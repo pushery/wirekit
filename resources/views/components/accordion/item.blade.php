@@ -44,12 +44,11 @@
 
 
 @php
-    use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
     // Each item needs a stable id so Alpine can track open/closed state in the
     // parent's `opened` array, and so aria-controls / aria-labelledby can pair.
-    // STABLE across re-renders, which the old `Str::random(6)` was not. Both halves of
+    // It is the same on every render, and a random id would not be. Both halves of
     // BOTH pairings descend from this one value — the button carries id + aria-controls,
     // the panel carries id + aria-labelledby — so a re-mint breaks the accordion's entire
     // relationship in one step, while every attribute stays well-formed. An item inside a
@@ -178,7 +177,7 @@
         id="{{ $panelId }}"
         role="region"
         aria-labelledby="{{ $buttonId }}"
-        {{-- ⚠️ BOTH SPELLINGS ARE WRITTEN OUT RATHER THAN ASSEMBLED, and the duplication is the
+        {{-- Both spellings are written out rather than assembled, and the duplication is the
              point. A directive NAME built in PHP is invisible to every scanner that looks for
              this one by name — the CSP audit among them — so the modifier would be unreachable
              to exactly the checks that exist to find it. Two literal lines cost nothing. --}}

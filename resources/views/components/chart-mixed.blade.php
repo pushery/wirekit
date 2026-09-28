@@ -80,20 +80,18 @@
         $scope,
     );
 
-    // ⚠️ A caller's accessible name has to reach the INNER chart, because that is
-    // the element carrying `role="img"`. On this wrapper it sits on a role-less
-    // `<div>` — ARIA `generic`, where naming is PROHIBITED (axe
-    // `aria-prohibited-attr`) — so assistive technology dropped it and the chart
-    // announced its own generic fallback instead. A mixed chart paints to a canvas
-    // no reader can inspect, so that one word was the whole of what it said, and
-    // `aria-label`, the attribute a developer reaches for to fix exactly that, was
-    // the attribute being discarded. Worse for the developer: chart.blade.php's
-    // debug warning gates on `! $attributes->has('aria-label')`, which was ALWAYS
-    // true here, so the package told them to pass a label they had just passed.
+    // A caller's accessible name has to reach the inner chart, because that is
+    // the element carrying `role="img"`. On this wrapper it would sit on a role-less
+    // `<div>` — ARIA `generic`, where naming is prohibited (axe
+    // `aria-prohibited-attr`) — so assistive technology would drop it and the chart
+    // would announce its own generic fallback instead; a chart painted to a canvas
+    // has nothing else to say. And chart.blade.php's debug warning gates on
+    // `! $attributes->has('aria-label')`, so a label left on the wrapper would also
+    // be reported as missing.
     //
-    // Same defect and same remedy as `sparkline.blade.php`. Those two are the whole
-    // class: they are the only views in the package that wrap the class-based chart
-    // rather than being it, so they are the only ones that can swallow its name.
+    // Same remedy as `sparkline.blade.php`. Those two are the only views in the
+    // package that wrap the class-based chart rather than being it, so they are the
+    // only ones that could swallow its name.
     //
     // Forwarded as an attribute bag rather than as named props: the chart is a
     // CLASS-based component, so an attribute it does not declare flows into its

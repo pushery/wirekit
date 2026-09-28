@@ -23,8 +23,10 @@
  * Alpine happens to run the entangle pass.
  *
  * Lifecycle resources held on `this`:
- *   - _timer (setInterval, 1s) — cleared in destroy(). A visual clock does not
- *     need a server round-trip, so this ticks client-side rather than polling.
+ *   - _timer (setInterval, every `_tickMs()`: a second, 30 seconds when the smallest
+ *     unit shown is minutes, a minute when it is larger) — cleared in destroy(). A visual clock
+ *     does not need a server round-trip, so this ticks client-side rather than polling.
+ *   - _expiryTimer (setTimeout, fires `sync()` at the deadline) — cleared in destroy().
  *
  * @param {Object} config
  * @param {number}  config.target        deadline as a unix timestamp in ms
@@ -106,7 +108,7 @@ export default function wirekitCountdown(config = {}) {
             sync();
             this.$watch('now', () => sync());
 
-            // ⚠️ AND THE DEADLINE GETS ITS OWN TIMER, which is what lets the display tick be
+            // And the deadline gets its own timer, which is what lets the display tick be
             // coarse without making the EVENT coarse. `sync()` hangs on the interval, so a
             // 30-second display tick would delay `wirekit-countdown-expired` by up to thirty
             // seconds — a component that reads "0 days" while nothing has fired yet.
@@ -174,12 +176,10 @@ export default function wirekitCountdown(config = {}) {
         /**
          * Fire `sync()` AT the deadline, exactly once.
          *
-         * ⚠️ `setTimeout` TAKES A 32-BIT SIGNED DELAY, and anything past 2^31-1 ms — about
-         * 24.8 days — OVERFLOWS AND FIRES IMMEDIATELY. The report that prompted this work
-         * describes a legal deadline measured in WEEKS, so the naive form would have
-         * announced expiry the moment the page loaded. That is not a hypothetical: it is the
-         * first case this function has to survive, and it is why the arm re-arms instead of
-         * scheduling once.
+         * `setTimeout` takes a 32-bit signed delay, and anything past 2^31-1 ms — about
+         * 24.8 days — overflows and fires immediately. A legal deadline measured in weeks
+         * would announce expiry the moment the page loaded, which is why the arm re-arms
+         * instead of scheduling once.
          */
         _armExpiry(sync) {
             const MAX_DELAY = 2147483647;

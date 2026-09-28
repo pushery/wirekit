@@ -157,7 +157,7 @@ $wrapperClasses
 '2
 '2'
 '2xl'
-'2xl']),
+'2xl']))
 '2xl:1'
 '2xl:10'
 '2xl:11'
@@ -362,7 +362,7 @@ $wrapperClasses
 'statusText'
 'statusWord'
 'stretch'
-'stretch']),
+'stretch']))
 'success'
 'template'
 'template')
@@ -408,11 +408,9 @@ $wrapperClasses
 '…',
 (!
 ("Used
-($align)
-($gap)
+($align
 ($intent)
 ($invalid
-($item['href']
 ($item['key']
 ($item['label']
 ($items
@@ -426,6 +424,7 @@ $wrapperClasses
 ($v)
 ($value)
 (Level
+(WireKit::validateProp('grid',
 (`[sidebar-start]
 (a
 (anything
@@ -698,6 +697,7 @@ Written
 [])
 [],
 [];
+\Pushery\WireKit\Support\SafeUrl::href($item['href']
 \Pushery\WireKit\WireKit::tagName('grid',
 \Pushery\WireKit\WireKit::warnUnknownProps('grid',
 \Pushery\WireKit\WireKit::warnUnknownProps('status-tiles',
@@ -936,6 +936,7 @@ column.
 columns
 columns,
 combination
+come
 commonest
 compete.
 compilation),
@@ -974,6 +975,7 @@ data,
 data-key="{{
 data-table,
 data-wk-prose-skip
+database,
 debug
 debug:
 decided
@@ -1005,6 +1007,7 @@ does,
 does.
 domains
 down.
+draws
 dropped
 drops
 dynamic
@@ -1214,6 +1217,7 @@ line
 line.
 lines
 link
+link,
 link;
 linked
 links"
@@ -1433,6 +1437,7 @@ row's
 row,
 rule
 rule,
+run
 rung
 rungs,
 runs
@@ -1448,6 +1453,7 @@ scanner
 screen
 screen-reader-only
 screen.
+script
 second
 sees
 semicolon
@@ -1543,6 +1549,7 @@ tags
 takes
 tallest
 tally
+target
 taught
 tells
 template
@@ -1717,4 +1724,3 @@ zero,
 →
 ∈
 ≥4.5:1
-⚠

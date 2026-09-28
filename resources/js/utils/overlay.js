@@ -27,10 +27,9 @@ let scrollLockSnapshot = null;
  * one ESC press cascades through every open modal at once).
  *
  * Required because each Blade overlay registers its own window-level
- * `keydown.escape` listener (the listener is window-level so Playwright
- * `press('Escape')` against a non-focusable panel still hits it; without
- * the window listener focus-trap's `escapeDeactivates` would miss the
- * event because focus has fallen to body). With two open modals, two
+ * `keydown.escape` listener (the listener is window-level so Escape works
+ * before the focus trap is armed; once armed, focus-trap listens on the
+ * document as well). With two open modals, two
  * window listeners both fire on a single ESC — without this stack guard
  * both modals would close instead of just the top one.
  */
@@ -204,11 +203,10 @@ export function createOverlay({
      * the document body (the browser's own answer, and the one this exists to
      * avoid).
      *
-     * ⚠️ EXCEPT ON A DISMISSAL, where a surviving opener comes first. The named target used to win
-     * on every close, a Cancel with its trigger standing untouched included, and a keyboard user
-     * who backed out of a delete landed on the list heading instead of the row they were on. The
-     * order could not simply be flipped: a confirmation closes on the next task, BEFORE the
-     * re-render removes its row, so at that moment the trigger still exists, would win, and would
+     * Except on a dismissal, where a surviving opener comes first: a keyboard user who backs out
+     * of a delete belongs on the row they were on, not on the list heading. The order cannot
+     * simply be flipped: a confirmation closes on the next task, before the re-render removes
+     * its row, so at that moment the trigger still exists, would win, and would
      * vanish a moment later. What separates the two is how the dialog closed, not whether the
      * trigger exists.
      *
@@ -396,7 +394,7 @@ export function createOverlay({
                 }
 
                 /*
-                 * ⚠️ AND THE TICK IS NO PROMISE THAT THE PANEL IS SHOWN.
+                 * And the tick is no promise that the panel is shown.
                  *
                  * It relies on `x-transition` holding the next ticks until the second frame,
                  * and that hold is GLOBAL: another component's `$nextTick` schedules a

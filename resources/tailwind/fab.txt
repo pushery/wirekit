@@ -13,7 +13,7 @@
 $accessibleLabel
 $ariaLabel
 $attributes->class([$classes])
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel')->class([$classes.'
 $attributes->except('rel')->class([$classes])
 $attributes->get('aria-hidden');
@@ -79,6 +79,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -199,7 +200,7 @@ $validated
 ($shouldSetHidden)
 ($size
 ($svgHtml
-('xs')
+('xs').
 (44px)
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -223,7 +224,6 @@ $validated
 (so
 (string)
 (the
-(throws
 (true
 (true)
 (which
@@ -322,9 +322,7 @@ AND
 APG
 API:
 AROUND
-ARROWS,
 AT
-ATTEMPTED
 ATs
 Adding
 Alpine
@@ -334,9 +332,7 @@ Announcing
 ArrowDown
 ArrowUp
 Auto-inject
-BECAUSE
 BEFORE
-BELOW,
 BOTH
 Back
 Blade
@@ -346,9 +342,6 @@ BooleanProp::from($hideLabel,
 BooleanProp::isFalse($haspopup)
 Both
 Building
-CAN
-CANNOT
-CONDITION
 CONTAINS
 CONTRACT,
 CSP
@@ -356,9 +349,7 @@ Catching
 Check
 DECORATIVE,
 DEFAULT
-DIAL
 DO
-DOCS
 DOM
 Declared
 Dev-only
@@ -367,25 +358,18 @@ END
 ENT_QUOTES).'"',
 EVERY
 Escape
-Every
 FAB
 FAB.
-FAIL
 FILLED
 Fully
 Graceful
-HAS
-HERE,
 HTTP
 Host-filled
 Htmlable,
-IN
 INCLUDES
 INCLUDING
 INSIDE
 IS
-IT
-ITS
 Icon
 IconResolver,
 If
@@ -393,8 +377,6 @@ In
 It
 Its
 JavaScript
-KEPT
-LITERAL
 LTR
 Label
 Logger
@@ -402,12 +384,10 @@ MOST
 Measured
 NO
 NOT
-NOTHING
 Name
 No
 Nothing
 Null
-ON
 ONE
 ONLY
 ONLY,
@@ -416,7 +396,6 @@ OPENING
 OR
 OUT
 OUTER
-OWN
 On
 Once
 Only
@@ -428,7 +407,6 @@ Positioning
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 REPLACES
 REQUIRED
 RTL
@@ -443,8 +421,6 @@ Retheming
 RuntimeException
 SCREEN
 SCREEN;
-SEE.
-SPEED
 START
 SVG
 SVG:
@@ -460,9 +436,7 @@ SvgNotFound.
 Symmetric
 TAG
 TEXT.
-THE
 TOKEN,
-TRIGGER
 Tab
 Tailwind
 That
@@ -470,10 +444,8 @@ The
 They
 This
 Throwing
-Two
 UNBOUND
 Visible
-WAY
 WCAG
 WHERE
 We
@@ -510,12 +482,12 @@ __('wirekit::(opens
 __('wirekit::Action'),
 __('wirekit::Actions'),
 __toString
-`!`,
 `--wk-fab-lift`
 `--wk-scrollbar-inset`
 `.prevent`
 `.wk-fab`
 `0px`
+`<span>`
 `Svg
 `aria-haspopup="menu"`
 `aria-hidden="true"`
@@ -530,11 +502,13 @@ __toString
 `env(safe-area-inset-right)`
 `fab.button`
 `fab/button`,
+`fab`
 `fixed
 `heroicon-m-inbox`
 `hideLabel="false"`
 `hideLabel`
-`if`,
+`icon`
+`if`
 `if`.
 `inbox`
 `link`
@@ -543,6 +517,7 @@ __toString
 `menuitem`
 `move()`,
 `open
+`php
 `position:
 `preventDefault()`
 `rel="noopener
@@ -563,13 +538,11 @@ a11y
 able
 about
 about,
-about.
 above
 above.
 absent,
 absolute
 absolutely
-access
 accessibility
 accessible
 action
@@ -638,6 +611,8 @@ around
 array
 array_keys($sizeMap));
 arrow
+arrows,
+artisan
 as
 as.
 ask
@@ -646,6 +621,7 @@ asserted:
 assistive
 assuming
 at
+attempted
 attribute
 attribute,
 auto-derived
@@ -666,7 +642,6 @@ becomes
 been
 before
 before.
-behavior.
 behind
 below
 below,
@@ -677,7 +652,7 @@ between
 between;
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg-inverse)]
-binding
+binding.
 blade-heroicons
 blade-icons
 blade-icons,
@@ -698,7 +673,6 @@ branch's
 branch,
 break
 broke:
-browser
 bug
 build
 bundle
@@ -727,9 +701,7 @@ carries
 carry
 case
 case)
-catalog
 catch
-catches
 caught
 check
 checkbox,
@@ -751,13 +723,14 @@ class="sr-only">{{
 class="wk-fab-action-label
 class="wk-fab-actions
 class="wk-fab-icon
+classes
 classes,
 classic
 click
 client-only
 close
 close-icons,
-closed,
+closed
 closes
 closing.
 col-start-1
@@ -776,7 +749,6 @@ components
 compose
 composed
 composer
-composite
 computation
 computed
 concern).
@@ -798,7 +770,6 @@ control,
 copy
 corner
 corner,
-correct
 correctly.
 cosmetic.
 could
@@ -807,7 +778,6 @@ covered
 cross
 cross-branch
 crossfade
-csp-expression-audit
 current
 cursor-pointer
 custom
@@ -822,7 +792,7 @@ data-wk-fab-button
 data-wk-fab-trigger
 data-wk-prose-skip
 debug
-debug,
+decide
 decided
 decides
 decision,
@@ -846,6 +816,7 @@ deliberate
 deliberate.
 deliberate:
 dependency
+depending
 depends
 describing
 desktop,
@@ -854,6 +825,8 @@ developer
 developer's
 developer's.
 device
+dial
+dial's
 dial.
 did
 direct
@@ -898,6 +871,7 @@ emitted
 empty
 empty-state
 end-full
+ended
 engines,
 entirely
 entirely.
@@ -912,7 +886,7 @@ everything
 exactly
 except
 except('rel'),
-exception.
+exception
 exhausting
 existing
 exists.
@@ -920,10 +894,12 @@ exit
 explains
 explicitly
 expression
+expressions,
 fab.action);
 fab.button
 fab;
 factory:
+fail
 failure
 fallback
 fallback,
@@ -977,7 +953,6 @@ for,
 forbidden
 force-override
 forcing
-found.
 found.`
 framework
 from
@@ -987,7 +962,8 @@ function_exists('svg'))
 gap
 gap-[var(--gap-wk-sm)]"
 gap-[var(--gap-wk-sm)]',
-gate).
+gate
+gate,
 generated
 genuinely
 get
@@ -1025,6 +1001,7 @@ have
 have)
 helper
 here
+here,
 here.
 hid
 hidden
@@ -1048,6 +1025,7 @@ href
 href="{{
 iOS
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -1057,7 +1035,6 @@ icons,
 identifier
 if
 image
-implementations
 implements
 implements,
 implode('
@@ -1067,7 +1044,6 @@ in.
 inactive
 including
 indicator
-inert
 informative
 informative.
 injected
@@ -1100,6 +1076,7 @@ it
 it),
 it,
 it.
+it:
 item
 item.
 items,
@@ -1113,7 +1090,6 @@ keeping
 keeping,
 keeps
 kept
-key
 key.
 keyboard
 keys
@@ -1132,6 +1108,7 @@ land,
 landscape
 later
 layer
+layer,
 laying
 layout
 learn
@@ -1159,7 +1136,6 @@ lives
 loads.
 log
 logger()->warning(
-logs
 long
 looks
 lose
@@ -1184,8 +1160,6 @@ mean
 meaning
 means
 meant
-measures
-member
 menu
 menu,
 merge
@@ -1200,12 +1174,12 @@ modal).
 modals,
 model
 modifiers.
-more
 mouse
 mouse-only
 move
 moved
 moves
+moves,
 moves.
 must
 n/a
@@ -1257,6 +1231,7 @@ null);
 null,
 null;
 null`
+number
 number.
 obscure
 obvious
@@ -1314,7 +1289,6 @@ package
 page
 page,
 page.
-page:
 pages
 panel
 parent
@@ -1327,6 +1301,7 @@ pattern
 pattern's
 per-set
 person
+personalization
 phone.
 place
 place-items-center"
@@ -1354,8 +1329,6 @@ pressed
 primitive
 problem
 prod).
-production
-production.
 project,
 promise
 promised
@@ -1412,8 +1385,8 @@ replace
 replaced
 replaced,
 replaces
-repo's
 reported
+reports
 reproduced
 request
 require
@@ -1462,6 +1435,7 @@ screen-reader
 screen-reader-skipping
 screen.
 scroll-to-top,
+scroll-to-top.
 scrollbar
 scrollbar,
 scrollbar.
@@ -1469,12 +1443,14 @@ scrollbars
 scrolling
 second
 see
+see.
 sees
 semantic
 sensible
 server
 set
 sets
+settings.
 shadow-[var(--shadow-wk-lg)]
 shadow-[var(--shadow-wk-md)]
 shape
@@ -1489,7 +1465,6 @@ should
 show
 showed
 shown
-sibling
 side.
 sidebar.item
 sighted
@@ -1530,12 +1505,13 @@ started
 started.
 starts
 state
+statements,
 states
 static
 stay
 stayed
 stays
-stepped
+steps
 still
 stop
 stop.
@@ -1559,13 +1535,13 @@ stroke-width="2"
 stroke="currentColor"
 style="display:inline-block;"></span>
 subtree,
+such
 suppresses
 surface
 svg($resolved,
 svg()
 svg(),
 svg(WireKit::icon($icon),
-swallowing
 swap
 symmetric
 system
@@ -1577,7 +1553,6 @@ table
 tabnabbing
 tag's
 tag.
-taken
 takes
 taking
 target
@@ -1608,10 +1583,10 @@ their
 them,
 them.
 them:
+theme
 then
 there
 there,
-therefore
 these
 these.
 they
@@ -1625,13 +1600,13 @@ though
 three
 through
 throw
+throw,
 throws
 tile
 time
 to
 toHtml().
 token
-token,
 token.
 took
 tooltip
@@ -1668,8 +1643,10 @@ unknown.
 unless
 unrelated
 until
+up
 up.
 use
+use:
 used
 useful
 useful,
@@ -1731,10 +1708,10 @@ whole
 whose
 why
 why.
-widget
 will
 wins
 wins;
+wirekit:csp-audit`
 with
 without
 wk-fab-action-labeled'])
@@ -1758,8 +1735,7 @@ x-on:keydown.escape.prevent="close()"
 x-ref="trigger"
 x-show="isOpen"
 yet.
-z-40',
-z-40`
+z-40`,
 z-[var(--z-wk-sticky)]',
 {
 {!!
@@ -1775,4 +1751,3 @@ z-[var(--z-wk-sticky)]',
 }}</span>@endif
 }}>
 —
-⚠️

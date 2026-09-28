@@ -12,6 +12,7 @@
 import { position } from './utils/floating.js';
 import { contrast } from './utils/wcag-contrast.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { registerScrollToMagic } from './utils/scroll-to.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerFindableDirective } from './utils/findable.js';
@@ -134,17 +135,14 @@ export function installRuntime(Alpine) {
 
     // Alpine's collapse plugin, registered before any component.
     //
-    // Four components ask for `x-collapse` — collapsible, sidebar/group,
-    // sidebar/collapsible and tree-view/node — and nothing registered it. Alpine
-    // warns once per element and the directive does nothing, so the region
-    // appeared and vanished instantly instead of animating, exactly as if the
-    // animation had been chosen against. One of those files even says
-    // "(already bundled)".
+    // The disclosure components ask for `x-collapse` (`grep -rl x-collapse
+    // resources/views` lists them). Without the plugin Alpine warns once per element
+    // and the directive does nothing, so a region appears and vanishes at once
+    // instead of animating.
     //
-    // Registering it costs 646 gzipped bytes on every bundle, including for
-    // developers who render no disclosure at all. That is the trade, and it was
-    // the owner's to make: the docs already promise the animation, so not paying
-    // it means shipping a promise that is not true.
+    // The cost is part of every bundle's size in `dist/README.md`, paid by
+    // developers who render no disclosure as well. The docs promise the animation,
+    // so not paying it would ship a promise that is not true.
     // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is not
     // style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
     // callback its OWN module singleton and ignores the receiver. This bundle is
@@ -157,6 +155,7 @@ export function installRuntime(Alpine) {
 
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
+    registerScrollToMagic(Alpine);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.

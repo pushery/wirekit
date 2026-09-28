@@ -14,8 +14,7 @@ import { withOpenAlias } from '../utils/open-alias.js';
  * an error — the menu still opens and closes, it just falls back to the CSS
  * placement — so the check stays a silent guard.
  *
- * ⚠️ Lifecycle resources held on `this`: ONE, and this line said NONE until the
- * panel started repairing its own placement. `place()` asks the positioner to put
+ * Lifecycle resources held on `this`: one. `place()` asks the positioner to put
  * the placement back when something removes it, which registers a MutationObserver
  * — so there is a handle to release, and it is released on close, before every
  * reopen and on destroy.
@@ -26,10 +25,10 @@ import { withOpenAlias } from '../utils/open-alias.js';
  * never changed — so nothing asks for a new one. Measured here, menu open, one
  * refresh: `top` went from `158.5px` to empty and stayed empty.
  *
- * ⚠️ `autoReposition` does NOT cover this case, which is worth knowing because it
- * looks like it should. It recomputes on a size change, and this erasure does not
- * resize the panel: the `max-height` it drops was never binding on a 77px menu, so
- * the box stayed 192x77 and no observer fired. That is why the option here is
+ * `autoReposition` does not cover this case, though it looks like it should. It
+ * recomputes on a size change, and this erasure does not resize the panel: the
+ * `max-height` it drops is never binding on a short menu, so the box keeps its size
+ * and no observer fires. That is why the option here is
  * `repairErasure`, which watches the attribute rather than the box.
  */
 export default function wirekitDataTableColumnMenu() {
@@ -137,7 +136,7 @@ export default function wirekitDataTableColumnMenu() {
                 repairErasure: true,
             });
 
-            // ⚠️ The global is documented as something a component asks for WITHOUT depending
+            // The global is documented as something a component asks for WITHOUT depending
             // on it, so it may be absent — and by the same reasoning it may be something other
             // than this package's own helper. A stub that returns a non-thenable makes `.then`
             // throw, which is a worse failure than the missing placement it replaces.

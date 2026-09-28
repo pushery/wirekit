@@ -28,7 +28,9 @@
         $entries[] = [
             'index' => $index,
             'label' => (string) ($item['label'] ?? ''),
-            'href' => (string) ($item['href'] ?? '#'),
+            // A link row built from data (open records, recent pages). A target that could run
+            // script leaves the entry without an href, so it navigates nowhere.
+            'href' => \Pushery\WireKit\Support\SafeUrl::href((string) ($item['href'] ?? '#')),
             'current' => (bool) ($item['current'] ?? false),
             'attributes' => new \Illuminate\View\ComponentAttributeBag((array) ($item['attributes'] ?? [])),
         ];
@@ -81,7 +83,7 @@
     <ul data-wk-prose-skip role="list" x-ref="row" class="{{ $rowClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($entries as $entry)
             <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif x-show="shownHere({{ $entry['index'] }})">
-                <a data-wk-prose-skip href="{{ $entry['href'] }}" @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class([$linkClasses]) }}>{{ $entry['label'] }}</a>
+                <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class([$linkClasses]) }}>{{ $entry['label'] }}</a>
             </li>
         @endforeach
         {{-- Hidden until the row has measured itself, so a page without script shows every link
@@ -96,7 +98,7 @@
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none flex flex-col gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;">
                     @foreach($entries as $entry)
                         <li data-wk-prose-skip x-show="menuHere({{ $entry['index'] }})" style="display: none;">
-                            <a data-wk-prose-skip href="{{ $entry['href'] }}" {{ $entry['attributes']->class([$menuLinkClasses]) }}>{{ $entry['label'] }}</a>
+                            <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif {{ $entry['attributes']->class([$menuLinkClasses]) }}>{{ $entry['label'] }}</a>
                         </li>
                     @endforeach
                 </ul>

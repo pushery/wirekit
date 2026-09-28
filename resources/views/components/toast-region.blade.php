@@ -65,31 +65,25 @@
         ? 'padding-top: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-top, 0px));'
         : 'padding-bottom: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-bottom, 0px));';
 
-    // ⚠️ The INLINE gap has the same hole the FAB had, and here it hides one level deeper.
+    // The inline gap needs the scrollbar term too, and here the need hides one level deeper.
     //
     // The region is pinned flush to its edge and the 1rem gap comes from the base padding INSIDE
     // the box. A `position: fixed` box is laid out against a box that includes a classic
     // scrollbar, so the region overlaps the gutter and a toast ends up against it — nothing in
     // the markup looks wrong, because the padding is there and is being honored.
     //
-    // Only the arms anchored to the trailing edge are touched. A region on the opposite edge has
-    // no gutter under it, and the centered arms are off by HALF the gutter, which is a different
-    // magnitude and a different fix; neither is what was reported.
+    // Only the arms anchored to the trailing edge take it. A region on the opposite edge has no
+    // gutter under it, and the centered arms are off by half the gutter, which is a different
+    // magnitude and a different fix.
     //
-    // ⚠️ These arms name a physical side rather than a logical one, and that is deliberate rather
-    // than an oversight to repair here. Right-to-left support is a decided, deferred piece of
-    // work across the whole catalog, held by its own baseline; a term added INSIDE an existing
-    // physical utility introduces no new one, while converting the direction would settle the
-    // deferred question in three files as a side effect of a scrollbar fix.
+    // These arms name a physical side rather than a logical one, deliberately: RTL support is
+    // deferred across the whole catalog, and a term added inside an existing physical
+    // utility introduces no new one, where converting the direction here would settle that
+    // question in three files as a side effect.
     //
-    // ⚠️ The check reads the RESOLVED class rather than the input value, because the fallback arm
-    // renders a trailing-edge position for any unknown input — so a comparison against the string
-    // would miss exactly the arm a typo lands on.
-    //
-    // ⚠️ And the directional utilities are DESCRIBED here rather than spelled, for the same
+    // And the directional utilities are described here rather than spelled, for the same
     // reason the stacking comment below gives: Tailwind scans this file as text, comments
-    // included, so naming one emits it into the compiled stylesheet and counts it against the
-    // direction baseline. Writing this paragraph the obvious way added seven.
+    // included, so naming one would emit it into the compiled stylesheet.
     // Named by EXCLUSION rather than by matching the resolved class, and for two reasons at
     // once: the fallback arm has to be included (an unknown position renders on the trailing
     // edge, so a typo lands there), and matching the class would mean spelling a directional
@@ -298,11 +292,13 @@
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     {{-- SVG namespace gotcha: <template> elements inside <svg>
                          are NOT treated as HTML template elements (no .content
-                         property). Alpine's x-if then crashes with
+                         property). Alpine's x-if then fails with
                          "Cannot read properties of undefined (reading 'cloneNode')"
-                         on every page load — even with toasts:[]. Use <g x-show>
-                         instead: x-show only toggles display, no template cloning,
-                         no SVG-namespace pitfalls. --}}
+                         as soon as its condition holds, which here is the first
+                         toast that matches, since this svg sits inside the toast
+                         loop. A page with toasts:[] shows nothing wrong. <g x-show>
+                         only toggles display: no template cloning, no
+                         SVG-namespace pitfalls. --}}
                     <g x-show="toast.variant === 'success'">{!! $iconMap['success'] !!}</g>
                     <g x-show="toast.variant === 'warning'">{!! $iconMap['warning'] !!}</g>
                     <g x-show="toast.variant === 'danger'">{!! $iconMap['danger'] !!}</g>
@@ -340,7 +336,7 @@
                 type="button"
                 @click="remove(toast.id)"
                 aria-label="{{ __('wirekit::Dismiss notification') }}"
-                class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-80' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-[var(--opacity-wk-hover)]' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

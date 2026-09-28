@@ -8,11 +8,11 @@
      the supported route for a rich caption; `x-wirekit::field.legend` written into
      the DEFAULT slot is NOT — see the comment above the <fieldset> below.
 
-     ⚠️ Written as a Blade comment and with the tag names UNBRACKETED on purpose.
+     Written as a Blade comment and with the tag names unbracketed on purpose.
      `compileString` strips Blade comments BEFORE it compiles component tags but
      leaves `@props` alone, so an `<x-…>` spelled inside the @props array — even in
      a `//` comment — is compiled as a real component tag and the view dies on an
-     undefined `$component`. Measured here on 2026-09-04. --}}
+     undefined `$component`. --}}
 {{-- The group error, and why this view has a class behind it.
 
      A message can belong to the GROUP rather than to one control: "choose at least one
@@ -119,8 +119,8 @@
 @endphp
 
 <fieldset @if($group->key !== null) name="{{ $group->key }}" @endif @if($fieldsetDescribedBy !== null) aria-describedby="{{ $fieldsetDescribedBy }}" @endif {{ $attributes->class([$classes]) }}>
-    {{-- ⚠️ A <legend> IS THE GROUP'S CAPTION ONLY WHILE IT IS THE FIELDSET'S FIRST
-         CHILD. One level down it is an ordinary inline box: the <fieldset> then has no
+    {{-- A <legend> is the group's caption only while it is the fieldset's first
+         child. One level down it is an ordinary inline box: the <fieldset> then has no
          accessible name, and a screen reader announces nothing before the controls —
          which is the only reason to reach for a <fieldset> at all. Nothing about that
          is visible on screen, because the text still renders exactly where the author

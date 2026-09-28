@@ -114,6 +114,7 @@ $viewport
 (100dvh,
 (Named
 (The
+(`--size-wk-rail`)
 (`--wk-strip-inset`,
 (a
 (brand
@@ -165,7 +166,6 @@ $viewport
 255)`,
 255,
 256px
-3.5rem
 375px
 375px,
 375px:
@@ -324,7 +324,6 @@ One
 Only
 Overlays
 Owning
-PAGE
 PANEL
 PANEL.
 PHP
@@ -373,7 +372,6 @@ Toggle
 True
 UNBOUND
 UNDER
-Uses
 VALUE,
 Viewport-fixer
 WHAT
@@ -468,7 +466,6 @@ __('wirekit::Toggle
 `max-lg:[&>*]:…`
 `max-lg:bg-…`
 `max-lg`
-`min-h-screen`
 `null`
 `null`,
 `overflow-hidden`
@@ -1053,6 +1050,7 @@ have.
 header
 header's
 height
+height,
 heights
 helper,
 here
@@ -1062,6 +1060,7 @@ hidden`
 hiding
 high
 hold
+holding
 holds
 hole
 hook.

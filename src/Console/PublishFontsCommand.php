@@ -268,16 +268,14 @@ class PublishFontsCommand extends Command
     /**
      * Delete one family this command published, and refuse anything else.
      *
-     * ⚠️ THIS CHECK IS WHAT STANDS BETWEEN ONE MUTANT AND A DELETE OF EVERY TOP-LEVEL
-     * DIRECTORY. The path comes from `glob($categoryDir.'/*')` in prune(), and a mutation run
-     * removes the left operand of that concatenation as a matter of course: `glob('/*')` lists
-     * the whole filesystem root, and this method used to walk whatever it was handed. A mutant
-     * changes one place, so this check still stands when the concatenation falls — and the
-     * mutant dies on a refusal instead of on the machine running the suite.
+     * This check is what stands between a broken path and a delete of every top-level
+     * directory. The path comes from `glob($categoryDir.'/*')` in prune(), and without its
+     * left operand that is `glob('/*')`, which lists the whole filesystem root. So this method
+     * never walks whatever it is handed: a change in one place still meets a refusal here.
      *
-     * The same walk escaped without any mutant: a family directory that is a LINK was walked
-     * like any other, deleting the files at the link's target, and a linked CATEGORY directory
-     * made every family inside it resolve somewhere else. So two refusals, both on resolved
+     * A link escapes the same way: a family directory that is a link would be walked like any
+     * other, deleting the files at the link's target, and a linked category directory would
+     * make every family inside it resolve somewhere else. So two refusals, both on resolved
      * paths, the doctrine the install rollback's containment check follows: the link itself,
      * and a directory whose resolved path is not inside the resolved root. The trailing
      * separator keeps a sibling such as `fonts-old` from passing a prefix test against `fonts`.

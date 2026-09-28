@@ -8,13 +8,11 @@
      * A SECOND row under this one, carrying what `hide-below[-container]` took off the
      * remaining columns.
      *
-     * ⚠️ IT IS A SLOT ON THIS COMPONENT RATHER THAN A SIBLING `table.details`, AND THAT WAS
-     * THE WHOLE DESIGN QUESTION. The reporting ticket proposed a sibling component, which
-     * reads better at the call site and cannot work: Tailwind's `divide-y` compiles to
-     * `:where(.divide-y > :not(:last-child))` with `border-BOTTOM-width`, so the line between
-     * a record and its details belongs to the RECORD row. A sibling component cannot reach
-     * backwards to switch it off -- CSS has no previous-sibling combinator -- so the reporter
-     * had to write both halves by hand, which is the thing being fixed. One component
+     * It is a slot on this component rather than a sibling `table.details`. A sibling
+     * component reads better at the call site and cannot work: Tailwind's `divide-y` compiles
+     * to `:where(.divide-y > :not(:last-child))` with `border-bottom-width`, so the line
+     * between a record and its details belongs to the record row, and a sibling cannot reach
+     * backwards to switch it off -- CSS has no previous-sibling combinator. One component
      * emitting both rows owns the border, the `:last-child` arithmetic and the stripe.
      */
     'detailsBelowContainer' => null,
@@ -117,7 +115,7 @@
     // data attributes (see table.blade.php). The odd-child rule provides the
     // stripe color; the hover rule lights the whole row.
     //
-    // ⚠️ `odd of [data-wk-table-row]` RATHER THAN A BARE `odd`, because a details row is a
+    // `odd of [data-wk-table-row]` rather than a bare `odd`, because a details row is a
     // child of the same tbody and a bare `nth-child` counts it. With one details row in the
     // table every stripe below it lands on the wrong record. The `of S` form counts only
     // record rows, is a no-op for a table that has none, and sits ON the support baseline
@@ -150,7 +148,7 @@
     {{-- `headers` points at the record's row-header cell, so a screen reader reaching this row
          is told which record it continues. Without it the row is an orphan announcing values
          with no subject. --}}
-    {{-- ⚠️ THE KEY IS DERIVED, NOT DECLARED, AND THE DEFECT IT CLOSES IS SILENT. Livewire pairs
+    {{-- The key is derived, not declared, and the defect it closes is silent. Livewire pairs
          an UNKEYED sibling by position, which is right exactly as long as every record emits one
          details row, always immediately behind itself. The call site this slot was built for is
          the one where that stops being true — a row that carries details beside a row that does
@@ -160,14 +158,17 @@
          A details row belongs to exactly one record, and that record's key is already in the bag,
          so there is nothing for a call site to declare.
 
-         ⚠️ AND ONLY THAT ONE ATTRIBUTE CROSSES. Forwarding `$attributes` wholesale would put the
+         And only that one attribute crosses. Forwarding `$attributes` wholesale would put the
          record row's `class` on this row and overwrite the details classes below, and a `@class`
          on the record would silently start applying to both. --}}
     <tr data-wk-table-details
         @if(filled($attributes->get('wire:key'))) wire:key="{{ $attributes->get('wire:key') }}-details" @endif
         class="{{ $detailsClasses }}">
+        {{-- The marker is what `table`'s debug check reads to tell this cell from a raw `<td>`.
+             It follows `data-wk-prose-skip`, which prose reads only as the first attribute. --}}
         <td
             data-wk-prose-skip
+            data-wk-table-details-cell
             @if($detailsColspan !== null) colspan="{{ (int) $detailsColspan }}" @endif
             @if(filled($detailsFor)) headers="{{ $detailsFor }}" @endif
             class="px-[var(--padding-wk-x-md)] pb-[var(--padding-wk-y-md)] pt-0 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]"

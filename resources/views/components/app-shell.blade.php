@@ -2,8 +2,9 @@
      Layout state — which panes are open at this viewport. --}}
 @props([
     'scope' => null,
-    // Viewport-fixer mode. Default (false) keeps `min-h-screen` — the shell grows
-    // with its content and the PAGE scrolls as a document. When true, the root is
+    // Viewport-fixer mode. Default (false) keeps a minimum of the viewport height,
+    // less any strip above the page — the shell grows with its content and the page
+    // scrolls as a document. When true, the root is
     // pinned to the viewport height (100dvh, less any strip above the page) so the inner sidebar + main
     // regions scroll INTERNALLY (brand pinned top, account menu pinned bottom) — the
     // classic fixed-height admin-shell case. `dvh` (not `vh`) so the mobile browser
@@ -108,7 +109,7 @@
         : '';
 
     // App Shell — orchestrates header + sidebar + main layout.
-    // Uses CSS grid to position sidebar and main content area.
+    // A flex column holding a flex row of sidebar and main content area.
     // Default to `w-full` so the shell fills its parent in any layout
     // wrapper (raw page, docs preview, sandbox iframe). Without it, a
     // bare block-level `display:flex` div collapses to its intrinsic
@@ -590,7 +591,7 @@
                 :tabindex="isDrawer && sidebarOpen ? '-1' : null"
                 {{-- wk-app-shell-aside: on lg the dist/wirekit.css rule sizes this column
                      to the inner sidebar's width (var(--wk-sidebar-w,16rem)), and shrinks it
-                     to the 3.5rem icon rail when the sidebar is data-collapsed, so the main
+                     to the icon rail (`--size-wk-rail`) when the sidebar is data-collapsed, so the main
                      content reflows instead of leaving a gap. The drawer token stays the
                      mobile overlay width.
                      lg:transition-[width] animates the column in sync with the sidebar's own

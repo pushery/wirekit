@@ -51,9 +51,10 @@
         'relative inline-grid place-items-center',
     ]), $scope);
 
-    // Wrap the expression in parentheses before appending the ternary: an
-    // expression like "a || b" would otherwise bind as "a || b ? … : …" and the
-    // precedence quietly changes what the reader asked for.
+    // Wrap the expression in parentheses before appending the ternary. `?:` binds
+    // more weakly than `||` and `&&`, so those need no help, but an expression that
+    // ends in a ternary of its own would absorb the appended one: "a ? b : c" would
+    // read as "a ? b : (c ? … : …)" and answer `b` whenever `a` holds.
     $isDynamic = $expression !== null && $expression !== '';
     $expr = $isDynamic ? '('.$expression.')' : null;
 @endphp

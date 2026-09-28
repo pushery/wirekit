@@ -6,30 +6,36 @@ namespace Pushery\WireKit\Support;
 
 use InvalidArgumentException;
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\WireKit;
 
 /**
  * Strictness gate for runtime prop / value validation.
  *
  * Used by WireKit::validateProp() (component-level prop validation) and
- * IconResolver (icon-alias / preset lookups) to decide between two
- * behaviors when an invalid value is supplied:
+ * IconResolver (icon-alias / preset lookups) to decide what happens when an
+ * invalid value is supplied. For a prop value, one of three things:
  *
- *   - STRICT  → throw InvalidArgumentException with a Did-you-mean hint.
- *   - LENIENT → log a warning (with fallback annotation) and return the
- *     first allowed value (or a caller-supplied fallback).
+ *   - strict, and throwing on → throw InvalidArgumentException with a
+ *     Did-you-mean hint.
+ *   - strict, throwing off     → log at ERROR level and return the fallback.
+ *   - lenient                  → log a warning (with fallback annotation) and
+ *     return the first allowed value (or a caller-supplied fallback).
  *
  * Strictness is decided by:
  *   1. Explicit override via `wirekit.validation.strict` config
  *      (env `WIREKIT_STRICT_VALIDATION`) — true/false.
  *   2. Default: APP_DEBUG=true → strict, APP_DEBUG=false → lenient.
  *
- * Throw-on-invalid is a SECOND decision: even in strict mode, the gate
- * only throws when (a) running in console / artisan / Pest, OR (b) the
- * `wirekit.validation.throw_on_invalid` config is explicitly true. In
- * HTTP dev requests (strict + browser), the gate logs at ERROR level
- * and renders the fallback so a single prop typo doesn't 500 the whole
- * blade view. That split replaced an always-throw-in-debug behavior which
- * took down the entire page on a typo that was purely cosmetic.
+ * Throwing is a SECOND decision, and it only matters while the gate is strict:
+ *   1. Explicit override via `wirekit.validation.throw_on_invalid` config
+ *      (env `WIREKIT_THROW_ON_INVALID`) — true throws even in an HTTP request,
+ *      false never throws, not even in console / artisan / Pest.
+ *   2. Default: console / artisan / Pest → throw, HTTP request → do not.
+ * So an HTTP request with APP_DEBUG=true logs at ERROR level and renders the
+ * fallback, and a single prop typo does not 500 the whole Blade view. That
+ * split replaced an always-throw-in-debug behavior which took down the entire
+ * page on a typo that was purely cosmetic. IconResolver reads the second
+ * decision alone, for the reason on shouldThrowOnInvalid().
  */
 final class StrictnessGate
 {
@@ -58,23 +64,32 @@ final class StrictnessGate
     private const SCOPE_DIRECTIVES = ['x-data', 'x-init', 'x-effect', 'x-model', 'x-modelable'];
 
     /**
-     * HTML global attributes — valid on ANY element, so they can never be a
-     * prop typo. Closed set per the WHATWG HTML living standard's "global
-     * attributes" section (plus the widely-supported input-hint attributes
-     * `autocapitalize` / `autocorrect` that the spec lists as global). Splitting
-     * these out of the old ad-hoc `$reserved` grab-bag makes the rule structural:
-     * a valid HTML attribute is passthrough by definition, not by whether someone
-     * remembered to list it. `inputmode` / `enterkeyhint` sitting here is what
-     * stops `<x-wirekit::input inputmode="numeric">` — a correct, accessible
-     * mobile-keyboard hint — from logging a spurious "unknown prop" warning.
+     * Global attributes — valid on ANY element, so they can never be a prop typo.
+     *
+     * The HTML set is the WHATWG living standard's, taken from its index of attributes: every
+     * row whose element column reads "HTML elements". That is 31 names, the microdata family,
+     * `popover` and `writingsuggestions` among them, and it was 22 of them until an audit
+     * compared the two. `<x-wirekit::card popover id="…">` logged an unknown prop.
+     *
+     * Two names come from other specifications that make them global as well, and they are
+     * listed apart so the WHATWG half stays checkable against its index: `role` (WAI-ARIA, which
+     * HTML allows on every element) and `part` (CSS Shadow Parts).
+     *
+     * A valid attribute is passthrough by definition, not by whether someone remembered to list
+     * it: `inputmode` and `enterkeyhint` here are what stop `<x-wirekit::input inputmode="numeric">`,
+     * a correct mobile-keyboard hint, from logging a spurious warning.
      *
      * @var list<string>
      */
     public const HTML_GLOBAL_ATTRIBUTES = [
-        'id', 'class', 'style', 'title', 'lang', 'dir', 'hidden', 'inert',
-        'tabindex', 'accesskey', 'draggable', 'translate', 'contenteditable',
-        'spellcheck', 'autocapitalize', 'autocorrect', 'inputmode', 'enterkeyhint',
-        'role', 'slot', 'part', 'nonce', 'is', 'autofocus',
+        // WHATWG HTML, "HTML elements" in the index of attributes.
+        'accesskey', 'autocapitalize', 'autocorrect', 'autofocus', 'class', 'contenteditable',
+        'dir', 'draggable', 'enterkeyhint', 'headingoffset', 'headingreset', 'hidden', 'id',
+        'inert', 'inputmode', 'is', 'itemid', 'itemprop', 'itemref', 'itemscope', 'itemtype',
+        'lang', 'nonce', 'popover', 'slot', 'spellcheck', 'style', 'tabindex', 'title',
+        'translate', 'writingsuggestions',
+        // Global by another specification: WAI-ARIA and CSS Shadow Parts.
+        'role', 'part',
     ];
 
     /**
@@ -149,10 +164,10 @@ final class StrictnessGate
      * prop was unknown. Measured against a real render before the fix.
      *
      * A prefix rather than an enumeration: the handler list is long, it grows
-     * with the platform, and every name in it starts this way. Nothing in the
-     * component vocabulary begins with `on`, so it costs no coverage -- the
-     * match is prefix-based, so a hypothetical prop named `onset` would slip
-     * through, which is a false negative and the safe direction.
+     * with the platform, and every name in it starts this way. It is the one
+     * prefix that is NOT a family on its own, because three props begin with the
+     * same two letters: `toggle-button`'s `onIcon` and `onLabel`, and `reveal`'s
+     * `once`. {@see self::isPassthroughName()} tells the two apart.
      *
      * A CONSTANT, and that is a fix rather than tidying. This list existed
      * twice: once in `unknownPropNames()`, where it decides, and once inside
@@ -164,6 +179,23 @@ final class StrictnessGate
      * @var list<string>
      */
     public const PASSTHROUGH_PREFIXES = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
+
+    /**
+     * The most rejections one set remembers. A process that renders outside a request and a
+     * queued job, such as a command sending mail in a loop, never resets the set; at this size
+     * it starts over.
+     */
+    private const LOGGED_CAP = 1000;
+
+    /**
+     * The rejections already logged in this request, keyed by component, prop and value.
+     *
+     * A value that renders in a loop, one per row, is reported once rather than once per row.
+     * Reset after each request, before each queued job and by {@see WireKit::flush()}.
+     *
+     * @var array<string, true>
+     */
+    private static array $logged = [];
 
     /**
      * Whether an invalid value should THROW rather than degrade to a fallback.
@@ -231,23 +263,89 @@ final class StrictnessGate
             // Two strict-mode paths:
             //   - CLI / test / explicit throw-on-invalid → throw (fail-fast)
             //   - HTTP dev request → log at ERROR + render fallback
-            // The HTTP-dev fall-through a
-            // typo in one prop shouldn't 500 the whole blade view.
+            // The HTTP-dev fall-through exists because a typo in one prop
+            // shouldn't 500 the whole blade view.
             if (self::shouldThrowOnInvalid()) {
                 throw new InvalidArgumentException($message);
             }
 
-            logger()->error($message.' Falling back to "'.$effectiveFallback.'".');
+            self::logOnce(true, $context, $key, $value, $message.' Falling back to "'.$effectiveFallback.'".');
 
             return $effectiveFallback;
         }
 
         // Lenient (prod) — log at warning level and render the fallback.
-        logger()->warning(
-            $message.' Falling back to "'.$effectiveFallback.'".'
-        );
+        self::logOnce(false, $context, $key, $value, $message.' Falling back to "'.$effectiveFallback.'".');
 
         return $effectiveFallback;
+    }
+
+    /**
+     * The same answer as enforce() for a value that has a shape rather than a list of choices: a
+     * hex color, a length. There is nothing to suggest, so the message says what shape was
+     * expected instead.
+     *
+     * Throws where the gate throws (CLI, tests, `throw_on_invalid`), logs an error and returns the
+     * fallback on a strict HTTP request, and logs a warning and returns it otherwise.
+     */
+    public static function reject(
+        string $context,
+        string $key,
+        string $value,
+        string $expected,
+        string $fallback,
+    ): string {
+        $message = "WireKit [{$context}]: Invalid {$key} \"".LogValue::quote($value)."\". Expected {$expected}.";
+
+        if (self::isStrict()) {
+            if (self::shouldThrowOnInvalid()) {
+                throw new InvalidArgumentException($message);
+            }
+
+            self::logOnce(true, $context, $key, $value, $message.' Falling back to "'.$fallback.'".');
+
+            return $fallback;
+        }
+
+        self::logOnce(false, $context, $key, $value, $message.' Falling back to "'.$fallback.'".');
+
+        return $fallback;
+    }
+
+    /**
+     * Log a rejection the first time this request sees its component, prop and value, at ERROR
+     * on a strict request and at WARNING otherwise.
+     */
+    private static function logOnce(bool $asError, string $context, string $key, string $value, string $message): void
+    {
+        $rejection = $context."\0".$key."\0".$value;
+
+        if (isset(self::$logged[$rejection])) {
+            return;
+        }
+
+        if (count(self::$logged) >= self::LOGGED_CAP) {
+            self::$logged = [];
+        }
+
+        self::$logged[$rejection] = true;
+
+        if ($asError) {
+            logger()->error($message);
+
+            return;
+        }
+
+        logger()->warning($message);
+    }
+
+    /**
+     * Forget which rejections were logged, so the next request reports its own. Called after each
+     * request, before each queued job and by {@see WireKit::flush()}.
+     */
+    public static function forgetLogged(): void
+    {
+        self::$logged = [];
     }
 
     /**
@@ -355,10 +453,11 @@ final class StrictnessGate
      * runtime error it eventually produced named the CALLER's expression, sending everyone
      * in the wrong direction first.
      *
-     * Scoped to the three directives whose loss is not a degradation but a disconnection:
-     * `x-data`, `x-init` and `x-modelable` all sever everything downstream from the object
-     * it was written against. A duplicate `class` is merged by Blade and a duplicate
-     * `aria-*` reads as an intended override; those are not this.
+     * Scoped to the directives in SCOPE_DIRECTIVES, whose loss is not a degradation but a
+     * disconnection: a caller's `x-data`, `x-init`, `x-effect`, `x-model` or `x-modelable`
+     * beside the component's own is dropped, and everything written against it goes with it.
+     * A duplicate `class` is merged by Blade and a duplicate `aria-*` reads as an intended
+     * override; those are not this.
      *
      * Most component views set `x-data`; a handful set `x-init` and fewer still set
      * `x-modelable`. The tally itself is deliberately not written down — the one that used to
@@ -422,7 +521,7 @@ final class StrictnessGate
         }
 
         // The component's own template, read once per component per request. Only reached
-        // when a caller actually passed one of the three, so the common path costs nothing.
+        // when a caller actually passed one of them, so the common path costs nothing.
         static $occupiedCache = [];
 
         if (! array_key_exists($context, $occupiedCache)) {
@@ -481,6 +580,46 @@ final class StrictnessGate
     }
 
     /**
+     * Whether an attribute name belongs to a framework or platform family and is never a prop.
+     *
+     * Every prefix in {@see self::PASSTHROUGH_PREFIXES} names one family except `on`, which names
+     * two. The HTML event handlers (`onclick`, `oninput`, `onpointerdown`) are lowercase
+     * throughout and pass. The props that begin with the same two letters do not: a typo of
+     * `onLabel` or `once` (`onLable`, `on-lable`, `onse`) used to pass as a handler and was never
+     * reported. So an `on` name counts as a handler only when it is lowercase and is not within
+     * one edit of a declared prop, compared without case, since `onlabel` does not reach `onLabel`
+     * either.
+     *
+     * @param  list<string>  $declared
+     */
+    public static function isPassthroughName(string $key, array $declared): bool
+    {
+        foreach (self::PASSTHROUGH_PREFIXES as $prefix) {
+            if (! str_starts_with($key, $prefix)) {
+                continue;
+            }
+
+            if ($prefix !== 'on') {
+                return true;
+            }
+
+            if (preg_match('/^on[a-z]+$/', $key) !== 1) {
+                return false;
+            }
+
+            foreach ($declared as $prop) {
+                if (levenshtein($key, strtolower($prop)) <= 1) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * The attribute names in `$actual` that are neither declared props nor legitimate
      * passthrough. The VERDICT, with no logging and no environment gate.
      *
@@ -505,7 +644,7 @@ final class StrictnessGate
     {
         // Nothing to validate against — say so here rather than in every caller.
         //
-        // A component with no resolvable `@props` (`glass`, `fonts`) yields an empty declared
+        // A component with no resolvable `@props` (`glass`) yields an empty declared
         // list, and against an empty list EVERY attribute is unknown. `warnUnknownProps()`
         // has always returned early on exactly this case; the predicate did not, so each
         // caller carried its own `if ($declared === []) continue;` and one that forgot got a
@@ -527,7 +666,6 @@ final class StrictnessGate
             ...self::TOOLING_ATTRIBUTES,
             ...self::BLADE_ATTRIBUTES,
         ];
-        $prefixes = self::PASSTHROUGH_PREFIXES;
 
         $unknown = [];
 
@@ -538,10 +676,8 @@ final class StrictnessGate
             if (in_array($key, $declared, true) || in_array($key, $reserved, true)) {
                 continue;
             }
-            foreach ($prefixes as $p) {
-                if (str_starts_with($key, $p)) {
-                    continue 2;
-                }
+            if (self::isPassthroughName($key, $declared)) {
+                continue;
             }
 
             // `show-value` and `showValue` are the same prop: Blade camel-cases a kebab
@@ -559,9 +695,9 @@ final class StrictnessGate
             // prefix skips above are the reason: `aria-label` camel-cases to `ariaLabel`
             // and `x-on:click` to `xOn:click`, neither of which starts with `aria-` or
             // `x-` any more, so a caller that normalizes first defeats every passthrough
-            // rule at once. Measured, not reasoned: a scan of 1332 snippet usages that
-            // normalized before calling reported 77 findings against this function's 4,
-            // and all 40 additions were correct `aria-*` / `x-*` / `data-*` attributes.
+            // rule at once. Measured, not reasoned: a scan of the documentation's snippet
+            // usages that normalized before calling reported many times this function's
+            // findings, and every addition was a correct `aria-*` / `x-*` / `data-*` attribute.
             //
             // Doing the conversion HERE rather than at the call site is what makes that
             // mistake unavailable — there is nothing left for a caller to normalize.
@@ -590,7 +726,7 @@ final class StrictnessGate
         array $allowed,
     ): string {
         $list = implode(', ', $allowed);
-        $message = "WireKit [{$context}]: Invalid {$key} \"{$value}\". Allowed: {$list}.";
+        $message = "WireKit [{$context}]: Invalid {$key} \"".LogValue::quote($value)."\". Allowed: {$list}.";
 
         $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($value, $allowed));
         if ($hint !== null) {

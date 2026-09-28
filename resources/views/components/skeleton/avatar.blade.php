@@ -56,7 +56,7 @@
     {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 60px;'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
 >
     <div class="flex items-center gap-3">
-        <div class="{{ $baseShimmer }} h-10 w-10 rounded-[var(--radius-wk-full)]" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton);"></div>
+        <div class="{{ $baseShimmer }} h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-full)]" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton);"></div>
         <div class="flex flex-col gap-2 flex-1">
             <div class="{{ $baseShimmer }} h-3 w-1/3" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
             <div class="{{ $baseShimmer }} h-2 w-1/4" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>

@@ -127,8 +127,6 @@
             'generic' => __('wirekit::Stream failed'),
         ],
     ], fn ($v) => $v !== null);
-    // autoStart is a bool the filter would drop when false — re-assert it.
-    $config['autoStart'] = (bool) $autoStart;
 
     // No flex gap: the caret trails the text inline, and the error / controls carry
     // their own explicit top margins so the streamed text stays tight while the

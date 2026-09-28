@@ -65,7 +65,7 @@
     // viewport instead of breaking. The per-page cure has been to add `wrap` to each affected
     // preview, which fixes the page and leaves every developer to rediscover it.
     //
-    // ⚠️ AN OPT-IN RATHER THAN A NEW DEFAULT, and that is the whole decision. Flipping the
+    // An opt-in rather than a new default, and that is the whole decision. Flipping the
     // default to wrap would reflow every existing multi-item row in every application that
     // installed this package — a breaking change, and this line does not ship one. `responsive`
     // is additive: a row that does not ask for it renders byte-identically.
@@ -83,7 +83,7 @@
     $scale = WireKit::validateProp('row', 'scale', (string) $scale, ['space', 'gap']);
 
     $gapClasses = $scale === 'gap'
-        ? match ($gap) {
+        ? match (WireKit::validateProp('row', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'])) {
             'none' => '',
             'xs' => 'gap-[var(--gap-wk-xs,0.25rem)]',
             'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
@@ -91,9 +91,8 @@
             'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
             'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
             '2xl' => 'gap-[var(--gap-wk-2xl,2rem)]',
-            default => WireKit::validateProp('row', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
         }
-        : match ($gap) {
+        : match (WireKit::validateProp('row', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'])) {
             'none' => '',
             'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
             'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
@@ -101,26 +100,23 @@
             'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
             'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
             '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
-            default => WireKit::validateProp('row', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
         };
 
-    $alignClasses = match ($align) {
+    $alignClasses = match (WireKit::validateProp('row', 'align', $align, ['start', 'center', 'end', 'stretch', 'baseline'])) {
         'start' => 'items-start',
         'center' => 'items-center',
         'end' => 'items-end',
         'stretch' => 'items-stretch',
         'baseline' => 'items-baseline',
-        default => WireKit::validateProp('row', 'align', $align, ['start', 'center', 'end', 'stretch', 'baseline']),
     };
 
-    $justifyClasses = match ($justify) {
+    $justifyClasses = match (WireKit::validateProp('row', 'justify', $justify, ['start', 'center', 'end', 'between', 'around', 'evenly'])) {
         'start' => 'justify-start',
         'center' => 'justify-center',
         'end' => 'justify-end',
         'between' => 'justify-between',
         'around' => 'justify-around',
         'evenly' => 'justify-evenly',
-        default => WireKit::validateProp('row', 'justify', $justify, ['start', 'center', 'end', 'between', 'around', 'evenly']),
     };
 
     $alignFields = BooleanProp::from($alignFields, false);

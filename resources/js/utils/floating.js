@@ -60,20 +60,18 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   nothing asks for a new placement. A `fixed` element with no `top` then sits at its static
  *   position, which for a teleported panel is the end of the document.
  *
- *   ⚠️ `autoReposition` does NOT cover this, and assuming it does is the mistake this option
- *   exists to end. `autoUpdate` recomputes when something it OBSERVES changes, and it observes the
- *   two elements' BOXES — so it repairs an erasure only where the erasure also resizes the panel.
- *   Measured on a data table's column menu: `top` went from `158.5px` to empty, `max-height` from
- *   `950.5px` to empty, and the box stayed 192x77 because the cap had never been binding. No
- *   observer fired, and the placement was still gone thirty-four frames later.
+ *   `autoReposition` does not cover this. `autoUpdate` recomputes when something it observes
+ *   changes, and it observes the two elements' boxes — so it repairs an erasure only where the
+ *   erasure also resizes the panel. A menu whose `max-height` was never binding keeps its box when
+ *   `top` and `max-height` are erased, so no observer fires and the placement stays gone.
  *
  *   This option watches the `style` attribute instead, which is the thing that is actually taken
  *   away. Measured on the same page: one mutation record, `attributeName: 'style'`, with `top`
  *   already empty when the callback runs — early enough to put it back.
  *
- *   ⚠️ It re-places ONLY when `top` is empty, and that condition is the termination proof rather
- *   than an optimization: a write from inside the callback re-enters the observer (measured: five
- *   writes produced six callback runs), so an unconditional repair loops forever. Writing a `top`
+ *   It re-places ONLY when `top` is empty, and that condition is the termination proof rather
+ *   than an optimization: a write from inside the callback re-enters the observer, so an
+ *   unconditional repair loops forever. Writing a `top`
  *   makes the re-entrant run see a placed panel and stop, after exactly one extra pass.
  *
  *   Opt-in, like the options above, so no existing caller changes behavior. Like `autoReposition`
@@ -312,7 +310,7 @@ export async function position(reference, floating, {
         });
     });
 
-    // ⚠️ THE FRAME OUTLIVES THE TEARDOWN UNLESS IT IS CANCELED, and the deferral above is
+    // The frame outlives the teardown unless it is canceled, and the deferral above is
     // what created that gap. `autoUpdate`'s own stop detaches the observers and knows
     // nothing about a frame we queued ourselves — so a panel closed between the observer
     // firing and the frame running gets one more `run()`: a `computePosition` against a

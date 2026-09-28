@@ -6,7 +6,7 @@
 "heroicon-m-inbox"
 $active
 $active,
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -52,6 +52,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validated];
 $svgHtml
@@ -121,7 +122,8 @@ $validated
 ($shouldSetHidden)
 ($size
 ($svgHtml
-('xs')
+('xs').
+(Tailwind
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -192,19 +194,13 @@ ALSO
 AND
 API:
 AT
-ATTEMPTED
 Adding
 AlpinePayload::from([
 An
-BECAUSE
-BELOW,
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
 BooleanProp::from($loop,
-CAN
-CANNOT
-CONDITION
 Catching
 Check
 Clamped,
@@ -214,17 +210,11 @@ Dev-only
 Drop
 ENT_QUOTES).'"',
 EVERY
-FAIL
 Fully
 Graceful
-HERE,
 HTTP
 How
 Htmlable,
-IN
-INSIDE
-IS
-IT
 Icon
 IconResolver,
 If
@@ -250,7 +240,6 @@ Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\AlpinePayload;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 Reapply
 Render
 Rendered
@@ -259,7 +248,6 @@ Reported
 Required
 Resolve
 RuntimeException
-SEE.
 SVG
 SVG:
 Silent
@@ -269,11 +257,9 @@ SvgNotFound
 SvgNotFound.
 Symmetric
 TAG
-THE
 The
 This
 Throwing
-WAY
 We
 Whether
 Which
@@ -297,14 +283,15 @@ __('wirekit::Previous
 __('wirekit::Response
 __('wirekit::Showing
 __toString
+`<span>`
 `Svg
 `aria-hidden="true"`
 `aria-label`
 `aria-labelledby`
 `class="h-12
 `cursor-pointer`
-`cursor:
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `resources/js`
 `role="img"`.
@@ -353,11 +340,13 @@ aria-labelledby
 aria-live
 aria-live="polite"
 array_keys($sizeMap));
+arrow
 as
 asserted:
 assistant
 assistive
 at
+attempted
 attribute
 attribute,
 auto-derived
@@ -369,6 +358,7 @@ be
 because
 becomes
 below
+below,
 below.
 between
 binding
@@ -382,6 +372,7 @@ block,
 bootstrapped
 branch's
 break
+browser's
 bug
 build
 but
@@ -411,8 +402,10 @@ chevrons,
 choice
 chose
 clamped
+class
 class="sr-only"
 class="{{
+classes
 client-only
 close
 close-icons,
@@ -443,7 +436,6 @@ data-wk-branch-next
 data-wk-branch-previous
 data-wk-branch-switcher
 debug
-debug,
 decided
 decision
 decision,
@@ -455,7 +447,6 @@ decorative,
 default
 default.
 default:
-default`,
 define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
 degradation:
@@ -466,7 +457,7 @@ developer
 developer's
 direct
 disabled:hover:bg-transparent',
-disabled:opacity-50
+disabled:opacity-[var(--opacity-wk-disabled)]
 does
 down
 down.
@@ -495,6 +486,7 @@ expects
 explicitly
 factory
 factory:
+fail
 fallback
 fallback,
 fallback.
@@ -529,9 +521,10 @@ function
 function).
 function_exists('svg'))
 gap-[var(--gap-wk-xs)]',
+gate
+gate,
 get
 gets
-gives
 global
 glyph
 glyph.
@@ -551,11 +544,13 @@ have
 have)
 helper
 here
+here,
 hidden
 historical
 house
 hover:text-[color:var(--color-wk-text)]',
 icon
+icon's
 icon-only
 icon;
 icons
@@ -692,10 +687,12 @@ pages
 path
 per
 per-set
+personalization
 place
 placeholder
 placeholders
 plain
+pointer),
 post-process
 practice:
 pre-checking
@@ -710,7 +707,6 @@ preserves
 preset
 problem
 prod).
-production.
 project,
 props
 provides
@@ -748,6 +744,7 @@ rendered
 renders
 replaced
 replaces
+reported
 reproduced
 request
 require
@@ -777,6 +774,7 @@ same
 say
 says
 screen-reader-skipping
+see.
 sees
 semantic
 sensible
@@ -791,6 +789,7 @@ should
 show
 showing,
 shown
+shows
 silent
 single
 site
@@ -815,6 +814,7 @@ stepping
 still
 stopped
 storage/logs/laravel.log.
+strictness
 string
 strip
 style="display:inline-block;"></span>
@@ -842,6 +842,7 @@ that.
 the
 their
 them,
+them.
 then
 there
 therefore
@@ -851,6 +852,7 @@ this
 three
 through
 throw
+throw,
 throwing
 throws
 tile
@@ -882,6 +884,7 @@ use
 useful
 uses
 utility
+v4's
 valid
 validateProp
 value
@@ -908,6 +911,7 @@ we
 what
 when
 when:
+where
 wherever
 whether
 which
@@ -944,4 +948,3 @@ yet.
 }})"
 }}</span>
 —
-⚠️

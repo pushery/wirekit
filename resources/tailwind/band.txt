@@ -1,4 +1,3 @@
-"corrects"
 $as
 $as);
 $attributes->class([$classes])
@@ -25,18 +24,18 @@ $surfaceClasses,
 'border-t
 'border-y
 'both'
-'both']),
+'both']))
 'bottom'
 'bottom',
 'div',
 'edge'
 'edge',
 'lg'
-'lg']),
+'lg']))
 'md'
 'md',
 'muted'
-'muted']),
+'muted']))
 'none'
 'none',
 'padding'
@@ -56,9 +55,7 @@ $surfaceClasses,
 'top',
 'xs'
 'xs',
-($edge)
-($padding)
-($surface)
+(WireKit::validateProp('band',
 (silent
 (string)
 --}}
@@ -67,11 +64,7 @@ $surfaceClasses,
 0.5rem
 0.625rem,
 1.25rem
-12
 1rem,
-24
-24.
-5
 </{{
 <{{
 =
@@ -88,7 +81,6 @@ Declared
 Dev-only
 Fully
 Measured
-Measured:
 No
 Pushery\WireKit\WireKit;
 Renders
@@ -103,7 +95,6 @@ WRONG
 Where
 Which
 WireKit::resolveClasses('band',
-WireKit::validateProp('band',
 ['none',
 \Pushery\WireKit\WireKit::tagName('band',
 \Pushery\WireKit\WireKit::warnUnknownProps('band',
@@ -121,7 +112,7 @@ WireKit::validateProp('band',
 `tagName()`
 `toolbar`
 a
-across
+above
 action
 against
 allowlist
@@ -147,12 +138,11 @@ band
 bands
 be
 because
+below
 below,
 blank
 block,
-blueprint
 border-[color:var(--color-wk-border)]',
-bottom.
 bring
 call
 caller
@@ -163,7 +153,6 @@ carries
 carry
 carrying
 case
-catalog
 centers
 check's
 checks
@@ -173,6 +162,7 @@ claiming
 common.
 component's
 composite
+content
 controls
 core
 could
@@ -195,6 +185,7 @@ element,
 elements
 ends
 enum
+equally
 exactly
 fallback
 fallbacks.
@@ -208,12 +199,10 @@ form
 from
 guard
 guess
-hand-rolled
 has
 header
 here
 holding
-hunch:
 imports
 in
 interactive
@@ -238,7 +227,6 @@ mental
 might
 missing
 model
-more
 most
 n/a
 name
@@ -283,7 +271,6 @@ qualified:
 rather
 reach
 reason
-recording
 refutes
 renders
 resolve,
@@ -304,7 +291,6 @@ shape.
 shown
 site.
 so
-split
 stood
 straight
 surface
@@ -323,10 +309,9 @@ they
 this
 through
 to
-to,
+to:
 token
 tokens
-top
 trim(implode('
 turns
 two
@@ -351,8 +336,7 @@ widget
 width,
 window
 with
-with,
-worth
+with.
 would
 written
 x-lg
@@ -365,4 +349,3 @@ y-sm
 }}
 }}>
 —
-⚠️

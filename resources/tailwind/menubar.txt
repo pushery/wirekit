@@ -80,7 +80,7 @@ $triggerClasses
 'label'
 'leading-none',
 'lg'
-'lg']),
+'lg']))
 'md'
 'md',
 'min-w-[12rem]',
@@ -120,12 +120,12 @@ $triggerClasses
 'wkMenubarPanel')))
 ("Menu
 ($relAttr
-($size)
 ($wkAncestorData('[data-wk-menubar-panel]',
 (ArrowRight
 (File,
 (WAI-ARIA
 (WireKit
+(WireKit::validateProp('kbd',
 (a
 (avoids
 (discovered
@@ -263,7 +263,6 @@ WireKit::resolveClasses('menubar',
 WireKit::resolveClasses('menubar.item',
 WireKit::resolveClasses('menubar.menu',
 WireKit::resolveClasses('menubar.separator',
-WireKit::validateProp('kbd',
 With
 Without
 Wrapped

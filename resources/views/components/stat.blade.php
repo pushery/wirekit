@@ -163,8 +163,9 @@
     // palette: info/primary share accent; neutral uses the muted text token.
     $intentTileStyle = '';
     if ($intent !== null) {
-        // Validate first (throws in debug / falls back to first-allowed in
-        // prod), then map the canonical value to its color token.
+        // Validate first (reported through the strictness gate, which falls back to the
+        // first allowed value where it does not throw), then map the canonical value to
+        // its color token.
         $validIntent = match ($intent) {
             'primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral' => $intent,
             default => WireKit::validateProp('stat', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
@@ -191,21 +192,20 @@
     };
 
     /*
-     * ⚠️ `trend` IS A SENTIMENT IN THIS COMPONENT, AND THE ANNOUNCEMENT ABOVE READ IT AS A
-     * DIRECTION. `stat.md` tells callers so in as many words — "for metrics where down is
+     * `trend` is a sentiment in this component, not a direction. `stat.md` tells callers so in as many words — "for metrics where down is
      * good (churn, errors, bounce rate), flip the semantics" — and its own preview passes
      * `trend="down"` beside `change="+0.3%"`, because rising churn is bad. That is the
      * documented model, and it is fine for the two things `trend` really drives: the red
      * and the arrow, both of which a sighted reader takes in beside the visible "+0.3%".
      *
      * The sr-only expansion is not those. It states a fact — "decreased" — and a listener
-     * has nothing to reconcile it against, so the tile reads out "Churn, 2.4%, decreased,
-     * +0.3%". Eight tiles across the catalog said the opposite of their own number.
+     * has nothing to reconcile it against, so read from `trend` the tile would announce
+     * "Churn, 2.4%, decreased, +0.3%", the opposite of its own number.
      *
-     * So the direction is taken from the CHANGE, which is where the direction lives, and
+     * So the direction is taken from the change, which is where the direction lives, and
      * `trend` keeps the color and the glyph.
      *
-     * ⚠️ It requires an EXPLICIT SIGN, and that is the whole subtlety. A bare "12%" is a
+     * It requires an explicit sign, and that is the whole subtlety. A bare "12%" is a
      * magnitude, not a direction — the caller who writes it is leaning on `trend` to say
      * which way, and reading it as positive would silently overrule them. Only a leading
      * `+` or `-`, or a change that is plainly zero, carries a direction of its own; a word,

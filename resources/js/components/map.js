@@ -355,6 +355,9 @@ export default function wirekitMap(config = {}) {
                         this.styleUrl,
                         this.attribution ? { attribution: this.attribution } : undefined,
                     );
+                    // Leaflet reports a tile that failed to load only through
+                    // `tileerror` and logs nothing itself, so without this the
+                    // canvas stays blank with no word in the console.
                     if (typeof layer.on === 'function') {
                         layer.on('tileerror', () => this._warnLoadFailure());
                     }
@@ -387,12 +390,14 @@ export default function wirekitMap(config = {}) {
                 && typeof engine.NavigationControl === 'function') {
                 this._map.addControl(new engine.NavigationControl());
             }
-            // A blank canvas must self-diagnose: when the style/tiles fail to load
-            // (CSP connect-src/img-src block, cert interception, network), the
-            // libraries fail SILENTLY — wire their error events to a one-time DX
-            // hint naming the URL (mirrors the missing-library hint above).
+            // MapLibre logs an error itself only while nothing listens for `error`:
+            // its `fire()` hands an ErrorEvent to `console.error` when there is no
+            // listener, and to the listeners instead when there is one. So this
+            // listener passes every error on unchanged, and adds the one-time hint
+            // for a request that failed (a CSP connect-src block, a certificate
+            // interception, the network, an HTTP error).
             if (which === 'maplibre' && this._map && typeof this._map.on === 'function') {
-                this._map.on('error', () => this._warnLoadFailure());
+                this._map.on('error', (event) => this._reportMapError(event));
             }
             // Keep the GL canvas matched to its container.
             //
@@ -441,9 +446,9 @@ export default function wirekitMap(config = {}) {
         // Resolve an intent to its computed theme color. Map pins are drawn by the
         // peer library OUTSIDE WireKit's CSS, so we can't hand them a `var(--…)`
         // reference — we read the token's COMPUTED value off the component root, which
-        // honors the active theme + any per-instance scope. `info` has no base token
-        // (only --color-wk-info-text), so it aliases to accent, like the rest of the
-        // intent system. Returns '' when there's no DOM (node) — callers treat an
+        // honors the active theme + any per-instance scope. `info` has no surface
+        // token (--color-wk-info is the tone the charts and the flash tint read), so it aliases
+        // to accent, like the rest of the intent system. Returns '' when there's no DOM (node) — callers treat an
         // empty color as "library default pin".
         _intentColor(intent) {
             const tokens = {
@@ -671,11 +676,29 @@ export default function wirekitMap(config = {}) {
             return this.markers.length;
         },
 
-        // One-time hint when the map library loaded but its style/tiles DON'T —
-        // otherwise the canvas is just silently blank. A strict CSP is the classic
-        // cause: MapLibre fetches style.json + vector tiles via connect-src while
-        // Leaflet raster tiles load via img-src, so one engine can render fine
-        // while the other stays blank on the same page.
+        // A MapLibre `error` event, logged as MapLibre logs it when nobody listens,
+        // with the original error object and a prefix a browser check can filter
+        // on, plus the load-failure hint when the error is a failed request.
+        // MapLibre raises every failed fetch as an AJAXError, which carries the
+        // HTTP status (0 when no response arrived, as under a CSP block) and the
+        // URL. Its other errors, a style that does not validate among them, carry
+        // neither, and a hint about the network would send the reader the wrong way.
+        _reportMapError(event) {
+            const error = event ? event.error : undefined;
+            if (error === undefined) return;
+
+            console.error('[wirekit::map] MapLibre reported an error:', error);
+
+            if (error && typeof error.status === 'number' && typeof error.url === 'string') {
+                this._warnLoadFailure();
+            }
+        },
+
+        // One-time hint when the map library loaded but its style/tiles DON'T,
+        // naming the likely causes. A strict CSP is the classic one: MapLibre
+        // fetches style.json + vector tiles via connect-src while Leaflet raster
+        // tiles load via img-src, so one engine can render fine while the other
+        // stays blank on the same page.
         _warnLoadFailure() {
             if (this._loadFailureWarned) return;
             this._loadFailureWarned = true;

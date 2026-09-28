@@ -39,13 +39,12 @@
     $truncate = BooleanProp::from($truncate, false);
     $wrap = BooleanProp::from($wrap, true);
 
-    $sizeClasses = match ($size) {
+    $sizeClasses = match (WireKit::validateProp('text', 'size', $size, ['xs', 'sm', 'base', 'lg', 'xl'])) {
         'xs' => 'text-[length:var(--text-wk-xs,0.75rem)]',
         'sm' => 'text-[length:var(--text-wk-sm)]',
         'base' => 'text-[length:var(--text-wk-md)]',
         'lg' => 'text-[length:var(--text-wk-lg)]',
         'xl' => 'text-[length:var(--text-wk-xl,1.25rem)]',
-        default => WireKit::validateProp('text', 'size', $size, ['xs', 'sm', 'base', 'lg', 'xl']),
     };
 
     // `intent` is the canonical name for the color axis; `variant` is the
@@ -57,7 +56,7 @@
     // The error names the prop the CALLER wrote, not the canonical one.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
-    $variantClasses = match ($effectiveIntent) {
+    $variantClasses = match (WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger'])) {
         'default' => 'text-[color:var(--color-wk-text)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
         'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
@@ -65,25 +64,22 @@
         'success' => 'text-[color:var(--color-wk-success-text)]',
         'warning' => 'text-[color:var(--color-wk-warning-text)]',
         'danger' => 'text-[color:var(--color-wk-danger-text)]',
-        default => WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger']),
     };
 
     // `normal` is the theme's body weight rather than a fixed 400, so text follows a theme that sets
     // its running text lighter or heavier, as the rest of the body copy does.
-    $weightClasses = match ($weight) {
+    $weightClasses = match (WireKit::validateProp('text', 'weight', $weight, ['normal', 'medium', 'semibold', 'bold'])) {
         'normal' => 'font-[number:var(--font-wk-body-weight)]',
         'medium' => 'font-medium',
         'semibold' => 'font-semibold',
         'bold' => 'font-bold',
-        default => WireKit::validateProp('text', 'weight', $weight, ['normal', 'medium', 'semibold', 'bold']),
     };
 
-    $alignClasses = match ($align) {
+    $alignClasses = match ($align === null ? null : WireKit::validateProp('text', 'align', $align, ['left', 'center', 'right'])) {
         'left' => 'text-left',
         'center' => 'text-center',
         'right' => 'text-right',
         null => '',
-        default => WireKit::validateProp('text', 'align', $align, ['left', 'center', 'right']),
     };
 
     $truncateClasses = $truncate ? 'truncate' : '';
@@ -99,12 +95,13 @@
     //
     // A `match` (not the interpolation, and not a ternary) for the same reason
     // sticky-panel and stack spell theirs out: a class the scanner can read has to be in
-    // the source as text, and a match arm is where this library puts it. Tailwind ships
-    // `line-clamp-1` … `line-clamp-6`, so the arms are the whole utility rather than an
-    // arbitrary cut, and a number outside it is reported instead of silently clamping
-    // nothing. `$lineClamp ? … : null` keeps the original truthiness gate exactly, so
-    // `null`, `0`, `'0'` and `false` still mean "no clamp".
-    $lineClampClasses = match ($lineClamp ? (string) $lineClamp : null) {
+    // the source as text, and a match arm is where this library puts it. Tailwind would build
+    // `line-clamp-N` for any whole number, but only for a class it finds written out, so the
+    // six arms are the lines this component offers, the range its page documents. A number
+    // outside them is reported, and then clamps like the first arm instead of clamping nothing.
+    // `$lineClamp ? … : null` keeps the original truthiness gate exactly, so `null`, `0`, `'0'`
+    // and `false` still mean "no clamp".
+    $lineClampClasses = match ($lineClamp ? WireKit::validateProp('text', 'lineClamp', (string) $lineClamp, ['1', '2', '3', '4', '5', '6']) : null) {
         '1' => 'line-clamp-1',
         '2' => 'line-clamp-2',
         '3' => 'line-clamp-3',
@@ -112,7 +109,6 @@
         '5' => 'line-clamp-5',
         '6' => 'line-clamp-6',
         null => '',
-        default => WireKit::validateProp('text', 'lineClamp', (string) $lineClamp, ['1', '2', '3', '4', '5', '6']),
     };
 
     // An unbroken token — a checksum, a key, a long URL — has no space to wrap at, so it widens
@@ -124,20 +120,18 @@
     // that failure, measured. Literal arms for the same reason. `anywhere` also counts toward
     // the element's min-content width, which is what lets it wrap inside a flex row, where
     // `break-word` would not.
-    $breakClasses = match ($break === null ? null : (string) $break) {
+    $breakClasses = match ($break === null ? null : WireKit::validateProp('text', 'break', (string) $break, ['normal', 'anywhere', 'all'])) {
         'normal' => '[overflow-wrap:normal] [word-break:normal]',
         'anywhere' => '[overflow-wrap:anywhere]',
         'all' => '[word-break:break-all]',
         null => '',
-        default => WireKit::validateProp('text', 'break', (string) $break, ['normal', 'anywhere', 'all']),
     };
 
     // Literal arms, as for the other props here: an assembled class has no rule behind it.
-    $leadingClasses = match ($leading === null ? null : (string) $leading) {
+    $leadingClasses = match ($leading === null ? null : WireKit::validateProp('text', 'leading', (string) $leading, ['tight', 'normal', 'relaxed'])) {
         'tight' => 'leading-[var(--leading-wk-tight)]',
         'relaxed' => 'leading-[var(--leading-wk-relaxed)]',
         'normal', null => 'leading-[var(--font-wk-line-height,1.5)]',
-        default => WireKit::validateProp('text', 'leading', (string) $leading, ['tight', 'normal', 'relaxed']),
     };
 
     $classes = WireKit::resolveClasses('text', 'base', implode(' ', array_filter([

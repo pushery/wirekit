@@ -119,7 +119,9 @@
         $rows[] = [
             'key' => $key,
             'label' => (string) $item['label'],
-            'url' => (string) $item['url'],
+            // Tenant lists are data. A target that could run script leaves the row without
+            // an href, so it navigates nowhere instead of running on the click.
+            'url' => \Pushery\WireKit\Support\SafeUrl::href((string) $item['url']),
             'icon' => $item['icon'] ?? null,
             'image' => $item['image'] ?? null,
             'status' => $status,
@@ -329,25 +331,20 @@
                     @php $isCurrent = $currentRow !== null && $row['key'] === $currentRow['key']; @endphp
 
                     <a data-wk-prose-skip
-                        href="{{ $row['url'] }}"
+                        @if($row['url'] !== '') href="{{ $row['url'] }}" @endif
                         role="option"
                         id="{{ $id }}-option-{{ $row['key'] }}"
                         wire:key="{{ $id }}-{{ $row['key'] }}"
-                        {{-- ⚠️ NOT ON THE CURRENT ROW, and a preventDefault cannot take its
-                             place. Livewire's navigate binds its own click AND mousedown
+                        {{-- Not on the current row, and a preventDefault cannot take its
+                             place. Livewire's navigate binds its own click and mousedown
                              listeners to this element and checks neither `defaultPrevented`
-                             nor anything else this component can set — measured in
-                             `livewire.js`, whose only two mentions of `defaultPrevented` are
-                             about its own CustomEvents. So `onItemClick`'s preventDefault
-                             closes the panel and Livewire navigates anyway; for a real
-                             pointer the mousedown handler even runs BEFORE the click handler
-                             that was supposed to stop it.
-                             The lane caught it as a bare `#` appended to the URL, pushed from
-                             `livewire.js` — five weekly runs reported it as "it navigated"
-                             without being able to say who did. Not binding the row we refuse
-                             to navigate to is the fix; the preventDefault below stays as the
-                             belt for the anchor's own default. --}}
-                        @unless($isCurrent) @if($prefetch) wire:navigate.hover @else wire:navigate @endif @endunless
+                             nor anything else this component can set, so `onItemClick`'s
+                             preventDefault would close the panel while Livewire navigates
+                             anyway; for a real pointer the mousedown handler even runs
+                             before the click handler. So the row this component refuses to
+                             navigate to is not bound at all, and the preventDefault below
+                             stays for the anchor's own default. --}}
+                        @unless($isCurrent || $row['url'] === '') @if($prefetch) wire:navigate.hover @else wire:navigate @endif @endunless
                         data-key="{{ $row['key'] }}"
                         data-search="{{ $row['search'] }}"
                         {{-- Present ONLY on the current row, never as `false` elsewhere. A
@@ -448,9 +445,11 @@
                      was right. It is the last row of the same list and is now shaped like one.
                      The accent stays on the text, because this is an action and the rows
                      are not. --}}
+                {{-- The same rule as the rows: a target that could run script leaves the action
+                     without an href, so it navigates nowhere. --}}
+                @php $createUrl = \Pushery\WireKit\Support\SafeUrl::href((string) ($create['url'] ?? '')); @endphp
                 <a data-wk-prose-skip
-                    href="{{ $create['url'] }}"
-                    wire:navigate
+                    @if($createUrl !== '') href="{{ $createUrl }}" wire:navigate @endif
                     class="{{ $itemClasses }} text-[color:var(--color-wk-accent-content)]"
                 >
                     <x-wirekit::icon :name="$create['icon'] ?? 'plus'" class="h-5 w-5 shrink-0" aria-hidden="true" />

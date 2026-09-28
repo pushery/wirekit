@@ -192,7 +192,7 @@ export default function wirekitContextMenu() {
                 placement: 'bottom-start',
                 offset: 2,
 
-                // ⚠️ Put the placement back when a page update takes it away, and note that
+                // Put the placement back when a page update takes it away, and note that
                 // `autoReposition` would NOT do this job here for two separate reasons.
                 //
                 // Everything this call writes is inline style, and a framework update patches the
@@ -390,7 +390,7 @@ export default function wirekitContextMenu() {
         /**
          * The tab stop the reader reaches by leaving the menu.
          *
-         * ⚠️ ANCHORED ON THE TRIGGER, NOT ON THE PANEL, and that is the whole point.
+         * Anchored on the trigger, not on the panel, and that is the whole point.
          * `teleport` defaults to true, so the panel is moved to the end of `<body>` while
          * being drawn at the pointer — and sequential focus order follows the DOM, not the
          * paint. Continuing from where the panel SITS lands off the end of the document
@@ -489,14 +489,13 @@ export default function wirekitContextMenu() {
                     break;
 
                 case 'Tab': {
-                    // ⚠️ THE BROWSER IS WRONG HERE, AND IT FAILS SILENTLY. Focus sits on a
+                    // The browser's own Tab is wrong here, and it fails silently. Focus sits on a
                     // `tabindex="-1"` item inside a panel teleported to the end of `<body>`,
                     // so there is nothing sensible for the browser to continue from: forwards
                     // it leaves the document for the browser chrome, backwards it lands on
-                    // whatever precedes the overlay root. Either way the menu stayed OPEN and
-                    // painted over the page with focus somewhere else. Nothing reports it —
-                    // the menu is visible, the item was focusable, only the destination is
-                    // wrong.
+                    // whatever precedes the overlay root. Either way the menu would stay open,
+                    // painted over the page, with focus somewhere else, and nothing would
+                    // report it.
                     //
                     // Tab is a CLOSE that hands focus onward, not a trap. A `role="menu"` is a
                     // composite widget (WAI-ARIA menu pattern), so leaving it is a normal exit

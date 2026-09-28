@@ -361,9 +361,9 @@ CONTROL.
 CSP
 Change
 DECLARED
-DENSE,
 DOM
 Declared
+Dense,
 Dev-only
 EMPTY
 EQUALITY,
@@ -423,7 +423,6 @@ Read
 Readonly:
 Rendered
 Renders
-Reported
 Required
 SCORE,
 SERVER
@@ -440,7 +439,6 @@ Support
 Support\DomId
 Supports
 THIS
-TOP
 TWICE
 That
 The
@@ -501,7 +499,7 @@ __('wirekit::Saving'),
 `inline-block`:
 `input`:
 `label`
-`ms-0.5`
+`ms-0.5`,
 `name`
 `prop="false"`
 `rating`,
@@ -521,7 +519,6 @@ accepts
 across
 action
 added
-adopting
 after
 after-hook
 again,
@@ -556,7 +553,6 @@ any
 app
 appears
 appended
-application.
 arbitration
 are
 arguments
@@ -1252,7 +1248,6 @@ separator
 server
 server's
 server-side
-seven
 shape
 shapes
 shipped
@@ -1499,4 +1494,3 @@ zero,
 —
 …"
 …").
-⚠️

@@ -10,10 +10,8 @@ $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
 $autoStart
 $autoStart,
-$autoStart;
 $body,
 $config
-$config['autoStart']
 $doneSignal,
 $error
 $eventName
@@ -280,7 +278,6 @@ at
 attribute
 auto-announced.
 auto-derived
-autoStart
 bare
 be
 because
@@ -294,7 +291,6 @@ block,
 body,
 body-less.
 body.
-bool
 both
 break
 break-words
@@ -370,7 +366,6 @@ does
 doing.
 drew
 drive
-drop
 dropped
 e.g.
 each
@@ -405,7 +400,6 @@ false
 feature
 fetch
 files
-filter
 final
 finishes
 finishes,
@@ -574,7 +568,6 @@ pure
 push()/finish()/fail()
 qualified:
 rather
-re-assert
 re-read
 re-watch
 reach

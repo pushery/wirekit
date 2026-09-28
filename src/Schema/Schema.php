@@ -78,8 +78,9 @@ final class Schema
         array $extra = [],
     ): array {
         return self::node('Offer', [
-            // A price is a STRING in schema.org, and it must not carry a
-            // currency symbol or thousands separator.
+            // schema.org takes a price as Number or as Text. It is written as text, so a price
+            // passed as a string such as `9.90` keeps its digits exactly, and it carries no
+            // currency symbol and no thousands separator, with a full stop for the decimal point.
             'price' => (string) $price,
             'priceCurrency' => $priceCurrency,
             'availability' => $availability !== null ? self::availabilityUrl($availability) : null,
@@ -230,7 +231,7 @@ final class Schema
      * One rule for every producer: the breadcrumb component and `breadcrumbList()` above both
      * build their trail here, so the two cannot answer the question differently.
      *
-     * ⚠️ @internal — public only so `breadcrumb.blade.php` can reach it from another
+     * Internal: public only so `breadcrumb.blade.php` can reach it from another
      * namespace, which is a PHP visibility necessity rather than an API promise. The
      * entry point a developer builds a trail with is `breadcrumbList()` above, and it
      * is the one the docs name.
@@ -274,7 +275,7 @@ final class Schema
      *
      * @param  array<string, mixed>|null  $publisher  An `organization()` node, or `['@id' => '…#org']` to point at one already in the graph.
      * @param  list<string>|null  $sameAs
-     * @param  array<string, mixed>|null  $potentialAction  Usually a SearchAction — build it with `node()`.
+     * @param  array<string, mixed>|null  $potentialAction  An action node, built with `node()`.
      * @param  array<string, mixed>  $extra
      * @return array<string, mixed>
      */
@@ -396,7 +397,9 @@ final class Schema
     public static function graph(array $nodes): array
     {
         // Drop empties so a conditionally-built graph (`$showProduct ? … : null`)
-        // does not emit a null entry that would make the whole document invalid.
+        // does not emit a null entry that would make the whole document invalid. The
+        // entries are whatever the caller built, null included, which is why the filter
+        // takes `mixed`: this is where the non-nodes are sorted out.
         return ['@graph' => array_values(array_filter(
             $nodes,
             static fn (mixed $node): bool => is_array($node) && $node !== [],
@@ -441,6 +444,8 @@ final class Schema
      */
     public static function node(string $type, array $props, array $extra = []): array
     {
+        // A schema property holds any value the vocabulary allows (text, a number, a
+        // nested node, a list), so the filter that drops the empty ones takes `mixed`.
         $filtered = array_filter(
             $props,
             static fn (mixed $v): bool => $v !== null && $v !== [] && $v !== '',

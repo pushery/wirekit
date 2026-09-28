@@ -101,10 +101,10 @@
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
-    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
-    // did-you-mean) and falls back to the default in production — never to h1, which is
-    // what validateProp's own first-allowed fallback would produce and which would break
-    // the outline worse than the default does.
+    // Heading level (1-6). An invalid value is reported through the strictness gate, with a
+    // did-you-mean, and where the gate does not throw it renders the default level — never
+    // h1, which is what validateProp's own first-allowed fallback would produce and which
+    // would break the outline worse than the default does.
     $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
     if ($levelValue !== (int) $level) {
         WireKit::validateProp('tour.step', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);

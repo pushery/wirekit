@@ -15,7 +15,7 @@ namespace Pushery\WireKit\Support;
  * So a layout is followed — the component it renders, a view it extends or includes — until
  * the files that close `<head>` and `<body>` turn up. Those are what a directive has to reach.
  *
- * ⚠️ WHAT THIS CANNOT SEE, so that silence is never read as a verdict: a directive pushed
+ * What this cannot see, so that silence is never read as a verdict: a directive pushed
  * through a stack, a section a child view fills, a view composer, a class component whose view
  * is chosen in PHP. An empty answer means "not found from here", never "absent".
  */

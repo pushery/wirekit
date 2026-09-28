@@ -16,10 +16,9 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('blockquote', $attributes->getAttributes());
 
-    $variantClasses = match ($variant) {
+    $variantClasses = match (WireKit::validateProp('blockquote', 'variant', $variant, ['default', 'accent'])) {
         'default' => 'border-[var(--color-wk-border)]',
         'accent' => 'border-[var(--color-wk-accent)]',
-        default => WireKit::validateProp('blockquote', 'variant', $variant, ['default', 'accent']),
     };
 
     $classes = WireKit::resolveClasses('blockquote', 'base', implode(' ', [

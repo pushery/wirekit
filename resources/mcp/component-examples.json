@@ -983,8 +983,8 @@
             "code": "<x-wirekit::image\n    src=\"/placeholder/480x270?bg=bfdbfe&fg=1e40af&label=16:9&gradient=none\"\n    alt=\"A wide landscape\"\n    ratio=\"16/9\"\n    fit=\"cover\"\n    rounded\n/>"
         },
         {
-            "title": "Square 1/1, contain",
-            "code": "<x-wirekit::image\n    src=\"/placeholder/300x300?bg=bbf7d0&fg=065f46&label=1:1&gradient=none\"\n    alt=\"A product shot\"\n    ratio=\"1/1\"\n    fit=\"contain\"\n    rounded\n/>"
+            "title": "Two sources, reserved box",
+            "code": "<x-wirekit::image\n    src=\"/placeholder/480x270?bg=e9d5ff&fg=5b21b6&label=480w&gradient=none\"\n    srcset=\"/placeholder/480x270?bg=e9d5ff&fg=5b21b6&label=480w&gradient=none 480w, /placeholder/960x540?bg=e9d5ff&fg=5b21b6&label=960w&gradient=none 960w\"\n    sizes=\"(min-width: 40rem) 480px, 100vw\"\n    width=\"480\"\n    height=\"270\"\n    alt=\"A wide landscape in two resolutions\"\n    rounded\n/>"
         }
     ],
     "indicator": [

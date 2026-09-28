@@ -52,9 +52,16 @@ export default function wirekitInput() {
         /**
          * Empty the field and hand focus back to it.
          *
-         * The two dispatches are not decoration: assigning `.value` fires no
+         * The first two dispatches are not decoration: assigning `.value` fires no
          * event, so without them a `wire:model` / `x-model` binding keeps the
          * text the reader just cleared.
+         *
+         * The third is for a caller whose X means more than the text, a search that
+         * also drops the record it found: `wirekit:input-cleared` fires once per
+         * clear, after the model events, and bubbles from the field, so
+         * `x-on:wirekit:input-cleared` on the component hears it. A deferred
+         * `wire:model` sends nothing until the next request, and this is the moment
+         * the caller can act on instead.
          */
         clear() {
             const field = this.$refs.wkField;
@@ -66,6 +73,10 @@ export default function wirekitInput() {
             field.value = '';
             field.dispatchEvent(new Event('input', { bubbles: true }));
             field.dispatchEvent(new Event('change', { bubbles: true }));
+            field.dispatchEvent(new CustomEvent('wirekit:input-cleared', {
+                bubbles: true,
+                detail: { name: field.name || null },
+            }));
             this.hasValue = false;
             field.focus();
         },

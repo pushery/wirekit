@@ -36,10 +36,10 @@
         default => WireKit::validateProp('empty-state', 'variant', $variant, ['default', 'outline', 'muted']),
     };
 
-    // Heading level (1–6). An invalid value signals in debug (validateProp throws
-    // with a did-you-mean) and falls back to the h3 default in production — we
-    // never emit h1 as a side-effect of validateProp's first-allowed fallback,
-    // which would break the outline worse than the default.
+    // Heading level (1–6). An invalid value is reported through the strictness gate,
+    // with a did-you-mean, and where the gate does not throw it renders the h3
+    // default — we never emit h1 as a side-effect of validateProp's first-allowed
+    // fallback, which would break the outline worse than the default.
     $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
     if ($levelValue !== (int) $level) {
         WireKit::validateProp('empty-state', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
@@ -73,11 +73,11 @@
 <div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     {{-- Icon: iconSlot (if provided) takes priority; else string $icon prop. --}}
     @if($hasIconSlot)
-        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
+        <div class="mb-4 flex h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
             {{ $iconSlot }}
         </div>
     @elseif($icon)
-        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
+        <div class="mb-4 flex h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
             <x-wirekit::icon :name="$icon" size="lg" />
         </div>
     @endif

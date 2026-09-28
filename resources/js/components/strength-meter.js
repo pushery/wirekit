@@ -45,8 +45,8 @@ export default function wirekitStrengthMeter(config = {}) {
 
         init() {
             // The step the server rendered comes from its attribute, not from `x-data`: a value
-            // written into the seed changes the seed on every render, a Livewire morph rewrites
-            // it, and Alpine re-initializes the meter on that, forgetting that it had settled.
+            // written into the seed changes the seed whenever the value changes, the morph
+            // rewrites it, and Alpine initializes the meter again, forgetting that it had settled.
             // Capability-checked, since a harness may hand a `$root` that answers nothing.
             if (config.value == null) {
                 const seed = typeof this.$root?.getAttribute === 'function'
@@ -73,8 +73,9 @@ export default function wirekitStrengthMeter(config = {}) {
             this._stopServerSync = observeServerValue(this.$root, (raw) => {
                 const next = clampStrength(raw, this.max);
 
-                // A morph rewrites an unchanged value too, and the step a parent scope just
-                // bound must not be put back to the server's older one by it.
+                // The observer reports only a value the server changed. One that equals the
+                // step on screen (a parent scope's binding coming back from the server) needs
+                // nothing done.
                 if (next !== this.steps) {
                     this.value = next;
                 }

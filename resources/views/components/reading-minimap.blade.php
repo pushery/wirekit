@@ -11,7 +11,7 @@
     'scope' => null,
     // rendered-mode — rendered mode (literal scaled-down page preview)
     'mode' => 'stripes',         // 'stripes' (default, back-compat) | 'rendered'
-    'renderTarget' => null,      // CSS selector for the source to clone (defaults to `target`)
+    'renderTarget' => null,      // CSS selector for the source to draw (defaults to `target`)
     // stripe-mode visual: 'line' (default, thin 2px stripes per item) | 'block' (taller skeleton-style gray rectangles whose height tracks each source item's natural height — gives the minimap a content-texture instead of a sparse list of lines)
     'itemStyle' => 'line',
     // rendered-mode Extensions
@@ -129,9 +129,9 @@
 
     // AlpinePayload, not json_encode: `target`, `itemSelector` and `renderTarget` are
     // developer-supplied CSS selectors, so a heading id such as `#überschrift` is
-    // ordinary input here. A plain encode escapes it as `ü`, and Alpine's CSP
-    // tokenizer drops that backslash and keeps the letters — the selector arrives as
-    // `#u00fcberschrift`, matches nothing, and the minimap renders empty in silence.
+    // ordinary input here. A plain encode escapes it as `\u00fc`, which some CSP
+    // tokenizers do not decode — the selector would arrive as `#u00fcberschrift`, match
+    // nothing, and the minimap would render empty in silence.
     $alpineOptions = \Pushery\WireKit\Support\AlpinePayload::from([
         // The hover-preview iframe's title. Not exposed (aria-hidden + tabindex="-1"),
         // but still a user-visible string, and resources/js has no translator.
@@ -191,11 +191,11 @@
     @mousemove.passive="trackTooltip($event)"
     {{ $attributes->merge(['style' => 'width: '.($width).';'])->class([$rootClass]) }}
 >
-    {{-- Rendered-mode iframe — only mounted after the IntersectionObserver
-         fires the first intersection callback. `aria-hidden` + `tabindex=-1`
-         keep it out of the SR tree + tab order. `pointer-events: none` on
-         the iframe forwards clicks to the wrapper, which translates them
-         to parent-window scroll via the Alpine click handler. --}}
+    {{-- Rendered-mode canvas — constructed only after the IntersectionObserver
+         fires the first intersection callback. `aria-hidden` keeps it out of
+         the SR tree. The canvas takes no pointer events, so a click reaches
+         the wrapper, which translates it to parent-window scroll via the
+         Alpine click handler. --}}
     @if ($modeValue === 'rendered')
         <div
             class="wk-reading-minimap__rendered"
@@ -235,7 +235,7 @@
     {{-- Viewport overlay rectangle — translucent box showing the host's
          visible region. Drag-pan when draggable is true, for a mouse or a pen: a
          finger scrolls the page natively, so the overlay allows vertical panning
-         rather than blocking it. Painted above the iframe (z-index: 1 in CSS) so it
+         rather than blocking it. Painted above the canvas (z-index: 1 in CSS) so it
          stays visible in rendered mode. --}}
     <div
         class="wk-reading-minimap__viewport absolute left-0 right-0 pointer-events-auto"
@@ -269,16 +269,15 @@
     @if (filter_var($headingAnchors, FILTER_VALIDATE_BOOL))
         <nav
             class="wk-reading-minimap__anchors"
-            {{-- ⚠️ A DIFFERENT NAME FROM `reading-toc`, WHICH USES "Page sections". Both are
+            {{-- A different name from `reading-toc`, which uses "Page sections". Both are
                  <nav>, so both are navigation landmarks — and a page that renders the table of
-                 contents alongside this minimap with its heading anchors on published two
-                 landmarks with one name. In a screen reader's landmark rotor they are
-                 indistinguishable, which is the shape `never-ship.md` already forbids for
+                 contents alongside this minimap with its heading anchors on would otherwise
+                 publish two landmarks with one name. In a screen reader's landmark rotor they are
+                 indistinguishable, which is the shape this package already avoids for
                  `role="region"` and axe reports as `landmark-unique`.
 
-                 A separate catalog key rather than a new prop, which is the cheaper of the two
-                 routes the finding offered: a prop is public API surface and pulls a docs row,
-                 a props-table update and a catalog key along behind it. And the two names are
+                 A separate catalog key rather than a new prop: a prop is public API surface and
+                 pulls a docs row, a props-table update and a catalog key along behind it. And the two names are
                  not synonyms anyway — these anchors are a shortcut column, not the page's
                  section list. --}}
             aria-label="{{ __('wirekit::Section shortcuts') }}"

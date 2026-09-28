@@ -50,21 +50,19 @@
     // Both ladders as literal maps, for the reason `grid` gives: a class assembled at runtime
     // is never generated.
     $gapClasses = $scale === 'gap'
-        ? match ($gap) {
+        ? match (WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl'])) {
             'none' => '',
             'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
             'md' => 'gap-[var(--gap-wk-md,0.75rem)]',
             'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
             'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
-            default => WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl']),
         }
-        : match ($gap) {
+        : match (WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl'])) {
             'none' => '',
             'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
             'md' => 'gap-[var(--space-wk-md,1rem)]',
             'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
             'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
-            default => WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl']),
         };
 
     // Stagger logic — see dist/wirekit.css `.wk-stagger` rules. The Blade

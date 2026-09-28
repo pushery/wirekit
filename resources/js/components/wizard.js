@@ -133,14 +133,14 @@ export default function wirekitWizard(config = {}) {
         },
 
         /**
-         * ⚠️ `$root`, NOT `$el`, and the difference is what made the gate inert.
+         * `$root`, not `$el`.
          *
          * `$el` is contextual in Alpine: inside an expression evaluated from a directive on
-         * the Next button it is the BUTTON, not the component. So `$el.querySelector` looked
-         * for the step inside the button, found nothing, and `canAdvance` fell through to its
-         * "nothing said, so yes" default — a gate that reported itself as applied and let
-         * every incomplete step through. `$root` is the component root wherever it is read
-         * from. Caught by the browser case; every render assertion was green throughout.
+         * the Next button it is the button, not the component, so `$el.querySelector` would
+         * look for the step inside the button, find nothing, and `canAdvance` would fall
+         * through to its "nothing said, so yes" default — a gate that reports itself as
+         * applied and lets every incomplete step through. `$root` is the component root
+         * wherever it is read from.
          */
         stepElement(index) {
             const root = this.$root || this.$el;

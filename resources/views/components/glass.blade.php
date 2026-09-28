@@ -4,13 +4,11 @@
      any file that renders one. --}}
 {{-- WireKit Liquid Glass Extension — the FIRST thing in the layout <body>.
 
-     ⚠️ This line used to point at the OTHER end of the document, and the docs page, the
-     install command's docblock and the CLI reference all spell out why that is wrong. The
-     component emits an <svg>; the HTML parser has no "in head" insertion mode for one, so it
-     terminates that section and switches to the body — and every metadata tag after it, a
-     canonical link, the Open Graph block, a layout's @stack('meta'), is reparented into the
-     body, where a crawler does not look. The page still renders, which is why the wrong
-     instruction survived here across releases.
+     Not in <head>: the component emits an <svg>, and the HTML parser has no "in head"
+     insertion mode for one, so it terminates that section and switches to the body — and
+     every metadata tag after it, a canonical link, the Open Graph block, a layout's
+     @stack('meta'), is reparented into the body, where a crawler does not look. The page
+     still renders, so nothing on screen shows it.
 
      The wrong placement is deliberately not written out as a phrase: a guard scans these
      surfaces for it, and quoting it would trip the guard from the very comment that fixes it.
@@ -31,8 +29,8 @@
 @php
     // The nonce, resolved the same way `fonts` and the asset directives resolve it.
     //
-    // This component is the only one that emits EXTERNAL assets, and it was the only one
-    // with no nonce path at all. Under a `script-src 'strict-dynamic' 'nonce-…'` policy —
+    // This component emits its own EXTERNAL assets (the chart emits only the ones a custom
+    // adapter names), and it was the only one with no nonce path at all. Under a `script-src 'strict-dynamic' 'nonce-…'` policy —
     // which is the shape a nonce-based policy takes — a `<script src>` without the nonce is
     // simply not executed, so the whole Tier-2 runtime went missing with nothing in the page
     // to say why. The stylesheet is the same question one severity down: `style-src` with a

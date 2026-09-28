@@ -132,7 +132,22 @@
     // the tag twice, and a host reading it would get whichever the parser kept.
     $chartAttributes = $chartAttributes->except(['data-wk-chart']);
     $needsReplayWrapper = $emitReplayable || $callerReplayable !== null;
+
+    // The scripts a custom adapter names in `scripts()`. Both built-in adapters name none, so
+    // the nonce is only resolved when there is a tag to put it on.
+    $wkChartScripts = $adapterScripts ?? [];
+    $wkChartScriptNonce = $wkChartScripts !== [] ? \Pushery\WireKit\WireKit::cspNonce() : null;
 @endphp
+{{-- One tag per URL per response, keyed on the URL, so two charts on one page load the
+     library once, and a second adapter on the same page still gets its own. `defer` runs the
+     tags in the order the adapter lists them, after the document is parsed and before Livewire
+     starts Alpine on DOMContentLoaded. `data-navigate-once` keeps `wire:navigate` from running
+     a tag a second time. --}}
+@foreach ($wkChartScripts as $wkChartScript)
+    @once('wirekit-chart-script:'.$wkChartScript)
+        <script src="{{ $wkChartScript }}" defer data-navigate-once="true"@if ($wkChartScriptNonce) nonce="{{ $wkChartScriptNonce }}"@endif></script>
+    @endonce
+@endforeach
 @if ($needsReplayWrapper)
     {{-- Outer wrapper carries `data-replayable="true"` for docs.wirekit.app
          replay button. CRITICAL: the attribute MUST sit on a DIFFERENT
@@ -180,7 +195,7 @@
          style above is the source of truth for either class's behavior;
          these merely keep the rendered class= tidy for any styling that
          developers might want to override on top). --}}
-    {{ $chartAttributes->class(['relative w-full']) }}
+    {{ $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart', 'base', 'relative w-full')]) }}
     style="{{ $mergedStyle }}"
     wire:ignore
     role="img"
@@ -192,19 +207,13 @@
         x-ref="canvas" or x-ref="mount" depending on which library is active.
 
         Inline `width: 100%; height: 100%;` on the SVG-mount div instead of
-        Tailwind utilities so the height resolves CORRECTLY in every
-        rendering context — including a docs-preview iframe-srcdoc where
-        the developer's Tailwind utilities aren't necessarily loaded. With
-        the previous `class="h-full w-full"`, the mount div ended up at 0
-        px tall whenever Tailwind wasn't in the bundle (no `.h-full` rule
-        to resolve), which made ApexCharts' `height: '100%'` setting fall
-        back to its built-in default (~495 px) — visibly larger than the
-        chart wrapper's inline 380 px height, producing charts that
-        overflowed below the preview frame on every page under
-        /components/charts-apex/. The Chart.js canvas mount uses the
-        adapter's `responsive: true; maintainAspectRatio: false;` so its
-        sizing is driven by the wrapper's clientHeight; no inline-style
-        rescue needed there, but added for parity / defensive consistency.
+        Tailwind utilities, so the mount takes the wrapper's height in a page
+        whose stylesheet does not come from a Tailwind build that scanned this
+        view. A mount at 0px tall makes ApexCharts' `height: '100%'` fall back
+        to its own default height, and the chart overflows its wrapper. The
+        Chart.js canvas mount is sized from the wrapper's clientHeight by the
+        adapter's `responsive: true; maintainAspectRatio: false;`; it carries
+        the same inline style for consistency.
     --}}
     @if ($resolvedMountElement === 'div')
         <{{ $wrapperTag }} data-wk-prose-skip x-ref="mount" aria-hidden="true" style="width: 100%; height: 100%; display: block;"></{{ $wrapperTag }}>

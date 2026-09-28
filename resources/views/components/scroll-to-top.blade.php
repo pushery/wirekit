@@ -67,14 +67,13 @@
 
     // Position: four corners + custom via attributes.
     //
-    // ⚠️ The two BOTTOM corners carry `env(safe-area-inset-bottom, 0px)`; the top two do
-    // not need it. On a notched iPhone the home-indicator inset is 34px and this button
-    // sat 16px up, so the lower half of its 44px coarse-pointer hit area lay inside the
-    // gesture strip — where, in the library's own words, "the bottom row of a swipe-up
-    // gesture eats the taps". `.wk-fab` already ships this exact expression.
+    // The two bottom corners carry `env(safe-area-inset-bottom, 0px)`; the top two do
+    // not need it. On a notched iPhone the home-indicator inset is 34px, and without it the
+    // lower half of the button's 44px coarse-pointer hit area would lie inside the gesture
+    // strip, where a swipe-up gesture eats the taps. `.wk-fab` carries the same expression.
     //
     // `env()` is 0 in headless Playwright, so no browser test can see this either way.
-    // ⚠️ WRITTEN OUT IN FULL, TWICE, AND NOT ASSEMBLED FROM A VARIABLE.
+    // Written out in full, twice, and not assembled from a variable.
     //
     // Tailwind scans this file as TEXT, so a class assembled by string concatenation is
     // extracted WITH the PHP in it: the utility prefix, the opening bracket, a variable

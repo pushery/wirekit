@@ -80,16 +80,22 @@ final class ClassInventory
      * tokenReferences().
      *
      * Empirical reality of the WireKit src/ layout:
-     *   - Only src/VariantResolver.php emits Tailwind-class string
-     *     literals from PHP. Every other file in src/ stores domain
-     *     identifiers (icon names, chart-kind labels, slot keys,
-     *     publish-tag names, version labels, slug constants).
+     *   - Four places emit Tailwind-class string literals from PHP:
+     *     src/VariantResolver.php, src/Support/TablistStyles.php,
+     *     WireKit::spinePadding() in src/WireKit.php and the
+     *     `@wirekitTransition` directive in src/WireKitServiceProvider.php.
+     *     Only the first is read here: the other three sit in prefixes
+     *     skipped below, and every other file there, like the rest of
+     *     src/, stores domain identifiers (icon names, chart-kind labels,
+     *     slot keys, publish-tag names, version labels, slug constants).
      *   - The strict filter cannot tell `'color-picker'` (component
      *     slug) apart from `text-blue-500` (Tailwind class) by shape
      *     alone — both are hyphenated, both pass the regex.
-     *   - Hence: skip every non-class-emitting source dir wholesale.
-     *     If a future file needs to emit classes, REMOVE its prefix
-     *     here in the same commit and add a regression test.
+     *   - Hence: skip the source dirs whose literals are identifiers
+     *     wholesale, which leaves the three emitters above uncounted
+     *     here. A new file that emits classes goes outside these
+     *     prefixes, or its prefix is removed here in the same commit
+     *     together with a regression test.
      *
      *   resources/views/_safelist.blade.php → Tailwind safelist payload
      *   src/Boost/                          → Boost skill-manifest builder
@@ -356,11 +362,14 @@ final class ClassInventory
     {
         $inventory = [];
 
+        // Every stylesheet that ships is a source, not only dist/: the glass extension's
+        // sheet and the font sheets under resources/ reach an application as they are.
         $sources = [
             ['resources/views', ['blade.php']],
             ['src', ['php']],
             ['resources/js', ['js']],
             ['dist', ['css']],
+            ['resources', ['css']],
         ];
 
         foreach ($sources as [$root, $extensions]) {
@@ -397,6 +406,11 @@ final class ClassInventory
      * usage sites. The intersection of the two answers "is every
      * referenced token actually declared?".
      *
+     * Only what a rule declares: a `--name:` inside a comment is prose about a
+     * token, such as an example of an inline style or a note on a rename, and
+     * counting it would call a token declared that no browser ever sees. CSS has
+     * block comments and nothing else, so a `//` inside a value stays.
+     *
      * @return list<string>
      */
     public function declaredTokens(): array
@@ -404,7 +418,7 @@ final class ClassInventory
         $declared = [];
 
         foreach ($this->filesUnder('dist', ['css'], []) as $file) {
-            $contents = (string) file_get_contents($file->getPathname());
+            $contents = (string) preg_replace('!/\*.*?\*/!s', '', (string) file_get_contents($file->getPathname()));
 
             if (preg_match_all('/(--[a-zA-Z0-9_-]+)\s*:/u', $contents, $matches) !== false) {
                 foreach ($matches[1] as $name) {
@@ -529,8 +543,8 @@ final class ClassInventory
     private function harvestAtClassDirectives(string $contents, string $file, array &$inventory): void
     {
         /*
-         * ⚠️ BOTH SPELLINGS. `@class([...])` is the directive; `->class([...])` is the
-         * attribute-bag method, and 19 component views use it with literal strings.
+         * Both spellings. `@class([...])` is the directive; `->class([...])` is the
+         * attribute-bag method, and many component views use it with literal strings.
          *
          * The second was not matched at all, so the harvester read NOTHING inside those
          * calls — not the arbitrary variants that prompted this, not even a plain `gap-2`.
@@ -542,12 +556,10 @@ final class ClassInventory
          * came back empty.
          */
         /*
-         * ⚠️ THE BODY ENDS AT THE MATCHING `]`, NOT AT THE FIRST `])`. The pattern used to be
-         * `\[(?P<body>.*?)\]\s*\)`, and a class with an attribute selector inside `:not(…)` —
-         * `has-[:user-invalid:not([data-wk-cleared])]:border-…` — holds that very pair in its
-         * own text. The body stopped in the middle of the class, and it and every class after
-         * it in the call were reported as untraceable. Found by the reverse diff on the input
-         * component, whose user-invalid variants gained the `:not([…])` on 2026-09-25.
+         * The body ends at the matching `]`, not at the first `])`. A class with an attribute
+         * selector inside `:not(…)` — `has-[:user-invalid:not([data-wk-cleared])]:border-…` —
+         * holds that very pair in its own text, and a body that stopped there would cut the
+         * class in half and report it and every class after it in the call as untraceable.
          */
         if (preg_match_all('/(?:@class|->class)\(\s*\[/u', $contents, $opens, PREG_OFFSET_CAPTURE) === false) {
             return;
@@ -872,6 +884,94 @@ final class ClassInventory
     }
 
     /**
+     * Every `match (…) { … }` body in a source, with the offset it starts at.
+     *
+     * The subject is read up to its BALANCED closing parenthesis: a subject that calls a
+     * function, `match (WireKit::validateProp('list', 'type', $type, [...])) {`, carries
+     * parentheses of its own, and a pattern that stops at the first `)` never reaches the
+     * brace. The body runs to its balanced closing brace. Quoted strings are skipped while
+     * counting, so a class like `[&_ol:not(:where(.x))]:list-decimal` does not unbalance
+     * either walk.
+     *
+     * @return list<array{0: string, 1: int}>
+     */
+    private function matchBodies(string $contents): array
+    {
+        $bodies = [];
+        $offset = 0;
+
+        while (preg_match('/\bmatch\s*\(/u', $contents, $found, PREG_OFFSET_CAPTURE, $offset) === 1) {
+            $subjectStart = (int) $found[0][1] + strlen($found[0][0]);
+            $offset = $subjectStart;
+            $subjectEnd = $this->balancedEnd($contents, $subjectStart, '(', ')');
+
+            if ($subjectEnd === null || preg_match('/\G\s*\{/u', $contents, $brace, 0, $subjectEnd) !== 1) {
+                continue;
+            }
+
+            $bodyStart = $subjectEnd + strlen($brace[0]);
+            $bodyEnd = $this->balancedEnd($contents, $bodyStart, '{', '}');
+
+            if ($bodyEnd === null) {
+                continue;
+            }
+
+            // $bodyEnd is just past the closing brace.
+            $bodies[] = [substr($contents, $bodyStart, $bodyEnd - 1 - $bodyStart), $bodyStart];
+            $offset = $bodyStart;
+        }
+
+        return $bodies;
+    }
+
+    /**
+     * The offset just past the bracket that closes the one opened right before $start, or null
+     * when the source ends first. Quoted strings are stepped over, escapes included, and so are
+     * line and block comments: the apostrophe in "the caller's value" opens no string.
+     */
+    private function balancedEnd(string $contents, int $start, string $open, string $close): ?int
+    {
+        $depth = 1;
+        $length = strlen($contents);
+
+        for ($i = $start; $i < $length; $i++) {
+            $c = $contents[$i];
+
+            if ($c === '/' && ($contents[$i + 1] ?? '') === '/') {
+                $newline = strpos($contents, "\n", $i);
+                $i = $newline === false ? $length : $newline;
+
+                continue;
+            }
+
+            if ($c === '/' && ($contents[$i + 1] ?? '') === '*') {
+                $closeComment = strpos($contents, '*/', $i + 2);
+                $i = $closeComment === false ? $length : $closeComment + 1;
+
+                continue;
+            }
+
+            if ($c === '"' || $c === "'") {
+                for ($i++; $i < $length && $contents[$i] !== $c; $i++) {
+                    if ($contents[$i] === '\\') {
+                        $i++;
+                    }
+                }
+
+                continue;
+            }
+
+            if ($c === $open) {
+                $depth++;
+            } elseif ($c === $close && --$depth === 0) {
+                return $i + 1;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Extract class strings from PHP `match()` arms inside Blade files.
      * Focused on the most common shape where dispatcher keys map to
      * Tailwind class strings:
@@ -902,18 +1002,15 @@ final class ClassInventory
     {
         /*
          * Two-pass approach:
-         *   1. Find every `match (…) { … }` body (non-greedy across
-         *      multi-line bodies; nested matches are rare in Blade
-         *      and not worth the complexity).
+         *   1. Find every `match (…) { … }` body with matchBodies(), which
+         *      balances the parentheses of the subject and the braces of
+         *      the body, so `match (WireKit::validateProp(…, [...])) {` is
+         *      read like `match ($type) {`.
          *   2. Inside each body, capture every `=> 'STRING'` arm
          *      (single OR double quoted). Skip arms whose right-hand-
          *      side is a variable / method call / non-string-literal.
          */
-        if (preg_match_all('/match\s*\([^)]+\)\s*\{(?P<body>.*?)\}/su', $contents, $matchBodies, PREG_OFFSET_CAPTURE) === false) {
-            return;
-        }
-
-        foreach ($matchBodies['body'] as $bodyMatch) {
+        foreach ($this->matchBodies($contents) as $bodyMatch) {
             [$body, $bodyOffset] = $bodyMatch;
 
             /*
@@ -1023,23 +1120,30 @@ final class ClassInventory
     }
 
     /**
-     * Match every `var(--name)` (with optional fallback) in arbitrary content.
+     * Match every `var(--name)` (with optional fallback) in arbitrary content, and
+     * every Tailwind v4 shorthand that compiles to one: `rounded-(--radius-wk-card)`
+     * or, with a type hint, `bg-(color:--color-wk-surface)`.
      *
      * @param  Inventory  $inventory
      */
     private function harvestTokenReferences(string $contents, string $file, array &$inventory): void
     {
-        $pattern = '/var\(\s*(?P<name>--[a-zA-Z0-9_-]+)/u';
+        $patterns = [
+            '/var\(\s*(?P<name>--[a-zA-Z0-9_-]+)/u',
+            '/[a-zA-Z0-9]-\((?:[a-z-]+:)?(?P<name>--[a-zA-Z0-9_-]+)\)/u',
+        ];
 
-        if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
-            return;
-        }
+        foreach ($patterns as $pattern) {
+            if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
+                continue;
+            }
 
-        foreach ($matches['name'] as $match) {
-            [$name, $offset] = $match;
-            $line = $this->offsetToLine($contents, (int) $offset);
+            foreach ($matches['name'] as $match) {
+                [$name, $offset] = $match;
+                $line = $this->offsetToLine($contents, (int) $offset);
 
-            $inventory[$name][] = ['file' => $file, 'line' => $line];
+                $inventory[$name][] = ['file' => $file, 'line' => $line];
+            }
         }
     }
 
@@ -1276,12 +1380,9 @@ final class ClassInventory
          * (a variant, `@max-3xl/wk-table:hidden`, `@2xl/bento:col-span-2`). No Blade directive
          * carries either.
          *
-         * ⚠️ This was an ALLOWLIST ENTRY before it was a fix, and the allowlist said so: five
-         * bento classes sat under "the tokenizer does not parse the `@{size}/{name}:` syntax …
-         * teach the harvester the syntax if more land". More landed — the table's own named
-         * container and eight `@max-*` column variants — and adding nine more entries would have
-         * been the kind of entry that file already warns about: one that reads as a fact about
-         * the compiler when it is a fact about us.
+         * Taught here rather than allowlisted: an allowlist entry for a container variant reads
+         * as a fact about the compiler when it is a fact about this tokenizer, and the table's
+         * named container and its `@max-*` column variants would each need one.
          */
         $isContainerVariant = preg_match('/^@(?:container$|[a-z0-9-]*[\/:])/', $masked) === 1;
 
@@ -1378,12 +1479,10 @@ final class ClassInventory
          * `$variantColors['icon']` shape inside @class([…]) bodies.
          */
         /*
-         * ⚠️ Asked of the UTILITY FORM rather than the raw candidate, so that the container-query
+         * Asked of the utility form rather than the raw candidate, so that the container-query
          * marker does not change the answer. A bare `@container` carries no hyphen, colon or
-         * bracket and is not spelled `container`, so reading the raw form rejected it — while
-         * `container` itself is on the list two lines up. The named spelling passed only because
-         * its `/` happens to sit in the shape regex's body set, which is a coincidence rather
-         * than a decision.
+         * bracket and is not spelled `container`, so the raw form would be rejected while
+         * `container` itself is on the list two lines up.
          */
         /*
          * An ATTRIBUTE NAME, not a class: `aria-describedby`, `data-wk-ready`. Tailwind's aria
@@ -1413,21 +1512,19 @@ final class ClassInventory
 
         if ($strict) {
             /*
-             * ⚠️ THE UTILITY FORM AGAIN, and this was the half that stayed broken after the two
-             * checks above were fixed. Strict mode is what reads classes out of PHP strings —
-             * `implode(' ', ['@max-3xl/wk-table:hidden', …])` — and both of its shape questions
-             * are anchored at the FIRST character, which for a container variant is `@`. So the
-             * loose path accepted these and the strict path dropped them, which presents as a
-             * class that is traceable from a `class=` attribute and untraceable from a match arm:
-             * the same class, two answers, depending only on where it was written.
+             * The utility form again, in strict mode too. Strict mode is what reads classes out
+             * of PHP strings — `implode(' ', ['@max-3xl/wk-table:hidden', …])` — and both of its
+             * shape questions are anchored at the first character, which for a container variant
+             * is `@`. Asked of the raw form, the strict path would drop what the loose path
+             * accepts: the same class, traceable from a `class=` attribute and untraceable from a
+             * match arm.
              */
             if (in_array($utilityForm, self::KNOWN_SINGLE_WORD_CLASSES, true)) {
                 return true;
             }
 
             /*
-             * ⚠️ AND THE VARIANT CHAIN IS NOT PART OF THE SHAPE QUESTION EITHER — this was the
-             * third half of the same mistake, after the two the comment above records.
+             * And the variant chain is not part of the shape question either.
              *
              * `2xl:hidden` is the `hidden` utility under a breakpoint, and `hidden` is on the
              * list one check up. Reading the whole string kept the variant out while the same

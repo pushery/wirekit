@@ -32,8 +32,8 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, true);
 
-    // The app supplies used/limit (never recompute usage in the view — see plan
-    // pitfalls). limit === null is the "Unlimited" plan tier (no bar, no %).
+    // The application supplies used/limit; recomputing usage in a view would run a query on
+    // every render. limit === null is the "Unlimited" plan tier (no bar, no %).
     $usedNum = (float) $used;
     $isUnlimited = $limit === null;
     $limitNum = $isUnlimited ? null : max(0.0, (float) $limit);
@@ -46,7 +46,10 @@
     // the default danger=1.0, $isDanger is always false (ratio>=1.0 is already
     // $isOver), so default behavior is unchanged. Each band has its OWN text state
     // below, so the danger band is never signaled by the red bar color alone (a11y).
-    $isOver = ! $isUnlimited && $limitNum > 0 && $usedNum >= $limitNum;
+    // A limit of 0 means the plan does not include the dimension: nothing is left to use,
+    // which is what `>=` says for every other limit, so 0 / 0 and 3 / 0 are over it too.
+    // There is no percentage there, and the bar stays empty in the danger intent.
+    $isOver = ! $isUnlimited && $usedNum >= $limitNum;
     $isDanger = ! $isOver && ! $isUnlimited && $limitNum > 0 && $ratio >= (float) $danger;
     $isWarn = ! $isOver && ! $isDanger && ! $isUnlimited && $ratio >= (float) $warn;
 

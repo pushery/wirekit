@@ -8,6 +8,7 @@ use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Console\MakeCommand;
 use Pushery\WireKit\Support\AccessibilityContract;
 use Pushery\WireKit\Support\ComponentTokens;
+use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
 
@@ -32,6 +33,16 @@ use Pushery\WireKit\WireKit;
 final class McpCatalog
 {
     /**
+     * @param  bool  $publicOnly  Leave out every component whose documentation is not public yet.
+     *                            On by default, because every reader of this catalog in a real
+     *                            installation (the MCP server, the Boost manifest) hands its
+     *                            answers to a developer's assistant. Off only where the whole
+     *                            registry is the question, such as a check over every
+     *                            component's props.
+     */
+    public function __construct(private readonly bool $publicOnly = true) {}
+
+    /**
      * The component catalog.
      *
      * Sub-components ride along on their parent's entry rather than as entries of
@@ -48,6 +59,10 @@ final class McpCatalog
     {
         $out = [];
         foreach (ComponentRegistry::all() as $name => $meta) {
+            if ($this->isStaged($name)) {
+                continue;
+            }
+
             $entry = [
                 'name' => $name,
                 'category' => $meta['category'] ?? 'Other',
@@ -80,14 +95,12 @@ final class McpCatalog
             return array_slice($this->components(), 0, $limit);
         }
 
-        // ⚠️ EVERY WORD IS ITS OWN NEEDLE, AND THE WHOLE QUERY IS ONE MORE. This used to look
-        // for the entire query as a single substring, which is fine for `card.body` and
-        // useless for the way the search is actually reached: somebody who knows the name
-        // does not need to search, and somebody who does not know it types synonyms. Measured
-        // in an adopting project -- `alert` returned two components, `alert danger error box
-        // callout` returned NOTHING, and both `alert` and `callout` are literal component
-        // names. The agent concluded there was no alert component and started writing its own
-        // markup, which is the re-implementation the adopt-first rule exists against.
+        // Every word is its own needle, and the whole query is one more. The whole query
+        // alone is fine for `card.body` and useless for the way the search is actually
+        // reached: somebody who knows the name does not need to search, and somebody who does
+        // not know it types synonyms, so `alert danger error box callout` has to find both
+        // `alert` and `callout`. An empty answer there reads as "no such component", and the
+        // next step is writing the markup by hand.
         //
         // An empty answer is indistinguishable from "no such component", so the failure looks
         // like a fact about the library rather than about the query.
@@ -176,14 +189,14 @@ final class McpCatalog
         // AGENTS.md spends a paragraph preventing. Telling an agent to use a thing
         // and then denying it exists is the worst of both.
         $meta = ComponentRegistry::resolve($name);
-        if ($meta === null) {
+        if ($meta === null || $this->isStaged($name)) {
             return null;
         }
 
         // Every field the extractor produces, not a chosen three.
         //
-        // This used to narrow to name/default/comment, which reads as tidy and is
-        // a loss the caller cannot detect: `type_hint` carries the declared PHP
+        // Narrowing to name/default/comment reads as tidy and is a loss the
+        // caller cannot detect: `type_hint` carries the declared PHP
         // type of a class-based component's constructor argument,
         // `default_normalized` is the same expression as `default` with whitespace
         // collapsed and comments stripped so two records can be compared as
@@ -191,14 +204,10 @@ final class McpCatalog
         // Dropping any of them narrows what the caller can answer, and says
         // nothing about having done so.
         //
-        // ⚠️ Two of those clauses read the other way here, and on the public
-        // `docs/ai-tooling.md` page, for a long series of releases: a type hint
-        // that identifies an enum, and "the resolved value behind a `config(...)`
-        // call". Neither is produced, and the payload says so plainly to anyone
-        // who looks — measured 2026-09-06 over a real `--public` export:
-        // `default_normalized` is byte-identical to `default` for all 139
-        // config-backed defaults, and `type_hint` is null for 1282 of 1297 props,
-        // because an anonymous component's `@props` block declares no types.
+        // Neither field resolves anything: `type_hint` does not identify an enum,
+        // and `default_normalized` is not the value behind a `config(...)` call. An
+        // anonymous component's `@props` block declares no types, so `type_hint` is
+        // null for almost every prop.
         //
         // Resolving the fallback literal is worth doing and would need a NEW
         // field: `default_normalized`'s whitespace-collapse semantics are
@@ -249,7 +258,7 @@ final class McpCatalog
     {
         $meta = ComponentRegistry::resolve($name);
 
-        if ($meta === null) {
+        if ($meta === null || $this->isStaged($name)) {
             return null;
         }
 
@@ -272,10 +281,15 @@ final class McpCatalog
 
         $baked = $this->bakedExamples();
 
+        // A component a family documents on its page answers with the previews on that page
+        // that render IT. The page's own examples are its first three, the family's head:
+        // `reading-meta` answered with the shell and the progress bar and never with itself.
+        $own = is_string($meta['parent'] ?? null) ? null : ($this->pagelessExamples()[$name] ?? null);
+
         return [
             'name' => $name,
             'page' => $page,
-            'examples' => $baked[$page] ?? [],
+            'examples' => $own ?? ($baked[$page] ?? []),
         ];
     }
 
@@ -333,8 +347,35 @@ final class McpCatalog
         return $this->examplesCache = is_array($decoded) ? $decoded : [];
     }
 
+    /**
+     * The baked examples of the components documented on a family page, each one rendering
+     * its component, read once per process. Missing or unreadable, it yields an empty map and
+     * the lookup falls back to the page's own examples.
+     *
+     * @return array<string, list<array{title: string, code: string}>>
+     */
+    private function pagelessExamples(): array
+    {
+        if ($this->pagelessExamplesCache !== null) {
+            return $this->pagelessExamplesCache;
+        }
+
+        $path = \dirname(__DIR__, 2).'/resources/mcp/pageless-examples.json';
+
+        if (! is_file($path)) {
+            return $this->pagelessExamplesCache = [];
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+
+        return $this->pagelessExamplesCache = is_array($decoded) ? $decoded : [];
+    }
+
     /** @var array<string, list<array{title: string, code: string}>>|null */
     private ?array $examplesCache = null;
+
+    /** @var array<string, list<array{title: string, code: string}>>|null */
+    private ?array $pagelessExamplesCache = null;
 
     /** @var array<string, string>|null */
     private ?array $componentPagesCache = null;
@@ -413,24 +454,42 @@ final class McpCatalog
      */
     public function accessibility(string $name): ?array
     {
+        if ($this->isStaged($name)) {
+            return null;
+        }
+
         return AccessibilityContract::for($name);
+    }
+
+    /**
+     * A component whose documentation is not public yet, or one of its parts.
+     *
+     * The catalog answers `wirekit://catalog`, `list_components` and every lookup by name, and it
+     * feeds the Boost manifest, so everything here reaches a developer's assistant. A staged
+     * component is left out of every answer rather than listed with a null URL, the rule
+     * `wirekit:export-json --public` applies: its name alone would announce something that has
+     * not been announced. A part (`cart-list.item`) is as public as the component it belongs to.
+     */
+    private function isStaged(string $name): bool
+    {
+        if (! $this->publicOnly) {
+            return false;
+        }
+
+        $component = explode('.', $name, 2)[0];
+
+        return DocsVisibility::componentPageStatus($component) === DocsVisibility::STATUS_STAGED;
     }
 
     /**
      * Every design token the shipped `dist/wirekit.css` declares, as name → value pairs.
      *
-     * ⚠️ THIS MATCHED ONE NAMING SHAPE AND THE STYLESHEET SHIPS FOUR, which is why nothing
-     * looked wrong about the answer. The pattern was `--<segment>-wk-<rest>`; the tokens are
-     * also written `--<segment>-wk` (`--radius-wk`, the base every radius derives from),
-     * `--wk-<segment>`, and the whole `--reading-*` family, which carries no `wk` at all and is
-     * the largest documented per-component customization surface there is. Measured against the
-     * public token reference: 84 tokens it tabulates and the stylesheet declares were absent
-     * from this list, and an assistant reading it saw a theming surface that looked complete.
-     *
-     * So the shape is no longer part of the question — a custom property declared on a line of
-     * its own in the shipped stylesheet is a token, because that file IS what a developer
-     * overrides. `McpTokensCoverTheDocumentedTokenReferenceTest` holds it against the reference
-     * rather than against a count, since a count cannot say which one went missing.
+     * The shape of the name is not part of the question. The stylesheet writes tokens as
+     * `--<segment>-wk-<rest>`, `--<segment>-wk` (`--radius-wk`, the base every radius derives
+     * from), `--wk-<segment>`, and the whole `--reading-*` family, which carries no `wk` at all
+     * and is the largest documented per-component customization surface there is. So a custom
+     * property declared on a line of its own in the shipped stylesheet is a token, because that
+     * file is what a developer overrides.
      *
      * The reader is `ComponentTokens::declaredIn()`, the same one every component's `tokens` list
      * is drawn from, so this catalog and the manifest cannot disagree about which properties are
@@ -456,13 +515,11 @@ final class McpCatalog
     /**
      * The bundled theme presets, read from the registry that `wirekit:theme` writes from.
      *
-     * ⚠️ FROM `ThemePresetRegistry`, NEVER FROM THE DOCUMENTATION, AND THAT IS NOT A STYLE
-     * PREFERENCE. A preset already reaches a developer by three artifacts — the registry the
-     * command writes, the page they copy by hand, and the live picker on the documentation
-     * site — and those three have measurably disagreed (`ThemePresetDocsValueDriftTest` holds
-     * the surviving divergences as a ratchet). A fourth retelling would be a fourth thing to
-     * hold in step. Reading the registry makes this view current by construction: it cannot
-     * drift from the command, because it IS the command's source.
+     * From `ThemePresetRegistry`, never from the documentation. A preset already reaches a
+     * developer by three artifacts — the registry the command writes, the page they copy by
+     * hand, and the live picker on the documentation site — and a fourth retelling would be a
+     * fourth thing to hold in step. Reading the registry makes this view current by
+     * construction: it cannot drift from the command, because it is the command's source.
      *
      * @return list<array{key: string, label: string, has_dark_block: bool, command: string}>
      */
@@ -513,11 +570,11 @@ final class McpCatalog
     /**
      * The recipe library — the composed page shapes `wirekit:make recipe:<name>` scaffolds.
      *
-     * ⚠️ NOTHING HERE READS `docs/`, AND THE RECIPES ARE THE CASE WHERE THAT IS EASY TO GET
-     * WRONG. Each recipe has a documentation page under `docs/blueprints/recipes/`, which is
+     * Nothing here reads `docs/`, and the recipes are the case where that is easy to get
+     * wrong. Each recipe has a documentation page under `docs/blueprints/recipes/`, which is
      * the obvious place to read a title and a summary from — and it is export-ignored, so a
-     * catalog built that way answers in this repository and returns eleven blanks in every
-     * real install. The stubs under `src/Console/stubs/recipes/` ship, carry the same header,
+     * catalog built that way answers in this repository and returns a blank for every recipe
+     * in a real install. The stubs under `src/Console/stubs/recipes/` ship, carry the same header,
      * and are the file the developer actually receives.
      *
      * The names come from `MakeCommand::RECIPES`, so the list an agent sees and the list the
@@ -569,14 +626,11 @@ final class McpCatalog
      * Every stub opens with the same TWO lines — `{{-- Recipe: <Title> — <summary>` and a
      * `Full reference:` URL — so the metadata lives next to the code it describes rather than
      * in a table beside it. Whatever follows inside the comment is per-stub guidance for the
-     * developer who just scaffolded the view, and this parser ignores it: six of the eleven
-     * carry some, running from one line to three.
+     * developer who just scaffolded the view, and this parser ignores it: some stubs carry a
+     * line of it, some a paragraph, some none.
      *
-     * ⚠️ THIS SAID "THE SAME THREE-LINE BLOCK", WHICH WAS TRUE OF THREE STUBS. Read as a rule
-     * it would have sent an author to pad a two-line header to length, or to delete the
-     * guidance from a five-line one — and the parser cares about neither. What it needs is the
-     * `Recipe:` line with its em dash and, separately, a `Full reference:` URL anywhere in the
-     * file; a fixed line count was never part of it.
+     * What the parser needs is the `Recipe:` line with its em dash and, separately, a
+     * `Full reference:` URL anywhere in the file. The header can be two lines or five.
      *
      * A stub whose header does not parse is skipped rather than guessed at, and a test fails
      * on it: a recipe listed with an empty summary reads as a recipe that has nothing to say.
@@ -620,13 +674,11 @@ final class McpCatalog
     /**
      * The house conventions, as shipped prose rather than as a list held here.
      *
-     * ⚠️ THIS CLOSES A GAP `AGENTS.md` NAMES IN ITS OWN WORDS. That file tells an
-     * assistant that "for an MCP-native editor, the WireKit MCP server exposes the same
-     * CATALOG as live tools" — the catalog, not the conventions. So an agent on the MCP
-     * path could read every prop of every component and never learn that a Tailwind
-     * palette class, a `dark:` prefix or a hand-written color will fail this project's
-     * guards. Cursor users got those rules from `.cursor/rules/wirekit.mdc`; an MCP
-     * client has no filesystem and reached neither file.
+     * `AGENTS.md` tells an assistant that "for an MCP-native editor, the WireKit MCP server
+     * exposes the same CATALOG as live tools" — the catalog, not the conventions. This carries
+     * the conventions to the MCP path, so an agent there learns that a Tailwind palette class,
+     * a `dark:` prefix or a hand-written color will fail the guards: an MCP client has no
+     * filesystem, and reads neither `AGENTS.md` nor `.cursor/rules/wirekit.mdc`.
      *
      * Nothing is authored here on purpose. Both documents already ship, and a third
      * copy of the same rules is a third thing to keep in step — the failure this whole

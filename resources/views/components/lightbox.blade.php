@@ -53,26 +53,10 @@
      *
      * Allowed: http, https, protocol-relative, and anything without a scheme (a path the
      * application resolves itself). Everything else is dropped to an empty src, which
-     * renders an empty frame — visibly wrong, rather than quietly dangerous.
+     * renders an empty frame — visibly wrong, rather than quietly dangerous. The scheme is
+     * read the way the browser reads it, by the same rule every data-driven link uses.
      */
-    $safeEmbedSrc = static function (string $src): string {
-        $src = trim($src);
-
-        if ($src === '' || str_starts_with($src, '//')) {
-            return $src;
-        }
-
-        // A scheme is what precedes the first colon, and only when no slash comes first —
-        // `path/to:file` is a relative path, not a scheme.
-        $colon = strpos($src, ':');
-        $slash = strpos($src, '/');
-
-        if ($colon === false || ($slash !== false && $slash < $colon)) {
-            return $src;
-        }
-
-        return in_array(strtolower(substr($src, 0, $colon)), ['http', 'https'], true) ? $src : '';
-    };
+    $safeEmbedSrc = static fn (string $src): string => \Pushery\WireKit\Support\SafeUrl::href($src, \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 
     $slides = [];
     foreach ($items as $item) {
@@ -86,9 +70,9 @@
                 // frame — announced as an unlabeled region the reader has no way to identify.
                 // Images may legitimately be decorative, so the fallback is scoped to embeds.
                 //
-                // Resolved here rather than as a `:title="item.alt || …"` binding: that
-                // operator is outside Alpine's CSP grammar, so the expression is never
-                // evaluated on the CSP bundle and the frame loses its title there entirely.
+                // Resolved here rather than in a `:title="item.alt || …"` binding, so the
+                // fallback name comes from the locale file like every other string of the
+                // slide.
                 'alt' => ($type === 'embed' && trim((string) ($item['alt'] ?? '')) === '')
                     ? __('wirekit::Embedded content')
                     : (string) ($item['alt'] ?? ''),
@@ -257,7 +241,7 @@
                         :aria-disabled="hasPrev ? null : 'true'"
                         :class="hasPrev ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Previous') }}"
-                        class="absolute left-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="absolute left-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M12.5 4L7 10l5.5 6"/></svg>
                     </button>
@@ -269,7 +253,7 @@
                         :aria-disabled="hasNext ? null : 'true'"
                         :class="hasNext ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Next') }}"
-                        class="absolute right-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="absolute right-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 4L13 10l-5.5 6"/></svg>
                     </button>
@@ -279,7 +263,7 @@
                     type="button"
                     x-on:click="close()"
                     aria-label="{{ __('wirekit::Close') }}"
-                    class="absolute right-[var(--space-wk-md)] top-[var(--space-wk-md)] z-20 flex h-10 w-10 items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="absolute right-[var(--space-wk-md)] top-[var(--space-wk-md)] z-20 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 >
                     <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>

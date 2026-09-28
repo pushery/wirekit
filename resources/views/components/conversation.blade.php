@@ -30,11 +30,11 @@
     // name — silent, and exactly what happened.
     //
     // AlpinePayload, not json_encode: the labels come out of the catalog, and a
-    // plain encode escapes non-ASCII as `é`. Alpine's CSP tokenizer knows
-    // only `\n`, `\t`, `\r`, `\\` and the quote, so it drops that backslash and
-    // keeps the letters — `Aller au plus récent` (lang/fr.json) reaches the
-    // reader as `Aller au plus ru00e9cent`. Nothing throws; the label is simply
-    // wrong, and it is the accessible name of the jump-to-latest control.
+    // plain encode escapes non-ASCII as `\u00e9`, which some of the CSP tokenizers
+    // Alpine and Livewire ship do not decode: they drop the backslash and keep the
+    // letters, so `Aller au plus récent` (lang/fr.json) would reach the reader as
+    // `Aller au plus ru00e9cent`, the accessible name of the jump-to-latest control.
+    // `Support/AlpinePayload.php` names the versions.
     $alpineConfig = \Pushery\WireKit\Support\AlpinePayload::from((object) array_filter(
         [
             'threshold' => $threshold !== null ? (int) $threshold : null,

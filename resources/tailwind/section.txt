@@ -18,9 +18,9 @@ $slot
 '',
 ',
 '2xl'
-'2xl']),
+'2xl']))
 'accent'
-'accent']),
+'accent']))
 'as'
 'background'
 'background',
@@ -70,10 +70,9 @@ $slot
 'xl'
 'xl'),
 'xl',
-($background)
 ($divider)
 ($dividerValue)
-($padding)
+(WireKit::validateProp('section',
 (see
 (silent
 (string)

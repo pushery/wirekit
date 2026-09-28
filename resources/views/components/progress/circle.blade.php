@@ -74,11 +74,9 @@
     // Value text font size scales with circle size — must be small enough
     // to fit "100%" inside the circle without overflowing.
     //
-    // ⚠️ ALL FOUR WERE ABSOLUTE `rem` LITERALS, AND THAT PUT THEM OUTSIDE THE FONT SCALE.
-    // A reader who sets `--font-scale-wk` gets larger type everywhere and this one number
-    // stays put — the omission failure `FontScaleGuardTest` is written against, arriving
-    // through a Tailwind arbitrary value, which that guard reads `dist/wirekit.css` and
-    // cannot see.
+    // None of the four is an absolute `rem` literal, which would put it outside the font
+    // scale: a reader who sets `--font-scale-wk` gets larger type everywhere, and a literal
+    // here would stay put.
     //
     // Two of the four have a token at exactly their size and use it, so a theme that
     // retunes the ramp carries them. The other two are BELOW the smallest rung

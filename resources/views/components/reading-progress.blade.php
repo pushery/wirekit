@@ -43,10 +43,11 @@
     // bottom-right). Both reuse the same Alpine state machine; only the rendered
     // DOM differs.
     //
-    // The fill animation uses `transform: scaleX` (bar) / `stroke-dasharray` (dot)
-    // because both are compositor-only properties — GPU-accelerated, no layout, no
-    // paint. Tested on a 5000-line article + 4× CPU throttle: zero long-tasks
-    // during smooth scroll; the alternative `width: NN%` produced ~12.
+    // The fill animation uses `transform: scaleX` for the bar, which the compositor
+    // runs without layout or paint, and `stroke-dashoffset` over a fixed
+    // `stroke-dasharray` for the dot, which repaints the small SVG ring and lays out
+    // nothing. Animating the bar's `width` instead would lay it out on every scroll
+    // frame.
 
     $heightToken = match ($height) {
         'sm' => 'var(--reading-progress-height-sm)',
@@ -61,8 +62,9 @@
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
     // Validation — gates against the canonical 6-set + the auto value.
-    // 'accent' (legacy) and 'inverse' (legacy) explicitly throw — both were
-    // dropped during the family's first public release, no alias preserved.
+    // 'accent' (legacy) and 'inverse' (legacy) have no alias and are reported like
+    // any other unknown value, through validateProp and the strictness gate — both
+    // were dropped during the family's first public release.
     // Developers wanting the old 'inverse' behavior set
     // `--reading-progress-fill: var(--color-wk-text)` in their :root {} block.
     $variantValue = match ($effectiveIntent) {
@@ -141,13 +143,12 @@
     $edgeStyle = $position === 'bottom' ? 'bottom: 0' : ($useSticky ? 'top: 0' : 'top: var(--wk-strip-inset, 0px)');
 
     // Marker class — used by reduced-motion gating in dist/wirekit.css, and by
-    // print-stylesheet rules. Doubled-class specificity (`.wk-reading-progress.wk-reading-progress`)
-    // wins over developer typography wrappers without using `!important`.
+    // print-stylesheet rules.
     // Class strings stay STATIC across the sticky/fixed branch so Tailwind v4's
     // content scanner picks both variants up cleanly.
     $rootClass = WireKit::resolveClasses('reading-progress', 'base', implode(' ', [
         'wk-reading-progress',
-        // ⚠️ The dot's bottom offset carries `env(safe-area-inset-bottom, 0px)` in BOTH
+        // The dot's bottom offset carries `env(safe-area-inset-bottom, 0px)` in BOTH
         // branches. Sticky and fixed both settle against the viewport's bottom edge, and on
         // a phone with a home indicator the plain padding puts the dot inside the gesture
         // strip — where the system swallows the tap. It resolves to zero everywhere else,
@@ -179,12 +180,9 @@
             $pct = $pos * 100;
             // A 1px sliver at each position, transparent elsewhere.
             //
-            // ⚠️ THIS WAS `rgba(0,0,0,0.4)`, WHICH IS INVISIBLE ON EVERY DARK THEME. The
-            // strip it paints on is `bg-transparent`, so on a dark surface the dividers
-            // were 40%-opacity black on near-black — and the dividers ARE the `segments`
-            // prop. Every other color in this file is already a token with an override
-            // hook; this one had neither, and no exemption anywhere records it as
-            // deliberate.
+            // A token, not a fixed translucent black: the strip it paints on is
+            // `bg-transparent`, so on a dark surface a black divider would vanish, and the
+            // dividers are the `segments` prop.
             //
             // `--color-wk-border-strong` is the token for a separator that has to read
             // against the surface it divides, and it flips with the theme. The dedicated
@@ -214,10 +212,9 @@
          scope to the dot specifically. --}}
     <div
         {{-- The scroll math, the milestone dispatch and the fill transform live in
-             the factory (resources/js/components/reading-progress.js). It was
-             ~150 lines of inline x-data, duplicated BYTE FOR BYTE between the
-             bar and the dot below, and it did not parse under Alpine's CSP
-             build. One factory now serves both renderings. --}}
+             the factory (resources/js/components/reading-progress.js), which serves
+             the bar and the dot below alike and, unlike inline x-data holding the
+             same logic, parses under Alpine's CSP build. --}}
         x-data="wirekitReadingProgress({
             target: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $target) }},
             boundarySelector: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $boundarySelector) }},
@@ -231,10 +228,10 @@
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->merge(['style' => 'position: '.($positionMode).'; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);'])->class([$rootClass, 'wk-reading-progress--dot'])->merge(['aria-label' => __('wirekit::Reading progress')]) }}
         {{-- Inline-style the positioning + sizing so the dot pins to the
-             viewport corner even in environments where the developer's
-             Tailwind compile doesn't generate the arbitrary-value
-             classes from $rootClass (docs-sandbox iframe-srcdoc,
-             standalone HTML, browser extensions). Same regression class
+             viewport corner even in environments where no Tailwind
+             build generated the arbitrary-value classes from
+             $rootClass (standalone HTML, browser extensions, a build
+             that did not scan this view). Same regression class
              as the bar's earlier inline-style fix — without this the
              dot wrapper falls back to `position: static` in those
              contexts, lands in document flow, and changes the body
@@ -271,10 +268,9 @@
          `transform: scaleX` for compositor-only animation. --}}
     <div
         {{-- The scroll math, the milestone dispatch and the fill transform live in
-             the factory (resources/js/components/reading-progress.js). It was
-             ~150 lines of inline x-data, duplicated BYTE FOR BYTE between the
-             bar and the dot below, and it did not parse under Alpine's CSP
-             build. One factory now serves both renderings. --}}
+             the factory (resources/js/components/reading-progress.js), which serves
+             the bar and the dot below alike and, unlike inline x-data holding the
+             same logic, parses under Alpine's CSP build. --}}
         x-data="wirekitReadingProgress({
             target: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $target) }},
             boundarySelector: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $boundarySelector) }},
@@ -288,13 +284,11 @@
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->merge(['style' => 'position: '.($positionMode).'; '.$edgeStyle.'; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : '')])->class([$rootClass])->merge(['aria-label' => __('wirekit::Reading progress')]) }}
         {{-- `max-width: none` defeats developer-side typography CSS that
-             applies a max-width to direct children of a prose wrapper
-             (the `@tailwindcss/typography` plugin's `.prose > * {
-             max-width: 65ch }` pattern, or any equivalent custom
-             prose stylesheet that constrains child width). Without
-             this override the bar wrapper's `left:0; right:0` would
-             resolve correctly to viewport edges but then the prose
-             max-width cap kicks in and the bar visibly stops short
+             caps the width of a prose wrapper's direct children (a
+             `.prose > * { max-width: … }` rule in a custom prose
+             stylesheet). Without this override the bar wrapper's
+             `left:0; right:0` would resolve correctly to viewport edges
+             but then that cap kicks in and the bar visibly stops short
              of the right edge. Inline `!important` is not needed
              because inline style already beats class-level rules
              on specificity. --}}
@@ -310,11 +304,9 @@
              its background-color and becomes invisible. The OBJECT
              form merges with static styles via individual property
              assignment, preserving every static value. --}}
-        {{-- ⚠️ THE ORIGIN IS PINNED ONCE, IN CSS. The Tailwind origin utility that used to
-             sit in the class list below is gone, and it is NOT NAMED HERE on purpose:
-             Tailwind scans source TEXT, so a comment that spells the class regenerates
-             it — measured, the reverse drift diff went red on a utility no element
-             carries any more, emitted from this very sentence.
+        {{-- The origin is pinned in CSS, and the Tailwind origin utility is not named
+             here on purpose: Tailwind scans source text, so a comment that spells the
+             class would generate it.
              A reading bar is a direction-encoded object: it fills the way the reader
              travels. Under `dir="rtl"` the reader travels right to left while a scaleX
              anchored at the start edge still grows rightward, so at 10% read the filled
@@ -325,8 +317,7 @@
              shape `.wk-scroll-fade` already uses for its horizontal edge fade.
              The inline declaration below carries it because the object-form binding
              merges rather than replaces (see the note above); it stays physical on
-             purpose, and the stylesheet flips it. Two spellings of one anchor is why
-             repairing only the utility class read as "tried it, did not work". --}}
+             purpose, and the stylesheet flips it. --}}
         <div
             x-bind:style="fillStyle()"
             class="wk-reading-progress__fill h-full w-full"

@@ -65,13 +65,10 @@ export default function wirekitSidebarRail(config = {}) {
          * the words wait.
          */
         settling: false,
-        // ⚠️ ONLY TRUE JUST AFTER A REAL EXPAND, AND THAT IS THE WHOLE POINT. The label
-        // fade-in is an ARRIVAL animation: it belongs to the moment the names come back
-        // into flow, not to a page that loaded with the column already open. Scoped to
-        // `:not([data-collapsed]):not([data-settling])` it also matched first paint, so
-        // every label on every load spent the transition duration at partial opacity —
-        // axe measured one at 3.16:1 against a 4.5:1 threshold and called it serious,
-        // which it is: for that window the text really is that faint.
+        // Only true just after a real expand. The label fade-in is an arrival animation:
+        // it belongs to the moment the names come back into flow, not to a page that
+        // loaded with the column already open, where every label would spend the
+        // transition at partial opacity, below its contrast threshold.
         justExpanded: false,
 
         /**
@@ -90,6 +87,8 @@ export default function wirekitSidebarRail(config = {}) {
         ready: false,
 
         _persistKey: config.persist || null,
+        /** The page set `collapsed`, so the store is not asked. Writes still go to it. */
+        _pinned: config.pinned === true,
         // 'local' or 'cookie'. The helper defaults the same way, but naming it here keeps a
         // factory built by a test — which passes no config at all — on the documented store
         // rather than on whatever the helper's signature happens to say today.
@@ -100,7 +99,9 @@ export default function wirekitSidebarRail(config = {}) {
         _settleFallback: null,
 
         init() {
-            this._chosen = readPersistedFlag(this._persistKey, this._chosen, this._persistDriver);
+            if (! this._pinned) {
+                this._chosen = readPersistedFlag(this._persistKey, this._chosen, this._persistDriver);
+            }
 
             // `64rem`, the shell's own breakpoint and rem-based like its `lg:` utilities, so a
             // reader with a larger root font size crosses both at the same moment.

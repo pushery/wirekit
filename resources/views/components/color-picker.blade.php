@@ -46,10 +46,6 @@
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk.
     'required' => false,
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
-    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
-    // reads: no native constraint, no aria-required, no asterisk.
-    'required' => false,
     // The Livewire method to call once a color is settled — a released drag, a
     // swatch, an arrow-key nudge. A refusal KEEPS the color and says it was not
     // saved: the hex field is typed, and a rollback may never delete what the
@@ -185,9 +181,9 @@
     $controlDescribedBy = trim(((string) $controlDescribedBy).' '.((string) $attributes->get('aria-describedby', ''))) ?: null;
 
     $swatchSize = match ($size) {
-        'sm' => 'w-8 h-8',
-        'lg' => 'w-12 h-12',
-        default => 'w-10 h-10',
+        'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)]',
+        'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)]',
+        default => 'w-[var(--size-wk-md)] h-[var(--size-wk-md)]',
     };
 
     $popoverValue = (bool) $popover;
@@ -196,7 +192,11 @@
         default => WireKit::validateProp('color-picker', 'format', $format, ['hex', 'rgb', 'hsl', 'oklch']),
     };
 
+    // Each branch hands its own gap to resolveClasses() rather than appending a second one:
+    // of two gap utilities on one element, the stylesheet's rule order decides, not their order
+    // in `class`. The native branch sets its readout a little further from the swatch.
     $wrapperClasses = WireKit::resolveClasses('color-picker', 'wrapper', 'inline-flex items-center gap-[var(--padding-wk-x-sm)]', $scope);
+    $nativeWrapperClasses = WireKit::resolveClasses('color-picker', 'wrapper', 'inline-flex items-center gap-[var(--gap-wk-md)]', $scope);
 
     // One stacking wrapper around BOTH render branches, so the hint / error paragraph
     // has somewhere to go: the picker's own root is an inline-flex ROW, and a message
@@ -223,12 +223,11 @@
         $swatchSize,
     ]), $scope);
 
-    // The input extends 8px BELOW the visible swatch (height = label + 4px top
+    // The input extends 12px below the visible swatch (height = label + 4px top
     // overhang + 12px bottom): the browser anchors its native color panel to the
-    // INPUT's element box, so the extra (overflow-clipped, invisible) zone pushes
-    // the panel the same 8px off the swatch as the house popover offset (without
-    // it the native panel sat flush on the circle). The label's overflow-hidden keeps
-    // the visual swatch byte-identical; the hit area grows 8px downward.
+    // input's element box, so the extra (overflow-clipped, invisible) zone pushes
+    // the panel off the swatch instead of flush on the circle. The label's
+    // overflow-hidden keeps the visual swatch unchanged.
     $inputClasses = WireKit::resolveClasses('color-picker', 'input', implode(' ', [
         // Replaced elements don't stretch between insets — height must be
         // EXPLICIT: label height + 4px top overhang + 12px bottom extension.
@@ -257,10 +256,9 @@
     {{-- ── Native mode (default). ── Slightly wider swatch↔readout gap than the
          shared wrapper default: the hex pill sits inline next to the swatch, and
          the base --padding-wk-x-sm (10px) read as crowding it. --gap-wk-md (12px)
-         gives the readout clear separation. The appended gap-* utility wins over
-         the base one in $wrapperClasses (later source order); the popover branch
-         keeps the base gap untouched. --}}
-    <div x-data="{ current: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} }" class="{{ $wrapperClasses }} gap-[var(--gap-wk-md)]">
+         gives the readout clear separation, set in $nativeWrapperClasses as the
+         only gap on this element; the popover branch keeps the base gap. --}}
+    <div x-data="{ current: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} }" class="{{ $nativeWrapperClasses }}">
         <label for="{{ $pickerId }}" class="{{ $swatchClasses }}">
             <input
                 type="color"
@@ -573,7 +571,8 @@
             {{-- Format toggle + editable value field.
 
                  Every control in the panel below spells out `cursor-pointer`.
-                 Tailwind v4's preflight sets `cursor: default` on `button`, and
+                 Tailwind v4's preflight no longer sets `cursor: pointer` on
+                 `button`, so the browser's default arrow applies, and
                  the panel's buttons are styled entirely by these literal utility
                  strings — only the trigger and the swatch get a pointer from
                  elsewhere ($swatchClasses), which is what made the file look
@@ -662,7 +661,7 @@
                         <button
                             type="button"
                             @click="pickColor({{ \Pushery\WireKit\Support\AlpinePayload::from($preset) }})"
-                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                            class="h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             style="background-color: {{ $preset }};"
                             aria-label="{{ __('wirekit::Use :color', ['color' => $preset]) }}"
                         ></button>
@@ -677,7 +676,7 @@
                         <button
                             type="button"
                             @click="pickColor(recent)"
-                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                            class="h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             :style="recentStyle(recent)"
                             :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Use :color')) }}.replace(':color', recent)"
                         ></button>

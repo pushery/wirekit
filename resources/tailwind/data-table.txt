@@ -171,7 +171,7 @@ $value]))
 'h-4
 'hidden'
 'hover:bg-[var(--color-wk-bg-subtle)]'"
-'hover:opacity-80',
+'hover:opacity-[var(--opacity-wk-hover)]',
 'id',
 'info'
 'inline-flex
@@ -212,7 +212,7 @@ $value]))
 'text-center'
 'text-left')
 'text-right'
-'transition-colors',
+'transition-[color,text-decoration-color,opacity]',
 'underline
 'w-full
 'w-full'
@@ -384,13 +384,13 @@ $value]))
 @props.
 @unless($stickyColumn)
 A
-ALL
 AND
 APPLICATION's
 ARIA
 ARIA's
 Absent
 Accessible
+All
 Alpine
 Alpine's
 Alpine,
@@ -440,7 +440,6 @@ English
 Every
 FILTER_VALIDATE_BOOLEAN)
 FIRST
-FOUR
 Form
 Freeze
 Fully
@@ -482,6 +481,7 @@ OUTSIDE
 On
 One
 Only
+Opacity
 PHP
 PHP,
 Positioned
@@ -494,7 +494,6 @@ ROW
 RUNTIME
 Read
 SAME
-SEVEN
 SHAPE,
 SKU
 SKU,
@@ -617,7 +616,6 @@ __('wirekit::Select
 `caption`.
 `cellType:
 `config()`
-`danger`,
 `dir="rtl"`
 `display:
 `emptyText`
@@ -643,8 +641,7 @@ __('wirekit::Select
 `mode`)
 `muted`
 `name`,
-`neutral`
-`neutral`.
+`neutral`:
 `number`
 `overflow-*`,
 `position:
@@ -664,11 +661,11 @@ __('wirekit::Select
 `stickyColumn`,
 `strong`
 `subKey`,
-`success`,
 `tabindex`
 `table`'s:
 `table`.
 `table`:
+`transition-colors`
 `true`
 `visibleColumns[0]?.key`
 `w-10`
@@ -677,7 +674,6 @@ __('wirekit::Select
 `w-full
 `w-full`
 `w-max`
-`warning`,
 `white-space`
 `whitespace-normal`
 `whitespace-nowrap`.
@@ -698,6 +694,7 @@ absolute`,
 accent
 accent-[var(--color-wk-accent)]
 accents,
+accept
 accepts,
 accessible
 acknowledged,
@@ -713,6 +710,7 @@ advance
 affordance.
 after
 against
+against.
 all
 all)
 all,
@@ -875,7 +873,6 @@ caption
 caption,
 caption.
 care.
-carried
 carrier
 carries
 carries;
@@ -924,7 +921,7 @@ class="block"
 class="border-b-[length:var(--border-wk-width)]
 class="fixed
 class="flex
-class="font-mono
+class="font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]
 class="group
 class="h-3
 class="h-4
@@ -1068,6 +1065,7 @@ did
 differ
 difference
 different
+dim
 dimension
 direction
 direction.
@@ -1238,14 +1236,14 @@ goes
 going
 got
 grammar,
-gray,
+gray
 grid
 grids
 group
 group-hover:bg-[var(--color-wk-bg-subtle)]',
 guaranteed
 guess
-h-6
+h-[var(--size-wk-xs)]
 half
 halves
 handed
@@ -1345,6 +1343,7 @@ its
 itself
 itself.
 job
+jumped.
 justify-between
 justify-center
 keep
@@ -1398,6 +1397,7 @@ link:
 links
 list
 list,
+list:
 literal
 literal.
 literals
@@ -1620,7 +1620,7 @@ placeholder="{{
 plain
 plural
 plus
-point.
+point:
 pointer,
 pointing
 points
@@ -1811,7 +1811,6 @@ server-mode
 server-side
 set
 seven
-seven.
 several
 shadow
 shadow-[var(--shadow-wk-lg)]">
@@ -1821,6 +1820,7 @@ shape:
 shipped
 short
 short,
+shorter
 shorthand
 shouts
 show
@@ -1837,7 +1837,6 @@ sighted
 silence.
 silently
 silently.
-simply
 since
 single
 sit
@@ -1965,7 +1964,6 @@ theme
 then
 there
 there:
-therefore
 these
 they
 thing
@@ -2064,9 +2062,9 @@ w-3
 w-3"
 w-4
 w-4"
-w-6
 w-[12rem]
 w-[16rem]
+w-[var(--size-wk-xs)]
 w-fit
 w-full
 wait
@@ -2074,7 +2072,6 @@ waiting
 waits
 waits.
 wants
-warned;
 was
 way
 way,
@@ -2199,4 +2196,3 @@ z-[var(--z-wk-dropdown)]
 }}[rowIntent(row,
 ·
 —
-⚠️

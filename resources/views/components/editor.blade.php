@@ -127,9 +127,15 @@
     $hasError = $error || ($name && ($errors ?? null)?->has($name));
     $errorMessage = $error ?? ($name ? ($errors ?? null)?->first($name) : null);
 
-    // First-paint content (format=html only). Developer-controlled saved document —
-    // the security contract is "sanitize on STORE" (Tiptap re-sanitizes on parse).
-    $initialHtml = $formatValue === 'html' && is_string($value) ? $value : '';
+    // First-paint content (format=html only), rebuilt rather than echoed. The browser parses
+    // this copy in the live document before the engine mounts, so the engine's schema never
+    // sees it, and the value may be `old('body')` rather than a stored document. EditorSeed
+    // keeps the document's elements, escapes every text node and attribute, and drops the rest,
+    // so the preview can run nothing. The value the form submits is untouched and still has to
+    // be sanitized where it is stored.
+    $initialHtml = $formatValue === 'html' && is_string($value)
+        ? \Pushery\WireKit\Support\EditorSeed::render($value)
+        : '';
 
     $hintId = "{$id}-hint";
     $errorId = "{$id}-error";
@@ -296,9 +302,10 @@
              whole field. The server-rendered seed shows pre-hydration only:
              init() REMOVES it before mounting, because Tiptap appends its view
              and never empties the element — leaving the seed would render the
-             content twice. The value is developer-controlled saved content —
-             sanitize it on STORE (see the docs ::: warning). For format="json"
-             there's no server renderer, so the seed is empty. --}}
+             content twice. The seed is the value rebuilt by EditorSeed, so it
+             can run nothing before init() removes it; the value itself still
+             has to be sanitized on STORE (see the docs ::: warning). For
+             format="json" there's no server renderer, so the seed is empty. --}}
         <div
             x-ref="content"
             id="{{ $id }}"

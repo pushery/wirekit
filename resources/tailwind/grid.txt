@@ -93,7 +93,7 @@ $value,
 '12'
 '2'
 '2xl'
-'2xl']),
+'2xl']))
 '2xl:1'
 '2xl:10'
 '2xl:11'
@@ -265,7 +265,7 @@ $value,
 'space',
 'start'
 'stretch'
-'stretch']),
+'stretch']))
 'template'
 'template')
 'template',
@@ -299,8 +299,7 @@ $value,
 'xs'
 'xs',
 (!
-($align)
-($gap)
+($align
 ($invalid
 ($min
 ($responsiveTemplate)
@@ -311,6 +310,7 @@ $value,
 ($v)
 ($value)
 (Level
+(WireKit::validateProp('grid',
 (`[sidebar-start]
 (preg_match('/^(sm|md|lg|xl|2xl):\[(.+)\]$/',
 (preg_split('/\s+/',
@@ -999,4 +999,3 @@ you
 }}>
 —
 …)`
-⚠

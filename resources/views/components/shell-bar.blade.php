@@ -98,21 +98,19 @@
     $sticky = BooleanProp::from($sticky, false);
     $bleed = BooleanProp::from($bleed, false);
 
-    $paddingClasses = match ($padding) {
+    $paddingClasses = match (WireKit::validateProp('shell-bar', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl'])) {
         'none' => '',
         'xs' => 'px-[var(--padding-wk-x-xs)]',
         'sm' => 'px-[var(--padding-wk-x-sm)]',
         'md' => 'px-[var(--padding-wk-x-md)]',
         'lg' => 'px-[var(--padding-wk-x-lg)]',
         'xl' => 'px-[var(--padding-wk-x-xl)]',
-        default => WireKit::validateProp('shell-bar', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl']),
     };
 
-    $alignClasses = match ($align) {
+    $alignClasses = match (WireKit::validateProp('shell-bar', 'align', $align, ['start', 'center', 'between'])) {
         'start' => 'justify-start',
         'center' => 'justify-center',
         'between' => 'justify-between',
-        default => WireKit::validateProp('shell-bar', 'align', $align, ['start', 'center', 'between']),
     };
 
     // `h-`, not `min-h-`. An exact height is the entire contract: two bars whose
@@ -267,9 +265,9 @@
              uses the same shape for the same reason.
 
              `hasActualContent()`, never `isEmpty()`. `ComponentSlot::isEmpty()` is a strict
-             `=== ''`, and a caller who writes the slots on separate lines leaves a newline in
-             the default one — so every real-world empty cluster reads as full. The trimming,
-             comment-stripping variant is the one that answers the question being asked. --}}
+             `=== ''`, and a default slot that holds nothing but HTML comments, Livewire's morph
+             markers among them, is not empty by that test. `hasActualContent()` strips the
+             comments before it looks, so it answers the question being asked. --}}
         @if(filled($label) && $slot->hasActualContent())
             role="group"
             aria-label="{{ $label }}"

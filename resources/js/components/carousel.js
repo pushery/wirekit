@@ -58,19 +58,17 @@ export default function wirekitCarousel(config = {}) {
                 }
             }
 
-            // ⚠️ THAT DECISION IS MADE ONCE, AND THE PREFERENCE CAN CHANGE WHILE THE PAGE IS
-            // OPEN — both the OS setting and the application's own attribute, which is what
-            // a user flipping a preferences toggle without a reload does. Until now nothing
-            // in the library watched for it: `watchReducedMotion` was written for exactly
-            // this and had zero callers, so a reader who asked for less motion mid-session
-            // kept a running autoplay timer, and one who withdrew the request had to reload
-            // to get the carousel back.
+            // That decision is made once, and the preference can change while the page is
+            // open — both the OS setting and the application's own attribute, which is what
+            // a user flipping a preferences toggle without a reload does. So it is watched:
+            // a reader who asks for less motion mid-session gets the autoplay stopped, and one
+            // who withdraws the request gets it back without a reload.
             //
             // Every other reducedMotion read in the catalog happens at the moment of use
             // and therefore picks a change up naturally. This one and stat-animate's are
             // the two that do not.
             //
-            // ⚠️ IT STOPS THE ROTATION THROUGH pause(), NOT THROUGH _stopTimer(). Clearing
+            // It stops the rotation through pause(), not through _stopTimer(). Clearing
             // the timer alone leaves `playing` true, and `playing` is the whole state the
             // rest of the component reads: the control keeps saying "Pause carousel" while
             // nothing moves, and resumeFromHover() and _restartTimer() are both free to

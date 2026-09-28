@@ -59,11 +59,10 @@
     };
 
     // Value size
-    $valueSizeClass = match ($size) {
+    $valueSizeClass = match (WireKit::validateProp('ticker', 'size', $size, ['sm', 'md', 'lg'])) {
         'sm' => 'text-[length:var(--text-wk-lg)]',
         'md' => 'text-[length:var(--text-wk-xl)]',
         'lg' => 'text-[length:var(--text-wk-2xl)]',
-        default => WireKit::validateProp('ticker', 'size', $size, ['sm', 'md', 'lg']),
     };
 
     $baseClasses = WireKit::resolveClasses('ticker', 'base', implode(' ', [
@@ -139,21 +138,19 @@
 
     {{-- Optional sparkline via chart component.
 
-         ⚠️ The SLOT decides, not `trend` — and `trend` alone used to. `trend` names
-         no glyph anywhere in this component: it opens this box and nothing else, so
-         `<x-wirekit::ticker trend="up" />` with no slot emitted a 2rem-tall element
-         announced as an image called "Trend visualization" with nothing inside it.
-         That is the failure the comment above the <article> already names one screen
-         up — a name that resolves to an empty element is worse than no name, because
-         assistive technology announces it and then has nothing to say — applied to
-         the label and not to this. Twenty-two blueprint previews were passing `trend`
-         self-closing and getting exactly that. --}}
+         The slot decides, not `trend`. `trend` names no glyph anywhere in this
+         component: it opens this box and nothing else, so on its own
+         `<x-wirekit::ticker trend="up" />` would emit a 2rem-tall element with
+         nothing inside it. The comment above the <article> names the rule: a name
+         that resolves to an empty element is worse than no name, because assistive
+         technology announces it and then has nothing to say. --}}
     @if($trend !== null && $slot->hasActualContent())
-        {{-- `role="img"` PRUNES everything inside it: the subtree becomes one graphic with
-             one name, and whatever the slot content called itself is discarded. The wrapper
-             carried that role plus a fixed "Trend visualization" unconditionally, so a
-             `<x-wirekit-chart aria-label="Revenue, last 24 hours">` in the slot lost the
-             name the caller wrote and every ticker on a page announced the same sentence.
+        {{-- `role="img"` prunes everything inside it: the subtree becomes one graphic with
+             one name, and whatever the slot content called itself is discarded. With that
+             role and a fixed name on the wrapper, a
+             `<x-wirekit-chart aria-label="Revenue, last 24 hours">` in the slot would lose
+             the name the caller wrote, and every ticker on a page would announce the same
+             sentence.
              The chart names itself — it falls back to `role="img" aria-label="Chart"` when
              nobody supplies one — so the wrapper's job is layout, and it does only that.
 

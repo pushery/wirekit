@@ -8,7 +8,7 @@
     // whole component. Each message keeps its own timestamp: a run shares a sender, not
     // a moment.
     //
-    // ⚠️ No angle brackets around a component name in this file, here or anywhere else in
+    // No angle brackets around a component name in this file, here or anywhere else in
     // it. Blade's tag compiler runs over the raw source before anything understands PHP
     // comments, so a tag written inside one is compiled as a tag — which leaves the view
     // with a `$component->withAttributes()` call and no component, and the error names an

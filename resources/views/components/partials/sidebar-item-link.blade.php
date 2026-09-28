@@ -53,9 +53,11 @@
     {{-- WRAPS, never truncates. A navigation entry whose name is clipped does not name
          anything — "Terminal set…" is not a destination, and the reader cannot tell it from
          its neighbor without hovering. Maintainer's rule, and it is absolute.
-         `break-words` rather than plain wrapping, because a single long word has no space to
-         break at and would otherwise overflow the column instead of wrapping inside it. --}}
-    <span class="flex-1 break-words wk-rail-hide">{{ $slot }}</span>
+         `break-words` lets a single long word break inside itself, where it has no space to
+         break at, and `min-w-0` gives that break room to happen: a flex item is never narrower
+         than its min-content width, which `break-words` does not lower, so without it the word
+         keeps its full width and runs past the column. --}}
+    <span class="min-w-0 flex-1 break-words wk-rail-hide">{{ $slot }}</span>
     {{-- Trailing counter (an unread badge). Rendered OUTSIDE the label span so a long
          name wraps beside it rather than pushing it out, and pushed to the end with ml-auto.
 

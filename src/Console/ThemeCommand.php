@@ -124,22 +124,17 @@ class ThemeCommand extends Command
      *
      * @deprecated v2.1.0 — use ThemePresetRegistry::keys() directly.
      *
-     * ⚠️ THE REASON GIVEN HERE USED TO BE "the public-API export surface advertises this
-     * method", AND THAT IS NOT TRUE. Nothing advertises it: the public-API baseline covers
-     * no console class at all, the MCP catalog and the project-root schema do not mention
-     * it, and every other occurrence of the name in this repository is
-     * `IconResolver::availablePresets()` — a different class, for icon presets. So the
-     * removal trigger named a condition that is not true and cannot become false, which
-     * leaves an agent either deleting the method on a premise it just disproved or
-     * deferring it forever.
+     * Nothing advertises this method: the public-API baseline covers no console class, the
+     * MCP catalog and the project-root schema do not mention it, and the other methods of the
+     * name belong to `IconResolver`, for icon presets.
      *
-     * The real reason it stays is the one PersistedToggle states for itself: this is an
+     * It stays for the reason PersistedToggle states for itself: this is an
      * MIT package on Packagist, so removing a public method is a backward-compatibility
      * decision rather than a cleanup, and it is not this file's to make. It goes in the
      * next MAJOR.
      *
-     * Zero callers measured in src/, resources/, config/, docs/ and tests/, and a guard
-     * keeps it that way.
+     * Zero callers measured in src/, resources/, config/, docs/ and tests/. No test holds
+     * that count, so a new caller would not be reported.
      */
     public static function availablePresets(): array
     {

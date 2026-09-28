@@ -22,8 +22,8 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('bento-grid', $attributes->getAttributes());
 
-    // Match on the RESULT, not the raw prop: validateProp throws in strict mode
-    // and otherwise returns the fallback, so an invalid value can never reach the
+    // Match on the RESULT, not the raw prop: where the strictness gate does not throw,
+    // validateProp returns the fallback, so an invalid value can never reach the
     // class map. 'md' leads the list because validateProp falls back to the first
     // allowed value — a bad gap should land on the normal gap, not on none.
     $gap = WireKit::validateProp('bento-grid', 'gap', $gap, ['md', 'none', 'xs', 'sm', 'lg', 'xl', '2xl']);

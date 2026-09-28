@@ -424,7 +424,6 @@ $value,
 0
 0"
 0,
-0,1117
 00-1.06
 00-1.06-1.06L10
 01-1.08
@@ -447,7 +446,6 @@ $value,
 11.06l3.71-3.83a.75.75
 11.06l3.72
 111.08
-12,451.
 160px
 2
 2),
@@ -500,7 +498,6 @@ $value,
 </template>
 </ul>
 <body>
-<body>,
 <body>.
 <button
 <div
@@ -619,11 +616,11 @@ Chevron
 Clear
 Close
 Combobox
-DENSE,
 DESCRIPTIONS.
 DOM
 DROPDOWN
 Declared
+Dense,
 Dev-only
 Drawn,
 Dropping
@@ -651,7 +648,6 @@ IS
 IconSprite
 Icons
 If
-Illuminate\Support\Str;
 In
 Inside
 It
@@ -695,8 +691,6 @@ OPTION'S
 OR
 OTHER
 OUT
-OUTSIDE
-Once
 One
 Only
 Option-row
@@ -719,18 +713,15 @@ ROW
 Refocusing
 Rendered
 Renders
-Reported
 Required
 Room
 SCROLL
 SELECT-ONLY
 SELECTION.
 SIZE
-STABLE
 START,
 STATIC
 SWAPS
-Same
 Search
 Server
 Set
@@ -738,10 +729,10 @@ Shorter
 Single
 Sizing.
 So
+Stable
 Static
 Strip
 THE
-TOP
 TRIGGER,
 Teleported
 Text
@@ -752,7 +743,6 @@ Those
 Two
 Type
 UNBOUND
-UNDER
 URL
 URL,
 URLs
@@ -821,11 +811,10 @@ __('wirekit::Select…'),
 __('wirekit::Type
 _listId/_inputId
 _place()
+`#wk-overlay-root`,
 `$hasError`
 `$listId`
-`$refs.cbxList`
-`$refs`
-`<body>`,
+`$refs`.
 `<use>`
 `<x-wirekit::combobox
 `??`
@@ -834,7 +823,6 @@ _place()
 `Illegal
 `MessageBag::has(null)`
 `ReferenceError`
-`Str::random(6)`
 `['Europe'
 `['value'
 `[31
@@ -871,13 +859,11 @@ _place()
 `div`
 `div`,
 `dropdown`
-`dropdown`;
 `el.id`
 `error`
 `false`
 `fieldMedia`
 `filtered`
-`fixed`
 `flag`),
 `for={comboId}`;
 `for`
@@ -892,7 +878,7 @@ _place()
 `label`
 `lg`
 `loading="lazy"`,
-`ms-0.5`
+`ms-0.5`,
 `multi-select`.
 `name`
 `open`
@@ -948,7 +934,6 @@ _place()
 a
 a11y
 able
-about
 about.
 above
 above:
@@ -962,7 +947,6 @@ activation.
 active
 actual
 adds
-adopting
 affordance,
 after
 again.
@@ -1001,7 +985,6 @@ appear
 appears
 appended
 application
-application.
 applied
 applies
 arbitration
@@ -1059,7 +1042,6 @@ assistive
 assoc
 associated
 associates
-assumption
 asterisk
 at
 at.
@@ -1237,10 +1219,8 @@ component,
 component.
 component;
 components
-compounds
 computed
 condition
-conditional
 config
 config('app.debug'),
 config('wirekit.a11y.announce_error',
@@ -1269,9 +1249,10 @@ control).
 control.
 control:
 controls
-corrected,
 costs
 could
+count
+counted
 counterpart,
 country
 covers
@@ -1310,6 +1291,7 @@ deliberately
 deliberately:
 dense.
 denylist
+depends
 derived
 derives
 descendants,
@@ -1400,7 +1382,6 @@ exists
 expandos.
 explicit
 exposed
-exposure
 expression
 extra
 factory
@@ -1657,7 +1638,6 @@ layer's
 layout
 layout-neutral
 layout`,
-layout`:
 lays
 lazy
 leading-none
@@ -1697,7 +1677,6 @@ longer
 longest
 look
 looks
-looped
 lowers
 made,
 makes
@@ -1717,7 +1696,6 @@ may
 mean
 means,
 measured
-measured.
 measurements
 measurements).
 measurements,
@@ -1726,7 +1704,6 @@ medium,
 message
 messages.
 method
-milder
 min-content
 min-h-[24px]
 min-w-0
@@ -1744,7 +1721,6 @@ morph
 morphs:
 most
 move
-moves
 ms-0.5"
 multi-select
 multi-select's
@@ -1767,6 +1743,7 @@ navigates.
 needed).
 needs
 neither
+neither.
 nested
 nests
 network
@@ -1779,7 +1756,6 @@ no.
 nobody
 node
 node,
-node.
 nodes.
 non-input
 none;
@@ -1789,13 +1765,10 @@ nor
 normalizes
 not
 not-allowed
-not.
 nothing
-nothing,
 nothing.
 nothing:
 now
-now,
 nowhere
 null
 null"
@@ -1806,7 +1779,6 @@ null)?->has($name));
 null,
 null;
 null])
-nulls,
 number
 number,
 numeric
@@ -1818,7 +1790,6 @@ of.
 off
 off.
 offering
-old
 older
 omit
 on
@@ -1894,6 +1865,7 @@ panels
 paragraph
 parent
 parent's
+part
 parts
 passed
 passes.
@@ -1931,10 +1903,8 @@ pointing
 points
 polite
 polite,
-position:
+position
 positioned
-positioner
-positions
 positively,
 precedence
 precedence:
@@ -1966,14 +1936,15 @@ qualified:
 query
 quiet
 raises
-randomized
 rather
 re-renders,
+re-renders.
 reach
 reach.
 reached
 reaches
 read
+read.
 readable.
 readable:
 reader
@@ -1982,7 +1953,6 @@ readonly
 reads
 real
 reason
-reason,
 reason:
 reasoning.
 received
@@ -1990,6 +1960,7 @@ red
 redirect
 redirected
 reduced-motion
+ref
 reference
 refuse.
 refutes
@@ -1997,6 +1968,7 @@ region
 region,
 region.
 region:
+registers
 releases.
 remain
 remove
@@ -2020,6 +1992,7 @@ resolved
 resolves
 resolving
 resources/
+restart
 restores
 restyle.
 result
@@ -2068,7 +2041,6 @@ runIf:
 runtime
 same
 sample:
-sat
 satisfies
 save"
 save.
@@ -2080,6 +2052,7 @@ says.
 scales
 scope
 scope),
+scope,
 scope.
 scopes
 screen
@@ -2124,11 +2097,11 @@ server
 server's
 server-side
 server:
+set
 set,
 sets
 settled
 settles,
-seven
 several
 shape
 shared
@@ -2154,7 +2127,6 @@ single-option
 sit
 site
 site,
-site:
 sits
 size
 size),
@@ -2194,7 +2166,6 @@ state
 state:
 stated
 states:
-static
 status
 status,
 stays
@@ -2224,7 +2195,6 @@ supplies
 supported
 surface
 surrounding
-survive
 survives
 swaps
 symbols
@@ -2242,7 +2212,6 @@ takes.
 target
 tech
 technology
-teleport
 teleport,
 teleported
 teleports
@@ -2305,6 +2274,7 @@ too
 too,
 too:
 toolbar
+top
 top-1/2
 track
 tracking-wider
@@ -2349,7 +2319,6 @@ typedQuery())"></div>
 types
 typing
 unaffected:
-unconditional
 unconditionally
 undeclared
 under
@@ -2371,7 +2340,6 @@ until
 untouched
 up
 update
-updates
 uppercase
 use
 used
@@ -2410,6 +2378,7 @@ was
 way
 way.
 way:
+way;
 wearing
 well
 were
@@ -2422,7 +2391,6 @@ which
 whichever
 while
 whitespace,
-who
 whole
 whose
 why
@@ -2450,7 +2418,6 @@ word.
 wording
 work.
 working
-worse
 worth
 would
 wrapper
@@ -2541,4 +2508,3 @@ z-index
 —
 …
 …)
-⚠️

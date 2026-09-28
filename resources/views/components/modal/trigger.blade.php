@@ -18,9 +18,8 @@
 
     // `for` names the modal to open and is what makes this trigger independent of where it sits.
     //
-    // ⚠️ WITHOUT it the component is byte-identical to what it has always been: a `<div>` calling
-    // `show()` on the modal it is nested in. That is the ordinary case, it is the overwhelming
-    // majority of callers, and none of them needed to change for this.
+    // Without it the component is a `<div>` calling `show()` on the modal it is nested in,
+    // which is the ordinary case.
     //
     // WITH it the trigger carries its OWN `x-data` and sends the named event instead. The reason is
     // narrower than "some callers prefer it": a trigger that cannot be nested in its modal is
@@ -31,8 +30,7 @@
     // itself, so a modal cannot be wrapped around a link that sits in a checkbox's sentence.
     $named = filled($for);
 
-    // ⚠️ THE NAMED TRIGGER DELEGATES TO A PRIMITIVE INSTEAD OF EMITTING ITS OWN TAG, and the
-    // first version did the opposite — a hand-written `<a>` and `<button>` right here.
+    // The named trigger delegates to a primitive instead of emitting its own tag.
     //
     // A control that a caller can hand attributes to owes four things, and each of them is easy
     // to leave out: a link carrying the caller's attribute bag needs `rel` protection, because a
@@ -41,8 +39,7 @@
     // `data-wk-prose-skip` as its FIRST attribute; and a rendered `<button>` needs a cursor.
     //
     // `link` and `button` already carry all four, and they carry them in ONE place for the whole
-    // library. Re-deriving them here would have been a fifth copy that drifts — which is the same
-    // rule this repository states for previews that hand-roll a primitive.
+    // library. Re-deriving them here would be a fifth copy that drifts.
     //
     // WHICH primitive is not a detail: the position this exists for is a word inside a consent
     // sentence, and a button-styled box in the middle of a sentence is the wrong shape. So an
@@ -53,10 +50,11 @@
 @if($named)
 {{-- Modal trigger, standalone — opens the NAMED modal from wherever it sits.
 
-     `.stop` as well as `.prevent`, and it is not decoration. The position this exists for is
-     inside a `<label>`, and a label forwards any click within it to its control — so opening the
-     dialog would ALSO tick the checkbox the reader has not agreed to yet. `.prevent` alone does
-     not stop that: it cancels the anchor's navigation, not the label's forwarding. --}}
+     The position this exists for is inside a `<label>`, and a click on it must open the dialog
+     without ticking the checkbox the reader has not agreed to yet. A label does nothing for a
+     click on an interactive descendant such as this link or button, so the checkbox stays as it
+     is; `.prevent` keeps the link from navigating, and `.stop` keeps the click from reaching
+     handlers on the label and its ancestors. --}}
 @if($delegate === 'link')
 <x-wirekit::link
     :href="$href"

@@ -33,9 +33,10 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // z-index: tooltip-level (60) so the panel stays above other dropdown/sticky
-    // chrome on the page when the user interacts with anything else while the
-    // popover is open (matches hover-card and tooltip stacking).
+    // z-index: the dropdown layer (`--z-wk-dropdown`), the one hover-card uses too, so
+    // the panel stays above sticky chrome on the page when the user interacts with
+    // anything else while the popover is open; a tooltip sits one layer higher
+    // (`--z-wk-tooltip`) and paints above it.
     // Width: min-w-72 instead of fixed w-72 so the panel grows to fit content
     // wider than 18 rem (e.g. long share URLs in input fields) instead of clipping.
     $panelClasses = WireKit::resolveClasses('popover', 'panel', implode(' ', [

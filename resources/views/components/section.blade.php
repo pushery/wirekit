@@ -18,23 +18,21 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('section', $attributes->getAttributes());
 
-    $paddingClasses = match ($padding) {
+    $paddingClasses = match (WireKit::validateProp('section', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl', '2xl'])) {
         'none' => '',
         'sm' => 'py-[var(--space-wk-sm,0.5rem)]',
         'md' => 'py-[var(--space-wk-md,1rem)]',
         'lg' => 'py-[var(--space-wk-lg,1.5rem)]',
         'xl' => 'py-[var(--space-wk-xl,2.5rem)]',
         '2xl' => 'py-[var(--space-wk-2xl,4rem)]',
-        default => WireKit::validateProp('section', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl', '2xl']),
     };
 
-    $bgClasses = match ($background) {
+    $bgClasses = match (WireKit::validateProp('section', 'background', $background, ['default', 'muted', 'subtle', 'inverse', 'accent'])) {
         'default' => '',
         'muted' => 'bg-[var(--color-wk-bg-muted)]',
         'subtle' => 'bg-[var(--color-wk-bg-subtle)]',
         'inverse' => 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
-        default => WireKit::validateProp('section', 'background', $background, ['default', 'muted', 'subtle', 'inverse', 'accent']),
     };
 
     $dividerValue = match ($divider) {

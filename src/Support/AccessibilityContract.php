@@ -120,11 +120,11 @@ final class AccessibilityContract
      */
     private static function callerSupplied(string $markup, string $name): array
     {
-        // ⚠️ ONLY declared props count, and the first version did not check.
+        // Only declared props count.
         //
         // A Blade template interpolates its own locals as freely as its props —
         // `tabs` writes `aria-controls="…{{ $key }}"` where `$key` is a loop
-        // variable, and reporting it told a caller to pass something the
+        // variable, and reporting it would tell a caller to pass something the
         // component makes for itself. The declared list is what separates the
         // two, and it is already parsed for every component.
         $props = [];
@@ -163,12 +163,12 @@ final class AccessibilityContract
      * relying on the browser's, which is the correct design for a native control
      * and the wrong thing to re-implement on top of.
      *
-     * ⚠️ IT READ THE FACTORY ALONE, AND FOR A WHOLE CLASS OF COMPONENTS THAT IS
-     * THE FILE THE KEYS ARE NOT IN. Alpine takes a key as a MODIFIER on the
-     * binding — `@keydown.arrow-down.prevent="focusTab('next')"` — so a keyboard
-     * model declared that way lives in the Blade template and never appears in
-     * any `.js`. Measured on `tabs`, which is the canonical roving-tabindex
-     * widget in this package: it reported no keys at all while handling six.
+     * The factory alone is, for a whole class of components, the file the keys
+     * are not in. Alpine takes a key as a modifier on the binding —
+     * `@keydown.arrow-down.prevent="focusTab('next')"` — so a keyboard model
+     * declared that way lives in the Blade template and never appears in any
+     * `.js`. `tabs`, the canonical roving-tabindex widget in this package, is
+     * built that way.
      *
      * That answer is worse than no answer, and it is the exact failure this class
      * exists to prevent, one field over: an assistant told a tablist has no

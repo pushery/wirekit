@@ -91,13 +91,13 @@
 
     // Event intent → block classes (tinted surface + intent left-stripe). Defined
     // here (PHP literals) so Tailwind compiles them AND the drift inventory traces
-    // them; the block binds `:class="eventClasses[ev.intent || 'accent']"`. There
-    // is no --color-wk-info base token, so info maps onto accent.
-    // Stripe color = the intent's *-text token, NOT the base color: a base-color
-    // stripe sits on a 16% tint of the SAME hue, so its edge nearly vanishes
-    // (its edge reads as borderless) — while accent's near-black stripe popped.
-    // The *-text tokens are the AA-on-tint pairings, so the stripe separates on
-    // every intent equally, in both themes.
+    // them; the block binds `:class="eventClasses[ev.intent || 'accent']"`. Info has
+    // no surface token (--color-wk-info is the tone the charts and the flash tint read), so info maps onto accent.
+    // Stripe color = the status intent's *-text token, not its base color: a
+    // base-color stripe sits on a 16% tint of the same hue, so its edge nearly
+    // vanishes. The *-text tokens are the AA-on-tint pairings, so the stripe
+    // separates on every status intent, in both themes. `accent` and `info` take the
+    // accent base itself, whose near-black default already stands off its tint.
     $eventClasses = [
         'accent' => 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-accent)]',
         'info' => 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-accent)]',
@@ -110,7 +110,7 @@
     // Solid intent fills for the small agenda status-dot. The $eventClasses
     // BLOCK style above carries a `border-l-2` left stripe — applied to an 8px
     // circle it ate half the dot (it read as "cut off"). The dot needs a plain
-    // solid fill of the intent color instead. info → accent (no info token).
+    // solid fill of the intent color instead. info → accent (info has no surface token).
     $eventDot = [
         'accent' => 'bg-[var(--color-wk-accent)]',
         'info' => 'bg-[var(--color-wk-accent)]',
@@ -159,10 +159,10 @@
     $navBtn = 'inline-flex items-center justify-center h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
     $viewTab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors';
 
-    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
-    // did-you-mean) and falls back to the default in production — never to h1, which is
-    // what validateProp's own first-allowed fallback would produce and which would break
-    // the outline worse than the default does.
+    // Heading level (1-6). An invalid value is reported through the strictness gate, with a
+    // did-you-mean, and where the gate does not throw it renders the default level — never
+    // h1, which is what validateProp's own first-allowed fallback would produce and which
+    // would break the outline worse than the default does.
     $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 2;
     if ($levelValue !== (int) $level) {
         WireKit::validateProp('event-calendar', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
@@ -234,7 +234,7 @@
              filters nothing. --}}
         <div x-show="categories.length > 1" x-cloak role="group" aria-label="{{ __('wirekit::Filter by category') }}" class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
             <template x-for="c in categories" :key="'cat-' + c">
-                <button type="button" @click="toggleCategory(c)" :aria-pressed="isCategoryShown(c) ? 'true' : 'false'" class="inline-flex items-center min-h-6 px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="isCategoryShown(c) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryShown) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden) }}" x-text="c"></button>
+                <button type="button" @click="toggleCategory(c)" :aria-pressed="isCategoryShown(c) ? 'true' : 'false'" class="inline-flex items-center min-h-[var(--size-wk-target-min)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="isCategoryShown(c) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryShown) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden) }}" x-text="c"></button>
             </template>
         </div>
         {{-- Outside the group on purpose: the count must still be announced when the group
@@ -260,7 +260,7 @@
                                      markup nor operable. Named with the full date, because "8" alone does not say
                                      which month it belongs to. 24px rather than the plain number's 20px: it is a
                                      target now, and the first pill sits too close for the spacing exception. --}}
-                                <button type="button" @click="selectDay(day.date)" :aria-label="longDate(day.date)" @if($dayDetail) :aria-pressed="isSelectedDay(day.date) ? 'true' : 'false'" @endif :aria-current="day.isToday ? 'date' : false" class="inline-flex items-center justify-center h-6 min-w-6 px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] cursor-pointer hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (isSelectedDay(day.date) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }}))" x-text="day.label"></button>
+                                <button type="button" @click="selectDay(day.date)" :aria-label="longDate(day.date)" @if($dayDetail) :aria-pressed="isSelectedDay(day.date) ? 'true' : 'false'" @endif :aria-current="day.isToday ? 'date' : false" class="inline-flex items-center justify-center h-[var(--size-wk-target-min)] min-w-[var(--size-wk-target-min)] px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] cursor-pointer hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (isSelectedDay(day.date) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }}))" x-text="day.label"></button>
                             @else
                                 <span class="inline-flex items-center justify-center h-5 min-w-5 px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }})" x-text="day.label"></span>
                             @endif
@@ -326,12 +326,12 @@
                              the avatar group component uses. --}}
                         <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
                             <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
-                                <span class="inline-flex items-center justify-center shrink-0 w-6 h-6 overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
+                                <span class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
                                     <template x-if="a.avatar"><img data-wk-prose-skip :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
                                     <span x-show="!a.avatar" x-text="a.initials"></span>
                                 </span>
                             </template>
-                            <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
+                            <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
                         </span>
                     </button>
                 </template>
@@ -493,12 +493,12 @@
                                  the avatar group component uses. --}}
                             <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
                                 <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
-                                    <span class="inline-flex items-center justify-center shrink-0 w-6 h-6 overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
+                                    <span class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
                                         <template x-if="a.avatar"><img data-wk-prose-skip :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
                                         <span x-show="!a.avatar" x-text="a.initials"></span>
                                     </span>
                                 </template>
-                                <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
+                                <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
                             </span>
                         </button>
                     </template>
@@ -521,8 +521,9 @@
 
     {{-- Shared truncated-title tooltip — ONE bubble for every [data-wk-tip] pill /
          chip / row / marker, shown on hover/focus only when the text is actually
-         truncated (tipShow checks scrollWidth). The class set mirrors
-         <x-wirekit::tooltip>'s panel verbatim so it IS the house tooltip visually;
+         truncated (tipShow checks scrollWidth). The class set follows
+         <x-wirekit::tooltip>'s panel so it is the house tooltip visually, plus
+         `pointer-events-none`, which the tooltip panel does not carry;
          the Blade component itself can't wrap client-side x-for nodes. aria-hidden:
          every target's aria-label already carries the full text, so a described-by
          bubble would double-announce. --}}

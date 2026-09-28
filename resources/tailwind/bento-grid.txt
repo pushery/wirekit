@@ -214,6 +214,7 @@ for
 from
 gap
 gap,
+gate
 get
 gets
 grid
@@ -255,7 +256,6 @@ match
 matrix.
 may
 mean
-mode
 n/a
 name
 names
@@ -277,7 +277,6 @@ optimistic-ui:
 or
 order
 order,
-otherwise
 out
 own
 per
@@ -327,7 +326,7 @@ spans
 stack
 stacked
 stays
-strict
+strictness
 strings,
 tall
 text
@@ -340,7 +339,7 @@ there
 this
 three
 three-column
-throws
+throw,
 tighter
 to
 token,
@@ -360,6 +359,7 @@ vocabulary
 wall
 weight.
 when
+where
 which
 whose
 width,

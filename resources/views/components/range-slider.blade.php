@@ -144,14 +144,12 @@
         // it operable everywhere while still expanding to 100% in normal flow.
         // A dual-thumb track needs room for two handles plus their value bubbles without
         // the bubbles colliding on contact, which is what the floor below is sized for.
-        // ⚠️ `min(16rem, 100%)`, NOT a bare `16rem`. The floor keeps a shrink-to-fit
+        // `min(16rem, 100%)`, not a bare `16rem`. The floor keeps a shrink-to-fit
         // context (a flex or grid auto item, a table cell, a fit-content wrapper) from
-        // collapsing the track to a few unusable pixels — but `min-width` is a HARD floor,
-        // so a bare value does NOT "shrink to 100% of a narrower parent", which is what the
-        // comment here used to claim. In the documentation preview column, roughly 280px
-        // wide at phone width, 256px of track plus 32px of card padding is 288px: the
-        // control pushed past its own container. `min()` gives the intended behavior —
-        // 16rem where there is room, the parent's width where there is not.
+        // collapsing the track to a few unusable pixels, but `min-width` is a hard floor,
+        // so a bare value does not shrink to a narrower parent: in a column roughly 280px
+        // wide, 256px of track plus 32px of card padding would push past its own container.
+        // `min()` gives 16rem where there is room, the parent's width where there is not.
         //
         // (The same comment also argued for a 20rem floor while shipping 16rem. Whichever
         // of the two was meant, one of them was wrong in the source of truth; 16rem is what
@@ -327,7 +325,7 @@
         <x-wirekit::label id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
-    {{-- Alpine logic inlined (no wirekit.js dependency needed).
+    {{-- The `wirekitRangeSlider` factory, registered by the WireKit bundle.
          Handles dual-thumb drag, keyboard stepping, and percent calculation. --}}
     <div
         x-data="wirekitRangeSlider({ min: {{ $min }}, max: {{ $max }}, step: {{ $step }}, minValue: {{ $initialMin }}, maxValue: {{ $initialMax }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $rangeValueTextMap) }} })"

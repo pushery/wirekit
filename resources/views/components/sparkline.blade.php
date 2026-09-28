@@ -33,7 +33,7 @@
     // dashboard cells. Delegates to <x-wirekit-chart type="sparkline"> so both
     // adapters render correctly:
     //   - ApexCharts: native sparkline mode (chart.sparkline.enabled = true)
-    //   - Chart.js: falls back to a plain line; no axis chrome to begin with
+    //   - Chart.js: a plain line; the options below switch its axes, grid and legend off
     //
     // Two modes — inline (renders at surrounding text height for KPI ribbons)
     // and block (default, renders at $height — defaults to 2.5rem for compact
@@ -98,11 +98,10 @@
     // still see a focus indicator at the active point.
     $sparkOptions = [
         // ApexCharts native sparkline mode + marker stripping.
-        // `chart.sparkline.enabled: true` is the documented switch but it
-        // doesn't always strip every chrome layer when WireKit's themer
-        // injects axis-label styling later — explicit `show: false` on
-        // grid + legend + axes is belt-and-suspenders so the rendered
-        // SVG is genuinely just the line in every code path.
+        // `chart.sparkline.enabled: true` is the documented switch; the
+        // explicit `show: false` on grid, legend and axes keeps the rendered
+        // SVG to the line whatever options WireKit's themer merges in after
+        // it, rather than relying on the switch to win every merge.
         'chart' => ['sparkline' => ['enabled' => true]],
         'grid' => ['show' => false, 'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0]],
         'legend' => ['show' => false],
@@ -154,15 +153,11 @@
         $scope,
     );
 
-    // Inline-mode `display` MUST be set via inline style, NOT just the Tailwind
-    // class. The Tailwind `inline-block` utility only applies when Tailwind has
-    // generated a corresponding rule for it (i.e. the developer's compiled CSS
-    // is in scope). docs.wirekit.app sandbox previews render WITHOUT developer Tailwind,
-    // so an inline-sparkline that relies on `inline-block` alone falls back to
-    // `<div>`'s default `display: block` — taking a full line and breaking the
-    // surrounding paragraph's flow. /components/sparkline#inline-mode surfaced
-    // this: each sparkline sat on its own line instead of nestling between
-    // words in the running prose.
+    // Inline-mode `display` is set in an inline style as well as the Tailwind
+    // class. The `inline-block` utility applies only where a Tailwind build
+    // scanned this view; in a page whose stylesheet did not, an inline sparkline
+    // relying on the class alone falls back to its `<span>`'s default
+    // `display: inline`, where its width and height do not apply.
     //
     // The block-mode counterpart doesn't need the same treatment — `<div>` is
     // already `display: block` by default, so omitting the inline-style for
@@ -182,16 +177,14 @@
         ? 'display: inline-block; vertical-align: middle; '
         : 'min-width: 0; overflow: hidden; ';
 
-    // ⚠️ A caller's accessible name has to reach the INNER chart, because that is
-    // the element carrying `role="img"`. On this wrapper it sits on a role-less
-    // `<div>`/`<span>` — ARIA `generic`, where naming is PROHIBITED (axe
-    // `aria-prohibited-attr`) — so assistive technology dropped it and the chart
-    // announced its own generic fallback instead. A dashboard of eight sparklines
-    // read as eight images all called "Chart", and `aria-label`, the one attribute
-    // a developer reaches for to fix exactly that, was the attribute being
-    // discarded. Worse for the developer: chart.blade.php's debug warning gates on
-    // `! $attributes->has('aria-label')`, which was ALWAYS true here, so the
-    // package told them to pass a label they had just passed.
+    // A caller's accessible name has to reach the inner chart, because that is
+    // the element carrying `role="img"`. On this wrapper it would sit on a role-less
+    // `<div>`/`<span>` — ARIA `generic`, where naming is prohibited (axe
+    // `aria-prohibited-attr`) — so assistive technology would drop it and the chart
+    // would announce its own generic fallback instead: a dashboard of eight
+    // sparklines would read as eight images all called "Chart". And chart.blade.php's
+    // debug warning gates on `! $attributes->has('aria-label')`, so a label left on
+    // the wrapper would also be reported as missing.
     //
     // Forwarded as an attribute bag rather than as named props: the chart is a
     // CLASS-based component, so an attribute it does not declare flows into its
@@ -211,8 +204,8 @@
     $sparklineAttributes = $attributes->except(['aria-label', 'aria-labelledby']);
 
     /*
-     * ⚠️ `aria-hidden="true"` ON THIS WRAPPER HIDES A FOCUSABLE DESCENDANT, AND THAT IS AN
-     * AXE `aria-hidden-focus` VIOLATION — measured on the nightly browser lane, serious.
+     * `aria-hidden="true"` on this wrapper hides a focusable descendant, and that is an
+     * axe `aria-hidden-focus` violation, rated serious.
      *
      * A sparkline is a chart, and a chart puts focusable things inside itself. When the peer
      * library is missing it paints an advisory with a `<pre tabindex="0">` so the install

@@ -41,7 +41,7 @@
     'placeholder' => null,
     'error' => null,
     'hint' => null,
-    // ⚠️ SAY SO WHEN THE BROWSER WRITES DATES IN A DIFFERENT ORDER THAN THE PAGE, rather than
+    // Say so when the browser writes dates in a different order than the page, rather than
     // change the order — which no author can do. A native `<input type="date">` takes its
     // format from the BROWSER's user-interface language and from nothing else; it is not an
     // authorable property in any shipped browser, which is why this is a disclosure and not a
@@ -56,16 +56,15 @@
     // Off by default, so an existing call site renders byte for byte as before. On, it renders
     // NOTHING when the two orders agree — the overwhelmingly common case.
     //
-    // ⚠️ IF YOU WANT THE APPLICATION'S OWN FORMAT, THE ANSWER IS A DIFFERENT COMPONENT.
+    // If you want the application's own format, the answer is a different component.
     // `x-wirekit::calendar` takes the application locale and draws the dates itself. The
     // trade is the one this component exists to avoid: a non-native field gives up the
     // keyboard model, the calendar the browser opens, and the date wheel on a phone.
     //
-    // ⚠️ AND THE NAME ABOVE CARRIES NO ANGLE BRACKETS, WHICH IS NOT A TYPO. Blade's
-    // pre-compiler scans RAW TEXT for component tags, before any of this is a PHP comment —
+    // And the name above carries no angle brackets, which is not a typo. Blade's
+    // pre-compiler scans raw text for component tags, before any of this is a PHP comment —
     // so a tag written here is compiled into a real invocation, and every render of this
-    // component then dies on `Undefined variable $component`. Measured, from the first
-    // version of this paragraph.
+    // component then dies on `Undefined variable $component`.
     'formatHint' => false,
     'scope' => null,
 ])
@@ -114,6 +113,15 @@
     // popup + keyboard navigation (arrow keys, PageUp/PageDown for months,
     // etc.), and ships localized to the user's OS locale automatically.
     $isRange = filter_var($range, FILTER_VALIDATE_BOOLEAN);
+
+    // A date object, which is what an Eloquent `date` cast hands over, is written as the day a
+    // native date field reads, `YYYY-MM-DD`: cast to a string it would be `Y-m-d H:i:s`, and
+    // encoded as JSON an ISO timestamp, and the field reads either as no value at all. The same
+    // holds for `min`, `max` and both ends of a range.
+    $toDay = static fn ($date) => $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : $date;
+    $value = is_array($value) ? array_map($toDay, $value) : $toDay($value);
+    $min = $toDay($min);
+    $max = $toDay($max);
 
     // Range value can be an array ['start' => .., 'end' => ..] or a slash string
     // "Y-m-d/Y-m-d" (e.g. "2025-01-20/2025-02-09"). Single mode keeps `value`.
@@ -209,13 +217,11 @@
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
     $fallbackLabel = $name ? Str::headline((string) $name) : __('wirekit::Date');
 
-    // ⚠️ The range arm below never rendered the attribute bag — `$attributes` reached
-    // exactly one element in this file, the single-date `<input>`. So `class`, `style`,
-    // every `data-*`, every `aria-*` and, expensively, `wire:model` were parsed off the
-    // tag and dropped: `<x-wirekit::date-picker range wire:model="stay" />` bound nothing
-    // at all, with no error, no console entry and a control that looks and behaves
-    // normally. Native form submission still works through the `name[start]` /
-    // `name[end]` fields, which is exactly what hid it.
+    // The range arm renders the attribute bag too. Otherwise `class`, `style`, every
+    // `data-*`, every `aria-*` and `wire:model` would be parsed off the tag and dropped:
+    // `<x-wirekit::date-picker range wire:model="stay" />` would bind nothing, with no
+    // error and a control that looks and behaves normally, because native form
+    // submission still works through the `name[start]` / `name[end]` fields.
     //
     // A range has two controls and one wrapper, so the bag is split three ways rather
     // than splatted onto whichever element came first.
@@ -299,12 +305,9 @@
 <div class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
-            {{-- ⚠️ ONE marker, and this line used to be followed by a second one rendering
-                 `&nbsp;*`. Both sat inside this label, so a required date-picker printed TWO
-                 asterisks — reported from an adopting application as a spacing fault on its
-                 registration form, which is what a duplicate looks like when you only see it
-                 once. The dense form is the house form: no whitespace, `ms-0.5` carries the
-                 gap, and eight components now agree on it. --}}
+            {{-- One marker, in the dense house form: no whitespace, `ms-0.5` carries the
+                 gap, as in every field component. A second marker in this label would print
+                 two asterisks on a required field. --}}
             {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
         </label>
     @elseif($needsSrOnlyFallback)
@@ -407,11 +410,9 @@
                 template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
             })"
             x-text="message"
-            {{-- ⚠️ `--space-wk-xs` AND NOT THE PADDING TOKEN THE HINT ABOVE READS, though the two
-                 render the same 0.25rem. A margin between two stacked elements is a SPACE, and a
-                 margin reading a padding family is only right where it cancels one — the rule the
-                 spacing ratchet holds. The paragraph above is frozen debt from before that rule;
-                 copying it would have grown the count this element had no reason to be in. --}}
+            {{-- `--space-wk-xs` and not the padding token the hint above reads, though the two
+                 render the same 0.25rem. A margin between two stacked elements is a space, and a
+                 margin reading a padding family is only right where it cancels one. --}}
             class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]"
         ></p>
     @endif

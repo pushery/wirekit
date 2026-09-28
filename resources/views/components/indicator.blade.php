@@ -5,7 +5,7 @@
 @props([
     // Which corner the badge is anchored to. Logical, not physical: "end" is
     // the right edge in LTR and the left edge in RTL, so the anchor follows the
-    // reading direction with no extra rules.
+    // reading direction; the stylesheet flips the physical `transform` for RTL.
     'position' => 'top-end',
     // Nudge the badge further out (any CSS length). Default centers it on the
     // corner.

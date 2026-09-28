@@ -68,16 +68,14 @@
     ]), $scope);
 @endphp
 
-{{-- ⚠️ THE ROLE IS GATED ON A NAME, and the sibling that decided this says why:
-     "Naming it unconditionally would push an empty group into the accessibility tree of
-     every plain accordion, which is noise rather than structure." A rail without headings
-     emitted one nameless group per cluster; that is the same noise, one component over.
+{{-- The role is gated on a name: naming it unconditionally would push one nameless group
+     per cluster into the accessibility tree of a rail without headings, which is noise
+     rather than structure.
 
-     ⚠️ AND THE NAME COMES FROM THE HEADING RATHER THAN FROM A SECOND COPY OF IT. This
-     carried `aria-label="{{ $label }}"` AND rendered the same string as a child. In the
-     rail's default mode that child is `sr-only`, so the group announced its name and then
-     contained it — the cost this catalog names in `app-rail/item`: "it gives the link a
-     second source of the same name, which a screen-reader user pays for twice."
+     And the name comes from the heading rather than from a second copy of it. An
+     `aria-label` carrying the same string as the child would give the group a second source
+     of one name, which a screen-reader user pays for twice: in the rail's default mode that
+     child is `sr-only`, so the group would announce its name and then contain it.
 
      `aria-labelledby` keeps the property the prop docblock above promises — the heading is
      the group's accessible name in EVERY mode — while the string exists once. It needs no

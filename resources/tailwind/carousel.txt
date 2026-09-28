@@ -90,7 +90,7 @@ $viewportClasses
 'vertical'
 'vertical';
 'vertical']),
-'w-10
+'w-[var(--size-wk-md)]
 'w-full',
 'wk-carousel-slide',
 'wk-carousel-viewport',
@@ -555,12 +555,12 @@ groups
 grow-0',
 guard
 gutter
-h-10
 h-2
 h-3"
 h-5
 h-5"
 h-[20rem],
+h-[var(--size-wk-md)]
 h-full
 handler
 happens
@@ -816,7 +816,6 @@ says
 screen
 screen-reader
 scroll
-scroll-behavior
 scrollable
 scrollbar-hiding
 scroller

@@ -94,7 +94,7 @@ final class McpServer
     private function initializeResult(array $params): array
     {
         /*
-         * ⚠️ THIS ECHOED WHATEVER ARRIVED, AND AN EMPTY STRING IS NOT A VERSION.
+         * Not an echo of whatever arrived: an empty string is not a version.
          *
          * A handshake that mirrors the client's request agrees to everything: a revision this
          * server was never built against, a typo, `''`. Nothing fails at the handshake then —
@@ -477,6 +477,9 @@ final class McpServer
      * carrying pretty-printed JSON — readable for a human curling the server,
      * structured for an editor that re-parses it).
      *
+     * `mixed`, because a payload is whatever a tool answers with, any value `json_encode`
+     * accepts: a list, a map, a string, a count.
+     *
      * @return array<string, mixed>
      */
     private function toolResult(int|string|null $id, mixed $payload): array
@@ -486,7 +489,11 @@ final class McpServer
         return $this->ok($id, ['content' => [['type' => 'text', 'text' => $text]]]);
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * `mixed`, because JSON-RPC leaves the `result` member untyped: any JSON value.
+     *
+     * @return array<string, mixed>
+     */
     private function ok(int|string|null $id, mixed $result): array
     {
         return ['jsonrpc' => '2.0', 'id' => $id, 'result' => $result];

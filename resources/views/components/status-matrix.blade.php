@@ -94,9 +94,9 @@
     // scroller. The grid role was never what made this region reachable.
     $isCompositeGrid = in_array($cellType, ['tristate', 'toggle'], true);
 
-    // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
-    // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
-    // state (sort order, hidden columns, open panels) goes with it on the next round trip.
+    // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
+    // would mean destroy-and-rebuild, and the Alpine-only state — cells changed and not
+    // yet saved, held against `_baseline` — would go with it on the next round trip.
     $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('status-matrix', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 

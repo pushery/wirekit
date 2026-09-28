@@ -38,8 +38,13 @@ system. Acceptable values:
 
 - **Intent:** `primary`, `neutral`, `success`, `warning`, `danger`, `info`
   (the shared set, from `VariantResolver::INTENTS`). `secondary` is NOT an
-  intent — it is a legacy `variant` value that maps to `intent="neutral"
-  surface="filled"`. `badge` additionally accepts `intent="accent"`.
+  intent and not a value of any other prop: for a secondary action write
+  `intent="neutral"` and pick the surface, `filled` by default or `outline` /
+  `soft` for less weight. `button` and `badge` have no `variant` prop, so
+  `variant="secondary"` on them lands in the attribute bag and the component
+  renders its default `intent="primary"`. Where `variant` survives as the
+  older name of `intent` (the alias matrix in the prop-naming conventions),
+  write `intent`. `badge` additionally accepts `intent="accent"`.
 - **Surface:** `filled` (default), `soft`, `outline`, `ghost`, `link`
   (from `VariantResolver::SURFACES`). `badge` uses a different surface set:
   `soft` (default), `solid`, `outline` — `solid` is badge-only, not a button
@@ -73,7 +78,7 @@ Common tokens:
 - `--color-wk-border`, `--color-wk-border-subtle`, `--color-wk-border-hover`, `--color-wk-border-strong`, `--color-wk-border-strong-hover` (form controls MUST use the `strong` pair — the communicating border, WCAG 1.4.11, ≥3:1), `--color-wk-border-error`, `--color-wk-border-success`
 - `--color-wk-accent` (fill), `--color-wk-accent-text` (accent-toned text on bg — alias of `--color-wk-accent-content`), `--color-wk-accent-fg` (text on an accent fill)
 - `--space-wk-xs|sm|md|lg|xl|2xl` (+ `--space-wk-section-sm|md|lg`)
-- `--gap-wk-xs|sm|md|lg|xl|2xl` (the full `xs`…`2xl` internal layout-gap ladder). Note: the `gap` prop of `<x-wirekit::stack|row|grid|bento-grid|feature-grid>` maps to `--space-wk-*` by default and to these only with `scale="gap"` — the `--gap-wk-*` tokens are used internally by composed components (`brand`, `header`, `cta`, `hero`, `navbar`, …).
+- `--gap-wk-xs|sm|md|lg|xl|2xl` (the full `xs`…`2xl` internal layout-gap ladder). Note: the `gap` prop of `stack`, `row`, `grid`, `bento-grid` and `feature-grid` maps to `--space-wk-*` by default and to these only with `scale="gap"` — the `--gap-wk-*` tokens are used internally by composed components (`brand`, `header`, `cta`, `hero`, `navbar`, …).
 - `--padding-wk-x-xs|sm|md|lg|xl` and `--padding-wk-y-xs|sm|md|lg|xl` (axis-split — no axis-less shorthand)
 - `--radius-wk-sm|md|lg|xl|full`
 - `--shadow-wk-sm|md|lg`
@@ -126,8 +131,9 @@ Reach for these instead of hand-rolled flex/grid:
 - `<x-wirekit::aspect-ratio ratio="16/9">` — locked aspect ratio
 - `<x-wirekit::divider>`, `<x-wirekit::spacer>` (the spacer is a flex-grow gap — it has no `size` prop)
 
-Components carry NO outer margins — compose rhythm with `stack`/`row`/`grid`/
-`section` + their `gap` prop. Do NOT hand-roll `space-y-*` / `mb-*` utilities.
+Components carry NO outer margins — compose rhythm with `stack`/`row`/`grid` +
+their `gap` prop, and space a page band with `section`'s `padding` prop. Do NOT
+hand-roll `space-y-*` / `mb-*` utilities.
 
 ## Application shell (signed-in app layout)
 
@@ -225,10 +231,11 @@ and create silent bugs.
 ## Browser support
 
 Tailwind CSS v4 baseline: Chrome 111+, Edge 111+, Safari 16.4+,
-Firefox 128+. Use any CSS feature in this baseline freely
-(`color-mix()`, `@property`, `@starting-style`, `field-sizing`,
-native CSS nesting, `min()/max()/round()`). NEVER add polyfills for
-older browsers.
+Firefox 128+. Use any CSS feature the baseline covers
+(`color-mix()`, `@property`, `min()`/`max()`). `@starting-style`,
+`field-sizing`, native CSS nesting and `round()` are newer than the
+baseline: use them only behind `@supports`, as progressive enhancement.
+NEVER add polyfills for older browsers.
 
 ## CLI commands
 
@@ -251,7 +258,7 @@ php artisan wirekit:cursor-rules         # publish this file
 
 ## Reference
 
-- Components catalogue: <https://docs.wirekit.app>
+- Components catalog: <https://docs.wirekit.app>
 - JSON manifest: <https://docs.wirekit.app/components.json>
 - LLM-friendly index: <https://docs.wirekit.app/llms.txt>
 - API sitemap: <https://docs.wirekit.app/api-map.json>

@@ -47,12 +47,10 @@
     $isFloating = $mode !== 'static';
 
     $positioningClasses = $isFloating
-        // ⚠️ The bottom of the viewport is NOT the bottom of the usable screen on a phone
-        // with a home indicator — the inset is 34px on a notched iPhone, and this control
-        // sat inside it. The library states the rule in dist/wirekit.css and already ships
-        // this exact expression for `.wk-fab` and `.wk-bottom-nav`; these offsets were
-        // simply never given the term. `env()` resolves to 0 wherever there is no inset,
-        // so it costs nothing elsewhere.
+        // The bottom of the viewport is not the bottom of the usable screen on a phone with
+        // a home indicator, whose inset is 34px on a notched iPhone. The same expression keeps
+        // `.wk-fab` and `.wk-bottom-nav` clear of it. `env()` resolves to 0 wherever there is
+        // no inset, so it costs nothing elsewhere.
         //
         // No browser test can catch this: `env(safe-area-inset-*)` is 0 in headless
         // Playwright, which is why it survived every green mobile run.

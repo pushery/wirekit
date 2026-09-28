@@ -9,11 +9,11 @@ namespace Pushery\WireKit\Support;
  * JSON-LD can be derived from them instead of being written a second time by
  * hand.
  *
- * Why this exists at all: Google only shows FAQ rich results for a page that
- * emits FAQPage structured data, and it treats structured data describing
- * content the reader cannot see as a policy violation. Both halves are normally
- * the developer's problem — they write the accordion, then write the JSON-LD
- * again, and the two drift apart on the first copy edit. Here the JSON-LD is
+ * Why this exists at all: search engines treat structured data that describes
+ * content the reader cannot see as a policy violation, and a FAQPage written by
+ * hand beside the accordion becomes exactly that on the first copy edit. Both
+ * halves are normally the developer's problem — they write the accordion, then
+ * write the JSON-LD again, and the two drift apart. Here the JSON-LD is
  * built from the same strings that were just rendered into the page, so a
  * question can be reworded, added, or deleted and the schema simply follows. It
  * cannot describe an invisible answer, because it is made out of the visible one.
@@ -45,9 +45,11 @@ final class FaqCollector
      * schema. That is structured data describing an answer on somebody else's page, which
      * is the exact policy violation this class exists to prevent.
      *
-     * The container instance is the identity that changes between requests and cannot be
-     * recycled underneath us the way an object hash can. When it differs, the buffer
-     * belonged to a render that is over.
+     * Under Octane the container instance is the identity that changes between requests and
+     * cannot be recycled underneath us the way an object hash can. When it differs, the buffer
+     * belonged to a render that is over. A queue worker keeps ONE container across its jobs,
+     * so there the comparison never fires; the service provider covers that case by calling
+     * `reset()` before each queued job and after each request.
      */
     private static ?object $owner = null;
 
@@ -97,6 +99,9 @@ final class FaqCollector
      * still pushed, so the buffer must be cleared or their questions would
      * surface in the NEXT faq's JSON-LD — schema describing answers that live
      * somewhere else on the page.
+     *
+     * Also called between renders: by the service provider after each request and
+     * before each queued job, and by `WireKit::flush()` in tests.
      */
     public static function reset(): void
     {
@@ -111,6 +116,9 @@ final class FaqCollector
      * `terminating` callback is registered once and, under Octane, is not re-registered on
      * the next request — so the reset would work for one request and silently stop. Asking
      * "does this buffer belong to me?" at the two places that touch it cannot go stale.
+     *
+     * It cannot see a queue worker, which keeps one container across jobs, so the
+     * service provider's reset before each job is the net there, and both stay.
      */
     private static function forgetIfStale(): void
     {

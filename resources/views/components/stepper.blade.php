@@ -71,9 +71,13 @@
     ]), $scope);
 
     // Circle indicator that shows step number or a check for completed steps.
+    //
+    // Its size is `--wk-stepper-circle`, `--size-wk-sm` unless the stepper or a theme sets it,
+    // and the connector below computes its offsets from the same property. A size set only on
+    // the circle would move the circle and leave the line where a 2rem circle had its center.
     $circleBase = WireKit::resolveClasses('stepper', 'circle', implode(' ', [
         'flex items-center justify-center',
-        'w-8 h-8 shrink-0',
+        'w-[var(--wk-stepper-circle,var(--size-wk-sm))] h-[var(--wk-stepper-circle,var(--size-wk-sm))] shrink-0',
         'rounded-full',
         'text-[length:var(--text-wk-sm)]',
         'font-[number:var(--font-wk-heading-weight)]',
@@ -82,11 +86,13 @@
         'duration-[var(--transition-wk-duration)]',
     ]), $scope);
 
-    // Connector line between steps.
+    // Connector line between steps, placed from the circle's size: vertically it runs down the
+    // circle's center from its lower edge, horizontally through its center from its right edge
+    // to the next circle's left edge (the 0.5rem is the gap between steps).
     $connectorClasses = implode(' ', [
         $isVertical
-            ? 'absolute left-4 top-8 w-[1px] h-[calc(100%-0.5rem)] -translate-x-[0.5px]'
-            : 'absolute top-4 left-[calc(50%+1rem)] right-[calc(-50%+0.5rem)] h-[1px]',
+            ? 'absolute left-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] top-[var(--wk-stepper-circle,var(--size-wk-sm))] w-[1px] h-[calc(100%-0.5rem)] -translate-x-[0.5px]'
+            : 'absolute top-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)] left-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)] right-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-0.5rem)] h-[1px]',
         'bg-[var(--color-wk-border)]',
     ]);
 
@@ -107,9 +113,9 @@
 
 {{--
     aria-label names the progress indicator; role=list is implicit on ol.
-    Inline style strips the UA decimal markers + indent because the docs
-    sandbox iframe runs WITHOUT Tailwind preflight; the `list-none m-0 p-0`
-    classes in $listClasses are decorative only and don't apply there.
+    The inline style strips the UA decimal markers and indent, as the
+    `list-none m-0 p-0` classes in $listClasses do, so the list stays unmarked
+    in a page whose stylesheet does not come from a Tailwind build that scanned this view.
 --}}
 <ol data-wk-prose-skip data-wk-stepper="{{ $isVertical ? 'vertical' : 'horizontal' }}" role="list" aria-label="{{ __('wirekit::Progress') }}" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0; --wk-stepper-count: '.$count.';'])->class([$listClasses]) }}>
     @foreach($steps as $i => $step)
@@ -174,8 +180,9 @@
                  as "Completed: Details Sent yesterday", not as "Details". That reads well as
                  long as the description is written to be heard: on an operable step it is part
                  of the link's name rather than a caption beside it.
-                 `cursor-pointer` because Tailwind v4 sets `cursor: default` on `<button>` — the
-                 reverse of v3 — so every button in this package puts the affordance back. --}}
+                 `cursor-pointer` because Tailwind v4's preflight no longer sets `cursor: pointer`
+                 on `<button>` (v3 did), so every button in this package puts the affordance
+                 back. --}}
             <{{ $stepTag }} data-wk-prose-skip
                 @if($stepTag === 'a') href="{{ $stepHref }}" @endif
                 @if($stepTag === 'button') type="button" wire:click="{{ $stepAction }}" @endif
@@ -185,7 +192,7 @@
                     'cursor-pointer text-start' => $stepIsOperable,
                     'rounded-[var(--radius-wk-md)]' => $stepIsOperable,
                     'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $stepIsOperable,
-                    'transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-80' => $stepIsOperable,
+                    'transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-[var(--opacity-wk-hover)]' => $stepIsOperable,
                 ])
             >
                 @if($follow === null)

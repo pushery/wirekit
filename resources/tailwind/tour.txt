@@ -64,7 +64,6 @@ $titleId
 (left/top:
 (silent
 (string)
-(validateProp
 );
 *
 +
@@ -124,6 +123,7 @@ Alpine's
 An
 Auto-assign
 Back/Next
+Blade
 CSS
 DIALOG
 DOM
@@ -146,7 +146,6 @@ ITS
 Id
 It
 Its
-JS
 JavaScript
 Lighthouse.
 Live
@@ -161,7 +160,6 @@ Overlay
 PreviewRenderer)
 Pushery\WireKit\Support\TourStepCounter;
 Pushery\WireKit\WireKit;
-Reset
 SILENTLY,
 STEP
 See
@@ -173,6 +171,7 @@ TWICE,
 Teleported
 That
 The
+This
 Tour
 TourStepCounter::next()
 TourStepCounter::next();
@@ -184,7 +183,6 @@ When
 WireKit::resolveClasses('tour',
 WireKit::resolveClasses('tour.step',
 WireKit::validateProp('tour.step',
-Without
 [
 ['1',
 ['number'
@@ -203,15 +201,12 @@ __('wirekit::Back')
 __('wirekit::Next')
 __('wirekit::Tour
 `""`,
-`$index`
 `-1`
 `-2`
-`<x-wirekit::tour.step>`
 `Pushery\WireKit\Support\TourStepCounter`
 `aria-label="…"`
 `aria-label`
 `aria-labelledby`
-`data-wk-tour-step="0"`
 `filled()`
 `heading-order`
 `modal.blade.php`
@@ -226,6 +221,7 @@ all
 all.
 alone
 along
+already
 an
 ancestor
 and
@@ -245,11 +241,9 @@ aria-live="polite"
 aria-modal="true"
 as
 assembled
-assigned
 async
 at
 attribute
-auto-
 auto-assigned
 auto-assignment
 auto-derived
@@ -293,7 +287,6 @@ cannot
 carried
 check
 check:
-child
 chosen
 class="flex
 class="font-[number:var(--font-wk-heading-weight)]
@@ -311,8 +304,8 @@ containing
 content:
 control
 controls,
-could
 counter
+counter:
 current.
 cursor-pointer
 data-wk-placement="{{
@@ -322,7 +315,6 @@ data-wk-tour-step="{{
 debug
 dedupes
 default
-defaulted
 defect.
 depends
 derive.
@@ -330,7 +322,7 @@ destination,
 developer
 dialog
 dialog's
-did-you-mean)
+did-you-mean,
 didn't
 difference
 different
@@ -341,6 +333,7 @@ document
 document-render
 does
 does.
+drawn
 duration-200"
 each
 ease-out
@@ -361,7 +354,6 @@ every
 everything
 fall
 fallback
-falls
 filled($callerAriaLabel);
 final
 first
@@ -383,6 +375,8 @@ full
 full-viewport
 further
 gap-[var(--gap-wk-sm)]">
+gate
+gate,
 generated
 gets
 guessed
@@ -390,6 +384,7 @@ h1,
 halves
 handed
 has
+have
 heading
 heading's
 heading,
@@ -452,7 +447,6 @@ list
 literal
 live
 lives
-locate
 look
 looks
 loser
@@ -471,7 +465,6 @@ modal
 more
 most
 moves
-multi-tour-on-same-page
 n/a
 name
 name.
@@ -483,7 +476,6 @@ near
 needs
 never
 next
-next()
 no
 node
 not
@@ -496,6 +488,7 @@ of
 off-screen
 often
 on
+on.
 once
 one
 one,
@@ -521,6 +514,7 @@ owns,
 page
 page's
 page,
+page.
 pairing,
 panel
 parent
@@ -545,25 +539,27 @@ prevents
 prod).
 produce
 product
-production
 progress
 props
 qualified:
 quieter
 random
 rather
-rationale.
 re-minted
 re-render.
 reach
 reaches
 read
 reader
+readies
 reason:
 record
 reference
 region
+relies
 render
+renders
+reported
 reports,
 reset
 resolves
@@ -583,7 +579,6 @@ second
 sees
 sense
 sentence
-sequential
 server
 server,
 server-side
@@ -595,11 +590,11 @@ shorter
 shows
 sibling
 sight
-signals
 sit
 site
 sits,
 skipped
+slot
 slot,
 slot.
 so
@@ -610,10 +605,10 @@ state
 step
 step's
 step-by-step
-step.
 steps
 stop.
 straight
+strictness
 style
 stylesheet
 sub-component
@@ -643,9 +638,9 @@ then
 there
 things
 this
-this,
 three
-throws
+through
+throw
 title
 to
 told
@@ -681,6 +676,7 @@ values
 verbatim,
 via
 view's
+view.
 viewport.
 visible
 wants
@@ -696,7 +692,6 @@ which
 while
 who
 whole
-whose
 winner
 winner,
 wins

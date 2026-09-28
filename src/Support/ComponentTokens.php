@@ -19,9 +19,8 @@ use ReflectionMethod;
  * whole `--reading-*` family carry no `-wk-` segment, and a pattern that required one would drop
  * exactly the properties a developer overrides most.
  *
- * ⚠️ A COMPONENT READS A TOKEN THROUGH FOUR DOORS, AND A LIST BUILT FROM THE FIRST ONE ALONE
- * LOOKS COMPLETE. Measured over the catalog when this was written, the template door alone
- * carried about five in every six of the reads the four carry together:
+ * A component reads a token through four doors, and a list built from the first one alone
+ * looks complete, because the template door carries most of the reads:
  *
  *   1. Its own template, in every form that compiles to `var()`: `var(--x)`, the utility
  *      shorthand `text-(--x)`, an arbitrary value or property, a fallback inside a fallback.
@@ -246,9 +245,10 @@ final class ComponentTokens
      * One method's body without its comments, followed into the methods and constants of its own
      * class, and no further.
      *
-     * Method by method rather than class by class, and that is not a refinement: every template
-     * calls `WireKit::warnUnknownProps()`, and the same class holds a padding helper no template
-     * calls. Read whole, that class would hand its padding tokens to every component there is.
+     * Method by method rather than class by class, and that is not a refinement: nearly every
+     * component template calls `WireKit::warnUnknownProps()`, and the same class holds
+     * `spinePadding()`, which one template calls. Read whole, that class would hand the padding
+     * tokens to every component there is.
      *
      * And not into other classes, for the same reason one level up. A helper's own machinery is
      * the registry and the parsers, whose strings look like hooks and reads and are neither;

@@ -14,16 +14,13 @@ use RecursiveIteratorIterator;
  * The Public CSS API catalog on the documentation site, the drift guard that holds the
  * catalog and the shipped stylesheet in lockstep, and the `css-classes` group of
  * `wirekit:export-api-map` all answer the same question: which `wk-*` identifiers are a
- * public contract? Answering it takes a scan with several learned exclusions, and the
- * scan lived in two hand-kept copies — one of which never received them.
+ * public contract? Answering it takes a scan with several learned exclusions, and this
+ * class is the one copy of it.
  *
- * ⚠️ That is why this class exists, and the divergence is worth naming: the copy behind
- * the exported manifest advertised ten identifiers as Stable public CSS classes that are
- * emitted as classes nowhere — five morph identities, four DOM-id prefixes and one
- * Tailwind named group. The manifest is a machine-readable discovery surface, so the
- * failure is silent in both directions: a class that does not exist raises no error, and
- * the guard stayed green because it read its own copy of the scan rather than the export.
- * Deleting the second copy is the fix; keeping two regexes in step is not one.
+ * A second copy that missed an exclusion would advertise identifiers as Stable public CSS
+ * classes that are emitted as classes nowhere — morph identities, DOM-id prefixes, a
+ * Tailwind named group. The manifest is a machine-readable discovery surface, so that
+ * failure is silent in both directions: a class that does not exist raises no error.
  *
  * TWO EMISSION PATHS, both public:
  *
@@ -76,14 +73,11 @@ final class PublicCssClassInventory
         $css = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents($stylesheet));
 
         preg_match_all(
-            // ⚠️ `(?<![-\w])` rather than `(?<=^|\s|,)`. The old form required whitespace, a
-            // comma or a line start before the dot, so a class sitting straight after an
-            // opening paren was invisible — which is every class inside a `:where(…)`.
-            // Measured 2026-09-08 against dist/wirekit.css: `wk-footer`, `wk-hero` and
-            // `wk-main` are matched by the wider form and not by the narrow one, and all
-            // three pass today only because the Blade scan below emits them as well. A class
-            // living ONLY inside a `:where()` would be absent from the catalog AND from
-            // `/api-map.json`, and neither the guard nor the export would say a word.
+            // `(?<![-\w])` rather than `(?<=^|\s|,)`: requiring whitespace, a comma or a
+            // line start before the dot would miss a class sitting straight after an opening
+            // paren, which is every class inside a `:where(…)`. Such a class would be absent
+            // from the catalog and from `/api-map.json`, and neither the guard nor the export
+            // would say a word.
             //
             // Widening is safe by construction: the loose set is a superset of the strict one.
             '/(?<![-\w])\.(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)\b/m',

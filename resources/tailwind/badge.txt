@@ -13,8 +13,8 @@
 "↻
 $as
 $as);
-$attributes->class([$sizeClasses]);
 $attributes->class(['relative
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -74,6 +74,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
@@ -271,12 +272,11 @@ $wrap
 ($size)
 ($surface)
 ($svgHtml
-('xs')
+('xs').
 (AA
 (Alpine
 (Blade
 (CTA
-(Note:
 (SOFT
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -299,7 +299,6 @@ $wrap
 (icon
 (inert
 (int)
-(it
 (matches
 (not
 (or
@@ -321,6 +320,7 @@ $wrap
 -
 --border-wk-badge-width
 --border-wk-width
+--color-wk-info
 --shadow-wk-badge
 --}}
 -text
@@ -399,7 +399,6 @@ AND
 API:
 ARIA
 AT
-ATTEMPTED
 Accept
 Adding
 Alpine
@@ -407,8 +406,6 @@ Alpine's
 Also
 An
 Aurora
-BECAUSE
-BELOW,
 BOTH
 Base
 Blade
@@ -424,9 +421,6 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
-CAN
-CANNOT
-CONDITION
 CUT
 Catching
 Check
@@ -446,7 +440,6 @@ ENT_QUOTES).'"',
 EVERY
 English
 Escape
-FAIL
 FILTER_VALIDATE_BOOLEAN);
 Fast
 Floating
@@ -457,17 +450,13 @@ GROWS
 Generate
 German
 Graceful
-HERE,
 HOVER,
 HOVERABLE:
 HTML,
 HTTP
 Htmlable,
 ID
-IN
-INSIDE
 IS
-IT
 Icon
 IconResolver,
 If
@@ -506,12 +495,10 @@ On
 Operating
 Optional
 PERFECTLY
-POINTING
 Pick
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 Reapply
 Render
 Rendered
@@ -521,13 +508,11 @@ Reported
 Resolve
 Rich
 RuntimeException
-SEE.
 SHAPE
 SIBLING.
 SOFT
 SOLID
 SOLID:
-STABLE
 STATIC
 SVG
 SVG:
@@ -539,6 +524,7 @@ Silent
 Single-line
 Size
 So
+Stable
 Strip
 Surface
 SvgNotFound
@@ -547,7 +533,6 @@ Switch
 Symmetric
 TAG
 THE
-THIS
 Tailwind
 Teleporting
 That
@@ -563,10 +548,8 @@ UNBOUND
 Uses
 Validate
 WAS
-WAY
 WCAG
 WIDTH
-WINDOW,
 WITHOUT
 WRAPPER,
 We
@@ -609,12 +592,12 @@ __toString
 `<button>`
 `<div>`
 `<p>`
+`<span>`
 `<template
 `<template>`
 `<x-wirekit::scroll-area
 `=`,
 `Illegal
-`Str::random(12)`
 `Svg
 `_x_dataStack`,
 `aria-describedby`
@@ -641,6 +624,7 @@ __toString
 `fixed`
 `focusable-trigger`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `info`
 `inverted`
@@ -691,7 +675,6 @@ above.
 absence
 absent,
 accent
-accent),
 accent-fg
 accept
 accessibility
@@ -767,6 +750,7 @@ asserted:
 assertion
 association
 at
+attempted
 attribute
 attribute,
 attribute.
@@ -789,7 +773,6 @@ baked
 bakes
 bar.
 bare
-base
 base;
 be
 because
@@ -838,7 +821,6 @@ border-[var(--color-wk-text)]',
 border-[var(--color-wk-warning)]',
 border.
 bordered-only
-borrows
 both
 bound
 box
@@ -884,6 +866,7 @@ catch
 catch.
 caught
 cell
+charts
 check
 checks
 chevrons,
@@ -922,11 +905,9 @@ colors,
 come
 comes
 comment
-comments
 common
 compete
 compile
-compiler
 compiles
 component
 component's
@@ -976,7 +957,6 @@ data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
 dead.
 debug
-debug,
 decided
 decision,
 decision:
@@ -1075,7 +1055,6 @@ event
 event.
 event:
 events
-ever
 every
 exactly
 exhausting
@@ -1092,6 +1071,7 @@ eyebrow).
 factory,
 factory:
 fade="…">`
+fail
 failed"
 fails
 faint
@@ -1111,7 +1091,7 @@ field,
 file
 files
 fill
-fill;
+fill:
 filled
 filled-background
 filter_var($wrap,
@@ -1119,7 +1099,6 @@ finds
 fine).
 finish
 fire
-fired
 fires
 first
 fix
@@ -1129,6 +1108,7 @@ fixed-height
 fixed`
 fixes
 flags
+flash
 flatten
 flattened
 flattens
@@ -1166,6 +1146,8 @@ function;
 function_exists('svg'))
 gap
 gap-x-1',
+gate
+gate,
 get
 gets
 global
@@ -1225,6 +1207,7 @@ hover:opacity-100',
 how
 however
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -1249,6 +1232,7 @@ included.
 including
 indicator
 inert
+info
 informative
 informative.
 init
@@ -1295,7 +1279,6 @@ itself.
 just
 justify-center',
 keeps
-kept
 key
 keyboard
 keyboard,
@@ -1422,7 +1405,6 @@ none
 none,
 nor
 not
-not.
 nothing
 nothing.
 now.
@@ -1436,7 +1418,6 @@ of
 off
 offers
 offset:
-old
 omission.
 on
 on-color
@@ -1489,7 +1470,6 @@ pages
 pair
 pair).
 pairing
-pairing.)
 pairing;
 pairs
 panel
@@ -1513,6 +1493,7 @@ per
 per-instance
 per-set
 per-surface
+personalization
 phrasing
 pill
 pill,
@@ -1524,6 +1505,7 @@ placement:
 plain
 pointer
 pointer-events
+pointing
 popover's
 popovers
 popular"
@@ -1543,14 +1525,12 @@ preview
 pricing-card
 problem
 prod).
-production.
 project,
 prop
 prop's
 props
 provides
 proxy
-purpose
 purpose,
 put
 puts
@@ -1569,15 +1549,15 @@ racing
 radius
 radius.
 raises
-random
 rather
 raw
 re-inject
-re-renders,
+re-renders.
 re-thrown
 reach
 reachable
 reaches
+read;
 reader
 reading
 reads
@@ -1648,7 +1628,6 @@ safe:
 same
 say
 scanner
-scans
 scope
 scope,
 screen
@@ -1657,6 +1636,7 @@ screen-reader-skipping
 scroll
 second
 see
+see.
 sees
 sees.
 semantic
@@ -1671,6 +1651,7 @@ shadow.
 shape
 shape,
 shared
+shares
 shipped
 should
 show
@@ -1699,6 +1680,7 @@ soft
 soft).
 soft-chip
 soft-tone
+solid
 somebody
 something
 source
@@ -1729,6 +1711,7 @@ stopped
 stops
 storage/logs/laravel.log.
 strategy:
+strictness
 string
 string,
 stringly
@@ -1754,7 +1737,6 @@ svg(),
 swapped
 sweep
 switches
-syntax
 tab
 tab-stop
 tabbed
@@ -1809,6 +1791,7 @@ this
 three
 through
 throw
+throw,
 throws
 tick
 tidy
@@ -1819,6 +1802,7 @@ time.
 timer
 timer,
 timer;
+tint
 tinted
 tip
 tip.
@@ -1829,7 +1813,7 @@ to.
 toHtml().
 token
 token,
-too
+tone
 tooltip
 tooltip,
 tooltip.
@@ -1869,7 +1853,6 @@ type="button"
 typography,
 unaffected
 unaffected.
-unbalanced
 unbound
 uncaught
 unchanged.
@@ -1947,6 +1930,7 @@ why
 widening
 width
 width)
+window,
 wins
 wire:key="wk-tooltip-panel"
 with
@@ -2012,4 +1996,3 @@ zoom,
 }}>
 —
 ≥4.5:1
-⚠️

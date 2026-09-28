@@ -36,8 +36,8 @@
     $emphasis = BooleanProp::from($emphasis, false);
     $bleed = BooleanProp::from($bleed, false);
 
-    // Match on the RESULT, not the raw prop: validateProp throws in strict mode
-    // and otherwise returns the first allowed value — '1x1' here, which is both
+    // Match on the RESULT, not the raw prop: where the strictness gate does not throw,
+    // validateProp returns the first allowed value — '1x1' here, which is both
     // the default and the only span that is safe at any grid width.
     $span = WireKit::validateProp('bento-cell', 'span', $span, ['1x1', '2x1', '1x2', '2x2']);
 

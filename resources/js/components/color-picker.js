@@ -447,9 +447,8 @@ export default function wirekitColorPicker(config = {}) {
         // Home / End on a slider jump to the ends of its range — part of the
         // pattern the `role="slider"` on these strips announces, so a reader who
         // follows it and gets no response has been told something untrue. They
-        // live here rather than as an inline `h = 0; _sync()` so the template
-        // keeps handing Alpine one call per binding, which is the only shape the
-        // CSP build evaluates.
+        // live here rather than as an inline `h = 0; _sync()`: that is two
+        // statements, and Alpine's CSP build parses one expression per binding.
         setHue(v) { this.h = clamp(v, 0, 360); this._sync(); },
         setAlpha(v) { this.a = +clamp(v, 0, 1).toFixed(2); this._sync(); },
 

@@ -42,8 +42,8 @@
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
     // Validate against the canonical intent set. 'primary' and 'info'
-    // are visual synonyms on alert (both tint with --color-wk-accent — no
-    // separate --color-wk-info token exists in the WireKit token surface);
+    // are visual synonyms on alert (both tint with --color-wk-accent: info has
+    // no surface token, and --color-wk-info is the tone the charts and the flash tint read);
     // 'neutral' is a quiet gray treatment for non-severity-bearing notices.
     $variantValue = match ($effectiveIntent) {
         'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $effectiveIntent,
@@ -111,7 +111,7 @@
     };
 
     // Default inline SVG icons per variant (avoids blade-icons dependency)
-    // Simple heroicons-style outline paths, 20x20 viewBox
+    // Simple heroicons-style solid paths (`fill="currentColor"`), 20x20 viewBox
     $defaultIcon = match ($variantValue) {
         'success' => '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />',
         'warning' => '<path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />',

@@ -352,14 +352,12 @@
 
     {{-- Selected files list — rendered only when files exist.
          Each item shows filename (truncated), size, and a remove button on hover.
-         Inline style is REQUIRED for the sandbox-iframe rendering context
-         where Tailwind is out of scope — `list-none` / `m-0` / `p-0` classes
-         wouldn't resolve, browser UA disc bullets + UA margin would show.
-         Margin-top carries the dropzone-gap token directly via inline style so
-         the gap resolves in BOTH contexts (developer app + sandbox iframe; both
-         load wirekit.css so the CSS variable resolves). The class-based
-         `mt-[var(--padding-wk-y-sm)]` in $listClasses is now redundant but kept
-         for documentation parity. Enforced by ListStyleAntiDriftTest. --}}
+         The inline style repeats `list-none` / `m-0` / `p-0`, so no UA disc
+         bullets or UA margin show in a page whose stylesheet does not come from a Tailwind build that scanned this view.
+         Margin-top carries the dropzone-gap token inline for the same reason;
+         wirekit.css defines the variable either way. The class-based
+         `mt-[var(--padding-wk-y-sm)]` in $listClasses says the same to a reader
+         of the classes. ListStyleAntiDriftTest requires the class and the inline list-style alike. --}}
     <ul data-wk-prose-skip role="list" class="{{ $listClasses }}" style="list-style: none; padding: 0; margin: var(--padding-wk-y-sm) 0 0 0;" x-show="files.length > 0" x-cloak>
         <template x-for="(file, index) in files" :key="file.name">
             <li data-wk-prose-skip class="{{ $fileItemClasses }}">

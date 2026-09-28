@@ -45,7 +45,7 @@ $stickyClasses,
 'base',
 'between'
 'between',
-'between']),
+'between']))
 'bleed'
 'border-b-[length:var(--border-wk-width)]
 'border-t-[length:var(--border-wk-width)]
@@ -86,11 +86,10 @@ $stickyClasses,
 'wk-shell-bar',
 'wk-shell-bar-strip
 'xl'
-'xl']),
+'xl']))
 'xs'
 'xs',
-($align)
-($padding)
+(WireKit::validateProp('shell-bar',
 (`--wk-strip-inset`,
 (a
 (above),
@@ -171,12 +170,14 @@ FROM
 Fully
 Grows
 HOLDS
+HTML
 INSIDE
 Inline
 It
 Its
 KEEP
 KEYBOARD
+Livewire's
 Logical
 Main-axis
 Marks
@@ -225,7 +226,6 @@ WHICH
 WHOLE
 Where
 WireKit::resolveClasses('shell-bar',
-WireKit::validateProp('shell-bar',
 With
 Without
 [
@@ -263,6 +263,7 @@ Without
 `filled()`,
 `gap`
 `h-`,
+`hasActualContent()`
 `hasActualContent()`,
 `header`
 `isEmpty()`.
@@ -315,6 +316,7 @@ along
 already
 also
 always
+among
 an
 ancestor,
 ancestor.
@@ -406,6 +408,7 @@ browser:
 bug
 build
 built-in
+but
 buttons
 by
 caller
@@ -456,7 +459,8 @@ column's,
 column,
 columns
 come
-comment-stripping
+comments
+comments,
 compared
 compiles
 component
@@ -584,7 +588,6 @@ fragile
 from
 from.
 full
-full.
 gap
 gap-[var(--gap-wk-sm,0.5rem)]
 gap-[var(--gap-wk-sm,0.5rem)]')
@@ -694,7 +697,6 @@ let
 lets
 light
 line
-lines
 links
 links,
 list
@@ -706,6 +708,7 @@ long
 long,
 longer
 looks
+looks,
 lost
 main
 makes
@@ -713,6 +716,7 @@ margin
 margins
 mark
 marker
+markers
 marks
 markup
 match
@@ -741,6 +745,7 @@ modeled
 modeling.
 moment
 more
+morph
 move,
 must
 n/a
@@ -753,7 +758,6 @@ need
 needs
 negative
 never
-newline
 next
 no
 no-op.
@@ -854,7 +858,6 @@ read.
 reader
 reading
 reads
-real-world
 reason
 reason.
 records
@@ -909,7 +912,6 @@ see
 sees
 segment
 segments
-separate
 separates
 server
 shape
@@ -942,7 +944,6 @@ slightly
 slivers
 slot
 slot's
-slots
 so
 something
 sorts
@@ -992,6 +993,7 @@ tabindex="{{
 tabs
 takes
 tell
+test.
 text
 text,
 than
@@ -1000,6 +1002,7 @@ that,
 the
 their
 them
+them,
 then
 there
 there.
@@ -1037,7 +1040,6 @@ track
 trade
 trailing
 transform
-trimming,
 tripped
 true);
 true,
@@ -1073,7 +1075,6 @@ utility
 value
 value.
 variable
-variant
 variants
 version
 view
@@ -1096,7 +1097,6 @@ where
 whether
 which
 while
-who
 whole
 whose
 why
@@ -1123,7 +1123,6 @@ wrapped
 wrapper
 wrapper,
 write
-writes
 written
 wrong
 x

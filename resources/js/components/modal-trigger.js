@@ -10,12 +10,11 @@
  * `<label>`, so the modal cannot be placed around it — and the anchor is then outside every
  * `x-data`, which is the part that actually bites.
  *
- * ⚠️ **An element outside every `x-data` tree is never walked, so its directive is not refused —
+ * **An element outside every `x-data` tree is never walked, so its directive is not refused —
  * it is never installed.** That is worse than a refusal in the one way that matters: a refused
  * expression at least leaves the modifiers working, while an uninstalled directive leaves
- * `.prevent` off too, so the anchor plainly navigates. Measured under the strict-CSP fixture,
- * where the identical directive on a scoped anchor opens the dialog and on an unscoped one does
- * not. It is not a policy effect: it happens in every bundle.
+ * `.prevent` off too, so the anchor plainly navigates. It is not a policy effect: it happens in
+ * every bundle.
  *
  * So the trigger brings its own scope. That is the whole reason this factory exists — the dispatch
  * itself is one line and needs no state.

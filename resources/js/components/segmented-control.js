@@ -56,19 +56,15 @@ export default function wirekitSegmentedControl(config = {}) {
         init() {
             // Seed from the server attribute when the caller passed nothing.
             //
-            // The seed used to be interpolated into `x-data`, which looked
-            // harmless because Alpine reads that attribute once. A Livewire morph
-            // REWRITES it, though, and Alpine re-initializes on the change — so
-            // every round trip replaced the scope, and an effect queued against
-            // the old one flushed afterwards and wrote the old value last. That
-            // is invisible on an outward click (old and new agree) and shows up
-            // only when a reader returns to a value they already had.
-            //
-            // Reading it here instead keeps the attribute byte-identical across
-            // renders, so the scope survives and observeServerValue is the single
-            // path a server-side change travels — which is what its own docblock
-            // already claimed. The config argument still wins when given, so a
-            // caller constructing this factory by hand is unaffected.
+            // The value is not interpolated into `x-data`, so that attribute stays
+            // byte-identical across renders. A morph that changed it would make
+            // Alpine initialize the component again (a new scope before Alpine 3.16,
+            // the same one reset to the seed from 3.16), and an effect queued before
+            // the morph would then write the old value last. That shows only when a
+            // reader returns to a value they already had. With `x-data` unchanged the
+            // scope survives, and observeServerValue is the one path a server-side
+            // change travels. The config argument still wins when given, so a caller
+            // constructing this factory by hand is unaffected.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
             // here, but the ESM harness constructs each factory with a deliberately

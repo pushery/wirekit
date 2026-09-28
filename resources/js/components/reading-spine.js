@@ -29,9 +29,9 @@
  *   - _scrollRaf (a requestAnimationFrame id) — canceled in destroy().
  *   - _collapseTimer, _sectionEventTimer (timeouts) — cleared in destroy().
  *
- * Honors `prefers-reduced-motion: reduce` — the CSS layer collapses every
- * width / opacity / color transition on this component to 0.01ms via the
- * global @media block. The plugin itself never animates anything in JS.
+ * Honors `prefers-reduced-motion: reduce` — the global reduced-motion rule in
+ * dist/wirekit.css cuts every width / opacity / color transition on this
+ * component short. The plugin itself never animates anything in JS.
  */
 import { prefersReducedMotion } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
@@ -273,10 +273,9 @@ export default (options = {}) => ({
      * how one listener hears an inner region as well as the page. The same frame moves the
      * per-section fill.
      *
-     * ⚠️ THIS USED TO SPEAK TO THE WINDOW EVERYWHERE. An IntersectionObserver banded to the window
-     * decided the active section, and the end-of-page rule compared the window's scroll with the
-     * document's height. In a page whose content scrolls inside its own region the document never
-     * scrolls, so it is always at its end, and the last section won every recompute.
+     * Not banded to the window: in a page whose content scrolls inside its own region the
+     * document never scrolls, so it is always at its end, and a window-banded observer or an
+     * end-of-page rule on the window's scroll would hand the last section every recompute.
      */
     observeActive() {
         this._onScroll = () => {

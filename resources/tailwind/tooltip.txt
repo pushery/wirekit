@@ -146,21 +146,19 @@ Normalized
 Nothing
 OFF
 ORIGINAL
-POINTING
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Rendered
 Rich
 SHAPE
 SIBLING.
-STABLE
 STATIC
 SWAPS:
 Set
 So
+Stable
 Switch
 THE
-THIS
 Teleporting
 That
 The
@@ -172,7 +170,6 @@ UNBOUND
 Uses
 WAS
 WCAG
-WINDOW,
 WRAPPER,
 What
 WireKit::resolveClasses('tooltip',
@@ -196,7 +193,6 @@ Without
 `<x-wirekit::scroll-area
 `=`,
 `Illegal
-`Str::random(12)`
 `_x_dataStack`,
 `aria-describedby`
 `aria-describedby`:
@@ -438,7 +434,6 @@ escaping
 evaluated
 event
 events
-ever
 every
 exactly
 existing
@@ -454,7 +449,6 @@ feature
 finds
 finish
 fire
-fired
 fires
 first
 fixed
@@ -557,6 +551,7 @@ knows
 lands
 later
 least.
+leave
 leaves
 leaving
 left
@@ -619,7 +614,6 @@ none
 none,
 nor
 not
-not.
 nothing
 nothing.
 null,
@@ -627,7 +621,6 @@ object,
 of
 off
 offset:
-old
 omission.
 on
 on.
@@ -683,6 +676,7 @@ placement:
 plain
 pointer
 pointer-events
+pointing
 popover's
 popovers
 position
@@ -699,9 +693,8 @@ px
 quiet,
 racing
 raises
-random
 rather
-re-renders,
+re-renders.
 re-thrown
 reachable
 reader
@@ -898,6 +891,7 @@ whose
 why
 widening
 width)
+window,
 wire:key="wk-tooltip-panel"
 with
 without
@@ -943,4 +937,3 @@ zoom,
 }},
 }}>
 —
-⚠️

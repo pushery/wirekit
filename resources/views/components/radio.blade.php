@@ -103,9 +103,9 @@
     // other name-derived controls", so this was a shipped claim the component did
     // not honor.
     //
-    // The random fallback moves INTO DomId::unique, which does exactly the same
-    // thing for a null preferred id — keeping it here would register a value that is
-    // unique by construction and never collides, filling the registry for nothing.
+    // The fallback for a null preferred id is DomId::unique's own counter; a second
+    // one here would register a value that is unique by construction and never
+    // collides, filling the registry for nothing.
     $nameAttr = $attributes->get('name');
     $defaultId = $nameAttr && $value !== null
         ? $nameAttr . '-' . \Illuminate\Support\Str::slug((string) $value)

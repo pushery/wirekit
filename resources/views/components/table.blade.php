@@ -79,12 +79,13 @@
         : null;
     $stickyColumn = BooleanProp::from($stickyColumn, false);
 
-    // `stickyColumnBelow` freezes the first column only below a breakpoint and turns the frozen column
-    // on by itself. From that width up the table fills its box again, so a wide screen wraps the cells
-    // instead of scrolling sideways past a column it does not need to hold. The width classes are
-    // written out per breakpoint because Tailwind reads literal class names and never an assembled
-    // one. An unknown value throws in debug and freezes the column at every width in production,
-    // which is what the column did before this prop existed.
+    // `stickyColumnBelow` freezes the first column only below a breakpoint and turns the frozen
+    // column on by itself. From that width up the table fills its box again, so a wide screen
+    // wraps the cells instead of scrolling sideways past a column it does not need to hold. The
+    // width classes are written out per breakpoint because Tailwind reads literal class names and
+    // never an assembled one. An unknown value is reported through the strictness gate and, where
+    // the gate does not throw, freezes the column at every width, which is what the column did
+    // before this prop existed.
     $stickyColumnBelow = filled($stickyColumnBelow) ? (string) $stickyColumnBelow : null;
     if ($stickyColumnBelow !== null) {
         $stickyColumn = true;
@@ -168,30 +169,34 @@
     //   table.td    → <td data-wk-table-td>
     // (See resources/views/components/table/*.blade.php for emission.)
     //
-    // Plain-HTML descendant detection: render the slot to string, walk
-    // for `<thead`, `<tbody`, `<tr`, `<th`, `<td` opening-tag prefixes
-    // that DON'T carry a data-wk-table-* marker.
+    // Plain-HTML descendant detection: render the slot to string and read
+    // every opening `<thead`, `<tbody`, `<tr`, `<th` or `<td` up to its OWN
+    // `>`. One without a data-wk-table-* marker in that span is raw. The
+    // sub-components write their marker before any attribute of the
+    // caller's, so it always sits inside it. The span ends at the tag: a
+    // window running on into the children would find the marker of the
+    // first `table.th` inside a raw `<thead><tr>` and pass the rows it was
+    // written to catch.
+    //
+    // A table nested in a cell has rows of its own, and they are not this
+    // table's, so the markup of every nested table is taken out first,
+    // innermost first. Should that replacement fail, the markup is read as it
+    // stands.
     $rawSlot = (string) $slot;
     $hasPlainHtmlDescendants = false;
     if (config('app.debug') && $rawSlot !== '') {
-        foreach (['<thead', '<tbody', '<tr', '<th', '<td'] as $tag) {
-            // Match the opening of the tag; immediately check that the
-            // very next 80 chars (the typical attribute-bag span before
-            // the closing `>`) carry a data-wk-table-* marker.
-            $offset = 0;
-            while (($pos = strpos($rawSlot, $tag, $offset)) !== false) {
-                $after = substr($rawSlot, $pos, 200);
-                if (! str_contains($after, 'data-wk-table-')) {
-                    // Make sure we didn't match a longer tag prefix
-                    // (e.g. `<tr` inside `<treesomething>`) — the next
-                    // char must be whitespace, `>`, or attribute-start.
-                    $nextChar = $rawSlot[$pos + strlen($tag)] ?? '';
-                    if ($nextChar === ' ' || $nextChar === '>' || $nextChar === "\t" || $nextChar === "\n") {
-                        $hasPlainHtmlDescendants = true;
-                        break 2;
-                    }
+        $ownMarkup = $rawSlot;
+        do {
+            $before = $ownMarkup;
+            $ownMarkup = preg_replace('/<table\b[^>]*>(?:(?!<table\b).)*?<\/table>/is', '', $ownMarkup) ?? $before;
+        } while ($ownMarkup !== $before);
+
+        if (preg_match_all('/<(?:thead|tbody|tr|th|td)(?=[\s>\/])[^>]*>/i', $ownMarkup, $openingTags) > 0) {
+            foreach ($openingTags[0] as $openingTag) {
+                if (! str_contains($openingTag, 'data-wk-table-')) {
+                    $hasPlainHtmlDescendants = true;
+                    break;
                 }
-                $offset = $pos + strlen($tag);
             }
         }
     }

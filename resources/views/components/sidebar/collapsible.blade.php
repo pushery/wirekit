@@ -26,6 +26,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.collapsible', $attributes->getAttributes());
 
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
@@ -63,21 +64,25 @@
     // The disclosed region needs an id so the trigger's `aria-controls` can name it —
     // the wiring the standalone <x-wirekit::collapsible> already carries.
     //
-    // Seeded from the label, falling back to a bare icon name, because a per-render
-    // random id makes Livewire's morph treat the region as a NEW node on every round
-    // trip: it replaces the live node with a clone, and x-collapse replays its height
-    // transition instead of holding the open height. With neither a label nor an icon
-    // there is nothing stable to derive from, and the random suffix remains on purpose —
-    // a collision between two anonymous widgets on one page is worse than a re-render.
+    // Seeded from the label, falling back to a bare icon name, because a per-render id
+    // makes Livewire's morph treat the region as a new node on every round trip: it
+    // replaces the live node with a clone, and x-collapse replays its height transition
+    // instead of holding the open height. With neither a label nor an icon, `stableId`
+    // counts instead, which is page-unique and the same on the next render.
     //
     // Suffixed rather than reused: the bag emits a caller-supplied `id` on the ROOT, and
     // two elements sharing one id is a defect of its own.
-    $panelId = ($attributes->get('id') ?: WireKit::stableId(
+    //
+    // A seed can still repeat on one page: the same label in two sidebars, or in two
+    // previews of one documentation page. The deduper keeps the first id as it is and
+    // appends `-2` to a repeat, so each trigger names its own region. An id the caller
+    // chose is used as given.
+    $panelId = ($attributes->get('id') ?: DomId::unique(WireKit::stableId(
         'wk-sidebar-collapsible',
         (string) $label !== ''
             ? (string) $label
             : (is_string($icon) && ! str_contains($icon, '<') ? $icon : null)
-    )).'-panel';
+    ), 'wk-sidebar-collapsible-')).'-panel';
 
     // Collapsible sidebar group — a disclosure widget that toggles child items.
     // The default trigger looks like a sidebar item but acts as an expand/collapse
@@ -187,7 +192,7 @@
             </span>
         @endif
         {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
-        <span class="flex-1 break-words text-left wk-rail-hide">{{ $label }}</span>
+        <span class="min-w-0 flex-1 break-words text-left wk-rail-hide">{{ $label }}</span>
         @isset($trailing)
             {{-- Anything the caller wants at the end of the trigger.
                  A group is collapsed to keep the list short — and if it contains items with

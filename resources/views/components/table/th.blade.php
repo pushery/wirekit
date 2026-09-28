@@ -26,13 +26,12 @@
     'hideBelow' => null,
     // Hide the column below a width of the TABLE, not of the window.
     //
-    // ⚠️ `hideBelow` asks the viewport, and beside a sidebar that is the wrong question.
-    // Measured in an app shell: the table has 649px at a 1024px viewport and 702px at 768px,
-    // because the sidebar steps beside the content at `lg`. A column that appears at `md`
-    // therefore appears exactly where the table has least room — a reported table ran 141px
-    // past its frame at 1024px for that reason.
+    // `hideBelow` asks the viewport, and beside a sidebar that is the wrong question: in an
+    // app shell the table can have less room at a 1024px viewport than at 768px, because the
+    // sidebar steps beside the content at `lg`, so a column that appears at `md` appears
+    // exactly where the table has least room.
     //
-    // ⚠️ THE SCALE IS THE CONTAINER SCALE AND IT IS NOT THE VIEWPORT ONE. Tailwind's container
+    // The scale is the container scale and it is not the viewport one. Tailwind's container
     // sizes are their own ladder: `3xl` here is 48rem of TABLE width, where `hide-below="md"`
     // is 48rem of WINDOW. Same numbers, different subject — so the two props are deliberately
     // not interchangeable and a call site should pick one.
@@ -142,15 +141,12 @@
      * or a hyphen, and a long compound noun has neither. Without it the head stays exactly as wide
      * as its longest word, which is the width the report measured.
      *
-     * ⚠️ Deliberately NOT the `hyphens` utility the report proposed. It depends on a dictionary
-     * the browser may not have — Chromium ships hyphenation as a downloadable component on Linux,
-     * and the report could not measure that from macOS. A break rule that works everywhere beats a
+     * Deliberately not the `hyphens` utility. It depends on a dictionary the browser may not
+     * have — Chromium ships hyphenation as a downloadable component on Linux. A break rule that works everywhere beats a
      * prettier one that is a different rule in CI than on a laptop.
      *
-     * ⚠️ The utility is described rather than spelled, and that is not squeamishness: Tailwind
-     * scans RAW FILES, so naming a class in a comment compiles it. Spelled out here, this
-     * paragraph emitted a utility nothing uses — and the drift guard then reported it as a
-     * compiled selector with no source, which is exactly what it is for.
+     * The utility is described rather than spelled: Tailwind scans raw files, so naming a
+     * class in a comment would compile a utility nothing uses.
      */
     $scopeText = $isRowHeader
         ? 'text-[color:var(--color-wk-text)]'
@@ -191,8 +187,8 @@
     // hides only below the breakpoint, so above it the cell keeps the display the table gives it
     // instead of one this component would have to restate. The header and every cell of the column
     // take the same value: a header hidden without its cells, or cells without their header, would
-    // put every value under the wrong heading. An unknown value throws in debug and hides nothing
-    // in production.
+    // put every value under the wrong heading. An unknown value is reported through the strictness
+    // gate and, where the gate does not throw, hides nothing.
     $hideBelow = filled($hideBelow) ? (string) $hideBelow : null;
     if ($hideBelow !== null && ! in_array($hideBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
         WireKit::validateProp('table.th', 'hideBelow', $hideBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
@@ -274,9 +270,9 @@
 
     // ARIA: sortable columns expose their current sort state.
     //
-    // ⚠️ `$sortable` ALONE is not a sortable column. Both operable shapes need something to
+    // `$sortable` alone is not a sortable column. Both operable shapes need something to
     // sort BY — Alpine mode needs `column`, Livewire mode needs `sortAction` — and with
-    // neither the header rendered `aria-sort="none"`, a cursor-pointer and a hover state
+    // neither the header would render `aria-sort="none"`, a cursor-pointer and a hover state
     // while emitting no button at all. That is the precise combination WCAG 2.1.1 is about:
     // the cell ANNOUNCES a sort order and a keyboard or switch user can hear it and never
     // change it, while the pointer affordance says they should be able to.

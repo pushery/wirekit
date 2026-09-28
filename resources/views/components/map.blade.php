@@ -14,9 +14,9 @@
     //
     // Tiles are the largest network cost this library can cause and the only one it
     // controls at runtime: a map fetches tile after tile as it settles, and again on
-    // every pan. Nothing else WireKit ships fetches anything — the stylesheet contains
-    // no `url()` at all — so this is where the preference can actually be honored
-    // rather than merely acknowledged.
+    // every pan. Nothing else WireKit ships fetches on every interaction the way a map
+    // does — the stylesheet contains no `url()` at all — so this is where the preference
+    // can actually be honored rather than merely acknowledged.
     //
     // On 'respect' the canvas is withheld and the marker list carries the content, with
     // a control to load the map anyway. Use 'ignore' where the canvas IS the content
@@ -82,8 +82,8 @@
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',
         'danger' => 'bg-[var(--color-wk-danger)]',
-        // info has no base --color-wk-info token (only --color-wk-info-text), so the
-        // dot aliases to accent — matching the map pin's _intentColor info→accent.
+        // info has no surface token (--color-wk-info is the tone the charts and the flash tint read), so
+        // the dot aliases to accent — matching the map pin's _intentColor info→accent.
         'info' => 'bg-[var(--color-wk-accent)]',
         'neutral' => 'bg-[var(--color-wk-text-muted)]',
     ];
@@ -134,11 +134,12 @@
         {{-- The mount carries h-full w-full IN ADDITION to absolute inset-0, and
              that is load-bearing: MapLibre adds its `maplibregl-map` class to this
              element at construction, and maplibre-gl.css declares
-             `.maplibregl-map { position: relative }` — same single-class
-             specificity as Tailwind's `.absolute`, so whichever stylesheet loads
-             LAST wins. When maplibre-gl.css wins, the mount loses absolute
-             positioning, its only children are out-of-flow, and it collapses to
-             height 0 — MapLibre then falls back to a 300px canvas (clientHeight
+             `.maplibregl-map { position: relative }` outside any cascade layer.
+             Tailwind v4 emits `.absolute` inside `@layer utilities`, and an
+             unlayered declaration outranks a layered one whatever the load order,
+             so with maplibre-gl.css loaded as published the mount loses absolute
+             positioning; its only children are out-of-flow, and it would collapse
+             to height 0 — MapLibre then falls back to a 300px canvas (clientHeight
              || 300) and the GL canvas paints blank at the wrong size, with
              resize() re-reading 0 forever. h-full/w-full (100% of the sized
              wrapper above) resolve correctly under EITHER computed position, so
@@ -151,9 +152,10 @@
              a preview. Keep this role on the mount — dropping it silently kills
              Leaflet map controls on the docs site (asserted in MapRenderTest). --}}
         {{-- min-height floor (matches the wrapper above) is load-bearing on its
-             own. When maplibre-gl.css's `.maplibregl-map { position: relative }`
-             wins the cascade, `absolute inset-0` goes inert and the mount falls
-             back to `h-full` (height: 100%). A percentage height does NOT resolve
+             own. Once maplibre-gl.css's `.maplibregl-map { position: relative }`
+             applies, and it outranks the layered `.absolute`, `absolute inset-0`
+             goes inert and the mount falls back to `h-full` (height: 100%). A
+             percentage height does NOT resolve
              against a parent's `min-height`, and in a flex-COLUMN (the mobile
              stack — the outer wrapper is `flex flex-col sm:flex-row`) the parent
              has no definite height to resolve against, so `h-full` collapses to 0
@@ -183,12 +185,10 @@
     {{-- Marker list — the accessible companion (the screen-reader path). Always
          present; selecting an item pans the map (when available) and emits
          marker-click. --}}
-    {{-- ⚠️ THE TABINDEX IS UNCONDITIONAL AND ITS VALUE CARRIES THE CONDITION, which is not the
-         same thing as the Blade conditional around the attribute that it replaces. The
-         scroll-region guard strips conditionals before it reads the wiring, so this element
-         used to pass on the strength of its `role` alone — the keyboard model it appeared to
-         have was invisible to the one check that asks for it, and making the role opt-in would
-         have turned that arm red for a real reason.
+    {{-- The tabindex is unconditional and its value carries the condition, which is not the
+         same thing as a Blade conditional around the attribute: the scroll-region check reads
+         the wiring with conditionals stripped, so a conditional attribute would be invisible
+         to it.
 
          `-1` rather than dropping the attribute: with `list="false"` the element collapses to
          the sr-only companion, which does not scroll. A tab stop there would put keyboard focus

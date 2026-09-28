@@ -63,12 +63,11 @@
 
     // Normalize each entry to ['src', 'alt', 'caption', 'full'].
     //
-    // ⚠️ `full` IS THE ZOOM'S ADDRESS, NOT A SECOND THUMBNAIL. A grid tile is a few hundred
+    // `full` is the zoom's address, not a second thumbnail. A grid tile is a few hundred
     // pixels wide and a page carries ten of them; the lightbox is the whole screen. That
     // difference is the entire reason an image ladder exists, and with one address per image a
     // developer has to pick a side: the small step makes the zoom blurry, the large one makes
-    // every tile in a feed pay the zoom's resolution. Reported from an application that chose
-    // the large one and wrote the compromise into its own template.
+    // every tile in a feed pay the zoom's resolution.
     //
     // Absent — or present and empty — it falls back to `src`, so every gallery shipping today
     // renders byte-identically. `??` alone would NOT do that: an entry carrying `'full' => ''`

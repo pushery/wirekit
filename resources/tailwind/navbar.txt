@@ -89,7 +89,7 @@ $variantClasses,
 'font-[family-name:var(--font-wk-sans)]',
 'forceMobile'
 'full'
-'full']),
+'full']))
 'hover:bg-[var(--color-wk-bg-subtle)]',
 'href'
 'inline-flex
@@ -148,12 +148,12 @@ $variantClasses,
 'xl'
 'xl');
 'xl',
-($max)
 ($navId
 ($relAttr
 ($variant)
 (40)
 (50);
+(WireKit::validateProp('navbar',
 (`--wk-strip-inset`,
 (`aria-current="page"`,
 (a

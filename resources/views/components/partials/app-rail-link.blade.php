@@ -8,9 +8,8 @@
      $labelText, $truncate, $badge, $opensNewTab) is resolved in the including view — @include shares
      the including scope, so nothing has to be passed.
 
-     `$linkAttributes` in particular is resolved there ON PURPOSE: inside a component's
-     slot `$attributes` is the WRAPPER's bag, so reading it here would put the tooltip's
-     attributes on the link in one branch and this component's in the other. --}}
+     `$linkAttributes` in particular is resolved there so both branches take the same
+     `except('rel')` and the same class merge from one expression. --}}
 {{-- href / aria-current / rel are written HERE rather than folded into $linkAttributes,
      and they are plain locals from the including view — @include shares that scope, and
      unlike `$attributes` these are not rebound by the surrounding component.

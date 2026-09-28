@@ -149,7 +149,6 @@ $variantValue
 (`wire:model.live`,
 (`wk-upload-photos`),
 (axe
-(developer
 (not
 (p-0.5
 (resources/js/components/file-upload.js).
@@ -304,7 +303,6 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Both
 CLICKABLE
 CSP
-CSS
 Compact
 Compose
 Content-Security-Policy
@@ -316,7 +314,6 @@ Dev-only
 Dropzone
 EMPTY,
 Each
-Enforced
 Enter
 Error
 File
@@ -329,13 +326,12 @@ IDREFS
 IS
 Icon
 In
-Inline
 Internal
 It
 JavaScript
 LABEL,
 Laravel
-ListStyleAntiDriftTest.
+ListStyleAntiDriftTest
 Livewire
 Livewire's
 MEANS
@@ -356,7 +352,6 @@ PRESENCE,
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 REPLACE
-REQUIRED
 Remove
 Resolved
 Reusing
@@ -442,7 +437,7 @@ __('wirekit::Removed
 `multiple`
 `name[]`,
 `name`
-`p-0`
+`p-0`,
 `prop="false"`
 `relative`
 `required`
@@ -469,6 +464,7 @@ after
 against
 align-middle'
 aligned
+alike.
 all
 all.
 already
@@ -485,7 +481,6 @@ any.
 anything
 apart
 apart,
-app
 appears
 appears:
 are
@@ -624,7 +619,7 @@ class="sr-only"
 class="text-[color:var(--color-wk-danger-text)]
 class="text-[color:var(--color-wk-text-muted)]
 class="{{
-classes
+classes.
 click
 click-to-browse
 clicking
@@ -635,6 +630,7 @@ clips,
 clutter.
 color,
 column
+come
 comfortable
 compact
 compiles
@@ -658,8 +654,6 @@ container
 container,
 content
 content.
-context
-contexts
 contract,
 control
 control's
@@ -687,6 +681,7 @@ decorative,
 decorative;
 default
 default:
+defines
 dense
 described
 described-by
@@ -707,7 +702,6 @@ distinguished.
 div,
 docs
 document
-documentation
 does
 does.
 doesn't
@@ -833,7 +827,6 @@ fresh
 from
 full
 full-width
-gap
 gap-[var(--padding-wk-x-sm)]
 gap-[var(--padding-wk-y-sm)]',
 gap-[var(--space-wk-sm)]',
@@ -886,7 +879,6 @@ id="{{
 idref
 ids
 if
-iframe;
 ignores,
 implementation.
 implode('
@@ -927,7 +919,6 @@ just
 justify-center
 keep
 keeps
-kept
 key
 keyboard
 label
@@ -952,11 +943,11 @@ line.
 list
 list,
 list-none
+list-style
 literal
 literal,
 live
 lives
-load
 long
 long.
 looked
@@ -1148,11 +1139,11 @@ reads
 reads:
 real
 reason
+reason;
 received
 recognizes
 rectangle
 red
-redundant
 reference
 region
 region.
@@ -1165,8 +1156,8 @@ removedMessage:
 render
 render.
 rendered
-rendering
 renders
+repeats
 replaced
 replaces
 report
@@ -1174,9 +1165,7 @@ reported
 reporting.
 reports
 required
-resolve,
-resolves
-resolves).
+requires
 resolving
 resort,
 result
@@ -1199,15 +1188,14 @@ rows,
 runtime,
 said
 same
-sandbox
-sandbox-iframe
 satisfied,
 save
 saw
 say
 saying
+says
 says,
-scope
+scanned
 screen
 see
 seeds
@@ -1227,7 +1215,7 @@ share
 shift
 shipped
 shorter
-show.
+show
 shown
 shows
 shrink-0
@@ -1275,6 +1263,7 @@ strip
 strongest
 style
 style="list-style:
+stylesheet
 styling.
 submit
 submits
@@ -1382,6 +1371,7 @@ vertical
 very
 via
 view's
+view.
 viewBox
 viewBox="0
 visible
@@ -1420,7 +1410,6 @@ wording,
 worked
 worked.
 would
-wouldn't
 wrap
 wrapper
 written

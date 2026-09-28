@@ -173,7 +173,7 @@ class ShowComponentCommand extends Command
     /**
      * The published documentation URL for a component, or null when there is none.
      *
-     * Both surfaces of this command printed the URL unconditionally, and sixteen
+     * Both surfaces of this command printed the URL unconditionally, and a number of
      * components have no page of their own — the sub-component pattern (toast-region,
      * glass, the reading-* family, kanban-column …), which is documented on a parent
      * page. So `wirekit:show glass` ended on a link to a 404 while `wirekit:export-json`
@@ -285,8 +285,8 @@ class ShowComponentCommand extends Command
      * accepts either spelling on the tag — and this package answers that question TWICE.
      * `StrictnessGate` (the runtime warning) unions them; `--validate-against` did not. So
      * `<x-wirekit::input announce-errors="false">` rendered clean at runtime and was reported
-     * as an unknown attribute by the pre-commit linter, on a name 37 components accept and
-     * this library's own form documentation teaches.
+     * as an unknown attribute by the pre-commit linter, on a name the form controls accept
+     * and this library's own form documentation teaches.
      *
      * @return list<string>
      */
@@ -379,7 +379,7 @@ class ShowComponentCommand extends Command
                 // Allowlist common Blade / Alpine / Livewire attributes
                 // that aren't WireKit props but are valid usage.
                 //
-                // ⚠️ Matched against the COLON-stripped spelling, and camelCasing FIRST
+                // Matched against the COLON-stripped spelling, and camelCasing FIRST
                 // would be the mirror-image bug: `x-on:click` camelCases to `xOn:click`,
                 // which stops matching `^x-`, so a fix aimed at `:class` would break the
                 // passthrough family this already got right. Only the `:` comes off — the
@@ -469,7 +469,7 @@ class ShowComponentCommand extends Command
         $this->line('  Available: json (default = human-readable table)');
 
         /*
-         * `wirekit:list-fonts`, `wirekit:list-components` and `wirekit:list-icons` all
+         * `wirekit:fonts`, `wirekit:list` and `wirekit:icons` all
          * suggest on THIS flag name. A developer who has seen it work there reads the
          * bare list here as "too far off to match" rather than as a missing feature.
          *

@@ -45,12 +45,13 @@
     // to read. `warnUnknownProps` cannot see it either — it flags unknown prop KEYS, and
     // both of these are declared props carrying an out-of-set VALUE.
     //
-    // The gate supplies the signal without changing what renders: it throws in a console
-    // or test run, logs at error level and continues in an HTTP dev request, and stays
-    // silent in production. The fallback is assigned here rather than taken from the
-    // gate's return, because the gate falls back to the FIRST allowed value and this
-    // component's default is `md` / `right` — reordering the allowed set to steer that
-    // would make the error message lie about which value is canonical.
+    // The gate supplies the signal without changing what renders. By default it throws in a
+    // console or test run with APP_DEBUG on, logs an error and continues in a request with
+    // APP_DEBUG on, and logs a warning and continues with APP_DEBUG off. The fallback is
+    // assigned here rather than taken from the gate's return, because the gate falls back to
+    // the FIRST allowed value and this component's default is `md` / `right` — reordering the
+    // allowed set to steer that would make the error message lie about which value is
+    // canonical.
     if (! in_array($size, ['sm', 'md', 'lg'], true)) {
         WireKit::validateProp('drawer', 'size', (string) $size, ['sm', 'md', 'lg']);
         $size = 'md';
@@ -159,15 +160,13 @@
 
 {{-- Drawer component — slides in from the edge of the screen.
 
-     ESC handling: the JS component uses `focus-trap` with `escapeDeactivates`
-     for in-page interaction, BUT `focus-trap` ignores keydowns whose target is
-     not inside the trap container. Playwright's `locator.press('Escape')` on
-     the non-focusable panel div lets focus fall back to `document.body`, so
-     focus-trap never sees the ESC and the overlay stays open. A window-level
-     ESC listener bypasses this entirely: it catches the event regardless of
-     focus location and calls `dismissByReader('escape')` directly (which closes, deactivates
-     the focus trap and announces `wirekit:drawer-dismissed`). It is guarded against re-entry, so
-     the extra call is safe even if focus-trap happens to catch it too, and the announcement is
+     ESC handling: the JS component uses `focus-trap` with `escapeDeactivates`,
+     which listens on the document once the trap is active. The trap is armed
+     after the panel has settled, so a window-level ESC listener covers the time
+     before that: it catches the event regardless of focus location and calls
+     `dismissByReader('escape')` directly (which closes, deactivates the focus trap
+     and announces `wirekit:drawer-dismissed`). It is guarded against re-entry, so the extra
+     call is safe when focus-trap catches the key too, and the announcement is
      made once. Only registered when the
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div

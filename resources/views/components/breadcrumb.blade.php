@@ -57,12 +57,10 @@
         // does not rescue it either. Measured on an iPhone 14 Pro viewport: 30x20 for
         // "Atlas" in the stacked-shell blueprint.
         //
-        // ⚠️ `wk-touch-target` was tried FIRST and is the wrong tool here, which is worth
-        // recording because it is the library's own answer everywhere else. It centers a
-        // 44x44 pseudo-element on the host, and inside a trail that already sits in a
-        // narrow scroll strip that hit box reaches past the strip's edge: the clipped-
-        // overflow detector went red on `detail-record` with the link 5px outside its
-        // clipping ancestor. The expander is for a control with room around it.
+        // `wk-touch-target` is the wrong tool here, though it is the library's own answer
+        // everywhere else. It centers a 44x44 pseudo-element on the host, and inside a trail
+        // that already sits in a narrow scroll strip that hit box reaches past the strip's
+        // edge. The expander is for a control with room around it.
         //
         // Growing the LINE BOX instead adds four pixels of height and not one of width, so
         // the trail keeps its density and nothing reaches past anything. `inline-flex`
@@ -92,7 +90,7 @@
 
     // A control that belongs to the trail without being a step in it.
     //
-    // ⚠️ THE SLOT SITS BESIDE THE `<ol>`, NOT INSIDE IT, AND THAT IS THE WHOLE POINT. The list
+    // The slot sits beside the `<ol>`, not inside it, and that is the whole point. The list
     // is mirrored one-to-one into the BreadcrumbList JSON-LD below, where every entry is a
     // `ListItem` — a position in the trail. A favorite toggle or a copy-link button is not a
     // position, so putting it in the list would either publish a crumb that leads nowhere or

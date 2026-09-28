@@ -26,7 +26,7 @@ A comprehensive component library covering forms, navigation, overlays, layout, 
 - Laravel 12+/13+
 - Livewire 4+
 - Tailwind CSS v4
-- Alpine.js
+- Alpine.js, which Livewire 4 ships with (nothing to install)
 
 ## Browser Support
 
@@ -44,27 +44,34 @@ Older browsers are out of scope: WireKit ships no polyfills, no vendor-prefix fa
 ## Installation
 
 ```bash
-composer require pushery/wirekit
+# 1. The library, plus the icon renderer and the Heroicons set its components draw with
+composer require pushery/wirekit blade-ui-kit/blade-icons blade-ui-kit/blade-heroicons
+
+# 2. Publish the config and assets, add WireKit's templates to your Tailwind sources,
+#    and write the directives into your layout
+php artisan wirekit:install
 ```
 
-Add the directives to your layout:
-
-```blade
-<head>
-    @wirekitStyles
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body>
-    {{ $slot }}
-    @wirekitScripts
-</body>
-```
-
-Add WireKit's Blade source path to your `resources/css/app.css`:
+The installer adds this line to `resources/css/app.css`, so Tailwind compiles the classes WireKit's templates use:
 
 ```css
 @import 'tailwindcss';
 @source '../../vendor/pushery/wirekit/resources/views/**/*.blade.php';
+```
+
+It also writes the two directives into your layout, and creates one with Livewire's `livewire:layout` if there is none. `@wirekitScripts` goes before `@livewireScripts`, so WireKit's components are registered before Livewire starts Alpine:
+
+```blade
+<head>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @wirekitStyles
+</head>
+<body>
+    {{ $slot }}
+
+    @wirekitScripts
+    @livewireScripts
+</body>
 ```
 
 Full setup walkthrough: **[Getting Started](https://docs.wirekit.app/getting-started)** · **[Integration Guide](https://docs.wirekit.app/getting-started/integration)**
@@ -93,31 +100,31 @@ A wide catalog of components organized by category. Browse, search, and try ever
 | Category | Examples |
 |----------|----------|
 | **Forms** | button, input, select, textarea, editor, combobox, multi-select, date-picker, slider, color-picker, otp-input, filter-builder, … |
-| **Display** | badge, card, avatar, alert, callout, countdown, image, image-gallery, image-compare, kanban, stage-card, activity-row, reveal, stream, … |
+| **Display** | badge, card, avatar, alert, callout, countdown, image, image-gallery, image-compare, kanban, stage-card, activity-row, … |
 | **Data Display** | table, data-table, status-matrix, status-tiles, notification-center, pagination, stat, stats, progress, radial-progress, usage-meter, skeleton, spinner, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, lightbox, command-palette, alert-dialog, … |
 | **Navigation** | tabs, breadcrumb, scope-switcher, accordion, collapsible, sidebar, app-rail, navbar, brand-bar, menubar, navigation-menu, stepper, wizard, … |
 | **Layout** | app-shell, shell-bar, header, main, footer, container, stack, grid, section, divider, sticky-panel, skip-link, spine-aware, … |
 | **Typography** | heading, text, link, code, code-block, kbd, list, blockquote, mark, … |
-| **Marketing** | hero, feature-grid, feature, cta |
-| **Utilities** | fonts, icon, chart, chart-mixed, map, sparkline, scroll-area, scroll-to-top, structured-data |
-| **Specialized** | resizable, carousel, calendar, event-calendar, tour, qr-code, action-bar, prose, glass |
+| **Marketing** | hero, feature-grid, feature, cta, pricing-table, testimonial, faq, logo-cloud, team-section, … |
+| **Utilities** | fonts, icon, chart, chart-mixed, map, sparkline, scroll-area, scroll-to-top, structured-data, … |
+| **Specialized** | resizable, carousel, calendar, event-calendar, tour, qr-code, action-bar, prose, glass, … |
 | **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |
 | **Animation** | reveal, replay-button |
 | **Feedback** | toast-region |
-| **Chat & AI** | message, message-group, message-typing, quick-replies, conversation, assistant-message, chat-marker, attachment, stream, shimmer |
+| **Chat & AI** | message, message-group, message-typing, quick-replies, conversation, assistant-message, chat-marker, attachment, tool-call, branch-switcher, stream, shimmer |
 
 ## Theming & Customization
 
 WireKit ships with a **4-level customization system** — from CSS-variable theme tokens to fully published Blade views. Every component reads from `--color-wk-*` design tokens with built-in dark-mode support.
 
 ```css
-@layer base {
-    :root {
-        --color-wk-accent: var(--color-blue-600);
-    }
+:root {
+    --color-wk-accent: var(--color-blue-600);
 }
 ```
+
+Keep the override in a plain `:root {}` block. WireKit's defaults are unlayered, so an override inside `@layer base` or `@theme` loses to them and has no effect.
 
 → **[Theming Guide](https://docs.wirekit.app/theming)** · **[Customization Guide](https://docs.wirekit.app/customization)**
 

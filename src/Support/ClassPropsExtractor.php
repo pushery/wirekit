@@ -29,8 +29,8 @@ use ReflectionUnionType;
  *   - `default_normalized` — same as `default` for now (no whitespace
  *     collapse needed on a Reflection-derived value).
  *   - `type_hint` — the parameter's PHP type as a string (`string`,
- *     `?string`, `int`, `bool`, `array`, `string|null`). Null when no
- *     type hint is declared.
+ *     `?string`, `int`, `bool`, `array`, or a union such as
+ *     `string|int|null`). Null when no type hint is declared.
  *   - `comment` — null (Reflection doesn't surface parameter-level
  *     same-line comments; the equivalent docs are in the @phpdoc block
  *     above the constructor, which is read separately if needed).
@@ -68,9 +68,9 @@ final class ClassPropsExtractor
     /**
      * Extract every constructor parameter from a class as a prop entry.
      *
-     * Returns an empty array when the class doesn't exist OR has no
-     * public constructor (e.g. an interface, an abstract class, a
-     * class with a private constructor).
+     * Returns an empty array when the class doesn't exist (an interface
+     * does not count as one), is abstract, or has no public constructor:
+     * none of those can be rendered as a component, so none has props.
      *
      * @param  class-string  $className
      * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
@@ -83,7 +83,7 @@ final class ClassPropsExtractor
 
         $reflection = new ReflectionClass($className);
         $constructor = $reflection->getConstructor();
-        if ($constructor === null) {
+        if ($constructor === null || $reflection->isAbstract() || ! $constructor->isPublic()) {
             return [];
         }
 
@@ -185,8 +185,8 @@ final class ClassPropsExtractor
 
     /**
      * Render a ReflectionParameter's type as a string — `string`,
-     * `?string`, `int`, `bool`, `array`, `string|null` (union types
-     * supported). Returns null when the parameter has no type hint.
+     * `?string`, `int`, `bool`, `array`, or a union such as
+     * `string|int|null`. Returns null when the parameter has no type hint.
      */
     private static function stringifyType(\ReflectionParameter $param): ?string
     {
@@ -197,10 +197,9 @@ final class ClassPropsExtractor
         if ($type instanceof ReflectionNamedType) {
             $name = $type->getName();
 
-            // PHP's reflection emits `?T` only when the parameter was
-            // declared with the leading-`?` shorthand; `T|null` reads
-            // back as a union. Both shapes are semantically identical;
-            // we normalize to the `?T` form for prefix-nullable types.
+            // A nullable single type reads back as a named type whether it
+            // was declared `?T` or `T|null`; only a union of three or more
+            // members stays a ReflectionUnionType. It is written as `?T`.
             return ($type->allowsNull() && $name !== 'null' && $name !== 'mixed')
                 ? '?'.$name
                 : $name;

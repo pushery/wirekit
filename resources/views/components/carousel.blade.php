@@ -64,8 +64,8 @@
     // The viewport IS the scroller now. The browser owns snapping and momentum;
     // Alpine only watches where it landed.
     //
-    // wk-carousel-viewport carries the scrollbar-hiding and scroll-behavior rules
-    // that have no Tailwind utility — see dist/wirekit.css.
+    // wk-carousel-viewport carries the scrollbar-hiding rules that have no Tailwind
+    // utility — see dist/wirekit.css.
     $viewportClasses = implode(' ', [
         'wk-carousel-viewport',
         'flex',
@@ -80,7 +80,7 @@
     $buttonClasses = implode(' ', [
         'absolute z-10',
         'flex items-center justify-center',
-        'w-10 h-10 cursor-pointer rounded-full',
+        'w-[var(--size-wk-md)] h-[var(--size-wk-md)] cursor-pointer rounded-full',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-md)]',

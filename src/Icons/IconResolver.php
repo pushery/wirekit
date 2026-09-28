@@ -12,6 +12,7 @@ use Pushery\WireKit\Icons\Presets\HeroiconsPreset;
 use Pushery\WireKit\Icons\Presets\LucidePreset;
 use Pushery\WireKit\Icons\Presets\PhosphorPreset;
 use Pushery\WireKit\Icons\Presets\TablerPreset;
+use Pushery\WireKit\Support\LogValue;
 use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Support\SuggestSimilar;
 
@@ -113,7 +114,7 @@ final class IconResolver
      * package (`heroicons` and `heroicons-marketing` both need blade-heroicons), and
      * the developer needs to be told which line of their config is the problem.
      *
-     * ⚠️ INSTALLED IS NOT THE SAME QUESTION AS RESOLVES — see `sampleIdentifiers()` above,
+     * Installed is not the same question as resolves — see `sampleIdentifiers()` above,
      * which answers the one that decides whether a page renders.
      *
      * @return array<string, string> configured entry => composer package
@@ -183,7 +184,7 @@ final class IconResolver
             // in production noise.
             if (function_exists('logger')) {
                 logger()->info(
-                    "WireKit: Icon alias '{$alias}' resolved via fallthrough to '{$fallthrough}'. ".
+                    "WireKit: Icon alias '".LogValue::quote($alias)."' resolved via fallthrough to '{$fallthrough}'. ".
                     'Consider adding it to your active icon preset.'
                 );
             }
@@ -204,7 +205,7 @@ final class IconResolver
         // Aliases routinely collide on close typos (`bolt` vs `bell`,
         // `close` vs `clock`, `chevron-down` vs `chevron-up`), so a
         // ranked suggestion turns the exception into an actionable hint.
-        $message = "WireKit: Unknown icon alias '{$alias}'. ";
+        $message = "WireKit: Unknown icon alias '".LogValue::quote($alias)."'. ";
         $hint = SuggestSimilar::format(
             SuggestSimilar::byLevenshtein($alias, $available)
         );
@@ -368,6 +369,10 @@ final class IconResolver
 
     /**
      * Resolve a preset key or class name to an IconPreset instance.
+     *
+     * `mixed`, because the entry is a config value that nothing types: an array or an object
+     * written into `wirekit.icons.presets` has to reach the message below that names it, rather
+     * than fail on this signature with an error that does not mention the config.
      */
     private function instantiatePreset(mixed $entry): IconPreset
     {

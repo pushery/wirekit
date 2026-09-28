@@ -132,6 +132,7 @@ class DoctorPropsCommand extends Command
                     'file' => str_replace(base_path().'/', '', $file),
                     'line' => $glued['line'],
                     'snippet' => $glued['snippet'],
+                    'swallows' => $glued['swallows'],
                 ];
             }
 
@@ -195,8 +196,8 @@ class DoctorPropsCommand extends Command
                     ];
                 }
 
-                // An empty declared list means the component's `@props` could not be
-                // resolved (`glass`, `fonts`), and against an empty list EVERY attribute
+                // An empty declared list means the component has no `@props` to
+                // resolve (`glass`), and against an empty list EVERY attribute
                 // reads as unknown. The gate returns early on exactly this, so the wave of
                 // phantom findings cannot happen here — but say so, because a reader
                 // wondering why a file is quiet deserves the reason in the code.
@@ -274,8 +275,8 @@ class DoctorPropsCommand extends Command
                 //
                 // Deliberately NOT a scraped count. "Scanned N template(s)"
                 // answers the neighboring question — how many files ran, not how
-                // many were in scope — and a tree with thirty templates and no
-                // WireKit component reads as thirty and looks healthy.
+                // many were in scope — and a tree full of templates and no
+                // WireKit component reads as a large number and looks healthy.
                 if ($this->option('require-in-scope')) {
                     $this->error(sprintf(
                         'Scanned %d Blade template(s); none of them use a WireKit component.',
@@ -350,21 +351,35 @@ class DoctorPropsCommand extends Command
             // tags — printed raw, the very thing being reported would be eaten on its way to
             // the reader.
             $this->line(sprintf(
-                '  <fg=yellow>%s:%d</> — a slot closing tag is followed directly by text: <fg=red>%s</>',
+                '  <fg=yellow>%s:%d</> — a slot closing tag is followed directly by %s: <fg=red>%s</>',
                 $finding['file'],
                 $finding['line'],
+                $finding['swallows'] ? 'a parenthesis' : 'text',
                 OutputFormatter::escape($finding['snippet'])
             ));
         }
 
         if ($slotFindings !== []) {
+            $swallowing = count(array_filter($slotFindings, static fn (array $finding): bool => $finding['swallows']));
+
             $this->line('');
-            $this->warn(sprintf('%d slot closing tag(s) Blade does not compile as one.', count($slotFindings)));
+            $this->warn(sprintf('%d slot closing tag(s) Blade does not compile as written.', count($slotFindings)));
             $this->line('Blade rewrites a slot closing tag to `@endslot` with a space before it and nothing');
-            $this->line('after, so whatever follows becomes part of the directive. The slot then never closes:');
-            $this->line('its content lands in the default slot, the component is handed an empty string for');
-            $this->line('it, and the directive is printed on the page as text. Put a line break after the');
-            $this->line('closing tag — or a space, unless the next character is a parenthesis.');
+            $this->line('after, so whatever follows becomes part of the directive.');
+
+            if ($swallowing < count($slotFindings)) {
+                $this->line('Followed by a word or `::`, the directive is one Blade does not know: the slot never');
+                $this->line('closes, its content lands in the default slot, the component is handed an empty');
+                $this->line('string for it, and the directive is printed on the page as text.');
+            }
+
+            if ($swallowing > 0) {
+                $this->line('Followed by a parenthesis, the parenthesis becomes the directive\'s argument list: the');
+                $this->line('slot closes, and the parenthesized text never reaches the page.');
+            }
+
+            $this->line('Put a line break after the closing tag — or a space, unless the next character is a');
+            $this->line('parenthesis.');
         }
 
         foreach ($legacyFindings as $finding) {
@@ -423,10 +438,11 @@ class DoctorPropsCommand extends Command
      * `ComponentTagCompiler::compileSlots()` rewrites every slot closing tag to `@endslot`
      * with a space before it and nothing after, and the directive compiler then reads what
      * follows as part of the directive. A word or `::` makes it a single unknown directive,
-     * which stays in the page as text; a parenthesis — even after spaces or tabs — becomes
-     * its argument list and never reaches the page at all. Either way `endSlot()` does not
-     * run, so the named slot is still the empty string the opening call seeded, its content
-     * is captured into the default slot, and an output buffer stays open.
+     * which stays in the page as text, and `endSlot()` does not run: the named slot is still
+     * the empty string the opening call seeded, its content is captured into the default
+     * slot, and an output buffer stays open. A parenthesis — even after spaces or tabs —
+     * becomes the argument list of `@endslot` itself, so the slot closes and only the
+     * parenthesized text never reaches the page; `swallows` marks that form.
      *
      * Nothing about that throws or logs. It was found through a test runner reporting
      * "did not close its own output buffers", which an application has no equivalent of.
@@ -434,7 +450,7 @@ class DoctorPropsCommand extends Command
      * The tag half of the pattern is Laravel's own, so this matches exactly what the
      * compiler rewrites and nothing it leaves alone.
      *
-     * @return list<array{line: int, snippet: string}>
+     * @return list<array{line: int, snippet: string, swallows: bool}>
      */
     private function gluedSlotCloses(string $contents): array
     {
@@ -445,6 +461,9 @@ class DoctorPropsCommand extends Command
                 $hits[] = [
                     'line' => $index + 1,
                     'snippet' => mb_substr(trim($line), 0, 120),
+                    // The parenthesis form only when no word or `::` form sits on the same line,
+                    // because that one leaves the slot open whatever else the line holds.
+                    'swallows' => preg_match('/<\/\s*x[\-:]slot[^>]*>(?=\w|::)/', $line) !== 1,
                 ];
             }
         }

@@ -6,11 +6,14 @@
 "Build
 "Change
 "Details"
+"Done"
 "Failed"
 "Hoverable"
 "Most
 "New"
 "PHP
+"Queued"
+"Running…"
 "default"
 "false"
 "false").
@@ -22,6 +25,7 @@
 "trigger"
 "↻
 $active
+$announcement
 $arguments
 $argumentsText
 $argumentsText;
@@ -31,10 +35,10 @@ $as,
 $attributes->class([$classes])
 $attributes->class([$classes]);
 $attributes->class([$rootClasses])
-$attributes->class([$sizeClasses]);
 $attributes->class([$wrapperClasses])
 $attributes->class(['relative
 $attributes->class(['wk-collapsible',
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -83,9 +87,11 @@ $intent,
 $intentClasses
 $intentClasses,
 $isFailed
+$isFailed;
 $isInformative
 $isInformative;
 $isRunning
+$isSettled
 $label
 $language
 $m):
@@ -120,6 +126,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
@@ -132,6 +139,8 @@ $status
 $status,
 $statusIntent
 $statusLabel
+$statusLabel,
+$statusLabel]),
 $style
 $style]);
 $surface
@@ -144,6 +153,7 @@ $svgHtml,
 $tag
 $text
 $toolName
+$toolName,
 $toolName])">{{
 $tooltipClasses
 $tooltipId
@@ -364,6 +374,7 @@ $wrapperClasses
 'true'
 'true';
 'true']);
+'value'
 'w-max',
 'warning'
 'warning',
@@ -396,14 +407,13 @@ $wrapperClasses
 ($style
 ($surface)
 ($svgHtml
-('xs')
+('xs').
 (0.75rem):
 (AA
 (Alpine
 (Blade
 (CTA
 (Enter/Space)
-(Note:
 (SOFT
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -433,7 +443,6 @@ $wrapperClasses
 (icon
 (inert
 (int)
-(it
 (leading
 (matches
 (not
@@ -462,6 +471,7 @@ $wrapperClasses
 -
 --border-wk-badge-width
 --border-wk-width
+--color-wk-info
 --shadow-wk-badge
 --shimmer-wk-duration
 --}}
@@ -549,6 +559,7 @@ $wrapperClasses
 :text="$tooltip"
 :tool',
 :trigger="$isFailed
+:value',
 </button>
 </div>
 </span>
@@ -633,10 +644,8 @@ ALSO
 AND
 API:
 APPLICATION
-ARE
 ARIA
 AT
-ATTEMPTED
 Accept
 Adding
 Alpine
@@ -645,8 +654,6 @@ Also
 An
 Animation
 Aurora
-BECAUSE
-BELOW,
 BOTH
 Base
 Bind
@@ -667,10 +674,7 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
-CAN
-CANNOT
 COMPONENT
-CONDITION
 CSP
 CSS
 CUT
@@ -700,7 +704,6 @@ ENT_QUOTES).'"',
 EVERY
 English
 Escape
-FAIL
 FAQ
 FILTER_VALIDATE_BOOLEAN);
 FIRST
@@ -715,8 +718,6 @@ GROWS
 Generate
 German
 Graceful
-HALVES
-HERE,
 HERE.
 HOVER,
 HOVERABLE:
@@ -725,10 +726,7 @@ HTML,
 HTTP
 Htmlable,
 ID
-IN
-INSIDE
 IS
-IT
 Icon
 IconResolver,
 If
@@ -745,7 +743,6 @@ JSON_UNESCAPED_UNICODE),
 KEY,
 Keyboard-
 LANDMARK
-LANDMARK,
 LTR.
 Laravel's
 Level
@@ -786,14 +783,13 @@ OUTER
 OUTLINE
 OUTLINE:
 On
+Once
 Only
 Operating
 Optional
 Overrides
 PAGE
 PERFECTLY
-POINT.
-POINTING
 Per-instance
 Pick
 Polite
@@ -801,7 +797,6 @@ Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Put
-RENDER
 React-only
 Reapply
 Render
@@ -813,18 +808,14 @@ Resolve
 Rich
 RuntimeException
 SC
-SEE.
 SERVER
 SHAPE
 SIBLING.
 SOFT
 SOLID
 SOLID:
-SPLIT
-SPLIT,
 SR
 SR-only
-STABLE
 START
 STATIC
 SVG
@@ -851,7 +842,6 @@ TEXT,
 THE
 THIS
 TRIGGER
-TWO
 Tailwind
 Teleporting
 That
@@ -873,10 +863,8 @@ Validate
 WAI-ARIA
 WAITS
 WAS
-WAY
 WCAG
 WIDTH
-WINDOW,
 WITHOUT
 WORDS,
 WRAPPER,
@@ -909,6 +897,7 @@ Written
 ['data-wk-icon-missing'
 ['id'
 ['inverted',
+['label'
 ['outlined'
 ['pending',
 ['primary',
@@ -940,6 +929,7 @@ Written
 ]),
 ]);
 ];
+__('wirekit:::label:
 __('wirekit::Copy
 __('wirekit::Done'),
 __('wirekit::Error')
@@ -958,6 +948,7 @@ __toString
 `<button>`
 `<div>`
 `<p>`
+`<span>`
 `<template
 `<template>`
 `<x-wirekit::scroll-area
@@ -967,7 +958,6 @@ __toString
 `@foreach`
 `@if`
 `Illegal
-`Str::random(12)`
 `Svg
 `\/`
 `_x_dataStack`,
@@ -1011,6 +1001,7 @@ __toString
 `hasActualContent()`,
 `heroicon-m-inbox`
 `hidden="until-found"`
+`icon`
 `inbox`
 `info`
 `inverted`
@@ -1085,7 +1076,6 @@ above.
 absence
 absent,
 accent
-accent),
 accent-fg
 accept
 accessibility
@@ -1112,6 +1102,7 @@ all.
 allowed
 allowlist
 allowlist,
+alone
 already
 also
 always
@@ -1130,7 +1121,9 @@ annotation
 announce
 announced
 announcement
+announcement,
 announcement;
+announcements
 announcements:
 announces
 announcing
@@ -1201,6 +1194,7 @@ assertive)
 assistive
 association
 at
+attempted
 attribute
 attribute,
 attribute.
@@ -1286,7 +1280,6 @@ border-[var(--color-wk-warning)]',
 border-b
 border.
 bordered-only
-borrows
 both
 both;
 bound
@@ -1317,12 +1310,14 @@ by
 calibrated
 call
 call's
+call.
 callbacks,
 called
 called.
 caller
 caller's
 caller-supplied
+calls
 calls.
 calmer,
 came
@@ -1330,6 +1325,7 @@ can
 cancel
 cancels
 cannot
+cannot:
 canonical
 card
 card's
@@ -1349,7 +1345,8 @@ cell
 chain
 change
 changes
-changing;
+changing.
+charts
 check
 checked.
 checks
@@ -1405,6 +1402,7 @@ collapsed
 collapses
 collapsible
 collapsing
+colon.
 color
 color-mix
 color-mix(in
@@ -1421,7 +1419,6 @@ common
 compares.
 compete
 compile
-compiler
 compiles
 component
 component's
@@ -1492,6 +1489,7 @@ data-status="{{
 data-wk-code-block>
 data-wk-prose-skip
 data-wk-tool-call
+data-wk-tool-call-announcer>{{
 data-wk-tool-call-name>{{
 data-wk-tool-call-status>
 data-wk-tooltip-describedby="{{
@@ -1499,7 +1497,6 @@ data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
 dead.
 debug
-debug,
 decided
 decision,
 decision:
@@ -1564,7 +1561,6 @@ dismissLabel.
 dismissible
 dispatches
 display
-distinguish
 div
 do
 docs
@@ -1643,13 +1639,13 @@ event
 event.
 event:
 events
-ever
 every
 everything
 exactly
 except
 exhausting
 existing
+exists
 exists.
 expanding
 expandos.
@@ -1666,6 +1662,7 @@ eyebrow).
 factory,
 factory:
 fade="…">`
+fail
 failed
 failed"
 failed'))
@@ -1693,7 +1690,7 @@ file
 files
 fill
 fill,
-fill;
+fill:
 fill="none"
 filled
 filled-background
@@ -1706,10 +1703,10 @@ fine).
 finish
 finished
 fire
-fired
 fires
 first
 first,
+five
 fix
 fix.
 fixed
@@ -1717,6 +1714,7 @@ fixed-height
 fixed`
 fixes
 flags
+flash
 flashes
 flatten
 flattened
@@ -1776,6 +1774,8 @@ gap-[var(--gap-wk-sm)]">
 gap-[var(--padding-wk-x-sm)]
 gap-x-1',
 gap="sm"`
+gate
+gate,
 generic
 generic-scroll-region
 get
@@ -1788,6 +1788,7 @@ glyph.
 glyphs
 glyphs.
 go
+go,
 goes
 gone,
 gradient
@@ -1827,6 +1828,7 @@ have
 have)
 having
 header
+hears
 height
 height,
 heights
@@ -1861,6 +1863,7 @@ how
 however
 hypothetical
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -1896,6 +1899,7 @@ indicator
 indistinguishable
 inert
 inflate
+info
 informative
 informative.
 inherited-color
@@ -1909,6 +1913,7 @@ inline-block'])
 inline-flex
 inner
 input
+inserting
 inserts
 inset
 inside
@@ -1939,6 +1944,7 @@ invalid
 inverted
 invocation`
 is
+is,
 is.
 is_numeric($seconds)
 is_string($arguments)
@@ -2050,7 +2056,6 @@ lookup
 lost
 loudly
 loudly,
-made
 make
 makes
 many
@@ -2135,6 +2140,7 @@ neither
 nested
 neutralize
 never
+new
 next
 no
 no-op
@@ -2148,8 +2154,6 @@ none
 none,
 nor
 not
-not.
-not:
 nothing
 nothing.
 now
@@ -2168,14 +2172,12 @@ off
 off-screen.
 offers
 offset:
-old
 omission.
 on
 on-color
 on-fill
 on.
 once
-once,
 one
 one's
 one,
@@ -2248,7 +2250,6 @@ paints
 pair
 pair).
 pairing
-pairing.)
 pairing;
 pairs
 panel
@@ -2283,6 +2284,7 @@ per-set
 per-surface
 perceived
 person
+personalization
 phrasing
 pill
 pill,
@@ -2298,11 +2300,11 @@ plaintext`
 plugin,
 plus
 point
+point.
 pointed
 pointer
 pointer-events
 pointing
-polite
 popover's
 popovers
 popular"
@@ -2327,7 +2329,6 @@ printed
 problem
 prod).
 produces
-production.
 project,
 promise
 promise,
@@ -2343,7 +2344,6 @@ provider's
 provides
 proxy
 pt-[var(--padding-wk-y-lg)]
-purpose
 purpose,
 pushing
 put
@@ -2373,14 +2373,17 @@ random
 rather
 raw
 re-inject
+re-render
 re-renders
 re-renders,
+re-renders.
 re-thrown
 reach
 reachable
 reaches
 read
 read,
+read;
 readable
 reader
 reader's
@@ -2489,16 +2492,18 @@ run
 rung
 running
 running.
+running:
 runtime
 s',
 safe.
 safe:
+said
+said,
 same
 same,
 say
 says
 scanner
-scans
 scope
 scope,
 scoped
@@ -2513,6 +2518,7 @@ scroller:
 scrolls
 second
 see
+see.
 seeded
 sees
 sees.
@@ -2528,6 +2534,8 @@ set
 sets
 settle
 settled
+settled,
+settled:
 settles
 shadow
 shadow.
@@ -2535,6 +2543,7 @@ shape
 shape,
 share
 shared
+shares
 shift.
 shimmer
 shimmers)
@@ -2573,6 +2582,7 @@ soft
 soft).
 soft-chip
 soft-tone
+solid
 solved
 somebody
 something
@@ -2589,6 +2599,7 @@ spells
 spilling
 spinner
 split
+split,
 spoiler.
 srMessage
 srMessage.
@@ -2603,7 +2614,9 @@ standard
 stands
 stands:
 started,
+starts
 state
+state,
 state.
 state;
 states
@@ -2622,6 +2635,7 @@ stopwatch
 storage/logs/laravel.log.
 strategy:
 streaming
+strictness
 string
 string,
 stringly
@@ -2646,6 +2660,7 @@ subtree
 subtree,
 success
 success/failure
+such
 supplementary
 supplies
 supports
@@ -2663,7 +2678,6 @@ swapped
 sweep
 switch
 switches
-syntax
 tab
 tab-stop
 tabbed
@@ -2679,6 +2693,7 @@ tall.
 target
 teaches
 technology
+technology,
 teleport
 teleport:
 teleported
@@ -2711,6 +2726,7 @@ text.
 text;
 than
 that
+that.
 the
 their
 them
@@ -2732,9 +2748,11 @@ things,
 third
 this
 those
+those,
 three
 through
 throw
+throw,
 throws
 tick
 tidy
@@ -2745,6 +2763,7 @@ time.
 timer
 timer,
 timer;
+tint
 tinted
 tip
 tip.
@@ -2758,7 +2777,7 @@ toggle
 toggles
 token
 token,
-too
+tone
 took,
 tool
 toolbar
@@ -2821,7 +2840,6 @@ typed
 typography,
 unaffected
 unaffected.
-unbalanced
 unbound
 uncaught
 unchanged.
@@ -2891,6 +2909,7 @@ walk
 wants.
 warning
 was
+was.
 way
 way,
 ways
@@ -2918,6 +2937,7 @@ wide,
 widening
 width
 width)
+window,
 wins
 wire:key="wk-tool-call-{{
 wire:key="wk-tooltip-panel"
@@ -3019,4 +3039,3 @@ zoom,
 ~0.9rem
 —
 ≥4.5:1
-⚠️

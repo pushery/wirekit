@@ -40,7 +40,7 @@ export default function wirekitFileUpload(config = {}) {
     // The control's root element, resolved ONCE while something is still attached to
     // resolve it from.
     //
-    // ⚠️ `$root` IS RESOLVED WHEN IT IS READ, by walking up from `$el` to the nearest
+    // `$root` is resolved when it is read, by walking up from `$el` to the nearest
     // `[x-data]`. `removeFile()` runs from a row's own remove button, so `$el` is that
     // button — and `_focusAfterRemoval` reads the scope inside `$nextTick`, by which
     // time the button has gone with its row. The walk from a detached node reaches

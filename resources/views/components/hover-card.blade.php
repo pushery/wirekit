@@ -41,15 +41,14 @@
 <span
     x-data="wirekitHoverCard({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ $offset }}, delayShow: {{ $delayShow }}, delayHide: {{ $delayHide }} })"
     {{-- Escape listens on the WINDOW, and it has to.
-         The panel below carries its own `@keydown.escape`, which only ever fires
-         when focus is already inside the panel — and it never is: the panel is
-         teleported, and a hover card is opened by pointing at or focusing the
-         TRIGGER. So the key went to the trigger and the handler sat somewhere
-         the event could not reach.
+         The panel below carries its own `@keydown.escape`, which fires only while
+         focus is inside the panel — after `tabFromTrigger()` moves it there, not
+         while a reader points at or focuses the trigger, which is how a hover card
+         opens. The panel is teleported, so a key pressed on the trigger never
+         reaches that handler.
          That is not a nicety. WCAG 1.4.13 requires content shown on hover or
          focus to be dismissible without moving the pointer or the focus, and
-         Escape is the mechanism it names. Measured: the card stayed open
-         through Escape on every one of its previews.
+         Escape is the mechanism it names.
          Guarded on `open` so a page full of these does not run a handler each
          keystroke. --}}
     @keydown.escape.window="isOpen && close()"

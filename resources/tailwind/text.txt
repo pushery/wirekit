@@ -7,7 +7,6 @@ $as
 $as);
 $attributes->class([$classes])
 $attributes->getAttributes());
-$break)
 $break,
 $breakClasses
 $breakClasses,
@@ -17,11 +16,9 @@ $effectiveIntent,
 $intent
 $intentPropName
 $intentPropName,
-$leading)
 $leading,
 $leadingClasses
 $leadingClasses,
-$lineClamp
 $lineClamp,
 $lineClampClasses
 $lineClampClasses,
@@ -54,7 +51,7 @@ $wrap
 '5'
 '5',
 '6'
-'6']),
+'6'])
 '[overflow-wrap:anywhere]',
 '[overflow-wrap:normal]
 '[word-break:break-all]',
@@ -63,20 +60,20 @@ $wrap
 'align'
 'align',
 'all'
-'all']),
+'all']))
 'anywhere'
 'anywhere',
 'as'
 'base'
 'base',
 'bold'
-'bold']),
+'bold']))
 'break'
 'break',
 'center'
 'center',
 'danger'
-'danger']),
+'danger']))
 'default'
 'default',
 'false'
@@ -110,9 +107,9 @@ $wrap
 'normal',
 'p',
 'relaxed'
-'relaxed']),
+'relaxed']))
 'right'
-'right']),
+'right']))
 'scope'
 'semibold'
 'semibold',
@@ -151,15 +148,13 @@ $wrap
 'whitespace-nowrap',
 'wrap'
 'xl'
-'xl']),
+'xl']))
 'xs'
-($align)
+($align
 ($break
-($effectiveIntent)
 ($leading
 ($lineClamp
-($size)
-($weight)
+(WireKit::validateProp('text',
 (not
 (silent
 (string)
@@ -230,10 +225,8 @@ WireKit::validateProp('text',
 `break-word`
 `false`
 `intent`
-`line-clamp-1`
 `line-clamp-2`
 `line-clamp-3`,
-`line-clamp-6`,
 `line-clamp-N`
 `line-clamp-{$lineClamp}`,
 `match`
@@ -263,7 +256,6 @@ and
 any
 anywhere
 appeared
-arbitrary
 are
 arm
 arms
@@ -292,6 +284,8 @@ belongs
 block,
 body
 both
+build
+but
 by
 call
 can
@@ -303,6 +297,7 @@ characters
 checksum,
 clamp".
 clamping
+clamps
 class
 close
 color
@@ -317,7 +312,6 @@ container
 copy
 could
 counts
-cut,
 cuts
 cutting
 danger.
@@ -328,6 +322,7 @@ decided
 default
 did
 diff
+documents.
 does
 does.
 double
@@ -354,6 +349,8 @@ false);
 false,
 feature
 file
+finds
+first
 fixed
 flags
 flex
@@ -398,10 +395,12 @@ leading
 lets
 library
 lighter
+like
 line
 line,
 line-height
 lineClamp
+lines
 list
 literal
 live
@@ -432,7 +431,9 @@ null)
 null,
 null`
 number
+number,
 of
+offers,
 on
 on.
 one
@@ -449,6 +450,7 @@ out,
 out:
 outside
 own
+page
 paragraph
 phone
 point:
@@ -462,6 +464,7 @@ props
 pure
 puts
 qualified:
+range
 rather
 reach
 read
@@ -476,7 +479,7 @@ release,
 reliably,
 rendered
 renders
-reported
+reported,
 rest
 result
 row's
@@ -494,7 +497,6 @@ sees
 set
 sets
 severity
-ships
 short
 showed
 shown
@@ -503,6 +505,7 @@ silent
 silently
 silently.
 site
+six
 so
 source
 space
@@ -529,8 +532,10 @@ than
 that
 the
 theirs
+them
 theme
 theme's
+then
 there
 this
 tight
@@ -554,7 +559,6 @@ use
 used
 utilities
 utilities:
-utility
 v4
 validation.
 value
@@ -576,6 +580,7 @@ work
 would
 wrap
 wrap:
+written
 wrote,
 {
 {{

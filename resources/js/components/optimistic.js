@@ -5,9 +5,9 @@
  * immediately, and one of four things happens afterwards. Three of them are
  * ordinary; the fourth is the reason this file is careful.
  *
- * **A cancel is not a failure.** Livewire's legacy `failed` channel fired for an
- * aborted request and a rejected one alike — it does not exist in v4.3.3 at all —
- * so an implementation built on it announces "could not save" for something that
+ * **A cancel is not a failure.** Livewire's `commit` hook, the older interface,
+ * calls its `fail` callbacks for an aborted request and a rejected one alike, so
+ * an implementation built on it announces "could not save" for something that
  * was never refused. Nothing was denied, so nothing is said: the value goes back
  * and the state returns to `idle`, not to `rolled-back`. That difference is
  * invisible in the value and audible only in the announcement.

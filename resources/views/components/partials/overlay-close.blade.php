@@ -47,8 +47,8 @@
         type="button"
         x-on:click="close()"
         {{-- `cursor-pointer` unconditionally, and only on THIS branch.
-             Tailwind v4's preflight sets `cursor: default` on a button, and the resolved
-             class list here is empty unless the developer scopes one — so a dismiss
+             Tailwind v4's preflight no longer sets `cursor: pointer` on a button (v3 did),
+             and the resolved class list here is empty unless the developer scopes one — so a dismiss
              control holding nothing but an icon rendered with no pointer at all. The
              wrapper branch above does not need it: whatever it wraps is already a control
              and carries its own.

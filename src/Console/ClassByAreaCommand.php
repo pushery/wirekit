@@ -126,7 +126,7 @@ class ClassByAreaCommand extends Command
 
         $areas = $this->collectAreas($projectRoot, $format);
 
-        // ⚠️ `--area` says which rows are ASKED FOR. It must never say which operands EXIST.
+        // `--area` says which rows are ASKED FOR. It must never say which operands EXIST.
         //
         // The filter used to prune `$areas` itself, and diffPairs() reads its operands back
         // out with `$areas['compiled'] ?? []` — so a filtered-away layer arrived as an EMPTY
@@ -198,12 +198,11 @@ class ClassByAreaCommand extends Command
              * identical in the output, and the second one silently reports every class as
              * un-emitted.
              *
-             * ⚠️ NOT ON THE JSON PATH. Laravel's console components write to STDOUT, so this
-             * line landed in front of the document `renderJson()` emits four steps later, and
-             * `jq` aborts on it while the command still exits 0. The reference page sells
-             * `--format=json` for CI dashboards and audit-history pipelines, and the condition
-             * that triggers this is the ordinary state of a fresh checkout — the exact moment
-             * somebody wires the report up for the first time.
+             * Not on the JSON path. Laravel's console components write to STDOUT, so this
+             * line would land in front of the document `renderJson()` emits, and `jq` would
+             * abort on it while the command still exits 0. The condition that triggers it is
+             * the ordinary state of a fresh checkout, which is when somebody wires the JSON
+             * report up for the first time.
              *
              * The absence is not dropped, it MOVES: `compiled_measured` travels in the
              * document, which is the shape the diff rows already use one layer further out.
@@ -249,14 +248,9 @@ class ClassByAreaCommand extends Command
     /**
      * The post-Tailwind stylesheet to compare the source inventory against.
      *
-     * ⚠️ THE ONLY LOCATION THIS LOOKED IN WAS `sample/public/build/assets/app-*.css`, WHICH
-     * NO DEVELOPER INSTALL CONTAINS — `sample/` is export-ignored, so on a real installation
-     * the glob matched nothing, `$compiled` stayed empty, and the command reported its
-     * compiled-CSS column as blank without saying why. Every class looked un-emitted.
-     *
-     * A developer's own build output is the artifact that answers the same question for
-     * them, so it is looked for first. The package's own sample is the fallback, for a run
-     * from inside this repository.
+     * A developer's own build output is the artifact that answers the question for them, so
+     * it is looked for first. The package's own sample is the fallback, for a run from inside
+     * this repository: `sample/` is export-ignored, so no developer install contains it.
      */
     private function locateCompiledCss(string $projectRoot): ?string
     {

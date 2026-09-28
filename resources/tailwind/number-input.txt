@@ -266,11 +266,11 @@ Both
 Bound,
 Build
 CSP
-DENSE,
 DOM
 DOM,
 Declared
 Decrease
+Dense,
 Dev-only
 Dutch
 END
@@ -314,7 +314,6 @@ READ
 Render
 Rendered
 Renders
-Reported
 Required
 START
 Same
@@ -327,7 +326,6 @@ Stepper
 Strip
 Suffix
 Support\DomId
-TOP
 Taking
 The
 Two
@@ -381,7 +379,7 @@ __('wirekit::Saving'),
 `input`:
 `keep`
 `min`.
-`ms-0.5`
+`ms-0.5`,
 `name`
 `prop="false"`
 `required`
@@ -404,7 +402,6 @@ accessibility
 accessible
 account
 action
-adopting
 after
 against
 agreed
@@ -429,7 +426,6 @@ apart,
 appears
 appended
 application
-application.
 applied
 are
 arguments
@@ -969,7 +965,6 @@ select
 server
 server's.
 server-side
-seven
 shadow
 shared
 ships:
@@ -1082,6 +1077,7 @@ together
 tokens
 too.
 toolbar
+top
 top/bottom
 top:
 trap
@@ -1189,4 +1185,3 @@ x-text="announcement"></div>
 —
 ──
 ────────────────────────────────────
-⚠️

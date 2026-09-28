@@ -58,7 +58,7 @@
     // variant keyed on it matches EVERY row, and the chosen one renders muted along with
     // the rest. The mechanism is right; only the attribute it watches has to follow the
     // contract the column is actually under.
-    // ⚠️ BOTH SETS ARE WRITTEN OUT IN FULL, and that is not verbosity.
+    // Both sets are written out in full, and that is not verbosity.
     //
     // The first attempt interpolated the attribute — `"not-[".$marker."]:text-…"` — which
     // reads well and is silently wrong twice over. Tailwind scans SOURCE for complete
@@ -112,15 +112,11 @@
     $active = BooleanProp::from($active, false);
     $submenu = BooleanProp::from($submenu, false);
 
-    // also consume `data-current` /
-    // `data-current="true"` if the caller passed it via the attribute
-    // bag (Livewire 4 emits this on `wire:navigate` links automatically).
-    // Without this fallback the developer has to manually pass
-    // `:active="request()->is('posts*')"` on every sidebar item,
-    // duplicating routing knowledge that's already encoded in the
-    // route file. We OR-merge: explicit `:active` always wins; if the
-    // caller didn't pass `active` but did pass `data-current="true"`,
-    // the item highlights.
+    // A caller may mark the item current with `data-current` in the attribute bag
+    // (`true`, `"true"`, `"1"` or `"page"`) instead of `:active`; an explicit `:active`
+    // always wins. Livewire's own `data-current` on a `wire:navigate` link is written in
+    // the browser after the page loads and never reaches this bag, so a server render
+    // still needs one of the two, for example `:active="request()->is('posts*')"`.
     if (! $active) {
         $dataCurrent = $attributes->get('data-current');
         if ($dataCurrent === true || $dataCurrent === 'true' || $dataCurrent === '1' || $dataCurrent === 'page') {
@@ -137,7 +133,7 @@
         // Collapse-to-icon rail: center the lone icon when the sidebar collapses.
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
-        // ⚠️ THE ROW HEIGHT MUST NOT DEPEND ON WHICH CHILD HAPPENS TO BE TALLEST.
+        // The row height must not depend on which child happens to be tallest.
         //
         // Without this the row was sized by its LABEL while expanded and by its ICON while
         // collapsed, because the label carries `sr-only` in the rail and `sr-only` is a
@@ -260,8 +256,9 @@
      `focusable-trigger="false"` because the row is already focusable and already named;
      a second tab stop in front of every navigation entry would be the cure being worse.
 
-     `block w-full` overrides the tooltip's own `inline-block` so the wrapper does not
-     narrow the row it wraps. --}}
+     `w-full` keeps the wrapper from narrowing the row it wraps. The `block` beside it
+     does not change the display: Tailwind emits `.inline-block` after `.block`, so the
+     tooltip's own `inline-block` wins that tie. --}}
 @if($collapsible)
     <x-wirekit::tooltip
         :text="trim(strip_tags((string) $slot))"

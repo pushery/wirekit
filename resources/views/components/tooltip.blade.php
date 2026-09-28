@@ -38,7 +38,7 @@
     // rendering exactly as before; `as="span"` is what makes this component usable inside a
     // text-level one.
     //
-    // ⚠️ It has to move BOTH elements, and that is the whole reason it is one prop rather
+    // It has to move BOTH elements, and that is the whole reason it is one prop rather
     // than two. A `<div>` inside a `<p>` is invalid HTML, so the parser closes the paragraph
     // and hoists the div out — the trigger stops being a child of its text node and becomes
     // its SIBLING. In a grid that sibling gets a cell of its own, which is how a warning
@@ -82,9 +82,9 @@
     WireKit::warnUnknownProps('tooltip', $attributes->getAttributes());
 
     // Generate unique ID for ARIA association between trigger and tooltip
-    // STABLE across re-renders, which the old `Str::random(12)` was not. The trigger's
-    // aria-describedby and the bubble's id are the two halves of one pairing; a fresh id
-    // per render leaves them naming different things, and both stay well-formed so
+    // Stable across re-renders. The trigger's aria-describedby and the bubble's id are the
+    // two halves of one pairing; a fresh id per render would leave them naming different
+    // things, and both stay well-formed so
     // nothing in the markup looks wrong. A screen reader simply stops announcing the tip.
     $tooltipId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-');
 
@@ -137,10 +137,10 @@
     x-on:pointerdown="pointerdown($event)"
     x-on:pointerup="pointerup($event)"
     x-on:pointerleave="pointerleave($event)"
-    {{-- Escape listens on the WINDOW, and it has to.
-         A tooltip is opened by POINTING at its trigger, and a pointer moves no focus —
-         so a handler bound here only ever fired once something inside had already been
-         tabbed to, which is the one case that needed it least. WCAG 1.4.13 requires
+    {{-- Escape listens on the window, and it has to.
+         A tooltip is opened by pointing at its trigger, and a pointer moves no focus —
+         so a handler bound here would only fire once something inside had been tabbed
+         to, the one case that needs it least. WCAG 1.4.13 requires
          content shown on hover or focus to be dismissible without moving the pointer or
          the focus, and Escape is the mechanism it names.
          Deliberately NOT guarded on `open`, unlike the hover card's counterpart: a
@@ -153,7 +153,7 @@
     {{ $attributes->class(['relative inline-block']) }}
 >
     {{-- Trigger element — linked to tooltip via aria-describedby --}}
-    {{-- ⚠️ The description sits on this WRAPPER, and a wrapper `<div>` is not what a reader
+    {{-- The description sits on this WRAPPER, and a wrapper `<div>` is not what a reader
          lands on. With `focusable-trigger` the wrapper takes the tab stop and carries the
          name itself, which works. Without it — the documented shape for wrapping a caller's
          own `<button>` — the button is what gets focused, and it has no `aria-describedby`:
@@ -215,8 +215,9 @@
              patches a teleported node against its own counterpart, one to one, and
              never looks a key up among siblings — so many tooltips on one page do
              not compete — while the per-instance value is exactly the one that
-             cannot agree across two renders. The id stays random for the opposite
-             reason: `aria-describedby` on the trigger has to name THIS panel. --}}
+             cannot agree across two renders. The id stays per-instance for the
+             opposite reason: `aria-describedby` on the trigger has to name this
+             panel. --}}
         wire:key="wk-tooltip-panel"
         x-ref="tooltip"
         {{-- The panel holds itself open while the pointer rests on it — the "Hoverable"

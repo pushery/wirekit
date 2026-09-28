@@ -227,7 +227,6 @@ AND
 After
 Aligning
 Auto
-Auto-generate
 Auto-size:
 Base
 Blade
@@ -241,10 +240,11 @@ Border
 BrowserBaselineGuardTest,
 CSS
 Chrome
-DENSE,
 DOM
 Declared
+Dense,
 Dev-only
+DomId
 Error
 Every
 Extra
@@ -253,7 +253,6 @@ Fully
 HTML
 HTML)
 HTML5
-ID
 IS
 Instead
 It
@@ -281,7 +280,6 @@ READ
 Read-only
 Rendered
 Renders
-Reported
 Required
 Safari
 See
@@ -291,7 +289,6 @@ So
 Strip
 Success
 Support\DomId
-TOP
 Textarea
 The
 This
@@ -338,7 +335,7 @@ __('wirekit::Saving'),
 `items-end`
 `items-start`
 `keep`
-`ms-0.5`
+`ms-0.5`,
 `name`
 `optimistic="method"`
 `prop="false"`
@@ -361,7 +358,6 @@ accepts
 across
 action
 actually
-adopting
 after
 after.
 again
@@ -384,7 +380,6 @@ any
 appearing
 appears
 appended
-application.
 applies.
 arbitrary
 are
@@ -409,7 +404,6 @@ asterisk
 at
 at,
 attribute
-attribute,
 attributes
 attributes,
 auto
@@ -504,6 +498,7 @@ controls
 controls;
 copy,
 could
+counts
 danger-text
 dark
 dark:
@@ -601,7 +596,6 @@ free-text
 from
 from:
 gap
-generate
 get
 give
 gives:
@@ -636,7 +630,6 @@ id
 id;
 id="{{
 identical
-if
 implode('
 imports
 in
@@ -710,13 +703,14 @@ must
 muted
 n/a
 name
+name;
 name="{{
 named
 native
 needed
 needed).
 needs
-neither
+neither,
 network
 never
 new
@@ -781,7 +775,6 @@ prop,
 prop:
 property
 props
-provided
 pull
 pushed
 pushes
@@ -789,7 +782,6 @@ put
 qualified:
 question
 radius
-random
 rather
 rationale.
 re-anchors
@@ -813,6 +805,7 @@ render
 rendered
 rendered.
 renders
+request.
 required,
 resizable,
 resolve
@@ -845,7 +838,6 @@ server's
 server-side
 set.
 setting
-seven
 ships
 should
 show
@@ -927,6 +919,7 @@ to
 together
 tokens
 toolbar
+top
 trim(
 true
 true);
@@ -1018,4 +1011,3 @@ your
 }}@if($required)<span
 }}`
 —
-⚠️

@@ -78,12 +78,15 @@
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
         : '';
 
-    // Child panel classes — identical surface to dropdown.panel.
+    // Child panel classes — the surface and the frame of dropdown.panel. The inline padding
+    // matters as much as the radius: this panel inherits the item radius the parent panel
+    // derives from its own padding, and it is concentric only with the same frame.
     $panelClasses = WireKit::resolveClasses('dropdown.panel', 'base', implode(' ', [
         'fixed',
         'z-[var(--z-wk-dropdown)]',
         'min-w-[12rem]',
         'py-[var(--padding-wk-y-xs)]',
+        'px-[var(--padding-wk-y-xs)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',

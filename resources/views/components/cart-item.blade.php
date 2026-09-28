@@ -66,11 +66,11 @@
     $onSale = $compareAt !== null && $price !== null && (float) $compareAt > (float) $price;
 
     $classes = WireKit::resolveClasses('cart-item', 'base', implode(' ', [
-        // \u26a0 `flex-wrap` plus the container query on the controls below, and the numbers are
-        // why. A cart line has five columns \u2014 thumbnail, name, stepper, total, remove \u2014 and
-        // on a 369px list the controls cluster on the trailing side measured 262px while the NAME collapsed to
-        // 19px. `flex-1 min-w-0` gives way to `shrink-0`, so the column that matters is the one
-        // that disappears. Below the threshold the cluster takes a row of its own instead.
+        // `flex-wrap` plus the container query on the controls below. A cart line has five
+        // columns — thumbnail, name, stepper, total, remove — and on a narrow list the trailing
+        // cluster of controls keeps its width while the name collapses: `flex-1 min-w-0` gives
+        // way to `shrink-0`, so the column that matters is the one that disappears. Below the
+        // threshold the cluster takes a row of its own instead.
         'flex flex-wrap items-start gap-[var(--gap-wk-md)]',
         'py-[var(--padding-wk-y-md)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -128,7 +128,7 @@
          thumbnail plus 262px of controls plus the gaps leaves a name column under 160px on
          anything narrower, and a product name is not a thing to abbreviate. Outside a
          `cart-list` the named container does not exist, so none of these match and the line
-         stays on one row \u2014 which is the old behavior, not a broken one. --}}
+         stays on one row — which is the ordinary behavior, not a broken one. --}}
 
     {{-- `flex-wrap` on the cluster itself, and it is NOT redundant with the one on the line
          above: that one wraps the cluster away from the name, this one wraps INSIDE the
@@ -140,15 +140,15 @@
          its own. Above it there is room, nothing wraps, and the desktop line is unchanged:
          a wrap only happens where the content already did not fit. --}}
     <div class="flex shrink-0 flex-wrap items-center gap-[var(--gap-wk-md)] @max-lg/wk-cart-list:w-full @max-lg/wk-cart-list:justify-between">
-        {{-- No width of our own. \u26a0 AND THE UTILITY THAT USED TO BE HERE IS DELIBERATELY NOT
-             NAMED: Tailwind scans Blade COMMENTS too, so writing it would emit the class into
-             the compiled CSS with nothing rendering it, and the reverse-diff would report an
-             untraceable selector. The note about the trap springs the trap.
+        {{-- No width of our own, and the utility that would set one is deliberately not named:
+             Tailwind scans Blade comments too, so writing it would emit the class into the
+             compiled CSS with nothing rendering it.
 
-             A fixed 112px box was a guess, and the stepper's own row measured
-             128px at `size="lg"` \u2014 so the box clipped it by 16px in every cart line, silently,
-             because the overflow was inside a clipping ancestor rather than on the page. The
-             component already knows its size; imposing a second one can only ever disagree. --}}
+             A fixed box would be a guess, and the stepper's own row is wider at `size="lg"`
+             than a box sized for the default, so it would be clipped in every cart line,
+             silently, because the overflow sits inside a clipping ancestor rather than on the
+             page. The component already knows its size; imposing a second one can only ever
+             disagree. --}}
         <div class="shrink-0">
             <x-wirekit::number-input
                 :label="__('wirekit::Quantity')"
@@ -184,29 +184,24 @@
                  nothing. The accessible name carries the product, so ten of these in one cart are
                  ten different controls to anyone using voice control. --}}
             <span x-data>
-                {{-- \u26a0 THIS USED TO PASS `icon="x-mark"`, AND BOTH HALVES WERE WRONG. `button`
-                     declares `iconOnly` and NOT `icon`, so Blade rendered the name as a plain
-                     attribute and the control had no glyph at all \u2014 exactly the failure class the
-                     header of this file's test warns about. And `x-mark` is a heroicon spelling,
-                     not one of the catalog's aliases; the alias for this gesture is `close`.
-
-                     The documented shape puts the glyph in `iconLeft` and the LABEL in the default
-                     slot, where `icon-only` hides it visually and keeps it as the accessible name.
-                     That is also why there is no `aria-label` here any more: two names on one
-                     control is one too many, and the slot is the one the component supports. --}}
+                {{-- The glyph goes in `iconLeft` and the label in the default slot, where
+                     `icon-only` hides it visually and keeps it as the accessible name. `button`
+                     declares `iconOnly` and not `icon`, so an `icon` attribute would render as a
+                     plain attribute with no glyph at all, and the alias for this gesture is
+                     `close`, not a heroicon spelling. That is also why there is no `aria-label`
+                     here: two names on one control is one too many, and the slot is the one the
+                     component supports. --}}
                 <x-wirekit::button
                     intent="neutral"
                     surface="ghost"
                     :size="$size === 'lg' ? 'md' : 'sm'"
                     icon-only
-                    {{-- \u26a0 `AlpinePayload::from()`, NOT `Js::from()`. Under the CSP build the
+                    {{-- `AlpinePayload::from()`, not `Js::from()`. Under the CSP build the
                          latter emits `JSON.parse(…)` for anything non-scalar and `\u` escapes for
                          anything non-ASCII — the evaluator cannot resolve the call, and the
-                         tokenizer drops the backslash. Either way the directive never evaluates
-                         and this button silently does nothing, in the build a CSP-strict
-                         application ships. `csp-expression-audit.mjs` holds it, and that audit
-                         lives in the ESM chain rather than in Pest: a green PHP suite says
-                         nothing about it. --}}
+                         tokenizer drops the backslash. Either way the directive would never
+                         evaluate and this button would silently do nothing, in the build a
+                         CSP-strict application ships. --}}
                     x-on:click="$dispatch('wirekit:cart-remove', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
                 >
                     <x-slot:iconLeft>

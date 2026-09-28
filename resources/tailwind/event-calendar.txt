@@ -153,6 +153,7 @@ $weekStartsOn
 ($eventClasses)
 ($i
 ($levelValue
+(--color-wk-info
 (.wk-day-blocked
 (1-6).
 (2xs)
@@ -173,10 +174,10 @@ $weekStartsOn
 (day.inMonth
 (default
 (events
+(info
 (int)
 (isSelectedDay(day.date)
 (it
-(its
 (left/right
 (natural
 (navigation)
@@ -196,7 +197,6 @@ $weekStartsOn
 (tinted
 (tipShow
 (unavailable)
-(validateProp
 (x-ref="tip"
 ({{
 *
@@ -205,7 +205,6 @@ $weekStartsOn
 +
 +2px
 -
---color-wk-info
 --wk-agenda-time
 --wk-agenda-time,
 --}}
@@ -418,9 +417,9 @@ Height/floor
 Hidden
 Horizontal
 Hour
-IS
 ISO
 If
+Info
 Intl
 It
 Its
@@ -461,7 +460,6 @@ RADIOGROUP
 ROW
 Resolving
 Root-level
-SAME
 SHARED
 SHOWN,
 STRIP
@@ -556,6 +554,7 @@ _measureAgendaTime()
 `DomId::unique()`,
 `Intl`'s
 `__()`,
+`accent`
 `allDayLabel`
 `ariaLabel`:
 `blocked`
@@ -571,10 +570,12 @@ _measureAgendaTime()
 `generic`,
 `group`
 `heading-order`
+`info`
 `label[for]`
 `landmark-unique`).
 `max-sm:hidden`
 `min-w-0`
+`pointer-events-none`,
 `pt_BR`
 `region`
 `role="group"`
@@ -591,7 +592,6 @@ above
 above)
 above.
 accent
-accent's
 accent.
 accessible
 actionable:
@@ -659,7 +659,6 @@ away
 axe
 axe's
 axis
-back
 back,
 back-to-back
 back.
@@ -712,7 +711,6 @@ border-l-2
 border-l-[length:var(--border-wk-width)]
 border-r-[length:var(--border-wk-width)]
 border-t-[length:var(--border-wk-width)]
-borderless)
 both
 bottom
 boundary
@@ -746,6 +744,7 @@ carried
 carries
 carry
 carry,
+carry;
 case
 catalog
 catalog,
@@ -765,6 +764,7 @@ centers
 change
 change;
 changes
+charts
 checks
 child
 children,
@@ -901,7 +901,7 @@ destination.
 detail
 developer
 diagonal
-did-you-mean)
+did-you-mean,
 different
 disagree
 discontinuous
@@ -941,7 +941,6 @@ ends.
 engine
 enough
 entries
-equally,
 errors;
 established
 ev.id
@@ -969,7 +968,6 @@ factory,
 failure
 fallback
 fallback).
-falls
 false"
 false)
 false);
@@ -992,6 +990,7 @@ fixed
 fixed-position
 flagged
 flags
+flash
 flex
 flex-1
 flex-col
@@ -1029,6 +1028,8 @@ gap-[var(--gap-wk-sm)]
 gap-[var(--gap-wk-xs)]">
 gap-[var(--space-wk-sm)]
 gap-[var(--space-wk-sm)]">
+gate
+gate,
 gave
 gives
 going
@@ -1054,9 +1055,10 @@ gutter)
 gutter,
 h-2
 h-5
-h-6
 h-[60rem]">
 h-[var(--size-wk-sm)]
+h-[var(--size-wk-target-min)]
+h-[var(--size-wk-xs)]
 h-full
 h-px
 h1,
@@ -1141,6 +1143,7 @@ items-baseline
 items-center
 its
 itself
+itself,
 itself.
 jumps
 justify-between
@@ -1221,12 +1224,11 @@ met
 mi)
 min(6,
 min-h
-min-h-6
 min-h-[2.1875rem]
+min-h-[var(--size-wk-target-min)]
 min-w-5
-min-w-6
+min-w-[var(--size-wk-target-min)]
 minted
-mirrors
 mislabel
 moment
 month
@@ -1346,8 +1348,8 @@ pl
 pl-[var(--space-wk-sm)]
 place).
 plain
+plus
 pointer-events-none"></div>
-popped.
 position).
 pr-1
 present
@@ -1357,7 +1359,6 @@ prints.
 prod).
 produce
 produced
-production
 prop
 props
 pt-2):
@@ -1387,6 +1388,7 @@ reach
 reachable
 reaches
 read
+read),
 readable
 reader
 reader's
@@ -1406,6 +1408,7 @@ render
 render,
 rendered
 renders
+reported
 reports,
 resolved
 resolves.
@@ -1491,7 +1494,6 @@ shrink,
 shrink-0
 shrink-0">
 sighted
-signals
 simply
 single
 single-select
@@ -1516,6 +1518,7 @@ spells
 spine:
 sr-only
 stack
+stands
 state
 status
 status-dot.
@@ -1525,6 +1528,7 @@ sticky
 still
 stop
 strength
+strictness
 string,
 strip
 stripe
@@ -1555,6 +1559,7 @@ tabular-nums
 tabular-nums"
 tag
 tags
+take
 tall
 tall).
 tall);
@@ -1616,13 +1621,14 @@ thing,
 this
 three
 through
+throw
 thrown
-throws
 tight
 time
 time,
 time-grid,
 tint
+tint.
 tinted
 title
 title+time
@@ -1634,9 +1640,11 @@ to,
 to.
 today)
 toggle
+token
 token).
 token,
 tokens
+tone
 too
 tooltip
 tooltip:
@@ -1684,10 +1692,9 @@ uses.
 valid
 validateProp's
 value
-vanishes
+vanishes.
 var(--color-wk-bg),
 var(--wk-agenda-time,
-verbatim
 vertical
 via
 view
@@ -1704,11 +1711,11 @@ visible.
 visibly
 visual
 visually
-visually;
+visually,
 w-2
 w-4"
-w-6
 w-[var(--size-wk-sm)]
+w-[var(--size-wk-xs)]
 w-full
 w-max
 warning
@@ -1732,6 +1739,7 @@ while
 who
 whole
 whole.
+whose
 wi)
 widest,
 widget's

@@ -13,21 +13,12 @@ use Pushery\WireKit\Icons\IconSetPackages;
  * Icons for rows that Alpine renders, drawn once as `<symbol>`s and referenced from each row.
  *
  * `<x-wirekit::icon>` renders its SVG on the server, and a row stamped out by `x-for` in the
- * browser cannot call it. The two other ways to get an icon into such a row were measured
- * against this one before it was chosen, over 250 options with 20 distinct icons and a
- * description each, median of seven runs:
- *
- * | | first render, Chromium / WebKit | clearing a filter | nodes |
- * | --- | --- | --- | --- |
- * | a `<symbol>` per icon, `<use>` per row (this) | 31 / 43 ms | 19 / 25 ms | 1501 |
- * | a `<template x-if>` per icon in the row | 66 / 101 ms | 46 / 58 ms | 6501 |
- * | rows rendered on the server, filtered with `x-show` | 11 / 27 ms | 1 / 1 ms | 1500 |
- *
- * The server-rendered rows are fastest in the browser and were still not taken: they triple the
- * HTML (154 KB against 53 KB for that list), every Livewire update would morph every row, and
- * the keyboard model of both components indexes a filtered ARRAY, so they would have meant a
- * rewrite of it rather than an addition to it. `x-html` was never a candidate, since it is an
- * injection sink and inert on the CSP build.
+ * browser cannot call it. A `<symbol>` per icon with a `<use>` per row adds one small element to
+ * each row. A `<template x-if>` per icon in the row would clone a branch for every icon the row
+ * might show. Rows rendered on the server and filtered with `x-show` would multiply the HTML,
+ * make every Livewire update morph every row, and replace the keyboard model of both
+ * components, which indexes a filtered array. `x-html` is an injection sink and inert on the
+ * CSP build.
  *
  * The symbol carries the icon's own `viewBox` and presentation attributes, so an outline set
  * keeps `fill="none"` and its stroke, and `currentColor` resolves against the row's text color.

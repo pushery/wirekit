@@ -41,11 +41,6 @@
  *     when a framework update erases it. Released on every re-open, on both close
  *     paths and in destroy(). See the note beside `repairErasure` in openSub().
  *
- * ⚠️ That third line used to read "No listeners or observers are registered, so
- * those two timers are the whole cleanup surface." It was true when written, and
- * a sentence like it is the first thing to become false — the observer above was
- * added one commit later.
- *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
 import { position } from '../utils/floating.js';
@@ -127,7 +122,7 @@ export default function wirekitSubmenu(config = {}) {
                     // Measured on /overlay-placement-seam across one refresh: `top` 556.5px →
                     // empty, same node, still shown, box unchanged at 192x76.
                     //
-                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // The unchanged box is why this is `repairErasure` and not
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
                     // observes boxes rather than the style attribute.
                     //

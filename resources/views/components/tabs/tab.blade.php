@@ -49,7 +49,7 @@
     $selected = BooleanProp::from($selected, false);
     $disabled = BooleanProp::from($disabled, false);
 
-    // ⚠️ A DISABLED TAB STAYS DISCOVERABLE, AND THAT COSTS THE COMPONENT THE SUPPRESSION.
+    // A disabled tab stays discoverable, and that costs the component the suppression.
     //
     // Native `disabled` on a `role="tab"` removes it from the page's tab order AND from the
     // arrow cycle, so a keyboard reader never learns the tab exists — the WAI-ARIA APG names

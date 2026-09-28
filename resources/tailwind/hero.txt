@@ -117,13 +117,12 @@ $variantClasses])
 'level',
 'lg'
 'lg',
-'lg']);
 'lg'],
 'lg:mx-0
 'md'
 'md',
 'muted'
-'muted']),
+'muted']))
 'mx-auto'
 'px-[var(--padding-wk-x-lg)]',
 'py-[var(--space-wk-section-md)]
@@ -133,6 +132,7 @@ $variantClasses])
 'size'
 'size',
 'sm'
+'sm']);
 'stacked'
 'text-center
 'text-center'],
@@ -156,6 +156,7 @@ $variantClasses])
 (<x-wirekit::code-block>,
 (=
 (Blade-interpolated
+(WireKit::validateProp('hero',
 (a
 (below
 (bool)
@@ -163,7 +164,6 @@ $variantClasses])
 (centered's
 (centered/stacked)
 (copy
-(debug)
 (default
 (default,
 (flex-1
@@ -173,7 +173,6 @@ $variantClasses])
 (mobile
 (no
 (only
-(production).
 (saturated
 (see
 (silent
@@ -182,7 +181,6 @@ $variantClasses])
 (subtle-tinted
 (the
 (true)
-(validateProp
 (variant="dark"
 (visually
 (which
@@ -271,6 +269,7 @@ Default
 Defaults
 Dev-only
 Dynamically-
+FIRST
 For
 Fully
 Gradient
@@ -287,7 +286,6 @@ NOTE:
 Non-balanced
 Normalized
 Null
-Off-enum
 One
 Only
 Opt-in
@@ -332,6 +330,7 @@ Without
 ['flex-[1]',
 ['flex-[2]',
 ['flex-[3]',
+['lg',
 ['max-w-[var(--size-wk-container-md,48rem)]
 ['sm',
 ['w-full',
@@ -352,6 +351,7 @@ Without
 `false`)
 `heading-order`
 `lg`
+`lg`,
 `lg`.
 `max-width:
 `md`
@@ -378,7 +378,9 @@ adds
 against
 alignment
 alignment.
+allowed
 allowed-values
+alone.
 already
 also
 an
@@ -411,7 +413,6 @@ automatically
 axe
 axe's
 axis
-back
 background
 backgrounds.
 balanced
@@ -438,7 +439,6 @@ bottom
 bottom-empty-area-with-gradient
 bottom-right
 bracket-wrapped
-break
 breakpoint)
 bug
 bump
@@ -482,6 +482,8 @@ colored,
 column
 column's
 column,
+columns
+columns.
 combination
 combines
 comment
@@ -515,18 +517,17 @@ data-variant="{{
 data-wk-prose-skip
 dead-zone
 debug
-debug,
 debug-mode
 decoration.
 default
-default).
+default,
 defensive
 depth
 depth,
 desktop
 developer
 developers
-did-you-mean)
+did-you-mean,
 direction
 direction,
 directly
@@ -536,7 +537,6 @@ docs.wirekit.app
 docs/extending/spine-contract.md
 document
 does
-does.
 doesn't
 drift-audit
 drives
@@ -566,9 +566,6 @@ exhausts
 existing
 explicit
 factors,
-fail-fast
-fallback
-falls
 false);
 false,
 favored).
@@ -578,7 +575,6 @@ file
 files
 fills
 fine
-first-allowed
 fixed
 fixing
 flag
@@ -604,6 +600,8 @@ full-width
 full-width,
 gap-[var(--gap-wk-sm)]
 gap-[var(--space-wk-xl,2.5rem)]">
+gate
+gate,
 generous)
 genuinely
 gets
@@ -612,11 +610,13 @@ gradient
 gradient-extension
 guard
 guessed
-h1,
+h1:
 handles
 hardcoded
+has
 header)
 heading
+heading.
 here
 hero
 hero).
@@ -629,7 +629,6 @@ historical
 horizontal
 identical
 if
-ignore
 ignored
 implode('
 imports
@@ -676,11 +675,14 @@ layouts;
 lead
 lead's
 leading-[var(--font-wk-heading-line-height,1.25)]
+leads
+leave
 lede
 lede,
 left
 left-aligned
 level
+level,
 lg
 lg+"
 lg+,
@@ -696,6 +698,7 @@ light
 like
 line
 list
+list.
 literal
 live
 lives
@@ -755,6 +758,7 @@ null)
 null,
 of
 of:
+off-enum
 old
 on
 on.
@@ -769,9 +773,7 @@ optional
 or
 original
 other
-otherwise.
 outer
-outline
 outline:
 overflow-hidden',
 overflow-x-auto
@@ -801,10 +803,8 @@ preserved
 preview
 previous
 prod).
-produce
 produces
 producing
-production
 prop
 prop's
 props
@@ -837,6 +837,8 @@ render
 rendering
 renders
 replaces
+report
+reported
 reports,
 resolves
 responsive
@@ -849,7 +851,6 @@ rows).
 rule
 run
 runs
-safest
 said
 same
 scanner
@@ -870,7 +871,6 @@ shown
 shrinks
 side
 side)
-signals
 silently
 silently.
 single
@@ -901,6 +901,7 @@ stacked
 stacked's
 stay
 stays
+strictness
 string
 string,
 strings
@@ -934,7 +935,8 @@ they
 this
 those
 three-tier
-throws
+through
+throw
 tier
 tier).
 tier.
@@ -976,9 +978,8 @@ v1.5.0-identical).
 v4's
 valid
 validateProp
-validateProp's
-validation;
 value
+value,
 values
 variable
 variant
@@ -987,7 +988,6 @@ variant="dark"
 vertical
 vertical-padding
 vertical-rhythm
-via
 view's
 viewport
 viewport"
@@ -1013,6 +1013,7 @@ white-space:
 who
 whole
 whose
+why
 wide
 wirekit:spine-participant
 with

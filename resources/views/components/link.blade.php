@@ -48,30 +48,29 @@
     $external = BooleanProp::from($external, false);
     $announceNewTab = BooleanProp::from($announceNewTab, true);
 
-    $variantClasses = match ($variant) {
+    $variantClasses = match (WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted'])) {
         'default' => 'text-[color:var(--color-wk-accent-text)]',
         'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
-        default => WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted']),
     };
 
     // Mirrors `text`'s map rung for rung, including its `var()` fallbacks, so
     // the two cannot drift into disagreeing about what a rung is worth.
-    $sizeClasses = match ($size) {
+    // No size is the default and inherits the text around the link, so it skips the validator:
+    // `(string) null` is an empty string, which the list rejects.
+    $sizeClasses = match ($size === null || $size === '' ? null : WireKit::validateProp('link', 'size', (string) $size, ['xs', 'sm', 'base', 'lg', 'xl'])) {
         null => '',
         'xs' => 'text-[length:var(--text-wk-xs,0.75rem)]',
         'sm' => 'text-[length:var(--text-wk-sm)]',
         'base' => 'text-[length:var(--text-wk-md)]',
         'lg' => 'text-[length:var(--text-wk-lg)]',
         'xl' => 'text-[length:var(--text-wk-xl,1.25rem)]',
-        default => WireKit::validateProp('link', 'size', (string) $size, ['xs', 'sm', 'base', 'lg', 'xl']),
     };
 
-    $underlineClasses = match ($underline) {
+    $underlineClasses = match (WireKit::validateProp('link', 'underline', $underline, ['always', 'hover', 'none'])) {
         'always' => 'underline underline-offset-2',
         'hover' => 'hover:underline underline-offset-2',
         'none' => 'no-underline',
-        default => WireKit::validateProp('link', 'underline', $underline, ['always', 'hover', 'none']),
     };
 
     // `array_filter` because `size` defaults to no class at all: an empty entry
@@ -84,14 +83,16 @@
         // it does rather than by the tag it happens to render, and this component renders a
         // `<button>` whenever the action has to be a POST or a Livewire call — which is exactly
         // what `as="button"` is for. On an anchor this repeats what the user-agent stylesheet
-        // already says and costs nothing; on a button it replaces the `cursor: default` that
-        // Tailwind v4's preflight sets, which is where the pointer went missing. Reported from
+        // already says and costs nothing; on a button it replaces the browser's default arrow,
+        // which Tailwind v4's preflight no longer overrides (v3 set `cursor: pointer`), and that
+        // is where the pointer went missing. Reported from
         // three auth screens where the only affordance left was the underline.
         'cursor-pointer',
-        'transition-colors',
+        // Opacity is in the list: `transition-colors` leaves it out, and the hover dim jumped.
+        'transition-[color,text-decoration-color,opacity]',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:opacity-80',
+        'hover:opacity-[var(--opacity-wk-hover)]',
         $sizeClasses,
         $variantClasses,
         $underlineClasses,
@@ -140,8 +141,8 @@
          data loss for anyone who followed the prose rather than copying the `type="button"`
          out of the docs example.
 
-         ⚠️ RESOLVED THROUGH THE BAG RATHER THAN EMITTED BEFORE IT, and the difference is the
-         whole fix. A hardcoded `type="button"` here would come FIRST, and HTML keeps the first
+         Resolved through the bag rather than emitted before it. A hardcoded `type="button"`
+         here would come first, and HTML keeps the first
          occurrence of a repeated attribute — so it would silently beat a caller's own
          `type="submit"`. Reading the bag and excluding `type` from it emits exactly one
          attribute, and the caller's value wins when they gave one. --}}

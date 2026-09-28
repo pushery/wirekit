@@ -275,17 +275,11 @@ final class LucidePreset implements IconPreset
             //     `cube-transparent` beside `cube`, gives the vocabulary two ways to ask
             //     for one picture, and a reader has no way to guess which.
             //
-            // ⚠️ This list named `sparkles` and `cube` as well, and both are declared
-            // below it — in this file and in the three sibling presets, which carried
-            // the same paragraph word for word. The reason it gave was that a cognate
-            // existed but was ALREADY another alias's target, and that is not the rule
-            // this vocabulary follows. Sharing a glyph is ordinary here: measured across
-            // the four base presets, 10 to 14 targets each carry more than one alias, on
-            // purpose. `danger` and `x-circle` are the same picture; so are `settings`,
-            // `gear` and `cog-6-tooth`. Two words for two INTENTS that happen to look
-            // alike is the pattern. Two spellings of one word is not, and that is the
-            // line above. (It also cited lucide's inventory as the evidence, in all four
-            // files — including the two that are not about lucide.)
+            // Sharing a glyph is ordinary here, and several targets in each base preset
+            // carry more than one alias on purpose. `danger` and `x-circle` are the same
+            // picture; so are `settings`, `gear` and `cog-6-tooth`. Two words for two
+            // intents that happen to look alike is the pattern. Two spellings of one word
+            // is not, and that is the line above.
 
             'arrow-down' => 'lucide-arrow-down',
             'arrow-right' => 'lucide-arrow-right',

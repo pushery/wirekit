@@ -59,7 +59,7 @@
 
     $listClasses = WireKit::resolveClasses('tabs', 'tablist', TablistStyles::list($variant, $isVertical), $scope);
 
-    // ⚠️ A BAR WITH NO SELECTED TAB HAS NO TAB STOP, AND THAT IS THE WHOLE WIDGET GONE.
+    // A bar with no selected tab has no tab stop, and that is the whole widget gone.
     //
     // `tabs.tab` renders `tabindex="0"` for the selected tab and `-1` for the rest, which
     // is the roving model and is right — but `selected` defaults to false, so a bar where

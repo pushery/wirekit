@@ -19,6 +19,7 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  *
  * @param {Object}       config
  * @param {boolean}      [config.expanded]  state on a first visit, before storage
+ * @param {boolean}      [config.pinned]    true when the page set `expanded`; storage then does not answer it
  * @param {string|null}  [config.persist]   storage key; null keeps it ephemeral
  * @param {string}       [config.persistDriver] 'local' (default) or 'cookie'. The cookie
  *   driver exists so the SERVER can seed the first render — see persisted-flag.js.
@@ -77,6 +78,8 @@ export default function wirekitAppRail(config = {}) {
         _canToggle: config.expandable !== false,
 
         _persistKey: config.persist || null,
+        /** The page set `expanded`, so the store is not asked. Writes still go to it. */
+        _pinned: config.pinned === true,
         _persistDriver: config.persistDriver === 'cookie' ? 'cookie' : 'local',
         _readyFrame: null,
         _onExternalToggle: null,
@@ -151,7 +154,7 @@ export default function wirekitAppRail(config = {}) {
             // A rail that cannot expand has no preference to read. Its resting width is the one
             // `labels` names, and the only other width it ever takes is a drawer's.
             this._persisted = this._canToggle
-                ? readPersistedFlag(this._persistKey, this.expanded, this._persistDriver)
+                ? (this._pinned ? this.expanded : readPersistedFlag(this._persistKey, this.expanded, this._persistDriver))
                 : false;
 
             // `64rem` rather than `1024px`: the shell's own `lg:` utilities are rem-based,

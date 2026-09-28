@@ -15,12 +15,12 @@
  * Blade with a static attribute for the pre-Alpine state, and this keeps the two
  * from fighting over it.
  *
- * ⚠️ The scope is `$root`, not `$el`. The click handler sits ON the row, so inside
+ * The scope is `$root`, not `$el`. The click handler sits on the row, so inside
  * `toggle()` Alpine binds `$el` to the row itself — and a row is not its own child,
- * so `:scope > [data-wk-tree-node]` matched nothing and the attribute was never
- * written. Measured in chromium: the branch opened on screen while `aria-expanded`
- * stayed `false`, which is the one state a reader goes by. `$root` is the `<li>`
- * regardless of which descendant dispatched the event.
+ * so `:scope > [data-wk-tree-node]` would match nothing and the attribute would never
+ * be written: the branch would open on screen while `aria-expanded` stays `false`, the
+ * one state a reader goes by. `$root` is the `<li>` regardless of which descendant
+ * dispatched the event.
  *
  * @param {Object}  config
  * @param {boolean} [config.expanded]  the branch's initial state

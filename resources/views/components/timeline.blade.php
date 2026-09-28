@@ -3,9 +3,9 @@
      shown early. Measured rather than asserted: the guard refutes this reason for
      any file that renders one. --}}
 @props([
-    'variant' => 'default', // default | centered | compact
-    'before' => false, // show dotted fade-in line above first item
-    'after' => false,  // show dotted fade-out line below last item
+    'variant' => 'default', // free-form hook written verbatim to data-wk-timeline for your own CSS; no built-in layouts
+    'before' => false, // show dashed fade-in line above first item
+    'after' => false,  // show dashed fade-out line below last item
     'scope' => null,
 ])
 

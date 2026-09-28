@@ -10,14 +10,10 @@ use Pushery\WireKit\WireKit;
 /**
  * The machine-readable component manifest, built once for every artifact that publishes it.
  *
- * ⚠️ THIS EXISTS BECAUSE THE SAME MANIFEST WAS BUILT TWICE AND THE TWO DRIFTED APART.
- * `wirekit:export-json` emits it, and `wirekit:install` writes `.wirekit-schema.json` at the
- * developer's project root — three documented places call the second one "the same JSON
- * manifest" as the first. It was not: the feeder dropped `component_kind` and `tag_alias` from
- * every entry and `released_version` from the document, and its `sub_components` were bare
- * dotted strings against the export's `{name, tag, props}` records. A tool written against the
- * documentation and pointed at the feeder — which is precisely what the documentation tells an
- * integrator to do — got a different shape and no notice.
+ * One builder for one manifest. `wirekit:export-json` emits it, and `wirekit:install` writes
+ * `.wirekit-schema.json` at the developer's project root, which three documented places call
+ * "the same JSON manifest" as the first. A tool written against the documentation and pointed
+ * at either file gets the same shape, because both come from here.
  *
  * Neither copy was wrong on its own; they were written months apart, and the second one's own
  * docblock claimed "same output shape, single source of truth" while re-deriving slots and

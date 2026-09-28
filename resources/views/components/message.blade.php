@@ -1,7 +1,6 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+{{-- optimistic-ui: n/a — client-only
+     A chat message. The control it renders is the tooltip on its status, whose state is
+     visibility, and the actions a developer adds arrive through its slots. --}}
 @props([
     'author' => [],
     'timestamp' => null,

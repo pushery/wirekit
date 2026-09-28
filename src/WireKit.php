@@ -16,14 +16,36 @@ class WireKit
     /**
      * Canonical base URL for the public documentation site.
      *
-     * Single source of truth for the `https://docs.wirekit.app` literal that
-     * the CLI surfaces (wirekit:show / :export-json / :export-api-map /
-     * :make / :install / :doctor) emit when pointing developers at a docs
-     * page. A future domain change becomes a one-line edit here rather than a
-     * scatter-replace across src/Console. No trailing slash — callers append
-     * `'/components/'.$name` etc.
+     * The one place the CLI surfaces (wirekit:show / :export-json /
+     * :export-api-map / :make / :install / :doctor) take the
+     * `https://docs.wirekit.app` literal from when they point developers at a
+     * docs page. No trailing slash — callers append `'/components/'.$name` etc.
+     *
+     * The recipe stubs under `src/Console/stubs/recipes/` carry the literal in
+     * their headers all the same: they are copied into the application as
+     * written, so a comment there cannot read a constant. A domain change
+     * therefore edits this line and those headers.
      */
     public const DOCS_URL = 'https://docs.wirekit.app';
+
+    /**
+     * The components whose template resolves no class block of its own, and why.
+     *
+     * Every other component template passes its classes through `resolveClasses()`, directly or
+     * through a partial, so a personalization, a scope and the `wirekit.components.<name>.classes`
+     * config reach it. These render no element of their own that carries classes, so nothing
+     * would read a personalization registered under their name: `personalize()` says so in
+     * debug, and each reason names where the classes are resolved instead.
+     *
+     * @var array<string, string>
+     */
+    public const COMPONENTS_WITHOUT_CLASS_BLOCKS = [
+        'faq-item' => 'it renders `accordion.item`, which resolves the classes; personalize `accordion.item` instead.',
+        'fonts' => 'it renders `<link>` and `<style>` tags and no styled element.',
+        'glass' => 'it renders the stylesheet, the script and a hidden SVG filter definition, and no styled element.',
+        'structured-data' => 'it renders a JSON-LD script and no styled element.',
+        'toggle-button' => 'it renders `button` with its own `scope`, which resolves the classes; personalize `button` or a scope of it instead.',
+    ];
 
     /** @var array<string, array<string, mixed>> */
     protected static array $defaults = [];
@@ -55,12 +77,12 @@ class WireKit
      * search-and-replace across `variant=` therefore breaks every component that is
      * correct.
      *
-     * ⚠️ This paragraph used to enumerate thirteen of them by name. There are 34, and a
-     * reader who checked the named ones concluded they had checked — the understatement
-     * is worse than no list, because it looks like an inventory. The current set comes
-     * from the parser, which cannot drift:
+     * The set is not listed here, because a list that names some of them reads as an
+     * inventory. The parser answers it, and cannot drift:
      *
-     *     grep -l "'variant'" resources/views/components/**\/*.blade.php
+     *     collect(array_keys(ComponentRegistry::all()))->filter(fn ($name) => in_array(
+     *         'variant', array_column(ComponentRegistry::extractProps($name), 'name'), true
+     *     ))
      *
      * @param  array<string, mixed>|Closure  $defaults
      */
@@ -77,7 +99,7 @@ class WireKit
          *
          * This method stored its values and nothing ever asked for them: no template called
          * `defaultsFor()`, so a documented feature did precisely nothing. The obvious repair
-         * was to teach 242 templates to consult it — and that would have been the wrong one,
+         * was to teach every template to consult it — and that would have been the wrong one,
          * because they ALREADY resolve a default this way:
          *
          *     @props(['intent' => config('wirekit.components.button.intent', 'primary')])
@@ -169,11 +191,21 @@ class WireKit
      *       'base' => 'inline-flex items-center font-medium',
      *   ]);
      *
+     * A component in {@see self::COMPONENTS_WITHOUT_CLASS_BLOCKS} resolves no block of its own,
+     * so nothing reads a personalization registered under its name. That is logged as a warning
+     * in debug and on the console, where the developer is, and not in production.
+     *
      * @param  array<string, mixed>|Closure  $blocks
      */
     public static function personalize(string $component, array|Closure $blocks): void
     {
         static::$personalizations[$component] = $blocks;
+
+        $reason = self::COMPONENTS_WITHOUT_CLASS_BLOCKS[$component] ?? null;
+
+        if ($reason !== null && ((bool) config('app.debug') || app()->runningInConsole())) {
+            logger()->warning("[WireKit] WireKit::personalize('{$component}') has no effect: {$reason}");
+        }
     }
 
     /**
@@ -215,7 +247,9 @@ class WireKit
      * Resolve final classes for a component block.
      *
      * Priority chain: deep > scoped > config > component default.
-     * This method is called by every component's Blade template.
+     * Every component template calls it for each element that carries classes, directly or
+     * through a partial; the few that render no such element are listed, with the reason, in
+     * {@see self::COMPONENTS_WITHOUT_CLASS_BLOCKS}.
      */
     public static function resolveClasses(
         string $component,
@@ -313,9 +347,9 @@ class WireKit
      * non-public static. It is plumbing for those templates, not a promise a developer may
      * build on.
      *
-     * ⚠️ The list named six for as long as there were eight. A docblock enumerating call
-     * sites is a second copy of `grep`, and the copy is the one that goes stale — read it
-     * as "which KIND of thing calls this", never as an inventory.
+     * Read that list as which kind of thing calls this, never as an inventory: a docblock
+     * enumerating call sites is a second copy of `grep`, and the copy is the one that goes
+     * stale.
      *
      * A DOM id that survives a Livewire round trip.
      *
@@ -325,34 +359,22 @@ class WireKit
      * panel. The user sorts, clicks anything that talks to the server, and the sort is
      * gone. Nothing errors; the widget simply forgets.
      *
-     * A caller-supplied `id` already solved it and still does. What this fixes is the
-     * DEFAULT, by seeding it from the component's own stable identity — its `name` — which
+     * A caller-supplied `id` solves it. What this fixes is the DEFAULT, by seeding it from the component's own stable identity — its `name` — which
      * is precisely what a widget embedded in a Livewire component is given anyway.
      *
-     * ⚠️ THIS PARAGRAPH USED TO READ "Without a seed there is nothing stable to derive from,
-     * so the random suffix remains: a collision between two unnamed widgets on one page would
-     * be worse than a re-render, and inventing determinism where the inputs have none would
-     * only move the surprise." Both halves of that are wrong, and the counter-example was in
-     * this package the whole time.
-     *
-     * There IS something stable without a seed: the ORDER the widgets render in. {@see DomId}
-     * has used it since 2.20 for exactly this — it counts per request and per prefix, so two
-     * unnamed widgets get `-1` and `-2` (no collision, which answers the second half) and the
-     * same widget gets the same number on the next render (stable, which answers the first).
+     * Without a seed there is still something stable: the order the widgets render in.
+     * {@see DomId} counts per request and per prefix, so two unnamed widgets get `-1` and `-2`
+     * (no collision) and the same widget gets the same number on the next render (stable).
      * The registry resets on `RequestHandled`, so it is Octane-safe rather than accidentally
-     * correct under FPM.
+     * correct under FPM. A random suffix instead would rebuild the widget on every render: an
+     * open panel's node disconnected after one `$refresh()`, a closed replacement in its place,
+     * and a trigger that never opens again, with no error and no warning.
      *
-     * What the random fallback cost while that reasoning stood: measured 2026-09-17 on an
-     * unnamed `filter-builder`, the open panel's node came back `isConnected=false` after one
-     * `$refresh()`, a closed replacement stood in its place, and the trigger NEVER OPENED
-     * AGAIN — no error, no warning. Eight templates ride on this method, and every one of them
-     * carries a comment promising the opposite.
-     *
-     * ⚠️ The caveat DomId documents travels with the delegation and is the right trade: across
+     * The caveat DomId documents travels with the delegation and is the right trade: across
      * independently-updating Livewire islands the counter can restart, so an unnamed widget in
      * an island that re-renders alone may come back with a different number. A caller who hits
-     * that passes a `name` — which is the one-word fix, and the control that proved the cause.
-     * A random id breaks the pairing on EVERY render; a counted one only in that case.
+     * that passes a `name`, which is the one-word fix. A random id breaks the pairing on every
+     * render; a counted one only in that case.
      */
     public static function stableId(string $prefix, ?string $seed = null): string
     {
@@ -385,13 +407,9 @@ class WireKit
      * working event handler. Measured across text, container, row, stack, center and
      * section, all six identical.
      *
-     * ⚠️ THE COVERED SET IS DERIVED, NEVER RESTATED HERE AS A NUMBER. This docblock used to
-     * put a count on it, twice, and by then the count was too low under either reading of
-     * what it was counting — which mattered because this file is where an auditor comes
-     * for the rationale, and a stated total reads as complete coverage. What holds the set
-     * is `TagNamePropCannotCarryAnAttributeTest`: every component that declares an `as`
-     * prop and interpolates a variable into its opening tag either calls this, or validates
-     * against a closed enum of its own. Read the set there; it cannot go stale.
+     * The covered set is derived, never restated here as a number: every component that
+     * declares an `as` prop and interpolates a variable into its opening tag either calls
+     * this, or validates against a closed enum of its own.
      *
      * `as` is developer-supplied rather than end-user input, which is why this is a hole
      * rather than a live exploit — but a value derived from data (a CMS block type, a
@@ -427,13 +445,20 @@ class WireKit
      * decision is identical across every WireKit validation site
      * (component props here, icon resolution in `IconResolver`).
      *
-     * Default behavior (no `wirekit.validation.strict` config):
-     *   - APP_DEBUG=true  → throws InvalidArgumentException with Did-you-mean.
-     *   - APP_DEBUG=false → logs warning + returns first allowed value.
+     * Default behavior (neither `wirekit.validation.strict` nor
+     * `wirekit.validation.throw_on_invalid` set):
+     *   - APP_DEBUG=true, console / test run → throws InvalidArgumentException
+     *     with Did-you-mean.
+     *   - APP_DEBUG=true, HTTP request       → logs an error + returns the first
+     *     allowed value.
+     *   - APP_DEBUG=false                    → logs a warning + returns the first
+     *     allowed value.
      *
-     * Explicit override: set `wirekit.validation.strict` to true / false
-     * (env `WIREKIT_STRICT_VALIDATION`) to force strict / lenient
-     * regardless of APP_DEBUG.
+     * Explicit overrides: `wirekit.validation.strict` (env
+     * `WIREKIT_STRICT_VALIDATION`) forces strict / lenient regardless of
+     * APP_DEBUG, and `wirekit.validation.throw_on_invalid` (env
+     * `WIREKIT_THROW_ON_INVALID`) decides whether a strict miss throws. A
+     * lenient miss never throws. The full matrix is StrictnessGate's docblock.
      *
      * @param  list<string>  $allowed
      */
@@ -478,13 +503,14 @@ class WireKit
      * the build. Under a policy without `'unsafe-inline'` that block needs a nonce
      * or it is discarded.
      *
-     * And it is discarded ABRUPTLY, which is why this resolves itself rather than
+     * And it is discarded abruptly, which is why this resolves itself rather than
      * waiting to be handed a value. From CSP Level 2 on, a nonce anywhere in a
-     * directive makes the browser IGNORE `'unsafe-inline'` in that same directive —
+     * directive makes the browser ignore `'unsafe-inline'` in that same directive —
      * so the moment an application adds a nonce to `style-src` for any reason at
-     * all, this block loses the permission it had. Nothing is logged, no console
-     * error appears at load: the page renders and the typography silently falls
-     * back to the system font. That failure passes every HTML comparison and every
+     * all, this block loses the permission it had. The browser reports the refusal
+     * as a policy violation and nothing on the page looks broken: it renders, and
+     * the typography falls back to the system font. That failure passes every HTML
+     * comparison and every
      * header assertion, so requiring the developer to remember one more parameter
      * would be requiring them to remember the thing they cannot see going wrong.
      *
@@ -623,21 +649,24 @@ class WireKit
         static::$scoped = [];
         static::$personalizations = [];
         Support\DomId::reset();
+        StrictnessGate::forgetLogged();
+        Support\TourStepCounter::reset();
+        Support\FaqCollector::reset();
     }
 
     /**
      * Resolves the `animateIn` prop on marketing components into an x-data
      * attribute string for the wirekitAnimate Alpine helper, or null when
-     * the prop is unset (default — no animation, byte-identical to v1.5.0).
+     * the prop is unset: the default, with no animation and no attribute in the markup.
      *
      * Accepts both base names (`fade` → `fade-in`) and full preset names
      * (`fade-in`, `slide-up-in`, etc). Also accepts the `fade-up` /
      * `fade-down` / `fade-left` / `fade-right` shorthand naming convention
      * as aliases for the corresponding `slide-*-in` presets — the same map
      * `<x-wirekit::reveal>` accepts, kept in lockstep by
-     * `FadePresetAliasConsistencyTest`. Unknown values throw via
-     * validateProp in debug mode, fall back to the first allowed in
-     * production.
+     * `FadePresetAliasConsistencyTest`. Unknown values are reported through
+     * validateProp and the strictness gate, and fall back to the first allowed
+     * value wherever the gate does not throw.
      *
      * @internal Public because nine Blade templates call it while rendering —
      * alert, callout, card, cta, empty-state, feature, footer, hero and stat.

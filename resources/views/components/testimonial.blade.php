@@ -21,7 +21,7 @@
     'logoAlt' => null,
     // Intrinsic aspect ratio of `$logo`, as `'width/height'` — e.g. `'3/1'`.
     //
-    // Same reasoning as brand's `logoAspect`: the mark is `h-6 w-auto`, so the height is
+    // Same reasoning as brand's `logoAspect`: the mark is `w-auto` at the `xs` height, so the height is
     // fixed and the width comes from the image. Until its bytes arrive there is nothing
     // to derive that width from, and the attribution row re-flows when they land. The
     // min-width floor below keeps the worst case at a square rather than at nothing.
@@ -42,7 +42,7 @@
 
     // Inline rather than a utility class: the ratio is caller data, and a Tailwind class
     // cannot be built from a runtime value.
-    $wkLogoStyle = ($logoAspect ? 'aspect-ratio: '.e($logoAspect).'; ' : '').'min-width: 1.5rem;';
+    $wkLogoStyle = ($logoAspect ? 'aspect-ratio: '.e($logoAspect).'; ' : '').'min-width: var(--size-wk-xs);';
 
     $ratingValue = ($rating === null || $rating === '') ? null : (float) $rating;
 
@@ -119,7 +119,7 @@
                 src="{{ $logo }}"
                 alt="{{ $logoAlt ?? '' }}"
                 data-wk-testimonial-logo
-                class="h-6 w-auto shrink-0 opacity-70"
+                class="h-[var(--size-wk-xs)] w-auto shrink-0 opacity-70"
                 style="{{ $wkLogoStyle }}"
             />
         @endif

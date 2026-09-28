@@ -288,8 +288,8 @@ CSS,
        glyphs). The interactive `--color-wk-accent` reads from L=0.55, which
        clears AA at the default hue 306 (5.28:1 light / 6.29:1 dark).
 
-       ⚠️ L=0.55 IS NOT THE AA FLOOR "AT ANY HUE", WHICH IS WHAT THIS COMMENT
-       CLAIMED. A lightness is not hue-independent — a cyan carries far more
+       L=0.55 is not an AA floor at every hue. A lightness is not
+       hue-independent — a cyan carries far more
        luminance than a magenta at the same L — so the near-white label falls
        to 3.64:1 around hue 189 and is below AA across roughly 113°-247°. The
        preset ships at its own hue and is compliant there; a retint into the

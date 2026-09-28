@@ -39,7 +39,7 @@ $tagline
 'false'
 'flex
 'full'
-'full']),
+'full']))
 'gap-[var(--space-wk-md)]',
 'header',
 'lg'
@@ -74,8 +74,8 @@ $tagline
 'xl',
 'xl']
 ($divider)
-($max)
-($padding)
+(WireKit::validateProp(
+(WireKit::validateProp('brand-bar',
 (`--wk-strip-inset`),
 (background,
 (brand,
@@ -83,7 +83,7 @@ $tagline
 (silent
 (string)
 (the
-),
+))
 +
 --}}
 /
@@ -139,8 +139,6 @@ TOC
 UNBOUND
 When
 WireKit::resolveClasses('brand-bar',
-WireKit::validateProp(
-WireKit::validateProp('brand-bar',
 ['none',
 ['sm',
 \Pushery\WireKit\WireKit::tagName('brand-bar',

@@ -40,14 +40,14 @@ export function createFocusTrap(container, {
         preventScroll: true,
         // Fallback focus to the container itself if no focusable elements inside.
         //
-        // ⚠️ A FUNCTION, AND THE `tabindex` IT WRITES IS THE WHOLE POINT. focus-trap's
+        // A function, and the `tabindex` it writes is the whole point. focus-trap's
         // own README states the precondition next to this option: *"Make sure the
         // fallback element has a negative `tabindex` so it can be programmatically
-        // focused."* Handing it the bare node did not meet that — and not one of the
-        // panels this library passes carries a `tabindex`: modal, drawer,
-        // alert-dialog, popover, command-palette and lightbox are all zero.
+        // focused."* The panels this library passes — modal, drawer, alert-dialog,
+        // popover, command-palette and lightbox — carry no `tabindex` of their own,
+        // so a bare node would not meet it.
         //
-        // Nothing failed loudly, which is why it survived. A truthy fallback
+        // Without it nothing fails loudly. A truthy fallback
         // satisfies the library's "must have at least one tabbable node" check, so
         // no error is thrown; the fallback then resolves to a `<div>` and
         // `node.focus()` on a div without a tabindex is a NO-OP. The trap reports

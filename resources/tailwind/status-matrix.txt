@@ -21,8 +21,8 @@ $ariaLabel
 $ariaLabelResolved
 $as
 $as);
-$attributes->class([$sizeClasses]);
 $attributes->class(['relative
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except(['id',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
@@ -159,6 +159,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
@@ -449,14 +450,13 @@ $wrap
 ($svgHtml
 ($v
 ($value)
-('xs')
+('xs').
 ((float)
 (--color-wk-text
 (AA
 (Alpine
 (Blade
 (CTA
-(Note:
 (SOFT
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -511,7 +511,6 @@ $wrap
 (shouldSetHidden=true),
 (silent
 (so
-(sort
 (string)
 (tabindex
 (text-bg
@@ -530,6 +529,7 @@ $wrap
 --border-wk-badge-width
 --border-wk-width
 --color-wk-bg-elevated
+--color-wk-info
 --shadow-wk-badge
 --}}
 -text
@@ -686,7 +686,6 @@ API:
 APPLICATION's
 ARIA
 AT
-ATTEMPTED
 Accept
 Accessible
 Adding
@@ -697,8 +696,6 @@ Also
 An
 Aurora
 BCP-47
-BECAUSE
-BELOW,
 BOTH
 Baking
 Base
@@ -718,12 +715,9 @@ Border
 Both
 CALLER
 CALLER's
-CAN
-CANNOT
 CELL
 CELLS
 COMPOSITE
-CONDITION
 CORNER
 COUNT
 CUT
@@ -751,7 +745,6 @@ EVERY
 English
 Enter
 Escape
-FAIL
 FILTER_VALIDATE_BOOLEAN)
 FILTER_VALIDATE_BOOLEAN);
 FIRST
@@ -766,7 +759,6 @@ Generate
 German
 Graceful
 HERE
-HERE,
 HOVER,
 HOVERABLE:
 HTML,
@@ -775,10 +767,7 @@ Heat
 Hover
 Htmlable,
 ID
-IN
-INSIDE
 IS
-IT
 Icon
 IconResolver,
 If
@@ -838,13 +827,11 @@ Operating
 Optional
 Override
 PERFECTLY
-POINTING
 Pick
 Polish
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 REPLACES
 Reapply
 Render
@@ -855,14 +842,12 @@ Reported
 Resolve
 Rich
 RuntimeException
-SEE.
 SHAPE
 SHIPPED
 SIBLING.
 SOFT
 SOLID
 SOLID:
-STABLE
 STATIC
 SVG
 SVG:
@@ -880,6 +865,7 @@ Single-line
 Size
 So
 Spelled
+Stable
 Static
 Sticky
 Strip
@@ -890,7 +876,6 @@ Switch
 Symmetric
 TAG
 THE
-THIS
 THROUGH
 TYPE,
 Tailwind
@@ -912,11 +897,9 @@ UNBOUND
 Uses
 Validate
 WAS
-WAY
 WCAG
 WIDGET,
 WIDTH
-WINDOW,
 WITHOUT
 WRAPPER,
 We
@@ -1015,9 +998,9 @@ __toString
 `Illegal
 `Intl.PluralRules`
 `N
-`Str::random(12)`
 `Svg
 `__()`,
+`_baseline`
 `_x_dataStack`,
 `aria-describedby`
 `aria-describedby`:
@@ -1055,6 +1038,7 @@ __toString
 `gridcell`
 `heat`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `info`
 `inverted`
@@ -1069,7 +1053,7 @@ __toString
 `mouseenter`/`mouseleave`
 `mouseleave`
 `moveFocus`.
-`name`,
+`name`:
 `neutral`
 `none`).
 `offset`
@@ -1122,7 +1106,6 @@ above:
 absence
 absent,
 accent
-accent),
 accent-fg
 accept
 accepting
@@ -1226,6 +1209,7 @@ asserted:
 assertion
 association
 at
+attempted
 attribute
 attribute,
 attribute.
@@ -1320,7 +1304,6 @@ border-collapse"
 border-r-[length:var(--border-wk-width)]
 border.
 bordered-only
-borrows
 both
 bound
 box
@@ -1389,6 +1372,7 @@ changes
 changes')
 change|[2,*]
 channel
+charts
 check
 checks
 chevrons,
@@ -1443,16 +1427,13 @@ colors,
 column
 columns
 columns",
-columns,
 come
 comes
 comment
-comments
 comments,
 common
 compete
 compile
-compiler
 compiles
 component
 component's
@@ -1530,7 +1511,6 @@ data.
 dead
 dead.
 debug
-debug,
 decided
 decision,
 decision:
@@ -1565,7 +1545,7 @@ descendant
 descendants
 description
 despite
-destroy-and-rebuild
+destroy-and-rebuild,
 dev
 developer
 developer's
@@ -1657,7 +1637,6 @@ event
 event.
 event:
 events
-ever
 every
 exactly
 exchange
@@ -1682,6 +1661,7 @@ factory:
 fade)
 fade.
 fade="…">`
+fail
 failed"
 fails
 faint
@@ -1701,7 +1681,7 @@ field,
 file
 files
 fill
-fill;
+fill:
 fill="none"
 filled
 filled($ariaLabel)
@@ -1712,7 +1692,6 @@ finds
 fine).
 finish
 fire
-fired
 fires
 first
 first-column
@@ -1723,6 +1702,7 @@ fixed-height
 fixed`
 fixes
 flags
+flash
 flat
 flatten
 flattened
@@ -1780,6 +1760,8 @@ gap-1"><span
 gap-1"><svg
 gap-[var(--space-wk-md)]
 gap-x-1',
+gate
+gate,
 gated
 gave
 generic
@@ -1840,6 +1822,7 @@ heatMin:
 heatTo
 height
 height,
+held
 helper
 here
 here,
@@ -1872,6 +1855,7 @@ how
 however
 hundred
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -1900,6 +1884,7 @@ including
 indicator
 inert
 inflects
+info
 informative
 informative.
 init
@@ -1956,7 +1941,6 @@ just
 justify-center
 justify-center',
 keeps
-kept
 key
 key,
 keyboard
@@ -2060,7 +2044,6 @@ max(0.0,
 maximum
 may
 mean
-means
 meant
 mechanism
 medium
@@ -2155,7 +2138,6 @@ off
 offers
 offset:
 oklch,
-old
 omission.
 on
 on-color
@@ -2218,14 +2200,12 @@ paint;
 pair
 pair).
 pairing
-pairing.)
 pairing;
 pairs
 panel
 panel's
 panel,
 panel.
-panels)
 paragraph
 paragraph's
 parenthesized
@@ -2244,6 +2224,7 @@ per
 per-instance
 per-set
 per-surface
+personalization
 phantom
 phrasing
 picks
@@ -2263,6 +2244,7 @@ plus
 point
 pointer
 pointer-events
+pointing
 popover's
 popovers
 popular"
@@ -2286,7 +2268,6 @@ problem
 prod).
 produced
 produces
-production.
 project,
 promise
 promises
@@ -2297,7 +2278,6 @@ props
 provides
 proxy
 publishing
-purpose
 purpose,
 purpose.
 put
@@ -2329,13 +2309,11 @@ ramp,
 ramp.
 ramp:
 ran
-random
 rather
 ratio
 raw
 re-inject
-re-randomized
-re-renders,
+re-renders.
 re-thrown
 reach
 reach.
@@ -2346,6 +2324,7 @@ reaching
 read
 read-only
 read-only).
+read;
 reader
 reader's
 readers
@@ -2384,7 +2363,6 @@ removes
 removing
 render
 render,
-render:
 rendered
 rendering
 renders
@@ -2463,12 +2441,12 @@ said.
 same
 sample
 saturated
+saved,
 say
 says
 scale
 scale.
 scanner
-scans
 scope
 scope,
 scope="col"
@@ -2483,6 +2461,7 @@ scroller.
 scrolling
 second
 see
+see.
 sees
 sees.
 semantic
@@ -2507,6 +2486,7 @@ shape
 shape,
 share
 shared
+shares
 shipped
 shorthand
 shorthand:
@@ -2543,6 +2523,7 @@ soft
 soft).
 soft-chip
 soft-tone
+solid
 somebody
 something
 source
@@ -2583,6 +2564,7 @@ stops
 stops.
 storage/logs/laravel.log.
 strategy:
+strictness
 string
 string,
 string:
@@ -2625,7 +2607,6 @@ sweep
 switch
 switched
 switches
-syntax
 tab
 tab-stop
 tabbed
@@ -2704,6 +2685,7 @@ three
 through
 throughout.
 throw
+throw,
 throws
 tick
 tidy
@@ -2714,6 +2696,7 @@ time.
 timer
 timer,
 timer;
+tint
 tinted
 tip
 tip.
@@ -2727,7 +2710,7 @@ toggle).
 token
 token,
 tokens
-too
+tone
 too).
 tooltip
 tooltip,
@@ -2780,7 +2763,6 @@ types
 typography,
 unaffected
 unaffected.
-unbalanced
 unbound
 uncaught
 unchanged.
@@ -2887,6 +2869,7 @@ width
 width)
 win
 window
+window,
 wins
 wire:key="wk-tooltip-panel"
 wire:model
@@ -2945,6 +2928,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+yet
 yet'),
 yet.
 you
@@ -2989,4 +2973,3 @@ zoom,
 ≥4.5:1
 ──
 ───────────────────
-⚠️

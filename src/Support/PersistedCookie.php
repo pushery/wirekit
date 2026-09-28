@@ -13,21 +13,23 @@ namespace Pushery\WireKit\Support;
  * of this order is how one of them would quietly stop agreeing.
  *
  * The REQUEST is asked first and the superglobal only as a fallback, and that order is the fix
- * rather than a detail. PHP fills `$_COOKIE` once per PROCESS, not once per request. Under
- * `fpm-fcgi` those are the same thing, a process serves one request and dies, which is why
- * reading it alone looks correct for as long as it does. Every server that keeps a worker alive
- * across requests (Octane, FrankenPHP, RoadRunner) fills it at boot, when there is no request,
- * and never again. Measured on one page with one cookie under two SAPIs: present under FPM,
- * empty under a long-lived CLI SAPI, where a rail then rendered collapsed and the client widened
- * it a frame later, 187px of column movement, 0.1097 CLS against a budget of 0.1. Nothing
- * throws; the other state simply renders.
+ * rather than a detail. PHP fills `$_COOKIE` when it starts a script. Under `fpm-fcgi` it starts
+ * the script afresh for every HTTP request, even though one worker process serves many of them,
+ * which is why reading the superglobal alone looks correct for as long as it does. A worker that
+ * runs one script across many requests and receives them through its own client (Octane on
+ * Swoole or RoadRunner) has it filled once, at boot, when there is no request, and nothing writes
+ * it again; FrankenPHP's worker mode is the exception and refills it for each request it hands
+ * over. Measured on one page with one cookie under two SAPIs: present under FPM, empty under a
+ * long-lived CLI SAPI, where a rail then rendered collapsed and the client widened it a frame
+ * later, 187px of column movement, 0.1097 CLS against a budget of 0.1. Nothing throws; the other
+ * state simply renders.
  *
  * The superglobal stays as a fallback because dropping it would be a regression, not a cleanup.
  * The cookie is written by JavaScript, so it arrives as plaintext, and Laravel's `EncryptCookies`
  * nulls a plaintext cookie it cannot decrypt unless the name is excepted. An application on FPM
  * that never added that exception is served by `$_COOKIE` and must keep working. The fallback can
- * fail to answer but cannot answer wrongly: on a long-lived server nothing writes `$_COOKIE` per
- * request, so it is empty rather than another visitor's value.
+ * fail to answer but cannot answer wrongly: a long-lived worker either leaves `$_COOKIE` empty or
+ * refills it for the request in hand, so it never holds another visitor's value.
  */
 final class PersistedCookie
 {

@@ -90,7 +90,12 @@ final class SandboxRenderer
         } catch (\Throwable $e) {
             SandboxAuditLog::record('error:render', $component, $ipAddress, 1);
 
-            return RenderResult::rejected(['render failed: '.$e->getMessage()]);
+            // The caller of the sandbox is not trusted, and an exception carries whatever its
+            // thrower put in it: a Blade error ends in "(View: <absolute path>)". The exception
+            // goes to the application's own error reporting, and the caller gets a fixed reason.
+            report($e);
+
+            return RenderResult::rejected(['render failed']);
         }
 
         SandboxAuditLog::record('rendered', $component, $ipAddress, 0);

@@ -6,7 +6,6 @@
 "Bold",
 "Bullet
 "Could
-"Editor-Befehle"
 "Hoverable"
 "Italic",
 "Release
@@ -26,10 +25,8 @@
 "isActive('taskList')"],
 "isActive('underline')"],
 "isActive({
-"sanitize
 "{$id}-error";
 "{$id}-hint";
-#7).
 $active
 $active]
 $announceError
@@ -239,7 +236,7 @@ $wrapperClasses])
 'format'
 'format',
 'full'
-'h-8
+'h-[var(--size-wk-sm)]
 'heading-1'
 'heading-1',
 'heading-2'
@@ -374,8 +371,6 @@ $wrapperClasses])
 (.live
 (@aware
 (B
-(Pitfall
-(Tiptap
 (Tiptap's
 (WCAG
 (`.wk-scroll-fade…:focus-within
@@ -590,17 +585,18 @@ Commands
 ComponentSlot)
 Config
 DECLARED
-DENSE,
 DOM
 Declared
 Default
 Deliberately
+Dense,
 Describing
 Dev-only
-Developer-controlled
 Disabled
 Done
 Editor
+EditorSeed
+EditorSeed,
 Elsewhere
 English
 Error
@@ -613,12 +609,10 @@ For
 From
 Fully
 GLOBAL
-GOES
 Generate
 German
 Glyphs
 H1
-HARDCODED.
 HOST
 HOVER,
 HOVERABLE:
@@ -631,7 +625,6 @@ I
 ID
 INSIDE
 IS
-IT
 Illuminate\Support\Str;
 In
 Invisible
@@ -641,8 +634,6 @@ Its
 JS
 KEEPS
 KEY,
-Keep
-LABEL
 LITERALLY,
 Label
 Laravel
@@ -670,7 +661,6 @@ ORIGINAL
 OUTERMOST
 OUTSIDE
 Own
-POINTING
 PRESENCE,
 Plumbed
 Pushery\WireKit\Support\BooleanProp;
@@ -680,26 +670,24 @@ REFERENCE
 REMOVES
 Rendered
 Renders
-Reported
 Required
 Rich
 Rich-text
 Route
 SERVER-SIDE.
 SHAPE
-SHIPPED
 SIBLING.
 SOFT
 STABLE
 STATIC
 STORE
-STORE"
 SVG
 SVGs
 SWAPS:
 Set
 So
 Soft
+Stable
 Static
 Str::headline((string)
 StrictnessGate
@@ -707,10 +695,6 @@ Strip
 Switch
 TEXT
 THE
-THIS
-THROUGH
-TOP
-TRANSLATOR,
 Tab
 Tailwind
 Teleporting
@@ -737,7 +721,6 @@ WAS
 WCAG
 WHICH
 WIDEN
-WINDOW,
 WRAPPER,
 What
 Which
@@ -793,6 +776,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\EditorSeed::render($value)
 \Pushery\WireKit\WireKit::warnUnknownProps('editor',
 \Pushery\WireKit\WireKit::warnUnknownProps('editor.toolbar',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
@@ -827,7 +811,6 @@ __('wirekit::Saving'),
 `@props`
 `Illegal
 `Str::headline($name)`
-`Str::random(12)`
 `Str::random(6)`
 `__()`
 `_x_dataStack`,
@@ -877,8 +860,9 @@ __('wirekit::Saving'),
 `mouseenter`
 `mouseenter`/`mouseleave`
 `mouseleave`
-`ms-0.5`
+`ms-0.5`,
 `offset`
+`old('body')`
 `onBlur`,
 `open`
 `open`,
@@ -929,7 +913,6 @@ action
 active
 actually
 added.
-adopting
 advertises
 affordance
 after
@@ -968,7 +951,6 @@ appears
 appended
 appends
 application
-application.
 applied
 applies
 arbitration
@@ -1019,6 +1001,7 @@ asterisk.
 at
 at.
 attribute
+attribute,
 attribute:
 attributes
 auto-derived
@@ -1214,7 +1197,6 @@ content,
 contenteditable
 contents">
 contents`
-contract
 control
 control.
 controls
@@ -1276,7 +1258,6 @@ description,
 design
 detection:
 developer
-developer-controlled
 developer-controlled),
 developer-controlled.
 developer-supplied
@@ -1299,16 +1280,18 @@ div,
 do
 docs
 document
+document's
+document.
 documented
 does
 doesn't
 double
 double-announce.
-down
 down.
 downward.
 drives
 dropped
+drops
 duplicate.
 duration-100"
 duration-75"
@@ -1318,6 +1301,7 @@ each
 early.
 ease-in
 ease-out
+echoed.
 echoes
 edge
 edge.
@@ -1327,6 +1311,7 @@ editor
 editor",
 editor'))
 editor'))),
+editor's
 editor.
 editor.js
 editorProps.
@@ -1352,6 +1337,7 @@ empty:
 ends
 enforcement
 engine
+engine's
 engine.
 engine:
 ensures
@@ -1409,7 +1395,6 @@ fills
 finds
 finish
 fire
-fired
 fires
 first
 first,
@@ -1454,7 +1439,6 @@ fresh
 from
 from.
 front
-fully
 function-valued
 function;
 gap
@@ -1473,6 +1457,7 @@ glyph,
 glyph-style,
 glyphs
 go
+goes
 grid
 group
 grow
@@ -1495,7 +1480,6 @@ handlers
 handles
 hangs
 happen
-hard
 hardcoded
 has
 hatch
@@ -1590,6 +1574,7 @@ it),
 it,
 it.
 it:
+it;
 item,
 items-center
 its
@@ -1662,7 +1647,6 @@ looked
 looks
 lookups
 lost.
-made
 make
 makes
 many
@@ -1681,14 +1665,13 @@ maxLength
 may
 md
 mean
-means
 meant
 mechanism
 menus
 message
 method
 min-height
-min-w-8
+min-w-[var(--size-wk-sm)]
 mints
 mismatch
 misplacement,
@@ -1702,6 +1685,7 @@ morph
 mount
 mount,
 mounting,
+mounts,
 move
 move.
 moves
@@ -1776,7 +1760,7 @@ one,
 one.
 one:
 only
-only).
+only),
 only,
 only:
 onmouseover=alert(1)"`
@@ -1820,8 +1804,8 @@ panel.
 paragraph
 paragraph's
 parent
-parse).
 parser
+parses
 passed
 passes,
 passes.
@@ -1848,6 +1832,7 @@ pointed
 pointer
 pointer-events
 pointer-events-none
+pointing
 points
 polite
 popover's
@@ -1862,6 +1847,7 @@ presentational
 preserved;
 preset
 preset,
+preview
 prod).
 produced
 promises
@@ -1887,13 +1873,12 @@ question
 quiet,
 racing
 raises
-random
 rather
 raw
 re-minted
 re-rendered
 re-renders,
-re-sanitizes
+re-renders.
 re-thrown
 reach
 reachable
@@ -1909,6 +1894,7 @@ reads:
 real
 reason
 reason:
+rebuilt
 receive
 receiver,
 recognizes
@@ -1946,6 +1932,7 @@ requires
 resolved
 resolves
 resources/js
+rest,
 rests
 result
 reverse,
@@ -1968,7 +1955,6 @@ row.
 rule
 rules
 run
-running
 runs
 safe
 safe.
@@ -1976,16 +1962,16 @@ safe:
 said
 same
 sample
-sanitize
+sanitized
 sat
 save"
 save.
-saved
 saved.
 say
 says
 says,
 scans
+schema
 scope
 scope,
 scope:
@@ -1993,9 +1979,7 @@ screen
 scroll
 scrolls
 second
-security
 see
-see:
 seed
 seeds
 sees
@@ -2013,7 +1997,6 @@ set
 set.
 set;
 settles
-seven
 seventeen
 shadow.
 shape
@@ -2080,6 +2063,8 @@ stop
 stop.
 stopped.
 stops
+stored
+stored.
 strategy:
 stray
 string
@@ -2124,6 +2109,7 @@ tabular-nums">
 tag
 tag,
 tags
+take
 takes
 target
 targets
@@ -2198,13 +2184,14 @@ tooltip's
 tooltip,
 tooltip.
 tooltips
+top
 touch,
 towards
 transformed
 translated
-translated,
 translated.
 translator,
+translator.
 travel
 trigger
 trigger's
@@ -2245,6 +2232,7 @@ unlocatable
 unnamed
 unreachable,
 unsteady
+untouched
 untouched.
 untranslated
 unwrappable
@@ -2307,6 +2295,7 @@ why
 widening
 wider
 width)
+window,
 window.wirekitEditor)
 window.wirekitEditor).
 wins,
@@ -2410,5 +2399,4 @@ zoom,
 ¶)
 —
 →
-⚠️
 🔗

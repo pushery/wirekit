@@ -338,7 +338,7 @@ export default function wirekitRangeSlider(config = {}) {
          * `this.$refs.track`, so the leak is not merely idle: every pointer move on the
          * page ran a measurement against a detached element.
          *
-         * ⚠️ `_commit()` is deliberately NOT called here. Teardown is not a commit boundary
+         * `_commit()` is deliberately NOT called here. Teardown is not a commit boundary
          * — the component is going away, and sending a value the reader never let go of
          * would be the optimistic layer's worst case: a write nobody asked for, on a
          * surface that no longer exists to roll it back.

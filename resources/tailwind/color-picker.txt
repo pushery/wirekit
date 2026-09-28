@@ -45,6 +45,7 @@ $name
 $name)])
 $nativeOnMobile
 $nativeOnMobile,
+$nativeWrapperClasses
 $optimistic
 $optimistic,
 $optimisticArgs),
@@ -163,10 +164,10 @@ $wrapperClasses
 'uppercase
 'value'
 'value',
-'w-10
-'w-12
-'w-8
 'w-[calc(100%+0.5rem)]
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
 'withAlpha'
 'withClear'
 'withEyedropper'
@@ -198,7 +199,6 @@ $wrapperClasses
 (it
 (its
 (keep
-(later
 (left→right)
 (like
 (localStorage,
@@ -218,7 +218,6 @@ $wrapperClasses
 (top→bottom)
 (useNative,
 (which
-(without
 **The
 +
 --gap-wk-md
@@ -430,7 +429,6 @@ ARBITRARY
 Alpha
 An
 BEFORE
-BELOW
 BLOCKER
 BOTH
 Because
@@ -466,6 +464,7 @@ Dev-only
 Developer
 EVENT,
 EXPLICIT:
+Each
 Enabling
 End
 English
@@ -489,7 +488,6 @@ Home
 Home/End
 Hooking
 Hue
-INPUT's
 IS
 Illuminate\Support\Str;
 Inline-level
@@ -635,6 +633,7 @@ __('wirekit::Use
 `aria-valuetext`
 `bind`:
 `button`,
+`class`.
 `config()`
 `cursor-pointer`.
 `cursor:
@@ -716,11 +715,12 @@ answer
 any
 appears
 appended
+appending
 application
+applies,
 applies.
 apply
 are
-area
 argument
 arguments
 aria-atomic="true"
@@ -744,6 +744,7 @@ arm
 around
 array_values((array)
 arrives
+arrow
 arrow-key
 as
 as,
@@ -821,6 +822,7 @@ brightness
 brightness')
 broke
 browser
+browser's
 browser.
 bubbles
 build
@@ -831,7 +833,6 @@ buttons
 by
 byte-identical
 byte-identical.
-byte-identical;
 call
 call,
 call.
@@ -864,12 +865,13 @@ child.
 children,
 circle).
 circle,
+circle.
 class
 class="absolute
 class="fixed
 class="flex
 class="h-4
-class="h-6
+class="h-[var(--size-wk-target-min)]
 class="inline-flex
 class="pointer-events-none
 class="relative
@@ -972,13 +974,13 @@ date-picker
 debug
 decided
 decides
+decides,
 deciding
 declaration
 decorative
 deduper,
 default
 default:
-default`
 delete
 deliberately.
 deliberately:
@@ -1010,7 +1012,6 @@ does
 does.
 does:
 don't
-downward.
 drag
 drag's
 drag,
@@ -1028,7 +1029,9 @@ editable
 either
 element
 element's
+element,
 element:
+element;
 elements
 else
 else:
@@ -1128,13 +1131,14 @@ from-scratch
 front
 full
 fully
+further
 gap
-gap-*
 gap-1.5"
 gap-2">
-gap-[var(--gap-wk-md)]">
+gap-[var(--gap-wk-md)]',
 gap-[var(--gap-wk-xs)]',
 gap-[var(--padding-wk-x-sm)]',
+gap.
 gesture
 get
 gets
@@ -1148,17 +1152,16 @@ go:
 goes
 got
 grid
-grows
 guard
 guarded
-h-10',
-h-12',
 h-3
 h-3.5
 h-4
 h-40
-h-8',
 h-[calc(100%+1rem)]',
+h-[var(--size-wk-lg)]',
+h-[var(--size-wk-md)]',
+h-[var(--size-wk-sm)]',
 had
 half
 hand-mount
@@ -1179,7 +1182,6 @@ hint
 hit
 hold
 holds
-house
 hover:text-[color:var(--color-wk-danger-text)]
 hover:text-[color:var(--color-wk-text)]
 how
@@ -1262,6 +1264,7 @@ list,
 listener
 literal
 literal,
+little
 live
 lives
 locale,
@@ -1351,7 +1354,6 @@ numeric
 obstacle
 of
 off
-offset
 oklch
 old
 on
@@ -1364,6 +1366,7 @@ once:
 one
 one's
 one.
+one:
 only
 only:
 opacity
@@ -1375,7 +1378,7 @@ opposite
 optimistic
 optimistic-ui:
 or
-order);
+order
 other
 otherwise
 otp-input
@@ -1433,6 +1436,7 @@ platform's
 plausible
 pointed
 pointer
+pointer`
 pointercancel
 pointerdown,
 pointers
@@ -1522,6 +1526,7 @@ represent
 request
 request's
 resolve
+resolveClasses()
 resolves
 resolving
 response
@@ -1584,9 +1589,10 @@ see
 selects
 semantics;
 separates
-separation.
+separation,
 server
 server,
+set
 sets
 settled
 shadow)
@@ -1627,7 +1633,6 @@ so
 so),
 someone
 somewhere
-source
 space-y-3
 speaking
 spectrum
@@ -1665,6 +1670,7 @@ style="display:
 style="{{
 styled
 stylesheet
+stylesheet's
 subtree.
 success-colored
 succession
@@ -1676,6 +1682,7 @@ surface
 survives
 swatch
 swatch,
+swatch.
 swatches
 swatches.
 swatch↔readout
@@ -1770,6 +1777,7 @@ type="text"
 typed
 typed**,
 typed,
+unchanged.
 uncommitted,
 unconditional
 unconditionally
@@ -1787,7 +1795,6 @@ unrelated
 unsaved,
 untestable.
 until
-untouched.
 untranslated
 up
 uppercase
@@ -1797,6 +1804,7 @@ user
 user-chosen
 uses
 using
+utilities
 utility
 v)"
 v4's
@@ -1822,8 +1830,8 @@ voice
 w-3.5
 w-4
 w-4"
-w-6
 w-[18rem]
+w-[var(--size-wk-target-min)]
 w-full
 waiting
 warning

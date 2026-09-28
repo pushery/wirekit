@@ -88,7 +88,7 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('select', $attributes->getAttributes());
 
-    // Auto-generate ID from name attribute, or generate random if neither provided
+    // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'select-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly

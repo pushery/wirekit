@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Pushery\WireKit\Support\BlueprintSections;
+use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\WireKit;
 
@@ -21,7 +23,8 @@ use Pushery\WireKit\WireKit;
  *     blocks: [
  *       {
  *         slug, title, description, category, tags, dependencies,
- *         responsive, dark_compatible, kind ('layout' | 'blueprint'),
+ *         responsive, dark_compatible, kind ('layout' for the page-layout
+ *         sections, 'blueprint' for the rest; see BlueprintSections),
  *         preview_url, source_url
  *       }
  *     ]
@@ -96,11 +99,16 @@ class ExportBlocksCommand extends Command
         // never carries non-public content). Without the flag the full
         // manifest (every block + its visibility field) stays available as the
         // documentation site's build input.
+        //
+        // Whether a page is public is decided by DocsVisibility, the reader the
+        // component and blueprint groups of the other exports use, so the same
+        // page cannot be public in one manifest and staged in another. The
+        // `visibility` and `draft` fields each entry carries are still read from
+        // the page, for a gallery that shows them.
         if ($this->option('public')) {
             $blocks = array_values(array_filter(
                 $blocks,
-                fn (array $b): bool => ($b['visibility'] ?? 'guest') === 'guest'
-                    && ($b['draft'] ?? false) !== true,
+                fn (array $b): bool => DocsVisibility::pageStatus($packageRoot.'/docs/'.$b['slug'].'.md') === DocsVisibility::STATUS_PUBLIC,
             ));
         }
 
@@ -194,7 +202,9 @@ class ExportBlocksCommand extends Command
 
             $blocks[] = [
                 'slug' => $slug,
-                'kind' => rtrim($kind, 's'),  // 'layouts' → 'layout'
+                // The page-layout sections are `layout`, by the rule the API map groups them
+                // with; everything else under `docs/blueprints/` is a `blueprint`.
+                'kind' => BlueprintSections::isPageLayout(str_replace(DIRECTORY_SEPARATOR, '/', (string) preg_replace('/\.md$/', '', $relativePath))) ? 'layout' : 'blueprint',
                 'title' => $frontmatter['title'] ?? null,
                 'description' => $frontmatter['description'] ?? null,
                 'category' => $frontmatter['category'] ?? null,
@@ -202,8 +212,10 @@ class ExportBlocksCommand extends Command
                 'dependencies' => $frontmatter['dependencies'] ?? [],
                 'responsive' => $frontmatter['responsive'] ?? null,
                 'dark_compatible' => $frontmatter['dark_compatible'] ?? null,
-                // Surfaced so a gallery can filter blocks by their visibility field.
-                'visibility' => $frontmatter['visibility'] ?? 'guest',
+                // Surfaced so a gallery can filter blocks by their visibility field. A page that
+                // declares none takes the docs site's default for its section, and every block
+                // lives under `blueprints/`, where that default is not the public one.
+                'visibility' => $frontmatter['visibility'] ?? 'member',
                 'draft' => $frontmatter['draft'] ?? false,
                 'preview_url' => WireKit::DOCS_URL.'/'.$slug,
                 // The docs site's raw-markdown route, NOT a repository URL.

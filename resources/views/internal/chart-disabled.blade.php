@@ -5,42 +5,32 @@
      the developer-supplied `height` so layout stays stable once the config
      is fixed.
 
-     ⚠️ The two classes below are this placeholder's OWN. `wk-chart` in
+     The two classes below are this placeholder's OWN. `wk-chart` in
      particular marks nothing else: the chart component emits no `wk-*` class
      at all, `chart-mixed` emits `wk-chart-mixed`, and `dist/wirekit.css`
      styles neither. A selector built on `wk-chart` expecting to find a
      rendered chart will match this placeholder and nothing else.
 
-     This sentence used to claim the opposite, and a lazy-loading selector in
-     a developer's app believed it: it looked for `.wk-chart` while excluding
-     this placeholder by name, so it could match nothing in any state and
-     never fired once. Nothing failed — a loader that never runs looks exactly
-     like one with nothing to do. `PublicCssApiDriftTest` now fails the build
-     on a comment here that names a class no component emits.
-
-     ⚠️ The signal a host should aim at is `data-wk-chart`, and this placeholder
+     The signal a host should aim at is `data-wk-chart`, and this placeholder
      deliberately does NOT carry it. Every rendered chart emits it with the
      active library as its value; nothing renders here, so a lazy-loader firing
      on this element would fetch a chart library for a chart that was never
-     configured — the exact cost the deferral existed to avoid. The absence is
-     part of the contract rather than an omission, and
-     `ChartMarkerAttributeTest` holds both halves. --}}
+     configured — the exact cost the deferral exists to avoid. The absence is
+     part of the contract rather than an omission. --}}
 @php
     $tag = $inline ?? false ? 'span' : 'div';
 @endphp
 
-{{-- ⚠️ NO `role="region"`, AND NO `aria-label`. It carried both, and each was wrong for its
-     own reason.
+{{-- No `role="region"`, and no `aria-label`, each for its own reason.
 
-     The role made a debug placeholder a page LANDMARK — something a reader navigates BY, and
-     something axe reports as `landmark-unique` the moment a page renders two charts. This
+     The role would make a debug placeholder a page landmark — something a reader navigates by,
+     and something axe reports as `landmark-unique` the moment a page renders two charts. This
      package's rule for a generic region is that the role waits for a name the CALLER chose;
-     there is no caller-supplied name reaching here at all, because `Chart::render()` hands this
-     view no data and the element merges no attribute bag.
+     there is no caller-supplied name reaching here at all: the element merges no attribute bag.
 
-     The label was worse than redundant: an `aria-label` on a container REPLACES its contents in
-     the accessible-name computation, so the one thing a reader needed — the two lines below
-     naming the config key to set — was the thing it hid, behind an English string that no
+     The label would be worse than redundant: an `aria-label` on a container replaces its
+     contents in the accessible-name computation, so the one thing a reader needs — the two lines
+     below naming the config key to set — would be hidden behind an English string that no
      catalog translates.
 
      Nothing is owed in their place. The visible text is a complete sentence, it is read

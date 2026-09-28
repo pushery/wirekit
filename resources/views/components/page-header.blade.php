@@ -26,11 +26,10 @@
     // deletes: on confirm, the dialog AND its trigger both disappear, so focus has nowhere
     // to go back to and the page title is the nearest honest place (WCAG 2.4.3).
     //
-    // ⚠️ A prop rather than "the overlay sets it at runtime", and the difference is the
+    // A prop rather than "the overlay sets it at runtime", and the difference is the
     // whole reason this exists. `utils/overlay.js` does set `tabindex="-1"` on a target that
     // has none — but an attribute written at runtime is absent from the template a Livewire
-    // morph patches against, so the next update can take it away again. Exactly the class
-    // this catalog spent a day on with inline placement styles.
+    // morph patches against, so the next update can take it away again.
     //
     // Off by default: a `tabindex` nobody asked for is a promise about focus order, and a
     // screen that never returns focus here should not carry one.
@@ -43,14 +42,12 @@
     // with about 8px to spare. A shorter label, a narrower face or a `sm` button stays beside the
     // title, and then a two-line description lives in 16rem.
     //
-    // ⚠️ THE WIDTH IS THE HEADER'S OWN, NOT THE WINDOW'S, and that was measured rather than
-    // chosen. The first attempt used viewport breakpoints (`max-sm:`) the way `button.group`
-    // does — and in a 375px-wide container inside a wide window it changed nothing at all:
-    // `flex-basis` stayed 256px and the actions stayed on the line. A page header lives inside a
-    // content column, and beside a sidebar that column is not the window. Same finding as the
-    // data table's `hide-below-container`, one component over.
+    // The width is the header's own, not the window's. A page header lives inside a content
+    // column, and beside a sidebar that column is not the window: viewport breakpoints
+    // (`max-sm:`, as `button.group` uses) would change nothing in a 375px-wide container inside
+    // a wide window. The data table's `hide-below-container` answers the same way.
     //
-    // ⚠️ SO THE SCALE IS TAILWIND'S CONTAINER LADDER, which shares its NAMES with the viewport one
+    // So the scale is Tailwind's container ladder, which shares its NAMES with the viewport one
     // and not its meanings: `sm` here is 24rem of HEADER, where a viewport `sm` is 40rem of
     // window. Null keeps today's behavior exactly, so no existing header moves.
     'stackBelow' => null,
@@ -74,14 +71,10 @@
      * have nowhere to go but the next line — no second layout, no `flex-direction` switch that
      * would then have to restate the gap.
      *
-     * ⚠️ The utility is described rather than spelled, and that is not fussiness: Tailwind scans
-     * RAW FILES, so a comment naming a class compiles it. Spelled out, this paragraph put a bare
-     * full-basis rule in the shipped stylesheet that no element carries — and the drift guard
-     * reported it as a compiled selector with no source, which is exactly its job.
-     *
-     * ⚠️ AND THE FIRST ATTEMPT AT THIS VERY WARNING SPRANG THE TRAP AGAIN, because it named the
-     * class while explaining why not to. The rule has no exception for the sentence that states
-     * it: describe the utility, never write its token.
+     * The utility is described rather than spelled: Tailwind scans raw files, so a comment
+     * naming a class compiles it, and the shipped stylesheet would carry a bare full-basis rule
+     * that no element uses. That includes the sentence explaining why: describe the utility,
+     * never write its token.
      *
      * Written out per size because Tailwind reads a literal class name and never an assembled
      * one, the same reason `hide-below` spells its five out.
@@ -133,11 +126,9 @@
     /*
      * The two structures BESIDE the root, named so a call site can reach them.
      *
-     * ⚠️ Naming them is the whole point, and it is not cosmetic: a consuming application
-     * reported that it had to write a descendant selector against this component's internal
-     * markup to tune the title column — the one shape the house rules spend the most words
-     * against, because it turns private markup into someone else's public API. `base` was the
-     * only resolvable block, so there was no other way in.
+     * Naming them is the point: without a resolvable block for the title column, the only way
+     * to tune it is a descendant selector against this component's internal markup, which
+     * turns private markup into someone else's public API.
      *
      * The defaults are byte-for-byte what these two divs carried as literals, so nothing
      * rendered moves; what changes is that a developer can now say so through
@@ -147,13 +138,10 @@
         // `min-w-0` is not decoration: a flex child defaults to `min-width: auto`, so a long
         // unbroken word would push the column past the row instead of wrapping inside it.
         //
-        // ⚠️ `grow`, NOT the `flex` shorthand, and the reason is that the pair used to be
-        // `flex-1 basis-[16rem]` — a shorthand that sets `flex-basis: 0%` beside a longhand
-        // that sets 16rem. Both are single-class selectors, so which one applies is decided
-        // by their ORDER in the compiled stylesheet, which this component does not control.
-        // Measured: the basis rule is emitted later, so 16rem wins and the intent above holds
-        // — but it holds by luck rather than by construction, and a reporter was right to ask.
-        // Three longhands say the same thing with nothing left to order.
+        // `grow`, not the `flex` shorthand: `flex-1` sets `flex-basis: 0%`, and beside a
+        // `basis-[16rem]` longhand both are single-class selectors, so which one applies would
+        // be decided by their order in the compiled stylesheet, which this component does not
+        // control. Three longhands say the same thing with nothing left to order.
         'min-w-0 grow basis-[16rem]',
         $stackClass,
     ])), $scope);

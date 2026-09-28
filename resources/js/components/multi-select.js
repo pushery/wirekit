@@ -357,8 +357,8 @@ export default function wirekitMultiSelect(config = {}) {
          * behalf — without this the marker walks off the bottom of a capped
          * panel and Enter takes an option the reader cannot see.
          *
-         * By id rather than through `$refs`, for the reason `_panelElement()` spells
-         * out in full 170 lines below: with `optimistic` set the refs register into
+         * By id rather than through `$refs`, for the reason the docblock of
+         * `_panelElement()` spells out in full: with `optimistic` set the refs register into
          * a nested scope this component cannot read, and an id is scope-free. NOT
          * the teleport — Alpine's closest-element walk follows `_x_teleportBack`,
          * and that same docblock records the measurement proving it.
@@ -555,13 +555,11 @@ export default function wirekitMultiSelect(config = {}) {
          * below the field's bottom, 12px off its inline start and 334px narrower than it.
          * All four things `_place()` exists for were absent, and nothing threw.
          *
-         * ⚠️ THE TELEPORT IS NOT THE CAUSE, though it looks like the obvious suspect and was
-         * reported as one. Alpine's closest-element walk follows `_x_teleportBack`, so a ref
-         * on a teleported node resolves back through its template into the component that
-         * owns it — verified: outside the optimistic wrapper `$refs.panel` resolves to
-         * exactly the teleported panel and the placement is correct. The sibling combobox
-         * carries a comment blaming the teleport for its own version of this; the half of
-         * that comment which holds is the one about the nested optimistic scope.
+         * The teleport is not the cause, though it looks like the obvious suspect. Alpine's
+         * closest-element walk follows `_x_teleportBack`, so a ref on a teleported node
+         * resolves back through its template into the component that owns it: outside the
+         * optimistic wrapper `$refs.panel` resolves to exactly the teleported panel. The
+         * cause is the nested optimistic scope, as in the sibling combobox.
          *
          * The panel goes by id because it has one and an id is scope-free. The field has no
          * id, so it is found by its ref ATTRIBUTE — present in the rendered HTML regardless

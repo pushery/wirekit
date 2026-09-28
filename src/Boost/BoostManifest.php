@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Boost;
 
+use Illuminate\Support\Facades\Artisan;
 use Pushery\WireKit\Mcp\McpCatalog;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
 
@@ -14,8 +15,8 @@ use Pushery\WireKit\Theming\ThemePresetRegistry;
  * data that an AI-augmented editor loads when working in a project that depends
  * on WireKit. This manifest is auto-derived ENTIRELY from shipped surfaces — it
  * reuses {@see McpCatalog} (the same PropsParser-backed component + token catalog
- * the MCP server serves) plus {@see ThemePresetRegistry} and the registered
- * `wirekit:*` command signatures — so it can never drift from the installed
+ * the MCP server serves) plus {@see ThemePresetRegistry} and the `wirekit:*`
+ * commands Artisan has registered — so it can never drift from the installed
  * package, and it leaks nothing that isn't already public (no `docs/`, no
  * network, no internal references).
  *
@@ -156,17 +157,31 @@ final class BoostManifest
         ];
     }
 
-    /** @return list<array{name: string, description: string}> */
+    /**
+     * The `wirekit:*` commands Artisan has registered, with the descriptions Artisan reports.
+     *
+     * Read from the running application rather than from the command sources. A pattern over
+     * `protected $signature` stopped at the first digit, so `wirekit:doctor:a11y` came out as
+     * `wirekit:doctor:a`, a command that does not exist; and a description stopped at the
+     * first quote, escaped or not, so every description with an apostrophe was cut short.
+     *
+     * An alias names a command a second time, and a hidden command is not offered, so both
+     * stay out.
+     *
+     * @return list<array{name: string, description: string}>
+     */
     private function commands(): array
     {
         $found = [];
-        foreach (glob(\dirname(__DIR__, 2).'/src/Console/*.php') ?: [] as $file) {
-            $src = (string) file_get_contents($file);
-            if (preg_match('/protected \$signature\s*=\s*[\'"](wirekit:[a-z:-]+)/', $src, $sig)
-                && preg_match('/protected \$description\s*=\s*[\'"]([^\'"]+)/', $src, $desc)) {
-                $found[$sig[1]] = $desc[1];
+
+        foreach (Artisan::all() as $name => $command) {
+            if (! str_starts_with($name, 'wirekit:') || $name !== $command->getName() || $command->isHidden()) {
+                continue;
             }
+
+            $found[$name] = $command->getDescription();
         }
+
         ksort($found);
 
         return array_map(

@@ -39,7 +39,9 @@
 
     // Color: null/'' inherits currentColor; a semantic intent maps to its token.
     // Full literal class strings (not interpolated) so the Tailwind scanner sees
-    // them. info has no own base color, so it borrows the accent token. A spinner
+    // them. info shares the accent token, as in the rest of the intent palette: info
+    // has no surface token, and --color-wk-info is the tone the charts and the flash
+    // tint read. A spinner
     // is a non-text GRAPHIC (WCAG 1.4.11, 3:1) — its intent color is the semantic
     // FILL token (like success/warning/danger below), NOT the readable accent-text
     // alias links use; accent-text defaults to near-black, which would strip the

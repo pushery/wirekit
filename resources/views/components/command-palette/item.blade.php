@@ -49,7 +49,7 @@
         $wkCmdDerivedId = $label !== '' ? 'wk-cmd-item-'.$label : null;
     }
 
-    // ⚠️ The derivation above is stable but NOT unique, and a palette is the one
+    // The derivation above is stable but NOT unique, and a palette is the one
     // place that shape hurts. The same verb under two groups — "Settings" under
     // Docs and under Admin, "Open" under Files and Projects — derives ONE id for
     // two rows, and `document.getElementById` answers with the first: arrowing
@@ -59,10 +59,10 @@
     // nothing at all. DomId::unique hands the FIRST sight back verbatim — a lone
     // item keeps the clean, readable id the paragraph above argues for — and
     // counts only the collisions, so both properties hold instead of one being
-    // traded for the other. It also replaces the old Str::random fallback for the
-    // item that has neither href nor text: a counter survives a re-render, a
-    // random string makes the row a different element every time. Its registry is
-    // per request, which is what a re-render is.
+    // traded for the other. It also covers the item that has neither href nor
+    // text: a counter survives a re-render, where a random string would make the
+    // row a different element every time. Its registry is per request, which is
+    // what a re-render is.
     $itemId = \Pushery\WireKit\Support\DomId::unique($wkCmdDerivedId, 'wk-cmd-item-');
 
     $classes = WireKit::resolveClasses('command-palette.item', 'base', implode(' ', [
@@ -80,8 +80,8 @@
         // `data-active`, not `focus`, and this is the one menu-ish component where
         // that distinction matters. The option is `tabindex="-1"` under the list's
         // `aria-activedescendant`, and command-palette.js never calls `.focus()` on
-        // it — the highlight is written by markActive() at line 325. So a `focus:`
-        // background here was inert and has been dropped rather than converted.
+        // it — the highlight is written by `_paintActive()`. So a `focus:` background here
+        // would be inert, and there is none.
         //
         // The RING is the mark, for the reason dropdown/item.blade.php records: dark
         // mode declares --color-wk-bg-subtle and --color-wk-bg-elevated as the same

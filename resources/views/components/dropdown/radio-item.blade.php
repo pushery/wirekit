@@ -1,29 +1,22 @@
 {{-- optimistic-ui: candidate
      Same, with the group-rollback wrinkle: the snapshot is the previously selected sibling.
 
-     ⚠️ TWO OBSTACLES WERE NAMED HERE. ONE IS SETTLED, AND THE OTHER ONE WAS NOT
-     THE RIGHT NAME FOR WHAT IS ACTUALLY IN THE WAY.
+     The announcer wrapper is not in the way. The `display: contents` wrapper between
+     `role="menu"` and its owned item leaves both items direct children of the menu:
+     `ariaSnapshot()` in chromium, firefox and webkit shows it on checkbox-item, with the
+     same wrapper, the same menu and the same role family.
 
-     SETTLED — the announcer wrapper. This paragraph said the `display: contents`
-     wrapper landing between `role="menu"` and its owned item still had to be
-     resolved. It was, on checkbox-item, and by measurement rather than by the
-     spec's promise: `ariaSnapshot()` in chromium, firefox and webkit shows both
-     items staying DIRECT children of the menu with the wrapper in place. That
-     answer transfers here unchanged — same wrapper, same menu, same role family.
+     Nor is a missing group-level surface. That is true of `radio`, where the browser
+     deselects the sibling before any handler runs. Here the item's group value is a
+     single Alpine property named by `model` on an ancestor scope, and `wirekitOptimistic`
+     already binds to exactly that shape — `bind: '<model>'`, no `value` of its own,
+     nested inside the scope that owns it; segmented-control ships on that mechanism. The
+     snapshot the rollback needs is the ancestor's previous value, which is one string,
+     and putting it back moves every sibling's display with it because they all read the
+     same property.
 
-     WRONGLY NAMED — "the value does not live on this component, and WireKit has
-     no group-level surface to bind to". That is true of `radio`, where the
-     browser deselects the sibling before any handler runs, and it was inherited
-     from there. It is NOT true here: this item's group value is a single Alpine
-     property named by `model` on an ancestor scope, and `wirekitOptimistic`
-     already binds to exactly that shape — `bind: '<model>'`, no `value` of its
-     own, nested inside the scope that owns it. segmented-control ships on that
-     mechanism today. The snapshot the rollback needs is the ancestor's previous
-     value, which is one string, and putting it back moves every sibling's
-     display with it because they all read the same property.
-
-     WHAT IS ACTUALLY IN THE WAY — arbitration, and it is a consequence of the
-     component being one ITEM of a group rather than the group. Each item would
+     What is in the way is arbitration, and it is a consequence of the component being
+     one item of a group rather than the group. Each item would
      mount its own layer over the shared property, and `mode: 'reject'` guards a
      layer against itself, not against its siblings. Pick B, then pick C while B
      is still in flight: C snapshots B's optimistic value, and a refusal of B

@@ -187,16 +187,16 @@ export default function wirekitAlertDialog(config = {}) {
         /**
          * Close the dialog once the destructive action has actually fired — opt-in.
          *
-         * ⚠️ IT IS NOT COSMETIC, AND THAT IS WHY THE OPTION EXISTS. A dialog that stays up
+         * It is not cosmetic, and that is why the option exists. A dialog that stays up
          * after its action holds `aria-modal="true"`, so the `role="status"` the action
          * produces on the page BELOW is outside the modal and is never announced (WCAG
          * 4.1.3). The backdrop also keeps the page unreachable after the work is done.
          *
-         * ⚠️ DEFAULT OFF, deliberately: closing is a behavior change for every dialog that
+         * Default off, deliberately: closing is a behavior change for every dialog that
          * already ships, and some confirmations legitimately keep the panel up to show a
          * result inside it.
          *
-         * ⚠️ AND IT CLOSES ON THE NEXT TASK RATHER THAN INSIDE THE EVENT. `wire:click` on
+         * And it closes on the next task rather than inside the event. `wire:click` on
          * the same control is another listener on the same event; closing synchronously
          * tears the panel out from under handlers that have not run yet, and which of them
          * runs first is registration order rather than anything a caller controls. Yielding

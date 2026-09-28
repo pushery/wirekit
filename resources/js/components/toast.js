@@ -19,8 +19,8 @@ export default function wirekitToast(config = {}) {
 
     // The region element itself, captured at init.
     //
-    // ⚠️ IT EXISTS BECAUSE `$root` IS RESOLVED WHEN IT IS READ, AND ONE OF THE
-    // READS HAPPENS AFTER THE ELEMENT IT RESOLVES FROM IS GONE.
+    // It exists because `$root` is resolved when it is read, and one of the
+    // reads happens after the element it resolves from is gone.
     //
     // `remove()` runs from the dismiss button's own `@click`, so Alpine anchors the
     // magics to that BUTTON. `_focusSuccessor` reads `$root` synchronously, while
@@ -206,7 +206,7 @@ export default function wirekitToast(config = {}) {
 
             // Enforce max queue length — remove oldest.
             //
-            // ⚠️ THE EVICTION IS THE SECOND WAY A TOAST LEAVES THE DOM, and it takes
+            // The eviction is the second way a toast leaves the DOM, and it takes
             // focus with it exactly as the dismiss button does — the mechanism and the
             // WCAG 2.4.3 requirement are written out on `remove()` below. This path is
             // the worse of the two, because the reader did not press anything: the jump
@@ -318,12 +318,11 @@ export default function wirekitToast(config = {}) {
          * the stack. Then, with the region emptied, whatever the reader was on
          * before they tabbed in.
          *
-         * ⚠️ The scope is `$root`, not `$el`. `remove()` is reached from the dismiss
-         * button's own click handler, so Alpine binds `$el` to that BUTTON — and a
-         * button contains no `[data-wk-toast-id]` card, so the lookup returned null,
-         * this method returned null, and focus was never restored. The whole
-         * keyboard path was dead while every assertion around it stayed green.
-         * `$root` is the region whichever descendant dispatched the event.
+         * The scope is `$root`, not `$el`. `remove()` is reached from the dismiss
+         * button's own click handler, so Alpine binds `$el` to that button — and a
+         * button contains no `[data-wk-toast-id]` card, so the lookup would return
+         * null and focus would never be restored. `$root` is the region whichever
+         * descendant dispatched the event.
          *
          * @param {number} idx
          * @returns {{toastId: number}|{element: Element}|null}
@@ -355,16 +354,12 @@ export default function wirekitToast(config = {}) {
          * during its leave transition, and focusing while it is there is what
          * takes focus off it.
          *
-         * ⚠️ A LATER LANDING WAS BUILT AND THEN TAKEN BACK OUT, and that is worth a
-         * line because the obvious next fix is to put it back. The suspicion was
-         * that the tick is too early — that the leaving card is removed by its own
-         * transition, outside Alpine's tick, and takes focus with it. A second
-         * landing via `MutationObserver`, once the card really detaches, was
-         * written and measured: the four browser cases pass identically without
-         * it, because the card is already detached by the tick and, when it is
-         * not, focus has moved to the successor before the removal reaches it.
-         * Shipping it anyway would have been a mechanism nothing exercises,
-         * standing where the real cause was.
+         * No second, later landing. The obvious suspicion is that the tick is too
+         * early — that the leaving card is removed by its own transition, outside
+         * Alpine's tick, and takes focus with it. It is not: the card is already
+         * detached by the tick, and when it is not, focus has moved to the
+         * successor before the removal reaches it, so a landing via
+         * `MutationObserver` would be a mechanism nothing exercises.
          *
          * The real cause was `$root` — see the note at the top of this file.
          *

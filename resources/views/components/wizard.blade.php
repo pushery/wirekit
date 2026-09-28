@@ -72,8 +72,8 @@
         announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($announcementTemplate) }},
         incompleteAnnouncement: {{ \Pushery\WireKit\Support\AlpinePayload::from($incompleteTemplate) }}
     })"
-    {{-- A single method call, not an inline expression. Alpine's CSP build parses a call and
-         nothing more, so anything richer here goes inert on that bundle without a word. --}}
+    {{-- A single method call rather than an inline body: Alpine's CSP build parses one
+         expression per directive, so a body of several statements would never run there. --}}
     x-init="initWizard()"
     {{ $attributes->class([$classes]) }}
 >

@@ -6,10 +6,9 @@
  * a native date field is not an authorable property in any shipped browser. So a German page
  * read on an English laptop asks for `mm/dd/yyyy` while every word beside it is German.
  *
- * ⚠️ AND THE MISREADING IS SILENT, which is the whole reason this exists. `03.04.2026` and
+ * And the misreading is silent, which is the whole reason this exists. `03.04.2026` and
  * `04/03/2026` are both valid dates; nothing is rejected, no error appears, and the record
- * simply carries a different day than the person meant. Reported against a shop whose
- * operators work on company laptops with an English system language.
+ * simply carries a different day than the person meant.
  *
  * What this does NOT do: change the order. It states it, in the language of the page, with a
  * worked example rather than a letter pattern — `dd/mm/yyyy` has to be decoded, "4 March 2026 is

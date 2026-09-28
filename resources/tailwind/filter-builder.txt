@@ -99,7 +99,6 @@ $valueArr),
 (search
 (see
 (silent
-(sort
 (two-way
 (typed
 (window-scoped,
@@ -319,7 +318,7 @@ __('wirekit::starts
 `$status`
 `chipText()`,
 `config()`
-`name`,
+`name`:
 `relative`
 `remove()`
 `resources/js`
@@ -455,7 +454,6 @@ clipping/stacking
 close()
 close(true)"
 coerces
-columns,
 compiles
 component's
 components
@@ -488,7 +486,7 @@ decoration:
 default
 defensive
 deliberately:
-destroy-and-rebuild
+destroy-and-rebuild,
 destroys
 developer's
 dialog
@@ -575,14 +573,13 @@ gap-[var(--gap-wk-sm)]
 gap-[var(--gap-wk-sm)]">
 gated
 gestures
-goes
+go
 guard
 handed
 has
 hear
 here
 here,
-hidden
 hidden-input
 hide
 highest
@@ -643,7 +640,6 @@ max-w-[calc(100vw-2rem)]
 may
 mb-1';
 mean
-means
 mirrored
 model
 morph
@@ -690,7 +686,6 @@ optimistic-ui:
 option's
 optional
 order
-order,
 otherwise
 out
 over
@@ -702,7 +697,6 @@ page.
 painted
 panel
 panel),
-panels)
 payload
 per
 piece
@@ -736,7 +730,6 @@ query.
 rather
 raw
 re-finds
-re-randomized
 re-rendering
 reach
 reachable,
@@ -753,7 +746,6 @@ removed
 removed:
 removing
 render
-render:
 renders
 request
 reserve

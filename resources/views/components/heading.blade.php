@@ -28,17 +28,16 @@
 
     // Determine the HTML heading level (h1–h6).
     //
-    // ⚠️ RESOLVED TO AN INT IN RANGE, because this value is concatenated into the opening
+    // Resolved to an int in range, because this value is concatenated into the opening
     // tag below. Blade compiles an unbound attribute to a string and `e()` escapes neither
-    // a space nor an `=`, so `level="2 onmouseover=alert(1)"` rendered
-    // `<h2 onmouseover=alert(1) …>` — the same attribute injection `as` carried, one prop
-    // over, and it survived the fix that closed `as` because only that branch was guarded.
+    // a space nor an `=`, so `level="2 onmouseover=alert(1)"` would render
+    // `<h2 onmouseover=alert(1) …>`, the same attribute injection `as` is guarded against.
     // An int clamped to the documented 1–6 cannot carry an attribute and cannot name an
     // element that does not exist.
     $headingLevel = min(6, max(1, (int) ($level ?? 2)));
     // `as` is rendered straight into the opening tag, so anything with a space or an
-    // `=` in it becomes an ATTRIBUTE — `as="div onmouseover=alert(1)"` shipped a working
-    // event handler. tagName() admits a tag name and nothing else; it is the same call
+    // `=` in it would become an attribute — `as="div onmouseover=alert(1)"` would ship a
+    // working event handler. tagName() admits a tag name and nothing else; it is the same call
     // text / row / container / link already make.
     $tag = $as === null ? "h{$headingLevel}" : \Pushery\WireKit\WireKit::tagName('heading', (string) $as);
 
@@ -57,7 +56,7 @@
     //     the canonical middle tier — heading was the outlier).
     //   - 4xl and 5xl added so hero copy can use the standard hero
     //     scale designers copy from external typography systems.
-    $sizeClasses = match ($resolvedSize) {
+    $sizeClasses = match (WireKit::validateProp('heading', 'size', $resolvedSize, ['sm', 'md', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'])) {
         'sm' => 'text-[length:var(--text-wk-sm)]',
         'md', 'base' => 'text-[length:var(--text-wk-md)]',
         'lg' => 'text-[length:var(--text-wk-lg)]',
@@ -66,14 +65,12 @@
         '3xl' => 'text-[length:var(--text-wk-3xl,1.875rem)]',
         '4xl' => 'text-[length:var(--text-wk-4xl,2.25rem)]',
         '5xl' => 'text-[length:var(--text-wk-5xl,3rem)]',
-        default => WireKit::validateProp('heading', 'size', $resolvedSize, ['sm', 'md', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']),
     };
 
-    $trackingClasses = match ($tracking) {
+    $trackingClasses = match (WireKit::validateProp('heading', 'tracking', $tracking, ['normal', 'tight', 'tighter'])) {
         'normal' => 'tracking-normal',
         'tight' => 'tracking-tight',
         'tighter' => 'tracking-tighter',
-        default => WireKit::validateProp('heading', 'tracking', $tracking, ['normal', 'tight', 'tighter']),
     };
 
     // A heading often carries a name somebody typed — a template, a repository, a channel —
@@ -82,12 +79,11 @@
     // cannot drift apart: arbitrary properties rather than the named overflow-wrap utilities,
     // which only arrived in Tailwind 4.1. `anywhere` also counts toward the min-content width,
     // which is what lets a heading wrap inside a flex row.
-    $breakClasses = match ($break === null ? null : (string) $break) {
+    $breakClasses = match ($break === null ? null : WireKit::validateProp('heading', 'break', (string) $break, ['normal', 'anywhere', 'all'])) {
         'normal' => '[overflow-wrap:normal] [word-break:normal]',
         'anywhere' => '[overflow-wrap:anywhere]',
         'all' => '[word-break:break-all]',
         null => '',
-        default => WireKit::validateProp('heading', 'break', (string) $break, ['normal', 'anywhere', 'all']),
     };
 
     $colorClasses = $accent

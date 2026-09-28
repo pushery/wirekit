@@ -11,8 +11,10 @@ import { followChartServerData } from '../utils/chart-server-data.js';
  * and re-applies theme colors (grid, ticks, legend, datasets) instantly.
  *
  * @param {Object} config - Chart.js configuration object (type, data, options).
- *   Passed from the Blade component via Alpine x-data. Will be unwrapped with
- *   Alpine.raw() before passing to Chart.js to avoid Proxy conflicts.
+ *   Passed from the Blade component via Alpine x-data. Alpine hands a factory its
+ *   argument as given and makes only the returned object reactive, so this is the
+ *   plain object; `Alpine.raw()` before Chart.js keeps it plain for a caller who
+ *   passes a reactive one.
  *
  * Lifecycle:
  * - init(): Creates chart + observer inside $nextTick (after DOM ready)
@@ -124,12 +126,11 @@ export default function wirekitChartJs(config) {
         /**
          * Paint a visible advisory where the chart would have been.
          *
-         * ⚠️ WITHOUT THIS, A MISSING PEER LIBRARY LOOKED LIKE A STYLING BUG. The adapter
-         * returned after a console.error, leaving an empty box that the wrapper still
-         * announces as a chart — so the page reads as broken CSS to a developer and as an
-         * empty chart to a screen reader, and the one message explaining it was in a console
-         * nobody had open. The ApexCharts adapter has painted a panel for this case all along;
-         * these two behaved differently for the same failure.
+         * Without this, a missing peer library would look like a styling bug: an empty box
+         * after a console.error, which the wrapper still announces as a chart — broken CSS to
+         * a developer, an empty chart to a screen reader, and the one message explaining it in
+         * a console nobody has open. The ApexCharts adapter paints the same kind of panel for
+         * this case.
          *
          * The canvas is REPLACED rather than filled: a <canvas> renders no HTML children, so
          * there is nowhere inside it to put a message. It is hidden and the panel takes its
@@ -193,7 +194,7 @@ export default function wirekitChartJs(config) {
                 // visually-hidden sentence below keeps the full message on the
                 // accessibility tree, where the `role="alert"` announces it either way.
                 /*
-                 * ⚠️ THE BACKGROUND IS OPAQUE, AND THAT IS THE WHOLE FIX RATHER THAN A DETAIL.
+                 * The background is opaque, and that is the whole fix rather than a detail.
                  *
                  * This panel used `background: rgba(254, 243, 199, 0.5)` with
                  * `color: rgb(120, 53, 15)` — amber-100 at half alpha under amber-900. In LIGHT
@@ -363,12 +364,12 @@ Chart.register(...registerables);</pre>
                 // (causes "setContext is not a function" errors).
                 this._applyGlobalDefaults(colors, fontFamily);
 
-                // Alpine.raw() strips the reactive Proxy wrapper from the
-                // config object. Alpine 3.x wraps all x-data properties in
-                // reactive Proxies, but Chart.js 4.x creates its own internal
-                // Proxies for option resolution (setContext). Proxy-in-Proxy
-                // breaks Chart.js's internal chain. Alpine.raw() returns the
-                // original plain object so Chart.js can wrap it correctly.
+                // Chart.js must receive a plain object: it wraps the options in
+                // Proxies of its own for option resolution (setContext), and a
+                // reactive Proxy underneath breaks that chain. `config` is the
+                // factory's argument, which Alpine passes through unwrapped, so
+                // for the server-rendered payload Alpine.raw() returns it as it
+                // is; the call covers a caller who passes a reactive object.
                 const rawConfig = Alpine.raw(config);
 
                 // Record which datasets have user-provided colors BEFORE

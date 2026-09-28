@@ -1,7 +1,5 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+{{-- optimistic-ui: n/a — sub-component
+     One question of the faq component. Its open state lives on the accordion the faq renders. --}}
 {{-- Pick up the surrounding faq's appearance so the items match the container.
      accordion.item resolves its own chrome from `variant` / `size`, and this
      component sits between the two — so without bridging them here, a flush FAQ
@@ -65,10 +63,10 @@
 
     // What the schema records. Still DERIVED from what is rendered — `plainText`
     // only removes markup, it never re-authors the answer, so the schema and the
-    // page cannot drift apart. Google's FAQPage accepts a limited HTML subset, and
-    // arbitrary rendered markup (nested components, data-* attributes, Alpine
-    // directives) can fail rich-result validation; stripping to text lands inside
-    // the supported subset. Entities are decoded so the schema carries real
+    // page cannot drift apart. The schema is read outside the page, where the markup
+    // of nested components (data-* attributes, Alpine directives, utility classes)
+    // means nothing, and plain text is what every reader of it takes reliably.
+    // Entities are decoded so the schema carries real
     // characters rather than `&amp;`, and whitespace is collapsed because the
     // rendered indentation is layout, not content.
     $schemaText = $schemaAnswer;

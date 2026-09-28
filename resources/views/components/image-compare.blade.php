@@ -285,8 +285,7 @@
         </svg>
     </button>
 
-    {{-- aria-live IS present here — do not flag as missing.
-         Announces value changes during drag / keyboard interaction. --}}
+    {{-- Announces the revealed percentage while the divider moves by drag or keyboard. --}}
     <span class="sr-only" aria-live="polite" aria-atomic="true">
         <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::percent% revealed')) }}.replace(':percent', value)"></span>
     </span>

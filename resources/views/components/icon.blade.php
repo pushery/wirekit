@@ -20,7 +20,7 @@
     $resolved = app(IconResolver::class)->resolve($name);
 
     // Check if blade-icons is installed (provides the svg() helper function).
-    // Graceful degradation: if the package is missing, render an inert SVG
+    // Graceful degradation: if the package is missing, render an empty `<span>`
     // placeholder + emit a one-time framework log entry so the rest of the
     // page still loads. Throwing a hard RuntimeException would kill any
     // page that uses an icon — including pages that use icons transitively
@@ -61,7 +61,8 @@
     if ($size === null) {
         $sizeClasses = 'h-5 w-5';
     } else {
-        // validateProp throws in debug, returns the first allowed value ('xs') in production.
+        // An unknown size is reported through the strictness gate, and where the gate does not
+        // throw, validateProp returns the first allowed value ('xs').
         $validated = isset($sizeMap[$size])
             ? $size
             : WireKit::validateProp('icon', 'size', $size, array_keys($sizeMap));
@@ -81,7 +82,8 @@
     $isInformative = $callerAriaLabel || $callerAriaLabelledBy || $callerRole === 'img';
     $shouldSetHidden = $callerAriaHidden === null && ! $isInformative;
 
-    $mergedAttributes = $attributes->class([$sizeClasses]);
+    // The size classes are the icon's one class block, so a personalization of `icon` reaches them.
+    $mergedAttributes = $attributes->class([WireKit::resolveClasses('icon', 'base', $sizeClasses)]);
     if ($shouldSetHidden) {
         $mergedAttributes = $mergedAttributes->merge(['aria-hidden' => 'true']);
     }
@@ -101,8 +103,8 @@
      This guarantees the rendered SVG carries AT MOST ONE aria-hidden
      attribute, matching the developer's declared intent. --}}
 @php
-    // ⚠️ THE RENDER IS ATTEMPTED HERE, NOT INSIDE THE @if BELOW, BECAUSE IT CAN FAIL IN A
-    // WAY THE CONDITION CANNOT SEE.
+    // The render is attempted here, not inside the @if below, because it can fail in a
+    // way the condition cannot see.
     //
     // The condition covered two of the three ways an icon goes missing: blade-icons not
     // installed at all, and an alias that resolved to '' because it is unknown. The third

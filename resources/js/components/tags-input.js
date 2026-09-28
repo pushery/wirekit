@@ -34,7 +34,7 @@ export default function wirekitTagsInput(config = {}) {
     // The field's root element, resolved ONCE while something is still attached
     // to resolve it from.
     //
-    // ⚠️ `$root` IS RESOLVED WHEN IT IS READ, by walking up from `$el` to the
+    // `$root` is resolved when it is read, by walking up from `$el` to the
     // nearest `[x-data]`. `removeTag()` runs from a chip's own remove button, so
     // `$el` is that button — and `_focusAfterRemoval` reads the scope inside
     // `$nextTick`, by which time the button has gone with its chip. The walk from
@@ -237,13 +237,13 @@ export default function wirekitTagsInput(config = {}) {
          * live region changes nothing, so pressing Enter twice on the same duplicate
          * would be answered once. Same shape, same reason, as the optimistic layer's.
          *
-         * ⚠️ NOT called `_announce`, for the reason `tagAnnouncement` is not called
+         * Not called `_announce`, for the reason `tagAnnouncement` is not called
          * `announcement`: the optimistic layer nests inside this component and declares
          * `_announce(text)`, and Alpine resolves a name to the NEAREST scope that has it.
          * Every caller here runs from the text field or a chip, inside the layer's
-         * element, so under that name `addTag()` reached the layer's method instead —
-         * which ignores the replacements. The raw template "Added :name" went into the
-         * layer's region and overwrote the "Saving" it had queued a moment earlier.
+         * element, so under that name `addTag()` would reach the layer's method instead,
+         * which ignores the replacements: the raw template "Added :name" would go into the
+         * layer's region and overwrite the "Saving" it had queued a moment earlier.
          */
         _announceTag(template, replacements) {
             if (typeof template !== 'string' || template === '') return;

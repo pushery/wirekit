@@ -19,8 +19,9 @@ use Pushery\WireKit\WireKit;
  *
  * This keeps a per-request registry: the FIRST sight of a base returns it verbatim
  * (so a lone `id="email"` stays byte-identical), and each subsequent collision
- * appends `-2`, `-3`, … The registry is reset after each HTTP request (Octane-safe;
- * a fresh FPM process starts empty anyway) and by {@see WireKit::flush()}.
+ * appends `-2`, `-3`, … The registry is reset after each HTTP request, which keeps it
+ * per request under Octane (FPM starts every request with empty static state anyway),
+ * and by {@see WireKit::flush()}.
  *
  * Opt out with `config('wirekit.a11y.dedupe_ids', false)` — then the preferred
  * value is returned verbatim (the pre-2.20 behavior).
@@ -62,7 +63,7 @@ final class DomId
      * Return a page-unique id for a control.
      *
      * @param  string|null  $preferred  The caller's explicit `id`, else its `name`.
-     * @param  string  $fallbackPrefix  Prefix for a random id when neither is given.
+     * @param  string  $fallbackPrefix  Prefix for the counted id when neither is given.
      */
     public static function unique(?string $preferred, string $fallbackPrefix): string
     {

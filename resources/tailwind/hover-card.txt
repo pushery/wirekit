@@ -96,14 +96,11 @@ INNER
 INTO
 Its
 LEGITIMATELY
-Measured:
 NOT
 OUTSIDE
 Only
 Pushery\WireKit\WireKit;
-So
 Surfaced
-TRIGGER.
 Tab
 Teleported
 Teleporting
@@ -137,6 +134,7 @@ __('wirekit::Hover
 `body`
 `open`
 `position:
+`tabFromTrigger()`
 `x-teleport="#wk-overlay-root"`
 a
 a11y.
@@ -185,7 +183,6 @@ broke.
 browser
 but
 buttons
-by
 calculations
 cancels
 card
@@ -203,7 +200,6 @@ content
 content)
 control
 coordinates
-could
 counterpart
 debug
 delayHide:
@@ -231,9 +227,6 @@ end
 entering
 entirely
 error.
-event
-ever
-every
 exists,
 fires
 first
@@ -243,7 +236,7 @@ flow
 focus
 focus,
 focusable;
-focusing
+focuses
 follows
 for
 fragmentation
@@ -252,6 +245,7 @@ front
 full
 generic
 handler
+handler.
 has
 hid
 hide
@@ -263,6 +257,7 @@ hover-card
 hover-intent
 hover/focus),
 hover/focus.
+how
 implode('
 imports
 in
@@ -274,7 +269,6 @@ interactive
 into
 irrelevant).
 is
-is:
 it
 its
 itself
@@ -301,6 +295,7 @@ machine
 makes
 may
 mechanism
+moves
 moving
 must
 n/a
@@ -323,7 +318,6 @@ one
 one.
 only
 open
-opened
 opens.
 optimistic-ui:
 or
@@ -346,13 +340,13 @@ placement.
 placement:
 plain
 pointer
-pointing
+points
 popover,
 position
 positioned
 positioning
 precedes
-previews.
+pressed
 prod).
 promise
 promises.
@@ -361,8 +355,8 @@ puts
 qualified:
 rather
 reach
-reach.
 reachable
+reaches
 read-only
 reader
 refs
@@ -381,7 +375,6 @@ root.
 rule.
 run
 running
-sat
 scale-100"
 scale-95"
 screen
@@ -399,7 +392,6 @@ so
 something
 somewhere
 state
-stayed
 steps
 still
 structured
@@ -415,15 +407,16 @@ the
 them
 them,
 there
+there,
 these
 this
-through
 to
 to.
 tooltip,
 tooltip-like
 trigger
 trigger's
+trigger,
 true:
 two
 unchanged
@@ -436,7 +429,6 @@ via
 view's
 viewport-relative
 visibility
-went
 what
 whatever
 when

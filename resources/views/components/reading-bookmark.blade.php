@@ -83,12 +83,10 @@
     $useScoped = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
     $boundaryClass = $useScoped
         ? 'absolute bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]'
-        // ⚠️ The bottom of the viewport is NOT the bottom of the usable screen on a phone
-        // with a home indicator — the inset is 34px on a notched iPhone, and this control
-        // sat inside it. The library states the rule in dist/wirekit.css and already ships
-        // this exact expression for `.wk-fab` and `.wk-bottom-nav`; these offsets were
-        // simply never given the term. `env()` resolves to 0 wherever there is no inset,
-        // so it costs nothing elsewhere.
+        // The bottom of the viewport is not the bottom of the usable screen on a phone with
+        // a home indicator, whose inset is 34px on a notched iPhone. The same expression keeps
+        // `.wk-fab` and `.wk-bottom-nav` clear of it. `env()` resolves to 0 wherever there is
+        // no inset, so it costs nothing elsewhere.
         //
         // No browser test can catch this: `env(safe-area-inset-*)` is 0 in headless
         // Playwright, which is why it survived every green mobile run.
@@ -160,8 +158,8 @@
     >
         <span class="wk-reading-bookmark__label">{{ $resumePrompt }}</span>
         {{-- Both controls spell out `cursor-pointer` because nothing else supplies
-             it: Tailwind v4's preflight sets `cursor: default` on `button` (v3
-             inherited the user agent's pointer), and `.wk-reading-bookmark__resume`
+             it: Tailwind v4's preflight no longer sets `cursor: pointer` on `button`
+             (v3 did), so the browser's default arrow applies, and `.wk-reading-bookmark__resume`
              and `__dismiss` carry no declarations in dist/wirekit.css — the class
              names are hooks for a developer, not styles. Without it the prompt
              reads as static text. --}}
@@ -176,7 +174,7 @@
             type="button"
             @click="dismiss()"
             aria-label="{{ __('wirekit::Dismiss') }}"
-            class="wk-reading-bookmark__dismiss inline-flex items-center justify-center cursor-pointer w-6 h-6 rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+            class="wk-reading-bookmark__dismiss inline-flex items-center justify-center cursor-pointer w-[var(--size-wk-target-min)] h-[var(--size-wk-target-min)] rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 10-1.06-1.06L10 8.94 6.28 5.22z" />

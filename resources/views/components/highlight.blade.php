@@ -52,8 +52,8 @@
      *              matched the `em` in `<em>` and wrapped the halves in `<mark>`
      *
      * So the content is split into TAG and TEXT segments first and only the text is searched;
-     * tags pass through untouched and every fragment is emitted raw, because all of it is
-     * already-escaped output.
+     * tags pass through untouched, and each text segment is decoded, searched and escaped once
+     * on the way out, so it leaves as escaped as it arrived.
      *
      * Assembled into one string rather than emitted through a Blade `@foreach`: a loop puts a
      * newline around every iteration, and in inline content a newline IS a space, so
@@ -62,7 +62,7 @@
     $highlighted = null;
 
     if ($query) {
-        $escaped = preg_quote((string) $query, '/');
+        $pattern = '/('.preg_quote((string) $query, '/').')/iu';
         $highlighted = '';
 
         foreach (preg_split('/(<[^>]*>)/', (string) $slot, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [] as $segment) {
@@ -72,10 +72,24 @@
                 continue;
             }
 
-            foreach (preg_split("/({$escaped})/i", $segment, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [] as $part) {
-                $highlighted .= mb_strtolower($part) === mb_strtolower((string) $query)
-                    ? '<mark class="'.e($markClasses).'">'.$part.'</mark>'
-                    : $part;
+            // Each text segment is searched DECODED and every part is escaped again on the way
+            // out, so a match never falls inside an entity (`query="amp"` leaves `&amp;` whole)
+            // and a query with an `&` in it finds the character the reader sees. `/u` folds
+            // case beyond ASCII, so `query="über"` finds "Über".
+            $parts = preg_split($pattern, html_entity_decode($segment, ENT_QUOTES | ENT_HTML5, 'UTF-8'), -1, PREG_SPLIT_DELIM_CAPTURE);
+
+            if ($parts === false) {
+                // Text that is not valid UTF-8 cannot be searched; it stays as it arrived.
+                $highlighted .= $segment;
+
+                continue;
+            }
+
+            foreach ($parts as $index => $part) {
+                // With one capturing group, every odd part is a match.
+                $highlighted .= $index % 2 === 1
+                    ? '<mark class="'.e($markClasses).'">'.e($part).'</mark>'
+                    : e($part);
             }
         }
     }

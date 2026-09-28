@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Closure;
+use InvalidArgumentException;
+
 /**
  * Public-rendering status oracle for the docs pages backing exported
  * surfaces (components.json / api-map.json / blocks.json).
  *
  * THE shared visibility check for every export command — one parser,
  * one contract, no per-command frontmatter drift. The docs site renders
- * a page publicly ONLY when its frontmatter does not restrict it (a
- * missing field is the downstream parser's default — public) AND it is
- * not `draft: true`. Everything else exists on disk but is not
- * publicly rendered.
+ * a page publicly ONLY when its frontmatter does not restrict it AND it
+ * is not a draft. A page that names no audience, or has no frontmatter,
+ * takes the default of its section, which the docs site derives from the
+ * first path segment: public for most of `docs/`, not public under
+ * `blueprints/`, `layouts/`, `demos/` and `previews/`. Everything else
+ * exists on disk but is not publicly rendered.
  *
  * Three statuses, deliberately distinct:
  *
@@ -30,6 +35,16 @@ namespace Pushery\WireKit\Support;
  */
 final class DocsVisibility
 {
+    /**
+     * The top-level sections where a page that names no audience is not publicly rendered.
+     * `layouts/` is the former name of the page-layout part of `blueprints/`, and the docs
+     * site still classifies it with them.
+     */
+    private const SECTIONS_NOT_PUBLIC_BY_DEFAULT = ['blueprints', 'layouts', 'demos', 'previews'];
+
+    /** The `draft:` words that mean no; any other word makes the page a draft. */
+    private const DRAFT_NO = ['false', '0', 'no', 'off'];
+
     /** Page exists and renders publicly. */
     public const STATUS_PUBLIC = 'public';
 
@@ -38,6 +53,14 @@ final class DocsVisibility
 
     /** No dedicated page on disk (documented on a parent page). */
     public const STATUS_MISSING = 'missing';
+
+    /**
+     * Statuses that stand in for what their pages say, keyed by resolved path, while a callback
+     * passed to withPageStatuses() runs.
+     *
+     * @var array<string, string>
+     */
+    private static array $pageStatusOverrides = [];
 
     /**
      * Status of a component's dedicated docs page
@@ -57,8 +80,9 @@ final class DocsVisibility
      *
      * So the tree stays authoritative wherever it exists, and the baked
      * stem lists answer where it does not. They are extracted FROM that
-     * tree, and the two are held in lockstep by a test rather than by
-     * hand.
+     * tree with contentStatus(), the reader this class applies to the tree,
+     * so an installation and a checkout cannot disagree about a page, and a
+     * test holds the committed lists against a fresh extraction.
      *
      * A component with no page of its own is as public as the page that
      * documents it. One taught only on a page that is not publicly rendered
@@ -95,7 +119,7 @@ final class DocsVisibility
      * which is the sub-component pattern documented on a parent page, and
      * keeps its entry with a null URL. Collapsing those last two into one
      * answer goes wrong in whichever direction it is collapsed: one way
-     * advertises a name that is not ready, the other deletes sixteen real
+     * advertises a name that is not ready, the other deletes real
      * components from the manifest they belong in.
      *
      * A list that is missing or unreadable contributes nothing rather
@@ -117,7 +141,7 @@ final class DocsVisibility
 
     /**
      * One baked stem list, read once per file per process — an export
-     * walks the whole registry, so this is asked ~180 times per run.
+     * walks the whole registry, so this is asked once per component per run.
      *
      * @return list<string>
      */
@@ -141,25 +165,98 @@ final class DocsVisibility
     }
 
     /**
+     * Runs the callback with the given pages reporting the given statuses instead of what their
+     * frontmatter says, and restores the previous statuses however the callback ends.
+     *
+     * The public manifests drop a component only while its page is staged, so whether their
+     * filter acts at all depends on what the documentation stages at that moment. Staging a page
+     * for the length of one callback makes the filter observable whatever the tree holds. A status
+     * set here applies wherever the page is read, componentPageStatus() included, as long as the
+     * documentation tree is present.
+     *
+     * @param  array<string, string>  $statuses  page path => one of the STATUS_ constants
+     */
+    public static function withPageStatuses(array $statuses, Closure $callback): void
+    {
+        $previous = self::$pageStatusOverrides;
+
+        foreach ($statuses as $path => $status) {
+            if (! in_array($status, [self::STATUS_PUBLIC, self::STATUS_STAGED, self::STATUS_MISSING], true)) {
+                throw new InvalidArgumentException(sprintf('Unknown page status "%s" for %s.', $status, $path));
+            }
+
+            self::$pageStatusOverrides[realpath($path) ?: $path] = $status;
+        }
+
+        try {
+            $callback();
+        } finally {
+            self::$pageStatusOverrides = $previous;
+        }
+    }
+
+    /**
      * Status of an arbitrary docs page by absolute path.
      */
     public static function pageStatus(string $path): string
     {
+        if (self::$pageStatusOverrides !== []) {
+            $override = self::$pageStatusOverrides[realpath($path) ?: $path] ?? null;
+
+            if ($override !== null) {
+                return $override;
+            }
+        }
+
         if (! file_exists($path)) {
             return self::STATUS_MISSING;
         }
 
-        $content = (string) file_get_contents($path);
+        return self::contentStatus((string) file_get_contents($path), self::sectionIsPublicByDefault($path));
+    }
 
-        // No frontmatter → the downstream Markdown parser applies its own defaults,
-        // which are unrestricted and non-draft → publicly rendered.
+    /**
+     * Whether a page at this path is public when its frontmatter names no audience.
+     *
+     * The section is the first path segment below `docs/`, read from the last `/docs/` in the
+     * path so a checkout that itself sits under a directory of that name still resolves. A page
+     * directly in `docs/` counts by its own name, which is how a bare section slug classifies.
+     */
+    private static function sectionIsPublicByDefault(string $path): bool
+    {
+        $normalized = str_replace('\\', '/', $path);
+        $at = strrpos($normalized, '/docs/');
+
+        if ($at === false) {
+            return true;
+        }
+
+        $segment = strtok(substr($normalized, $at + strlen('/docs/')), '/');
+        $section = $segment === false ? '' : (string) preg_replace('/\.md$/', '', $segment);
+
+        return ! in_array($section, self::SECTIONS_NOT_PUBLIC_BY_DEFAULT, true);
+    }
+
+    /**
+     * Status of a page by its content, for a caller that holds the Markdown rather than a path.
+     *
+     * The MCP baker decides with this, so the lists it bakes for an installation without the
+     * documentation tree answer exactly what pageStatus() answers in a checkout. It reads
+     * `components/` and `theming/`, whose section default is public; a caller reading another
+     * section passes that section's default, which pageStatus() derives from the path.
+     */
+    public static function contentStatus(string $content, bool $publicByDefault = true): string
+    {
+        $undeclared = $publicByDefault ? self::STATUS_PUBLIC : self::STATUS_STAGED;
+
+        // No frontmatter, or one that never closes: the docs site applies the section default.
         if (! str_starts_with($content, '---')) {
-            return self::STATUS_PUBLIC;
+            return $undeclared;
         }
 
         $closing = strpos($content, "\n---", 3);
         if ($closing === false) {
-            return self::STATUS_PUBLIC;
+            return $undeclared;
         }
 
         $frontmatter = substr($content, 3, $closing - 3);
@@ -169,16 +266,20 @@ final class DocsVisibility
         // because the failure directions are not symmetric — see readFrontmatterValue().
         $visibility = self::readFrontmatterValue($frontmatter, 'visibility');
 
+        if ($visibility === null && ! $publicByDefault) {
+            return self::STATUS_STAGED;
+        }
+
         if ($visibility !== null && strtolower($visibility) !== 'guest') {
             return self::STATUS_STAGED;
         }
 
-        // `draft: true` pages exist on disk but are not publicly
-        // rendered either — the same as a page the frontmatter
-        // restricts (mirrors the blocks export's public filter).
+        // A draft exists on disk but is not publicly rendered either — the same as a page the
+        // frontmatter restricts. Read the way the docs site reads it: any word that is not a
+        // known no is a draft, so an unfamiliar spelling hides the page rather than publishing it.
         $draft = self::readFrontmatterValue($frontmatter, 'draft');
 
-        if ($draft !== null && in_array(strtolower($draft), ['true', 'yes', 'on', '1'], true)) {
+        if ($draft !== null && ! in_array(strtolower($draft), self::DRAFT_NO, true)) {
             return self::STATUS_STAGED;
         }
 
@@ -188,9 +289,9 @@ final class DocsVisibility
     /**
      * One frontmatter scalar, read the way YAML would write it.
      *
-     * ⚠️ THE VALUE CLASS USED TO BE `([a-z]+)`, AND THAT IS A FAIL-OPEN SHAPE. Four ordinary
-     * YAML spellings did not match it, and a non-match here does not mean "no restriction" —
-     * it means the restriction was not SEEN, and the page was reported publicly renderable.
+     * The value class is not `([a-z]+)`, which is a fail-open shape: four ordinary YAML
+     * spellings do not match it, and a non-match here does not mean "no restriction" — it
+     * means the restriction was not seen, and the page would be reported publicly renderable.
      * Written with a placeholder value, because naming the tiers in a source comment is
      * itself a leak this package forbids:
      *

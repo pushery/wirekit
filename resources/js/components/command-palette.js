@@ -84,16 +84,15 @@ export default function wirekitCommandPalette(config = {}) {
             /*
              * And the closing half of the pair.
              *
-             * ⚠️ ONLY `-show` WAS REGISTERED, while `docs/components/command-palette.md` ships a
-             * two-button block whose second button dispatches `wirekit-command-palette-close`.
-             * A developer copied the pair, wired "Close" into their UI, and it silently did
-             * nothing — beside a sibling button that worked, which reads as an Alpine scoping
-             * problem in their own application rather than a missing listener here.
+             * `docs/components/command-palette.md` ships a two-button block whose second button
+             * dispatches `wirekit-command-palette-close`. Without this listener a copied "Close"
+             * would silently do nothing beside a sibling button that works, which reads as an
+             * Alpine scoping problem in the developer's own application rather than a missing
+             * listener here.
              *
-             * `docs/overlays/events.md` described the component as show-only, so the two pages
-             * contradicted each other. This resolves it toward the family rather than away from
-             * it: modal, drawer and alert-dialog all carry `-show` / `-close`, and that same
-             * page names "`-show` / `-close` everywhere" as the standard verb scheme.
+             * The family carries both: modal, drawer and alert-dialog all answer `-show` and
+             * `-close`, and `docs/overlays/events.md` names "`-show` / `-close` everywhere" as
+             * the standard verb scheme.
              */
             this._closeHandler = () => this._forceClose();
             window.addEventListener('wirekit-command-palette-close', this._closeHandler);

@@ -58,7 +58,8 @@
         // The item's own shape, and the panel's inline padding is what makes room for it.
         // A square row inside a rounded panel is what the starter kit reported, and the
         // ring follows the box: `--radius-wk-nav-item` is the panel radius minus that
-        // padding, which is the same arithmetic every navigation row in this library uses.
+        // padding, set on the panel in the stylesheet with the same arithmetic the rounded
+        // navigation columns use.
         'rounded-[var(--radius-wk-nav-item)]',
         'focus:outline-hidden',
         // `focus-visible`, not `focus`, and a RING rather than only a surface.

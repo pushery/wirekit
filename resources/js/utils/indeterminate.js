@@ -4,22 +4,20 @@
  * A checkbox's third state — "some, not all" — has no HTML attribute. It exists only as a
  * property on the element, which means something has to apply it after every render.
  *
- * The component used to do that with `x-init="$el.indeterminate = true"`, and `x-init` runs
- * ONCE. The third state, though, practically always arrives AFTER the first render: a
- * Livewire round trip morphs the element, the attribute text changes, Alpine does not
- * re-initialize, and the property keeps its initial value. Measured in a browser with one of
- * three rows selected — the server rendered `x-init="$el.indeterminate = true"` and
+ * An `x-init="$el.indeterminate = true"` does not carry it. The third state practically always
+ * arrives AFTER the first render, through a Livewire round trip, and measured in a browser
+ * with one of three rows selected, the server had rendered that `x-init` and
  * `el.indeterminate` was `false`. Nothing errors; the box simply reads as "none selected"
  * while something is selected, which is precisely the state it exists to show.
  *
- * The old form could also only ever turn the state ON: the attribute was emitted only when
- * the prop was true, so going back to a determinate state had nothing to undo it.
+ * An `x-init` emitted only while the prop is true could also only ever turn the state ON:
+ * going back to a determinate state would have nothing to undo it.
  *
  * WHY AN ATTRIBUTE PLUS AN OBSERVER, and not the two obvious alternatives:
  *
  *   - `x-effect` is what `data-table` uses, and it works there because the value it reads is
- *     reactive ALPINE state. Here the value comes from the server, so an effect over a
- *     literal re-runs exactly as often as `x-init` does: once.
+ *     reactive ALPINE state. Here the value comes from the server, and an effect over a
+ *     literal has no reactive source that could run it again.
  *   - Giving the checkbox its own `x-data` would make the effect reactive, and would also
  *     mean a caller's passed-through `x-data` is silently discarded — HTML keeps the first
  *     of two identical attributes. That is a known defect class in this library and not

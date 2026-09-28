@@ -124,8 +124,6 @@ $wrapperClasses
 @props.
 A
 A).
-AND
-ARE
 Alpine's
 Blade
 BooleanProp::from($copy,
@@ -137,12 +135,9 @@ Declared
 Dev-only
 Filename
 Fully
-HALVES
 HERE.
-IS
 Its
 LANDMARK
-LANDMARK,
 LTR.
 Level
 Live
@@ -151,22 +146,17 @@ Name
 Normalized
 Not
 Nothing
-POINT.
 Polite
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Reported
 SC
-SPLIT
-SPLIT,
 SR
 SR-only
 START
 Safari);
 So
 Symmetric
-THE
-TWO
 That
 The
 UNBOUND
@@ -271,6 +261,7 @@ called
 caller
 can
 cannot
+cannot:
 case
 cast
 chain
@@ -313,7 +304,6 @@ developer
 did
 diff
 difference
-distinguish
 documented
 does
 drives
@@ -359,6 +349,7 @@ full
 gap-2
 generic
 generic-scroll-region
+halves
 happen
 happens
 has
@@ -418,7 +409,7 @@ log
 long-press
 longer
 lost
-made
+make
 makes
 markdown
 may
@@ -440,7 +431,6 @@ never
 no
 none
 not
-not:
 nothing
 now
 null
@@ -480,6 +470,7 @@ plaintext;">{{
 plaintext`
 plus
 point
+point.
 pointer
 prescribes
 prod).
@@ -549,6 +540,8 @@ so
 span
 speech.
 spelling:
+split
+split,
 srMessage
 srMessage.
 standard
@@ -567,6 +560,7 @@ style="unicode-bidi:
 stylesheets
 success
 success/failure
+such
 supplies
 surfaces
 swap.
@@ -655,4 +649,3 @@ xmlns="http://www.w3.org/2000/svg"
 }}</code></pre>
 }}</span></span>
 —
-⚠️

@@ -185,15 +185,10 @@ export default () => ({
                 // A superseded run stops here and writes nothing.
                 if (this._run !== run) return;
 
-                // ⚠️ THE WATCHDOG BELOW IS NOT CANCELED HERE, AND THAT IS THE FIX.
-                // It used to be, on the first frame that landed, reasoned as "once the
-                // animation is ticking it owns the value". But one frame is not ticking.
-                // Exactly one frame lands at t ≈ 0, writes formatValue(0 × target) — the
-                // string "0" — and if no successor ever arrives, that zero is final. So the
-                // one shape the net was spanned for was the one shape that took it down.
-                // Measured: frames 1, progress 0, value "0" still at 5000ms, with 146 rAF
-                // callbacks firing elsewhere in the document at the same time.
-                // The watchdog now decides for itself, by progress, when it fires.
+                // The watchdog below is not canceled here. One frame is not ticking:
+                // exactly one frame can land at t ≈ 0 and write formatValue(0 × target)
+                // — the string "0" — and if no successor ever arrives, that zero would be
+                // final. So the watchdog decides for itself, by progress, when it fires.
 
                 const t = Math.min(1, (now - start) / duration);
                 const eased = ease(t);

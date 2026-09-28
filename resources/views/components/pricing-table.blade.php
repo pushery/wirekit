@@ -63,9 +63,8 @@
     // Both toggle branches resolve through resolveClasses and are interpolated
     // into the Alpine ternary, rather than sitting in it as literals: a runtime
     // :class binding is out of reach of WireKit::scope(), so appearance written
-    // there cannot be personalized. Same pattern as segmented-control; both class
-    // strings are listed in resources/views/_safelist.blade.php so the Tailwind
-    // scanner still generates them.
+    // there cannot be personalized. Same pattern as segmented-control, and the
+    // class strings stay literals here, where the Tailwind scanner finds them.
     $intervalSelectedClasses = WireKit::resolveClasses('pricing-table', 'interval-selected', implode(' ', [
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[color:var(--color-wk-text)]',
@@ -79,14 +78,10 @@
 
 {{-- A list, not a pile of divs: the tiers are a set the reader compares, and a
      screen reader should hear "3 items" before wading in. --}}
-{{-- The inline list-style is not redundant with the list-none class: the docs
-     sandbox iframe renders previews WITHOUT the developer's Tailwind build, so
-     `list-none` is a dead class name there and the plans grow UA bullets.
-
-     It DOES load dist/wirekit.css — that is why every token in this component
-     resolves in a preview. (An earlier version of this comment claimed the
-     opposite; dist/wirekit.css carries a rule written specifically to fix a
-     sandbox-iframe symptom, which could not work if the sheet never loaded.) --}}
+{{-- The inline list-style repeats the list-none class on purpose: `list-none` exists only
+     where a Tailwind build scanned this view, and the inline rule keeps the plans free of
+     UA bullets in a page whose stylesheet did not. The tokens resolve from
+     dist/wirekit.css either way. --}}
 @if($intervalMap !== null)
 {{-- The toggle owns `interval` for the whole table. It sits OUTSIDE the <ul>
      because a list may only contain list items, and the tiers read the value

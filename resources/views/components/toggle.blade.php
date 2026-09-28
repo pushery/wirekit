@@ -70,7 +70,7 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('toggle', $attributes->getAttributes());
 
-    // Auto-generate ID from name or fall back to a random identifier
+    // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'toggle-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
 
@@ -112,7 +112,7 @@
     // Size scale: track width/height + knob offset distance
     // Knob diameter = track height minus 4px of padding
     $sizing = match ($size) {
-        // ⚠️ BOTH DIRECTIONS PER SIZE, and the RTL half is not decoration. A switch encodes
+        // Both directions per size, and the RTL half is not decoration. A switch encodes
         // off -> on as travel along the READING direction; that is the whole affordance. With
         // only the positive form, an Arabic or Hebrew form mirrors around the control while the
         // knob still starts at the left edge and runs right, so "on" points back at the start of
@@ -251,9 +251,8 @@
 
             {{-- Knob: sibling of .peer, slides via peer-checked:translate-x-*.
                  `wk-toggle-knob` is the marker the stylesheet's forced-colors rule selects,
-                 and it sits OUTSIDE the class list on purpose — the same discipline
-                 `wk-spinner` uses, so a developer replacing the block through
-                 `personalize()` cannot take the accessibility rule out with it. --}}
+                 and it sits outside the class list on purpose — the same discipline
+                 `wk-spinner` uses. --}}
             <span class="wk-toggle-knob {{ $knobClasses }}" aria-hidden="true"></span>
         </span>
 

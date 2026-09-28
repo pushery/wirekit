@@ -1,7 +1,7 @@
 /**
  * The pointer drag in progress, if any.
  *
- * ⚠️ MODULE STATE, NOT INSTANCE STATE, because a drag can end in a list that never
+ * Module state, not instance state, because a drag can end in a list that never
  * started it. `dragend` fires on the dragged node and bubbles through the list the
  * node sits in AT THAT MOMENT — after a move between columns that is the target
  * column, whose instance knew nothing about the drag — and the column it left would
@@ -342,15 +342,12 @@ export default function wirekitSortable(config = {}) {
                 // The wording comes from the call site: it is read aloud, so an
                 // English literal here would be the one thing about this item a
                 // German page could not translate.
-                // ⚠️ THE ROLE COMES FIRST, AND WITHOUT IT THE LINE BELOW IS A
-                // VIOLATION RATHER THAN AN ANNOUNCEMENT. `aria-roledescription`
+                // The role comes first, and without it the line below is a
+                // violation rather than an announcement. `aria-roledescription`
                 // renames a role; on an element that has none — a plain `<div>`,
                 // which is what `<x-wirekit::card>` renders and what the kanban
                 // blueprint drops in here — the implicit role is `generic`, where
-                // ARIA prohibits the attribute outright. Measured on the shipped
-                // kanban preview before this line existed: axe reported
-                // `aria-roledescription` on 16 nodes, and a bare control div took
-                // it to 17, so the sixteen were ours.
+                // ARIA prohibits the attribute outright.
                 //
                 // `group` rather than `listitem`: the container this runs inside is
                 // already a labeled `region` (the column body, whose landmark name

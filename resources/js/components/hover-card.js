@@ -351,11 +351,10 @@ export default function wirekitHoverCard(config = {}) {
                     // Measured on /overlays across one refresh: `top` 959.25px → empty, still
                     // shown, box unchanged at 288x74.
                     //
-                    // ⚠️ That last number is why the option is `repairErasure` and not
+                    // That last number is why the option is `repairErasure` and not
                     // `autoReposition`: an unchanged box means no resize, and `autoUpdate`
-                    // observes boxes rather than the style attribute — it would have watched this
-                    // panel being erased and reported nothing, exactly as it did for the data
-                    // table's column menu.
+                    // observes boxes rather than the style attribute — it would watch this panel
+                    // being erased and report nothing.
                     //
                     // A hover card is not transient either. It holds itself open while the
                     // pointer rests on it, and it is focusable — the reader tabs INTO it, which

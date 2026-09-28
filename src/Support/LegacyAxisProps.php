@@ -15,11 +15,9 @@ namespace Pushery\WireKit\Support;
  * work, and both keep working for the whole of v2; what a reader needs is to be told which one
  * the kit calls canonical, once, at the moment they write the other.
  *
- * ⚠️ THE MAP IS DERIVED, AND THAT IS THE WHOLE DESIGN. A hand-written list of pairs is the half
- * of a rule that rots: it was measured against the tree on the day it was typed and never
- * again. Worse, it is wrong the first time — the resolution below finds `progress.circle` and
- * `timeline.item`, two sub-components that no reading of the top-level catalog turns up, and a
- * list assembled by eye would have silently covered seven of nine.
+ * The map is derived. A hand-written list of pairs is the half of a rule that rots, and it is
+ * wrong the first time: the resolution below finds sub-components such as `progress.circle` and
+ * `timeline.item` that no reading of the top-level catalog turns up.
  *
  * The signal is behavioral rather than a comment: an older spelling is one the template reads
  * ONLY when the canonical one is absent — `$intent ?? $variant`. That distinguishes the pairs
@@ -60,8 +58,8 @@ final class LegacyAxisProps
         $base = __DIR__.'/../../resources/views/components/';
         $map = [];
 
-        // Both levels. The top-level glob alone reaches 179 of 267 templates here, and the
-        // two pairs it misses are exactly the ones a person misses too.
+        // Both levels. The top-level glob alone misses every sub-component template, and
+        // the two pairs it misses are exactly the ones a person misses too.
         $files = [
             ...(glob($base.'*.blade.php') ?: []),
             ...(glob($base.'*/*.blade.php') ?: []),

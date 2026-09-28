@@ -169,6 +169,7 @@ flips
 for
 from
 full
+gate
 gradient:
 grid
 guard
@@ -193,7 +194,6 @@ live
 match
 may
 mean
-mode
 much
 n/a
 narrow
@@ -214,7 +214,6 @@ only
 opposite
 optimistic-ui:
 or
-otherwise
 out.
 overflow-hidden',
 own
@@ -265,7 +264,7 @@ spans
 squeezes
 stacked
 statically
-strict
+strictness
 string,
 surface.
 survive
@@ -278,7 +277,7 @@ there
 these
 this
 three
-throws
+throw,
 tint
 to
 tracks

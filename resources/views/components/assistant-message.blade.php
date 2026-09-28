@@ -75,8 +75,9 @@
     // block rather than here — a 44px chip on a mouse-driven page would read as a tag, not a
     // marker.
     $citationChipClasses = WireKit::resolveClasses('assistant-message', 'citation', implode(' ', [
-        // `cursor-pointer` because Tailwind's preflight gives a button `cursor: default`, and a
-        // chip that opens its source has to read as something you can press.
+        // `cursor-pointer` because a button shows the browser's default arrow (Tailwind v4's
+        // preflight no longer sets a pointer), and a chip that opens its source has to read as
+        // something you can press.
         'inline-flex cursor-pointer items-center justify-center',
         'min-w-[1.5rem] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)]',
         'rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-subtle)]',
@@ -139,7 +140,8 @@
     // validated `sentence|all|off` enum, so no byte above ASCII can reach it today — but
     // the encoder is chosen for the CONTEXT rather than for the payload that happens to be
     // in it, and a plain json_encode leaves the next value added here escaping non-ASCII
-    // into `ü` shapes that Alpine's CSP tokenizer flattens to `u00fc`.
+    // as `\u00fc`, which some CSP tokenizers flatten to `u00fc` (`Support/AlpinePayload.php`
+    // names the versions).
     $alpineConfig = \Pushery\WireKit\Support\AlpinePayload::from((object) ['announce' => $announceValue]);
 @endphp
 

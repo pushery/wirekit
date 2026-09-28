@@ -1,12 +1,14 @@
 /**
  * Notice when the server changed a value the component is showing.
  *
- * Livewire patches the DOM in place and Alpine reads `x-data` exactly once, when
- * it initializes the element. So a component seeded from a PHP value keeps
- * whatever that value was on first paint: the server can send a new one on every
- * round trip, the attribute text in the DOM changes, and the live Alpine scope
- * never looks at it again. The reader is left with a control answering a
- * question nobody is asking any more.
+ * Seeding the value into `x-data` does not follow it reliably. A Livewire morph
+ * that rewrites the `x-data` attribute makes Alpine initialize the component
+ * again (a new scope before Alpine 3.16, the same one reset to the seed from
+ * 3.16), and an effect queued against the scope before the morph can flush
+ * afterwards and write the old value last: a reader returning to a value they
+ * already held sees the one they came from. So the value lives in an attribute
+ * Alpine does not initialize from, and this helper applies a change of it to the
+ * live scope.
  *
  * WHY A DEDICATED ATTRIBUTE, rather than reading the hidden input the component
  * already has. Measured on a real round trip, the two shapes in this library
@@ -30,8 +32,17 @@
  * and these components are documented to work in a plain form too. A mutation on
  * an attribute is true whoever wrote it.
  *
+ * A mutation record says the attribute was WRITTEN, not that it changed: writing
+ * the same value again is a record too. So the helper compares with the value the
+ * server wrote last and stays quiet when it is the same. That answers "did the
+ * server change it?". Whether the new value differs from what the reader has in
+ * front of them is the caller's question, and each caller asks it, because a
+ * reader's own choice can reach the server first and come back unchanged.
+ *
  * @param {HTMLElement} el        the element carrying the attribute — the component root
- * @param {Function}    onChange  called with the new value, only when it differs
+ * @param {Function}    onChange  called with the new value when it differs from the one the
+ *                                server wrote before; the value present when observing starts
+ *                                counts as the first
  * @param {string}      attribute the attribute to follow; a component whose server half is not
  *                                its value (the options of a server search) names its own
  * @returns {Function}  disconnects the observer; call it from destroy()
@@ -41,17 +52,24 @@ export const WK_SERVER_VALUE_ATTRIBUTE = 'data-wk-server-value';
 export function observeServerValue(el, onChange, attribute = WK_SERVER_VALUE_ATTRIBUTE) {
     // Defensive per the house rule for observers: a component may be torn down
     // between init() and the first callback, and an observer firing into a dead
-    // scope throws where nobody is looking.
-    if (! el || typeof MutationObserver === 'undefined' || typeof onChange !== 'function') {
+    // scope throws where nobody is looking. A root without `getAttribute` is not
+    // an element and has no attribute to follow; reading one here would throw
+    // inside the caller's init().
+    if (! el || typeof el.getAttribute !== 'function' || typeof MutationObserver === 'undefined' || typeof onChange !== 'function') {
         return () => {};
     }
+
+    let last = el.getAttribute(attribute);
 
     const observer = new MutationObserver(() => {
         const value = el.getAttribute(attribute);
 
-        if (value !== null) {
-            onChange(value);
+        if (value === null || value === last) {
+            return;
         }
+
+        last = value;
+        onChange(value);
     });
 
     observer.observe(el, { attributes: true, attributeFilter: [attribute] });

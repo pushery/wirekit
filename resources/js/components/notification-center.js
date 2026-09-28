@@ -17,10 +17,6 @@
  *     framework update erases it; released on every re-anchor, in close() and in
  *     destroy(). See the note beside `repairErasure` in _anchor().
  *
- * ⚠️ The first entry used to end "No observers / timers / rAF loops." It was true
- * when written, and a sentence of that shape is the first thing to become false —
- * the observer above arrived later.
- *
  * @param {Object} config
  * @param {Array}  config.items - notifications [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
  * @param {string} config.groupBy - 'none' | 'time' | 'type'
@@ -29,6 +25,7 @@
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { safeHref } from '../utils/safe-href.js';
 
 /**
  * What counts as a tab stop, for the two edges of the teleported panel.
@@ -53,15 +50,33 @@ const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]),
  *     `button:not([disabled])` — the selector clauses are an OR, and a button
  *     satisfies the button clause whatever its tabindex says.
  *
- * ⚠️ The second one is the half a copy of another component's helper does not
+ * The second one is the half a copy of another component's helper does not
  * have, and dropping it is invisible on the first filter: `focusables[0]` becomes
  * a radio the reader can never stand on, the Shift+Tab edge stops matching, and
- * focus leaves the document exactly as it did before — on every filter but "All".
+ * focus leaves the document — on every filter but "All".
  */
 function isTabStop(el) {
     if (typeof el.tabIndex === 'number' && el.tabIndex < 0) return false;
 
     return typeof el.getClientRects !== 'function' || el.getClientRects().length > 0;
+}
+
+/**
+ * A notification as the panel keeps it, with its link target passed through `safeHref`.
+ *
+ * Both ways in pass through here: the list the server rendered and every realtime payload handed
+ * to `prepend()`. A notification often carries what another user wrote, so a `javascript:` target
+ * becomes `null`: the row draws as a button instead of a link, and the `notification-action` detail
+ * carries no URL either. An item without a target is copied unchanged.
+ */
+function intake(item) {
+    if (! item || item.href === undefined || item.href === null) {
+        return { ...item };
+    }
+
+    const href = safeHref(item.href);
+
+    return { ...item, href: href === '' ? null : href };
 }
 
 export default function wirekitNotificationCenter(config = {}) {
@@ -94,7 +109,7 @@ export default function wirekitNotificationCenter(config = {}) {
             return group && group.label ? group.label : 'all';
         },
 
-        items: Array.isArray(config.items) ? config.items.map((i) => ({ ...i })) : [],
+        items: Array.isArray(config.items) ? config.items.map(intake) : [],
         groupBy: config.groupBy || 'none',
         activeFilter: 'all',
         isOpen: !!config.open, // start open (inline embeds, docs demos)
@@ -252,15 +267,14 @@ export default function wirekitNotificationCenter(config = {}) {
         /**
          * Tab pressed inside the flyout — handle both of its edges.
          *
-         * ⚠️ NEITHER EDGE IS WHAT THE BROWSER WOULD DO, because the panel is
+         * Neither Edge is what the browser would do, because the panel is
          * teleported to the end of `<body>` while it is drawn beside the bell,
          * and sequential focus order follows the DOM rather than the screen.
-         * Opening moves focus into the panel, so before this existed a Tab off
-         * the last notification left the DOCUMENT for the browser chrome, and a
-         * Shift+Tab landed on whatever precedes the overlay root — both with
-         * `role="dialog"` still open and painted over the page. The reader lost
-         * the panel and their place in one keystroke, and the keyboard table in
-         * the component's docs promised the opposite.
+         * Opening moves focus into the panel, so on its own a Tab off the last
+         * notification would leave the document for the browser chrome, and a
+         * Shift+Tab would land on whatever precedes the overlay root — both with
+         * `role="dialog"` still open and painted over the page, the reader's panel
+         * and place lost in one keystroke.
          *
          * Leaving closes it, which is what this flyout's other three dismissals
          * already mean: Escape, a click outside and a page scroll all return the
@@ -270,7 +284,7 @@ export default function wirekitNotificationCenter(config = {}) {
          * lock, and a trap would also have to be taught about the roving-tabindex
          * radiogroup and the `tabindex="0"` scroll region the panel already owns.
          *
-         * ⚠️ The BACKWARD edge also fires on the panel container itself. Opening
+         * The BACKWARD edge also fires on the panel container itself. Opening
          * focuses `$refs.panel`, which is `tabindex="-1"` and therefore not a tab
          * stop and never equal to `focusables[0]` — so the very first Shift+Tab
          * after opening is the one edge a `focusables`-only check does not catch.
@@ -328,15 +342,10 @@ export default function wirekitNotificationCenter(config = {}) {
                     // it. Measured on /overlay-placement-seam across one refresh: `top` 398.5px →
                     // empty, same node, box unchanged at 352x172.
                     //
-                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // The unchanged box is why this is `repairErasure` and not
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
                     // observes boxes rather than the style attribute.
                     //
-                    // ⚠️ This measurement only became POSSIBLE once an unnamed widget stopped
-                    // getting a fresh root id on every render. Before that it did not lose its
-                    // placement — it lost the whole component, and the panel that came back was a
-                    // closed replacement whose bell never opened again. Nothing was left to
-                    // re-place, so the question could not be asked.
                     repairErasure: true,
                 });
 
@@ -400,7 +409,7 @@ export default function wirekitNotificationCenter(config = {}) {
         // Optimistic realtime insert — dedup by id, newest first, unread.
         prepend(item) {
             if (item && item.id !== undefined && !this.items.some((i) => i.id === item.id)) {
-                this.items = [{ ...item, read: false }, ...this.items];
+                this.items = [{ ...intake(item), read: false }, ...this.items];
                 this._emit('notification-new', { id: item.id });
             }
         },

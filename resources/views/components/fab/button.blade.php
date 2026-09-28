@@ -79,7 +79,7 @@
     // class carries the block-end offset INCLUDING env(safe-area-inset-bottom) (so
     // the iOS home indicator never overlaps it), and the inline offset folds in the
     // matching horizontal safe-area inset for a landscape notch on that side.
-    // ⚠️ `--wk-scrollbar-inset` is on the END arm ONLY, and that is not an oversight.
+    // `--wk-scrollbar-inset` is on the END arm ONLY, and that is not an oversight.
     //
     // A `position: fixed` box is laid out against a box that INCLUDES a classic scrollbar, so
     // the gutter eats into the inline-end gap while the block-end gap loses nothing. The two
@@ -131,7 +131,9 @@
     $classes = WireKit::resolveClasses('fab.button', 'base', implode(' ', [
         'wk-fab',
         $placementClass,
-        'fixed z-40',
+        // The layer TOKEN, as `fab` and the speed dial use: a number here stayed put when a theme
+        // moved the layer, and the FAB ended up above or below scroll-to-top.
+        'fixed z-[var(--z-wk-sticky)]',
         // The box reads --size-wk-fab rather than a literal, because a developer laying out
         // AROUND a fixed control needs to be able to read its size. `wk-fab-clearance` does
         // exactly that; before the token the only way was to copy 3.5rem out of this line.

@@ -109,12 +109,11 @@
     // over once rather than read back out of the DOM — a factory that parses its own markup
     // cannot be constructed in a test, and this one is.
     //
-    // ⚠️ The display NAME is deliberately not in here, and the reason is a measurement. With it,
-    // one field rendered 45 KB of HTML, because every country's name appeared twice: once in its
-    // own <option> and again in this JSON. The factory only wanted the name to build a label for
-    // a BUTTON, and this layer has no button — a native <select> announces its selected option
-    // by itself. Layer B, which does have a button, re-adds the name for the countries it offers
-    // rather than for all 245.
+    // The display name is deliberately not in here. With it every country's name would appear
+    // twice, once in its own <option> and again in this JSON, for a label the factory only builds
+    // for a button, and this layer has no button — a native <select> announces its selected
+    // option by itself. Layer B, which does have a button, adds the name for the countries it
+    // offers.
     //
     // The trunk prefix is omitted where a region has none, which is 101 of 245: `null` and
     // "absent" mean the same thing to the factory, and absent costs no bytes.
@@ -163,12 +162,10 @@
     // an iOS zoom guard and a date-separator color and nothing that draws a box. `input` builds
     // its box from this same set of utilities in its own class list.
     //
-    // ⚠️ THIS WAS MISSING UNTIL A CAPTURE SHOWED IT. Both controls rendered with `border-width: 0`,
-    // no padding, no radius and a transparent background — a naked HTML input, 24px tall. Every
-    // renderer test passed (they read markup), every browser check passed (they read values and
-    // focus), and the phone-width check passed (it reads edges). Only looking at the screen found
-    // it. And it silently disabled the `:user-invalid` rule as well: a border COLOR on an element
-    // with no border width paints nothing.
+    // The field shape, spelled out for both controls. Without it they render with
+    // `border-width: 0`, no padding, no radius and a transparent background — a naked HTML input,
+    // 24px tall — and the `:user-invalid` rule paints nothing, because a border color on an
+    // element with no border width paints nothing.
     $fieldShape = implode(' ', [
         'bg-[var(--color-wk-bg-input)]',
         'text-[color:var(--color-wk-text)]',
@@ -276,7 +273,7 @@
              a different string — writing one into the other is the defect this whole component is
              built around.
 
-             ⚠️ A caller's `wire:model` belongs HERE and is stripped from the number box above. It
+             A caller's `wire:model` belongs HERE and is stripped from the number box above. It
              compiles to `x-model`, and on the box it would bind what the reader typed — the local
              string — while the box already carries an `x-model` of its own. Two bindings fighting
              over one element, and the property would receive `0151 2345 6789` where the whole

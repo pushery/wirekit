@@ -103,14 +103,13 @@
      * Tailwind arbitrary values take no spaces, hence `calc(a+2*b)` unspaced.
      */
     $maxClass = $isContainerWrapped
-        ? match ($max) {
+        ? match (WireKit::validateProp('navbar', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full'])) {
             'sm' => 'max-w-[calc(var(--size-wk-container-sm)+2*var(--padding-wk-x-lg))] mx-auto',
             'md' => 'max-w-[calc(var(--size-wk-container-md)+2*var(--padding-wk-x-lg))] mx-auto',
             'lg' => 'max-w-[calc(var(--size-wk-container-lg)+2*var(--padding-wk-x-lg))] mx-auto',
             'xl' => 'max-w-[calc(var(--size-wk-container-xl)+2*var(--padding-wk-x-lg))] mx-auto',
             '2xl' => 'max-w-[calc(var(--size-wk-container-2xl)+2*var(--padding-wk-x-lg))] mx-auto',
             'full' => 'max-w-full',
-            default => WireKit::validateProp('navbar', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full']),
         }
         : '';
 

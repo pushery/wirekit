@@ -158,7 +158,7 @@ export default function wirekitTour(config = {}) {
                     // it. Measured on /overlay-placement-seam across one refresh: `top` 650.5px →
                     // empty, same node, still shown, box unchanged at 320x111.
                     //
-                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // The unchanged box is why this is `repairErasure` and not
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
                     // observes boxes rather than the style attribute.
                     //

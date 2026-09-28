@@ -223,8 +223,10 @@ export { renderUnifiedTooltip };
  *
  * @param {Object} config - ApexCharts options object (chart, series, xaxis,
  *   etc.) emitted by ApexChartsAdapter.normalizeData() + defaultOptions().
- *   Passed via Alpine x-data; unwrapped with Alpine.raw() before handing to
- *   ApexCharts to avoid Proxy-in-Proxy issues.
+ *   Passed via Alpine x-data. Alpine hands a factory its argument as given and
+ *   makes only the returned object reactive, so this is the plain object;
+ *   `Alpine.raw()` before ApexCharts keeps it plain for a caller who passes a
+ *   reactive one.
  *
  * Lifecycle:
  * - init(): creates chart + observer inside $nextTick (after DOM ready)
@@ -282,8 +284,8 @@ export default function wirekitApexChart(config) {
 
         init() {
             // ApexCharts peer-dependency guard. WireKit ships only the
-            // adapter glue (`dist/wirekit-apex.js`, ~2 KB) — the developer
-            // installs `apexcharts` via npm and exposes it on
+            // adapter glue (`dist/wirekit-apex.js`, its size measured in
+            // `dist/README.md`) — the developer installs `apexcharts` via npm and exposes it on
             // `window.ApexCharts` per the chart-component docs.
             //
             // When the global is missing we render a visible in-DOM
@@ -341,11 +343,11 @@ export default function wirekitApexChart(config) {
                 // what state the surrounding theme is in). Reads as a
                 // muted-yellow advisory panel on light backgrounds and
                 // adapts to dark mode via CSS color-scheme inheritance.
-                // ⚠️ The panel goes into the mount, and the mount carries `aria-hidden`
+                // The panel goes into the mount, and the mount carries `aria-hidden`
                 // (see _removeHiddenTabStop). A `role="alert"` inside an aria-hidden subtree
                 // is never announced — the browser does not walk into it — so the one
-                // message that exists to reach a reader when the chart cannot render was
-                // reaching nobody. The attribute is lifted for as long as the fallback is
+                // message that exists to reach a reader when the chart cannot render would
+                // reach nobody. The attribute is lifted for as long as the fallback is
                 // the only thing in there; the guard puts it back when a chart renders.
                 mount.removeAttribute('aria-hidden');
 
@@ -454,9 +456,11 @@ window.ApexCharts = ApexCharts;</pre>
                 const mount = this.$refs.mount;
                 if (!mount) return;
 
-                // Alpine.raw() strips the reactive Proxy wrapper. ApexCharts
-                // creates its own internal data structures; feeding it a
-                // reactive Proxy can cause unexpected double-tracking.
+                // ApexCharts builds its own structures from the options, and a
+                // reactive Proxy fed to it is tracked twice. `config` is the
+                // factory's argument, which Alpine passes through unwrapped, so
+                // for the server-rendered payload Alpine.raw() returns it as it
+                // is; the call covers a caller who passes a reactive object.
                 const rawConfig = this._flattenApexConfig(Alpine.raw(config));
 
                 // Read CSS variables off the mount element — resolves correctly

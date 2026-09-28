@@ -63,7 +63,7 @@ class DoctorA11yCommand extends Command
 
     protected $signature = 'wirekit:doctor:a11y
         {path? : Path to scan (defaults to resources/views in the host app)}
-        {--path=* : Directory to scan, repeatable and ADDITIVE to the default ground set. Same shape as wirekit:csp-audit.}
+        {--path=* : Directory to scan, repeatable and ADDITIVE to the default ground set. Unlike wirekit:csp-audit, where --path replaces the default surface.}
         {--fail-on= : Treat findings at this severity or higher as a non-zero exit. One of `error` (default), `warning`, or `none`. Use `warning` in CI to gate on every finding.}
         {--theme-contrast : Also audit the active theme tokens for WCAG 2.1 AA contrast against the canonical pairings. Reads resources/css/app.css.}';
 
@@ -71,14 +71,14 @@ class DoctorA11yCommand extends Command
 
     public function handle(): int
     {
-        // ⚠️ THE POSITIONAL REPLACES, `--path` ADDS, and the difference is the whole ask.
+        // The positional replaces, `--path` adds, and the difference is the whole ask.
         //
         // A package component mounted BY NAME renders its Blade from `vendor/`, outside the
         // application's own view paths — so a page that mounts four package panels is
-        // reported clean because the audit never opens their files. `wirekit:csp-audit`
-        // already answers that with a repeatable, additive `--path`; this command had only
-        // the positional, which replaces the ground set instead of extending it, so
-        // checking a package meant giving up checking the application in the same run.
+        // reported clean because the audit never opens their files. `--path` extends the
+        // ground set, so one run covers the application and the packages it mounts; the
+        // positional replaces it. `wirekit:csp-audit` takes a repeatable `--path` as well,
+        // and there it replaces the default surface.
         /** @var array<int, string> $named */
         $named = (array) $this->option('path');
 
@@ -336,7 +336,7 @@ class DoctorA11yCommand extends Command
             ['name' => 'border on bg', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
         ];
 
-        // ⚠️ AND THE PAIRINGS THIS TREE ACTUALLY RENDERS, which the list above cannot know.
+        // And the pairings this tree actually renders, which the list above cannot know.
         //
         // The canonical list is a list. It covers the pairings this package's own components
         // use, and a component that puts a different foreground on a different background —
@@ -354,7 +354,7 @@ class DoctorA11yCommand extends Command
         $derived = $this->derivedPairings($bladeFiles, $pairings);
         $pairings = array_merge($pairings, $derived);
 
-        // ⚠️ AND THE COUNT IS SAID OUT LOUD, because a derivation that finds nothing
+        // And the count is said out loud, because a derivation that finds nothing
         // reports no contrast failure — which is indistinguishable from a tree that has
         // none. Zero over a non-empty template set is a scan to repair, not a clean result,
         // and without this line the two print identically.
@@ -480,12 +480,10 @@ class DoctorA11yCommand extends Command
         $extract = function (string $selector, string $source): array {
             $escaped = preg_quote($selector, '/');
 
-            // ⚠️ THE SELECTOR MAY SIT IN A LIST. A theme writes `:root, .light` for a token that
-            // changes with the mode, as the theming guide asks, and the shipped stylesheet once
-            // declared its own light tokens on `:where(:root), :where(.light)`. Requiring the
-            // brace to follow the selector immediately read such a rule as absent — and absent is
-            // indistinguishable from empty here, so every pairing came back "token unresolved"
-            // rather than wrong.
+            // The selector may sit in a list. A theme writes `:root, .light` for a token that
+            // changes with the mode, as the theming guide asks. A rule read as absent is
+            // indistinguishable from an empty one here, so every pairing would come back
+            // "token unresolved" rather than wrong.
             //
             // `[^{};]*` and not `[^{}]*`: a selector list cannot contain a semicolon, and
             // without that exclusion a `.dark` inside a DECLARATION (`:where(.dark, .dark *)`)
@@ -554,28 +552,20 @@ class DoctorA11yCommand extends Command
     /**
      * The stylesheet split by the presentation each block actually applies to.
      *
-     * ⚠️ AN AT-RULE IS INVISIBLE TO A SELECTOR PATTERN, AND THAT IS THE WHOLE DEFECT. The
-     * extractor above finds `:root` and `.dark` wherever they stand; an `@media` wrapper is
-     * just text in between. So a print sheet written exactly as it should be --
+     * An at-rule is invisible to a selector pattern. The extractor above finds `:root` and
+     * `.dark` wherever they stand; an `@media` wrapper is just text in between. So a print
+     * sheet written exactly as it should be --
      *
      *     @media print {
      *         :root,
      *         .dark { --color-wk-bg: #fff; --color-wk-text: #000; }
      *     }
      *
-     * -- was read as a description of the screen, and being the LAST `.dark` match in the
-     * file it replaced the entire dark table. Measured in a developer stylesheet: the audit
-     * reported 21.00:1 for text on bg in dark mode -- pure black on pure white, the highest
-     * ratio that exists -- where the real navy surface measures 18.27:1, plus one FAIL and
-     * two WARN on border pairings whose real ratios all pass.
+     * -- would read as a description of the screen, and as the last `.dark` match in the file
+     * it would replace the entire dark table: text on bg would come back at 21.00:1, pure black
+     * on pure white, whatever the real dark surface measures.
      *
-     * ⚠️ Light was untouched, and that is a trap rather than a clue: `:root,` ends in a
-     * comma, and the selector pattern needs a brace. A reader who takes "light is correct"
-     * as evidence looks for a bug in the dark PATH, and there is none -- that path resolves
-     * an inherited `:root` custom property and an embedded `var()` correctly, both proven
-     * separately. The difference is which half of one print selector happened to match.
-     *
-     * ⚠️ AN UNRECOGNIZED PRELUDE STAYS WHERE IT IS. Dropping a block this classifier does
+     * An unrecognized prelude stays where it is. Dropping a block this classifier does
      * not understand would narrow the audit silently, and a narrower audit reports fewer
      * findings -- which reads exactly like a cleaner theme.
      *
@@ -848,7 +838,7 @@ class DoctorA11yCommand extends Command
                 continue;
             }
 
-            // ⚠️ A LITERAL `class` ONLY — never `:class`, `x-bind:class` or `@class`.
+            // A literal `class` only — never `:class`, `x-bind:class` or `@class`.
             //
             // A bound class list is where the BRANCHES live, and two classes in different
             // branches never render together. The first version of this scan matched them
@@ -910,7 +900,7 @@ class DoctorA11yCommand extends Command
             if (! str_ends_with($path, '.blade.php')) {
                 continue;
             }
-            // ⚠️ THE FILTER IS FOR THE DEFAULT SWEEP, NOT FOR A ROOT SOMEBODY NAMED.
+            // The filter is for the default sweep, not for a root somebody named.
             // Naming a directory is the statement that its contents are in scope, and
             // refusing to read it then reports "found no Blade templates" over a tree full
             // of them.

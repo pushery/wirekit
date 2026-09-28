@@ -68,12 +68,11 @@
     // and when the row wraps, the second line sits under the start of the first rather
     // than under its middle.
     //
-    // ⚠️ THE CALL SITE COULD NOT REACH IT, WHICH IS WHY THIS IS A PROP AND NOT A NOTE.
-    // `$attributes->only('class')` lands on the outer wrapper, so a centering utility
-    // written on the tag never touches the row. The only thing left to an adopting
-    // application was a rule over this component's internal markup — `justify-content` on
-    // a descendant `[role="group"]` — which is exactly the shape the grouping prop below
-    // removed one door over, and which breaks silently the day the markup moves.
+    // A prop rather than a note, because the call site cannot reach the row:
+    // `$attributes->only('class')` lands on the outer wrapper, so a centering utility written
+    // on the tag never touches it. The only other way is a rule over this component's
+    // internal markup — `justify-content` on a descendant `[role="group"]` — which breaks
+    // silently the day the markup moves.
     //
     // `start` by default, so no existing field moves. The centered default the report
     // suggests would be right for most call sites and wrong for backward compatibility,
@@ -163,9 +162,9 @@
     $group = $group === null || $group === '' ? null : (string) $group;
 
     if ($group !== null) {
-        // ⚠️ `StrictnessGate::enforce()` DIRECTLY, not through `WireKit::validateProp()`, and the
-        // reason is the catalog rather than the behavior — the two do the same thing here (throw
-        // in debug, fall back and warn in production, same message). `PropValidationParser` reads
+        // `StrictnessGate::enforce()` directly, not through `WireKit::validateProp()`, and the
+        // reason is the catalog rather than the behavior: the two do the same thing here (the
+        // same gate decision, fallback and message). `PropValidationParser` reads
         // every `validateProp()` allow-list to publish a prop's values in `/api-map.json`, and it
         // can only read a LITERAL list. This one depends on another prop: the sizes a code of
         // `length` can carry. A list built at render time comes back unresolved, which publishes
@@ -196,7 +195,7 @@
         $justify = 'start';
     }
 
-    // ⚠️ The default emits NOTHING rather than the leading-edge utility, so a field that
+    // The default emits NOTHING rather than the leading-edge utility, so a field that
     // does not ask for an alignment renders the markup it always did, byte for byte. The
     // flex default already packs to the leading edge; naming it would change every
     // rendered page to say what was already true.
@@ -294,11 +293,10 @@
 
     // One box per size: width, height, the digit's text size and the corner. `md` carries the
     // same four classes that shipped, so a field that passes nothing looks exactly as before.
-    $sizeClasses = match ($size) {
-        'sm' => 'w-8 h-[var(--size-wk-sm)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]',
-        'md' => 'w-10 h-[var(--size-wk-md)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]',
-        'lg' => 'w-12 h-[var(--size-wk-lg)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]',
-        default => WireKit::validateProp('otp-input', 'size', $size, ['sm', 'md', 'lg']),
+    $sizeClasses = match (WireKit::validateProp('otp-input', 'size', $size, ['sm', 'md', 'lg'])) {
+        'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]',
+        'md' => 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]',
+        'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]',
     };
 
     // Individual digit input classes
@@ -383,12 +381,12 @@
          must not be posted on their behalf. --}}
     <input type="hidden" id="{{ $id }}" name="{{ $name }}" @disabled($disabled) {{ $attributes->whereStartsWith('wire:model') }} />
 
-    {{-- Alpine logic inlined (no wirekit.js dependency needed).
+    {{-- The `wirekitOtpInput` factory, registered by the WireKit bundle.
          Handles auto-advance on digit input, backspace to previous,
          arrow key navigation, and paste distribution across fields. --}}
     <div
         x-data="wirekitOtpInput({ length: {{ $length }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, alphabet: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars) }}, caseFold: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold) }} })"
-        {{-- flex-wrap because every digit box carries a hard width (`w-10`, 40px, at the
+        {{-- flex-wrap because every digit box carries a hard width (`--size-wk-md`, 40px at the
              default size) and is an <input>, whose automatic minimum size resolves to that
              definite width —
              the row cannot shrink, so without wrapping it overflows its parent. An

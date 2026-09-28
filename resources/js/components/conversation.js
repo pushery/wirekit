@@ -25,6 +25,7 @@
  *   - _mutationObserver (MutationObserver) — disconnected in destroy()
  *   - _resizeObserver (ResizeObserver) — disconnected in destroy()
  *   - _onScrollBound (scroll listener on the viewport) — removed in destroy()
+ *   - _scrollFrame (frameCoalesce, the scroll handler's frame) — canceled in destroy()
  *   Every callback null-guards `_viewport` first: browser-queued observer and
  *   scroll callbacks can fire AFTER destroy() has torn the component down.
  */
@@ -174,8 +175,7 @@ export default function wirekitConversation(config = {}) {
         },
 
         /**
-         * Jump to a specific message by id and flash it. Powers reply-to-quote
-         * deep links.
+         * Scroll to a specific message by id. Powers reply-to-quote deep links.
          */
         scrollToMessage(id, smooth = true) {
             if (!this._viewport) {

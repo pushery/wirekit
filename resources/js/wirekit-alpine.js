@@ -15,7 +15,7 @@
  *                         tag (docs site iframe srcdoc, isolated preview
  *                         surfaces, standalone landing pages).
  *
- *   wirekit.core.js     — you only need the chart component, no overlays.
+ *   wirekit.core.js     — charts and the before/after slider, no overlays.
  *
  * Pick exactly one — but loading this bundle onto a page that already has an
  * Alpine does not leave it inert. It registers every WireKit component on the
@@ -30,6 +30,7 @@
 
 import Alpine from 'alpinejs';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { registerScrollToMagic } from './utils/scroll-to.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerFindableDirective } from './utils/findable.js';
@@ -177,9 +178,9 @@ const target = hostAlpine ?? Alpine;
 // It sat inside the else-branch, and that was a fatal in the exact configuration this
 // bundle is most often reached for. A Livewire app already has Alpine, so this bundle
 // skips itself by design — but the markup still teleports to `#wk-overlay-root`, and
-// `x-teleport` on a selector that matches nothing does not warn, it throws inside
-// Alpine's init walk. So one skipped container took the whole page's Alpine down with
-// it, and the visible symptom was every OTHER component reporting "is not defined".
+// `x-teleport` on a selector that matches nothing warns and then throws inside
+// Alpine's init walk. So one missing container takes the whole page's Alpine down with
+// it, and the visible symptom is every OTHER component reporting "is not defined".
 //
 // Cheap when it is redundant (one div), and the difference between an inert bundle and
 // a broken page when it is not.
@@ -187,29 +188,24 @@ installOverlayRoot();
 
     // Alpine's collapse plugin, registered before any component.
     //
-    // Four components ask for `x-collapse` — collapsible, sidebar/group,
-    // sidebar/collapsible and tree-view/node — and nothing registered it. Alpine
-    // warns once per element and the directive does nothing, so the region
-    // appeared and vanished instantly instead of animating, exactly as if the
-    // animation had been chosen against. One of those files even says
-    // "(already bundled)".
+    // The disclosure components ask for `x-collapse` (`grep -rl x-collapse
+    // resources/views` lists them). Without the plugin Alpine warns once per element
+    // and the directive does nothing, so a region appears and vanishes at once
+    // instead of animating.
     //
-    // Registering it costs 646 gzipped bytes on every bundle, including for
-    // developers who render no disclosure at all. That is the trade, and it was
-    // the owner's to make: the docs already promise the animation, so not paying
-    // it means shipping a promise that is not true.
+    // The cost is part of every bundle's size in `dist/README.md`, paid by
+    // developers who render no disclosure as well. The docs promise the animation,
+    // so not paying it would ship a promise that is not true.
     // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is not
     // style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
-    // callback its OWN module singleton and ignores the receiver. This bundle is
-    // itself an installer, called as `Alpine.plugin(WireKit)` with an Alpine the
-    // developer imported from their own build, so going through `plugin` would
-    // register the directive on a DIFFERENT Alpine than the one running their
-    // page. Calling the installer directly registers it on whichever Alpine is
-    // actually in hand.
-    // On the RUNNING Alpine — `target`, not the imported one. Registering the directive on a
-    // module singleton the page never starts is exactly the defect the paragraph above warns
-    // about for `Alpine.plugin`, and this line had it: with a host Alpine present, `x-collapse`
-    // went to the bundled Alpine and four components lost their animation silently.
+    // callback its OWN module singleton and ignores the receiver. This bundle starts
+    // its own Alpine, or registers on the host's when a page already runs one, so
+    // going through `plugin` could register the directive on an Alpine that is not
+    // the one running the page. Calling the installer directly registers it on the
+    // Alpine in hand.
+    // On the RUNNING Alpine — `target`, not the imported one. A directive registered on a
+    // module singleton the page never starts reaches no element: with a host Alpine present,
+    // every disclosure would lose its animation, and nothing would say so.
     collapse(target);
 
 if (hostAlpine) {
@@ -230,6 +226,7 @@ if (hostAlpine) {
 {
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(target);
+    registerScrollToMagic(target);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.

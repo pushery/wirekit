@@ -44,9 +44,9 @@
     $filters = BooleanProp::from($filters, false);
 
     $groupBy = WireKit::validateProp('notification-center', 'groupBy', $groupBy, ['none', 'time', 'type']);
-    // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
-    // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
-    // state (sort order, hidden columns, open panels) goes with it on the next round trip.
+    // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
+    // would mean destroy-and-rebuild, and the Alpine-only state — the open panel, the
+    // active filter — would go with it on the next round trip.
     $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('notification-center', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 

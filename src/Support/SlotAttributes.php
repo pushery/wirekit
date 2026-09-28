@@ -36,10 +36,9 @@ use Illuminate\View\ComponentSlot;
  * component ran. Same shape as {@see BooleanProp} — Blade hands the view a string where
  * the view expected something richer.
  *
- * ⚠️ A test suite is close to blind to it. Test Blade is nearly always written in a
- * `<<<'BLADE'` heredoc, where a line break follows every closing tag. Five sites across
- * two components shipped reading `->attributes` directly, and exactly one had a red
- * test. A red proof for this class MUST glue the closing tag to the text after it.
+ * A test suite is close to blind to it. Test Blade is nearly always written in a
+ * `<<<'BLADE'` heredoc, where a line break follows every closing tag, so a test for this
+ * class has to glue the closing tag to the text after it.
  */
 final class SlotAttributes
 {

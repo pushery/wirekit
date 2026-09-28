@@ -29,8 +29,8 @@ $as
 $as);
 $attributes->class([$baseClasses])
 $attributes->class([$classes])
-$attributes->class([$sizeClasses]);
 $attributes->class(['relative
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -133,6 +133,7 @@ $size
 $size,
 $sizeClasses
 $sizeClasses);
+$sizeClasses)]);
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
@@ -359,7 +360,7 @@ $wrap
 'wrap'
 'x-circle'
 'xl'
-'xl']),
+'xl']))
 'xs'
 'yr'].
 'z-[var(--z-wk-tooltip)]',
@@ -382,7 +383,7 @@ $wrap
 ($surface)
 ($svgHtml
 ($unitPrice
-('xs')
+('xs').
 (1.5rem)
 (<bdi>{{
 (AA
@@ -390,12 +391,13 @@ $wrap
 (Blade
 (CTA
 (Grundpreis)
-(Note:
-(Preisangabenverordnung)
+(Grundpreis),
+(Preisangabenverordnung).
 (Price
 (SOFT
 (UVP
 (WCAG
+(WireKit::validateProp('price',
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -418,7 +420,6 @@ $wrap
 (icon
 (inert
 (int)
-(it
 (lg
 (matches
 (not
@@ -441,6 +442,7 @@ $wrap
 -
 --border-wk-badge-width
 --border-wk-width
+--color-wk-info
 --shadow-wk-badge
 --text-wk-2xl
 --}}
@@ -462,7 +464,6 @@ $wrap
 1px
 1rem),
 2.1.1).
-250
 2rem,
 30%,
 300),
@@ -475,7 +476,6 @@ $wrap
 500s
 6),
 91%
-98/6/EC
 98/6/EC,
 :
 :amount="$intervalAmount"
@@ -573,7 +573,6 @@ AND
 API:
 ARIA
 AT
-ATTEMPTED
 Accept
 Adding
 Alpine
@@ -581,8 +580,6 @@ Alpine's
 Also
 An
 Aurora
-BECAUSE
-BELOW,
 BOTH
 Base
 Blade
@@ -600,9 +597,6 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
-CAN
-CANNOT
-CONDITION
 CONTENT
 CTA
 CUT
@@ -632,7 +626,6 @@ EVERY
 English
 Escape
 Every
-FAIL
 FILTER_VALIDATE_BOOLEAN);
 FORMATTED
 Falls
@@ -647,8 +640,9 @@ GLOBAL
 GROWS
 Generate
 German
+Germany
+Germany,
 Graceful
-HERE,
 HOVER,
 HOVERABLE:
 HTML,
@@ -656,10 +650,7 @@ HTTP
 Highlighted
 Htmlable,
 ID
-IN
-INSIDE
 IS
-IT
 Icon
 IconResolver,
 If
@@ -674,7 +665,6 @@ JavaScript.
 KEY,
 Keyboard-
 L)"
-L,
 LEADING
 Literal
 Livewire
@@ -712,7 +702,6 @@ PAngV
 PAngV)
 PERFECTLY
 PHP
-POINTING
 Per-interval
 Pick
 Price
@@ -720,11 +709,9 @@ Primary
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 RRP
 Raw
 Reapply
-Reference
 Render
 Rendered
 Renders
@@ -733,7 +720,6 @@ Reported
 Resolve
 Rich
 RuntimeException
-SEE.
 SERVER-SIDE;
 SHAPE
 SIBLING.
@@ -742,7 +728,6 @@ SIZE
 SOFT
 SOLID
 SOLID:
-STABLE
 STATIC
 SVG
 SVG:
@@ -755,6 +740,7 @@ Silent
 Single-line
 Size
 So
+Stable
 Strike-through
 Strip
 Suffix
@@ -765,7 +751,6 @@ Switch
 Symmetric
 TAG
 THE
-THIS
 Tailwind
 Teleporting
 Text
@@ -783,10 +768,8 @@ Unit
 Uses
 Validate
 WAS
-WAY
 WCAG
 WIDTH
-WINDOW,
 WITHOUT
 WRAPPER,
 We
@@ -801,7 +784,6 @@ WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
 WireKit::validateProp('badge',
 WireKit::validateProp('icon',
-WireKit::validateProp('price',
 WireKit::validateProp('tooltip',
 WireKit::warnUnknownProps('badge',
 WireKit::warnUnknownProps('tooltip',
@@ -844,12 +826,12 @@ __toString
 `<button>`
 `<div>`
 `<p>`
+`<span>`
 `<template
 `<template>`
 `<x-wirekit::scroll-area
 `=`,
 `Illegal
-`Str::random(12)`
 `Svg
 `_x_dataStack`,
 `aria-describedby`
@@ -878,6 +860,7 @@ __toString
 `focusable-trigger`
 `generic`,
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `info`
 `interval`
@@ -937,7 +920,6 @@ above.
 absence
 absent,
 accent
-accent),
 accent-fg
 accept
 accessibility
@@ -996,7 +978,7 @@ applies
 applying
 are
 area's
-area.
+area:
 aria-describedby
 aria-describedby)
 aria-describedby="{{
@@ -1027,6 +1009,7 @@ assertion
 assistive
 association
 at
+attempted
 attribute
 attribute,
 attribute.
@@ -1053,9 +1036,7 @@ bakes
 balanced
 bar.
 bare
-base
 base;
-based
 baseline,
 be
 because
@@ -1073,6 +1054,7 @@ below,
 below.
 below:
 below;
+beside
 between
 bg
 bg).
@@ -1109,7 +1091,6 @@ border-[var(--color-wk-text)]',
 border-[var(--color-wk-warning)]',
 border.
 bordered-only
-borrows
 both
 bound
 box
@@ -1158,6 +1139,7 @@ catch
 catch.
 caught
 cell
+charts
 check
 checks
 chevrons,
@@ -1185,7 +1167,6 @@ class="{{
 classes
 classes:
 classic
-clearly
 clears
 client-only
 client-side
@@ -1207,12 +1188,10 @@ colors,
 come
 comes
 comment
-comments
 common
 compare-at
 compete
 compile
-compiler
 compiles
 component
 component's
@@ -1257,11 +1236,12 @@ covered
 covers
 crossed
 currency
-currency,
 currency/locale/minor-unit
 current
 currentColor
 currentColor;
+custom.
+customarily
 dark
 data-featured="true"
 data-replayable="true"
@@ -1280,7 +1260,6 @@ data-wk-tooltip-surface="elevated"
 de-emphasis
 dead.
 debug
-debug,
 decided
 decision,
 decision:
@@ -1306,6 +1285,7 @@ deliberate.
 deliberately
 delivered
 delta
+depends
 depth
 depth).
 descendant
@@ -1372,7 +1352,6 @@ empty
 empty-state
 end
 ends
-enforce
 ensures
 entirely,
 entry
@@ -1389,7 +1368,6 @@ event
 event.
 event:
 events
-ever
 every
 exactly
 exhausting
@@ -1409,6 +1387,7 @@ eyebrow).
 factory,
 factory:
 fade="…">`
+fail
 failed"
 fails
 faint
@@ -1430,7 +1409,7 @@ figure
 file
 files
 fill
-fill;
+fill:
 filled
 filled-background
 filter_var($featured,
@@ -1439,7 +1418,6 @@ finds
 fine).
 finish
 fire
-fired
 fires
 first
 fix
@@ -1449,6 +1427,7 @@ fixed-height
 fixed`
 fixes
 flags
+flash
 flashes
 flatten
 flattened
@@ -1495,13 +1474,14 @@ function-valued
 function;
 function_exists('svg'))
 g
-g/ml).
 gap
 gap-[var(--gap-wk-sm)]">
 gap-[var(--space-wk-xs)]"
 gap-[var(--space-wk-xs)]">
 gap-x-1',
 gap-x-1.5',
+gate
+gate,
 get
 gets
 global
@@ -1569,6 +1549,7 @@ hover:opacity-100',
 how
 however
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -1593,6 +1574,7 @@ included.
 including
 indicator
 inert
+info
 informative
 informative.
 init
@@ -1651,7 +1633,6 @@ jurisdiction
 just
 justify-center',
 keeps
-kept
 key
 keyboard
 keyboard,
@@ -1659,6 +1640,7 @@ keyboard-focusable
 kg,
 kill
 knows
+l,
 label
 label.
 label;
@@ -1714,6 +1696,7 @@ look
 look.
 looked
 looks
+loose
 lost
 loudest
 loudly
@@ -1745,6 +1728,7 @@ meaning
 meant
 mechanism
 medium
+member
 menus
 merge
 min-height
@@ -1781,6 +1765,7 @@ multi-line
 must
 muted
 m²
+m³,
 n/a
 name
 name,
@@ -1805,14 +1790,12 @@ nobody
 nobody.
 node
 node's
-nominal
 non-null
 none
 none,
 none;"
 nor
 not
-not.
 nothing
 nothing.
 now.
@@ -1828,6 +1811,7 @@ occurrence
 odd
 of
 off
+offered
 offers
 offset:
 old
@@ -1888,7 +1872,6 @@ pages
 pair
 pair).
 pairing
-pairing.)
 pairing;
 pairs
 panel
@@ -1914,6 +1897,7 @@ per-instance
 per-set
 per-surface
 period
+personalization
 phone.
 phrasing
 pill
@@ -1932,6 +1916,7 @@ plan.
 plans
 pointer
 pointer-events
+pointing
 popover's
 popovers
 popular"
@@ -1940,7 +1925,6 @@ position
 positioning
 post-process
 pre-checking
-pre-packaged
 prefix
 prefix,
 preg_replace(
@@ -1966,8 +1950,8 @@ pricing-table's
 primary
 problem
 prod).
-product
-production.
+product.
+product;
 prohibits
 project,
 prop
@@ -1976,7 +1960,6 @@ props
 provides
 proxy
 pt-[var(--space-wk-md)]">
-purpose
 purpose,
 put
 puts
@@ -1990,24 +1973,22 @@ px-3',
 py-1
 py-1.5
 qualified:
-quantities
 quiet,
 racing
 radius
 radius.
 raises
-random
 rather
 raw
 re-inject
-re-renders,
+re-renders.
 re-thrown
 reach
 reachable
 reaches
 read
+read;
 readable
-readable.
 reader
 reader's
 readers
@@ -2098,7 +2079,6 @@ says
 scaled
 scaling
 scanner
-scans
 scope
 scope,
 screen
@@ -2107,8 +2087,10 @@ screen-reader-skipping
 scroll
 second
 see
+see.
 sees
 sees.
+selling
 semantic
 sensible
 separates
@@ -2122,6 +2104,7 @@ shadow.
 shape
 shape,
 shared
+shares
 sharper
 shipped
 should
@@ -2158,6 +2141,7 @@ soft).
 soft-chip
 soft-tone
 sold
+solid
 somebody
 something
 source
@@ -2191,6 +2175,7 @@ storage/logs/laravel.log.
 story
 strategy:
 strength
+strictness
 strike
 strike).
 strike,
@@ -2224,7 +2209,6 @@ swapped
 sweep
 switches
 switching
-syntax
 tab
 tab-stop
 tabbed
@@ -2295,6 +2279,7 @@ this
 three
 through
 throw
+throw,
 throws
 tick
 tidy
@@ -2320,6 +2305,7 @@ toggle
 toggle,
 token
 token,
+tone
 too
 too.
 tooltip
@@ -2358,18 +2344,17 @@ twice
 two
 two+
 two.
-type.
 type="button"
 typography,
 unaffected
 unaffected.
-unbalanced
 unbound
 uncaught
 unchanged.
 under
 unique
 unit
+unit:
 units
 unknown
 unknown-alias
@@ -2410,11 +2395,12 @@ viewport.
 visibility
 visible
 visible,
-vision,
+vision.
 visual
 visually-hidden
 vocabulary
 volume
+volume,
 w-1.5
 w-12"`
 w-12',
@@ -2435,6 +2421,7 @@ way,
 ways
 we
 weight
+weight,
 well
 well-formed
 what
@@ -2454,6 +2441,7 @@ why
 widening
 width
 width)
+window,
 wins
 wire:key="wk-tooltip-panel"
 with
@@ -2526,6 +2514,4 @@ zoom,
 }}</x-wirekit::badge>
 }}>
 —
-≤
 ≥4.5:1
-⚠️

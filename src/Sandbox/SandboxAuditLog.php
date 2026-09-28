@@ -9,10 +9,17 @@ namespace Pushery\WireKit\Sandbox;
  *
  * Each request emits one line to `storage/logs/sandbox/YYYY-MM-DD.log`
  * with shape:
- *   {timestamp}\t{outcome}\t{component}\t{ip-hash}\t{violations-count}
+ *   {timestamp}\t{outcome}\t{component}\t{network-digest}\t{violations-count}
  *
- * IP addresses are hashed (sha256, 8-byte truncation) so the log is
- * useful for rate-pattern auditing but not for tracking individuals.
+ * The address is written as a digest of its NETWORK, keyed with the application key: an IPv4
+ * address cut to its /24, an IPv6 address to its /48, then HMAC-SHA256 with 8 bytes kept. That
+ * is enough to see a burst of requests from one place, and not enough to name a person. An
+ * unkeyed digest of the whole address was a lookup table: IPv4 has 2^32 values, and hashing all
+ * of them takes minutes. Without an application key there is no secret to key with, and the
+ * field is written as `-`.
+ *
+ * Daily files older than `wirekit.sandbox.audit_log_retention_days` (14 by default) are deleted
+ * when the first record of a day opens that day's file; `null` keeps them all.
  */
 final class SandboxAuditLog
 {
@@ -29,6 +36,7 @@ final class SandboxAuditLog
         }
 
         $file = $logDir.'/'.date('Y-m-d').'.log';
+        $opensTheDay = ! is_file($file);
         // Log-injection (CWE-117) defense: the log is tab-delimited, line-based,
         // and `$component` arrives UNSANITIZED on the `rejected:component` path
         // (it is logged BEFORE the allowlist regex validates it — see
@@ -42,7 +50,7 @@ final class SandboxAuditLog
             date('c'),
             self::sanitizeField($outcome),
             self::sanitizeField($component),
-            substr(hash('sha256', $ipAddress), 0, 16),
+            self::networkDigest($ipAddress),
             (string) $violationsCount,
         ]).PHP_EOL;
 
@@ -51,15 +59,107 @@ final class SandboxAuditLog
         if ($written === false || $written !== strlen($line)) {
             self::reportWriteFailure(sprintf('%s could not be appended to', $file));
         }
+
+        // Once a day, on the record that opens the day's file, rather than on every request:
+        // the directory walk is then paid once however busy the endpoint is.
+        if ($opensTheDay) {
+            self::prune($logDir);
+        }
+    }
+
+    /**
+     * The keyed digest of the address's network, 16 hex characters, or `-` with no key to use.
+     */
+    private static function networkDigest(string $ipAddress): string
+    {
+        $key = self::applicationKey();
+
+        if ($key === '') {
+            return '-';
+        }
+
+        return substr(hash_hmac('sha256', self::network($ipAddress), $key), 0, 16);
+    }
+
+    /**
+     * An IPv4 address cut to its /24 and an IPv6 address to its /48. An IPv4 address written in
+     * IPv6 form (`::ffff:203.0.113.4`) counts as the IPv4 address it is, or every such client
+     * would share one /48. A value that is no address at all is used as given.
+     */
+    private static function network(string $ipAddress): string
+    {
+        $packed = @inet_pton($ipAddress);
+
+        if ($packed === false) {
+            return $ipAddress;
+        }
+
+        if (strlen($packed) === 16 && str_starts_with($packed, str_repeat("\0", 10)."\xff\xff")) {
+            $packed = substr($packed, 12);
+        }
+
+        $kept = strlen($packed) === 4 ? 3 : 6;
+
+        return (string) inet_ntop(substr($packed, 0, $kept).str_repeat("\0", strlen($packed) - $kept));
+    }
+
+    /**
+     * Delete this log's own daily files once they are older than the retention, judged by the
+     * date in the name. Anything else in the directory is left alone.
+     */
+    private static function prune(string $logDir): void
+    {
+        $days = self::retentionDays();
+
+        if ($days === null) {
+            return;
+        }
+
+        $cutoff = date('Y-m-d', (int) strtotime('-'.$days.' days'));
+
+        foreach (glob($logDir.'/*.log') ?: [] as $path) {
+            $day = basename($path, '.log');
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 && $day < $cutoff) {
+                @unlink($path);
+            }
+        }
+    }
+
+    /**
+     * The application key, or an empty string outside a booted application. The log also runs
+     * without a container, which is why every Laravel helper here is asked for first.
+     */
+    private static function applicationKey(): string
+    {
+        $key = function_exists('app') && app()->bound('config') ? app('config')->get('app.key') : null;
+
+        return is_string($key) ? $key : '';
+    }
+
+    /**
+     * How many days of files to keep, at least one, or null to keep them all. 14 without a
+     * booted application, the same as the published default.
+     */
+    private static function retentionDays(): ?int
+    {
+        if (! function_exists('app') || ! app()->bound('config')) {
+            return 14;
+        }
+
+        $days = app('config')->get('wirekit.sandbox.audit_log_retention_days', 14);
+
+        // An environment variable arrives as a string, so the count is read as a number here.
+        return $days === null ? null : max(1, (int) $days);
     }
 
     /**
      * Say so when a security record could not be written — WITHOUT throwing.
      *
-     * ⚠️ The failure mode this closes is the quiet one: an unwritable log directory meant
-     * every rejected render went unrecorded, and the only evidence was an audit file that
-     * stops growing. A reader checking it later sees a clean history rather than a blind one,
-     * which is the wrong way round for a security record.
+     * The failure mode this closes is the quiet one: with an unwritable log directory every
+     * rejected render would go unrecorded, and the only evidence would be an audit file that
+     * stops growing. A reader checking it later would see a clean history rather than a blind
+     * one, which is the wrong way round for a security record.
      *
      * It does NOT throw, and that is the other half. This runs on the reject path of a
      * sandboxed render, so an exception here would turn "the audit log is unwritable" into

@@ -5,14 +5,12 @@
 @props([
     // Which edge carries the rule.
     //
-    // ⚠️ There is no majority to default to, and the number is worth recording so nobody
-    // later "corrects" this on a hunch: across the 24 hand-rolled bands in the blueprint
-    // catalog the split is exactly 12 top and 12 bottom. `bottom` is chosen because a band
-    // under a header is the mental model most callers arrive with, not because it is more
-    // common. State it at the call site.
+    // There is no majority to default to: bands above and below their content are equally
+    // common. `bottom` is chosen because a band under a header is the mental model most
+    // callers arrive with. State it at the call site.
     'edge' => 'bottom',
     'padding' => 'sm',
-    // The occasional band that is not on the page background. Measured: 5 of the 24.
+    // The occasional band that is not on the page background.
     'surface' => 'none',
     'as' => 'div',
     'scope' => null,
@@ -26,15 +24,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('band', $attributes->getAttributes());
 
-    $edgeClasses = match ($edge) {
+    $edgeClasses = match (WireKit::validateProp('band', 'edge', $edge, ['none', 'top', 'bottom', 'both'])) {
         'none' => '',
         'top' => 'border-t border-[color:var(--color-wk-border)]',
         'bottom' => 'border-b border-[color:var(--color-wk-border)]',
         'both' => 'border-y border-[color:var(--color-wk-border)]',
-        default => WireKit::validateProp('band', 'edge', $edge, ['none', 'top', 'bottom', 'both']),
     };
 
-    $paddingClasses = match ($padding) {
+    $paddingClasses = match (WireKit::validateProp('band', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg'])) {
         'none' => '',
         // No literal fallbacks. SIX of the eight here disagreed with the token they stood in
         // for — x-sm said 0.5rem against 0.625rem, y-sm 0.5rem against 0.375rem, x-lg 1.25rem
@@ -47,14 +44,12 @@
         'sm' => 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]',
         'md' => 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-md)]',
         'lg' => 'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-lg)]',
-        default => WireKit::validateProp('band', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg']),
     };
 
-    $surfaceClasses = match ($surface) {
+    $surfaceClasses = match (WireKit::validateProp('band', 'surface', $surface, ['none', 'subtle', 'muted'])) {
         'none' => '',
         'subtle' => 'bg-[var(--color-wk-bg-subtle)]',
         'muted' => 'bg-[var(--color-wk-bg-muted)]',
-        default => WireKit::validateProp('band', 'surface', $surface, ['none', 'subtle', 'muted']),
     };
 
     // `$as` is interpolated into the tag name below, so an unvalidated value is written

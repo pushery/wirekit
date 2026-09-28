@@ -9,11 +9,11 @@
     // the container binding or Vite — see WireKit::cspNonce(). Pass one explicitly
     // when the application mints a value per response and publishes it nowhere.
     //
-    // A JSON-LD block is data rather than code, and it is still a <script> element:
-    // `script-src` is specified over the ELEMENT, not over its type, so a
-    // nonce-based policy can reject it and take the page's structured data with it —
-    // silently, because nothing on the page looks different. The attribute costs one
-    // string when a nonce exists and nothing at all when it does not.
+    // A JSON-LD block is a data block: the HTML standard stops preparing a <script>
+    // whose type is not a script type before it consults the Content Security Policy,
+    // so `script-src` does not apply to it and no policy can reject it. The attribute
+    // is harmless there, and it costs one string when a nonce exists and nothing at
+    // all when it does not.
     'nonce' => null,
 ])
 
@@ -42,14 +42,31 @@
         && (array_key_exists('@type', $payload) || array_key_exists('@graph', $payload))) {
         $payload = ['@context' => 'https://schema.org'] + $payload;
     }
+
+    // Invalid UTF-8, such as text from a legacy Latin-1 column, becomes U+FFFD and the block stays
+    // valid. What cannot be JSON at all (NAN, INF, nesting past the depth limit) renders no tag,
+    // since an empty ld+json block is invalid structured data, and debug mode says why.
+    $json = json_encode($payload, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
+
+    if ($json === false && config('app.debug')) {
+        logger()->warning('WireKit [structured-data]: the data could not be encoded as JSON ('.json_last_error_msg().'), so no JSON-LD block was rendered.');
+    }
 @endphp
 
 {{--
     Structured Data — emits a <script type="application/ld+json"> block.
 
-    Solves a Blade footgun: hand-writing JSON-LD with @json([...]) across
-    multiple lines breaks the tokenizer at `{`/`}`. This component takes a
-    PHP array and serializes it safely.
+    Solves a Blade footgun: @json splits its argument at every comma into the
+    value, the flags and the depth. An array literal written into it compiles
+    with the flags lost once it holds a comma (`<` then reaches the page
+    unescaped) and fails to compile at three. This component takes a PHP array
+    and serializes it itself.
+
+    Encoding failures:
+      Invalid UTF-8 is replaced with U+FFFD (JSON_INVALID_UTF8_SUBSTITUTE).
+      A value JSON cannot hold (NAN, INF, nesting past the depth limit)
+      renders no tag at all rather than an empty one, and logs a warning in
+      debug mode.
 
     Security:
       JSON_HEX_TAG encodes `<` and `>` as \u003C / \u003E so a value
@@ -72,6 +89,8 @@
           'name'     => 'WireKit',
       ]" />
 --}}
+@if($json !== false)
 <script type="application/ld+json"@if($wkNonce) nonce="{{ $wkNonce }}"@endif>
-{!! json_encode($payload, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+{!! $json !!}
 </script>
+@endif

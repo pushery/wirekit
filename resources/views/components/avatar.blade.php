@@ -18,7 +18,7 @@
     // How to visually render the status:
     //   'dot'  — small colored dot in the bottom-right corner (default).
     //   'ring' — full colored ring that surrounds the avatar, separated from
-    //            the image by a thin gap in the page background color. The
+    //            the image by a thin gap in the elevated surface color. The
     //            more prominent of the two: presence reads at a glance in a
     //            dense roster, where a corner dot needs looking for.
     // Ignored when `status` is null.
@@ -67,13 +67,12 @@
 
     // Size classes: width, height, font size scaling
     // Fixed rem values provide a consistent avatar scale independent of input sizing
-    $sizeClasses = match ($size) {
-        'xs' => 'w-6 h-6 text-[length:var(--text-wk-sm)]',
-        'sm' => 'w-8 h-8 text-[length:var(--text-wk-sm)]',
-        'md' => 'w-10 h-10 text-[length:var(--text-wk-md)]',
-        'lg' => 'w-12 h-12 text-[length:var(--text-wk-lg)]',
+    $sizeClasses = match (WireKit::validateProp('avatar', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl'])) {
+        'xs' => 'w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] text-[length:var(--text-wk-sm)]',
+        'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-sm)]',
+        'md' => 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-md)]',
+        'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-lg)]',
         'xl' => 'w-16 h-16 text-[length:var(--text-wk-lg)]',
-        default => WireKit::validateProp('avatar', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl']),
     };
 
     // Shape: circle (default) or square with medium radius.
@@ -114,9 +113,11 @@
     };
 
     // Ring variant — double-ring presence look via box-shadow. Two concentric
-    // shadows: inner layer = gap in page background, outer layer = status color.
-    // Uses inline box-shadow instead of Tailwind ring-offset-* utilities (removed
-    // in Tailwind v4). Box-shadow never affects layout / box sizing.
+    // shadows: inner layer = gap in `--color-wk-bg-elevated`, outer layer = status color.
+    // Inline rather than through the `ring-*` and `ring-offset-*` utilities, which
+    // Tailwind v4 still has: the gap and both widths are computed here from `size`,
+    // and one declaration carries them without a literal class per size and status.
+    // Box-shadow never affects layout / box sizing.
     $statusRingStyle = '';
     if ($status && $statusVariant === 'ring') {
         $ringWidth = match ($size) {
