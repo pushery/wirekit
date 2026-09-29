@@ -406,8 +406,8 @@ __('wirekit::Removed
 `@props`
 `MessageBag::has(null)`
 `_focusAfterRemoval`
-`accept="image/*;capture=camera"`,
-`accept`.
+`accept="image/*;capture=camera"`
+`accept`:
 `any()`,
 `aria-describedby=""`,
 `aria-invalid`
@@ -583,10 +583,8 @@ caller
 caller's
 caller's.
 caller-supplied
-camera
 can
 cannot
-capture
 capture="{{
 card
 carrier
@@ -661,7 +659,6 @@ control,
 control.
 copy
 correctly.
-could
 counted
 couple
 current
@@ -688,7 +685,6 @@ described-by
 describes
 description.
 destroys
-developer
 dialog
 did
 differ
@@ -839,7 +835,6 @@ gives,
 global
 glyph
 gone.
-got
 group
 growing
 grows
@@ -854,7 +849,6 @@ handlers
 handling
 hard
 has
-have
 heard
 heavier
 height
@@ -1053,6 +1047,7 @@ or
 or,
 order
 other
+otherwise
 out
 out.
 over
@@ -1076,7 +1071,7 @@ parity.
 parse
 parser
 part
-passing
+passed
 passthrough
 path
 path,
@@ -1201,7 +1196,6 @@ see
 seeds
 segmented-control's
 selected
-sell
 sentence
 server
 server-side
@@ -1275,7 +1269,6 @@ surface
 survives
 system
 tabbing
-table
 tabular-nums
 tag,
 tags
@@ -1301,7 +1294,6 @@ that
 the
 their
 them
-themselves
 then
 there
 they
@@ -1407,7 +1399,6 @@ without
 word
 word:
 wording,
-worked
 worked.
 would
 wrap

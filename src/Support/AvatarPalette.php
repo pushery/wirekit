@@ -9,9 +9,8 @@ namespace Pushery\WireKit\Support;
  *
  * Maps an arbitrary key (typically a person's initials or name) to a stable
  * background + foreground color pair, so the same person always renders the
- * same avatar color across page loads and across a list. Replaces the
- * per-app `$avatarBg = fn ($initials) => …` crc32-palette helpers that every
- * dashboard blueprint previously hand-rolled.
+ * same avatar color across page loads and across a list, so a page needs no
+ * `$avatarBg = fn ($initials) => …` palette helper of its own.
  *
  * Theme-independence: each palette entry is a self-contained background +
  * white foreground pair chosen for WCAG-AA contrast (≥ 4.5:1) regardless of

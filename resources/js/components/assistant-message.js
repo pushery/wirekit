@@ -177,12 +177,9 @@ export default function wirekitAssistantMessage(config = {}) {
             // half-written clause is never read out.
             //
             // Every terminator here is one _text() can actually leave behind. A period
-            // followed by a newline used to be listed as a fifth candidate, and it could
-            // never match: _text() has already turned that newline into a space, so the
-            // paragraph break arrives as ". " and the first candidate finds it. The line
-            // read as coverage of the line-break case while contributing nothing to it,
-            // which is the kind of branch that survives a rewrite of the very code that
-            // made it unreachable.
+            // followed by a newline is not among them: _text() has already turned that
+            // newline into a space, so the paragraph break arrives as ". " and the first
+            // candidate finds it.
             const lastEnd = Math.max(
                 pending.lastIndexOf('. '),
                 pending.lastIndexOf('! '),

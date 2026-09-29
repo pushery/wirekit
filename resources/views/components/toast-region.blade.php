@@ -35,7 +35,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('toast-region', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $filled = BooleanProp::from($filled, false);
 
@@ -65,12 +65,15 @@
         ? 'padding-top: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-top, 0px));'
         : 'padding-bottom: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-bottom, 0px));';
 
-    // The inline gap needs the scrollbar term too, and here the need hides one level deeper.
+    // The inline gap takes the scrollbar term too, and here the need hides one level deeper.
     //
     // The region is pinned flush to its edge and the 1rem gap comes from the base padding INSIDE
-    // the box. A `position: fixed` box is laid out against a box that includes a classic
-    // scrollbar, so the region overlaps the gutter and a toast ends up against it — nothing in
-    // the markup looks wrong, because the padding is there and is being honored.
+    // the box. The document's own scrollbar is outside the viewport box a `position: fixed` box
+    // is laid out against, but two gutters are not: the one the scroll lock takes away while an
+    // overlay is open, and a scrollbar drawn by an inner scroll container. `--wk-scrollbar-inset`
+    // carries either, and without the term the region would overlap that gutter and a toast would
+    // end up against it — nothing in the markup would look wrong, because the padding is there and
+    // is being honored.
     //
     // Only the arms anchored to the trailing edge take it. A region on the opposite edge has no
     // gutter under it, and the centered arms are off by half the gutter, which is a different
@@ -96,15 +99,13 @@
 
     // Container: fixed portal, stacks toasts vertically with gap
     $containerClasses = WireKit::resolveClasses('toast-region', 'base', implode(' ', [
-        // The scale, not a hardcoded number. The literal four-nines arbitrary value that
-        // stood here worked and could not be themed: an application layering its own chrome
-        // above WireKit's had to out-bid a value it could not read, and the stacking order
-        // documented in the token scale did not mention toasts at all.
+        // The scale, not a hardcoded number: a literal arbitrary value could not be themed,
+        // and an application layering its own chrome above WireKit's would have to out-bid a
+        // value it cannot read. The token puts toasts in the stacking order the scale
+        // documents.
         //
-        // The old value is DESCRIBED rather than quoted, and that is not fussiness: Tailwind
-        // scans this file as text, so writing the arbitrary-value class in a comment emits
-        // the class — the reverse-diff guard found it in the compiled stylesheet, traceable
-        // to no source emission, one build after the fix.
+        // No arbitrary-value class is quoted in this comment: Tailwind scans this file as
+        // text, so writing one here would emit it into the compiled stylesheet.
         'fixed z-[var(--z-wk-toast)]',
         'flex flex-col gap-3',
         'p-4',
@@ -206,6 +207,10 @@
      With name prop: $dispatch('wirekit-toast-{name}', { ... }) for scoped regions. --}}
 <div
     x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, scope: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventScope) }} })"
+    {{-- Kept reachable behind an open modal dialog, which makes the rest of the page inert:
+         a toast raised while a dialog is open is still announced, and its controls still
+         answer. --}}
+    data-wk-toast-region
     {{ $attributes->merge(['style' => $offsetStyle])->class([$containerClasses, $positionClasses]) }}
     {{-- `filled()` rather than `??`: an interpolated caller value can arrive empty,
          and `role="region"` with an empty accessible name is not exposed as a
@@ -256,10 +261,8 @@
                  focusin/focusout alongside mouseenter/mouseleave — a keyboard user
                  who tabs to a toast's action watched it disappear mid-reach, because
                  only the pointer paused the auto-dismiss. --}}
-            {{-- A stable hook for the toast element. It used to be findable by its
-                 live role, and removing that role — correctly — left nothing to
-                 select it by, which is how two browser tests came to look for an
-                 element that no longer existed. --}}
+            {{-- A stable hook for the toast element, which carries no live role of
+                 its own and would otherwise have nothing to be selected by. --}}
             data-wk-toast
             {{-- The id as well as the flag: dismissing a toast removes the button
                  that was pressed, and `remove()` has to be able to tell WHICH card

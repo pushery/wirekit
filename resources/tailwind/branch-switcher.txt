@@ -222,7 +222,6 @@ In
 It
 Logger
 MOST
-Measured
 Moving
 NOT
 Names
@@ -244,7 +243,6 @@ Reapply
 Render
 Rendered
 Renders
-Reported
 Required
 Resolve
 RuntimeException
@@ -342,7 +340,6 @@ aria-live="polite"
 array_keys($sizeMap));
 arrow
 as
-asserted:
 assistant
 assistive
 at
@@ -353,7 +350,6 @@ auto-derived
 back
 baked
 bakes
-bare
 be
 because
 becomes
@@ -418,7 +414,6 @@ configured
 conflict
 console
 console).
-consuming
 content
 context
 control.
@@ -485,7 +480,6 @@ exists.
 expects
 explicitly
 factory
-factory:
 fail
 fallback
 fallback,
@@ -496,7 +490,6 @@ false),
 false);
 false,
 feature
-file
 files
 filled
 filled($label)
@@ -531,7 +524,6 @@ glyph.
 goes
 group
 guarantees
-guard
 h-5
 h/w
 hand
@@ -623,6 +615,7 @@ may
 mean.
 means
 merge
+message
 mid-move.
 min($total,
 missing
@@ -707,7 +700,6 @@ preserves
 preset
 problem
 prod).
-project,
 props
 provides
 purpose:
@@ -730,7 +722,6 @@ reasons
 records,
 refused
 refused.
-refutes
 regenerate
 regenerates
 region
@@ -741,11 +732,9 @@ removed
 render
 render,
 rendered
-renders
 replaced
 replaces
 reported
-reproduced
 request
 require
 requires

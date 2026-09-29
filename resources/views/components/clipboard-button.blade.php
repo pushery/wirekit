@@ -27,7 +27,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $iconOnly = BooleanProp::from($iconOnly, false);
 
@@ -103,9 +103,9 @@
     <svg x-show="copied" class="w-4 h-4 text-[color:var(--color-wk-success-text)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" x-cloak>
         <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
     </svg>
-    {{-- Warning icon (shown when the write was refused). The refusal used to take the success
-         back to the look of an untouched button, so a sighted reader saw at most the check flash
-         and nothing saying the clipboard was empty. A different shape from the check, not only a
+    {{-- Warning icon (shown when the write was refused). Without it a refusal would take the
+         button back to its untouched look, and a sighted reader would see at most the check flash
+         and nothing saying the clipboard is empty. A different shape from the check, not only a
          different color, so the failure reads without telling red from green. --}}
     <svg x-show="failed" class="w-4 h-4 text-[color:var(--color-wk-danger-text)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" data-wk-clipboard-failed x-cloak>
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />

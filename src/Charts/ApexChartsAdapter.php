@@ -100,8 +100,7 @@ final class ApexChartsAdapter implements ChartAdapter
         //
         // chart.width/height = 100% — without these defaults ApexCharts uses
         // its own auto-sizing which can land at < 50% of the available width
-        // (the "tiny chart in a wide preview frame" failure mode reported on
-        // /components/charts-apex/mixed). Setting both to 100% makes the
+        // (a tiny chart in a wide preview frame). Setting both to 100% makes the
         // chart fill its wrapper, which is height-pinned by the chart Blade
         // component's inline style.
         $base = [

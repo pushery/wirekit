@@ -16,7 +16,6 @@
 "Standard
 "false",
 "key"
-"literally
 "old
 "per
 "{$sign}{$delta}";
@@ -86,12 +85,14 @@ $size,
 $sizeClasses
 $sizeClasses);
 $slot
+$slot->hasActualContent()
 $suffix
 $totalLabelClasses
 $unitMeasure
 $unitMeasure)
 $unitPrice
 $unitPrice;
+$value
 $valueStyle
 $variant,
 $variantValue
@@ -184,6 +185,7 @@ $wrapperStyle])->class([$itemClasses])
 'total-label',
 'unitMeasure'
 'unitPrice'
+'value'
 'variant'
 'variant',
 'vertical'
@@ -239,8 +241,8 @@ $wrapperStyle])->class([$itemClasses])
 0.00
 0.25rem)
 0.75rem);
-0.75rem,
-0.75rem`.
+0.75rem.
+0.75rem`,
 0;
 1
 100
@@ -296,6 +298,7 @@ $wrapperStyle])->class([$itemClasses])
 <del
 <del>
 <div
+<div>
 <dl
 <dl>
 <dl>,
@@ -309,7 +312,6 @@ $wrapperStyle])->class([$itemClasses])
 <section
 <span
 <span>,
-<span>.
 <x-slot:label>
 <x-wirekit::data-list
 <x-wirekit::data-list.item
@@ -365,7 +367,7 @@ BooleanProp::from($minorUnits,
 Both
 CALLER's,
 CONTAINER
-CONTENT
+CONTENT,
 Clamped
 Color
 Convert
@@ -404,8 +406,8 @@ LEADING
 Label:
 Laravel's
 Layouts:
+Livewire's
 MSRP).
-Measured
 NOT
 Native
 Neither
@@ -434,7 +436,6 @@ Size
 So
 Strike-through
 Suffix
-Swapping
 TWO
 Tailwind
 That
@@ -457,7 +458,6 @@ WireKit::resolveClasses('data-list',
 WireKit::resolveClasses('divider',
 WireKit::resolveClasses('price',
 WireKit::validateProp('divider',
-Worse,
 [
 ['default',
 ['horizontal',
@@ -494,7 +494,6 @@ __('wirekit::Total')
 `@aware`
 `@props`
 `align-items:
-`aria-hidden`
 `aria-label`
 `aria-label`.
 `aria-labelledby`
@@ -534,6 +533,7 @@ __('wirekit::Total')
 `summary`;
 `tabular-nums`
 `text-decoration`
+`value`
 `wk-data-list-item`
 `{{
 a
@@ -542,17 +542,16 @@ above,
 accessible
 across
 action
-actual
 addition
 adds
-adjustable,
+adjustable.
 affects
 against
 align-items:
 alignment
 alignment.
-all
 all.
+all;
 alone
 alone:
 along
@@ -585,9 +584,8 @@ application,
 applies
 are
 area:
-aria-hidden,
 aria-hidden="true">&minus;</span><x-wirekit::price
-aria-label
+aria-label:
 aria-label="{{
 aria-orientation="vertical"
 around
@@ -595,12 +593,12 @@ arrangement
 arrowing
 as
 as,
-asserted:
 assistive
 at
 attribute
 attribute,
 attributes
+attributes,
 auto-derived
 auto-placement.
 badge
@@ -616,12 +614,11 @@ because
 become
 becomes
 before
-behavior
 behind
 being
 belongs
 below
-below,
+below.
 beside
 between
 bleeding
@@ -653,6 +650,7 @@ caller
 caller,
 calling
 can
+cannot.
 canonical
 card",
 card,
@@ -665,10 +663,10 @@ cart
 case
 cast
 cell
+cell.
 center
 centered
 cents.
-change
 channels
 checkout",
 choice
@@ -691,6 +689,7 @@ columns
 come
 comes
 comment
+comments,
 common
 commoner
 compare-at
@@ -701,6 +700,7 @@ component's.
 component,
 compound
 computed
+conditional
 config
 config('wirekit.components.data-list.layout',
 config('wirekit.components.price.size',
@@ -711,6 +711,8 @@ container's
 container's.
 content
 content)
+content,
+content.
 contents;'
 contents`
 context
@@ -732,9 +734,9 @@ data-wk-cart-summary-tax>
 data-wk-cart-summary-total
 data-wk-prose-skip
 de-emphasis
+dead
 debug
 decision
-declaration",
 declaration.
 declared
 decoration
@@ -748,7 +750,6 @@ delta
 depends
 deposit.
 derived
-described
 detail
 developer
 developer's
@@ -784,6 +785,7 @@ emits
 emitted
 emphasis
 emphasized
+empty
 empty.
 end
 entirely.
@@ -857,10 +859,8 @@ grid's
 grid,
 grid-template-columns:
 grid;
-grounds
 guarantee
 guarantees
-guard
 guessed
 had
 half
@@ -872,6 +872,7 @@ hang
 happened
 happens
 has
+hasActualContent()
 have
 heading
 here
@@ -891,12 +892,10 @@ imports
 in
 in.
 inaudible.
-indeed
 independently
 inline
 inside
 instead
-instead.
 insurance
 intent
 inter-row
@@ -907,6 +906,7 @@ invalid
 invoice
 is
 is:
+isEmpty().
 it
 it,
 it.
@@ -928,6 +928,7 @@ l,
 label
 label)
 label.
+label/value
 label="OR"
 labels
 lands
@@ -967,7 +968,8 @@ major
 make
 makes
 maps
-marked
+markers
+markup
 match
 matches
 max-content
@@ -977,9 +979,6 @@ may
 mean
 meaning
 means
-measured
-measurement
-measurement.
 mechanics
 member
 method"
@@ -991,9 +990,9 @@ minor
 minus
 mirrors
 ml
-modal
 month")
 more
+morph
 moves
 must
 muted
@@ -1003,9 +1002,9 @@ n/a
 name
 name.
 named
-names,
 narrow
 native
+naturally
 needs
 negative
 neither
@@ -1013,12 +1012,12 @@ never
 new
 next
 no
-non-breaking.
 none
 not
 not.
 not:
 nothing
+nothing,
 noun,
 nouns
 null
@@ -1059,7 +1058,6 @@ out,
 outline
 outside
 over
-over.
 over;
 overflow-wrap:
 overview.
@@ -1114,7 +1112,6 @@ product;
 prohibits
 prop
 prop's
-proposed
 props
 prose
 pushing
@@ -1122,6 +1119,7 @@ put
 px-[var(--space-wk-sm,0.5rem)]">{{
 qualified:
 quantity
+question
 rate,
 rather
 re-implements
@@ -1137,10 +1135,8 @@ real
 real-estate
 reason
 reason:
-reasoning
 reduction.
 reference
-refutes
 remove
 render
 rendered
@@ -1148,9 +1144,7 @@ rendering
 renders
 renders,
 repeat(2,
-reporting
 repository
-request.
 required
 requires
 rest
@@ -1174,9 +1168,7 @@ rule
 rule,
 rules
 rules,
-said
 same
-sat
 says
 scan
 scan.
@@ -1230,10 +1222,12 @@ sit
 site
 sits
 size
+size.
 size="lg"
 size="sm"
+sized
 slot
-slot.
+slot,
 smaller
 so
 sold
@@ -1248,11 +1242,9 @@ state
 stays
 step,
 still
-story
 straight
 strand
 stray
-strength
 strike
 strike).
 strike,
@@ -1263,8 +1255,10 @@ style="text-decoration:
 style="{{
 styles
 subtotal
+such
 summary
 summary'),
+summary's,
 summary,
 summary.
 supplied
@@ -1275,7 +1269,6 @@ survives
 swap
 swapped
 swapped,
-swapped;
 symmetric
 tabular
 tabular-nums;',
@@ -1287,6 +1280,7 @@ teaches,
 tech
 tells
 text
+text,
 text-[color:var(--color-wk-text)]">
 text-[color:var(--color-wk-text-muted)]">
 text-[length:var(--text-wk-sm)]">
@@ -1295,7 +1289,6 @@ text-align:
 text-decoration-color:
 text-decoration-thickness:
 text-muted
-text.
 text;
 than
 that
@@ -1309,9 +1302,8 @@ this
 through
 through.
 tiered
-tightened
+tighten
 to
-today's
 token
 too
 too.
@@ -1341,7 +1333,6 @@ unrelated
 unset,
 up
 use
-used
 uses
 using
 utility
@@ -1388,6 +1379,7 @@ why,
 why:
 wide
 width
+wins
 wins:
 with
 without

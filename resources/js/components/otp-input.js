@@ -27,11 +27,25 @@
  * alphabet may legitimately contain `-`, `]`, `^` or a backslash, and those are
  * exactly the characters a character class would need escaped.
  *
+ * ## The bound value
+ *
+ * `wire:model` sits on the hidden field, and the boxes write to it. The other direction
+ * holds as well: when something other than the boxes sets the bound property, the server
+ * emptying it after a submit or filling it in, the boxes show the new value. Without that
+ * they kept a code the field no longer held, and the next submit sent the field's value
+ * under a row of filled boxes.
+ *
+ * Lifecycle resources held on `this`, each released in destroy():
+ *   - _unwatch (the unwatch function of `$wire.$watch`). Livewire also releases it when the
+ *     element goes; it is nulled so a second destroy() cannot call it twice.
+ *
  * @param {Object}  config
  * @param {number}  config.length    number of boxes
  * @param {string}  config.name      the hidden field's name
  * @param {string}  config.alphabet  every character the field accepts
  * @param {boolean} config.caseFold  normalize case (true when the alphabet is single-case)
+ * @param {string|null} [config.model]  the Livewire property the hidden field is bound to,
+ *   read from its `wire:model` attribute; null when it is bound to nothing
  */
 export default function wirekitOtpInput(config = {}) {
     return {
@@ -43,6 +57,90 @@ export default function wirekitOtpInput(config = {}) {
          *  _announceCompletion(). Declared rather than left implicit so the
          *  scope's shape does not depend on how far the user has typed. */
         _wasComplete: false,
+
+        _model: typeof config.model === 'string' && config.model !== '' ? config.model : null,
+        _unwatch: null,
+
+        /**
+         * Follow the bound property: its value when the field starts, and every change after.
+         *
+         * `$wire.$watch` reports the changes `_sync()` makes as well, since those reach the
+         * property through the hidden field. They already match the boxes, and `_follow()`
+         * leaves the boxes alone when they do. Outside a Livewire component `$wire.$watch` is
+         * a no-op returning nothing, which is why the result is checked rather than assumed.
+         */
+        init() {
+            if (this._model === null || ! this.$wire || typeof this.$wire.$watch !== 'function') {
+                return;
+            }
+
+            const unwatch = this.$wire.$watch(this._model, (value) => this._follow(value));
+
+            if (typeof unwatch !== 'function') {
+                return;
+            }
+
+            this._unwatch = unwatch;
+
+            if (typeof this.$wire.$get === 'function') {
+                this._follow(this.$wire.$get(this._model));
+            }
+        },
+
+        destroy() {
+            if (this._unwatch) {
+                this._unwatch();
+                this._unwatch = null;
+            }
+        },
+
+        /**
+         * Show a value the boxes did not enter.
+         *
+         * Compared as the assembled code, the way `_sync()` assembles it, so a row with a gap
+         * in it is not rearranged when its own value comes back. The completion state follows
+         * the value without announcing it: the reader did not enter this code, and an
+         * announcement would submit it for them wherever an application submits on
+         * completion. Focus moves only when it was already in the row, to the first empty
+         * box, so a cleared code is typed again from the start.
+         */
+        _follow(value) {
+            const text = value === null || value === undefined ? '' : String(value);
+            const chars = Array.from(text).map((c) => this._normalize(c)).slice(0, this._length);
+
+            let current = '';
+
+            for (let i = 0; i < this._length; i++) {
+                const ref = this.$refs['digit' + i];
+                current += (ref && ref.value) || '';
+            }
+
+            if (chars.join('') === current) {
+                return;
+            }
+
+            const active = typeof document === 'undefined' ? null : document.activeElement;
+            let focusInRow = false;
+
+            for (let i = 0; i < this._length; i++) {
+                const ref = this.$refs['digit' + i];
+
+                if (ref) {
+                    focusInRow = focusInRow || ref === active;
+                    ref.value = chars[i] || '';
+                }
+            }
+
+            this._wasComplete = chars.length === this._length;
+
+            if (focusInRow && chars.length < this._length) {
+                const target = this.$refs['digit' + chars.length];
+
+                if (target) {
+                    target.focus();
+                }
+            }
+        },
 
         /** Fold a character toward the alphabet's case, if it folds at all. */
         _normalize(char) {
@@ -63,13 +161,11 @@ export default function wirekitOtpInput(config = {}) {
          * Select a cell's content when it takes focus, so a filled cell behaves like
          * an empty one.
          *
-         * Without this, correcting a code costs a deletion per cell — measured, not
-         * inferred: with `123456` in place, clicking cell 0 leaves the value `"1"` with
-         * `selectionStart` and `selectionEnd` both at 1, i.e. the caret AFTER the
-         * character and nothing selected. `maxlength="1"` is already satisfied, so the
-         * browser refuses the keystroke, `onInput` never fires, and the advance below
-         * never runs. Typing does nothing at all. The reader has to backspace every cell
-         * before they can retype it.
+         * Without this, correcting a code costs a deletion per cell: clicking a filled
+         * cell puts the caret after its character with nothing selected.
+         * `maxlength="1"` is already satisfied, so the browser refuses the keystroke,
+         * `onInput` never fires, and the advance below never runs. Typing does nothing
+         * at all, and the reader has to backspace every cell before retyping it.
          *
          * Selecting on FOCUS rather than on click covers both ways in: a pointer, and the
          * programmatic `next.focus()` that carries typing across the row. So a corrected
@@ -90,15 +186,12 @@ export default function wirekitOtpInput(config = {}) {
          * WebKit finishes the click after the focus handler has run, and the click's
          * default action puts a caret where the pointer is — which collapses the
          * selection and brings back exactly the refused keystroke described above.
-         * Measured in WebKit: the cell still reads 0–1 after `mouseup` and `click`,
-         * and 0–0 before the next frame; typing "9" leaves the "1" in place. Chromium
-         * keeps the selection, so the defect is invisible there.
+         * Chromium keeps the selection.
          *
-         * Canceling the default of `mouseup` is what keeps it; canceling `click` was
-         * measured and does not. Selecting again a moment after focus is not a
-         * substitute, measured two ways: one frame later leaves the caret in place in
-         * WebKit even for an instant click, and a 50 ms timer does too, while in Chromium
-         * it passes an instant click and fails one held as long as a person holds it.
+         * Canceling the default of `mouseup` is what keeps it; canceling `click` does
+         * not. Selecting again a moment after focus is no substitute: a frame or a short
+         * timer later, WebKit still leaves the caret, and in Chromium a timer that
+         * catches an instant click misses a press held as long as a person holds it.
          *
          * `select()` again here, not only the cancel: clicking a cell that already has
          * focus fires no focus event, and the press has already placed a caret.
@@ -149,6 +242,17 @@ export default function wirekitOtpInput(config = {}) {
                     event.target.value = '';
                 }
 
+                this._sync();
+
+                return;
+            }
+
+            // Delete empties the focused cell and keeps focus on it. The native key removes
+            // the character after the caret, which is nothing once typing into the last cell
+            // leaves the caret behind its character with no selection, so the cell is
+            // cleared here wherever the caret sits.
+            if (event.key === 'Delete') {
+                event.target.value = '';
                 this._sync();
 
                 return;

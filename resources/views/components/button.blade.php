@@ -20,10 +20,9 @@
     // of a text button, so it rendered as a wide box with a small glyph floating in the middle,
     // and there was nothing holding the label in the accessibility tree once it was hidden.
     //
-    // Reported from the starter kit's user list, where a row action had to narrow on a phone:
-    // "Edit roles" in German held 147px of the 309px the table had left. Their workaround put
-    // the icon and a `sr-only` label in the slot by hand and re-did the padding from outside —
-    // which is what this replaces, and the shape `clipboard-button` has had all along.
+    // The case is a row action that has to narrow on a phone, where a translated label can take
+    // half of what the table leaves. Without the prop the icon and an `sr-only` label go into the
+    // slot by hand and the padding is redone from outside; `clipboard-button` has the same shape.
     //
     // The label stays in the default slot. It is rendered visually-hidden rather than
     // dropped, so the button keeps a real accessible name that is translated by the same
@@ -73,13 +72,12 @@
     // `disabled` is what this component has always used, and it costs the focus: the
     // browser blurs a control the moment it becomes disabled, so the element the reader
     // just activated stops being focused for the whole in-flight window and focus falls to
-    // `<body>`. That is WCAG 2.4.3, on every request, and it is why an adopting project
-    // set `aria-busy` through the attribute bag by hand rather than use `loading` at all.
+    // `<body>`. That is WCAG 2.4.3, on every request.
     //
     // `false` swaps the attribute for `aria-busy`, which announces the same wait while the
     // element stays focusable and in the tab order. Livewire's `.attr` sets the attribute
-    // to `true` — measured in its own `toggleBooleanStateDirective`, not assumed — so this
-    // yields a valid `aria-busy="true"` rather than the attribute's own name.
+    // to `true` (its `toggleBooleanStateDirective` does), so this yields a valid
+    // `aria-busy="true"` rather than the attribute's own name.
     //
     // The default stays `true`, and the trade is the developer's to make: a control that
     // stays enabled while its action is in flight can be pressed twice.
@@ -92,7 +90,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
     $loading = BooleanProp::from($loading, false);
@@ -145,10 +143,9 @@
     // button byte-identical to one without the attribute — no spinner, no disable, nothing
     // — while reading at the call site exactly like a working busy state.
     //
-    // Nothing goes red over it: no error, no warning, no log. Reported from an adopting
-    // project where it sat on a re-consent screen, the one page a person cannot leave
-    // without agreeing, and a slow connection got no feedback at all — neither visual nor
-    // assistive — until the answer came back.
+    // Nothing goes red over it: no error, no warning, no log. On a screen a person cannot
+    // leave without submitting, a re-consent screen for one, a slow connection then gets no
+    // feedback at all, neither visual nor assistive, until the answer comes back.
     $loading = $loading || $loadingTarget !== null;
     $forceLoading = BooleanProp::from($forceLoading, false);
 
@@ -331,14 +328,13 @@
 
     // The height, and why it is TWO tables rather than one class.
     //
-    // A clamped label is exactly one line tall, so a FIXED height is the right
+    // A clamped label is exactly one line tall, so a fixed height is the right
     // answer and it keeps a row of buttons aligned to the same baseline. A label
-    // that may wrap is not: measured in the browser inside a 9rem container,
-    // `wrap-label` with a user's label took FOUR line boxes while the button
-    // stayed 40px tall — the first line sat 20px ABOVE the button's top edge and
-    // the last 20px below its bottom. Letting the label wrap and then clamping
-    // the box it wraps inside is half the prop, so the wrapping variant turns the
-    // same token into a FLOOR and adds the vertical padding a second row needs.
+    // that may wrap is not: in a fixed-height box its extra lines would spill
+    // above and below the button's edges. Letting the label wrap and then
+    // clamping the box it wraps inside is half the prop, so the wrapping variant
+    // turns the same token into a floor and adds the vertical padding a second
+    // row needs.
     //
     // Neither spelling may be assembled at runtime. Tailwind scans source text
     // for class names, so `str_replace('h-[', 'min-h-[', $sizeClasses)` yields a
@@ -401,8 +397,8 @@
 
     // `xs` is not a Tailwind breakpoint, so it is written as the width it stands for: 22.5rem, the
     // 360px of the smallest phones in common use. `sm` hides the label on every phone, including
-    // the 390px ones where a short bar still fits; this is the step below it. Reported from a top
-    // bar that needs 351px: it fits at 393px and scrolled the page sideways at 320px.
+    // the 390px ones where a short bar still fits; this is the step below it, for a bar that fits
+    // a 393px phone and would scroll a 320px one sideways.
     $iconOnlyBelowClasses = match ($iconOnlyBelow) {
         'xs' => 'max-[22.5rem]:w-[var(--wk-button-square)]',
         'sm' => 'max-sm:w-[var(--wk-button-square)]',
@@ -424,13 +420,13 @@
      * reserve space for a label nobody can see.
      */
     /*
-     * ON A TOUCH SCREEN THE SQUARE STAYS A SQUARE, and the finger gets its 44px as a patch.
+     * On a touch screen the square stays a square, and the finger gets its 44px as a patch.
      *
      * The stylesheet gives every `.wk-button` a 44px minimum height under `pointer: coarse`, and
-     * that floor turned a 32px icon-only square into a 32 x 44 pill whose hit area was still
-     * 32px wide. Measured in an application's user list with touch emulation. An icon control
-     * is what `wk-touch-target` exists for: a centered 44x44 patch that paints nothing, so the
-     * finger gets the full target and the drawn square keeps its size.
+     * that floor alone would turn a 32px icon-only square into a 32 x 44 pill whose hit area is
+     * still 32px wide. An icon control is what `wk-touch-target` exists for: a centered 44x44
+     * patch that paints nothing, so the finger gets the full target and the drawn square keeps
+     * its size.
      *
      * The floor reads `--wk-touch-min` before its own 44px, and the button sets it to zero where
      * it is the square: always for `iconOnly`, below the breakpoint for `iconOnlyBelow`, through

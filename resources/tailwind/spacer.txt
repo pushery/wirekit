@@ -18,7 +18,6 @@ $scope);
 Declared
 Dev-only
 Fully
-Measured
 Pushery\WireKit\WireKit;
 Renders
 WireKit::resolveClasses('spacer',
@@ -26,9 +25,7 @@ WireKit::resolveClasses('spacer',
 ])
 a
 action
-any
 aria-hidden="true"></div>
-asserted:
 auto-derived
 be
 block,
@@ -38,11 +35,8 @@ debug
 does
 early.
 element,
-file
 flags
-for
 from
-guard
 imports
 in
 interactive
@@ -61,17 +55,10 @@ presentational
 prod).
 props
 qualified:
-rather
 reach
-reason
-refutes
-renders
 result
 shown
 so
-than
-that
-the
 there
 this
 unknown

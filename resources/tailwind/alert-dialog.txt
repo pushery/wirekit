@@ -1,12 +1,10 @@
 !
 !==
 "0"
-"Abbrechen"
-"Cancel"
+"Abbrechen".
 "Cancel".
 "Copied"
 "Copy
-"Edit
 "Hoverable"
 "Save",
 "Saving…")
@@ -143,6 +141,7 @@ $linkDisabledClasses
 $linkDisabledClasses])
 $loading
 $loadingTarget
+$lockScroll
 $message
 $mono
 $name
@@ -374,6 +373,7 @@ $wrapLabel
 'lg']),
 'loading'
 'loadingTarget'
+'lockScroll'
 'max-2xl:sr-only',
 'max-2xl:w-[var(--wk-button-square)]',
 'max-[22.5rem]:sr-only',
@@ -580,6 +580,7 @@ $wrapLabel
 (int)
 (is_string($key)
 (it
+(its
 (kept
 (logical
 (no
@@ -661,7 +662,6 @@ $wrapLabel
 1.052l-8
 1.06L10
 1.06L8.94
-1.3
 1.4.13
 1.4.13.
 1.5
@@ -673,14 +673,10 @@ $wrapLabel
 10l-3.72
 10l3.72-3.72a.75.75
 11.06l3.72
-1108
-1114
 12%,
 12a8
 12h4z"></path>
-147px
 16px
-18.5
 18h7a1.5
 1px
 2
@@ -688,13 +684,11 @@ $wrapLabel
 2.1
 2.1.1).
 2.2
-2.31.0
 2.4.3
 2.4.3,
 2.5.8
 20
 20"
-20px
 22.5rem,
 24
 24"
@@ -712,11 +706,9 @@ $wrapLabel
 3.72a.75.75
 3.893
 300),
-309px
 32
-320px.
+320px
 32px
-351px:
 360px
 390px
 393px
@@ -738,7 +730,6 @@ $wrapLabel
 5.22z"/>
 5.373
 5.379A3
-533
 6),
 6.28
 6.439A1.5
@@ -751,7 +742,6 @@ $wrapLabel
 8
 8.94
 8px
-9rem
 :
 :aria-label
 :aria-label="copied
@@ -894,7 +884,6 @@ ALSO
 AND
 ANY
 APG
-ARE
 ARIA
 Accessible
 Alert
@@ -934,6 +923,7 @@ BooleanProp::from($forceLoading,
 BooleanProp::from($hideLabel,
 BooleanProp::from($iconOnly,
 BooleanProp::from($loading,
+BooleanProp::from($lockScroll,
 BooleanProp::from($mono,
 BooleanProp::from($readonly,
 BooleanProp::from($required,
@@ -944,16 +934,15 @@ BooleanProp::isFalse($success);
 BooleanProp::stripFalseHtmlFlags($attributes);
 Border
 Both
+Bound
 Built
 Bypasses
 CALLER's
 CONTENT
-CONTROL,
 CSP
 CSS
 CSS-pixel
 CSS.
-CUT
 Caller
 Cancel
 Capture
@@ -964,7 +953,6 @@ Close
 Copy-to-clipboard
 Counted,
 DECLARATIVE
-DECLARES
 DIALOG,
 DISABLES
 DO
@@ -981,7 +969,6 @@ Dev-only
 Dialog
 DomId
 Done
-ELEMENT:
 EVERY
 EXACTLY.
 EXISTS
@@ -992,28 +979,22 @@ Error
 Escape
 Escape,
 Every
-Exactly
 Example
 Example:
 Examples
 Extra
-FIXED
-FLOOR
 FOCUSABLE,
-FOUR
+False
 Fast
 Floating
 For
 Fully
 GLOBAL
-GOES
 Generate
 German
 Given
 HAVE
-HERE,
 HORIZONTAL
-HOVER,
 HOVERABLE:
 HTML
 HTML,
@@ -1039,12 +1020,11 @@ Joining
 KEY,
 Keep
 Kept
-L=0.972
-L=0.985
 LINE
 Label
 Laravel
 Leading
+Left
 Let
 Letting
 Level
@@ -1059,7 +1039,6 @@ MORPH
 Make
 Marker
 Matched
-Measured
 Mirror
 Mixing
 Monospace
@@ -1080,8 +1059,6 @@ Not
 Note
 Nothing
 Null
-OFF
-ON
 ONLY
 OR
 ORIGINAL
@@ -1120,23 +1097,17 @@ Removed
 Render
 Rendered
 Renders
-Reported
 Required
 Rich
 SCOPE
 SCOPES
-SCREEN
 SHAPE
 SIBLING.
 SKUs,
 SOLUTION
-SQUARE
-SQUARE,
 SR
 START
-STATE
 STATIC
-STAYS
 STRING
 SWAPS:
 Same
@@ -1146,6 +1117,7 @@ Set
 Setting
 Shared:
 Show
+Six
 Size
 So
 Soft
@@ -1165,7 +1137,6 @@ THEM
 THIRD
 THIS
 TOKEN,
-TOUCH
 TRANSPARENT
 TRUE:
 TWO
@@ -1177,18 +1148,16 @@ Takes
 Teleporting
 That
 The
-Their
 There
 They
 This
 Tooltip
 Trailing
-Translated,
+Translated
 Tri-state
 Trigger
 Trimming
 Two
-Type-to-Confirm
 UI
 UNBOUND
 USER
@@ -1357,8 +1326,6 @@ __('wirekit::To
 `__()`
 `_bindMissing`,
 `_x_dataStack`,
-`alert-confirm-reason-1`
-`alert-confirm-reason-2`.
 `alert-dialog.actions`,
 `alert-dialog.confirm`
 `alert-dialog.description`,
@@ -1369,7 +1336,6 @@ __('wirekit::To
 `aria-busy`
 `aria-busy`,
 `aria-describedby`
-`aria-describedby`.
 `aria-describedby`:
 `aria-disabled="true"`
 `aria-disabled`
@@ -1438,7 +1404,6 @@ __('wirekit::To
 `forceLoading`
 `foreground
 `gap-1`
-`getElementById`
 `hidden`
 `hidden`,
 `href`
@@ -1509,7 +1474,7 @@ __('wirekit::To
 `tagName()`
 `target`
 `this.$refs.tooltip`
-`toggleBooleanStateDirective`,
+`toggleBooleanStateDirective`
 `true`
 `true`,
 `value`
@@ -1528,7 +1493,6 @@ __('wirekit::To
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
-`wrap-label`
 `wrapLabel`
 `wrapLabel`,
 `x-bind:data-wk-tooltip-disabled="collapsed"`
@@ -1589,8 +1553,6 @@ acts
 actual
 actually
 add
-added
-added.
 addon
 adds
 adjusts
@@ -1599,14 +1561,11 @@ advertise,
 affordance
 affordances
 after
-after,
-after.
 again.
 against
 against,
 agree
 agreed
-agreeing,
 ahead
 aims
 alert
@@ -1619,6 +1578,7 @@ aligned
 alike
 alike.
 all
+all,
 all.
 allow
 allow-list.
@@ -1628,7 +1588,6 @@ allows
 alone
 alone.
 along
-along.
 alongside
 already
 already;
@@ -1664,7 +1623,6 @@ anywhere
 anywhere,
 apart:
 app
-app.css
 appear
 appearance
 appeared
@@ -1672,7 +1630,6 @@ appearing
 appears
 appended
 application
-application's
 applied
 applies
 approve
@@ -1721,11 +1678,10 @@ asked
 asking
 asks
 assembled
-asserted:
 assertion
 assistive
+assistive,
 association
-assumed
 at
 at,
 attached
@@ -1735,7 +1691,6 @@ attribute's
 attribute,
 attribute-bag
 attribute.
-attributed
 attributes
 attributes)
 attributes,
@@ -1773,8 +1728,6 @@ bag.
 bag:
 bar
 bar's
-bar,
-bar.
 bare
 base
 baseline.
@@ -1782,14 +1735,12 @@ baseline;
 be
 be.
 beat
-became
 because
 become
 becomes
 becoming
 been
 before
-before,
 before.
 before;
 behavior
@@ -1849,12 +1800,10 @@ borders
 both
 both,
 bottom
-bottom.
 bound
 boundaries
 box
 box.
-boxes
 bracket
 brake
 branch
@@ -1868,17 +1817,16 @@ breakpoint,
 breakpoint:
 breakpoints
 brief
-brighter
+brighter,
 browser
 bubble's
 bubble.
 bubbles
 bubbling
-bug.
+bug
 build
 build,
 built
-bullets
 busy
 but
 button
@@ -1906,7 +1854,6 @@ caller-supplied
 callout/alert).
 calls
 calls.
-came
 can
 cancel
 cancel/confirm
@@ -1927,6 +1874,7 @@ carve-out:
 case
 cast
 catalog
+catalog:
 catch.
 cell
 center
@@ -1953,8 +1901,6 @@ child)
 children
 children,
 choice
-claimed
-claims
 clamp,
 clamped
 clamping
@@ -2002,6 +1948,7 @@ clipboard')
 clipboard'))
 clipped
 clipping
+clipping,
 clone
 close
 close.
@@ -2088,9 +2035,7 @@ console
 console,
 constraint
 construction.
-consuming
 container
-container,
 container-relative
 container.
 containers.
@@ -2186,6 +2131,7 @@ dead
 dead.
 debug
 decided
+decided,
 decides
 decision
 decision.
@@ -2194,7 +2140,7 @@ declarative
 declare
 declared
 declares
-decoration
+decoration:
 decorative
 default
 default),
@@ -2277,9 +2223,9 @@ docs,
 docs.
 document
 document's
-documentation
 documented
 does
+does),
 does,
 does.
 does;
@@ -2322,6 +2268,7 @@ edge
 edge,
 edge.
 edges,
+edges.
 editing
 either
 either,
@@ -2329,6 +2276,7 @@ either.
 element
 element,
 element.
+element:
 elements
 elements,
 elevated
@@ -2344,7 +2292,6 @@ emitting
 empties
 empty
 empty:
-emulation.
 enable
 enabled
 enabled,
@@ -2386,24 +2333,23 @@ except('rel')
 exist
 exist,
 existed
-existed.
 existing
 exists
 exists,
 exists.
 exit**:
 expandos.
-expensive:
-experience
-explained
+explain
+explains
 explicit
 explicitly
 exposed
 expression
 expressions.
+extra
 factory
 factory,
-fade="…">`
+fade="…">`,
 fading
 failed.
 fails
@@ -2424,7 +2370,6 @@ false`,
 family
 feature
 feedback
-fell
 few
 field
 field's
@@ -2451,7 +2396,6 @@ fine
 finger
 finger.
 finish
-finished
 finished,
 fire
 fired.
@@ -2465,6 +2409,7 @@ fits;
 five
 fix
 fixed
+fixed-height
 fixed.
 fixed`
 fixes
@@ -2528,7 +2473,6 @@ form-state
 form.
 formatting.
 found
-found.
 four
 fragment
 frame
@@ -2573,7 +2517,6 @@ go
 goes
 goes.
 goes;
-good
 got
 green
 grew
@@ -2710,6 +2653,7 @@ id="{{
 idea
 identical
 identity
+ids.
 if
 ignores
 implicit
@@ -2753,7 +2697,6 @@ inserts
 inset-0',
 inside
 inside,
-installed.
 instead
 instead,
 instead.
@@ -2827,7 +2770,6 @@ keyboard-focusable
 keydown
 keystroke,
 kit
-kit's
 know
 knowing
 knows
@@ -2840,9 +2782,7 @@ land
 landing
 lands
 lang/de.json
-lang/en.json
 large
-last
 last:border-b-0
 last:border-e-0
 later
@@ -2858,6 +2798,7 @@ least
 least.
 leave
 leaves
+leaves.
 leaving
 left
 left-to-right;
@@ -2886,7 +2827,6 @@ link()
 link.
 linked
 list
-list,
 listed,
 listener
 listener,
@@ -2903,6 +2843,8 @@ loading
 loading-spinner
 loading-target="redeliver".
 loadingTarget
+lockScroll:
+locks
 log
 log.
 logger()->warning('[WireKit]
@@ -2935,7 +2877,6 @@ mask
 mask-image:
 masked
 match
-matched
 matches
 matches.
 matching
@@ -2955,7 +2896,6 @@ meaningful
 means
 meant
 measure
-measured
 measurements,
 measures
 measures.
@@ -2988,7 +2928,6 @@ mirrors
 mismatch
 missing
 missing-accessible-name
-missing.
 modal
 mode
 mode"),
@@ -3006,7 +2945,6 @@ mouse
 mouse,
 move
 move.
-moved
 moves
 moving
 mr-[var(--padding-wk-x-sm)]
@@ -3063,7 +3001,6 @@ node's
 node,
 non-Livewire
 none
-none,
 noopener
 nor
 noreferrer"
@@ -3154,6 +3091,7 @@ outline()
 output
 outranks
 outside
+outside;
 over
 over,
 overflow
@@ -3180,6 +3118,8 @@ padding
 padding,
 padding.
 page
+page's
+page,
 page-unique
 pagination
 paint
@@ -3232,7 +3172,6 @@ phase,
 phone
 phone,
 phone.
-phone:
 phones
 phrase
 phrase')"
@@ -3270,9 +3209,7 @@ pre-existing
 pre-fix
 pre-wired
 precedence:
-precise
 precisely
-predicted
 preference.
 prefers
 prefix
@@ -3283,9 +3220,7 @@ presentational
 preserving
 pressed
 prevent
-prevents.
-prevents:
-preview
+preview,
 previous
 primary
 primary)
@@ -3321,7 +3256,6 @@ purpose,
 pushed
 put
 puts
-px
 py-[var(--padding-wk-y-md)]',
 py-[var(--padding-wk-y-sm)]',
 py-[var(--padding-wk-y-xs)]',
@@ -3341,7 +3275,6 @@ rationale
 raw
 re-anchors
 re-consent
-re-did
 re-render
 re-rendered
 re-renders.
@@ -3378,9 +3311,9 @@ recommendation:
 records
 red
 red:
+redone
 ref
 ref.
-refactor
 reference
 reference.
 refinement,
@@ -3392,10 +3325,10 @@ refusal
 refused
 refuses
 refuses.
-refutes
 regardless
 regardless"
 region
+region,
 registers
 regression
 regularly
@@ -3408,7 +3341,6 @@ reliably.
 remember
 remove
 remove.
-removed
 removes
 removing
 render
@@ -3426,7 +3358,6 @@ repeated
 repeating
 replacement
 replaces
-replaces,
 replacing
 report
 reported
@@ -3457,7 +3388,6 @@ resync
 retargeted
 return
 return)
-returned
 returns
 rides
 right
@@ -3473,7 +3403,6 @@ role="link"
 role="status"
 role="tooltip"
 roleless
-roles"
 roll
 room
 root
@@ -3537,7 +3466,8 @@ screen,
 screen-reader
 script.
 scroll
-scrolled
+scroll.
+scrolling.
 scrolls
 seam
 search
@@ -3555,7 +3485,6 @@ selectable
 selected
 selector
 selector,
-selectors
 semantics
 semantics.
 sent
@@ -3578,6 +3507,7 @@ shadow-none',
 shadow.
 shape
 shape-marker
+shape.
 shapes
 share,
 shared
@@ -3597,7 +3527,6 @@ shows
 shows;
 shrink
 shrink-0
-shrinking
 shrinks
 sibling
 siblings
@@ -3605,7 +3534,7 @@ siblings;
 side,
 side:
 sidebar
-sideways
+sideways.
 sighted
 signal
 signals
@@ -3619,6 +3548,7 @@ sit
 site
 sits
 six
+six.
 size
 size,
 size.
@@ -3628,6 +3558,7 @@ sizes
 sizes,
 sizing
 skipped
+slightly
 slot
 slot's
 slot,
@@ -3667,6 +3598,7 @@ spellcheck="false"
 spelled
 spelling
 spellings
+spill
 spinner
 spinner,
 spinner.
@@ -3676,6 +3608,7 @@ spread
 spreads
 square
 square's
+square,
 square:
 squared
 squares
@@ -3691,7 +3624,6 @@ stands
 stands.
 start;
 started
-starter
 starting
 state
 state,
@@ -3707,7 +3639,6 @@ step
 step).
 still
 stop
-stopped
 stops
 str_contains($relAttr,
 str_contains($targetAttr,
@@ -3732,12 +3663,14 @@ stutter.
 style
 styled,
 stylesheet
+stylesheet's
 stylesheet).
 styling
 styling:
 stylistic
 sub-component,
 submit
+submitting,
 subtle:
 subtree
 subtree,
@@ -3797,7 +3730,6 @@ teaches
 tears
 tech)
 technology
-teleport
 teleport:
 teleport;
 teleported
@@ -3958,7 +3890,6 @@ truthy.
 turn
 turned
 turns
-twelve
 twice
 twice.
 twin
@@ -3996,7 +3927,6 @@ unknown
 unlayered
 unless
 unlike
-unlocatable
 unreachable,
 unrelated
 unresolvable
@@ -4006,18 +3936,15 @@ untargeted
 until
 up
 up.
-upgrade
 upstream
 urgency
 usable
 use
 use.
 use:
-used
 used,
 useful
 user
-user's
 uses
 uses.
 using
@@ -4057,7 +3984,6 @@ viewBox="0
 viewport
 viewport,
 viewport.
-views
 violations
 violations.
 visibility
@@ -4172,7 +4098,6 @@ work
 work,
 work.
 work:
-workaround
 worked
 worked.
 working

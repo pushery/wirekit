@@ -167,13 +167,12 @@ about
 across
 after
 against
-already
 also
 an
 and
 animated
 animation
-announced
+announce
 announces
 anticipate
 anything
@@ -188,12 +187,11 @@ as,
 at
 attribute
 auto-derived
+avoids
 back.
 bag.
 bare
 base
-be
-because
 below
 below.
 between
@@ -219,10 +217,8 @@ case
 case).
 cast
 change
-checked.
 chevron
 chrome
-claim
 clamp
 class
 class="flex-1
@@ -294,7 +290,6 @@ gap="sm"`
 give.
 gone,
 group
-guess:
 h-4
 had
 has
@@ -312,7 +307,6 @@ id="{{
 identity
 imbalance
 implode('
-imported
 imports
 in
 in.
@@ -376,12 +370,10 @@ name,
 named
 never
 no
-nobody
 node
 nominal
 not
 nothing
-now
 null
 null,
 of
@@ -402,6 +394,7 @@ opposite
 optimistic-ui:
 ordinary
 other
+otherwise
 outside
 over-spacing
 own
@@ -411,7 +404,7 @@ padding
 page
 page,
 panel
-panel:
+panel,
 pass
 pattern
 per-render
@@ -445,7 +438,7 @@ renders.
 repeat,
 replaces
 replays
-resolved
+resolve
 rich
 roll
 root,
@@ -455,11 +448,9 @@ round
 rows,
 rules
 same
-says
 scoped
 second
 seeded
-sentence
 server
 server-rendered
 share
@@ -472,7 +463,6 @@ site
 slot
 smooth
 so
-solved
 spoiler.
 stable
 standalone
@@ -531,7 +521,6 @@ unknown
 until
 until-found
 use
-used
 utils/findable.js.
 value
 variable,
@@ -547,11 +536,11 @@ where
 which
 whichever
 while
-why
 wire:model
 with
 without
 works
+would
 x-cloak
 x-collapse
 x-collapse.

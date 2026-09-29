@@ -15,7 +15,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $close = BooleanProp::from($close, true);
 
@@ -47,20 +47,14 @@
     //
     // The visible box stays at --size-wk-sm (32px); a centered transparent 44×44
     // ::before supplies the WCAG 2.5.5 AAA hit area without changing the render.
-    // Same expander the file-upload remove button already ships.
-    //
-    // This comment used to claim the AAA target outright while the button was
-    // 32×32 with nothing widening it — no min-height, no expander — and the
-    // coarse-pointer floor does not reach it either, since that rule is
-    // element-qualified to .wk-field / .wk-button and this carries neither. A
-    // comment asserting a property nothing implements is worse than no comment:
-    // it is exactly what stops the next reader from checking.
+    // Same expander the file-upload remove button ships. The coarse-pointer floor
+    // does not reach this button, since that rule is element-qualified to
+    // .wk-field / .wk-button and this carries neither.
     //
     // It sits exactly in the corner the header's padding defines, top and end alike, so its
-    // glyph is inset by the same distance from both edges. It used to be pulled into the end
-    // padding by a negative margin, which only read right while the button was vertically
-    // centered — anchored to the top, the same pull put the glyph closer to the side than
-    // to the top.
+    // glyph is inset by the same distance from both edges. A negative margin into the end
+    // padding would read right only while the button was vertically centered; anchored to
+    // the top, it would put the glyph closer to the side than to the top.
     $closeClasses = WireKit::resolveClasses('modal.header', 'close', implode(' ', [
         'relative shrink-0',
         'inline-flex items-center justify-center',

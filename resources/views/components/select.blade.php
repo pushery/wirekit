@@ -52,7 +52,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false);
     $reserveMessage = BooleanProp::from($reserveMessage, false);
@@ -121,7 +121,7 @@
         // `overflow-hidden` because with `appearance: none` WebKit paints the chosen value itself, and a
         // value wider than the field counted into the scrollable width of every ancestor: invisible,
         // since the text ends at the chevron, yet the page scrolled sideways on a phone. No
-        // ellipsis utility: on this select it drew no ellipsis in either engine, measured by screenshot.
+        // ellipsis utility: on this select it draws no ellipsis in either engine.
         // (Named in words on purpose: a class name in a comment is still a class to Tailwind's scanner.)
         'block w-full appearance-none overflow-hidden',
         'font-[family-name:var(--font-wk-sans)]',

@@ -24,8 +24,7 @@
     // A prop rather than an !important utility override on the base class, because that
     // override is not the same thing: it removes the corner clipping for EVERY
     // child, and nothing says so until someone drops a full-bleed image or a table
-    // into that card. Reported from a consuming project that was carrying exactly
-    // that override, on two elements.
+    // into that card.
     'overflow' => 'hidden',
     'scope' => null,
 ])
@@ -108,11 +107,9 @@
     // winner is then decided by EMISSION ORDER in the built stylesheet.
     //
     // Tailwind v4 derives that order from the class name rather than from the intent, so
-    // the outcome is arbitrary with respect to what the developer meant. Measured in a
-    // consuming application's built CSS: `border-[var(--color-wk-accent)]` at offset 50367,
-    // `border-[var(--color-wk-border)]` at 50600 — the component's border wins, and the
-    // selected card looks exactly like an unselected one. `border-transparent` sits further
-    // back still, so `flat` and `elevated` lose by more.
+    // the outcome is arbitrary with respect to what the developer meant: an accent border
+    // can sort before the component's own, and the selected card then looks exactly like an
+    // unselected one.
     //
     // With the seam an application REPLACES the block in its own scope instead of hanging
     // something beside it, which is the one shape that cannot be decided by an ordering
@@ -148,15 +145,10 @@
     }, $scope);
 
     // The interactive treatment is keyed on whether the card DOES something when it is
-    // clicked, not on whether it happens to render an `<a>`. The condition used to read
-    // `$href ? …`, and its comment said "when rendered as a link (interactive)" — which
-    // equated link with interactive. That stopped being true the moment `as` arrived:
-    // `as="button"` got the card frame and no affordance at all, so a card that acts on
-    // click looked exactly like a card that does nothing. Same class as the
-    // `surface="soft"` hover state added in v2.43.0 — an element that does not answer
-    // the pointer reads as not clickable. Reported from a consuming project that was
-    // hand-rolling clickable cards out of a raw `<button>` plus tokens plus its own
-    // `cursor-pointer`, because the component would not look clickable.
+    // clicked, not on whether it happens to render an `<a>`. Keyed on `$href` alone,
+    // `as="button"` would get the card frame and no affordance at all, so a card that
+    // acts on click would look exactly like a card that does nothing: an element that
+    // does not answer the pointer reads as not clickable.
     $hasClickBinding = false;
     foreach ($attributes->getAttributes() as $attributeKey => $_) {
         if (! is_string($attributeKey)) {

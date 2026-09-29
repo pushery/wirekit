@@ -12,10 +12,9 @@
  * sets. Nothing is left to how an older engine parses an attribute value it does not know, so the
  * experience below the enhancement is today's by construction rather than by assumption.
  *
- * What the panel must not carry, measured in Chromium 151 and WebKit 26.5:
+ * What the panel must not carry:
  * - padding, a border or a background of its own: a closed until-found element keeps its box, so
- *   those paint as an empty strip (26 px for a panel with padding and a border). They belong on
- *   an element inside it;
+ *   those paint as an empty strip. They belong on an element inside it;
  * - `tabindex`: an element that is itself until-found still takes focus, by script and by Tab.
  *   A panel that needs a tab stop binds it to its open state;
  * - `x-cloak`: `display: none !important` would stop the browser from revealing it at all.

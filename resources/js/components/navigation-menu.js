@@ -188,10 +188,7 @@ export default function wirekitNavigationMenu() {
                     // the panel against its own template, whose `style` attribute carries none of
                     // it. The placement is gone while the flyout is still open — and the panel is
                     // teleported out of the bar, so with no `top` it sits at the END of the
-                    // document instead of under its trigger.
-                    //
-                    // Measured on /overlays across one refresh: `top` 949px → empty, still shown,
-                    // box unchanged at 105x67.
+                    // document instead of under its trigger. The box does not change.
                     //
                     // The unchanged box is why this is `repairErasure` and not
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, since it

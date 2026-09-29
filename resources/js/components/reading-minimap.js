@@ -965,9 +965,9 @@ export default (options = {}) => ({
      * Puts the anchor strip on the side that has room for it.
      *
      * The strip belongs on the outboard edge, and a minimap pinned against the viewport has
-     * no outboard edge to speak of: measured at 390px, every label painted from x=382 to as
-     * far as 479 — up to 89px off the screen, in Chromium and WebKit alike. Rendered mode
-     * pins the minimap to the viewport on every screen, so the same labels left a desktop too.
+     * no outboard edge to speak of: its labels would paint past the edge of the screen.
+     * Rendered mode pins the minimap to the viewport on every screen, so that holds on a
+     * desktop too.
      *
      * Both sides are measured. The strip moves inside only when the outboard side cannot hold
      * the widest label AND the inboard side holds more. A label is narrowed — to the room its

@@ -44,9 +44,8 @@
     // A sidebar's own entries stand muted at rest and go full on hover
     // (`sidebar/item.blade.php`). The account trigger sits directly under them, so a
     // name baked to the full color leaves exactly ONE row in the column permanently
-    // brighter than every other — reported from a consuming project, which could only
-    // work around it by abandoning the `name` prop for the slot and re-writing the
-    // collapse handling by hand.
+    // brighter than every other, and the only way around it would be the slot instead of
+    // the `name` prop, with the collapse handling rewritten by hand.
     //
     // A color on the wrapper does not reach it: the span sets its own and wins.
     'tone' => 'default',
@@ -72,7 +71,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('profile', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $interactive = BooleanProp::from($interactive, false);
 
@@ -129,11 +128,10 @@
 
     // ── An avatar-only control IS the avatar ──────────────────────────────
     //
-    // Reported from the starter kit, measured in both engines: the account trigger at
-    // the top of a phone layout showed a 2px square ring around a round avatar, 35px
-    // across a 32px circle, `radius="nav-item"` doing exactly what it was asked.
+    // On an avatar-only trigger `radius="nav-item"` would draw a square ring around a
+    // round avatar, doing exactly what it was asked.
     //
-    // A radius describes a BOX, and with no name and no slot there is no box — the
+    // A radius describes a box, and with no name and no slot there is no box — the
     // control hugs the circle, so the only shape that can look deliberate is the
     // circle's own. The prop keeps its meaning everywhere it has a row to describe,
     // and this is not only about the focus ring: the hover surface is the same
@@ -222,18 +220,10 @@
     @if($avatarSrc)
         <img data-wk-prose-skip src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-full object-cover" />
     @elseif($avatarInitials)
-        {{-- The PRIMITIVE, not a copy of it. This was hand-rolled, and the comment above it
-             claimed "the same deterministic-palette shape as the canonical avatar primitive"
-             while painting a flat `--color-wk-bg-muted` — the one thing the palette exists to
-             replace. Measured from a consuming kit before adopting this component: the copy
-             also differed in border (none against a subtle one), text size (`xs` against `sm`)
-             and weight (body against heading). Four differences under a comment asserting
-             sameness.
-
-             The cost is not cosmetic and it is why they kept a hand-build instead: the palette
-             derives the color from the initials, so two people are two colors. Adopting the
-             copy traded a color-coded list for a uniformly gray one, and in a list of people
-             the color IS what tells two rows apart. --}}
+        {{-- The primitive, not a copy of it: a copy drifts in color, border, text size and
+             weight. The color is not cosmetic: the palette derives it from the initials, so
+             two people are two colors, and in a list of people the color is what tells two
+             rows apart. --}}
         <x-wirekit::avatar
             :initials="$avatarInitials"
             from-initials
@@ -244,9 +234,8 @@
     @if($name)
         {{-- In a collapsed sidebar rail the name becomes sr-only, exactly as a
              `sidebar.item` label does — visually gone, still the accessible name.
-             Without this the name stays and WRAPS: measured at 43px, "Dana Ortiz"
-             broke across two lines inside a column built for a 32px avatar, which is
-             how a footer row ends up taller than the rail it sits in.
+             Without this the name stays and wraps across lines inside a column built
+             for an avatar, and the footer row ends up taller than the rail it sits in.
 
              `group-data-[settling]` as well as `group-data-[collapsed]`, because the
              collapse animates: hiding only at the end of it lets the name reflow once

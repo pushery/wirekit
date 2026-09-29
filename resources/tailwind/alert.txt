@@ -224,7 +224,7 @@ Dismiss
 Dismissal
 FIRST
 HTML
-It
+Left
 No
 Normalized
 Null
@@ -458,6 +458,7 @@ optimistic-ui:
 opts
 other
 otherwise
+out
 over
 own
 p-1
@@ -486,7 +487,7 @@ reader
 readers
 reads
 reload
-rendered
+render
 replay
 replay-button
 restore

@@ -29,7 +29,7 @@
     'imageAlt' => null,
     // Price in the currency's major units, or minor units with :minor-units.
     'price' => null,
-    // What it used to cost. Renders struck through, and the saving is announced.
+    // The price before the reduction. Renders struck through, and the saving is announced.
     'compareAt' => null,
     'currency' => config('wirekit.currency', 'USD'),
     'minorUnits' => false,
@@ -60,7 +60,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('product-card', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $minorUnits = BooleanProp::from($minorUnits, false);
 

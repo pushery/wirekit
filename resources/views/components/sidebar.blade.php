@@ -66,10 +66,10 @@
     // agree should not each own a copy of it.
     'tone' => 'default',
     // Where the auto-rendered collapse toggle sits, or `none` to omit it and
-    // supply your own. `none` keeps the state machinery here — a developer who
-    // wanted the trigger elsewhere previously had to switch `collapsible` off and
-    // rebuild the rail's Alpine state, the persisted flag and the marker the
-    // descendant items read, which is vendor mechanics reimplemented in an app.
+    // supply your own. `none` keeps the state machinery here, so a trigger
+    // elsewhere does not mean switching `collapsible` off and rebuilding the rail's
+    // Alpine state, the persisted flag and the marker the descendant items read,
+    // which would be vendor mechanics reimplemented in an app.
     // An outside trigger reaches this sidebar through the `wirekit:sidebar:toggle`
     // window event instead; see the docs page.
     'toggle' => 'end',
@@ -93,11 +93,9 @@
     // No server can read localStorage, so a column that remembers being collapsed
     // renders at its seed width and corrects itself after the first paint. A nonced
     // script after the column closes that gap — see the partial it includes — but the driver
-    // below remains the only way the FIRST render is right without any script at all. An adopting
-    // application measured that on the rail next door at 0.1097 CLS against a budget of
-    // 0.1 — the content column moving 187px, 53ms in. The usual answer, a blocking
-    // inline script in the head, is unavailable under a strict `script-src 'self'`
-    // policy without a nonce.
+    // below remains the only way the first render is right without any script at all. The
+    // usual answer, a blocking inline script in the head, is unavailable under a strict
+    // `script-src 'self'` policy without a nonce.
     //
     // A cookie is the only store Blade and Alpine both read, so this driver mirrors the
     // flag there and the first render is already right. Opt-in on purpose: writing a
@@ -139,7 +137,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false);
     $zoneInset = BooleanProp::from($zoneInset, true);
@@ -252,12 +250,11 @@
         ? [
             $contentEdgeBorder,
             $toneBorder,
-            // Fills its column. Only the browser showed why this is needed: the edge
-            // is drawn on THIS element, so a nav sized to its content ends the
-            // separator wherever the last item happens to fall — measured 200px of
-            // line in a 340px column, which reads as a rendering fault rather than
-            // as a short list. The card variant must NOT have it, because a card is
-            // supposed to be as tall as its content.
+            // Fills its column: the edge is drawn on this element, so a nav sized to
+            // its content would end the separator wherever the last item happens to
+            // fall, which reads as a rendering fault rather than as a short list. The
+            // card variant must not have it, because a card is supposed to be as tall
+            // as its content.
             'h-full',
             // A flush column deliberately paints NOTHING by default — flush means the
             // host's background IS the column's. A toned one has to paint, or the tone it
@@ -323,21 +320,19 @@
         isset($footer) ? '' : ($toggle === 'start' ? 'self-start' : 'self-end'),
         // BOTTOM of the column, and never touching the row above it.
         //
-        // It used to be the first child, which put it at the top — while the documentation
-        // told the reader to click "the chevron toggle at the bottom of the sidebar", and
-        // while the app rail's expander really is down there. Two components, one gesture,
-        // two places to look for it.
+        // The documentation tells the reader to click "the chevron toggle at the bottom of
+        // the sidebar", and the app rail's expander is down there too: two components, one
+        // gesture, one place to look for it.
         //
         // `mt-auto` claims the leftover height when the column is taller than its content;
         // with a short list it simply ends up last, which is the same thing to look at.
         //
-        // The spacing lives here now, and only one `mt-` utility may: two on one element
-        // fight and the later one wins.
+        // The spacing lives here, and only one `mt-` utility may: two on one element fight
+        // and the later one wins.
         //
-        // It used to be a row gap on the column instead. That gap could not be selective —
-        // it spaced EVERY zone boundary, so it also sat between the scroller's bottom
-        // shadow and the footer's rule, where the rule IS the boundary and wants nothing
-        // in front of it. Measured at 4px, in a place nobody asked for it.
+        // A row gap on the column could not be selective: it would space every zone
+        // boundary, including the one between the scroller's bottom shadow and the
+        // footer's rule, where the rule is the boundary and wants nothing in front of it.
         //
         // `mt-auto` still does the pushing; the gap token is added on top so the control
         // keeps its distance from the last row of a short list.
@@ -471,12 +466,12 @@
         {{-- The initial width is emitted STATICALLY as well as through the `:class` above.
              Until Alpine boots, `:class` has not run, so without this the column carries no
              width at all — it lays out at content width and snaps to its real one a frame
-             later, which is the flicker reported from three shells. Alpine's `:class` swaps
+             later, a visible flicker. Alpine's `:class` swaps
              the two widths, so exactly one width utility is ever in the list and the
              equal-specificity conflict never arises. The stored choice lives in the reader's
              browser, so this static class is the SEED rather than the memory — the nonced
-             script emitted after this column reconciles the two before the first paint, which
-             is where the "briefly collapsed, then open" report came from. --}}
+             script emitted after this column reconciles the two before the first paint, so an
+             open column never shows collapsed first. --}}
         {{ $attributes->class([$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')

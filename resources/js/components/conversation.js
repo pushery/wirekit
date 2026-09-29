@@ -94,15 +94,16 @@ export default function wirekitConversation(config = {}) {
             // childList = a new message row; characterData = streamed tokens
             // appended into an existing bubble.
             /*
-             * The records are READ, not discarded. Every path into this callback used to
-             * count as a new message, and only one of them is one.
+             * The records are READ, not discarded. Several paths lead into this callback,
+             * and only one of them is a new message.
              *
-             * `characterData` fires once per streamed token, so a single 200-token reply
-             * counted 200 unread messages. The ResizeObserver below fires on any size change
-             * — a window resize, a phone rotating, the soft keyboard opening — and counted
-             * one more each time. The badge on the jump-to-latest button is what a reader
-             * uses to decide whether to scroll back down, and it was reporting the length of
-             * the reply and the number of times they had turned their phone.
+             * `characterData` fires once per streamed token, so counting every record would
+             * turn a single 200-token reply into 200 unread messages. The ResizeObserver below
+             * fires on any size change — a window resize, a phone rotating, the soft keyboard
+             * opening — and would count one more each time. The badge on the jump-to-latest
+             * button is what a reader uses to decide whether to scroll back down, and it would
+             * report the length of the reply and the number of times they had turned their
+             * phone.
              *
              * A new message is a childList mutation that ADDS an element. Everything else
              * still runs the anchor restore and the follow-output, which is what those

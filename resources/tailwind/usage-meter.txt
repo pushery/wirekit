@@ -12,7 +12,6 @@
 "Unlimited")
 "Usage").
 "X
-"not
 "orders",
 "seats")
 "work
@@ -222,8 +221,8 @@ $wrapperClasses
 ($variantValue)
 (+
 (0..max).
+(A
 (Component
-(This
 (Z%)"
 (`--text-wk-2xs`
 (a
@@ -311,7 +310,6 @@ $wrapperClasses
 15.9155;
 2
 2.
-2026-09-09.
 3
 3.
 36
@@ -432,7 +430,6 @@ LocalizedNumber::format((float)
 MANDATORY
 M_PI
 Mapping
-Measured
 Mirrors
 More
 Mutually-exclusive
@@ -462,17 +459,16 @@ Real
 Reason
 Renders
 Reset
-SIBLING
 SOME
 STABLE
 SVG
 Same
+So
 Sourced
 Status
 Stroke
 TEXT
 Tailwind
-That
 The
 There
 This
@@ -488,7 +484,6 @@ Validated
 Value
 WCAG
 WCAG/WAI-ARIA
-WRAPPER,
 WireKit::resolveClasses('progress',
 WireKit::resolveClasses('usage-meter',
 WireKit::validateProp('progress',
@@ -591,14 +586,12 @@ announce.
 announcement
 announces,
 another
-any
 anything
 anything,
 apart
 application
 applied
 arc
-arc,
 are
 aria-disabled
 aria-disabled="true"
@@ -619,7 +612,6 @@ around
 arrives
 as
 as,
-asserted:
 at
 attached
 attribute
@@ -669,7 +661,6 @@ by
 cadence
 cadence.
 call
-called
 caller
 caller's
 callers
@@ -724,7 +715,6 @@ color-axis
 colored
 coloring,
 column
-coming,
 comment
 comments.)
 compiler
@@ -761,7 +751,6 @@ danger
 danger/over
 danger=1.0,
 data-over-limit="true"
-date
 debug
 decided
 default
@@ -805,7 +794,6 @@ element,
 else
 else,
 empty
-empty,
 enough
 enters
 enum;
@@ -882,14 +870,12 @@ grid-column
 grid;
 group
 group's
-guard
 h-[var(--size-wk-lg)]',
 h-[var(--size-wk-md)]',
 h-[var(--size-wk-sm)]',
 h-[var(--size-wk-xl,6rem)]',
 h-full
 had
-half
 halves
 has
 have
@@ -957,7 +943,7 @@ larger
 later
 layout
 layout,
-leaves
+leave
 left
 legacy
 length
@@ -1021,7 +1007,6 @@ name
 name)
 name,
 name.
-named
 named.
 names
 natural
@@ -1071,6 +1056,7 @@ optional
 order
 origin-center"
 other
+otherwise
 out,
 outer
 outside
@@ -1120,7 +1106,6 @@ progress'
 progress:
 progressbar
 progressbar-name
-promised
 prop
 prop's
 proper
@@ -1166,7 +1151,6 @@ recommend
 recomputing
 red
 redundant
-refutes
 region
 reinforcement
 rely
@@ -1177,7 +1161,6 @@ render,
 render.
 rendered
 renders
-report
 represents
 request
 required
@@ -1191,7 +1174,7 @@ result
 retunes
 reuses
 richer
-right
+right.
 ring
 role.
 role="group"
@@ -1225,7 +1208,6 @@ shape
 share
 shares
 shimmer
-shipped
 shortest
 should
 show
@@ -1257,7 +1239,6 @@ smooth
 so
 soften
 source
-source.
 span
 spans
 stable
@@ -1265,10 +1246,9 @@ stack
 state
 static
 stay
-stayed
 stays
 still
-stops
+stop
 streamed
 streaming).
 string,
@@ -1299,6 +1279,7 @@ tabular-nums">
 tag
 tag,
 tags
+takes:
 text
 text)
 text-[color:var(--color-wk-danger-text)]">{{
@@ -1318,7 +1299,6 @@ theme
 themselves,
 there
 there,
-there.
 they
 thing
 this
@@ -1342,7 +1322,6 @@ tokens.
 tone
 too,
 too.
-took:
 top
 track
 track,
@@ -1369,7 +1348,6 @@ unit
 unknown
 unlimited
 unresolvable
-until
 untouched
 untouched.
 up
@@ -1388,7 +1366,6 @@ used
 used/limit;
 uses
 utility
-v3.0.0
 value
 value,
 value/width
@@ -1398,7 +1375,6 @@ values.
 var(--transition-wk-duration)
 var(--transition-wk-easing)"
 variants
-version
 vertical
 very
 via
@@ -1407,7 +1383,6 @@ view's
 viewBox="0
 viewports.
 visible
-visual-only".
 vocabulary
 w-full
 w-full',
@@ -1417,7 +1392,6 @@ was
 watched
 we
 weekly'),
-were
 what
 when
 where
@@ -1444,6 +1418,7 @@ would
 wrapped
 wrapper
 wrapper).
+wrapper,
 x-bind:aria-valuenow="ariaValueNow()"
 x-bind:class="fillClasses()"
 x-bind:style="fillStyle()"

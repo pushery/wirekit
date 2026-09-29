@@ -1,17 +1,13 @@
 /**
  * Two siblings of the same overlay must not stand open at once.
  *
- * ## The defect this is for
+ * ## What it is for
  *
- * Two `<x-wirekit::combobox>` instances on one page both opened, and their
- * panels overlapped: opening the second did not close the first, because
- * nothing told it to. `context-menu` had already solved it, and the fix was
- * copied to `combobox` — which is where a third copy would normally follow,
- * then a fourth, each drifting a little.
- *
- * Measured before this existed: `dropdown`, `menubar`, `navigation-menu`,
- * `hover-card` and `popover` had **zero** cross-close hooks between them. Five
- * components, one bug, five places to write the same twelve lines.
+ * Without it, two `<x-wirekit::combobox>` instances on one page can both stand
+ * open with their panels overlapping: opening the second does not close the
+ * first, because nothing tells it to. One channel per kind of overlay keeps
+ * that in one place rather than a copy of the same lines in every component,
+ * each drifting a little.
  *
  * ## What it does not do
  *

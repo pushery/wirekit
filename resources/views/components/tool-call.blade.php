@@ -96,13 +96,12 @@
     };
 
     /*
-     * `min-w-0` is load-bearing, and it was measured rather than added defensively. A grid or
-     * flex item's `min-width` defaults to `auto`, which means "never narrower than my content" —
-     * and a tool call's content is an arguments block whose longest line is a URL that does not
-     * wrap. Put four of these in a `display: grid` column at 390 px and the blocks came out
-     * 404 px wide, so the whole PAGE scrolled sideways: the reader drags the entire column to
-     * read one argument. With `min-w-0` the block takes its track and the arguments scroll
-     * inside their own region, which is what that region is for.
+     * `min-w-0` is load-bearing. A grid or flex item's `min-width` defaults to `auto`, which
+     * means "never narrower than my content", and a tool call's content is an arguments block
+     * whose longest line is a URL that does not wrap: in a narrow grid column the block would
+     * come out wider than the screen, and the whole page would scroll sideways. With `min-w-0`
+     * the block takes its track and the arguments scroll inside their own region, which is
+     * what that region is for.
      */
     $rootClasses = WireKit::resolveClasses('tool-call', 'base', implode(' ', [
         'min-w-0',

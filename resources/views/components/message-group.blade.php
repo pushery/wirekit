@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // The same shape `x-wirekit::message` takes: ['name' => …, 'avatar' => …, 'role' => …].
     // The group prints it ONCE and the messages inside stop repeating it — that is the

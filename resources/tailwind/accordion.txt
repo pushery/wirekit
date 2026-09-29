@@ -153,9 +153,6 @@ $wrapperClasses
 20"
 3
 3,
-349px
-37px
-37px.
 3;
 4,
 4.39a.75.75
@@ -251,8 +248,6 @@ Items
 Its
 JavaScript
 Laravel's
-MARKER,
-MIDDLE
 NAME
 NOT
 NOTE:
@@ -730,8 +725,8 @@ matches
 matching
 matters
 may
-measured
 methods
+middle
 min-content
 min-w-0
 min-w-0">{{
@@ -788,6 +783,7 @@ ordinary
 original
 other
 others
+otherwise
 out
 outer
 outline
@@ -916,6 +912,8 @@ server
 set
 shape,
 shipped
+short
+shorter.
 showing
 shows
 shrink-0
@@ -1066,6 +1064,7 @@ while
 who
 whole
 why
+wide
 widget:
 width
 with

@@ -66,8 +66,8 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   `top` and `max-height` are erased, so no observer fires and the placement stays gone.
  *
  *   This option watches the `style` attribute instead, which is the thing that is actually taken
- *   away. Measured on the same page: one mutation record, `attributeName: 'style'`, with `top`
- *   already empty when the callback runs — early enough to put it back.
+ *   away. The mutation record arrives with `top` already empty when the callback runs, early
+ *   enough to put it back.
  *
  *   It re-places ONLY when `top` is empty, and that condition is the termination proof rather
  *   than an optimization: a write from inside the callback re-enters the observer, so an
@@ -79,8 +79,8 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *
  *   A function instead of `true` is called with the panel before the placement is put back, for a
  *   caller that writes inline style of its own besides the placement. The same update removes that
- *   too: a tooltip copies its colors onto its teleported panel, and without the callback it came
- *   back placed but in the default colors. The emptiness test still ends it: a write from the
+ *   too: a tooltip copies its colors onto its teleported panel, and without the callback it would
+ *   come back placed but in the default colors. The emptiness test still ends it: a write from the
  *   callback re-enters the observer like any other, and every pass ends in a `run()` that writes
  *   `top`.
  * @returns {Promise<{x: number, y: number, placement: string, stop?: () => void}>}
@@ -91,9 +91,7 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  * Every overlay that places focus after awaiting `position()` needs this answer first. The panel
  * is visible and operable from the frame Alpine reveals it, and positioning resolves later, so a
  * reader who moves into the panel in between, with the keyboard, a screen reader or a script,
- * would otherwise have focus taken back to wherever the component meant to put it. Measured on
- * the dropdown: its second row had a box two frames after opening, and focus placed on that row
- * there was moved to the first row two milliseconds later, in ten runs out of ten.
+ * would otherwise have focus taken back to wherever the component meant to put it.
  *
  * Guarded rather than assumed: a unit harness does not have to provide `document`, and a panel
  * that is gone by the time a promise resolves is no reason to throw.
@@ -116,10 +114,9 @@ export function focusIsWithin(container) {
  *
  * Every panel teleports into the one overlay root, where it stacks against the modals and drawers
  * that live there too by z-index alone: a dropdown at `--z-wk-dropdown` and a tooltip at
- * `--z-wk-tooltip` sit BELOW a dialog at `--z-wk-modal`. For a panel of the page that is right. For
- * one opened from inside the dialog it is not: the dialog's own layer covered it, and a click on a
- * dropdown entry landed on that layer, which closes the dialog. Measured in Blink and WebKit for a
- * tooltip, a popover and a dropdown in an open modal.
+ * `--z-wk-tooltip` sit below a dialog at `--z-wk-modal`. For a panel of the page that is right. For
+ * one opened from inside the dialog it is not: the dialog's own layer would cover it, and a click on
+ * a dropdown entry would land on that layer, which closes the dialog.
  *
  * So the panel is lifted just above the highest positioned ancestor of its trigger that stands at
  * dialog level or above, a tooltip one step higher than the rest, so that inside a dialog the two
@@ -190,8 +187,8 @@ export async function position(reference, floating, {
     ];
 
     if (fitViewport || matchReferenceWidth || minReferenceWidth) {
-        // AFTER flip on purpose: `availableHeight` describes the placement that
-        // was actually chosen. Measured before the flip it would report the room
+        // After flip on purpose: `availableHeight` describes the placement that
+        // was actually chosen. Computed before the flip it would report the room
         // on the side floating-ui just rejected, and the cap would be wrong in
         // exactly the situation the cap exists for.
         middleware.push(size({
@@ -215,23 +212,17 @@ export async function position(reference, floating, {
     // first paint and the repositioned geometry never drift — important because the
     // `size`/`matchReferenceWidth` middleware mutate inline styles on every run.
     const run = async () => {
-        // A panel with no box yet is measured as 0x0, and every placement that
-        // subtracts the panel's own size then lands one panel-width off. This is
-        // not hypothetical: the data table's column menu opened at x 290..482 in
-        // a 375px viewport, because `bottom-end` computes
-        // `reference.left + reference.width - floating.width` and the width it
-        // subtracted was zero — 194 + 96 - 0 = 290, to the pixel.
+        // A panel with no box yet reads as 0x0, and every placement that
+        // subtracts the panel's own size then lands one panel-width off:
+        // `bottom-end` computes `reference.left + reference.width - floating.width`,
+        // and with a width of zero the panel starts at the trigger's right edge.
         //
-        // It reproduces in WebKit and not in Blink. Alpine's `$nextTick` fires
-        // after the DOM mutation, which is enough for Blink to have laid the
-        // panel out but not always for WebKit, so callers that anchor from
-        // `$nextTick` (the documented, correct thing to do) still measure
-        // nothing. Every engine can hit it; only one of them does so reliably,
-        // which is why it shipped.
-        //
-        // Waiting for a frame is the whole fix, and it costs nothing in the
-        // normal case: a panel that already has a box never enters the loop.
-        // The cap keeps a legitimately zero-width panel from waiting forever.
+        // Alpine's `$nextTick` fires after the DOM mutation, which is enough for
+        // Blink to have laid the panel out but not always for WebKit, so callers
+        // that anchor from `$nextTick` (the documented, correct thing to do) can
+        // still read nothing. Waiting up to three frames costs nothing in the
+        // normal case: a panel that already has a box never enters the loop, and
+        // the cap keeps a legitimately zero-width panel from waiting forever.
         for (let frame = 0; frame < 3 && floating.getBoundingClientRect().width === 0; frame++) {
             await new Promise((resolve) => requestAnimationFrame(resolve));
         }
@@ -310,15 +301,13 @@ export async function position(reference, floating, {
         });
     });
 
-    // The frame outlives the teardown unless it is canceled, and the deferral above is
-    // what created that gap. `autoUpdate`'s own stop detaches the observers and knows
+    // The frame outlives the teardown unless it is canceled, because the recompute above
+    // is deferred. `autoUpdate`'s own stop detaches the observers and knows
     // nothing about a frame we queued ourselves — so a panel closed between the observer
     // firing and the frame running gets one more `run()`: a `computePosition` against a
     // reference that may be detached, and a style write onto an element the caller has
     // already finished with.
-    //
-    // Returning `stopAutoUpdate` directly was correct while the recompute was synchronous.
-    // It stopped being correct in the same edit that made it deferred.
+    // So `stop` cancels the frame as well; `stopAutoUpdate` alone would leave it running.
     const stop = () => {
         stopAutoUpdate();
         stopRepair?.();

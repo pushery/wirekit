@@ -7,7 +7,6 @@
 "button".
 "default"
 "heroicon-m-inbox"
-"role=menuitem
 "the
 "this
 $accessibleLabel
@@ -247,7 +246,6 @@ $validated
 16px
 17px
 18
-1rem.
 2.5.3
 2.5.3,
 24
@@ -345,6 +343,7 @@ Building
 CONTAINS
 CONTRACT,
 CSP
+Carried
 Catching
 Check
 DECORATIVE,
@@ -366,7 +365,6 @@ Graceful
 HTTP
 Host-filled
 Htmlable,
-INCLUDES
 INCLUDING
 INSIDE
 IS
@@ -381,7 +379,6 @@ LTR
 Label
 Logger
 MOST
-Measured
 NO
 NOT
 Name
@@ -414,7 +411,6 @@ Reapply
 Render
 Rendered
 Renders
-Reported
 Resolve
 Resolved
 Retheming
@@ -428,7 +424,6 @@ Same
 Silent
 Size
 So
-Stated
 Strip
 Suppressing
 SvgNotFound
@@ -441,7 +436,6 @@ Tab
 Tailwind
 That
 The
-They
 This
 Throwing
 UNBOUND
@@ -525,10 +519,8 @@ __toString
 `role="group"`
 `role="group"`,
 `role="img"`.
-`role="menu"`
 `role="menu"`,
 `role="menu"`.
-`role="menuitem"`,
 `target="_blank"`
 `true`,
 `wk-fab-clearance`
@@ -540,6 +532,7 @@ about
 about,
 above
 above.
+above:
 absent,
 absolute
 absolutely
@@ -553,16 +546,17 @@ activate
 actual
 actually
 add
+adding
 affects
 affordance
 after
 against
+against,
 agree
-agree".
+agree,
 alias
 all
 all,
-all.
 all:
 allowed
 allowlist
@@ -617,7 +611,6 @@ as
 as.
 ask
 asked
-asserted:
 assistive
 assuming
 at
@@ -649,7 +642,6 @@ below.
 beneath
 beside
 between
-between;
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg-inverse)]
 binding.
@@ -672,7 +664,6 @@ branch
 branch's
 branch,
 break
-broke:
 bug
 build
 bundle
@@ -707,7 +698,6 @@ check
 checkbox,
 checks
 chevrons,
-children
 choice
 chose
 circles,
@@ -736,7 +726,6 @@ closing.
 col-start-1
 collapsed
 column.
-come
 comes
 comment
 comparison
@@ -760,7 +749,7 @@ conflict
 console
 console).
 constraint
-consuming
+container
 content
 content,
 context
@@ -778,7 +767,6 @@ covered
 cross
 cross-branch
 crossfade
-current
 cursor-pointer
 custom
 d="M12
@@ -812,7 +800,6 @@ define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
 degradation:
 degrades,
-deliberate
 deliberate.
 deliberate:
 dependency
@@ -838,12 +825,14 @@ disagree:
 distinction
 do
 document
+document's
 does
 does.
 doing
 down
 downstream
 drag
+drawn
 draws
 drift
 dropdown
@@ -872,7 +861,7 @@ empty
 empty-state
 end-full
 ended
-engines,
+engines.
 entirely
 entirely.
 entry
@@ -898,7 +887,6 @@ expressions,
 fab.action);
 fab.button
 fab;
-factory:
 fail
 failure
 fallback
@@ -913,7 +901,6 @@ falsy
 feature
 feedback
 feedback"
-file
 files
 fill="none"
 finds
@@ -928,7 +915,6 @@ fixed
 fixed`
 flag
 flags
-flat
 flex
 flex-col-reverse
 floats
@@ -956,6 +942,7 @@ forcing
 found.`
 framework
 from
+from.
 function
 function).
 function_exists('svg'))
@@ -968,12 +955,10 @@ generated
 genuinely
 get
 gets
-give.
 global
 glyph
 glyph.
 goes
-gone
 got
 group
 guarantees
@@ -990,7 +975,6 @@ half
 hand-rolled
 hand-written
 handler
-handling
 hanging
 happen.
 happens
@@ -1003,7 +987,6 @@ helper
 here
 here,
 here.
-hid
 hidden
 hidden-ness
 hiding
@@ -1053,12 +1036,12 @@ inline-end
 inline-end,
 inline-end.
 inline-grid
+inner
 inset
 inside
 installed
 installed.'
 instead
-instruction
 intact
 intent.
 inter-attribute
@@ -1067,7 +1050,6 @@ interactive
 intercept
 into
 invent
-invitation
 is
 is,
 isn't
@@ -1087,9 +1069,7 @@ itself.
 justify-center
 justify-center',
 keeping
-keeping,
 keeps
-kept
 key.
 keyboard
 keys
@@ -1116,7 +1096,6 @@ leave
 leave,
 leaves
 leaving
-led
 left
 left,
 left-to-right.
@@ -1134,10 +1113,10 @@ literal,
 live
 lives
 loads.
+lock
 log
 logger()->warning(
 long
-looks
 lose
 loses
 lost
@@ -1145,6 +1124,7 @@ loud
 loudly,
 macOS
 made
+make
 make.
 makes
 map.
@@ -1163,6 +1143,7 @@ meant
 menu
 menu,
 merge
+message
 method
 minimum,
 mirrors
@@ -1207,6 +1188,7 @@ nobody
 non-empty
 non-focusable
 non-null
+non-zero.
 none
 none,
 noopener
@@ -1240,7 +1222,6 @@ of
 off
 off,
 offset
-old
 omit
 on
 on.
@@ -1249,7 +1230,6 @@ one
 one,
 one-time
 one.
-one:
 one;
 only
 only:
@@ -1257,6 +1237,7 @@ onto
 opacity-0
 open
 open.
+open:
 opener,
 opening
 opens
@@ -1329,8 +1310,6 @@ pressed
 primitive
 problem
 prod).
-project,
-promise
 promised
 promises
 prop
@@ -1351,23 +1330,19 @@ raw
 re-inject
 reach
 reachable
-reached
 reaches
 read
 read,
 read.
 reader
 reader.
-reading
 reads
 real
 reapply
 reason
 reason:
-reasoning
 records
 recover
-refutes
 registered
 registry
 reinvented.
@@ -1383,11 +1358,9 @@ rendering
 renders
 replace
 replaced
-replaced,
 replaces
 reported
 reports
-reproduced
 request
 require
 required.
@@ -1410,8 +1383,6 @@ role.
 role="group"
 role="img"
 role="img".
-role=menu,
-roles
 roll
 root
 root;
@@ -1427,17 +1398,16 @@ rung
 safe-area
 said
 same
-sat
 say
 says
 screen
 screen-reader
 screen-reader-skipping
 screen.
+scroll
 scroll-to-top,
 scroll-to-top.
 scrollbar
-scrollbar,
 scrollbar.
 scrollbars
 scrolling
@@ -1457,14 +1427,13 @@ shape
 shape:
 shapes.
 shared
-shipped
 shipped;
 shipping
 ships
 should
 show
-showed
 shown
+shows
 side.
 sidebar.item
 sighted
@@ -1501,7 +1470,6 @@ stack.
 standalone
 stands
 start
-started
 started.
 starts
 state
@@ -1534,10 +1502,9 @@ stroke-linejoin="round"
 stroke-width="2"
 stroke="currentColor"
 style="display:inline-block;"></span>
-subtree,
+subtree
 such
 suppresses
-surface
 svg($resolved,
 svg()
 svg(),
@@ -1594,9 +1561,7 @@ thing
 third
 this
 this"
-this.
 those
-though
 three
 through
 throw
@@ -1608,6 +1573,7 @@ to
 toHtml().
 token
 token.
+too:
 took
 tooltip
 top.
@@ -1627,16 +1593,15 @@ trim(strip_tags((string)
 true);
 truthy,
 try
-turned
 turns
 twice.
 two
 type="button"
 unaffected
 unchanged;
-unconditionally,
+unconditional
+unconditionally
 under
-undo
 unknown
 unknown-alias
 unknown.
@@ -1647,7 +1612,6 @@ up
 up.
 use
 use:
-used
 useful
 useful,
 user
@@ -1661,7 +1625,6 @@ validation
 value
 value,
 value.
-verbatim
 via
 view's
 viewBox="0
@@ -1690,7 +1653,6 @@ way
 ways
 we
 well
-were
 what
 whatever
 when
@@ -1717,7 +1679,6 @@ without
 wk-fab-action-labeled'])
 words
 worse
-worth
 would
 wrapper
 wrapping

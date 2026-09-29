@@ -222,7 +222,7 @@ export function resolveThemeColors(style, element = null) {
     //     chrome, which would render a chart polygon as a black blob. Themes that DO want neutral
     //     charts can use a chroma > 0 oklch (e.g. `oklch(50% 0.01 250)`) or a hex/rgb declaration.
     //   * A token under 3:1 against the background. The default warning token is shared with every
-    //     warning surface in the library and measured 2.13:1 on white; the substitute keeps the
+    //     warning surface in the library and falls under 3:1 on white; the substitute keeps the
     //     series legible without changing the token for everything else that reads it.
     //
     // The substitutes are 600 shades in light mode and 200 shades in dark mode, and each clears 3:1
@@ -236,10 +236,9 @@ export function resolveThemeColors(style, element = null) {
     };
 
     const colors = {
-        // Chart-data substitutes: Tailwind 600 shades in light mode, 200 shades in dark mode. The
-        // light ones were 300 shades, a soft band that read as polished and measured 1.4 to 1.9:1 on
-        // white, so a default install drew its first series at 1.67:1. A 600 shade is the lightest
-        // step of each hue that clears 3:1 there; the dark 200 shades clear it many times over.
+        // Chart-data substitutes: Tailwind 600 shades in light mode, 200 shades in dark mode. A 600
+        // shade is the lightest step of each hue that clears 3:1 on white; the dark 200 shades clear
+        // it many times over.
         //
         // Sky-blue replaces flat blue for a friendlier accent default;
         // rose replaces red for a less-alarming negative signal that still
@@ -328,28 +327,27 @@ export function withOpacity(color, opacity) {
  * SVG `fill="…"` attributes / Canvas `fillStyle`. Neither path accepts
  * `var(--name)` — SVG attribute values aren't parsed for CSS vars, and
  * Canvas ignores them silently. The adapter resolves the OUTER palette
- * via `resolveThemeColors()`, but per-dataset / per-range / per-annotation
- * colors stayed unresolved — `<x-wirekit::sparkline>` passed
- * `color: 'var(--color-wk-success)'` into a series object, ApexCharts
- * received the literal string, and the chart fell back to its default
- * blue first-series color. Same bug class affected heatmap `colorScale.
- * ranges[].color`, annotation `fillColor`, candlestick stroke colors,
- * timeline `fillColor`.
+ * via `resolveThemeColors()`, and this walk resolves the per-dataset,
+ * per-range and per-annotation colors: without it,
+ * `color: 'var(--color-wk-success)'` in a series object would reach
+ * ApexCharts as the literal string, and the chart would fall back to its
+ * default blue first-series color. The same holds for heatmap
+ * `colorScale.ranges[].color`, annotation `fillColor`, candlestick stroke
+ * colors and timeline `fillColor`.
  *
- * One adapter-side walk fixes the entire bug class — developers can now
- * write `'color' => 'var(--color-wk-success)'` in any nested option and
- * the color resolves correctly + auto-switches with `.dark` because
- * `resolveThemeColors()`'s same probe re-runs on every paint cycle.
+ * With the walk, a developer can write `'color' => 'var(--color-wk-success)'`
+ * in any nested option, and the color resolves and follows `.dark`, because
+ * `resolveThemeColors()`'s probe re-runs on every paint cycle.
  *
  * @param {*} node — anything; primitives + arrays + objects walk fine.
  * @param {CSSStyleDeclaration} style — getComputedStyle of an element inside the live cascade
- *   (typically the chart mount element). READ, since 2026-09-08: it is the cheapest source for
- *   a token's value, and it was accepted and ignored while every lookup built a DOM probe.
+ *   (typically the chart mount element). Read first: it is the cheapest source for a token's
+ *   value.
  * @param {Map<string, string>} [cache] — one resolution per variable per walk. A themed config
  *   repeats the same handful of tokens across series, annotations, gradient stops and the
  *   heatmap scale, and nothing between two occurrences in one walk can change the answer.
  * @param {{ctx?: CanvasRenderingContext2D}} [scratch] — one 1x1 canvas for the whole walk. It
- *   is cheap to draw on and not cheap to create, and there used to be one per occurrence.
+ *   is cheap to draw on and not cheap to create.
  * @returns {*} — the input shape with every `var(--…)` substring resolved.
  */
 export function resolveCssVarsDeep(node, style, cache = new Map(), scratch = {}) {
@@ -363,8 +361,8 @@ export function resolveCssVarsDeep(node, style, cache = new Map(), scratch = {})
         return node.replace(/var\((--[a-zA-Z0-9-]+)\)/g, (_match, varName) => {
             // Resolved ONCE per variable per walk. A themed ApexCharts config repeats the
             // same handful of tokens across series, annotations, gradient stops and the
-            // heatmap color scale, and every occurrence used to build a DOM probe, force a
-            // layout read through getComputedStyle, and allocate a fresh Canvas 2D context.
+            // heatmap color scale, and resolving every occurrence would build a DOM probe, force
+            // a layout read through getComputedStyle, and allocate a fresh Canvas 2D context.
             // The answer is identical every time — nothing between two occurrences in one
             // walk can change it.
             if (cache.has(varName)) return cache.get(varName);

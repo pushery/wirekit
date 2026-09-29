@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'orientation' => 'horizontal',
     'sortable' => false,
@@ -23,7 +22,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('kanban', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false);
     $crossColumn = BooleanProp::from($crossColumn, false);
@@ -44,13 +43,11 @@
         // `contain-paint` is what keeps the board's scrollable width off the PAGE.
         //
         // A horizontal scroller clips its own painting, but its scrollable overflow still
-        // counted toward the document's, so on a phone the whole page could be panned
-        // sideways past the board. Measured on a 393px viewport: the kanban blueprint's
-        // document was 926px wide, 533px of it off-screen, and the reader panned the page
-        // instead of the columns. Six candidate fixes were tried live in the browser
-        // (max-width, width, flex-none, overflow-x:hidden on the card body and on body);
-        // `contain: paint` is the only one that changed anything, and it took the document
-        // straight back to 393.
+        // counts toward the document's, so on a phone the whole page could be panned
+        // sideways past the board, the reader panning the page instead of the columns.
+        // `contain: paint` keeps the overflow inside the board, where a width limit, a
+        // column that neither grows nor shrinks and `overflow-x: hidden` on an ancestor do
+        // not.
         //
         // Safe below the support floor — Chrome 52 / Safari 15.4 / Firefox 69, well under
         // the Tailwind v4 baseline this library pins to — and visually a no-op, because a

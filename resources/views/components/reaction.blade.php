@@ -1,10 +1,9 @@
 {{-- optimistic-ui: supported
-     The case the plan called the textbook one, and it was blocked until the
-     accessible name stopped being built on the server: `trans_choice` there
-     names the count the SERVER saw, so an optimistic flip would show six and
-     announce five, and the rollback would restore a number the reader was never
-     told about. The forms and the locale travel now, and Intl.PluralRules
-     chooses.
+     The textbook case, and it needs the accessible name built in the browser:
+     `trans_choice` on the server names the count the SERVER saw, so an
+     optimistic flip would show six and announce five, and the rollback would
+     restore a number the reader was never told about. So the plural forms and
+     the locale travel in, and Intl.PluralRules chooses.
 
      Only `active` is state. The count is derived from it, which is what makes
      the rollback correct without anything having to remember to undo two
@@ -38,7 +37,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('reaction', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false);
 

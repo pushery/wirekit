@@ -81,7 +81,7 @@
         default => 'border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]',
     };
     $controlClasses = WireKit::resolveClasses('theme-controller', 'control', implode(' ', [
-        'wk-touch-target inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'wk-touch-target inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)]',
         $controlSize,
         $surfaceChrome,
     ]), $scope);
@@ -108,14 +108,23 @@
     $classes = WireKit::resolveClasses('theme-controller', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
+
+    // While the page fixes the mode (`data-wk-theme-fixed` on the root element), the control
+    // stays focusable and says why it changes nothing: `aria-disabled` rather than `disabled`,
+    // which would take it out of the tab order and the reason with it. The sentence is the
+    // page's `data-wk-theme-fixed-reason`, or this one.
+    $fixedReasonId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-theme-fixed-reason-');
+    $fixedReasonRef = \Pushery\WireKit\Support\AlpinePayload::string($fixedReasonId);
 @endphp
 
 <div
-    x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }} })"
+    x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }}, fixedReason: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::This page sets the mode.')) }} })"
     data-wk-theme-controller
     data-variant="{{ $variant }}"
     {{ $attributes->class([$classes]) }}
 >
+    <span id="{{ $fixedReasonId }}" class="sr-only" x-text="fixedMessage"></span>
+
     @if($variant === 'button')
         {{-- aria-pressed, not just an icon: "the page is dark" is a state, and a
              reader who cannot see the icon still needs to know which way the
@@ -124,6 +133,8 @@
             type="button"
             x-on:click="toggle()"
             :aria-pressed="isDark ? 'true' : 'false'"
+            :aria-disabled="fixed ? 'true' : null"
+            :aria-describedby="fixed ? {{ $fixedReasonRef }} : null"
             aria-label="{{ $label }}"
             data-wk-theme-toggle
             class="{{ $controlClasses }}"
@@ -161,8 +172,11 @@
             <input
                 type="checkbox"
                 role="switch"
+                x-on:click="refuseWhileFixed($event)"
                 x-on:change="toggle()"
                 :checked="isDark"
+                :aria-disabled="fixed ? 'true' : null"
+                :aria-describedby="fixed ? {{ $fixedReasonRef }} : null"
                 data-wk-theme-toggle
                 class="peer sr-only"
             />
@@ -174,7 +188,7 @@
                  checkbox. --}}
             <span
                 aria-hidden="true"
-                class="wk-theme-switch-track relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-theme-switch-track relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
             >
                 <span class="wk-theme-switch-knob absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
             </span>
@@ -190,16 +204,20 @@
              exists beside it rather than instead of it. --}}
         <label class="inline-flex items-center gap-[var(--gap-wk-sm)]">
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
+            {{-- Bound one way, to the mode on, so the box shows the page's mode while it fixes
+                 one; `choose()` puts that back when the reader picks another. --}}
             <select
-                x-model="theme"
-                x-on:change="select($event.target.value)"
+                x-bind:value="mode"
+                x-on:change="choose($event.target)"
+                :aria-disabled="fixed ? 'true' : null"
+                :aria-describedby="fixed ? {{ $fixedReasonRef }} : null"
                 data-wk-theme-toggle
                 {{-- A <select> is a form control under WCAG 1.4.11: its border must
                      clear 3:1 against the fill. --color-wk-border is the DECORATIVE
                      token (~1.29:1) — the canonical select.blade.php reaches for
                      --color-wk-border-strong (+ -strong-hover) instead, and so must
                      this one. --}}
-                class="wk-field cursor-pointer rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)] hover:border-[var(--color-wk-border-strong-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-field cursor-pointer rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)] hover:border-[var(--color-wk-border-strong-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)]"
             >
                 {{-- __() so a translated app can localize the only visible copy of
                      the select variant (the keys ship in lang/en.json), and the
@@ -242,9 +260,9 @@
                      the mode text inside is a VALUE, the way a `<select>` shows its current
                      option, and the thing a reader needs on arrival is what the control is
                      for. --}}
-                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle :aria-label="$label">
+                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle :aria-label="$label" x-bind:aria-describedby="fixed ? {{ $fixedReasonRef }} : null">
                     @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
-                        <span x-show="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }}" x-cloak class="inline-flex items-center gap-[var(--gap-wk-sm)]">
+                        <span x-show="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }}" x-cloak class="inline-flex items-center gap-[var(--gap-wk-sm)]">
                             <x-wirekit::icon :name="$modeIcon" class="h-4 w-4" />
                             <span @class(['sr-only' => $hideLabel])>{{ $optionLabels[$modeValue] ?? $modeValue }}</span>
                         </span>
@@ -289,8 +307,9 @@
                     role="menuitemradio"
                     :icon="$modeIcon"
                     x-on:click="select({{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }})"
-                    x-bind:aria-checked="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'true' : 'false'"
-                    x-bind:class="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'font-medium text-[color:var(--color-wk-accent-text)]' : ''"
+                    x-bind:aria-checked="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'true' : 'false'"
+                    x-bind:aria-disabled="fixed ? 'true' : null"
+                    x-bind:class="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'font-medium text-[color:var(--color-wk-accent-text)]' : ''"
                 >{{ $optionLabels[$modeValue] ?? $modeValue }}</x-wirekit::dropdown.item>
             @endforeach
         </x-wirekit::dropdown>

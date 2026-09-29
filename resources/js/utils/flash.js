@@ -1,11 +1,9 @@
 /**
  * `x-wk-flash`: a row lights up in a tone when it changes, driven by the server.
  *
- * Reported from a till: every change to a line in the basket should show on that line for a
- * moment, green for an addition, amber for one fewer, red for a removal, and a removed line should
- * leave only after its red. The application built it from two identical keyframes and an attribute
- * it flipped between them, because a CSS animation restarts only when its NAME changes: without
- * the flip, a line changed twice in a row lit up once.
+ * The use it is built for is a till: every change to a line in the basket shows on that line for a
+ * moment, green for an addition, amber for one fewer, red for a removal, and a removed line
+ * leaves only after its red.
  *
  * THE SERVER WRITES THREE ATTRIBUTES AND NOTHING ELSE:
  *

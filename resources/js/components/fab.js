@@ -75,25 +75,21 @@ export default function wirekitFab() {
 
             // Focus the first action once the browser will actually accept it.
             //
-            // Neither $nextTick nor a single frame is reliable here, and the
-            // reason is worth writing down. focus() on an element whose ancestor
-            // is still display:none does nothing at all — silently, no error. The
-            // panel becomes visible when Alpine's x-show effect flushes, and that
-            // is on Alpine's schedule, not ours: measured, the focus call fails at
-            // the microtask, and whether it succeeds one frame later depends on
-            // what else happened to trigger a flush first. A fix that wins that
-            // race most of the time is not a fix — it is a component that
-            // sometimes traps keyboard users on the trigger.
+            // Neither $nextTick nor a single frame is reliable here. focus() on an
+            // element whose ancestor is still display:none does nothing at all,
+            // silently. The panel becomes visible when Alpine's x-show effect
+            // flushes, and that is on Alpine's schedule, not ours: a focus call at
+            // the microtask fails, and one a frame later succeeds only if something
+            // else has triggered a flush first. Winning that race most of the time
+            // would still leave keyboard users stranded on the trigger sometimes.
             //
             // So ask the only question that actually matters — does this element
             // have a layout box yet — and wait until it does.
             //
-            // Driven by requestAnimationFrame rather than $nextTick, deliberately.
-            // Measured: on the click path the $nextTick callback did not run at
-            // all, while the panel became visible at ~16ms — the menu opened and
-            // focus simply never moved. rAF answers to the browser's frame clock
-            // rather than to Alpine's flush schedule, so it cannot be skipped by
-            // one.
+            // Driven by requestAnimationFrame rather than $nextTick, deliberately:
+            // on the click path a $nextTick callback can be skipped altogether.
+            // rAF answers to the browser's frame clock rather than to Alpine's
+            // flush schedule, so it cannot be skipped by one.
             this._focusFirstAction();
         },
 
@@ -145,17 +141,13 @@ export default function wirekitFab() {
         },
 
         _actions() {
-            // $root, NOT $el. This is the whole bug that made the menu unreachable
-            // by keyboard, and it is worth being precise about: Alpine's $el means
-            // "the element the current expression is running on", not "the
-            // component root". The trigger's own x-on:click is what starts this
-            // chain, so inside it $el is the BUTTON — and searching a button for
-            // the menu's actions finds nothing, every time, silently.
-            //
-            // Measured, not deduced: $el.tagName came back "BUTTON" while the same
-            // query against the document found all three actions. It also explains
-            // why calling show() from outside the component appeared to work —
-            // there is no expression element there, so $el falls back to the root.
+            // $root, not $el. Alpine's $el means "the element the current
+            // expression is running on", not "the component root". The trigger's
+            // own x-on:click is what starts this chain, so inside it $el is the
+            // button, and searching a button for the menu's actions finds nothing,
+            // silently, which would leave the menu unreachable by keyboard. Called
+            // from outside the component there is no expression element, and $el
+            // falls back to the root; $root is right on both paths.
             return Array.from(this.$root.querySelectorAll('[data-wk-fab-action]'));
         },
 

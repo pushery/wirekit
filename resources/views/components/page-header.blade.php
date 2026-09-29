@@ -5,10 +5,9 @@
     // The page title. The default slot says the same thing and wins when both are given,
     // because a slot can carry markup a prop cannot — a badge beside the name, a link.
     'title' => null,
-    // The heading level. ONE by default, which is the whole reason this component exists:
-    // the thirteen screens it was reported from used an h2 in a card, an h1 at `lg` and an
-    // h1 at `2xl`, and the cap heights measured 12, 14 and 17px on pages that are siblings.
-    // A screen has one title, and that title is the document's heading.
+    // The heading level. One by default, which is the whole reason this component exists:
+    // sibling screens that each build their own title end up with different levels and
+    // sizes. A screen has one title, and that title is the document's heading.
     'level' => 1,
     // Optional sentence under the title. A `description` SLOT takes the same place when
     // the text needs markup.
@@ -37,9 +36,8 @@
     // Put the actions on their own line below this width, whatever they are wide.
     //
     // Without it the break depends on the LABEL: the title column asks for 16rem and the row
-    // wraps when 16rem plus the gap plus the actions no longer fit. Reported from a 375px phone
-    // where the sum came to roughly 351px against 343px of content column — the actions dropped,
-    // with about 8px to spare. A shorter label, a narrower face or a `sm` button stays beside the
+    // wraps when 16rem plus the gap plus the actions no longer fit, which on a phone comes down to
+    // a few pixels either way. A shorter label, a narrower face or a `sm` button stays beside the
     // title, and then a two-line description lives in 16rem.
     //
     // The width is the header's own, not the window's. A page header lives inside a content
@@ -164,8 +162,8 @@
     $hasMeta = isset($meta) && $meta->hasActualContent();
 
     $actionsClasses = WireKit::resolveClasses('page-header', 'actions', implode(' ', [
-        // Wraps inside itself too. Two buttons beside a title on a phone is the case the
-        // report measured, and a row that cannot wrap puts the second one off-screen.
+        // Wraps inside itself too: with two buttons beside a title on a phone, a row that
+        // cannot wrap puts the second one off-screen.
         'flex flex-wrap items-center gap-[var(--gap-wk-sm)]',
     ]), $scope);
 @endphp

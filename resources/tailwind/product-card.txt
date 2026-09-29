@@ -20,7 +20,6 @@
 "Build
 "Copy
 "Could
-"Edit
 "Failed"
 "Hoverable"
 "Last
@@ -858,6 +857,7 @@ $wrapperClasses
 (int)
 (is_string($key)
 (it
+(its
 (less).
 (letterbox,
 (logical
@@ -946,7 +946,6 @@ $wrapperClasses
 1
 1)
 1.18
-1.3
 1.4.13
 1.4.13.
 1.54-.5
@@ -957,8 +956,6 @@ $wrapperClasses
 100),
 100vw".
 11.54L12
-1108
-1114
 12%,
 12.28
 12a8
@@ -966,12 +963,10 @@ $wrapperClasses
 12l10
 14.14
 14.76
-147px
 15.36
 16.5
 1600w"
 17.77l-6.18
-18.5
 19.58
 1;
 1px
@@ -980,7 +975,6 @@ $wrapperClasses
 2-2V5a2
 2.09C13.09
 2.1.1).
-2.31.0
 2.4.3
 2.4.3,
 2.5.3).
@@ -988,7 +982,6 @@ $wrapperClasses
 20
 20.5%)
 20h2V10H2v10zm20-9a2
-20px
 21.35l-1.45-1.32C5.4
 21.35z',
 22
@@ -1017,11 +1010,9 @@ $wrapperClasses
 3.81
 30%,
 300),
-309px
 32
-320px.
+320px
 32px
-351px:
 360px
 390px
 393px
@@ -1039,12 +1030,10 @@ $wrapperClasses
 4.5
 4.78).
 4.87
-40px
 44
 44px
 44px,
 44x44
-4px
 5
 5),
 5,
@@ -1052,7 +1041,6 @@ $wrapperClasses
 5.42
 500s
 50vw,
-533
 6),
 6.26L22
 6.86-8.55
@@ -1073,7 +1061,6 @@ $wrapperClasses
 9.27l6.91-1.01L12
 91%
 98/6/EC,
-9rem
 9v10a2
 :
 :alt="$imageAlt
@@ -1146,7 +1133,6 @@ $wrapperClasses
 <span
 <span>
 <span>,
-<span>.
 <svg
 <svg>,
 <svg…>)
@@ -1268,7 +1254,6 @@ AND
 ANY
 API:
 APPENDED
-ARE
 ARIA
 AT
 Accept
@@ -1327,7 +1312,7 @@ Built
 By
 Bypasses
 CALLER's
-CONTENT
+CONTENT,
 CONTROL.
 CSP
 CSS
@@ -1335,7 +1320,6 @@ CSS-pixel
 CSS.
 CTA
 CTA.
-CUT
 Catching
 Change
 Check
@@ -1374,13 +1358,10 @@ Empty
 English
 Escape
 Every
-Exactly
 Examples
 Extra
 FILL
 FILTER_VALIDATE_BOOLEAN);
-FIXED
-FLOOR
 FOUR
 Fallback
 Fast
@@ -1402,7 +1383,6 @@ Graceful
 HAS
 HAVE
 HORIZONTAL
-HOVER,
 HOVERABLE:
 HTML
 HTML,
@@ -1440,13 +1420,12 @@ Keeping
 Kept
 Keyboard-
 L)"
-L=0.972
-L=0.985
 LEADING
 LINE
 LINK
 Label
 Laravel
+Left
 Let
 Letting
 Lighthouse.
@@ -1463,7 +1442,6 @@ MOST
 MSRP).
 Make
 Marker
-Measured
 Mirrors
 Mixing
 Multi-line
@@ -1480,7 +1458,6 @@ Native
 Neither
 Neutral
 No
-Nonsense,
 Normalize
 Normalized
 Not
@@ -1488,8 +1465,6 @@ Nothing
 Null
 Null,
 NumberFormatter
-OFF
-ON
 ONE
 ONLY
 OPENING
@@ -1548,7 +1523,6 @@ Render
 Rendered
 Renders
 Replay"
-Reported
 Required
 Resolve
 Responsive
@@ -1557,7 +1531,6 @@ RuntimeException
 SAME
 SCOPES
 SCORE,
-SCREEN
 SERVER
 SHAPE
 SIBLING.
@@ -1567,11 +1540,8 @@ SOFT
 SOLID
 SOLID:
 SOLUTION
-SQUARE
-SQUARE,
 SR
 STATIC
-STAYS
 SVG
 SVG:
 SVGs
@@ -1588,6 +1558,7 @@ Show
 Silent
 Silent:
 Single-line
+Six
 Size
 Sizes
 So
@@ -1614,7 +1585,6 @@ THE
 THEM
 THIRD
 THIS
-TOUCH
 TRANSPARENT
 TWICE
 TWO
@@ -1626,7 +1596,6 @@ Takes
 Teleporting
 That
 The
-Their
 There
 This
 Throwing
@@ -1690,7 +1659,6 @@ WireKit::warnUnknownProps('tooltip',
 WireKit::warnUnknownProps()
 With
 Without
-Worse,
 Wrapping
 Written
 [
@@ -1831,7 +1799,6 @@ __toString
 `aria-describedby`:
 `aria-disabled="true"`
 `aria-hidden="true"`
-`aria-hidden`
 `aria-label`
 `aria-labelledby`
 `as="div
@@ -1966,7 +1933,7 @@ __toString
 `text-decoration`
 `this.$refs.tooltip`
 `this`,
-`toggleBooleanStateDirective`,
+`toggleBooleanStateDirective`
 `true`
 `true`,
 `value`
@@ -1986,7 +1953,6 @@ __toString
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
-`wrap-label`
 `wrap="false"`
 `wrapLabel`
 `wrapLabel`,
@@ -2010,6 +1976,7 @@ above)
 above,
 above-the-fold
 above.
+above:
 absence
 absent
 absent,
@@ -2040,7 +2007,6 @@ actually
 add
 add-to-cart
 added
-added.
 adding
 adds
 adopting
@@ -2052,7 +2018,6 @@ again.
 against
 agree
 agreed
-agreeing,
 alert;
 alias
 alias,
@@ -2061,6 +2026,7 @@ aligned
 all
 all,
 all.
+all;
 allow
 allow-list.
 allowed
@@ -2072,14 +2038,12 @@ alone,
 alone.
 alone:
 along
-along.
 alongside
 already
 also
 alt=""
 alt="{{
 alt="…"
-alternative
 always
 always-filled
 always;
@@ -2118,13 +2082,11 @@ apart.
 app
 app()->getLocale();
 app(IconResolver::class)->resolve($name);
-app.css
 appear
 appearance
 appears
 appended
 application
-application's
 applied
 applies
 applying
@@ -2138,7 +2100,7 @@ arguments
 aria-atomic="true"
 aria-busy="true"
 aria-checked
-aria-checked="true"
+aria-checked="true":
 aria-checked="{{
 aria-describedby
 aria-describedby)
@@ -2156,6 +2118,7 @@ aria-hidden="true">
 aria-hidden="true">*</span>@endif
 aria-invalid="true"
 aria-label
+aria-label:
 aria-label="{{
 aria-labelledby
 aria-labelledby.';
@@ -2186,9 +2149,9 @@ asking
 asks
 aspect-ratio
 assembled
-asserted:
 assertion
 assistive
+assistive,
 association
 assumed
 assumed.
@@ -2202,7 +2165,6 @@ attribute
 attribute's
 attribute,
 attribute.
-attributed
 attributes
 attributes,
 audit
@@ -2246,8 +2208,6 @@ bakes
 balanced
 bar
 bar's
-bar,
-bar.
 bare
 barely
 base
@@ -2257,14 +2217,12 @@ baseline.
 be
 be.
 beat
-became
 because
 become
 becomes
 becoming
 been
 before
-before,
 before;
 behalf,
 behaves
@@ -2352,12 +2310,10 @@ bordered-only
 both
 both,
 bottom
-bottom.
 bound
 boundaries
 box
 box,
-boxes
 bracket
 branch
 branch's
@@ -2372,14 +2328,13 @@ breakpoint,
 breakpoint:
 breakpoints
 breathless
-brighter
+brighter,
 browser
 browser's
 browser.
 bubble's
 bubbles
 bug
-bug.
 build
 building
 built
@@ -2408,7 +2363,6 @@ caller's
 caller-supplied
 callout/alert).
 calls.
-came
 can
 cancel
 cancels
@@ -2422,7 +2376,6 @@ caption
 card
 card's
 card,
-card.
 cards
 carried
 carries
@@ -2471,7 +2424,6 @@ chosen"
 chosen.
 chrome
 claim
-claimed
 claims.
 clamp,
 clamped
@@ -2527,6 +2479,7 @@ clip-path,
 clipboard"
 clipped
 clipping
+clipping,
 clone
 close
 close-icons,
@@ -2608,10 +2561,8 @@ console,
 constraint,
 construction.
 consulted.
-consuming
 contain
 container
-container,
 container-relative
 containers.
 contains
@@ -2648,7 +2599,6 @@ corrected
 correctly,
 correctly.
 cosmetic.
-cost.
 costs
 could
 count
@@ -2671,6 +2621,7 @@ cursor-pointer"
 custom
 custom.
 customarily
+cut
 cx="12"
 cy="12"
 d="M4
@@ -2708,6 +2659,7 @@ de-emphasis
 dead.
 debug
 decided
+decided,
 decimal
 decision
 decision,
@@ -2719,6 +2671,7 @@ declares
 declaring
 decoding="async"
 decoration
+decoration:
 decorative
 decorative"
 decorative,
@@ -2778,6 +2731,7 @@ dialog
 did
 did-you-mean,
 difference
+difference.
 different
 differs
 dim
@@ -2820,6 +2774,7 @@ document
 documented
 documents
 does
+does),
 does.
 does;
 doing.
@@ -2862,6 +2817,7 @@ ease-out
 edge
 edge.
 edges,
+edges.
 editing
 effect
 either
@@ -2888,7 +2844,6 @@ empty
 empty,
 empty-state
 empty:
-emulation.
 enabled
 end
 end-[var(--padding-wk-x-sm)]
@@ -2941,7 +2896,6 @@ exists
 exists,
 exists.
 expandos.
-expensive:
 explanation
 explicit
 explicitly
@@ -2960,8 +2914,7 @@ facet
 factory
 factory's
 factory,
-factory:
-fade="…">`
+fade="…">`,
 fading
 fail
 failed
@@ -3035,7 +2988,6 @@ five-star
 five.
 fix
 fix.
-fix:
 fixed
 fixed-height
 fixed.
@@ -3106,9 +3058,7 @@ formatted
 formatting
 formatting.
 forms.
-found
 found,
-found.
 found.`
 four
 fractional
@@ -3168,13 +3118,10 @@ glyph"
 glyph.
 go
 goes
-good
 goods
-got
 grammar;
 gray
 grid
-grounds
 group
 group-hover:opacity-[var(--opacity-wk-hover)]
 group.
@@ -3228,7 +3175,6 @@ height
 height,
 height.
 height="{{
-held
 helper
 here
 here,
@@ -3415,7 +3361,7 @@ invented,
 inverted
 invisible
 invisible.
-invited
+invite
 invocation`
 is
 is"
@@ -3461,7 +3407,6 @@ keyboard-focusable
 kg,
 kill
 kit
-kit's
 know
 knowing
 knows
@@ -3495,10 +3440,10 @@ leadingIcon,
 least.
 leave
 leaves
+leaves.
 leaving
 left
 left-to-right;
-left.
 legally
 legitimate
 legitimately
@@ -3531,7 +3476,6 @@ link.
 linked
 links
 list
-list,
 listed,
 listener
 listens
@@ -3572,7 +3516,6 @@ loud
 loud,
 loudly
 loudly,
-low
 lower
 lowering
 m,
@@ -3591,7 +3534,6 @@ map.
 maps
 margin
 margins
-mark
 marked
 marked.
 marker
@@ -3628,7 +3570,6 @@ meaningful
 means
 meant
 measure
-measured
 measures
 measures.
 mechanism
@@ -3662,7 +3603,6 @@ miss.
 missing
 missing,
 missing-accessible-name
-missing.
 missing:
 ml
 modal
@@ -3683,7 +3623,6 @@ morph
 most
 move
 move.
-moved
 moves
 moving
 ms-0.5"
@@ -3865,8 +3804,8 @@ output
 outrank
 outranks
 outside
+outside;
 over
-over.
 overflow
 overflow-hidden
 overflow-x-auto
@@ -3955,9 +3894,9 @@ permanent
 permanently,
 person
 personalization
+phone
 phone,
 phone.
-phone:
 phones
 photo
 phrase
@@ -4011,7 +3950,6 @@ pre-morph
 precedence:
 precisely
 precision
-predicted
 preference.
 prefers
 prefix
@@ -4051,7 +3989,6 @@ product;
 products
 prohibits
 project
-project,
 promise.
 promises
 promoting
@@ -4077,7 +4014,6 @@ purpose:
 pushed
 put
 puts
-px
 px-2'
 px-2',
 px-2.5'
@@ -4119,7 +4055,6 @@ ratio="1/1"
 rationale
 raw
 re-consent
-re-did
 re-initializes
 re-inject
 re-renders.
@@ -4160,19 +4095,18 @@ records
 rectangle.
 red
 red:
+redone
 reduced
+reduction.
 redundant
 ref
-refactor
 reference
 refinement,
 refinement.
 refreshes
 refuses.
-refutes
 regardless
 regardless"
-regardless,
 regenerated
 region
 region,
@@ -4208,7 +4142,6 @@ repeating
 replaced
 replacement
 replaces
-replaces,
 replay-button
 repo's
 report
@@ -4216,9 +4149,9 @@ reported
 reports
 reports,
 repository.
-reproduced
 request
 request,
+request.
 requested
 require
 required
@@ -4266,7 +4199,6 @@ role="radio"
 role="radiogroup"
 role="tooltip"
 roleless
-roles"
 roll
 rollback
 rollback.
@@ -4307,7 +4239,6 @@ sale
 sale,
 same
 sane
-sat
 save"
 save.
 saving
@@ -4335,7 +4266,6 @@ screen,
 screen-reader-operable;
 screen-reader-skipping
 scroll
-scrolled
 seam
 second
 second,
@@ -4351,7 +4281,6 @@ select()
 selected
 selected,
 selection,
-selectors
 self-contained
 selling
 semantic
@@ -4379,6 +4308,7 @@ shadow-[var(--shadow-wk-sm)]
 shadow.
 shape
 shape,
+shape.
 shapes
 share,
 shared
@@ -4387,6 +4317,7 @@ sharper
 shell)
 shifting.
 shifts
+ship
 shipped
 shipping.
 ships
@@ -4402,13 +4333,12 @@ shows
 shows.
 shrink
 shrink-0
-shrinking
 shrinks
 sibling
 siblings
 siblings.
 sidebar
-sideways
+sideways.
 sighted
 sign
 sign,
@@ -4430,6 +4360,7 @@ sites
 sits
 sits,
 six
+six.
 size
 size,
 size.
@@ -4445,6 +4376,7 @@ sizes="{{
 sizing
 skip
 skipped
+slightly
 slot
 slot's
 slot,
@@ -4488,6 +4420,7 @@ spelled
 spelling
 spellings
 spells
+spill
 spilling
 spinner
 spinner,
@@ -4501,6 +4434,7 @@ spread
 spreads
 square
 square's
+square,
 square:
 squared
 squares
@@ -4526,7 +4460,6 @@ stars,
 stars.
 start-[var(--padding-wk-x-sm)]
 start-anchored
-starter
 starting
 star|:count
 state
@@ -4559,7 +4492,6 @@ str_starts_with($key,
 straight
 strategy:
 stray
-strength
 stretched
 stretched-link:
 stricter
@@ -4588,6 +4520,7 @@ style="display:inline-block;"></span>
 style="text-decoration:
 styled,
 stylesheet
+stylesheet's
 stylesheet).
 styling
 stylistic
@@ -4598,6 +4531,7 @@ submit.
 submits
 submitted
 submitting
+submitting,
 substituted
 subtle
 subtle:
@@ -4657,7 +4591,6 @@ tag.
 tags
 take
 taken
-taken:
 takes
 taking
 talking
@@ -4670,7 +4603,6 @@ target="_blank".
 teaches
 tech
 technology
-teleport
 teleport:
 teleported
 tell
@@ -4759,7 +4691,6 @@ tick
 tidy
 tile
 tiles
-time
 time,
 time.
 timer
@@ -4846,9 +4777,8 @@ true;
 truthy
 truthy.
 try
-turned
+turn
 turns
-twelve
 twenty-two
 twice
 twice.
@@ -4887,7 +4817,6 @@ unknown.
 unlayered
 unless
 unlike
-unlocatable
 unreachable,
 unrelated
 unsteady
@@ -4899,7 +4828,6 @@ unusable
 up
 up.
 update
-upgrade
 upstream
 usable
 use
@@ -4910,7 +4838,6 @@ used
 used,
 useful
 user
-user's
 uses
 uses.
 using
@@ -4960,7 +4887,6 @@ viewBox="{{
 viewport
 viewport,
 viewport.
-views
 visibility
 visible
 visible.
@@ -5092,7 +5018,6 @@ word.
 word:
 words
 work,
-workaround
 working
 works
 works).
@@ -5204,7 +5129,7 @@ zoom,
 —
 …
 …"
-…").
+…")
 €39.00".
 €59.00,
 →

@@ -9,16 +9,15 @@
  * scrolling ancestor too, the page included, so a page reloaded half-way down would jump to its
  * top to show a link in the header.
  *
- * A single measurement at start is not enough, and that was measured rather than assumed: in
- * WebKit the row ends narrower than it first measures, once the fonts and the actions beside it
- * settle, and an entry centered for the first width sits off the edge of the final one. A
- * ResizeObserver fires for the width the row actually ends at. It watches the entries as well:
- * a web font that lands after the first pass widens them while the row keeps its own width, and
- * the current entry moves with them.
+ * A single measurement at start is not enough: in WebKit the row ends narrower than it first
+ * measures, once the fonts and the actions beside it settle, and an entry centered for the first
+ * width sits off the edge of the final one. A ResizeObserver fires for the width the row
+ * actually ends at. It watches the entries as well: a web font that lands after the first pass
+ * widens them while the row keeps its own width, and the current entry moves with them.
  *
  * The row draws no scrollbar, so it also says where entries lie beyond an edge: `data-fade`
  * names those edges (`start`, `end` or `both`) and `.wk-scroll-fade` fades them. Without it, a
- * word cut off at the edge was the only hint, and it read like a rendering fault. The attribute
+ * word cut off at the edge would be the only hint, and it reads like a rendering fault. The attribute
  * follows every scroll, whether by touch, wheel, Tab or `reveal()`, and is absent when the row
  * fits.
  *

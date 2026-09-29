@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 {{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'variant' => 'default',
@@ -52,7 +51,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('hero', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $gradient = BooleanProp::from($gradient, false);
     $tightOnMobile = BooleanProp::from($tightOnMobile, false);
@@ -197,10 +196,7 @@
     //     WHITE overlay so the corner LIGHTENS instead, producing a
     //     comparable depth cue against dark backgrounds.
     //
-    // The two figures are the `/20` and `/30` in the classes directly below, and they
-    // said 10 % and 12 % until this line was measured against them — a gradient bump
-    // moved the code and left the prose where it was. A percentage in a comment beside
-    // the utility that carries it is worth reading as a claim, not as decoration.
+    // The two figures are the `/20` and `/30` in the classes directly below.
     $gradientOverlayClass = match ($variant) {
         'dark', 'accent' => 'bg-gradient-to-br from-transparent to-white/30',
         default => 'bg-gradient-to-br from-transparent to-black/20',

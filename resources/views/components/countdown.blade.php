@@ -47,7 +47,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('countdown', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showSeconds = BooleanProp::from($showSeconds, true);
     $separators = BooleanProp::from($separators, true);
@@ -104,24 +104,21 @@
     // Both forms travel to the client because the count is only known there —
     // the clock ticks in Alpine. The phrase carries :count rather than being
     // concatenated, so a language that puts the number elsewhere (or attaches a
-    // suffix to it) can say so in its own catalog. The old code lowercased the
-    // label, which is simply wrong for German and any language capitalizing
-    // nouns; casing belongs to the translation, never to a transformation.
+    // suffix to it) can say so in its own catalog. Lowercasing the label would be
+    // wrong for German and any language capitalizing nouns; casing belongs to the
+    // translation, never to a transformation.
     // Passing :count back as the replacement keeps the placeholder literal so the
     // client can substitute the live value into whichever form it picked.
     //
     // The keys are written out literally rather than looped over a variable, and
     // that is deliberate: a key reachable only through a variable is invisible to
-    // `lang:extract` and to the drift guard that keeps lang/en.json honest — the
-    // same blindness that let a hardcoded string sit in an Alpine expression
-    // unnoticed. Six lines of repetition buy a key that every tool can see.
+    // `lang:extract` and to the drift guard that keeps lang/en.json honest. Six
+    // lines of repetition buy a key that every tool can see.
     // Every form the locale distinguishes, not just two.
     //
-    // These used to be two entries per unit — the singular and the plural —
-    // and the factory picked with `value === 1 ? 0 : 1`. That is right for
-    // English and German and silently wrong for Polish, Russian and Arabic,
-    // which have three to six categories. It also looked right to everyone who
-    // read the English output, which is why it survived.
+    // Two entries per unit, singular and plural, picked with `value === 1 ? 0 : 1`,
+    // would be right for English and German and silently wrong for Polish,
+    // Russian and Arabic, which have three to six categories.
     //
     // PluralPhrases renders the key at every count the supported locales
     // distinguish and the browser chooses with Intl.PluralRules. The keys stay
@@ -169,16 +166,14 @@
     $baseClasses = WireKit::resolveClasses('countdown', 'base', implode(' ', [
         $variantValue === 'segments'
             // flex-wrap, because a segment carries a hard minimum width
-            // (min-w-[3.5rem] per box). Without wrapping, a row of five units
-            // needs 398px and overruns its parent by 29px on a 393px device —
-            // measured, not estimated. Wrapping is the only adjustment that
-            // keeps the box size; shrinking would make the digits unreadable.
+            // (min-w-[3.5rem] per box), and a row of five units is wider than
+            // a phone. Wrapping is the only adjustment that keeps the box size;
+            // shrinking would make the digits unreadable.
             // The horizontal padding holds room for the component's own
             // animation: the box pulse runs through transform: scale(1.08), so
-            // a 90px box grows by a little over 7px — about 3.6px per side,
-            // which is exactly the 3px overflow the mobile sweep reported at
-            // the outermost box. Making the pulse smaller would be a design
-            // change; reserving the room is not.
+            // a 90px box grows by a little over 7px, about 3.6px per side, past
+            // the row at the outermost box. Making the pulse smaller would be a
+            // design change; reserving the room is not.
             ? 'inline-flex flex-wrap items-stretch justify-center gap-[var(--space-wk-sm)] px-[var(--space-wk-xs)]'
             : 'inline-flex items-baseline gap-[var(--space-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',

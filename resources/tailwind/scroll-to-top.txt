@@ -80,7 +80,6 @@ $threshold
 20"
 34px
 34px,
-40×40
 44px
 44×44
 5.5a.75.75
@@ -108,7 +107,6 @@ Alpine:
 BOTTOM
 Blade
 BooleanProp::from($forceVisible,
-Both
 CSP
 Chevron
 Declared
@@ -156,7 +154,6 @@ __('wirekit::Scroll
 a
 accessible
 actually
-added
 after
 against
 all
@@ -169,7 +166,6 @@ app
 appeared,
 appears
 arbitrary
-are
 area
 aria-hidden
 aria-hidden="true"
@@ -186,12 +182,11 @@ avoid
 back
 back.
 bag
-be
 because
 become
 block,
 bottom
-box.
+box,
 bracket
 bracket,
 browser
@@ -204,7 +199,6 @@ caller
 can
 candidate,
 cannot
-carried
 carries
 carry
 cast
@@ -220,7 +214,7 @@ clip-rule="evenodd"/>
 closing
 coarse
 coarse-pointer
-code-block
+code-block.
 comment
 compiled
 compiled,
@@ -232,14 +226,13 @@ config('wirekit.components.scroll-to-top.size',
 configurable
 containing
 corners
-could
 custom
 d="M10
 dead
 debug
 decorative,
 default
-design
+design,
 dimensions
 do
 does
@@ -269,7 +262,6 @@ file
 fill-rule="evenodd"
 fill="currentColor">
 first
-fixed
 flags
 flips
 for
@@ -285,12 +277,9 @@ gets
 glyph,
 goes
 half
-halves
-hand,
 hardcoded
 headless
 height).
-here
 here:
 hit
 home-indicator
@@ -305,18 +294,15 @@ inset
 inside
 is
 it
-it,
 it.
 it:
 items-center
 its
 jank
 justify-center',
-kept
 label
 later
 lay
-left
 left-[var(--padding-wk-x-lg)]',
 library's
 lie
@@ -336,6 +322,7 @@ mean
 merge
 methods
 multiplier
+must
 n/a
 name,
 named
@@ -350,7 +337,6 @@ notched
 nothing
 null,
 of
-off
 off-screen.
 offending
 offset
@@ -363,6 +349,7 @@ onto
 opening
 opposite
 optimistic-ui:
+otherwise
 out
 override
 overrides
@@ -382,7 +369,6 @@ prod).
 prop's
 props
 prose.)
-purpose.
 qualified:
 rather
 re-emits
@@ -416,7 +402,6 @@ ships
 shows
 silently
 silently.
-simply
 site
 smooth
 so
@@ -432,7 +417,6 @@ swipe-up
 tap
 taps".
 taps.
-target
 test
 than
 that
@@ -443,11 +427,10 @@ this
 three
 threshold.
 threshold:
-threw
 through
+throw
 time,
 to
-together,
 top
 top')])->class([$buttonClasses,
 translate-y-0"
@@ -462,7 +445,6 @@ untraceable
 up
 up,
 use
-used
 utility
 value
 variable

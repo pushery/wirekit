@@ -31,7 +31,6 @@ Accessible
 Declared
 Dev-only
 Fully
-Measured
 Pushery\WireKit\WireKit;
 Renders
 Tailwind
@@ -47,10 +46,8 @@ a
 action
 and
 announces
-any
 are
 aria-label="{{
-asserted:
 auto-derived
 be
 block,
@@ -68,12 +65,10 @@ early.
 either
 element,
 exists
-file
 flags
 for
 from
 gap-[var(--space-wk-lg,1.5rem)]',
-guard
 how
 implode('
 imports
@@ -118,9 +113,6 @@ rather
 reach
 reader
 reading
-reason
-refutes
-renders
 repeats
 resolve
 result
@@ -134,7 +126,6 @@ shown
 so
 stylesheet
 than
-that
 the
 there
 this

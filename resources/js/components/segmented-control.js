@@ -67,12 +67,10 @@ export default function wirekitSegmentedControl(config = {}) {
             // constructing this factory by hand is unaffected.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
-            // here, but the ESM harness constructs each factory with a deliberately
-            // barren stub — `test-segmented-control.mjs` passes `{ querySelectorAll }` and
-            // `test-server-value-seed.mjs` a lone `getAttribute`, each on purpose — and a
-            // factory that requires more than it uses turns that into a TypeError at init.
-            // Measured on 2026-08-16: one of 63 ESM scripts, red in CI and invisible to the
-            // PHP suite, which does not run them.
+            // here, but the ESM harnesses construct this factory with barren stubs:
+            // `test-segmented-control.mjs` passes `{ querySelectorAll }` and
+            // `test-server-value-seed.mjs` a lone `getAttribute`. A factory that requires
+            // more than it uses turns that into a TypeError at init.
             if (config.selected == null) {
                 const seed = typeof this.$root?.getAttribute === 'function'
                     ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
@@ -94,20 +92,18 @@ export default function wirekitSegmentedControl(config = {}) {
 
             // A selected option past the edge of a scrolling track is a choice the reader cannot
             // see was made, so the track scrolls it into view — whenever a size changes, not
-            // once at init. Measured: at init the track did not overflow yet. Livewire starts
-            // Alpine before the page's stylesheets apply, so the track still measured its full
-            // content width, and a reveal written for that moment returned without scrolling;
-            // the same call made a second later scrolled by 120px. The track's size changes when
-            // the stylesheet applies and again whenever its column does, and a notification is
-            // what arrives at exactly those moments.
+            // once at init. Livewire starts Alpine before the page's stylesheets apply, so at
+            // init the track may not overflow yet and a reveal at that moment has nothing to
+            // scroll. The track's size changes when the stylesheet applies and again whenever
+            // its column does, and a notification is what arrives at exactly those moments.
             //
             // The segments are observed as well, because a label can widen while the track,
             // capped by its column, keeps its box. The web font does exactly that, and in more
-            // than one batch: the regular weight settled `document.fonts.ready`, which this code
-            // used to wait for, and the medium weight arrived after it and left the selected
-            // segment past the edge. Invisible on a machine whose fallback face is metric-matched
-            // to the web font, 2px out on one where it is not. A segment's own box changes with
-            // its label, whatever changed the label.
+            // than one batch: the regular weight can settle `document.fonts.ready` while the
+            // medium weight arrives after it, so waiting for that promise alone would leave the
+            // selected segment past the edge wherever the fallback face is not metric-matched
+            // to the web font. A segment's own box changes with its label, whatever changed the
+            // label.
             if (typeof ResizeObserver === 'function' && typeof this.$root?.getBoundingClientRect === 'function') {
                 this._trackResizeObserver = new ResizeObserver(() => {
                     // Null-guard: a notification queued before destroy() can still arrive after it.
@@ -129,8 +125,7 @@ export default function wirekitSegmentedControl(config = {}) {
             // A value the server changed has to reach the segments. Alpine read
             // `selected` once, here, and will not look at the seed again — so
             // without this the control keeps showing whatever it was born with
-            // while the form submits something else entirely. Measured: the
-            // hidden input said `max`, the checked segment said Basic.
+            // while the form submits something else entirely.
             //
             // Guarded on a real change so an unrelated round trip cannot undo a
             // choice the reader just made: every morph rewrites the attribute,

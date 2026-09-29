@@ -6,17 +6,16 @@
  * have something reactive to read. That direction matters and is the reason
  * there is no `:value` binding on the input — see the template.
  *
- * This moved out of an inline `x-data` because Alpine's CSP build parses one
- * expression and allows neither method shorthand nor getters, so under a strict
- * Content-Security-Policy the whole object literal failed to build: the element
- * ended up with an empty scope and every directive on it silently did nothing —
+ * A factory rather than an inline `x-data`, because Alpine's CSP build parses one
+ * expression and allows neither method shorthand nor getters: under a strict
+ * Content-Security-Policy the object literal would fail to build, leaving the
+ * element with an empty scope and every directive on it silently doing nothing —
  * no bubble, no announced text, no Livewire resync.
  *
  * Lifecycle resources held on `this`:
  *   - _unhookResync (the function Livewire.hook returns) — released in destroy().
- *     It used to be discarded, and the comment here claimed a post-teardown fire
- *     was harmless. It is not: after a livewire:navigate the handler still runs
- *     and reads $refs on a scope that no longer exists.
+ *     A post-teardown fire is not harmless: after a livewire:navigate the handler
+ *     still runs and reads $refs on a scope that no longer exists.
  *
  * @param {Object} config
  * @param {string} config.current   the input's value at render time, as a string

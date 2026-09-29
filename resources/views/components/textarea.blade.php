@@ -60,7 +60,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false);
     $reserveMessage = BooleanProp::from($reserveMessage, false);
@@ -121,8 +121,7 @@
 
     // Auto-size: `rows="auto"` grows the textarea with its content via CSS
     // `field-sizing: content`, which is ABOVE the WireKit browser baseline —
-    // Chrome 123 and Safari 26.2, against a floor of 111 and 16.4. This comment
-    // claimed the opposite for thirteen releases.
+    // Chrome 123 and Safari 26.2, against a floor of 111 and 16.4.
     //
     // The field is complete without it: the numeric `rows` is the minimum height,
     // the control scrolls and stays resizable, and we never emit `rows="auto"`
@@ -131,8 +130,7 @@
     // named after. The declaration sits behind the `@supports (field-sizing: content)`
     // rule in dist/wirekit.css that the `wk-autosize` class below opts into — so it IS
     // feature-detected, where it lives. This template ships no arbitrary variant for
-    // it, and the pointer that used to stand here, at an accepted-use row in
-    // BrowserBaselineGuardTest, named a row that had never existed.
+    // it.
     $autosize = $rows === 'auto' || $rows === true;
     $minRows = $autosize ? 2 : (int) $rows;
 

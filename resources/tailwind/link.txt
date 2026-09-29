@@ -178,7 +178,6 @@ POST
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Reading
-Reported
 Resolved
 SR
 SR-hint
@@ -237,7 +236,7 @@ a
 about
 action
 additive
-affordance
+affordance.
 against
 all
 all:
@@ -262,7 +261,6 @@ attribute
 attribute,
 attribute-passed
 attribute.
-auth
 auto-derived
 auto-injection
 automatic
@@ -405,7 +403,6 @@ keeps
 ladder
 later
 leaves
-left
 link
 link,
 link-styled
@@ -421,7 +418,6 @@ map
 match
 may
 mean
-missing.
 more
 ms-0.5"
 n/a
@@ -459,6 +455,7 @@ opposite
 optimism
 optimistic-ui:
 or
+otherwise
 our
 out
 out,
@@ -471,8 +468,7 @@ page.
 passed
 past
 paths
-pointer
-pointer`),
+pointer`).
 preferences
 preflight
 primitive.
@@ -516,11 +512,11 @@ runs
 same
 says
 screen-reader
-screens
 script
 sentence
 separately.
 set
+shows
 silently
 silently.
 single
@@ -571,7 +567,6 @@ there
 therefore
 they
 this
-three
 through
 time,
 times
@@ -588,7 +583,6 @@ two
 type="{{
 underline
 underline-offset-2',
-underline.
 unknown
 unvalidated
 use
@@ -604,12 +598,10 @@ vocabulary
 w-3.5
 was
 we
-went
 what
 whatever
 when
 whenever
-where
 wherever
 which
 whitespace

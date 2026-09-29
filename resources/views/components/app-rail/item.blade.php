@@ -6,11 +6,9 @@
     // the default — this exists for the OTHER thing a rail entry legitimately is: the
     // trigger of a dropdown, which our own console-shell blueprint builds out of one.
     //
-    // As a link that trigger is subtly broken. A link activates on Enter and NOT on Space,
-    // measured against the blueprint's own pattern: Enter opened the menu and moved focus
-    // to the first entry, Escape closed it and returned focus, and Space did nothing —
-    // `aria-expanded` stayed "false". In a `viewport` shell Space is not even scrolling,
-    // so the key simply has no effect anywhere. On top of that every click on an `href="#"`
+    // As a link that trigger is subtly broken: a link activates on Enter and not on Space,
+    // so Space would leave the menu closed and `aria-expanded` at "false". In a `viewport`
+    // shell Space is not even scrolling, so the key would have no effect anywhere. On top of that every click on an `href="#"`
     // pushes a history entry and writes `…#` into the address bar, and a modified click
     // opens a dead duplicate tab.
     //
@@ -118,18 +116,16 @@
         // paddings plus the border. Centering there had nothing left to center.
         //
         // Where it stops being identical is the panel shell, which widens the column by the
-        // gap to the panel and insets the contents by it. The module is then WIDER than the
-        // glyph it holds — measured beside a panel: a 45px module around a 20px glyph with
-        // 10px of padding either side, so 5px of surplus — and a leading-aligned glyph sits
-        // 2.5px off the module's own center. Reported on 2026-09-01 from three pages at once.
+        // gap to the panel and insets the contents by it. The module is then wider than the
+        // glyph and its padding, and a leading-aligned glyph sits off the module's own center
+        // by half the surplus.
         //
         // Not centered: a folding column must not move its icon sideways, and centering the
         // icon-only mode alone would do exactly that. The expanded row carries a label beside
         // its glyph and has to stay leading-aligned, so a centered glyph would move by half the
         // surplus on every fold.
         //
-        // The surplus is where the two reports meet, and it exists ONLY beside an inset panel —
-        // measured 0 on the multi-column shell against 5 there. Removing it satisfies both, and
+        // The surplus exists only beside an inset panel. Removing it would satisfy both, and
         // it cannot be removed without moving one of two further guarded edges: the panel's
         // even four-sided inset, or the module's symmetric visible chrome. Three requirements,
         // satisfiable in pairs and not together, which makes it a decision rather than a defect.
@@ -178,14 +174,12 @@
         // the row in every labeling mode — a fixed height is wrong the moment a caption
         // makes the row taller.
         //
-        // IT SITS INSIDE THE ROW, and that is a correction. It used to be pulled OUT by a
-        // negative inset equal to the scroller's padding, so it painted in the column's
-        // own gutter rather than on the row. Two things followed. The row then needed
-        // clearance on its end side that its start side did not have, so a column whose
-        // rows look symmetrical was not — and the marker rode on the outside of a rounded
-        // box, which is where a shape that is meant to say "this row" stops belonging to
-        // the row at all. Fully rounded now, and inset by the hairline that keeps it clear
-        // of the row's own corner radius.
+        // It sits INSIDE the row. Pulled out into the column's gutter by a negative inset,
+        // it would need clearance on the row's end side that the start side does not have,
+        // so a column whose rows look symmetrical would not be, and the marker would ride
+        // on the outside of a rounded box, where a shape meant to say "this row" stops
+        // belonging to the row. Fully rounded, and inset by the hairline that keeps it
+        // clear of the row's own corner radius.
         'group-data-[indicator=edge]/wk-rail:after:absolute',
         'group-data-[indicator=edge]/wk-rail:after:top-[20%]',
         'group-data-[indicator=edge]/wk-rail:after:bottom-[20%]',
@@ -220,9 +214,9 @@
     // break at and would otherwise overflow the column instead of wrapping inside it.
     $labelClasses = WireKit::resolveClasses('app-rail.item', 'label', implode(' ', [
         'sr-only',
-        // The words wait for `data-wk-names`; the MODE does not. Held together on one marker,
-        // the icon rode the widening column out to its middle and snapped back at the end —
-        // measured at 17.5px → 108px → 16px in a single frame. The mode still decides HOW a
+        // The words wait for `data-wk-names`; the mode does not. Held together on one marker,
+        // the icon would ride the widening column out to its middle and snap back at the end.
+        // The mode still decides HOW a
         // name is laid out (below, inline); this decides only WHETHER it is in the layout yet.
         'group-data-[wk-names]/wk-rail:not-sr-only',
         // `max-w-full`, NOT a full width, and the difference is the whole fix. The reset of

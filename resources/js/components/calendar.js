@@ -156,11 +156,11 @@ export default function wirekitCalendar(config = {}) {
         /**
          * Chunk a month's flat day list into weeks of seven.
          *
-         * The template used to do this inline, with
-         * `Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => …)`.
-         * Under Alpine's CSP build that fails twice over: the arrow function is
-         * outside the grammar its parser accepts, and `Array` / `Math` are
-         * globals its evaluator cannot resolve. The grid simply did not render.
+         * Done inline in the template, with
+         * `Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => …)`,
+         * this would fail twice over under Alpine's CSP build: the arrow function
+         * is outside the grammar its parser accepts, and `Array` / `Math` are
+         * globals its evaluator cannot resolve. The grid would simply not render.
          *
          * `_daysFor` already pads to whole weeks, so the last chunk is never
          * short — but the loop does not assume that, because a caller passing an
@@ -335,17 +335,14 @@ export default function wirekitCalendar(config = {}) {
             // the end. That makes the shading answer the question the reader is
             // actually asking — "what am I about to choose" — instead of showing
             // nothing until the choice is already made.
-            // IN EITHER DIRECTION. This used to require `hoverDate > selected`, so
-            // hovering backwards produced no provisional end at all and the preview
-            // simply did not exist: the reader dragged toward an earlier day, saw
-            // nothing shade, clicked anyway, and only then discovered the range had
-            // been right all along.
+            // IN EITHER DIRECTION. Requiring `hoverDate > selected` would give
+            // hovering backwards no provisional end at all: the reader drags toward
+            // an earlier day, sees nothing shade, clicks anyway, and only then
+            // discovers the range was right all along.
             //
-            // The inconsistency was internal, which is what makes it a defect rather
-            // than a missing feature. `selectDate()` below goes out of its way to
-            // accept a backwards choice — "a second click before the start simply
-            // becomes the start, and the range stays ordered" — so the component
-            // supports the gesture and refused to preview it.
+            // `selectDate()` below goes out of its way to accept a backwards choice —
+            // "a second click before the start simply becomes the start, and the
+            // range stays ordered" — so the preview supports the same gesture.
             const provisional = ! this.selectedEnd && this.hoverDate ? this.hoverDate : null;
             const end = this.selectedEnd || provisional;
 
@@ -404,8 +401,7 @@ export default function wirekitCalendar(config = {}) {
          * Getters rather than `selected ?? ''` in the template: Alpine's CSP build
          * does not parse `??`, and a directive it cannot parse does nothing at all
          * under a policy this library promises to support. The combined field below
-         * was already a getter for the same reason — these two were written as
-         * expressions and the audit caught both.
+         * is a getter for the same reason.
          */
         get rangeStartValue() {
             return this.selected || '';

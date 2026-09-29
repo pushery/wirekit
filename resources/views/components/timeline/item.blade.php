@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 {{-- WHY `datetime` IS A SEPARATE PROP, AND WHY THE ELEMENT CHANGES WITHOUT IT.
 
      HTML is explicit about this: a `<time>` without a `datetime` attribute must have text
@@ -15,10 +14,8 @@
 
      So the attribute arrives on its own, and the element follows it. With a machine-readable
      value the item renders `<time datetime="…">` like its siblings; without one it renders a
-     `<span>`, which is what the phrase actually is. Measured before changing it: no stylesheet
-     in this package targets the element, and no call site passes anything parseable — so the
-     `<span>` branch is what every existing caller gets, rendering identically to what an
-     invalid `<time>` already rendered. --}}
+     `<span>`, which is what the phrase actually is. No stylesheet in this package targets the
+     element, so the two render identically. --}}
 @props([
     'time' => null,
     'datetime' => null,
@@ -110,13 +107,11 @@
          Bottom padding creates visual spacing between items while
          keeping the connector line continuous (no margin gaps).
          Padding is applied via dist/wirekit.css using the
-         `data-wk-timeline-item-content` selector instead of inline
-         style + `[li:last-child_&]:pb-0`. The inline style previously
-         beat the class (no `!important`), so the padding-bottom-zero
-         NEVER actually applied — not on the normal last item, and
-         especially not when `after="true"` moved the real last item
-         to `:nth-last-child(2)`. The CSS rule uses `:has()` to match
-         both cases cleanly. --}}
+         `data-wk-timeline-item-content` selector rather than an inline
+         style, which would beat any class removing the padding from the
+         last item. The CSS rule uses `:has()` to match both the normal
+         last item and the one `after="true"` moves to
+         `:nth-last-child(2)`. --}}
     <div data-wk-timeline-item-content>
         {{-- Ahead of the title, so the outcome is heard as a prefix to the event
              rather than trailing after the body text. --}}

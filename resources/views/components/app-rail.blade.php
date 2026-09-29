@@ -37,18 +37,13 @@
     'persist' => null,
     // WHERE the choice is remembered: 'local' (default) or 'cookie'.
     //
-    // No server can read localStorage, so a rail that remembers being expanded renders
-    // collapsed and widens itself after the first paint. An adopting application measured
-    // that at 0.1097 CLS against a budget of 0.1 — the content column moving 187px, 53ms in.
-    // Reported again on 2026-09-01 from several production applications, as the navigation
-    // being briefly collapsed and then snapping open.
-    // A small nonced script after the column closes that gap now — it reads the stored flag
+    // No server can read localStorage, so a rail that remembers being expanded would render
+    // collapsed and widen itself after the first paint, moving the content column.
+    // A small nonced script after the column closes that gap: it reads the stored flag
     // while the parser is still working and swaps the width class before anything is painted.
-    // This comment used to end here saying the usual fix is an inline script "which a strict
-    // `script-src 'self'` policy without a nonce simply blocks", and that was an argument
-    // against an UNNONCED script: `fonts.blade.php` had already answered the same objection
-    // for its inline <style> by emitting `WireKit::cspNonce()`. Where a policy refuses it
-    // anyway, the column falls back to exactly the behavior described above.
+    // The script carries `WireKit::cspNonce()`, the same answer `fonts.blade.php` gives for
+    // its inline <style>, so a strict `script-src 'self'` policy with a nonce runs it. Where a
+    // policy refuses it anyway, the column falls back to exactly the behavior described above.
     //
     // A cookie is the only store Blade and Alpine both read, so this driver mirrors the
     // flag there and the first render is already right. Opt-in on purpose: writing a cookie
@@ -97,14 +92,14 @@
     $persistDriver = WireKit::validateProp('app-rail', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
     // Whether the CALLER set `expanded`, taken before anything below answers it. The factory and
-    // the seed script both need it: an explicit value wins over the store, and both used to
-    // read the store anyway, so a pinned rail opened or closed a frame after the server render.
+    // the seed script both need it: an explicit value wins over the store, and reading the
+    // store anyway would open or close a pinned rail a frame after the server render.
     $expandedPinned = $expanded !== null;
 
     // The server half of the cookie driver. Which store is asked, and in what order, is
     // `PersistedCookie`'s to say: the sidebar reads the same kind of flag, and one read keeps
-    // the two agreeing. It measured this rail rendering collapsed under a long-lived server
-    // and widening a frame later, which is why the order matters at all.
+    // the two agreeing. Under a long-lived server the rail would otherwise render collapsed
+    // and widen a frame later, which is why the order matters at all.
     if ($expanded === null && $persistDriver === 'cookie' && $persist !== null) {
         $expanded = \Pushery\WireKit\Support\PersistedCookie::flag($persist);
     }
@@ -125,12 +120,11 @@
     // place a rail width is decided and the column follows it — including while the
     // expand transition is mid-flight.
     //
-    // The width is the token and nothing else, including beside an inset content panel. The
-    // column used to add the shell's gap to itself there, so that its horizontal rules would
-    // REACH the panel instead of stopping short of the seam. The rules still have to reach it
-    // — but a wider column puts every glyph in the stack off the column's own center, which
-    // is what that bought and what was reported. So the RULES overflow the column now, and
-    // the column keeps the one width every other rail has. See dist/wirekit.css.
+    // The width is the token and nothing else, including beside an inset content panel. Its
+    // horizontal rules have to REACH the panel instead of stopping short of the seam, but a
+    // column widened by the shell's gap would put every glyph in the stack off the column's
+    // own center. So the RULES overflow the column, and the column keeps the one width every
+    // other rail has. See dist/wirekit.css.
     $restingWidth = match ($labels) {
         // `--size-wk-rail-labeled` without its literal: the fallback said 4.75rem against a
         // declared 5.5rem, so the labeled rail would have come out three quarters of a rem
@@ -249,10 +243,9 @@
     {{-- TWO markers, because the mode and the words need two different moments.
 
          `data-labels` rewrites the mode AT ONCE, and it has to: it also decides where an
-         item's icon sits. Held back to the end of the transition, the icon stayed centered
-         while the column grew and then snapped to the start edge — measured on a 240px
-         rail, it drifted from 17.5px out to 108px and jumped back to 16px in one frame.
-         That is a worse artifact than the one this was meant to remove.
+         item's icon sits. Held back to the end of the transition, the icon would stay
+         centered while the column grew and then snap to the start edge, a worse artifact
+         than the one this is meant to remove.
 
          `data-wk-names` is the words alone, and those wait. Put into the layout at the
          width the animation happens to be passing through, a name wraps there and unwraps
@@ -282,8 +275,8 @@
         // utilities of equal specificity on one element — the winner decided by Tailwind's
         // emission order rather than by state, which is the exact failure sidebar.item
         // documents for its active foreground.
-        // …but withholding the width from an expandable rail ENTIRELY is what made the column
-        // flicker into place on load, reported from three separate shells. Until Alpine boots,
+        // …but withholding the width from an expandable rail ENTIRELY makes the column flicker
+        // into place on load. Until Alpine boots,
         // `:class` has not run, so the element carries no width at all: it lays out at content
         // width and then snaps to its real one. Emitting the width of the INITIAL state fixes
         // the first paint without reintroducing the conflict above — Alpine's `:class` swaps
@@ -339,12 +332,10 @@
         {{-- The bottom block: account, help, search — the cluster every one of these rails
              puts there — and, last of all, the expand toggle.
 
-             THE TOGGLE IS AT THE BOTTOM, and that is a correction rather than a preference.
-             It used to sit directly under the brand mark, which is the most valuable row in
-             the whole column: the eye lands there first, and the first thing it found was a
-             chevron rather than the workspace. Expanded it was worse — it took the row where
-             the workspace name belongs. A control that changes the column's WIDTH is chrome,
-             and chrome goes where chrome goes.
+             The toggle is at the bottom. Directly under the brand mark it would take the most
+             valuable row in the whole column, where the eye lands first, and expanded it would
+             take the row where the workspace name belongs. A control that changes the column's
+             WIDTH is chrome, and chrome goes where chrome goes.
 
              It shares this block with the footer rather than getting its own, so the rail
              keeps ONE separator line at the bottom instead of two. The block is emitted when
@@ -356,11 +347,10 @@
                      moved onto this row — it is the room the toggle occupies, so the two
                      belong to the same condition.
 
-                     On the LAST row only. The inset sat on this whole column, so every
-                     footer row shrank to make space for a control that stands beside one
-                     of them: measured expanded, the menu entries ran 232px and all three
-                     footer rows 196px, which reads as a second, narrower list rather than
-                     as the same list with a button at the end. --}}
+                     On the last row only. On the whole column every footer row would
+                     shrink to make space for a control that stands beside one of them,
+                     which reads as a second, narrower list rather than as the same list
+                     with a button at the end. --}}
                 <div @class([
                     'flex flex-col gap-[var(--space-wk-nav-gap)]',
                     '[&>*:last-child]:group-data-[expanded]/wk-rail:pe-[2.25rem]' => $expandable,
@@ -373,9 +363,8 @@
                 <div @class([
                     'flex',
                     // Not below `lg`. There the rail is the left strip of an off-canvas
-                    // drawer, and expanding it widens that drawer past the device: measured
-                    // at 375px, 0…309 collapsed against 0…496 expanded, with 121px of the
-                    // module column gone and `scrollWidth` still 375 — nothing to scroll to.
+                    // drawer, and expanding it would widen that drawer past the device, with
+                    // part of the module column out of reach and nothing to scroll to.
                     // The factory refuses the state at this width regardless, so leaving the
                     // control here would present a button that does nothing.
                     'max-lg:hidden',

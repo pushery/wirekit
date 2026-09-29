@@ -171,8 +171,8 @@ export default function wirekitEditor(config = {}) {
             }
             this.editor = created;
 
-            // Autofocus the Tiptap surface when requested (the `autofocus` prop
-            // previously reached ONLY the textarea fallback). Done AFTER the assignment
+            // Autofocus the Tiptap surface when requested, so the `autofocus` prop
+            // reaches it and not only the textarea fallback. Done AFTER the assignment
             // — not in onCreate, which can fire mid-construction while this.editor is
             // still undefined (the same reason _writeOut guards on it) — and
             // factory-independent: it doesn't rely on the editor factory

@@ -249,7 +249,6 @@ $wrapperClasses
 4.42
 4.5
 4.87
-4px
 5
 5),
 5.42
@@ -394,15 +393,14 @@ Laravel
 Let
 Livewire
 LocalizedNumber::format((float)
-Measured
 Mirrors
 NESTS
 NO
 NOT
 Naming
 No
-Nonsense,
 Normalized
+Not
 Null
 OWN
 On
@@ -535,7 +533,6 @@ alone.
 along
 already
 also
-alternative
 always
 an
 and
@@ -549,7 +546,6 @@ announces
 announces,
 announces.
 answer
-any
 app
 appears
 appended
@@ -558,7 +554,7 @@ are
 arguments
 aria-atomic="true"
 aria-checked
-aria-checked="true"
+aria-checked="true":
 aria-checked="{{
 aria-describedby.
 aria-describedby="{{
@@ -579,7 +575,6 @@ as
 as,
 ascent
 asked
-asserted:
 assistive
 association
 assumed
@@ -611,7 +606,6 @@ because
 been
 before
 behaves
-behavior
 behind,
 being
 belongs
@@ -650,7 +644,6 @@ caller's
 cannot
 capability
 card,
-card.
 carried
 carry
 carrying
@@ -664,7 +657,6 @@ choosing
 chosen
 chosen"
 chosen.
-claim
 clamps
 class="cursor-default">
 class="inline-flex
@@ -730,6 +722,7 @@ decision
 deduped
 default
 default)
+default:
 defect
 defines
 definition,
@@ -742,7 +735,7 @@ design
 designed
 developer
 did
-difference
+difference.
 different
 direction
 directly
@@ -817,7 +810,6 @@ false,
 feature
 field
 field's
-file
 fill
 fill-[var(--color-wk-warning)]
 fill-[var(--color-wk-warning)]'
@@ -834,7 +826,6 @@ five
 five-star
 five.
 fix
-fix:
 flags
 fleet,
 flex
@@ -877,7 +868,6 @@ goes
 grammar;
 grid
 group
-guard
 hand-mount
 hardcoded
 has
@@ -932,7 +922,7 @@ interpolated
 interrupt
 into
 invalid
-invited
+invite
 is
 it
 it"
@@ -980,13 +970,11 @@ localized
 looked
 looks.
 lose
-low
 lowering
 majority
 make
 makes
 mangled
-mark
 marking
 markup
 match
@@ -999,7 +987,6 @@ mean
 means
 meant
 measure
-measured
 message
 method
 method;
@@ -1141,7 +1128,6 @@ purpose
 purpose:
 pushed
 put
-puts
 qualified:
 question
 queued
@@ -1168,15 +1154,12 @@ reads
 reads:
 really
 reappeared
-reason
 reason.
 receives
 record
 records
 redundant
 reference
-refutes
-regardless,
 regenerated
 region
 region,
@@ -1250,7 +1233,7 @@ server's
 server-side
 shape
 shapes
-shipped
+ship
 should
 show
 showed
@@ -1268,7 +1251,6 @@ sit
 site
 site.
 size
-size="sm"
 sizes
 skip
 slot
@@ -1331,7 +1313,6 @@ tabindex="{{
 tag,
 take
 taken
-taken:
 takes
 tech
 tell
@@ -1382,7 +1363,6 @@ two
 type="button"
 type="hidden"
 unable
-unchanged.
 unconditionally
 undeclared
 under
@@ -1493,4 +1473,4 @@ zero,
 }}`
 —
 …"
-…").
+…")

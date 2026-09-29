@@ -60,7 +60,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $editable = BooleanProp::from($editable, true);
     $autofocus = BooleanProp::from($autofocus, false);
@@ -198,22 +198,23 @@
         // fallback for the unlabeled case.
         'ariaLabelledby' => $label ? $id.'-label' : null,
         // `__()` on both halves of the same name. editor.js spreads this onto the
-        // contenteditable as its aria-label, so an untranslated literal here announces
-        // the editor in English on the Tiptap path while the textarea path below is
-        // correct — one string, two writes, and only one of them was translated.
+        // contenteditable as its aria-label, so an untranslated literal here would
+        // announce the editor in English on the Tiptap path while the textarea path
+        // below is translated.
         // `Str::headline($name)` stays untranslated on purpose: it is derived from a
         // developer-supplied name, not a string this package ships.
         //
-        // The caller's own `aria-label` comes before either fallback. It used to be written
-        // onto the content host instead, and the host is never the textbox: with an engine
-        // the textbox is the surface the engine builds inside it, without one the host is
-        // hidden. So `aria-label="Release notes"` produced a textbox announced as
-        // "Rich text editor", on a page whose visible label said "Release notes".
+        // The caller's own `aria-label` comes before either fallback, and it goes to the
+        // textbox, not to the content host: with an engine the textbox is the surface the
+        // engine builds inside the host, without one the host is hidden. On the host,
+        // `aria-label="Release notes"` would leave a textbox announced as "Rich text
+        // editor" on a page whose visible label says "Release notes".
         'ariaLabel' => $label ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
-        // The same misplacement, one attribute over: the host carried `aria-required`, which
-        // a generic element may not carry, and the textbox was never announced as required.
+        // The same holds one attribute over: `aria-required` goes to the textbox, because a
+        // generic element may not carry it, and on the host the textbox would never be
+        // announced as required.
         'ariaRequired' => (bool) $required,
         // Plumbed to the Tiptap path too (not just the textarea fallback's
         // data-autofocus) — editor.js focuses the editor in onCreate when set.

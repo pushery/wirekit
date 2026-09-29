@@ -162,12 +162,13 @@ be
 because
 been
 before
-belongs.
 binding
-bleed,
+bleed
 blinks
 block,
 both
+box
+box,
 browser
 browser,
 built
@@ -185,7 +186,6 @@ channel
 chrome,
 class
 class="wk-page-progress__fill
-classic
 click
 client-only
 color
@@ -243,6 +243,7 @@ flags
 flight.
 float
 flow
+follows
 for
 from
 full
@@ -271,6 +272,7 @@ instead
 intent
 into
 is
+is.
 it
 it,
 it.
@@ -280,9 +282,11 @@ keeps
 keystroke
 keyword
 knows,
+knows.
 later
 layout.
 left
+length
 lifecycle
 linear;"
 list
@@ -295,7 +299,6 @@ look:
 match
 may
 meaning
-measured.
 message
 mirror
 mirrored
@@ -378,7 +381,6 @@ round
 rule
 rule.
 rules
-running
 runs
 same
 sandboxed
@@ -388,7 +390,6 @@ scaleX(0);
 scope
 screen
 scroll
-scrollbar
 sees
 server
 sets
@@ -469,6 +470,7 @@ var(--wk-strip-inset,
 var(--z-wk-tooltip);
 varies
 view's
+viewport
 viewport-pinned
 visual-synonym
 waiting
@@ -478,10 +480,13 @@ way
 way.
 well
 what
+whatever
 where
 which
 while
 whole
+whose
+width
 width:
 window
 with

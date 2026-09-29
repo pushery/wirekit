@@ -3,12 +3,10 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
 /**
  * Pricing table — which billing interval the whole table is priced at.
  *
- * The interval used to live in an inline `x-data="{ interval: … }"`, which is
- * correct for a reader and useless to an application whose checkout is decided
- * on the server: the choice existed only in the browser and told nobody. A
- * server-authoritative checkout could therefore not use the component at all —
- * it had no way to learn that "annual" had been picked, and no way to say so
- * either when it already knew.
+ * An inline `x-data="{ interval: … }"` would be correct for a reader and useless
+ * to an application whose checkout is decided on the server, because the choice
+ * would exist only in the browser. The factory lets the server learn that
+ * "annual" was picked, and set the interval when it already knows.
  *
  * A factory rather than an inline scope for two reasons, and only the first is
  * about this feature: a MutationObserver cannot be written inline under Alpine's
@@ -44,17 +42,13 @@ export default function wirekitPricingTable(config = {}) {
             // The observer attribute is CONDITIONAL here — it is only rendered
             // when the server actually drives the interval. So the fallback is
             // the `default` prop rather than nothing: without it a table the
-            // server does not drive would start on no interval at all, which is
-            // a regression this change would otherwise have introduced silently.
+            // server does not drive would start on no interval at all.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
-            // here, but the ESM harness constructs each factory with a deliberately
-            // barren stub. This factory has no script of its own, so the one that boots
-            // it is `test-server-value-seed.mjs`: a `$root` answering `getAttribute` and
-            // nothing else, plus one case that answers nothing at all. A factory needing
-            // more than it uses turns that into a TypeError at init. Measured on
-            // 2026-08-16: one of 63 ESM scripts, red in CI and invisible to the PHP
-            // suite, which does not run them.
+            // here, but `test-server-value-seed.mjs` constructs this factory with a
+            // barren stub that answers `getAttribute` and nothing else, or nothing at
+            // all, and a factory needing more than it uses turns that into a TypeError
+            // at init.
             if (config.interval == null) {
                 const seed = typeof this.$root?.getAttribute === 'function'
                     ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)

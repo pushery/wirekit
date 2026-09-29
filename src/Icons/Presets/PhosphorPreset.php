@@ -65,10 +65,8 @@ final class PhosphorPreset implements IconPreset
             // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
             // glyph is each set's own — which is what these aliases are for.
             //
-            // Every target below was verified against the real set: Heroicons from the
-            // installed package, the other three from each package's full recursive git
-            // tree. A directory listing was tried first and is useless here — GitHub caps
-            // it at 1000 entries, so "absent" would have meant nothing.
+            // Every target below exists in its set, checked against the installed
+            // Heroicons package and the full recursive git tree of the other three.
             //
             // `article` was proposed with these and deliberately left out: it needs two
             // substitutions and "editorial unit" is the most arguable of the seven.
@@ -141,6 +139,7 @@ final class PhosphorPreset implements IconPreset
             'server' => 'phosphor-hard-drives',
             'database' => 'phosphor-database',
             'cloud' => 'phosphor-cloud',
+            'desktop' => 'phosphor-monitor', // the glyph `system` uses, as in the other three presets
             'shield' => 'phosphor-shield-check', // parity with the base `shield` alias
             'shield-check' => 'phosphor-shield-check',
             'inbox' => 'phosphor-tray', // phosphor calls the inbox glyph `tray`
@@ -356,6 +355,7 @@ final class PhosphorPreset implements IconPreset
             'speed' => 'phosphor-gauge',
             'squares-2x2' => 'phosphor-squares-four',
             'star' => 'phosphor-star',
+            'star-outline' => 'phosphor-star',
             'swatch' => 'phosphor-swatches',
             'unlock' => 'phosphor-lock-open',
             'user-group' => 'phosphor-users',

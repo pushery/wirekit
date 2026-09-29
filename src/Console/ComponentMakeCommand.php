@@ -144,7 +144,7 @@ class ComponentMakeCommand extends Command
             // we READ. Unvalidated, its dots and slashes are just path — so
             // `--base=../../../../resources/views/admin/panel` walks out of the
             // package's component tree and copies an application's own Blade
-            // file into a new one. Measured, not reasoned about: it resolves.
+            // file into a new one.
             //
             // A dot here is a SUB-COMPONENT separator (`card.header`,
             // `table.th`), never a path segment, which is why `..` cannot be a

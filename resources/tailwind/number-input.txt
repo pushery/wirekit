@@ -1,6 +1,5 @@
 !$hasError
 !==
-"1"
 "Decrease
 "Decrease"
 "Increase",
@@ -194,7 +193,6 @@ $suffix
 16px
 2N
 3v10M3
-7.
 8h10"
 :
 :aria-disabled="atMax"
@@ -293,7 +291,6 @@ Label
 Laravel
 Leaving
 Livewire
-Measured
 Mirrors
 N
 NOT
@@ -400,7 +397,6 @@ above
 accepts
 accessibility
 accessible
-account
 action
 after
 against
@@ -421,12 +417,10 @@ announced.
 announces
 answering
 answers
-any
 apart,
 appears
 appended
-application
-applied
+applies
 are
 arguments
 aria-atomic="true"
@@ -447,7 +441,6 @@ arrows
 as
 as,
 asked
-asserted:
 asterisk
 at
 attribute
@@ -561,7 +554,6 @@ dark
 dark:
 data-wk-optimistic-announcer
 data-wk-prose-skip
-day
 debounces
 debug
 decision
@@ -584,7 +576,7 @@ did
 disabled
 disabled:cursor-not-allowed',
 disables
-disagreed
+disagree
 discrete
 do.
 docs
@@ -635,7 +627,6 @@ field's
 field,
 field.
 fields
-file
 fill="currentColor"><path
 fill="none"/></svg>
 finished
@@ -676,7 +667,6 @@ got
 grid
 group
 guarantees
-guard
 half
 halves
 halves.
@@ -686,7 +676,6 @@ happened
 hardcoded
 has
 have.
-held
 here
 here.
 here.'),
@@ -756,8 +745,6 @@ list,
 literal
 live
 lives
-lock
-locked
 logically
 looked
 looks
@@ -772,7 +759,6 @@ max:
 max="{{
 may
 mean
-measured
 meeting
 meets
 message
@@ -911,18 +897,15 @@ question
 rather
 reach
 reaches
-read
 reader
 reader's
 reading
 reads
 real
-reason
 red
 reference
 refusal
 refused
-refutes
 region
 remove
 render
@@ -971,7 +954,7 @@ ships:
 shortcut.
 should
 show.
-showed
+showing
 shown
 shows
 silently
@@ -1102,7 +1085,6 @@ unreachable,
 untouched
 up
 use
-used
 uses
 validation
 value

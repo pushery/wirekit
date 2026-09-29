@@ -11,10 +11,13 @@
 
      This script runs while the parser is still working, before anything is painted. It sits
      immediately after the section's panel and reaches it through
-     `document.currentScript.previousElementSibling`, so it needs no id. It changes one thing:
-     whether the panel carries `x-cloak`, the attribute that keeps it hidden until Alpine starts.
-     Alpine removes `x-cloak` when it starts and `x-show` takes over from the same stored value,
-     so the two never disagree for a frame.
+     `document.currentScript.previousElementSibling`, so it needs no id. It changes two things:
+     whether the panel carries `x-cloak`, the attribute that keeps it hidden until Alpine starts,
+     and whether the section's arrow is turned. Alpine removes `x-cloak` when it starts, and
+     `x-show` and the arrow's binding take over from the same stored value, so neither disagrees
+     with it for a frame. The arrow is the first `[data-wk-disclosure-arrow]` in the section,
+     which is its own: the header comes before the panel, and a nested section's arrow is inside
+     the panel.
 
      Every value arrives as a data attribute on this tag and the body is a constant, for the
      reason `nav-persist-seed` gives: a script body is not escaped the way an attribute is.
@@ -48,5 +51,8 @@
     // A section the reader opened shows at once, like one the server rendered open; one they
     // folded stays hidden until Alpine starts, like one the server rendered closed.
     if (on) { panel.removeAttribute('x-cloak'); } else { panel.setAttribute('x-cloak', ''); }
+
+    var arrow = panel.parentElement && panel.parentElement.querySelector('[data-wk-disclosure-arrow]');
+    if (arrow) { arrow.classList.toggle('rotate-90', on); }
 })();
 </script>

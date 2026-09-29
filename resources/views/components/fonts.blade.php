@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // A CSP nonce for the inline <style> below. Left out, it resolves itself from
     // the container binding or Vite — see WireKit::cspNonce(). Pass one explicitly
@@ -37,12 +36,12 @@
     // Helper: is this font activated but not yet published?
     //
     // The published copy is the fast path — the web server hands it over without
-    // touching PHP. But a configured font that was never published used to emit
-    // NOTHING, so the page silently fell back to system fonts. That is the worst
-    // shape a failure can take: it looks right locally, where someone ran the
-    // publish once by hand, and it is wrong in production where nobody did.
+    // touching PHP. A configured font that was never published must not emit
+    // NOTHING, or the page would silently fall back to system fonts, looking right
+    // locally, where someone ran the publish once by hand, and wrong in production
+    // where nobody did.
     //
-    // So an unpublished font now falls back to the package route
+    // So an unpublished font falls back to the package route
     // (`/wirekit/fonts/...`), which reads straight from the installed package and
     // is therefore always correct after `composer update`. The inert HTML comment
     // stays as well, in every environment: the route means the page LOOKS right,
@@ -181,13 +180,12 @@
 @php
     // Metric-matched fallbacks for the developer's OWN fonts.
     //
-    // Every bundled family ships one of these, generated from measurements. A
-    // self-hosted font of the developer's own got nothing — which is exactly the
-    // setup the null font values are for, so the capability stopped precisely
-    // where the documented path leads.
+    // Every bundled family ships one of these, generated from its metrics. A
+    // self-hosted font of the developer's own, which is the setup the null font
+    // values are for, gets one from the numbers configured for it.
     //
     // Only the four overrides are emitted, and nothing is invented: a family with
-    // no measured numbers has no entry here, because a guessed `size-adjust`
+    // no configured numbers has no entry here, because a guessed `size-adjust`
     // moves the layout in the OTHER direction and looks deliberate doing it.
     $customFallbacks = [];
 
@@ -249,8 +247,8 @@
 @endphp
 
 @foreach($customFallbacks as $fallback)
-    {{-- Registers a local system font under "<family> Fallback" with the measured
-         metrics of the developer's own face, so the text painted before the swap
+    {{-- Registers a local system font under "<family> Fallback" with the metrics
+         of the developer's own face, so the text painted before the swap
          occupies the same box as the text painted after it. --}}
     <style @if($wkNonce)nonce="{{ $wkNonce }}"@endif>
         @font-face {
@@ -266,20 +264,14 @@
 {{-- CSS Custom Properties — one declaration per CONFIGURED category, and nothing
      for the others.
 
-     It used to write all three unconditionally, with a hardcoded stack standing in
-     for an unconfigured category. Those stand-ins were SHORTER than what
-     `dist/wirekit.css` ships for the same token — `ui-monospace, monospace` against
-     the stylesheet's `ui-monospace, 'Fira Code', 'Cascadia Code', monospace`, and
-     the sans stack lost Inter and -apple-system. Both are unlayered `:root` at the
-     same specificity, so whichever came second won: place this component after
-     `@wirekitStyles` — which is what the integration page's own ordering leads to —
-     and the monospace stack silently loses two families. Nothing throws, the HTML is
-     identical either way, and it shows only to a reader who has those fonts
-     installed. A consuming project found it by reading the computed cascade.
-
-     A declaration whose only job is to restate the shipped default has no job. Now
-     an unconfigured category emits nothing and the stylesheet's own value stands,
-     from any position.
+     A stand-in stack for an unconfigured category would compete with what
+     `dist/wirekit.css` ships for the same token. Both are unlayered `:root` at the
+     same specificity, so whichever came second would win, and placing this component
+     after `@wirekitStyles` (which the integration page's ordering leads to) would
+     replace the shipped stack with the stand-in, with nothing thrown and identical
+     HTML either way. A declaration whose only job is to restate the shipped default
+     has no job, so an unconfigured category emits nothing and the stylesheet's own
+     value stands, from any position.
 
      The nonce is what keeps this block alive once an application drops
      'unsafe-inline' from style-src: from CSP Level 2 on, a nonce anywhere in a

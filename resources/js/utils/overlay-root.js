@@ -267,11 +267,10 @@ let navigationListenersBound = false;
  * A navigation replaces the whole `<body>`. The container was appended to the old one and
  * leaves with it, so Alpine then walks a document in which every `x-teleport="#wk-overlay-root"`
  * points at nothing — and `x-teleport` treats that as fatal. The walk ends at the first
- * overlay it meets and nothing after it is ever initialized. Measured on a two-page fixture:
- * one uncaught `TypeError: Cannot read properties of null (reading 'appendChild')`, the
- * arriving page rendered in full, and an Alpine counter that no longer counts.
+ * overlay it meets and nothing after it is ever initialized: the arriving page renders in full
+ * and none of its components works.
  *
- * THE OBVIOUS HOOK IS THE WRONG ONE, and this is the whole reason the comment is long.
+ * The obvious hook is the wrong one, which is why this comment is long.
  * `livewire:navigated` forwards Alpine's `alpine:navigated`, and in the navigate source the
  * order is:
  *
@@ -281,9 +280,8 @@ let navigationListenersBound = false;
  *     fireEventForOtherLibrariesToHookInto('alpine:navigated');
  *
  * Rebuilding on `alpine:navigated` restores the container for the NEXT overlay and leaves
- * the error that already happened exactly where it was. That is not a theory about what
- * would happen — it is what the reporting application saw: the container was back afterwards
- * and the page was dead anyway.
+ * the error that already happened exactly where it was: the container is back afterwards and
+ * the page is dead anyway.
  *
  * So the container is rebuilt from `alpine:navigating`'s `onSwap`, which runs after the new
  * body is in place and before the walk. `alpine:navigated` is kept as a second net for a

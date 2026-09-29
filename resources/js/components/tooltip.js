@@ -32,9 +32,10 @@ export default function wirekitTooltip(config = {}) {
         _longPressTimer: null,
         _autoDismissTimer: null,
 
-        // The positioner's teardown handle, held only while the tooltip is open. One
-        // attribute-filtered MutationObserver per showing, disconnected on every hide — see the
-        // note beside `repairErasure` below for why a tooltip of all things needs one.
+        // The positioner's teardown handle, held only while the tooltip is open. It ends both
+        // observers of one showing, the attribute-filtered MutationObserver and the scroll and
+        // resize listeners, and every hide calls it — see the notes beside `repairErasure` and
+        // `autoReposition` below for why a tooltip of all things needs them.
         _stopRepair: null,
 
         // Stored cleanup handler for destroy()
@@ -253,17 +254,13 @@ export default function wirekitTooltip(config = {}) {
             // switch that only guards the doors it knows about is not a switch.
             if (this._disabled()) return;
 
-            // Color the panel BEFORE it is shown, not after.
+            // Color the panel before it is shown, not after.
             //
-            // `open = true` flips x-show, which sets display immediately; the
-            // copy used to run after the $nextTick that follows. Between those
-            // two moments the panel is displayed and still carries the default
-            // color — measured, reproducibly, by polling a shown panel and
-            // reading the default value off it. Whether a browser paints inside
-            // that window was never established, and it does not need to be:
-            // an observable window makes the contract untestable without a
-            // race, which is how a healthy component held a downstream check
-            // red for weeks.
+            // `open = true` flips x-show, which sets display immediately. A copy
+            // after the $nextTick that follows would leave a window in which the
+            // panel is displayed and still carries the default color, observable
+            // by anything that reads a shown panel, which makes the contract
+            // untestable without a race.
             //
             // The panel is teleported by `<template x-teleport>` at init and
             // only display-toggled afterwards, so the ref is already there —
@@ -318,18 +315,19 @@ export default function wirekitTooltip(config = {}) {
                     // them again before the placement is put back, so a tooltip restyled on its
                     // wrapper keeps its colors across the update.
                     repairErasure: (panel) => this._inheritThemeVars(panel),
+                    // It also follows the trigger: the placement is viewport-relative (`fixed`),
+                    // so a scroll while this is open would otherwise leave it where the trigger
+                    // was. The same `stop()` ends both observers.
+                    autoReposition: true,
                     // Without this a `placement="right"` tooltip runs off the
                     // right edge of a phone and stays there. Floating UI's
                     // default shift only moves along the placement's MAIN axis,
                     // which for left/right is vertical — so nothing pulls it
                     // back horizontally, and `flip` gives up when both sides
                     // overflow, which on a 375px viewport they do.
-                    // Measured before the fix: the panel occupied x 369..559 in
-                    // a 375px viewport — 184px of it off-screen.
                     // The sibling overlays (popover, navigation-menu, filter-
                     // builder, color-picker, event-calendar, notification-
-                    // center) already pass this; the tooltip was the one that
-                    // did not.
+                    // center) pass it too.
                     crossAxisShift: true,
                 });
 

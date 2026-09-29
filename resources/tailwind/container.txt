@@ -76,7 +76,6 @@ Declared
 Dev-only
 Fully
 Inline
-Measured
 Normalized
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -105,12 +104,10 @@ action
 against
 an
 and
-any
 apply
 array_filter([
 as
 as,
-asserted:
 attribute
 attribute.
 auto-derived
@@ -140,12 +137,9 @@ element,
 escaping
 exactly
 feature
-file
 flags
 flips
-for
 from
-guard
 implode('
 imports
 in
@@ -179,6 +173,7 @@ opening
 opposite
 optimistic-ui:
 or
+otherwise
 own
 padding
 padding="lg">`
@@ -188,11 +183,8 @@ prod).
 prop's
 props
 qualified:
-rather
 reach
 reads
-reason
-refutes
 renders
 result
 rhythm).
@@ -212,7 +204,6 @@ stop
 straight
 string,
 tag,
-than
 that
 the
 themselves
@@ -227,7 +218,6 @@ truthy
 unknown
 unvalidated
 use
-used
 uses
 value
 view's
@@ -240,6 +230,7 @@ where
 which
 whose
 wirekit:spine-participant
+would
 would.
 {
 {{

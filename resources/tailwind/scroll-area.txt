@@ -266,8 +266,6 @@ match
 max-height
 may
 meant
-measured.
-measurement
 measures
 mechanism.
 missing
@@ -301,6 +299,7 @@ outcomes.
 overflow
 overflow-x-hidden',
 overflow-y-hidden',
+overflow.
 overlay).
 page
 paint
@@ -315,7 +314,9 @@ pure
 qualified:
 rather
 reach
+read
 reader
+reading
 real
 really
 region

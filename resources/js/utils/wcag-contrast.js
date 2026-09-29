@@ -367,7 +367,7 @@ function compositeOver(top, under) {
  * when either input is in an unsupported format, or when the BACKGROUND is translucent.
  *
  * A translucent foreground is laid over the background first, the way a browser composites it.
- * Measured as if it were opaque, 50% black on white reads 21:1 where a reader sees 3.98:1 —
+ * Computed as if it were opaque, 50% black on white would read 21:1 where a reader sees 3.98:1 —
  * the dangerous direction, because nothing turns red. A translucent background has no contrast
  * of its own: what shows through depends on whatever lies beneath it, which the two strings do
  * not say, so it is refused rather than guessed.

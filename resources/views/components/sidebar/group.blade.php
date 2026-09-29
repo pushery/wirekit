@@ -1,6 +1,16 @@
 {{-- optimistic-ui: n/a — client-only
      Its state is disclosure state. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
+{{-- Why this view has a class behind it.
+
+     `collapsible` means two things in a sidebar. Here it folds the group's rows; on the sidebar
+     it lets the column become an icon rail, and each row reads the sidebar's through `@aware`,
+     which answers with the nearest ancestor that was called with the name.
+     `Pushery\WireKit\Components\SidebarGroup` takes `collapsible` in its constructor, so this
+     group is never that ancestor. The prop stays declared below, because that declaration is
+     what every catalog and guard reads. A view compiled before the class existed reaches this
+     file anonymously until its cache is cleared: the prop then arrives as an attribute, and the
+     group folds as before. --}}
 @props([
     'label' => null,
     // When set, the group heading becomes a disclosure button that folds its items.
@@ -151,8 +161,13 @@
             <span class="break-words">{{ $label }}</span>
             {{-- Chevron rotates when open; hidden in the collapsed icon rail (no room). --}}
             <svg
-                class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
-                :class="isOpen ? 'rotate-90' : ''"
+                {{-- Turned in the markup when the server renders the section open, so the arrow of an open
+                     section points down from the first paint rather than turning once Alpine starts. The
+                     object form of the binding removes a class it did not add, so a section that closes
+                     loses the rotation the markup gave it. --}}
+                data-wk-disclosure-arrow
+                class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden{{ $open ? ' rotate-90' : '' }}"
+                :class="{ 'rotate-90': isOpen }"
                 fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
             >
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />

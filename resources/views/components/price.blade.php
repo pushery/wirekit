@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'amount' => null,
     'currency' => config('wirekit.currency', 'USD'),
@@ -26,7 +25,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('price', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $minorUnits = BooleanProp::from($minorUnits, false);
 
@@ -67,15 +66,14 @@
             : "{$sign}{$delta}";
     }
 
-    // The whole accessible story used to live in one `aria-label` on the wrapper below,
-    // and the wrapper is a roleless <span>. ARIA prohibits `aria-label` on `generic`, so
-    // that name is not required to reach assistive tech at all — the same defect the
-    // modal comment names, one component over. Worse, the unit price was marked
-    // `aria-hidden` on the strength of it: a legally required figure (Price Indication
-    // Directive 98/6/EC, PAngV) hidden behind a name nothing guarantees is spoken.
+    // The meaning is carried by CONTENT, not by an `aria-label` on the wrapper below. The
+    // wrapper is a roleless <span>, and ARIA prohibits `aria-label` on `generic`, so such a
+    // name is not required to reach assistive tech at all; a unit price hidden behind it
+    // would be a legally required figure (Price Indication Directive 98/6/EC, PAngV) that
+    // nothing guarantees is spoken.
     //
-    // So the meaning is carried by CONTENT instead. The struck compare-at price gets a
-    // visually-hidden prefix, because <del> maps to `role="deletion"` and screen readers
+    // The struck compare-at price gets a visually-hidden prefix, because <del> maps to
+    // `role="deletion"` and screen readers
     // do not announce it by default; the unit price is simply read out, being visible
     // text; and the delta keeps its own sign, which is exactly what tells a sighted
     // reader the direction too.
@@ -161,11 +159,10 @@
     @endif
 
     {{-- Unit price (Grundpreis) — formatted as "(€8.99 / L)" alongside the
-         main price. It is read out like any other visible text. It used to
-         carry aria-hidden, on the grounds that the wrapper's aria-label
-         already said it — but that label sat on a roleless <span>, where
-         ARIA prohibits it, so the figure the Price Indication Directive
-         requires was hidden behind a name nothing guarantees is spoken. --}}
+         main price. It is read out like any other visible text, not hidden
+         behind the wrapper's aria-label: that label sits on a roleless <span>,
+         where ARIA prohibits it, so the figure the Price Indication Directive
+         requires would hang on a name nothing guarantees is spoken. --}}
     @if($formattedUnitPrice !== null)
         <span class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
             (<bdi>{{ $formattedUnitPrice }}</bdi> / {{ $unitMeasure }})

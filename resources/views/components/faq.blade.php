@@ -55,10 +55,10 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('faq', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `schema="false"` used to switch the JSON-LD ON. That is the exact spelling a
+    // `schema="false"` would switch the JSON-LD ON. That is the exact spelling a
     // developer reaches for when a page carries a second FAQ and must not emit two
-    // competing FAQPage nodes, and the page rendered normally either way, so
-    // nothing surfaced the mistake. Both spellings now agree.
+    // competing FAQPage nodes, and the page renders normally either way, so
+    // nothing would surface the mistake. Both spellings agree.
     $schema = BooleanProp::from($schema, true);
     $multiple = BooleanProp::from($multiple);
     $plainText = BooleanProp::from($plainText);

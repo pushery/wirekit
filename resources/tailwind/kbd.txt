@@ -43,7 +43,6 @@ $slot
 Declared
 Dev-only
 Fully
-Measured
 Pushery\WireKit\WireKit;
 Renders
 WireKit::resolveClasses('kbd',
@@ -54,8 +53,6 @@ WireKit::resolveClasses('kbd',
 ]),
 a
 action
-any
-asserted:
 auto-derived
 be
 block,
@@ -65,11 +62,8 @@ debug
 does
 early.
 element,
-file
 flags
-for
 from
-guard
 implode('
 imports
 in
@@ -100,17 +94,10 @@ px-2
 py-0.5
 py-1
 qualified:
-rather
 reach
-reason
-refutes
-renders
 result
 shown
 so
-than
-that
-the
 there
 this
 unknown

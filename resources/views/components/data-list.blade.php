@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'layout' => config('wirekit.components.data-list.layout', 'horizontal'),
     'scope' => null,
@@ -23,12 +22,10 @@
     // outside the developer's source-tree scan.
     $layoutStyle = match ($layout) {
         // `--gap-wk-lg`, NOT `--gap-wk-md`, and the difference is the whole point of using a
-        // token here at all. The reporting application proposed `md` on the reasoning that a
-        // fallback keeps today's behavior — which holds only while the token is unset, and it
-        // is not: `dist/wirekit.css` ships `--gap-wk-md: 0.75rem`. Swapping to it would have
-        // tightened every stacked and grid list in every application from 1rem to 0.75rem, on
-        // a change described as non-breaking. `--gap-wk-lg` IS 1rem, so nothing moves and the
-        // gap becomes adjustable, which was the actual request.
+        // token here at all. A fallback keeps the 1rem only while the token is unset, and it is
+        // not: `dist/wirekit.css` ships `--gap-wk-md: 0.75rem`, so `md` would tighten every
+        // stacked and grid list in every application from 1rem to 0.75rem. `--gap-wk-lg` IS
+        // 1rem, so nothing moves and the gap becomes adjustable.
         'stacked' => 'display: flex; flex-direction: column; gap: var(--gap-wk-lg, 1rem);',
         'grid' => 'display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap-wk-lg, 1rem);',
         // `summary` is the totals shape: an invoice subtotal block, a cart
@@ -45,8 +42,8 @@
         //
         // The <dt>/<dd> pairs are the grid's own items — `data-list.item`
         // drops its wrapper box to `display: contents` in this layout — so the
-        // value column is ONE track measured across every row, not a separate
-        // measurement per row. That shared track is what makes the amounts a
+        // value column is ONE track sized across every row, not a separate
+        // size per row. That shared track is what makes the amounts a
         // column rather than a set of independently right-aligned strings.
         //
         // Row rhythm comes from the row gap rather than per-item padding, and

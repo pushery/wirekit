@@ -6,6 +6,9 @@
     'position' => config('wirekit.components.drawer.position', 'right'),
     'size' => config('wirekit.components.drawer.size', 'md'),
     'dismissible' => config('wirekit.components.drawer.dismissible', true),
+    // Whether opening locks the page's scroll. False for an overlay that lives inside a page
+    // region, such as a preview, where the page around it has to keep scrolling.
+    'lockScroll' => true,
     'describedby' => null,
     // An explicit accessible name, for a drawer composed WITHOUT `drawer.header`.
     //
@@ -31,13 +34,14 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('drawer', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `dismissible="false"` used to mean the opposite of what the call site reads as. The
+    // `dismissible="false"` would otherwise mean the opposite of what the call site reads as. The
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
     // the only reason the coverage guard did not see it. It defaults ON, so turning it off
     // is the direction a developer chooses deliberately — and Escape and the backdrop both
     // kept closing the drawer, which is the whole of what the prop suppresses. Same shape,
     // same fix as the modal beside it.
     $dismissible = BooleanProp::from($dismissible, true);
+    $lockScroll = BooleanProp::from($lockScroll, true);
 
     // `size` and `position` are resolved by a `match` with a `default` arm below, and a
     // default arm is silent by construction: `size="xl"` rendered `md` and
@@ -170,7 +174,7 @@
      made once. Only registered when the
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
-    x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
+    x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
     @if($dismissible) x-on:keydown.escape.window="isOpen && isTopmost && dismissByReader('escape')" @endif
     {{ $attributes }}
 >

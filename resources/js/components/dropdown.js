@@ -44,16 +44,14 @@ export default function wirekitDropdown(config = {}) {
         init() {
             // The panel's id is written here rather than bound in the template.
             //
-            // It used to be `x-bind:id="panelId"` on the panel — reading the value out of
-            // this scope, which is correct across the TELEPORT (Alpine keeps the scope;
-            // `closest()` would not) and wrong across a Livewire MORPH. On every morph
-            // that binding was re-evaluated in a scope that no longer had `panelId`, and
-            // threw `panelId is not defined`.
-            //
-            // A JavaScript error during a morph ends evaluation at that point, so whatever
-            // the same pass would have done next does not happen — and nothing turns red,
-            // because a console error is not a failed assertion. It sat in a consuming
-            // application for weeks that way.
+            // An `x-bind:id="panelId"` on the panel reads the value out of this scope,
+            // which is correct across the TELEPORT (Alpine keeps the scope; `closest()`
+            // would not) and wrong across a Livewire MORPH: the morph re-evaluates the
+            // binding in a scope that no longer has `panelId`, and it throws
+            // `panelId is not defined`. A JavaScript error during a morph ends evaluation
+            // at that point, so whatever the same pass would have done next does not
+            // happen, and nothing turns red, because a console error is not a failed
+            // assertion.
             //
             // Assigning it imperatively removes the last scope-dependent expression from
             // the teleported node: it runs on init, re-runs when the morph re-initializes
@@ -66,11 +64,10 @@ export default function wirekitDropdown(config = {}) {
             // trigger's `aria-controls` then announces a relationship to an
             // element that is not in the document.
             //
-            // This was tried once before and reverted, because writing the id
-            // made the panel the morph's key and a mismatch swapped it for a
-            // scopeless clone. The panel's `wire:key` is what makes it safe now:
-            // the key no longer falls back to the id, both sides of the morph
-            // agree, and the node is patched rather than replaced. Removing
+            // Writing the id is safe because of the panel's `wire:key`: without
+            // it the morph would key the panel by its id, and a mismatch would
+            // swap it for a scopeless clone. With the key, both sides of the
+            // morph agree and the node is patched rather than replaced. Removing
             // either half brings the other's defect back.
             this.$nextTick(() => this._applyPanelId());
 
@@ -159,9 +156,9 @@ export default function wirekitDropdown(config = {}) {
                 const { stop } = await position(trigger, panel, {
                     placement: this._placement,
                     offset: this._offset,
-                    // Cap the panel to the viewport and let it scroll — a 12-item
-                    // menu opening upward from the foot of a short window used to
-                    // pin to the top edge and clip its first (often most
+                    // Cap the panel to the viewport and let it scroll — without the
+                    // cap, a long menu opening upward from the foot of a short window
+                    // would pin to the top edge and clip its first (often most
                     // important) item. See floating.js size middleware.
                     fitViewport: true,
                     // Follow the trigger while open; teardown handle stored for close().
@@ -228,17 +225,15 @@ export default function wirekitDropdown(config = {}) {
             // arrives through `handleKeydown`, which is bound on the PANEL, and there Alpine
             // binds `$el` to the panel. The panel does not contain the trigger, so the lookup
             // would return null and Tab would silently stop returning focus. `$root` is the
-            // x-data element whichever child dispatched the event. Written as `$el` first and
-            // caught by the guard that exists because this class has shipped twice before.
+            // x-data element whichever child dispatched the event.
             const triggerRoot = this._triggerElement();
             const target = triggerRoot?.querySelector('button, [role="button"], a')
                 ?? triggerRoot;
 
-            // BEFORE the hide, not after. `this.open = false` makes `x-show` write
+            // Before the hide, not after. `this.open = false` makes `x-show` write
             // `display: none`, and hiding the subtree that holds focus makes the browser
-            // drop focus on `<body>` — after our focus() call, which therefore accomplished
-            // nothing. Measured: Escape on an open menu left `document.activeElement ===
-            // document.body` in both engines. Moving focus first means there is never a
+            // drop focus on `<body>`, in both engines — after a focus() call made later,
+            // which would then accomplish nothing. Moving focus first means there is never a
             // moment where the focused element is inside a hidden subtree.
             if (focusWasInside) {
                 target?.focus({ preventScroll: true });

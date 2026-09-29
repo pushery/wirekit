@@ -69,8 +69,9 @@ export default function wirekitHoverCard(config = {}) {
         // Cross-close channel — see utils/overlay-coordination.js. Two open
         // sibling hover cards overlap, which a reader sees and no test does.
         _coordination: null,
-        // Disconnects the observer that puts the placement back after a framework update
-        // erases it. See the note beside `repairErasure` in show().
+        // Ends both observers of one showing: the one that puts the placement back after a
+        // framework update erases it, and the one that follows the trigger on scroll. See the
+        // notes beside `repairErasure` and `autoReposition` in show().
         _stopRepair: null,
         // Held up for exactly the moment focus is put back on the trigger by
         // Escape or a shift-Tab out of the card. Without it the trigger's own
@@ -114,12 +115,11 @@ export default function wirekitHoverCard(config = {}) {
          * The delay allows moving between trigger and panel without closing.
          *
          * A card the reader is FOCUSED inside is a card in use, so the pointer leaving does
-         * not dismiss it. This path used to close unconditionally while the keyboard path
-         * beside it had asked all along, and the two answers are not separable: a reader who
-         * hovers the trigger, Tabs into the card — which this component's documentation
-         * invites, and which is the whole reason it is a dialog rather than a tooltip — and
-         * then moves the mouse away lost the card mid-use, and with it their place in the
-         * document. Hiding the subtree that holds focus drops it on `<body>` (WCAG 2.4.3).
+         * not dismiss it. This path asks the same question as the keyboard path beside it,
+         * and the two answers are not separable: a reader who hovers the trigger, Tabs into
+         * the card — which this component's documentation invites, and which is the whole
+         * reason it is a dialog rather than a tooltip — and then moves the mouse away would
+         * otherwise lose the card mid-use, and with it their place in the document. Hiding the subtree that holds focus drops it on `<body>` (WCAG 2.4.3).
          *
          * Dismissal is not lost, only handed to the path that owns it: `focusout()` closes the
          * card as soon as focus genuinely leaves.
@@ -346,20 +346,21 @@ export default function wirekitHoverCard(config = {}) {
                     // the panel against its own template, whose `style` attribute carries none of
                     // it. The placement is gone while the card is still open — and this panel is
                     // teleported to the overlay root, so with no `top` it sits at the END of the
-                    // document rather than a few pixels off its trigger.
+                    // document rather than a few pixels off its trigger, with its box unchanged.
                     //
-                    // Measured on /overlays across one refresh: `top` 959.25px → empty, still
-                    // shown, box unchanged at 288x74.
-                    //
-                    // That last number is why the option is `repairErasure` and not
-                    // `autoReposition`: an unchanged box means no resize, and `autoUpdate`
-                    // observes boxes rather than the style attribute — it would watch this panel
-                    // being erased and report nothing.
+                    // That unchanged box is why `repairErasure` is needed beside `autoReposition`
+                    // below: an unchanged box means no resize, and `autoUpdate` observes boxes
+                    // rather than the style attribute — it would watch this panel being erased
+                    // and report nothing.
                     //
                     // A hover card is not transient either. It holds itself open while the
                     // pointer rests on it, and it is focusable — the reader tabs INTO it, which
                     // is the whole reason `tabFromTrigger` exists.
                     repairErasure: true,
+                    // It also follows the trigger: the placement is viewport-relative (`fixed`),
+                    // so a scroll while this is open would otherwise leave it where the trigger
+                    // was. The same `stop()` ends both observers.
+                    autoReposition: true,
                 });
 
                 if (placement && typeof placement.stop === 'function') {

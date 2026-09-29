@@ -58,7 +58,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('segmented-control', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
 
@@ -96,16 +96,16 @@
 
     // Selected / unselected segment appearance.
     //
-    // These used to be string literals inside the Alpine `:class` ternary below.
-    // That put them out of reach of WireKit::scope(): resolveClasses runs at
-    // RENDER time in PHP, while `:class` is a RUNTIME reactive binding, so any
-    // state-dependent styling written there silently opts out of personalization.
-    // A brand that themes its active segment (gold on navy, say) could not adopt
-    // this component without losing that styling — the accent token does not help,
-    // because the selected pill is an elevated surface rather than an accent fill.
+    // Resolved here rather than written as string literals inside the Alpine `:class`
+    // ternary below, where WireKit::scope() could not reach them: resolveClasses runs
+    // at RENDER time in PHP, while `:class` is a RUNTIME reactive binding, so any
+    // state-dependent styling written there silently opts out of personalization. A
+    // brand that themes its active segment (gold on navy, say) would lose that styling
+    // — the accent token does not help, because the selected pill is an elevated
+    // surface rather than an accent fill.
     //
-    // Resolving both branches here and interpolating the results keeps the runtime
-    // behavior identical while making both reachable.
+    // Both branches are resolved here and the results interpolated, so both are
+    // reachable and the runtime behavior is the same.
     //
     // The class strings stay literals in this file, so Tailwind's content scanner
     // still finds them here, through the views glob and through this component's
@@ -208,17 +208,14 @@
              that bind that input with `:value` have Alpine writing its own stale
              state back over the morph, so watching it would be racing a binding. --}}
         data-wk-server-value="{{ $selected }}"
-        {{-- The seed is NOT interpolated here, and that is the whole fix for the
-             return-trip defect. The comment above assumed Alpine reads `x-data`
-             once; a Livewire morph rewrites the attribute, and Alpine then
-             re-initializes the component. Measured: the scope object is replaced
-             on every round trip, and a reactive effect from the pre-morph scope
-             flushes AFTERWARDS and writes the pre-morph value last — so a reader
-             who returns to a value they already had sees the previous segment.
+        {{-- The seed is not interpolated here. A Livewire morph that rewrites the
+             `x-data` attribute makes Alpine re-initialize the component, replacing
+             the scope on every round trip, and a reactive effect from the old
+             scope flushes afterwards and writes the old value last: a reader who
+             returns to a value they already had would see the previous segment.
              Keeping the attribute byte-identical across renders leaves the scope
              alone, which makes `data-wk-server-value` + observeServerValue the one
-             update path it was always meant to be. The seed now comes from that
-             same attribute at init. --}}
+             update path. The seed comes from that same attribute at init. --}}
         x-data="wirekitSegmentedControl({ disabled: {{ $disabled ? 'true' : 'false' }} })"
         {{-- Without the optimistic layer the radiogroup IS this element, exactly
              as before. With it, the role moves one level in — because the layer
@@ -251,11 +248,11 @@
              Must be within the same Alpine component for x-ref to work.
 
              `value` is static because this field is what a form actually submits.
-             Alpine writes it in init(), so it USED to be empty until then — and a
-             submit inside that window sent nothing while the selected segment sat
-             visibly highlighted next to it. Under a policy that blocks Alpine's
-             evaluator the field never fills at all, so the window is the whole
-             session rather than a few milliseconds.
+             Alpine writes it in init(), and without a static value the field would
+             be empty until then: a submit inside that window would send nothing
+             while the selected segment sat visibly highlighted next to it. Under a
+             policy that blocks Alpine's evaluator the field never fills at all, so
+             the window would be the whole session rather than a few milliseconds.
 
              It reads `$selected`, the same expression that feeds the Alpine seed
              on the wrapper and `data-wk-server-value`. Deriving it a second way

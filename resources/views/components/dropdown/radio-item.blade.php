@@ -1,5 +1,5 @@
 {{-- optimistic-ui: candidate
-     Same, with the group-rollback wrinkle: the snapshot is the previously selected sibling.
+     Same, with the group-rollback wrinkle: the snapshot is the sibling selected before the pick.
 
      The announcer wrapper is not in the way. The `display: contents` wrapper between
      `role="menu"` and its owned item leaves both items direct children of the menu:
@@ -48,7 +48,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
 

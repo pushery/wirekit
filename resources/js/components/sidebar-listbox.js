@@ -144,8 +144,7 @@ export default function wirekitSidebarListbox(config = {}) {
             // would only pull the list out from under it. The half-visible row at the
             // column's edge is the case that bites: revealing it shifts a different row
             // under the cursor, and the next click lands on something the reader never
-            // aimed at. Measured before this guard, on a capped column: a click on the
-            // half-visible last row moved scrollTop from 0 to 17.
+            // aimed at.
             //
             // One call, then the flag is spent — `markActive()` is the shared path, and a
             // flag left standing would silence the keyboard's next move as well.

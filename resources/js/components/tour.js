@@ -8,6 +8,7 @@
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { position } from '../utils/floating.js';
+import { holdPageInert, inOverlayRoot, releasePageInert } from '../utils/overlay.js';
 import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
@@ -24,8 +25,13 @@ export default function wirekitTour(config = {}) {
         _startHandler: null,
         _trap: null,
         _opener: null,
-        // Disconnects the observer that puts the step's placement back after a framework update
-        // erases it. See the note beside `repairErasure` in _positionStep().
+        // Whether this tour holds one of the counted holds that keep the page behind it inert
+        // (see `holdPageInert` in utils/overlay.js). One hold for the whole tour, taken once the
+        // first step's trap has recorded the opener, given back before focus returns to it.
+        _holdsPageInert: false,
+        // Ends both observers of the current step: the one that puts its placement back after a
+        // framework update erases it, and the one that follows its target on scroll. See the
+        // notes beside `repairErasure` and `autoReposition` in _positionStep().
         _stopRepair: null,
 
         init() {
@@ -47,6 +53,7 @@ export default function wirekitTour(config = {}) {
             // A tour torn down mid-flight (SPA navigation away from the page it
             // runs on) would otherwise leave an active focus trap behind, holding
             // its own document listeners and a reference to a detached panel.
+            this._releasePageInert();
             this._releaseFocus({ returnFocus: false });
 
             this._stopRepair?.();
@@ -63,6 +70,9 @@ export default function wirekitTour(config = {}) {
             // x-teleport + x-show keeps steps in the DOM at all times,
             // so $nextTick is sufficient (no setTimeout needed).
             this.$nextTick(() => {
+                // Ended inside the tick: there is no step to show any more.
+                if (! this.active) return;
+
                 const overlay = this.$refs.overlay;
                 if (!overlay) return;
                 this.totalSteps = overlay.querySelectorAll('[data-wk-tour-step]').length;
@@ -82,6 +92,7 @@ export default function wirekitTour(config = {}) {
                 // moves in the same macrotask and for the same reason: a panel
                 // that x-show has not yet revealed cannot take focus.
                 setTimeout(() => {
+                    if (! this.active) return;
                     this._positionStep();
                     this._focusStep();
                 }, 0);
@@ -97,6 +108,7 @@ export default function wirekitTour(config = {}) {
             if (this.currentStep > 0) {
                 this.currentStep--;
                 setTimeout(() => {
+                    if (! this.active) return;
                     this._positionStep();
                     this._focusStep();
                 }, 0);
@@ -109,7 +121,9 @@ export default function wirekitTour(config = {}) {
         finish() {
             // Before the panels go hidden: releasing afterwards would deactivate
             // a trap whose container is already display:none, and focus would be
-            // sitting on that hidden element in the meantime.
+            // sitting on that hidden element in the meantime. The page first, so
+            // the opener focus returns to is no longer inert.
+            this._releasePageInert();
             this._releaseFocus();
 
             this.active = false;
@@ -155,12 +169,12 @@ export default function wirekitTour(config = {}) {
 
                     // Everything this call writes is inline style, and a framework update patches
                     // the step against its own template, whose `style` attribute carries none of
-                    // it. Measured on /overlay-placement-seam across one refresh: `top` 650.5px →
-                    // empty, same node, still shown, box unchanged at 320x111.
+                    // it: after a refresh the same node is still shown, with no `top` and the same
+                    // box.
                     //
-                    // The unchanged box is why this is `repairErasure` and not
-                    // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
-                    // observes boxes rather than the style attribute.
+                    // The unchanged box is why `repairErasure` is needed beside `autoReposition`
+                    // below: no resize means `autoUpdate` sees nothing, because it observes boxes
+                    // rather than the style attribute.
                     //
                     // A tour is the longest-lived overlay in the catalog — it stands over the page
                     // for as many steps as it has, and the page underneath keeps working. The
@@ -168,6 +182,11 @@ export default function wirekitTour(config = {}) {
                     // slid to the end of the document is telling the reader about an element they
                     // cannot see, while the focus trap still holds them inside it.
                     repairErasure: true,
+                    // It also follows its target: the placement is viewport-relative (`fixed`),
+                    // and the step scrolls its target into view right after this call, so without
+                    // this the step would stay where the target was before that scroll, and after
+                    // any scroll of the reader's own. The same `stop()` ends both observers.
+                    autoReposition: true,
                 });
 
                 if (placed && typeof placed.stop === 'function') {
@@ -214,8 +233,16 @@ export default function wirekitTour(config = {}) {
          * the page and scrolls each target into view itself, so pinning the
          * document would defeat the component. Focus-trap's `preventScroll` keeps
          * the two from fighting: the focus call moves no scroll position of its own.
+         *
+         * The page behind is inert all the same. `inert` takes the page out of reach,
+         * not out of scrolling, so the tour still brings each target into view.
          */
         _focusStep() {
+            // Every caller runs a tick or a task after the step changed, and the tour can end in
+            // between. `finish()` found no trap and no hold then, so taking them now would leave
+            // a trap on a hidden step and the page inert behind nothing.
+            if (! this.active) return;
+
             const overlay = this.$refs.overlay;
             if (!overlay) return;
 
@@ -233,6 +260,10 @@ export default function wirekitTour(config = {}) {
             // to take it, and letting both act would move focus twice.
             this._releaseFocus({ returnFocus: false });
 
+            // The destination is fixed when the trap is made. focus-trap asks for it a task
+            // after `deactivate()`, and by then ending the tour has cleared `_opener`.
+            const opener = this._opener;
+
             this._trap = createFocusTrap(stepEl, {
                 // The Blade template keeps a window-level Escape handler so a press
                 // still dismisses when focus has fallen to the body; letting the
@@ -244,11 +275,23 @@ export default function wirekitTour(config = {}) {
                 // before" points at a step that is hidden by the time the tour
                 // ends. The opener is the only sensible destination.
                 setReturnFocus: () => (
-                    this._opener && this._opener.isConnected ? this._opener : document.body
+                    opener && opener.isConnected ? opener : document.body
                 ),
             });
 
             this._trap.activate();
+
+            if (! this._holdsPageInert && inOverlayRoot(stepEl)) {
+                this._holdsPageInert = holdPageInert();
+            }
+        },
+
+        /** Give back the hold on the page behind the tour, once. */
+        _releasePageInert() {
+            if (this._holdsPageInert) {
+                this._holdsPageInert = false;
+                releasePageInert();
+            }
         },
 
         /**

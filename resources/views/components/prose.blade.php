@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'size' => 'md',
     'variant' => 'default',
@@ -72,43 +71,46 @@
     // Every element rule ends in the same exclusion, written out on each rule because Tailwind
     // compiles only the class names it can read literally in this file:
     //
-    //     :not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip]))
+    //     :not(:where(
+    //         .not-wk-prose,
+    //         .not-wk-prose *:not(.not-wk-prose .wk-prose *),
+    //         .not-wk-prose .wk-prose .not-wk-prose *:not(.not-wk-prose .wk-prose .not-wk-prose .wk-prose *),
+    //         [data-wk-prose-skip]
+    //     ))
     //
     // Prose styles the markup it is given, not the WireKit components nested in it. Every element
     // a component renders carries `data-wk-prose-skip`, which exempts that element and nothing
     // below it, so whatever sits in a component's slot is still styled and a table cell can hold
-    // prose of its own. `not-wk-prose` is the developer's opt-out for a whole block: the element
-    // and everything inside it. Without the exclusion, a button link inside prose came out
-    // underlined, a code block wrapped and took a second padding, and table cells lost their own
-    // padding. `:where()` adds no specificity, so every rule weighs exactly what it did before.
-
-    // Density-aware heading + paragraph rules. `comfortable` keeps the
-    // pre-v2.0.0 scale (back-compat default); `compact` tightens the
-    // h2/h3 mt + p mb tokens so the prose fits marketing-page rhythm
-    // without developer-side overrides.
+    // prose of its own. `not-wk-prose` is the developer's opt-out for a block: the element and
+    // everything inside it, up to a prose nested in that block, which styles its own content
+    // again. The two middle lines are that boundary, for a prose inside the block and for one
+    // more level of the same (a documentation page whose example is a prose with a block of its
+    // own); a deeper level is not covered. Without the exclusion, a button link inside prose came
+    // out underlined, a code block wrapped and took a second padding, and table cells lost their
+    // own padding. `:where()` adds no specificity, so every rule weighs exactly what it did before.
     $presetValue = ($preset === null || $preset === '')
         ? null
         : (in_array($preset, ['chat', 'reading', 'large'], true)
             ? $preset
             : WireKit::validateProp('prose', 'preset', $preset, ['chat', 'reading', 'large']));
 
-    $densityClasses = match ($density) {
-        'comfortable' => [
-            '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-2xl)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-0 [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
-            '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-xl)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-xl)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-sm)]',
-            '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-lg)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-lg)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-sm)]',
-            '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-md)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-lg)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
-            '[&_p:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
-        ],
-        'compact' => [
-            '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-xl)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-0 [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
-            '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-lg)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-md)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
-            '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-md)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-sm)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
-            '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-sm)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-sm)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
-            '[&_p:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-sm)]',
-        ],
+    // Density sets the heading scale and the block rhythm as variables on this root, through
+    // `data-density` and dist/wirekit.css, and the rules below read them. A variable is
+    // inherited, so a prose nested inside another takes its values from the nearer root: its own
+    // density holds for its own content whichever prose's rule reached it.
+    $densityAttr = match ($density) {
+        'comfortable' => null,
+        'compact' => 'compact',
         default => WireKit::validateProp('prose', 'density', $density, ['comfortable', 'compact']),
     };
+
+    $densityClasses = [
+        '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[length:var(--wk-prose-h1-size)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mt-0 [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--wk-prose-h1-mb)]',
+        '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[length:var(--wk-prose-h2-size)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mt-[var(--wk-prose-h2-mt)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--wk-prose-h2-mb)]',
+        '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[length:var(--wk-prose-h3-size)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mt-[var(--wk-prose-h3-mt)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--wk-prose-h3-mb)]',
+        '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[length:var(--wk-prose-h4-size)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mt-[var(--wk-prose-h4-mt)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--wk-prose-h4-mb)]',
+        '[&_p:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--wk-prose-p-mb)]',
+    ];
 
     $classes = WireKit::resolveClasses('prose', 'base', implode(' ', array_merge([
         // `wk-prose` marker — load-bearing against developer prose
@@ -142,25 +144,25 @@
         '[overflow-wrap:break-word]',
         // Shared heading typography (font-weight + line-height), density
         // controls size + margin.
-        '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
-        '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
-        '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
-        '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]',
+        '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
+        '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
+        '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
+        '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]',
         // Inline
-        '[&_a:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[color:var(--color-wk-accent-text)] [&_a:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:underline [&_a:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:underline-offset-2',
-        '[&_strong:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]',
+        '[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--color-wk-accent-text)] [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:underline [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:underline-offset-2',
+        '[&_strong:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]',
         // Lists
-        '[&_ul:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:list-disc [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-lg)] [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
-        '[&_ol:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:list-decimal [&_ol:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-lg)] [&_ol:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
-        '[&_li:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
+        '[&_ul:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:list-disc [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-lg)] [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+        '[&_ol:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:list-decimal [&_ol:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-lg)] [&_ol:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+        '[&_li:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
         // Blockquote
-        '[&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-l-4 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-md)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:italic [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[color:var(--color-wk-text-muted)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+        '[&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-l-4 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-md)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:italic [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--color-wk-text-muted)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
         // Code
         // Inline code is the prime offender — tokens like `Foo::bar(string $x)`
         // have long no-space runs, so it gets the stronger `anywhere` (which
         // also lets the code element's min-content shrink, so it can't force
         // its parent wider than the viewport).
-        '[&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[family-name:var(--font-wk-mono)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:px-1.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:py-0.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
+        '[&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[family-name:var(--font-wk-mono)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[length:var(--text-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-1.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-0.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:rounded-[var(--radius-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
         // No descendant `overflow-x` rule on <pre>, and its class is not spelled out here,
         // because Tailwind reads comments too and would emit it. Such a rule would turn every
         // <pre> the caller passes in into a horizontal scroll region, and a <pre><code> block
@@ -171,22 +173,22 @@
         // Wrapping instead of scrolling shows the whole line rather than hiding half of it,
         // which is the better reading experience anyway. `anywhere` is the safety net for a
         // single unbroken token longer than the column.
-        '[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:p-[var(--padding-wk-x-md)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
-        '[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:whitespace-pre-wrap [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
+        '[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:p-[var(--padding-wk-x-md)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+        '[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:whitespace-pre-wrap [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
         // A caller who WANTS horizontal scrolling can have it, by authoring the keyboard
         // model themselves: `<pre tabindex="0" role="region" aria-label="…">`. Scrolling is
         // then granted to exactly the markup that is reachable, which is the whole point —
         // the accessible path is the only path that scrolls.
-        '[&_pre[tabindex]:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:whitespace-pre [&_pre[tabindex]:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:overflow-x-auto',
-        '[&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:bg-transparent [&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:p-0',
+        '[&_pre[tabindex]:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:whitespace-pre [&_pre[tabindex]:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:overflow-x-auto',
+        '[&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:bg-transparent [&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:p-0',
         // Table
-        '[&_table:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:w-full [&_table:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)] [&_table:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-collapse',
-        '[&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-left [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-b-2 [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border)]',
-        '[&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-b [&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border-subtle)]',
+        '[&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:w-full [&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)] [&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-collapse',
+        '[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-left [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-b-2 [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)]',
+        '[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-b [&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border-subtle)]',
         // Horizontal rule
-        '[&_hr:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border)] [&_hr:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:my-[var(--padding-wk-y-xl)]',
+        '[&_hr:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)] [&_hr:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:my-[var(--padding-wk-y-xl)]',
         // Images
-        '[&_img:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)] [&_img:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:my-[var(--padding-wk-y-md)]',
+        '[&_img:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)] [&_img:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:my-[var(--padding-wk-y-md)]',
     ], $densityClasses)), $scope);
 
     $sizeClasses = match (WireKit::validateProp('prose', 'size', $size, ['sm', 'md', 'lg'])) {
@@ -211,6 +213,6 @@
     };
 @endphp
 
-<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif @if($presetValue) data-preset="{{ $presetValue }}" @endif @if($container) data-container @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
+<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif @if($densityAttr) data-density="{{ $densityAttr }}" @endif @if($presetValue) data-preset="{{ $presetValue }}" @endif @if($container) data-container @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
     {{ $slot }}
 </div>

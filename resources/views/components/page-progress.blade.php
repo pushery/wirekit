@@ -31,8 +31,8 @@
     // remembering to add anything to it.
     //
     // It is NOT `progress`, and the difference is the axis rather than the look:
-    // `progress` shows a value somebody knows, this shows waiting that nobody has
-    // measured. It is NOT `reading-progress` either — that one is driven by scroll
+    // `progress` shows a value somebody knows, this shows waiting whose length nobody
+    // knows. It is NOT `reading-progress` either — that one is driven by scroll
     // position and says where you are, not that something is in flight.
 
     $heightToken = match (WireKit::validateProp('page-progress', 'height', (string) $height, ['sm', 'md', 'lg'])) {
@@ -77,10 +77,11 @@
          and start affecting the height it is supposed to float over. The tokens stay
          theme-aware either way.
 
-         It does not carry `--wk-scrollbar-inset`, and that is deliberate. That token exists for a fixed surface that keeps a GAP from the inline
-         edge, where a classic scrollbar eats into the gap. This bar keeps no gap — it is
-         full bleed, so running under the gutter is where it belongs. The components that do
-         take the inset all sit inset from an edge.
+         It does not carry `--wk-scrollbar-inset`, and that is deliberate. That token exists for a
+         fixed surface that keeps a GAP from the inline edge, where a gutter inside the viewport
+         eats into the gap. This bar keeps no gap — it is full bleed across the viewport box, so
+         its width follows whatever that box is. The components that do take the inset all sit
+         inset from an edge.
 
          It DOES take `--wk-strip-inset`, which is the other edge and a different question: a
          strip above the page is browser chrome, and the bar reports the application's request,

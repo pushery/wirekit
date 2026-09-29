@@ -145,9 +145,6 @@ $wrapperClasses
 20"
 3
 3,
-349px
-37px
-37px.
 3;
 4,
 4.39a.75.75
@@ -239,8 +236,6 @@ Its
 Laravel
 Laravel's
 Livewire's
-MARKER,
-MIDDLE
 NAME
 NOT
 NOTE:
@@ -614,6 +609,7 @@ lives
 long
 looks
 loop
+marker,
 markers
 markup
 markup,
@@ -622,8 +618,8 @@ match
 matters
 may
 means
-measured
 methods
+middle
 min-content
 min-w-0
 min-w-0">{{
@@ -776,6 +772,8 @@ separation.
 set
 shape,
 shipped
+short
+shorter.
 shown
 shrink-0
 shrinks
@@ -883,6 +881,7 @@ where
 which
 while
 whitespace
+wide
 width
 with
 without

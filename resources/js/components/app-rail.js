@@ -36,15 +36,14 @@ export default function wirekitAppRail(config = {}) {
         /**
          * Whether the NAMES are laid out. Deliberately not the same thing as `expanded`.
          *
-         * A label leaving is invisible; a label arriving is not. Measured mid-flight, at a
-         * column already 164.8px of its final 240px: the name was in the layout at 101.8px
-         * and grew to 177px as the column caught up — so it was set at a width that was not
-         * yet the final one, wrapped there, and then unwrapped. That is the shift.
+         * A label leaving is invisible; a label arriving is not. A name laid out while the
+         * column is still widening is set at a width that is not yet the final one, wraps
+         * there, and unwraps as the column catches up. That is the shift.
          *
-         * The sidebar reads clean in the other direction for the same reason: collapsing, its
-         * label is already out of the layout at 164.5px, so the column narrows over nothing.
+         * Collapsing reads clean for the same reason: the label is already out of the layout
+         * when the column starts to narrow, so it narrows over nothing.
          *
-         * So the names LEAVE with the toggle and ARRIVE only once the column has stopped
+         * So the names leave with the toggle and arrive only once the column has stopped
          * moving. Wrapping is untouched — the house rule that a navigation entry never
          * truncates stands, and this is precisely what lets it stand: the text is only ever
          * laid out at a width it will keep.
@@ -91,11 +90,9 @@ export default function wirekitAppRail(config = {}) {
          * they are not the same thing.
          *
          * Below `lg` this rail is not a column — it is the left strip of an off-canvas
-         * drawer, and the drawer's width is the sum of its columns. Measured at 375px with
-         * the drawer open: collapsed it spans 0…309 and all 243px of the module entries are
-         * visible; EXPANDED it spans 0…496, and 121px of that column is simply gone.
-         * `document.documentElement.scrollWidth` stays 375, so there is nothing to scroll
-         * to — the entries and the column edge are off the device with no way to reach them.
+         * drawer, and the drawer's width is the sum of its columns. Expanded, the drawer can
+         * be wider than a phone, and the page does not scroll sideways, so the entries and the
+         * column edge would be off the device with no way to reach them.
          *
          * The preference is stored, is not tied to a breakpoint, and the control that sets
          * it lives INSIDE the drawer. So a phone can reach that state without a desktop ever

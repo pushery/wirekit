@@ -224,7 +224,6 @@ JS
 Keydown
 Label:
 Livewire
-Measured
 Menu
 Menubar
 Mirrors
@@ -320,7 +319,6 @@ anchors
 and
 announced
 anticipate
-any
 apart
 are
 aria-*
@@ -334,7 +332,6 @@ arrow
 arrow-key
 as
 as,
-asserted:
 at
 attribute
 auto-derived
@@ -446,7 +443,6 @@ false);
 false,
 far
 feature
-file
 fill="none"
 fire
 fired
@@ -473,7 +469,6 @@ gap-x-[var(--gap-wk-md)]
 gap-x-[var(--gap-wk-sm)]">
 gives
 global
-guard
 h-4"
 h-5"
 h-5'])
@@ -673,9 +668,7 @@ reader
 reader;
 reading
 reads
-reason
 ref
-refutes
 registered.
 regular
 rel
@@ -806,7 +799,6 @@ unnamed
 untouched
 update
 use
-used
 user
 value
 via

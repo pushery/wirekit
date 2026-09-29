@@ -380,7 +380,6 @@ Every
 FALLBACK
 Fully
 It
-Measured
 Merged
 NOT
 Named
@@ -471,7 +470,6 @@ always
 an
 and
 another
-any
 anyone
 appear
 application
@@ -489,7 +487,6 @@ as
 asked
 assembled
 assembled,
-asserted:
 at
 attribute
 attribute,
@@ -580,7 +577,7 @@ definition
 denylist
 developer's
 differ
-disappeared
+disappear
 disentangle".
 documented
 does
@@ -616,7 +613,6 @@ failure
 fallback
 falling
 false;
-file
 find.
 finds
 first
@@ -645,7 +641,6 @@ grid-cols
 grid-template-columns
 grids
 growing
-guard
 had
 half
 hand.
@@ -713,6 +708,7 @@ long
 longer
 looks
 made
+make
 makes
 many
 map
@@ -816,7 +812,6 @@ reads
 really
 reason
 reasoning
-refutes
 removes.
 render
 rendered,
@@ -874,7 +869,7 @@ specific
 specificity
 spelling
 split
-stacked
+stack
 standing
 start
 stated
@@ -897,7 +892,7 @@ style
 style,
 such
 supported
-suppress
+suppressing
 suppression
 survives
 syntax
@@ -949,7 +944,6 @@ until
 unvalidated
 up,
 use
-used
 using
 utility
 validated
@@ -964,7 +958,7 @@ vocabulary:
 was
 way
 week
-well,
+well
 were
 what
 whatever

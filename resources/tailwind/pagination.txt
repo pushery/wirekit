@@ -6,7 +6,6 @@
 "%s"
 ":TOTAL"
 "Copy
-"Edit
 "Page
 "Previous"
 "Save",
@@ -699,29 +698,23 @@ $wrapLabel
 1
 1);
 1.04l-4.25
-1.3
 1.6:1.
 100]`.
 11.168l3.71-3.938a.75.75
-1108
 111.08
-1114
 12%,
 12a8
 12h4z"></path>
-147px
 16px
 1px
 2),
 2,
 2.1
-2.31.0
 2.4.3
 2.4.3,
 2.5.8
 20
 20"
-20px
 22.5rem,
 24
 24"
@@ -731,11 +724,9 @@ $wrapLabel
 2rem
 2xl
 3.1.2,
-309px
 32
-320px.
+320px
 32px
-351px:
 360px
 390px
 393px
@@ -744,17 +735,14 @@ $wrapLabel
 4.5a.75.75
 4.78).
 404
-40px
 44
 44px
 44px,
 44x44
 5.373
 50,
-533
 7.21a.75.75
 8
-9rem
 :
 :PLACEHOLDER
 :Placeholder
@@ -887,7 +875,6 @@ ABOVE
 AFTER
 AND
 ANY
-ARE
 ARIA
 Absolute-ize
 Accessible
@@ -959,14 +946,10 @@ Error
 Escaped
 Every
 Everything
-Exactly
 Examples
 Expects
 Extra
-FIXED
-FLOOR
 FOR
-FOUR
 False
 Flat:
 Flattened
@@ -974,7 +957,6 @@ Flex
 Full:
 Fully
 GET
-German
 Glyph-only,
 Grouped:
 HAVE
@@ -1001,8 +983,6 @@ Joining
 KNOW
 Keep
 Kept
-L=0.972
-L=0.985
 LAST
 LINE
 Label
@@ -1019,7 +999,6 @@ MAINTENANCE
 MISLEADING
 Marker
 Marking
-Measured
 Mirrors
 Mixing
 NAME
@@ -1037,7 +1016,6 @@ Not
 Nothing
 Null
 Numbered
-ON
 ONE
 ONLY
 OR
@@ -1081,16 +1059,11 @@ Render
 Rendered
 Rendering
 Renders
-Reported
 Required
 Resolved
 SCOPES
-SCREEN
 SOLUTION
-SQUARE
-SQUARE,
 SR
-STAYS
 Same
 Scope
 See
@@ -1100,6 +1073,7 @@ Shared
 Shared:
 Show
 Simple:
+Six
 Size
 So
 Soft
@@ -1110,11 +1084,9 @@ Success
 Support\DomId
 TEXT
 THAT
-THE
 THEM
 THIRD
 THIS
-TOUCH
 TRANSPARENT
 TWO
 Tab-reachable
@@ -1124,7 +1096,6 @@ Tailwind's
 Takes
 That
 The
-Their
 There
 These
 This
@@ -1375,7 +1346,7 @@ __('wirekit::Showing
 `surface`).
 `table.th
 `target`
-`toggleBooleanStateDirective`,
+`toggleBooleanStateDirective`
 `total()`
 `true`
 `true`,
@@ -1394,7 +1365,6 @@ __('wirekit::Showing
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
-`wrap-label`
 `wrapLabel`
 `wrapLabel`,
 `xs`
@@ -1411,6 +1381,7 @@ above
 above)
 above,
 above.
+above:
 absence.
 absent
 absolute
@@ -1437,21 +1408,18 @@ activity
 acts
 actually
 add
-added
-added.
 adds
 admits
 adopting
 after
-after,
 against
 agreed
-agreeing,
 alias
 aliases
 align
 aligned
 all
+all,
 all.
 allow
 allow-list.
@@ -1460,7 +1428,6 @@ alone
 alone.
 alone:
 along
-along.
 alongside
 already
 already-absolute
@@ -1499,7 +1466,6 @@ anyway.
 anywhere
 anywhere,
 apart
-app.css
 appear
 appearance
 appearance-none
@@ -1562,9 +1528,8 @@ asked
 asking
 asks
 assembled
-asserted:
 assistive
-assumed
+assistive,
 asterisk
 at
 attached
@@ -1572,7 +1537,6 @@ attribute
 attribute's
 attribute,
 attribute.
-attributed
 attributes
 attributes,
 attrs:['de'
@@ -1603,19 +1567,16 @@ bag:
 baked
 bar
 bar's
-bar,
 bare
 base
 baseline.
 be
 be.
 beat
-became
 because
 becomes
 been
 before
-before,
 before.
 behavior
 behind
@@ -1666,13 +1627,11 @@ borrowed
 both
 both,
 bottom
-bottom.
 bound
 boundaries
 boundaries.
 boundary
 box
-boxes
 bracket
 branch
 branch.
@@ -1684,7 +1643,7 @@ breakpoint
 breakpoint,
 breakpoint:
 breakpoints
-brighter
+brighter,
 browser
 build
 build,
@@ -1710,7 +1669,6 @@ caller's
 calling
 callout/alert).
 calls
-came
 can
 candidate
 candidates
@@ -1850,7 +1808,6 @@ construction.
 constructs
 consuming
 container
-container,
 container-relative
 contains
 content
@@ -1912,14 +1869,15 @@ dead
 debug
 decide
 decided
+decided,
 decision
 declaration
 declarative
 declared
 declares
 declaring
-decoration
 decoration.
+decoration:
 default
 default).
 default,
@@ -1981,6 +1939,7 @@ document,
 document.
 documentation
 does
+does),
 does.
 does;
 dotted-read
@@ -1991,7 +1950,6 @@ downstream
 drag-select
 drawn
 draws
-drew
 drive.
 driven
 drop
@@ -2020,6 +1978,7 @@ edge
 edge.
 edges
 edges,
+edges.
 editing
 either
 either,
@@ -2042,7 +2001,6 @@ empty
 empty($optionLabel['disabled']);
 empty($subLabel['disabled']);
 empty:
-emulation.
 enabled
 encoding
 end
@@ -2052,7 +2010,7 @@ endonym
 endonyms,
 ends
 ends,
-engine,
+engine.
 enough
 ensures
 entirely
@@ -2091,6 +2049,7 @@ expressed.
 expression
 expressions.
 extends
+extra
 fact
 factory
 fading
@@ -2139,6 +2098,7 @@ fits;
 five
 fix
 fixed
+fixed-height
 fixed.
 fixes
 flag
@@ -2185,8 +2145,6 @@ form
 form,
 formatting.
 forwarded
-found
-found.
 four
 fourth
 fragments
@@ -2234,7 +2192,6 @@ glyph"
 glyphs
 go
 goes
-good
 got
 green
 grep
@@ -2245,7 +2202,6 @@ groups,
 grows
 growth,
 guarantee,
-guard
 h-4
 h-auto
 had
@@ -2273,7 +2229,6 @@ heard
 height
 height,
 height.
-held
 here
 here,
 here.
@@ -2433,7 +2388,6 @@ key.
 key;
 keys
 kit
-kit's
 know
 knowing
 knows
@@ -2454,7 +2408,6 @@ lang="{{
 language
 languages,
 largest
-last
 last,
 last:border-b-0
 last:border-e-0
@@ -2466,10 +2419,10 @@ lazy
 lead
 leave
 leaves
+leaves.
 leaving
 left
 left-to-right;
-left.
 let
 lets
 lg
@@ -2495,7 +2448,6 @@ links.
 links:
 list
 list's
-list,
 list.
 listed,
 lists
@@ -2557,7 +2509,6 @@ meaningful
 means
 meant
 measure
-measured
 measures
 measures.
 mechanism
@@ -2586,7 +2537,6 @@ mispronounced.
 missing
 missing,
 missing-accessible-name
-missing.
 mode
 mode").
 mode,
@@ -2594,7 +2544,6 @@ modes
 moment
 more
 most
-moved
 moves
 ms-0.5"
 multiple
@@ -2753,6 +2702,7 @@ outline()
 output
 outranks
 outside
+outside;
 over
 over:
 overflow-hidden
@@ -2833,9 +2783,9 @@ per-intent
 perception
 person
 phantom
+phone
 phone,
 phone.
-phone:
 phones
 phrase
 pick
@@ -2854,7 +2804,6 @@ point
 pointer-events-none"
 pointer-events-none'
 pointing
-points
 polite
 position.
 positions
@@ -2869,7 +2818,6 @@ pre-selected
 pre-selects
 precedence:
 precisely
-predicted
 preference.
 prefers
 prefix
@@ -2937,7 +2885,6 @@ rationale
 raw
 re-anchors
 re-consent
-re-did
 reach
 reachable
 reaches
@@ -2957,13 +2904,12 @@ rebuilds.
 recognizes
 records
 red
-refactor
+redone
 reference
 refinement,
 refinement.
 refreshes
 refused
-refutes
 regardless
 regardless"
 region
@@ -2979,7 +2925,6 @@ reliably
 reliably.
 remove
 remove.
-removed
 removes
 render
 render)
@@ -2989,7 +2934,6 @@ rendering
 renders
 renders,
 replaces
-replaces,
 report
 reported
 reports
@@ -3027,7 +2971,6 @@ role
 role="group"
 role="link"
 role="navigation"
-roles"
 room
 rotates
 round
@@ -3059,7 +3002,6 @@ said
 same
 same.
 sane
-sat
 save.
 say
 saying
@@ -3076,7 +3018,6 @@ scoped
 scoping
 screen
 screen,
-screenshot.
 script
 scroll
 scrollable
@@ -3095,7 +3036,6 @@ select:
 selected
 selected'
 selector,
-selectors
 send
 sends
 sentence,
@@ -3116,6 +3056,7 @@ seven,
 shadow-[var(--shadow-wk-none)]
 shadow-[var(--shadow-wk-sm)]
 shape
+shape.
 shapes
 share,
 shared
@@ -3132,11 +3073,11 @@ shown
 shows
 shrink
 shrink-0
-shrinking
 shrinks
 sibling
 side
 sideways
+sideways.
 sighted
 signal
 silent
@@ -3149,6 +3090,7 @@ single
 site
 sits
 six
+six.
 size
 size),
 size,
@@ -3161,6 +3103,7 @@ sizes,
 sizing
 skip
 skips
+slightly
 slot
 slot,
 slot.
@@ -3192,6 +3135,7 @@ specificity
 spelled
 spelling
 spellings
+spill
 spinner
 spinner,
 spinner.
@@ -3202,6 +3146,7 @@ spread.
 spreads
 square
 square's
+square,
 square:
 squared
 squares
@@ -3214,7 +3159,6 @@ stacks:
 stands
 start
 start;
-starter
 starting
 starts
 state
@@ -3260,6 +3204,7 @@ stylistic
 sub-component
 sub-component,
 submit
+submitting,
 substituted
 subtle:
 success
@@ -3275,7 +3220,6 @@ surface
 surface,
 surfaced
 surfaces
-survive
 survives
 swap
 swaps
@@ -3432,9 +3376,7 @@ truthy.
 turn
 turn.
 turn:
-turned
 turns
-twelve
 twice
 twice.
 two
@@ -3471,7 +3413,6 @@ until
 untranslatable
 up
 up.
-upgrade
 uppercased
 upstream
 url
@@ -3481,11 +3422,9 @@ urldecode($queryValue)];
 urls
 use
 use.
-used
 used,
 useful
 user
-user's
 user-influenced
 uses
 uses.
@@ -3511,7 +3450,6 @@ values
 values).
 values,
 values.
-vanished
 var(--color-wk-X)
 var(--color-wk-bg))
 variable
@@ -3531,7 +3469,6 @@ viewBox="0
 viewport
 viewport,
 viewports
-views
 violations.
 visible
 visibly
@@ -3626,7 +3563,6 @@ word.
 words
 words).
 work,
-workaround
 worked.
 working
 works

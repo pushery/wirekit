@@ -80,7 +80,6 @@ DOES
 Declared
 Dev-only
 Fully
-Measured
 No
 Pushery\WireKit\WireKit;
 Renders
@@ -119,7 +118,6 @@ allowlist
 allowlist,
 an
 and
-any
 are
 aria-label
 arises
@@ -127,7 +125,6 @@ array_filter([
 arrive
 arrow-key
 as
-asserted:
 at
 attribute
 attribute.
@@ -190,14 +187,12 @@ exactly
 fallback
 fallbacks.
 field
-file
 fires
 first
 flags
 for
 form
 from
-guard
 guess
 has
 header
@@ -271,7 +266,6 @@ qualified:
 rather
 reach
 reason
-refutes
 renders
 resolve,
 result

@@ -123,7 +123,6 @@ FIRST
 Fully
 Heading
 Lighthouse.
-Measured
 Mobile
 Null
 One
@@ -173,10 +172,8 @@ allowed
 an
 and
 animation
-any
 are
 as
-asserted:
 at
 auto-derived
 axe
@@ -234,7 +231,6 @@ enum.
 establishes
 every
 fallback
-file
 first-allowed
 flags
 flex-row
@@ -250,7 +246,6 @@ gap-[var(--gap-wk-sm)]
 gate
 gate,
 genuinely
-guard
 guessed
 h1,
 happy.
@@ -337,8 +332,6 @@ rationale).
 rationale;
 reach
 real
-reason
-refutes
 render
 renders
 reported

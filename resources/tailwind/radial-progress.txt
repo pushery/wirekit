@@ -146,7 +146,6 @@ GB
 INTO
 Ignored
 MUST
-Measured
 No-op
 Normalized
 Opt
@@ -199,7 +198,6 @@ animation.
 announces
 annulus,
 anonymous.
-any
 app
 arc
 are
@@ -214,7 +212,6 @@ arm
 array_filter([
 as
 as,
-asserted:
 assistive
 at
 attribute
@@ -293,12 +290,12 @@ elseif
 empty
 every
 exact
+fallback
 falls
 false);
 false,
 far
 feature
-file
 fill
 filter_var($animate,
 first
@@ -314,7 +311,6 @@ full
 full.
 gated
 generic
-guard
 has
 have
 how
@@ -389,6 +385,7 @@ only
 opposite
 optimistic-ui:
 or
+otherwise
 over
 own
 paint,
@@ -421,11 +418,8 @@ read
 read);
 reader
 reads
-reason
-refutes
 registered
 render
-renders
 repeated
 replay
 restarts
@@ -493,7 +487,6 @@ unknown
 unknown-duration
 usage-meter
 use
-used
 used").
 uses,
 value

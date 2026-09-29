@@ -77,9 +77,9 @@ final class PluralPhrases
 
         foreach ($ordered as $count) {
             // Trimmed, and not only for tidiness. A count that matches no range
-            // comes back with the segment separator's whitespace still on it —
-            // measured: `trans_choice('{1} …|[2,*] :count people reacted', 0)`
-            // returns " :count people reacted". Untrimmed that is a THIRD
+            // comes back with the segment separator's whitespace still on it:
+            // `trans_choice('{1} …|[2,*] :count people reacted', 0)` returns
+            // " :count people reacted". Untrimmed that is a third
             // distinct form differing by one space, and an announcement that
             // begins with one.
             $rendered = trim(trans_choice($key, $count, ['count' => ':count']));

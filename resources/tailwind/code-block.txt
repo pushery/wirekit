@@ -125,6 +125,7 @@ $wrapperClasses
 A
 A).
 Alpine's
+An
 Blade
 BooleanProp::from($copy,
 CSP
@@ -149,7 +150,6 @@ Nothing
 Polite
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-Reported
 SC
 SR
 SR-only
@@ -263,6 +263,7 @@ can
 cannot
 cannot:
 case
+case:
 cast
 chain
 class="flex
@@ -329,8 +330,8 @@ false);
 false,
 feature
 file
-fill
 fill="none"
+filling
 find
 first
 flags
@@ -367,7 +368,6 @@ identify
 implode('
 imports
 in
-in,
 indistinguishable
 inner
 inside
@@ -414,7 +414,6 @@ makes
 markdown
 may
 mean
-meant
 moment's
 must
 muted
@@ -432,7 +431,6 @@ no
 none
 not
 nothing
-now
 null
 null,
 of
@@ -448,6 +446,7 @@ opposite
 optimistic-ui:
 or
 other
+otherwise
 our
 outcome
 outer
@@ -466,6 +465,7 @@ parent
 parses
 path
 per
+plain
 plaintext;">{{
 plaintext`
 plus
@@ -604,7 +604,6 @@ unlock
 unnamed
 use
 use:
-used
 user
 uses.
 value
@@ -618,7 +617,6 @@ was
 way
 what
 when
-where
 which
 while
 white

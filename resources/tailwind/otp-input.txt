@@ -33,9 +33,11 @@ $attributes->only('class')->class([$wrapperClasses])
 $attributes->only(['dusk'])
 $attributes->whereStartsWith('data-')
 $attributes->whereStartsWith('wire:model')
+$attributes->whereStartsWith('wire:model')->first();
 $autofocus
 $autofocus)
 $b`
+$boundModel
 $c):
 $classes
 $describedBy
@@ -226,22 +228,17 @@ $wrapperClasses
 1)]
 1,
 10
-1280px
 1;
 2
 320px
 32px,
-375px
-375px,
-375px.
-376px
 376px,
 4+4
 40px
 40px.
 44px
 48px.
-5+1
+5+1,
 5+3
 6),
 6+2
@@ -302,7 +299,6 @@ Alignment
 Alphabet:
 Alpine
 An
-Before
 Blade
 BooleanProp::from($autofocus,
 BooleanProp::from($disabled,
@@ -354,7 +350,6 @@ LITERAL
 Label
 Lacking
 Livewire
-Measured
 Mirrors
 NOT
 NOTHING
@@ -377,14 +372,12 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Rendered
 Renders
-Reported
 Required
 Same
 See
 Selects
 Set
 So
-Somebody
 StrictnessGate
 Strip
 Support\DomId
@@ -424,6 +417,7 @@ Your
 [range(0,
 \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold)
 \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars)
+\Pushery\WireKit\Support\AlpinePayload::from($boundModel)
 \Pushery\WireKit\Support\AlpinePayload::from($name)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
@@ -480,7 +474,6 @@ __('wirekit::Saving'),
 `disabled`
 `disabled`,
 `div[role="slider"]`,
-`document.activeElement
 `dusk`
 `failure:
 `flex
@@ -516,7 +509,6 @@ a
 able
 about
 about.
-above
 above,
 above.
 accept
@@ -529,7 +521,6 @@ action
 actually
 additive
 adjustment
-adopting
 after
 again
 against
@@ -564,8 +555,6 @@ anywhere.
 appears
 appended
 appending
-application,
-approximately.
 are
 are:
 arguments
@@ -594,7 +583,6 @@ as
 as,
 ask
 asked
-asserted:
 assigns
 asterisk.
 at
@@ -608,6 +596,7 @@ autocomplete="one-time-code"
 autofocus
 automatic
 back
+back,
 back.
 backspace
 backward
@@ -627,8 +616,6 @@ behalf.
 behave
 behaved
 behaves
-behavior
-behavior.
 behavior:
 being
 below
@@ -638,12 +625,13 @@ binds
 block
 block,
 blocked:
-body`,
 boolean
 booting
 boots
 both
 both.
+bound
+bound.
 boundary
 boundary.
 boundary:
@@ -660,11 +648,9 @@ break:
 breaking
 breaks
 briefly
-broke
 browser
 browser's
 browsers
-bug
 build
 building.
 built
@@ -673,7 +659,6 @@ but
 button
 by
 byte
-byte,
 byte-identical
 byte.
 call
@@ -687,7 +672,7 @@ can
 cannot
 capability
 card
-card,
+card.
 caret
 carries
 carry
@@ -829,13 +814,13 @@ differently
 digit
 digit's
 digits
-digits,
+digits.
 directly,
 disabled
 disables
 disarm,
 discard
-discarded
+discarded,
 discards
 dispatches
 distribution
@@ -844,7 +829,6 @@ do
 document
 does
 doing
-door
 down.
 dropped
 dropped,
@@ -875,6 +859,7 @@ emitting
 empty
 empty,
 empty:
+emptying
 enter
 enter.
 enterable.
@@ -889,10 +874,8 @@ every
 everything
 exact
 exactly
-exactly:
 exempt
 existed
-existed,
 existed.
 existing
 exists
@@ -917,10 +900,8 @@ far
 feature
 field
 field,
-field;
 fields
 fields.
-file
 filled
 filled($justify)
 filled,
@@ -959,7 +940,6 @@ folding
 folding,
 folds
 for
-for.
 forbids
 force
 form
@@ -1001,7 +981,7 @@ happens
 hard
 hardcoded
 has
-has.
+has,
 have
 heading,
 hear
@@ -1034,6 +1014,7 @@ imports
 in
 in,
 in_array($justify,
+included.
 index
 indicator
 information:
@@ -1054,6 +1035,7 @@ is
 it
 it,
 it.
+it:
 items
 its
 itself
@@ -1138,7 +1120,6 @@ meaningful,
 means
 meant
 meantime.
-measured
 message
 message).
 message.
@@ -1153,6 +1134,7 @@ mixed-case
 mixing
 mobile
 mode,
+model:
 moment
 more
 most
@@ -1189,7 +1171,7 @@ node,
 normalizes.
 normally
 not
-not,
+not.
 note
 note,
 nothing
@@ -1237,10 +1219,11 @@ otherwise
 otp-input
 out
 out.
+out:
 outer
 output
+outside
 over
-over.
 overflows
 overwrites
 own
@@ -1264,7 +1247,7 @@ pattern
 pattern="{{
 pending
 per
-phone,
+phone.
 plain
 plugged
 plus
@@ -1280,7 +1263,6 @@ preference
 preg_match('/\p{Ll}/u',
 preg_match('/\p{Lu}/u',
 presentational
-previous
 previous,
 prod).
 promise
@@ -1307,6 +1289,7 @@ reaches
 reaching
 read
 reader
+reader,
 reader.
 reading
 reads
@@ -1316,7 +1299,6 @@ redirect
 reference
 refusal
 refuses
-refutes
 region
 registered
 rejecting
@@ -1386,14 +1368,15 @@ served
 server
 server-side
 set
+sets
 shape
 shape,
 shared
-shipped
 shipped),
 shipped,
 shipped:
 should
+show
 shown
 shows,
 shrink,
@@ -1505,6 +1488,7 @@ till
 time
 timing,
 to
+to.
 together
 tokens
 told
@@ -1545,7 +1529,6 @@ untestable.
 up
 upward:
 use
-used
 uses
 usually
 utility
@@ -1583,7 +1566,6 @@ wider
 width
 width,
 width.
-widths:
 wins
 wire:model.
 with

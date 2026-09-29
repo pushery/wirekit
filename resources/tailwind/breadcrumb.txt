@@ -2,7 +2,6 @@
 !!}
 !==
 "1.
-"Atlas"
 "Breadcrumb"
 "Home,
 "Undefined
@@ -194,7 +193,7 @@ $wkNonce
 ('.json_last_error_msg().'),
 ('xs').
 (Its
-(JSON-LD).
+(JSON-LD),
 (JSON_INVALID_UTF8_SUBSTITUTE).
 (NAN,
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -202,6 +201,7 @@ $wkNonce
 (\Throwable
 (`<`
 (`@type`)
+(a
 (array
 (array_key_exists('@type',
 (browser
@@ -218,7 +218,6 @@ $wkNonce
 (paths,
 (preserving
 (provides
-(real
 (regex
 (same
 (shouldSetHidden=true),
@@ -242,14 +241,12 @@ $wkNonce
 0;
 0;">
 1
-14
 2.
 2.5.8
 20px
 24x24
 2rem,
 3.
-30x20
 3rem.
 44x44
 500s
@@ -278,7 +275,7 @@ $wkNonce
 <use>,
 <x-wirekit::icon>
 <x-wirekit::structured-data
-<x-wirekit::structured-data>
+<x-wirekit::structured-data>,
 =
 ===
 =>
@@ -336,7 +333,6 @@ Data
 Declared
 Decorative
 Defaults
-Delegated
 Dev-only
 Drop
 ENT_QUOTES).'"',
@@ -345,7 +341,6 @@ Each
 Emit
 Encoding
 FAQ
-FULL
 Fully
 Google
 Graceful
@@ -382,7 +377,6 @@ Link
 ListItem
 Logger
 MOST
-Measured
 Muted
 NOT
 Normalize
@@ -404,8 +398,6 @@ PERFECTLY
 PHP
 Pass
 Policy,
-Previously
-Pro
 Product
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
@@ -413,7 +405,6 @@ Pushery\WireKit\WireKit;
 Reapply
 Render
 Renders
-Reported
 Resolve
 RuntimeException
 SVG
@@ -461,7 +452,6 @@ Without
 Wrapper:
 Written
 XSS
-XSS).
 [
 ['@context'
 ['Home',
@@ -538,7 +528,6 @@ activate.
 actual
 add
 adds
-adopting
 after
 against
 alias
@@ -561,7 +550,6 @@ any
 anything.
 app(IconResolver::class)->resolve($name);
 application
-applied
 applies
 apply
 are
@@ -582,7 +570,7 @@ aria-hidden="true">{{
 aria-label
 aria-label="{{
 aria-labelledby
-aria-pressed>`
+aria-pressed>`,
 around
 array
 array.
@@ -592,7 +580,6 @@ array_key_last($items);
 array_keys($sizeMap));
 as
 asked.
-asserted:
 at
 at.
 attempted
@@ -629,10 +616,9 @@ block's
 block,
 block.
 block:
-blueprint.
 body
 bootstrapped
-borrow
+borrowing
 both.
 box
 branch
@@ -696,6 +682,7 @@ compiled
 compiles
 component
 component's
+component,
 components
 composer
 composition
@@ -704,18 +691,15 @@ config('app.debug'))
 config('wirekit.components.breadcrumb.separator',
 configured
 conflict
-consistently.
 console
 console).
 construct
 consults
-consuming
 container
 containing
 content
 context
 control
-control.
 copy
 copy-link
 costs
@@ -747,6 +731,7 @@ define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
 degradation:
 degrades,
+delegated
 deliberate.
 deliberately
 density
@@ -758,7 +743,6 @@ developer's
 did
 diff
 direct
-directly
 discards
 document
 document:
@@ -804,7 +788,6 @@ exists
 exists.
 expander
 explicitly
-factory:
 fail
 fails
 failure
@@ -817,7 +800,6 @@ false)
 false),
 favorite
 feature
-file
 files
 finds
 first
@@ -825,7 +807,6 @@ first.
 fit
 fix
 fix.
-flag
 flags
 flex
 flex-wrap
@@ -845,6 +826,7 @@ four
 fragments,
 framework
 from
+full
 function
 function).
 function_exists('svg'))
@@ -862,7 +844,6 @@ glyph.
 goes
 group
 guarantees
-guard
 h-5
 h/w
 hand-written
@@ -888,7 +869,6 @@ house
 hover
 href).
 href="{{
-iPhone
 icon
 icon's
 icon-only
@@ -905,7 +885,7 @@ implode
 implode('
 imports
 in
-in.
+in:
 including
 informative
 informative.
@@ -940,10 +920,8 @@ its
 itself
 itself.
 json_encode($payload,
-json_encode()
 just
 keeps
-kept
 kill
 know
 label
@@ -1008,6 +986,7 @@ matching
 may
 means:
 merge
+message
 middle
 min-h-[1.5rem]',
 min-height
@@ -1041,7 +1020,6 @@ nested
 nesting
 neutralizes
 never
-next
 no
 nobody
 node
@@ -1068,7 +1046,6 @@ null,
 null;
 occurrence
 of
-omitted
 on
 once
 once,
@@ -1144,7 +1121,6 @@ preset
 problem
 prod).
 producer
-project,
 prop's
 prop,
 props
@@ -1170,11 +1146,9 @@ readers
 reads
 real
 reapply
-reason
 reason.
 reason:
 reasoning
-refutes
 region
 registered
 registry
@@ -1190,7 +1164,6 @@ repeated
 replaced
 replaces
 reported
-reproduced
 request
 require
 requires
@@ -1200,7 +1173,7 @@ resolves
 respect
 response
 rest
-restyled
+restyle
 result
 return
 returns
@@ -1216,9 +1189,8 @@ root;
 row
 rule
 rung
-safety
-sake
 same
+say)
 says
 schema
 schema.org
@@ -1244,7 +1216,7 @@ shapes
 shares:
 shell's
 should
-showed
+show
 shown
 shrank
 shrink-0',
@@ -1269,7 +1241,6 @@ space).
 spacing
 span
 splits
-stacked-shell
 stamping
 standard
 state.
@@ -1289,7 +1260,6 @@ strip
 strip's
 strip.
 structured
-structured-data
 style:
 style="display:inline-block;"></span>
 style="list-style:
@@ -1342,7 +1312,6 @@ trace
 trail
 trail,
 trail.
-trail:
 trails
 transitively
 tree:
@@ -1365,7 +1334,6 @@ untouched.
 up.
 usage)
 use
-used
 useful
 user-controlled
 uses
@@ -1381,7 +1349,6 @@ variant
 vector.
 via
 view's
-viewport:
 visible
 w-12"`
 w-12',
@@ -1392,7 +1359,6 @@ w-5',
 w-5';
 w-6',
 w-8',
-wanted
 warning
 was
 way

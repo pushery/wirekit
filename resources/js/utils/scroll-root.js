@@ -1,10 +1,10 @@
 /**
  * The element that actually scrolls a node into view, or null when the window does.
  *
- * The reading family used to scroll the WINDOW unconditionally, which works only for a page that
- * scrolls as a whole. An application that owns its scroll region — and WireKit's own
- * `<x-wirekit::main>` is one, it carries `overflow-y-auto` — got nothing: the window has nowhere to
- * go, so a jump did nothing at all and there was no error to see.
+ * Scrolling the WINDOW unconditionally works only for a page that scrolls as a whole. An
+ * application that owns its scroll region — and WireKit's own `<x-wirekit::main>` is one, it
+ * carries `overflow-y-auto` — would get nothing: the window has nowhere to go, so a jump would do
+ * nothing at all and there would be no error to see.
  *
  * Detected rather than configured. A `scroll-root` prop would put the burden on the developer to
  * describe their own layout to a component that can look, and the answer it would be given is

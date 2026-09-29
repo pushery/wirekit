@@ -122,12 +122,11 @@ final class SandboxRenderer
         // through a Blade expression — NEVER concatenated into the template
         // source. This is the load-bearing defense: HTML escaping does NOT
         // neutralize Blade's own compile tokens (`{{ … }}`, `{!! … !!}`,
-        // `@directive`). Previously the values were string-concatenated
-        // straight into the Blade source, so a prop value of `{{ 7*7 }}` (or
-        // `{{ system(chr(105).chr(100)) }}` for a no-quote RCE) reached the
-        // Blade compiler intact and executed. Binding the values as data
-        // instead means their content is echoed literally at render time and
-        // never re-parsed as Blade — there is no token blacklist to bypass.
+        // `@directive`). Concatenated into the Blade source, a prop value of
+        // `{{ 7*7 }}` (or `{{ system(chr(105).chr(100)) }}` for a no-quote RCE)
+        // would reach the Blade compiler intact and execute. Bound as data,
+        // its content is echoed literally at render time and never re-parsed
+        // as Blade, so there is no token blacklist to bypass.
         $tag = 'x-wirekit::'.$component;
         $body = '';
         $attrs = '';

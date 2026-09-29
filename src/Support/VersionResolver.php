@@ -33,13 +33,11 @@ use Composer\InstalledVersions;
  *      checked out raw (no Composer install yet, no installed.json) and
  *      the package's own composer.json doesn't pin a version.
  *
- * Background: previously each export command had its own `detectVersion()`
- * / `packageVersion()` helper that read ONLY the package's own
- * `composer.json`. Since the package intentionally carries no `version`
- * field, every helper fell straight to `'dev'` / `'dev-develop'` even on
- * tagged releases consumed via Composer — visible on `/components.json`
- * and `/api-map.json` as `version: "dev"` instead of `version: "1.x.y"`
- * on docs.wirekit.app and any developer's deployment.
+ * Every export command resolves its version here. The package's own
+ * `composer.json` intentionally carries no `version` field, so a helper
+ * reading only that file would report `'dev'` even on a tagged release
+ * installed through Composer, and `/components.json` and `/api-map.json`
+ * would say `version: "dev"` on every deployment.
  */
 final class VersionResolver
 {

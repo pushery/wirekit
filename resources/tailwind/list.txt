@@ -93,7 +93,6 @@ Declared
 Dev-only
 Fully
 IE6.
-Measured
 Ordered
 Pushery\WireKit\WireKit;
 Renders
@@ -120,10 +119,8 @@ action
 admitted.
 alpha
 and
-any
 arbitrary-value
 as
-asserted:
 at
 auto-derived
 be
@@ -147,11 +144,9 @@ else.
 etc.)
 every
 everything
-file
 flags
 for
 from
-guard
 has
 heading.blade.php
 implode('
@@ -194,14 +189,10 @@ prop
 property
 props
 qualified:
-rather
 reach
-reason
-refutes
 rejects
 render
 rendered
-renders
 result
 rhythm
 rules
@@ -219,7 +210,6 @@ syntax;
 tag
 tagName()
 target.
-than
 that
 the
 there

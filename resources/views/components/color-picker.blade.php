@@ -1,46 +1,26 @@
 {{-- optimistic-ui: supported
-     The commit-boundary obstacle this used to carry is SOLVED — a value stream
-     commits at an EVENT, never a timer, and `_endDrag()` already is one (it now
-     ends on pointercancel too, which was a real listener leak, not just an
-     optimistic concern).
+     A value stream commits at an EVENT, never a timer, and `_endDrag()` is one (it also
+     ends on pointercancel, so no listener outlives a canceled drag).
 
-     What blocks it is a different rule, and it was not visible until the drag
-     path was looked at closely: this control is MIXED. The plane, the hue strip
-     and the swatches are discrete picks whose previous value belongs to the
-     server, so an undo there costs nothing. **The hex field is typed**, and a
-     rollback may never delete what the user wrote.
+     This control is MIXED. The plane, the hue strip and the swatches are discrete picks
+     whose previous value belongs to the server, so an undo there costs nothing. **The hex
+     field is typed**, and a rollback may never delete what the user wrote: a value typed
+     into the field while a drag's request is in flight would be overwritten by that
+     request's rollback. `failure: 'keep'` never rolls back, so nothing typed can be
+     destroyed. The price is that a refused color stays on screen and says it was not
+     saved, which the reader can act on: the previous color is one click away in recents.
 
-     Enabling only the drag paths is not a way out — it is the same trap as
-     number-input: a value typed into the field while a drag's request is in
-     flight would be overwritten by that request's rollback.
+     The layer WRAPS this component instead of nesting inside it, because the value is
+     DERIVED. With `h`/`s`/`v`/`a` and `formattedValue` computed from them there is no
+     single writable property to bind, so the layer holds the value and the component
+     hands it up through `run()`. A child reaches its parent, never the reverse, which
+     puts the layer on the outside.
 
-     THAT BLOCKER IS GONE, and resolving it is what let this ship. It said the
-     component needs "the fourth exit for text (keep the value, mark it unsaved,
-     say so), which number-input, otp-input and the text fields are waiting on" —
-     and the fourth exit shipped. `failure: 'keep'` never rolls back, so nothing
-     typed can be destroyed and the mixed-control argument no longer applies. The
-     price is that a refused color stays on screen and says it was not saved,
-     which the reader can act on: the previous color is one click away in recents.
-
-     TWO THINGS ABOUT THE SHAPE, both found by counting call sites rather than
-     following the first plausible one.
-
-     The layer WRAPS this component instead of nesting inside it, and that follows
-     from the value being DERIVED. `h`/`s`/`v`/`a` with `formattedValue` computed
-     from them means there is no single writable property to bind — so the layer
-     holds the value and the component hands it up through `run()`. A child
-     reaches its parent, never the reverse, which puts the layer on the outside.
-     Every component wired before this one bound a real property and nested the
-     other way round.
-
-     The commit boundary is `_commitRecent()`, NOT `_sync(true)` as first assumed.
-     `_sync` looked like the seam because its argument separates drag-in-progress
-     from settled — but two of the four settled paths (`pickColor`, `eyedropper`)
-     call `_commitRecent()` directly and never pass through `_sync(true)` at all.
-     Hooking `_sync` would have left a swatch click silently uncommitted, with
-     nothing failing. `_commitRecent()` is where a color is settled in all four
-     cases, which is exactly why a color lands in "recents" there and nowhere
-     else — the boundary was already in the component, under another name. --}}
+     The commit boundary is `_commitRecent()`, not `_sync(true)`: two of the four settled
+     paths (`pickColor`, `eyedropper`) call `_commitRecent()` directly and never pass
+     through `_sync(true)`, so a hook there would leave a swatch click uncommitted with
+     nothing failing. `_commitRecent()` is where a color is settled in all four cases,
+     which is why a color lands in "recents" there and nowhere else. --}}
 @props([
     // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
     // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
@@ -110,7 +90,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, true);
     $disabled = BooleanProp::from($disabled, false);

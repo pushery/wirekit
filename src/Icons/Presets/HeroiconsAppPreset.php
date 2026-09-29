@@ -19,7 +19,7 @@ use Pushery\WireKit\Contracts\IconPreset;
  * `'presets' => [..., 'heroicons-app', ...]` in its published config would otherwise
  * fail to boot on an unknown preset name — a hard break in exchange for removing a
  * class that now costs nothing. Stacking it is simply a no-op: it adds no keys, and
- * the words it used to add are already in the base.
+ * every word it could add is already in the base.
  *
  * If it ever gains an alias again, the same rule applies as everywhere else: a name is
  * only taken when all four interchangeable presets have a genuine glyph for it.
@@ -39,10 +39,8 @@ final class HeroiconsAppPreset implements IconPreset
 {
     public function icons(): array
     {
-        // Deliberately empty — see the class docblock. The five group headings that used to
-        // sit in here (sort order, close-with-emphasis, sharing, security, notifications)
-        // described entries that no longer exist, so the array read as one somebody had
-        // half-deleted rather than as an intentional no-op.
+        // Deliberately empty — see the class docblock. It carries no group headings either,
+        // so the array reads as an intentional no-op rather than as one somebody half-deleted.
         return [];
     }
 

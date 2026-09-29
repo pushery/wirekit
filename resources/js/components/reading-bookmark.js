@@ -63,13 +63,13 @@ export default function wirekitReadingBookmark(config = {}) {
         /**
          * What the live region says, which is nothing until there is an offer.
          *
-         * The prompt used to BE the region: the pill carried role="status" and was
-         * toggled with x-show, so the region and its text arrived together. A region
-         * that appears already holding its sentence is a new node rather than a
-         * changed one, and assistive technology watches for the change — so the one
-         * output this component has for a screen-reader user was the one output
-         * likely never to be spoken, on a control pinned to a corner that a reader
-         * moving linearly reaches last.
+         * The region is not the prompt itself. A pill carrying role="status" and
+         * toggled with x-show would bring the region and its text together, and a
+         * region that appears already holding its sentence is a new node rather than
+         * a changed one: assistive technology watches for the change, so the one
+         * output this component has for a screen-reader user would likely never be
+         * spoken, on a control pinned to a corner that a reader moving linearly
+         * reaches last.
          *
          * Derived rather than assigned so the two can never disagree: every path
          * that takes the prompt down (resume, dismiss, clear, a sibling tab

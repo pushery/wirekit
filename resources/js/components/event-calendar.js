@@ -290,10 +290,10 @@ export default function wirekitEventCalendar(config = {}) {
         /**
          * Re-measure the agenda's time column when the view or its days change.
          *
-         * Bound to `x-effect`. The template used to read both dependencies and
-         * then defer the measurement — `view; agendaDays; $nextTick(() => …)` —
-         * which is three statements and an arrow function, none of which the CSP
-         * build parses. The reads have to stay, and stay first: an effect tracks
+         * Bound to `x-effect`, as a method because the template form of it —
+         * `view; agendaDays; $nextTick(() => …)` — is three statements and an
+         * arrow function, none of which the CSP build parses. The reads have to
+         * stay, and stay first: an effect tracks
          * only what it touches, and the deferral means the measurement itself
          * runs after the DOM has caught up rather than against the old one.
          */
@@ -315,11 +315,9 @@ export default function wirekitEventCalendar(config = {}) {
                 this.$root.style.setProperty('--wk-agenda-time', `${Math.ceil(max)}px`);
             } else if (labels.length > 0 && attempt < 10 && typeof requestAnimationFrame === 'function') {
                 // Labels that exist but measure nothing are not an empty agenda: the panel has
-                // not been laid out yet. Measured in WebKit: in the tick this runs in, the agenda
-                // was still `display: none` and all three labels read 0 px; one frame later it
-                // was `block` and they read 49, 49 and 38 px. Blink had already laid it out. The
-                // old branch below then removed the variable and nothing measured again, so the
-                // column fell back to the fixed width. Measure again on the next frame instead.
+                // not been laid out yet, which in WebKit can still be the case in the tick this
+                // runs in. Measure again on the next frame rather than falling back to the fixed
+                // width.
                 requestAnimationFrame(() => this._measureAgendaTime(attempt + 1));
             } else {
                 // No event rows (marker-only / empty agenda) — fall back to the
@@ -720,8 +718,8 @@ export default function wirekitEventCalendar(config = {}) {
 
                     // Everything this call writes is inline style, and a framework update patches
                     // the bubble against its own template, whose `style` attribute carries none
-                    // of it. Measured on /overlays across one refresh: `top` 1699px → empty,
-                    // still shown, box unchanged at 274x28.
+                    // of it: after a refresh the bubble is still shown, with no `top` and the
+                    // same box.
                     //
                     // This bubble is NOT teleported, and it makes no difference. It is
                     // `position: fixed`, so with no `top` it falls back to its STATIC position —

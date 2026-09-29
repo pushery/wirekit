@@ -2,12 +2,9 @@
  * A peer library that arrives after the component that needs it.
  *
  * The chart adapters ship the Alpine glue and never bundle their library: the application
- * installs Chart.js or ApexCharts and puts it on the page. They used to look for it exactly once,
- * in init(), and paint a developer panel on the spot when it was missing — so an application that
- * loads the library lazily, to keep it out of the bundle every page downloads, lost that race
- * every time. The library landed a moment later and nothing looked again. Measured in a consuming
- * application: eight report screens showed the panel instead of a chart, with the library sitting
- * on `window` two seconds after the load.
+ * installs Chart.js or ApexCharts and puts it on the page. An application may load the library
+ * lazily, to keep it out of the bundle every page downloads, so it can land a moment after the
+ * component starts, and a single look in init() would paint the developer panel for good.
  *
  * So the question is asked until it can be answered. Quickly at first; once the page has loaded
  * and a grace period has passed, the component is told the library is missing — and the check

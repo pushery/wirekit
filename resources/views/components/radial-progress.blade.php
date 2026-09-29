@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // Current value. Determinate only — a ring that cannot say how far along it is
     // has nothing to draw; use the spinner for unknown-duration work.
@@ -39,7 +38,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('radial-progress', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $animate = BooleanProp::from($animate, false);
 
@@ -122,7 +121,8 @@
     aria-valuetext="{{ $announced }}"
     {{-- A progressbar MUST have an accessible name; aria-valuetext is the VALUE,
          not the name. `label` is the intended source, but it defaults to null, so
-         a developer who omits it used to ship a nameless progressbar. Fall back to
+         without a fallback a developer who omits it would ship a nameless
+         progressbar. Fall back to
          a translatable generic name so the role is never anonymous. --}}
     aria-label="{{ $label ?? __('wirekit::Progress') }}"
     {{-- Opt the animated ring INTO the docs.wirekit.app replay button so the sweep

@@ -39,7 +39,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('message', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $edited = BooleanProp::from($edited, false);
 
@@ -58,17 +58,12 @@
     };
 
     // Actions reveal. 'hover' reveals on hover, on keyboard focus (focus-within), AND on
-    // a coarse pointer — the last of those was the half this comment used to leave to the
-    // caller. A phone has no hover, and `focus-within` needs the user to first tap a
-    // control they cannot see, so the shipped default rendered every message's action
-    // slot at opacity 0 with no discoverable way to reveal it: reply, react and delete
-    // were gone on every phone until the developer found the prop. The docs even call
-    // 'always' "the accessible choice for touch devices, which have no hover" while the
-    // other one shipped as the default.
-    //
-    // `inline-edit` — same problem, four files away — already solved it in-component with
-    // exactly this media query. 'always' still exists for a surface that wants the
-    // actions permanently visible on every pointer type.
+    // a coarse pointer. A phone has no hover, and `focus-within` needs the user to first
+    // tap a control they cannot see, so without the coarse-pointer arm every message's
+    // action slot would sit at opacity 0 on a phone with no discoverable way to reveal
+    // it. `inline-edit` uses the same media query for the same reason. 'always' still
+    // exists for a surface that wants the actions permanently visible on every pointer
+    // type.
     $actionsRevealValue = match ($actionsReveal) {
         'hover', 'always' => $actionsReveal,
         default => WireKit::validateProp('message', 'actionsReveal', $actionsReveal, ['hover', 'always']),
@@ -188,10 +183,13 @@
     // was; without one the old `uniqid()` made it fresh on every render — and a message
     // list is typically inside a polled thread, so that is the common path rather than
     // the rare one. `aria-labelledby` and the header's id then name different things
-    // every tick, both well-formed, and the article loses its accessible name.
-    $messageId = $timestamp !== null
-        ? 'message-'.md5($authorName.$timestamp)
-        : \Pushery\WireKit\Support\DomId::unique(null, 'message-');
+    // every tick, both well-formed, and the article loses its accessible name. Two messages from
+    // the same sender at the same time are told apart by DomId: the first keeps the hash and the
+    // second gets `-2`, so each article is named by its own header.
+    $messageId = \Pushery\WireKit\Support\DomId::unique(
+        $timestamp !== null ? 'message-'.md5($authorName.$timestamp) : null,
+        'message-'
+    );
 @endphp
 
 {{-- The three `data-wk-message-*` markers are how `x-wirekit::message-group` reaches in: a

@@ -18,7 +18,7 @@ $attributes->has('aria-labelledby');
 $attributes->has('aria-valuetext')
 $attributes->has('x-bind:aria-valuetext')
 $attributes->only(['class',
-$attributes->whereStartsWith('wire:model')->first()));
+$attributes->whereStartsWith('wire:model')->first())),
 $attributes->whereStartsWith('x-model')->whereDoesntStartWith('x-modelable')
 $bindValueText
 $callerBindsValueText
@@ -438,12 +438,12 @@ BooleanProp::from($tooltip,
 BooleanProp::stripFalseHtmlFlags($attributes);
 Both
 Build
-CONTROL's
 CRASHED
 CSP
 CSS
 CURRENT
 Caller
+Casting
 Centering
 Change
 DECLARED
@@ -455,6 +455,7 @@ Decorative
 Decorative;
 Decouple
 Dev-only
+DomId
 EACH,
 ELEMENT
 EVER
@@ -487,8 +488,6 @@ Livewire's
 MAP
 MEAN
 MEANS
-MEASURED
-MEASURED,
 MIRROR
 MOVE
 Mirrors
@@ -564,7 +563,6 @@ WRAPPER,
 When
 Where
 Whether
-Which
 Whichever
 WireKit::resolveClasses('slider',
 WireKit::stableId('wk-slider',
@@ -590,6 +588,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from((object)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
+\Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\WireKit::validateProp('slider',
 \Pushery\WireKit\WireKit::warnUnknownProps('slider',
 ])
@@ -609,7 +608,8 @@ __('wirekit::Slider');
 `$name`,
 `$this->validate()`
 `'Neutral'`
-`(string)`,
+`(string)`
+`-2`,
 `16rem`.
 `:error`
 `:value="current"`.
@@ -702,7 +702,6 @@ after
 afterwards
 against
 against,
-against:
 agreed
 aimed
 alike
@@ -775,9 +774,6 @@ as,
 asking
 assistive
 assume
-assumed
-assumed,
-assuming
 asterisk.
 at
 at.
@@ -874,7 +870,6 @@ character
 check
 child,
 choice,
-chromium
 clamped
 class
 class="absolute
@@ -940,6 +935,7 @@ contents`
 context
 contiguous
 control
+control's
 control.
 control:
 controls
@@ -952,7 +948,6 @@ correctly,
 correctly.
 cost
 costs
-could
 counted
 counts
 covers
@@ -1085,9 +1080,9 @@ fill)
 fill.
 fills
 find
-fine
 finished
 fires
+fires:
 first
 first,
 fit-content
@@ -1240,13 +1235,13 @@ itself:
 just
 justify-items-center
 justify-items-end
+keep
 keeps
 kept
 key
 key,
 keydown
 keypress
-keypress,
 keys
 know
 label
@@ -1289,7 +1284,6 @@ listen
 listener
 literal
 live
-long
 longer
 longest
 looked
@@ -1303,7 +1297,6 @@ map.
 mark
 mark's
 mark.
-marker
 marks
 marks)
 marks).
@@ -1327,7 +1320,6 @@ meaning.
 means
 means,
 meant,
-mechanism
 message
 method
 methods
@@ -1390,7 +1382,6 @@ normalizer
 not
 not,
 not.
-not:
 note
 nothing
 nothing.
@@ -1424,6 +1415,7 @@ once
 once,
 once.
 one
+one,
 one-cell
 one.
 only
@@ -1456,6 +1448,7 @@ own
 owns
 owns.
 padding
+page
 pair
 parent
 parent's
@@ -1777,7 +1770,7 @@ too:
 took
 tooltip
 tooltip,
-top):
+top),
 top-full
 touch,
 trace
@@ -1818,6 +1811,7 @@ undeclared
 undefined
 under
 undone.'),
+unique
 units
 unknown
 unlike
@@ -1831,7 +1825,6 @@ updated
 us
 usability
 use
-used
 user
 users
 uses
@@ -1867,7 +1860,6 @@ was
 way
 way.
 we
-weakest
 well.
 were
 what
@@ -1901,6 +1893,7 @@ word
 word,
 words
 work,
+works
 would
 wrap
 wrapped

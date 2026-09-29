@@ -199,8 +199,9 @@ export default function wirekitPageProgress(config = {}) {
             // A request that begins while the previous bar is fading out. That window opens
             // after every answer that showed the bar, and a follow-up in it is the ordinary
             // case: a second click, `wire:model.live` while typing, a lazy component loading.
-            // The early return below used to come first, so the hide timer kept running and
-            // retired the bar 220ms later, and the whole new wait showed nothing.
+            // This runs before the early return below: otherwise the hide timer would keep
+            // running and retire the bar a moment later, and the whole new wait would show
+            // nothing.
             //
             // The bar goes back to where a wait starts instead of staying at 100: a full bar
             // says "done", and this is a new wait.

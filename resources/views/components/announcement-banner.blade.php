@@ -32,7 +32,7 @@
     // read as a warning about something that is not one. Independent of the theme's accent,
     // which is monochrome by default, so `intent="info"` is not blue out of the box.
     //
-    // Lightness and chroma come from `--wk-banner-hue-l` / `--wk-banner-hue-c`, measured to
+    // Lightness and chroma come from `--wk-banner-hue-l` / `--wk-banner-hue-c`, chosen to
     // keep AA against the text at every hue. The hue itself can also come from the stylesheet
     // — `.env-staging { --wk-banner-hue: 300 }` — which survives a Content-Security-Policy that
     // strips inline styles; without either, it follows `--theme-hue` where a preset sets one.
@@ -79,7 +79,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('announcement-banner', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false);
     $persist = BooleanProp::from($persist, true);

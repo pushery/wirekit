@@ -160,8 +160,8 @@ final class StrictnessGate
      *
      * `on` covers the HTML event-handler family -- onclick, onsubmit, oninput
      * and the rest. They were missing, so a developer writing the perfectly
-     * ordinary `<x-wirekit::button onclick="history.back()">` was told their
-     * prop was unknown. Measured against a real render before the fix.
+     * ordinary `<x-wirekit::button onclick="history.back()">` would be told their
+     * prop was unknown.
      *
      * A prefix rather than an enumeration: the handler list is long, it grows
      * with the platform, and every name in it starts this way. It is the one
@@ -418,10 +418,8 @@ final class StrictnessGate
         }
 
         // The passthrough rule itself lives on `unknownPropNames()` and on the
-        // constants it reads. This method used to restate it here in full, and
-        // that copy stopped deciding anything the moment the verdict was split
-        // out -- see PASSTHROUGH_PREFIXES for why leaving it there was worse
-        // than having no comment at all.
+        // constants it reads, and only there: a copy restated here would decide
+        // nothing and drift from the one that does -- see PASSTHROUGH_PREFIXES.
         foreach (self::unknownPropNames($actual, $declared) as $key) {
             // Levenshtein-rank against declared props for a Did-you-mean.
             $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($key, $declared));
@@ -460,9 +458,8 @@ final class StrictnessGate
      * override; those are not this.
      *
      * Most component views set `x-data`; a handful set `x-init` and fewer still set
-     * `x-modelable`. The tally itself is deliberately not written down — the one that used to
-     * stand here went stale, and a docblock count in this package has already shipped a wrong
-     * promise once.
+     * `x-modelable`. The tally itself is deliberately not written down: a count in a docblock
+     * goes stale without anything noticing, and then it is a wrong promise.
      *
      * What DOES matter is a distinction the tally hid: a large minority of them set the
      * attribute only inside a condition, and for those the sentence this method logs — "your
@@ -502,8 +499,6 @@ final class StrictnessGate
      *
      * The two share this one implementation so the rule cannot drift between the warning a
      * developer sees at runtime and the answer a test asserts on.
-     *
-     * Reported from an adopting application re-checking its upstream-gap register.
      *
      * @param  string  $context  the component name, as `ComponentRegistry` knows it
      * @param  array<string, mixed>  $actual  attribute name => value
@@ -570,9 +565,9 @@ final class StrictnessGate
         // never exists and collides with nothing. A developer whose countdown was demonstrably
         // running got told three times a day to wrap the component in their own element.
         //
-        // Measured here on 2026-08-27: 18 components set `x-data` only inside a condition and
-        // 17 set it both ways. The second group still warns, which is the point of asking about
-        // the unconditional case rather than simply exempting anything conditional.
+        // A component that sets `x-data` both inside a condition and outside one still warns,
+        // which is the point of asking about the unconditional case rather than simply exempting
+        // anything conditional.
         return array_values(array_filter(
             self::SCOPE_DIRECTIVES,
             static fn (string $directive): bool => BladeParser::setsAttributeUnconditionally($source, $directive)
@@ -585,7 +580,7 @@ final class StrictnessGate
      * Every prefix in {@see self::PASSTHROUGH_PREFIXES} names one family except `on`, which names
      * two. The HTML event handlers (`onclick`, `oninput`, `onpointerdown`) are lowercase
      * throughout and pass. The props that begin with the same two letters do not: a typo of
-     * `onLabel` or `once` (`onLable`, `on-lable`, `onse`) used to pass as a handler and was never
+     * `onLabel` or `once` (`onLable`, `on-lable`, `onse`) would pass as a handler and never be
      * reported. So an `on` name counts as a handler only when it is lowercase and is not within
      * one edit of a declared prop, compared without case, since `onlabel` does not reach `onLabel`
      * either.
@@ -650,9 +645,8 @@ final class StrictnessGate
         // caller carried its own `if ($declared === []) continue;` and one that forgot got a
         // wave of phantom findings rather than a quiet pass.
         //
-        // Reported by a downstream repo that adopted this predicate to replace its own
-        // hand-rolled walker and had to preserve the guard by hand. A rule that every caller
-        // must remember is a rule that one of them will not.
+        // Without the early return here every caller has to carry that guard itself, and a
+        // rule that every caller must remember is a rule that one of them will not.
         if ($declared === []) {
             return [];
         }
@@ -695,9 +689,8 @@ final class StrictnessGate
             // prefix skips above are the reason: `aria-label` camel-cases to `ariaLabel`
             // and `x-on:click` to `xOn:click`, neither of which starts with `aria-` or
             // `x-` any more, so a caller that normalizes first defeats every passthrough
-            // rule at once. Measured, not reasoned: a scan of the documentation's snippet
-            // usages that normalized before calling reported many times this function's
-            // findings, and every addition was a correct `aria-*` / `x-*` / `data-*` attribute.
+            // rule at once, and every correct `aria-*`, `x-*` and `data-*` attribute becomes a
+            // finding.
             //
             // Doing the conversion HERE rather than at the call site is what makes that
             // mistake unavailable — there is nothing left for a caller to normalize.

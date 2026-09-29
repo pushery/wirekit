@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // A code the shipped artwork carries: an ISO 3166-1 alpha-2 code such as
     // `de`, or one of its region and organization codes such as `eu` or `gb-sct`. Case does not

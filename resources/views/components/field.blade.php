@@ -37,7 +37,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('field', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $required = BooleanProp::from($required, false);
 
@@ -114,9 +114,8 @@
             </x-wirekit::label>
         @elseif($inAlignedRow)
             {{-- A field with no label still needs to occupy the label row, or it slides up
-                 into it and its control stops lining up with its neighbors'. Measured on a
-                 row of three: one field without a label sat 13.5px above the other. Empty
-                 and aria-hidden — it is spacing, and there is no name here to announce. --}}
+                 into it and its control stops lining up with its neighbors'. Empty and
+                 aria-hidden — it is spacing, and there is no name here to announce. --}}
             <span data-wk-field-part="label" aria-hidden="true"></span>
         @endif
 

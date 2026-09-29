@@ -59,10 +59,15 @@
     // 28px row is `1.75rem`, between `xs` and `sm`. Numbers with `rem`, `em` or `px` only; the
     // value goes into a style attribute, so anything else is refused like a word off the scale.
     'size' => 'sm',
+    // Whether the brand gives way in a narrow row: the root may shrink below the width of the
+    // name, the name ends in an ellipsis, and the mark keeps its size. Off by default, so a
+    // brand that does not ask renders as it always has.
+    'truncate' => false,
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -125,9 +130,14 @@
     // developer prose-stylesheet rule that targets `<a>` inside a prose
     // wrapper — the doubled-class `.wk-brand.wk-brand` selector wins
     // on specificity (0,2,0) against `.{prose-class} a` (0,1,1).
+    // Read like every boolean prop, so an unbound `truncate="false"` is false. The mark keeps its
+    // size either way: in a shrinking root it is the name that gives, never the logo.
+    $truncate = BooleanProp::from($truncate, false);
+    $wkLogoShrinkClass = $truncate ? 'shrink-0 ' : '';
+
     $classes = WireKit::resolveClasses('brand', 'base', implode(' ', [
         'wk-brand',
-        'flex items-center shrink-0',
+        $truncate ? 'flex items-center min-w-0' : 'flex items-center shrink-0',
         'gap-[var(--gap-wk-sm)]',
         'text-[color:var(--color-wk-text)]',
         'no-underline',
@@ -223,51 +233,47 @@
              single element carrying both `{bp}:block` and `wk-dark-only` is a
              0,1,0 specificity tie decided by stylesheet load order (fragile).
              Splitting them onto the span vs the imgs keeps it deterministic. --}}
-        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
-        <span class="hidden {{ $bpInlineFlex }} items-center">
-            <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
-            <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <span class="hidden {{ $wkLogoShrinkClass }}{{ $bpInlineFlex }} items-center">
+            <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+            <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
         </span>
     @elseif($logo && $mobileLogo)
         {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
              full-width wordmark at + breakpoint. Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label handles the accessible name. --}}
-        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="hidden {{ $wkLogoHeightClass }}w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="hidden {{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
     @elseif($logo && $darkLogo)
         {{-- Mode-aware logo swap: light wordmark in light mode, dark wordmark
              under the `.dark` class (via the wk-light-only / wk-dark-only
              visibility pair in dist/wirekit.css). Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label / visible name handles the accessible name. --}}
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
-        <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
     @elseif($logo)
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="{{ $wkLogoShrinkClass }}{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
     @endif
     @if($name)
         {{-- Same rule as the sidebar row and the profile row beside it: in a collapsed
-             rail the word goes sr-only rather than wrapping. Measured at 55px, "Acme
-             Console" broke across two lines and made the brand row the tallest thing in
-             a column of 32px icons.
+             rail the word goes sr-only rather than wrapping, which would break a
+             two-word name across lines and make the brand row the tallest thing in a
+             column of icons.
 
              It costs nothing outside a sidebar — the group selector only matches inside
              one, so a brand in a header or a footer is untouched. --}}
-        <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] wk-rail-hide">{{ $name }}</span>
+        <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] wk-rail-hide{{ $truncate ? ' min-w-0 truncate' : '' }}">{{ $name }}</span>
     @endif
-    {{-- Children render ALONGSIDE the logo and the name, not instead of them.
-         This used to be `@if(!$logo && !$name)`, which dropped them silently
-         whenever either was set — the documented use (a workspace-switcher
-         chevron, a product badge) is exactly the case that was thrown away.
+    {{-- Children render ALONGSIDE the logo and the name, not instead of them:
+         the documented use (a workspace-switcher chevron, a product badge) sets
+         both.
 
-         It also left the link with NO accessible name: `$hasVisibleName` above
-         counts slot content, so a `logo` + children brand suppressed the
-         `aria-label` fallback and then rendered nothing to replace it. The
-         `<a>` held one `alt=""` `aria-hidden` image and nothing else.
-
-         Additive: with no logo and no name the output is byte-identical, and
-         with either set the slot rendered nothing before. --}}
+         It also keeps the link named: `$hasVisibleName` above counts slot
+         content, so a `logo` + children brand suppresses the `aria-label`
+         fallback, and dropping the children would leave the `<a>` holding one
+         `alt=""` `aria-hidden` image and nothing else. --}}
     @if($slot->hasActualContent())
         {{ $slot }}
     @endif

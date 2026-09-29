@@ -3,10 +3,10 @@
  *
  * The panel body's top/bottom overflow shadows are OVERLAYS painted above the
  * scrolled content (`.wk-scroll-shadow-top/-bottom` in dist/wirekit.css), so a
- * hovered row or button near an edge can never cover the affordance. The
- * earlier approach drew the shadows in the scroll container's `background`,
- * which children paint over (a ghost button's hover surface swallowed the
- * shadow at both edges).
+ * hovered row or button near an edge can never cover the affordance. Shadows
+ * drawn in the scroll container's `background` would be painted over by its
+ * children (a ghost button's hover surface would swallow the shadow at both
+ * edges).
  *
  * Auto-hide at the scroll extremes is driven by an IntersectionObserver over
  * two 1px sentinels at the very start/end of the scroll content: a sentinel

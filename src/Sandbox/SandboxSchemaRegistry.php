@@ -25,14 +25,9 @@ namespace Pushery\WireKit\Sandbox;
  *
  * Schemas are seeded LAZILY, on the first read: `ensureSeeded()` runs
  * `seed()` once and every accessor goes through it. `register()` seeds first
- * too, so a custom schema always lands ON TOP of the built-in of the same name
- * — before 2026-09-10 it landed under one, and registering at boot was silently
- * undone by the first read. There is no boot hook
- * and no service-provider call — this line named
- * `WireKitServiceProvider::boot()` until 2026-09-09, and the provider
- * contains no reference to this class at all, so a reader looking for the
- * registration found nothing and had no way to tell whether they had
- * missed it or it was never there.
+ * too, so a custom schema always lands ON TOP of the built-in of the same name,
+ * and registering at boot is not undone by the first read. There is no boot hook
+ * and no service-provider call: the provider does not reference this class.
  *
  * Initial coverage (starter set):
  *   - button, badge, callout, alert, card, code, code-block, kbd
@@ -138,11 +133,10 @@ final class SandboxSchemaRegistry
         // accept — they run their `variant` through validateProp against exactly
         // this list and throw on anything else.
         //
-        // This used to carry eight, with `secondary` and `accent` among them. Those
-        // two are not in either component's vocabulary, so the sandbox offered them
-        // in its prop editor and the preview threw the moment somebody picked one.
-        // A schema that advertises a value the component refuses is worse than a
-        // missing schema: the developer reads it as the API.
+        // `secondary` and `accent` are not in either component's vocabulary, and a
+        // schema that offered them would put a value in the prop editor that makes
+        // the preview throw. A schema that advertises a value the component refuses
+        // is worse than a missing schema: the developer reads it as the API.
         $intentValues = ['primary', 'neutral', 'info', 'success', 'warning', 'danger'];
 
         self::register('button', [
@@ -284,6 +278,8 @@ final class SandboxSchemaRegistry
             // No default: an unset leading keeps the theme's own line height.
             'leading' => ['type' => 'string', 'allowed_values' => ['tight', 'normal', 'relaxed']],
             'wrap' => ['type' => 'bool', 'default' => true],
+            'family' => ['type' => 'string', 'default' => 'sans', 'allowed_values' => ['sans', 'mono']],
+            'tabular' => ['type' => 'bool', 'default' => false],
             'body' => ['type' => 'string', 'default' => 'Text body'],
         ]);
 

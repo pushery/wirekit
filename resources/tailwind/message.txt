@@ -21,7 +21,6 @@
 "false").
 "false",
 "heroicon-m-inbox"
-"the
 "↻
 $actions
 $actionsReveal,
@@ -339,7 +338,7 @@ $wrap
 'md'
 'md'),
 'md',
-'message-');
+'message-'
 'message-'.md5($authorName.$timestamp)
 'min-h-5
 'min-h-6
@@ -602,7 +601,6 @@ $wrap
 15"
 16.8
 18
-18.5
 1px
 2,
 2.1.1).
@@ -762,7 +760,6 @@ Bubble
 CALLER's
 CLASS,
 CSS
-CUT
 Carbon
 Carbon::parse($statusTime);
 Carbon::parse($timestamp);
@@ -781,6 +778,7 @@ Depth
 Describing
 Dev-only
 Discoverable
+DomId:
 Done
 Dot
 Double-check
@@ -807,7 +805,6 @@ German
 Given
 Glyph
 Graceful
-HOVER,
 HOVERABLE:
 HTML,
 HTTP
@@ -829,6 +826,7 @@ Its
 JS
 KEY,
 Keyboard-
+Left
 Literal
 Livewire
 Locale-aware
@@ -836,7 +834,6 @@ Logger
 MORPH
 MOST
 Make
-Measured
 Message
 Multi-line
 NON-interactive
@@ -848,7 +845,6 @@ Normalized
 Nothing
 Null
 Null,
-OFF
 ONCE,
 ONE
 ONLY
@@ -880,7 +876,6 @@ Render
 Rendered
 Renders
 Replay"
-Reported
 Resolve
 Revealed
 Rich
@@ -985,6 +980,7 @@ Without
 [],
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
@@ -1010,6 +1006,7 @@ __toString
 `$as`
 `$refs`
 `--color-wk-bg-elevated`,
+`-2`,
 `:remaining="7"`
 `<button>`
 `<div>`
@@ -1169,6 +1166,7 @@ anticipate
 any
 anyone
 anything
+apart
 app
 app(IconResolver::class)->resolve($name);
 appear
@@ -1212,7 +1210,6 @@ article
 as
 as,
 asks
-asserted:
 assertion
 assistive
 association
@@ -1231,7 +1228,6 @@ avatar,
 avatars
 avatars.
 avoid
-away
 back-compat
 back.
 background
@@ -1244,7 +1240,6 @@ badges
 badges;
 baked
 bakes
-bar.
 bare
 base
 base;
@@ -1323,7 +1318,6 @@ bubble's
 bubbles
 bubbles).
 bug
-bug.
 build
 but
 button
@@ -1340,7 +1334,6 @@ called
 caller
 caller's
 caller-supplied
-caller.
 callout
 calls.
 can
@@ -1351,7 +1344,6 @@ canonical
 card
 card's
 card,
-carried
 carries
 carry
 carry.
@@ -1379,7 +1371,6 @@ chose
 chosen
 chrome
 circle
-claimed
 class
 class="flex
 class="font-[number:var(--font-wk-heading-weight)]
@@ -1401,11 +1392,13 @@ client
 client-only
 climbs
 clipping
+clipping,
 clone
 close
 close-icons,
 closes
 coarse
+coarse-pointer
 code
 cohesion.
 collaborators").
@@ -1421,7 +1414,6 @@ colors
 colors,
 come
 comes
-comment
 common
 compare
 compete
@@ -1454,7 +1446,6 @@ consistent
 console
 console).
 construction.
-consuming
 containers.
 content
 content,
@@ -1482,6 +1473,7 @@ crossed
 current
 currentColor
 currentColor;
+cut
 d="M1
 d="M12
 d="M7
@@ -1523,7 +1515,6 @@ degradation:
 degrades,
 delayHide:
 delayShow:
-delete
 deliberate
 deliberate.
 deliberately
@@ -1542,7 +1533,6 @@ deterministic
 dev
 developer
 developer's
-devices,
 dialect
 dialog
 different
@@ -1633,7 +1623,6 @@ existing
 exists
 exists.
 expandos.
-expensive:
 explanation
 explicit
 explicitly
@@ -1644,8 +1633,7 @@ external-link
 eyebrow).
 fact
 factory,
-factory:
-fade="…">`
+fade="…">`,
 fail
 failed"
 failed.
@@ -1664,7 +1652,6 @@ family
 feature
 field
 field,
-file
 files
 fill
 fill:
@@ -1684,7 +1671,6 @@ fix.
 fixed
 fixed-height
 fixed`
-fixes
 flags
 flash
 flatten
@@ -1714,7 +1700,6 @@ foreground
 foreground.
 format
 format),
-found
 found.`
 four
 fragment
@@ -1756,7 +1741,6 @@ glyph.
 glyph;
 go
 goes
-gone
 gray
 grid
 group
@@ -1804,6 +1788,7 @@ hatch
 have
 have)
 header's
+header.
 height
 height,
 helper
@@ -1830,7 +1815,6 @@ honors
 host
 house
 hover
-hover"
 hover)
 hover,
 hover.
@@ -1859,7 +1843,6 @@ implements
 implode('
 imports
 in
-in-component
 in.
 in:
 in_array($statusValue,
@@ -1947,7 +1930,6 @@ labels).
 ladder
 lands
 language.
-last
 later
 layer
 layout
@@ -2165,6 +2147,7 @@ package
 padding
 padding,
 page
+page,
 page.
 pages
 pair
@@ -2217,6 +2200,7 @@ places
 plain
 pointer
 pointer-events
+pointer.
 pointing
 polled
 popover's
@@ -2242,14 +2226,11 @@ preview
 pricing-card
 prints
 problem
-problem,
 prod).
 produced
-project,
 prominent
 prop
 prop's
-prop.
 props
 provide
 provides
@@ -2258,7 +2239,6 @@ pure
 purpose,
 put
 puts
-px
 px-2'
 px-2',
 px-2.5'
@@ -2270,7 +2250,7 @@ py-1
 py-1.5
 py-[var(--space-wk-sm,0.5rem)]
 qualified:
-query.
+query
 quiet,
 racing
 radius
@@ -2288,7 +2268,6 @@ reachable
 reachable.
 reached
 reaches
-react
 read
 read)
 read,
@@ -2302,6 +2281,7 @@ reads
 real
 reapply
 reason
+reason.
 reason:
 reasoning
 receive
@@ -2314,7 +2294,6 @@ redundant
 ref
 referenced
 refuses.
-refutes
 regardless
 region
 region,
@@ -2339,9 +2318,7 @@ replaced
 replacement
 replaces
 replay-button
-reply,
 reported
-reproduced
 request
 requested
 require
@@ -2458,6 +2435,7 @@ silently.
 simply
 single
 single-line
+sit
 site
 sits
 size
@@ -2478,7 +2456,6 @@ soft).
 soft-chip
 soft-tone
 solid
-solved
 somebody
 something
 source
@@ -2533,6 +2510,7 @@ stroke="currentColor"
 style
 style="display:inline-block;"></span>
 stylesheet
+stylesheet's
 stylesheet).
 subtle
 subtree
@@ -2573,7 +2551,6 @@ tap
 teaches
 technology
 technology.
-teleport
 teleport:
 teleported
 template
@@ -2657,6 +2634,7 @@ to.
 toHtml().
 token
 token,
+told
 tone
 tooltip
 tooltip,
@@ -2718,7 +2696,6 @@ unknown.
 unlabeled
 unless
 unlike
-unlocatable
 unsteady
 until
 untouched.
@@ -2726,7 +2703,6 @@ up
 usable
 use
 use:
-used
 useful
 user
 uses
@@ -2800,7 +2776,6 @@ whitespace-nowrap"
 who
 whole
 whose
-why
 widening
 width
 width)

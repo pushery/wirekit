@@ -142,7 +142,6 @@ $wkRequiredMarker
 (@aware
 (WCAG).
 (`min-w-0
-(`x-init="$el.indeterminate
 (a
 (aligned
 (bool)
@@ -153,7 +152,6 @@ $wkRequiredMarker
 (inline-flex)
 (kept
 (links,
-(measured:
 (nested
 (no
 (silent
@@ -177,7 +175,6 @@ $wkRequiredMarker
 12h14"
 12px
 13l4
-155x20
 2.5.8's
 2.75rem
 20px
@@ -231,14 +228,11 @@ $wkRequiredMarker
 @props.
 A
 A11y:
-AFTER
-ALWAYS
-Alpine
+Always
 Announced
 Array-style
 BETWEEN
 BOTH
-BOX,
 Blade
 BooleanProp::from($groupError,
 BooleanProp::from($hideLabel,
@@ -248,7 +242,6 @@ Both
 CLASS
 Card
 Change
-CheckboxToggleShiftTest).
 Checkmark
 DEFAULT
 DOM
@@ -272,7 +265,6 @@ Laravel
 Lenient
 Livewire
 Livewire-compatible.
-Measured
 Mirrors
 NOT
 Native
@@ -280,14 +272,12 @@ No
 Normalized
 Note
 Null
-ON
-ON.
 ONE
 ONLY
 ONLY,
 OR
 OUTSIDE
-PLUS
+On
 PRESENCE,
 Passing
 Pushery\WireKit\Support\BooleanProp;
@@ -355,7 +345,6 @@ __('wirekit::Saving'),
 `class="flex
 `covers()`
 `disabled="false"`
-`el.indeterminate`
 `flex-1`
 `flex`
 `group`
@@ -373,6 +362,7 @@ __('wirekit::Saving'),
 `sr-only`
 `target-size`
 `true`.
+`x-init="$el.indeterminate
 `{{
 a
 able
@@ -496,14 +486,12 @@ card's
 card.
 cards
 carry
-case
 case,
 cases
 cast
 causes
 centered
 change
-changed,
 changing
 check
 check/indeterminate
@@ -525,7 +513,7 @@ class="text-[length:var(--text-wk-sm)]
 class="{{
 clean
 clickable
-closer
+closer.
 closure,
 code
 column
@@ -557,7 +545,6 @@ control,
 control.
 controls
 controls:
-could
 count
 counter-check
 counts
@@ -579,7 +566,6 @@ dense
 dense)
 described
 detection:
-did
 disables
 display
 does
@@ -596,7 +582,6 @@ either
 either:
 element
 element.
-element:
 elsewhere)
 emitted
 emitted,
@@ -701,7 +686,6 @@ implode('
 in
 independent
 indeterminate
-initial
 inline-flex
 inner
 input
@@ -713,6 +697,7 @@ instead,
 into
 invalid
 is
+is.
 isn't
 it
 it,
@@ -753,11 +738,11 @@ lives
 longer
 make
 makes
+many
 match
 match-with-default
 matching
 mean
-measured
 merged
 message
 message,
@@ -802,7 +787,7 @@ occurrence
 of
 off
 offsets
-old
+often
 on
 on.
 once
@@ -819,6 +804,7 @@ optimistic-ui:
 or
 order
 other
+otherwise
 our
 out
 out.
@@ -844,6 +830,7 @@ personalization
 placed
 placement
 plain
+plus
 point
 pointer-events-none
 pointer.
@@ -852,7 +839,7 @@ polite
 positions
 practically
 precedence:
-primitive
+primitive,
 printing
 prod).
 prop
@@ -869,9 +856,8 @@ px-[var(--padding-wk-x-md)]
 py-[var(--padding-wk-y-md)]
 question.
 radio
-ran
 rather
-re-initialize,
+re-initializing
 re-rounds
 reach
 reaches
@@ -913,7 +899,6 @@ routing
 row
 row's
 row,
-rows
 rule
 runs
 runs.
@@ -929,7 +914,6 @@ second
 select
 select-none
 selectable-option
-selected
 selected"
 selectors.
 sentence
@@ -951,7 +935,6 @@ sibling
 siblings
 silently
 silently.
-simply
 sit
 site
 sites
@@ -989,6 +972,7 @@ stroke-width="3"
 stroke="currentColor"
 styling.
 sub-pixel
+sub-pixel,
 submit
 such
 suffix,
@@ -1002,6 +986,7 @@ table
 tag
 tag,
 take
+tall,
 taps
 target
 target,
@@ -1010,6 +995,7 @@ targets
 tell
 template
 text
+text,
 text-[color:var(--color-wk-accent-fg)]"
 text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-text)]
@@ -1035,6 +1021,7 @@ three,
 through
 ticking
 time
+times
 tinted
 to
 today,
@@ -1044,13 +1031,13 @@ toggle.
 toggle/radio):
 toggle:
 too,
+too.
 touch
 trailing
 transition-colors
 trip
 true
-true"`,
-true)
+true"`
 true);
 true,
 truthy
@@ -1069,7 +1056,6 @@ unreachable,
 up
 upper
 use
-used
 uses
 validation
 value
@@ -1090,7 +1076,6 @@ w-full"`
 w/h.
 wants
 was
-was.
 way
 way.
 well,
@@ -1103,9 +1088,11 @@ who
 whole
 whose
 wide
+wider
 will
 wire:model.live
 with
+without
 words
 would
 wrapper
@@ -1133,5 +1120,4 @@ x-wk-indeterminate
 }}@if($wkRequiredMarker)<span
 }}`
 }}{{
-~0.5px,
 —

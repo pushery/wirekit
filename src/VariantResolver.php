@@ -60,19 +60,17 @@ class VariantResolver
     {
         // The border is TRANSPARENT on every intent, and the fill shows through it: a filled
         // button keeps the one-pixel box the outline surface has, without drawing a second shape.
-        // It used to be the fill's own color, which made two things to keep in step where one
-        // does the job:
+        // A border in the fill's own color would be two things to keep in step where one does
+        // the job:
         //
-        // - A border recolored BY HAND alongside the fill. Three of the six intents changed the
-        //   fill on hover and left the border behind, so a hovered neutral, success or warning
-        //   button wore a ring of its resting color. Measured in both engines.
+        // - A border recolored by hand alongside the fill: an intent that changes the fill on
+        //   hover and leaves the border behind wears a ring of its resting color.
         // - A separately anti-aliased shape on top of the fill. Where two shapes meet along a
-        //   rounded corner, the page can show between them, and a capture from an adopting
-        //   application showed exactly that: a light seam at the corners of a filled button.
-        //   With no border color there is no second shape to meet.
+        //   rounded corner, the page can show between them as a light seam at the corners of a
+        //   filled button. With no border color there is no second shape to meet.
         //
-        // NOT `background-clip: padding-box`, the other way to keep a border and a fill apart: it
-        // produces that seam, measured in both engines.
+        // Not `background-clip: padding-box`, the other way to keep a border and a fill apart: it
+        // produces that seam, in both engines.
         return match ($intent) {
             'primary' => implode(' ', [
                 'bg-[var(--color-wk-accent)]',
@@ -192,11 +190,10 @@ class VariantResolver
             ? 'bg-[var(--color-wk-bg-muted)]'
             : "bg-[color-mix(in_srgb,var({$tintToken})_12%,var(--color-wk-bg))]";
 
-        // The hover, and `soft` was the only one of the five surfaces without one. That is not
-        // a polish gap: `soft` is the surface for secondary actions, so it is the MAJORITY of
-        // the buttons in an application — measured in one adopting app at 41 of 154 explicit,
-        // with every row-action card built from nothing else. An element that does not answer
-        // the pointer reads as not clickable, which is the signal a pointer user has.
+        // The hover, as on the other four surfaces. `soft` is the surface for secondary
+        // actions, so it carries a large share of the buttons in an application, row actions
+        // among them. An element that does not answer the pointer reads as not clickable,
+        // which is the signal a pointer user has.
         //
         // Same formula, more tint. 12% to 18% stays inside the expression the surface already
         // uses, needs no new token, and follows the theme in both modes because

@@ -365,10 +365,11 @@ final class WcagContrast
      * unsupported format, or if the BACKGROUND is translucent.
      *
      * A translucent foreground is laid over the background first, source-over in encoded sRGB,
-     * the way a browser composites it. Measured as if it were opaque, 50% black on white read
-     * 21:1 where a reader sees 3.98:1 — the dangerous direction, because nothing turns red. A
-     * translucent background has no contrast of its own: what shows through depends on whatever
-     * lies beneath it, which the two strings do not say, so it is refused rather than guessed.
+     * the way a browser composites it. Computed as if it were opaque, 50% black on white would
+     * read 21:1 where a reader sees 3.98:1 — the dangerous direction, because nothing turns red.
+     * A translucent background has no contrast of its own: what shows through depends on
+     * whatever lies beneath it, which the two strings do not say, so it is refused rather than
+     * guessed.
      */
     public static function ratio(string $foreground, string $background): ?float
     {

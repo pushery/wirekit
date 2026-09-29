@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — client-only
      A press dispatches the chosen reply and mutates nothing, so there is no result that
-     could be shown early. Measured rather than asserted: the guard refutes this reason
-     for any file that performs a mutation of its own. --}}
+     could be shown early. --}}
 @props([
     // The suggested replies, in the order they are offered. An entry is either a string —
     // the label, which is then also the value — or an array with `label`, an optional

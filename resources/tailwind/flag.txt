@@ -106,7 +106,6 @@ Give
 Heights
 ISO
 It
-Measured
 No
 Pushery\WireKit\Support\FlagPackage;
 Pushery\WireKit\WireKit;
@@ -145,14 +144,12 @@ alt="{{
 an
 and
 announcement
-any
 aria-hidden="true"
 aria-label="{{
 artwork
 artwork's
 artwork,
 as
-asserted:
 attributes
 be
 before
@@ -196,7 +193,6 @@ element,
 else
 elseif
 every
-file
 flag
 flag's
 flags
@@ -208,7 +204,6 @@ from
 given
 given.
 goes
-guard
 halved,
 has
 height
@@ -251,7 +246,6 @@ null;
 of
 on
 one
-one.
 only
 optimistic-ui:
 or
@@ -269,13 +263,9 @@ prod).
 props
 qualified,
 radius
-rather
 ratio
 ratio,
-reason
-refutes
 region
-renders
 repeat
 result
 role="img"
@@ -301,14 +291,12 @@ stylesheet
 such
 taken
 text
-than
 that
 the
 theme
 theme,
 there
 thing
-this
 through
 to
 trim($src)

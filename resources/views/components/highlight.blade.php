@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'query' => null,
     'as' => 'span',
@@ -41,15 +40,14 @@
      * The highlighted markup, built here rather than in the template below.
      *
      * The slot arrives as RENDERED HTML: Blade has already escaped whatever text the caller
-     * wrote and left whatever markup they wrote intact. The previous implementation split that
-     * string on the query and printed each fragment through `{{ }}`, escaping it a SECOND
-     * time. Three consequences, and the same component renders all three correctly the moment
-     * the query is removed:
+     * wrote and left whatever markup they wrote intact. Splitting that string on the query and
+     * printing each fragment through `{{ }}` would escape it a SECOND time, with three
+     * consequences:
      *
-     *   markup     `<em>note</em>` came out as visible angle brackets
-     *   entities   an `&amp;` the caller had escaped came out as `&amp;amp;`
-     *   tags       splitting the HTML on the query alone cut INSIDE a tag — `query="em"`
-     *              matched the `em` in `<em>` and wrapped the halves in `<mark>`
+     *   markup     `<em>note</em>` would come out as visible angle brackets
+     *   entities   an `&amp;` the caller had escaped would come out as `&amp;amp;`
+     *   tags       splitting the HTML on the query alone cuts INSIDE a tag — `query="em"`
+     *              matches the `em` in `<em>` and wraps the halves in `<mark>`
      *
      * So the content is split into TAG and TEXT segments first and only the text is searched;
      * tags pass through untouched, and each text segment is decoded, searched and escaped once
@@ -57,7 +55,7 @@
      *
      * Assembled into one string rather than emitted through a Blade `@foreach`: a loop puts a
      * newline around every iteration, and in inline content a newline IS a space, so
-     * `foo<em>bar</em>` came back with gaps the caller never wrote.
+     * `foo<em>bar</em>` would come back with gaps the caller never wrote.
      */
     $highlighted = null;
 

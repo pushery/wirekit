@@ -117,7 +117,6 @@ Declared
 Default
 Dev-only
 Fully
-Measured
 Normalized
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -151,13 +150,11 @@ action
 against
 an
 and
-any
 arbitrary
 are
 array_filter([
 as
 as,
-asserted:
 attribute
 attribute.
 auto-derived
@@ -197,7 +194,6 @@ falling
 false);
 false,
 feature
-file
 file.
 flags
 flex-col',
@@ -206,7 +202,6 @@ for
 form:
 from
 full
-guard
 here.
 historical
 implode('
@@ -248,6 +243,7 @@ opposite
 optimistic-ui:
 or
 other.
+otherwise
 out
 outcomes
 own
@@ -261,9 +257,7 @@ rather
 reach
 reachable
 reads
-reason
 reasoning;
-refutes
 renders
 reported
 result
@@ -299,7 +293,6 @@ unknown
 unvalidated
 up
 use
-used
 utility
 value
 values

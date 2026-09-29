@@ -3,11 +3,10 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'target' => null,
-    // A selector for subtrees whose headings are NOT this page's structure. Reported from
-    // the documentation site: a page embedding live component demos listed 41 entries of
-    // which 23 were demo content — an accordion's panel titles, a carousel's product names —
-    // and `target` could not help, because the demos sit INSIDE the article that holds the
-    // real sections. Unset (the default) changes nothing about an existing call site.
+    // A selector for subtrees whose headings are NOT this page's structure, such as live
+    // component demos, whose accordion panel titles or carousel product names would otherwise
+    // become entries. `target` cannot help there, because the demos sit INSIDE the article that
+    // holds the real sections. Unset (the default) changes nothing about an existing call site.
     'exclude' => null,
     'levels' => '2,3',
     'position' => 'right',
@@ -47,7 +46,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-spine', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $numbered = BooleanProp::from($numbered, false);
     $fillSections = BooleanProp::from($fillSections, false);
@@ -97,9 +96,8 @@
 
     // Position class — left or right viewport edge. Both pin vertically
     // centered with translate-y, leaving a margin gutter to expand into.
-    // The fallback in the arbitrary value is the 1rem the two arms used to carry as a
-    // spacing-step utility, so a call site that says nothing renders exactly what it
-    // rendered before. Same shape the sidebar uses for its width: the property is
+    // The fallback in the arbitrary value is 1rem, one spacing step. Same shape the
+    // sidebar uses for its width: the property is
     // settable from a `style` attribute or from CSS, and the utility carries the
     // default rather than a second declaration that could drift away from it.
     //
@@ -229,8 +227,8 @@
         // which takes every other directive on it down silently.
         'forceExpanded' => filter_var($forceExpanded, FILTER_VALIDATE_BOOL),
         'forceExpandedMd' => filter_var($forceExpandedMd, FILTER_VALIDATE_BOOL),
-        // The shallowest level in the spine — the link indent is measured from
-        // it, and passing it here keeps the arithmetic in one place instead of
+        // The shallowest level in the spine — the link indent counts from it,
+        // and passing it here keeps the arithmetic in one place instead of
         // interpolated into a style string.
         'baseLevel' => min($levelsArray),
     ]);

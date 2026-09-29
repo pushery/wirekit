@@ -186,6 +186,7 @@ class ComponentRegistry
             'reading-shell' => ['category' => 'Display', 'description' => 'Composition wrapper with toggles + density preset'],
             'reading-spine' => ['category' => 'Display', 'description' => 'Sidebar mini-TOC tracking scroll, expanding on hover/focus'],
             'reading-toc' => ['category' => 'Display', 'description' => 'Horizontal sticky-strip TOC for marketing landing pages'],
+            'reorder' => ['category' => 'Display', 'description' => 'Drag handle and move-up / move-down arrows for one row of a list Livewire sorts, so a keyboard and a screen reader can reorder it too'],
             'replay-button' => ['category' => 'Display', 'description' => 'Re-mount the closest [data-replay-target] ancestor — companion to the `data-replayable` animation contract'],
             'scroll-area' => ['category' => 'Display', 'description' => 'Scrollable content area with styled scrollbar'],
             'segmented-control' => ['category' => 'Display', 'description' => 'Segmented toggle control'],
@@ -267,10 +268,10 @@ class ComponentRegistry
      * `wirekit:export-json`, `wirekit:install summary`,
      * `wirekit:export-api-map`) so every "what tag do I use?" report
      * prints the WORKING form. Without this map, `wirekit:show chart`
-     * previously printed `<x-wirekit::chart>` — which renders a 500
-     * because the anonymous Blade file references an undefined
-     * `$alpineComponent` variable (the class constructor populates it
-     * via the class-based path).
+     * would print `<x-wirekit::chart>`, which renders a 500 because the
+     * anonymous Blade file references an undefined `$alpineComponent`
+     * variable (the class constructor populates it via the class-based
+     * path).
      *
      * @var array<string, string>
      */
@@ -393,10 +394,10 @@ class ComponentRegistry
      * Metadata for a name of EITHER kind — `card` or `card.body`.
      *
      * The three discovery surfaces (the show command, the JSON export, the MCP
-     * catalog) each used to answer "what is card.body?" their own way, or not at
-     * all: the MCP server returned null, which reads to an agent as "there is no
-     * such component" — and it then writes content straight into <x-wirekit::card>,
-     * the exact mistake AGENTS.md exists to prevent. One resolver, one answer.
+     * catalog) answer "what is card.body?" through this one resolver. A surface that
+     * answered null would read to an agent as "there is no such component", and it
+     * would then write content straight into <x-wirekit::card>, the exact mistake
+     * AGENTS.md exists to prevent. One resolver, one answer.
      *
      * A sub-component inherits its parent's category (it belongs to the same part
      * of the library) and describes itself in terms of that parent, because that
@@ -459,12 +460,10 @@ class ComponentRegistry
      * an entry mapping the component name → its class. Both paths
      * return the same shape so downstream callers don't branch.
      *
-     * **Breaking change in v2.1.0** — the prior return shape (flat
-     * name→default-string map) is gone. Developers reading the old
-     * shape must migrate; the new fields make inline-comment metadata
-     * available without source-grepping AND close two data-corruption
-     * bug classes (truncated `config(...)` defaults, leaked inline
-     * comments) that the prior regex parser silently shipped.
+     * One entry per prop, with its metadata, since v2.1.0 (a flat
+     * name→default-string map before that). The fields make inline-comment
+     * metadata available without source-grepping, and parsing the tokens
+     * keeps a `config(...)` default whole and an inline comment out of it.
      *
      * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
@@ -515,8 +514,8 @@ class ComponentRegistry
      * manifest, a docs page and an API map mean. This one answers "would Blade do something with
      * this attribute?" — and there the two blocks are equal, because `@aware` reads
      * `currentComponentData`, which carries the component's OWN data before the parent chain. A
-     * key written directly on the tag therefore arrives and takes effect; measured on
-     * `<x-wirekit::accordion.item variant="separated">`, which renders the separated chrome.
+     * key written directly on the tag therefore arrives and takes effect:
+     * `<x-wirekit::accordion.item variant="separated">` renders the separated chrome.
      *
      * Both readers of this question, the unknown-prop warning and `wirekit:doctor:props`, call
      * this method rather than writing the union out themselves, so neither can report an

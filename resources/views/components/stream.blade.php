@@ -75,7 +75,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('stream', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $autoStart = BooleanProp::from($autoStart, true);
 
@@ -106,7 +106,7 @@
         'body' => $body,
         'headers' => $headers,
         'name' => $name,
-        // Screen-reader announcements, translated HERE. They used to default
+        // Screen-reader announcements, translated HERE rather than defaulted
         // inside the plugin as bare English literals — a string that never passes
         // through __() cannot be localized by any developer, and these are the
         // only thing a screen-reader user hears about the stream's state.

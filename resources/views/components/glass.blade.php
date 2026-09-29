@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 {{-- WireKit Liquid Glass Extension — the FIRST thing in the layout <body>.
 
      Not in <head>: the component emits an <svg>, and the HTML parser has no "in head"
@@ -52,26 +51,13 @@
                          numOctaves="1"
                          seed="2"
                          result="noise"/>
-            {{-- scale 60, and it was 20 through four earlier attempts.
-                 20 displaces measurably and BENDS NOTHING: rendered against the
-                 documentation demo's own backdrop — 2px dots on a 28px pitch —
-                 the grid inside the surface stays regular. Measured, not judged
-                 by eye: mean per-channel delta 4.79 of 765 at scale 20, 10.61 at
-                 60, and the difference is the difference between a grid and one
-                 that visibly curves.
-
-                 Compared at three values as images, because "visible" is not a
-                 number: at 20 the pattern is a regular grid, at 60 the dots are
-                 drawn into short arcs and still read as a pattern, at 120 they
-                 dissolve into swirls and the pattern is lost. 60 is what the page
-                 promises — "watch the dotted pattern bend behind the box".
-
-                 One lead tested and REFUTED, recorded so nobody re-runs it:
-                 raising `baseFrequency` was proposed as buying more than scale,
-                 on the reasoning that 0.015 is smooth over ~66px and translates
-                 neighboring pixels together. It measures WORSE — 0.04 gives 4.28
-                 and 0.08 gives 4.31 against 4.79 at the original frequency. The
-                 strength lives in scale. --}}
+            {{-- scale 60. A much lower scale displaces the backdrop without bending
+                 it: a dotted grid behind the surface stays regular. At 60 the dots are
+                 drawn into short arcs and still read as a pattern; much higher and
+                 they dissolve into swirls and the pattern is lost. 60 is what the page
+                 promises — "watch the dotted pattern bend behind the box". The
+                 strength lives in the scale: a higher `baseFrequency` bends less, not
+                 more. --}}
             <feDisplacementMap in="SourceGraphic"
                               in2="noise"
                               scale="60"

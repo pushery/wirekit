@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // Optional lead-in ("Trusted by teams at"). Rendered as real text above the
     // wall, so the claim is readable rather than implied by layout alone.
@@ -31,7 +30,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('logo-cloud', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $muted = BooleanProp::from($muted, true);
 

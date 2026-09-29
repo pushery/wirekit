@@ -24,7 +24,9 @@
     // Whether the column this row sits in can ever become an icon rail. A sidebar that
     // cannot collapse never hides this label, so it needs no tooltip — and wrapping it
     // anyway would put a second element around every navigation row in every classic
-    // sidebar in the fleet, for a state those sidebars cannot reach.
+    // sidebar in the fleet, for a state those sidebars cannot reach. It is the SIDEBAR's
+    // value: `sidebar.group` has a `collapsible` of its own that folds its rows, and the
+    // class behind the group keeps that one out of this search.
     'collapsible' => false,
 ])
 
@@ -46,7 +48,7 @@
     $attributes = $attributes->except(['mode', 'selected', 'collapsible']);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $selectionMode = $mode === 'selection';
 
@@ -60,12 +62,11 @@
     // contract the column is actually under.
     // Both sets are written out in full, and that is not verbosity.
     //
-    // The first attempt interpolated the attribute — `"not-[".$marker."]:text-…"` — which
-    // reads well and is silently wrong twice over. Tailwind scans SOURCE for complete
-    // class names, so a name assembled at runtime is a name it never sees: the rules were
-    // simply not generated, and every row would have rendered unstyled in the direction
-    // the variant exists to control. The drift guard caught it as forward drift; nothing
-    // in the markup or the ARIA would have looked wrong.
+    // Interpolating the attribute into the class name would read well and be silently
+    // wrong: Tailwind scans SOURCE for complete class names, so a name assembled at runtime
+    // is a name it never sees, the rules would not be generated, and every row would
+    // render unstyled in the direction the variant exists to control, with nothing in the
+    // markup or the ARIA looking wrong.
     $notCurrentClasses = $selectionMode
         ? [
             'not-[[aria-selected=true]]:text-[color:var(--color-wk-text-muted)]',
@@ -91,8 +92,8 @@
     // keyboard's position with that same token would make the chosen row and the
     // marked row look identical, which is the one distinction the two states exist
     // to draw. scope-switcher can use the fill precisely because nothing else there
-    // does. Measured against `--color-wk-ring`: 18.2:1 light and 14.5:1 dark on a
-    // chosen row, 19.8:1 and 19.0:1 on an ordinary one.
+    // does. `--color-wk-ring` clears contrast on a chosen row and on an ordinary one,
+    // in both modes.
     //
     // `data-active`, written by `writeActiveMarker()` in sidebar-listbox.js the way
     // scope-switcher.js writes it — one attribute per move, no observer, because the
@@ -135,23 +136,18 @@
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         // The row height must not depend on which child happens to be tallest.
         //
-        // Without this the row was sized by its LABEL while expanded and by its ICON while
-        // collapsed, because the label carries `sr-only` in the rail and `sr-only` is a
-        // 1px box. Measured on the docs site: an expanded item is 34.75px (a 22.75px line
-        // box plus 6px top and bottom) and a collapsed one is 32px (a 20px icon plus the
-        // same padding) — 2.75px per row, so a three-item rail changed height by 8.25px
-        // when it collapsed and everything under it moved. Reported four times before
-        // anybody measured it.
+        // Without this the row would be sized by its label while expanded and by its icon
+        // while collapsed, because the label carries `sr-only` in the rail and `sr-only` is
+        // a 1px box. A web font's line box is taller than the icon, so a folding rail would
+        // change height and move everything under it.
         //
         // `1lh` is the item's own line box, so the floor tracks the type ramp and the
         // `--font-scale-wk` accessibility bump instead of pinning a length. Chrome 109 /
         // Safari 16.4 / Firefox 120 — inside the support floor, not above it.
-        //
-        // The sample app could not see this: it loads no web font, so the fallback's line
-        // box is shorter than the icon and both states measured 32px there.
+
         'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
         // Derived from the container rather than fixed — see dist/wirekit.css. In a card
-        // sidebar the concentric answer is 4px, not the 8px this used to be.
+        // sidebar the concentric answer is 4px, not the 8px of a flat radius.
         'rounded-[var(--radius-wk-nav-item)]',
         // The RESTING foreground is scoped to non-active items for the same reason
         // the hover below is, and it is not optional. Unscoped, this and the active
@@ -265,14 +261,12 @@
         placement="right"
         focusable-trigger="false"
         class="block w-full"
-        {{-- `$data`, not a bare `collapsed`. The rail state lives on the sidebar, and this row
-             only reaches it when the SIDEBAR is the collapsible one. `@aware` cannot tell that
-             apart: `sidebar.group` declares a `collapsible` prop of its own -- meaning "this
-             group folds its children", something else entirely -- and the nearest ancestor wins.
-             So a plain sidebar holding a collapsible group wrapped every row in a tooltip bound
-             to an identifier no scope defines, and Alpine threw on each one. Reading through
-             `$data` yields `undefined` there instead, which disables the tooltip -- the right
-             answer for a column that can never hide its label. --}}
+        {{-- `$data`, not a bare `collapsed`. The rail state lives on the sidebar, and `@aware`
+             answers with the nearest ancestor that was called with `collapsible`: that is the
+             sidebar unless something between them was called with the name too, such as an
+             application's own wrapper component. Where no scope defines `collapsed`, `$data`
+             yields `undefined` and the tooltip stays disabled, where a bare identifier would
+             make Alpine throw on every row. --}}
         x-bind:data-wk-tooltip-disabled="! $data.collapsed"
     >@include('wirekit::components.partials.sidebar-item-link')</x-wirekit::tooltip>
 @else

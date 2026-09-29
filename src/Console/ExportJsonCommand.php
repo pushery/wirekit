@@ -46,11 +46,10 @@ class ExportJsonCommand extends Command
     public function handle(): int
     {
         /*
-         * The manifest is built in `ComponentManifest` rather than here, because it is
-         * published by two artifacts and used to be built by two loops. `wirekit:install`
-         * writes the same document to `.wirekit-schema.json`, three documented places call the
-         * two "the same manifest", and the second loop had quietly lost `component_kind`,
-         * `tag_alias` and `released_version` and was emitting `sub_components` as bare strings.
+         * The manifest is built in `ComponentManifest` rather than here, because two artifacts
+         * publish it: `wirekit:install` writes the same document to `.wirekit-schema.json`, and
+         * the documentation calls the two "the same manifest". One builder keeps them that way;
+         * two loops would drift apart field by field.
          */
         $document = ComponentManifest::document((bool) $this->option('public'));
 

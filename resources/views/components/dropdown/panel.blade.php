@@ -2,11 +2,8 @@
      Its own state is which row currently holds focus, and that is not a value a server
      owns — there is nothing to anticipate and nothing to roll back. The rows themselves
      may each carry an optimistic action; that belongs to the row, not to the container.
-
-     It said "presentational" until the panel took over the menu's keyboard model, and the
-     guard refused it: an element carrying a keydown handler is interactive, so "renders no
-     interactive element" stopped being true the moment the binding landed. The claim is
-     measured against the file rather than trusted, which is the point of that arm. --}}
+     Not "presentational": the panel owns the menu's keyboard model, and an element
+     carrying a keydown handler is interactive. --}}
 {{-- WHY THE PANEL'S NAME IS A PROP, AND WHY THERE IS NO GENERIC FALLBACK.
 
      A `role="menu"` without a name is announced as a bare "menu": a reader is told a menu
@@ -51,10 +48,8 @@
         'py-[var(--padding-wk-y-xs)]',
         // Inline padding as well, and it is what gives the items a shape to have.
         //
-        // Reported from the starter kit: a focused entry drew a 2px square ring that ran
-        // into the panel's rounded inner edge — measured at x 64..254 inside a panel at
-        // x 63..255. The items were flush to the walls, so the only shapes on screen were
-        // a rounded panel and a square row inside it.
+        // Items flush to the walls would draw a focused entry's square ring into the
+        // panel's rounded inner edge, leaving a rounded panel with a square row inside it.
         //
         // Set to the same token as the block padding, so the inset reads as one frame
         // rather than as two decisions. `--radius-wk-nav-item` on the item is then
@@ -87,8 +82,8 @@
 {{-- Teleported to <body>: `position: fixed` escapes a clipping ancestor but not a
      STACKING context. A host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after it covers the
-     menu however high the z-index goes — reported from the documentation site,
-     where the open menu rendered under the code block below the preview. --}}
+     menu however high the z-index goes: a menu open inside a preview renders under
+     the code block below it. --}}
 <template x-teleport="#wk-overlay-root">
 <div
     {{-- Theme marker. A theme dresses surfaces by querying for these, and this

@@ -27,9 +27,8 @@
     // Where the header slot renders. `shell` (default) spans the full width above
     // the sidebar row. `content` puts it INSIDE the content column, so the sidebar
     // runs the full height and the topbar begins beside it — the other common admin
-    // layout, and previously reachable only by hiding the header slot at lg and
-    // hand-placing a topbar in the default slot, which cost the header slot on
-    // desktop entirely and cost every developer the same discovery.
+    // layout, without hiding the header slot at lg and hand-placing a topbar in the
+    // default slot.
     //
     // A `sticky` HEADER STOPS WORKING IN THIS MODE, and the reason is structural rather
     // than a bug to fix here. `position: sticky` sticks to the nearest scrolling ancestor;
@@ -157,11 +156,11 @@
         ? implode(' ', [
             // AN EVEN INSET ON ALL FOUR SIDES, and rounded on all four corners.
             //
-            // It used to round only the inline-start corners and sit flush against the
-            // chrome, and that shape does not hold up: a curve needs something to curve away
-            // FROM. With the panel's top and bottom edges flush to the shell, the two rounded
-            // corners opened a wedge of chrome beside the rail's straight edge — read,
-            // correctly, as a gap rather than as a sheet. Closing that gap and giving
+            // Rounding only the inline-start corners and sitting flush against the chrome
+            // does not hold up: a curve needs something to curve away FROM. With the panel's
+            // top and bottom edges flush to the shell, the two rounded corners would open a
+            // wedge of chrome beside the rail's straight edge — read, correctly, as a gap
+            // rather than as a sheet. Closing that gap and giving
             // the panel a margin of its own are the same requirement seen twice.
             //
             // An even inset answers both at once. The space stops being a wedge that appears
@@ -182,14 +181,12 @@
         ])
         : '';
 
-    // WHO OWNS THE GAP BESIDE THE CONTENT PANEL.
+    // Who owns the gap beside the content panel.
     //
     // A `panel` shell lifts its content column off the chrome with a real gap, and the column
-    // next to it is a navigation column whose horizontal rules are the SAME line as the
-    // panel's own — level with it, drawn by the same component, reading the same height token.
-    // With the gap between them that one line arrives at the seam and stops eight pixels
-    // short. Measured on the expandable rail shell: the rail's rules end at x=252, the
-    // panel's begin at x=260, both at y=431. Reported three times, and not as a preference.
+    // next to it is a navigation column whose horizontal rules are the same line as the
+    // panel's own: level with it, drawn by the same component, reading the same height token.
+    // With the gap between them that one line would stop short at the seam.
     //
     // So the gap moves INSIDE the navigation column: the column grows by it, insets its own
     // contents by the same amount, and the panel gives up its inline-start margin. Nothing
@@ -244,14 +241,12 @@
     }
     // The drawer's id, so the toggle's `aria-controls` has something to name.
     //
-    // `DomId::unique` and NOT `Str::random`, which is what this line said first. A random
-    // id is minted afresh on every render, and inside a Livewire morph or a `wire:poll`
-    // region that means the two halves stop naming each other while both remain perfectly
-    // well-formed. `dropdown` and `progress` each carried that exact defect and each says
-    // so in its own comment; this file does not need to learn it a third time.
+    // `DomId::unique` and NOT `Str::random`: a random id is minted afresh on every render,
+    // and inside a Livewire morph or a `wire:poll` region that means the two halves stop
+    // naming each other while both remain perfectly well-formed.
     //
     // The counted fallback is unique by construction, so two shells on one page still get
-    // two ids — which was the reason the random version looked right.
+    // two ids.
     $drawerId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-shell-nav-');
 
     // WHAT THE DRAWER BINDINGS FALL BACK TO WHILE THE PANEL IS NOT A DIALOG.
@@ -333,8 +328,8 @@
          Without it the drawer and its backdrop measure themselves against
          whatever ancestor happens to be one — the viewport in a full-page app,
          but any element with `contain`, `transform`, `filter` or `perspective`
-         when the shell is embedded. Measured: the drawer came out 64px above
-         the shell and as tall as that ancestor instead of the shell. Owning the
+         when the shell is embedded, and the drawer would then sit against that
+         ancestor and take its height instead of the shell's. Owning the
          context makes the two coincide everywhere. --}}
     <div class="relative flex flex-1 overflow-hidden">
         @if(isset($sidebar) || isset($rail))
@@ -349,6 +344,7 @@
                  dimming matters most. `lg:hidden` is why it survived that long: the divergence
                  needs a mobile viewport to be visible at all. --}}
             <div
+                x-ref="drawerBackdrop"
                 x-show="sidebarOpen"
                 x-on:click="sidebarOpen = false"
                 x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
@@ -375,14 +371,11 @@
                  become direct flex children of the shell row again and nothing about the
                  desktop layout goes through this wrapper at all. --}}
             <div
-                {{-- `max-lg:bg-…` — A DRAWER IS AN OPAQUE SHEET, and this one was see-through.
-                     The rail paints its own surface, so the left strip looked right; the
-                     navigation column beside it is `variant="flush"`, which means "no surface
-                     of my own" — correct standing next to content, where the shell's own
-                     background is what shows, and wrong sliding over a page, where what shows
-                     is the page. Measured in the open drawer at 375px: the rail
-                     `rgb(255, 255, 255)`, the 256px column beside it `rgba(0, 0, 0, 0)`. The
-                     reader saw the article's text through the menu.
+                {{-- `max-lg:bg-…`: a drawer is an opaque sheet. The rail paints its own surface;
+                     the navigation column beside it is `variant="flush"`, which means "no surface
+                     of my own": right standing next to content, where the shell's own background
+                     is what shows, and wrong sliding over a page, where the page's text would
+                     show through the menu.
                      On the GROUP rather than on the column, because the group is the drawer:
                      one sheet whose width is the sum of its columns, and one surface under
                      both of them. It reads the rail's role so a toned shell keeps its chrome
@@ -391,9 +384,8 @@
                      `max-lg` only: above the breakpoint this wrapper is `display: contents`
                      and paints nothing at all, which is exactly right — there is no drawer
                      there to be opaque.
-                     The single-column branch below has carried this since it was reported the
-                     first time. This branch never got it, and every mobile check here asks
-                     about reachability or geometry — never about opacity. --}}
+                     The single-column branch below carries the same background for the same
+                     reason. --}}
                 class="wk-app-shell-nav max-lg:bg-[var(--color-wk-rail-bg,var(--color-wk-bg-elevated))] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] flex transform transition-[translate,transform,visibility] duration-[var(--transition-wk-duration)] lg:contents"
                 {{-- Whether the rail has this drawer to itself. Only this template knows what else went
                      into it, and the rail has to: alone, it shows its names here, because a strip of
@@ -422,12 +414,9 @@
                      of being expressed as a `lg:` class: `role` and `aria-modal` are
                      attributes, and an attribute has one value at a time however wide the
                      window is.
-                     Measured by an adopting application at 375px with the drawer open,
-                     before this existed: `role` null, `aria-modal` null, `aria-controls`
-                     null, and Escape did nothing. The backdrop blocks POINTERS from the
-                     page behind it and does not block the keyboard, so focus walked on
-                     through controls the backdrop was covering — invisible to everyone
-                     except the people who cannot see where focus went. --}}
+                     The backdrop blocks pointers from the page behind it and not the
+                     keyboard, so without them focus would walk on through the controls the
+                     backdrop covers, where nobody can see it. --}}
                 x-ref="drawer"
                 {{-- Written by the server, not bound through Alpine. The id is known at
                      render time, so a binding would only make it appear once Alpine has
@@ -439,14 +428,10 @@
                 :aria-modal="isDrawer && sidebarOpen ? 'true' : null"
                 :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Navigation')) }} : null"
                 {{-- `tabindex="-1"` while it is a dialog, and it is not decoration: it is what
-                     lets the panel RECEIVE focus. `focus-trap` looks for a tabbable element at
-                     activation and falls back to the container when it finds none — and a
-                     container without a tabindex cannot take focus, so the trap reports itself
-                     active while `document.activeElement` is still `<body>`.
-                     Measured exactly that way in a browser: trap present, `active: true`, two
-                     focusable elements in the panel, focus on BODY. Every ESM case was green
-                     throughout, because they construct the state machine and this is a question
-                     the DOM answers.
+                     lets the panel receive focus. `focus-trap` looks for a tabbable element at
+                     activation and falls back to the container when it finds none, and a
+                     container without a tabindex cannot take focus, so the trap would report
+                     itself active while `document.activeElement` is still `<body>`.
                      Only while it is a drawer: a `tabindex` on an ordinary layout column adds a
                      stop to the tab order that leads nowhere. --}}
                 :tabindex="isDrawer && sidebarOpen ? '-1' : null"
@@ -457,11 +442,10 @@
 
                      One shell-bar high at the top of the drawer, with a shell-bar's inline inset, so
                      it sits on the spot a header's navigation toggle occupies. A header placed in the
-                     content column puts that toggle UNDER the open drawer, and a second tap on it
-                     used to land on whatever the drawer drew in that corner: measured by an adopting
-                     application at 375px, the rail's brand link, which navigated away instead of
-                     closing. The columns start one shell-bar lower, so nothing of theirs sits under
-                     the button either.
+                     content column puts that toggle under the open drawer, where a second tap would
+                     land on whatever the drawer drew in that corner, such as the rail's brand link.
+                     The columns start one shell-bar lower, so nothing of theirs sits under the
+                     button either.
 
                      The colors are the rail's roles, because the surface under it is the rail's.
                      Gone at the breakpoint, where this panel is layout and has nothing to close. --}}
@@ -526,9 +510,7 @@
                      layout` makes an ancestor exactly that (so does a transform
                      or a filter), and then -100% means 256px left of THAT box —
                      which paints, in full, wherever that box happens to sit.
-                     Measured on a docs preview surface carrying `contain:
-                     layout` and `overflow: visible`.
-                     The second fix is the one that was always a defect: a
+                     The second: a
                      translated drawer is still focusable and still in the
                      accessibility tree, so keyboard users tab into a menu they
                      cannot see. `visibility: hidden` removes it from both.
@@ -545,12 +527,9 @@
                      of being expressed as a `lg:` class: `role` and `aria-modal` are
                      attributes, and an attribute has one value at a time however wide the
                      window is.
-                     Measured by an adopting application at 375px with the drawer open,
-                     before this existed: `role` null, `aria-modal` null, `aria-controls`
-                     null, and Escape did nothing. The backdrop blocks POINTERS from the
-                     page behind it and does not block the keyboard, so focus walked on
-                     through controls the backdrop was covering — invisible to everyone
-                     except the people who cannot see where focus went. --}}
+                     The backdrop blocks pointers from the page behind it and not the
+                     keyboard, so without them focus would walk on through the controls the
+                     backdrop covers, where nobody can see it. --}}
                 x-ref="drawer"
                 {{-- Written by the server, not bound through Alpine. The id is known at
                      render time, so a binding would only make it appear once Alpine has
@@ -578,14 +557,10 @@
                 :aria-modal="isDrawer && sidebarOpen ? 'true' : null"
                 :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Navigation')) }} : {{ $sidebarDrawerLabelFallback }}"
                 {{-- `tabindex="-1"` while it is a dialog, and it is not decoration: it is what
-                     lets the panel RECEIVE focus. `focus-trap` looks for a tabbable element at
-                     activation and falls back to the container when it finds none — and a
-                     container without a tabindex cannot take focus, so the trap reports itself
-                     active while `document.activeElement` is still `<body>`.
-                     Measured exactly that way in a browser: trap present, `active: true`, two
-                     focusable elements in the panel, focus on BODY. Every ESM case was green
-                     throughout, because they construct the state machine and this is a question
-                     the DOM answers.
+                     lets the panel receive focus. `focus-trap` looks for a tabbable element at
+                     activation and falls back to the container when it finds none, and a
+                     container without a tabindex cannot take focus, so the trap would report
+                     itself active while `document.activeElement` is still `<body>`.
                      Only while it is a drawer: a `tabindex` on an ordinary layout column adds a
                      stop to the tab order that leads nowhere. --}}
                 :tabindex="isDrawer && sidebarOpen ? '-1' : null"
@@ -601,29 +576,22 @@
                      and a drawer is not a card.
                      The `card` variant is deliberately as tall as its content and
                      rounded, which is right for a padded column and wrong for a
-                     panel that slides in over the page. Measured with the drawer
-                     open at 393px: the aside filled the shell's full 256px and the
-                     thing a reader actually SEES was 85px of it, with a 10px
-                     radius — a floating card dropped on the content.
-                     That gap is also why the first version of the guard passed
-                     while this was broken: it measured the aside, which is a
-                     transparent container, instead of the panel inside it.
+                     panel that slides in over the page, where it would read as a
+                     floating card dropped on the content.
                      Scoped with `max-lg` so it touches the drawer only; above the
                      breakpoint the card treatment is untouched rather than
                      overridden and restored.
 
-                     `max-lg:bg-…` closes the half this file got wrong twice. The
-                     note above says the aside is "a transparent container" — and
-                     that was left true, so a sidebar whose own variant paints
-                     nothing produced a drawer you could read the page through.
-                     `variant="flush"` is exactly that: no surface of its own,
-                     which is CORRECT above the breakpoint, because flush means
-                     the shell's background IS the column's. Below it the panel
-                     slides over the content, and nothing is behind it.
-                     The background belongs HERE rather than on the sidebar,
-                     because the shell is what decides the column becomes an
-                     overlay — the sidebar cannot know. It sits under the card
-                     variant's own surface, so that case renders identically. --}}
+                     `max-lg:bg-…`: the aside is a transparent container, so a
+                     sidebar whose own variant paints nothing would make a drawer
+                     the page shows through. `variant="flush"` is exactly that: no
+                     surface of its own, which is right above the breakpoint,
+                     because flush means the shell's background is the column's.
+                     Below it the panel slides over the content, and nothing is
+                     behind it. The background belongs here rather than on the
+                     sidebar, because the shell is what decides the column becomes
+                     an overlay, and the sidebar cannot know. It sits under the
+                     card variant's own surface, so that case renders identically. --}}
                 {{-- The slot's own attributes reach this column too, so naming it or re-roling
                      it works the same way it does in the console branch above. What this one
                      does NOT get is a `presentation` default: there is only one column here, so
@@ -639,7 +607,7 @@
 
                      Wrapped in a box that generates no box of its own, and the wrapper is not
                      decoration. This aside sizes and squares EVERY direct child below the breakpoint,
-                     because its one child used to be the sidebar. Placed there bare, the close row
+                     a rule meant for the sidebar it holds. Placed there bare, the close row
                      would be stretched to the full height of the drawer and laid over the whole
                      column; a height or a radius on a box that is not generated does nothing.
 

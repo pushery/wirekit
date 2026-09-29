@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'size' => 'base',
     'variant' => 'default', // back-compat alias of `intent`
@@ -20,6 +19,13 @@
     // ellipsis. For a short second line, a date or an amount, that must not double a row's height on
     // a phone and must not lose its end either.
     'wrap' => true,
+    // The typeface: `sans` (the body face, as before) or `mono`, which reads `--font-wk-mono` and
+    // drops the body face's letter spacing. A class from outside could not choose it reliably,
+    // because the base classes already set a family and two families on one element are decided
+    // by stylesheet order.
+    'family' => 'sans',
+    // Figures of one width, so a column of amounts, dates or counts lines up digit for digit.
+    'tabular' => false,
     'as' => 'p',
     'scope' => null,
 ])
@@ -34,10 +40,18 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('text', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $truncate = BooleanProp::from($truncate, false);
     $wrap = BooleanProp::from($wrap, true);
+    $tabular = BooleanProp::from($tabular, false);
+
+    // Literal arms, as for every class here: an assembled class has no rule behind it. The sans
+    // tracking belongs to the sans face; a monospaced face spaces its own letters.
+    $familyClasses = match (WireKit::validateProp('text', 'family', (string) $family, ['sans', 'mono'])) {
+        'mono' => 'font-[family-name:var(--font-wk-mono)]',
+        default => 'font-[family-name:var(--font-wk-sans)] tracking-[var(--font-wk-letter-spacing)]',
+    };
 
     $sizeClasses = match (WireKit::validateProp('text', 'size', $size, ['xs', 'sm', 'base', 'lg', 'xl'])) {
         'xs' => 'text-[length:var(--text-wk-xs,0.75rem)]',
@@ -85,13 +99,10 @@
     $truncateClasses = $truncate ? 'truncate' : '';
 
     // Literal arms rather than `line-clamp-{$lineClamp}`, and this is the whole prop.
-    // Tailwind scans SOURCE for complete class names and generates nothing for a name it
-    // never sees spelled out, so the interpolated form emitted an attribute with no rule
-    // behind it: DevTools showed `line-clamp-3`, the paragraph rendered at full height, and
-    // nothing was red anywhere — the class is absent from the compiled stylesheet, so both
-    // sides of the drift diff agreed on it. Measured 2026-09-06: the only `line-clamp-N`
-    // literal in the whole tree was `line-clamp-2` in product-card, which is the entire
-    // reason `:lineClamp="2"` appeared to work and every other value did not.
+    // Tailwind scans source for complete class names and generates nothing for a name it
+    // never sees spelled out, so an interpolated form would emit an attribute with no rule
+    // behind it: the class on the element, the paragraph at full height, and nothing red
+    // anywhere. It would even seem to work for a value some other file spells out.
     //
     // A `match` (not the interpolation, and not a ternary) for the same reason
     // sticky-panel and stack spell theirs out: a class the scanner can read has to be in
@@ -116,8 +127,8 @@
     //
     // Arbitrary PROPERTIES rather than named utilities: Tailwind generates one from the literal
     // class on every v4 release, where the named utilities for `overflow-wrap` only arrived in
-    // 4.1, and a class with no rule behind it fails silently — the lineClamp comment above is
-    // that failure, measured. Literal arms for the same reason. `anywhere` also counts toward
+    // 4.1, and a class with no rule behind it fails silently, as the lineClamp comment above
+    // describes. Literal arms for the same reason. `anywhere` also counts toward
     // the element's min-content width, which is what lets it wrap inside a flex row, where
     // `break-word` would not.
     $breakClasses = match ($break === null ? null : WireKit::validateProp('text', 'break', (string) $break, ['normal', 'anywhere', 'all'])) {
@@ -135,8 +146,8 @@
     };
 
     $classes = WireKit::resolveClasses('text', 'base', implode(' ', array_filter([
-        'font-[family-name:var(--font-wk-sans)]',
-        'tracking-[var(--font-wk-letter-spacing)]',
+        $familyClasses,
+        $tabular ? 'tabular-nums' : '',
         $leadingClasses,
         $sizeClasses,
         $variantClasses,

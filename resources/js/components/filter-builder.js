@@ -17,10 +17,10 @@
  * `@click.outside` / `@keydown.escape` directives, whose teardown Alpine manages.
  *
  * WHY BOTH SUBTRACTIVE GESTURES PLACE FOCUS AND SAY SOMETHING. Removing a chip and
- * clearing the set are the two primary keyboard gestures here, and both used to end
- * with focus on `<body>` and nothing announced — so the next Tab restarted at the top
- * of the page, and the filter set, which is exactly the state a reader cannot see,
- * changed in silence.
+ * clearing the set are the two primary keyboard gestures here, and without this both
+ * would end with focus on `<body>` and nothing announced — so the next Tab would restart
+ * at the top of the page, and the filter set, which is exactly the state a reader cannot
+ * see, would change in silence.
  *
  * The two lose focus by different mechanisms, which is why neither fix covers the other.
  * The chip loop is INDEX-keyed (`:key="i"`), so Alpine drops the element holding the
@@ -568,17 +568,14 @@ export default function wirekitFilterBuilder(config = {}) {
 
                         // Everything this call writes is inline style, and a framework update
                         // patches the panel against its own template, whose `style` attribute
-                        // carries none of it. Measured on /overlay-placement-seam across one
-                        // refresh: `top` 268.5px -> empty, same node, box unchanged at 288x280.
-                        // The unchanged box is why this is `repairErasure` and not
+                        // carries none of it: after a refresh the same node has no `top` and the
+                        // same box. The unchanged box is why this is `repairErasure` and not
                         // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
                         // observes boxes rather than the style attribute.
                         //
-                        // This measurement only became POSSIBLE once an unnamed widget stopped
-                        // getting a fresh root id on every render. Before that it did not lose its
-                        // placement -- it lost the whole component, and the panel that came back
-                        // was a closed replacement whose trigger never opened again. Nothing was
-                        // left to re-place.
+                        // The node survives the refresh because an unnamed widget keeps the same
+                        // root id across renders; with a fresh one the morph would replace the
+                        // whole component, leaving nothing to re-place.
                         repairErasure: true,
                     });
 

@@ -344,7 +344,6 @@ $useWrapper
 10l3.72-3.72a.75.75
 11.06l3.72
 16px
-18.5
 18h7a1.5
 2.1.1).
 2.2
@@ -488,7 +487,6 @@ Border
 Both
 CALLER's
 CSP
-CUT
 Clear
 Copy-to-clipboard
 DOM
@@ -510,7 +508,6 @@ Fully
 GLOBAL
 Generate
 Given
-HOVER,
 HOVERABLE:
 HTML
 HTML,
@@ -530,11 +527,11 @@ Keep
 Label
 Laravel
 Leading
+Left
 Livewire
 Livewire.
 MORPH
 Make
-Measured
 Mirror
 Monospace
 NO
@@ -546,7 +543,6 @@ Not
 Note
 Nothing
 Null
-OFF
 OR
 ORIGINAL
 OUTERMOST
@@ -818,7 +814,6 @@ arrives,
 arriving
 as
 as,
-asserted:
 assertion
 assistive
 association
@@ -843,7 +838,6 @@ background,
 bag
 bag.
 bag:
-bar.
 bare
 baseline;
 be
@@ -885,7 +879,7 @@ brief
 browser
 bubble's
 bubbles
-bug.
+bug
 build
 build,
 but
@@ -912,7 +906,6 @@ cannot
 capability
 card's
 card,
-carried
 carries
 carry
 case
@@ -927,7 +920,6 @@ check
 checks
 child
 children
-claimed
 class-detector's
 class.
 class="select-none
@@ -956,6 +948,7 @@ clipboard')
 clipboard'))
 clipped
 clipping
+clipping,
 clone
 closes
 coarse
@@ -969,7 +962,6 @@ color
 colors
 colors,
 come
-comment
 commit
 common
 commonest
@@ -1024,6 +1016,7 @@ counts
 covers
 crossed
 cursor-pointer"
+cut
 d="M16.704
 d="M4.5
 d="M6.28
@@ -1141,14 +1134,13 @@ existed
 existing
 exit**:
 expandos.
-expensive:
 explicit
 explicitly
 exposed
 expression
 factory
 factory,
-fade="…">`
+fade="…">`,
 failed.
 failure
 fallback;
@@ -1165,7 +1157,6 @@ field-value
 field.
 field;
 fields
-file
 fill-rule="evenodd"
 fill="currentColor"
 filled($clearLabel)
@@ -1181,7 +1172,6 @@ first,
 fix
 fixed
 fixed`
-fixes
 flags
 flex
 flipped,
@@ -1442,7 +1432,6 @@ min-w-0"
 minlength,
 mints
 mismatch
-missing
 mode
 mode"),
 mode,
@@ -1492,7 +1481,6 @@ node
 node's
 node,
 none
-none,
 nor
 normal
 not
@@ -1551,6 +1539,7 @@ owns,
 padding
 padding,
 page
+page,
 page-unique
 paint
 paints
@@ -1618,7 +1607,6 @@ purpose,
 pushed
 put
 puts
-px
 qualified:
 quiet,
 racing
@@ -1656,7 +1644,6 @@ reflect
 refocuses
 refusal
 refuses.
-refutes
 region
 registers
 regularly
@@ -1672,7 +1659,6 @@ rendering
 renders
 renders.
 replacement
-reported
 request.
 required
 required,
@@ -1809,7 +1795,7 @@ string
 string,
 stringly-false
 stripped
-stylesheet
+stylesheet's
 stylesheet).
 styling
 styling:
@@ -1846,7 +1832,6 @@ takes
 tall
 target
 tech)
-teleport
 teleport:
 teleported
 tell
@@ -1956,14 +1941,12 @@ unit
 unit)
 unknown
 unlike
-unlocatable
 unreachable,
 unsteady
 up
 usable
 use
 use:
-used
 user
 uses
 utilities

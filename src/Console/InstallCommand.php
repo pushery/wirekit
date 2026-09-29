@@ -964,8 +964,8 @@ class InstallCommand extends Command
         $this->line('');
 
         // Persist into config/wirekit.php — load existing config, merge,
-        // write back. The success line is printed only once the file says so:
-        // it used to follow every call, including the three that wrote nothing.
+        // write back. The success line is printed only once the file says so,
+        // never after a call that wrote nothing.
         if (! $this->writeApexConfig($tier)) {
             return self::FAILURE;
         }
@@ -1472,8 +1472,8 @@ CSS;
         // by default resources/views/layouts/app.blade.php, Livewire 4's 'layouts::app').
         // Delegate to it (fix at the source — don't hand-roll a layout template that
         // could drift from Livewire's own convention), then wire our directives in.
-        // This closes the chicken-and-egg the flow used to leave: the doctor said
-        // "add the layout, then re-run install", but install never created one.
+        // Without it the flow would be a chicken-and-egg: the doctor says "add the
+        // layout, then re-run install", and install would never create one.
         if (! $layoutFile) {
             $layoutFile = $this->createLayoutViaLivewire();
         }

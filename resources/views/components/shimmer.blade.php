@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // Whether the shimmer sweep animates across the text glyphs. Bind it to a
     // Livewire property — :active="$isStreaming" — to run the effect ONLY while
@@ -28,7 +27,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('shimmer', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `active="false"` used to mean the opposite of what the call site reads as. The prop's
+    // `active="false"` would otherwise mean the opposite of what the call site reads as. The prop's
     // default is spelled as a `config()` fallback rather than a literal, which is the only
     // reason the coverage guard did not see it. It defaults ON, and both reads below are
     // truth tests — the shimmer class and the duration custom property — so the animation

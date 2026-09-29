@@ -44,11 +44,11 @@
     // component is usually built to prevent, so it has to be able to say no.
     'clearable' => true,
     // `??` rather than a `config(…, 'Select…')` fallback, and the difference is the
-    // whole point: a config default holds ONE string for every locale, so the literal
-    // that used to sit in that second argument was unreachable to a translated app —
-    // its only escape was publishing the config, which freezes the wording again. The
-    // seam survives (an app may still pin its own word), and an untouched default now
-    // resolves through the catalog, exactly as the sibling multi-select already does.
+    // whole point: a config default holds ONE string for every locale, so a literal in
+    // that second argument would be unreachable to a translated app, whose only escape
+    // would be publishing the config, which freezes the wording again. The seam survives
+    // (an app may still pin its own word), and an untouched default resolves through the
+    // catalog, as it does in multi-select.
     'placeholder' => config('wirekit.components.combobox.placeholder') ?? __('wirekit::Select…'),
     'disabled' => false,
     'error' => null,
@@ -94,7 +94,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('combobox', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
     $hideLabel = BooleanProp::from($hideLabel, false);
@@ -337,10 +337,9 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         // A label wider than the field is cut MID-CHARACTER without this, because an input
-        // defaults to `text-overflow: clip`. Measured 2026-09-18 at 390px on a 160px country
-        // picker: 80px of content box for a 99px label, and the field read "Germany (+" with the
-        // clear button hard against it -- which looks like a bug in the component rather than a
-        // field that is simply too narrow for its longest option.
+        // defaults to `text-overflow: clip`: a narrow country picker would read "Germany (+"
+        // with the clear button hard against it, which looks like a bug in the component rather
+        // than a field that is simply too narrow for its longest option.
         //
         // It costs nothing at any comfortable width, and the value is still fully readable: the
         // input scrolls to the caret as soon as it is focused.
@@ -473,9 +472,9 @@
     @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
     @click.outside="isOpen = false"
     {{-- The chosen option, exposed by name so a binding on the component tag reaches
-         the SELECTION. It used to reach the search field instead -- the bag below is
-         routed to the role="combobox" input, which already carries `x-model="query"`,
-         so `wire:model` bound the typed text and the server received three letters
+         the SELECTION rather than the search field: the bag below is routed to the
+         role="combobox" input, which already carries `x-model="query"`, so without this
+         `wire:model` would bind the typed text and the server would receive three letters
          rather than the option behind them. `wire:model` compiles to `x-model`, and
          `x-modelable` is what lets a non-input element answer it. --}}
     x-modelable="selected"
@@ -488,12 +487,9 @@
     {{-- The roleless wrapper otherwise carries ONLY layout — every caller attribute
          (aria-describedby, data-*, autocomplete, required, …) is routed to the
          role="combobox" input below, never left stranded on this <div>. --}}
-    {{-- `class` as well as `style`, and `slider` two files over has carried both for releases.
-         Dropping it here left a caller's class stranded: the wrapper kept only `style`, the input
-         below excludes `class` from its own bag, so `<x-wirekit::combobox class="max-w-[10rem]">`
-         reached the markup nowhere at all and sized nothing. Measured 2026-09-18 across docs/,
-         resources/ and the sample: ZERO callers passed one, which is what a silently discarded
-         attribute looks like from the outside -- nobody keeps doing something with no effect. --}}
+    {{-- `class` as well as `style`, as `slider` does. The input below excludes `class` from its
+         own bag, so without it here `<x-wirekit::combobox class="max-w-[10rem]">` would reach the
+         markup nowhere at all and size nothing. --}}
     {{ $attributes->only(['class', 'style'])->class(['relative w-full']) }}
 >
     @if($optimisticConfig)

@@ -84,6 +84,7 @@ $style])->class([$classes])
 @php
 @props([
 @props.
+A
 APG's
 ARIA
 Accessible
@@ -100,8 +101,6 @@ Inline
 It
 Its
 JS
-JavaScript
-Measured
 NOT
 NOTE:
 Not
@@ -113,7 +112,6 @@ Safari
 Splitter
 That
 The
-This
 WAI-ARIA
 WHICH
 We
@@ -162,7 +160,6 @@ announced
 another
 answer
 anticipate
-any
 aria-controls,
 aria-hidden
 aria-hidden="true"></span>
@@ -170,7 +167,6 @@ aria-label="{{
 aria-valuenow
 arrow-key
 as
-asserted:
 at
 attach
 attaches
@@ -183,7 +179,6 @@ backward
 be
 because
 behind.
-being
 belief
 beside
 better
@@ -235,7 +230,6 @@ decorative:
 default
 delegated
 descendant
-described
 developer
 direction-aware
 dist/wirekit.css
@@ -253,7 +247,6 @@ emitted
 events
 every
 exposes
-file
 first
 flags
 flex
@@ -268,10 +261,8 @@ gesture:
 gives
 grip,
 growth.
-guard
 half,
 handle
-handler
 handlers,
 handles
 has
@@ -296,7 +287,6 @@ interactive
 interactive.
 into
 is
-is:
 it
 it.
 its
@@ -320,7 +310,6 @@ lives
 locate
 locks
 logic
-long
 lose
 lost
 marks
@@ -330,7 +319,6 @@ max(0,
 may
 mid-drag,
 min(100,
-more
 mouse.
 movable
 moves
@@ -400,17 +388,12 @@ props
 put
 qualified:
 range
-rather
 reach
 reachable
 read
 reader
-reading
-reason
-refutes
 reload,
 removed
-renders
 reports
 resizable.js)
 resizable.js);
@@ -435,7 +418,6 @@ selected
 selection,
 selectors
 sending
-sentence
 separator
 separator.
 server
@@ -449,9 +431,7 @@ so
 space
 split
 sprintf(
-stale
 state
-stopped
 style
 supplied
 tabs
@@ -459,7 +439,6 @@ takes
 target
 template
 text
-than
 that
 the
 them
@@ -473,7 +452,7 @@ time.
 to
 to.
 too,
-true,
+took
 two
 under
 unknown
@@ -486,7 +465,6 @@ use
 used
 user-select:
 uses
-usually
 value
 vertical`
 via
@@ -501,10 +479,10 @@ whatever
 when
 whenever
 which
+who
 whose
 with
 without
-worth
 would
 wrapped
 wrapper

@@ -252,6 +252,7 @@ opposite
 opt-in.
 optimistic-ui:
 optionally
+otherwise
 own
 owns,
 pace.
@@ -328,7 +329,6 @@ underestimates,
 unit
 unknown
 use
-used
 value
 var(--reading-meta-color);'])->class([$rootClass])
 var(--reading-meta-text-size);
@@ -344,6 +344,7 @@ wins).
 with
 word
 words.
+would
 wpm:
 x-data="wirekitReadingMeta({
 x-text="remainingMinutes"></span>

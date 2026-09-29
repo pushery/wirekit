@@ -67,16 +67,13 @@
     // points stay within the plot area).
     /*
      * Wrapper width MUST be inline `width: 100%` — NOT the Tailwind
-     * `w-full` utility we used to set on this element. In every
-     * rendering context that doesn't load the developer's Tailwind
-     * bundle (the docs-preview iframe-srcdoc is the canonical
-     * example, but any tenant-isolated context with its own CSS
-     * scope hits the same gap) the `.w-full` class doesn't match
-     * any rule, the wrapper collapses to `width: auto`, and the
-     * chart inside resolves its 100% against the auto-shrunk
-     * parent — visible as the "chart at 1/3 of preview width" bug
-     * reported on multiple `/components/charts-apex/*` and
-     * `/components/charts-chartjs/advanced` pages. `min-width: 0`
+     * `w-full` utility. In every rendering context that doesn't load
+     * the developer's Tailwind bundle (a docs-preview iframe-srcdoc,
+     * or any tenant-isolated context with its own CSS scope) the
+     * `.w-full` class doesn't match any rule, the wrapper collapses
+     * to `width: auto`, and the chart inside resolves its 100%
+     * against the auto-shrunk parent, drawing at a fraction of its
+     * container's width. `min-width: 0`
      * cooperates with flex-grid contexts where children default to
      * `min-width: auto` (= content size). `display: block` belt-and-
      * suspenders against any "inline display" parent (where the

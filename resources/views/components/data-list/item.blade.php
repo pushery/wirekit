@@ -1,9 +1,9 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'label' => null,
+    'value' => null,
     'scope' => null,
 ])
 
@@ -59,15 +59,14 @@
 
     // `detail` shares the grid mechanics and NOT the alignment. Both drop this box to
     // `display: contents` so the <dt>/<dd> become the container's own grid items — that is
-    // what makes the value column ONE track measured across every row rather than a
-    // per-row measurement.
+    // what makes the value column ONE track sized across every row rather than a
+    // per-row size.
     //
     // What does not carry over is the totals treatment. A summary value is an amount: flush
     // right, tabular figures, so the digits line up under one another. A detail value is
     // prose — "Credit card", "Standard shipping" — and right-aligning it would strand it
-    // against the far edge with a gap in the middle of every row. The reporting application
-    // described this layout as "literally the swapped column declaration", and the columns
-    // are indeed swapped; the alignment has to swap with them.
+    // against the far edge with a gap in the middle of every row. The columns are the summary's,
+    // swapped, and the alignment has to swap with them.
     $isGridPair = $isSummary || $layout === 'detail';
 
     $wrapperStyle = $isGridPair
@@ -108,10 +107,16 @@
         </dt>
     @endif
 
-    {{-- Value: the content slot. overflow-wrap: anywhere covers the
-         symmetric case where the VALUE is a long single token (URL,
-         compound German noun, file path). --}}
+    {{-- Value: the content slot, or the `value` prop when the slot holds no content.
+         Livewire's morph markers around a conditional slot are comments, not content,
+         so the question is hasActualContent() rather than isEmpty().
+         A label/value pair is naturally written as two attributes, and on the
+         <div> a `value` attribute means nothing, so without the prop the value
+         would render as a dead attribute beside an empty cell. The slot wins
+         when both are given, because it can carry markup and the prop cannot.
+         overflow-wrap: anywhere covers the symmetric case where the VALUE is a
+         long single token (URL, compound German noun, file path). --}}
     <dd style="{{ $valueStyle }}" class="text-[color:var(--color-wk-text)]">
-        {{ $slot }}
+        {{ $slot->hasActualContent() ? $slot : $value }}
     </dd>
 </div>

@@ -6,7 +6,6 @@
 "Undefined
 "WireKit
 "a
-"chart
 "inline
 "width:
 $adapterScripts
@@ -162,7 +161,6 @@ $wrapperTag
 0;
 0`
 0px
-1/3
 100%
 100%;
 100%;"
@@ -274,7 +272,6 @@ January
 Livewire
 Livewire's
 MUST
-Measured
 Merge
 Monthly
 Multi-axis:
@@ -331,8 +328,6 @@ Wrapping
 __('wirekit::Chart'));
 `!
 `.w-full`
-`/components/charts-apex/*`
-`/components/charts-chartjs/advanced`
 `:attributes`
 `<div>`
 `<p>`
@@ -435,7 +430,6 @@ array_diff_key
 array_filter(
 as
 as,
-asserted:
 assistive
 at
 at:
@@ -481,7 +475,6 @@ branches
 break
 breaking
 browser,
-bug
 build
 built
 built-in
@@ -497,7 +490,6 @@ caller-supplied
 calls
 can
 cannot
-canonical
 canvas
 caption,
 carries
@@ -546,6 +538,7 @@ consistency.
 constructor
 consume
 container
+container's
 contains
 content
 content.
@@ -619,6 +612,7 @@ doesn't
 don't
 down
 down.
+drawing
 drawn
 drifts
 drop
@@ -648,7 +642,6 @@ escape
 even
 events
 every
-example,
 example:
 existing
 expands.
@@ -672,7 +665,6 @@ fetch
 field:
 fields
 figure
-file
 filled($value),
 filtered
 fires
@@ -694,7 +686,6 @@ fraction
 fresh
 from
 further
-gap)
 gates
 generated
 generic
@@ -720,7 +711,6 @@ here",
 here,
 hidden
 hidden;
-hits
 honor
 host
 https://docs.wirekit.app/components/chart'
@@ -730,6 +720,7 @@ hyphen),
 identifier
 if
 iframe-srcdoc
+iframe-srcdoc,
 imperative
 implementation
 imports
@@ -832,7 +823,6 @@ mount
 mountElement
 multi-axis
 multi-type
-multiple
 must
 n/a
 name
@@ -892,10 +882,10 @@ own.
 package
 package.
 page
-pages.
 painted
 paragraph
 parent
+parent,
 parsed
 parser
 pass
@@ -921,7 +911,6 @@ position:
 positioning
 presentational
 prevents
-preview
 previews
 prod).
 prohibited
@@ -953,11 +942,9 @@ reader
 readers.
 reading
 reads
-reason
 rebuild
 recommended
 references
-refutes
 relative;";
 reliably
 remedy
@@ -993,7 +980,7 @@ says
 scale
 scanned
 scanner
-scope
+scope)
 scope,
 scope.
 screen
@@ -1007,7 +994,6 @@ separate
 series
 series[].type
 server
-set
 set,
 sets
 shape
@@ -1125,11 +1111,11 @@ updated
 updates
 usage
 use
-used
 uses
 utilities
 utilities,
 utility
+utility.
 v4's
 value.
 values
@@ -1160,8 +1146,8 @@ who
 whole
 whose
 width
-width"
 width)
+width.
 width:
 wins
 wire:ignore

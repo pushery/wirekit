@@ -23,6 +23,7 @@ $enterEnd
 $enterStart
 $isHorizontal
 $label
+$lockScroll
 $name
 $overlayCloseSlot
 $overlayCloseSlot);
@@ -85,6 +86,7 @@ $titleId
 'lg'
 'lg']);
 'lg'],
+'lockScroll'
 'md'
 'md'),
 'md',
@@ -170,13 +172,10 @@ $titleId
 //
 />
 0
-1.5rem
-1.5rem,
 100dvh`
 12"
 150ms)
 18L18
-1rem
 2.1
 2.1.1
 2.5.5
@@ -229,7 +228,6 @@ $titleId
 A
 A.
 AAA
-ALL
 APP_DEBUG
 Alpine
 An
@@ -240,6 +238,7 @@ Blade
 Body
 BooleanProp::from($close,
 BooleanProp::from($dismissible,
+BooleanProp::from($lockScroll,
 But
 By
 Clamp
@@ -256,10 +255,9 @@ Dynamic
 ESC
 ESC.
 Enter
-Equal
 Escape
 FIRST
-FOUR
+False
 Footer
 Fully
 HTML,
@@ -278,14 +276,13 @@ LARGE
 Leave
 Level
 Livewire's
-Measured
 Modal
 No
 Normalized
 Nothing
-ON
 ON,
 ONE
+One
 Only
 Opt
 Panel
@@ -294,7 +291,6 @@ Position
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Renders
-SIDES,
 START
 SVG
 Safari's
@@ -305,7 +301,6 @@ Slide
 So
 Space
 THIS
-TOKEN
 Tailwind
 That
 The
@@ -317,6 +312,8 @@ WAS
 WCAG
 WITHOUT
 When
+Whether
+Wider
 WireKit::resolveClasses("{$component}.close",
 WireKit::resolveClasses('drawer',
 WireKit::resolveClasses('drawer.body',
@@ -438,7 +435,6 @@ as,
 as.
 asked
 asks
-asserted:
 assertion.
 assigned
 assistive
@@ -481,7 +477,7 @@ border.
 both
 bottom
 bottom-0',
-bottom.
+bottom;
 bound
 box,
 branch
@@ -625,6 +621,7 @@ end.
 end;
 ended
 environment,
+equal
 error
 escape-free.
 even
@@ -670,6 +667,7 @@ footer
 footer,
 for
 for,
+four
 from
 full
 further
@@ -690,7 +688,6 @@ h-4
 h-[var(--size-wk-drawer-lg)]',
 h-[var(--size-wk-drawer-md)]',
 h-[var(--size-wk-drawer-sm)]',
-had
 handler,
 handling:
 has
@@ -781,6 +778,8 @@ literal,
 live
 lives
 location
+lockScroll:
+locks
 logic
 logs
 longer
@@ -854,11 +853,13 @@ one
 one.
 only
 open
+opening
 opposite
 optimistic-ui:
 or
 original
 other.
+otherwise
 out
 out-of-set
 outer
@@ -877,6 +878,8 @@ owns,
 package.
 packed
 padding
+page
+page's
 pages
 paints
 pair
@@ -906,6 +909,7 @@ preg_match('/<(?:button|a)\b/i',
 presence
 presentational
 preserved.
+preview,
 prod).
 promised
 prop
@@ -932,10 +936,10 @@ reads
 reason
 reasoning
 reference.
-refutes
 regardless
 region
 region's
+region,
 registered
 relative
 remaining
@@ -970,7 +974,6 @@ runtime
 runtime,
 safe
 same
-sat
 say
 scanned
 scopes
@@ -979,8 +982,10 @@ screen.
 screens
 scroll
 scroll-area
+scroll.
 scrolled
 scrolling
+scrolling.
 scrolls
 scrolls.
 section
@@ -1007,11 +1012,13 @@ side
 side,
 side:
 sides
+sides,
 signal
 silent
 silently.
 single
 single-child
+sit
 site
 sits
 size
@@ -1032,7 +1039,6 @@ stack
 stacked
 standard
 start
-started
 state
 state.
 states
@@ -1065,7 +1071,6 @@ synchronous
 tab
 tabindex,
 tabindex="0"
-take
 taken
 takes
 target
@@ -1123,14 +1128,12 @@ type="button"
 unconditional
 unconditionally
 unconditionally,
-under
 underline.
 unknown
 unless
 unresolvable
 up
 use
-used
 user
 uses
 utilities

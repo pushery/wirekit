@@ -257,6 +257,7 @@ can
 can't
 cannot
 carry
+carrying
 cast
 catch
 class
@@ -368,7 +369,6 @@ it.
 it:
 items-center
 its
-itself
 justify-center
 keeps
 key
@@ -427,6 +427,7 @@ opposite
 optimistic-ui:
 or
 other
+otherwise
 out
 own
 own:
@@ -512,6 +513,7 @@ sentence
 session
 sets
 shape
+shape,
 shape.
 sibling
 sidebar
@@ -610,7 +612,7 @@ wrapped
 wrapper
 x-cloak
 x-data="wirekitReadingBookmark({
-x-show,
+x-show
 x-show="showPrompt"
 x-text="promptAnnouncement"></div>
 x-transition:enter-end="opacity-100

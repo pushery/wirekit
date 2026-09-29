@@ -146,12 +146,12 @@
         </div>
     @endisset
 @else
-    {{-- No zones: the slot used to inherit its row rhythm from the column's own flex
-         gap. That gap is gone (it also spaced the zones, which is what pushed the
-         first row down), so the rhythm is stated here instead of inherited. --}}
+    {{-- No zones: the column has no flex gap of its own (it would also space the
+         zones and push the first row down), so the rhythm is stated here instead of
+         inherited. --}}
     {{-- `flex-1` so the slot absorbs the column's free height and the collapse control
-         below it still lands at the bottom. It used to get there on `mt-auto` against the
-         column's own row gap; that gap is gone, and without this the control would sit
-         directly under the last item of a short list. --}}
+         below it still lands at the bottom: the column has no row gap for an `mt-auto` to
+         work against, and without this the control would sit directly under the last item
+         of a short list. --}}
     <div class="flex flex-col flex-1 gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
 @endif

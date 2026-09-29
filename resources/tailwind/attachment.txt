@@ -14,7 +14,6 @@
 "default"
 "finish"
 "heroicon-m-inbox"
-"not
 "work
 $accessibleName
 $actions
@@ -330,11 +329,11 @@ $wrapperClasses
 (24
 (?int
 (?string
+(A
 (Component
 (NOT
 (PDF,
 (PHP-side
-(This
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -430,7 +429,6 @@ $wrapperClasses
 2
 2.
 2.4
-2026-09-09.
 2rem,
 3.
 36
@@ -606,7 +604,6 @@ MOST
 M_PI
 Makes
 Mapping
-Measured
 Media
 Metadata
 NAME
@@ -645,11 +642,9 @@ Reapply
 Render
 Rendered
 Renders
-Reported
 Resolve
 Rounded
 RuntimeException
-SIBLING
 SOME
 STABLE
 SVG
@@ -658,6 +653,7 @@ Same
 Short,
 Silent
 Size
+So
 Sourced
 Strip
 Stroke
@@ -665,7 +661,6 @@ SvgNotFound
 SvgNotFound.
 Symmetric
 TAG
-That
 The
 This
 Throwing
@@ -681,7 +676,6 @@ WAI-ARIA
 WCAG
 WCAG/WAI-ARIA
 WHERE
-WRAPPER,
 We
 When
 WireKit
@@ -823,7 +817,6 @@ app(IconResolver::class)->resolve($name);
 appear.
 applied
 arc
-arc,
 are
 aria-hidden
 aria-hidden,
@@ -851,7 +844,6 @@ array_values(array_filter([$label,
 arrives
 as
 as,
-asserted:
 assistive
 at
 attached
@@ -989,7 +981,6 @@ color
 color-axis
 color-only:
 coloring,
-coming,
 comment
 comments.)
 comparison,
@@ -1013,7 +1004,6 @@ conflict
 consistently
 console
 console).
-consuming
 content
 content,
 context
@@ -1040,7 +1030,6 @@ data-wk-attachment-meta
 data-wk-attachment-name
 data-wk-attachment-state>{{
 data-wk-prose-skip
-date
 debug
 decided
 decimal
@@ -1116,7 +1105,6 @@ emitted
 emitted,
 empty
 empty)
-empty,
 empty-state
 enough
 entry
@@ -1139,7 +1127,6 @@ extension
 extraction,
 factor
 factory,
-factory:
 fail
 failed'),
 failure
@@ -1221,7 +1208,6 @@ goes.
 gray
 group
 guarantees
-guard
 h-5
 h-[var(--size-wk-lg)]',
 h-[var(--size-wk-md)]
@@ -1338,7 +1324,6 @@ later
 layer.
 layout
 leave
-leaves
 left
 legacy
 length
@@ -1390,6 +1375,7 @@ means
 media
 media+name
 merge
+message
 metadata;
 method.
 min
@@ -1483,6 +1469,7 @@ or
 order
 origin-center"
 other
+otherwise
 our
 ours,
 out,
@@ -1555,8 +1542,6 @@ progress.
 progress:
 progressbar
 progressbar-name
-project,
-promised
 promoting
 prop
 prop's
@@ -1600,7 +1585,6 @@ reason
 reason,
 reason:
 records
-refutes
 region
 registered
 registry
@@ -1620,11 +1604,9 @@ renders
 replace
 replaced
 replaces
-report
 reported
 reports
 represents
-reproduced
 request
 require
 required
@@ -1640,7 +1622,7 @@ return
 returns
 richer
 rides
-right
+right.
 ring
 role
 role,
@@ -1693,7 +1675,6 @@ shapes.
 share
 shares
 shimmer
-shipped
 short
 shortest
 should
@@ -1703,6 +1684,7 @@ shown
 shown:
 shows
 shrink-0
+sibling
 silent-wrong-color
 silently.
 simply
@@ -1725,7 +1707,6 @@ soften
 somebody
 source
 source-baked
-source.
 space).
 span
 sr-only
@@ -1735,9 +1716,9 @@ state
 state,
 static
 stay
-stayed
 stays
 still
+stop
 stopped
 stops
 storage/logs/laravel.log.
@@ -1786,6 +1767,7 @@ tag's
 tag.
 tags
 takes
+takes:
 taking
 target
 target="_blank"
@@ -1813,7 +1795,6 @@ themselves,
 then
 there
 there,
-there.
 they
 thing
 third
@@ -1839,7 +1820,6 @@ tokens.
 tone
 too,
 took
-took:
 touches
 track
 track,
@@ -1886,7 +1866,6 @@ useful
 uses
 uses.
 utility
-v3.0.0
 valid
 validateProp
 value
@@ -1899,13 +1878,11 @@ values.
 var(--transition-wk-duration)
 var(--transition-wk-easing)"
 variants
-version
 via
 view's
 viewBox="0
 visible
 visual
-visual-only".
 vocabulary
 w-12"`
 w-12',
@@ -1926,7 +1903,6 @@ way
 ways
 we
 well
-were
 what
 when
 when:
@@ -1953,6 +1929,7 @@ work
 would
 wrapper
 wrapper).
+wrapper,
 x-bind:aria-valuenow="ariaValueNow()"
 x-bind:class="fillClasses()"
 x-bind:style="fillStyle()"

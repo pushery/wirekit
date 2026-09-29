@@ -19,7 +19,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('scroll-to-top', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $forceVisible = BooleanProp::from($forceVisible, false);
 
@@ -29,11 +29,9 @@
     $buttonClasses = WireKit::resolveClasses('scroll-to-top', 'base', implode(' ', [
         'fixed z-[var(--z-wk-sticky)]',
         // Expands the tap area to 44×44 on coarse pointers without changing the
-        // painted box. It was left off here while theme-controller and
-        // code-block carried it, so this button kept a 40×40 target — and it
-        // could not simply be added by hand, because the class used to force
-        // `position: relative` onto a host that is `fixed` by design and threw
-        // the button off-screen. Both halves are fixed together, on purpose.
+        // painted box, as on theme-controller and code-block. The class must not
+        // force `position: relative` onto a host that is `fixed` by design, which
+        // would throw the button off-screen.
         'wk-touch-target',
         'inline-flex items-center justify-center',
         'rounded-full',

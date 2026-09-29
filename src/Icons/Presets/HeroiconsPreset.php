@@ -71,10 +71,8 @@ final class HeroiconsPreset implements IconPreset
             // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
             // glyph is each set's own — which is what these aliases are for.
             //
-            // Every target below was verified against the real set: Heroicons from the
-            // installed package, the other three from each package's full recursive git
-            // tree. A directory listing was tried first and is useless here — GitHub caps
-            // it at 1000 entries, so "absent" would have meant nothing.
+            // Every target below exists in its set, checked against the installed
+            // Heroicons package and the full recursive git tree of the other three.
             //
             // `article` was proposed with these and deliberately left out: it needs two
             // substitutions and "editorial unit" is the most arguable of the seven.
@@ -135,10 +133,9 @@ final class HeroiconsPreset implements IconPreset
             // Common semantic aliases (v2.6.4) — promoted from the heroicons-app/
             // marketing extension presets so they resolve on EVERY base preset
             // without stacking. Every base preset (heroicons/lucide/phosphor/
-            // tabler) shares this identical keyset — `live` INCLUDED. These two lines used
-            // to say it stayed marketing-specific for want of a universal equivalent, and all
-            // four base presets carry it (signal / radio) while the marketing preset carries
-            // no `live` entry at all. The claim was exactly inverted.
+            // tabler) shares this identical keyset — `live` INCLUDED: every base preset
+            // carries it (signal / radio), while the marketing preset carries no `live` entry
+            // at all.
             'copy' => 'heroicon-m-clipboard-document',
             'globe' => 'heroicon-m-globe-alt',
             'book' => 'heroicon-m-book-open',
@@ -158,6 +155,7 @@ final class HeroiconsPreset implements IconPreset
             'server' => 'heroicon-m-server',
             'database' => 'heroicon-m-circle-stack', // heroicons has no `database`
             'cloud' => 'heroicon-m-cloud',
+            'desktop' => 'heroicon-m-computer-desktop',
             'shield' => 'heroicon-m-shield-check', // heroicons has no plain `shield`
             'shield-check' => 'heroicon-m-shield-check',
             'inbox' => 'heroicon-m-inbox',
@@ -267,8 +265,8 @@ final class HeroiconsPreset implements IconPreset
             'truck' => 'heroicon-m-truck',
             'package' => 'heroicon-m-archive-box',
             'barcode' => 'heroicon-m-qr-code',
-            // Heroicons ships no register, till or drawer glyph in any style — measured
-            // against the installed set, which has `calculator` and nothing nearer. A cash
+            // Heroicons ships no register, till or drawer glyph in any style; the nearest in
+            // the set is `calculator`. A cash
             // register is a keypad-and-display device, so the substitution reads, and the
             // alternative is worse than a near miss: a name off the contract resolves
             // through whichever family happens to be active, so it survives until the day
@@ -379,6 +377,7 @@ final class HeroiconsPreset implements IconPreset
             'speed' => 'heroicon-m-bolt',
             'squares-2x2' => 'heroicon-m-squares-2x2',
             'star' => 'heroicon-m-star',
+            'star-outline' => 'heroicon-o-star', // the only outline glyph here: the concept is the outline
             'swatch' => 'heroicon-m-swatch',
             'unlock' => 'heroicon-m-lock-open',
             'user-group' => 'heroicon-m-user-group',

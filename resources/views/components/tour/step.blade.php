@@ -52,18 +52,18 @@
     // HOW THE STEP DIALOG GETS ITS NAME — three sources, one winner, and the
     // caller's is the winner whenever there is one.
     //
-    // The panel used to name itself and then let the attribute bag land on the
-    // same element, so `aria-label="…"` from the call site lost in both branches
-    // and lost SILENTLY, by two different mechanisms:
+    // A panel that named itself and then let the attribute bag land on the same
+    // element would make `aria-label="…"` from the call site lose in both branches,
+    // SILENTLY, by two different mechanisms:
     //
-    //   * with a title slot, the element carried `aria-labelledby` as well, and
+    //   * with a title slot, the element would carry `aria-labelledby` as well, and
     //     ARIA resolves the reference in preference to the label;
-    //   * without one, the element carried `aria-label` TWICE, and the HTML parser
-    //     keeps the first — which was the generated "Tour step N".
+    //   * without one, the element would carry `aria-label` TWICE, and the HTML
+    //     parser keeps the first, the generated "Tour step N".
     //
     // The second is the quieter of the two: it is not an ARIA precedence rule a
     // developer might know to look up, just a parser rule, and the DOM inspector
-    // shows one attribute with the wrong value. No error, no warning, no lint hit.
+    // shows one attribute with the wrong value.
     //
     // The order is the one `modal.blade.php` sets out and for the same reason: a
     // name written at the call site is the most specific instruction available, so
@@ -73,7 +73,7 @@
     //
     // `filled()` rather than a null check: an interpolated caller value over a
     // record with no title yields `""`, and an empty `aria-label` names nothing at
-    // all. Honoring it would trade the heading for no name — worse than the defect.
+    // all. Honoring it would trade the heading for no name.
     $callerAriaLabel = $attributes->get('aria-label');
     $hasCallerName = filled($callerAriaLabel);
 

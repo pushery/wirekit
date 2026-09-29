@@ -60,7 +60,6 @@
 
 <div
     x-data="wirekitPopover({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
-    x-on:click.outside="close()"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Trigger — clicking toggles the popover.
@@ -84,9 +83,7 @@
 {{-- Teleported to <body>. `position: fixed` escapes a clipping ancestor but NOT a
      stacking context: a host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after that ancestor
-     covers the panel however high the z-index goes. Reported from the documentation
-     site for the sibling components; fixed here at the same time rather than waiting
-     for the same screenshot a third time. --}}
+     covers the panel however high the z-index goes. --}}
 <template x-teleport="#wk-overlay-root">
     <div
         {{-- Theme marker — see docs/theming.md "Theme markers". --}}
@@ -99,6 +96,11 @@
         x-transition:leave="transition ease-in duration-[var(--transition-wk-duration)]"
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
+        {{-- The outside-click close sits on the panel, not on the wrapper: the panel is
+             teleported out of the wrapper, so a click anywhere in it would count as outside
+             the wrapper. A click on the trigger also counts as outside the panel; the
+             trigger's own toggle has closed the popover by then, and this finds it closed. --}}
+        x-on:click.outside="close()"
         role="dialog"
         {{-- The panel traps focus and closes on Escape, which IS the modal contract — but
              without this attribute assistive technology is told the page behind stays

@@ -21,6 +21,7 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
  * @param {Object} config - Alert dialog configuration from Blade
  * @param {string} config.name - Unique dialog identifier
  * @param {boolean} config.dismissible - Whether ESC/backdrop closes (default: false)
+ * @param {boolean} [config.lockScroll=true] - Whether opening locks the page's scroll
  * @param {string} [config.initialFocus] - CSS selector for the control that should
  *   receive focus instead of Cancel
  * @param {string} [config.focusReturnTo] - CSS selector for where focus should land when the
@@ -41,6 +42,8 @@ export default function wirekitAlertDialog(config = {}) {
         // need a keyboard escape hatch so users aren't trapped. Backdrop
         // click stays gated by `dismissible` (the safety-strict half).
         escapeAlwaysCloses: true,
+        // False for a dialog inside a page region, such as a preview: the page keeps scrolling.
+        lockScroll: config.lockScroll !== false,
         /**
          * Focus Cancel, not whatever happens to come first in the DOM.
          *

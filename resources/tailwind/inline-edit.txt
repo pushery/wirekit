@@ -1,7 +1,6 @@
 !
 !$hasError
 !==
-"1"
 "Copied"
 "Decrease
 "Decrease"
@@ -637,14 +636,12 @@ $width
 10000,
 101.06
 101.06-1.06L11.06
-102px
 10l-3.72
 10l3.72-3.72a.75.75
 11.06l3.72
 11.168l3.71-3.938a.75.75
 111
 111.08
-1144px,
 12"
 12.75
 123
@@ -655,10 +652,8 @@ $width
 16.4.
 16px
 18
-18.5
 18h7a1.5
 18l.8-2.685a4.5
-192px
 1;
 1`
 2
@@ -710,14 +705,10 @@ $width
 6H4.5z"/>
 6M6
 6l12
-7.
 7.21a.75.75
 7.48-9.817a.75.75
 7.5v9A1.5
 8.94
-81px
-828
-852
 8h10"
 8px
 9-13.5"
@@ -921,18 +912,14 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Border
 Both
 Bound,
-BrowserBaselineGuardTest,
 Build
 But
 CALLER's
 CANNOT
-CARRYING
 COMMITTING
-CONTROL
 CONTROL,
 CSP
 CSS
-CUT
 Cancel
 Change
 Chrome
@@ -991,7 +978,6 @@ Generate
 German
 Given
 Grouped:
-HOVER,
 HOVERABLE:
 HTML
 HTML)
@@ -1010,7 +996,6 @@ INSIDE
 INT
 IS
 ISO
-IT:
 Ignored
 In
 Increase
@@ -1025,11 +1010,11 @@ Keep
 Keyboard
 LEFT
 LOGICAL
-LOOKS
 Label
 Laravel
 Leading
 Leaving
+Left
 Livewire
 Livewire's
 Livewire.
@@ -1040,12 +1025,10 @@ Make
 Making
 Marking
 Markup
-Measured
 Mirror
 Mirrors
 Monospace
 N
-NEWER
 NO
 NON-interactive
 NOT
@@ -1058,7 +1041,6 @@ Note
 Nothing
 Null
 Number
-OFF
 ON
 ONE
 OR
@@ -1085,7 +1067,6 @@ Pushery\WireKit\Support\DomId;
 Pushery\WireKit\WireKit;
 Putting
 Quantity"
-RATHER
 READ
 READABLE
 RECORD
@@ -1125,16 +1106,13 @@ Stable
 Static
 Stepper
 Strip
-Subtle
 Success
 Suffix
 Support\DomId
 Swaps
 Switch
-THAN
 THE
 TOO:
-TWO
 Tailwind's
 Taking
 Teleporting
@@ -1172,8 +1150,6 @@ WHICH
 WHY
 WITH
 WITHOUT
-WRAPPED
-WRAPPER
 WRAPPER,
 Wasted
 WebKit
@@ -1181,6 +1157,7 @@ What
 When
 Whether
 Which
+Why
 WireKit
 WireKit::resolveClasses('inline-edit',
 WireKit::resolveClasses('input',
@@ -1468,11 +1445,9 @@ absence
 absence.
 absolute
 accept
-accepted-use
 accepts
 accessibility
 accessible
-account
 acknowledgment
 across
 action
@@ -1548,7 +1523,6 @@ appearing
 appears
 appended
 appended,
-application
 applied
 applied.
 applies
@@ -1603,12 +1577,10 @@ as,
 asked
 asking
 asks
-asserted:
 assertion
 assistive
 association
 assume
-assumed:
 asterisk
 asterisk.
 at
@@ -1642,7 +1614,6 @@ bag's
 bag,
 bag.
 bag:
-bar.
 bare
 baseline
 baseline).
@@ -1650,7 +1621,6 @@ baseline,
 baseline.
 baseline;
 be
-became
 because
 become
 becomes
@@ -1704,6 +1674,7 @@ boundary
 boundary.
 box
 box,
+box.
 boxes
 branch
 branches
@@ -1717,7 +1688,7 @@ browser
 browser's
 bubble's
 bubbles
-bug.
+bug
 build
 build,
 built
@@ -1748,7 +1719,7 @@ calls.
 came
 can
 cancel
-cancel),
+cancel):
 cancels
 candidate
 cannot
@@ -1756,9 +1727,9 @@ capability
 card's
 card,
 care
-carried
 carries
 carry
+carrying
 case
 case:
 cast
@@ -1789,7 +1760,6 @@ choice:
 chosen
 chosen.
 claim
-claimed
 claiming
 clamp(value)"
 class
@@ -1834,6 +1804,7 @@ clipboard'))
 clipboard.
 clipped
 clipping
+clipping,
 clone
 close
 close-and-discard
@@ -1965,6 +1936,7 @@ crossed
 cursor-pointer"
 cursor-pointer';
 cursor-text
+cut
 d="M16.704
 d="M3
 d="M4.5
@@ -2045,7 +2017,6 @@ different
 differently
 differs,
 directive)
-directly
 disabled
 disabled'
 disabled,
@@ -2055,7 +2026,7 @@ disabled:cursor-not-allowed',
 disabled:opacity-[var(--opacity-wk-disabled)]
 disabled{{
 disables
-disagreed
+disagree
 disappearing,
 discard,
 discards.
@@ -2090,8 +2061,8 @@ down.
 draft
 draft;
 drag-select
+draws
 draws,
-drew
 drift
 drives
 dropdown
@@ -2151,7 +2122,6 @@ ending.
 endonym
 endonyms,
 ends
-engine,
 engine.
 engines
 enough
@@ -2185,7 +2155,6 @@ exception
 excludes
 exclusive:
 existed
-existed.
 existing
 exists
 exists.
@@ -2194,7 +2163,6 @@ exit**:
 exit,
 exits
 expandos.
-expensive:
 explicit
 explicitly
 explicitly,
@@ -2205,7 +2173,7 @@ extra
 factory
 factory's
 factory,
-fade="…">`
+fade="…">`,
 failed
 failed,
 failed.
@@ -2236,7 +2204,6 @@ field.
 field.blade.php
 field;
 fields
-file
 fill-rule="evenodd"
 fill="currentColor"
 fill="currentColor"><path
@@ -2263,7 +2230,6 @@ five.
 fix
 fixed
 fixed`
-fixes
 fixture
 flag
 flags
@@ -2343,9 +2309,9 @@ function-valued
 function;
 further
 gap
+gap,
 gap-[var(--gap-wk-sm)]
 gap-[var(--gap-wk-xs)]',
-gap.
 genuinely
 get
 gets
@@ -2366,7 +2332,7 @@ gone
 gone,
 got
 grandchild
-grandchild.
+grandchild,
 green
 grew
 grid
@@ -2424,7 +2390,6 @@ hears
 height
 height,
 height:
-held
 help:
 here
 here,
@@ -2575,7 +2540,6 @@ jumps,
 just
 justify-center
 justify-center',
-keep
 keeping
 keeps
 kept
@@ -2647,8 +2611,6 @@ lives
 lives.
 load.
 loading:
-lock
-locked
 logger()->warning('[WireKit]
 logically
 long
@@ -2689,7 +2651,6 @@ mean
 meaning
 means
 meant
-measured
 measurements
 measurements,
 measures
@@ -2732,7 +2693,6 @@ misalignment
 mismatch
 mispronounced.
 miss
-missing
 missing,
 mixed|null
 mode
@@ -2792,6 +2752,7 @@ network
 neutral
 never
 new
+newer
 newline
 next
 next.
@@ -2864,7 +2825,7 @@ one-directional:
 one.
 one:
 only
-only.
+only:
 onmouseover=alert(1)"`
 onto
 open
@@ -2916,6 +2877,7 @@ padding,
 padding-y
 page
 page's
+page,
 page-unique
 page-unique,
 paint
@@ -2936,7 +2898,6 @@ parameterized
 parent
 parent's
 parent's.
-parent.
 parser
 part
 partial
@@ -3019,7 +2980,6 @@ preg_replace(
 present
 presentational
 preserving
-preview
 previous
 price
 primitive,
@@ -3027,7 +2987,6 @@ prod).
 produce
 producing
 promise.
-promise:
 promised.
 promises
 prop
@@ -3049,7 +3008,6 @@ pushes
 pushing
 put
 puts
-px
 py-[var(--padding-wk-y-lg)]
 py-[var(--padding-wk-y-md)]
 py-[var(--padding-wk-y-sm)]
@@ -3112,7 +3070,6 @@ refusal
 refused
 refuses
 refuses.
-refutes
 regardless
 region
 registered
@@ -3140,9 +3097,8 @@ renders.
 replaced
 replacement
 replaces
-replacing:
+replaces:
 report,
-reported
 reports
 reports.
 request
@@ -3152,6 +3108,7 @@ required
 required,
 requires
 reservation
+reserve
 reserved
 reserved:
 reset
@@ -3241,7 +3198,6 @@ scoped
 screen
 screen,
 screen-reader
-screenshot.
 scroll
 scrollable
 scrolled
@@ -3307,7 +3263,6 @@ showed
 showing
 shown
 shows
-shrank
 shrink
 shrink-0
 sibling
@@ -3370,7 +3325,6 @@ stack
 stack.
 stacked
 stacking-context
-stand
 standard
 standing
 stands
@@ -3421,7 +3375,7 @@ stroke="currentColor"
 structurally
 style
 style="display:
-stylesheet
+stylesheet's
 stylesheet).
 styling
 styling:
@@ -3472,7 +3426,6 @@ target
 teaches
 tear
 tech)
-teleport
 teleport:
 teleported
 tell
@@ -3649,7 +3602,6 @@ unknown
 unknownMessage:
 unlabeled
 unlike
-unlocatable
 unreachable
 unreachable,
 unrelated
@@ -3663,7 +3615,6 @@ usable
 use
 use,
 use:
-used
 useless
 user
 users
@@ -3752,7 +3703,6 @@ wider
 width
 width)
 width,
-width.
 width:
 will
 window,

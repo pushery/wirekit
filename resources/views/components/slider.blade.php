@@ -1,10 +1,9 @@
 {{-- optimistic-ui: supported
      Single-handle, over a native `<input type="range">`, so the commit boundary
-     is the CONTROL's own event rather than a pointerup handler this code owns.
-     Which event that is was MEASURED in chromium rather than assumed, because
-     assuming is what the marker mechanism is weakest against:
+     is the control's own event rather than a pointerup handler this code owns.
+     A native range input fires:
 
-       a five-move drag  → 5 × input, then exactly ONE change, at release
+       a five-move drag  → 5 × input, then exactly one change, at release
        one arrow key     → 1 × input, then change, immediately
        two arrow keys    → one input+change pair EACH, no coalescing
        blur afterwards   → nothing further
@@ -108,7 +107,7 @@
     $hasMessage = (bool) $error || (bool) $hint;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false);
     $valueBelow = match ($valuePosition) {
@@ -142,8 +141,13 @@
     // The id is the same on every render: Livewire's morph recognizes an element by it, and an
     // id drawn fresh per render made every round trip REPLACE the range input, so a drag bound
     // with `wire:model.live` lost its thumb mid-gesture. Seeded from the bound property when
-    // there is no name, counted per render order when there is neither.
-    $sliderId = $id ?? ($name ? 'wk-slider-' . $name : WireKit::stableId('wk-slider', $attributes->whereStartsWith('wire:model')->first()));
+    // there is no name, counted per render order when there is neither. DomId keeps it unique on
+    // the page like every other form control: a second slider with the same name gets `-2`, so
+    // its label and its hint do not point at the first one.
+    $sliderId = \Pushery\WireKit\Support\DomId::unique(
+        $id ?? ($name ? 'wk-slider-' . $name : WireKit::stableId('wk-slider', $attributes->whereStartsWith('wire:model')->first())),
+        'wk-slider-'
+    );
     // One description list for the control: the component's own id first, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
@@ -244,9 +248,9 @@
     // A marks MAP opts into aria-valuetext ONLY when a label carries meaning beyond the
     // number (a numeric-label map — [-2 => '-2', …] — stays byte-identical to a plain
     // slider: the number already IS the value).
-    // Reads the NORMALIZED marks, not the raw prop. Both places used to cast the
-    // raw value with `(string)`, which was fine while a mark was a string and
-    // throws "Array to string conversion" the moment one is a spec array. Reading
+    // Reads the NORMALIZED marks, not the raw prop. Casting the raw value with
+    // `(string)` works for a mark that is a string and throws "Array to string
+    // conversion" the moment one is a spec array. Reading
     // the normalized form means the shape is handled in exactly one place — the
     // normalizer above — rather than in every reader of `$marks`.
     // A DESCRIPTION counts as semantic content, not only a label that differs from the
@@ -439,16 +443,16 @@
 
 {{-- Alpine tracks the current value so the display (and the tooltip bubble /
      fill) update on input. `pct` is the thumb position as a 0–100 percentage,
-     used to place the tooltip bubble over the thumb.
+     which places the tooltip bubble over the thumb.
 
      `current` is a MIRROR of the input's own value, and it is kept honest in both
-     directions. It used to be written once at render and mutated only by @input,
-     which is correct exactly as long as the browser is the only thing that moves
-     the thumb. It is not: with `wire:model`, a server-side change writes
-     `el.value` directly and fires NO input event, so the mirror kept the old
-     number while the thumb showed the new one — and everything derived from the
-     mirror (aria-valuetext, the tooltip, showValue, the fill) announced a value
-     the reader could no longer see. Assigning a property fires no event and
+     directions. Written once at render and mutated only by @input, it would be
+     correct only while the browser is the only thing that moves the thumb. With
+     `wire:model`, a server-side change writes `el.value` directly and fires NO
+     input event, so the mirror would keep the old number while the thumb showed
+     the new one, and everything derived from the mirror (aria-valuetext, the
+     tooltip, showValue, the fill) would announce a value the reader can no longer
+     see. Assigning a property fires no event and
      mutates no attribute, so it is invisible to x-effect and to a
      MutationObserver alike (verified) — the one reliable signal is Livewire's own
      commit hook, which is exactly the moment the two can diverge. --}}
@@ -549,9 +553,9 @@
             @input="current = $event.target.value"
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
-                {{-- MEASURED, not assumed (see the note at the top): `change`
-                     fires once at the end of a drag and once per keypress, which
-                     is exactly the commit boundary for both input modes. --}}
+                {{-- `change` fires once at the end of a drag and once per keypress
+                     (see the note at the top), which is exactly the commit boundary
+                     for both input modes. --}}
                 x-on:change="run($event.target.value)"
                 {{-- The gesture begins here, before the mirror moves. A drag
                      writes `current` on every frame via @input above, so a

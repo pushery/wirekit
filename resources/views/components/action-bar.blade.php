@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'visible' => false,
     'mode' => 'floating',
@@ -18,7 +17,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('action-bar', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $visible = BooleanProp::from($visible, false);
 
@@ -75,12 +74,10 @@
 
 {{-- The live region sits OUTSIDE the bar, and that is the whole point.
 
-     It used to live inside, and the comment below explained that a `:visible` flip swaps
-     empty text for filled text "inside a region that was already in the accessibility tree".
-     It was not: when `$visible` is false the bar carries `display: none`, and a subtree that
-     is display-none is not in the tree at all. So the region did not CHANGE on the flip — it
-     APPEARED, already populated, and a live region that appears with its text already in it
-     announces nothing. The one announcement this component exists to make could never fire.
+     When `$visible` is false the bar carries `display: none`, and a display-none subtree is
+     not in the accessibility tree at all. A region inside the bar would therefore not CHANGE
+     on the flip — it would APPEAR, already populated, and a live region that appears with its
+     text already in it announces nothing.
 
      Out here it is always in the tree, always empty until the bar is shown, and the flip is
      the text change a live region reacts to. --}}

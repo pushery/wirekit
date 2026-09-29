@@ -295,7 +295,6 @@ Label
 Laravel
 Livewire
 Marking
-Measured
 Mirrors
 NOT
 No
@@ -411,7 +410,6 @@ announced
 announced.
 another.
 answered
-any
 anything,
 appearance-none
 appearing
@@ -439,7 +437,6 @@ arrives
 arrow
 as
 as,
-asserted:
 assistive
 asterisk
 at
@@ -564,7 +561,7 @@ document
 does
 down.
 drag-select
-drew
+draws
 dropdown
 dropped
 each
@@ -584,7 +581,7 @@ empty:
 endonym
 endonyms,
 ends
-engine,
+engine.
 error
 error,
 even
@@ -608,7 +605,6 @@ feature
 fell
 field
 fields
-file
 fill-rule="evenodd"
 fill="currentColor"
 first
@@ -642,7 +638,6 @@ green
 group
 grows
 growth,
-guard
 hand-mount
 hardcoded
 has
@@ -723,7 +718,6 @@ made
 match
 may
 mean
-measured
 message
 message):
 message.
@@ -780,6 +774,7 @@ option
 option.
 options
 or
+otherwise
 out.
 over
 overflow-hidden',
@@ -834,7 +829,6 @@ reason
 recognizes
 red
 reference
-refutes
 region
 reject.
 remove
@@ -860,7 +854,6 @@ says,
 scan
 scanner.)
 screen
-screenshot.
 scrollable
 scrolled
 second,
@@ -965,7 +958,6 @@ unlike
 unreachable,
 up
 use
-used
 uses
 utility:
 valid

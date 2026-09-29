@@ -52,8 +52,8 @@ export default function wirekitTableSort(config = {}) {
                 }
             } catch {
                 // An unknown locale tag throws. Empty separators disable the locale path
-                // below, which restores exactly the previous behavior rather than sorting
-                // by something invented here.
+                // below, so the sort falls back to the locale-free comparison rather than
+                // sorting by something invented here.
             }
 
             this.__separators = { group, decimal };
@@ -265,8 +265,8 @@ export default function wirekitTableSort(config = {}) {
              * call — the single most expensive thing a comparator can do. Hoisting it is
              * the documented reason `Intl.Collator` exists as a separate object.
              *
-             * `undefined` for the locale keeps the previous behavior exactly: the runtime's
-             * default, which is what localeCompare was being given.
+             * `undefined` for the locale is the runtime's default, the same one a bare
+             * `localeCompare` call uses.
              */
             const collator = new Intl.Collator(undefined, {
                 numeric: true,

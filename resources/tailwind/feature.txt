@@ -271,7 +271,6 @@ It
 Lighthouse.
 Logger
 MOST
-Measured
 NOT
 Named
 Nothing
@@ -290,7 +289,6 @@ Pushery\WireKit\WireKit;
 Reapply
 Render
 Renders
-Reported
 Resolve
 Resolved
 RuntimeException
@@ -394,7 +392,6 @@ aria-labelledby
 array_keys($sizeMap));
 array_keys($toneMap));
 as
-asserted:
 at
 attempted
 attribute
@@ -410,7 +407,6 @@ badge
 badge,
 baked
 bakes
-bare
 be
 because
 becomes
@@ -481,7 +477,6 @@ configured
 conflict
 console
 console).
-consuming
 content
 context
 contract.
@@ -546,7 +541,6 @@ every
 exhausting
 exists.
 explicitly
-factory:
 fail
 fallback
 fallback,
@@ -556,7 +550,6 @@ false),
 feature
 feature-grid.
 features
-file
 files
 finds
 finished
@@ -591,7 +584,6 @@ glyph.
 goes
 grid
 guarantees
-guard
 guessed
 h-16
 h-5
@@ -781,7 +773,6 @@ prod).
 produce
 progress)
 progress,
-project,
 prop
 prop-naming-conventions
 props
@@ -797,9 +788,7 @@ reaches
 reader
 real
 reapply
-reason
 reason:
-refutes
 registered
 registry
 removed
@@ -811,7 +800,6 @@ replaced
 replaces
 reported
 reports,
-reproduced
 request
 require
 requires

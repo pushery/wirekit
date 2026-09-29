@@ -25,7 +25,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('kanban-column', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false);
 
@@ -144,11 +144,9 @@
         class="wk-scrollbar flex flex-col gap-[var(--space-wk-sm,0.5rem)] px-[var(--space-wk-sm,0.5rem)] pb-[var(--space-wk-sm,0.5rem)] overflow-y-auto min-h-[120px] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
         @if($sortable)
             data-sortable-items
-            {{-- The marker used to be the whole feature: three attributes and
-                 nothing in the package reading any of them, so `sortable="true"`
-                 produced valid markup, no warning, and a board where nothing
-                 moved. The behavior lives here now, keyboard path included —
-                 a drag-only list is not reorderable by everyone. --}}
+            {{-- `sortable` wires the behavior here, keyboard path included,
+                 rather than leaving attributes for code that is not there: a
+                 drag-only list is not reorderable by everyone. --}}
             {{-- The factory's own docblock says "the component passes the catalog string",
                  and until now this call site passed nothing at all — so every sentence a
                  keyboard reorder writes into the live region came from the English

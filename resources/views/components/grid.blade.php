@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'cols' => config('wirekit.components.grid.cols', 1), // @example "1 md:2 lg:4" @example "1 sm:2 md:3 lg:4 xl:6"
     // A grid that counts columns by CONTENT rather than by viewport. `min` is the
@@ -164,8 +163,8 @@
     // `style`: Tailwind extracts class names from source text, and a track built at
     // runtime leaves the scanner nothing to find. Under a `style-src` policy without
     // `'unsafe-inline'` (Level 3: `style-src-attr`) the browser drops that attribute —
-    // and this component used to suppress the cols classes as well, so the column
-    // definition disappeared ENTIRELY and the grid stacked into one column. Elsewhere a
+    // and suppressing the cols classes as well would make the column definition
+    // disappear ENTIRELY and stack the grid into one column. Elsewhere a
     // dropped inline style costs a shade or a width; here it costs the whole statement.
     //
     // The suppression was there for readability — "a class that never applies is one

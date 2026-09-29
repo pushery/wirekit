@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Support\AttributeTarget;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\LegacyAxisProps;
 use Pushery\WireKit\Support\PropsParser;
@@ -52,7 +53,7 @@ class DoctorPropsCommand extends Command
         {--require-in-scope : Fail when no scanned template uses a WireKit component. For an application that uses WireKit everywhere, an empty scope means the linter went blind.}
         {--fail-on-legacy-axis : Also exit 1 on an older prop spelling. Off by default, because both spellings are supported API for the whole of v2.}';
 
-    protected $description = 'Static-analysis template linter — finds unknown or misspelled props on WireKit components, slots passed as attributes, slot closing tags Blade does not compile as one, and older prop spellings on the shared semantic axes';
+    protected $description = 'Static-analysis template linter — finds unknown or misspelled props on WireKit components, HTML attributes the rendered element does not use, slots passed as attributes, slot closing tags Blade does not compile as one, and older prop spellings on the shared semantic axes';
 
     public function handle(): int
     {
@@ -79,6 +80,7 @@ class DoctorPropsCommand extends Command
         $findings = [];
         $slotFindings = [];
         $slotAttributeFindings = [];
+        $inertAttributeFindings = [];
         $legacyFindings = [];
         $scanned = 0;
 
@@ -212,6 +214,18 @@ class DoctorPropsCommand extends Command
                         'suggestions' => $suggestions,
                     ];
                 }
+
+                // Valid HTML, but not on the element this component renders its attributes onto:
+                // `value` on a component whose bag lands on a `<span>` is an attribute nothing
+                // reads, and the value never reaches the page.
+                foreach (AttributeTarget::meaninglessOn($usage['name'], array_values(array_diff($usage['attributes'], $asAttribute)), $declared) as $attribute) {
+                    $inertAttributeFindings[] = [
+                        'file' => str_replace(base_path().'/', '', $file),
+                        'component' => $usage['name'],
+                        'attribute' => $attribute,
+                        'element' => (string) AttributeTarget::elementFor($usage['name']),
+                    ];
+                }
             }
 
             // Call sites of the application's forwarding components. Only the unknown-prop question
@@ -252,7 +266,7 @@ class DoctorPropsCommand extends Command
             }
         }
 
-        if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $legacyFindings === []) {
+        if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === [] && $legacyFindings === []) {
             // Two different clean results, and collapsing them is how the first one
             // hides. Templates exist but none of them use a WireKit component: the
             // run is honest, there was simply nothing in scope — so it succeeds and
@@ -346,6 +360,25 @@ class DoctorPropsCommand extends Command
             $this->line('the text is on the page, inside the attribute.');
         }
 
+        foreach ($inertAttributeFindings as $finding) {
+            $this->line(sprintf(
+                '  <fg=yellow>%s</> — <x-wirekit::%s> renders <fg=red>%s</> onto %s, where it means nothing',
+                $finding['file'],
+                $finding['component'],
+                $finding['attribute'],
+                OutputFormatter::escape('<'.$finding['element'].'>')
+            ));
+        }
+
+        if ($inertAttributeFindings !== []) {
+            $this->line('');
+            $this->warn(sprintf('%d attribute(s) the rendered element does not use.', count($inertAttributeFindings)));
+            $this->line('Each is valid HTML on some element, but not on the one this component renders its');
+            $this->line('attributes onto, so the value never reaches the page. A test that looks for the text');
+            $this->line('still passes, because the text is on the page, inside the attribute. Pass it through');
+            $this->line('the component\'s own prop or slot instead.');
+        }
+
         foreach ($slotFindings as $finding) {
             // The snippet is markup, and the console formatter reads `<…>` as its own styling
             // tags — printed raw, the very thing being reported would be eaten on its way to
@@ -399,7 +432,7 @@ class DoctorPropsCommand extends Command
             // lives in a branch this run did not take. Without it a reader sees a list of
             // advisories and cannot tell whether the linter got as far as the two checks
             // that actually break a page.
-            if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === []) {
+            if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === []) {
                 $this->info(sprintf(
                     'No unknown props, and no slot closing tag swallowed by the text after it, across %d template(s).',
                     $scanned
@@ -426,6 +459,7 @@ class DoctorPropsCommand extends Command
             $findings !== []
             || $slotFindings !== []
             || $slotAttributeFindings !== []
+            || $inertAttributeFindings !== []
             || ($legacyFindings !== [] && $this->option('fail-on-legacy-axis'))
         );
 

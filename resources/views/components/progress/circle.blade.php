@@ -1,16 +1,13 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 {{-- DEPRECATED: superseded by the radial-progress component, which is the canonical
      radial (circular) progress — richer (threshold coloring, valueText, a required
      accessible name) and consistently named. This sub-component still renders for
      back-compat, and no removal is scheduled — what is settled is that it will not GAIN
      anything, not when it goes. New code should use radial-progress.
-     (This comment named v3.0.0 until 2026-09-09. That version is not coming, so the line
-     promised a date to every developer who reads the shipped source. A removal here is a
-     breaking change with nothing to soften it: there is no component-level alias in this
-     package, so the tag simply stops resolving.)
+     (A removal would be a breaking change with nothing to soften it: there is no
+     component-level alias in this package, so the tag would simply stop resolving.)
      (Component tag omitted from this comment on purpose — Blade compiles component
      tags even inside comments.) --}}
 @props([
@@ -34,7 +31,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false);
 
@@ -116,11 +113,11 @@
     {{-- SVG circular progress indicator --}}
     <div class="relative {{ $dimensions }}">
         {{-- An accessible name is MANDATORY on anything carrying role="progressbar"
-             (axe-core's progressbar-name rule), and it used to depend on which branch
-             the value took: the name was attached beside the indeterminate arc, so a
+             (axe-core's progressbar-name rule), and it must not depend on which branch
+             the value takes: a name attached beside the indeterminate arc would leave a
              determinate circle with no `label` — `value="40"` and nothing else, the
-             shortest call there is — rendered a progressbar nobody could announce. The
-             name is unconditional now and the value branch below carries only values.
+             shortest call there is — as a progressbar nobody could announce. So the
+             name is unconditional and the value branch below carries only values.
              Sourced in the same order as the linear progress:
                1. `label` prop (visible under the circle)
                2. `aria-labelledby` from the caller

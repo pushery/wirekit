@@ -286,15 +286,14 @@ final class PropsParser
         // thing, the lexer reads an apostrophe in a comment above the component
         // — `{{-- the trigger's label --}}` — as the start of a string literal,
         // and the `[` of `@props([` disappears inside it. Depth then never
-        // opens, the first `]` drives it negative, and the component reports NO
-        // props at all. Measured: `dropdown/trigger` and `faq-item` did exactly
-        // that. Starting at the bracket means nothing before it can be
+        // opens, the first `]` drives it negative, and the component would report
+        // no props at all. Starting at the bracket means nothing before it can be
         // misjudged, which is the one property the hand-rolled walk had for
         // free.
         //
         // Lexed PERMISSIVELY, without `TOKEN_PARSE`: what follows the array is
-        // still Blade and will never parse, so demanding that it does rejects
-        // every real input — measured at 28 of 30 cases failing. The lexer
+        // still Blade and will never parse, so demanding that it does would reject
+        // nearly every real input. The lexer
         // groups strings, comments and heredocs correctly regardless, and that
         // grouping is the only thing this needs.
         $prefix = '<?php ';

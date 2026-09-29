@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 {{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'sticky' => false,
@@ -19,7 +18,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('header', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false);
     $container = BooleanProp::from($container, false);
@@ -63,8 +62,8 @@
     ]), $scope);
 
     // The CHROME layer, not the shared sticky one. A popover opened in page content is a
-    // teleported panel at --z-wk-dropdown (50); this bar used to sit at --z-wk-sticky (40)
-    // and was therefore painted over — arithmetic, not a quirk. A panel anchored INSIDE
+    // teleported panel at --z-wk-dropdown (50), and at --z-wk-sticky (40) this bar would be
+    // painted over — arithmetic, not a quirk. A panel anchored INSIDE
     // this bar opens downward and never overlaps it, so nothing is lost; a modal is still
     // above, which is correct.
     // Sticks BELOW a strip above the page (`--wk-strip-inset`, 0px without one), not under it.

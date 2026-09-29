@@ -12,10 +12,10 @@
  * and the state returns to `idle`, not to `rolled-back`. That difference is
  * invisible in the value and audible only in the announcement.
  *
- * The wiring is `$wire.$intercept(action, callback)`, measured in the shipped
- * bundle rather than taken from the plan: it is scoped to THIS component and
- * THIS action already, and hands each fire its own outcome callbacks. So there
- * is no id to correlate and nothing smuggled into the request payload.
+ * The wiring is `$wire.$intercept(action, callback)`: it is scoped to this
+ * component and this action already, and hands each fire its own outcome
+ * callbacks. So there is no id to correlate and nothing smuggled into the
+ * request payload.
  *
  * Lifecycle resources held on `this`, every one released in destroy():
  *   - _unintercept   the unhook $intercept returns
@@ -51,13 +51,12 @@ import { devWarn } from '../utils/dev-warning.js';
  * Everything prefixed `_` is reserved too, checked by prefix rather than
  * enumerated here.
  *
- * `current` is NOT here, and its absence was earned. This layer used to expose a
- * `current` getter as a convenience alias for the bound value — no template ever
- * bound to it, and it silently shadowed any component property of the same name.
- * Two components call their value `current` (slider, color-picker), which is the
- * obvious name for it, and the shadowing was invisible from both sides: reading
- * it recursed until the stack gave out, and writing it hit a getter with no
- * setter and did nothing at all. Deleting the alias is what makes `current` an
+ * `current` is NOT here, on purpose. A `current` getter aliasing the bound value
+ * would silently shadow any component property of the same name, and two
+ * components call their value `current` (slider, color-picker), which is the
+ * obvious name for it. The shadowing would be invisible from both sides: reading
+ * it would recurse until the stack gave out, and writing it would hit a getter
+ * with no setter and do nothing at all. Without the alias `current` is an
  * ordinary bindable name.
  *
  * `value` is not here either, and for the opposite reason: it is the DEFAULT
@@ -96,12 +95,12 @@ export default function wirekitOptimistic(config = {}) {
         // itself — that is the toggle case, whose value is a native checkbox.
         //
         // A component that already owns its state names its own property here
-        // instead, and the optimistic layer nests INSIDE it: measured in a
-        // browser, a nested Alpine component's method reads and writes its
-        // parent's properties through `this`, and only in that direction. The
-        // stateful component outside, this layer inside, the controls within
-        // this layer — any other arrangement satisfies exactly one of the two
-        // requirements and looks identical until the first rollback.
+        // instead, and the optimistic layer nests inside it: a nested Alpine
+        // component's method reads and writes its parent's properties through
+        // `this`, and only in that direction. The stateful component outside,
+        // this layer inside, the controls within this layer — any other
+        // arrangement satisfies exactly one of the two requirements and looks
+        // identical until the first rollback.
         bind,
         // Optional method to call after EVERY write, including the rollback.
         // rating needs it: its _notify() keeps a hidden form field in step, and
@@ -149,12 +148,12 @@ export default function wirekitOptimistic(config = {}) {
          * undefined: the value changes on screen, no request is sent, no error is
          * raised, and the control announces "saving" forever.
          *
-         * Caching the id at init fixed HALF of that — the color picker, whose wrapper
-         * is inside the component and whose saturation plane teleports out of it. It
-         * does nothing for a wrapper that is born outside: measured on the dropdown's
-         * three optimistic demos, all three sit directly under `<body>` at init with
+         * Caching the id at init covers a wrapper that is inside the component while
+         * part of it teleports out, like the color picker's saturation plane. It does
+         * nothing for a wrapper that is born outside, such as an optimistic control in
+         * a dropdown panel: that one sits directly under `<body>` at init with
          * `closest('[wire:id]')` already null. Alpine initializes the moved node, so
-         * there is no moment at which the naive walk would have worked.
+         * there is no moment at which the naive walk would work.
          *
          * `_x_teleportBack` is what survives the move. Alpine leaves it on the moved
          * node pointing at the `<template>` still inside the component, and that
@@ -282,9 +281,8 @@ export default function wirekitOptimistic(config = {}) {
             // value and write over it on the next flip — wrong in a way nothing
             // reports, which is why a loud stop is better than the silence.
             //
-            // The names that USED to be fatal are gone rather than guarded: see
-            // the note on RESERVED_NAMES for why `current` is an ordinary
-            // bindable name now.
+            // `current` is an ordinary bindable name; the note on RESERVED_NAMES
+            // says why.
             const reserved = names.filter((name) => RESERVED_NAMES.includes(name) || String(name).startsWith('_'));
 
             if (reserved.length > 0) {
@@ -331,10 +329,9 @@ export default function wirekitOptimistic(config = {}) {
 
             // Only a checkbox or a radio reports its state in `checked`.
             // `'checked' in element` is true for EVERY <input> — it is a
-            // property of HTMLInputElement, not of the checkbox type — so this
-            // used to adopt `false` as the initial value of every text, time and
-            // date field. The blanket test caught it on the first non-checkbox
-            // control that went through.
+            // property of HTMLInputElement, not of the checkbox type — so testing
+            // for it would adopt `false` as the initial value of every text, time
+            // and date field.
             if (control && (control.type === 'checkbox' || control.type === 'radio')) {
                 this.value = control.checked;
             }
@@ -357,50 +354,40 @@ export default function wirekitOptimistic(config = {}) {
          * `$wire` is Alpine's magic and is the right path whenever it resolves.
          * In some render contexts it hands back a component-LESS stub instead:
          * every property answers as a function, every call returns undefined,
-         * and nothing reaches the server. Measured on the documentation site's
-         * preview route, where the consequence was that every optimistic control
-         * painted its provisional state and then waited forever for an answer
-         * nobody had asked for — 24 pages, permanently.
+         * and nothing reaches the server. An optimistic control calling into it
+         * would paint its provisional state and then wait forever for an answer
+         * nobody asked for.
          *
          * The stub cannot be recognized by asking whether the method exists.
          * Livewire's wire is a proxy that answers `typeof … === 'function'` for
-         * ANY name, including one that is nonsense — verified on a page where
-         * everything works, so that is the proxy's nature and not the defect.
+         * any name, including one that is nonsense, on a working page as much as
+         * on a broken one.
          *
          * What does separate them is whether the wire knows which component it
          * is. A resolved wire carries `$id`; the stub carries nothing. When it
          * carries nothing, ask Livewire directly for the component that owns
-         * this element — measured to work in exactly the context where the magic
+         * this element, which resolves in exactly the contexts where the magic
          * does not.
          */
         _wire() {
-            // Explicit resolution FIRST, the magic only as a fallback — and the
-            // order is the whole fix.
+            // Explicit resolution first, the magic only as a fallback. Falling back
+            // "when the magic looks unresolved" cannot work, because there is no
+            // reliable way to tell the two apart from inside: `$id` reads as present
+            // through one access path and absent through another on the same
+            // element. Asking the DOM which component owns this element has no such
+            // ambiguity: there is one `[wire:id]` ancestor or there is none, and
+            // Livewire either knows that id or it does not.
             //
-            // Preferring the magic and falling back "when it looks unresolved"
-            // was the first attempt and it did not work, because there is no
-            // reliable way to tell the two apart from inside. `$id` reads as
-            // present through one access path and absent through another on the
-            // very same element, so a check built on it picks the stub about as
-            // often as not. Asking the DOM which component owns this element has
-            // no such ambiguity: there is one `[wire:id]` ancestor or there is
-            // none, and Livewire either knows that id or it does not.
-            // The id is REMEMBERED from init, and that is the second half of the
-            // fix — the first half only made the resolution explicit.
-            //
-            // `$el` is not stable. A panel that teleports moves out of the
-            // component and into `<body>`, so a control inside it has no
-            // `[wire:id]` ancestor at all: measured on the color picker, whose
-            // saturation plane sits in a teleported panel and whose parent chain
-            // from there reads DIV < DIV < BODY < HTML. The DOM lookup then found
-            // nothing, the magic fallback handed back the component-less stub —
-            // which answers `$id` truthily, so the guard above let it past — and
-            // the layer flipped to its provisional state and called into nothing.
-            // No request, no error, no rollback: the control said "saving" and
-            // stayed that way, and every arrow key on that plane did it again.
+            // The id is remembered from init, because `$el` is not stable. A panel
+            // that teleports moves out of the component and into `<body>`, so a
+            // control inside it, like the color picker's saturation plane, has no
+            // `[wire:id]` ancestor at all. The DOM lookup would find nothing, and the
+            // magic would hand back the component-less stub, which answers `$id`
+            // truthily: the layer would flip to its provisional state and call into
+            // nothing, with no request, no error and no rollback.
             //
             // Read at init and re-tried here, because "at init the wrapper is inside
-            // the component" is true for a control that MOVES and false for one that
+            // the component" is true for a control that moves and false for one that
             // is born outside — see _resolveHostId().
             const id = this._hostId || this._resolveHostId();
 
@@ -750,9 +737,6 @@ export default function wirekitOptimistic(config = {}) {
             // and then Livewire covers that with a stack trace the reader can do
             // nothing with.
             //
-            // Reported from a phone on a public documentation page, on a demo whose
-            // label promises "the tick is taken back, and said out loud".
-            //
             // The failure is not swallowed — it goes to the console, where a
             // developer looks and a reader does not. Handling something and hiding
             // it are different acts, and only the second would be a defect.
@@ -841,14 +825,13 @@ export default function wirekitOptimistic(config = {}) {
          *
          * A control inside a menu is a legitimate place for an optimistic action,
          * and clicking a menu item closes the menu. The refusal then renders into
-         * a subtree with no box: measured on the dropdown demo, `state` correctly
-         * `rolled-back`, the announcement present, the CSS making it readable —
-         * and `getBoundingClientRect()` reporting 0x0 on both the announcer and
-         * the wrapper, with the panel's `aria-expanded` already `false`. A screen
-         * reader heard it. Nobody looking at the page did.
+         * a subtree with no box: the state is `rolled-back` and the announcement
+         * is present, but once the panel has closed, the announcer and its wrapper
+         * have no size. A screen reader hears it; nobody looking at the page sees
+         * it.
          *
-         * The rule this restores is the promise the demo makes in as many words:
-         * "what you typed stays, and you are told it did not save". Told, not
+         * The rule this keeps is the promise an optimistic control makes: "what
+         * you typed stays, and you are told it did not save". Told, not
          * announced — those are the same sentence only while the element has a
          * surface.
          *
@@ -955,17 +938,16 @@ export default function wirekitOptimistic(config = {}) {
                 return;
             }
 
-            // The type, NOT `'checked' in el` — that property exists on EVERY
-            // <input>, so a date, text or color field took the checkbox branch,
-            // had a meaningless boolean written to `checked`, and never got its
-            // value back. The layer rolled back, announced "Change undone", and
-            // left the user's value sitting in the field: the state said undone
-            // and the screen said otherwise, which is worse than not rolling back
-            // at all, because the sentence is a lie the reader can see through.
+            // The type, NOT `'checked' in el`: that property exists on EVERY
+            // <input>, so a date, text or color field would take the checkbox
+            // branch, get a meaningless boolean written to `checked`, and never
+            // get its value back. The layer would announce "Change undone" and
+            // leave the user's value in the field, which is worse than not
+            // rolling back at all, because the sentence is a lie the reader can
+            // see through.
             //
-            // The comment that used to sit here said the binding handles the
-            // rollback path. It does for a checkbox. A value control has no
-            // `x-model` back to the DOM, so nothing wrote it.
+            // For a checkbox the binding handles the rollback. A value control
+            // has no `x-model` back to the DOM, so its value is written here.
             const type = (el.type || '').toLowerCase();
 
             if (type === 'checkbox' || type === 'radio') {

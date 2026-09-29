@@ -749,7 +749,6 @@ Large
 List
 Literal
 Livewire
-Measured
 Merged
 NAMELESS
 NOT
@@ -1023,7 +1022,6 @@ aspect
 aspect-ratio
 assembled
 assembled,
-asserted:
 at
 attribute
 attribute,
@@ -1262,7 +1260,7 @@ directly
 directly.
 disabled
 disables
-disappeared
+disappear
 discarded
 disentangle".
 dispatch
@@ -1409,7 +1407,6 @@ grid-cols
 grid-template-columns
 grids
 growing
-guard
 h-[var(--size-wk-md)]
 h-auto
 had
@@ -1712,6 +1709,7 @@ order
 order,
 origin
 other
+otherwise
 out
 over
 overflow
@@ -1829,7 +1827,6 @@ reason
 reasoning
 receive
 refuses
-refutes
 region
 relative
 removed:
@@ -1982,7 +1979,7 @@ src="{{
 srcset="a-800.jpg
 srcset="{{
 stable
-stacked
+stack
 standing
 start
 state
@@ -2024,7 +2021,7 @@ such
 supplies
 supported
 supports
-suppress
+suppressing
 suppression
 surface
 surface.
@@ -2144,7 +2141,6 @@ up,
 up.
 update
 use
-used
 user
 uses.
 using
@@ -2182,7 +2178,7 @@ was
 watermark,
 way
 week
-well,
+well
 were
 what
 whatever

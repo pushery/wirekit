@@ -149,7 +149,7 @@ final class BaseLocaleJsonLoader implements Loader
         $catalog = $base === null ? [] : $this->catalog($base);
 
         // This package's catalog for the locale itself, under its canonical
-        // dash spelling. It covers two jobs that used to be one.
+        // dash spelling. It covers two jobs.
         //
         // The REGIONAL one: `pt_BR` and `pt-BR` are one locale, but the real
         // loader interpolates the locale into a filename verbatim, so the
@@ -161,17 +161,14 @@ final class BaseLocaleJsonLoader implements Loader
         // is not exotic: PHP's own locale primitives emit it, and it is a
         // common `config/app.php` value.
         //
-        // The BRIDGE one, and this is why it is no longer conditional on the
-        // spelling having changed. `bridgeLegacyKeys()` below has to tell OUR
-        // entry for a key from the application's, and it does that by comparing
-        // against what this package ships. For `de` the real loader has already
-        // read `de.json` into `$lines`, so leaving it out of `$ours` left that
-        // comparison holding the ENGLISH backstop value — which never equals
-        // the German one, so every key looked like the application's and the
-        // bridge skipped all of them. Measured: an application's legacy `Close`
-        // override applied in `en` and in nothing else, i.e. the bridge was
-        // inert for all six locales that ship a complete catalog, which is
-        // every locale it exists to serve.
+        // The BRIDGE one, and it is why this runs whether or not the spelling
+        // changed. `bridgeLegacyKeys()` below has to tell OUR entry for a key
+        // from the application's, and it does that by comparing against what
+        // this package ships. For `de` the real loader has already read `de.json`
+        // into `$lines`, so without it in `$ours` that comparison would hold the
+        // ENGLISH backstop value — which never equals
+        // the German one, so every key would look like the application's and
+        // the bridge would skip all of them in every locale it exists to serve.
         $own = $this->ownCatalog((string) $locale);
 
         if ($english === [] && $catalog === [] && $own === []) {
@@ -233,8 +230,8 @@ final class BaseLocaleJsonLoader implements Loader
      * Not gated on `$legacyKeyBridge`, and the difference is deliberate. That flag governs
      * whether a plain key is INFERRED to mean ours — an inference an application may reasonably
      * decline, and one the docs say goes away in the next major. This is not an inference: the
-     * application named a key this package used to ship, and the only question is whether the
-     * rename takes their wording away. Tying the two together would mean an application that
+     * application named a key an earlier release of this package shipped, and the only question
+     * is whether the rename takes their wording away. Tying the two together would mean an application that
      * turned off the inference silently lost its overrides on the day of an unrelated rename.
      *
      * @param  array<string, string>  $ours  This package's own catalog for this locale, namespaced.
@@ -254,7 +251,7 @@ final class BaseLocaleJsonLoader implements Loader
             }
 
             // The two spellings answer to different rules. The PREFIXED old key is not an inference — the application
-            // named a key this package used to ship, so a rename must not take it away
+            // named a key an earlier release of this package shipped, so a rename must not take it away
             // whatever the flag says. A PLAIN old key IS the inference `$legacyKeyBridge`
             // governs: an application that switched the flag off has said "do not read my
             // bare keys as yours", and honoring it here anyway re-opens exactly the door
@@ -285,8 +282,7 @@ final class BaseLocaleJsonLoader implements Loader
      * loader's result is merged last. After the rename our key is `wirekit::Close`, which their
      * catalog says nothing about — so without this step every existing override would stop
      * working in the release that renamed the keys, silently, with no test going red and no
-     * error anywhere. That is precisely the failure mode the rename was reported for, and
-     * shipping it as the fix would have been the worst possible answer to it.
+     * error anywhere, which is the very failure the rename exists to prevent.
      *
      * The price is named rather than hidden: for an application that has the collision, the
      * bridge PRESERVES it. If their `Map` means "to map" and ours means "a map", the bridge

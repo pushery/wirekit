@@ -284,7 +284,7 @@ export default function wirekitApexChart(config) {
 
         init() {
             // ApexCharts peer-dependency guard. WireKit ships only the
-            // adapter glue (`dist/wirekit-apex.js`, its size measured in
+            // adapter glue (`dist/wirekit-apex.js`, its size listed in
             // `dist/README.md`) — the developer installs `apexcharts` via npm and exposes it on
             // `window.ApexCharts` per the chart-component docs.
             //
@@ -354,10 +354,8 @@ export default function wirekitApexChart(config) {
                 // Same host-width branch as the Chart.js panel, and for the same
                 // reason: `sparkline` is in this adapter's supportedTypes(), so an
                 // inline sparkline on the ApexCharts engine puts this panel in a 4rem
-                // box. The Chart.js side was measured doing exactly that — a 19px-wide,
-                // 975px-tall column of three characters per line inside a sentence.
-                // This half is proven by forcing `window.ApexCharts` away in a probe
-                // rather than by a preview, because the sample loads ApexCharts.
+                // box, where the full panel would become a column of a few characters
+                // per line inside a sentence.
                 // An empty mount can measure 0 — the panel is what will give it width —
                 // so a bare `width > 0` test defaults to the FULL panel exactly where the
                 // compact one is needed. Walk out to the nearest ancestor that has a
@@ -497,12 +495,11 @@ window.ApexCharts = ApexCharts;</pre>
                 // already set).
                 const apexType = themed.chart?.type;
 
-                // Per-type auto-formatters previously lived here for
-                // range-bar / boxplot / candlestick. All three (plus
-                // every other ApexCharts type) are now subsumed by the
-                // unified `renderUnifiedTooltip` swap above — single
-                // tooltip layout across every demo, matched to the
-                // scatter-bubble shape described at the top of this file.
+                // Range-bar, boxplot and candlestick need no per-type
+                // formatter here: every ApexCharts type goes through the
+                // unified `renderUnifiedTooltip` swap above, one tooltip
+                // layout matched to the scatter-bubble shape described at
+                // the top of this file.
 
                 // Honor reduced-motion at chart-construction time: disable
                 // animations entirely when the OS preference is set, so the
@@ -719,9 +716,9 @@ window.ApexCharts = ApexCharts;</pre>
                         // fallback for a tooltip no pointer opened, and it
                         // cannot tell two axes named alike apart. Keeping
                         // the last marker is safe: off the markers
-                        // ApexCharts hides a radar tooltip (measured at the
-                        // chart's center), so a kept marker is never paired
-                        // with another vertex's tooltip.
+                        // ApexCharts hides a radar tooltip, so a kept
+                        // marker is never paired with another vertex's
+                        // tooltip.
                         const resolveRadarMarkerByTitle = () => {
                             const title = tooltipEl.querySelector('.apexcharts-tooltip-title')?.textContent?.trim();
                             if (!title) return null;
@@ -964,13 +961,12 @@ window.ApexCharts = ApexCharts;</pre>
                 this._setupDetachGuard(mount);
 
                 // The focus stops ApexCharts creates are removed at the source
-                // (see _removeHiddenTabStop). This used to be a runtime blur
-                // handler that fired on `focusin` and pushed focus straight back
-                // out — which treated the symptom without removing it. A tab stop
-                // that immediately blurs is still a tab stop: the keyboard user
-                // still lands there, axe still reports aria-hidden-focus because
-                // it reads the markup and cannot see a listener, and the ring
-                // still flashed on the chart's first element.
+                // (see _removeHiddenTabStop), not blurred away on `focusin`: a
+                // tab stop that immediately blurs is still a tab stop. The
+                // keyboard user still lands there, axe still reports
+                // aria-hidden-focus because it reads the markup and cannot see
+                // a listener, and the ring still flashes on the chart's first
+                // element.
 
 
                 this._setupDarkModeObserver(rawConfig);
@@ -1305,17 +1301,12 @@ window.ApexCharts = ApexCharts;</pre>
                     // Keep watching, because a render is not the only moment
                     // ApexCharts stamps these.
                     //
-                    // This function used to be CALLED at moments — after
-                    // render, after a theme swap — and that is a list somebody
-                    // has to remember to extend. It was not extended: a page
-                    // streaming live data rebuilds its SVG on every tick, so
-                    // the strip ran once, correctly, and the next update put
-                    // the tab stops straight back. Invisible on every static
-                    // page, because there is no second render there to undo it.
-                    //
-                    // Found from outside, on one page out of 22, by an
-                    // accessibility pass that could see WHICH page differed and
-                    // what it did differently — not by anything here.
+                    // Calling this at chosen moments — after render, after a
+                    // theme swap — is a list somebody has to remember to extend,
+                    // and a page streaming live data rebuilds its SVG on every
+                    // tick: a strip that ran once would be undone by the next
+                    // update. Invisible on every static page, because there is
+                    // no second render there to undo it.
                     //
                     // An observer is a property rather than a list: whatever
                     // rebuilds the subtree, and whenever, the stamp does not
@@ -1475,11 +1466,10 @@ window.ApexCharts = ApexCharts;</pre>
             // A WireKit chart config is written once and rendered by whichever
             // adapter is active, so several components (sparkline is the clearest
             // case) emit BOTH vocabularies and let the inactive one fall away.
-            // That worked only because ApexCharts used to ignore keys it did not
-            // know. It no longer does: ApexCharts gained a plugins feature and
-            // now runs `(config.plugins || []).map(...)` over it — and our
+            // ApexCharts does not ignore keys it does not know: its plugins feature
+            // runs `(config.plugins || []).map(...)` over the config — and our
             // `plugins` is a Chart.js OBJECT (`{legend, tooltip}`), so `.map` is
-            // not a function and the chart throws before drawing anything.
+            // not a function and the chart would throw before drawing anything.
             //
             // The failure is silent where it hurts most. A sparkline is usually
             // decorative and aria-hidden beside the number it illustrates, so the

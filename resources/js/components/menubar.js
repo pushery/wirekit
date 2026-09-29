@@ -277,10 +277,9 @@ export default function wirekitMenubar() {
         /**
          * The trigger the reader is standing ON, resolved from the event itself.
          *
-         * This is the piece the keyboard model was missing. Every arrow branch used to
-         * derive its position from `activeMenu` alone, so with the bar closed the position
-         * was -1 for every trigger equally: ArrowDown on the third menu opened the first,
-         * and ArrowLeft opened the last. The reader's focus IS the position when nothing
+         * Every arrow branch reads its position from here. From `activeMenu` alone the
+         * position would be -1 for every trigger equally while the bar is closed: ArrowDown
+         * on the third menu would open the first, and ArrowLeft the last. The reader's focus IS the position when nothing
          * is open, and only the event knows where that is.
          *
          * Scoped to `$root` because the handler is also bound on the teleported panel,
@@ -432,9 +431,9 @@ export default function wirekitMenubar() {
                     this.markRovingTrigger(name);
 
                     // With a menu open the movement carries the open state along; with
-                    // the bar closed it moves focus ONLY. Arrowing across a closed bar
-                    // used to open every menu it passed, which is the pattern's own
-                    // distinction between browsing the bar and being inside a menu.
+                    // the bar closed it moves focus ONLY: arrowing across a closed bar must
+                    // not open every menu it passes, which is the pattern's own distinction
+                    // between browsing the bar and being inside a menu.
                     if (this.activeMenu) {
                         this.openMenuAt(name, 'first');
                     } else {

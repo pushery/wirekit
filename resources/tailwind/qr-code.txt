@@ -161,7 +161,6 @@ HTML
 It
 Map
 Mark
-Measured
 Pushery\WireKit\WireKit;
 QR
 QR-code
@@ -231,7 +230,6 @@ aria-label="{{
 array
 arrive
 as
-asserted:
 assistive
 attribute
 authors
@@ -306,7 +304,6 @@ experience:
 expired.
 eye
 failures,
-file
 fill's
 first,
 flags
@@ -325,7 +322,6 @@ gave:
 generates
 generic
 give
-guard
 h-full
 halves
 happens
@@ -432,10 +428,8 @@ reaches
 read
 reader
 reason
-refutes
 removing
 render
-renders
 result
 return
 rgb(255,
@@ -488,7 +482,6 @@ turn
 typo
 unknown
 use
-used
 useful
 versions
 via

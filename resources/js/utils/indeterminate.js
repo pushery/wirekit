@@ -5,10 +5,9 @@
  * property on the element, which means something has to apply it after every render.
  *
  * An `x-init="$el.indeterminate = true"` does not carry it. The third state practically always
- * arrives AFTER the first render, through a Livewire round trip, and measured in a browser
- * with one of three rows selected, the server had rendered that `x-init` and
- * `el.indeterminate` was `false`. Nothing errors; the box simply reads as "none selected"
- * while something is selected, which is precisely the state it exists to show.
+ * arrives after the first render, through a Livewire round trip, when that `x-init` has already
+ * run: the box would read as "none selected" while something is selected, which is precisely the
+ * state it exists to show, and nothing would error.
  *
  * An `x-init` emitted only while the prop is true could also only ever turn the state ON:
  * going back to a determinate state would have nothing to undo it.
@@ -63,14 +62,12 @@ export function registerIndeterminateDirective(Alpine) {
 
     // A directive only runs inside a tree Alpine initializes: under an `x-data`, a Livewire
     // component, or an `x-init`. A checkbox in a plain form has none of those, so the directive
-    // never ran there and the third state never showed. Measured on a page with no Alpine root:
-    // the input carried the attribute and `indeterminate` stayed false, while a manual
-    // `Alpine.initTree()` on the same input set it at once.
+    // would never run there.
     //
-    // `x-init`, which the component used before, initializes itself outside `x-data`. Registering
-    // the attribute as an init selector gives the directive that same reach, without an `x-data`
-    // of its own (see above for why not). Guarded, because not every Alpine a page brings has the
-    // method; without it the directive still works wherever an Alpine root encloses the checkbox.
+    // An `x-init` initializes itself outside `x-data`. Registering the attribute as an init
+    // selector gives the directive that same reach, without an `x-data` of its own (see above
+    // for why not). Guarded, because not every Alpine a page brings has the method; without it
+    // the directive still works wherever an Alpine root encloses the checkbox.
     if (typeof Alpine.addInitSelector === 'function') {
         Alpine.addInitSelector(() => '[x-wk-indeterminate]');
     }

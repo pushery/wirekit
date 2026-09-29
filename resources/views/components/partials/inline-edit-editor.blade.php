@@ -23,17 +23,15 @@
      @param string|int   $rows        textarea height: 'auto' (content-sized) or a row count
      @param mixed|null   $editor      developer-supplied control, or null
 
-     WHY THE CONTROL IS WRAPPED IN `flex-1 min-w-0` RATHER THAN CARRYING IT:
-     `w-full` on the control alone reads as "fills the row" and does not — the
-     editor opened at 192px where read mode had shown 1144px, so clicking a value
-     visibly shrank its own field.
+     Why the control is wrapped in `flex-1 min-w-0` rather than carrying it:
+     `w-full` on the control alone reads as "fills the row" and does not, so
+     clicking a value would visibly shrink its own field.
 
      Putting `flex-1` on the control does not fix it either, and the reason is
-     worth stating because the class LOOKS applied when you inspect the input:
+     worth stating because the class looks applied when you inspect the input:
      these are full form components, so each renders its own `space-y` wrapper
-     around label, control and hint. That WRAPPER is the flex item; the input is
-     a grandchild. `flex-grow: 1` on a grandchild grows nothing. Measured
-     directly — computed `flex-grow: 1` on the input, and a 192px block parent.
+     around label, control and hint. That wrapper is the flex item; the input is
+     a grandchild, and `flex-grow: 1` on a grandchild grows nothing.
 
      So the wrapper goes here, where it really is the flex item. `min-w-0` lets
      it shrink below the control's intrinsic width on a narrow row instead of
@@ -58,15 +56,14 @@
 @elseif($control === 'textarea')
     {{-- `rows` defaults to `auto`, which is the textarea's own content-sizing mode
          (`.wk-autosize`, which is `field-sizing: content` behind an `@supports` —
-         the property is NEWER than the supported baseline). Without it the
-         editor opened at the config default of three rows regardless of how much text
-         it was replacing: a value that read as four wrapped lines became a
-         three-row box the reader had to scroll to see their own text in — measured
-         102px of read display collapsing to an 81px editor.
+         the property is newer than the supported baseline). Without it the
+         editor would open at the config default of three rows regardless of how much
+         text it replaces: a value that read as four wrapped lines would become a
+         three-row box the reader has to scroll to see their own text in.
 
-         The library already had this mode, which is why nothing is built here. The
+         The library already has this mode, which is why nothing is built here. The
          numeric value still works as a minimum, so a developer who wants a fixed
-         height passes `rows="3"` and gets exactly the previous behavior. --}}
+         height passes `rows="3"` and gets a fixed three-row box. --}}
     <x-wirekit::textarea
         :required="$required ?? false"
         :id="$id"

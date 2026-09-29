@@ -1,8 +1,7 @@
 {{-- optimistic-ui: n/a — client-only
      The click runs `toggle()` in Alpine and nothing else; the collapsed state never
      leaves the browser, so there is no server answer for an optimistic update to
-     anticipate. Same claim as `sidebar.blade.php`, which is where this button used
-     to live. --}}
+     anticipate. Same claim as `sidebar.blade.php`, which renders this button. --}}
 {{-- The collapse control, extracted so it can be rendered in two places.
 
      With a footer zone it rides ON that band; without one it is the column's last row.

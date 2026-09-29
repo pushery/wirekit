@@ -82,8 +82,8 @@ function intake(item) {
 export default function wirekitNotificationCenter(config = {}) {
     return withOpenAlias({
         // The summary's middle phrase is translated server-side and travels in,
-        // because the expression that used to build the line lived in the
-        // template and interpolated it there.
+        // because the line is built here rather than in the template, where it
+        // could be interpolated.
         _latestLabel: config.latestLabel || 'unread. Latest:',
 
         /**
@@ -339,8 +339,7 @@ export default function wirekitNotificationCenter(config = {}) {
 
                     // Everything this call writes is inline style, and a framework update patches
                     // the panel against its own template, whose `style` attribute carries none of
-                    // it. Measured on /overlay-placement-seam across one refresh: `top` 398.5px →
-                    // empty, same node, box unchanged at 352x172.
+                    // it: after a refresh the same node has no `top` and the same box.
                     //
                     // The unchanged box is why this is `repairErasure` and not
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, because it

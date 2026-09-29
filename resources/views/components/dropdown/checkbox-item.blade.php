@@ -59,7 +59,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $checked = BooleanProp::from($checked, false);
     $disabled = BooleanProp::from($disabled, false);
@@ -131,8 +131,8 @@
 
 @if($optimisticConfig)
 {{-- `display: contents` so the announcer gets a sibling without the item leaving
-     the menu's layout — and, measured in all three baseline engines, without it
-     leaving the menu's ACCESSIBILITY tree either. See the note at the top. --}}
+     the menu's layout — and without it leaving the menu's accessibility tree
+     either, in all three baseline engines. See the note at the top. --}}
 <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
 <button
@@ -156,8 +156,8 @@
 >
     {{-- Checkbox box — a bordered square that is ALWAYS visible (mirrors the
          radio-item's always-visible circle), filled with the accent + a
-         checkmark when on. Previously only the checkmark rendered, so an
-         UNCHECKED item showed no box at all — the control was invisible. --}}
+         checkmark when on. With only the checkmark, an UNCHECKED item would
+         show no box at all, and the control would be invisible. --}}
     <span class="shrink-0 w-4 h-4 flex items-center justify-center" aria-hidden="true">
         <span
             class="w-3.5 h-3.5 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"

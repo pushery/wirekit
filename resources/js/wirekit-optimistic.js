@@ -17,10 +17,10 @@
  * Alpine and therefore has to choose a distribution. This bundle registers onto
  * whichever Alpine the application already loaded, so it inherits that choice.
  * The wiring it depends on — `$wire.$intercept` — is present in Livewire's own
- * CSP build, measured rather than assumed.
+ * CSP build too.
  */
 import wirekitOptimistic from './components/optimistic.js';
-import { reportLateRegistration } from './utils/late-registration.js';
+import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 
 function registerOptimisticComponent() {
     Alpine.data('wirekitOptimistic', wirekitOptimistic);
@@ -39,6 +39,6 @@ document.addEventListener('alpine:init', () => {
 // that was already walked without its component, which is worth saying out loud:
 // that control silently stops being optimistic rather than visibly breaking.
 if (window.Alpine?.version) {
-    registerOptimisticComponent();
-    reportLateRegistration('wirekit-optimistic.js', () => reachedByInitEvent);
+    const names = registeredNames(window.Alpine, registerOptimisticComponent);
+    reportLateRegistration('wirekit-optimistic.js', () => reachedByInitEvent, names);
 }

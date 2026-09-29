@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'direction' => 'horizontal',
     'scope' => null,
@@ -27,11 +26,9 @@
     // resizable.js) attaches the WAI-ARIA Window Splitter attributes to it at
     // init — role, orientation, aria-controls, the value range and a live
     // aria-valuenow — and owns the pointer-drag and arrow-key handlers, so the
-    // split is reachable and movable without a mouse. This comment described it
-    // as a decorative line with no JavaScript and no keyboard handler long after
-    // that stopped being true, which is worth more than a stale sentence usually
-    // is: a developer reading it would leave the handle unnamed and untested on
-    // the belief that nothing there was interactive.
+    // split is reachable and movable without a mouse. A developer who took it for a
+    // decorative line would leave the handle unnamed and untested on the belief that
+    // nothing there is interactive.
     $classes = WireKit::resolveClasses('resizable', 'base', implode(' ', [
         'flex w-full',
         'font-[family-name:var(--font-wk-sans)]',

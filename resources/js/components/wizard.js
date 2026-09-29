@@ -36,18 +36,17 @@ export default function wirekitWizard(config = {}) {
         announcement: '',
 
         /*
-         * A REACTIVE mirror of the current step's `data-wk-step-complete`, and the observer
+         * A reactive mirror of the current step's `data-wk-step-complete`, and the observer
          * that keeps it true.
          *
-         * `canAdvance` read the attribute straight off the DOM. Alpine tracks its own
-         * reactive state and nothing else, so `x-bind:aria-disabled="canAdvance ? null :
-         * 'true'"` was evaluated once, at bind time, and never again — a step that BECAME
-         * complete kept `aria-disabled="true"` on its Next button, and a step that became
-         * incomplete kept the button announcing as available. The gate itself worked; only
-         * its announcement was frozen, which is the worse half: the button says one thing
-         * and does another.
+         * Alpine tracks its own reactive state and nothing else, so a `canAdvance` that read
+         * the attribute straight off the DOM would leave `x-bind:aria-disabled="canAdvance ?
+         * null : 'true'"` evaluated once, at bind time: a step that became complete would
+         * keep `aria-disabled="true"` on its Next button, and one that became incomplete
+         * would keep announcing it as available. The button would say one thing and do
+         * another.
          *
-         * `null` means "not measured yet", which is distinct from `true` — the observer only
+         * `null` means "not observed yet", which is distinct from `true` — the observer only
          * runs where there is a DOM, and `canAdvance` still has to answer in the bare
          * construction the plugin is unit-tested in.
          */
@@ -62,7 +61,7 @@ export default function wirekitWizard(config = {}) {
          * the simplest use of this component the one that does not work.
          */
         get canAdvance() {
-            // The mirror when the observer has measured, the DOM when it has not — the
+            // The mirror when the observer has run, the DOM when it has not — the
             // second path is what answers in a unit harness and before the first mutation.
             if (this._stepComplete !== null) {
                 return this._stepComplete;
@@ -255,12 +254,11 @@ export default function wirekitWizard(config = {}) {
             this.$nextTick(() => {
                 // Focus is lost when it sits on `<body>` — and also when it still sits on an
                 // element that can no longer hold it. Blink drops focus to `<body>` as soon as
-                // the focused button is hidden, so asking for `<body>` was enough there. WebKit
-                // does not: measured after a microtask and after a frame, `activeElement` was
-                // still the Next button, already `hidden` with no client rects, and only later
-                // did focus fall to `<body>` — after this check had passed and returned. So an
-                // element that is detached or renders no box counts as lost too. A control that
-                // survived the change still renders, and it keeps its focus.
+                // the focused button is hidden. WebKit does not: for a while `activeElement` is
+                // still the Next button, already `hidden` with no client rects, and focus falls
+                // to `<body>` only later. So an element that is detached or renders no box
+                // counts as lost too. A control that survived the change still renders, and it
+                // keeps its focus.
                 const active = document.activeElement;
                 const renders = (el) => el.isConnected !== false
                     && (typeof el.getClientRects !== 'function' || el.getClientRects().length > 0);
@@ -270,10 +268,8 @@ export default function wirekitWizard(config = {}) {
                 if (!panel || typeof panel.focus !== 'function') return;
 
                 // Move focus, and check that it arrived. WebKit ignores the move while it is
-                // still dropping focus from the hidden button: measured, `panel.focus()` ran,
-                // `activeElement` stayed on the button, no `focusin` fired, and a moment later
-                // focus fell to `<body>` all the same. Calling `blur()` on the button first did
-                // not change that either. What WebKit does accept is the same move once focus
+                // still dropping focus from the hidden button, and a `blur()` on the button
+                // first does not change that. What WebKit does accept is the same move once focus
                 // has reached `<body>`, so the move is repeated on the next frame for as long as
                 // focus is still on `<body>` or on an element that renders nothing — and stops
                 // the moment it arrives, or the reader has put focus somewhere real themselves.

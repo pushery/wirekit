@@ -14,7 +14,7 @@
  * emptied carries `data-wk-cleared`, and the stylesheet and the field utilities read
  * `:user-invalid:not([data-wk-cleared])`. The browser's validity is untouched; only the paint is.
  *
- * Which fields the server emptied is measured, not guessed: the fields that held text when a
+ * Which fields the server emptied is observed, not guessed: the fields that held text when a
  * request left, and are empty once its response has rendered. Two things keep a reader's own
  * emptying out of that set:
  *   - a field the reader typed into after the request left is skipped, so clearing it by hand

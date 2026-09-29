@@ -96,12 +96,14 @@
     // active panel's slot — the developer's own markup, which is where forms live — is
     // destroyed and rebuilt.
     //
-    // The tab KEYS are the seed: they are the caller's own vocabulary, they are stable
-    // across renders by construction, and two different tabsets on one page have
-    // different ones. A caller-supplied id still wins.
-    $uid = $attributes->get('id') ?: \Pushery\WireKit\WireKit::stableId(
-        'wk-tabs',
-        implode('-', array_keys($tabs))
+    // The tab KEYS are the seed: they are the caller's own vocabulary and stable across
+    // renders by construction. Two tabsets with the same keys on one page are told apart
+    // by DomId: the first keeps the derived id and the second gets `-2`, so every
+    // `aria-controls` and `aria-labelledby` stays inside its own tabset. A caller-supplied
+    // id still wins, verbatim, because the root element carries it as given.
+    $uid = $attributes->get('id') ?: \Pushery\WireKit\Support\DomId::unique(
+        \Pushery\WireKit\WireKit::stableId('wk-tabs', implode('-', array_keys($tabs))),
+        'wk-tabs-'
     );
 
     // Tablist container — horizontal row of tab buttons. Variant controls bottom
@@ -242,8 +244,8 @@
             {{-- FINDABLE PANEL. An inactive one is `hidden="until-found"` where the engine supports
                  it, and a match activates its tab through `x-on:beforematch`, so `aria-selected`
                  and the roving tab stop follow. The tab stop is BOUND: an element that is itself
-                 until-found still takes focus (measured in Chromium and WebKit, by script and by
-                 Tab), so an inactive panel carries no `tabindex` at all. See utils/findable.js. --}}
+                 until-found still takes focus, by script and by Tab, in Chromium and WebKit, so
+                 an inactive panel carries no `tabindex` at all. See utils/findable.js. --}}
             <div
                 role="tabpanel"
                 id="{{ $uid }}-panel-{{ $key }}"

@@ -52,7 +52,7 @@
     $ariaLabelResolved = filled($ariaLabel) ? $ariaLabel : __('wirekit::Status matrix');
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $editable = BooleanProp::from($editable, false);
     // Same contract, different spelling of the default: a `config()` fallback declares a
@@ -196,7 +196,7 @@
     //
     // For the tristate cell the word IS the state: its three SVGs are
     // `aria-hidden`, so `tristateLabel()` is the ONLY channel a screen reader
-    // has, and it used to answer in English whatever the application's locale.
+    // has, so it answers in the application's locale, not in English.
     $stateLabels = \Pushery\WireKit\Support\AlpinePayload::from([
         'allow' => __('wirekit::Allowed'),
         'deny' => __('wirekit::Denied'),

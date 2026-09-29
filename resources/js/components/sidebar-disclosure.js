@@ -2,6 +2,48 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
 import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
+ * The sections on the page that persist their state, grouped by key.
+ *
+ * Two sections with one key are one section drawn twice, such as the same navigation in a drawer
+ * for phones and in a rail for wider screens, and a fold in one has to reach the other. The
+ * `storage` event never fires in the tab that wrote, so the page tells its own sections. One
+ * registry per page and no listener at all, so nothing accumulates across `wire:navigate`: a
+ * section joins when Alpine starts it and leaves when Alpine destroys its element.
+ *
+ * @type {Map<string, Set<{ adopt: ((open: boolean) => void) | null }>>}
+ */
+const sectionsByKey = new Map();
+
+function joinSections(key, entry) {
+    if (! sectionsByKey.has(key)) {
+        sectionsByKey.set(key, new Set());
+    }
+
+    sectionsByKey.get(key).add(entry);
+}
+
+function leaveSections(key, entry) {
+    const entries = sectionsByKey.get(key);
+
+    if (entries) {
+        entries.delete(entry);
+
+        if (entries.size === 0) {
+            sectionsByKey.delete(key);
+        }
+    }
+}
+
+/** Hand a new state to every other section with the key. Each adopts it only when it differs. */
+function tellSections(key, from, open) {
+    for (const entry of sectionsByKey.get(key) ?? []) {
+        if (entry !== from && entry.adopt) {
+            entry.adopt(open);
+        }
+    }
+}
+
+/**
  * Sidebar disclosure — the folding section behind both `sidebar.group` and
  * `sidebar.collapsible`.
  *
@@ -17,8 +59,16 @@ import { withOpenAlias } from '../utils/open-alias.js';
  * @param {string|null}  [config.persist]    localStorage key; null keeps it ephemeral
  * @param {boolean}      [config.forceOpen]  open on every load, whatever storage says; a fold
  *                                           still holds for the rest of the visit
+ *
+ * A fold reaches every other section on the page with the same `persist` key, through the
+ * registry above.
  */
 export default function wirekitSidebarDisclosure(config = {}) {
+    // This instance's place in the registry above. Held in the closure rather than on the
+    // component: Alpine hands every method call a fresh proxy as `this`, and reads of the
+    // component's data come back wrapped, so neither is the same object twice.
+    const entry = { adopt: null };
+
     return withOpenAlias({
         isOpen: config.open === true || config.forceOpen === true,
         _persistKey: config.persist || null,
@@ -30,11 +80,33 @@ export default function wirekitSidebarDisclosure(config = {}) {
             // state wins over the seed, as it always has. A fold is still written, and holds for
             // the rest of this visit.
             this.isOpen = this._forceOpen || readPersistedFlag(this._persistKey, this.isOpen);
+
+            if (this._persistKey) {
+                // Compared before it is set, so two sections never answer each other.
+                entry.adopt = (open) => {
+                    if (this.isOpen !== open) {
+                        this.isOpen = open;
+                    }
+                };
+                joinSections(this._persistKey, entry);
+            }
+        },
+
+        destroy() {
+            if (this._persistKey) {
+                leaveSections(this._persistKey, entry);
+            }
+
+            entry.adopt = null;
         },
 
         toggle() {
             this.isOpen = ! this.isOpen;
             writePersistedFlag(this._persistKey, this.isOpen);
+
+            if (this._persistKey) {
+                tellSections(this._persistKey, entry, this.isOpen);
+            }
         },
 
         /**

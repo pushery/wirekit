@@ -2,14 +2,9 @@
  * A boolean that survives a reload, when storage allows it.
  *
  * Kept by `app-rail` and `sidebar-rail` for their folded state, and by
- * `sidebar-disclosure` for the open state of each of its two shapes. This sentence
- * began "Three components keep one" and named a single rail, which is how `app-rail` —
- * added later, importing this same helper — stayed out of it. The count is gone rather
- * than corrected: `grep -rl persisted-flag resources/js/components/` answers it in a
- * second and cannot drift. The mechanic used to be emitted
- * as JavaScript source from PHP so all three would share it; that made it one
- * implementation, but an implementation living in a string, which Alpine's CSP
- * build cannot parse. Same idea, expressed where it can be read and tested.
+ * `sidebar-disclosure` for the open state of each of its two shapes. One module
+ * rather than JavaScript source emitted from PHP: an implementation living in a
+ * string is one Alpine's CSP build cannot parse, and one nobody can read or test.
  *
  * `localStorage` throws rather than returning null in private mode and when
  * storage is disabled entirely, so every access is guarded. A reader whose
@@ -18,11 +13,10 @@
  *
  * TWO DRIVERS, and the second one exists for a reason localStorage cannot solve.
  * No server can read localStorage, so a component that remembers a layout choice
- * renders its seed state first and corrects itself after the first paint. Measured
- * by an adopting application at 0.1097 CLS against a budget of 0.1, 53ms in, with
- * the content column moving 187px. The usual answer — a blocking inline script in
- * the head — is unavailable under a strict `script-src 'self'` policy without a
- * nonce, which is not a niche configuration.
+ * renders its seed state first and corrects itself after the first paint, which moves
+ * the content column and counts against the page's layout-shift budget. The usual
+ * answer — a blocking inline script in the head — is unavailable under a strict
+ * `script-src 'self'` policy without a nonce, which is not a niche configuration.
  *
  * A cookie is the only store both Blade and Alpine can read, so `driver: 'cookie'`
  * mirrors the flag there and the server seeds the first render correctly. It is

@@ -57,7 +57,6 @@ Dev-only
 Drain
 Falls
 Fully
-Measured
 Normalized
 Optional
 Purely
@@ -87,13 +86,11 @@ alt
 an
 and
 announced
-any
 arbitrary
 are
 aria-label="{{
 as
 as,
-asserted:
 at").
 attribute
 auditor
@@ -154,7 +151,6 @@ flips
 for
 from
 full
-guard
 hangs
 here
 here:
@@ -214,6 +210,7 @@ one:
 only
 opposite
 optimistic-ui:
+otherwise
 out
 own
 own.
@@ -232,9 +229,6 @@ reach
 readable
 reads
 real
-reason
-refutes
-renders
 repeats
 resolve
 result
@@ -277,7 +271,6 @@ truthy
 unknown
 unmarked
 use
-used
 uses.
 utility
 variant,

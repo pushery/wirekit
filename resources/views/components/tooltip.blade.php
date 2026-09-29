@@ -64,7 +64,7 @@
     $describes = BooleanProp::from($describes, true);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $focusableTrigger = BooleanProp::from($focusableTrigger, true);
     $disabled = BooleanProp::from($disabled, false);
@@ -169,20 +169,15 @@
 
     {{-- Tooltip panel, teleported out of the document flow.
 
-         The comment above this block claimed the teleport for a long time while
-         the markup had none, and the gap was expensive: a tooltip inside a
-         `<x-wirekit::scroll-area fade="…">` was CUT OFF at the scroll area's
-         edge. The panel is `position: fixed` and so escapes overflow clipping —
-         but `fade` works by `mask-image`, and a mask applies to the whole
-         rendered subtree, fixed descendants included. Measured 18.5 px of the
-         panel missing above the bar.
+         Left inside a `<x-wirekit::scroll-area fade="…">`, a tooltip would be cut
+         off at the scroll area's edge. The panel is `position: fixed` and so
+         escapes overflow clipping, but `fade` works by `mask-image`, and a mask
+         applies to the whole rendered subtree, fixed descendants included. The
+         stylesheet's escape hatch (`.wk-scroll-fade…:focus-within { mask-image:
+         none }`) cannot fire here: a tooltip opens on hover, and focus-within
+         does not see a hover.
 
-         The stylesheet already carried an escape hatch for this
-         (`.wk-scroll-fade…:focus-within { mask-image: none }`) and it could
-         never fire here: a tooltip opens on HOVER, and focus-within does not
-         see a hover.
-
-         Teleporting fixes it at the root rather than widening that hatch — the
+         Teleporting settles it at the root rather than widening that hatch — the
          panel leaves the masked subtree entirely, which also settles every
          other stacking-context case (a clipping card, a transformed ancestor,
          an `isolation: isolate` wrapper) in one move.
@@ -208,8 +203,8 @@
              the brand check on a global operation refuses. The `Illegal
              invocation` that raises is re-thrown from a timer, so it surfaces one
              tick later as an uncaught page error whose stack names nothing on the
-             page — which is why this was reported as unlocatable rather than as a
-             tooltip bug. No interaction is needed to trigger it: `x-show` is
+             page, so it does not read as a tooltip bug at all. No interaction is
+             needed to trigger it: `x-show` is
              evaluated the moment the clone is initialized.
              A STATIC value on purpose, and it must never become the id. The morph
              patches a teleported node against its own counterpart, one to one, and
