@@ -43,7 +43,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('link', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $external = BooleanProp::from($external, false);
     $announceNewTab = BooleanProp::from($announceNewTab, true);
@@ -84,9 +84,8 @@
         // `<button>` whenever the action has to be a POST or a Livewire call — which is exactly
         // what `as="button"` is for. On an anchor this repeats what the user-agent stylesheet
         // already says and costs nothing; on a button it replaces the browser's default arrow,
-        // which Tailwind v4's preflight no longer overrides (v3 set `cursor: pointer`), and that
-        // is where the pointer went missing. Reported from
-        // three auth screens where the only affordance left was the underline.
+        // which Tailwind v4's preflight no longer overrides (v3 set `cursor: pointer`). Without
+        // it a link rendered as a button shows the arrow, and the underline is its only affordance.
         'cursor-pointer',
         // Opacity is in the list: `transition-colors` leaves it out, and the hover dim jumped.
         'transition-[color,text-decoration-color,opacity]',

@@ -62,10 +62,11 @@ export default function wirekitPopover(config = {}) {
         },
 
         /**
-         * Toggle popover open/close.
+         * Toggle popover open/close. Bound to the trigger, so a close from here is a close
+         * from the trigger, and focus goes back to it.
          */
         toggle() {
-            this.isOpen ? this.close() : this.show();
+            this.isOpen ? this.close({ fromTrigger: true }) : this.show();
         },
 
         /**
@@ -100,41 +101,34 @@ export default function wirekitPopover(config = {}) {
                 this._trap = createFocusTrap(panel, {
                     escapeDeactivates: true,
                     onDeactivate: () => this._closeFromTrap(),
-                    // Allow clicking the trigger — or anything else — to close without trap
-                    // interference, and RELEASE THE TRAP ON THE PRESS rather than on the click.
+                    // A press outside the panel releases the trap on the press, not on the
+                    // click. focus-trap resolves this hook on `mousedown` and `touchstart` in
+                    // the capture phase, ahead of its own `focusin` handler. A trap still armed
+                    // at that point pulls focus back into the panel, and the close that
+                    // follows then finds focus inside the panel, the state Escape leaves, and
+                    // hands it to the trigger. Released here with `returnFocus: false`, the
+                    // trap leaves focus on the control the reader pressed.
                     //
-                    // The timing is the whole point. Returning a bare `true` lets the click
-                    // through but leaves the trap armed, and the trap's `focusin` handler then
-                    // pulls focus straight back into the panel before the click that closes
-                    // this even fires. Measured in Chromium on one outside click, in order:
-                    //
-                    //   mousedown  target=outside control   active=<the panel's own input>
-                    //   focusout   target=<panel input>     active=BODY
-                    //   focusin    target=<panel input>     active=<panel input>   <- pulled back
-                    //   click      target=outside control   active=<panel input>   <- close() here
-                    //
-                    // So by the time close() looks, the DOM says focus is inside the panel —
-                    // identical to the Escape case, which wants the opposite answer. Reading
-                    // `activeElement` cannot separate the two, and hiding the panel from that
-                    // state drops focus on `<body>` (WCAG 2.4.3).
-                    //
-                    // focus-trap resolves this hook on `mousedown` in the capture phase, so
-                    // letting go here happens BEFORE the focusin steal — and `returnFocus:
-                    // false` is the library's own documented way to leave the outside click to
-                    // put focus where it naturally would. The reader ends up on the control
-                    // they pressed, which is the entire contract.
-                    allowOutsideClick: () => {
+                    // The trigger is the exception. Its click runs `toggle()`, and a trap
+                    // released on its press has closed the popover by then, so the toggle
+                    // would open it again. The trap stays armed through that press, and the
+                    // toggle closes the popover and returns focus to the trigger.
+                    allowOutsideClick: (event) => {
+                        if (this.$refs.trigger?.contains(event?.target)) {
+                            return true;
+                        }
+
                         this._trap?.deactivate({ returnFocus: false });
 
                         return true;
                     },
-                    // WHERE FOCUS GOES WHEN THE TRAP LETS GO, named explicitly.
+                    // Where focus goes when the trap lets go, named explicitly.
                     //
                     // The trap returns focus to whatever held it at activation, and that is
                     // not reliable here: the panel is teleported out of the wrapper, so the
                     // element it remembers is in a different subtree by the time it looks.
-                    // Measured — Escape left focus on <body>, which drops a keyboard reader
-                    // back to the top of the page (WCAG 2.4.3).
+                    // Escape would leave focus on <body>, which drops a keyboard reader back
+                    // to the top of the page (WCAG 2.4.3).
                     //
                     // The interactive descendant, not the wrapper: the wrapper is a plain
                     // div, and focusing it would be a stop that announces nothing.
@@ -163,49 +157,48 @@ export default function wirekitPopover(config = {}) {
 
         /**
          * Close popover, deactivate the focus trap, and hand focus back.
+         *
+         * @param {Object} [options]
+         * @param {boolean} [options.fromTrigger] - Set by `toggle()`, the trigger's own close
          */
-        close() {
+        close(options = {}) {
             if (!this.isOpen) return;
 
-            // WAS THE READER INSIDE THE PANEL? The answer has to be taken BEFORE anything
-            // hides, and it decides whether focus is ours to move.
+            // Whether focus is this popover's to move is decided before anything hides.
             //
-            // Escape and activating something inside close with focus in the panel, and
-            // there the popover owes focus back to its trigger (WCAG 2.4.3) — otherwise it
-            // lands on <body> and a keyboard reader resumes from the top of the page.
-            // Measured: that is exactly where it went. A click on some other control also
-            // closes this, and there focus belongs where the reader just put it; stealing
-            // it back would be worse than doing nothing.
+            // A close with focus in the panel (Escape, a control inside that closes it)
+            // returns focus to the trigger (WCAG 2.4.3); otherwise it would land on <body>
+            // and a keyboard reader would resume from the top of the page. The trigger's
+            // own toggle returns focus to the trigger too, and says so through
+            // `fromTrigger`, because `activeElement` cannot answer for it: an engine that
+            // does not focus a button on click leaves <body> focused by then.
             //
-            // THE OUTSIDE-CLICK PATH DOES NOT REACH HERE ANY MORE: the trap releases itself on
-            // the press (see `allowOutsideClick` in show()), which closes this through
-            // `_closeFromTrap()`, so the `click.outside` binding then finds `open` already
-            // false and returns above. What is left for this method are the closes that happen
-            // with focus somewhere settled — from inside the panel, or programmatically — and
-            // for those `activeElement` is a truthful answer.
+            // While the trap is armed, a click on any other control never gets here with
+            // the popover open. The trap releases itself on that press (see
+            // `allowOutsideClick` in show()) and closes the popover through
+            // `_closeFromTrap()`, so the panel's outside-click binding finds it closed and
+            // returns above, and focus stays on what was clicked. Every other close moves
+            // focus only when it was inside the panel.
             const panel = this.$refs.panel;
-            const hadFocus = Boolean(panel && panel.contains(document.activeElement));
+            const returnFocus = options.fromTrigger === true
+                || Boolean(panel && panel.contains(document.activeElement));
 
             this.isOpen = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
 
             if (this._trap) {
-                // THE DECISION IS HANDED OVER, not merely made. `utils/focus-trap.js` sets
+                // The decision is passed to the trap. `utils/focus-trap.js` sets
                 // `returnFocusOnDeactivate: true` for every trap in this package, so a bare
-                // `deactivate()` answers this question by itself — and answers it the same
-                // way every time, which is the way that is wrong half the time. The guard
-                // below it could then only suppress our own second `focus()` call, never the
-                // trap's, and the reader clicking a filter or a text field still got yanked
-                // back onto a trigger they had left. Same shape as `color-picker.js`, which
-                // is the sibling that already passes it through.
-                this._trap.deactivate({ returnFocus: hadFocus });
+                // `deactivate()` would return focus on every close, including one where the
+                // reader has moved on to another control. `color-picker.js` passes it the
+                // same way.
+                this._trap.deactivate({ returnFocus });
                 this._trap = null;
-            } else if (hadFocus) {
-                // THE TRAP-LESS PATH, and it is a real one rather than defensive padding:
-                // `show()` builds a trap only when a trigger AND a panel both resolve, so a
-                // trigger slot holding nothing focusable never gets one. Nothing else would
-                // return focus there, and the panel is about to hide with focus inside it.
+            } else if (returnFocus) {
+                // Without a trap nothing else returns focus. `show()` builds the trap only
+                // after it has positioned the panel, and only when both refs resolve, so a
+                // close in between runs without one.
                 //
                 // The interactive descendant, not the wrapper: the wrapper is a plain div and
                 // focusing it would be a stop that announces nothing.

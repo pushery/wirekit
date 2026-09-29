@@ -35,7 +35,6 @@ CSS
 Declared
 Dev-only
 Fully
-Measured
 No
 Pinned
 Pushery\WireKit\WireKit;
@@ -59,7 +58,6 @@ an
 and
 any
 as
-asserted:
 attribute
 attributes
 auto-derived
@@ -89,11 +87,9 @@ difference
 does
 early.
 element,
-file
 first
 flags
 folds
-for
 for.
 forms
 from
@@ -146,15 +142,11 @@ property,
 props
 qualified:
 radius)
-rather
 ratio
 reach
 reads
 real
 really
-reason
-refutes
-renders
 result
 second
 shown
@@ -168,8 +160,6 @@ style
 style=
 styled
 suite.
-than
-that
 the
 them
 there

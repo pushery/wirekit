@@ -50,11 +50,9 @@ export default function wirekitTabs(config = {}) {
             // render makes every morph re-initialize this scope.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
-            // here, but the ESM harness constructs each factory with a deliberately
-            // barren stub — `test-tabs.mjs` passes `{ querySelectorAll }` and nothing
-            // else, on purpose — and a factory that requires more than it uses turns
-            // that into a TypeError at init. Measured on 2026-08-16: one of 63 ESM
-            // scripts, red in CI and invisible to the PHP suite, which never runs them.
+            // here, but `test-tabs.mjs` constructs this factory with a barren stub that
+            // passes `{ querySelectorAll }` and nothing else, and a factory that requires
+            // more than it uses turns that into a TypeError at init.
             const seed = typeof this.$root?.getAttribute === 'function'
                 ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
                 : null;
@@ -77,10 +75,10 @@ export default function wirekitTabs(config = {}) {
             }));
 
             // The other direction. The event above lets the server hear a switch;
-            // without this it could not answer. Alpine read the seed once, so a
-            // tab the server selects on a later round trip changed the attribute
-            // text and nothing else — the tablist kept showing what it was born
-            // with.
+            // without this it could not answer. Alpine reads the seed once, so a
+            // tab the server selects on a later round trip would change the
+            // attribute text and nothing else, and the tablist would keep showing
+            // what it was born with.
             //
             // Guarded on a real change so an unrelated round trip cannot undo a
             // choice the reader just made: every morph rewrites the attribute,

@@ -10,6 +10,18 @@
  * at sunset. A two-state toggle cannot express that, and silently freezing
  * someone onto light because they once tapped a button is worse than not having
  * the button.
+ *
+ * A page can fix the mode itself, with `data-wk-theme-fixed="light|dark"` on the
+ * root element and a sentence for why in `data-wk-theme-fixed-reason`. While it
+ * does, the page is in that mode, the control shows it as the one on and changes
+ * nothing when used, and a screen reader hears the reason. The reader's own
+ * choice stays stored and comes back the moment the attribute goes.
+ *
+ * Lifecycle resources held on `this`:
+ *   - _media + _onSystemChange (MediaQueryList listener) — removed in destroy().
+ *   - _onPeerChange (window listener) — removed in destroy().
+ *   - _fixedObserver (MutationObserver on the root element's two attributes) —
+ *     disconnected in destroy() AND null-guarded inside its callback.
  */
 export default function wirekitThemeController(config = {}) {
     return {
@@ -21,13 +33,39 @@ export default function wirekitThemeController(config = {}) {
         storage: config.storage === 'cookie' ? 'cookie' : 'local',
         // Only consulted for the 'cookie' driver. { same_site, max_age, path }.
         cookieAttributes: config.cookieAttributes || {},
+        // The mode the page fixes, or null, and why. Read from the root element.
+        fixed: null,
+        fixedReason: '',
+        // What a screen reader hears while the page fixes the mode and names no reason.
+        defaultFixedReason: config.fixedReason || 'This page sets the mode.',
         _media: null,
         _onSystemChange: null,
         _onPeerChange: null,
+        _fixedObserver: null,
 
         init() {
             this.theme = this._read() ?? 'system';
+            this._readFixed();
             this._apply();
+
+            // Follow the page fixing the mode, and letting go of it, while it runs.
+            if (typeof MutationObserver === 'function' && typeof document !== 'undefined') {
+                this._fixedObserver = new MutationObserver(() => {
+                    // Null-guard against a record delivered after destroy().
+                    if (! this._fixedObserver) return;
+
+                    this._readFixed();
+
+                    if (this._apply()) {
+                        this._announce();
+                    }
+                });
+
+                this._fixedObserver.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['data-wk-theme-fixed', 'data-wk-theme-fixed-reason'],
+                });
+            }
 
             // Follow the OTHER controls on the page. Each one is its own Alpine
             // scope with its own `theme`, so without this a header toggle and a
@@ -75,15 +113,32 @@ export default function wirekitThemeController(config = {}) {
                 window.removeEventListener('wirekit:theme-changed', this._onPeerChange);
             }
 
+            this._fixedObserver?.disconnect();
+
             this._media = null;
             this._onSystemChange = null;
             this._onPeerChange = null;
+            this._fixedObserver = null;
         },
 
         /** Is the page dark right now, whatever the reason? */
         get isDark() {
+            if (this.fixed !== null) {
+                return this.fixed === 'dark';
+            }
+
             return this.theme === 'dark'
                 || (this.theme === 'system' && this._systemPrefersDark());
+        },
+
+        /** The mode the control shows as on: the page's while it fixes one, the reader's otherwise. */
+        get mode() {
+            return this.fixed ?? this.theme;
+        },
+
+        /** Why the control changes nothing, while the page fixes the mode; empty otherwise. */
+        get fixedMessage() {
+            return this.fixed === null ? '' : (this.fixedReason || this.defaultFixedReason);
         },
 
         /**
@@ -97,22 +152,60 @@ export default function wirekitThemeController(config = {}) {
         },
 
         select(theme) {
+            // While the page fixes the mode, a choice would change nothing on it.
+            if (this.fixed !== null) return;
             if (!['system', 'light', 'dark'].includes(theme)) return;
 
             this.theme = theme;
             this._write(theme);
             this._apply();
+            this._announce();
+        },
 
-            // Tell the rest of the page — the other controls, and any app code
-            // with its own colors (a chart, a map, a third-party embed). Being
-            // told beats polling a class for a change that may never come.
-            //
-            // Dispatched on window, not on $el: a sibling control is not an
-            // ancestor, so an event that only bubbles up this element's tree
-            // never reaches it.
+        /**
+         * The native `select` variant: take the option chosen, or put the fixed
+         * mode back in the box while the page fixes one.
+         */
+        choose(field) {
+            if (this.fixed !== null) {
+                field.value = this.mode;
+
+                return;
+            }
+
+            this.select(field.value);
+        },
+
+        /**
+         * The switch variant: a checkbox flips before its change event, so the
+         * click is refused while the page fixes the mode.
+         */
+        refuseWhileFixed(event) {
+            if (this.fixed !== null) {
+                event.preventDefault();
+            }
+        },
+
+        /**
+         * Tell the rest of the page — the other controls, and any app code with
+         * its own colors (a chart, a map, a third-party embed). Being told beats
+         * polling a class for a change that may never come.
+         *
+         * Dispatched on window, not on $el: a sibling control is not an ancestor,
+         * so an event that only bubbles up this element's tree never reaches it.
+         */
+        _announce() {
             window.dispatchEvent(new CustomEvent('wirekit:theme-changed', {
-                detail: { theme, dark: this.isDark },
+                detail: { theme: this.theme, dark: this.isDark, fixed: this.fixed },
             }));
+        },
+
+        _readFixed() {
+            const root = typeof document !== 'undefined' ? document.documentElement : null;
+            const fixed = root?.getAttribute('data-wk-theme-fixed');
+
+            this.fixed = fixed === 'light' || fixed === 'dark' ? fixed : null;
+            this.fixedReason = this.fixed === null ? '' : (root?.getAttribute('data-wk-theme-fixed-reason') || '');
         },
 
         _systemPrefersDark() {
@@ -121,8 +214,18 @@ export default function wirekitThemeController(config = {}) {
                 && window.matchMedia('(prefers-color-scheme: dark)').matches;
         },
 
+        /**
+         * Put the page in the mode this control resolves to. Returns whether the
+         * page changed, so the controls that follow the root element's attributes
+         * announce a change once between them rather than once each.
+         */
         _apply() {
-            document.documentElement.classList.toggle('dark', this.isDark);
+            const root = document.documentElement;
+            const was = root.classList.contains('dark');
+
+            root.classList.toggle('dark', this.isDark);
+
+            return was !== this.isDark;
         },
 
         _read() {

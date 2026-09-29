@@ -43,7 +43,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $indeterminate = BooleanProp::from($indeterminate, false);
     $hideLabel = BooleanProp::from($hideLabel, false);
@@ -96,10 +96,10 @@
     // align-top on the default (inline-flex) label kills a sub-pixel layout shift on
     // toggle: an inline-flex label is placed in its line box by its baseline, and the
     // box's flex baseline shifts when the checkmark SVG flips display none↔block — on a
-    // 2× display that re-rounds the whole label ~0.5px, pulling the next row closer
-    // (measured: CheckboxToggleShiftTest). align-top positions the label by its TOP
-    // edge instead, independent of the changing baseline, so the row stays put. The
-    // card variant is block-level `flex` (no line-box baseline) and is unaffected.
+    // 2× display that re-rounds the whole label by a sub-pixel, pulling the next row
+    // closer. align-top positions the label by its TOP edge instead, independent of the
+    // changing baseline, so the row stays put. The card variant is block-level `flex`
+    // (no line-box baseline) and is unaffected.
     //
     // ROUTED THROUGH THE CLASS SEAM, like the box below, and that is the whole point of
     // the two `resolveClasses` calls here. The default label is `inline-flex`, so it is as
@@ -185,12 +185,11 @@
     $boxClasses = WireKit::resolveClasses('checkbox', 'base', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0',
         // A 2.75rem hit area centered on the box, which is 20px in the default size. The
-        // library already ships this primitive and the theme-controller already consumes it;
-        // the checkbox simply never asked for it.
+        // library ships this primitive, and the theme-controller consumes it too.
         //
-        // ON THE BOX, not on the <label>, and that placement is the whole decision. The
-        // default label is the box PLUS its text — 155x20 in one measured case — so a hit area
-        // centered there would sit over the words rather than over the control.
+        // On the box, not on the <label>, and that placement is the whole decision. The
+        // default label is the box plus its text, often many times wider than tall, so a hit
+        // area centered there would sit over the words rather than over the control.
         //
         // DEFAULT VARIANT ONLY, which is the counter-check this needs. In `card` the <label>
         // IS the target: a bordered, full-width, already-tall clickable card. Hanging an
@@ -260,15 +259,13 @@
             type="checkbox"
             id="{{ $id }}"
             name="{{ $name }}"
-            {{-- ALWAYS emitted, in both states. `indeterminate` is a DOM property with no
-                 HTML attribute, so the server cannot render it — and the old form
-                 (`x-init="$el.indeterminate = true"`, emitted only when true) ran once and
-                 could only ever turn the state ON. The third state practically always
-                 arrives AFTER the first render, through a Livewire round trip that morphs
-                 the element: the attribute text changed, Alpine did not re-initialize, and
-                 the property kept its initial value. Measured with one of three rows
-                 selected — the server asked for it and `el.indeterminate` was false, so the
-                 box read as "none selected" while something was. --}}
+            {{-- Always emitted, in both states. `indeterminate` is a DOM property with no
+                 HTML attribute, so the server cannot render it, and an
+                 `x-init="$el.indeterminate = true"` emitted only when true runs once and can
+                 only ever turn the state on. The third state practically always arrives
+                 after the first render, through a Livewire round trip that morphs the
+                 element without re-initializing it, so the box would read as "none
+                 selected" while something is. --}}
             data-wk-indeterminate="{{ $indeterminate ? 'true' : 'false' }}"
             x-wk-indeterminate
             @if($isInvalid) aria-invalid="true" @endif

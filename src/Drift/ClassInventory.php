@@ -546,14 +546,11 @@ final class ClassInventory
          * Both spellings. `@class([...])` is the directive; `->class([...])` is the
          * attribute-bag method, and many component views use it with literal strings.
          *
-         * The second was not matched at all, so the harvester read NOTHING inside those
-         * calls — not the arbitrary variants that prompted this, not even a plain `gap-2`.
-         * The consequence was quiet in the worst way: two classes that ARE in the source
-         * were recorded in the reverse-diff allowlist as "known-untraceable", with a
-         * comment reasoning about which bracket shape defeats the harvester. The shape was
-         * never the problem; the CALL was. Measured across the four spellings the catalog
-         * uses — attribute, `@class` key, `implode` array, `->class` — only the last one
-         * came back empty.
+         * A harvester that matched only the first would read nothing inside the second —
+         * not an arbitrary variant, not even a plain `gap-2` — and classes that are in the
+         * source would then look untraceable to the reverse diff. The catalog spells a
+         * class four ways (attribute, `@class` key, `implode` array, `->class`), and each
+         * of them is harvested.
          */
         /*
          * The body ends at the matching `]`, not at the first `])`. A class with an attribute
@@ -688,8 +685,8 @@ final class ClassInventory
         /*
          * `array_filter(` may wrap the array: it drops the empty strings a conditional entry
          * leaves behind, and the catalog writes it that way wherever a class is optional. Without
-         * it here those arrays reached only the @php-block harvester, which rejects a bare word
-         * on purpose, so `justify-items-end` written in one was reported as untraceable.
+         * it here those arrays would reach only the @php-block harvester, which rejects a bare
+         * word on purpose, so `justify-items-end` written in one would read as untraceable.
          */
         $openPattern = '/implode\s*\(\s*(["\'])\s\1\s*,\s*(?:array_filter\s*\(\s*)?\[/u';
 
@@ -1292,12 +1289,11 @@ final class ClassInventory
          * below — order matters here, and getting it wrong is what this check is for.
          *
          * `text-[color:var({$textColor})]` in a PHP string is a template, not a class:
-         * what reaches the browser depends on a variable. It used to be rejected by the
-         * shape regex, which admits neither `{` nor `$` — but those characters sit INSIDE
-         * the brackets, so once the shape check reads a masked form they are no longer
-         * there to reject, and three of VariantResolver's templates started reporting as
-         * classes Tailwind had failed to compile. Which is true, and not a defect: nothing
-         * emits them literally.
+         * what reaches the browser depends on a variable. The shape regex admits neither
+         * `{` nor `$`, but those characters sit INSIDE the brackets, and the shape check
+         * reads a masked form where they are no longer there to reject. Left to it,
+         * VariantResolver's templates would report as classes Tailwind had failed to
+         * compile, which is true and not a defect: nothing emits them literally.
          */
         if (str_contains($candidate, '{$') || str_contains($candidate, '${')) {
             return false;

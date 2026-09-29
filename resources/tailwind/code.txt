@@ -27,7 +27,6 @@ $slot
 Declared
 Dev-only
 Fully
-Measured
 Pushery\WireKit\WireKit;
 Renders
 WireKit::resolveClasses('code',
@@ -37,8 +36,6 @@ WireKit::resolveClasses('code',
 ]),
 a
 action
-any
-asserted:
 auto-derived
 be
 block,
@@ -49,11 +46,8 @@ debug
 does
 early.
 element,
-file
 flags
-for
 from
-guard
 implode('
 imports
 in
@@ -74,17 +68,10 @@ prod).
 props
 py-0.5',
 qualified:
-rather
 reach
-reason
-refutes
-renders
 result
 shown
 so
-than
-that
-the
 there
 this
 unknown

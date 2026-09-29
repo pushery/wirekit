@@ -29,7 +29,7 @@
     'min' => config('wirekit.components.cart-item.min', 1),
     'max' => null,
     'step' => 1,
-    // The size of the stepper. `lg` rather than the `md` default, and that is a measured choice:
+    // The size of the stepper. `lg` rather than the `md` default, and that is a deliberate choice:
     // `--size-wk-md` is 2.5rem = 40px, which clears WCAG 2.2 SC 2.5.8 (24px, level AA) with room
     // but misses the 44px of SC 2.5.5 (level AAA) and of platform touch guidance. `--size-wk-lg`
     // is 3rem = 48px and clears both. Raising the token instead would move every component that
@@ -130,15 +130,13 @@
          `cart-list` the named container does not exist, so none of these match and the line
          stays on one row — which is the ordinary behavior, not a broken one. --}}
 
-    {{-- `flex-wrap` on the cluster itself, and it is NOT redundant with the one on the line
-         above: that one wraps the cluster away from the name, this one wraps INSIDE the
-         cluster. Measured at a 360px viewport inside the documentation preview column, where
-         the cluster gets 242px and its three children need 249px before the two gaps are
-         counted -- stepper 148, line total 61, remove 40. `justify-between` distributes
-         spare width and has none to distribute, so the remove control painted 24px past the
-         right edge in BOTH engines, identically. Below the threshold it now takes a row of
-         its own. Above it there is room, nothing wraps, and the desktop line is unchanged:
-         a wrap only happens where the content already did not fit. --}}
+    {{-- `flex-wrap` on the cluster itself, and it is not redundant with the one on the line
+         above: that one wraps the cluster away from the name, this one wraps inside the
+         cluster. In a narrow column the stepper, the line total and the remove control can
+         need more than the cluster gets, and `justify-between` distributes spare width and
+         has none to distribute, so the remove control would paint past the right edge.
+         Below that width it takes a row of its own; above it there is room, nothing wraps,
+         and a wrap only happens where the content already did not fit. --}}
     <div class="flex shrink-0 flex-wrap items-center gap-[var(--gap-wk-md)] @max-lg/wk-cart-list:w-full @max-lg/wk-cart-list:justify-between">
         {{-- No width of our own, and the utility that would set one is deliberately not named:
              Tailwind scans Blade comments too, so writing it would emit the class into the

@@ -1,7 +1,6 @@
 !!}
 !!}</svg>
 !==
-"semantic
 $actions
 $animateAttr
 $attributes->class([$baseClasses,
@@ -94,7 +93,6 @@ $variantValue
 ($variantValue)
 (15%
 (both
-(complementary
 (default
 (default,
 (named
@@ -174,7 +172,7 @@ $variantValue
 :
 </div>
 <aside>
-<aside>,
+<aside>:
 <div
 <div>,
 <svg
@@ -201,7 +199,6 @@ A
 Alert
 Alert)
 Alert;
-An
 Blade
 Body:
 BooleanProp::from($bordered,
@@ -219,9 +216,9 @@ HTML
 IS
 It
 Livewire
-Measured
 NOT
 Normalized
+Not
 Null
 OFF
 OFF).
@@ -234,7 +231,6 @@ Pushery\WireKit\WireKit;
 Renders
 SIDEBAR,
 SVG
-Showing
 So:
 Something
 That
@@ -250,7 +246,6 @@ WireKit::resolveClasses('callout',
 WireKit::validateProp('callout',
 WireKit::warnUnknownProps('callout',
 With
-Worse,
 [
 ['primary',
 \Illuminate\View\ComponentSlot
@@ -286,7 +281,6 @@ and
 animation
 animation.
 announces
-any
 anyone
 are
 aria-hidden,
@@ -296,8 +290,8 @@ around
 arrives
 as
 as,
+aside
 asked
-asserted:
 at
 attention
 attribute
@@ -350,7 +344,6 @@ component
 component's
 config('wirekit.components.callout.variant',
 content
-content)".
 content,
 content.
 continues
@@ -385,14 +378,13 @@ element,
 error
 every
 explicitly
-fails
+fails,
 falls
 false)
 false);
 false,
 false.
 feature
-file
 fill-rule="evenodd"
 fill="currentColor"
 filled($title))
@@ -412,7 +404,6 @@ generic
 genuinely
 given
 given).
-guard
 h-5"
 has
 have
@@ -482,9 +473,9 @@ off
 on
 on.
 one
+one,
 one-sided
 one.
-one:
 only
 only,
 opposite
@@ -492,6 +483,7 @@ opt-in
 optimistic-ui:
 or
 order,
+otherwise
 over
 overflowing
 own
@@ -512,7 +504,6 @@ primary,
 prod).
 prop
 prop's
-proposed.
 props
 put
 rather
@@ -521,20 +512,16 @@ read
 read).
 reader
 reads
-reason
-refutes
 region
 region.
 regions.
-renders
-report
 reports
 reserved
 restore
 result
 reveal
 role
-role="alert",
+role="alert".
 role="complementary"
 role="status"
 roles
@@ -577,11 +564,9 @@ text
 text-[color:var(--color-wk-text)]">{{
 than
 that
-that.
 the
 then
 there
-therefore
 this
 this.
 though
@@ -604,7 +589,6 @@ truthy
 two
 unknown
 use
-used
 v1.5.0-identical).
 variant
 variant-derived

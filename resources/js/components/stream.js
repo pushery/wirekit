@@ -187,9 +187,8 @@ export default function wirekitStream(config = {}) {
         /**
          * Replace the request body for the next run.
          *
-         * The body used to be read once, at mount, and there was no way to change
-         * it afterwards — so a fetch stream could only ever send the payload it was
-         * born with. That is fine for a fixed endpoint and impossible for the case
+         * A body read once, at mount, would let a fetch stream send only the payload
+         * it was born with. That is fine for a fixed endpoint and impossible for the case
          * this transport exists for: a request whose body IS the input, rebuilt
          * every run (the prompt, the language pair, the model, the options).
          */
@@ -398,15 +397,15 @@ export default function wirekitStream(config = {}) {
                 for (const frame of frames) {
                     const lines = frame.split(/\r?\n/);
 
-                    // The `event:` line, which this reader used to drop on the floor.
+                    // The `event:` line.
                     //
                     // A server that names its events — and Laravel's own SSE helper
-                    // frames them as `event: <name>\ndata: <payload>` — was read here
-                    // as if every frame were the same nameless one. So a stream of
-                    // `meta` / `token` / `refused` / `done` arrived as one run-on
+                    // frames them as `event: <name>\ndata: <payload>` — would otherwise
+                    // be read as if every frame were the same nameless one. A stream of
+                    // `meta` / `token` / `refused` / `done` would arrive as one run-on
                     // string, with a refusal indistinguishable from a token, and not
-                    // one error anywhere: the same `eventName` prop that the SSE path
-                    // honors was silently ignored by this one.
+                    // one error anywhere: this path honors the same `eventName` prop
+                    // as the SSE path.
                     const named = lines.find((line) => line.startsWith('event:'));
                     const eventName = named ? named.slice(6).trim() : '';
 

@@ -10,12 +10,9 @@
     // The panel's width CEILING, not a fixed width. It fills the column it is
     // given and stops growing here — so a two-column desktop layout gets exactly
     // this, and a stacked mobile layout gets the full width instead of a narrow
-    // card floating in a wide space.
-    //
-    // It used to be applied as `width: <this>; max-width: 100%`, which caps the
-    // wrong end: the ceiling only bites when the container is NARROWER, and the
-    // case that actually happens is the container being wider. Measured at 393px
-    // with the layout stacked, the summary came out 214px beside a 301px sibling.
+    // card floating in a wide space. `width: <this>; max-width: 100%` would cap
+    // the wrong end: that ceiling only bites when the container is narrower, and
+    // the case that actually happens is the container being wider.
     'width' => '20rem',
     // Tailwind breakpoint at/above which the panel sticks. Below it, mobileBehavior applies.
     'hideBelow' => 'md',
@@ -44,7 +41,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('sticky-panel', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $scrollShadow = BooleanProp::from($scrollShadow, true);
 
@@ -66,11 +63,10 @@
         default => 'md:sticky',
     };
 
-    // The width ceiling belongs to the STUCK layout only, and applying it
-    // everywhere was the defect. Below the breakpoint the panel un-sticks and
-    // renders in normal flow, where a ceiling meant for a side column leaves a
-    // narrow card sitting in a wide space: measured at 393px, the summary came
-    // out 240px beside a 301px sibling, which is what a reader notices.
+    // The width ceiling belongs to the stuck layout only. Below the breakpoint
+    // the panel un-sticks and renders in normal flow, where a ceiling meant for
+    // a side column would leave a narrow card sitting in a wide space, beside
+    // wider siblings.
     //
     // Literal classes rather than an interpolated prefix, for the same reason
     // the sticky class above is literal: Tailwind scans source text, and a class
@@ -155,9 +151,8 @@
                 <div
                     x-ref="scroller"
                     {{-- Reachability unconditional, landmark opt-in — and BOTH branches of this
-                         `@if($scrollShadow)` carry the same shape. Changing one would have
-                         left `:scroll-shadow="false"` on the old behavior, which is the branch
-                         nobody looks at again. --}}
+                         `@if($scrollShadow)` carry the same shape, so `:scroll-shadow="false"`
+                         behaves like the default. --}}
                     tabindex="0"
                     @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
                     class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"

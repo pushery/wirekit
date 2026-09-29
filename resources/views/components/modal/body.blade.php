@@ -28,10 +28,10 @@
     // whenever the dialog holds a control.
     $classes = WireKit::resolveClasses('modal.body', 'base', implode(' ', [
         'min-h-0 overflow-y-auto wk-scrollbar',
-        // ONE TOKEN ON ALL FOUR SIDES, and the header's. The sides used to take 1.5rem against 1rem
-        // above and below, so the title started 1rem from the panel's edge and the content under it
-        // 1.5rem, and the content sat further from the sides than from the bottom. Equal padding
-        // on one token keeps a single edge down the panel, and a theme cannot pull the sides apart.
+        // One token on all four sides, and the header's. Wider side padding would start the content
+        // further in than the title above it and sit it further from the sides than from the
+        // bottom; equal padding on one token keeps a single edge down the panel, and a theme
+        // cannot pull the sides apart.
         'p-[var(--padding-wk-x-lg)]',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',

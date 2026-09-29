@@ -374,7 +374,6 @@ $value;
 A
 A/C
 A11y
-AFTER
 ALSO
 AND
 API:
@@ -384,7 +383,6 @@ Alpine
 Alpine's
 Alpine.
 An
-And
 Animation
 BCP-47
 BOTH
@@ -394,7 +392,6 @@ BladeUI\Icons\Svg
 BooleanProp::from($animate,
 BooleanProp::from($descriptionAnimate,
 BooleanProp::from($descriptionDeferred,
-Both
 Bottom
 By
 C
@@ -410,7 +407,6 @@ Dev-only
 Drop
 ENT_QUOTES).'"',
 EVERY
-English.
 Everything
 Fallback:
 Fully
@@ -434,7 +430,6 @@ Logger
 MACHINE
 MOST
 Main
-Measured
 Mirrors
 Mutual
 Mutually
@@ -464,10 +459,10 @@ Pure
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
+Re-deriving
 Reapply
 Render
 Renders
-Reported
 Resolve
 Respects
 RuntimeException
@@ -532,7 +527,6 @@ __toString
 `$`.
 `+`
 `-`,
-`.`
 `<span>`
 `Svg
 `animate`
@@ -618,7 +612,6 @@ arrow
 arrow,
 as
 as,
-asserted:
 at
 attaches
 attempted
@@ -725,12 +718,12 @@ collapsed
 color
 color-mix(in
 combine.
+come
 compiles
 component's
 component,
 components
 composer
-concatenate
 concatenating
 condition
 config('wirekit.components.stat.animate',
@@ -738,7 +731,6 @@ configured
 conflict
 console
 console).
-consuming
 content
 context
 contract
@@ -749,7 +741,6 @@ count
 count-up
 count-up.
 count.
-counted
 counter
 counter's
 counter):
@@ -804,7 +795,6 @@ did
 differently
 digit
 digits
-digits,
 direct
 direction
 direction,
@@ -862,7 +852,6 @@ explicitly
 explosion).
 fact
 factor
-factory:
 fade-in.
 fades
 fail
@@ -878,7 +867,6 @@ false);
 false,
 feature
 figure
-file
 files
 finds
 fine
@@ -923,13 +911,12 @@ glyph.
 go
 goes
 good
-grammar:
+grammar
 grouping
 grouping,
 groups
 groups.
 guarantees
-guard
 h-5
 h/w
 halves
@@ -1023,7 +1010,6 @@ leaning
 learns
 leave
 leaves
-left
 line
 list
 listener
@@ -1032,7 +1018,7 @@ live
 lives,
 loads.
 locale
-locale,
+locale.
 log
 logger()->warning(
 lost
@@ -1057,6 +1043,7 @@ mb_substr($probe,
 mean
 meant
 merge
+message
 metric
 metrics
 mirrors
@@ -1165,7 +1152,7 @@ plain
 plainly
 plugin
 point,
-point.
+point;
 positive
 post-process
 pre-checking
@@ -1192,7 +1179,6 @@ problem
 prod).
 progress
 progress)
-project,
 prop's
 prop).
 props
@@ -1204,7 +1190,6 @@ qualified:
 rate),
 rather
 raw
-re-derive
 re-inject
 re-mount
 reach
@@ -1219,13 +1204,11 @@ reads
 real
 really
 reapply
-reason
 reason:
 rebuilding
 receives
 reconcile
 red
-refutes
 regional
 registered
 registry
@@ -1240,7 +1223,6 @@ replaces
 replay
 replayable
 reported
-reproduced
 request
 require
 requires
@@ -1303,21 +1285,22 @@ set,
 set.
 sets
 settle.
-settled
 settled).
 settles.
+settling
 share
 should
 shown
 sibling
 side
-side:
+side,
 sides,
 sighted
 sign
 sign,
 silently
 silently.
+silently:
 since
 single
 site
@@ -1455,7 +1438,6 @@ until
 upward.
 use
 use,
-used
 useful
 uses
 uses,
@@ -1492,9 +1474,7 @@ way
 way,
 ways
 we
-were
 what
-whatever
 when
 when:
 where

@@ -1,12 +1,8 @@
 {{-- optimistic-ui: n/a — client-only
      Its own state is the scroll position of the leading cluster — where in a strip of
      tabs the reader has scrolled to. That is not a value a server owns, so there is
-     nothing to anticipate and nothing to roll back.
-
-     It said "presentational" until the cluster started scrolling, and the guard refused
-     it: a scroll region is keyboard-operable, so with a `label` the bar renders a
-     focusable element and "renders no interactive element" stopped being true. The claim
-     was measured against the file rather than trusted, which is the point of that arm. --}}
+     nothing to anticipate and nothing to roll back. A scroll region is keyboard-operable,
+     so with a `label` the bar renders a focusable element. --}}
 {{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     // The border. This is THE horizontal line of a console shell: place one bar at
@@ -52,7 +48,7 @@
     // The case this exists for is a bar placed in a sidebar's `header` zone. A sidebar pads
     // itself uniformly, which is right for navigation items and wrong for a chrome band: the
     // rule ends up inset on three sides and sits 6px below the rule in the columns either
-    // side of it. Measured in the browser at exactly that, which is the padding token's value.
+    // side of it, by the padding token's value.
     //
     // The bar does not escape: it marks itself `data-wk-bleed`, and the container stands aside.
     // A zone holding a bleeding bar drops its own inset and pulls back the column's, so the head
@@ -124,10 +120,9 @@
     // page steal pixels from the bar's height.
     // `w-full` belongs to the NON-bleeding branch only. Emitting both it and the bleed's
     // width leaves two width utilities of equal specificity on one element, and the winner is
-    // then Tailwind's emission order rather than the prop — which is exactly what happened:
-    // `w-auto` sorts BEFORE `w-full`, so `w-full` won and the bar shifted left by the host's
-    // padding without ever widening to cover it. Measured in the browser: a 256px column, a
-    // rule 223px long, and a 33px gap before the column's edge. The same defect class this
+    // then Tailwind's emission order rather than the prop: `w-auto` sorts before `w-full`, so
+    // `w-full` would win and the bar would shift left by the host's padding without widening to
+    // cover it, leaving its rule short of the column's edge. The same defect class this
     // component's own rail records for its width, and sidebar.item for its foreground.
     $classes = WireKit::resolveClasses('shell-bar', 'base', implode(' ', [
         'wk-shell-bar',
@@ -167,14 +162,12 @@
     //
     // The BOTTOM is deliberately not canceled: the gap under the head is what separates the
     // rule from the first navigation item, and pulling it up would close it.
-    // NOTHING. The bar no longer escapes its container — the container stands aside.
+    // NOTHING. The bar does not escape its container — the container stands aside.
     //
-    // It used to bleed with negative margins plus a width of `100% + 2 * the padding`, which
-    // worked and was fragile in a way this repository has paid for before: an element that
-    // relies on overflowing its parent is at the mercy of every ancestor, and any one of them
-    // with `overflow: hidden`, `contain: layout`, a transform or a filter clips it without
-    // warning. The mobile sweep caught the shape before a reader did — a 6px overflow on a zone
-    // that happened not to clip.
+    // Bleeding with negative margins plus a width of `100% + 2 * the padding` would be
+    // fragile: an element that relies on overflowing its parent is at the mercy of every
+    // ancestor, and any one of them with `overflow: hidden`, `contain: layout`, a transform or
+    // a filter clips it without warning.
     //
     // The `data-wk-bleed` marker lets the ancestors drop their own inset instead, in
     // dist/wirekit.css. Same result, no overflow, and nothing to clip.
@@ -202,11 +195,10 @@
          does, and it costs desktop nothing because the overflow never engages there.
 
          `wk-shell-bar-strip` hides the scrollbar rather than thinning it, and that is a change
-         of kind rather than of degree. A thin track still PAINTS, and where it paints is the
-         bottom edge of a bar whose bottom edge is the shell's rule — so on a phone the reader
-         got a short gray line under a clipped title and read it, correctly, as a rule that had
-         come apart. Measured at 375px: the strip 65px wide with 210px of overflow, the thumb
-         sitting in the last two pixels of a 56px bar.
+         of kind rather than of degree. A thin track still paints, and where it paints is the
+         bottom edge of a bar whose bottom edge is the shell's rule, so on a phone the reader
+         would see a short gray line under a clipped title and read it, correctly, as a rule
+         that had come apart.
 
          Nothing is lost with it gone. The affordance is the clipped item itself — a name cut
          mid-word says there is more of it — and the region stays scrollable by touch, by
@@ -225,24 +217,23 @@
              responsive class was the control inside, and a control that is `display: none`
              leaves its wrapper behind as a zero-width flex item — which still takes the bar's
              `gap` on both sides of it. The heading beside it then carries a phantom indent
-             that nothing in the markup accounts for: measured at 1728px on the sidebar-shell
-             blueprint, whose start slot holds a toggle hidden above `lg`, the title sat 12px
-             — one `--gap-wk-md` — to the right of the text beneath it. --}}
+             that nothing in the markup accounts for: one gap's width to the right of the
+             text beneath it. --}}
         <div {{ \Pushery\WireKit\Support\SlotAttributes::of($start)->class('flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]') }}>
             {{ $start }}
         </div>
     @endisset
     <div
-        {{-- The KEYBOARD half is unconditional, and that is the fix that mattered. This
-             wiring used to sit behind `@if($label)`, which tied a WCAG 2.1.1 obligation to
-             a cosmetic prop: the strip always carries `overflow-x-auto`, and 35 of the 41
-             documented usages omit `label` — so the configuration that failed was the
-             default one. `tabindex` and the focus ring below stay on every bar.
+        {{-- The KEYBOARD half is unconditional. Behind a `label` check it would tie a
+             WCAG 2.1.1 obligation to a cosmetic prop: the strip always carries
+             `overflow-x-auto`, and most bars omit `label`, so the configuration that
+             failed would be the default one. `tabindex` and the focus ring below stay on
+             every bar.
 
              The ROLE and the NAME are a different thing and wait for the caller. A role
              plus a name is a named container announced in its own right, and a built-in
              default makes every bar in an application the same one — a reader tabbing
-             through a three-column shell heard "Toolbar, group" three times before
+             through a three-column shell would hear "Toolbar, group" three times before
              anything with content in it, which is the opposite of what a name is for. So
              the strip is a plain focusable scroller until the caller names it, matching
              every other scroll region in the catalog.
@@ -254,9 +245,8 @@
              default slot has nothing to overflow and therefore nothing to scroll to, so a
              tab stop on it is a keypress that lands on a 0 x 0 box and announces nothing —
              the exact outcome `shell-bar.md` warns about under "Never pass `label` to a bar
-             whose leading cluster is empty". That warning was written as advice to the
-             caller while the markup produced the stop either way; the gate below is the
-             same rule, enforced rather than requested.
+             whose leading cluster is empty". The gate below enforces that rule rather than
+             leaving it to the caller.
 
              The condition lives in the attribute's VALUE, not around the attribute.
              `ScrollRegionKeyboardModelGuardTest` strips `@if(...)...@endif` before it reads
@@ -286,15 +276,13 @@
             // already pinned to the leading edge looks the same whether or not it grows, and
             // the trailing cluster is `shrink-0` either way.
             'flex-1' => $align !== 'center',
-            // A second ring color used to sit here, gated on `filled($label)`, reaching for
-            // `--color-wk-rail-ring` so a bar inside a toned rail rings in the rail's own
-            // color. Two arbitrary-value ring utilities on one element are the same
-            // specificity, so which one won came down to the order the developer's build
-            // emitted them in — a bar whose focus ring changes color between projects. It
-            // was also unnecessary: `.wk-rail` re-points `--color-wk-ring` to
-            // `--color-wk-rail-ring` for its whole subtree, so the single unconditional
-            // ring above already resolves to the rail's color inside a rail and to the page
-            // ring everywhere else.
+            // One ring color, not a second one reaching for `--color-wk-rail-ring`: two
+            // arbitrary-value ring utilities on one element are the same specificity, so
+            // which one won would come down to the order the developer's build emits them
+            // in, and the focus ring would change color between projects. `.wk-rail`
+            // re-points `--color-wk-ring` to `--color-wk-rail-ring` for its whole subtree,
+            // so the single ring above resolves to the rail's color inside a rail and to
+            // the page ring everywhere else.
         ])
     >
         {{ $slot }}

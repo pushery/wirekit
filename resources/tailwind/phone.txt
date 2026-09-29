@@ -550,16 +550,12 @@ $value,
 11.06l3.71-3.83a.75.75
 11.06l3.72
 111.08
-160px
 2
 2),
 20
 20"
-2026-09-18
-2026-09-18,
 20rem']);
 2345
-243
 245
 245:
 24px
@@ -567,7 +563,6 @@ $value,
 3.72a.75.75
 300),
 3166-1
-390px
 4.39a.75.75
 4:3
 5.22a.75.75
@@ -577,8 +572,6 @@ $value,
 7.21a.75.75
 8.27a.75.75
 8.94
-80px
-99px
 :
 :aria-activedescendant="isOpen
 :aria-describedby="opt.description
@@ -771,10 +764,8 @@ DialingCodes::has($country)
 DialingCodes::trunkPrefix($code);
 DomId::unique($attributes->get('id')
 Drawn,
-Dropping
 E.164
 E.164,
-EFFECT
 Each
 Empty
 Empty-state
@@ -831,7 +822,6 @@ MEDIUM:
 MESSAGE,
 MID-CHARACTER
 MORPH
-Measured
 Media
 Merge
 Milliseconds
@@ -886,9 +876,8 @@ Required
 Room
 SCROLL
 SELECT-ONLY
-SELECTION.
+SELECTION
 SHAPE,
-SIZE
 START,
 STATIC
 SWAPS
@@ -918,7 +907,6 @@ Type
 UNBOUND
 URL
 URL,
-URLs
 USES
 Under
 Uruguay.
@@ -940,7 +928,6 @@ WireKit::warnUnknownProps('phone',
 With
 Without
 Z,
-ZERO
 Zypern
 [
 [$normalized,
@@ -1187,9 +1174,9 @@ any
 anything
 anything.
 anywhere
-apart.
 app
 app()->getLocale();
+app,
 appear
 appears
 appended
@@ -1250,7 +1237,6 @@ asort($named);
 aspect-[4/3]
 assembled
 assembles
-asserted:
 assistive
 assoc
 associated
@@ -1290,7 +1276,6 @@ before,
 before.
 behavior
 behavior:
-behavior;
 behind
 being
 belongs
@@ -1317,7 +1302,6 @@ border
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border-subtle)]
 both
-both,
 bound
 boundaries
 boundary.
@@ -1355,7 +1339,6 @@ call.
 caller
 caller's
 caller-passed
-callers
 can
 cannot
 capability
@@ -1424,7 +1407,7 @@ clickable
 clicked
 clicked,
 clip-rule="evenodd"/>
-clip`.
+clip`:
 clipping
 close
 close.
@@ -1482,7 +1465,6 @@ constructed
 consuming
 container
 containing
-content
 content,
 contents
 contents">
@@ -1573,21 +1555,18 @@ disabled:opacity-[var(--opacity-wk-disabled)]"
 disables
 disagree:
 disagrees
-discarded
 discrete
 display
 displayed,
 div
 do
 do.
-docs/,
 document
 document,
 document.
 documentation
 does
 does.
-doing
 down
 draw
 drawn
@@ -1604,7 +1583,6 @@ each
 eager
 early,
 early.
-effect.
 effective
 eight
 either
@@ -1631,6 +1609,7 @@ ends
 error
 escape
 escapes
+even
 event
 every
 everywhere:
@@ -1684,8 +1663,6 @@ field:
 fieldMedia"
 fields);
 fighting
-file
-files
 fill,
 fill-rule="evenodd"
 fill="currentColor"
@@ -1703,7 +1680,6 @@ first.
 fix
 fixed
 fixed`
-fixture
 flag
 flag,
 flag:
@@ -1725,7 +1701,7 @@ focusable
 focusable="false"
 focused
 focused.
-fold;
+fold,
 folds
 follow
 followed,
@@ -1792,7 +1768,6 @@ hardcoded
 has
 have
 have.
-having,
 header
 heading
 headings,
@@ -1854,7 +1829,6 @@ in
 in.
 in_array($panelWidth,
 includes
-including
 incoming
 index
 indexes
@@ -2012,10 +1986,7 @@ max-w-[10rem]',
 may
 mean
 means,
-measured
 measurements
-measurements).
-measurements,
 medium
 medium,
 message
@@ -2041,8 +2012,8 @@ morphs:
 most
 move
 ms-0.5"
-multi-select
 multi-select's
+multi-select.
 multi-select:
 must
 mutation
@@ -2062,6 +2033,7 @@ native
 natural
 navigate
 navigates.
+near
 needed).
 needs
 neither
@@ -2093,7 +2065,6 @@ nothing
 nothing,
 nothing.
 nothing:
-now
 nowhere
 null
 null"
@@ -2159,10 +2130,10 @@ option's
 option,
 option-row
 option.
+option:
 optional
 options
 options,
-options.
 options:
 or
 order
@@ -2206,7 +2177,6 @@ parses
 part
 part.
 parts
-passed
 passes.
 passthrough
 past
@@ -2214,7 +2184,6 @@ pasting
 patch,
 patched
 patches
-path
 pattern.
 pattern:
 payload
@@ -2229,9 +2198,7 @@ physical
 pick
 picked.
 picker
-picker:
 pin
-place.
 placeholder
 placeholder="{{
 placement
@@ -2260,7 +2227,6 @@ prevent,
 prevents
 preview
 previous
-problem
 prod).
 produces
 projects
@@ -2293,7 +2259,6 @@ re-renders,
 re-renders.
 reach
 reach.
-reached
 reaches
 read
 read.
@@ -2310,17 +2275,14 @@ reason:
 reasoning
 reasoning.
 receive
-received
 receives:
 recipe:
 red
 redirect
-redirected
 reduced-motion
 ref
 reference
 refuse.
-refutes
 region
 region,
 region.
@@ -2346,7 +2308,6 @@ reported,
 reports
 repository
 request
-requests
 required
 required,
 resolution.
@@ -2354,7 +2315,6 @@ resolve
 resolved
 resolves
 resolving
-resources/
 rest.
 restart
 restores
@@ -2406,7 +2366,6 @@ runIf,
 runIf:
 runtime
 same
-sample:
 satisfies
 save"
 save.
@@ -2494,13 +2453,11 @@ side
 side.
 sideways,
 silent
-silently
 silently.
 simply
 since
 single
 single-option
-sit
 site
 site,
 sits
@@ -2508,7 +2465,6 @@ size
 size),
 size).
 size-full
-sized
 sizes
 sizing
 slot
@@ -2554,7 +2510,6 @@ step
 still
 stops;
 stranded
-stranded:
 stray
 string
 string,
@@ -2645,7 +2600,6 @@ this
 this,
 thought
 three
-three-artwork
 throttles
 through
 thrown
@@ -2744,7 +2698,6 @@ up
 update
 uppercase
 use
-used
 user
 uses
 uses,
@@ -2770,6 +2723,7 @@ view
 view's
 viewBox="0
 viewport
+viewport.
 visibility,
 visible
 visibly
@@ -2805,7 +2759,7 @@ who
 whole
 whose
 why
-why,
+why).
 wide
 widening
 wider
@@ -2834,7 +2788,6 @@ work
 work.
 working
 world:
-worth
 would
 wrapper
 wrapper.

@@ -284,12 +284,11 @@
                                          color, drop a size.
 
                                          `max-sm:hidden` because this is the one child that cannot
-                                         shrink, and a month cell on a phone is ~51px. Measured at
-                                         393px: "10:00 AM" renders 52px, the title beside it had
-                                         already collapsed to 0px, and the pill overflowed its cell
-                                         by 17px — so the visible result was a pill showing the
-                                         time and NOT the title. Dropping the time below `sm` gives
-                                         the title the cell back. Nothing is lost to a screen
+                                         shrink, and a month cell on a phone is about as wide as
+                                         the time alone: the title beside it would collapse to
+                                         nothing and the pill would show the time and not the
+                                         title. Dropping the time below `sm` gives the title the
+                                         cell back. Nothing is lost to a screen
                                          reader: the button's aria-label is `eventLabel(ev)`, which
                                          spells out title, full date AND time regardless. --}}
                                     <span x-show="pillTime(ev)" x-cloak class="max-sm:hidden shrink-0 tabular-nums text-[length:var(--text-wk-2xs)]" x-text="pillTime(ev)"></span>
@@ -356,9 +355,9 @@
                     </div>
                 </template>
             </div>
-            {{-- All-day band: events flagged allDay:true were previously dropped from
-                 week view (the _layoutDay overlap engine filters them out, having no
-                 hour position). They render here as full-width chips per day. The band
+            {{-- All-day band: the _layoutDay overlap engine filters out events flagged
+                 allDay:true, which have no hour position, so they render here as
+                 full-width chips per day. The band
                  is hidden when the focused week has no all-day events. --}}
             <div x-show="weekHasAllDay || weekHasMarkers" x-cloak class="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                 {{-- The band shows for all-day events OR day-markers. The "All day"
@@ -416,24 +415,18 @@
                     <div x-show="day.isToday" x-cloak aria-hidden="true" class="absolute left-0 right-0 h-px bg-[var(--color-wk-danger)] z-10" :style="'top: ' + nowLineTop + '%'"></div>
                     {{-- Event blocks --}}
                     <template x-for="b in day.blocks" :key="b.event.id">
-                        {{-- min-h floor guarantees a block is tall enough for title+time
-                             even for sub-30-min events, which previously clipped under
-                             overflow-hidden. Height/floor history: a full-2.5rem
-                             floor made a 1-hour block snap to the full row height (4px too
-                             tall); 2.25rem (row − 4px gutter) fixed most of it but left the
-                             1-hour block 1px too tall at the bottom — the `% height` calc
-                             rounds UP ~1px at this scale and the 2.25rem floor (== the 1-hour
-                             calc) pinned it there (the block was 1px too tall). So the
-                             vertical gutter is now 5px on height with the floor lowered to
-                             2.1875rem (35px): a 1-hour block lands 1px shorter and the bottom
-                             inset matches the +2px top. Horizontal gutter stays 2px/-4px
-                             (left/right fit). The clipped line is the time (no
-                             descenders), so overflow-hidden costs nothing visible. No
-                             vertical gutter at all made back-to-back events touch
-                             edge-to-edge (back-to-back events visually merged). NOTE the event
-                             background ($eventClasses) is now an OPAQUE color-mix over
-                             var(--color-wk-bg), not transparent, so the hour gridlines no
-                             longer show THROUGH the block (events no longer bleed over the gridlines). --}}
+                        {{-- The min-h floor keeps a block tall enough for title+time even
+                             for sub-30-minute events, which would otherwise clip under
+                             overflow-hidden. The vertical gutter is 5px on height with the
+                             floor at 2.1875rem (35px): the `% height` calc rounds UP about 1px
+                             at this scale, and this pair lands a 1-hour block with a bottom
+                             inset that matches the +2px top, while back-to-back events keep a
+                             gap instead of merging edge to edge. The horizontal gutter is
+                             2px/-4px (left/right fit). The clipped line is the time (no
+                             descenders), so overflow-hidden costs nothing visible. The event
+                             background ($eventClasses) is an OPAQUE color-mix over
+                             var(--color-wk-bg), so the hour gridlines do not show THROUGH
+                             the block. --}}
                         <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="b.event.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="'top:calc('+b.top+'% + 2px); height:calc('+b.height+'% - 5px); left:calc('+b.left+'% + 2px); width:calc('+b.width+'% - 4px)'" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span class="block font-[number:var(--font-wk-heading-weight)] leading-[var(--leading-wk-tight)] truncate" x-text="b.event.title"></span>
                             {{-- Secondary line: a smaller (2xs) tight time so the title
@@ -457,7 +450,7 @@
     <div x-show="view === 'agenda'" x-cloak role="group" aria-label="{{ __('wirekit::Agenda') }}" x-effect="measureAgendaOnChange()" class="relative overflow-hidden border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] divide-y divide-[var(--color-wk-border)]">
         {{-- No vertical spine: each day's events stack cleanly under their day
              heading, so a continuous rule between the time column and the titles
-             read as visual noise. The time column is still measured
+             read as visual noise. The time column's width still comes from its labels
              (_measureAgendaTime → --wk-agenda-time, via the x-effect above) so every
              row's time shares one width and the titles line up. --}}
         <template x-for="day in agendaDays" :key="day.date.toISOString()">

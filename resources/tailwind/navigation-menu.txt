@@ -164,7 +164,6 @@ Deliberately
 Derived
 Dev-only
 DomId's
-Drift
 Escape
 Floating
 Flyout
@@ -180,7 +179,6 @@ Livewire
 MORPH
 Menu
 Modal,
-NAMED
 NO
 NOT
 Navigation
@@ -194,7 +192,6 @@ Pairs
 Panel
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-SECOND
 SR
 SWAPS:
 Same
@@ -272,7 +269,6 @@ anchors
 and
 announced
 anticipate
-any
 are
 aria-controls
 aria-controls,
@@ -289,6 +285,7 @@ as
 as,
 at
 attribute
+attribute,
 attributes
 authors
 auto-derived
@@ -296,7 +293,7 @@ avoids
 axe-core's
 back
 back.
-bag.
+bag:
 bar
 bar's
 base
@@ -349,13 +346,13 @@ comes
 comment
 comments
 compares
+compile
 compiles
 component's
 container
 containing
 content
 copies
-correctly.
 could
 counter
 covers
@@ -380,7 +377,7 @@ descendants,
 dialog
 dialog.
 different
-discards
+discards,
 disclosure
 distinct
 div
@@ -390,9 +387,6 @@ document.
 documents.
 does
 does,
-down
-draft
-drift
 dropdown.blade.php
 dropdown/item.blade.php
 duration-150"
@@ -406,14 +400,13 @@ edge;
 edges
 either
 element
-emission
+emits.
 end
 escapes
 establishes
 event
 events
 every
-example
 exceed
 except('rel')
 existed
@@ -423,6 +416,7 @@ explicit-prop
 fails.
 fall
 fallback
+falls
 false);
 false,
 feature
@@ -505,7 +499,6 @@ item:
 items-center
 items.
 its
-itself.
 just
 keep
 keeps
@@ -516,7 +509,6 @@ keys
 kinds
 label
 later
-lines
 link
 link.
 links
@@ -529,21 +521,19 @@ location.
 longer
 made
 makes
-margin
 marker
 markup
 match
 matches
 may
 mean
-measured:
 mega-menu
 menu
 menu).
 menu.
 menu:
 menus
-merged
+merges
 mismatch
 mobile.
 model
@@ -561,6 +551,7 @@ n/a
 name
 name)
 name.
+named
 namespace
 narrow
 native
@@ -662,7 +653,6 @@ reader
 reads
 real
 receives
-reddened
 reduced-motion
 ref
 region
@@ -685,7 +675,6 @@ resolves
 returns
 reveal
 reveals
-reverse-diff
 rich
 right
 role-less
@@ -702,6 +691,7 @@ scope
 screen
 screens
 scroll-close
+second
 security
 see.
 separate
@@ -740,7 +730,6 @@ stroke="currentColor"
 stylesheet
 styling
 subtree
-suite
 summon
 tab)')
 takes
@@ -764,7 +753,6 @@ to
 token
 too,
 top-level
-trace
 transformed
 transition-transform
 translate-y-0"
@@ -778,7 +766,6 @@ trigger→panel
 trim($relAttr.'
 true
 truthy
-twelve
 twice
 two
 type="button"
@@ -791,12 +778,13 @@ used
 utility
 value
 value;
-vanished
+vanish
 view's
 viewBox="0
 viewport
 viewport.
 was
+way.
 well-formed
 what
 when

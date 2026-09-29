@@ -44,9 +44,9 @@
     //
     // A column header is `whitespace-nowrap` by default, and that is right for the usual
     // one-word head. It is wrong for a column whose NAME is long and whose CONTENT is not:
-    // reported from a permissions table where "Nutzungsbedingungen" and
-    // "Datenschutzerklaerung" held their columns at 144 and 142px over icons that need 16,
-    // and the table ran past its frame rather than the heads taking two lines.
+    // a permissions table with heads like "Nutzungsbedingungen" over icons that need 16px
+    // holds each column at the width of its word, and the table runs past its frame rather
+    // than the heads taking two lines.
     //
     // `wrap` breaks ANYWHERE, which is what a long compound over a narrow icon column needs.
     // `wrap="words"` breaks only between words and evens the lines up: over a column of numbers
@@ -56,8 +56,8 @@
     // Turn the label on its side, reading from bottom to top on one line.
     //
     // For a column whose NAME is long and whose values are a mark or a glyph, next to a column
-    // that takes the rest of the width: reported from a user list with one column per legal text,
-    // where six one-word heads took 570px over cells that need 20. `wrap` cannot help there, since
+    // that takes the rest of the width, such as a user list with one column per legal text.
+    // `wrap` cannot help there, since
     // the wide column claims everything the heads give up and they fall to one letter per line.
     // A turned head is as wide as one line of text in any language, and the row grows instead.
     //
@@ -77,7 +77,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false);
     $sideways = BooleanProp::from($sideways, false);
@@ -130,16 +130,15 @@
     $wrap = $wrapWords || BooleanProp::from($wrap, false);
 
     /*
-     * `whitespace-normal` is emitted EXPLICITLY rather than by leaving `nowrap` off, and that is
-     * the half the report asked for without naming it: two Tailwind utilities for one property are
-     * decided by their order in the generated stylesheet, not by the order in the attribute — so a
-     * developer's own `class="whitespace-normal"` does not reliably win, which is why the adopting
-     * application had to wrap its header text in a `<span>` instead.
+     * `whitespace-normal` is emitted explicitly rather than by leaving `nowrap` off: two Tailwind
+     * utilities for one property are decided by their order in the generated stylesheet, not by
+     * the order in the attribute, so a developer's own `class="whitespace-normal"` does not
+     * reliably win.
      *
      * `[overflow-wrap:anywhere]` comes with the wrap, the same pairing `button`'s `wrap-label`
-     * ships and for the same measured reason: `whitespace-normal` only permits a break at a space
-     * or a hyphen, and a long compound noun has neither. Without it the head stays exactly as wide
-     * as its longest word, which is the width the report measured.
+     * ships and for the same reason: `whitespace-normal` only permits a break at a space or a
+     * hyphen, and a long compound noun has neither. Without it the head stays exactly as wide
+     * as its longest word.
      *
      * Deliberately not the `hyphens` utility. It depends on a dictionary the browser may not
      * have — Chromium ships hyphenation as a downloadable component on Linux. A break rule that works everywhere beats a
@@ -156,27 +155,22 @@
             default => 'whitespace-nowrap',
         };
 
-    // Whenever a sort <button> renders, the padding MOVES onto it instead of sitting
-    // on the cell (see both buttons below). Measured at a coarse pointer, the button
-    // was 20px tall inside a 36px cell whose padding this mode deliberately leaves
-    // inert — under the 24px WCAG 2.5.8 (AA) minimum, with 16px of dead cell
-    // around the only clickable thing.
+    // Whenever a sort <button> renders, the padding moves onto it instead of sitting
+    // on the cell (see both buttons below). Left on the cell, it would leave the button
+    // a target only as tall as its text inside a taller cell whose padding does nothing,
+    // under the 24px WCAG 2.5.8 (AA) minimum.
     //
     // Padding on the button rather than duplicated onto it: growing the button with
     // `py` + a matching negative `my` reads like it should keep the row height, and
-    // it does NOT. An inline-flex child grows the line box, so the cell's own
-    // padding lands on top of the taller box — measured 52px where 36 was expected.
-    // Moving the padding keeps the cell exactly as tall as before AND keeps the whole
-    // cell clickable, which is what the Alpine-sort mode did before it had a button.
+    // it does not. An inline-flex child grows the line box, so the cell's own padding
+    // lands on top of the taller box. Moving the padding keeps the cell exactly as
+    // tall and keeps the whole cell clickable.
     //
     // The gate is "does a button render", not "which sort mode is this": both modes
-    // render one now (Alpine-sort binds `@click`, Livewire-sort binds `wire:click`), so
-    // the relocated padding always has something to land on. That is not a formality —
-    // while the Alpine branch still emitted a bare <span>, this gate read
-    // `$sortable && $sortAction !== null` and a header given BOTH props had its padding
-    // removed with nothing to receive it: the header collapsed from 35.5px to 19.5px,
-    // under the very 24px floor the relocation exists to reach, and the compact-density
-    // override went with it.
+    // render one (Alpine-sort binds `@click`, Livewire-sort binds `wire:click`), so
+    // the relocated padding always has something to land on. A gate on a narrower
+    // condition would strip the padding from a header that renders no button, and
+    // collapse it under the floor the relocation exists to reach.
     $padOnButton = $sortable && ($column !== null || $sortAction !== null);
     $cellPadding = $padOnButton
         ? ''

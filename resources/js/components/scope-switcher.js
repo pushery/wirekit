@@ -213,8 +213,8 @@ export default function wirekitScopeSwitcher(config = {}) {
 
                     // Damerau, and it is the whole reason this is not plain Levenshtein: a
                     // swapped pair of adjacent letters is the commonest typo there is, and
-                    // plain edit distance charges TWO for it. At a budget of one, `wroker`
-                    // and `exmaple` therefore matched nothing — measured, before this line.
+                    // plain edit distance charges two for it, so at a budget of one `wroker`
+                    // and `exmaple` would match nothing.
                     if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
                         d = Math.min(d, prevPrev[j - 2] + 1);
                     }

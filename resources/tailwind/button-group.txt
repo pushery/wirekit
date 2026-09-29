@@ -51,7 +51,6 @@ Declared
 Deliberately
 Dev-only
 Fully
-Measured
 NO
 Pushery\WireKit\WireKit;
 Renders
@@ -71,9 +70,7 @@ action
 alignment",
 and
 answers
-any
 aria-label="{{
-asserted:
 auditor
 auto-derived
 be
@@ -101,14 +98,12 @@ early.
 element,
 every
 expect
-file
 flags
 for
 from
 give
 group
 group.
-guard
 harvest
 here
 here.
@@ -145,11 +140,7 @@ prod).
 props
 qualified:
 question.
-rather
 reach
-reason
-refutes
-renders
 result
 role="group"
 roving
@@ -161,8 +152,6 @@ stays
 strings.
 tabindex:
 ternary)
-than
-that
 the
 there
 this

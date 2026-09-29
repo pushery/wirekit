@@ -4,9 +4,9 @@
  * A native scroll-snap carousel: the browser owns the scrolling, the snapping and
  * the momentum, and this component OBSERVES the result rather than driving it.
  *
- * Why observe rather than drive: the previous implementation translated the track
- * by `-current * 100%`, which meant one slide per view by construction and no
- * touch swipe beyond what the transform allowed. A snap track gets swipe,
+ * Why observe rather than drive: translating the track by `-current * 100%` means
+ * one slide per view by construction and no touch swipe beyond what the transform
+ * allows. A snap track gets swipe,
  * momentum and multi-per-view from the platform for free — but only if the
  * component treats scroll position as the source of truth instead of trying to
  * own it. Fighting the scroller (writing scrollLeft on every frame) is what makes

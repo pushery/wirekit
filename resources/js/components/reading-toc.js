@@ -43,9 +43,9 @@ export default (options = {}) => ({
     _scrollRaf: 0,
     _seq: 0,
     // True from a jump until the reader moves the page themselves. A jump says which section the
-    // reader wants, and it holds for as long as they have not said anything else. It used to hold
-    // for 600 ms, which a long smooth scroll outlasts on a busy machine, and which was the only
-    // reason the wrong active line went unnoticed on a fast one.
+    // reader wants, and it holds for as long as they have not said anything else. A fixed delay
+    // would not do: a long smooth scroll outlasts it on a busy machine, and the wrong line would
+    // light up on the way.
     _held: false,
 
     init() {
@@ -185,8 +185,8 @@ export default (options = {}) => ({
 
     /**
      * The viewport line a jump stands a heading on, and the line a heading has to reach to be the
-     * active one. One answer to both questions is the whole fix: they used to differ by the
-     * strip's height plus 24px, and by the distance from the window's top to the region's.
+     * active one. One answer serves both questions: two separate answers would differ by the
+     * strip's height and by the distance from the window's top to the region's.
      *
      * The strip covers `offset` plus its own height at the top of the region, unless it is pinned
      * to the bottom, where it covers nothing up here. The 24px keeps a heading from sitting fused
@@ -271,9 +271,9 @@ export default (options = {}) => ({
         const clicked = this.items.findIndex((it) => it.id === id);
         if (clicked !== -1) this.activeIndex = clicked;
 
-        // Both kinds of scroller mirror the hash. The region branch used to RETURN before this
-        // line, so on a page with its own scroll container the URL never followed the heading,
-        // and a reader who copied the address bar after a jump got a link to the top of the page.
+        // Both kinds of scroller mirror the hash: on a page with its own scroll container the URL
+        // follows the heading too, so a reader who copies the address bar after a jump gets a
+        // link to the section rather than to the top of the page.
         this._mirrorHash(id);
 
         // Focus goes where the reader asked to go. `preventDefault()` above suppressed the

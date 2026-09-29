@@ -11,9 +11,9 @@ namespace Pushery\WireKit\Support;
  * extension already carries the Unicode CLDR, so it names and sorts every country for free, and a
  * Composer package bundling the same data would be megabytes for nothing.
  *
- * That argument does not extend to phone numbers, and the difference is why this file exists.
- * Measured on 2026-09-18 against PHP 8.5.8 / ICU 77.1, with a control that passed: ICU's
- * `telephoneCodeData` bundle is not reachable through PHP, so `intl` knows no dialing code at all.
+ * That argument does not extend to phone numbers, and the difference is why this file exists:
+ * ICU's `telephoneCodeData` bundle is not reachable through PHP, so `intl` knows no dialing code
+ * at all.
  *
  * What it would take to know more than this table does — a national format per country, and a real
  * validity check — is metadata measured in megabytes, and it is the reason a phone field usually

@@ -331,8 +331,7 @@ class DoctorA11yCommand extends Command
             // design system; see docs/theming.md "Intentional trade-offs". It is
             // audited for INFORMATION ONLY ('advisory'): the ratio is printed, but
             // never counts toward PASS/WARN/FAIL totals and never affects the exit
-            // code. (border-strong used to live here too — that was the
-            // bug: the tool was blind to the one token it mattered most for.)
+            // code. border-strong is not decorative and is hard-checked above.
             ['name' => 'border on bg', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
         ];
 
@@ -345,12 +344,8 @@ class DoctorA11yCommand extends Command
         // over the pairings it knows and says nothing about the one on the page.
         //
         // Both nets have their hole in the same place. This one is not in the Blade rules
-        // either, because contrast is not one of them.
-        //
-        // Measured over this package's own views before building it: 23 distinct pairings
-        // are rendered and 19 of them are outside the canonical list — the most frequent
-        // being muted text on a muted background, fifteen times. So the gap had content
-        // rather than being a hypothetical.
+        // either, because contrast is not one of them. Most pairings a catalog renders are
+        // outside the canonical list, muted text on a muted background the most frequent.
         $derived = $this->derivedPairings($bladeFiles, $pairings);
         $pairings = array_merge($pairings, $derived);
 
@@ -511,10 +506,10 @@ class DoctorA11yCommand extends Command
 
         // A theme can express dark two ways, and both are legitimate: the `.dark` class the
         // kit's own toggler writes, and `@media (prefers-color-scheme: dark)` for a theme
-        // that follows the system with no toggle of its own. The second used to land in the
-        // LIGHT table, because a `:root` block is a `:root` block wherever it sits -- so a
-        // theme written that way had its light mode audited against its dark colors, which
-        // is the worse direction of the two: light is the mode people spot-check.
+        // that follows the system with no toggle of its own. A `:root` block is a `:root`
+        // block wherever it sits, so without this split a theme written the second way would
+        // have its light mode audited against its dark colors, the worse direction of the
+        // two: light is the mode people spot-check.
         //
         // The class wins where both declare the same token. It is the documented switch,
         // and it is what is actually on the element when the toggler has run.
@@ -905,12 +900,10 @@ class DoctorA11yCommand extends Command
             // refusing to read it then reports "found no Blade templates" over a tree full
             // of them.
             //
-            // It was worse than a refusal, because it depended on how the path was SPELLED.
-            // The test is `/vendor/` with both separators, so a RELATIVE
-            // `vendor/foo/resources/views` slipped through while the same directory written
-            // absolutely did not. Measured on one tree: `4 Blade files, clean` one way and
-            // `Found no Blade templates` with a non-zero exit the other — the same
-            // question, two answers, and the failing one is the spelling a script produces.
+            // And the filter depends on how the path is spelled: the test is `/vendor/` with
+            // both separators, so a relative `vendor/foo/resources/views` would slip through
+            // while the same directory written absolutely would not, giving the same question
+            // two answers.
             if (
                 ! $named && (
                     str_contains($path, '/vendor/') ||

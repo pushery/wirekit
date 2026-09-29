@@ -151,7 +151,6 @@ Lighthouse.
 Live
 N".
 NAME
-No
 Nothing
 ONLY
 Object.assign(floating.style,
@@ -271,7 +270,7 @@ block,
 blocks
 body
 both
-branches
+branches,
 break
 built
 but
@@ -284,7 +283,7 @@ caller
 caller's
 can
 cannot
-carried
+carry
 check
 check:
 chosen
@@ -315,7 +314,6 @@ data-wk-tour-step="{{
 debug
 dedupes
 default
-defect.
 depends
 derive.
 destination,
@@ -338,14 +336,12 @@ duration-200"
 each
 ease-out
 element
-element,
 element.
 else,
 emitted
 empty
 empty,
 enclosing
-error,
 escapes
 evaluates
 evaluation.
@@ -357,6 +353,7 @@ fallback
 filled($callerAriaLabel);
 final
 first
+first,
 first-allowed
 fixed
 flags
@@ -391,7 +388,6 @@ heading,
 heading.
 here
 here:
-hit.
 hover:bg-[var(--color-wk-accent-hover)]
 hover:bg-[var(--color-wk-bg-subtle)]
 hover:text-[color:var(--color-wk-text)]
@@ -442,15 +438,15 @@ let
 level
 line
 links
-lint
 list
 literal
 live
 lives
 look
 looks
+lose
 loser
-lost
+make
 markup
 match
 matters
@@ -469,6 +465,7 @@ n/a
 name
 name.
 name:
+named
 names
 naming
 navigation
@@ -665,7 +662,6 @@ unknown
 until
 up,
 use
-used
 useful
 uses,
 using
@@ -680,8 +676,6 @@ view.
 viewport.
 visible
 wants
-warning,
-was
 well,
 well-formed
 what

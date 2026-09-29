@@ -123,8 +123,7 @@ export default function wirekitMap(config = {}) {
         available: false,
         // Currently-selected marker id (set by a list click OR a map-pin click).
         // The Blade list highlights the matching row, so clicking a pin and clicking
-        // a list row stay in sync — closing the gap where a pin click previously
-        // left the sidebar unchanged.
+        // a list row stay in sync.
         selectedId: null,
         _map: null,
         // ResizeObserver that keeps the GL canvas matched to its container (held so
@@ -404,8 +403,8 @@ export default function wirekitMap(config = {}) {
             // A ResizeObserver re-measures on EVERY container size change
             // (responsive reflow, font load, sidebar wrap, container queries) and
             // calls the library's own resize — the canonical pattern for a
-            // dynamically-sized map mount. The rAF is a belt-and-braces first
-            // attempt right after mount; the load handler covers a style that
+            // dynamically-sized map mount. The rAF is a belt-and-braces resize
+            // right after mount; the load handler covers a style that
             // finishes after the last resize. All three are idempotent.
             //
             // NOTE — this is NOT the fix for the "canvas stuck at 300px, paints
@@ -432,7 +431,7 @@ export default function wirekitMap(config = {}) {
             }
             // Resize once more after the style/first render is ready, so the GL
             // viewport matches the (by-then-settled) container even if every earlier
-            // resize measured a transient height.
+            // resize read a transient height.
             if (which === 'maplibre' && this._map && typeof this._map.on === 'function') {
                 this._map.on('load', resize);
             } else if (which === 'leaflet' && this._map && typeof this._map.whenReady === 'function') {
@@ -531,7 +530,7 @@ export default function wirekitMap(config = {}) {
         },
 
         // Create one rendered pin and register it by id. Intent color, click-to-select
-        // (previously missing), and a label tooltip are wired here for BOTH providers.
+        // and a label tooltip are wired here for BOTH providers.
         _addMarker(m) {
             if (!this._map || !m || m.id === undefined) return;
             const color = this._intentColor(m.intent);
@@ -721,12 +720,10 @@ export default function wirekitMap(config = {}) {
             if (window.__wirekit_map_missing_warned__) return;
             window.__wirekit_map_missing_warned__ = true;
              
-            // The message names BOTH ways in, because the one it used to name alone — a global —
-            // is exactly what MapLibre GL 6 no longer sets on its own. It also says which bundle each
-            // way belongs to: registerMapEngine() is exported by the ESM build only, and the classic
-            // bundle `@wirekitScripts` loads carried that name in this sentence and nowhere else, so
-            // a page without a bundler was first told to do something it cannot do. Assigning the
-            // global works from every bundle, so it comes first.
+            // The message names both ways in, because MapLibre GL 6 no longer sets the global on
+            // its own. It also says which bundle each way belongs to: registerMapEngine() is
+            // exported by the ESM build only, so a page without a bundler has to assign the global.
+            // Assigning the global works from every bundle, so it comes first.
             console.error(
                 '[wirekit::map] No supported map library found: none is on window (window.maplibregl, '
                 + 'window.L), and none was registered with registerMapEngine() from wirekit.esm.js. '

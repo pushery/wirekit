@@ -219,9 +219,9 @@
              Without it the control failed in the direction that reads as success: the
              chips confirmed the choice while the server never heard about it. --}}
         x-modelable="tags"
-        {{-- The whole bag, not just `class`: everything else the caller wrote --
-             `wire:model`, `data-*` -- used to be dropped here. `aria-describedby` is the
-             exception: it describes the text input, so it joins that input's list. --}}
+        {{-- The whole bag, not just `class`, so everything else the caller wrote --
+             `wire:model`, `data-*` -- arrives here. `aria-describedby` is the exception:
+             it describes the text input, so it joins that input's list. --}}
         {{ $attributes->except('aria-describedby') }}
     >
         {{-- The set's own live region, OUTSIDE the optimistic wrapper below.
@@ -237,12 +237,12 @@
         <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="tagAnnouncement"></div>
 
 @if($optimisticConfig)
-        {{-- INSIDE the component that owns the set, not around it: a nested
+        {{-- Inside the component that owns the set, not around it: a nested
              Alpine component reads and writes its parent's properties through
              `this` and never the reverse, so `bind: 'tags'` only resolves this
-             way round. Wrapped the other way it binds to nothing — measured, and
-             it fails as `tags` being undefined rather than as anything that
-             names the cause.
+             way round. Wrapped the other way it would bind to nothing, and fail
+             as `tags` being undefined rather than as anything that names the
+             cause.
 
              `display: contents` so the chip row keeps its own layout. --}}
         <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">

@@ -61,7 +61,7 @@ class PublishFontsCommand extends Command
 
         if ($targets === []) {
             /*
-             * TWO different states reach this branch, and it used to absorb both.
+             * TWO different states reach this branch, and it must not absorb both.
              *
              * Nothing configured is a legitimate setup — an application may be serving its own
              * faces — and the comment below rightly justifies exit 0 for it. A key that NAMES a
@@ -70,9 +70,9 @@ class PublishFontsCommand extends Command
              * answer. This file's own docblock describes that outcome — the files are missing
              * and the page silently falls back to system fonts.
              *
-             * Merged, the run printed "config fonts.sans names 'x', which is not a bundled
+             * Merged, the run would print "config fonts.sans names 'x', which is not a bundled
              * family" and then "No font families are configured." — two statements that
-             * contradict each other — and exited 0. A developer who reads the second goes
+             * contradict each other — and exit 0. A developer who reads the second goes
              * looking at an empty config that is not empty. And the reference page recommends
              * hanging this command off `composer post-autoload-dump`, where nobody reads either
              * line; there, the exit code is the whole message.

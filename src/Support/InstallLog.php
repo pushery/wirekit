@@ -9,9 +9,8 @@ namespace Pushery\WireKit\Support;
  *
  * It is append-only within a window, and the window is the point. A session records the
  * PRIOR CONTENT of every file the install touched — which on a reinstall means the published
- * asset bundles, roughly ten megabytes, written into the developer's project root. Nothing
- * shortened it and nothing warned, because an append is not an error. Measured in this
- * package's own test skeleton before the cap: 33 sessions, 321 MB, a single line of 9.7 MB.
+ * asset bundles, roughly ten megabytes, written into the developer's project root. Without a
+ * cap nothing would shorten it and nothing would warn, because an append is not an error.
  *
  * The reader is where that becomes expensive rather than merely untidy. `--rollback` replays
  * the LAST line, and `lastSessionLine()` below reads it without loading the file: loading a
@@ -59,15 +58,10 @@ final class InstallLog
     /**
      * The newest session line, read WITHOUT loading the log.
      *
-     * `--rollback` used to do `explode("\n", file_get_contents($path))` and then take
-     * `end()` of it — reading the whole file, doubling it in an array, and using one line.
-     * Measured against a log holding its five retained sessions of this package's own
-     * publishable tree, binaries base64'd: the log peaked at about twice its own size in
-     * memory and died outright at `memory_limit=64M`. The command that undoes a bad install was the one that ran out
-     * of memory — a safety net failing exactly when it is reached for.
-     *
-     * This file's own docblock already described that defect. The WRITE path was fixed with
-     * a bounded ring; the reader it was written about was not, which is what this closes.
+     * Reading the whole file to use its last line would hold the log about twice over in
+     * memory, and a log of five retained sessions of published binaries is large enough for
+     * that to exhaust a modest `memory_limit`: the command that undoes a bad install would be
+     * the one to run out of memory, a safety net failing exactly when it is reached for.
      * The same streaming shape as `trim()` below peaks at 30.9 MB on that file and clears
      * a 64M limit.
      *

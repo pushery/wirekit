@@ -1,16 +1,14 @@
 /**
  * The SECOND half of the CSP restriction: which names an expression may READ.
  *
- * `wirekit:csp-audit` used to answer only the first half — does this parse under
- * Alpine's CSP grammar. Both halves are needed, and the gap between them is not
- * academic: `Illuminate\Support\Js::from()` emits `JSON.parse('…')`, which is a
+ * The first half is whether an expression parses under Alpine's CSP grammar. Both
+ * halves are needed, and the gap between them is not academic: `Illuminate\Support\Js::from()` emits `JSON.parse('…')`, which is a
  * member call and therefore perfectly good grammar. It parses, the audit says
  * PASS, and the expression throws in the browser.
  *
  * This module ships (`resources/` is not export-ignored) because the audit a
- * developer runs is the one that has to know. It was previously reachable only
- * from `scripts/`, which is export-ignored — so the knowledge existed and never
- * left this repository.
+ * developer runs is the one that has to know; a list kept under `scripts/`,
+ * which is export-ignored, would never reach an installation.
  */
 
 /**
@@ -31,10 +29,8 @@
  * The consequence is worse than one dead binding: an `x-data` that names a
  * global throws while BUILDING the component, so the element ends up with an
  * empty scope and every directive on it does nothing. The only report is the
- * `Alpine Expression Error` the build writes to the browser console. Measured in
- * a real browser under `script-src 'self'`: an event-calendar handed one event
- * rendered "No events in this range", and `Alpine.$data(el)` returned an object
- * with zero keys.
+ * `Alpine Expression Error` the build writes to the browser console: an
+ * event-calendar handed one event would render "No events in this range".
  *
  * The list is written out rather than read from this process's `globalThis`,
  * because node's globals and a browser's differ in both directions — deriving

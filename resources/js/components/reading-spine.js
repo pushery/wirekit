@@ -62,7 +62,7 @@ export default (options = {}) => ({
     forceExpanded: options.forceExpanded === true,
     forceExpandedMd: options.forceExpandedMd === true,
 
-    /** The minimum heading level in the spine — the indent is measured from it. */
+    /** The minimum heading level in the spine — the indent counts from it. */
     baseLevel: typeof options.baseLevel === 'number' ? options.baseLevel : 2,
 
     items: [],
@@ -84,8 +84,8 @@ export default (options = {}) => ({
     _lastDispatchedIndex: -1,
     _seq: 0,
     // True from a jump until the reader moves the page themselves, so the scroll a jump starts
-    // cannot walk the mark through every section on the way. It used to be a 600 ms timer, which
-    // a long smooth scroll outlasts on a busy machine.
+    // cannot walk the mark through every section on the way. A timer would not do: a long smooth
+    // scroll outlasts any fixed delay on a busy machine.
     _held: false,
 
     /**
@@ -129,7 +129,7 @@ export default (options = {}) => ({
      * Whether the spine starts expanded.
      *
      * A method rather than three lines inside init() so the decision can be
-     * measured on its own: init() goes on to collect headings and attach
+     * tested on its own: init() goes on to collect headings and attach
      * observers, so a test of the expansion rule would otherwise need a whole
      * document to ask a question about two booleans.
      *
@@ -156,8 +156,8 @@ export default (options = {}) => ({
         this.assignIds(this.items);
         if (this.numbered) this.computeNumbering(this.items);
         // One scroll listener drives both the active section and the per-section fill (see
-        // observeActive()). There used to be two, and the fill's sat on the WINDOW, so in a page
-        // that scrolls inside its own region the fill never moved.
+        // observeActive()), on the element that actually scrolls: a listener on the window would
+        // never move the fill in a page that scrolls inside its own region.
         this.observeActive();
     },
 
@@ -194,10 +194,8 @@ export default (options = {}) => ({
         const found = Array.from(container.querySelectorAll(sel));
 
         // A page can hold headings that are not its own structure — a demo embedded in the
-        // prose brings an accordion's panel titles, a carousel's product names. Measured on
-        // the documentation site: one page listed 41 entries of which 23 came from demos,
-        // and 36 pages carried 183 such entries between them. `target` cannot help, because
-        // the demos sit INSIDE the article that holds the real sections.
+        // prose brings an accordion's panel titles, a carousel's product names. `target`
+        // cannot help, because the demos sit inside the article that holds the real sections.
         //
         // `closest` rather than a descendant test, so naming the wrapper is enough and the
         // caller does not have to enumerate what is inside it.
@@ -353,9 +351,9 @@ export default (options = {}) => ({
      * that section (top of next heading − top of this heading). Stores 0..1 on each item; CSS reads
      * via a style="--reading-spine-fill: NN%" inline binding.
      *
-     * Measured in the scroller's own content space (its top, its scroll position, its height)
+     * Computed in the scroller's own content space (its top, its scroll position, its height)
      * because the window's are the wrong ones in a page that scrolls inside its own region: the
-     * window never moves there, so the fill never did either.
+     * window never moves there, so a fill read from it would never move either.
      */
     updateSectionFills() {
         if (!this.fillSections || this.items.length === 0) return;

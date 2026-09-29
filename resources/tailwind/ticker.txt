@@ -142,9 +142,7 @@ Format
 Fully
 German
 Given
-It
 Label
-Measured
 NOT
 Names
 Negative
@@ -180,17 +178,15 @@ __('wirekit::Change:
 `<svg>`,
 `<x-wirekit-chart
 `<x-wirekit::ticker
-`Blade::render`
 `aria-label`
 `aria-labelledby`
 `generic`
 `hasActualContent()`,
 `isNotEmpty()`
-`isNotEmpty()`,
+`isNotEmpty()`:
 `md5($label)`
 `role="img"
 `role="img"`
-`shell-bar`
 `trendLabel`
 `trend`
 `trend`.
@@ -220,7 +216,6 @@ aria-labelledby="{{
 as
 asking,
 assembled
-asserted:
 assistive
 at
 at:
@@ -235,22 +230,17 @@ because
 becomes
 before
 below
-belt-and-braces
 bg
-bit
-bite
-blank
 block
 block,
 both
 box
 built
+but
 by
 calibrated
-call.
 called
 caller
-campaign.
 cannot
 canvas,
 cards
@@ -308,9 +298,7 @@ expands
 explicitly
 fail
 falls
-file
 first
-fix:
 fixed
 flags
 flex-col
@@ -333,7 +321,6 @@ guard
 happening.
 has
 heading
-here
 holding
 hours">`
 id
@@ -394,7 +381,6 @@ match
 matches
 may
 means.
-measured
 mode.
 mostly
 must
@@ -402,7 +388,6 @@ n/a
 name
 name,
 named
-named-slot-only
 names
 need
 never
@@ -430,7 +415,6 @@ order
 original
 own
 page
-path,
 per
 percent".
 point
@@ -450,8 +434,6 @@ reader
 reader's
 readers
 readers.
-reason
-refutes
 render
 renders
 reported
@@ -478,7 +460,6 @@ shown
 sign
 sign,
 signed-string
-simply
 size
 skip
 slot
@@ -503,7 +484,6 @@ tabular-nums"
 tabular-nums">
 technology
 template
-test-helper
 text
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
@@ -524,7 +504,7 @@ to
 tokens
 translated
 trend="up"
-trim,
+trim.
 trimming
 trims
 true.

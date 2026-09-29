@@ -23,7 +23,7 @@ import wirekitImageCompare from './components/image-compare.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
-import { reportLateRegistration } from './utils/late-registration.js';
+import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
 // Image compare has no Floating UI / focus-trap deps so it ships in the
@@ -85,6 +85,6 @@ document.addEventListener('alpine:init', () => {
 // about that is what left developers reading "<name> is not defined" for a property
 // they never wrote.
 if (window.Alpine?.version) {
-    registerCoreComponents();
-    reportLateRegistration('wirekit.core.js', () => reachedByInitEvent);
+    const names = registeredNames(window.Alpine, registerCoreComponents);
+    reportLateRegistration('wirekit.core.js', () => reachedByInitEvent, names);
 }

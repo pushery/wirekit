@@ -46,14 +46,13 @@
     // and the x-data scope while the panel still in the document carries the id
     // from the render before it. The two halves stop pointing at each other, and
     // nothing in the markup looks wrong: both sides are well-formed, they simply
-    // name different things. `progress` had the identical defect for the identical
-    // reason and its comment says so — inside a wire:poll region every poll minted
-    // a new id.
+    // name different things. `progress` derives its id the same way, for the same
+    // reason: inside a wire:poll region every poll would mint a new id.
     //
-    // NOT uniqid(): microsecond resolution, so two dropdowns rendered in the same
-    // microsecond shared one id. Measured on the split-button preview — two roots,
-    // one DOM id, and a single click left BOTH panels open. `DomId::unique` keeps
-    // that property while deriving from the caller's `name` when there is one.
+    // Not uniqid(): microsecond resolution, so two dropdowns rendered in the same
+    // microsecond, like the two halves of a split button, would share one id, and
+    // a single click would open both panels. `DomId::unique` keeps the stability
+    // while deriving from the caller's `name` when there is one.
     $panelId = \Pushery\WireKit\Support\DomId::unique(
         $name ? $name.'-panel' : null,
         'wk-dropdown-panel-'
@@ -97,9 +96,9 @@
 <div
     {{-- panelId travels through the Alpine SCOPE, not the DOM. The panel is
          teleported out of the document flow to escape a host stacking context, and Alpine keeps
-         the scope across that move while `closest()` does not — the panel used to
-         read this id off `data-wk-panel-id` with an ancestor walk, which returns
-         null the moment the element leaves the component. --}}
+         the scope across that move while `closest()` does not — reading this id off
+         `data-wk-panel-id` with an ancestor walk would return null the moment the
+         element leaves the component. --}}
     x-data="wirekitDropdown({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }}, panelId: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} })"
     x-on:keydown="handleKeydown"
     x-on:keydown.escape.window="isOpen && close()"
@@ -119,18 +118,12 @@
              default slot in the canonical sub-component shells so the
              developer doesn't repeat the trigger/panel composition.
 
-             MIXING THE TWO FORMS used to wrap a panel around a panel, silently.
-             A call site naming BOTH `<x-slot:trigger>` and an explicit
-             `<x-wirekit::dropdown.panel>` got two nested shells, two teleports
-             and — because the id travels through the Alpine scope — the SAME id
-             on both. The only signal was a duplicate-id accessibility violation
-             two layers from the cause, which is what made it expensive: three
-             hypotheses were tested and killed here before the documentation site
-             read the served HTML and found two templates already in it.
-
-             So the wrap is now conditional, and the mistake says so out loud in
-             development. Silence was the defect; the second shell was only how
-             it showed. --}}
+             The wrap is conditional. A call site naming BOTH `<x-slot:trigger>`
+             and an explicit `<x-wirekit::dropdown.panel>` would otherwise get two
+             nested shells, two teleports and — because the id travels through
+             the Alpine scope — the SAME id on both, and the only signal would be
+             a duplicate-id accessibility violation two layers from the cause. So
+             the mistake says so out loud in development. --}}
         @php
             // The rendered slot, once, because touching a ComponentSlot twice
             // re-renders it. `data-wk-dropdown-panel` is the panel's own marker.

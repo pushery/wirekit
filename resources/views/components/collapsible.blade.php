@@ -22,7 +22,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('collapsible', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, false);
     $findable = BooleanProp::from($findable, true);
@@ -31,8 +31,7 @@
     // <x-wirekit::accordion> there is no card chrome and no group coordination — it is
     // the bare WAI-ARIA Disclosure pattern (button[aria-expanded] controls a region).
     // For smooth height animation we lean on Alpine's x-collapse plugin, which every
-    // full-catalog WireKit bundle registers. It says so because the sentence used to
-    // be a guess: nothing imported the plugin, and the claim is why nobody checked.
+    // full-catalog WireKit bundle registers.
     // A per-render random id makes Livewire's morph treat the content region as a NEW
     // node on every round trip: it keys by `el.id`, finds no match, and replaces the live
     // node with a clone of the server-rendered one. Three things follow from that single
@@ -42,16 +41,16 @@
     // literal `x-cloak` (Alpine strips it only after init), so an OPEN panel flashes
     // hidden for a few frames.
     //
-    // A caller-supplied id already solved it. The default is now seeded from the trigger
-    // label, which is the only stable identity a collapsible has — and the one thing
-    // about it that does not change between renders.
+    // A caller-supplied id avoids it, and the default is seeded from the trigger label,
+    // the only stable identity a collapsible has and the one thing about it that does not
+    // change between renders.
     // Stable across renders, and unique on the page — two properties one hash cannot give.
     //
     // `stableId()` derives the id from the TRIGGER TEXT, which is what makes it survive a
     // Livewire morph. It also makes two disclosures with the same trigger — "Details" twice
-    // on one page, which is the ordinary case in a list — share an id, so the second
-    // trigger's `aria-controls` resolved to the FIRST one's panel: expanding one announced
-    // that the other had opened.
+    // on one page, which is the ordinary case in a list — share an id, so without the
+    // deduper the second trigger's `aria-controls` would resolve to the FIRST one's panel,
+    // and expanding one would announce that the other had opened.
     //
     // The deduper takes the stable value as its base and appends `-2` to a repeat, so the
     // first keeps the readable id and the second stops pointing at it.

@@ -38,7 +38,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('image-compare', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $labels = BooleanProp::from($labels, true);
     $decorative = BooleanProp::from($decorative, false);
@@ -130,7 +130,7 @@
 
     // Built here rather than written as a second style= on the <figure>. Two style
     // attributes on one element means the browser keeps the first and drops the
-    // rest, so a caller styling this figure used to take the aspect ratio with it.
+    // rest, so a caller styling this figure would take the aspect ratio with it.
     $figureStyle = 'touch-action: none;'.($ratio ? ' aspect-ratio: '.$ratio.';' : '');
 @endphp
 
@@ -187,17 +187,9 @@
         label-anchor positions on the BEFORE side: `before-label` sits at
         bottom-LEFT (horizontal) / top-LEFT (vertical) — directly over
         the BEFORE image — and `after-label` sits at top-RIGHT (horizontal)
-        / bottom-RIGHT (vertical) — directly over the AFTER image.
-
-        The previous implementation clipped from the RIGHT edge (and from
-        the BOTTOM in vertical mode), which inverted the visible halves
-        relative to the label anchors: at value=50 the LEFT half showed
-        AFTER and the RIGHT half showed BEFORE, but `before-label` was
-        still anchored at bottom-LEFT. Result: every image-compare with
-        the default labels rendered "Before" floating over the AFTER image
-        and "After" floating over the BEFORE image. Reported on
-        /components/image-compare#wide-aspect-ratio where the wide 21:9
-        crop made the misalignment unmissable.
+        / bottom-RIGHT (vertical) — directly over the AFTER image. Clipping
+        from the other edge would swap the visible halves relative to the
+        label anchors, and each label would float over the wrong image.
     --}}
     <img data-wk-prose-skip
         src="{{ $after }}"
@@ -259,7 +251,7 @@
         @pointerdown.stop="startDrag($event)"
         {{-- Left decreases and Right increases on BOTH axes, which is what the APG slider
              pattern asks for and what a swallowed key cannot deliver: `.prevent` fires
-             whatever the guard decides, so a vertical slider used to suppress the browser
+             whatever the guard decides, so a vertical slider would suppress the browser
              default and then do nothing. The up/down inversion below is a different matter
              and stays — that one has a written reason under the docs table. --}}
         @keydown.left.prevent="stepBy(-1)"

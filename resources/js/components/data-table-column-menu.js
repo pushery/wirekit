@@ -19,11 +19,10 @@ import { withOpenAlias } from '../utils/open-alias.js';
  * — so there is a handle to release, and it is released on close, before every
  * reopen and on destroy.
  *
- * WHY. Everything the positioner writes is inline style, and a framework update
+ * Why: everything the positioner writes is inline style, and a framework update
  * patches this panel against its own template, whose `style` attribute carries
  * none of it. The whole attribute is replaced, the placement is gone, and `open`
- * never changed — so nothing asks for a new one. Measured here, menu open, one
- * refresh: `top` went from `158.5px` to empty and stayed empty.
+ * never changed — so nothing asks for a new one.
  *
  * `autoReposition` does not cover this case, though it looks like it should. It
  * recomputes on a size change, and this erasure does not resize the panel: the

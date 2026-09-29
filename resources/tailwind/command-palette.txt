@@ -46,6 +46,7 @@ $listClasses
 $listId
 $loading
 $lockScroll
+$name
 $opensNewTab
 $panelClasses
 $placeholder
@@ -109,7 +110,6 @@ $wkCmdSlug(trim(strip_tags((string)
 'gap-[var(--gap-wk-xs)]',
 'heading'
 'heading',
-'hidden'`
 'hotkey'
 'hover:bg-[var(--color-wk-bg-subtle)]',
 'href'
@@ -117,6 +117,7 @@ $wkCmdSlug(trim(strip_tags((string)
 'id'
 'inline-flex
 'input',
+'label'
 'leading-none',
 'lg'
 'lg']))
@@ -126,6 +127,7 @@ $wkCmdSlug(trim(strip_tags((string)
 'max-w-[var(--size-wk-modal-md)]',
 'md'
 'md',
+'name'
 'noopener')
 'opacity-[var(--opacity-wk-disabled)]
 'overflow-hidden',
@@ -186,6 +188,7 @@ $wkCmdSlug(trim(strip_tags((string)
 (see
 (silent
 (string
+(string)
 (the
 (wrapper
 (wrapping
@@ -201,8 +204,6 @@ $wkCmdSlug(trim(strip_tags((string)
 1080p
 17.2:1
 19.8:1
-2
-24-unit
 288px
 4.1.2,
 :
@@ -260,6 +261,7 @@ A
 ABOVE
 ARIA
 Absent
+Addresses
 Admin,
 Auto-inject
 Backdrop
@@ -289,10 +291,7 @@ FULL
 Files
 Filter
 Fully
-Heroicon
-Heroicons'
 IS
-IconResolver,
 In
 It
 Its
@@ -301,17 +300,13 @@ Light
 Livewire
 Livewire's
 Livewire,
-Lucide
 MARKER
 Making
-Measured
-Measured:
 Merged
 NOT
 Neither
 Normalized
 ONE
-OUTLINE
 On
 Only
 Optional
@@ -320,7 +315,6 @@ PHP
 Page-unique,
 Palette
 Pass
-Phosphor
 Projects
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -337,7 +331,6 @@ Search
 See
 Set
 So
-Someone
 Stable
 Tab
 Tailwind
@@ -360,6 +353,7 @@ Wrapped
 [
 ['class'
 ['sm',
+\Pushery\WireKit\Support\AlpinePayload::from(filled($name)
 \Pushery\WireKit\Support\AlpinePayload::string($hotkey)
 \Pushery\WireKit\Support\DomId::unique($wkCmdDerivedId,
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -374,6 +368,7 @@ __('wirekit::(opens
 __('wirekit::Command
 __('wirekit::Search
 `$teleport
+`-close`
 `.focus()`
 `<template
 `<x-wirekit::command-palette
@@ -390,7 +385,6 @@ __('wirekit::Search
 `contain:
 `data-active`,
 `dismissible`
-`document.body.style.overflow
 `document.getElementById`
 `empty`
 `error`
@@ -400,6 +394,7 @@ __('wirekit::Search
 `id=`.
 `id`,
 `loading`
+`name`
 `prop="false"`
 `public-css-api.md`
 `resolveClasses('kbd',
@@ -410,6 +405,7 @@ __('wirekit::Search
 `tabindex="-1"`
 `transform`
 `transform`,
+`wirekit-command-palette-show`,
 `wirekit:command-palette-state`
 `wk-command-list`
 `wk-command-list`,
@@ -448,7 +444,6 @@ answer,
 answering:
 answers
 anticipate
-any
 anything
 appearance
 appearing
@@ -473,7 +468,6 @@ arrowing
 arrows.
 as
 as,
-asserted:
 at
 attribute
 auto-derived
@@ -491,7 +485,6 @@ bare
 be
 because
 before
-behavior.
 behind
 being
 beneath
@@ -506,13 +499,11 @@ border-[var(--color-wk-border)]',
 border-b
 both
 both,
-box
 broke
 browser
 build
 but
 by
-bypassed
 call
 caller
 caller-supplied
@@ -586,6 +577,7 @@ controls
 copy
 correct
 could
+counted
 counter
 counts
 covers
@@ -596,14 +588,16 @@ decides
 declares
 default
 default).
+default.
 deliberately
 derivation
 derive
 derives
 descendant,
+detail
 developer
 developer's
-did
+dialog's
 different
 disappears
 dispatches
@@ -616,6 +610,7 @@ documented
 does
 doors
 double-binding
+drawer
 drift
 drive
 dropdown/item.blade.php
@@ -636,7 +631,6 @@ embedded
 embedding
 emitQuery()
 empty
-entirely.
 entry.
 escape
 escapes
@@ -661,7 +655,7 @@ false`
 family.
 feature
 file
-file's
+filled($label)
 filter
 filters.
 fine
@@ -678,6 +672,7 @@ flex
 flex-wrap
 flips
 flow
+follows
 footer
 for
 from
@@ -687,7 +682,6 @@ gap-1
 gap-[var(--gap-wk-sm)]">
 gap-x-[var(--gap-wk-sm)]
 global
-got
 greps
 group
 grouped
@@ -700,7 +694,7 @@ half
 half.
 half;
 halves
-hand-drawn.
+hand-drawn,
 hand-rolled
 handleKeydown),
 handlers
@@ -709,11 +703,11 @@ happened
 happens.
 has
 have
+have.
 heading
 hear
 height
 here
-here,
 highlight
 highlighted
 hint
@@ -726,12 +720,12 @@ hotkey:
 href
 href="{{
 hurts.
+iOS
 icon
 icon,
 id
 id="{{
 if
-ignored
 implicit
 implode('
 imports
@@ -802,13 +796,13 @@ literal
 literal,
 live
 local
+lock
 lockScroll:
 locking
 lone
 longer
 looked
 looks
-magnifier
 make
 makes
 managed
@@ -841,6 +835,8 @@ moving
 must
 n/a
 name
+name,
+name.
 name:
 named.
 namely
@@ -850,6 +846,7 @@ narrows.
 natural
 navigation.
 nearly
+need
 needs
 neither
 never
@@ -887,6 +884,7 @@ onto
 open
 open,
 opening
+opens.
 operates
 opposite
 optimistic-ui:
@@ -904,6 +902,7 @@ order
 order:
 other
 other.
+otherwise
 otherwise,
 out
 outside
@@ -916,8 +915,9 @@ own
 owns
 owns,
 p-[var(--padding-wk-y-sm)]
-package
+package.
 page
+page,
 page-unique
 paint
 palette
@@ -925,6 +925,7 @@ palette')
 palette's
 palette,
 palette.
+palette:
 palettes
 panel
 panel)
@@ -996,7 +997,6 @@ reads
 reason
 rebuilt
 records:
-refutes
 region
 region),
 registry
@@ -1055,7 +1055,7 @@ scoped
 scoping
 screen
 scroll
-scrolled
+scrolled,
 scrolling.
 seam
 seam:
@@ -1069,8 +1069,9 @@ selector
 server
 server-side
 set
-sets
 shape
+share
+share,
 shared
 shortcut
 should
@@ -1103,7 +1104,6 @@ source
 spotlight-style
 stable
 stacking
-standard
 standing
 state
 state,
@@ -1117,7 +1117,6 @@ str_contains($relAttr,
 str_contains($targetAttr,
 string
 string,
-stroke-width
 strtolower(preg_replace('/[^A-Za-z0-9]+/',
 stylesheet
 styling
@@ -1166,10 +1165,12 @@ time.
 to
 together
 told
+too.
 top
 touched.
 tracking-wider',
 traded
+translated
 treating
 trim($relAttr.'
 trim($slug,
@@ -1197,7 +1198,6 @@ until
 untouched
 up
 use
-used
 useful
 user
 uses
@@ -1217,6 +1217,7 @@ w-5
 w-full',
 wants
 was
+way,
 well:
 were
 what

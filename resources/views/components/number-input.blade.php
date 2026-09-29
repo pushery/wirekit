@@ -201,10 +201,10 @@
     //
     // The stepper keeps its own value, seeded from `value` and otherwise from `min`. With a
     // `wire:model` (or an Alpine `x-model`) on the field, that value and the bound one are two
-    // models of one input, and they disagreed from the first render on: the field showed the
-    // minimum while the component held the bound value, so an untouched submit applied a number
-    // nobody saw. An application measured it on an account lock that read "1" day and locked
-    // for 7. The bound model therefore owns the field, and the stepper's value only mirrors it.
+    // models of one input, and they could disagree from the first render on: the field showing
+    // the minimum while the component holds the bound value, so that an untouched submit applies
+    // a number nobody saw. The bound model therefore owns the field, and the stepper's value
+    // only mirrors it.
     //
     // The model stays on the input rather than moving to the wrapper: Livewire debounces
     // `.live` only on a real input, and a `.blur` bound to a wrapper never fires.

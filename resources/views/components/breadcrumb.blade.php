@@ -54,8 +54,7 @@
     $linkClasses = WireKit::resolveClasses('breadcrumb', 'link', implode(' ', [
         // A breadcrumb link is 20px tall — its line box — and that is below the 24x24
         // WCAG 2.5.8 AA minimum, with its siblings close enough that the spacing exception
-        // does not rescue it either. Measured on an iPhone 14 Pro viewport: 30x20 for
-        // "Atlas" in the stacked-shell blueprint.
+        // does not rescue it either.
         //
         // `wk-touch-target` is the wrong tool here, though it is the library's own answer
         // everywhere else. It centers a 44x44 pseudo-element on the host, and inside a trail
@@ -82,9 +81,9 @@
     $currentClasses = WireKit::resolveClasses('breadcrumb', 'current', 'text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]', $scope);
 
     // A step with no page of its own — a navigation group between the home page and this one.
-    // It reads as plain text like the current page, but it is NOT the current page, and it
-    // used to borrow that block: the trail then showed two crumbs in the emphasis color, and
-    // personalizing `current` restyled both. Muted like the links around it, without the
+    // It reads as plain text like the current page, but it is NOT the current page: borrowing
+    // that block would show two crumbs in the emphasis color, and personalizing `current`
+    // would restyle both. Muted like the links around it, without the
     // hover and focus a link carries, because there is nothing to activate.
     $ancestorClasses = WireKit::resolveClasses('breadcrumb', 'ancestor', 'text-[color:var(--color-wk-text-muted)]', $scope);
 
@@ -96,9 +95,9 @@
     // position, so putting it in the list would either publish a crumb that leads nowhere or
     // force the schema loop to learn which children to skip.
     //
-    // Reported from an adopting application that wanted exactly one `<button aria-pressed>`
-    // next to the trail: with nowhere to put it, it kept a FULL local copy of this component —
-    // including a second implementation of the JSON-LD — for the sake of one control.
+    // Without a place beside the trail, a single control there (a `<button aria-pressed>`, say)
+    // would force a full local copy of this component, including a second implementation of the
+    // JSON-LD.
     //
     // `self-center` rather than `items-center` on the nav — see the class list below.
     //
@@ -189,12 +188,10 @@
     @endif
 </nav>
 
-{{-- Schema.org BreadcrumbList structured data (JSON-LD). — Delegated to <x-wirekit::structured-data> so
-     the JSON_HEX_TAG safety flag is applied consistently. Previously
-     this component called json_encode() directly with a flag set that
-     omitted JSON_HEX_TAG — a user-controlled item label containing
-     </script> could break out of the JSON-LD block (real XSS). The
-     structured-data component bakes JSON_HEX_TAG in. --}}
+{{-- Schema.org BreadcrumbList structured data (JSON-LD), delegated to
+     <x-wirekit::structured-data>, which bakes JSON_HEX_TAG in: without it a
+     user-controlled item label containing </script> could break out of the
+     JSON-LD block. --}}
 @if($schema && count($items) > 0)
     @php
         // Built by Schema::breadcrumbItems(), the one rule every producer shares: a step with no

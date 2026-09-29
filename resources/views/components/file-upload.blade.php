@@ -16,12 +16,11 @@
     'id' => null,
     'multiple' => config('wirekit.components.file-upload.multiple', false),
     'accept' => config('wirekit.components.file-upload.accept', null),
-    // `capture` is its OWN attribute, not a token inside `accept`. The docs table used
-    // to sell camera capture as `accept="image/*;capture=camera"`, which is a legacy
-    // Android spelling that no current browser reads and which sets a MIME filter no
-    // file matches. It could not have worked from the caller's side either: this input
-    // takes named attributes and `wire:model*` only, never the whole bag, so a
-    // developer passing `capture` themselves got nothing on the element.
+    // `capture` is its OWN attribute, not a token inside `accept`:
+    // `accept="image/*;capture=camera"` is a legacy Android spelling that no current browser
+    // reads and which sets a MIME filter no file matches. It cannot come from the caller's
+    // side either: this input takes named attributes and `wire:model*` only, never the whole
+    // bag, so a `capture` passed as a plain attribute would never reach the element.
     'capture' => config('wirekit.components.file-upload.capture', null),
     'size' => config('wirekit.components.file-upload.size', 'md'),
     // Shape, not chrome. `default` is the full drop AREA — a block-level dashed
@@ -59,7 +58,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('file-upload', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
     // Same contract, different spelling of the default: a `config()` fallback declares a

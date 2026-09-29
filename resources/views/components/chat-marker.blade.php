@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // default    — a centered inline status / system note row
     // border     — the same row with a hairline under it (row boundaries)
@@ -29,7 +28,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('chat-marker', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $status = BooleanProp::from($status, false);
     $shimmer = BooleanProp::from($shimmer, false);
@@ -94,9 +93,8 @@
         {{-- aria-busy tracks shimmer, and is global — it does NOT depend on the
              live region. A `status` region carries it either way so the settled
              state reads as an explicit "not busy" that flips to "busy" when work
-             starts; `shimmer` on its own also carries it, because the docs say
-             shimmer implies aria-busy and it used to sit inside the @if above,
-             emitting nothing at all without `status`. Present whenever there is
+             starts; `shimmer` on its own also carries it, because shimmer
+             implies aria-busy with or without `status`. Present whenever there is
              something to say about — a region to settle, or a shimmer to flag. --}}
         @if($status || $shimmer) aria-busy="{{ $shimmer ? 'true' : 'false' }}" @endif
         {{ $attributes->class([$classes]) }}

@@ -78,13 +78,9 @@
 
 {{-- No role. The parent is a `role="group"` now rather than a `role="menu"`, and a
      `menuitem` outside a menu is an orphaned role — it REPLACES the link or button role the
-     element already had, which is the one a reader needs to know how to operate it.
-
-     The reasoning that led here is worth keeping, and it was kept as a verbatim copy of the
-     old comment until that copy started reading as the current rule: it said "role=menuitem
-     to match the parent's role=menu, the two have to agree". They do have to agree — and the
-     way they were made to agree was to stop claiming a keyboard model neither implements,
-     not to add the role. Stated as an instruction it was an invitation to undo this.
+     element already had, which is the one a reader needs to know how to operate it. The
+     parent's role and this one do have to agree, and they agree by claiming no menu keyboard
+     model that neither implements, not by adding `menuitem` back.
 
      The box is --size-wk-touch-target (44px) — the touch minimum, and these are the
      smallest targets on the screen. It reads the token rather than a literal so the
@@ -115,10 +111,7 @@
          three circles, and the only way to learn what they do was to click one.
 
          It lives INSIDE the action rather than wrapping it, and that is the
-         constraint the whole shape follows from — though not for the reason this
-         comment used to give. It said the parent is `role="menu"` and its children
-         must be `role="menuitem"`, so no wrapper may come between; the roles are
-         gone and the constraint is not. The action is the focusable element, and a
+         constraint the whole shape follows from. The action is the focusable element, and a
          label that wraps it would put a non-focusable box between the group and the
          control, which is why the obvious answer — putting a tooltip component
          around the action — is still not available here.

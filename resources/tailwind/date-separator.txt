@@ -100,7 +100,6 @@ German
 HTML
 Human-friendly
 ICU
-Measured
 NAME
 No
 Only
@@ -138,7 +137,6 @@ aria-hidden="true"
 aria-label="{{
 arrangement,
 as
-asserted:
 attributes,
 auto-derived
 bag
@@ -174,7 +172,6 @@ elseif
 every
 fallback
 fallback:
-file
 flags
 font-[number:var(--font-wk-heading-weight)]"
 for
@@ -182,7 +179,6 @@ format
 four
 from
 full
-guard
 here:
 identical
 if
@@ -238,13 +234,11 @@ props
 px-[var(--space-wk-sm,0.5rem)]
 py-[var(--space-wk-xs,0.25rem)]'
 qualified:
-rather
 reach
 read
 reader
 readers
 reason
-refutes
 relative
 rendered
 renders

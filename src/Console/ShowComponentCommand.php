@@ -57,12 +57,12 @@ class ShowComponentCommand extends Command
 
         /*
          * `--as` and `--validate-against` are two different jobs, and the flag order in this
-         * method used to decide which one silently won.
+         * method must not decide which one silently wins.
          *
          * `--as=json` prints a schema and exits 0. `--validate-against` reads a developer's
          * Blade file and exits 1 on a finding — it is sold in the signature for pre-commit
-         * hooks. Passed together, the `--as` branch below returned first, so the hook printed
-         * a schema, validated nothing, and reported success. A linter that answers "clean" on
+         * hooks. Passed together, the `--as` branch below would return first, so the hook would
+         * print a schema, validate nothing, and report success. A linter that answers "clean" on
          * a file it never opened is worse than one that is missing.
          *
          * Rejected rather than resolved by precedence: either choice would be a guess about
@@ -205,10 +205,9 @@ class ShowComponentCommand extends Command
     {
         $props = ComponentRegistry::extractProps($name);
 
-        // One source for what sub-components exist. This used to be a local
-        // filesystem walk, duplicated again in the JSON exporter and absent from
-        // the MCP catalog — three surfaces answering the same question their own
-        // way, which is how the MCP one ended up answering it with null.
+        // One source for what sub-components exist, shared with the JSON exporter
+        // and the MCP catalog, so the three surfaces cannot answer the same
+        // question three ways.
         $subComponents = ComponentRegistry::subComponentsOf($name);
 
         $payload = [
@@ -283,9 +282,9 @@ class ShowComponentCommand extends Command
      *
      * The unknown-attribute question is the one place they belong together, because Blade
      * accepts either spelling on the tag — and this package answers that question TWICE.
-     * `StrictnessGate` (the runtime warning) unions them; `--validate-against` did not. So
-     * `<x-wirekit::input announce-errors="false">` rendered clean at runtime and was reported
-     * as an unknown attribute by the pre-commit linter, on a name the form controls accept
+     * `StrictnessGate` (the runtime warning) unions them, and `--validate-against` has to as
+     * well: otherwise `<x-wirekit::input announce-errors="false">` renders clean at runtime and
+     * fails the pre-commit linter as an unknown attribute, on a name the form controls accept
      * and this library's own form documentation teaches.
      *
      * @return list<string>
@@ -308,13 +307,12 @@ class ShowComponentCommand extends Command
      * `x-*`, `@*`, `data-*`, `aria-*`) trigger a warning with the
      * closest matching prop name (Levenshtein-ranked).
      *
-     * Where each tag ends comes from `BladeParser::tagsFromSource()`, and both reasons are
-     * failures this validation used to have. It ran to the first `>`, which is ordinary
-     * inside a value — `x-show="count > 3"` has one — so every attribute after it went
-     * unchecked; and it read names across the whole tag body, so `count`, a word out of the
-     * middle of that same value, was reported as a passed attribute. A developer wiring this
-     * into a pre-commit hook got a warning about something they never wrote and none about
-     * the typo they did.
+     * Where each tag ends comes from `BladeParser::tagsFromSource()`, for two reasons. A scan
+     * to the first `>` stops inside a value — `x-show="count > 3"` has one — and leaves every
+     * attribute after it unchecked; and names read across the whole tag body would report
+     * `count`, a word out of the middle of that same value, as a passed attribute. A developer
+     * wiring this into a pre-commit hook would get a warning about something they never wrote
+     * and none about the typo they did.
      *
      * Exit code: 0 on clean validation, 1 on any unknown-attribute
      * warning. Lets developers wire `wirekit:show foo --validate-against=resources/views/page.blade.php`
@@ -391,7 +389,7 @@ class ShowComponentCommand extends Command
                 $issues[] = [
                     'line' => $line,
                     'attr' => $written,
-                    // Suggested from the normalized form, so a kebab-case typo is measured
+                    // Suggested from the normalized form, so a kebab-case typo is compared
                     // against the prop names in the spelling those are declared in.
                     'closest' => $this->closestProp($candidate, $knownProps),
                 ];

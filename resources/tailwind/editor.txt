@@ -436,7 +436,6 @@ $wrapperClasses])
 13a5
 14
 14.5v0A5.5
-18.5
 2
 2'),
 2-2h11"/><path
@@ -577,7 +576,6 @@ CEILING
 CONTROL,
 CSS
 CSS,
-CUT
 Cap
 CharacterCount
 Command
@@ -614,7 +612,6 @@ German
 Glyphs
 H1
 HOST
-HOVER,
 HOVERABLE:
 HTML
 HTML,
@@ -638,10 +635,10 @@ LITERALLY,
 Label
 Laravel
 Leaving
+Left
 Livewire
 MORPH
 Make
-Measured
 Min
 Mirror
 Mirrors
@@ -653,13 +650,13 @@ Named
 No
 Normalized
 Nothing
-OFF
 ONCE
 ONCE,
 OR
 ORIGINAL
 OUTERMOST
 OUTSIDE
+On
 Own
 PRESENCE,
 Plumbed
@@ -936,6 +933,7 @@ ancestor
 ancestor,
 and
 annotate.
+announce
 announce-error
 announceErrors)
 announced
@@ -993,7 +991,6 @@ arrow
 as
 as,
 asks
-asserted:
 assertion
 association
 assuming
@@ -1016,7 +1013,6 @@ background
 background,
 bag
 bag.
-bar.
 baseline
 be
 because
@@ -1064,8 +1060,8 @@ browser
 bubble's
 bubbles
 bubbles,
+bug
 bug)
-bug.
 build
 builds
 built
@@ -1098,7 +1094,6 @@ card,
 carried
 carries
 carry
-carry,
 case
 case.
 cast
@@ -1116,7 +1111,6 @@ child
 child's
 children
 choosing
-claimed
 clash
 class
 class).
@@ -1140,6 +1134,7 @@ clicking
 client-only
 climbs
 clipping
+clipping,
 clone
 closes
 cmd()
@@ -1158,7 +1153,6 @@ comes
 command
 command,
 commands')
-comment
 commit
 committing
 common
@@ -1219,6 +1213,7 @@ currentColor
 cursor-text
 cursor-text,
 custom
+cut
 d="M10
 d="M14
 d="M20
@@ -1308,7 +1303,7 @@ edge.
 editable
 editing
 editor
-editor",
+editor"
 editor'))
 editor'))),
 editor's
@@ -1363,7 +1358,6 @@ exactly
 existed
 existing
 expandos.
-expensive:
 explicit
 exposed
 expr
@@ -1371,7 +1365,7 @@ expression
 extension
 factory
 factory,
-fade="…">`
+fade="…">`,
 failure
 fall
 fallback
@@ -1401,7 +1395,6 @@ first,
 first.
 fixed
 fixed`
-fixes
 flags
 flat
 flex
@@ -1505,6 +1498,7 @@ hoists
 holds
 host
 host,
+host:
 hover
 hover,
 hover.
@@ -1674,8 +1668,6 @@ min-height
 min-w-[var(--size-wk-sm)]
 mints
 mismatch
-misplacement,
-missing
 mode"),
 mode,
 model
@@ -1723,7 +1715,6 @@ node
 node's
 node,
 none
-none,
 nor
 normal
 not
@@ -1793,6 +1784,7 @@ own,
 owns,
 package
 page
+page,
 page.
 pair
 pairing
@@ -1849,7 +1841,6 @@ preset
 preset,
 preview
 prod).
-produced
 promises
 prompt
 prop
@@ -1862,7 +1853,6 @@ purpose,
 purpose:
 put
 puts
-px
 px-[var(--padding-wk-x-md)]
 px-[var(--padding-wk-x-sm)]',
 py-[var(--padding-wk-y-md)]
@@ -1903,7 +1893,6 @@ ref
 reference
 refusal
 refuses.
-refutes
 region
 region.
 registers
@@ -1923,7 +1912,6 @@ renders
 renders,
 renders.
 replacement
-reported
 request
 request,
 required
@@ -1959,7 +1947,6 @@ runs
 safe
 safe.
 safe:
-said
 same
 sample
 sanitized
@@ -2080,7 +2067,7 @@ style="display:
 style="max-height:
 style="max-width:
 styled,
-stylesheet
+stylesheet's
 stylesheet).
 submit
 submits
@@ -2114,7 +2101,6 @@ takes
 target
 targets
 task-list).
-teleport
 teleport:
 teleported
 tell
@@ -2136,6 +2122,7 @@ textAlign:
 textarea
 textarea,
 textbox
+textbox,
 textbox:
 than
 that
@@ -2160,7 +2147,6 @@ this
 this,
 through
 tick
-time
 time.
 timer
 timer,
@@ -2228,7 +2214,6 @@ unique
 unknown
 unlabeled
 unlike
-unlocatable
 unnamed
 unreachable,
 unsteady
@@ -2240,7 +2225,6 @@ up
 usable
 use
 use:
-used
 user
 uses
 valid
@@ -2323,7 +2307,6 @@ wrapping
 wraps
 write
 writes
-writes,
 writing
 written
 wrong

@@ -446,19 +446,14 @@ $value,
 11.06l3.71-3.83a.75.75
 11.06l3.72
 111.08
-160px
 2
 2),
 20
 20"
-2026-09-18
-2026-09-18,
 20rem']);
-243
 3.3.1
 3.72a.75.75
 300),
-390px
 4.39a.75.75
 4:3
 5.22a.75.75
@@ -467,8 +462,6 @@ $value,
 7.21a.75.75
 8.27a.75.75
 8.94
-80px
-99px
 :
 :aria-activedescendant="isOpen
 :aria-describedby="opt.description
@@ -623,9 +616,7 @@ Declared
 Dense,
 Dev-only
 Drawn,
-Dropping
 E.164
-EFFECT
 Each
 Empty
 Empty-state
@@ -668,7 +659,6 @@ MEDIA
 MEDIUM:
 MID-CHARACTER
 MORPH
-Measured
 Media
 Merge
 Milliseconds
@@ -717,8 +707,7 @@ Required
 Room
 SCROLL
 SELECT-ONLY
-SELECTION.
-SIZE
+SELECTION
 START,
 STATIC
 SWAPS
@@ -745,7 +734,6 @@ Type
 UNBOUND
 URL
 URL,
-URLs
 USES
 Under
 VISIBLE
@@ -760,7 +748,6 @@ WireKit::resolveClasses('combobox',
 WireKit::resolveClasses('label',
 WireKit::validateProp('combobox',
 Without
-ZERO
 [
 [$normalized,
 [$rowMediaBox,
@@ -979,8 +966,8 @@ answers
 any
 anything
 anywhere
-apart.
 app
+app,
 appear
 appears
 appended
@@ -1037,7 +1024,6 @@ as,
 asks.
 aspect-[4/3]
 assembles
-asserted:
 assistive
 assoc
 associated
@@ -1071,7 +1057,6 @@ before,
 before.
 behavior
 behavior:
-behavior;
 behind
 being
 below
@@ -1095,7 +1080,6 @@ border
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border-subtle)]
 both
-both,
 bound
 box
 box's
@@ -1122,7 +1106,6 @@ call.
 caller
 caller's
 caller-passed
-callers
 can
 cannot
 capability
@@ -1185,7 +1168,7 @@ clickable
 clicked
 clicked,
 clip-rule="evenodd"/>
-clip`.
+clip`:
 clipping
 close
 close.
@@ -1235,7 +1218,6 @@ config.
 consuming
 container
 containing
-content
 content,
 contents
 contents">
@@ -1287,7 +1269,6 @@ defaults
 defect
 defect,
 delegates
-deliberately
 deliberately:
 dense.
 denylist
@@ -1313,20 +1294,17 @@ disabled:cursor-not-allowed
 disabled:opacity-[var(--opacity-wk-disabled)]"
 disables
 disagrees
-discarded
 discrete
 displayed,
 div
 do
 do.
-docs/,
 document
 document,
 document.
 documentation
 does
 does.
-doing
 down
 draw
 drawn
@@ -1341,7 +1319,6 @@ duration-[var(--transition-wk-duration)]"
 each
 eager
 early.
-effect.
 effective
 eight
 either
@@ -1366,6 +1343,7 @@ ends
 error
 escape
 escapes
+even
 event
 every
 everywhere:
@@ -1415,8 +1393,6 @@ field.blade.php
 field:
 fieldMedia"
 fields);
-file
-files
 fill-rule="evenodd"
 fill="currentColor"
 filter
@@ -1432,7 +1408,6 @@ first
 fix
 fixed
 fixed`
-fixture
 flag
 flag,
 flags
@@ -1451,7 +1426,7 @@ focusable
 focusable="false"
 focused
 focused.
-fold;
+fold,
 folds
 follow
 follows
@@ -1505,7 +1480,6 @@ hard
 hardcoded
 has
 have
-having,
 header
 heading
 headings,
@@ -1565,7 +1539,6 @@ in
 in.
 in_array($panelWidth,
 includes
-including
 incoming
 index
 indexes
@@ -1612,7 +1585,6 @@ just
 justify-center
 keep
 keeps
-kept
 key
 key's
 key:
@@ -1695,10 +1667,7 @@ max-h-60
 may
 mean
 means,
-measured
 measurements
-measurements).
-measurements,
 medium
 medium,
 message
@@ -1722,8 +1691,8 @@ morphs:
 most
 move
 ms-0.5"
-multi-select
 multi-select's
+multi-select.
 multi-select:
 must
 mutation
@@ -1740,6 +1709,7 @@ native
 natural
 navigate
 navigates.
+near
 needed).
 needs
 neither
@@ -1768,7 +1738,6 @@ not-allowed
 nothing
 nothing.
 nothing:
-now
 nowhere
 null
 null"
@@ -1825,10 +1794,10 @@ option's
 option,
 option-row
 option.
+option:
 optional
 options
 options,
-options.
 options:
 or
 order
@@ -1867,13 +1836,11 @@ parent
 parent's
 part
 parts
-passed
 passes.
 past
 patch,
 patched
 patches
-path
 pattern.
 pattern:
 pb-[var(--padding-wk-y-xs)]
@@ -1886,9 +1853,7 @@ physical
 pick
 picked.
 picker
-picker:
 pin
-place.
 placeholder
 placeholder="{{
 placement
@@ -1915,7 +1880,6 @@ prevent,
 prevents
 preview
 previous
-problem
 prod).
 produces
 projects
@@ -1941,7 +1905,6 @@ re-renders,
 re-renders.
 reach
 reach.
-reached
 reaches
 read
 read.
@@ -1955,15 +1918,13 @@ real
 reason
 reason:
 reasoning.
-received
+receive
 red
 redirect
-redirected
 reduced-motion
 ref
 reference
 refuse.
-refutes
 region
 region,
 region.
@@ -1984,14 +1945,12 @@ reported
 reported,
 repository
 request
-requests
 required,
 resolution.
 resolve
 resolved
 resolves
 resolving
-resources/
 restart
 restores
 restyle.
@@ -2040,7 +1999,6 @@ runIf,
 runIf:
 runtime
 same
-sample:
 satisfies
 save"
 save.
@@ -2118,13 +2076,11 @@ side
 side.
 sideways,
 silent
-silently
 silently.
 simply
 since
 single
 single-option
-sit
 site
 site,
 sits
@@ -2132,7 +2088,6 @@ size
 size),
 size).
 size-full
-sized
 sizes
 sizing
 slot
@@ -2172,7 +2127,6 @@ stays
 step
 still
 stranded
-stranded:
 stray
 string
 string,
@@ -2254,7 +2208,6 @@ this
 this,
 thought
 three
-three-artwork
 throttles
 through
 time
@@ -2342,7 +2295,6 @@ up
 update
 uppercase
 use
-used
 user
 uses
 uses,
@@ -2364,6 +2316,7 @@ via
 view's
 viewBox="0
 viewport
+viewport.
 visibility,
 visible
 visibly
@@ -2394,7 +2347,7 @@ whitespace,
 whole
 whose
 why
-why,
+why).
 wide
 widening
 wider
@@ -2418,7 +2371,6 @@ word.
 wording
 work.
 working
-worth
 would
 wrapper
 wrapper.

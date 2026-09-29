@@ -13,7 +13,7 @@
  * drive it.
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
-import { lockScroll, unlockScroll } from '../utils/overlay.js';
+import { holdPageInert, inOverlayRoot, lockScroll, releasePageInert, unlockScroll } from '../utils/overlay.js';
 import { FOCUSABLE } from '../utils/first-control.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 
@@ -53,9 +53,9 @@ export default function wirekitLightbox(config = {}) {
         loop: config.loop !== false,
         _name: config.name || '',
         // The captions travel with the config so the template can ask for the
-        // current one by name. It used to reach into the array itself —
-        // `slides[current]?.caption` — which is an optional chain, and Alpine's
-        // CSP build has no such thing in its grammar. A getter also means the
+        // current one by name rather than reach into the array itself:
+        // `slides[current]?.caption` is an optional chain, and Alpine's CSP
+        // build has no such thing in its grammar. A getter also means the
         // out-of-range case is handled once here rather than at each of the two
         // bindings that need it.
         _slides: Array.isArray(config.slides) ? config.slides : [],
@@ -105,14 +105,16 @@ export default function wirekitLightbox(config = {}) {
         // boolean about the page — several overlays can hold it at once, and the count
         // lives in `overlay.js`.
         _holdsScrollLock: false,
+        // Whether this viewer holds one of the counted holds that keep the page behind it inert
+        // (see `holdPageInert` in utils/overlay.js). Taken once the trap has focus in the stage,
+        // given back before the trap returns focus to the page.
+        _holdsPageInert: false,
         _openHandler: null,
         // The control that opened the viewer, and where focus goes back when it closes.
         // focus-trap returns focus to whatever was focused when it activated, and in Safari
-        // that is <body>: a mouse click does not focus a button there. Measured in WebKit,
-        // focus sat on <body> after the click and again after Escape, for a gallery thumbnail
-        // and a standalone trigger alike, while Chromium returned it to the button. So the
-        // opener is noted from the click, or from the open event's target, and handed to the
-        // trap as its return target.
+        // that is <body>: a mouse click does not focus a button there, for a gallery
+        // thumbnail and a standalone trigger alike. So the opener is noted from the click, or
+        // from the open event's target, and handed to the trap as its return target.
         _pendingTrigger: null,
         _returnTo: null,
         _triggerNoter: null,
@@ -239,20 +241,27 @@ export default function wirekitLightbox(config = {}) {
                     // so x-show hides the overlay; focus returns to the trigger.
                     onDeactivate: () => {
                         // Escape lands here without passing through `close()`, so the
-                        // release has to be on this path too — it was the commonest way out
-                        // of the viewer and would have left the page locked for good.
+                        // release has to be on this path too — it is the commonest way out
+                        // of the viewer. It runs before the trap returns focus, which an
+                        // inert page would refuse.
+                        self._releasePageInert();
                         self._releaseScrollLock();
                         self.isOpen = false;
                         self._trap = null;
                     },
                 });
                 self._trap.activate();
+
+                if (! self._holdsPageInert && inOverlayRoot(container)) {
+                    self._holdsPageInert = holdPageInert();
+                }
             });
         },
 
         close() {
             const self = host ?? this;
 
+            self._releasePageInert();
             self._releaseScrollLock();
 
             if (self._trap) {
@@ -275,6 +284,14 @@ export default function wirekitLightbox(config = {}) {
             if (this._holdsScrollLock) {
                 this._holdsScrollLock = false;
                 unlockScroll();
+            }
+        },
+
+        /** Give back the hold on the page behind the viewer, once, for the same reason. */
+        _releasePageInert() {
+            if (this._holdsPageInert) {
+                this._holdsPageInert = false;
+                releasePageInert();
             }
         },
 
@@ -315,6 +332,7 @@ export default function wirekitLightbox(config = {}) {
                 this._triggerNoter = null;
             }
             this._returnTo = null;
+            this._releasePageInert();
             // Never leave an active trap behind on teardown (SPA nav, Livewire
             // morph) — it would keep focus locked to a detached node.
             if (this._trap) {

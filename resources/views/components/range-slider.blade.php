@@ -457,10 +457,10 @@
                      wrapper cannot carry it either — that element sits OUTSIDE
                      this layer's Alpine scope, so a binding placed there has
                      nothing to read. The scope is the whole obstacle: a role on
-                     a `display: contents` element IS exposed in the platform
-                     accessibility tree together with its children, measured in
-                     Blink, which is why the segmented control puts its
-                     `radiogroup` on exactly that shape. And a wrapper here would
+                     a `display: contents` element is exposed in the platform
+                     accessibility tree together with its children, which is why
+                     the segmented control puts its `radiogroup` on exactly that
+                     shape. And a wrapper here would
                      carry no role of its own, so the pending state belongs on
                      the sliders a reader actually lands on. --}}
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif

@@ -122,7 +122,6 @@ FILTER_VALIDATE_BOOL);
 Fully
 INNER
 IS
-Measured
 No
 Normalized
 OUTER
@@ -177,13 +176,11 @@ already
 an
 and
 announces
-any
 are
 array_filter([
 article
 as
 as,
-asserted:
 at
 attribute
 attribute.
@@ -251,7 +248,6 @@ false);
 false,
 false.
 feature
-file
 filter_var($container,
 filter_var($sticky,
 flags
@@ -262,7 +258,6 @@ for
 from
 gap-[var(--space-wk-md)]
 gap-[var(--space-wk-sm)]">{{
-guard
 hardcoded
 header
 if
@@ -311,6 +306,7 @@ opposite
 optimistic-ui:
 optional
 or
+otherwise
 own
 padding
 padding)
@@ -328,11 +324,8 @@ props
 provide
 px
 qualified:
-rather
 reach
 reads
-reason
-refutes
 renders
 result
 same
@@ -361,7 +354,6 @@ tag,
 tagline,
 takes
 text-[color:var(--color-wk-text-muted)]">{{
-than
 that
 the
 there
@@ -380,7 +372,6 @@ under
 unknown
 unvalidated
 use
-used
 using
 v2.0.0
 value
@@ -400,6 +391,7 @@ whose
 width).
 wirekit:spine-participant
 with
+would
 wrapper
 wraps
 z-[var(--z-wk-sticky)]

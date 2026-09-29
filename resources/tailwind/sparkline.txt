@@ -4,7 +4,6 @@
 "Chart".
 "Undefined
 "a
-"chart
 "inline
 "width:
 $adapterScripts
@@ -238,7 +237,6 @@ $wrapperTag
 0px
 1.25em
 1.5,
-1/3
 100%
 100%;
 100%;"
@@ -362,7 +360,6 @@ MUST
 Manual
 Marker
 Marking
-Measured
 Merge
 Monthly
 NAME
@@ -433,8 +430,6 @@ Wrapping
 __('wirekit::Chart'));
 `!
 `.w-full`
-`/components/charts-apex/*`
-`/components/charts-chartjs/advanced`
 `:attributes`
 `<div>`
 `<div>`/`<span>`
@@ -553,7 +548,6 @@ array_map(static
 arrive
 as
 as,
-asserted:
 assistive
 at
 at:
@@ -607,7 +601,6 @@ break
 breaking
 browser,
 browser:
-bug
 build
 built
 built-in
@@ -687,6 +680,7 @@ consistency.
 consistent
 consumes
 container
+container's
 contains
 content
 content)
@@ -772,6 +766,7 @@ dominate
 don't
 dots
 down.
+drawing
 drawn
 drifts
 drop
@@ -802,7 +797,6 @@ escape
 events
 every
 exact
-example,
 example:
 existing
 exists
@@ -826,7 +820,6 @@ fatal
 feature
 fetch
 figure
-file
 filled($value),
 filter_var(
 filtered
@@ -853,12 +846,12 @@ focusable
 follows
 for
 for:
+fraction
 fresh
 from
 full
 function
 further
-gap)
 gates
 generated
 generic
@@ -890,7 +883,6 @@ hidden;
 hidden`
 hides
 hiding
-hits
 honor
 host
 https://docs.wirekit.app/components/chart'
@@ -899,7 +891,7 @@ hyphen)
 hyphen),
 identifier
 if
-iframe-srcdoc
+iframe-srcdoc,
 images
 imperative
 implementation
@@ -1025,7 +1017,6 @@ morph
 morphing
 mount
 mountElement
-multiple
 must
 n/a
 name
@@ -1093,11 +1084,11 @@ own.
 package
 package.
 page
-pages.
 paints
 palette;
 paragraph
 parent
+parent,
 parsed
 parser
 pass
@@ -1126,7 +1117,6 @@ pre-resolve
 present
 presentational
 prevents
-preview
 previews
 primitives.
 prod).
@@ -1165,13 +1155,11 @@ reader
 readers.
 reading
 reads
-reason
 reasoning
 rebuild
 recommended
 red
 references
-refutes
 relative;";
 relying
 rename
@@ -1208,7 +1196,7 @@ say
 says
 scanned
 scanner
-scope
+scope)
 scope,
 scope.
 screen
@@ -1371,11 +1359,11 @@ updated
 updates
 usage
 use
-used
 uses
 utilities
 utilities,
 utility
+utility.
 v4's
 value.
 values
@@ -1412,9 +1400,9 @@ who
 whole
 whose
 width
-width"
 width)
 width).
+width.
 width:
 will
 win

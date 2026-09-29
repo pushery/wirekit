@@ -77,8 +77,8 @@ const ON_HANDLER_RE = /\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
 //
 // The scheme is spelled letter by letter with whitespace and C0 control characters allowed
 // BETWEEN the letters, because that is what browsers accept: `java&#10;script:` decodes to
-// a newline inside the scheme and still runs. The previous pattern allowed whitespace only
-// BEFORE the word — its own comment claimed `java\nscript:` was covered, and it was not.
+// a newline inside the scheme and still runs. A pattern allowing whitespace only BEFORE the
+// word would miss `java\nscript:`.
 const SCHEME_GAP = '[\\s\\u0000-\\u0020]*';
 const JS_SCHEME = 'j'.concat(SCHEME_GAP, 'a', SCHEME_GAP, 'v', SCHEME_GAP, 'a', SCHEME_GAP, 's', SCHEME_GAP, 'c', SCHEME_GAP, 'r', SCHEME_GAP, 'i', SCHEME_GAP, 'p', SCHEME_GAP, 't', SCHEME_GAP, ':');
 const JS_URI_RE = new RegExp(
@@ -145,9 +145,8 @@ function stripOnce(html) {
     out = out.replace(DATA_URI_SRC_RE, '');
     // Event-handler attributes, and the ORDER is the point: this runs after the URI strips
     // so `ON_HANDLER_RE` cannot match inside a `href="javascript:…"` value that is about to
-    // be removed anyway. (This comment said "the lookahead around `on*=…`" until 2026-09-09.
-    // There is no lookahead in that pattern — what bounds it is the required `=` after the
-    // attribute name, the same mechanism its own declaration now names.)
+    // be removed anyway. What bounds `ON_HANDLER_RE` is the required `=` after the attribute
+    // name, as its own declaration says.
     out = out.replace(ON_HANDLER_RE, '');
     // srcdoc on any tag (defense-in-depth).
     out = out.replace(NESTED_SRCDOC_RE, '');
@@ -206,8 +205,7 @@ export function sanitizeMinimapHtml(html) {
  * It is kept because it is the right tool for the question it actually answers: how heavy is
  * a string of HTML, before anything has parsed it. `sanitizeMinimapHtml` above works on the
  * same input, and a caller weighing whether to sanitize at all has no live DOM to count.
- * 5000 tags is the ceiling that was measured for Moto G5-class devices; memory grows linearly
- * with DOM size.
+ * 5000 tags is the ceiling for Moto G5-class devices; memory grows linearly with DOM size.
  */
 export function countTags(html) {
     if (typeof html !== 'string' || html.length === 0) return 0;

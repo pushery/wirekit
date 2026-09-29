@@ -232,13 +232,10 @@ class ListIconsCommand extends Command
      * caller reports it as its own number rather than folding it into either
      * side.
      *
-     * The walk is `BladeParser`'s, not this file's. A hand-written one was tried
-     * first and the drift guard rejected it, correctly: three scanners in this
-     * package each hand-wrote a tag walk, each learned Blade to a different
-     * depth, and the same defect was found and fixed three times. Routing
-     * through the one parser inherits what it knows — a `{{-- don't --}}`
-     * comment inside a tag, a tag another element interrupted, a file that ends
-     * mid-tag — none of which this command would have handled.
+     * The walk is `BladeParser`'s, not this file's: separate hand-written walks
+     * each learn Blade to a different depth. Routing through the one parser
+     * inherits what it knows — a `{{-- don't --}}` comment inside a tag, a tag
+     * another element interrupted, a file that ends mid-tag.
      *
      * The attribute VALUE is read here rather than there on purpose:
      * `tagsFromSource()` returns boundaries and names, deliberately, so that it
@@ -306,14 +303,13 @@ class ListIconsCommand extends Command
      * Every WireKit component that accepts an ICON NAME as a prop, derived rather than
      * listed.
      *
-     * WHY THIS EXISTS. The audit separates names under contract (a declared alias) from
-     * names that merely happen to work today (a glyph name through the fall-through) —
-     * and it read only <x-wirekit::icon> tags. But a navigation column names its icons in
-     * props, because that is what the components ask for, and a prop-passed name goes
-     * through exactly the same WireKit::icon() resolution. Measured in a consuming
-     * project: 12 of 13 icon names were invisible to the audit, which then reported a
-     * clean result over 8% of the surface in a summary that reads as a statement about
-     * all of it. That is not a counting inaccuracy; it inverts the answer.
+     * Why this exists: the audit separates names under contract (a declared alias) from
+     * names that merely happen to work today (a glyph name through the fall-through), and
+     * a navigation column names its icons in props, because that is what the components
+     * ask for. A prop-passed name goes through exactly the same WireKit::icon()
+     * resolution, so an audit that read only <x-wirekit::icon> tags would report a clean
+     * result over a fraction of the surface, in a summary that reads as a statement about
+     * all of it.
      *
      * DERIVED FROM THE VIEWS, never a hand-kept list. A list here would be a second
      * source of truth for a fact the templates already state, and the component that got

@@ -106,15 +106,15 @@
     "aspect-ratio": [
         {
             "title": "Image constrained to 16:9",
-            "code": "<x-wirekit::aspect-ratio style=\"max-width: 600px\">\n    <img src=\"/_assets/sample_1920x1080_98p.jpg\" alt=\"Landscape photo\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n</x-wirekit::aspect-ratio>"
+            "code": "<x-wirekit::aspect-ratio style=\"max-width: 600px\">\n    <img src=\"/_assets/sample_1280x720_80p.jpg\" alt=\"Landscape photo\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n</x-wirekit::aspect-ratio>"
         },
         {
             "title": "Different ratios with the same image",
-            "code": "<x-wirekit::row gap=\"lg\" style=\"align-items: start;\">\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio>\n            <img src=\"/_assets/sample_1920x1080_98p.jpg\" alt=\"16:9 landscape\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">16:9 (default)</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio ratio=\"4/3\">\n            <img src=\"/_assets/sample_1920x1080_98p.jpg\" alt=\"4:3 landscape\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">4:3</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio ratio=\"1/1\">\n            <img src=\"/_assets/sample_1920x1080_98p.jpg\" alt=\"1:1 square\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">1:1 (square)</x-wirekit::text>\n    </x-wirekit::stack>\n</x-wirekit::row>"
+            "code": "<x-wirekit::row gap=\"lg\" style=\"align-items: start;\">\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio>\n            <img src=\"/_assets/sample_1280x720_80p.jpg\" alt=\"16:9 landscape\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">16:9 (default)</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio ratio=\"4/3\">\n            <img src=\"/_assets/sample_1280x720_80p.jpg\" alt=\"4:3 landscape\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">4:3</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio ratio=\"1/1\">\n            <img src=\"/_assets/sample_1280x720_80p.jpg\" alt=\"1:1 square\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">1:1 (square)</x-wirekit::text>\n    </x-wirekit::stack>\n</x-wirekit::row>"
         },
         {
             "title": "Portrait and ultrawide ratios",
-            "code": "<x-wirekit::row gap=\"lg\" style=\"align-items: start;\">\n    <x-wirekit::stack gap=\"sm\" style=\"max-width: 200px;\">\n        <x-wirekit::aspect-ratio ratio=\"3/4\">\n            <img src=\"/_assets/sample_840x1120_98p.jpg\" alt=\"3:4 portrait\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">3:4 (portrait)</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio ratio=\"21/9\">\n            <img src=\"/_assets/sample_1920x823_98p.jpg\" alt=\"21:9 ultrawide\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">21:9 (ultrawide)</x-wirekit::text>\n    </x-wirekit::stack>\n</x-wirekit::row>"
+            "code": "<x-wirekit::row gap=\"lg\" style=\"align-items: start;\">\n    <x-wirekit::stack gap=\"sm\" style=\"max-width: 200px;\">\n        <x-wirekit::aspect-ratio ratio=\"3/4\">\n            <img src=\"/_assets/sample_768x1024_80p.jpg\" alt=\"3:4 portrait\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">3:4 (portrait)</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"sm\" style=\"flex: 1;\">\n        <x-wirekit::aspect-ratio ratio=\"21/9\">\n            <img src=\"/_assets/sample_1280x548_80p.jpg\" alt=\"21:9 ultrawide\" style=\"width: 100%; height: 100%; object-fit: cover;\" />\n        </x-wirekit::aspect-ratio>\n        <x-wirekit::text intent=\"muted\" size=\"sm\">21:9 (ultrawide)</x-wirekit::text>\n    </x-wirekit::stack>\n</x-wirekit::row>"
         }
     ],
     "assistant-message": [
@@ -587,12 +587,12 @@
             "code": "<x-wirekit::data-list>\n    <x-wirekit::data-list.item label=\"Name\">John Doe</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Email\">john.doe@mail</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Plan\">Pro ($29/mo)</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Joined\">June 1, 2024</x-wirekit::data-list.item>\n</x-wirekit::data-list>"
         },
         {
-            "title": "Stacked layout",
-            "code": "<x-wirekit::data-list layout=\"stacked\">\n    <x-wirekit::data-list.item label=\"Description\">A long description that wraps naturally in a stacked layout without being constrained by a side-by-side arrangement.</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Category\">Engineering</x-wirekit::data-list.item>\n</x-wirekit::data-list>"
+            "title": "Values passed as the value prop",
+            "code": "<x-wirekit::data-list>\n    <x-wirekit::data-list.item label=\"Order\" value=\"SO-10482\" />\n    <x-wirekit::data-list.item label=\"Carrier\" value=\"Standard shipping\" />\n    <x-wirekit::data-list.item label=\"Delivered\" value=\"March 14, 2025\" />\n</x-wirekit::data-list>"
         },
         {
-            "title": "Grid layout",
-            "code": "<x-wirekit::data-list layout=\"grid\">\n    <x-wirekit::data-list.item label=\"First Name\">John</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Last Name\">Doe</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Email\">john.doe@mail</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Phone\">+1 (555) 123-4567</x-wirekit::data-list.item>\n</x-wirekit::data-list>"
+            "title": "Stacked layout",
+            "code": "<x-wirekit::data-list layout=\"stacked\">\n    <x-wirekit::data-list.item label=\"Description\">A long description that wraps naturally in a stacked layout without being constrained by a side-by-side arrangement.</x-wirekit::data-list.item>\n    <x-wirekit::data-list.item label=\"Category\">Engineering</x-wirekit::data-list.item>\n</x-wirekit::data-list>"
         }
     ],
     "data-table": [
@@ -920,11 +920,11 @@
     "hover-card": [
         {
             "title": "User Profile Hover Card",
-            "code": "<x-wirekit::hover-card>\n    <x-slot:trigger>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">@kevin</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::row align=\"start\" gap=\"sm\">\n        <x-wirekit::avatar name=\"Kevin Smith\" size=\"lg\" />\n        <div>\n            <div style=\"font-weight: 600; font-size: 0.9375rem;\">Kevin Smith</div>\n            <div style=\"font-size: 0.8125rem; color: var(--color-wk-text-muted);\">Senior Developer</div>\n            <div style=\"font-size: 0.8125rem; margin-top: 0.5rem;\">Building things with Laravel &amp; Livewire.</div>\n        </div>\n    </x-wirekit::row>\n</x-wirekit::hover-card>"
+            "code": "<x-wirekit::hover-card>\n    <x-slot:trigger>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">@kevin</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::row align=\"start\" gap=\"sm\">\n        <x-wirekit::avatar initials=\"KS\" size=\"lg\" />\n        <div>\n            <div style=\"font-weight: 600; font-size: 0.9375rem;\">Kevin Smith</div>\n            <div style=\"font-size: 0.8125rem; color: var(--color-wk-text-muted);\">Senior Developer</div>\n            <div style=\"font-size: 0.8125rem; margin-top: 0.5rem;\">Building things with Laravel &amp; Livewire.</div>\n        </div>\n    </x-wirekit::row>\n</x-wirekit::hover-card>"
         },
         {
             "title": "Bold word inside a sentence triggers a profile card",
-            "code": "<x-wirekit::text>The release notes were authored by <x-wirekit::hover-card><x-slot:trigger><button type=\"button\" style=\"all: unset; font-family: inherit; font-size: inherit; line-height: inherit; font-weight: 600; color: var(--color-wk-text); cursor: pointer; vertical-align: baseline; white-space: nowrap; text-decoration: underline dotted var(--color-wk-border-hover); text-underline-offset: 3px;\">Kevin Smith</button></x-slot:trigger><x-wirekit::row align=\"start\" gap=\"sm\"><x-wirekit::avatar name=\"Kevin Smith\" size=\"lg\" /><div><div style=\"font-weight: 600; font-size: 0.9375rem;\">Kevin Smith</div><div style=\"font-size: 0.8125rem; color: var(--color-wk-text-muted);\">Senior Developer · Berlin</div><div style=\"font-size: 0.8125rem; margin-top: 0.5rem;\">Maintainer of the auth + billing modules. Reach out for changes touching session handling.</div></div></x-wirekit::row></x-wirekit::hover-card> after a deep review of the migration plan.</x-wirekit::text>"
+            "code": "<x-wirekit::text>The release notes were authored by <x-wirekit::hover-card><x-slot:trigger><button type=\"button\" style=\"all: unset; font-family: inherit; font-size: inherit; line-height: inherit; font-weight: 600; color: var(--color-wk-text); cursor: pointer; vertical-align: baseline; white-space: nowrap; text-decoration: underline dotted var(--color-wk-border-hover); text-underline-offset: 3px;\">Kevin Smith</button></x-slot:trigger><x-wirekit::row align=\"start\" gap=\"sm\"><x-wirekit::avatar initials=\"KS\" size=\"lg\" /><div><div style=\"font-weight: 600; font-size: 0.9375rem;\">Kevin Smith</div><div style=\"font-size: 0.8125rem; color: var(--color-wk-text-muted);\">Senior Developer · Berlin</div><div style=\"font-size: 0.8125rem; margin-top: 0.5rem;\">Maintainer of the auth + billing modules. Reach out for changes touching session handling.</div></div></x-wirekit::row></x-wirekit::hover-card> after a deep review of the migration plan.</x-wirekit::text>"
         },
         {
             "title": "Top placement",
@@ -948,15 +948,15 @@
     "image-compare": [
         {
             "title": "Horizontal compare",
-            "code": "<x-wirekit::image-compare\n    ratio=\"16/9\"\n    class=\"max-w-[40rem]\"\n    before=\"/_assets/sample_1920x1080_0p.jpg\"\n    after=\"/_assets/sample_1920x1080_98p.jpg\"\n    before-alt=\"Same photograph at 0% JPEG quality\"\n    after-alt=\"High quality photograph\"\n    aria-label=\"Compare high quality vs heavily compressed image\"\n/>"
+            "code": "<x-wirekit::image-compare\n    ratio=\"16/9\"\n    class=\"max-w-[40rem]\"\n    loading=\"eager\"\n    before=\"/_assets/sample_1920x1080_0p.jpg\"\n    after=\"/_assets/sample_1280x720_80p.jpg\"\n    before-alt=\"Same photograph at 0% JPEG quality\"\n    after-alt=\"High quality photograph\"\n    aria-label=\"Compare high quality vs heavily compressed image\"\n/>"
         },
         {
             "title": "Vertical compare",
-            "code": "<x-wirekit::image-compare\n    orientation=\"vertical\"\n    ratio=\"3/4\"\n    class=\"max-w-[28rem]\"\n    before=\"/_assets/sample_840x1120_0p.jpg\"\n    after=\"/_assets/sample_840x1120_98p.jpg\"\n    before-alt=\"Same photograph at 0% JPEG quality\"\n    after-alt=\"High quality photograph in portrait\"\n    before-label=\"Top\"\n    after-label=\"Bottom\"\n    aria-label=\"Compare vertical image quality\"\n/>"
+            "code": "<x-wirekit::image-compare\n    orientation=\"vertical\"\n    ratio=\"3/4\"\n    class=\"max-w-[28rem]\"\n    before=\"/_assets/sample_840x1120_0p.jpg\"\n    after=\"/_assets/sample_768x1024_80p.jpg\"\n    before-alt=\"Same photograph at 0% JPEG quality\"\n    after-alt=\"High quality photograph in portrait\"\n    before-label=\"Top\"\n    after-label=\"Bottom\"\n    aria-label=\"Compare vertical image quality\"\n/>"
         },
         {
             "title": "Custom labels",
-            "code": "<x-wirekit::image-compare\n    ratio=\"16/9\"\n    class=\"max-w-[40rem]\"\n    before=\"/_assets/sample_1920x1080_0p.jpg\"\n    after=\"/_assets/sample_1920x1080_98p.jpg\"\n    before-alt=\"Same photograph at 0% JPEG quality\"\n    after-alt=\"High quality photograph\"\n    before-label=\"Compressed\"\n    after-label=\"High Quality\"\n    :value=\"30\"\n    aria-label=\"Compare image quality with custom labels\"\n/>"
+            "code": "<x-wirekit::image-compare\n    ratio=\"16/9\"\n    class=\"max-w-[40rem]\"\n    before=\"/_assets/sample_1920x1080_0p.jpg\"\n    after=\"/_assets/sample_1280x720_80p.jpg\"\n    before-alt=\"Same photograph at 0% JPEG quality\"\n    after-alt=\"High quality photograph\"\n    before-label=\"Compressed\"\n    after-label=\"High Quality\"\n    :value=\"30\"\n    aria-label=\"Compare image quality with custom labels\"\n/>"
         }
     ],
     "image-gallery": [
@@ -976,7 +976,7 @@
     "image": [
         {
             "title": "Content image with a caption",
-            "code": "<x-wirekit::image\n    src=\"/placeholder/480x300?bg=fbcfe8&fg=9d174d&label=Photo&gradient=none\"\n    alt=\"The team gathered at the 2026 offsite\"\n    caption=\"The 2026 offsite\"\n    rounded\n/>"
+            "code": "<x-wirekit::image\n    src=\"/placeholder/480x300?bg=fbcfe8&fg=9d174d&label=Photo&gradient=none\"\n    alt=\"The team gathered at the 2026 offsite\"\n    loading=\"eager\"\n    caption=\"The 2026 offsite\"\n    rounded\n/>"
         },
         {
             "title": "Fixed 16/9, cover",
@@ -1325,6 +1325,10 @@
         {
             "title": "One line",
             "code": "<x-wirekit::overflow-nav label=\"Recently viewed\" lines=\"1\" :items=\"[\n    ['label' => 'Overview', 'href' => '#overview', 'current' => true],\n    ['label' => 'Orders', 'href' => '#orders'],\n    ['label' => 'Customers', 'href' => '#customers'],\n    ['label' => 'Products', 'href' => '#products'],\n    ['label' => 'Invoices', 'href' => '#invoices'],\n    ['label' => 'Shipping', 'href' => '#shipping'],\n    ['label' => 'Returns', 'href' => '#returns'],\n    ['label' => 'Reports', 'href' => '#reports'],\n    ['label' => 'Settings', 'href' => '#settings'],\n]\" />"
+        },
+        {
+            "title": "Open records that close",
+            "code": "<x-wirekit::overflow-nav label=\"Open tabs\" lines=\"1\" :items=\"[\n    ['label' => 'Overview', 'href' => '#overview', 'current' => true],\n    ['label' => 'Order 1042', 'href' => '#order-1042', 'action' => ['label' => 'Close Order 1042']],\n    ['label' => 'Order 1043', 'href' => '#order-1043', 'action' => ['label' => 'Close Order 1043']],\n    ['label' => 'Customer 7', 'href' => '#customer-7', 'action' => ['label' => 'Close Customer 7']],\n    ['label' => 'Invoice 318', 'href' => '#invoice-318', 'action' => ['label' => 'Close Invoice 318']],\n    ['label' => 'Product 55', 'href' => '#product-55', 'action' => ['label' => 'Close Product 55']],\n    ['label' => 'Order 1051', 'href' => '#order-1051', 'action' => ['label' => 'Close Order 1051']],\n    ['label' => 'Customer 12', 'href' => '#customer-12', 'action' => ['label' => 'Close Customer 12']],\n    ['label' => 'Invoice 322', 'href' => '#invoice-322', 'action' => ['label' => 'Close Invoice 322']],\n]\" />"
         }
     ],
     "page-header": [
@@ -1589,6 +1593,16 @@
         {
             "title": "Dot indicator",
             "code": "<x-wirekit::reading-progress indicator=\"dot\" />\n<x-wirekit::prose>\n    <article style=\"padding: 1rem;\">\n        <h2>Watch the dot fill as the page scrolls</h2>\n        <p>Scroll inside this preview frame and the dot's stroke fills clockwise as the scroll position progresses from 0 to the bottom. Same Alpine state machine as the bar variant; only the rendered DOM differs. The dot pins to the bottom-right of the iframe via <code>position: fixed</code> and renders as a circular SVG with a stroke that fills as the reader progresses.</p>\n        <p>The fill animation uses <code>stroke-dasharray</code> on the SVG circle — also a compositor-only property, GPU-accelerated. The dot doesn't take itself out of layout (it sits in its own fixed-position container), so it never interferes with the article flow below.</p>\n        <p>Use the dot variant when a horizontal bar would interfere with your layout — for example, if you already have a fixed top nav or a persistent CTA at the top. The dot is also less visually heavy than the bar; some product surfaces want the indicator to be discoverable but not prominent.</p>\n        <p>Hover the dot to see the percentage tooltip (the percentage is also exposed via the dot's <code>aria-label</code> for screen readers). On touch, the tooltip is suppressed; the percentage is still available via assistive tech.</p>\n        <p>Pass <code>position=\"bottom-left\"</code> / <code>position=\"top-left\"</code> / <code>position=\"top-right\"</code> to relocate the dot. The default <code>bottom-right</code> follows the convention every messaging app and chat surface uses for \"your status indicator\".</p>\n        <p>The dot variant carries the same <code>intent</code> prop as the bar (<code>primary</code>, <code>neutral</code>, <code>success</code>, <code>warning</code>, <code>danger</code>, <code>info</code>, <code>auto</code>) — the color token threading is identical.</p>\n        <p>Both indicators (bar and dot) ship a <code>@media print { display: none !important }</code> rule via the <code>.wk-reading-progress</code> marker class. Print-friendly; the article body prints clean without progress chrome on every page.</p>\n        <p>If you need both indicators simultaneously (a bar for \"where am I\" plus a dot for ambient feedback), mount two <code>&lt;x-wirekit::reading-progress&gt;</code> tags side by side. Both share scroll state via the same plugin; neither knows about the other.</p>\n        <p>Keep scrolling to see the dot fill. The stroke completes as the reader hits the bottom of the article.</p>\n    </article>\n</x-wirekit::prose>"
+        }
+    ],
+    "reorder": [
+        {
+            "title": "A list reordered by dragging or with the arrows",
+            "code": "<x-wirekit::list type=\"none\" spacing=\"md\" wire:sort=\"moveValue\">\n    <x-wirekit::list.item wire:sort:item=\"1\" wire:key=\"value-1\">\n        <x-wirekit::row gap=\"sm\">\n            <x-wirekit::reorder :item=\"1\" :position=\"0\" :count=\"3\" action=\"moveValue\" label=\"Small\" />\n            <x-wirekit::text>Small</x-wirekit::text>\n        </x-wirekit::row>\n    </x-wirekit::list.item>\n    <x-wirekit::list.item wire:sort:item=\"2\" wire:key=\"value-2\">\n        <x-wirekit::row gap=\"sm\">\n            <x-wirekit::reorder :item=\"2\" :position=\"1\" :count=\"3\" action=\"moveValue\" label=\"Medium\" />\n            <x-wirekit::text>Medium</x-wirekit::text>\n        </x-wirekit::row>\n    </x-wirekit::list.item>\n    <x-wirekit::list.item wire:sort:item=\"3\" wire:key=\"value-3\">\n        <x-wirekit::row gap=\"sm\">\n            <x-wirekit::reorder :item=\"3\" :position=\"2\" :count=\"3\" action=\"moveValue\" label=\"Large\" />\n            <x-wirekit::text>Large</x-wirekit::text>\n        </x-wirekit::row>\n    </x-wirekit::list.item>\n</x-wirekit::list>"
+        },
+        {
+            "title": "Arrows in the soft surface",
+            "code": "<x-wirekit::row gap=\"sm\">\n    <x-wirekit::reorder :item=\"4\" :position=\"1\" :count=\"3\" action=\"moveValue\" label=\"Medium\" arrow-surface=\"soft\" arrow-size=\"sm\" />\n    <x-wirekit::text>Medium</x-wirekit::text>\n</x-wirekit::row>"
         }
     ],
     "replay-button": [

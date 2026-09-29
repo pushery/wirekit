@@ -312,9 +312,9 @@ class WireKit
      * one different value shape. The application states only its own delta and
      * keeps inheriting the rest.
      *
-     * Strings stay exactly as they were — a closure was previously a TypeError
-     * against this method's `string` return, so nothing that worked can change
-     * meaning here.
+     * Strings behave exactly as they do without a closure anywhere, and a closure
+     * could not have been passed before this shape existed (it is not a `string`),
+     * so nothing that worked can change meaning here.
      *
      * Deliberately NOT extended to the config layer (#3 in the chain): a closure
      * in a config file cannot survive `config:cache`, so offering it there would
@@ -404,8 +404,7 @@ class WireKit
      * as `<{{ $as }} …>` or as `<{{ $tag }} …>`, where a default was resolved first. Blade
      * escapes that echo, and `e()` escapes NEITHER A SPACE NOR AN `=`, so
      * `as="div onmouseover=alert(1)"` renders `<div onmouseover=alert(1) class="…">`: a
-     * working event handler. Measured across text, container, row, stack, center and
-     * section, all six identical.
+     * working event handler, in every component that interpolates the tag that way.
      *
      * The covered set is derived, never restated here as a number: every component that
      * declares an `as` prop and interpolates a variable into its opening tag either calls
@@ -538,6 +537,22 @@ class WireKit
     }
 
     /**
+     * The hash sources (`sha256-…`) of the inline scripts WireKit writes into a page.
+     *
+     * For a policy that admits inline scripts by hash instead of by nonce: list these in
+     * `script-src`. They cover the first-paint seeds of a remembered sidebar column and a
+     * remembered folding section, and the `@wirekitThemeScript` code while it is written into
+     * the page. Each script body is a constant, so the list is the same on every page, and a
+     * nonce-based policy needs none of it.
+     *
+     * @return list<string>
+     */
+    public static function inlineScriptHashes(): array
+    {
+        return Support\InlineScriptHashes::all();
+    }
+
+    /**
      * Resolve an icon alias to the actual Blade Icon identifier.
      *
      * Usage: WireKit::icon('close') -> 'heroicon-m-x-mark'
@@ -649,6 +664,7 @@ class WireKit
         static::$scoped = [];
         static::$personalizations = [];
         Support\DomId::reset();
+        Support\InlineScriptHashes::reset();
         StrictnessGate::forgetLogged();
         Support\TourStepCounter::reset();
         Support\FaqCollector::reset();

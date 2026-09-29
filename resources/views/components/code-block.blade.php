@@ -9,13 +9,13 @@
     //
     // `role="region"` plus a name is a landmark, and twenty landmarks called "PHP code" are
     // twenty indistinguishable entries in a screen reader's rotor — axe reports it as
-    // `landmark-unique`. Reported from an audit log rendering one diff per table row, where the
+    // `landmark-unique`. An audit log rendering one diff per table row is the plain case: the
     // language is identical on every row and so cannot tell them apart.
     //
-    // The language-derived name used to fill this in, which meant the duplicate-landmark case
-    // was the DEFAULT one and naming was the escape. That is now the other way round: with no
-    // label the block is `tabindex="0"` and nothing else — still keyboard-reachable
-    // (WCAG 2.1.1), deliberately not a destination.
+    // A language-derived name filling this in would make the duplicate-landmark case the
+    // DEFAULT one and naming the escape. So it is the other way round: with no label the
+    // block is `tabindex="0"` and nothing else — still keyboard-reachable (WCAG 2.1.1),
+    // deliberately not a destination.
     //
     // Name it after the row, not after the language: "Change 4471" locates the block; "PHP
     // code" only says what everything on the page already is.
@@ -33,7 +33,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('code-block', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $copy = BooleanProp::from($copy, false);
 

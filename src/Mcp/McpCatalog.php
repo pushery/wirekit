@@ -267,11 +267,11 @@ final class McpCatalog
         // `parent` is what the registry states outright. The baked map covers the
         // case it does not: a component that carries NO parent and still has no
         // page of its own, because a family documents all of its primitives on
-        // one page. Measured 2026-09-05 — sixteen of them, every `reading-*`
-        // primitive among them, and the registry states a parent for none.
+        // one page. The `reading-*` primitives are among them, and the registry
+        // states a parent for none.
         //
-        // Falling straight through to `$name` returned an empty list for all of
-        // them, and an empty list is indistinguishable from "this component has
+        // Falling straight through to `$name` would return an empty list for all
+        // of them, and an empty list is indistinguishable from "this component has
         // no worked examples". An agent told that builds markup from a prop list
         // instead of from usage a person already reviewed — the exact guessing
         // this catalog exists to remove.
@@ -391,10 +391,8 @@ final class McpCatalog
      * reproduced where it is developed.
      *
      * The examples map is deliberately not reused as that list. A public page
-     * carrying no shippable preview is missing from it: measured 2026-08-18, the
-     * examples map held 163 stems while 166 pages were public, and `map` was one
-     * of the three. Deriving the URL from example membership would have nulled
-     * exactly those, silently and only for the components with the thinnest
+     * carrying no shippable preview is missing from it, and deriving the URL from
+     * example membership would null exactly those, silently and only for the components with the thinnest
      * documentation — the ones an agent most needs the link for.
      */
     private function docsUrl(string $name): ?string

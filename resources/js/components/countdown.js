@@ -113,9 +113,8 @@ export default function wirekitCountdown(config = {}) {
             // 30-second display tick would delay `wirekit-countdown-expired` by up to thirty
             // seconds — a component that reads "0 days" while nothing has fired yet.
             //
-            // This is better than the state it replaces rather than a compensation for it:
-            // the event used to arrive up to a full second late even at 1 Hz, and now it
-            // arrives at the deadline.
+            // A timer armed for the deadline itself fires the event at the deadline; waiting
+            // for the next 1 Hz tick would deliver it up to a full second late.
             this._armExpiry(sync);
 
             // Re-assert after any write that clears `done` while the deadline is
@@ -154,12 +153,10 @@ export default function wirekitCountdown(config = {}) {
         /**
          * How often the DISPLAY has to be refreshed, from the smallest unit it shows.
          *
-         * The interval used to be an unconditional 1 Hz, and neither `showSeconds` nor the
-         * unit list appeared in it — they only decided what was rendered out of `now`. So a
-         * deadline shown in DAYS still set a reactive property every second on every
-         * authenticated page, re-evaluating every expression derived from it, for a value
-         * that changes once a day. Reported from an adopting project as the only continuous
-         * client work in the whole package, which is why it stood out at all.
+         * An unconditional 1 Hz tick would set a reactive property every second for a
+         * deadline shown in DAYS, re-evaluating every expression derived from it for a value
+         * that changes once a day. The interval follows `showSeconds` and the unit list
+         * instead.
          *
          * One rung under Nyquist on the display, so a minute still turns over visibly.
          */

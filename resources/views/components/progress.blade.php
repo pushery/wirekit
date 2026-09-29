@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'value' => null,             // numeric value (0..max). null = indeterminate
     'max' => 100,                // max value the bar represents
@@ -31,7 +30,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false);
 
@@ -122,10 +121,9 @@
 @endphp
 
 @if($valueExpression)
-    {{-- The scope sits on the WRAPPER, not on the bar: the readout is a SIBLING above
-         the track, so a scope on the track leaves `valueText()` unresolvable there.
-         Measured in the browser — the width and `aria-valuenow` were right while the
-         readout stayed empty, which is the half the report called "not visual-only".
+    {{-- The scope sits on the wrapper, not on the bar: the readout is a sibling above
+         the track, so a scope on the track would leave `valueText()` unresolvable there
+         and the readout empty while the width and `aria-valuenow` are right.
          The arithmetic lives in the factory, where the fill, `aria-valuenow` and the
          readout share one clamped number; every binding below only names a method. --}}
     <div x-data="wirekitProgress({ from: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueExpression) }}, max: {{ $max + 0 }}, determinate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate) }}, indeterminate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate) }} })" {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>

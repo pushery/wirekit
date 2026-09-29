@@ -20,7 +20,7 @@
  * is purely additive for the core-bundle-plus-editor case.
  */
 import wirekitEditor from './components/editor.js';
-import { reportLateRegistration } from './utils/late-registration.js';
+import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 
 function registerEditorComponent() {
     Alpine.data('wirekitEditor', wirekitEditor);
@@ -38,6 +38,6 @@ document.addEventListener('alpine:init', () => {
 // reaches DOM Alpine has not walked yet. An editor already rendered before this
 // bundle arrived is beyond rescue, though, so say that rather than imply otherwise.
 if (window.Alpine?.version) {
-    registerEditorComponent();
-    reportLateRegistration('wirekit-tiptap.js', () => reachedByInitEvent);
+    const names = registeredNames(window.Alpine, registerEditorComponent);
+    reportLateRegistration('wirekit-tiptap.js', () => reachedByInitEvent, names);
 }

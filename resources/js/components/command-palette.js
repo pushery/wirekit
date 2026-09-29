@@ -8,17 +8,46 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
+import {
+    holdPageInert,
+    inOverlayRoot,
+    lockScroll as lockPageScroll,
+    releasePageInert,
+    unlockScroll as unlockPageScroll,
+} from '../utils/overlay.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * @param {Object} config - Command palette configuration from Blade
- * @param {string} config.hotkey - Keyboard shortcut (default: 'cmd+k')
- * @param {boolean} [config.lockScroll=true] - Whether to set `document.body.style.overflow = 'hidden'`
- *   while the palette is open. Set to false when the palette is embedded inside a scoped
- *   container (e.g. docs preview card) where a global body-scroll lock would be disruptive.
+ * @param {string|false|null} [config.hotkey] - Keyboard shortcut. Absent means 'cmd+k'; an
+ *   empty string, `false` or `null` binds no shortcut at all.
+ * @param {string|null} [config.name] - The palette's name. An event that carries
+ *   `detail.name` reaches only the palette of that name; an event without one reaches every
+ *   palette on the page.
+ * @param {boolean} [config.lockScroll=true] - Whether to hold the page still while the palette
+ *   is open, with the counted lock modal and drawer share. Set to false when the palette is
+ *   embedded inside a scoped container (e.g. docs preview card) where a global body-scroll lock
+ *   would be disruptive.
  */
 export default function wirekitCommandPalette(config = {}) {
     const lockScroll = config.lockScroll !== false;
+
+    // An empty, false or null shortcut binds nothing: a page that manages the key itself, or
+    // carries a second palette, needs a way to leave it off. Absent keeps the default.
+    const hotkey = config.hotkey === undefined
+        ? 'cmd+k'
+        : (typeof config.hotkey === 'string' ? config.hotkey.trim().toLowerCase() : '');
+
+    const name = typeof config.name === 'string' && config.name !== '' ? config.name : null;
+
+    // Whether an event is meant for this palette. Without a `detail.name` it is meant for every
+    // palette on the page, which is how these events have always been read; with one, only for
+    // the palette of that name.
+    const addressed = (event) => {
+        const target = event?.detail?.name;
+
+        return target === undefined || target === null || target === '' || target === name;
+    };
 
     return withOpenAlias({
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
@@ -44,41 +73,47 @@ export default function wirekitCommandPalette(config = {}) {
         _navCleanup: null,
         _hotkeyHandler: null,
         _showHandler: null,
-        // The body's own inline `overflow` as it stood the moment this palette
-        // locked it — null while the palette holds no lock at all.
-        //
-        // The close paths used to write the empty string unconditionally, which
-        // is only correct when nothing else was already holding the page still.
-        // The hotkey is registered on `document`, so the palette opens from
-        // inside an open modal or drawer as readily as from the page: closing it
-        // then handed the empty string to a body that a still-open dialog had
-        // set to `hidden`, and the page scrolled behind that dialog. With
-        // `lockScroll: false` it was worse — the palette released a lock it had
-        // never taken.
-        _bodyOverflow: null,
+        // Whether this palette holds one of the page's scroll locks. The lock is the counted
+        // one modal and drawer share: the hotkey is registered on `document`, so the palette
+        // opens from inside an open dialog as readily as from the page, and the page must stay
+        // still until the last of them closes. The flag is what keeps a close from releasing a
+        // lock this palette never took, which `lockScroll: false` and a second close both are.
+        _holdsScrollLock: false,
+        // Whether this palette holds one of the counted holds that keep the page behind a modal
+        // overlay inert (see `holdPageInert` in utils/overlay.js). Taken once the trap has focus
+        // in the panel, and only for a palette rendered in the overlay root that holds the page
+        // still; given back before the trap returns focus to the page.
+        _holdsPageInert: false,
+        // The visual viewport listener while the palette is open; see _fitListToVisibleViewport().
+        _onVisibleViewport: null,
 
         init() {
             // Parse hotkey (e.g. 'cmd+k') and register global listener
-            this._hotkeyHandler = (e) => {
-                const hotkey = config.hotkey || 'cmd+k';
-                const parts = hotkey.toLowerCase().split('+');
+            if (hotkey !== '') {
+                const parts = hotkey.split('+');
                 const key = parts[parts.length - 1];
                 const needsMeta = parts.includes('cmd') || parts.includes('meta');
                 const needsCtrl = parts.includes('ctrl');
 
-                const metaMatch = needsMeta ? (e.metaKey || e.ctrlKey) : true;
-                const ctrlMatch = needsCtrl ? e.ctrlKey : true;
+                this._hotkeyHandler = (e) => {
+                    const metaMatch = needsMeta ? (e.metaKey || e.ctrlKey) : true;
+                    const ctrlMatch = needsCtrl ? e.ctrlKey : true;
 
-                if (e.key.toLowerCase() === key && metaMatch && ctrlMatch) {
-                    e.preventDefault();
-                    this.toggle();
-                }
-            };
+                    if (typeof e.key === 'string' && e.key.toLowerCase() === key && metaMatch && ctrlMatch) {
+                        e.preventDefault();
+                        this.toggle();
+                    }
+                };
 
-            document.addEventListener('keydown', this._hotkeyHandler);
+                document.addEventListener('keydown', this._hotkeyHandler);
+            }
 
             // Listen for programmatic open events — store reference for cleanup
-            this._showHandler = () => this.show();
+            this._showHandler = (event) => {
+                if (addressed(event)) {
+                    this.show();
+                }
+            };
             window.addEventListener('wirekit-command-palette-show', this._showHandler);
 
             /*
@@ -94,7 +129,11 @@ export default function wirekitCommandPalette(config = {}) {
              * `-close`, and `docs/overlays/events.md` names "`-show` / `-close` everywhere" as
              * the standard verb scheme.
              */
-            this._closeHandler = () => this._forceClose();
+            this._closeHandler = (event) => {
+                if (addressed(event)) {
+                    this._forceClose();
+                }
+            };
             window.addEventListener('wirekit-command-palette-close', this._closeHandler);
 
             /*
@@ -106,11 +145,16 @@ export default function wirekitCommandPalette(config = {}) {
              * stands, and the palette shows the matching slot and hides the empty state while
              * it is not the truth.
              *
-             * Page-global like `-show` and `-close`, which read no payload either: a page
-             * carries one palette. Livewire's `$this->dispatch(…, state: 'error')` arrives as
-             * `detail.state`, the same place an Alpine `$dispatch(…, { state })` puts it.
+             * Addressed like `-show` and `-close`: a `detail.name` reaches only the palette of
+             * that name, and a report without one reaches every palette on the page. Livewire's
+             * `$this->dispatch(…, state: 'error', name: 'search')` arrives as `detail.state` and
+             * `detail.name`, the same place an Alpine `$dispatch(…, { state, name })` puts them.
              */
-            this._stateHandler = (event) => this._setRemoteState(event?.detail?.state);
+            this._stateHandler = (event) => {
+                if (addressed(event)) {
+                    this._setRemoteState(event?.detail?.state);
+                }
+            };
             window.addEventListener('wirekit:command-palette-state', this._stateHandler);
 
             // SPA cleanup
@@ -122,6 +166,7 @@ export default function wirekitCommandPalette(config = {}) {
             this._unwatchList();
             if (this._hotkeyHandler) {
                 document.removeEventListener('keydown', this._hotkeyHandler);
+                this._hotkeyHandler = null;
             }
             if (this._showHandler) {
                 window.removeEventListener('wirekit-command-palette-show', this._showHandler);
@@ -181,18 +226,24 @@ export default function wirekitCommandPalette(config = {}) {
             // two cannot disagree.
             this.emitQuery();
 
-            // Lock body scroll (standard modal behavior). Skipped when the palette
-            // is embedded inside a scoped container where global body-scroll lock
-            // would be disruptive — see `lockScroll` prop on the Blade component.
-            //
-            // Snapshot first, restore on close: the value being replaced may be a
-            // lock somebody else is still holding. See `_bodyOverflow` above.
-            if (lockScroll) {
-                this._bodyOverflow = document.body.style.overflow;
-                document.body.style.overflow = 'hidden';
+            // Hold the page still, as a modal does. `overflow: hidden` alone does not do that
+            // on iOS, where a swipe over the backdrop still drags the page; the shared lock pins
+            // the body at its scroll position and puts it back on the last release. Skipped
+            // when the palette is embedded inside a scoped container where a global lock would
+            // be disruptive — see the `lockScroll` prop on the Blade component.
+            if (lockScroll && ! this._holdsScrollLock) {
+                this._holdsScrollLock = true;
+                lockPageScroll();
             }
 
             this.$nextTick(() => {
+                // The tick runs a task later, and the palette can close inside it. `close()`
+                // found no trap and no hold to give back then, so whatever this callback took
+                // now would stay taken: a trap on a hidden panel, and a page left inert.
+                if (! this.isOpen || this._trap) {
+                    return;
+                }
+
                 const panel = this.$refs.panel;
                 if (panel) {
                     this._trap = createFocusTrap(panel, {
@@ -202,10 +253,15 @@ export default function wirekitCommandPalette(config = {}) {
                         initialFocus: () => this.$refs.input,
                     });
                     this._trap.activate();
+
+                    if (lockScroll && ! this._holdsPageInert && inOverlayRoot(panel)) {
+                        this._holdsPageInert = holdPageInert();
+                    }
                 }
 
                 // The list only exists once the panel has rendered.
                 this._watchList();
+                this._watchVisibleViewport();
             });
         },
 
@@ -216,31 +272,35 @@ export default function wirekitCommandPalette(config = {}) {
             if (!this.isOpen) return;
             this.isOpen = false;
             this._trap = null;
+            this._releasePageInert();
             this._releaseScroll();
+            this._unwatchVisibleViewport();
         },
 
         /**
-         * Hand the body's `overflow` back exactly as it was found.
+         * Give back this palette's hold on the page behind it, and only its own, before the trap
+         * returns focus there: an inert element cannot take focus.
+         */
+        _releasePageInert() {
+            if (! this._holdsPageInert) return;
+
+            this._holdsPageInert = false;
+            releasePageInert();
+        },
+
+        /**
+         * Give back this palette's scroll lock, and only its own.
          *
-         * Doing nothing when this palette never locked is the load-bearing half:
-         * a release that runs unconditionally is indistinguishable from one that
-         * releases somebody else's lock, and the second is what the page behind
-         * an open dialog notices.
+         * The count decides when the page moves again: a dialog underneath that is still open
+         * keeps it still, and one that closed first has already given its lock back. Doing
+         * nothing when this palette holds none is the load-bearing half, because a release
+         * that runs unconditionally takes a lock that belongs to somebody else.
          */
         _releaseScroll() {
-            if (this._bodyOverflow === null) return;
+            if (! this._holdsScrollLock) return;
 
-            // …and the other half: hand back only a lock this palette is still the
-            // one holding. A dialog underneath can close FIRST and release its own
-            // lock while the palette is open, and the snapshot taken at open time
-            // then says `hidden` about a page nothing covers any more — writing it
-            // back would leave the reader unable to scroll with no dialog in sight.
-            // Anything other than the value written here belongs to somebody else.
-            if (document.body.style.overflow === 'hidden') {
-                document.body.style.overflow = this._bodyOverflow;
-            }
-
-            this._bodyOverflow = null;
+            this._holdsScrollLock = false;
+            unlockPageScroll();
         },
 
         /**
@@ -249,6 +309,7 @@ export default function wirekitCommandPalette(config = {}) {
         close() {
             if (!this.isOpen) return;
             this.isOpen = false;
+            this._releasePageInert();
 
             if (this._trap) {
                 this._trap.deactivate();
@@ -256,6 +317,7 @@ export default function wirekitCommandPalette(config = {}) {
             }
 
             this._releaseScroll();
+            this._unwatchVisibleViewport();
         },
 
         /**
@@ -263,6 +325,7 @@ export default function wirekitCommandPalette(config = {}) {
          */
         _forceClose() {
             this.isOpen = false;
+            this._releasePageInert();
 
             if (this._trap) {
                 this._trap.deactivate();
@@ -270,6 +333,7 @@ export default function wirekitCommandPalette(config = {}) {
             }
 
             this._releaseScroll();
+            this._unwatchVisibleViewport();
         },
 
         /**
@@ -315,6 +379,26 @@ export default function wirekitCommandPalette(config = {}) {
             if (event.target && event.target !== this.$refs?.input) return;
 
             const items = this._getItems();
+
+            // Enter while an input method composes text confirms the composition, not a choice.
+            if (event.key === 'Enter' && (event.isComposing || event.keyCode === 229)) return;
+
+            // Enter with no option highlighted belongs to the host. A search submits its query to
+            // a full results page, takes its single hit, or jumps where the query points; the
+            // palette itself never activates a row the reader did not highlight, so it only says
+            // that Enter was pressed, and with which query. Before the empty-list check, because
+            // a query that matched nothing can still be submitted. The default is prevented where
+            // it always was, with options in the list.
+            if (event.key === 'Enter' && ! (this._activeIndex >= 0 && items[this._activeIndex])) {
+                if (items.length) {
+                    event.preventDefault();
+                }
+
+                this.emitSubmit();
+
+                return;
+            }
+
             if (!items.length) return;
 
             switch (event.key) {
@@ -331,19 +415,30 @@ export default function wirekitCommandPalette(config = {}) {
                     break;
 
                 case 'Enter':
+                    // A highlighted option: the branch above took every other Enter.
                     event.preventDefault();
-                    if (this._activeIndex >= 0 && items[this._activeIndex]) {
-                        items[this._activeIndex].click();
-                    }
+                    items[this._activeIndex].click();
                     break;
 
+                // Home and End move through the list only once an option is highlighted. Before
+                // that the reader is still editing the query, and the keys belong to the text
+                // field, as the combobox pattern leaves them: the caret goes to the start or the
+                // end of the query.
                 case 'Home':
+                    if (this._activeIndex < 0) {
+                        break;
+                    }
+
                     event.preventDefault();
                     this._activeIndex = 0;
                     this._scrollToActive(items);
                     break;
 
                 case 'End':
+                    if (this._activeIndex < 0) {
+                        break;
+                    }
+
                     event.preventDefault();
                     this._activeIndex = items.length - 1;
                     this._scrollToActive(items);
@@ -404,12 +499,12 @@ export default function wirekitCommandPalette(config = {}) {
         /**
          * Keep the keyboard state honest across re-renders.
          *
-         * `_activeIndex` used to be reset only in show(), which is correct only
-         * while the list is rendered once. With server-side search the list is
-         * rebuilt on every keystroke: the index survived and pointed into the NEW
-         * results, so Enter activated whatever now sat at that position — the user
-         * arrowed to the third hit, typed one more character, and confirmed
-         * something they never looked at.
+         * Resetting `_activeIndex` only in show() is correct only while the list is
+         * rendered once. With server-side search the list is rebuilt on every
+         * keystroke, and a surviving index would point into the NEW results, so
+         * Enter would activate whatever now sat at that position: the user arrows
+         * to the third hit, types one more character, and confirms something they
+         * never looked at.
          *
          * A changed result set therefore clears the selection; an unchanged one
          * that merely re-rendered gets its highlight painted back on.
@@ -449,6 +544,76 @@ export default function wirekitCommandPalette(config = {}) {
                 this._observer.disconnect();
                 this._observer = null;
             }
+        },
+
+        /**
+         * Keep the end of the list above an on-screen keyboard.
+         *
+         * A keyboard leaves the layout viewport as it is and shrinks the visual one, so a list
+         * sized in viewport units or rem keeps its height and its last options sit under the
+         * keyboard, where scrolling the list cannot bring them, because the end of the scroll
+         * range is under the keyboard too. While the visible viewport is shorter than the layout
+         * viewport, the list's height token is capped at the room between the list's top and the
+         * visible bottom, less whatever the panel shows below the list. Otherwise the token is
+         * left as the page set it, so the height without a keyboard does not change.
+         */
+        _fitListToVisibleViewport() {
+            const viewport = typeof window !== 'undefined' ? window.visualViewport : null;
+            const list = this.$refs?.list;
+
+            if (! viewport || ! list || typeof list.style?.setProperty !== 'function'
+                || typeof list.getBoundingClientRect !== 'function' || typeof getComputedStyle !== 'function') {
+                return;
+            }
+
+            list.style.removeProperty('--wk-command-palette-list-max-height');
+
+            if (viewport.height >= window.innerHeight - 1) {
+                return;
+            }
+
+            const box = list.getBoundingClientRect();
+            const panel = this.$refs.panel;
+            const below = panel && typeof panel.getBoundingClientRect === 'function'
+                ? Math.max(0, panel.getBoundingClientRect().bottom - box.bottom)
+                : 0;
+            const room = Math.floor(viewport.offsetTop + viewport.height - box.top - below - 8);
+            // Read after the removal above, so this is the value the page set, or the default.
+            const token = getComputedStyle(list).getPropertyValue('--wk-command-palette-list-max-height').trim() || '18rem';
+
+            // A floor of a few rows: a list squeezed to nothing hides every option at once.
+            list.style.setProperty('--wk-command-palette-list-max-height', `min(${token}, ${Math.max(room, 96)}px)`);
+        },
+
+        _watchVisibleViewport() {
+            this._unwatchVisibleViewport();
+
+            const viewport = typeof window !== 'undefined' ? window.visualViewport : null;
+
+            if (! viewport || typeof viewport.addEventListener !== 'function') {
+                return;
+            }
+
+            this._onVisibleViewport = () => this._fitListToVisibleViewport();
+            // Passive: the handler only measures, and a non-passive scroll listener makes the
+            // browser wait for it before it scrolls.
+            viewport.addEventListener('resize', this._onVisibleViewport, { passive: true });
+            viewport.addEventListener('scroll', this._onVisibleViewport, { passive: true });
+            this._fitListToVisibleViewport();
+        },
+
+        /** Idempotent: every close path calls it, and the cap goes with the listener. */
+        _unwatchVisibleViewport() {
+            if (! this._onVisibleViewport) {
+                return;
+            }
+
+            const viewport = typeof window !== 'undefined' ? window.visualViewport : null;
+
+            viewport?.removeEventListener?.('resize', this._onVisibleViewport);
+            viewport?.removeEventListener?.('scroll', this._onVisibleViewport);
+            this._onVisibleViewport = null;
+            this.$refs?.list?.style?.removeProperty?.('--wk-command-palette-list-max-height');
         },
 
         /**
@@ -522,6 +687,20 @@ export default function wirekitCommandPalette(config = {}) {
          */
         emitQuery() {
             this.$root.dispatchEvent(new CustomEvent('wirekit-command-palette-query', {
+                detail: { query: this.query },
+                bubbles: true,
+                composed: true,
+            }));
+        },
+
+        /**
+         * Tell the host that Enter was pressed with no option highlighted, and with which query.
+         *
+         * Dispatched from the root for the reason `emitQuery()` gives. The palette stays open: the
+         * host closes it, navigates, or leaves it as it is.
+         */
+        emitSubmit() {
+            this.$root.dispatchEvent(new CustomEvent('wirekit:command-palette-submit', {
                 detail: { query: this.query },
                 bubbles: true,
                 composed: true,

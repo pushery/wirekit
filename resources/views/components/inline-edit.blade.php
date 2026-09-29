@@ -39,9 +39,8 @@
     // when the control loses focus. Forced to explicit for a select, see below.
     'commitOn' => 'explicit',
     'actions' => true,
-    // sm / md / lg only. Measured against all four control components rather
-    // than assumed: `md-compact` exists on input and select but NOT on textarea
-    // or number-input, so offering it here would throw for two of the four.
+    // sm / md / lg only: `md-compact` exists on input and select but not on
+    // textarea or number-input, so offering it here would throw for two of the four.
     'size' => 'md',
     // Cross-axis behavior. `auto` measures the content, so the width DOES jump
     // when the editor opens and that is the honest choice for a short value in
@@ -371,13 +370,11 @@
         @if($width === 'full' && $actions)
             {{-- Reserves the second action slot that only edit mode fills.
                  `width="full"` promises that the read box and the edit box are the same
-                 width — the component's own prop comment says so — and it did not keep
-                 the promise: read mode has ONE trailing button, edit mode has TWO
-                 (confirm and cancel), so the field came out narrower than the text it
-                 replaced by exactly one button plus a gap. Measured 852 → 828 at a docs
-                 preview width. Subtle on a single-line input and obvious on a textarea,
-                 where a visible border makes the inset right edge easy to compare
-                 against the unbordered text above it.
+                 width, and read mode has one trailing button where edit mode has two
+                 (confirm and cancel): without the reserve the field would come out
+                 narrower than the text it replaced by exactly one button plus a gap,
+                 obvious on a textarea, whose visible border makes the inset right edge
+                 easy to compare against the unbordered text above it.
 
                  Reserved by rendering the same markup rather than by computing a width:
                  an arithmetic reservation would silently drift the day the icon size or

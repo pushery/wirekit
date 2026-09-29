@@ -552,7 +552,6 @@ $wrap
 10x12
 16
 16"
-18.5
 1px
 2.1.1
 2.1.1).
@@ -720,7 +719,6 @@ CELLS
 COMPOSITE
 CORNER
 COUNT
-CUT
 Catching
 Check
 Computed
@@ -743,6 +741,7 @@ Drop
 ENT_QUOTES).'"',
 EVERY
 English
+English.
 Enter
 Escape
 FILTER_VALIDATE_BOOLEAN)
@@ -759,7 +758,6 @@ Generate
 German
 Graceful
 HERE
-HOVER,
 HOVERABLE:
 HTML,
 HTTP
@@ -784,6 +782,7 @@ KEY,
 Keyboard-
 LANDMARK
 LANDMARK.
+Left
 Legend
 Literal
 Livewire
@@ -794,7 +793,6 @@ MORPH
 MOST
 Make
 Map
-Measured
 Multi-line
 N
 NO
@@ -808,7 +806,6 @@ Normalize
 Normalized
 Nothing
 Null,
-OFF
 ON,
 ONE
 ONLY
@@ -838,7 +835,6 @@ Render
 Rendered
 Renders
 Replay"
-Reported
 Resolve
 Rich
 RuntimeException
@@ -1099,7 +1095,6 @@ a
 a11y
 able
 about
-above
 above,
 above.
 above:
@@ -1152,6 +1147,7 @@ announcing
 anonymous
 answer
 answer.
+answers
 anticipate
 any
 anything
@@ -1205,7 +1201,6 @@ as,
 asked
 asks
 assembled
-asserted:
 assertion
 association
 at
@@ -1236,7 +1231,6 @@ badges
 badges;
 baked
 bakes
-bar.
 bare
 base
 base;
@@ -1320,7 +1314,6 @@ bubble's
 bubbles
 bug
 bug,
-bug.
 build
 but
 button
@@ -1346,7 +1339,6 @@ card
 card's
 card,
 care
-carried
 carries
 carry
 case
@@ -1383,7 +1375,6 @@ choice
 chose
 chosen
 chrome
-claimed
 class
 class-shaped
 class="flex
@@ -1407,6 +1398,7 @@ clears
 client-only
 climbs
 clipping
+clipping,
 clone
 close
 close-icons,
@@ -1429,7 +1421,6 @@ columns
 columns",
 come
 comes
-comment
 comments,
 common
 compete
@@ -1460,7 +1451,6 @@ connects
 console
 console).
 construction.
-consuming
 containers.
 content
 content).
@@ -1491,6 +1481,7 @@ covers
 crossed
 currentColor
 currentColor;
+cut
 d="M3
 d="M4
 danger
@@ -1646,7 +1637,6 @@ existing
 exists
 exists.
 expandos.
-expensive:
 explanation
 explicitly
 exposing
@@ -1657,10 +1647,9 @@ eyebrow).
 factory's
 factory,
 factory.
-factory:
 fade)
 fade.
-fade="…">`
+fade="…">`,
 fail
 failed"
 fails
@@ -1678,7 +1667,6 @@ family
 feature
 field
 field,
-file
 files
 fill
 fill:
@@ -2001,7 +1989,6 @@ lives.
 loads.
 locale
 locale,
-locale.
 locale:
 localizable
 log
@@ -2049,6 +2036,7 @@ mechanism
 medium
 menus
 merge
+message
 min(1.0,
 min-height
 min-w-[var(--size-wk-sm)]
@@ -2194,6 +2182,7 @@ package
 padding
 padding,
 page
+page,
 page.
 pages
 paint;
@@ -2268,7 +2257,6 @@ problem
 prod).
 produced
 produces
-project,
 promise
 promises
 prop
@@ -2282,7 +2270,6 @@ purpose,
 purpose.
 put
 puts
-px
 px-2'
 px-2',
 px-2.5'
@@ -2347,7 +2334,6 @@ reduced
 redundant
 ref
 refuses.
-refutes
 regardless
 region
 region's
@@ -2373,7 +2359,6 @@ replaces
 replay-button
 reported
 reports
-reproduced
 request
 requested
 require
@@ -2581,7 +2566,7 @@ strtolower((string)
 stuck
 style="background:
 style="display:inline-block;"></span>
-stylesheet
+stylesheet's
 stylesheet).
 submission
 submitted
@@ -2627,7 +2612,6 @@ takes
 taking
 tall.
 teaches
-teleport
 teleport:
 teleported
 tell
@@ -2690,7 +2674,6 @@ throws
 tick
 tidy
 tile
-time
 time,
 time.
 timer
@@ -2777,7 +2760,6 @@ unknown-alias
 unknown.
 unless
 unlike
-unlocatable
 unnamed,
 unsaved
 unsaved-changes
@@ -2790,7 +2772,6 @@ upper
 usable
 use
 use:
-used
 useful
 user
 uses

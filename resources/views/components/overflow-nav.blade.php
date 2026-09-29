@@ -2,14 +2,20 @@
      A row of links. Following one loads a page; nothing is written that could be anticipated. --}}
 @props([
     // The links, in order: `label`, `href`, and optionally `current` (the page on screen, which
-    // never goes into the menu) and `attributes` (extra attributes for the anchor, such as
-    // `wire:navigate`).
+    // never goes into the menu), `attributes` (extra attributes for the anchor, such as
+    // `wire:navigate`), `key` (what `menuOrder` names the entry by, its position otherwise) and
+    // `action` (a button beside the link: `label`, which names it, `icon`, `close` by default,
+    // and `attributes`, such as the `wire:click` that closes the entry).
     'items' => [],
     // How many rows the links may take before the rest go into the menu.
     'lines' => 2,
     // The landmark's name. A `<nav>` is rendered only with one, so two rows on a page never
     // share a nameless landmark; without it the row is a plain list.
     'label' => null,
+    // The order of the menu, as a list of entry keys. Which entries move into the menu is still
+    // decided by the width; this only orders them there. Keys it does not name follow in the
+    // order of `items`.
+    'menuOrder' => null,
     'scope' => null,
 ])
 
@@ -33,7 +39,43 @@
             'href' => \Pushery\WireKit\Support\SafeUrl::href((string) ($item['href'] ?? '#')),
             'current' => (bool) ($item['current'] ?? false),
             'attributes' => new \Illuminate\View\ComponentAttributeBag((array) ($item['attributes'] ?? [])),
+            'key' => (string) ($item['key'] ?? $index),
+            'action' => $item['action'] ?? null,
         ];
+    }
+
+    // The action beside an entry is a button of its own, a sibling of the link rather than inside
+    // it, where it would be a control within a control. Its label is its name, and an action
+    // without one would be a button nobody can name, so it is reported and left out.
+    foreach ($entries as $position => $entry) {
+        $action = $entry['action'];
+
+        if ($action === null) {
+            continue;
+        }
+
+        $action = (array) $action;
+        $actionLabel = trim((string) ($action['label'] ?? ''));
+
+        if ($actionLabel === '') {
+            WireKit::validateProp('overflow-nav', 'items.action.label', '', ['the name of the action, such as "Close Order 1042"']);
+            $entries[$position]['action'] = null;
+
+            continue;
+        }
+
+        $entries[$position]['action'] = [
+            'label' => $actionLabel,
+            'icon' => (string) ($action['icon'] ?? 'close'),
+            'attributes' => new \Illuminate\View\ComponentAttributeBag((array) ($action['attributes'] ?? [])),
+        ];
+    }
+
+    // The menu in the order the caller gives, the rest after it in the order of the rows.
+    $menuEntries = $entries;
+    if (is_array($menuOrder) && $menuOrder !== []) {
+        $rank = array_flip(array_map('strval', array_values($menuOrder)));
+        usort($menuEntries, static fn (array $a, array $b): int => [$rank[$a['key']] ?? PHP_INT_MAX, $a['index']] <=> [$rank[$b['key']] ?? PHP_INT_MAX, $b['index']]);
     }
 
     $named = filled($label);
@@ -82,8 +124,11 @@
 >
     <ul data-wk-prose-skip role="list" x-ref="row" class="{{ $rowClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($entries as $entry)
-            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif x-show="shownHere({{ $entry['index'] }})">
+            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif @if($entry['action']) class="inline-flex items-center" @endif x-show="shownHere({{ $entry['index'] }})">
                 <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class([$linkClasses]) }}>{{ $entry['label'] }}</a>
+                @if($entry['action'])
+                    @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
+                @endif
             </li>
         @endforeach
         {{-- Hidden until the row has measured itself, so a page without script shows every link
@@ -96,9 +141,12 @@
                     </x-wirekit::button>
                 </x-slot:trigger>
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none flex flex-col gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;">
-                    @foreach($entries as $entry)
-                        <li data-wk-prose-skip x-show="menuHere({{ $entry['index'] }})" style="display: none;">
-                            <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif {{ $entry['attributes']->class([$menuLinkClasses]) }}>{{ $entry['label'] }}</a>
+                    @foreach($menuEntries as $entry)
+                        <li data-wk-prose-skip @if($entry['action']) class="flex items-center gap-[var(--gap-wk-xs)]" @endif x-show="menuHere({{ $entry['index'] }})" style="display: none;">
+                            <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif {{ $entry['attributes']->class([$menuLinkClasses, 'min-w-0 flex-1' => $entry['action'] !== null]) }}>{{ $entry['label'] }}</a>
+                            @if($entry['action'])
+                                @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
+                            @endif
                         </li>
                     @endforeach
                 </ul>

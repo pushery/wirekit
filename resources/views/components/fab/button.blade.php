@@ -40,16 +40,15 @@
 
     // The accessible name.
     //
-    // `aria-label` used to be emitted unconditionally, so a FAB with words in it
-    // showed "Send feedback" and announced "Action". Visible name and accessible
-    // name have to agree — WCAG 2.5.3, Label in Name — and someone using voice
-    // control cannot activate a control by the words they can see if it answers
-    // to something else.
+    // An unconditional `aria-label` would make a FAB that shows "Send feedback"
+    // announce "Action". Visible name and accessible name have to agree — WCAG
+    // 2.5.3, Label in Name — and someone using voice control cannot activate a
+    // control by the words they can see if it answers to something else.
     //
-    // Suppressing the label whenever the slot is FILLED would have been the
-    // obvious fix and the wrong one: a slot usually carries custom icon markup,
-    // which is non-empty and has nothing to read, so those buttons would have
-    // lost their name entirely. What decides is visible TEXT.
+    // Suppressing the label whenever the slot is FILLED would be wrong too: a
+    // slot usually carries custom icon markup, which is non-empty and has nothing
+    // to read, so those buttons would lose their name entirely. What decides is
+    // visible TEXT.
     $slotText = trim(strip_tags((string) $slot));
     $ariaLabel = match (true) {
         // No words of its own — the canonical icon FAB. The label is the name.
@@ -64,12 +63,10 @@
     // Whether the icon wrapper below may be hidden from assistive tech.
     //
     // `aria-hidden` is a claim that the content is DECORATIVE, and text is never
-    // decorative. The wrapper used to carry it unconditionally, which turned the
-    // branch above into a promise the next line broke: `default => null` means
-    // "the visible text is the name", and the text sat inside a hidden subtree,
-    // so a FAB with words in it shipped with NO accessible name at all — worse
-    // than the wrong name it replaced, because a control without a name cannot be
-    // reached by voice control and is announced as nothing at all.
+    // decorative. Carried unconditionally it would break the branch above:
+    // `default => null` means "the visible text is the name", and text inside a
+    // hidden subtree leaves a FAB with words in it with NO accessible name at all,
+    // which voice control cannot reach and a screen reader announces as nothing.
     //
     // Same value the name resolution keys off, so the two cannot disagree: the
     // wrapper is hidden exactly when there is nothing in it to read.
@@ -81,14 +78,15 @@
     // matching horizontal safe-area inset for a landscape notch on that side.
     // `--wk-scrollbar-inset` is on the END arm ONLY, and that is not an oversight.
     //
-    // A `position: fixed` box is laid out against a box that INCLUDES a classic scrollbar, so
-    // the gutter eats into the inline-end gap while the block-end gap loses nothing. The two
-    // axes read as symmetric and are not: at a 17px gutter the declared 16px inline offset
-    // renders as about -1px and the button touches the scrollbar.
+    // The document's own scrollbar is outside the viewport box a `position: fixed` box is laid
+    // out against, and needs nothing. A scrollbar drawn by an inner scroll container is inside
+    // it, and so is the gutter the scroll lock takes away while an overlay is open: that gutter
+    // eats into the inline-end gap while the block-end gap loses nothing. The two axes read as
+    // symmetric and are not: at a 17px gutter the declared 16px inline offset would render as
+    // about -1px and the button would touch the scrollbar. `--wk-scrollbar-inset` carries it.
     //
-    // `env(safe-area-inset-right)` does not cover it, and that is what hid this for so long —
-    // it compensates a device notch and is 0 on every desktop, in both engines, so the rule
-    // looks like deliberate scrollbar handling and is a flat 1rem.
+    // `env(safe-area-inset-right)` does not cover it: it compensates a device notch and is 0 on
+    // every desktop, in both engines.
     //
     // The scrollbar sits on the inline-END edge in BOTH directions: LTR puts it right, which is
     // inline-end, and an RTL document puts it left, which is also inline-end. So the START arm

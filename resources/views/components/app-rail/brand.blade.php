@@ -55,22 +55,20 @@
         'justify-center gap-0',
         'group-data-[labels=inline]/wk-rail:justify-start',
         'group-data-[labels=inline]/wk-rail:gap-[var(--gap-wk-sm,0.5rem)]',
-        // THE MARK SHARES THE MODULES' CENTER LINE, NOT THEIR LEFT EDGE — and the difference
+        // The mark shares the modules' center line, not their left edge, and the difference
         // between those two readings is this whole rule.
         //
-        // It used to use the rail's plain inline tier on both sides, which put the mark's LEFT
-        // edge on the icons' left edge. That is the same vertical line only for two things of
-        // the same width, and these are not: the mark is `--size-wk-sm` (2rem) and a module
-        // icon is 1.25rem. Sharing an edge therefore puts the mark's mass six pixels right of
-        // the column the icons make, and an eye reads a circle by its center. Reported as
-        // "indented a bit too far right", measured at exactly that: mark left 28, icon left
-        // 28, icon center 38, mark center 44.
+        // The rail's plain inline tier on both sides would put the mark's left edge on the
+        // icons' left edge. That is the same vertical line only for two things of the same
+        // width, and these are not: the mark is `--size-wk-sm` (2rem) and a module icon is
+        // 1.25rem. Sharing an edge would put the mark's mass half the difference right of the
+        // column the icons make, and an eye reads a circle by its center.
         //
-        // The narrow rail never had the problem — there both are centered in the column, so
-        // they already share a center (measured 40 and 40). This makes the wide rail agree.
+        // The narrow rail centers both in the column, so they already share a center. This
+        // makes the wide rail agree.
         //
         // The subtraction assumes a mark the size the component ships with. That assumption is
-        // held by a browser guard that compares the two CENTERS rather than the two edges, so
+        // held by a browser guard that compares the two centers rather than the two edges, so
         // a change to either size fails loudly instead of drifting six pixels at a time.
         //
         // It reads the module's own padding token, not the tier directly, and that is what
@@ -81,7 +79,7 @@
         // the modules do, in every shell, with no second rule to keep in step.
         //
         // And it carries the rail's own inset, because the zone this lands in does not.
-        // A module's padding is measured from the start of the module list, and the rail insets
+        // A module's padding counts from the start of the module list, and the rail insets
         // that list by `--wk-rail-inset-start`. The brand slot is rendered into a zone with no
         // inline padding at all, so without the inset a mark would begin its measurement one
         // inset earlier than every glyph below it, and the optical correction above would pull

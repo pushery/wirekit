@@ -11,12 +11,20 @@
     // `contain: layout`, `transform`, etc.) that should contain the fixed
     // overlay instead of letting it escape to the viewport.
     'teleport' => true,
-    // When true (default) opening the palette sets `document.body.style.overflow = 'hidden'`
-    // so the page behind the overlay can't be scrolled — standard modal behavior.
+    // When true (default) opening the palette holds the page still with the counted lock
+    // modal and drawer share, so the page behind the overlay can't be scrolled, on iOS too.
     // Set to false when the palette is embedded inside a local container (e.g. a
     // docs preview card) where locking global body scroll would be disruptive and
     // where a backdrop scoped via `contain: layout` already confines the overlay.
     'lockScroll' => true,
+    // Addresses this palette: `wirekit-command-palette-show`, `-close` and
+    // `wirekit:command-palette-state` with a `name` in their detail reach only the palette of
+    // that name. Without one they reach every palette on the page, as they always have.
+    'name' => null,
+    // The dialog's accessible name, announced first when the palette opens. A search
+    // is announced as a search this way, and two palettes on one page need not share
+    // a name. Empty keeps the translated default.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -45,7 +53,7 @@
 
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $teleport = BooleanProp::from($teleport, true);
     $lockScroll = BooleanProp::from($lockScroll, true);
@@ -90,7 +98,7 @@
     // file as text and does not know a PHP comment from markup, so writing the
     // old class here would re-emit it into the compiled stylesheet — and the
     // reverse-diff would then report a selector no source produces, pointing at
-    // a component that no longer uses it. Measured: it did exactly that.
+    // a component that no longer uses it.
     //
     // 288px is a fine default and a poor ceiling. A palette showing ranked search
     // results wants roughly half the viewport — on a 1080p screen that is ~540px,
@@ -127,7 +135,7 @@
 @endphp
 
 <div
-    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
+    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }} })"
     {{ $attributes }}
 >
     {{-- Overlay markup. Wrapped in `<template x-teleport="#wk-overlay-root">` by default so
@@ -180,19 +188,16 @@
                     x-transition:leave-end="opacity-0 scale-95"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="{{ __('wirekit::Command palette') }}"
+                    aria-label="{{ filled($label) ? $label : __('wirekit::Command palette') }}"
                     class="{{ $panelClasses }}"
                     x-on:click.stop
                     @keydown="handleKeydown"
                 >
                     {{-- Search input --}}
                     <div class="flex items-center gap-[var(--gap-wk-sm)]">
-                        {{-- Search icon, through the icon system rather than hand-drawn.
-                             It used to be this file's own copy of Heroicons' OUTLINE magnifier
-                             at stroke-width 2 on a 24-unit box — the only icon in the package
-                             that bypassed IconResolver, and therefore the only one that ignored
-                             a developer's preset entirely. Someone on Lucide or Phosphor still
-                             got a Heroicon here, and nothing said so. --}}
+                        {{-- Search icon, through the icon system rather than hand-drawn, so it
+                             follows the developer's icon preset like every other icon in the
+                             package. --}}
                         <div class="pl-[var(--padding-wk-x-lg)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
                             @if(function_exists('svg'))
                                 {{ svg(\Pushery\WireKit\WireKit::icon('search'), ['class' => 'w-5 h-5']) }}

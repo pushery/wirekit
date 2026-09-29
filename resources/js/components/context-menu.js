@@ -36,9 +36,8 @@ const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
 const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /*
- * Takes no configuration. It used to declare a `config` parameter documented as coming
- * from Blade — but the template calls `wirekitContextMenu()` with no arguments and the
- * body never read it, so the doc described a channel that did not exist.
+ * Takes no configuration: the template calls `wirekitContextMenu()` with no arguments, so a
+ * `config` parameter would describe a channel that does not exist.
  */
 export default function wirekitContextMenu() {
     return withOpenAlias({
@@ -47,26 +46,22 @@ export default function wirekitContextMenu() {
         _onScroll: null,
 
         isOpen: false,
-        // NO `_focusIndex` HERE, AND ITS ABSENCE IS THE POINT. This component used to hold
-        // the focused entry as a number and step it on every press, while `_getItems()` read
-        // the list back from the DOM each time — so the number and the list could describe
-        // different pages. `utils/roving-focus.js` opens with why that is not a style choice:
-        // an index captured before a morph survives it and points into a list that no longer
-        // exists, and the failure is quiet. It was the only one of this package's four menu
-        // models that worked that way; dropdown, menubar and submenu all resolve the current
-        // entry from `document.activeElement` per press, and `handleKeydown()` below now
-        // does too.
+        // No `_focusIndex` here, deliberately. A focused entry held as a number while
+        // `_getItems()` reads the list back from the DOM each time lets the number and the list
+        // describe different pages: `utils/roving-focus.js` opens with why an index captured
+        // before a morph survives it and points, quietly, into a list that no longer exists.
+        // Like dropdown, menubar and submenu, `handleKeydown()` below resolves the current
+        // entry from `document.activeElement` on every press.
         _navCleanup: null,
         // Cross-close channel — see utils/overlay-coordination.js.
         _coordination: null,
         // Stable identity for the "close every other instance" coordination.
-        // We previously used `this` for the source check, but Alpine wraps
-        // each component in a reactive Proxy and the identity of `this` is
-        // not guaranteed to be stable across event listener invocations vs
-        // dispatchEvent calls (the Proxy can wrap-and-unwrap depending on
-        // call site). A plain Symbol() created once in init() is bulletproof
-        // — it's a primitive value, never proxied, and `===` comparison is
-        // identity-based, so each instance gets its own unforgeable token.
+        // Not `this`: Alpine wraps each component in a reactive Proxy, and the
+        // identity of `this` is not guaranteed to be stable between event
+        // listener invocations and dispatchEvent calls (the Proxy can wrap and
+        // unwrap depending on the call site). A plain Symbol() created once in
+        // init() is a primitive, never proxied, and `===` compares identity,
+        // so each instance gets its own unforgeable token.
         // Long-press (touch) state.
         _pressTimer: null,
         _pressStartX: 0,
@@ -404,7 +399,7 @@ export default function wirekitContextMenu() {
          * carry no `PRECEDING` bit and are correctly left out: the reader steps out of the
          * region, and its own stops stay one Tab away.
          *
-         * Two exclusions, each for a measured reason. Every teleported panel is skipped —
+         * Two exclusions, each for a reason. Every teleported panel is skipped —
          * ours and every other overlay's — because they sit at the end of `<body>` while
          * being drawn somewhere else entirely, so one is never a sensible neighbor. And a
          * present but `display: none` element is skipped because `focus()` on one does

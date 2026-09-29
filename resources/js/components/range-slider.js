@@ -36,12 +36,12 @@ export default function wirekitRangeSlider(config = {}) {
         /*
          * The three document-level drag listeners, held so a teardown can reach them.
          *
-         * They used to live only in closures inside `_startDrag`, removed by the `onUp`
-         * that ends the gesture — which is fine for every drag that ENDS. A component torn
-         * down mid-gesture (a Livewire morph, a conditional render flipping, an SPA
-         * navigation) never gets that pointerup: three handlers stay on `document`, each
-         * closing over a dead scope, and the next pointer move anywhere on the page runs
-         * `_onDrag` against it.
+         * Closures inside `_startDrag`, removed by the `onUp` that ends the gesture, are
+         * fine for every drag that ENDS. A component torn down mid-gesture (a Livewire
+         * morph, a conditional render flipping, an SPA navigation) never gets that
+         * pointerup: three handlers would stay on `document`, each closing over a dead
+         * scope, and the next pointer move anywhere on the page would run `_onDrag`
+         * against it.
          *
          * Declared here with the other state rather than assigned inside the method,
          * because a handle that only ever appears inside a method is one nobody reading
@@ -51,7 +51,7 @@ export default function wirekitRangeSlider(config = {}) {
         _dragEnd: null,
         // True when the two thumbs are close enough that their individual value
         // badges would overlap — the blade then shows ONE merged "min – max"
-        // badge instead. Set by _measureBubbles() (measured, not a guessed %).
+        // badge instead. Set by _measureBubbles() from the badges' real boxes.
         _merged: false,
 
         /**
@@ -267,8 +267,7 @@ export default function wirekitRangeSlider(config = {}) {
             // focused element: the focus ring never appears, and the ArrowRight
             // pressed to fine-tune the value scrolls the page instead of moving
             // the handle, which is exactly the pointer-then-keyboard sequence the
-            // component documents. Measured in Chromium: `document.activeElement`
-            // stayed on `body` after a click on a thumb.
+            // component documents.
             //
             // `preventScroll` because the thumb is already under the pointer —
             // there is nothing to scroll into view, and scrolling here would drag
@@ -414,9 +413,8 @@ export default function wirekitRangeSlider(config = {}) {
 
         /**
          * Merge the two value badges into one "min – max" badge when the thumbs
-         * sit close enough that the individual badges would overlap (the issue a
-         * docs blueprint used to work around by printing the value in a separate
-         * row). Measures the rendered badge widths against the gap between the
+         * sit close enough that the individual badges would overlap. Measures the
+         * rendered badge widths against the gap between the
          * thumb centers — robust to track width and digit count, unlike a guessed
          * % threshold. Driven by an x-effect on minVal/maxVal, so it tracks live
          * during a drag, plus first paint. The individual badges stay in layout
@@ -449,9 +447,9 @@ export default function wirekitRangeSlider(config = {}) {
         /**
          * Re-measure whenever either handle moves.
          *
-         * Bound to `x-effect`, which re-runs whatever its expression READ. The
-         * template used to spell that out as `minVal; maxVal; remeasure()` —
-         * three statements, which Alpine's CSP build does not parse. The reads
+         * Bound to `x-effect`, which re-runs whatever its expression READ. Spelled
+         * out in the template as `minVal; maxVal; remeasure()` it would be three
+         * statements, which Alpine's CSP build does not parse. The reads
          * have to stay, and stay BEFORE the call: an effect only tracks what it
          * actually touches, so dropping them would leave the geometry stale
          * until something else happened to re-run it.
@@ -476,11 +474,10 @@ export default function wirekitRangeSlider(config = {}) {
              * refreshes. `_measureBubbles()` then does three layout reads (the track's
              * rect and both bubbles' offsetWidth) against a DOM the same gesture is
              * writing, which is exactly the per-event cost the drag's own `_dragRect`
-             * cache was added to remove; it was removed from one path and left on the
-             * other.
+             * cache keeps off the other path.
              *
-             * A frame is also strictly later than the `$nextTick` this replaced, so the
-             * Alpine-rendered DOM being measured is current either way.
+             * A frame is also strictly later than a `$nextTick`, so the Alpine-rendered
+             * DOM being read is current.
              */
             (this._measureFrame ??= frameCoalesce(() => this._measureBubbles())).schedule();
         },

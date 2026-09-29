@@ -12,6 +12,7 @@ import { firstControl } from '../utils/first-control.js';
  * @param {Object} config - Drawer configuration from Blade
  * @param {string} config.name - Unique drawer identifier
  * @param {boolean} config.dismissible - Whether ESC/backdrop closes the drawer
+ * @param {boolean} [config.lockScroll=true] - Whether opening locks the page's scroll
  */
 export default function wirekitDrawer(config = {}) {
     const overlay = createOverlay({
@@ -21,6 +22,8 @@ export default function wirekitDrawer(config = {}) {
         closeEvent: 'wirekit-drawer-close',
         // Sent when the reader dismisses it, so a page can clean up state it did not close itself.
         dismissedEvent: 'wirekit:drawer-dismissed',
+        // False for an overlay inside a page region, such as a preview: the page keeps scrolling.
+        lockScroll: config.lockScroll !== false,
         // drawer.body is a tab stop so a drawer of plain text can be scrolled from the keyboard,
         // and it wraps everything inside the drawer — start on the first CONTROL instead, and
         // on the body only when there is none. utils/first-control.js.

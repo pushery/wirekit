@@ -44,7 +44,7 @@
     ]);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `searchable="false"` used to mean the opposite of what the call site reads as. The
+    // `searchable="false"` would otherwise mean the opposite of what the call site reads as. The
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
     // the only reason the coverage guard did not see it. The single read is a truth test
     // around the free-text search box, so the box the call site removed was still drawn.
@@ -110,7 +110,7 @@
      *
      * Both subtractive gestures are invisible without this: a chip disappears from a
      * bar the reader is not looking at, and Clear-all empties the whole set at once.
-     * Neither reloads anything and neither used to move focus, so a screen reader was
+     * Neither reloads anything, and without an announcement a screen reader would be
      * handed nothing to notice — on the one piece of state a filter bar exists to hold.
      *
      * Assembled from placeholders here because a sentence concatenated in JavaScript

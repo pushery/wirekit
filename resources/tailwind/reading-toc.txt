@@ -476,6 +476,7 @@ optimistic-ui:
 options
 or
 ordinary
+otherwise
 overflow).
 overflow-x-auto"
 overflow.
@@ -606,7 +607,6 @@ two
 under
 unknown
 use
-used
 utility
 value
 values)
@@ -638,6 +638,7 @@ without
 wk-scrollbar
 work.
 works
+would
 writes
 x-cloak
 x-data

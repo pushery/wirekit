@@ -38,27 +38,25 @@
     'length' => config('wirekit.components.otp-input.length', 6),
     'masked' => config('wirekit.components.otp-input.masked', false),
     'scope' => null,
-    // Which characters a box accepts. Defaults to digits, so a call site that
-    // passes nothing keeps exactly the previous behavior.
+    // Which characters a box accepts. Defaults to digits.
     //
     // "OTP" does not mean "numeric": an ambiguity-free alphabet like
     // ABCDEFGHJKMNPQRSTUVWXYZ23456789 (no I/1, no O/0) is chosen deliberately —
     // it carries far more entropy per character and survives being read aloud.
-    // Before this prop existed, such a code could not be entered here at all:
-    // every keystroke was discarded and the boxes stayed empty with no message.
+    // With digits only, such a code could not be entered at all: every keystroke
+    // outside the set is discarded, and the boxes stay empty with no message.
     'alphabet' => '0123456789',
-    // How many boxes form a group. Null keeps the previous behavior exactly: one
-    // wrapping row, breaking wherever the width runs out.
+    // How many boxes form a group. Null gives one wrapping row, breaking wherever
+    // the width runs out.
     //
-    // Reported from an adopting application, measured at four widths: an eight-digit
-    // code broke 6+2 at 1280px and 5+3 at 375px, and a six-digit one 5+1 at 375px —
-    // a break in the middle of a code, at no boundary the code has. Somebody copying
-    // it from an email reads one line there.
+    // Without it an eight-digit code can break 6+2 or 5+3 and a six-digit one 5+1,
+    // wherever the width runs out: a break in the middle of a code, at no boundary
+    // the code has, while somebody copying it from an email reads one line there.
     //
     // The prop does NOT force a break: the groups sit in a wrapping row and each
     // group itself does not wrap, so a row that fits stays a row and a row that does
     // not breaks at a group boundary. `group="4"` on eight digits is one row on a
-    // desktop and 4+4 on a phone, which is what the report asked for.
+    // desktop and 4+4 on a phone.
     'group' => null,
     // Where the row of boxes sits inside the control's own width.
     //
@@ -92,11 +90,10 @@
     // A one-time-code screen is single-purpose: the reader arrived from a
     // redirect whose status region has already said the code was sent, and the
     // boxes are the only thing on the page they came to operate. Every sibling
-    // screen in that flow focuses its field; this one could not, because an
-    // `autofocus` written at the call site landed in the attribute bag and was
-    // dropped with it — measured as `document.activeElement === body`, one
-    // extra Tab for a keyboard reader and a pre-filled email field read out
-    // first for a screen-reader reader.
+    // screen in that flow focuses its field, and an `autofocus` written at the
+    // call site would land in the attribute bag and be dropped with it: one extra
+    // Tab for a keyboard reader, and a pre-filled email field read out first for
+    // a screen-reader reader.
     //
     // Default false, because an OTP field is not always alone on its page and
     // moving focus on a page somebody is already reading takes them somewhere
@@ -124,7 +121,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $masked = BooleanProp::from($masked, false);
     $autofocus = BooleanProp::from($autofocus, false);
@@ -332,6 +329,11 @@
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
+    // The Livewire property the hidden field is bound to. The boxes read it back, so they
+    // show what the property holds when something other than the boxes sets it, the
+    // server emptying it after a submit included. Null when nothing is bound.
+    $boundModel = $attributes->whereStartsWith('wire:model')->first();
+
     // `failure: 'keep'` — the keep-on-refusal exit, and where it matters most. A
     // rollback would clear the boxes, and a one-time code cannot simply be
     // retyped: it may have expired while the request was in flight.
@@ -385,7 +387,7 @@
          Handles auto-advance on digit input, backspace to previous,
          arrow key navigation, and paste distribution across fields. --}}
     <div
-        x-data="wirekitOtpInput({ length: {{ $length }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, alphabet: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars) }}, caseFold: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold) }} })"
+        x-data="wirekitOtpInput({ length: {{ $length }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, alphabet: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars) }}, caseFold: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
         {{-- flex-wrap because every digit box carries a hard width (`--size-wk-md`, 40px at the
              default size) and is an <input>, whose automatic minimum size resolves to that
              definite width —
@@ -415,15 +417,13 @@
         @if($disabled) aria-disabled="true" @endif
     >
         @foreach($digitGroups as $digitGroup)
-        {{-- `contents` when ungrouped, so the boxes stay flex items of the row above and
-             the layout is the one that shipped — byte for byte, not approximately. A
+        {{-- `contents` when ungrouped, so the boxes stay flex items of the row above. A
              wrapper that took part in the layout would make an eight-digit code stop
-             wrapping and run past the card, which is the bug one door over.
+             wrapping and run past the card.
 
-             Grouped, it is a row that does NOT wrap: the groups wrap against each other
+             Grouped, it is a row that does not wrap: the groups wrap against each other
              in the row above, so a break can only happen at a group boundary. Eight
-             digits with `group="4"` are one row wherever 376px fits and 4+4 where it
-             does not — measured in the report at 1280px and 375px. --}}
+             digits with `group="4"` are one row where it fits and 4+4 where it does not. --}}
         <div class="{{ $group === null ? 'contents' : 'flex gap-2' }}">
         @foreach($digitGroup as $i)
             <input

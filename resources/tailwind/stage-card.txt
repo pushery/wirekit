@@ -10,7 +10,6 @@
 "Progress"
 "Q3
 "border-color:
-"not
 "work
 $animation
 $animation,
@@ -171,8 +170,8 @@ $wrapperClasses
 ($variantValue)
 (+
 (0..max).
+(A
 (Component
-(This
 (`--text-wk-2xs`
 (a
 (anything
@@ -234,7 +233,6 @@ $wrapperClasses
 2
 2.
 2026",
-2026-09-09.
 3.
 36
 36"
@@ -320,7 +318,6 @@ Indeterminate:
 MANDATORY
 M_PI
 Mapping
-Measured
 Mirrors
 NAME
 New
@@ -336,16 +333,15 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 RANGE
 Renders
-SIBLING
 SOME
 STABLE
 SVG
 Same
 Semantic
+So
 Sourced
 Stroke
 Tailwind
-That
 The
 This
 Track
@@ -356,7 +352,6 @@ Validated
 Value
 Visible
 WCAG/WAI-ARIA
-WRAPPER,
 WireKit::resolveClasses('progress',
 WireKit::resolveClasses('stage-card',
 WireKit::validateProp('progress',
@@ -449,13 +444,11 @@ announced
 announcement
 announces,
 another
-any
 anything
 anything,
 apart
 applied
 arc
-arc,
 are
 aria-hidden="true">
 aria-label
@@ -472,7 +465,6 @@ around
 arrives
 as
 as,
-asserted:
 at
 attached
 attribute
@@ -522,7 +514,6 @@ bug.
 button
 by
 call
-called
 caller
 caller's
 callers
@@ -568,7 +559,6 @@ color-mix
 color-mix(in
 coloring,
 column
-coming,
 comment
 comments.)
 compiles
@@ -594,7 +584,6 @@ cx="18"
 cy="18"
 danger
 dashboard
-date
 debug
 decided
 default
@@ -605,7 +594,6 @@ design
 determinate
 determinate)
 determinate:
-developer
 dimensions
 directory
 disagree
@@ -630,7 +618,7 @@ element's
 element,
 else
 else,
-empty,
+empty
 enough
 enum;
 evaluated
@@ -686,14 +674,12 @@ go
 goes.
 gray
 grouped
-guard
 h-[var(--size-wk-lg)]',
 h-[var(--size-wk-md)]',
 h-[var(--size-wk-sm)]',
 h-[var(--size-wk-xl,6rem)]',
 h-full
 had
-half
 has
 have
 header.
@@ -750,14 +736,13 @@ label
 label's
 larger
 later
-leaves
+leave
 left
 legacy
 length
 lg
 light
 like
-line
 linear
 links
 list
@@ -800,7 +785,6 @@ name
 name)
 name,
 name.
-named
 named.
 names
 needed
@@ -844,6 +828,7 @@ optional
 order
 origin-center"
 other
+otherwise
 out
 out,
 outer
@@ -882,7 +867,6 @@ progress',
 progress:
 progressbar
 progressbar-name
-promised
 prop
 prop's
 property
@@ -918,7 +902,6 @@ real
 reason
 reason,
 reason:
-refutes
 region
 rely
 removal
@@ -927,7 +910,6 @@ render
 render.
 rendered
 renders
-report
 represents
 request
 required
@@ -937,7 +919,7 @@ resolving.)
 result
 retunes
 richer
-right
+right.
 ring
 roadmap
 role.
@@ -966,12 +948,12 @@ shape
 share
 shares
 shimmer
-shipped
 shortest
 should
 show
 showValue
 shown
+sibling
 silent-wrong-color
 silently.
 simply
@@ -988,7 +970,6 @@ smooth
 so
 soften
 source
-source.
 spells
 srgb,
 stable
@@ -998,9 +979,8 @@ stat
 state
 static
 stay
-stayed
 still
-stops
+stop
 streamed
 streaming).
 strictness
@@ -1029,6 +1009,7 @@ tabular-nums"
 tabular-nums">
 tag
 tags
+takes:
 text
 text)
 text-[color:var(--color-wk-text)]
@@ -1047,7 +1028,6 @@ themselves,
 then
 there
 there,
-there.
 they
 thin
 thing
@@ -1068,7 +1048,6 @@ tokens
 tokens.
 tone
 too,
-took:
 track
 track,
 trailing
@@ -1086,7 +1065,6 @@ under
 unit.
 unknown
 unresolvable
-until
 up
 up.
 updates.
@@ -1095,7 +1073,6 @@ usage
 use
 used
 uses
-v3.0.0
 value
 value,
 value/width
@@ -1107,19 +1084,16 @@ var(--color-wk-border));
 var(--transition-wk-duration)
 var(--transition-wk-easing)"
 variants
-version
 via
 view's
 viewBox="0
 visible
-visual-only".
 vocabulary
 w-full
 warning
 was
 watched
 we
-were
 what
 when
 where
@@ -1139,6 +1113,7 @@ work
 would
 wrapper
 wrapper).
+wrapper,
 x-bind:aria-valuenow="ariaValueNow()"
 x-bind:class="fillClasses()"
 x-bind:style="fillStyle()"

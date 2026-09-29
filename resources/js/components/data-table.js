@@ -73,8 +73,8 @@ export default function wirekitDataTable(config = {}) {
         rowKey: config.rowKey || 'id',
         mode: config.mode || 'client',
         sortKey: config.sortKey || null,
-        // Two directions exist. Anything else used to pass straight through, and ariaSort()
-        // reads every value but "asc" as descending.
+        // Two directions exist. Anything else is normalized here, because ariaSort() reads
+        // every value but "asc" as descending.
         sortDir: config.sortDir === 'desc' ? 'desc' : 'asc',
         search: '',
         selected: [],
@@ -453,10 +453,9 @@ export default function wirekitDataTable(config = {}) {
         },
         /**
          * Whether a cell draws as plain text: a text column, a link column whose row has no URL,
-         * and a column whose type this table does not know. That last case used to match no
-         * branch of the template at all, so the cell rendered EMPTY — which is exactly how a
-         * `cellType: 'link'` column looked before the link cell existed, and how a typo still
-         * would.
+         * and a column whose type this table does not know. That last case matches no other
+         * branch of the template, and without this one the cell would render empty, which is
+         * how a typo in `cellType` would look.
          */
         isPlainCell(row, col) {
             if (col.cellType === 'link') {
@@ -469,15 +468,12 @@ export default function wirekitDataTable(config = {}) {
          * The quieter second line of a cell, when the column asks for one.
          *
          * An admin table's ordinary cell is two lines, not one: order number over date,
-         * customer over email, product over SKU. Measured across this package's four admin
-         * data grids, between 29% and 50% of their cells are that shape — which is why none
-         * of those pages could be built on this component and all of them are still on the
-         * plain table.
+         * customer over email, product over SKU.
          *
-         * Deliberately a SECOND KEY rather than a template. A template per column is the
+         * Deliberately a second key rather than a template. A template per column is the
          * complete answer and a much larger one: the body is an Alpine `x-for` over rows, so
          * there is no Blade cell to hand back, and getting one means a real API. This covers
-         * the two-line cells measured above, costs one optional field, and forecloses none of it — a
+         * those two-line cells, costs one optional field, and forecloses none of it — a
          * column can gain a template later and this stays the shortcut for the common case.
          *
          * Empty behaves as absent: a row whose sub-field is null renders one line, not one

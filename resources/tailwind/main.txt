@@ -98,7 +98,6 @@ Header
 Horizontal
 INTO
 Main
-Measured
 Normalized
 Opt
 Pushery\WireKit\Support\BooleanProp;
@@ -140,12 +139,10 @@ allowed
 also
 an
 and
-any
 app-shell
 area
 as
 as,
-asserted:
 attribute
 back-compat
 back-compat.
@@ -191,7 +188,6 @@ explicit
 false);
 false,
 feature
-file
 first
 flips
 focus
@@ -202,7 +198,6 @@ fragment
 from
 full
 generic
-guard
 helper.
 id
 id="{{
@@ -244,10 +239,10 @@ of
 on
 on.
 one
-one.
 only
 opposite
 optimistic-ui:
+otherwise
 out
 overflow-y-auto',
 overrides.
@@ -269,11 +264,8 @@ py-[var(--space-wk-lg,1.5rem)]',
 py-[var(--space-wk-md,1rem)]',
 py-[var(--space-wk-sm,0.5rem)]',
 py-[var(--space-wk-xl,2.5rem)]',
-rather
 rationale).
 reads
-reason
-refutes
 renders
 result
 room.
@@ -297,7 +289,6 @@ string
 string)
 string,
 tabindex="-1"
-than
 that
 the
 there
@@ -311,7 +302,6 @@ truthy
 unbounded
 unknown
 use
-used
 uses
 validator.
 value

@@ -185,7 +185,6 @@ Declared
 Dev-only
 Developer
 Fully
-Measured
 Merge
 ON
 Pushery\WireKit\Support\BooleanProp;
@@ -233,7 +232,6 @@ any
 array_keys($colsMap)))
 as
 assembled
-asserted:
 at
 attribute
 attributes
@@ -278,14 +276,12 @@ entrance
 explicit
 extract
 false`
-file
 flags
 for
 from
 generated.
 gives:
 grids
-guard
 had.
 has
 if
@@ -346,12 +342,9 @@ prop
 property;
 props
 qualified:
-rather
 reach
 reason
 recognizes
-refutes
-renders
 result
 rtrim($developerStyle,
 rules
@@ -381,8 +374,6 @@ stringly-false
 style
 style="{{
 supplied
-than
-that
 the
 there
 this

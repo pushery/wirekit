@@ -6,11 +6,9 @@
  * The question "does this expression work without `script-src 'unsafe-eval'`"
  * has exactly one correct oracle: Alpine's own CSP parser. Anything else — a
  * regex catalog of forbidden constructs, a PHP re-implementation of the
- * grammar — is a GUESS about that oracle, and guessing is how this got sized
- * wrong the first time it was attempted: the estimate assumed the CSP build
- * accepted only property names and method calls, which had been true of an
- * older build. Measured against the real parser, the affected surface was a
- * fifth of the guess.
+ * grammar — is a guess about that oracle. The obvious guess, that the CSP build
+ * accepts only property names and method calls, was true of an older build and
+ * over-reports several times over against the current one.
  *
  * The grammar is also wider than it looks. Object literals, chains, ternaries,
  * index access and the usual operators all parse. Reading an expression and

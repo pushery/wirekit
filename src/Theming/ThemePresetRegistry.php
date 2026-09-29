@@ -150,11 +150,9 @@ CSS,
                 'vars' => <<<'CSS'
     /* Brutalist — raw honesty, visible structure. Mirrors docs/theming/brutalist.md.
 
-       This entry used to declare three token families and a comment reading
-       "bold borders, no shadows", which is the opposite of the aesthetic the
-       page has taught since 2026-03-31: a hard 2D offset shadow with zero blur.
-       The command wrote one theme, the page taught another, and they shared a
-       name. ThemePresetDocsValueDriftTest held the gap as a known divergence.
+       The entry follows the page: a hard 2D offset shadow with zero blur, not
+       "bold borders, no shadows". Anything else would have the command write one
+       theme and the page teach another under the same name.
 
        The FONT stays out on purpose: the page's JetBrains Mono pairing needs
        config/wirekit.php -> 'mono' => 'jetbrains-mono', which this command
@@ -334,9 +332,9 @@ CSS,
 
     --color-wk-border: oklch(0.91 0 0);
     /* Form-control borders — contrast-bound, not stylistic: 3:1 against the
-       input fill (WCAG 1.4.11), and hover moves AWAY from that fill. The softer
-       0.82 this preset used to carry reads well on a card edge but reaches only
-       1.75:1 around an input. Keep in lockstep with docs/theming/aurora.md. */
+       input fill (WCAG 1.4.11), and hover moves AWAY from that fill. A softer
+       0.82 reads well on a card edge but reaches only 1.75:1 around an input.
+       Keep in lockstep with docs/theming/aurora.md. */
     --color-wk-border-strong: oklch(0.66 0 0);
     --color-wk-border-strong-hover: oklch(0.58 0 0);
 

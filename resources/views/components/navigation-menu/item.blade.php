@@ -95,16 +95,14 @@
     <a data-wk-prose-skip
         href="{{ $href }}"
         @if($computedRel) rel="{{ $computedRel }}" @endif
-        {{-- Through ->class(), not as a hardcoded attribute beside the bag. A caller's own
-             class used to arrive as a SECOND class attribute here, which the browser
-             discards — so their styling vanished with nothing to see. The sibling anchor
-             twelve lines down already merged correctly.
+        {{-- Through ->class(), not as a hardcoded attribute beside the bag: a caller's own
+             class would otherwise arrive as a second class attribute, which the browser
+             discards, and their styling would vanish with nothing to see. The sibling
+             anchor below merges the same way.
 
-             No utility class is NAMED in this comment on purpose. Tailwind scans Blade
-             comments too, so an illustrative one here compiles into the stylesheet as a real
-             rule that the drift reverse-diff cannot trace to any emission — measured: the
-             first draft of this comment used a margin utility as its example and reddened
-             the Drift suite by itself. --}}
+             No utility class is named in this comment on purpose. Tailwind scans Blade
+             comments too, so an illustrative one here would compile into the stylesheet as
+             a real rule that nothing emits. --}}
         {{ $attributes->except('rel')->class($triggerClasses) }}
     >
         {{ $slot->hasActualContent() ? $slot : $trigger }}
@@ -191,7 +189,7 @@
                 {{-- The panel has teleported out of the nav, so its events bubble
                      to <body> and never reach the bar's own keydown listener.
                      Escape closes AND returns focus to the trigger (WCAG 2.4.3 —
-                     it used to fall to <body>), and the two Tab edges hand focus
+                     otherwise it falls to <body>), and the two Tab edges hand focus
                      back to the bar instead of off the end of the document. --}}
                 x-on:keydown="handlePanelKeydown($event, {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
                 x-on:focusout="handlePanelFocusOut($event, {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"

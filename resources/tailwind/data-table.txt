@@ -275,17 +275,14 @@ $value]))
 12h12"/></svg>
 16
 16"
-165
 2.1.1),
 2.1.1,
 2.17.0
 2l2.5
 300),
-390
 3h-5zM6
 3l3
 4.1.3
-42%
 4H3z"/></svg>
 4h12M2
 5h6z"/></svg>
@@ -414,7 +411,6 @@ Both
 Bound
 Bulk-action
 CALLER
-CAPPED,
 CELL
 CHARACTER.
 CONTENT
@@ -461,7 +457,6 @@ LANDMARK
 LANDMARK.
 Livewire
 Livewire's
-Measured
 Milliseconds
 N
 NAMES
@@ -493,6 +488,7 @@ RENDER
 ROW
 RUNTIME
 Read
+Rows
 SAME
 SHAPE,
 SKU
@@ -590,7 +586,6 @@ __('wirekit::Select
 `??`
 `??`:
 `?q=…`
-`@else`
 `AvatarPalette`
 `I`
 `Intl.PluralRules`
@@ -650,7 +645,7 @@ __('wirekit::Select
 `resolveClasses`
 `role="group"`
 `role="menu"`
-`role="menu"`,
+`role="menu"`:
 `role="region"`
 `role="status"`
 `search-change`.
@@ -707,6 +702,7 @@ address
 adds
 admin
 advance
+advance:
 affordance.
 after
 against
@@ -760,7 +756,6 @@ aria-hidden="true"
 aria-label="{{
 aria-labelledby="{{
 aria-live="polite"
-arm
 around
 array
 array_values((array)
@@ -856,7 +851,7 @@ bundle
 busy
 busy.
 button
-button",
+button"
 by
 call
 called
@@ -868,6 +863,7 @@ cannot
 cap
 cap,
 capitalize';
+capped,
 caps
 caption
 caption,
@@ -875,7 +871,7 @@ caption.
 care.
 carrier
 carries
-carries;
+carries.
 carry
 carry.
 carrying
@@ -1130,14 +1126,13 @@ exactly
 exist,
 existed
 exists
-expected
+expect
 exposed
 express
 express.
 expressed,
 expressible
 expression
-expression.
 eye
 eye.
 facing
@@ -1232,13 +1227,12 @@ gets
 getter
 gives
 glyphs
+go
 goes
 going
-got
 grammar,
 gray
 grid
-grids
 group
 group-hover:bg-[var(--color-wk-bg-subtle)]',
 guaranteed
@@ -1337,7 +1331,7 @@ it,
 it.
 it:
 it;
-items,
+items
 items-center
 its
 itself
@@ -1349,7 +1343,6 @@ justify-center
 keep
 keep.
 keeps
-kept
 key
 key,
 key:
@@ -1362,7 +1355,7 @@ keystroke
 keystroke,
 knob
 know.
-knowable
+known
 knows
 label
 label,
@@ -1374,6 +1367,7 @@ landmark,
 landmark.
 lands
 language
+large
 last
 late
 later
@@ -1440,8 +1434,6 @@ mean
 means
 means.
 meanwhile
-measured
-measured:
 measurement
 members
 menu
@@ -1485,7 +1477,6 @@ muted
 n/a
 name
 name.
-name:
 name="{{
 named
 names
@@ -1499,7 +1490,6 @@ needs
 negative
 neither
 neither.
-neither:
 nested
 never
 new
@@ -1517,7 +1507,6 @@ nothing
 nothing,
 nothing.
 noun
-now
 null
 null,
 null:
@@ -1650,8 +1639,6 @@ prose",
 purpose.
 put
 puts
-px
-px,
 px-[var(--padding-wk-x-md)]
 px-[var(--padding-wk-x-md)]"><span
 px-[var(--padding-wk-x-sm)]
@@ -1817,6 +1804,7 @@ shadow-[var(--shadow-wk-lg)]">
 shadows
 shape
 shape:
+share
 shipped
 short
 short,
@@ -1853,7 +1841,7 @@ so
 so.
 soft
 solid
-solves.
+solves:
 someSelected"
 something
 sort
@@ -1915,7 +1903,7 @@ switched
 tab
 tabindex="0"
 table
-table",
+table"
 table's
 table,
 table.
@@ -1993,7 +1981,6 @@ told
 too
 too,
 too.
-took
 toolbar
 top
 total;
@@ -2006,7 +1993,6 @@ travels
 trigger's
 trigger,
 trip
-trip,
 trip.
 trips
 trips.
@@ -2036,7 +2022,6 @@ up,
 updates
 urgent
 use
-used
 user
 uses,
 utilities
@@ -2082,8 +2067,6 @@ we
 wears
 well
 well-formed,
-went
-were
 what
 whatever
 when

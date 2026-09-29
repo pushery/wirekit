@@ -52,6 +52,10 @@
     'searchDebounce' => config('wirekit.components.multi-select.search-debounce', 300),
     // The application cut its results at a limit. The list then says there are more.
     'truncated' => false,
+    // How the options are offered. `dropdown` opens them in a panel under the field and shows
+    // the choice as pills inside it. `list` shows them open under a search field, each with a
+    // checkbox, and the choice as a list below it with a button to take each one out.
+    'layout' => 'dropdown',
     'scope' => null,
     'ariaLabel' => null,
 ])
@@ -78,6 +82,7 @@
     $truncated = BooleanProp::from($truncated, false);
     $searchMinLength = max(1, (int) $searchMinLength);
     $searchDebounce = max(0, (int) $searchDebounce);
+    $listLayout = WireKit::validateProp('multi-select', 'layout', (string) $layout, ['dropdown', 'list']) === 'list';
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -204,6 +209,51 @@
         'text-[color:var(--color-wk-text-muted)]',
         'cursor-default',
     ]);
+
+    // The list layout: a search field, the options open under it with a checkbox each, and the
+    // choice below with a button to take each one out. The checkbox box is the one `checkbox`
+    // draws, written out here because a row is stamped out by Alpine and cannot render the
+    // component: its `label for` names one fixed id, which every row would share.
+    $listSearchClasses = WireKit::resolveClasses('multi-select', 'list-search', implode(' ', [
+        'block w-full min-h-[var(--size-wk-md)]',
+        'py-[var(--padding-wk-y-sm)] px-[var(--padding-wk-x-md)]',
+        'font-[family-name:var(--font-wk-sans)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]',
+        'bg-[var(--color-wk-bg-input)] rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] shadow-[var(--shadow-wk-sm)]',
+        'placeholder:text-[color:var(--color-wk-text-placeholder)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+    ]), $scope);
+
+    $listRowClasses = WireKit::resolveClasses('multi-select', 'list-row', implode(' ', [
+        'group flex items-start gap-[var(--gap-wk-sm)] cursor-pointer',
+        'py-[var(--padding-wk-y-xs)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)]',
+        'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]',
+        'hover:bg-[var(--color-wk-bg-muted)]',
+    ]), $scope);
+
+    $listBoxClasses = WireKit::resolveClasses('multi-select', 'list-checkbox', implode(' ', [
+        'relative inline-flex items-center justify-center shrink-0 wk-touch-target w-5 h-5 mt-0.5',
+        'rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]',
+        'peer-hover:border-[var(--color-wk-border-strong-hover)] bg-[var(--color-wk-bg-input)]',
+        'peer-checked:bg-[var(--color-wk-accent)] peer-checked:border-[var(--color-wk-accent)]',
+        'peer-checked:peer-hover:border-[var(--color-wk-accent)]',
+        'peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
+        'peer-focus-visible:ring-[var(--color-wk-ring)] peer-focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
+        'transition-colors duration-[var(--transition-wk-duration)] text-[color:var(--color-wk-accent-fg)]',
+    ]), $scope);
+
+    $listChosenClasses = WireKit::resolveClasses('multi-select', 'list-chosen', implode(' ', [
+        'flex items-center justify-between gap-[var(--gap-wk-sm)]',
+        'py-[var(--padding-wk-y-xs)] ps-[var(--padding-wk-x-sm)] pe-1',
+        'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]',
+        'bg-[var(--color-wk-bg-muted)] rounded-[var(--radius-wk-sm)]',
+    ]), $scope);
+
+    // Both plural forms of the heading over the choice travel to the browser, which counts it.
+    $selectedOne = trans_choice('wirekit::{1} :count selected|[2,*] :count selected', 1, ['count' => '__COUNT__']);
+    $selectedMany = trans_choice('wirekit::{1} :count selected|[2,*] :count selected', 2, ['count' => '__COUNT__']);
+    $listConfig = $listLayout
+        ? ', selectedOne: '.\Pushery\WireKit\Support\AlpinePayload::string($selectedOne).', selectedMany: '.\Pushery\WireKit\Support\AlpinePayload::string($selectedMany)
+        : '';
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
     // A caller's aria-describedby joins this list, because the control is what it describes
@@ -357,7 +407,8 @@
         {{ $attributes->except('aria-describedby')->class(['relative']) }}
         x-modelable="selected"
         {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
-        x-data="wirekitMultiSelect({ options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }} })"
+        x-data="wirekitMultiSelect({ options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
+        @if($listLayout) data-wk-multi-select-layout="list" @endif
         @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"
@@ -373,6 +424,95 @@
             <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="val" />
         </template>
 
+        @if($listLayout)
+            {{-- The search field. Its text is sent the way the dropdown's is; there is no panel to
+                 open, so it is a search field rather than a combobox. --}}
+            <input
+                type="search"
+                id="{{ $id }}-input"
+                x-ref="filterInput"
+                x-model="filter"
+                @input="onListInput()"
+                aria-controls="{{ $id }}-results"
+                @if($required) aria-required="true" @endif
+                @if($hasError) aria-invalid="true" @endif
+                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                aria-label="{{ $resolvedAriaLabel }}"
+                placeholder="{{ $placeholder }}"
+                {{-- `wk-field` is outside `resolveClasses()` so a personalization cannot take it off:
+                     it holds the font-size floor that keeps iOS from zooming the page on focus. --}}
+                class="wk-field {{ $listSearchClasses }} {{ $stateClasses }}"
+            />
+
+            {{-- The options, open, each with a checkbox. A checkbox is a control of its own, reached
+                 with Tab and flipped with Space, and it says whether its option is chosen, so a
+                 chosen option stays in the list rather than leaving it. --}}
+            <div
+                id="{{ $id }}-results"
+                role="group"
+                aria-label="{{ $resolvedAriaLabel }}"
+                @if($server) x-bind:aria-busy="searchAriaBusy()" @endif
+                class="mt-[var(--space-wk-xs)] [overflow-wrap:anywhere]"
+            >
+                <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none" style="list-style: none; margin: 0; padding: 0;">
+                    <template x-for="(opt, idx) in listOptions" :key="opt.value">
+                        <li data-wk-prose-skip>
+                            <label class="{{ $listRowClasses }}">
+                                <input
+                                    type="checkbox"
+                                    class="peer sr-only"
+                                    data-wk-multi-select-option
+                                    :value="opt.value"
+                                    :checked="selected.includes(opt.value)"
+                                    @change="{{ $optimisticConfig ? 'run(nextWith(opt.value))' : 'toggleFromList(opt.value)' }}"
+                                />
+                                <span class="{{ $listBoxClasses }}" aria-hidden="true">
+                                    <svg class="hidden group-has-[:checked]:block pointer-events-none w-full h-full p-0.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                </span>
+                                <span class="flex min-w-0 flex-col">
+                                    <span x-text="opt.label"></span>
+                                    <span x-show="opt.description" x-text="opt.description" class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]"></span>
+                                </span>
+                            </label>
+                        </li>
+                    </template>
+                </ul>
+                <p data-wk-prose-skip
+                    x-show="listOptions.length === 0"
+                    @if($server) x-text="searchEmptyText(filter)" @endif
+                    class="{{ $emptyRowClasses }}"
+                >{{ __('wirekit::No results') }}</p>
+                @if($server)
+                    <p data-wk-prose-skip
+                        x-show="listOptions.length > 0 && searchNote() !== ''"
+                        x-text="searchNote()"
+                        class="{{ $emptyRowClasses }}"
+                    ></p>
+                @endif
+            </div>
+
+            {{-- The choice, under the options, with a button to take each one out. A chosen option
+                 keeps its name here after the results move on to another search. --}}
+            <div x-show="selected.length > 0" class="mt-[var(--space-wk-sm)] space-y-1">
+                <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" x-text="selectionHeading"></p>
+                <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none flex flex-col gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;">
+                    <template x-for="(val, i) in selected" :key="'chosen-'+val">
+                        <li data-wk-prose-skip class="{{ $listChosenClasses }}">
+                            <span class="min-w-0" x-text="pillLabel(val)"></span>
+                            <button
+                                type="button"
+                                data-wk-multi-select-remove
+                                @click="{{ $optimisticConfig ? 'run(nextWith(val))' : 'removeFromList(val)' }}"
+                                :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
+                                class="wk-touch-target relative p-1 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                            >
+                                <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        @else
         {{-- Input container with pills. `wk-field-frame` is outside `resolveClasses()` on purpose:
              on a coarse pointer the frame takes the 44px touch floor and the text input inside gives
              its own up, and a developer who restyles the base classes must not lose that. --}}
@@ -479,11 +619,10 @@
                  against its own counterpart, one to one, never against a keyed
                  sibling, so several multi-selects on a page do not compete. --}}
             wire:key="wk-multi-select-listbox"
-            {{-- Open is open, whether or not anything matched. The panel used to
-                 hide itself on an empty list, so a filter that matched nothing
-                 and a filter that had not been typed yet looked identical — no
-                 panel either way — and the documented "No results" state had
-                 nowhere to appear. --}}
+            {{-- Open is open, whether or not anything matched. A panel that hid
+                 itself on an empty list would make a filter that matched nothing
+                 and a filter not typed yet look identical — no panel either way —
+                 and leave the documented "No results" state nowhere to appear. --}}
             x-show="dropdownOpen"
             x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
             x-transition:enter-start="opacity-0 -translate-y-1"
@@ -588,6 +727,7 @@
             @endif
         </div>
         </template>
+        @endif
 
         {{-- Selection announcer. Outside the listbox — a live region is not an
              option — and present from the first render, carrying whatever the
@@ -602,7 +742,8 @@
              hedged, by the optimistic layer, and a second voice on the success
              path is what makes a rollback indistinguishable from a
              confirmation. One speaker per pick, whichever one is there. --}}
-        @unless($optimisticConfig)
+        {{-- The list layout needs none: its checkbox stays where it is and says its own state. --}}
+        @unless($optimisticConfig || $listLayout)
             <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="selectionAnnouncement"></div>
         @endunless
 
@@ -610,7 +751,7 @@
             {{-- The search status, spoken: the panel's rows are options a reader arrows through,
                  and a row that says "Searching" is only read when the keyboard lands on it.
                  Present from the first render for the reason the announcer above gives. --}}
-            <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="searchAnnouncement(filteredOptions.length, filter)"></div>
+            <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="searchAnnouncement({{ $listLayout ? 'listOptions' : 'filteredOptions' }}.length, filter)"></div>
         @endif
 
         {{-- The symbols the option icons point at, rendered with the component so a Livewire

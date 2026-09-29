@@ -10,9 +10,9 @@
  * Alpine does not initialize from, and this helper applies a change of it to the
  * live scope.
  *
- * WHY A DEDICATED ATTRIBUTE, rather than reading the hidden input the component
- * already has. Measured on a real round trip, the two shapes in this library
- * behave differently and only one of them is watchable:
+ * Why a dedicated attribute, rather than reading the hidden input the component
+ * already has: across a real round trip the two shapes in this library behave
+ * differently, and only one of them is watchable:
  *
  *   - `segmented-control` and `otp-input` write their hidden input imperatively,
  *     so Livewire's morph lands on the `value` attribute and stays there. An
@@ -27,8 +27,8 @@
  * the server on every render and by nobody else, which makes "the server changed
  * it" a fact the DOM can state rather than something to be inferred.
  *
- * WHY NOT A LIVEWIRE HOOK. `morph.updated` exists and fires (measured), but it
- * would make every component that wants this depend on Livewire being present,
+ * Why not a Livewire hook: `morph.updated` exists and fires, but it would make
+ * every component that wants this depend on Livewire being present,
  * and these components are documented to work in a plain form too. A mutation on
  * an attribute is true whoever wrote it.
  *

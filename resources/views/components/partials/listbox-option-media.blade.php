@@ -7,19 +7,15 @@
      or an avatar's initials would read the same name twice, or read letters nobody wrote.
 
      An icon is a `<use>` into the sprite the component rendered on the server (see IconSprite for
-     why, with the measurements). An avatar shows its photo until the photo fails to load, and its
+     why). An avatar shows its photo until the photo fails to load, and its
      initials from then on, or from the start when it has no photo at all.
 
      Every <img> here is `loading="lazy"`, and the reason is the list rather than the image. An
      option list is a SCROLL region: every row exists in the DOM the moment the panel opens, while
      roughly eight of them are on screen.
 
-     Two measurements, 2026-09-18, and they are deliberately kept apart. The SIZE of the problem is
-     read off the render: a `phone` picker offering every country puts 243 flag URLs into its
-     options. The EFFECT is measured in a browser, where the flag path is redirected at a
-     three-artwork fixture and only two rows carry an image at all — eager fetched both, including
-     the one far below the fold; lazy fetched one. That is the behavior; the first number is what
-     makes it worth having, and nobody has measured 243 requests in one place.
+     A `phone` picker offering every country puts a flag URL into every option: an eager image is
+     fetched even far below the fold, a lazy one only when its row comes near the viewport.
 
      The icon is not an <img> and is unaffected: it is a `<use>` into a sprite the server already
      rendered, so it costs no request at all.

@@ -20,9 +20,9 @@ const OWNER = Symbol('wirekit.openAliasOwner');
  * `open` as an alias of `isOpen`, deprecated since 2.57.0 and removed in 3.0.0, a major version
  * that has no fixed date.
  *
- * A component's open state is `isOpen`. It used to be `open`, which is also the name of a function
- * on `window`, so an expression evaluated against a scope that no longer carries the component
- * found `window.open` instead of failing, and Alpine called it: an `Illegal invocation` from the
+ * A component's open state is `isOpen`, not `open`: `open` is also the name of a function on
+ * `window`, so an expression evaluated against a scope that no longer carries the component finds
+ * `window.open` instead of failing, and Alpine calls it — an `Illegal invocation` from the
  * framework's bundle, with no component named. `isOpen` fails with the component's own name
  * instead.
  *

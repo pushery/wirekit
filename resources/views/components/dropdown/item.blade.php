@@ -39,7 +39,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $danger = BooleanProp::from($danger, false);
     $disabled = BooleanProp::from($disabled, false);
@@ -67,8 +67,7 @@
         // The menu focuses its first item on open so keyboard users land inside it. With a
         // plain `focus:` background that meant every mouse-opened menu painted its first entry
         // the moment it appeared — and a filled row reads as "you are here", not as "the
-        // caret is here". Reported by a user sitting on a page that was not in the menu at
-        // all: "why is that highlighted when I am not even on that page?"
+        // caret is here", even on a page the menu does not list.
         //
         // `focus-visible` is the heuristic the browser already maintains: it matches after a
         // programmatic focus when the last interaction was the keyboard, and does not after a

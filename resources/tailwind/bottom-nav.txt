@@ -289,7 +289,6 @@ Let
 Logger
 MOST
 Marks
-Measured
 Merged
 NOT
 Normalized
@@ -312,7 +311,6 @@ Reapply
 Render
 Rendered
 Renders
-Reported
 Resolve
 RuntimeException
 SVG
@@ -433,7 +431,6 @@ aria-labelledby
 array_keys($sizeMap));
 as
 as,
-asserted:
 at
 attempted
 attribute
@@ -530,10 +527,8 @@ computed
 condition
 configured
 conflict
-conjunct
 console
 console).
-consuming
 content
 context
 corner
@@ -613,7 +608,6 @@ except('rel'),
 exhausting
 exists.
 explicitly
-factory:
 fail
 fallback
 fallback,
@@ -625,7 +619,6 @@ false);
 false,
 false])
 feature
-file
 files
 filter_var($interactive,
 find
@@ -666,7 +659,6 @@ glyph.
 go
 goes
 guarantees
-guard
 h-5
 h/w
 half
@@ -788,6 +780,7 @@ matching
 may
 mean
 merge
+message
 min-w-4
 mirror
 missing
@@ -895,7 +888,6 @@ preserves
 preset
 problem
 prod).
-project,
 prop
 prop's
 props
@@ -912,13 +904,12 @@ raw
 re-inject
 reach
 reaches
+read
 reader
 reads
 real
 reapply
-reason
 reason:
-refutes
 registered
 registry
 rel
@@ -934,7 +925,6 @@ replace
 replaced
 replaces
 reported
-reproduced
 request
 require
 requires
@@ -1094,7 +1084,6 @@ until
 up,
 usable
 use
-used
 useful
 user
 uses

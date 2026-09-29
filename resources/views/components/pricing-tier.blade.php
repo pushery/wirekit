@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'name' => '',
     // Raw amount — formatted by the price component, so a plan never
@@ -29,8 +28,7 @@
     // Shown instead of an amount ("Let's talk") for a contact-us tier.
     'priceLabel' => null,
     // Forwarded to the inner price component so a tier can render minor-unit
-    // amounts (e.g. 4900 -> EUR 49.00), locale-format them, and size the amount —
-    // previously the wrapper hardcoded size="lg" and dropped the rest.
+    // amounts (e.g. 4900 -> EUR 49.00), locale-format them, and size the amount.
     'minorUnits' => false,
     'locale' => null,
     'priceSize' => 'lg',
@@ -47,7 +45,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('pricing-tier', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $featured = BooleanProp::from($featured, false);
     $minorUnits = BooleanProp::from($minorUnits, false);

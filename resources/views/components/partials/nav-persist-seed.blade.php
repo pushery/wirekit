@@ -5,10 +5,9 @@
 
      A column with `persist` and the `local` driver stores its state in the reader's browser,
      and no server can read localStorage — so the markup carries the SEED width, the browser
-     paints it, and Alpine applies the remembered one a frame later. Reported from several
-     production applications as the navigation being briefly collapsed and then snapping open.
-     An adopting application measured the same movement at 0.1097 CLS against a budget of 0.1:
-     the content column shifting 187px, 53ms in.
+     paints it, and Alpine applies the remembered one a frame later: the navigation would show
+     briefly collapsed and then snap open, shifting the content column and counting against the
+     page's layout-shift budget.
 
      This closes it the only way the platform allows — a script that runs while the parser is
      still working, before anything is painted. It sits immediately after the column's own tag

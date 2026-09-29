@@ -79,7 +79,6 @@ Dev-only
 Developer
 Fully
 Leading
-Measured
 Optional
 Pushery\WireKit\WireKit;
 Renders
@@ -119,7 +118,6 @@ app
 are
 aria-hidden="true"
 array_merge([
-asserted:
 at
 auto-derived
 back
@@ -180,7 +178,6 @@ extend
 fall
 falls
 fields,
-file
 finds
 flags
 flex
@@ -193,7 +190,6 @@ gap-1">
 gap-2">
 gap-3',
 gave
-guard
 h-2
 hears
 hold
@@ -215,7 +211,7 @@ items-start
 its
 justify-between
 key
-key,
+key.
 key:
 keys
 kind
@@ -265,19 +261,14 @@ prod).
 props
 qualified:
 quoted
-rather
 reach
 reader
-reason
 recolor
-refutes
 relative
 rendered
-renders
 result
 right-aligned
 rounded-full"
-row.
 screen
 search
 set
@@ -301,8 +292,6 @@ text-[color:var(--color-wk-text-muted)]
 text-[length:var(--text-wk-xs)]
 textual
 textually
-than
-that
 the
 there
 this
@@ -313,9 +302,7 @@ translation
 under
 unknown
 unless
-untranslated
 use
-used
 used.
 user;
 var(--color-wk-warning)`

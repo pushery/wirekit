@@ -40,15 +40,11 @@ export default function wirekitTagsInput(config = {}) {
     // `$nextTick`, by which time the button has gone with its chip. The walk from
     // a detached node reaches nothing.
     //
-    // The `?? this.$el` fallback that used to stand there is what made it quiet
-    // rather than loud: a button answers `querySelectorAll` perfectly well and has
-    // no chips inside it, so the list came back EMPTY and the code took its
-    // last-resort branch — focus to the text field. That is a plausible place for
-    // focus to be, which is exactly why nobody noticed the chip it was meant to go
-    // to. Measured in chromium: three chips, remove the last one with its button
-    // focused, and focus lands on the INPUT rather than on the new last chip.
-    //
-    // Same defect as the one fixed in `toast.js`; the two were found by one sweep.
+    // A `?? this.$el` fallback would fail quietly: a button answers
+    // `querySelectorAll` perfectly well and has no chips inside it, so the list
+    // would come back empty and focus would go to the text field rather than to
+    // the new last chip. `toast.js` holds its region the same way, for the same
+    // reason.
     let rootEl = null;
 
     /**

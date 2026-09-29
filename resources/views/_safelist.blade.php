@@ -137,11 +137,10 @@
       hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
       hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
 
-    Neutral has no tint token, and it is deliberately NOT the filled() pairing of
-    muted → subtle: measured against a real theme that is L=0.972 → L=0.985 in
-    light mode, so the hover gets brighter by 1.3 points — at the threshold of
-    perception and pointing the way a reader parses as fading out. Mixing toward
-    the TEXT color is right in both modes by construction.
+    Neutral has no tint token, and it is deliberately not the filled() pairing of
+    muted → subtle: in light mode that hover gets slightly brighter, at the
+    threshold of perception and pointing the way a reader parses as fading out.
+    Mixing toward the text color is right in both modes by construction.
       hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
       hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
       hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
@@ -172,24 +171,21 @@
       h-auto
 
     ────────────────────────────────────────────────────────────────────────
-    TablistStyles — the tab bar, added because six of its classes vanished
+    TablistStyles — the tab bar
     ────────────────────────────────────────────────────────────────────────
 
-    Same mechanism as above, found the same way it was predicted to be found.
-    `Support\TablistStyles` became the one place a tab bar's appearance is
-    decided in 2.31.0 — a good refactor that moved twelve class literals out of
-    three Blade views and into PHP, where the `@source` glob never looks.
+    Same mechanism as above: `Support\TablistStyles` is the one place a tab
+    bar's appearance is decided, and it keeps its class literals in PHP, where
+    the `@source` glob never looks.
 
-    A consuming project measured its compiled app.css shrinking by 533 bytes
-    across the upgrade and attributed it: 1114 selectors before, 1108 after,
-    six removed and none added. Exactly six of these classes appear in NO Blade
-    view, and they are not decoration — `border-b-[3px]` / `border-e-[3px]` ARE
-    the active-tab indicator, and the negative margins pull it onto the
-    container edge. The bar renders, the tabs work, ARIA is correct, and the
-    selected tab is simply not marked. Nothing throws.
+    Six of these classes appear in no Blade view, and they are not decoration:
+    `border-b-[3px]` / `border-e-[3px]` are the active-tab indicator, and the
+    negative margins pull it onto the container edge. Without them the bar
+    renders, the tabs work, ARIA is correct, and the selected tab is simply not
+    marked. Nothing throws.
 
-    All of what TablistStyles can emit is listed, not only the six that were
-    missing. The other classes survive today because some other view happens to
+    All of what TablistStyles can emit is listed, not only these six. The other
+    classes are generated today because some other view happens to
     use `flex` or `gap-1` as well — a coincidence, not a guarantee, and one that
     a future view deletion would quietly end.
 

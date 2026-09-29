@@ -2,8 +2,6 @@
 "1/1").
 "16/9",
 "4/3",
-"After"
-"Before"
 "wiped
 $after
 $afterAlt;
@@ -137,11 +135,9 @@ $wrapperClasses
 /
 //
 />
-/components/image-compare#wide-aspect-ratio
 0
 1)
 100
-21:9
 24
 24"
 50,
@@ -213,7 +209,6 @@ Announces
 Anything
 At
 BEFORE
-BEFORE,
 BOTH
 BOTTOM
 Before
@@ -224,6 +219,7 @@ Both
 Built
 Class
 Click/drag
+Clipping
 Declared
 Default
 Detect
@@ -253,8 +249,6 @@ Pattern.
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 RIGHT
-Reported
-Result:
 Right
 Rotated
 Set
@@ -309,8 +303,7 @@ already
 alt="{{
 alts
 an
-anchored
-anchors:
+anchors,
 and
 anticipate
 applies
@@ -357,7 +350,6 @@ body
 boots,
 border-[var(--color-wk-border)]',
 bottom-LEFT
-bottom-LEFT.
 bottom-RIGHT
 bound
 box
@@ -365,7 +357,6 @@ box)
 box.
 break;
 browser
-but
 by
 call
 caller
@@ -395,7 +386,6 @@ control
 controlled
 convention.
 coordinates.
-crop
 d="M9
 dashes).
 data-wk-prose-skip
@@ -454,7 +444,7 @@ fires
 first
 flags
 flips
-floating
+float
 font-medium',
 for
 forced-empty
@@ -488,11 +478,9 @@ if
 image
 image's
 image).
-image-compare
 image.
 images
 images,
-implementation
 implode
 implode('
 imports
@@ -509,7 +497,6 @@ interactive
 into
 intrinsic
 inversion
-inverted
 is
 isolate',
 it
@@ -520,7 +507,6 @@ key
 keyboard.
 label
 label-anchor
-labels
 lands
 later
 layer,
@@ -534,7 +520,6 @@ live
 loading="{{
 long
 macro
-made
 master
 matching
 matter
@@ -543,7 +528,6 @@ may
 mean
 means
 min(100,
-misalignment
 mode
 mode),
 modifier
@@ -581,6 +565,8 @@ optional;
 or
 orientation:
 original
+other
+otherwise
 out
 outer
 outward.
@@ -602,7 +588,6 @@ pointing
 position.
 positions
 preg_match('/^[A-Za-z0-9_.\-]+$/',
-previous
 prod).
 prop
 prop's
@@ -622,7 +607,6 @@ reads
 reason
 registered.
 relative
-rendered
 rendered.
 requiring
 rest,
@@ -647,7 +631,6 @@ sends
 sentence
 separator
 server
-showed
 shows
 side
 side:
@@ -690,6 +673,7 @@ successful
 suffix
 suppress
 swallowed
+swap
 tabindex="-1"
 table.
 take
@@ -721,19 +705,16 @@ under
 underscores,
 universal
 unknown
-unmissable.
 unnamed
 until
 up/down
 updates.
 use
-used
 value
 value)"></span>
 value.
 value:
 value="{{
-value=50
 vertical
 vertical.
 via
@@ -752,7 +733,6 @@ where
 which
 while
 whitelist
-wide
 width
 width)
 window
@@ -767,6 +747,7 @@ would
 wrapper
 writing
 written
+wrong
 x-data
 x-data="wirekitImageCompare({
 x-on:slide="$dispatch('wirekit:image-compare-slide',

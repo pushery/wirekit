@@ -79,7 +79,6 @@ Default:
 Dev-only
 Developer
 Fully
-Measured
 Merge
 ON
 ONE
@@ -110,8 +109,6 @@ alone
 an
 and
 animations
-any
-asserted:
 attribute
 auto-derived
 auto-emitted
@@ -142,7 +139,6 @@ entrance
 explicit
 false`
 feature-grid
-file
 flags
 for
 from
@@ -150,7 +146,6 @@ full
 gap-4
 grid
 grid:
-guard
 hardcoded
 has
 if
@@ -189,15 +184,11 @@ prod).
 prop.
 props
 qualified:
-rather
 rationale.
 raw
 reach
-reason
 recognizes
-refutes
 rendered
-renders
 responsive
 result
 rtrim($developerStyle,
@@ -222,8 +213,6 @@ stringly-false
 style
 style="{{
 take
-than
-that
 the
 there
 this

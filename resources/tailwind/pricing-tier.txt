@@ -460,7 +460,6 @@ $wrap
 1.4.13.
 100
 100),
-18.5
 1px
 1rem),
 2.1.1).
@@ -512,7 +511,6 @@ $wrap
 <p
 <span
 <span>,
-<span>.
 <svg
 <svg…>)
 <template
@@ -597,9 +595,8 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
-CONTENT
+CONTENT,
 CTA
-CUT
 Catching
 Check
 Convert
@@ -643,7 +640,6 @@ German
 Germany
 Germany,
 Graceful
-HOVER,
 HOVERABLE:
 HTML,
 HTTP
@@ -666,6 +662,7 @@ KEY,
 Keyboard-
 L)"
 LEADING
+Left
 Literal
 Livewire
 Logger
@@ -674,7 +671,6 @@ MOST
 MSRP).
 Make
 Match
-Measured
 Multi-line
 NON-interactive
 NOT
@@ -684,7 +680,6 @@ Normalized
 Nothing
 Null,
 NumberFormatter
-OFF
 ONE
 ONLY
 OPENING
@@ -716,7 +711,6 @@ Render
 Rendered
 Renders
 Replay"
-Reported
 Resolve
 Rich
 RuntimeException
@@ -789,7 +783,6 @@ WireKit::warnUnknownProps('badge',
 WireKit::warnUnknownProps('tooltip',
 With
 Without
-Worse,
 [
 ['data-wk-icon-missing'
 ['inverted',
@@ -837,7 +830,6 @@ __toString
 `aria-describedby`
 `aria-describedby`:
 `aria-hidden="true"`
-`aria-hidden`
 `aria-label`
 `aria-labelledby`
 `as="div
@@ -914,7 +906,6 @@ a
 a11y
 able
 about
-above
 above,
 above.
 absence
@@ -936,9 +927,9 @@ agree
 alert;
 alias
 alias,
-all
 all,
 all.
+all;
 allowed
 allowlist,
 alone
@@ -990,6 +981,7 @@ aria-hidden="..."
 aria-hidden="false".
 aria-hidden="true"
 aria-label
+aria-label:
 aria-label="{{
 aria-labelledby
 armed,
@@ -1004,7 +996,6 @@ arrow
 as
 as,
 asks
-asserted:
 assertion
 assistive
 association
@@ -1034,7 +1025,6 @@ badges;
 baked
 bakes
 balanced
-bar.
 bare
 base;
 baseline,
@@ -1102,7 +1092,6 @@ browser's
 bubble's
 bubbles
 bug
-bug.
 build
 but
 button
@@ -1150,7 +1139,6 @@ choice
 chose
 chosen
 chrome
-claimed
 class
 class-ordering
 class="flex
@@ -1172,6 +1160,7 @@ client-only
 client-side
 climbs
 clipping
+clipping,
 clone
 close
 close-icons,
@@ -1187,7 +1176,6 @@ colors
 colors,
 come
 comes
-comment
 common
 compare-at
 compete
@@ -1216,7 +1204,6 @@ conflict
 console
 console).
 construction.
-consuming
 contact-us
 containers.
 content
@@ -1242,6 +1229,7 @@ currentColor
 currentColor;
 custom.
 customarily
+cut
 dark
 data-featured="true"
 data-replayable="true"
@@ -1274,7 +1262,6 @@ default
 default.
 default:
 default;
-defect
 define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
 degradation:
@@ -1323,7 +1310,6 @@ drift
 drop
 dropdown
 dropdowns
-dropped
 drops
 duplicates
 duration-100"
@@ -1374,7 +1360,6 @@ exhausting
 existing
 exists.
 expandos.
-expensive:
 explanation
 explicitly
 exposes
@@ -1385,8 +1370,7 @@ eye
 eye.
 eyebrow).
 factory,
-factory:
-fade="…">`
+fade="…">`,
 fail
 failed"
 fails
@@ -1406,7 +1390,6 @@ featured
 field
 field,
 figure
-file
 files
 fill
 fill:
@@ -1425,7 +1408,6 @@ fix.
 fixed
 fixed-height
 fixed`
-fixes
 flags
 flash
 flashes
@@ -1492,7 +1474,6 @@ goes
 goods
 grid
 grid.
-grounds
 grows
 guarantees
 guard
@@ -1512,10 +1493,10 @@ handler
 handler.
 handlers
 handles
+hang
 hangs
 hard
 hard-codes
-hardcoded
 harder
 has
 hatch
@@ -1710,7 +1691,6 @@ many
 map.
 maps
 margin
-marked
 markers
 marketing
 marks
@@ -1731,6 +1711,7 @@ medium
 member
 menus
 merge
+message
 min-height
 minor
 minor-unit
@@ -1773,7 +1754,6 @@ name.
 name="close"
 named
 names
-names,
 names.
 naming
 native
@@ -1852,7 +1832,6 @@ out.
 outline
 output
 over
-over.
 overflow
 overhead.
 overlay
@@ -1867,6 +1846,7 @@ package
 padding
 padding,
 page
+page,
 page.
 pages
 pair
@@ -1936,7 +1916,6 @@ presentational
 preserves
 preset
 preview
-previously
 price
 price",
 price')
@@ -1953,7 +1932,6 @@ prod).
 product.
 product;
 prohibits
-project,
 prop
 prop's
 props
@@ -1963,7 +1941,6 @@ pt-[var(--space-wk-md)]">
 purpose,
 put
 puts
-px
 px-2'
 px-2',
 px-2.5'
@@ -2008,7 +1985,6 @@ ref
 reference
 reflows
 refuses.
-refutes
 registered
 registers
 registry
@@ -2030,7 +2006,6 @@ replacement
 replaces
 replay-button
 reported
-reproduced
 request
 requested
 require
@@ -2042,7 +2017,6 @@ resolved
 resolves
 respect
 rest
-rest.
 rests
 result
 return
@@ -2071,9 +2045,7 @@ rung
 runtime
 safe.
 safe:
-said
 same
-sat
 say
 says
 scaled
@@ -2126,7 +2098,6 @@ site
 sits
 size
 size,
-size="lg"
 size="sm"
 size="xs"
 sizes
@@ -2172,9 +2143,7 @@ stop
 stopped
 stops
 storage/logs/laravel.log.
-story
 strategy:
-strength
 strictness
 strike
 strike).
@@ -2190,11 +2159,12 @@ struck
 style="display:
 style="display:inline-block;"></span>
 style="text-decoration:
-stylesheet
+stylesheet's
 stylesheet).
 subtle
 subtree
 subtree,
+such
 supplementary
 supposed
 surface
@@ -2224,7 +2194,6 @@ talk")
 tall.
 teaches
 tech
-teleport
 teleport:
 teleported
 tell
@@ -2286,7 +2255,6 @@ tidy
 tier
 tier.
 tile
-time
 time,
 time.
 timer
@@ -2361,7 +2329,6 @@ unknown-alias
 unknown.
 unless
 unlike
-unlocatable
 unrelated
 unsteady
 until
@@ -2437,7 +2404,6 @@ whitespace
 who
 whole
 whose
-why
 widening
 width
 width)

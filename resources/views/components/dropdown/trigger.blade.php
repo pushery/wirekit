@@ -47,12 +47,11 @@
 <div
     {{-- A DOM marker, because `x-ref` alone does not reach the dropdown.
 
-         This element declares its own `x-data`, which makes it a scope ROOT — and an
-         `x-ref` registers into the closest `x-data` scope, so `x-ref="trigger"` has always
-         registered here rather than on the dropdown wrapper. `this.$refs.trigger` in the
-         dropdown factory resolved to `undefined`, so `close()` focused nothing and every
-         dismissal dropped the user on `<body>` (WCAG 2.4.3). Measured, not deduced: the
-         panel's ref resolves from the same factory and this one does not.
+         This element declares its own `x-data`, which makes it a scope root, and an
+         `x-ref` registers into the closest `x-data` scope, so `x-ref="trigger"` registers
+         here rather than on the dropdown wrapper. `this.$refs.trigger` in the dropdown
+         factory would resolve to `undefined`, `close()` would focus nothing, and every
+         dismissal would drop the user on `<body>` (WCAG 2.4.3).
 
          The `x-ref` stays for anything already reading it from inside this scope. --}}
     data-wk-dropdown-trigger

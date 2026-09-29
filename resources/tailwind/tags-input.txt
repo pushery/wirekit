@@ -264,7 +264,6 @@ Fully
 HTML
 Hidden
 How
-INSIDE
 IS
 Inside
 JavaScript
@@ -272,7 +271,6 @@ JavaScript.
 KEEPS
 Label
 Livewire
-Measured
 Mirrors
 NOT
 No
@@ -349,7 +347,7 @@ __('wirekit::Saving'),
 `aria-disabled`
 `bind:
 `bind`
-`class`:
+`class`,
 `config/wirekit.php`
 `data-*`
 `disabled="false"`
@@ -419,7 +417,6 @@ announcement,
 announcements:
 announcer
 announces
-any
 anything
 anyway,
 appear
@@ -451,7 +448,6 @@ as
 as,
 asked
 asking
-asserted:
 asterisk.
 asymmetric
 at
@@ -481,8 +477,8 @@ below.
 beside
 between
 bg-transparent
+bind
 binding
-binds
 block,
 boolean
 border
@@ -650,6 +646,7 @@ explicit
 explode(',',
 exposed
 factory
+fail
 failed
 fails
 fall
@@ -659,7 +656,6 @@ false,
 feature
 field
 field,
-file
 fill="currentColor"><path
 finds
 first
@@ -705,7 +701,6 @@ global
 got
 group
 guarantees
-guard
 gutter
 half
 hand-mount
@@ -815,7 +810,6 @@ maxTags:
 may
 mean
 meant
-measured,
 message
 method
 min-w-0">
@@ -853,6 +847,7 @@ not
 not:
 note
 nothing
+nothing,
 nothing.
 notice:
 now
@@ -946,7 +941,6 @@ reason:
 reference
 refusal
 refused
-refutes
 region
 region,
 regular
@@ -1125,7 +1119,6 @@ until
 up
 up.
 use
-used
 uses
 uses,
 uses.

@@ -45,21 +45,19 @@
     {{ $attributes->class([$classes]) }}
 >
     @if(! $slot->hasActualContent())
-        {{-- Translated, and the key already existed. `Cancel` sat here as a literal while
-             lang/en.json carried "Cancel" and lang/de.json carried "Abbrechen" — so a German
-             app rendered a fully translated dialog with an English cancel button, and the
-             catalog that could have fixed it was already installed. --}}
+        {{-- Translated through the catalog: a literal `Cancel` would leave a German app
+             with a fully translated dialog and an English cancel button, while
+             lang/de.json carries "Abbrechen". --}}
         <x-wirekit::button intent="neutral" surface="filled">{{ __('wirekit::Cancel') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
         {{-- The caller supplied their own control. Matched on the RENDERED markup,
              because that is what a slot holds: by the time it is cast to a string
              Blade has already compiled `<x-wirekit::button>` into `<button>`, so a
-             test for the tag NAME never matched and every caller fell through to the
-             branch below -- which wrapped their finished button in a second one.
+             test for the tag NAME would never match and every caller would fall
+             through to the branch below -- which wraps its content in a second button.
              Nested buttons are invalid HTML, and a browser repairing them tears the
-             surrounding structure apart: the control rendered as an empty box beside
-             its own label, and on the documentation page every heading after it
-             stopped being a heading. --}}
+             surrounding structure apart: the control renders as an empty box beside
+             its own label, and every heading after it stops being a heading. --}}
         {{-- Caller supplied a full WireKit component (typically a
              button) — use it verbatim. The x-on:click on the parent
              <div> handles the close event so the caller's button

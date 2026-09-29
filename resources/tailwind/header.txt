@@ -30,7 +30,7 @@ $stickyClasses])
 'w-full',
 'wk-header',
 (40)
-(50);
+(50),
 (Dashboard
 (`--wk-strip-inset`,
 (`min-h-16`)
@@ -80,7 +80,6 @@ Header
 INSIDE
 Inline
 MIN-height
-Measured
 Normalized
 Projects
 Pushery\WireKit\Support\BooleanProp;
@@ -123,14 +122,12 @@ align-items:
 an
 anchored
 and
-any
 app-shell
 are
 area
 arithmetic,
 as
 as,
-asserted:
 at
 attribute
 auto
@@ -190,7 +187,6 @@ engages
 false);
 false,
 feature
-file
 fit,
 flags
 flex
@@ -207,7 +203,6 @@ full
 full-width
 gap-[var(--gap-wk-md)]"
 gap:
-guard
 h-16
 has
 header
@@ -280,6 +275,7 @@ opened
 opens
 opposite
 optimistic-ui:
+otherwise
 out
 outer
 over
@@ -307,14 +303,11 @@ push
 pushed
 qualified:
 quirk.
-rather
 rationale).
 reach
 reading
 reads
 reason
-refutes
-renders
 result
 right
 row
@@ -326,7 +319,6 @@ shared
 shown
 silently.
 single
-sit
 site
 slot
 so
@@ -342,13 +334,11 @@ style="{{
 stylesheet
 takes
 teleported
-than
 that
 the
 them
 there
 there,
-therefore
 they
 this
 to
@@ -361,7 +351,6 @@ under
 unknown
 up
 use
-used
 usually
 utility
 var(--gap-wk-md);';
@@ -383,6 +372,7 @@ width:
 wirekit:spine-participant
 with
 without
+would
 wrap
 wrap;
 wrap`

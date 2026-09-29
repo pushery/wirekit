@@ -24,26 +24,14 @@ use Symfony\Component\Process\Process;
  * outside it is **never evaluated**, and the page looks correct while the
  * control is dead.
  *
- * It is not entirely silent, and this docblock used to say it was — "it throws
- * nothing, logs nothing". Measured against the shipped CSP bundle, that is
- * false: it carries `Alpine Expression Error` and `CSP Parser Error`, emitted
- * through console.error and console.warn. The sentence mattered because
- * developers quote it, and quoting it tells them not to look in the one place
- * that would have told them.
+ * It is not entirely silent: the CSP bundle emits `Alpine Expression Error` and
+ * `CSP Parser Error` through console.error and console.warn, but only when the
+ * expression is evaluated. A `wire:click` no test ever clicks stays silent, and
+ * the page looks correct meanwhile, so a browser check catches this class
+ * exactly when it operates the control rather than merely rendering the page.
  *
- * The correction changes what to DO about it, which is why the wording
- * mattered. "It logs nothing" says there is no net, and the conclusion drawn
- * from that is that a browser suite cannot see this class at all — so nobody
- * points one at it. The truth is narrower and more useful: the message fires
- * when the expression is EVALUATED. A wire:click no test ever clicks stays
- * silent, and the page looks correct meanwhile.
- *
- * So the net exists and has to be TRIGGERED. A browser check catches this
- * exactly when it operates the control rather than merely rendering the page
- * — which is a thing worth writing, where "it cannot be caught" is not.
- *
- * The static audit remains the reliable half for the same reason: it does not
- * depend on anyone having exercised the right control on the right page.
+ * The static audit is the reliable half for that reason: it does not depend on
+ * anyone having exercised the right control on the right page.
  *
  * ## Why the verdict comes from node
  *
@@ -53,13 +41,10 @@ use Symfony\Component\Process\Process;
  * expression and judging it by eye over-reports badly. This command finds the
  * expressions (it knows the view paths) and hands the verdict to the parser.
  *
- * The verdict shape is declared ONCE, here, because it was previously written out
- * three times and all three drifted together the moment the bridge gained a key:
- * a docblock, a `@var` on the decoded payload, and a `@var` on the extracted list
- * all said the warning path did not exist, while the bridge emitted it and the
- * command consumed it. PHP does not read any of them, so nothing failed — static
- * analysis proved the reading loop unreachable, which was the only visible symptom.
- * `warnings` is optional because the branch reporting a SYNTAX error returns before
+ * The verdict shape is declared once, here, and every annotation refers to it: PHP
+ * reads none of them, so separate copies could drift from what the bridge emits
+ * without anything failing, and static analysis would then call a live branch
+ * unreachable. `warnings` is optional because the branch reporting a SYNTAX error returns before
  * a warning could exist.
  *
  * @phpstan-type CspVerdict array{ok: bool, error: string|null, globals: array<int, string>, warnings?: array<int, string>}
@@ -87,10 +72,10 @@ class CspAuditCommand extends Command
      * for `delete`, `new`, `typeof` and the rest of that set wherever they stand, so
      * `$wire.delete(1)` is a dead button there; 3.17.3 accepts it.
      *
-     * The advice block below used to state the 3.17.2 behavior unconditionally, and it prints
-     * whenever there is ANY offender — so a developer on 3.17.3 with an arrow-function problem
-     * was told to rewrite methods that work. Telling somebody to change working code is the same
-     * class of damage as missing a violation: it spends the credibility this command runs on.
+     * The advice block below prints whenever there is ANY offender, so stating the 3.17.2
+     * behavior unconditionally would tell a developer on 3.17.3 with an arrow-function problem
+     * to rewrite methods that work. Telling somebody to change working code is the same class
+     * of damage as missing a violation: it spends the credibility this command runs on.
      */
     private ?bool $reservedWordAsMember = null;
 
@@ -123,11 +108,6 @@ class CspAuditCommand extends Command
      * expression that starts with an operator, and reporting it as one is a
      * finding a reader cannot act on: there is nothing to rewrite.
      *
-     * It cost more than a wrong line. Measured over this repository's own views,
-     * eleven of twenty-seven rejections were `x-teleport="#wk-overlay-root"` —
-     * so nearly half of what the audit reported was the audit misreading its own
-     * input, in a command whose only value is that its output can be trusted.
-     *
      * `x-wk-findable` is WireKit's own and belongs here for the reason the others do: it
      * takes the place of `x-show` on a disclosure panel and hands its value to
      * `evaluateLater()`, so under the CSP build it meets the same parser. Its `.collapse`
@@ -146,7 +126,7 @@ class CspAuditCommand extends Command
      * Kept as a deny-list because Livewire's own wildcard is one, and copying
      * the shape is the same discipline that makes the verdict come from Alpine's
      * parser rather than from a pattern catalog: the set of EVENTS is open, so
-     * only the exceptions can be enumerated. Measured from the installed
+     * only the exceptions can be enumerated. Read from the installed
      * `livewire.esm.js`, `js/directives/wire-wildcard.js`:
      *
      *     on("directive.init", ({ el, directive, ... }) => {
@@ -265,9 +245,7 @@ class CspAuditCommand extends Command
             // It exists because `contextualizeExpression()` mirrors Livewire's own SKIP
             // list, correctly — `true`, `false`, `null` and `undefined` are NOT prefixed
             // with `$wire.`, so `wire:click="true(1)"` reaches the browser as `true(1)` and
-            // throws `true is not a function`. Reported from a consuming package that
-            // measured all four cases: `delete(1)` was found, `true(1)` and `null(1)` were
-            // certified, and the run exited 0 over two dead controls.
+            // throws `true is not a function`.
             //
             // Decidable without a runtime, and deliberately narrow: only a CALL, and only
             // where Livewire would otherwise have prefixed it. In an `x-` attribute a bare
@@ -302,9 +280,6 @@ class CspAuditCommand extends Command
             // init removes `x-cloak` regardless. The panel is visible and every control in
             // it is dead — which reads as a layout bug, not as a missing script.
             //
-            // Measured in an adopting application: this command reported PASS over a tree
-            // full of unregistered kit components with inline `x-data` beside them.
-            //
             // And not over a substitution. An `x-data="@js(…)"` reaches this loop as a
             // placeholder, and a placeholder is a bare identifier, so judging it would report
             // the substitution as an unregistered factory. That is the same trap `$unchecked` exists for one branch down: a
@@ -332,8 +307,8 @@ class CspAuditCommand extends Command
                     $warnings[] = $entry + ['warning' => $warning];
                 }
 
-                // A PASS earned by a placeholder is recorded as such. This is the half of
-                // the audit that used to be silent, and silence here reads as measurement.
+                // A PASS earned by a placeholder is recorded as such, because silence here
+                // would read as measurement.
                 if ($entry['unresolved'] !== null) {
                     $unresolved[] = $entry;
                 }
@@ -473,7 +448,7 @@ class CspAuditCommand extends Command
             // same there; only the receiver's name differs, and this scan does not use it.
             base_path('resources/js'),
             // And the package's own shipped bundles, so an application that loads them from
-            // the route fallback rather than a published copy is still measured.
+            // the route fallback rather than a published copy is still scanned.
             dirname(__DIR__, 2).'/dist',
         ];
 
@@ -510,9 +485,9 @@ class CspAuditCommand extends Command
         // a source does not report less, it reports MORE -- every factory registered only in
         // the dropped source becomes an offender that does not exist.
         //
-        // Which is precisely the trap the report's own hint used to walk a reader into: it
-        // prints `--registrations=<package source>`, and under the old replacing semantics
-        // that one flag threw away the application's own bundles on the way in.
+        // The report's own hint prints `--registrations=<package source>`, so replacing
+        // semantics would make that one flag throw away the application's own bundles on the
+        // way in.
         //
         // Isolation stays reachable through `--registrations-only`: it is the only way to ask
         // "what does this bundle register, and nothing else".
@@ -626,11 +601,10 @@ class CspAuditCommand extends Command
             // readers downstream ask which package a path belongs to by looking for a
             // `vendor` segment with a separator in front of it, and the spelling a
             // developer actually types has nothing in front of it at all:
-            // `--path=vendor/acme/widgets/resources/views` begins AT `vendor`. Both readers
-            // then found no package, so its own registration source was never added and
-            // every factory it registers correctly was reported as registered by nothing —
-            // the report for a genuinely dead panel, in the same words. The same run with
-            // the absolute spelling of the same directory passed.
+            // `--path=vendor/acme/widgets/resources/views` begins AT `vendor`. Relative, both
+            // readers would find no package, so its own registration source would never be
+            // added and every factory it registers correctly would read as registered by
+            // nothing, in the same words as the report for a genuinely dead panel.
             //
             // Resolved against the working directory rather than `base_path()`, because
             // that is what `is_dir()` on the line below just did: a relative path that
@@ -671,10 +645,8 @@ class CspAuditCommand extends Command
      * excludes every packaged template by construction, and a package that ships a CSP-unsafe
      * directive is invisible to it.
      *
-     * That is the failure shape this whole command exists against, at the one place it did
-     * not look. Measured in an adopting application: the default run reported PASS over 24
-     * expressions while a `--path` over one package's views rejected 23 of 60, in the same
-     * app in the same moment. The pages had been throwing for three weeks.
+     * That is the failure shape this whole command exists against, so it reads the views of
+     * every package namespace as well.
      *
      * `getHints()` is on `FileViewFinder`, NOT on `ViewFinderInterface` — an application may
      * bind a finder of its own — so the call is guarded rather than assumed. An unreadable
@@ -895,13 +867,13 @@ class CspAuditCommand extends Command
      *
      * Where a tag begins and ends is Blade's question, not Alpine's, so it is answered
      * once — in `BladeParser::tagsFromSource()` — and this command reads the boundaries
-     * it returns. That walk had been written a second time here, at a shallower depth,
-     * and the difference was not academic: a `{{-- don't --}}` between attributes ran the
-     * cursor off the end of the file and threw a raw `ValueError` out of this method,
-     * before the command could report anything at all. Where the apostrophes happened to
-     * balance there was no crash and no signal either — the swallowed span was attributed
-     * to the tag it started on, and if that tag was a component, the bare-colon exemption
-     * below then discarded every Alpine binding inside it.
+     * it returns. A second walk here, at a shallower depth, would differ, and not
+     * academically: a `{{-- don't --}}` between attributes would run the cursor off the end
+     * of the file and throw a raw `ValueError` out of this method, before the command could
+     * report anything at all. Where the apostrophes happen to balance there would be no crash
+     * and no signal either — the swallowed span would be attributed to the tag it started on,
+     * and if that tag is a component, the bare-colon exemption below would then discard every
+     * Alpine binding inside it.
      *
      * What stays here is the part that is about Alpine: which attributes carry an
      * expression, and which stand-in a Blade hole leaves behind in one. Removing the holes
@@ -954,10 +926,8 @@ class CspAuditCommand extends Command
      * as `$wire.alert` — a method on their component, not a window global.
      *
      * Auditing the raw source instead is wrong in the expensive direction: it calls a
-     * working handler dead. Measured over the browser globals that are plausible
-     * method names, six of them (`location`, `self`, `confirm`, `top`, `alert`,
-     * `history`) were reported as unresolvable while `print`, `close` and `focus` were
-     * not — a split that makes any small sample look clean.
+     * working handler dead, as it would for a component method named after a browser
+     * global such as `alert` or `history`.
      *
      * The skip list is upstream's, verbatim. Upstream ALSO skips the Alpine scope keys
      * of the element, which cannot be known from source; the consequence of prefixing
@@ -1034,25 +1004,17 @@ class CspAuditCommand extends Command
         // the bare-colon alternative and every Livewire binding is scanned as Alpine.
         $names = implode('|', array_map('preg_quote', self::EXPRESSION_ATTRIBUTES));
 
-        // A directive NAME carries more structure than its base: any number of further
-        // `:segment` parts, and — on a bare base — `.modifier` parts. Both are repeatable,
-        // and the pattern allowed exactly ONE optional colon segment and no dot tail at all.
+        // A directive name carries more structure than its base: any number of further
+        // `:segment` parts, and on a bare base `.modifier` parts. Both are repeatable.
         //
-        // That is not a cosmetic tightness. An event name may itself contain a colon —
-        // `x-on:visual-feedback:open.window` is how a package namespaces its events — and
-        // such an attribute matched no alternative here, so it was never collected, never
-        // parsed, and never counted. It did not read as a gap: the run reported a smaller
-        // `Scanned N` and a clean verdict, which is the one shape this command must never
-        // take. Measured in an adopting application, the two expressions that opened its
-        // widget were both written that way; under a policy without `unsafe-eval` neither
-        // could run, and the audit named 60 expressions without either of them.
-        //
-        // The same tightness had four more faces, each found by putting the SAME broken
-        // expression on a scanned sibling and on the unscanned form in one file:
-        // `@vf:open.window` (the `x-on` shorthand), `wire:vf:open` (which Livewire rewrites
-        // to exactly that), `:xlink:href` (the `x-bind` shorthand) and `x-model.live` /
-        // `x-intersect.once` (a dot modifier on a bare base). One rule, so there is one
-        // tightness to reason about rather than four.
+        // An event name may itself contain a colon (`x-on:visual-feedback:open.window` is how
+        // a package namespaces its events), and an attribute the pattern does not match is
+        // never collected, parsed or counted: the run reports a smaller `Scanned N` and a
+        // clean verdict, which is the one shape this command must never take. The same holds
+        // for `@vf:open.window` (the `x-on` shorthand), `wire:vf:open` (which Livewire
+        // rewrites to exactly that), `:xlink:href` (the `x-bind` shorthand) and
+        // `x-model.live` / `x-intersect.once` (a dot modifier on a bare base). One rule
+        // covers all of them.
         //
         // What stays OUT stays out by not being on the name list — `x-ref`, `x-cloak`,
         // `x-teleport` and `x-transition:enter` take a name, a selector or a class list, and
@@ -1104,10 +1066,9 @@ class CspAuditCommand extends Command
             // The substitute is an identifier and not a literal, which is the one part of
             // this that is Alpine's question rather than Blade's. A hole does not only sit at
             // a value position: `@click="{{ $model }} = ! {{ $model }}"` puts one at an
-            // assignment target, and an object literal can put one at a key. Measured against
-            // the parser, `0` is rejected at both ("Invalid assignment target", "Expected
-            // property key") and `"BLADE"` at the first; the identifier is accepted at every
-            // position a hole was found in. Permissive is the right direction here — a false
+            // assignment target, and an object literal can put one at a key. Alpine's parser
+            // rejects `0` at both ("Invalid assignment target", "Expected property key") and
+            // `"BLADE"` at the first, and accepts an identifier at each. Permissive is the right direction here — a false
             // violation costs a developer a hunt through a template that is fine, and after
             // one of those they stop reading the report that was their only warning.
             //
@@ -1208,13 +1169,10 @@ class CspAuditCommand extends Command
      * would be a guess wearing a verdict's clothes, and one wrong violation costs the next
      * hundred their credibility.
      *
-     * This paragraph said "any non-empty string, array or object" until 2026-08-17, and a
-     * developer followed it to the wrong repair: their one flagged expression passed a
-     * string, was already fully resolvable, and the advice below told them to replace the
-     * encoder with hand-written interpolation — trading a safe encoding for one the next
-     * apostrophe breaks. A hint that leads from correct code to unsafe code is worse than
-     * no hint. A guard in the package's own suite derives the claim from `Js::from()`
-     * itself rather than restating it here.
+     * A string is resolvable as it stands, so the advice below must not send its author
+     * from the encoder to hand-written interpolation, trading a safe encoding for one the
+     * next apostrophe breaks: a hint that leads from correct code to unsafe code is worse
+     * than no hint.
      */
     private static function unresolvedReason(string $raw): ?string
     {
@@ -1525,7 +1483,7 @@ class CspAuditCommand extends Command
             }
         }
 
-        // The half that used to be silent.
+        // The passes that rest on a placeholder.
         //
         // These expressions PASSED, and the pass is real as far as it goes — the grammar
         // accepted what was left after Blade came out. What it does not cover is the text
@@ -1556,11 +1514,10 @@ class CspAuditCommand extends Command
                 $this->line('  command cannot see which shape the data will take.');
             }
 
-            // ONLY the encoders are listed. Measured over this library's own views, 226
-            // expressions rest on a substitution — an interpolated prop in an `x-data`
-            // object is the ordinary way to write Alpine in Blade, and printing ten
-            // arbitrary `BLADE = BLADE` lines out of that teaches nothing while making the
-            // encoder block, which is the actionable part, scroll off the top.
+            // Only the encoders are listed. An interpolated prop in an `x-data` object is the
+            // ordinary way to write Alpine in Blade, so a template rests on many substitutions,
+            // and printing ten arbitrary `BLADE = BLADE` lines out of them teaches nothing while
+            // making the encoder block, which is the actionable part, scroll off the top.
             //
             // The count carries the honest half (a PASS here does not cover the rendered
             // form); the list carries the part someone can act on. A report that buries the
@@ -1580,7 +1537,7 @@ class CspAuditCommand extends Command
         }
 
         // Before the verdict, for the same reason `unchecked` is: a PASS read without
-        // this next to it says more than the audit measured.
+        // this next to it says more than the audit checked.
         if ($warnings !== []) {
             $this->line('');
             $this->warn(sprintf('%d expression(s) parse but may not EVALUATE.', count($warnings)));
@@ -1691,10 +1648,9 @@ class CspAuditCommand extends Command
             //
             // "`x` is not registered" is a claim about the world: no scope, so the panel
             // renders visible and dead. "`x` was not among the registrations I read" is a
-            // claim about this RUN. They looked identical here, and the cost is measured: a
-            // run pointed at a package's views reported three registered factories as
-            // unregistered, and that report became a ticket in the package's own tracker
-            // that had to be refuted there.
+            // claim about this run. Printed alike, the second reads as the first, and a
+            // report about one run becomes a claim about a package that its maintainers
+            // then have to refute.
             //
             // The hint block below already tells these apart per package. It sits under a
             // headline that has already said "nothing registers", though, and the line a
@@ -1755,10 +1711,9 @@ class CspAuditCommand extends Command
         }
 
         if ($offenders === []) {
-            // The unqualified sentence is reserved for the run that earned it. It used to be
-            // printed whenever nothing failed, which is how a developer read "resolves in
-            // scope" off a run where the deciding text had been substituted away before the
-            // parser ever saw it.
+            // The unqualified sentence is reserved for the run that earned it: printed
+            // whenever nothing failed, it would claim "resolves in scope" for a run where the
+            // deciding text had been substituted away before the parser ever saw it.
             $verdict = match (true) {
                 $unchecked === [] && $unresolved === [] => 'PASS — every expression parses under Alpine\'s CSP grammar and resolves in scope.',
                 $unchecked === [] => 'PASS — with '.count($unresolved).' expression(s) resting on a substitution (listed above).',

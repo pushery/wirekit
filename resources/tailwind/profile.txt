@@ -4,10 +4,8 @@
 "+7").
 "+N"
 "5
-"Dana
 "background-color:
 "box-shadow:
-"the
 #1
 $alt
 $as,
@@ -231,8 +229,6 @@ $total
 (WireKit::validateProp('avatar',
 (WireKit::validateProp('profile',
 (`sidebar/item.blade.php`).
-(`xs`
-(body
 (default)
 (default).
 (dist/wirekit.css):
@@ -245,7 +241,6 @@ $total
 (matches
 (matching
 (no
-(none
 (or
 (silent
 (string)
@@ -273,15 +268,11 @@ $total
 24"
 2;
 2c-2.67
-2px
 3
-32px
-35px
 4
 4-1.79
 4-4s-1.79-4-4-4-4
 43px
-43px,
 4v2h16v-2c0-2.66-5.33-4-8-4z"
 4zm0
 :
@@ -334,14 +325,12 @@ AFTER
 AND
 Accessible
 Add
-Adopting
 Alpine
 Alpine's
 An
 Anything
 Argument
 AvatarPalette::for((string)
-BOX,
 Baked
 Base
 Blade
@@ -368,7 +357,6 @@ Enter
 Enter/Space
 FIRST
 Fixed
-Four
 Fully
 Gated
 HOVER,
@@ -384,7 +372,6 @@ It
 Literal
 Livewire
 Livewire-morphed
-Measured
 Muted
 NAMED
 Never
@@ -396,9 +383,7 @@ On
 One
 Only
 Optional
-Ortiz"
 Overlap
-PRIMITIVE,
 Pre-fix,
 Profile
 Pushery\WireKit\Support\AvatarPalette.
@@ -407,7 +392,6 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Reads
 Renders
-Reported
 Ring
 Same
 See
@@ -427,7 +411,6 @@ UA
 UNBOUND
 URL
 Used
-WRAPS:
 When
 WireKit
 WireKit::resolveClasses('avatar',
@@ -457,7 +440,6 @@ __('wirekit::Busy'),
 __('wirekit::Offline'),
 __('wirekit::Online'),
 `--color-wk-bg-elevated`,
-`--color-wk-bg-muted`
 `--gap-wk-*`
 `--radius-wk-nav-item`.
 `:remaining="7"`
@@ -503,7 +485,6 @@ __('wirekit::Online'),
 `size`
 `size`,
 `sm`
-`sm`)
 `src`),
 `statusVariant="Dot"`
 `status`
@@ -513,7 +494,6 @@ __('wirekit::Online'),
 `x-init`
 `x-on:`
 a
-abandoning
 about
 above
 accept
@@ -570,8 +550,6 @@ as,
 asked
 asked.
 asks
-asserted:
-asserting
 assistive
 at
 attribute
@@ -604,7 +582,6 @@ bg
 block,
 boot.
 boots.
-border
 border,
 both
 bottom
@@ -612,12 +589,12 @@ bottom-0
 bottom-right
 bottom-right)
 box
+box,
 box-shadow
 box-shadow.
 branch
 branch:
 brighter
-broke
 browse
 browser
 browser's
@@ -653,7 +630,6 @@ circle
 circle's
 circle,
 circle.
-claimed
 class
 class,
 class="h-[var(--size-wk-sm)]
@@ -673,11 +649,10 @@ collapse
 collapsed
 color
 color,
-color-coded
 color.
 color:
 colored
-colors.
+colors,
 column
 column,
 comment
@@ -687,7 +662,6 @@ compiles
 component
 component's
 component).
-component:
 computed
 concentric
 config('wirekit.components.avatar.shape',
@@ -695,7 +669,6 @@ config('wirekit.components.avatar.size',
 config('wirekit.components.avatar.status-variant',
 consistent
 console
-consuming
 content
 control
 control,
@@ -705,8 +678,7 @@ convention).
 conveyed
 copy
 corner
-cosmetic
-cost
+cosmetic:
 costs
 could
 counter.
@@ -728,16 +700,13 @@ describe,
 describe.
 describes
 deterministic
-deterministic-palette
 developer
 developer's
 developer-supplied
 diagnosed
 did
 did),
-differed
 difference
-differences
 dim:
 dims
 direction.
@@ -755,7 +724,9 @@ doing
 done.
 dot
 double-ring
+draw
 drawing
+drifts
 dropdown
 dropdown-trigger
 duration-[var(--transition-wk-duration)]
@@ -775,7 +746,6 @@ emitting
 empty
 end
 ends
-engines:
 entries
 entry
 error,
@@ -797,14 +767,12 @@ false
 false);
 false,
 feature
-file
 fill="currentColor"
 filled($name)
 firing
 first
 fixed
 flags
-flat
 flex
 flex-1
 flips
@@ -840,12 +808,10 @@ glance
 go
 goes
 gone,
-gray
 group
 group,
 group-hover/wk-profile:text-[color:var(--color-wk-text)]',
 grows
-guard
 h-16
 h-2',
 h-2.5',
@@ -860,9 +826,7 @@ h-full
 had
 half
 hand
-hand-build
 hand-built
-hand-rolled,
 hand.
 handler
 handler,
@@ -878,7 +842,6 @@ hash.
 have
 having
 header
-heading).
 height,
 helpers.
 here
@@ -922,7 +885,6 @@ inserted
 inside
 instead
 instead.
-instead:
 interactive
 into
 invalid.
@@ -948,7 +910,6 @@ keyboard-reachability).
 keyboard.
 keyed
 kit
-kit,
 label
 labels
 ladder
@@ -987,7 +948,6 @@ match
 may
 mean
 meaning
-measured
 medium
 menu
 menu.
@@ -1047,7 +1007,6 @@ on
 on.
 once
 one
-one),
 one,
 one.
 one:
@@ -1061,6 +1020,7 @@ optimistic-ui:
 optional
 or
 other
+other,
 otherwise
 ours
 out
@@ -1076,7 +1036,6 @@ package.
 padding),
 padding,
 page-edge
-painting
 pair
 pairing
 pairs
@@ -1094,7 +1053,6 @@ per-app
 permanently
 person
 person,
-phone
 place
 placement.
 places
@@ -1109,16 +1067,16 @@ premise
 presence
 presentational
 preserves
-primitive"
+primitive,
 primitives
 problem:
 prod).
 produced
 profile
-project,
 prominent
 prop
 prop's
+prop,
 props
 provide
 provides.
@@ -1129,7 +1087,6 @@ radius,
 radius.
 rail
 rather
-re-writing
 reach
 reachable
 reached
@@ -1150,7 +1107,6 @@ recommend.
 redefines
 redundant
 reflow
-refutes
 region
 region,
 reliably
@@ -1164,13 +1120,12 @@ renderer
 rendering
 renders
 renders.
-replace.
 replaces
-reported
 repository
 requirement
 rest
 result
+rewritten
 right
 right-0',
 ring
@@ -1201,7 +1156,6 @@ rung:
 runtime.
 same
 same,
-sameness.
 saw
 says
 scale
@@ -1223,7 +1177,6 @@ shapes
 shell
 shorter
 show
-showed
 shown
 shown.
 shrink
@@ -1258,7 +1211,6 @@ src="{{
 stack.
 stand
 standing
-starter
 state
 state,
 status
@@ -1273,7 +1225,6 @@ string,
 strings
 style
 submit
-subtle
 summary
 supplied
 surface
@@ -1322,7 +1273,6 @@ took
 top
 total.
 trade
-traded
 trailing
 transition-colors
 translated
@@ -1346,7 +1296,6 @@ type="button"
 typed
 unconditionally
 under
-uniformly
 unknown
 unlabeled
 unlike
@@ -1356,7 +1305,6 @@ up
 usage
 use
 use,
-used
 used:
 utilities,
 v2.38.0,
@@ -1379,7 +1327,7 @@ warns
 was
 way
 way.
-weight
+weight.
 well
 were
 what
@@ -1392,14 +1340,12 @@ while
 white
 whole
 whose
-why
 width,
 widths
 wins.
 with
 without
 wk-rail-hide">{{
-work
 worked
 worth
 would

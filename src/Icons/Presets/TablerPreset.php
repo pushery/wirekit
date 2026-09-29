@@ -63,10 +63,8 @@ final class TablerPreset implements IconPreset
             // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
             // glyph is each set's own — which is what these aliases are for.
             //
-            // Every target below was verified against the real set: Heroicons from the
-            // installed package, the other three from each package's full recursive git
-            // tree. A directory listing was tried first and is useless here — GitHub caps
-            // it at 1000 entries, so "absent" would have meant nothing.
+            // Every target below exists in its set, checked against the installed
+            // Heroicons package and the full recursive git tree of the other three.
             //
             // `article` was proposed with these and deliberately left out: it needs two
             // substitutions and "editorial unit" is the most arguable of the seven.
@@ -128,6 +126,7 @@ final class TablerPreset implements IconPreset
             'server' => 'tabler-server',
             'database' => 'tabler-database',
             'cloud' => 'tabler-cloud',
+            'desktop' => 'tabler-device-desktop',
             'shield' => 'tabler-shield-check', // parity with the base `shield` alias
             'shield-check' => 'tabler-shield-check',
             'inbox' => 'tabler-inbox',
@@ -334,6 +333,7 @@ final class TablerPreset implements IconPreset
             'speed' => 'tabler-gauge',
             'squares-2x2' => 'tabler-layout-grid',
             'star' => 'tabler-star',
+            'star-outline' => 'tabler-star',
             'swatch' => 'tabler-palette',
             'unlock' => 'tabler-lock-open',
             'user-group' => 'tabler-users',

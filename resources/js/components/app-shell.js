@@ -1,4 +1,5 @@
 import { createFocusTrap } from '../utils/focus-trap.js';
+import { holdPageInert, releasePageInert } from '../utils/overlay.js';
 
 /**
  * App shell — the off-canvas navigation drawer, and only below the breakpoint.
@@ -10,10 +11,8 @@ import { createFocusTrap } from '../utils/focus-trap.js';
  * opened. Sliding over the page, the same element is modal: a backdrop covers everything
  * behind it, and a reader has to be able to get out.
  *
- * Until this factory existed the shell carried `x-data="{ sidebarOpen: false }"` and
- * nothing else, so the drawer half of that contract was simply absent. Measured by an
- * adopting application at 375px with the drawer open: `role` null, `aria-modal` null, the
- * toggle's `aria-controls` null, and Escape did nothing — visibility stayed `visible`.
+ * Below the breakpoint the factory gives the drawer `role="dialog"` and `aria-modal`, points
+ * the toggle at it with `aria-controls`, and closes it on Escape.
  *
  * The failure that makes it worth a factory rather than a few attributes is asymmetric,
  * which is why it looks fine with a mouse. The scrim backdrop blocks pointers from the page
@@ -29,6 +28,12 @@ import { createFocusTrap } from '../utils/focus-trap.js';
  * @param {string} [config.drawerId]  id the drawer carries and the toggle points at
  */
 export default function wirekitAppShell(config = {}) {
+    // The drawer's elements that stay reachable while the page beside it is inert, held while
+    // this shell holds the page (see `holdPageInert` in utils/overlay.js). A closure variable
+    // rather than a property: a DOM node stored on the reactive object comes back out as a
+    // Proxy, and the release has to hand back the very elements the hold was given.
+    let pageInertKept = null;
+
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
@@ -208,12 +213,12 @@ export default function wirekitAppShell(config = {}) {
                 // state have to agree — otherwise the panel slides away with `sidebarOpen`
                 // still true and the next click on the toggle closes an already-closed
                 // drawer.
-                // Named EXPLICITLY rather than left to the library's own tabbable scan.
+                // Named explicitly rather than left to the library's own tabbable scan.
                 //
-                // The library picks the initial focus once, at `activate()`, and on this
-                // panel its scan came up empty there: the trap reported `active: true` and
-                // never moved focus. A function resolves at activation time and asks the
-                // DOM directly, which is the same question with a reliable answer.
+                // The library picks the initial focus once, at `activate()`, and its scan
+                // can come up empty on a panel that is still arriving, leaving the trap
+                // active with focus outside it. A function resolves at activation time and
+                // asks the DOM directly, which is the same question with a reliable answer.
                 //
                 // Falling back to the panel itself is why it carries `tabindex="-1"`: a
                 // drawer whose links have not rendered yet still has to take focus, or the
@@ -235,15 +240,15 @@ export default function wirekitAppShell(config = {}) {
                 // there does not focus it, by platform convention. `focus-trap` then calls
                 // `document.body.focus()`, which is a no-op, and the reader is returned to
                 // the top of the document — every stop they had already tabbed past has to
-                // be walked again. Measured by an adopting application at v2.41.1, in
-                // Chromium and WebKit: drawer opens, focus enters correctly, Escape closes
-                // it, and `document.activeElement.tagName` is `BODY`.
+                // be walked again.
                 //
-                // The sibling overlays already name a target this way (`overlay.js`,
-                // `popover.js`, `color-picker.js`, `tour.js`); the shell was the one that
-                // did not.
+                // The sibling overlays name a target the same way (`overlay.js`,
+                // `popover.js`, `color-picker.js`, `tour.js`).
                 setReturnFocus: (previouslyFocused) => this._resolveReturnFocus(panel, previouslyFocused),
                 onDeactivate: () => {
+                    // Before focus returns: the toggle it goes back to sits on the page beside
+                    // the drawer, and an inert element cannot take focus.
+                    this._releasePageInert();
                     this._trap = null;
                     this.sidebarOpen = false;
                 },
@@ -251,37 +256,18 @@ export default function wirekitAppShell(config = {}) {
 
             this._trap = trap;
 
-            // Activated on the NEXT tick, not here, and that is the whole difference
-            // between a trap that exists and a trap that works.
+            // Activated later, not here. The watcher fires the moment `sidebarOpen`
+            // changes, before Alpine has applied the class that makes the panel visible.
+            // `focus-trap` looks for something focusable at `activate()` time, finds
+            // nothing in a subtree that is still `visibility: hidden`, and falls back to
+            // the container, which cannot take focus either: the trap would exist, report
+            // itself active, and leave focus on `<body>`.
             //
-            // The watcher fires the moment `sidebarOpen` changes — BEFORE Alpine has
-            // applied the class that makes the panel visible. `focus-trap` looks for
-            // something focusable at `activate()` time, finds nothing in a subtree that is
-            // still `visibility: hidden`, and falls back to the container, which cannot
-            // take focus either. The trap then exists, reports itself active, and focus
-            // stays on `<body>`.
-            //
-            // Measured in a browser, and only there: `_trap` truthy, `isDrawer` true, two
-            // focusable elements inside the panel, and `document.activeElement` still
-            // `BODY`. Every ESM case passed throughout — they construct the state machine,
-            // and this is a question about paint order.
-            //
-            // `$nextTick` is Alpine's; where it is absent (a unit harness) activation is
-            // immediate, which is what those cases already assert.
-            // A COUNTER, not an object comparison — and that distinction is the whole bug
-            // this line used to be.
-            //
-            // The guard read `this._trap !== trap`, which looks obviously correct and is
-            // never true: Alpine keeps component data behind a reactive Proxy, so reading
-            // `this._trap` hands back a proxied wrapper that is not identical to the raw
-            // trap that was just stored. The guard therefore rejected every activation, the
-            // trap sat created-but-never-armed, and the symptom was a `role="dialog"` panel
-            // with focus still on `<body>`.
-            //
-            // It took instrumenting `activate` itself to see: the log showed `trap-created`
-            // and never `activate-called`. Everything before that read like a timing
-            // problem, and two plausible timing fixes changed nothing — because the call
-            // was not late, it was not happening.
+            // A counter, not an object comparison, says whether an activation is still
+            // the current one. Alpine keeps component data behind a reactive Proxy, so
+            // reading `this._trap` hands back a proxied wrapper that is never identical to
+            // the raw trap just stored, and a guard reading `this._trap !== trap` would
+            // reject every activation.
             const arming = (this._arm = (this._arm ?? 0) + 1);
 
             const activate = () => {
@@ -298,22 +284,27 @@ export default function wirekitAppShell(config = {}) {
                 this._releaseInterimEscape();
 
                 trap.activate();
+
+                // The page beside the drawer is inert while it is a dialog, once the trap has
+                // recorded the opener. The drawer and its backdrop stay reachable: they render
+                // in place, and a click on the backdrop is how a pointer closes the drawer.
+                if (! pageInertKept) {
+                    const keep = [panel, this.$refs?.drawerBackdrop].filter(Boolean);
+
+                    if (holdPageInert(keep)) {
+                        pageInertKept = keep;
+                    }
+                }
             };
 
-            // WHEN to activate is the whole problem, and it took a browser to see it.
+            // When to activate: once the panel has finished arriving.
             //
             // `focus-trap` places the initial focus once, at `activate()`; it re-reads its
             // tabbables later (on each Tab, when the focused node goes away), but it does
             // not come back to the initial focus. Called while the panel is still
             // translated out and mid-transition, it finds nothing to focus, and the trap
-            // reports `active: true` without ever having moved focus. Measured: `_trap` truthy,
-            // `active: true`, two visible tabbable links in the panel, and
-            // `document.activeElement` still `BODY` at 0, 50, 150, 400 and 900 ms.
-            //
-            // `$nextTick` is too early. Two animation frames are too early. What works —
-            // proven by deactivating and re-activating the SAME trap once the panel is laid
-            // out, which puts focus on the first link — is to wait for the panel to finish
-            // arriving.
+            // reports `active: true` without ever having moved focus. A tick or two
+            // animation frames after the flip, the panel is still on its way in.
             //
             // So: the drawer's own `transitionend`, with a timer behind it because
             // `transitionend` does not fire for a zero-duration transition, for
@@ -330,11 +321,8 @@ export default function wirekitAppShell(config = {}) {
                 // every link inside it animates its color on hover, the toggle animates its
                 // own transform. Each of those would arm the trap early, in the middle of the
                 // drawer sliding in, the moment the comment above shows focus lands nowhere.
-                //
-                // The sibling already had this right: `app-rail` filters on
-                // `propertyName === 'width' && target === $el` and says why in one line —
-                // "this element also transitions colors, and every one of those would
-                // otherwise publish the names early".
+                // `app-rail` filters its own `transitionend` on property and target for the
+                // same reason.
                 //
                 // And the property list is the panel's own, not just `transform`: under
                 // `transition-[transform,visibility]` Blink emits `visibility` as the panel's
@@ -342,15 +330,12 @@ export default function wirekitAppShell(config = {}) {
                 // alone would discard the one event there is and leave the 350 ms fallback as
                 // the whole arming path.
                 //
-                // What that cost is not subtle: for 350 ms after the drawer opens, focus sits
-                // on `<body>`, so an Escape aimed at the focused element never reaches the
-                // drawer and the panel stays open. The engine sweep caught it as 19
-                // `escape-does-not-close` findings at phone width.
+                // Focus would then sit on `<body>` for 350 ms after the drawer opens, and an
+                // Escape aimed at the focused element would never reach the drawer.
                 //
-                // `target === panel` is what does the anti-bubbling work and it is kept: the
-                // backdrop's own `opacity` event was measured arriving 9 ms later from a
-                // `div`, and a link's color transition bubbles from a child. Neither is the
-                // panel.
+                // `target === panel` does the anti-bubbling work: the backdrop transitions its
+                // own `opacity`, and a link's color transition bubbles from a child. Neither is
+                // the panel.
                 //
                 // And the timer path must survive the filter. `setTimeout(this._onSettle, …)`
                 // calls this with NO event, and that call is the whole fallback for a
@@ -489,6 +474,16 @@ export default function wirekitAppShell(config = {}) {
             document.addEventListener?.('keydown', this._onInterimEscape);
         },
 
+        /** Give the page beside the drawer back, once. Idempotent, like the releases around it. */
+        _releasePageInert() {
+            if (pageInertKept) {
+                const keep = pageInertKept;
+
+                pageInertKept = null;
+                releasePageInert(keep);
+            }
+        },
+
         /** Idempotent: called by the arming handover, by every close, and by `destroy()`. */
         _releaseInterimEscape() {
             if (! this._onInterimEscape) {
@@ -508,6 +503,7 @@ export default function wirekitAppShell(config = {}) {
             // `_trap` to release and would otherwise keep a document-level keydown handler
             // for the rest of the page's life.
             this._releaseInterimEscape();
+            this._releasePageInert();
 
             if (! this._trap) {
                 return;

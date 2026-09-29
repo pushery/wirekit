@@ -12,13 +12,11 @@
 "current".
 "false",
 "false".
-"indented
 "link"
 "not
 "the
 "this
 "unexpected
-"which
 $active
 $active)
 $active,
@@ -390,7 +388,6 @@ $variant,
 (even
 (function
 (int)
-(measured
 (not
 (on
 (silent
@@ -406,53 +403,26 @@ $variant,
 //
 />
 0
-0.1
-0.1097
-0.1:
 0px
-0…309
-0…496
 1.25rem.
 1.4.13
 1.4.13.
 100),
-108px
-10px
 11.25
-121px
 12l7.5
-16px
-17.5px
-18.5
-187px,
-196px,
 2.1.1).
 2.5px
 200px
-2026-09-01
 20px
-232px
 24
 24"
-240px
-28,
 3.5rem
 300),
 340px
-375
-375px,
-38,
 4.5
 4.75rem
-40
-40).
-44.
-45px
-5
 5.5rem,
-53ms
 56px
-5px
 6),
 7.5"
 7.5m-7.5-15L3.75
@@ -489,7 +459,6 @@ $variant,
 <path
 <script
 <span
-<style>
 <style>,
 <svg
 <svg>,
@@ -569,7 +538,6 @@ Attributes
 Auto-inject
 BEFORE
 BOTH
-BOTTOM,
 BOUND
 BRAND
 BY
@@ -591,9 +559,6 @@ Both
 Bound
 CALLER
 CALLER's
-CENTER
-CENTERS
-CLS
 COLLIDE
 COLUMN,
 COMPILED
@@ -602,7 +567,6 @@ CONTENT
 CSP
 CSS
 CSS.
-CUT
 Centered
 Centering
 Consistent
@@ -617,10 +581,10 @@ Derived
 Describing
 Dev-only
 Digits
+Directly
 Doing
 Done
 Drawn
-EDGE
 EITHER
 ENTIRELY
 EVERY
@@ -630,7 +594,6 @@ Enter
 Escape
 Every
 Everywhere
-Expanded
 Expanded,
 FIRST
 Fast
@@ -642,7 +605,6 @@ Generate
 Going
 HAS
 HERE
-HOVER,
 HOVERABLE:
 HOW
 HTML
@@ -670,9 +632,6 @@ JSON
 JSON.parse(…),
 JavaScript
 KEY,
-LAST
-LEFT
-LINE,
 LIVE
 Landmark
 Leading-aligned,
@@ -682,14 +641,10 @@ Like
 Link
 Livewire
 Livewire's
-MARK
-MODE
-MODULES'
 MORPH
 Maintainer's
 Make
 Makes
-Measured
 NEVER
 NON-active
 NON-interactive
@@ -702,7 +657,6 @@ Nothing
 Null
 OBJECT
 OF
-OFF
 OFF,
 ON
 ON.
@@ -713,7 +667,6 @@ OPENING
 OPENS
 ORIGINAL
 OTHER
-OUT
 Off
 On
 One
@@ -730,6 +683,7 @@ Params:
 Passing
 Present
 Publishes
+Pulled
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Put
@@ -739,13 +693,11 @@ RENDER
 REQUIRED,
 RESTING
 ROW
-ROW,
 RULES
 Read
 Reading
 Removing
 Rendered
-Reported
 Resolvable
 Resolved
 Resting
@@ -754,10 +706,8 @@ Rich
 SECOND
 SEED
 SHAPE
-SHARES
 SHIPPED
 SIBLING.
-SITS
 STATIC
 SWAPS:
 Same
@@ -774,10 +724,8 @@ Static
 Storage
 Switch
 THE
-THEIR
 THIS
 THREE
-TOGGLE
 TRUNCATED
 TWO
 Tab
@@ -809,7 +757,6 @@ WAS
 WCAG
 WHERE
 WHETHER
-WIDER
 WIDTH
 WRAPPER's
 WRAPPER,
@@ -916,7 +863,7 @@ __('wirekit::Modules'),
 `Illegal
 `PersistedCookie`'s
 `Str::random`
-`WireKit::cspNonce()`.
+`WireKit::cspNonce()`,
 `[data-wk-nav-gutter]`
 `_x_dataStack`,
 `a`
@@ -1026,7 +973,6 @@ __('wirekit::Modules'),
 `relative`
 `right`
 `script-src
-`scrollWidth`
 `shrink-0`
 `sidebar.item`
 `sidebar`
@@ -1081,7 +1027,6 @@ activate
 activates
 active
 actually
-add
 add,
 added
 added:
@@ -1090,7 +1035,6 @@ addition:
 address
 addresses.
 adds
-adopting
 affordance
 affordances.
 afresh
@@ -1151,6 +1095,7 @@ anticipate
 any
 anything
 anything:
+anyway
 anyway,
 anyway;
 anywhere.
@@ -1165,8 +1110,6 @@ appear.
 appears
 appended
 application
-applications
-applications,
 applies
 applies,
 apply,
@@ -1248,6 +1191,7 @@ bare,
 bare.)
 base
 be
+be,
 beat
 because
 become
@@ -1276,16 +1220,13 @@ bg-[var(--color-wk-rail-badge)]
 bind
 binding
 binds
-bit
 bleeding
 block
 block's
 block,
 block:
-blocks",
 blocks,
 blueprint
-blueprint's
 body
 boolean
 booleans
@@ -1299,7 +1240,7 @@ border.
 both
 both,
 bottom
-bought
+bottom.
 bound
 bound:
 bounded
@@ -1317,13 +1258,14 @@ breakpoint
 breakpoint,
 breaks
 briefly
-broken.
+broken:
 browser
 browser,
 bubble's
 bubbles
 budget
-bug.
+budget.
+bug
 build
 build.
 builds
@@ -1353,7 +1295,6 @@ caption
 captions
 card's
 card,
-carried
 carries
 carry
 carrying
@@ -1366,7 +1307,6 @@ caught
 caused
 cell
 center
-center,
 center.
 centered
 centered:
@@ -1399,7 +1339,6 @@ chrome,
 chrome.
 circle
 claim
-claimed
 class
 class="block
 class="h-4
@@ -1425,7 +1364,9 @@ climbs
 clipped
 clipped.
 clipping
+clipping,
 clone
+close
 closed
 closes
 closing
@@ -1512,7 +1453,6 @@ corner
 correct
 correct.
 correction
-correction.
 correctly,
 cosmetic.
 costs
@@ -1524,6 +1464,8 @@ counter
 counter.
 counterpart,
 counterpart:
+counting
+counts
 covers
 cramped
 creates.
@@ -1598,7 +1540,7 @@ destination,
 destinations:
 developer
 developer's
-device:
+device,
 did
 did),
 dies
@@ -1646,7 +1588,6 @@ drawn,
 drawn.
 draws
 drift
-drifted
 drifting
 drifts
 driven
@@ -1676,6 +1617,7 @@ echoed
 echoes
 echoes,
 edge
+edge,
 edge-to-edge
 edge.
 edge;
@@ -1758,7 +1700,6 @@ expandos.
 expands
 expected,
 expensive
-expensive:
 explaining
 explicit
 explicitly
@@ -1772,7 +1713,7 @@ fact
 factored
 factory
 factory,
-fade="…">`
+fade="…">`,
 fails
 failure
 fall
@@ -1783,7 +1724,6 @@ false
 false);
 false,
 false])
-far
 fault
 feature
 fell
@@ -1803,7 +1743,6 @@ first
 first,
 fit
 fits
-fix
 fix.
 fixable
 fixed
@@ -1835,7 +1774,6 @@ fold.
 folded
 folding
 follow
-followed.
 follows
 font
 foot
@@ -1852,7 +1790,6 @@ form.
 forms
 forms,
 forms:
-found
 four
 four-sided
 fragment
@@ -1875,6 +1812,7 @@ gap-[2px]',
 gap-[var(--space-wk-nav-gap)]
 gap-[var(--space-wk-nav-gap)]">
 gap-[var(--space-wk-nav-gap)]',
+gap:
 gate
 gated
 gates
@@ -1890,7 +1828,6 @@ glyphs
 go
 goes
 goes.
-gone
 got
 grew
 grid
@@ -2081,7 +2018,6 @@ itself,
 itself.
 itself;
 joining
-jumped
 just
 justify-center',
 keep
@@ -2118,9 +2054,11 @@ last
 later
 later,
 later.
+later:
 layer,
 layout
 layout,
+layout-shift
 layout:
 lays
 leading-aligned
@@ -2140,6 +2078,7 @@ let
 lets
 like
 line
+line,
 line.
 lines
 link
@@ -2159,7 +2098,7 @@ literally
 live
 lives
 load
-load,
+load.
 local
 local,
 localStorage
@@ -2184,7 +2123,6 @@ makes
 many
 mark
 mark's
-mark,
 mark.
 marked.
 marker
@@ -2205,11 +2143,9 @@ may
 mean
 means
 meant
-measured
 measurement
 measures.
 mechanism
-meet,
 meets
 menu
 menus
@@ -2225,7 +2161,6 @@ minted
 mints
 mirrors
 mismatch
-missing
 missing"
 missing:
 mistake
@@ -2242,6 +2177,7 @@ module's
 module,
 module.
 modules
+modules'
 modules,
 moment
 moments.
@@ -2252,12 +2188,10 @@ move
 move.
 moved
 moved,
-movement
 moves
 moving
 moving.
 much
-multi-column
 must
 muted.
 n/a
@@ -2301,7 +2235,6 @@ non-expandable
 nonce
 nonced
 none
-none,
 none:
 none`
 noopener
@@ -2321,8 +2254,6 @@ nothing.
 nothing:
 notice
 notion
-now
-now,
 null
 null"
 null)
@@ -2363,7 +2294,7 @@ onmouseover=alert(1)"`
 onto
 onward.
 open
-open.
+open,
 opened
 opener,
 opening
@@ -2411,12 +2342,11 @@ padding,
 paddings
 pads
 page
+page's
 page,
 page.
-pages
 paint
-paint.
-painted
+paint,
 painted.
 paints
 pair
@@ -2428,7 +2358,6 @@ panel
 panel's
 panel,
 panel.
-panel:
 paragraph
 paragraph's
 parallel
@@ -2449,7 +2378,6 @@ passthrough
 past
 patch,
 patches
-pattern:
 payload
 pays
 pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))]
@@ -2503,7 +2431,6 @@ position
 positioning
 practice,
 preference
-preference.
 preflight
 preprocessor
 present
@@ -2512,9 +2439,7 @@ presentational
 presented
 prevent:
 preventing
-problem
 prod).
-production
 promise
 promised
 promises
@@ -2532,7 +2457,6 @@ proxy
 ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))]
 pt-[var(--space-wk-sm,0.5rem)]
 pull
-pulled
 purpose,
 purpose:
 push
@@ -2540,7 +2464,6 @@ pushed
 pushes
 put
 puts
-px
 py-[var(--padding-wk-y-sm)]
 py-[var(--padding-wk-y-sm)]',
 qualified:
@@ -2640,7 +2563,6 @@ replace
 replaced,
 replacement
 reported
-reported.
 reports
 reports"
 reports",
@@ -2660,14 +2582,12 @@ rests
 restyle
 result
 return;
-returned
 rewrites
+ride
 rides
 right
-right",
 right-hand
 right.
-rode
 role
 role.
 role="group"
@@ -2679,6 +2599,7 @@ room:
 root
 root,
 rounded
+rounded,
 rounded-[var(--radius-wk-full)]
 row
 row"
@@ -2702,9 +2623,8 @@ safe.
 safe:
 said
 same
-sat
 satisfiable
-satisfies
+satisfy
 say
 say.
 say:
@@ -2720,14 +2640,12 @@ screen
 screen-reader
 screen.
 script
-script:
 scroll
 scrolled.
 scroller
-scroller's
 scroller.
 scrolling,
-seam.
+seam,
 search
 second
 second,
@@ -2749,7 +2667,6 @@ self
 self.dataset;
 self.previousElementSibling;
 sentence.
-separate
 separator
 sequence
 server
@@ -2761,7 +2678,6 @@ set"
 sets
 settles
 seven
-several
 shadow.
 shape
 shape.
@@ -2775,7 +2691,6 @@ shell's
 shell,
 shell-bar
 shell.
-shells.
 shifting
 ship
 shipped
@@ -2786,7 +2701,6 @@ should
 show
 shown
 shows
-shrank
 shrink
 shrink,
 shrink-0
@@ -2798,7 +2712,7 @@ side,
 sidebar
 sidebar's
 sidebar.item
-sides,
+sides
 sideways,
 sighted
 signal
@@ -2810,7 +2724,6 @@ simply
 single
 single-class
 single-column
-sit
 site
 sits
 sits.
@@ -2827,8 +2740,7 @@ slot,
 slot.
 sm
 small
-snapped
-snapping
+snap
 snaps
 so
 somebody
@@ -2923,6 +2835,7 @@ surface
 surface.
 surfaces
 surplus
+surplus.
 surrounding
 survive
 survived
@@ -2965,7 +2878,6 @@ target="_blank"
 target="_blank".
 teaches,
 technology.
-teleport
 teleport:
 teleported
 tell
@@ -2981,14 +2893,12 @@ text:
 than
 that
 that.
-that:
 the
 their
 theirs.
 them
 them,
 them.
-them:
 them;
 theme
 theme's
@@ -3049,8 +2959,6 @@ token.
 told
 tone
 tone,
-too
-took
 tooltip
 tooltip's
 tooltip,
@@ -3126,7 +3034,6 @@ unknown
 unlabeled
 unless
 unlike
-unlocatable
 unread
 unset,
 unsteady
@@ -3142,13 +3049,11 @@ up.
 usable
 use
 use:
-used
 used.
 useless.
 user
 uses
 uses.
-usual
 usually
 utilities
 utilities.
@@ -3264,7 +3169,6 @@ works.
 workspace
 workspace's
 workspace,
-workspace.
 worse
 would
 wrap
@@ -3338,4 +3242,3 @@ zoom,
 —
 …but
 …except
-→

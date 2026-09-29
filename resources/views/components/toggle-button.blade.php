@@ -69,7 +69,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('toggle-button', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $pressed = BooleanProp::from($pressed, false);
     $selfToggle = BooleanProp::from($selfToggle, false);

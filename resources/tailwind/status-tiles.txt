@@ -629,7 +629,6 @@ It
 Its
 Legend:
 Let
-Measured
 Merged
 N
 NB
@@ -811,7 +810,6 @@ ask,
 asked
 assembled
 assembled,
-asserted:
 at
 attribute
 attribute,
@@ -996,7 +994,7 @@ did
 differ
 direct
 directly
-disappeared
+disappear
 disentangle".
 disk
 distinct
@@ -1053,7 +1051,6 @@ false,
 false;
 feature
 feature.
-file
 fill-rule="evenodd"
 fill="currentColor"><path
 fills
@@ -1115,7 +1112,6 @@ grid-template-columns
 grids
 growing
 grows
-guard
 h-full
 had
 half
@@ -1239,6 +1235,7 @@ looks
 lopsided
 made
 magic
+make
 makes
 many
 map
@@ -1404,7 +1401,6 @@ real
 really
 reason
 reasoning
-refutes
 regardless
 removes.
 render
@@ -1504,7 +1500,7 @@ spelling
 split
 spoken
 squeezes
-stacked
+stack
 standing
 start
 state
@@ -1538,7 +1534,7 @@ style="color:
 success
 such
 supported
-suppress
+suppressing
 suppression
 surface
 surfaced
@@ -1665,7 +1661,7 @@ was
 way
 way,
 week
-well,
+well
 well.
 were
 what

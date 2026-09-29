@@ -195,13 +195,12 @@ $val
 17z"
 1rem
 1rem);
+1rem,
 2.1.1
 20
 20"
-23
 3];
 40px
-41
 5.5a.75.75
 500'd,
 6)
@@ -439,7 +438,7 @@ about
 above,
 above.
 absolute
-accordion's
+accordion
 act
 activeIndex
 actually
@@ -498,8 +497,8 @@ backslash
 base
 be
 because
+become
 before,
-before.
 below)
 between
 bg-[var(--color-wk-bg-elevated)]
@@ -528,10 +527,9 @@ can
 can't
 cannot
 canonical
-carousel's
+carousel
 carried
 carries
-carry
 carrying
 cast
 casts
@@ -586,6 +584,7 @@ convention"
 conversion:
 correctly
 could
+counts
 covered
 crowd
 current
@@ -605,8 +604,8 @@ default)
 default.
 degrading.
 deliberately
-demo
 demos
+demos,
 density
 depends
 developer's
@@ -650,13 +649,12 @@ emits
 empty
 encode
 entirely
-entries
+entries.
 equal
 escape
 escapes
 even
 every
-exactly
 exist
 existing
 exists
@@ -731,7 +729,7 @@ headings
 headings,
 height:
 height:0
-help,
+help
 here
 here.
 here:
@@ -822,7 +820,6 @@ link
 link's
 links
 list
-listed
 literal
 literal.
 live
@@ -842,7 +839,6 @@ may
 md+
 md:block',
 mean
-measured
 measures
 menu
 merge
@@ -1017,7 +1013,6 @@ rule,
 rules
 same
 satisfies
-says
 scale
 scanned
 scanning
@@ -1064,14 +1059,13 @@ sit
 site
 site,
 site.
-site:
 skip
 skips
 slot
 slot.
 sm:block',
 so
-spacing-step
+spacing
 spec,
 spelled
 spellings
@@ -1084,6 +1078,7 @@ state.
 statements
 stays
 step
+step.
 sticks
 sticky
 sticky;
@@ -1092,7 +1087,7 @@ story
 string
 string,
 string.
-structure.
+structure,
 style
 style,
 style.
@@ -1132,6 +1127,7 @@ them
 then
 there
 there"
+there,
 there.
 this
 though
@@ -1139,7 +1135,7 @@ through
 tick-height
 ticks
 ticks/labels
-titles,
+titles
 to
 toggles
 token.
@@ -1181,7 +1177,6 @@ uses
 uses.
 utilities
 utility
-utility,
 v4
 v4's
 valid
@@ -1217,7 +1212,6 @@ w-[var(--size-wk-sm)]
 want
 wants
 was
-were
 what
 when
 where

@@ -197,8 +197,6 @@ $variantClasses])
 1
 1,
 1/3
-10
-12
 12-class).
 1;
 2,
@@ -279,7 +277,6 @@ LIGHTENS
 LONGEST
 Layout
 Lighthouse.
-Measured
 Mobile
 NOT
 NOTE:
@@ -404,7 +401,6 @@ aside,
 aside.
 aside;
 asideWidth
-asserted:
 at
 attribute
 attribute)
@@ -425,9 +421,8 @@ becomes
 behavior.
 below
 below).
-below,
+below.
 below;
-beside
 best-practice
 bg-[var(--color-wk-bg)]
 black
@@ -441,7 +436,6 @@ bottom-right
 bracket-wrapped
 breakpoint)
 bug
-bump
 but
 buttons
 by
@@ -458,7 +452,6 @@ change
 child
 children
 chosen
-claim,
 clamps
 class
 class),
@@ -473,7 +466,6 @@ classes
 clean
 cleanly.
 clicks
-code
 code-block
 code-block's
 collapses
@@ -518,7 +510,6 @@ data-wk-prose-skip
 dead-zone
 debug
 debug-mode
-decoration.
 default
 default,
 defensive
@@ -571,7 +562,6 @@ false,
 favored).
 feature
 figures
-file
 files
 fills
 fine
@@ -608,7 +598,6 @@ gets
 got
 gradient
 gradient-extension
-guard
 guessed
 h1:
 handles
@@ -679,7 +668,6 @@ leads
 leave
 lede
 lede,
-left
 left-aligned
 level
 level,
@@ -718,7 +706,6 @@ may
 mb-[var(--space-wk-lg,1.5rem)]
 mb-[var(--space-wk-md,1rem)]">
 mean
-measured
 message
 min-content
 min-w-0
@@ -729,7 +716,6 @@ mode
 mode,
 mode.
 most
-moved
 moves
 mt-[var(--space-wk-xl,2.5rem)]',
 muted
@@ -773,6 +759,7 @@ optional
 or
 original
 other
+otherwise
 outer
 outline:
 overflow-hidden',
@@ -793,7 +780,6 @@ past
 pattern
 pattern).
 per-component
-percentage
 picks
 pointer-events-none
 pre
@@ -821,13 +807,10 @@ rationale).
 raw
 reach
 read
-reading
 reads
 real
-reason
 recur.
 refines
-refutes
 regardless
 regular
 rem
@@ -851,7 +834,6 @@ rows).
 rule
 run
 runs
-said
 same
 scanner
 scanner.
@@ -931,7 +913,6 @@ theme):
 then
 there
 these,
-they
 this
 those
 three-tier
@@ -965,11 +946,9 @@ unbreakable
 under
 underlying
 unknown
-until
 up
 up.
 use
-used
 uses
 usually
 utility
@@ -1002,7 +981,6 @@ visible
 visually
 w-full
 was
-was.
 well
 what
 when
@@ -1020,7 +998,6 @@ with
 within
 without
 worse
-worth
 would
 wrapper
 write

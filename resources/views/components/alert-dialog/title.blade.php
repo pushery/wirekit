@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // Heading level for the dialog title (1-6). Defaults to 2 so nothing moves for a caller
     // who never sets it. A dialog's heading is part of the document's outline like any other,

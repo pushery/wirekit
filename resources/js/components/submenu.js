@@ -37,9 +37,11 @@
  *   - `_typeAheadTimer` — the forget-what-was-typed setTimeout. Same reasoning:
  *     it outlives a Livewire morph or an SPA navigation otherwise, and fires
  *     against a scope that is gone.
- *   - `_stopRepair` — the MutationObserver that puts the flyout's placement back
- *     when a framework update erases it. Released on every re-open, on both close
- *     paths and in destroy(). See the note beside `repairErasure` in openSub().
+ *   - `_stopRepair` — ends both observers of the open flyout: the MutationObserver
+ *     that puts its placement back when a framework update erases it, and the
+ *     listeners that follow the parent item on scroll. Released on every re-open, on
+ *     both close paths and in destroy(). See the notes beside `repairErasure` and
+ *     `autoReposition` in openSub().
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
@@ -117,20 +119,23 @@ export default function wirekitSubmenu(config = {}) {
 
                     // Everything this call writes is inline style, and a framework update patches
                     // the panel against its own template, whose `style` attribute carries none of
-                    // it. The placement is gone while the flyout is still open.
+                    // it. The placement is gone while the flyout is still open, on the same node,
+                    // with the same box.
                     //
-                    // Measured on /overlay-placement-seam across one refresh: `top` 556.5px →
-                    // empty, same node, still shown, box unchanged at 192x76.
-                    //
-                    // The unchanged box is why this is `repairErasure` and not
-                    // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
-                    // observes boxes rather than the style attribute.
+                    // The unchanged box is why `repairErasure` is needed beside `autoReposition`
+                    // below: no resize means `autoUpdate` sees nothing, because it observes boxes
+                    // rather than the style attribute.
                     //
                     // A submenu is the worst place in the catalog for this. It is a level a
                     // reader is standing INSIDE — arrowing, typing ahead — and a flyout that
                     // jumps to the end of the document takes their place in the menu with it,
                     // while the parent item still says `aria-expanded="true"`.
                     repairErasure: true,
+                    // It also follows its parent item: the placement is viewport-relative
+                    // (`fixed`), so a scroll while this is open would otherwise leave it where the
+                    // item was, while the parent panel follows its own trigger. The same `stop()`
+                    // ends both observers.
+                    autoReposition: true,
                 });
 
                 if (placement && typeof placement.stop === 'function') {

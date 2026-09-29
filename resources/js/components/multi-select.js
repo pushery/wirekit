@@ -129,6 +129,84 @@ export default function wirekitMultiSelect(config = {}) {
         /**
          * Get the label for a value.
          */
+        /**
+         * The options the list layout shows. A server search shows every result it was given and a
+         * list in the browser every option the text matches, chosen ones included in both: there
+         * a checkbox says whether an option is chosen, where the dropdown drops it from the rows.
+         */
+        get listOptions() {
+            if (this._server) {
+                return this._options;
+            }
+
+            const term = this.filter.toLowerCase();
+
+            return this._options.filter((opt) => optionMatches(opt, term));
+        },
+
+        /** The list layout's search field sends its text. There is no panel to open. */
+        onListInput() {
+            this._queueSearch(this.filter);
+        },
+
+        /**
+         * A checkbox of the list layout. The choice changes, and the text and the focus stay where
+         * they are, so a reader checks several results of one search in a row.
+         */
+        toggleFromList(value) {
+            const idx = this.selected.indexOf(value);
+
+            if (idx >= 0) {
+                this.selected.splice(idx, 1);
+            } else {
+                this.selected.push(value);
+            }
+        },
+
+        /**
+         * A remove button of the list layout's selection. The focus moves to the remove button that
+         * takes its place, or to the search field once the selection is empty, instead of falling
+         * to the page with the button that was pressed.
+         */
+        removeFromList(value) {
+            const idx = this.selected.indexOf(value);
+
+            if (idx < 0) {
+                return;
+            }
+
+            // Resolved now, while the pressed button is still in the document. `$root` is found
+            // by walking up from the element whose handler called in, which is this button, and
+            // the removal takes it out of the list before the tick below runs: read there, the
+            // walk reached nothing and the focus fell to the search field.
+            const root = this.$root;
+
+            this.selected.splice(idx, 1);
+
+            const place = () => {
+                const buttons = [...(root?.querySelectorAll?.('[data-wk-multi-select-remove]') ?? [])];
+                const target = buttons[idx] ?? buttons[buttons.length - 1] ?? this._searchSource();
+
+                if (target && typeof target.focus === 'function') {
+                    target.focus();
+                }
+            };
+
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(place);
+            } else {
+                place();
+            }
+        },
+
+        /** The heading over the list layout's selection: "2 selected". */
+        get selectionHeading() {
+            const count = this.selected.length;
+            const template = String(count === 1 ? config.selectedOne ?? '' : config.selectedMany ?? '');
+
+            return template.replace('__COUNT__', String(count));
+        },
+
         getLabel(value) {
             return this._knownOption(value, this._options)?.label || value;
         },
@@ -534,26 +612,21 @@ export default function wirekitMultiSelect(config = {}) {
         /**
          * Anchor the panel to the field.
          *
-         * The panel used to be `absolute` inside the field wrapper, which made it a
-         * descendant of any clipping ancestor — put the field in a card and the open
-         * panel was cut off at the card's edge, because clipping is not a z-index
-         * question. Positioning it `fixed` against the field escapes that, and
-         * `matchReferenceWidth` carries over the width that `w-full` used to provide
-         * for free. `fitViewport` caps the height to the room actually available so a
+         * An `absolute` panel inside the field wrapper would be cut off at the edge
+         * of any clipping ancestor, a card for instance, because clipping is not a
+         * z-index question. Positioning it `fixed` against the field escapes that,
+         * and `matchReferenceWidth` gives it the field's width. `fitViewport` caps the height to the room actually available so a
          * long list scrolls instead of running past the fold.
          */
         /**
          * The field and the panel, resolved so that a nested `x-data` cannot hide them.
          *
-         * `x-ref` registers into the NEAREST `x-data` scope, and with `optimistic` set this
+         * `x-ref` registers into the nearest `x-data` scope, and with `optimistic` set this
          * component wraps its own field in a second one — `wirekitOptimistic(...)` opens
          * before the field in the Blade and closes after the panel's teleport template. Every
-         * ref of this component therefore lands in that CHILD scope, while `_place()` runs in
-         * the parent and sees an empty registry. Measured on the optimistic preview before
-         * this change: `$refs.field` null, `$refs.panel` null, `_stopAutoUpdate` never set,
-         * no inline top/left/width/max-height on the panel — and the panel sitting 616.75px
-         * below the field's bottom, 12px off its inline start and 334px narrower than it.
-         * All four things `_place()` exists for were absent, and nothing threw.
+         * ref of this component therefore lands in that child scope, while `_place()` runs in
+         * the parent and would see an empty registry: the panel would be neither placed, sized
+         * nor followed, and nothing would throw.
          *
          * The teleport is not the cause, though it looks like the obvious suspect. Alpine's
          * closest-element walk follows `_x_teleportBack`, so a ref on a teleported node

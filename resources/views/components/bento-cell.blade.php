@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // How much room this cell claims once the grid is wide enough (the '@2xl'
     // container width). In a narrow grid every cell is full width regardless —
@@ -31,7 +30,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('bento-cell', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $emphasis = BooleanProp::from($emphasis, false);
     $bleed = BooleanProp::from($bleed, false);

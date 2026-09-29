@@ -194,7 +194,6 @@ $value
 @unless($optimisticConfig)
 A
 A11y:
-AFTERWARDS
 APG's
 Absent
 All
@@ -206,6 +205,7 @@ BEATS
 Blade
 BooleanProp::from($disabled,
 BooleanProp::from($required,
+Both
 CSP
 Change
 Container
@@ -234,8 +234,6 @@ Keeping
 Keyboard
 Label
 Livewire
-Measured
-Measured:
 Mirrors
 Must
 NESTS
@@ -259,7 +257,7 @@ RUNTIME
 Rendered
 Renders
 Required
-Resolving
+Resolved
 Roll")
 SERVER
 Same
@@ -271,19 +269,16 @@ Static
 Support\DomId
 TRACK
 Tailwind's
-That
 The
-These
 This
 UNBOUND
-USED
 Under
 WCAG
 WHICH
 Where
 WireKit::resolveClasses('label',
 WireKit::resolveClasses('segmented-control',
-WireKit::scope():
+WireKit::scope()
 With
 Without
 Written
@@ -368,8 +363,8 @@ across
 action
 active
 actually
-adopt
 after
+afterwards
 again.
 against
 alike:
@@ -430,13 +425,10 @@ arrows
 as
 as,
 asked
-asserted:
-assumed
 at
 at,
 at.
 attribute
-attribute,
 attribute.
 attributes,
 auto-derived
@@ -450,7 +442,6 @@ bag.
 bar
 bare
 be
-be.
 because
 become
 been
@@ -459,7 +450,7 @@ before,
 before.
 behavior
 below
-below.
+below,
 beneath
 between
 bind
@@ -533,7 +524,6 @@ collapses
 colors
 column,
 comes
-comment
 commonest
 compiles
 complete
@@ -574,7 +564,6 @@ dead.
 debug
 default
 defect
-defect.
 dense.
 depend
 description
@@ -643,7 +632,6 @@ feeds
 few
 field
 field's
-file
 file,
 fill.
 fills
@@ -651,7 +639,6 @@ finds
 first
 first,
 fit,
-fix
 fixed
 flags
 flex
@@ -681,7 +668,6 @@ global
 group
 group,
 group:
-guard
 guidance
 had
 hand-mount
@@ -730,7 +716,7 @@ instead,
 interactive
 interchangeable:
 interpolated
-interpolating
+interpolated,
 interrupt
 into
 is
@@ -757,6 +743,7 @@ land
 landed
 lands
 last
+last:
 later
 layer
 layer's
@@ -775,16 +762,14 @@ literals
 little
 live
 live.
+lose
 loses
-losing
 machinery
 makes
-making
 match
 may
 mean
 means
-meant
 measure
 meets
 message
@@ -835,11 +820,9 @@ nor
 not
 not,
 nothing
-now
 null
 null,
 null])
-object
 observeServerValue
 of
 off
@@ -849,7 +832,6 @@ on,
 on.
 on:
 once
-once;
 one
 one-pixel
 one.
@@ -893,8 +875,8 @@ parses
 part
 participating
 past
-path
 path,
+path.
 per
 personalization.
 phantom
@@ -911,7 +893,6 @@ policy
 polite
 politely
 pre-Alpine-init
-pre-morph
 precedence:
 present,
 presentational
@@ -939,10 +920,10 @@ radiogroup,
 radiogroup;
 radios,
 rather
-re-initializes
+re-initialize
 re-themes,
 reach
-reachable.
+reachable
 reaches
 reactive
 reactively
@@ -953,7 +934,6 @@ reason
 reasoning
 reduced-motion
 reference
-refutes
 region
 region,
 region.
@@ -963,13 +943,13 @@ render
 rendered
 renders
 repeating
-replaced
+replacing
 resolve
 resolveClasses
+resolved
 resolves
 result
 results
-return-trip
 returns
 rewrites
 ring.
@@ -990,6 +970,7 @@ run(),
 runs
 runtime
 same
+same.
 sat
 save"
 save.
@@ -1021,6 +1002,7 @@ selectable.
 selected
 selection
 self-stretch
+send
 sent
 sentinel
 sentinel,
@@ -1113,8 +1095,10 @@ that:
 the
 them
 them.
+them:
 themes
 then
+then:
 there
 there,
 they
@@ -1164,7 +1148,6 @@ up
 update
 use
 use.
-used
 used,
 user
 uses

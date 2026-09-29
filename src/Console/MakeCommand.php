@@ -41,11 +41,9 @@ class MakeCommand extends Command
      * Each scaffold generates a Livewire class + Blade view; the developer
      * adapts the recipe to their data shape.
      *
-     * The list and the published recipe catalog are one-to-one in BOTH directions, and
-     * only one of them used to be checked. A published page with no stub is a
-     * `recipe:<name>` a developer reads about, runs, and is told is unknown — which is
-     * what `on-page-toc` and `reading-sidebar` were while the reference page claimed
-     * every recipe mirrors a scaffold.
+     * The list and the published recipe catalog are one-to-one in both directions: a
+     * published page with no stub would be a `recipe:<name>` a developer reads about,
+     * runs, and is told is unknown.
      *
      * @var list<string>
      */
@@ -142,16 +140,11 @@ class MakeCommand extends Command
     /**
      * The generated class renders the view this command actually WROTE.
      *
-     * It used to call `Str::kebab($className)` at runtime instead, which was wrong
-     * twice over. It named a class the stub never imported — inside
-     * `namespace App\Livewire;` an unimported name resolves against that namespace,
-     * so it meant `App\Livewire\Str`, a fatal on the FIRST render while the command
-     * printed "Created: …" and exited 0. And it derived the view name from a second
-     * source: the file is written to `$meta['view']`, so the two agreed only by
-     * coincidence, and any template whose view name is not the kebab of its class
-     * would have rendered a view that does not exist.
-     *
-     * Passing the same value that named the file removes both.
+     * The view name is passed in as the same value that named the file, never derived
+     * at runtime: a derivation such as `Str::kebab($className)` would agree with the
+     * written file only by coincidence, and would need an import the stub does not carry
+     * (inside `namespace App\Livewire;` an unimported `Str` resolves to
+     * `App\Livewire\Str`, a fatal on the first render after a successful scaffold).
      */
     private function generateClass(string $className, string $viewName): string
     {

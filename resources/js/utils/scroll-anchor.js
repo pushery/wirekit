@@ -6,9 +6,8 @@
  * true of a scroll that MOVES the trigger. Browsers deliver a scroll's event a frame late, so a
  * scroll that finished before the panel opened can still be announced after it: an action that
  * scrolls its own trigger into view and then opens — a right-click below the fold, a keyboard or
- * assistive-technology path — had its panel shut by its own scroll. Measured on the context menu
- * at 393px in Chromium: the page scrolled at ~35 ms, the menu opened at ~37 ms, and the event of
- * that same scroll arrived at ~70 ms with the page exactly where it had been at the open.
+ * assistive-technology path — would have its panel shut by its own scroll, whose event can arrive
+ * after the open, with the page exactly where it was at the open.
  *
  * So each of them takes a snapshot of its anchor when it opens, and a scroll closes the panel
  * only once the anchor has moved since.

@@ -31,7 +31,6 @@ Declared
 Dev-only
 Error-announcement
 Fully
-Measured
 OFF
 ON
 OWN
@@ -53,10 +52,8 @@ all
 an
 and
 announces
-any
 aria-live
 as
-asserted:
 attribute
 auto-derived
 bag
@@ -87,7 +84,6 @@ error-announcement
 every
 exactly
 false
-file
 flags
 focus
 for
@@ -99,7 +95,6 @@ from
 gap
 global
 governs
-guard
 imports
 in
 inherit
@@ -145,12 +140,9 @@ prod).
 props
 pulls
 qualified:
-rather
 reach
 read
 real
-reason
-refutes
 region
 regions
 renders
@@ -164,7 +156,6 @@ so
 stack).
 still
 summary
-than
 that
 the
 there

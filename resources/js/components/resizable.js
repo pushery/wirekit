@@ -179,10 +179,9 @@ export default function wirekitResizableHandle() {
             }
 
             // Store, do not measure. `pointermove` fires faster than the display
-            // refreshes, and this handler used to read two rects immediately after
-            // the PREVIOUS event had written an inline width — a read after a write
-            // is what forces the browser to recompute layout synchronously, and it
-            // paid that on every event of the drag.
+            // refreshes, and reading two rects here, right after the previous event
+            // wrote an inline width, would force the browser to recompute layout
+            // synchronously on every event of the drag.
             //
             // The frame below does the same arithmetic against the same rects, once,
             // at a point where the layout it reads is already current.
@@ -215,7 +214,8 @@ export default function wirekitResizableHandle() {
             // Both rects are read fresh each frame rather than cached at
             // pointerdown: they are viewport-relative, so a scroll or a resize
             // during the drag moves them, and a cache would put the panel where
-            // the cursor used to be. Once a frame is cheap; once an event was not.
+            // the cursor was before the page moved. Once a frame is cheap; once an
+            // event would not be.
             const wrapperRect = this.wrapper.getBoundingClientRect();
             const panelRect = this.panel.getBoundingClientRect();
             let percent;
@@ -253,9 +253,8 @@ export default function wirekitResizableHandle() {
         /**
          * Give the page its text selection back, once.
          *
-         * Split out because three paths need it and only one of them used to have it:
-         * `onPointerUp` (pointerup, pointercancel and now lostpointercapture all route
-         * through it) and `destroy()`. Idempotent through the null check — restoring twice
+         * Split out because three paths need it: `onPointerUp` (pointerup,
+         * pointercancel and lostpointercapture all route through it) and `destroy()`. Idempotent through the null check — restoring twice
          * would write `''` over a value a SECOND handle had just snapshotted, and a page
          * with two resizable panels has two of these.
          */

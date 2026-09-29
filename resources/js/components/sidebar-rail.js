@@ -16,14 +16,14 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  *
  * A trigger OUTSIDE this component cannot call `toggle()` — Alpine merges scope
  * downwards only, so a button in a topbar is not in the sidebar's tree and never
- * sees it. That is the whole reason the built-in toggle used to be the only option:
- * moving it meant switching the collapsible mode off and rebuilding this state, the
- * persisted flag and the marker the items read, in the app. So the state stays here
- * and the outside reaches it through a window event instead.
+ * sees it. Moving the toggle out would otherwise mean switching the collapsible mode
+ * off and rebuilding this state, the persisted flag and the marker the items read, in
+ * the app. So the state stays here and the outside reaches it through a window event
+ * instead.
  *
  * The reader's choice and what is on screen are two values, the way they are on `app-rail`.
  * Below the shell's breakpoint the column is part of the navigation drawer, and a collapsed
- * column there was a strip of nameless icons in an otherwise empty drawer, where a tap
+ * column there would be a strip of nameless icons in an otherwise empty drawer, where a tap
  * navigates before any tooltip could name anything. So in the drawer the column shows its
  * names; the stored choice is not touched, and the next desktop draws the column the way the
  * reader left it. A sidebar outside the shell keeps collapsing at every width.
@@ -48,17 +48,11 @@ export default function wirekitSidebarRail(config = {}) {
 
         /**
          * True while the column is on its way back to full width and the names have not been
-         * let in yet. It exists because a label LEAVING is invisible and a label ARRIVING is
-         * not.
+         * let in yet. It exists because a label leaving is invisible and a label arriving is
+         * not: a name laid out in a column that is still widening wraps onto extra lines, the
+         * rows below it move down, and they move back once the column settles.
          *
-         * Measured on the collapsible-sidebar example, with an entry named long enough to
-         * wrap: at rest the first row is 51px tall and the second starts at 90px. Sixty
-         * milliseconds into the expand, at a column 174px of its final 256px, the first row
-         * was 70.5px — three lines — and the second sat at 109.5px. It then settled back.
-         * That 19.5px round trip is the shift; with short names it is the one or two pixels
-         * somebody notices without being able to say what moved.
-         *
-         * A SEPARATE marker rather than delaying `data-collapsed`, and that is not caution:
+         * A separate marker rather than delaying `data-collapsed`, and that is not caution:
          * twenty-five rules key off that attribute — centering, badge shape, headings, the
          * column width itself — and holding it back would hold all of them back. This one is
          * read by exactly the rules that hide TEXT, so the geometry moves on time and only

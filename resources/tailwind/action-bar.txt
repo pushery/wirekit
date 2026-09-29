@@ -1,5 +1,4 @@
 !==
-"inside
 "toolbar"
 $attributes->getAttributes());
 $attributes->merge(!$visible
@@ -60,7 +59,8 @@ $visible
 @php
 @props([
 @props.
-APPEARED,
+A
+APPEAR,
 Action
 Alpine-controlled
 Announcing
@@ -78,7 +78,6 @@ Home/End
 It
 Left/Right
 Livewire
-Measured
 NOT
 No
 Normalized
@@ -89,7 +88,6 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Renders
 SERVER-driven
-So
 Tab
 Tab.
 The
@@ -100,6 +98,7 @@ Under
 Up/Down)
 Useful
 Uses
+When
 Why
 WireKit::resolveClasses('action-bar',
 [
@@ -136,7 +135,6 @@ and
 announced
 announcement
 announces
-any
 appears
 are
 aria-label="{{
@@ -144,7 +142,6 @@ aria-live
 aria-live="polite"
 arrows
 as,
-asserted:
 at
 attribute
 auto-derived
@@ -154,7 +151,6 @@ axe
 bar
 bar,
 be
-below
 between
 block,
 bottom
@@ -196,7 +192,6 @@ dashboard
 debug
 dedicated
 default
-did
 display-none
 distinction
 do
@@ -211,17 +206,13 @@ ends.
 every
 everybody,
 exactly
-exists
 exists.
-explained
 expression
 false
 false);
 false,
 feature
-file
 filled
-fire.
 fires.
 first
 fixed
@@ -235,7 +226,6 @@ for
 from
 gap-[var(--gap-wk-md)]',
 green
-guard
 has
 headless
 here
@@ -250,7 +240,6 @@ inline
 inset
 inset,
 inside
-inside,
 interactive
 interface
 introduces
@@ -275,7 +264,6 @@ left-1/2
 list
 literal
 live
-make
 make;
 may
 mean
@@ -292,7 +280,6 @@ no
 none;']
 none`,
 not
-not:
 notched
 nothing
 nothing.
@@ -338,7 +325,6 @@ read
 readers.
 reads
 reason
-refutes
 region
 related
 renders
@@ -382,6 +368,7 @@ the
 their
 them
 there
+therefore
 this
 this:
 tip
@@ -393,7 +380,6 @@ transforms;
 translated
 translated,
 tree
-tree".
 tree,
 true
 truthy
@@ -401,7 +387,6 @@ unknown
 until
 usable
 use
-used
 user
 via
 view's
@@ -424,6 +409,7 @@ whose
 why
 with
 without
+would
 wrapper
 z-[var(--z-wk-sticky)]'
 {{

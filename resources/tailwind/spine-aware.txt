@@ -30,7 +30,6 @@ Declared
 Default
 Dev-only
 Fully
-Measured
 Pass
 Pushery\WireKit\WireKit;
 Renders
@@ -51,10 +50,8 @@ WireKit::spinePadding($tier);
 `xl`
 a
 action
-any
 applies
 are
-asserted:
 auto-derived
 be
 block,
@@ -77,14 +74,12 @@ does
 early.
 edge
 element,
-file
 first-party
 flags
 footer
 footer.
 for
 from
-guard
 header
 helper
 hero).
@@ -117,12 +112,8 @@ prod).
 produce
 props
 qualified:
-rather
 reach
 read.
-reason
-refutes
-renders
 result
 shown
 so
@@ -132,8 +123,6 @@ spine-padding
 spine-participant
 spine.
 stay
-than
-that
 the
 there
 this

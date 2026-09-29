@@ -397,7 +397,7 @@ ${$key}
 'whitespace-nowrap',
 'wire:model'))
 'wirekit:badge-dismissed'
-'wk-tabs',
+'wk-tabs-'
 'wk-tooltip-');
 'wrap'
 'x-circle'
@@ -466,7 +466,6 @@ ${$key}
 (is_string($key)
 (legacy):
 (matches
-(measured
 (no
 (not
 (only
@@ -526,18 +525,13 @@ ${$key}
 0;
 1
 1)
-1.3
 1.4.13
 1.4.13.
 100),
-1108
-1114
 12%,
-18.5
 1px
 2.1.1
 2.1.1).
-2.31.0
 2.4.3,
 2N
 2rem,
@@ -548,7 +542,6 @@ ${$key}
 4%,
 4.78).
 500s
-533
 6),
 8.1+
 :
@@ -638,7 +631,6 @@ ALSO
 AND
 APG
 API:
-ARE
 ARIA
 AT
 Accept
@@ -684,7 +676,6 @@ CALLER's
 CSP
 CSS
 CSS.
-CUT
 Catching
 Check
 Chromium
@@ -705,6 +696,7 @@ Dev-only
 Discoverable
 Distinct
 Doing
+DomId:
 Done
 Dot
 Driven
@@ -718,7 +710,6 @@ Enter
 Escape
 Every
 Everything
-Exactly
 Examples
 FILTER_VALIDATE_BOOLEAN);
 FINDABLE
@@ -735,7 +726,6 @@ Generate
 German
 Graceful
 HERE,
-HOVER,
 HOVERABLE:
 HTML
 HTML,
@@ -764,10 +754,9 @@ KEYS
 Keyboard-
 Keyed-assoc
 Key→label
-L=0.972
-L=0.985
 LIST
 Leave
+Left
 Literal
 Livewire
 Livewire's
@@ -781,7 +770,6 @@ MOST
 Make
 Matches
 Material
-Measured
 Mixing
 Multi-line
 NEXT
@@ -798,7 +786,6 @@ Not
 Nothing
 Null
 Null,
-OFF
 ON
 ONCE
 ONE
@@ -838,7 +825,6 @@ Render
 Rendered
 Renders
 Replay"
-Reported
 Resolve
 Rich
 Root
@@ -868,6 +854,7 @@ Shared
 Shared:
 Silent
 Single-line
+Six
 Size
 So
 Soft
@@ -883,11 +870,10 @@ Switch
 Symmetric
 TAG
 TEMPLATE
-TEXT
 THE
 TRANSPARENT
 Tab
-Tab),
+Tab,
 Tablist
 Tablist"
 TablistStyles
@@ -978,12 +964,13 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses)
+\Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\TablistStyles::list($variant,
 \Pushery\WireKit\Support\TablistStyles::tab($variant,
 \Pushery\WireKit\Support\TablistStyles::tabActive($variant);
 \Pushery\WireKit\Support\TablistStyles::tabInactive();
-\Pushery\WireKit\WireKit::stableId(
+\Pushery\WireKit\WireKit::stableId('wk-tabs',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('tabs',
 ])
@@ -1001,6 +988,7 @@ __toString
 `$current`
 `$refs`
 `-1`
+`-2`,
 `:selected="$key
 `<button>`
 `<div>`
@@ -1152,8 +1140,8 @@ able
 about
 above
 above)
-above,
 above.
+above:
 absence
 absent
 absent,
@@ -1178,11 +1166,8 @@ active:
 actual
 actually
 add
-added
-added.
 adds
 after
-after,
 afterwards.
 again
 again.
@@ -1222,7 +1207,6 @@ any
 apart
 app
 app(IconResolver::class)->resolve($name);
-app.css
 appear
 appearance
 appeared
@@ -1263,7 +1247,7 @@ array_filter([
 array_is_list($items))
 array_is_list()
 array_keys($sizeMap));
-array_keys($tabs))
+array_keys($tabs))),
 array_map(fn
 arrive
 arrives
@@ -1279,7 +1263,6 @@ as
 as,
 asked
 asks
-asserted:
 assertion
 assignment
 assistive
@@ -1290,7 +1273,6 @@ attempted
 attribute
 attribute,
 attribute.
-attributed
 attributes
 audit
 authors
@@ -1323,20 +1305,16 @@ baked
 bakes
 bar
 bar's
-bar,
-bar.
 bare
 bars
 base;
 be
-became
 because
 become
 becomes
 becoming
 been
 before
-before,
 before.
 before;
 behalf,
@@ -1421,14 +1399,13 @@ branch's
 brand
 break
 break;
-brighter
+brighter,
 browser
 browser's
 bubble's
 bubbles
 bubbles,
 bug
-bug.
 build
 but
 button
@@ -1466,7 +1443,6 @@ captured
 card
 card's
 card,
-carried
 carries
 carry
 case
@@ -1496,7 +1472,6 @@ choosing
 chose
 chosen
 chrome
-claimed
 clash
 class
 class="h-4
@@ -1513,6 +1488,7 @@ clicks
 client-only
 climbs
 clipping
+clipping,
 clone
 close
 close-icons,
@@ -1534,7 +1510,6 @@ column,
 combinations:
 come
 comes
-comment
 comment,
 commits
 common
@@ -1575,10 +1550,8 @@ considers
 console
 console).
 console.warn
-construction,
 construction.
 consumes
-consuming
 container
 containers.
 contains
@@ -1615,6 +1588,7 @@ current.
 currentColor
 currentColor;
 cursor-pointer
+cut
 cycle,
 danger
 danger-fg
@@ -1632,13 +1606,14 @@ dead.
 debug
 debug-only
 decided
+decided,
 decides.
 decision,
 decision:
 declared
 declares
 declaring
-decoration
+decoration:
 decorative
 decorative,
 decorative.
@@ -1791,7 +1766,6 @@ exists,
 exists.
 exotic
 expandos.
-expensive:
 explanation
 explicit
 explicitly
@@ -1806,8 +1780,7 @@ factory
 factory's
 factory,
 factory.
-factory:
-fade="…">`
+fade="…">`,
 fading
 fail
 failed
@@ -1859,7 +1832,6 @@ fix.
 fixed
 fixed-height
 fixed`
-fixes
 flags
 flash
 flatten
@@ -1893,8 +1865,6 @@ foreach
 foreground
 foreground.
 forms
-found
-found.
 found.`
 four
 fragment
@@ -1920,9 +1890,11 @@ gap-x-1',
 gaps:
 gate
 gate,
+generated
 get
 gets
 ghost()
+given.
 glob
 global
 glyph
@@ -1930,7 +1902,6 @@ glyph.
 go
 goes
 gone.
-good
 grid
 group,
 group.
@@ -2226,12 +2197,12 @@ mean
 meaning
 means
 meant
-measured
 mechanism
 medium
 meet
 menus
 merge
+message
 metadata:
 method
 mid-interaction
@@ -2243,7 +2214,6 @@ mirror
 mismatch
 missing
 missing,
-missing.
 missing:
 mobile
 mobile.
@@ -2262,7 +2232,6 @@ morph,
 mounted
 move
 move.
-moved
 moves
 moves.
 moving
@@ -2349,7 +2318,6 @@ one.
 one:
 one;
 ones
-ones.
 only
 only):
 onmouseover=alert(1)"`
@@ -2491,7 +2459,6 @@ positioning
 post-process
 pre-checking
 precisely
-predicted
 prefix
 preg_match('/^(?:wire:|x-on:|@|on)(?:click|mousedown|mouseup|keydown|keyup|keypress)\b/i',
 preg_replace(
@@ -2509,8 +2476,6 @@ primary)
 primary:
 problem
 prod).
-project
-project,
 prop
 prop's
 property
@@ -2525,7 +2490,6 @@ purpose,
 purpose:
 put
 puts
-px
 px-2'
 px-2',
 px-2.5'
@@ -2580,11 +2544,9 @@ red
 red:
 reduced
 ref
-refactor
 references
 refuses
 refuses.
-refutes
 regardless
 registered
 registers
@@ -2613,7 +2575,6 @@ replacement
 replaces
 replay-button
 reported
-reproduced
 request
 request:
 requested
@@ -2707,7 +2668,6 @@ segments.
 selected
 selection
 selection.
-selectors
 semantic
 sensible
 separates
@@ -2741,7 +2701,6 @@ shown
 shows
 shrink-0
 shrink-0"
-shrinking
 sibling
 siblings
 sidebar
@@ -2757,12 +2716,14 @@ site
 site's
 sits
 six
+six.
 size
 size,
 size="sm"
 size="xs"
 sizes
 skips
+slightly
 slot
 slot's
 slot.
@@ -2838,7 +2799,7 @@ strlen($unselected));
 strlen($unselected);
 strpos($slotHtml,
 style="display:inline-block;"></span>
-stylesheet
+stylesheet's
 stylesheet).
 sub-component
 submit
@@ -2895,6 +2856,7 @@ tablist).
 tablist.
 tabs
 tabs:
+tabset.
 tabsets
 tag
 tag's
@@ -2909,7 +2871,6 @@ target,
 teaches
 technology
 technology.
-teleport
 teleport:
 teleported
 template
@@ -2991,6 +2952,7 @@ token
 token,
 tokens
 tokens.
+told
 tone
 tone,
 tooltip
@@ -3035,7 +2997,6 @@ true;
 truthy
 truthy.
 try
-twelve
 twice
 twice.
 two
@@ -3063,7 +3024,6 @@ unknown.
 unlabeled
 unless
 unlike
-unlocatable
 unset
 unsteady
 until
@@ -3071,12 +3031,10 @@ until-found
 untouched.
 up
 up.
-upgrade
 upstream
 usable
 use
 use:
-used
 used:
 useful
 user
@@ -3098,6 +3056,7 @@ var(--shadow-wk-badge,
 variant
 variant),
 variant).
+verbatim,
 version
 vertical
 vertical)
@@ -3107,13 +3066,11 @@ view's
 view,
 viewport.
 viewports.
-views
 visibility
 visible
 visible;
 visual
 vocabulary
-vocabulary,
 w-1.5
 w-12"`
 w-12',
@@ -3170,7 +3127,7 @@ width.
 window
 window,
 wins
-wins.
+wins,
 wire:key="wk-tooltip-panel"
 wire:model
 wiring.

@@ -271,7 +271,6 @@ Ignored
 Inline
 It
 Literal
-Measured
 Named
 No
 Normalized
@@ -374,7 +373,6 @@ angle
 announce
 announced
 announces
-any
 anyone
 anything
 anywhere
@@ -391,7 +389,6 @@ array
 array_filter([$fromInitialsStyle,
 as
 as,
-asserted:
 assistive
 at
 attribute
@@ -513,7 +510,6 @@ fallback
 false);
 false,
 feature
-file
 file,
 fill="currentColor"
 first
@@ -544,7 +540,6 @@ goes
 group
 group's
 grouping:
-guard
 h-16
 h-2',
 h-2.5',
@@ -691,6 +686,7 @@ optimistic-ui:
 optional
 or
 other
+otherwise
 outer
 over
 overflow
@@ -737,10 +733,8 @@ readers).
 reading
 reads
 real
-reason
 reasoning
 redundant
-refutes
 region
 region,
 reliably
@@ -884,7 +878,6 @@ unknown
 unlabeled
 unnamed
 use
-used
 uses:
 utilities,
 v4

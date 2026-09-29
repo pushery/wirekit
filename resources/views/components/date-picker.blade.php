@@ -49,9 +49,9 @@
     //
     // The misreading it closes is silent, and that is what makes it worth a prop: `03.04.2026`
     // and `04/03/2026` are both valid dates. Nothing is rejected, no error appears, and the
-    // record carries a different day than the person meant. Reported from a shop whose
-    // operators work on company laptops with an English system language while every word on
-    // the screen is German.
+    // record carries a different day than the person meant. It happens wherever the system
+    // language and the page disagree: an operator on an English laptop entering a date on a
+    // German screen is the common case.
     //
     // Off by default, so an existing call site renders byte for byte as before. On, it renders
     // NOTHING when the two orders agree — the overwhelmingly common case.
@@ -80,7 +80,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('date-picker', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $range = BooleanProp::from($range, false);
     $disabled = BooleanProp::from($disabled, false);
@@ -331,10 +331,8 @@
                  container. A flex item defaults to `min-width: auto`, so it cannot shrink
                  past its intrinsic content width — and a native date input has a large one
                  (the format text plus the picker button). Two of those plus the separator
-                 exceed anything under roughly 330px, and a preview frame that does not
-                 scroll CLIPS the excess: the end date becomes unreachable on a phone.
-                 Measured at a 310px frame before the fix: 25px past the edge, and the
-                 fields at 139/155 rather than an even split. --}}
+                 exceed anything under roughly 330px, and a frame that does not scroll
+                 clips the excess: the end date would become unreachable on a phone. --}}
             {{ $rangeWrapperAttributes->class('flex items-center gap-[var(--padding-wk-x-sm)]') }}
         >
             <input

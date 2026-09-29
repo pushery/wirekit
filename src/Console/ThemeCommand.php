@@ -55,13 +55,12 @@ class ThemeCommand extends Command
             $content
         );
 
-        // A PCRE failure returns null, and this line used to cast that to a
-        // string — which is '' — and then wrote it. So the one input that can
-        // break the match is also the one that empties the developer's
-        // stylesheet: an app.css carrying a start marker with no end marker
-        // exhausts the backtrack limit past roughly a megabyte, and everything
-        // they wrote is replaced by our theme block. Their file is not ours to
-        // lose, so a failed match refuses instead of guessing.
+        // A PCRE failure returns null, and cast to a string that is '': written,
+        // it would empty the developer's stylesheet on exactly the input that
+        // can break the match (an app.css carrying a start marker with no end
+        // marker exhausts the backtrack limit past roughly a megabyte), leaving
+        // nothing but the theme block. Their file is not ours to lose, so a
+        // failed match refuses instead of guessing.
         if ($newContent === null) {
             $this->error('Could not scan resources/css/app.css for an existing theme block.');
             $this->line('  '.preg_last_error_msg().' — app.css was left untouched.');
@@ -133,8 +132,7 @@ class ThemeCommand extends Command
      * decision rather than a cleanup, and it is not this file's to make. It goes in the
      * next MAJOR.
      *
-     * Zero callers measured in src/, resources/, config/, docs/ and tests/. No test holds
-     * that count, so a new caller would not be reported.
+     * Nothing in the package calls it.
      */
     public static function availablePresets(): array
     {

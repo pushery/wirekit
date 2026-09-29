@@ -4,6 +4,9 @@
 @props([
     'name' => null,
     'dismissible' => config('wirekit.components.alert-dialog.dismissible', false),
+    // Whether opening locks the page's scroll. False for a dialog that lives inside a page
+    // region, such as a preview, where the page around it has to keep scrolling.
+    'lockScroll' => true,
     // CSS selector, resolved inside the panel, for the control that should hold
     // focus when the dialog opens. Unset, focus goes to Cancel — the least
     // destructive action, per the APG alertdialog pattern.
@@ -65,12 +68,13 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('alert-dialog', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `dismissible="false"` used to mean the opposite of what the call site reads as. The
+    // `dismissible="false"` would otherwise mean the opposite of what the call site reads as. The
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
     // the only reason the coverage guard did not see it. All three reads are truth tests
     // (the Alpine seed and the two backdrop handlers), so the string turned every one of
     // them back on and a destructive-confirmation dialog dismissed on a backdrop click.
     $dismissible = BooleanProp::from($dismissible, false);
+    $lockScroll = BooleanProp::from($lockScroll, true);
     // Same reason as `dismissible` above: an unbound `close-on-confirm="false"` is the string
     // 'false', which is truthy, so the dialog would have kept closing on confirm for a caller
     // who wrote the opposite.
@@ -79,7 +83,7 @@
     // Default TRUE: an unset `describedby` keeps the documented behavior, and only an
     // explicit false in any spelling drops the attribute. `BooleanProp::from` reads the
     // bound `false`, the string "false", "0" and an empty attribute alike — the three
-    // spellings the docs advertise, of which one used to work.
+    // spellings the docs advertise, and each of them has to work.
     $describedbyEnabled = BooleanProp::from($describedby, true);
 
     // Alert Dialog — specialized confirmation dialog for destructive actions.
@@ -131,7 +135,7 @@
 @endphp
 
 <div
-    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }} })"
+    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
     {{-- Trigger slot — clicking opens the alert dialog.

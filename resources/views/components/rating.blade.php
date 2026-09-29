@@ -44,8 +44,8 @@
     //
     // This control implements the ARIA radiogroup model, and a radiogroup has
     // no way back to "nothing chosen" — a native radio cannot be deselected
-    // from the keyboard either. By that measure the old behavior was correct,
-    // which is why this is a prop and not a fix: lowering the floor for
+    // from the keyboard either. By that measure the default is correct, which
+    // is why this is a prop and not a new default: lowering the floor for
     // everybody would change a documented model for every existing call site.
     //
     // It is opt-in because the two places a rating is most often used are not
@@ -55,10 +55,10 @@
     // and documents is reachable only until the first interaction.
     //
     // The gesture is picking the chosen star again, plus stepping down past the
-    // first one. A separate clear control was the alternative and was not
-    // taken: it puts a permanent extra element and an extra tab stop on every
-    // rating on the page — including the majority that never clear — and it
-    // needs a label and a position that only the call site knows.
+    // first one. Not a separate clear control: it would put a permanent extra
+    // element and an extra tab stop on every rating on the page — including the
+    // majority that never clear — and it needs a label and a position that only
+    // the call site knows.
     'clearable' => false,
     'readonly' => false,
     'size' => config('wirekit.components.rating.size', 'md'),
@@ -81,7 +81,7 @@
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $readonly = BooleanProp::from($readonly, false);
     $clearable = BooleanProp::from($clearable, false);
@@ -257,10 +257,10 @@
     {{-- Hidden input for form submission / wire:model.
 
          Only when the rating is a CONTROL. A readonly rating is a record of what
-         someone gave — displaying it must not put a form field on the page. It
-         used to regardless, which meant a product grid shipped one stray field
-         per card, with a name regenerated on every render that the developer
-         could not even exclude from a submit. --}}
+         someone gave — displaying it must not put a form field on the page, or
+         a product grid would ship one stray field per card, with a name
+         regenerated on every render that the developer could not even exclude
+         from a submit. --}}
     @if($optimisticConfig)
         {{-- The optimistic scope opens ABOVE the hidden input, not below it.
              `_notify()` finds that input with `closest('[x-data]')` — and once
@@ -285,14 +285,14 @@
     {{-- Two different things wear the same stars.
 
          A READONLY rating is a picture of a score: role="img" with one name, and
-         nothing inside it to operate. It used to claim role="radiogroup" and mark
-         every filled star aria-checked="true" — but a radiogroup is single-select
-         by definition, so a 4-star rating announced FOUR simultaneously selected
-         radios ("4 stars, selected, 3 stars, selected, …"). Nonsense, and it
-         invited the reader to interact with something inert.
+         nothing inside it to operate. Not role="radiogroup" with every filled
+         star aria-checked="true": a radiogroup is single-select by definition,
+         so a 4-star rating would announce FOUR simultaneously selected radios
+         ("4 stars, selected, 3 stars, selected, …") and invite the reader to
+         interact with something inert.
 
          An INTERACTIVE rating really is a radiogroup: picking a score IS choosing
-         one of five. That path is unchanged. --}}
+         one of five. --}}
     <div
         @if($readonly)
             role="img"
@@ -345,8 +345,7 @@
                              wrapper instead baseline-aligns against the surrounding
                              line box, so whenever the strut's ascent (driven by the
                              INHERITED line-height) exceeds the icon height, the partial
-                             star drops by the difference — measured 4px low at
-                             size="sm" inside a product card. Block-level makes its box
+                             star drops by the difference. Block-level makes its box
                              model identical to its siblings. --}}
                         <span class="relative block {{ $iconSize }}">
                             {{-- Empty icon background --}}

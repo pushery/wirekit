@@ -152,16 +152,14 @@ export default function wirekitChartJs(config) {
                     return;
                 }
 
-                // How much room the panel actually has, measured BEFORE the canvas is
-                // hidden — hiding it first collapses an inline host to zero and the
-                // measurement then says the opposite of the truth.
+                // How much room the panel actually has, read before the canvas is
+                // hidden: hiding it first collapses an inline host to zero, and the
+                // reading then says the opposite of the truth.
                 //
-                // Measured 2026-09-08 on /preview/components/sparkline/3: an inline
-                // sparkline host is 4rem (64px) wide by design, and this panel rendered
-                // inside it as a 19px-wide, 975px-tall column of three characters per
-                // line, in the middle of a running sentence. At 1280px too — the width
-                // that breaks it is the HOST's, not the viewport's, so it was never a
-                // mobile bug even though the mobile sweep is what noticed.
+                // An inline sparkline host is 4rem wide by design, and the full panel
+                // written into it would become a column of a few characters per line in
+                // the middle of a running sentence, at any viewport width: the width
+                // that decides it is the host's.
                 // An empty mount can measure 0 — the panel is what will give it width —
                 // so a bare `width > 0` test defaults to the FULL panel exactly where the
                 // compact one is needed. Walk out to the nearest ancestor that has a
@@ -194,25 +192,15 @@ export default function wirekitChartJs(config) {
                 // visually-hidden sentence below keeps the full message on the
                 // accessibility tree, where the `role="alert"` announces it either way.
                 /*
-                 * The background is opaque, and that is the whole fix rather than a detail.
-                 *
-                 * This panel used `background: rgba(254, 243, 199, 0.5)` with
-                 * `color: rgb(120, 53, 15)` — amber-100 at half alpha under amber-900. In LIGHT
-                 * mode that composites to a pale amber and reads fine. In DARK mode the same
-                 * half-alpha fill blends with the page behind it, axe measured the effective
-                 * background as #847f69, and amber-900 on that is 2.25:1 against a 4.5:1
-                 * threshold. Twenty previews failed the dark sweep on 2026-09-10 (pipeline
-                 * 2679), all of them this one span.
-                 *
-                 * A translucent fill has no contrast ratio of its own — it has whatever the
-                 * thing behind it makes. So the pair is now the two tokens the design system
-                 * already aligns for exactly this, and they are OPAQUE: measured with the
-                 * repository's own WcagContrast, warning-text on warning-bg is 6.24:1 in light
-                 * and 7.76:1 in dark.
+                 * The background is opaque. A translucent fill has no contrast ratio of its
+                 * own — it has whatever the thing behind it makes, and on a dark page a
+                 * half-alpha amber under dark amber text falls far below 4.5:1. So the pair
+                 * is the two tokens the design system aligns for exactly this, warning-text
+                 * on warning-bg, both opaque and above 4.5:1 in either mode.
                  *
                  * The insets keep a tint rather than a fixed white, for the same reason one
-                 * level down: `rgba(255,255,255,0.6)` is a light surface in both modes, and in
-                 * dark it put a light-mode surface under light-mode-inverted text.
+                 * level down: a fixed white is a light surface in both modes, and in dark
+                 * mode it would sit under text that has turned light.
                  *
                  * `--color-wk-border-warning` is deliberately NOT used — it is one of the two
                  * state-border tokens this library does not ship, and the guard's
@@ -617,17 +605,17 @@ Chart.register(...registerables);</pre>
                      * The observer's only gate is "was the mutated attribute `class`",
                      * and html/body carry a great many classes that have nothing to do
                      * with the theme — a scroll lock, an open navigation, a Livewire
-                     * state flag, the application's own. Every one of them re-resolved
-                     * the palette, re-applied it to every dataset and ran a full
-                     * Chart.js style pass with an animated redraw, on every chart on
-                     * the page. On a dashboard that is the most expensive thing a
-                     * class toggle can cost.
+                     * state flag, the application's own. Without this gate every one of
+                     * them would re-resolve the palette, re-apply it to every dataset
+                     * and run a full Chart.js style pass with an animated redraw, on
+                     * every chart on the page. On a dashboard that is the most
+                     * expensive thing a class toggle can cost.
                      *
                      * Compared on the RESOLVED values rather than on the presence of a
                      * `.dark` class: a theme preset can change the palette without
                      * touching that class, and a dark-flag test would call it unchanged
                      * and leave the chart on the old colors. This costs one string
-                     * comparison and cannot miss a change the old code would have seen.
+                     * comparison and misses no change a class-based test would see.
                      */
                     const signature = fontFamily + '|' + JSON.stringify(colors);
                     if (signature === this._themeSignature) {

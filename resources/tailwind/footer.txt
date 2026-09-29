@@ -60,10 +60,8 @@ $slot
 --}}
 /
 //
-0px
 100%`
 2026
-49px
 75
 75ch`
 80
@@ -102,7 +100,6 @@ IS
 In
 Inner-container
 It
-Measured
 No
 Null
 OUTSIDE
@@ -111,7 +108,6 @@ Privacy
 Pushery\WireKit\WireKit;
 Real-world
 Renders
-SECOND
 Same
 See
 Terms"
@@ -146,11 +142,9 @@ aligns
 an
 and
 animation
-any
 app
 apply
 as
-asserted:
 at
 auto-derived
 available
@@ -158,7 +152,6 @@ be
 be.
 becomes
 before
-before,
 being
 belonging
 below
@@ -225,7 +218,6 @@ enum
 explicit
 fallback
 family
-file
 fill
 flags
 flex-col
@@ -245,7 +237,6 @@ gap-[var(--space-wk-md)]">
 gap-[var(--space-wk-xl)]
 gives
 grid-cols-2
-guard
 hardcoded
 implode('
 imports
@@ -259,6 +250,7 @@ intrinsic
 is
 isset($legal))
 it
+it,
 items-center
 its
 joins
@@ -286,14 +278,12 @@ max-w-container-xl
 max-width
 may
 mb-[var(--space-wk-xl)]">
-measured
 mx-auto">
 n/a
 narrower
 naturally;
 no
 not
-now,
 null,
 of
 on
@@ -319,14 +309,11 @@ px
 px)
 px-lg
 qualified:
-rather
 reach
 read
 reading-toc
 reads
 real
-reason
-refutes
 regardless
 region
 rem).
@@ -341,9 +328,11 @@ row
 row).
 row,
 rule
+rule,
 rules
 same
 scrolls
+second
 separated
 shell's
 should
@@ -374,7 +363,7 @@ tier
 to
 token
 top
-touched.
+touches.
 truth.
 typically
 typography
@@ -391,7 +380,6 @@ website
 when
 which
 whose
-why
 width
 width.
 wirekit:spine-participant

@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'variant' => 'default', // free-form hook written verbatim to data-wk-timeline for your own CSS; no built-in layouts
     'before' => false, // show dashed fade-in line above first item
@@ -19,7 +18,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('timeline', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $before = BooleanProp::from($before, false);
     $after = BooleanProp::from($after, false);

@@ -436,7 +436,6 @@ $wrapperClasses
 4.42
 4.5
 4.87
-4px
 4v2h16v-2c0-2.66-5.33-4-8-4z"
 4zm0
 5
@@ -638,15 +637,14 @@ Livewire
 LocalizedNumber::format((float)
 Lovelace"
 Lovelace,
-Measured
 Mirrors
 NESTS
 NO
 NOT
 Naming
 No
-Nonsense,
 Normalized
+Not
 Null
 ONLY
 OWN
@@ -847,7 +845,6 @@ also
 alt
 alt=""
 alt="{{
-alternative
 always
 an
 and
@@ -861,7 +858,6 @@ announces
 announces,
 announces.
 answer
-any
 anyone
 anything
 app
@@ -874,7 +870,7 @@ are
 arguments
 aria-atomic="true"
 aria-checked
-aria-checked="true"
+aria-checked="true":
 aria-checked="{{
 aria-describedby.
 aria-describedby="{{
@@ -901,7 +897,6 @@ as,
 ascent
 asked
 aspect
-asserted:
 assistive
 association
 assumed
@@ -946,7 +941,6 @@ been
 before
 behalf
 behaves
-behavior
 behind,
 being
 belongs
@@ -1003,7 +997,6 @@ caller's
 cannot
 capability
 card,
-card.
 carried
 carries
 carry
@@ -1026,7 +1019,6 @@ chosen.
 circle
 circle.
 cited
-claim
 clamps
 class
 class:
@@ -1134,6 +1126,7 @@ decorative-image
 deduped
 default
 default)
+default:
 defect
 defines
 definition,
@@ -1153,7 +1146,7 @@ deterministic
 developer
 developer's
 did
-difference
+difference.
 different
 dims
 direction
@@ -1244,7 +1237,6 @@ figcaption
 figcaption,
 figure
 figure,
-file
 fill
 fill-[var(--color-wk-warning)]
 fill-[var(--color-wk-warning)]'
@@ -1262,7 +1254,6 @@ five
 five-star
 five.
 fix
-fix:
 fixed
 flags
 fleet,
@@ -1321,7 +1312,6 @@ grammar;
 gray
 grid
 group
-guard
 h-16
 h-2',
 h-2.5',
@@ -1410,7 +1400,7 @@ interpolated
 interrupt
 into
 invalid
-invited
+invite
 is
 it
 it"
@@ -1475,7 +1465,6 @@ looking
 looks
 looks.
 lose
-low
 lowering
 made
 majority
@@ -1502,7 +1491,6 @@ mean
 means
 meant
 measure
-measured
 medium
 message
 method
@@ -1684,7 +1672,6 @@ purpose
 purpose:
 pushed
 put
-puts
 qualified:
 question
 queued
@@ -1726,7 +1713,6 @@ reads:
 real
 really
 reappeared
-reason
 reason.
 reasoning
 receives
@@ -1735,8 +1721,6 @@ record,
 records
 redundant
 reference
-refutes
-regardless,
 regenerated
 region
 region,
@@ -1833,7 +1817,7 @@ set,
 shadows:
 shape
 shapes
-shipped
+ship
 should
 show
 showed
@@ -1944,7 +1928,6 @@ tabindex="{{
 tag,
 take
 taken
-taken:
 takes
 tech
 technology
@@ -2022,7 +2005,6 @@ type="hidden"
 typed
 unable
 unattributed
-unchanged.
 unconditionally
 undeclared
 under
@@ -2164,5 +2146,5 @@ zero,
 }}`
 —
 …"
-…").
+…")
 →

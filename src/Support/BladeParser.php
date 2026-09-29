@@ -73,8 +73,8 @@ final class BladeParser
      * directly via `{{ $name }}` WITHOUT an `@isset($name)` guard
      * render `Undefined variable $name` when the developer omits the
      * slot. popover / hover-card / context-menu all do this for their
-     * `trigger` slot — schema previously reported them as default-slot
-     * only, hiding the requirement.
+     * `trigger` slot, and the plain extraction alone would report them as
+     * default-slot only, hiding the requirement.
      *
      * Detection heuristic:
      *   - A slot wrapped in `@isset($name)` / `isset($name)` is OPTIONAL
@@ -281,17 +281,13 @@ final class BladeParser
     /**
      * Variables a Blade LOOP binds, which are not slots and never were.
      *
-     * The exclusion list already dropped props, reserved names and `@php` locals. It did not
-     * know about loop bindings, so every `@for($i = …)` and `@foreach($xs as $x)` left its
-     * variable behind as a "required slot" — and because a bare `{{ $i }}` is exactly the
-     * shape that marks a slot REQUIRED, they came out as hard dependencies.
-     *
-     * WHAT THAT COST, measured before the fix: `otp-input` reported its only slot as `i`,
-     * `rating` the same, `range-slider` reported `tickPercent`, and `select` reported
-     * `optionValue` and `subValue`. Those are not internal — `slotsOf()` feeds
-     * `ExportJsonCommand` (the publicly served components.json / api-map.json) and
-     * `McpCatalog` (what an AI assistant reads). So an assistant asking what
-     * `<x-wirekit::otp-input>` accepts was told it takes a slot called `i`.
+     * The exclusion list drops props, reserved names and `@php` locals, and loop bindings join
+     * them here: every `@for($i = …)` and `@foreach($xs as $x)` would otherwise leave its
+     * variable behind as a slot, and because a bare `{{ $i }}` is exactly the shape that marks a
+     * slot required, as a hard dependency. That is not internal: `slotsOf()` feeds
+     * `ExportJsonCommand` (the publicly served components.json and api-map.json) and
+     * `McpCatalog` (what an AI assistant reads), so an assistant asking what `otp-input` accepts
+     * would be told it takes a slot called `i`.
      *
      * Four directives bind, and all four are matched rather than only the common two: a
      * `@forelse` that went unhandled would reintroduce the bug for exactly the components
@@ -305,8 +301,7 @@ final class BladeParser
 
         /*
          * `@foreach($xs as $k => $v)` and `@foreach($xs as $v)`, plus @forelse which has
-         * the same head. Both sides of a `=>` are bound, and taking only the value half is
-         * how `optionValue` survived a first pass at this.
+         * the same head. Both sides of a `=>` are bound.
          *
          * The head is read with balanced parentheses, not to the first `)`. A non-greedy
          * `\((.*?)\)` stops inside the collection expression the moment it contains one --
@@ -315,17 +310,8 @@ final class BladeParser
          *     @foreach((array) $shortcut as $key)                  → head cut to `(array`
          *     @foreach($p->linkCollection()->slice(1, -1) as $link) → head cut to `$p->linkCollection`
          *
-         * Neither cut half contains ` as `, so nothing was bound and the loop variable
-         * survived into the slot list as a REQUIRED slot. Measured over the catalog: 3 of 35
-         * heads were being truncated, producing `pagination::link`, `menubar.item::key` and
-         * `command-palette.item::key`.
-         *
-         * Of those three, exactly ONE reached a published artifact -- `pagination::link`, in
-         * components.json and the MCP catalog. The other two sit on SUB-components, and both
-         * readers ask `slotsOf()` for registry names only while describing sub-components
-         * through a separate call that carries no slots at all. Stated precisely because the
-         * first draft of this comment claimed all three shipped, which would have been a
-         * comment overstating its own fix.
+         * Neither cut half contains ` as `, so nothing would be bound and the loop variable
+         * would survive into the slot list as a required slot, `pagination::link` among them.
          */
         foreach (self::directiveHeads($contents, ['foreach', 'forelse']) as $head) {
             if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9_]*)/', (string) strstr($head, ' as ') ?: '', $bound)) {
@@ -389,19 +375,16 @@ final class BladeParser
      * Scan a PHP-source string for assignments and append each captured name to the
      * `$locals` accumulator.
      *
-     * Three shapes, and the third was added after it was measured rather than guessed at.
-     * `$foo = …` is the common one; `foreach (… as $item)` binds a name the same way; and
-     * LIST DESTRUCTURING — `[$a, $b, $c] = match (…)` or `list($a, $b) = …` — binds several
-     * at once. This docblock used to say destructuring "falls through silently", which was
-     * true and cost more than it sounds: every name bound that way was reported as a
-     * REQUIRED SLOT, and that answer ships. Measured across the catalog before the fix: 5
-     * components, 13 names — `stat` alone advertised `trendColor`, `trendIcon` and
-     * `trendLabel` as slots a developer must fill, in `components.json`, in the api-map and
-     * in the MCP catalog a coding assistant reads.
+     * Three shapes. `$foo = …` is the common one; `foreach (… as $item)` binds a name the same
+     * way; and list destructuring (`[$a, $b, $c] = match (…)` or `list($a, $b) = …`) binds
+     * several at once. A name bound by destructuring would otherwise be reported as a required
+     * slot, and that answer ships: `stat` would advertise `trendColor`, `trendIcon` and
+     * `trendLabel` as slots a developer must fill, in `components.json`, in the api-map and in
+     * the MCP catalog a coding assistant reads.
      *
-     * Nested destructuring (`[[$a, $b], $c] = …`) and keyed destructuring
-     * (`['x' => $a] = …`) are still not covered. Neither shape occurs in this catalog today
-     * — measured, not assumed — and a pattern for them would be guesswork against no case.
+     * Nested destructuring (`[[$a, $b], $c] = …`) and keyed destructuring (`['x' => $a] = …`)
+     * are not covered. Neither shape occurs in this catalog, and a pattern for them would be
+     * guesswork against no case.
      *
      * @param  list<string>  $locals
      */
@@ -513,11 +496,10 @@ final class BladeParser
      * the component sets it every time — and a plain regex over the source cannot tell the
      * difference, because it does not see conditions.
      *
-     * Measured across this package on 2026-08-27: of the components that set `x-data` at
-     * all, 18 set it ONLY inside a condition, 17 set it both ways, and 60 set it plainly.
-     * `x-init` has the same shape (one of four). Every one of those 18 produced a warning
-     * telling a developer to change working code — `card` is the reported case, where the
-     * `x-data` belongs to a debug warning that fires only when a card is composed wrongly.
+     * A component that sets `x-data` only inside a condition would otherwise produce a warning
+     * telling a developer to change working code: `card` is such a case, where the `x-data`
+     * belongs to a debug warning that fires only when a card is composed wrongly. `x-init` has
+     * the same shape.
      *
      * This under-reports on purpose, and that is the trade. A component that sets the
      * attribute only inside a condition that happens to be TRUE at runtime does collide, and
@@ -883,9 +865,9 @@ final class BladeParser
                 'terminator' => $terminator,
             ];
 
-            // Never past the end. The cursor running to `strlen + 1` on a malformed file is
-            // how the audit command used to die with a raw `ValueError` out of its
-            // extraction phase — before it could report anything at all.
+            // Never past the end. A cursor running to `strlen + 1` on a malformed file would
+            // make the audit command die with a raw `ValueError` out of its extraction
+            // phase — before it could report anything at all.
             $cursor = $terminator === '>' ? $cursor + 1 : $cursor;
         }
 
@@ -988,9 +970,7 @@ final class BladeParser
      * Both things that can hide a `)` in PHP are handled, and the second one is not
      * optional: `@props([… // the item's name …])` is ordinary in this package, and a
      * matcher that saw only strings read that apostrophe as an opening quote and ran to the
-     * next one somewhere else in the file. That is the same defect this class keeps
-     * producing, one level down — it was measured here before it shipped, on a walk that had
-     * otherwise stopped losing tags.
+     * next one somewhere else in the file, losing the tags in between.
      */
     private static function pastMatchingParen(string $contents, int $open): ?int
     {
@@ -1075,11 +1055,10 @@ final class BladeParser
      *
      * The caller is a scan that hands attribute values to a client-side grammar, and Blade is
      * not client-side: `@js(…)` dies on its `@` before the expression is reached, and a raw
-     * `{!! … !!}` echo is not a property key. Measured over a real application, ELEVEN of
-     * twenty-five reported violations were exactly this — artifacts of Blade rather than
-     * properties of what the browser sees. Worse, `@js()` is the documented way to hand server
-     * data to a client-side attribute, so a clean report was unreachable for a template that
-     * used it, no matter how good the expression was.
+     * `{!! … !!}` echo is not a property key. Reported as violations, they would be artifacts of
+     * Blade rather than properties of what the browser sees, and `@js()` is the documented way to
+     * hand server data to a client-side attribute, so a template using it could never read clean,
+     * however good the expression was.
      *
      * The order is not cosmetic. `{{--` is also a `{{`, so substituting the echoes first turns
      * a whole comment into one placeholder and yields an expression that is not in the file —
@@ -1377,10 +1356,9 @@ final class BladeParser
     /**
      * Every `<x-wirekit::…>` usage in a source string, with the attribute names it carries.
      *
-     * A filter over `tagsFromSource()`, which owns every hardening this scan used to carry
-     * on its own. It is worth naming why the walk lives there rather than here: the same
-     * defect was found three times in three separate scanners, and each one had learned a
-     * different subset of Blade. The reasons a regex cannot do this job are recorded on
+     * A filter over `tagsFromSource()`, which owns the walk: one walk for every scanner
+     * means every scanner reads the same Blade, where separate scanners would each learn
+     * a different subset of it. The reasons a regex cannot do this job are recorded on
      * that method — a `>` is ordinary inside a value, and Blade's own constructs are not
      * markup — and they are the same reasons wherever the job comes up.
      *
@@ -1404,12 +1382,12 @@ final class BladeParser
             }
 
             // A tag another element interrupted is DISCARDED rather than reported with
-            // whatever it managed to collect. Reported from a downstream tree that pointed
-            // this at PHP fixtures, where a component tag split across string concatenation
-            // yielded entries like `<button $html>` and `<ticker \;>` — eight of nine
-            // findings were artifacts, on a guard whose whole purpose was reporting real
-            // ones. Silent plausible output is worse than a throw, because everything built
-            // on top of it inherits the confidence without the correctness.
+            // whatever it managed to collect. Pointed at PHP fixtures, where a component tag
+            // is split across string concatenation, a partial read yields entries like
+            // `<button $html>` and `<ticker \;>`: artifacts, on a guard whose whole purpose
+            // is reporting real findings. Silent plausible output is worse than a throw,
+            // because everything built on top of it inherits the confidence without the
+            // correctness.
             if ($tag['terminator'] === '<') {
                 continue;
             }
@@ -1454,11 +1432,9 @@ final class BladeParser
      *   - a `//` or `#` line comment inside `@php … @endphp`
      *   - the same inside a raw `<?php … ?>` island
      *
-     * Measured in a documentation site that uses the `@import` path and no directive at all: the only
-     * surviving match was the phrase `and ``@wirekitStyles`` now links it` in a PHP comment, and
-     * the doctor printed `✓ @wirekitStyles directive found` instead of the correct PASS line for
-     * the `@import` path. Harmless there because a valid path existed; on an install with
-     * NEITHER it reports a green setup over a broken one.
+     * A comment naming `@wirekitStyles` would otherwise count as the directive, and on an install
+     * with neither the directive nor the `@import` path the doctor would report a green setup
+     * over a broken one.
      *
      * The PHP half is tokenized rather than matched, and that is not fastidiousness: `//`
      * also occurs inside `'https://…'` and `#` inside `'#fff'`. A pattern that cuts at either

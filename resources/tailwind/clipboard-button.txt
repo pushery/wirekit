@@ -172,6 +172,7 @@ WIDER
 Warning
 We
 WireKit::resolveClasses('clipboard-button',
+Without
 [
 \Pushery\WireKit\Support\AlpinePayload::from($value)
 \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button',
@@ -245,7 +246,6 @@ browser
 build
 but
 button
-button,
 button:
 by,
 call
@@ -393,7 +393,7 @@ like
 list
 live
 lives
-look
+look,
 makes
 mark.
 may
@@ -425,6 +425,7 @@ only
 opposite
 optimistic-ui:
 or
+otherwise
 out
 over
 own
@@ -464,12 +465,12 @@ rows
 runs,
 said
 same
-saw
 saying
 says
 screen
 screen.
 second
+see
 server
 settles
 shape
@@ -538,7 +539,6 @@ unknown
 until
 untouched
 use
-used
 uses.
 value
 value:

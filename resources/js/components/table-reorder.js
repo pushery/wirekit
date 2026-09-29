@@ -17,25 +17,43 @@
  * ONE SLOT PER PAGE, as module state: one keyboard presses one arrow at a time, and the cell
  * that pressed it may itself be replaced by the morph. The Livewire hook is registered once.
  *
+ * The row is found in its own list. `table.reorder` and `reorder` both mount this, and two lists
+ * on one page can share row keys, or one can sit inside a row of the other. The list is the
+ * element that holds the row marked `wire:sort:item`, or the table where the rows carry no mark,
+ * and a control is only taken from the list the pressed arrow was in.
+ *
  * Lifecycle: no observer, no timer, no listener of its own; the commit hook is page-wide and
  * lives as long as Livewire does.
  *
  * @param {Object} config
- * @param {string} config.key - the row's key, as the cell's `data-wk-reorder-key` carries it
+ * @param {string} config.key - the row's key, as the control's `data-wk-reorder-key` carries it
  */
 
-/** @type {{ key: string, direction: string, table: Element | null } | null} */
+/** @type {{ key: string, direction: string, list: Element | null } | null} */
 let pending = null;
 let hooked = false;
 
-/** The cell for a key, in the table the arrow was pressed in when that table is still there. */
-function findCell(table, key) {
-    const scope = table?.isConnected ? table : (typeof document !== 'undefined' ? document : null);
+/** The list an element's row belongs to: the holder of its `wire:sort:item` row, or its table. */
+function listOf(element) {
+    const row = element?.closest?.('[wire\\:sort\\:item]');
+
+    return row?.parentElement ?? element?.closest?.('table') ?? null;
+}
+
+/**
+ * The control for a key, in the list the arrow was pressed in while that list is still there.
+ * Without it, the first control on the page with that key.
+ */
+function findCell(list, key) {
+    const scope = list?.isConnected ? list : (typeof document !== 'undefined' ? document : null);
     if (! scope) {
         return null;
     }
 
-    return [...scope.querySelectorAll('[data-wk-reorder-key]')].find((cell) => cell.getAttribute('data-wk-reorder-key') === key) ?? null;
+    const cells = [...scope.querySelectorAll('[data-wk-reorder-key]')].filter((cell) => cell.getAttribute('data-wk-reorder-key') === key);
+
+    // A list's descendants include the rows of a list nested in one of its rows.
+    return (scope === list ? cells.find((cell) => listOf(cell) === list) : cells[0]) ?? null;
 }
 
 /** After a commit: focus the remembered arrow again, if the focus was lost on the way. */
@@ -44,7 +62,7 @@ export function restoreReorderFocus() {
         return;
     }
 
-    const { key, direction, table } = pending;
+    const { key, direction, list } = pending;
     pending = null;
 
     const active = typeof document !== 'undefined' ? document.activeElement : null;
@@ -52,7 +70,7 @@ export function restoreReorderFocus() {
         return;
     }
 
-    const cell = findCell(table, key);
+    const cell = findCell(list, key);
     if (! cell) {
         return;
     }
@@ -88,7 +106,7 @@ export default function wirekitTableReorder(config = {}) {
                 return;
             }
 
-            pending = { key: this.key, direction, table: button.closest?.('table') ?? null };
+            pending = { key: this.key, direction, list: listOf(button) };
         },
     };
 }

@@ -106,6 +106,9 @@ export function lockScroll() {
             bodyTop: document.body.style.top,
             bodyWidth: document.body.style.width,
             bodyPaddingRight: document.body.style.paddingRight,
+            // Whether the gutter below was published, and what the root carried inline before.
+            publishedInset: false,
+            rootInset: document.documentElement.style.getPropertyValue?.('--wk-scrollbar-inset') ?? '',
         };
 
         document.body.style.overflow = 'hidden';
@@ -116,6 +119,15 @@ export function lockScroll() {
         document.body.style.width = '100%';
         if (scrollbarWidth > 0) {
             document.body.style.paddingRight = `${scrollbarWidth}px`;
+            // A pinned surface is laid out against the viewport, and a classic scrollbar on the
+            // document sits outside that box. With the scrollbar gone the box widens by the gutter,
+            // and every surface pinned to the inline end would move toward the edge for as long as
+            // the overlay is open. They fold `--wk-scrollbar-inset` into their offset, so the
+            // gutter published here keeps them where they were.
+            if (typeof document.documentElement.style.setProperty === 'function') {
+                document.documentElement.style.setProperty('--wk-scrollbar-inset', `${scrollbarWidth}px`);
+                scrollLockSnapshot.publishedInset = true;
+            }
         }
     }
     scrollLockCount++;
@@ -124,7 +136,7 @@ export function lockScroll() {
 export function unlockScroll() {
     scrollLockCount = Math.max(0, scrollLockCount - 1);
     if (scrollLockCount === 0 && scrollLockSnapshot) {
-        const { scrollY, bodyOverflow, bodyPosition, bodyTop, bodyWidth, bodyPaddingRight } = scrollLockSnapshot;
+        const { scrollY, bodyOverflow, bodyPosition, bodyTop, bodyWidth, bodyPaddingRight, publishedInset, rootInset } = scrollLockSnapshot;
         // Restore the inline-style values we captured at lock time. Setting
         // them back to '' (empty string) where the developer had no inline
         // style preserves the cascade — class-based overrides keep working.
@@ -133,12 +145,210 @@ export function unlockScroll() {
         document.body.style.top = bodyTop;
         document.body.style.width = bodyWidth;
         document.body.style.paddingRight = bodyPaddingRight;
+        // The root's own inline value comes back, or none: a gutter an application published for
+        // an inner scroll container is its answer, and the lock only lent the token.
+        if (publishedInset) {
+            if (rootInset) {
+                document.documentElement.style.setProperty('--wk-scrollbar-inset', rootInset);
+            } else {
+                document.documentElement.style.removeProperty('--wk-scrollbar-inset');
+            }
+        }
         // Restore scroll position before iOS-style position:fixed was applied.
         // window.scrollTo with `behavior: 'instant'` to avoid an animated
         // jump on close; the user's mental model is "nothing visibly moved".
         window.scrollTo({ top: scrollY, left: 0, behavior: 'instant' });
         scrollLockSnapshot = null;
     }
+}
+
+/**
+ * The page behind a page-level modal overlay is inert.
+ *
+ * `aria-modal="true"` tells assistive technology that nothing outside the dialog exists, and the
+ * focus trap keeps Tab inside it. Neither stops a pointer, a touch or a screen reader that does not
+ * honor `aria-modal` from reaching the page behind; `inert` does. While a page-level modal overlay
+ * is open, every element outside the overlay root and outside a toast region is inert. The overlay
+ * root stays reachable because it holds the dialog's own backdrop and every panel the dialog opens
+ * (a dropdown, a tooltip, a date picker). A toast region stays reachable because a reader has to
+ * hear an announcement made while a dialog is open.
+ *
+ * Not focus-trap's own `isolateSubtrees`, which isolates the trapped panel alone: it would make the
+ * dialog's backdrop inert, and with it every panel the dialog opens into the overlay root.
+ *
+ * Counted like the scroll lock, so the page comes back only when the last of them closes, and only
+ * the attributes set here are taken off again: an element the page made inert on its own stays
+ * inert. While the count is held, an element added to the page outside the kept regions is made
+ * inert as well, so content a morph inserts behind the dialog does not become the way around it,
+ * and an `inert` a framework's patch takes off an element is put back.
+ */
+let pageInertCount = 0;
+let pageInertApplied = new Set();
+let pageInertWatcher = null;
+
+// Elements a holder asked to keep reachable besides the overlay root and toast regions: the
+// parts of a dialog rendered in place, such as the app shell's drawer and its backdrop. Counted
+// per element, because the same drawer can be held again before a release has run.
+const pageInertKeptElements = new Map();
+
+// What stays reachable behind a page-level modal overlay.
+const PAGE_INERT_KEEP = '#wk-overlay-root, [data-wk-toast-region]';
+
+// Elements that render nothing a reader can reach; an attribute on them would change nothing.
+const PAGE_INERT_SKIP = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'LINK', 'META', 'NOSCRIPT']);
+
+/**
+ * Whether an element renders in the overlay root, which is what makes an overlay page-level: an
+ * overlay rendered in place, such as one in a preview, leaves the page around it alone.
+ *
+ * @param {Element|null|undefined} el
+ * @returns {boolean}
+ */
+export function inOverlayRoot(el) {
+    return Boolean(el && typeof el.closest === 'function' && el.closest('#wk-overlay-root'));
+}
+
+function inertOutsideKeptRegions() {
+    const kept = [...document.querySelectorAll(PAGE_INERT_KEEP), ...pageInertKeptElements.keys()];
+
+    // The ancestors of a kept element stay reachable, or the kept element would be inert with
+    // them; their other children are what becomes inert.
+    const path = new Set();
+
+    for (const el of kept) {
+        for (let node = el.parentElement; node; node = node.parentElement) {
+            path.add(node);
+        }
+    }
+
+    const visit = (parent) => {
+        for (const child of Array.from(parent.children ?? [])) {
+            if (kept.includes(child) || PAGE_INERT_SKIP.has(child.tagName)) {
+                continue;
+            }
+
+            if (path.has(child)) {
+                visit(child);
+            } else if (! child.hasAttribute('inert')) {
+                child.setAttribute('inert', '');
+                pageInertApplied.add(child);
+            }
+        }
+    };
+
+    visit(document.body);
+}
+
+/**
+ * Take one of the counted holds that keep the page behind a modal overlay inert. Returns whether a
+ * hold was taken: none is without a document, so a caller releases only what it holds.
+ *
+ * A dialog rendered in place names the elements of its own that have to stay reachable, and gives
+ * the same list back on release. They count only for the hold that makes the page inert: a panel
+ * handed over while the page is inert already is not taken out of it again.
+ *
+ * @param {Element[]} [keep]
+ * @returns {boolean}
+ */
+export function holdPageInert(keep = []) {
+    // Guarded rather than assumed: a unit harness hands a factory a `document` with only the
+    // fields its case needs, and a hold on a document that cannot be walked holds nothing.
+    if (typeof document === 'undefined' || ! document.body || typeof document.querySelectorAll !== 'function') {
+        return false;
+    }
+
+    for (const el of keep) {
+        if (el) {
+            pageInertKeptElements.set(el, (pageInertKeptElements.get(el) ?? 0) + 1);
+        }
+    }
+
+    if (pageInertCount === 0) {
+        inertOutsideKeptRegions();
+
+        // No body, nothing to watch: observing null throws, and a throw here would end the
+        // bundle's evaluation.
+        if (document.body && typeof MutationObserver === 'function') {
+            pageInertWatcher = new MutationObserver((records) => {
+                let behind = false;
+
+                for (const record of records) {
+                    if (record.type === 'attributes') {
+                        // A framework that patches an element against its own markup takes off
+                        // an attribute the markup does not carry, which is what Livewire's morph
+                        // does to a component root beside the dialog. Put it back.
+                        if (pageInertApplied.has(record.target) && ! record.target.hasAttribute('inert')) {
+                            record.target.setAttribute('inert', '');
+                        }
+
+                        continue;
+                    }
+
+                    // A change inside the overlay root or a toast region is the dialog or a
+                    // toast at work, and a change inside an inert element is inert already.
+                    // Anything else may have added an element behind the dialog.
+                    if (record.addedNodes.length > 0
+                        && ! (typeof record.target.closest === 'function'
+                            && record.target.closest(`${PAGE_INERT_KEEP}, [inert]`))) {
+                        behind = true;
+                    }
+                }
+
+                if (behind) {
+                    inertOutsideKeptRegions();
+                }
+            });
+            pageInertWatcher.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['inert'],
+            });
+        }
+    }
+
+    pageInertCount++;
+
+    return true;
+}
+
+/**
+ * Give back one hold, with the elements it asked to keep. The last one takes off every `inert` the
+ * holds set, and nothing else.
+ *
+ * @param {Element[]} [keep]
+ */
+export function releasePageInert(keep = []) {
+    if (pageInertCount === 0) {
+        return;
+    }
+
+    for (const el of keep) {
+        const count = el ? pageInertKeptElements.get(el) : undefined;
+
+        if (count === 1) {
+            pageInertKeptElements.delete(el);
+        } else if (count !== undefined) {
+            pageInertKeptElements.set(el, count - 1);
+        }
+    }
+
+    pageInertCount--;
+
+    if (pageInertCount > 0) {
+        return;
+    }
+
+    if (pageInertWatcher) {
+        pageInertWatcher.disconnect();
+        pageInertWatcher = null;
+    }
+
+    for (const el of pageInertApplied) {
+        el.removeAttribute('inert');
+    }
+
+    pageInertApplied = new Set();
 }
 
 /**
@@ -159,6 +369,10 @@ export function unlockScroll() {
  *   detail is `{ name, via }`. Never for a close the page asked for (the close event, a
  *   `wire:model` set to false, a composed close control) nor for the forced close of a
  *   navigation, so a page that closed its own overlay never hears about it a second time.
+ * @param {boolean} [options.lockScroll=true] - Whether opening locks the page's scroll and, for an
+ *   overlay rendered in the overlay root, makes the page behind it inert. False for an overlay that
+ *   lives inside a page region, such as a preview, where the page around it has to keep scrolling
+ *   and working. An overlay that took no lock releases none.
  * @returns {Object} Alpine component data object with overlay methods
  */
 export function createOverlay({
@@ -170,7 +384,46 @@ export function createOverlay({
     initialFocus = undefined,
     focusReturnTo = undefined,
     dismissedEvent = null,
+    lockScroll: locksScroll = true,
 }) {
+    // Whether this instance holds one of the counted scroll locks right now. Every close path
+    // releases through it, so an overlay built with `lockScroll: false`, which took no lock,
+    // never releases one another overlay holds.
+    let holdingScrollLock = false;
+
+    const takeScrollLock = () => {
+        if (locksScroll && ! holdingScrollLock) {
+            lockScroll();
+            holdingScrollLock = true;
+        }
+    };
+
+    const releaseScrollLock = () => {
+        if (holdingScrollLock) {
+            holdingScrollLock = false;
+            unlockScroll();
+        }
+    };
+
+    // Whether this instance holds one of the counted holds that keep the page behind it inert.
+    // Taken once the trap has focus inside the panel, because an `inert` ancestor takes focus off
+    // the opener, and the trap has to record the opener first to return focus to it. Released
+    // before the trap lets go, so the element focus returns to is reachable again.
+    let holdingPageInert = false;
+
+    const takePageInert = (panel) => {
+        if (locksScroll && ! holdingPageInert && inOverlayRoot(panel)) {
+            holdingPageInert = holdPageInert();
+        }
+    };
+
+    const releasePageInertHold = () => {
+        if (holdingPageInert) {
+            holdingPageInert = false;
+            releasePageInert();
+        }
+    };
+
     // Stable token identifying this overlay instance on the global stack —
     // not a string id, just an object reference equality check works.
     const stackToken = {};
@@ -361,7 +614,7 @@ export function createOverlay({
             openerChain.push(document.body);
 
             // Reference-counted scroll lock — safe with multiple overlays
-            lockScroll();
+            takeScrollLock();
 
             // Push onto the global active-overlay stack. This overlay is now
             // topmost; any previously-open overlay flips to non-topmost so its
@@ -403,11 +656,8 @@ export function createOverlay({
                  * `display: none`. focus-trap then finds no tabbable node, falls back to the
                  * panel, cannot focus a hidden element, and never tries again: it listens for
                  * `focusin` outside and for Tab, and focus never left the opener. The reader
-                 * stays on the trigger for good, which is WCAG 2.4.3.
-                 *
-                 * Measured in an adopting application's release gate in both engines: red in two of seven
-                 * runs there and in none of seventy local ones, which is the distribution of a
-                 * race between a timer and a frame.
+                 * stays on the trigger for good, which is WCAG 2.4.3. It is a race between a
+                 * timer and a frame, so it is lost only some of the time.
                  *
                  * So the arming waits for the panel to have a box and re-checks both conditions
                  * above after every wait — the overlay can close inside these frames exactly as
@@ -461,6 +711,7 @@ export function createOverlay({
                         setReturnFocus: resolveReturnFocus,
                     });
                     this._trap.activate();
+                    takePageInert(panelEl);
                 };
 
                 armWhenPanelIsShown();
@@ -478,7 +729,8 @@ export function createOverlay({
             dismissing = true;
             this.isOpen = false;
             this._trap = null;
-            unlockScroll();
+            releasePageInertHold();
+            releaseScrollLock();
             popOverlay(stackToken);
             this.isTopmost = isTopmostOverlay(stackToken);
             broadcastStackChange();
@@ -492,13 +744,16 @@ export function createOverlay({
             if (!this.isOpen) return;
             this.isOpen = false;
 
+            // Before the trap lets go: the element it returns focus to is on the page behind.
+            releasePageInertHold();
+
             // Deactivate focus trap (returns focus to trigger automatically)
             if (this._trap) {
                 this._trap.deactivate();
                 this._trap = null;
             }
 
-            unlockScroll();
+            releaseScrollLock();
             popOverlay(stackToken);
             this.isTopmost = isTopmostOverlay(stackToken);
             broadcastStackChange();
@@ -510,13 +765,14 @@ export function createOverlay({
         _forceClose() {
             if (!this.isOpen) return;
             this.isOpen = false;
+            releasePageInertHold();
 
             if (this._trap) {
                 this._trap.deactivate();
                 this._trap = null;
             }
 
-            unlockScroll();
+            releaseScrollLock();
             popOverlay(stackToken);
             this.isTopmost = isTopmostOverlay(stackToken);
             broadcastStackChange();

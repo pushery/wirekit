@@ -16,8 +16,8 @@
     //
     // With `selectable` BOTH leading columns freeze — the checkbox and the name — because a
     // checkbox that scrolls out from under its own row is worse than one that never moved.
-    // The offset is knowable rather than measured: the selection column's width is set here,
-    // by this component, at `w-10`.
+    // The offset is known in advance: the selection column's width is set here, by this
+    // component, at `w-10`.
     'stickyColumn' => config('wirekit.components.data-table.sticky-column', false),
     'searchable' => config('wirekit.components.data-table.searchable', false), // toolbar search box (client-side filter)
     'density' => config('wirekit.components.data-table.density', 'comfortable'), // comfortable | compact
@@ -100,7 +100,7 @@
     $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $columnManager = BooleanProp::from($columnManager, false);
     $server = BooleanProp::from($server, false);
@@ -151,10 +151,10 @@
         : '';
 
     /*
-     * The frozen column is CAPPED, and the cap is the difference between the feature helping and
-     * replacing the problem it solves. Measured at 390 px with an ordinary company name: the
-     * column took 165 px, 42% of the screen, and every further character is taken from the
-     * columns the reader froze it in order to read. `--size-wk-table-sticky-column-max` is the
+     * The frozen column is capped, and the cap is the difference between the feature helping and
+     * replacing the problem it solves: on a phone an ordinary company name would otherwise take a
+     * large share of the screen, and every further character is taken from the columns the reader
+     * froze it in order to read. `--size-wk-table-sticky-column-max` is the
      * same token `<x-wirekit::table>` caps with — one knob for one concept, rather than a second
      * that drifts. A cap, not a width: a short label keeps its own.
      *
@@ -316,13 +316,12 @@
 >
     {{-- What changes from one render to the next travels HERE, not in `x-data`.
 
-         The rows used to be part of the `x-data` expression. A Livewire render changes them,
-         the morph writes the changed expression onto the same element, and Alpine re-evaluates
-         it into a fresh component: measured across a search round trip, the element kept its
-         identity and the scope did not. Every value only the browser holds went back to its
-         start with it, the text in the search field, the density, the hidden columns, the
-         selection. The expression above now carries only what a render does not change, and the
-         factory reads this carrier when it starts and after every Livewire commit.
+         Rows in the `x-data` expression would change with every Livewire render: the morph
+         writes the changed expression onto the same element, and Alpine re-evaluates it into a
+         fresh component, so every value only the browser holds would go back to its start with
+         it, the text in the search field, the density, the hidden columns, the selection. The
+         expression above carries only what a render does not change, and the factory reads
+         this carrier when it starts and after every Livewire commit.
 
          A `<template>` so it has no box at all, and an attribute so Blade's own escaping
          applies. --}}
@@ -374,13 +373,12 @@
                          scope failed to build and the button toggled nothing. --}}
                     {{-- A DISCLOSURE, and it says so.
 
-                         The panel used to announce itself as `aria-haspopup="menu"` +
-                         `role="menu"`, and it is neither: its children are checkboxes, not
-                         `menuitem`s, and nothing here implements a menu's keyboard model.
-                         A reader was told "Columns, menu button", expected arrow keys and
-                         menu items, and got an unnamed box of checkboxes — and `role="menu"`
-                         without `menuitem` children fails ARIA's required-children rule
-                         anyway. `aria-haspopup="true"` would not have helped: ARIA maps the
+                         The panel is not `aria-haspopup="menu"` + `role="menu"`: its
+                         children are checkboxes, not `menuitem`s, and nothing here implements
+                         a menu's keyboard model. A reader told "Columns, menu button" would
+                         expect arrow keys and menu items and get an unnamed box of checkboxes
+                         — and `role="menu"` without `menuitem` children fails ARIA's
+                         required-children rule anyway. `aria-haspopup="true"` would not have helped: ARIA maps the
                          bare `true` onto `menu`, so it makes the same wrong promise.
 
                          What it really is: a button that discloses a group of checkboxes.
@@ -434,10 +432,10 @@
 
     {{-- Table — keyboard-reachable scroll region (WCAG 2.1.1), unconditionally.
 
-         The LANDMARK is opt-in and its switch is the caption. The `@else` arm used to name the
-         region "Data table", which is what everything on the page already is: three tables on a
-         dashboard were three identical rotor entries, and axe reports that as
-         `landmark-unique`. With a caption the region points at it (`aria-labelledby`), which is
+         The LANDMARK is opt-in and its switch is the caption. A built-in name such as "Data
+         table" would be what everything on the page already is: three tables on a dashboard
+         would be three identical rotor entries, which axe reports as `landmark-unique`. With a
+         caption the region points at it (`aria-labelledby`), which is
          a name the reader chose; without one there is no landmark to be ambiguous about. --}}
     {{-- A table that scrolls sideways shows a shadow at the edge it continues toward. On a phone
          there is no scrollbar until a drag is already underway, so a table cut off between two
@@ -544,7 +542,7 @@
 
                                      Deliberately NO cap with a "+2 more" affordance. That would be a second control with
                                      its own keyboard question, built against a guess about how many entries a real row
-                                     carries; the four grids measured here top out at two. `flex-wrap` handles the rest. --}}
+                                     carries. `flex-wrap` handles the rest. --}}
                                 <template x-if="col.cellType === 'badges'">
                                     <span class="inline-flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
                                         <template x-for="(item, index) in badgeItems(row, col)" :key="index">

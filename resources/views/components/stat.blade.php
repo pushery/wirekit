@@ -38,7 +38,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $animate = BooleanProp::from($animate, false);
     $descriptionDeferred = BooleanProp::from($descriptionDeferred, false);
@@ -70,15 +70,12 @@
     //
     // `value` is a DISPLAY string — "€31.200", "$1,250.50", "42%", "10000". The
     // counter needs a number to count to, the pieces around it to put back, and
-    // the number of decimals to keep. JavaScript used to re-derive all three from
-    // the display string with one grammar: strip everything but digits, `.` and
-    // `-`, then concatenate whatever was left AFTER the number.
-    //
-    // Both halves of that were wrong, and one of them silently. A German page
-    // writing "€31.200" — the ordinary spelling of 31,200 euros — counted to
-    // 31.2, off by a factor of a thousand, because a grouping period was read as
-    // a decimal point. And a leading currency symbol came back on the trailing
-    // side: "$1,250.50" settled as "1250.50$" in every locale, including English.
+    // the number of decimals to keep. Re-deriving all three in JavaScript from the
+    // display string with one grammar gets both halves wrong, one of them silently:
+    // a German page writing "€31.200" — the ordinary spelling of 31,200 euros —
+    // would count to 31.2, off by a factor of a thousand, because a grouping period
+    // reads as a decimal point; and a leading currency symbol would come back on
+    // the trailing side, "$1,250.50" settling as "1250.50$" in every locale.
     //
     // PHP is where the application locale is known, so the split happens here and
     // the browser is handed pieces rather than a puzzle.

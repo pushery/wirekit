@@ -30,7 +30,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, false);
     $forceOpen = BooleanProp::from($forceOpen, false);
@@ -215,8 +215,13 @@
         @endisset
         {{-- Chevron indicator — rotates when open; hidden in the collapsed rail. --}}
         <svg
-            class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
-            :class="isOpen ? 'rotate-90' : ''"
+            {{-- Turned in the markup when the server renders the section open, so the arrow of an open
+                 section points down from the first paint rather than turning once Alpine starts. The
+                 object form of the binding removes a class it did not add, so a section that closes
+                 loses the rotation the markup gave it. --}}
+            data-wk-disclosure-arrow
+            class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden{{ $open ? ' rotate-90' : '' }}"
+            :class="{ 'rotate-90': isOpen }"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />

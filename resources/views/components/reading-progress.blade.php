@@ -33,7 +33,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-progress', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $milestones = BooleanProp::from($milestones, false);
 
@@ -154,8 +154,7 @@
         // strip — where the system swallows the tap. It resolves to zero everywhere else,
         // so this is the same offset on a desktop.
         //
-        // Three siblings already did this (action-bar, scroll-to-top, reading-bookmark);
-        // this one was missed because the guard listed the components by hand.
+        // action-bar, scroll-to-top and reading-bookmark carry the same offset.
         $indicator === 'dot'
             ? ($useSticky
                 ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]'

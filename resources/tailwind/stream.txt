@@ -148,7 +148,7 @@ Fully
 GENERATING
 GET-only
 Given
-HERE.
+HERE
 HTTP
 Handed
 How
@@ -347,6 +347,7 @@ debug
 decoration,
 default
 default,
+defaulted
 defaults
 defined
 delete
@@ -532,6 +533,7 @@ options
 opts
 or
 order
+otherwise
 out
 output
 output,
@@ -727,7 +729,6 @@ unset
 up"
 use
 use,
-used
 user
 via
 view's

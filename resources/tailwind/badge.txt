@@ -334,7 +334,6 @@ $wrap
 1.4.13
 1.4.13.
 100),
-18.5
 1px
 2.1.1).
 2rem,
@@ -421,7 +420,6 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
-CUT
 Catching
 Check
 DO
@@ -450,7 +448,6 @@ GROWS
 Generate
 German
 Graceful
-HOVER,
 HOVERABLE:
 HTML,
 HTTP
@@ -467,13 +464,13 @@ Its
 JS
 KEY,
 Keyboard-
+Left
 Literal
 Livewire
 Logger
 MORPH
 MOST
 Make
-Measured
 Multi-line
 NON-interactive
 NOT
@@ -482,7 +479,6 @@ Normalize
 Normalized
 Nothing
 Null,
-OFF
 ONE
 ONLY
 OPENING
@@ -504,7 +500,6 @@ Render
 Rendered
 Renders
 Replay"
-Reported
 Resolve
 Rich
 RuntimeException
@@ -670,7 +665,6 @@ a
 a11y
 able
 about
-above
 above.
 absence
 absent,
@@ -746,7 +740,6 @@ arrow
 as
 as,
 asks
-asserted:
 assertion
 association
 at
@@ -771,7 +764,6 @@ badges
 badges;
 baked
 bakes
-bar.
 bare
 base;
 be
@@ -831,7 +823,6 @@ browser's
 bubble's
 bubbles
 bug
-bug.
 build
 but
 button
@@ -856,7 +847,6 @@ canonical
 card
 card's
 card,
-carried
 carries
 carry
 case
@@ -877,7 +867,6 @@ choice
 chose
 chosen
 chrome
-claimed
 class
 class="inline-block
 class="shrink-0"
@@ -889,6 +878,7 @@ clears
 client-only
 climbs
 clipping
+clipping,
 clone
 close
 close-icons,
@@ -904,7 +894,6 @@ colors
 colors,
 come
 comes
-comment
 common
 compete
 compile
@@ -929,7 +918,6 @@ conflict
 console
 console).
 construction.
-consuming
 containers.
 content
 content,
@@ -949,6 +937,7 @@ covers
 crossed
 currentColor
 currentColor;
+cut
 dark
 data-replayable="true"
 data-wk-prose-skip
@@ -1061,7 +1050,6 @@ exhausting
 existing
 exists.
 expandos.
-expensive:
 explanation
 explicitly
 exposing
@@ -1069,8 +1057,7 @@ expression
 external-link
 eyebrow).
 factory,
-factory:
-fade="…">`
+fade="…">`,
 fail
 failed"
 fails
@@ -1088,7 +1075,6 @@ family
 feature
 field
 field,
-file
 files
 fill
 fill:
@@ -1106,7 +1092,6 @@ fix.
 fixed
 fixed-height
 fixed`
-fixes
 flags
 flash
 flatten
@@ -1353,6 +1338,7 @@ mechanism
 medium
 menus
 merge
+message
 min-height
 mints
 mirror
@@ -1465,6 +1451,7 @@ package
 padding
 padding,
 page
+page,
 page.
 pages
 pair
@@ -1525,7 +1512,6 @@ preview
 pricing-card
 problem
 prod).
-project,
 prop
 prop's
 props
@@ -1534,7 +1520,6 @@ proxy
 purpose,
 put
 puts
-px
 px-2'
 px-2',
 px-2.5'
@@ -1557,6 +1542,7 @@ re-thrown
 reach
 reachable
 reaches
+read
 read;
 reader
 reading
@@ -1572,7 +1558,6 @@ red:
 reduced
 ref
 refuses.
-refutes
 registered
 registers
 registry
@@ -1592,7 +1577,6 @@ replacement
 replaces
 replay-button
 reported
-reproduced
 request
 requested
 require
@@ -1719,7 +1703,7 @@ stringly-false
 strings
 strip
 style="display:inline-block;"></span>
-stylesheet
+stylesheet's
 stylesheet).
 subtle
 subtree
@@ -1750,7 +1734,6 @@ takes
 taking
 tall.
 teaches
-teleport
 teleport:
 teleported
 template
@@ -1796,7 +1779,6 @@ throws
 tick
 tidy
 tile
-time
 time,
 time.
 timer
@@ -1863,7 +1845,6 @@ unknown-alias
 unknown.
 unless
 unlike
-unlocatable
 unsteady
 until
 untouched.
@@ -1871,7 +1852,6 @@ up
 usable
 use
 use:
-used
 useful
 uses
 utility
@@ -1926,7 +1906,6 @@ whitespace
 who
 whole
 whose
-why
 widening
 width
 width)

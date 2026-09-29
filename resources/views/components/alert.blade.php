@@ -16,7 +16,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $dismissible = BooleanProp::from($dismissible, false);
     $icon = BooleanProp::from($icon, true);
@@ -29,9 +29,10 @@
 
     // `intent` is the canonical name for this axis — it is what button and
     // badge call the same thing, so it is what a developer moving between
-    // components reaches for. It used to land in the attribute bag, ship as a
-    // stray HTML attribute, and change nothing: a danger alert rendered as a
-    // calm info one, with no error and nothing in the page to notice.
+    // components reaches for. Left out of the props it would land in the
+    // attribute bag, ship as a stray HTML attribute and change nothing: a danger
+    // alert would render as a calm info one, with no error and nothing in the
+    // page to notice.
     // `variant` stays as the back-compat alias; when both are given the
     // canonical name decides, matching progress.
     $effectiveIntent = $intent ?? $variant;

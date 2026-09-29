@@ -105,7 +105,7 @@ import wirekitDataTable from './components/data-table.js';
 import wirekitEventCalendar from './components/event-calendar.js';
 import wirekitMap from './components/map.js';
 import wirekitStickyPanelShadows from './components/sticky-panel.js';
-import { reportLateRegistration } from './utils/late-registration.js';
+import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 import wirekitStream from './components/stream.js';
 
 /**
@@ -267,8 +267,8 @@ document.addEventListener('alpine:init', () => {
 // and a re-walk does not revive them. reportLateRegistration says so once, and only
 // when such markup is actually on the page.
 if (window.Alpine?.version) {
-    registerComponents();
-    reportLateRegistration('wirekit.js', () => reachedByInitEvent);
+    const names = registeredNames(window.Alpine, registerComponents);
+    reportLateRegistration('wirekit.js', () => reachedByInitEvent, names);
 }
 
 // Positioning helper, exposed globally so a component can ask for it WITHOUT depending on

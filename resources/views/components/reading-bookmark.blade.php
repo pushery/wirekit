@@ -26,7 +26,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-bookmark', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $promptOnReturn = BooleanProp::from($promptOnReturn, true);
     $previewMode = BooleanProp::from($previewMode, false);
@@ -139,10 +139,10 @@
     })"
 >
     {{-- Rendered unconditionally and starting empty: a live region that arrives
-         together with its text is a new node, and nothing is announced at all. The
-         pill itself used to carry role="status" while being toggled with x-show,
-         which is that exact shape — so the one thing this component says to a
-         screen-reader user was the thing least likely to be heard. --}}
+         together with its text is a new node, and nothing is announced at all. A
+         pill carrying role="status" while being toggled with x-show would be that
+         exact shape, and the one thing this component says to a screen-reader user
+         would be the thing least likely to be heard. --}}
     <div class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="promptAnnouncement"></div>
 
     <div

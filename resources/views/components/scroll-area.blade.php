@@ -56,8 +56,8 @@
     $fadeAxis = $orientation === 'horizontal' ? 'x' : 'y';
 
     // 'auto' emits no data-fade at all — the plugin writes it once it has
-    // measured. Rendering a value here first would paint the very mask the
-    // measurement exists to avoid, for one frame or forever if scripts fail.
+    // read the overflow. Rendering a value here first would paint the very mask
+    // that reading exists to avoid, for one frame or forever if scripts fail.
     $fadeIsAuto = $fadeValue === 'auto';
 
     $classes = WireKit::resolveClasses('scroll-area', 'base', implode(' ', array_filter([

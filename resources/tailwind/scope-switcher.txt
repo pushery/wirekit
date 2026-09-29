@@ -7,7 +7,6 @@
 "3Treffer"
 "3results",
 "Copy
-"Edit
 "Popover",
 "Production"
 "Save",
@@ -549,6 +548,7 @@ $wrapperClasses
 (is_string($key)
 (isset($seen[$key]))
 (it
+(its
 (keyboard
 (logical
 (no
@@ -613,21 +613,15 @@ $wrapperClasses
 0.875
 018-8V0C5.373
 1
-1.3
-1108
-1114
 12%,
 12a8
 12h4z"></path>
-147px
 18
 1px
-2.31.0
 2.4.3
 2.4.3,
 2.5.3
 2.5.8
-20px
 22.5rem,
 24
 24"
@@ -638,29 +632,24 @@ $wrapperClasses
 2rem,
 2xl
 300);
-309px
 32
-320px.
+320px
 32px
-351px:
 360px
 390px
 393px
 3rem.
 4.1.2)
 4.78).
-40px
 44
 44px
 44px,
 44x44
 5.373
 500s
-533
 8
 8),
 8);
-9rem
 :
 :aria-labelledby="$id.'-current-label
 :count
@@ -776,7 +765,6 @@ ALSO
 AND
 ANY
 API:
-ARE
 ARIA
 AT
 Accessible
@@ -836,16 +824,11 @@ English,
 Escape,
 Every
 Everything
-Exactly
 Examples
-FIXED
-FLOOR
-FOUR
 First
 Floating
 Fold
 Fully
-German
 German.
 Gluing
 Graceful
@@ -878,8 +861,6 @@ JavaScript
 Joining
 Kept
 Keys
-L=0.972
-L=0.985
 LINE
 LIST
 LTR
@@ -896,7 +877,6 @@ Loud
 MAINTENANCE
 MOST
 Marker
-Measured
 Mixing
 NAME
 NAMES
@@ -917,7 +897,6 @@ Not
 Nothing
 Nudge
 Null
-ON
 ONCE,
 ONE
 ONLY
@@ -962,17 +941,12 @@ Recommended
 Removed
 Render
 Renders
-Reported
 Reset
 Resolve
 RuntimeException
 SCOPES
-SCREEN
 SOLUTION
-SQUARE
-SQUARE,
 SR
-STAYS
 SVG
 SVG:
 Same
@@ -984,6 +958,7 @@ Shared:
 Shipping
 Show
 Silent
+Six
 Size
 So
 Soft
@@ -996,11 +971,9 @@ SvgNotFound.
 Symmetric
 TAG
 TEXT
-THE
 THEM
 THIRD
 THIS
-TOUCH
 TRANSPARENT
 TWO
 Tab,
@@ -1013,7 +986,6 @@ Teleported
 Tenant
 That
 The
-Their
 Theme
 There
 This
@@ -1245,7 +1217,7 @@ __toString
 `surface`).
 `table.th
 `target`
-`toggleBooleanStateDirective`,
+`toggleBooleanStateDirective`
 `transform`
 `true`
 `true`,
@@ -1260,7 +1232,6 @@ __toString
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
-`wrap-label`
 `wrapLabel`
 `wrapLabel`,
 `x-data="wirekitPopover(…)"`,
@@ -1293,7 +1264,6 @@ accepts
 accessibility
 accessible
 accordion.item).
-across
 action
 action,
 action.
@@ -1308,16 +1278,12 @@ acts
 actual
 actually
 add
-added
-added.
 adds
 adopting
 affordance
 after
-after,
 against
 agree.
-agreeing,
 alert-dialog
 alias
 aliases
@@ -1333,7 +1299,6 @@ allows
 almost-alike.
 alone
 along
-along.
 alongside
 already
 also
@@ -1367,13 +1332,11 @@ anywhere,
 app()->getLocale()));
 app()->hasDebugModeEnabled())
 app(IconResolver::class)->resolve($name);
-app.css
 appear
 appear.
 appearance
 appears
 application
-application's
 applied
 applied.
 arbitrary
@@ -1416,9 +1379,8 @@ as,
 asking
 asks
 assembled
-asserted:
 assistive
-assumed
+assistive,
 at
 attached
 attempted
@@ -1428,7 +1390,6 @@ attribute's
 attribute,
 attribute.
 attribute:
-attributed
 attributes
 auditor
 auto-derived
@@ -1457,20 +1418,16 @@ bakes
 band
 bar
 bar's
-bar,
-bare
 base
 base.
 baseline.
 be
 be.
 beat
-became
 because
 become
 becomes
 before
-before,
 behavior
 behind
 being
@@ -1529,12 +1486,10 @@ both
 both,
 both.
 bottom
-bottom.
 bound
 boundaries
 box
 box.
-boxes
 bracket
 branch
 branch's
@@ -1547,7 +1502,7 @@ breakpoint,
 breakpoint:
 breakpoints
 breaks
-brighter
+brighter,
 brings
 browser
 browser.
@@ -1575,7 +1530,6 @@ caller
 caller's
 caller,
 callout/alert).
-came
 can
 can't
 candidate
@@ -1669,6 +1623,7 @@ clips
 close
 close-icons,
 closed
+closed.
 closes
 cluster).
 coarse-pointer
@@ -1699,7 +1654,6 @@ component
 component's
 component.
 components
-components;
 composer
 concatenation
 concern
@@ -1725,11 +1679,9 @@ console).
 console,
 console.warn.
 construction.
-consuming
 contain
 contain;"
 container
-container,
 container-relative
 containing
 contains
@@ -1761,6 +1713,7 @@ count($rows),
 count,
 counter,
 counters.
+counts
 coverage
 covered
 covers
@@ -1795,6 +1748,7 @@ data-wk-scope-switcher
 data.
 debug
 decided
+decided,
 decision,
 decision:
 declaration
@@ -1802,7 +1756,7 @@ declarative
 declared
 declares
 declaring
-decoration
+decoration:
 decorative
 decorative,
 default
@@ -1860,8 +1814,8 @@ docblock
 docs,
 docs.
 docs/theming.md
-documentation
 does
+does),
 does;
 dot
 dotted-read
@@ -1895,6 +1849,7 @@ ease-out
 edge
 edge.
 edges,
+edges.
 editing
 either
 either.
@@ -1912,7 +1867,6 @@ emits.
 emitted
 empty
 empty-state
-emulation.
 enabled
 end
 end.
@@ -1949,7 +1903,7 @@ explicit
 explicitly
 expression
 expressions.
-factory:
+extra
 fading
 fail
 fails
@@ -2002,6 +1956,7 @@ five
 fix
 fix.
 fixed
+fixed-height
 fixed.
 fixed`
 fixes
@@ -2052,7 +2007,6 @@ foreach
 form
 forms
 found
-found.
 found.`
 four
 framework
@@ -2091,11 +2045,10 @@ global
 glyph
 glyph"
 glyph.
+go
 goes
 goes.
 gone
-good
-got
 group
 group,
 group.
@@ -2104,7 +2057,6 @@ groups
 grows
 guarantee,
 guarantees
-guard
 gutter
 h-2
 h-4
@@ -2141,7 +2093,6 @@ heading
 height
 height,
 height.
-held
 helper
 here
 here,
@@ -2314,7 +2265,6 @@ keys
 keystroke
 kill
 kit
-kit's
 knowing
 knows
 label
@@ -2340,9 +2290,9 @@ lazy
 least
 leave
 leaves
+leaves.
 left
 left-to-right;
-left.
 length).
 lets
 letter
@@ -2357,6 +2307,7 @@ line
 line,
 line.
 lined
+lines
 link
 link()
 link.
@@ -2441,7 +2392,6 @@ meaningful
 means
 meant
 measure
-measured
 measures
 measures.
 mechanism
@@ -2449,6 +2399,7 @@ media
 meet
 merely
 merge
+message
 mid-word
 middle
 middle,
@@ -2461,7 +2412,6 @@ mirrors
 missing
 missing,
 missing-accessible-name
-missing.
 missing:
 mixed>>
 modal
@@ -2469,7 +2419,6 @@ modal,
 modals,
 mode
 mode").
-mode,
 modes
 moment
 more
@@ -2478,7 +2427,6 @@ most
 mousedown
 mouseenter
 mouseenter:
-moved
 moves
 multiply
 must
@@ -2529,7 +2477,6 @@ nodes.
 noise
 non-Livewire
 non-null
-none
 none,
 none.
 noopener
@@ -2622,6 +2569,8 @@ outline()
 outranks
 outside
 outside,
+outside-click
+outside;
 over
 overflow-hidden
 overflow-x-auto
@@ -2661,6 +2610,7 @@ panel's
 panel,
 panel.
 panel:
+panel;
 parses
 part
 pass
@@ -2684,9 +2634,9 @@ perception
 perfectly
 person
 personalization
+phone
 phone,
 phone.
-phone:
 phones
 phrase
 physical
@@ -2731,7 +2681,6 @@ post-process
 pre-checking
 pre-fix
 precisely
-predicted
 preference.
 prefers
 prefix
@@ -2756,7 +2705,6 @@ prod).
 prod.
 produces;
 project
-project,
 promise.
 promoting
 prop
@@ -2802,7 +2750,6 @@ rationale
 raw
 raw-div
 re-consent
-re-did
 re-inject
 reach
 reach.
@@ -2829,14 +2776,13 @@ reasoning
 rebuilds.
 records
 red
-refactor
+redone
 reference
 refinement,
 refinement.
 refreshes
 refuses
 refuses.
-refutes
 regardless
 regardless"
 regenerates
@@ -2864,14 +2810,13 @@ replace.
 replaced
 replacements,
 replaces
-replaces,
 report
 reported
 reports
 repository.
-reproduced
 request
 request,
+request.
 require
 required:
 requires
@@ -2916,7 +2861,6 @@ role="link"
 role="listbox"
 role="option"
 role="status"
-roles"
 roll
 room
 root
@@ -2971,11 +2915,9 @@ screen
 screen,
 screen-reader
 screen-reader-skipping
-screenshot
 script
 scroll
 scrollbar
-scrolled
 scrolling
 seam
 search
@@ -2988,7 +2930,6 @@ select
 selected
 selected"
 selector
-selectors
 semantic
 sensible
 separately
@@ -3009,6 +2950,7 @@ shadow-[var(--shadow-wk-none)]
 shadow-[var(--shadow-wk-sm)]
 shadows
 shape
+shape.
 shaped
 shapes
 share
@@ -3036,12 +2978,11 @@ shrink-0
 shrink-0"
 shrink-wraps
 shrink.
-shrinking
 shrinks
 sibling
 side
 sidebar
-sideways
+sideways.
 sight
 sighted
 silent
@@ -3057,6 +2998,7 @@ site
 sits
 sitting
 six
+six.
 size
 size,
 size.
@@ -3066,6 +3008,7 @@ sized
 sizes
 sizes,
 sizing
+slightly
 slot
 slot.
 slots.
@@ -3096,6 +3039,7 @@ specificity
 spellcheck="false"
 spelled
 spelling
+spill
 spinner
 spinner,
 spinner.
@@ -3118,7 +3062,6 @@ stacks
 stacks:
 stale
 stands
-starter
 state
 state,
 state.
@@ -3163,6 +3106,7 @@ stylesheet
 styling
 stylistic
 sub-component,
+submitting,
 subtle:
 success,
 success-hover
@@ -3173,7 +3117,6 @@ surface,
 surface="ghost"
 surface="ghost">`,
 surfaces
-survive
 survives
 svg($resolved,
 svg()
@@ -3255,6 +3198,7 @@ them.
 them.',
 theme
 then
+then,
 there
 there,
 there.
@@ -3277,9 +3221,7 @@ throwing
 throws
 throws.
 tile
-time
 time,
-time.
 tint
 to
 to.
@@ -3288,6 +3230,7 @@ toast
 today
 today's
 together
+toggle
 toggle,
 toggles
 token
@@ -3300,7 +3243,6 @@ too
 too,
 took
 tooltip
-top
 touch
 touch-target
 touches
@@ -3320,6 +3262,7 @@ treating
 treatment
 tree
 tree:
+trigger
 trigger's
 trim($relAttr.'
 trim(strip_tags((string)
@@ -3333,9 +3276,8 @@ true:
 true;
 truthy
 try
-turned
+turn
 turns
-twelve
 twice.
 two
 type
@@ -3368,15 +3310,12 @@ until
 unvalidated
 up
 up.
-upgrade
 upstream
 use
 use.
-used
 used,
 useful
 user
-user's
 users
 uses
 uses,
@@ -3397,7 +3336,6 @@ value.
 values
 values).
 values.
-vanished
 var(--color-wk-X)
 var(--color-wk-bg))
 variant
@@ -3411,7 +3349,6 @@ view,
 viewBox="0
 viewport
 viewport,
-views
 virtual
 visible
 visible.
@@ -3444,7 +3381,6 @@ w-[var(--size-wk-sm)]',
 w-full
 w-max',
 wait
-waiting
 wants
 warn
 warning
@@ -3524,7 +3460,6 @@ word,
 word.
 work
 work,
-workaround
 working
 works.
 worse
@@ -3533,7 +3468,9 @@ would
 wrap
 wrap,
 wrapper
+wrapper,
 wrapper.
+wrapper:
 wrapping
 wraps
 write

@@ -41,7 +41,6 @@ Default
 Dev-only
 Fully
 Inline
-Measured
 Normalized
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -66,10 +65,8 @@ actually
 against
 an
 and
-any
 as
 as,
-asserted:
 attribute
 attribute.
 auto-derived
@@ -100,14 +97,12 @@ escaping
 false);
 false,
 feature
-file
 fills
 flags
 flips
 flow.
 for
 from
-guard
 implode('
 imports
 in
@@ -141,6 +136,7 @@ opening
 opposite
 optimistic-ui:
 or
+otherwise
 own
 parent
 presentational
@@ -151,11 +147,8 @@ props
 prose
 purpose).
 qualified:
-rather
 reach
 reads
-reason
-refutes
 renders
 result
 shown
@@ -172,7 +165,6 @@ straight
 string,
 tag,
 text
-than
 that
 the
 there
@@ -193,6 +185,7 @@ what
 which
 whose
 width
+would
 wrappers
 {{
 {{--

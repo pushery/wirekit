@@ -159,7 +159,6 @@ In
 It
 Logger
 MOST
-Measured
 NOT
 Nothing
 ONE
@@ -174,7 +173,6 @@ Pushery\WireKit\WireKit;
 Reapply
 Render
 Renders
-Reported
 Resolve
 RuntimeException
 SVG
@@ -240,7 +238,6 @@ aria-label
 aria-labelledby
 array_keys($sizeMap));
 as
-asserted:
 at
 attempted
 attribute
@@ -248,7 +245,6 @@ attribute,
 auto-derived
 baked
 bakes
-bare
 be
 because
 becomes
@@ -299,7 +295,6 @@ configured
 conflict
 console
 console).
-consuming
 content
 context
 could
@@ -345,7 +340,6 @@ every
 exhausting
 exists.
 explicitly
-factory:
 fail
 fallback
 fallback,
@@ -353,7 +347,6 @@ fallback.
 false)
 false),
 feature
-file
 files
 finds
 first
@@ -379,7 +372,6 @@ glyph
 glyph.
 goes
 guarantees
-guard
 h-5
 h/w
 hand-written
@@ -448,6 +440,7 @@ marks
 matching
 may
 merge
+message
 missing
 missing,
 missing:
@@ -513,7 +506,6 @@ preserves
 preset
 problem
 prod).
-project,
 props
 provides
 put
@@ -526,20 +518,16 @@ reaches
 reader
 real
 reapply
-reason
 reason:
-refutes
 registered
 registry
 removed
 render
 render,
 rendered
-renders
 replaced
 replaces
 reported
-reproduced
 request
 require
 requires

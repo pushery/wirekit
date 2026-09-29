@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // Activity kind — drives the leading dot color. The built-in set is
     // commit / merge / deploy / comment / system / user; extend or recolor
@@ -42,8 +41,7 @@
 
     // The kind's spoken name — the text the dot's color stands in for (WCAG 1.4.1). A caller's
     // `kindLabel` wins. The built-in kinds come from the catalog, so a page in another language
-    // announces its own word instead of the key, which used to be the one untranslated word in
-    // the row. Any other kind falls back to its key: the one name the developer gave it. The keys
+    // announces its own word instead of the key. Any other kind falls back to its key: the one name the developer gave it. The keys
     // are written out literally, so a search for a catalog entry finds where it is used.
     $kindText = $kindLabel ?? match ($kind) {
         'commit' => __('wirekit::Commit'),

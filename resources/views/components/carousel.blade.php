@@ -26,7 +26,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('carousel', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $autoplay = BooleanProp::from($autoplay, false);
     $loop = BooleanProp::from($loop, true);
@@ -55,9 +55,8 @@
         'font-[family-name:var(--font-wk-sans)]',
         // A vertical carousel needs a fixed height, and it lives on the ROOT so an
         // inline `style="height: …"` override actually takes effect (inline beats
-        // this class). The viewport then fills it with h-full — previously the
-        // viewport hard-coded h-[20rem], so overriding the root's height left the
-        // viewport at 20rem and it overflowed the box.
+        // this class). The viewport then fills it with h-full, so overriding the
+        // root's height resizes the viewport with it.
         $isVertical ? 'h-[20rem]' : '',
     ])), $scope);
 
@@ -123,13 +122,10 @@
 
 {{-- The APG carousel shape, without the tabs.
 
-     The slides used to claim role="tabpanel" and the dots role="tab" — but
-     neither carried aria-controls or aria-labelledby, so it was a tablist that
-     never actually connected to anything. And the model does not survive this
-     change: a tablist means ONE selected panel, while perView shows three at
-     once. So the slides are now labeled groups inside a scroll region, which is
-     APG's non-tabbed carousel and the only model that is honest about several
-     slides being visible together. --}}
+     The slides are not tab panels and the dots are not tabs: a tablist means ONE
+     selected panel, while perView shows three at once. So the slides are labeled
+     groups inside a scroll region, which is APG's non-tabbed carousel and the
+     only model that is honest about several slides being visible together. --}}
 <div
     x-data="wirekitCarousel({
         autoplay: {{ $autoplay ? 'true' : 'false' }},
@@ -143,10 +139,9 @@
     x-on:focusin="pauseOnHover()"
     x-on:focusout="resumeFromHover()"
     {{-- role="region" is APG's own shape for a carousel (a named <section>), and
-         it makes the carousel a landmark a screen-reader user can jump to. It was
-         already region before this rewrite; downgrading it to a plain group would
-         have quietly taken that landmark away for no reason at all. The label is
-         now configurable, which makes the landmark better, not worse. --}}
+         it makes the carousel a landmark a screen-reader user can jump to; a plain
+         group would take that landmark away. The label is configurable, so two
+         carousels on one page can carry names that tell them apart. --}}
     role="region"
     aria-roledescription="{{ __('wirekit::carousel') }}"
     aria-label="{{ $label }}"
@@ -215,9 +210,9 @@
                 :aria-current="current === i ? 'true' : 'false'"
                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Go to slide :number')) }}.replace(':number', i + 1)"
                 data-wk-carousel-dot
-                {{-- SPACING, not an expander. The 44px `wk-touch-target` ::before was tried
-                     first and was worse than the problem: at a 14px pitch the expanders
-                     overlapped, so a tap in the middle of one dot landed on its neighbor.
+                {{-- SPACING, not an expander. A 44px `wk-touch-target` ::before would be
+                     worse than the problem: at a 14px pitch the expanders overlap, so a
+                     tap in the middle of one dot lands on its neighbor.
                      WCAG 2.5.8's own spacing exception is the exit here — `gap-4` puts the
                      centers 24px apart, which is exactly the distance at which the
                      standard's circles stop intersecting, and an 8px dot is then compliant

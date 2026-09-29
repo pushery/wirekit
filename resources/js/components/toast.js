@@ -23,22 +23,13 @@ export default function wirekitToast(config = {}) {
     // reads happens after the element it resolves from is gone.
     //
     // `remove()` runs from the dismiss button's own `@click`, so Alpine anchors the
-    // magics to that BUTTON. `_focusSuccessor` reads `$root` synchronously, while
-    // the button is still in the document, and gets the region — that half was
-    // always fine. `_restoreFocus` reads it inside `$nextTick`, by which time the
-    // button has gone with its card, `closest('[x-data]')` from a detached node
-    // finds nothing, and the lookup that should hand focus to the next toast never
-    // happens. Focus stays where the browser dropped it: `<body>`.
-    //
-    // The file already knew the button gets detached — the note in `_restoreFocus`
-    // says "by the time the tick lands that button is detached anyway" — and reached
-    // for `$root` in the same breath. That is the second time this path has been
-    // dead while everything around it stayed green.
-    //
-    // Measured, not reasoned. `ToastKeyboardFocusTest` fails on exactly the two
-    // neighbor cases when that one lookup goes back to `$root`, and passes on all
-    // four with this handle; the `{element}` branch — an origin outside the region
-    // — is unaffected either way, which is the asymmetry that named the cause.
+    // magics to that button. `_focusSuccessor` reads `$root` synchronously, while
+    // the button is still in the document, and gets the region. `_restoreFocus`
+    // reads it inside `$nextTick`, by which time the button has gone with its card:
+    // `closest('[x-data]')` from a detached node finds nothing, the lookup that
+    // should hand focus to the next toast would never happen, and focus would stay
+    // where the browser dropped it, on `<body>`. An origin outside the region is
+    // unaffected either way.
     //
     // A closure variable for the same reason as `focusOrigin` above: a DOM node
     // stored on the reactive object comes back out as a Proxy.

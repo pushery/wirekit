@@ -51,16 +51,14 @@ class ExportBlocksCommand extends Command
             return self::FAILURE;
         }
 
-        // The sources have to BE there, and until now their absence looked like a result.
+        // The sources have to be there, or their absence would look like a result.
         //
-        // `docs/` is `export-ignore`d, so it is not in the distributed package at all —
-        // measured, not assumed: `git archive HEAD` contains no docs/ entry. In every
-        // developer install this command therefore scanned two directories that do not
-        // exist, merged two empty arrays, printed well-formed JSON with `"count": 0` and
-        // exited 0. A developer wiring this into a build step gets a green run and an empty
-        // catalog, and nothing anywhere says the input was missing rather than empty.
+        // `docs/` is `export-ignore`d, so it is not in the distributed package at all. In a
+        // developer install the command would scan two directories that do not exist, print
+        // well-formed JSON with `"count": 0` and exit 0: a build step would get a green run
+        // and an empty catalog, and nothing would say the input was missing rather than empty.
         //
-        // An absence is not an answer. It fails now, by name, and the message says which of
+        // An absence is not an answer. It fails, by name, and the message says which of
         // the two states it is in — because "the package does not carry these" and "the
         // catalog is empty" want completely different reactions from whoever reads it.
         // One directory now, not two: page layouts moved under `docs/blueprints/` when the
@@ -220,11 +218,10 @@ class ExportBlocksCommand extends Command
                 'preview_url' => WireKit::DOCS_URL.'/'.$slug,
                 // The docs site's raw-markdown route, NOT a repository URL.
                 //
-                // This pointed at `github.com/pushery/wirekit/blob/develop/docs/…`,
-                // which cannot resolve for two independent reasons: the public
-                // mirror has no `develop` branch — it carries releases, tagged
-                // from main — and `docs/` is export-ignored, so the directory is
-                // not in that repository at all. Both were measured, not assumed.
+                // A repository URL cannot resolve, for two independent reasons:
+                // the public mirror has no `develop` branch — it carries releases,
+                // tagged from main — and `docs/` is export-ignored, so the
+                // directory is not in that repository at all.
                 //
                 // The raw route is the right target rather than a corrected
                 // repository path: it is the exact sibling of `preview_url` above,

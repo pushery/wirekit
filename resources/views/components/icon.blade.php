@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'name' => null,
     'size' => null,
@@ -113,8 +112,8 @@
     // exists. With blade-icons present and blade-heroicons absent, that name reaches svg(),
     // finds neither the set nor a fallback, and throws SvgNotFound. Nothing caught it, so
     // the page 500s — and icons render transitively through buttons, dropdowns and modals,
-    // which is every page. Reported from a consuming project, reproduced here against a
-    // bare factory: `Svg by name "heroicon-m-inbox" from set "default" not found.`
+    // which is every page. The message is `Svg by name "heroicon-m-inbox" from set "default"
+    // not found.`
     //
     // Catching SvgNotFound rather than pre-checking the registry is deliberate. svg() only
     // throws after exhausting the per-set fallback AND the global one, so a developer who

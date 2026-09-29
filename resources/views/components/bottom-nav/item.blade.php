@@ -24,9 +24,9 @@
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');
     // Unconditional, unlike the sibling in `fab.action` which gates on `$href`: this
-    // component's `href` carries a default, so it always renders the anchor. The
-    // conjunct was written as a literal `true &&` to mirror that sibling's shape and
-    // reads as an unfinished edit; the behavior is identical without it.
+    // component's `href` carries a default, so it always renders the anchor. A literal
+    // `true &&` to mirror that sibling's shape would read as an unfinished edit; the
+    // behavior is identical without it.
     $opensNewTab = str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
@@ -54,7 +54,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false);
 

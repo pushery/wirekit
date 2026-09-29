@@ -57,8 +57,8 @@ export default function wirekitPhone(config = {}) {
             // Armed LAST, and the `else` above exists for it. The two assignments in that branch
             // are the round-trip split rather than a reader's choice: a watcher armed before them
             // fires on page load, emitting an input event and moving focus on a page nobody has
-            // touched. The `return` that used to sit there would have skipped this line outright
-            // on exactly the values that need it most -- an editable saved record.
+            // touched. A `return` in that branch would skip this line on exactly the values that
+            // need it most -- an editable saved record.
             this.$watch('country', () => this.afterCountryChange());
         },
 

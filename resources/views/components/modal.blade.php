@@ -5,6 +5,9 @@
     'name' => null,
     'size' => config('wirekit.components.modal.size', 'md'),
     'dismissible' => config('wirekit.components.modal.dismissible', true),
+    // Whether opening locks the page's scroll. False for an overlay that lives inside a page
+    // region, such as a preview, where the page around it has to keep scrolling.
+    'lockScroll' => true,
     'describedby' => null,
     // Names the dialog when it has no header sub-component. A dialog with no
     // accessible name is announced as just "dialog", and the failure is silent —
@@ -31,6 +34,7 @@
     // Normalized against the prop's own default so a cast never turns dismissal off on
     // a modal that never asked for it.
     $dismissible = BooleanProp::from($dismissible, true);
+    $lockScroll = BooleanProp::from($lockScroll, true);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -45,13 +49,12 @@
 
     // HOW THE DIALOG GETS ITS NAME, and why this is not just `aria-labelledby`.
     //
-    // The panel used to carry aria-labelledby unconditionally, but only
-    // the header sub-component ever puts that id on an element. A modal built
-    // without a header — a confirmation, a media lightbox, anything whose heading
-    // is its own markup — therefore pointed aria-labelledby at an id nothing
-    // carried. Per ARIA that resolves to no name at all, so the dialog announced
-    // as bare "dialog", and nothing anywhere said so: the markup looked complete
-    // and axe cannot see a reference that is merely unfulfilled at runtime.
+    // Only the header sub-component ever puts the labeling id on an element, so an
+    // unconditional aria-labelledby would, in a modal built without a header — a
+    // confirmation, a media lightbox, anything whose heading is its own markup —
+    // point at an id nothing carries. Per ARIA that resolves to no name at all: the
+    // dialog would announce as bare "dialog", with the markup looking complete and
+    // axe unable to see a reference that is merely unfulfilled at runtime.
     //
     // Three sources, in priority order, and only one is ever emitted:
     //   1. a caller `aria-label` attribute,
@@ -161,7 +164,7 @@
      made once. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
-    x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
+    x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
     @if($dismissible) x-on:keydown.escape.window="isOpen && isTopmost && dismissByReader('escape')" @endif
     {{ $attributes }}
 >

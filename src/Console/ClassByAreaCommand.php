@@ -126,17 +126,13 @@ class ClassByAreaCommand extends Command
 
         $areas = $this->collectAreas($projectRoot, $format);
 
-        // `--area` says which rows are ASKED FOR. It must never say which operands EXIST.
+        // `--area` says which rows are asked for. It must never say which operands exist.
         //
-        // The filter used to prune `$areas` itself, and diffPairs() reads its operands back
-        // out with `$areas['compiled'] ?? []` — so a filtered-away layer arrived as an EMPTY
-        // SET rather than as an absent question, and every one of the five diff rows came out
-        // falsified, in both directions, with nothing in the output saying a set had been
-        // emptied. Measured under `--area=blade`: `blade ∖ compiled` reported 1272 against a
-        // true 16, while the three real gaps (928, 152, 190) all reported 0 — which a reader
-        // takes as clean. The documented `--area=blade --area=compiled` example was wrong the
-        // same way, and `--format=json`, which the reference page pitches for CI dashboards,
-        // carried the same numbers.
+        // diffPairs() reads its operands back out with `$areas['compiled'] ?? []`, so pruning
+        // `$areas` itself would make a filtered-away layer arrive as an empty set rather than
+        // as an absent question: the diff rows would come out falsified in both directions,
+        // a real gap reading as 0, which a reader takes as clean, with nothing in the output
+        // saying a set had been emptied, in the table and in `--format=json` alike.
         //
         // It is the failure mode collectAreas() already warns about from a different cause:
         // an empty compiled column and a compiled column that was never read look identical.
@@ -397,8 +393,7 @@ class ClassByAreaCommand extends Command
         foreach ($this->diffPairs($areas, $scope) as $row) {
             // `computed` on BOTH shapes, and a suppressed row carries no `count` at all.
             // A downstream reader that keys on `count` must not be able to read a
-            // suppressed row as a measured zero — that is the whole defect this shape
-            // replaces, one layer further out.
+            // suppressed row as a measured zero.
             $report['diffs'][$row['label']] = $row['outOfScope'] !== []
                 ? [
                     'computed' => false,

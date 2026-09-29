@@ -62,7 +62,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $toggle = BooleanProp::from($toggle, true);
     $strengthMeter = BooleanProp::from($strengthMeter, false);
@@ -216,10 +216,10 @@
 @endphp
 
 {{-- The toggle and the meter live in resources/js/components/password-input.js.
-     They cannot live here: this used to be an inline object literal carrying a
-     getter and a method, and Alpine's CSP parser does not accept that as an
-     expression — under a strict policy the element got an EMPTY scope, so the
-     show/hide button and the whole meter were dead with no error to say why. --}}
+     They cannot live here: an inline object literal carrying a getter and a
+     method is not an expression Alpine's CSP parser accepts, and under a strict
+     policy the element would get an EMPTY scope, leaving the show/hide button and
+     the whole meter dead with no error to say why. --}}
 <div class="space-y-1.5 min-w-0" x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
@@ -317,9 +317,9 @@
          Score: +1 for length≥8, +1 mixed case, +1 digit, +1 symbol. --}}
     @if($strengthMeter)
         {{-- role="meter" carries the value: four bars whose only difference is a
-             tint say nothing to a reader, and the region that used to sit here was
-             a live region with no text in it — so the field's own
-             `aria-describedby` pointed at an element that described nothing.
+             tint say nothing to a reader, and an empty live region here would
+             leave the field's own `aria-describedby` pointing at an element that
+             describes nothing.
 
              The static aria-valuenow is the same pre-hydration guard the toggle
              uses: a meter without a value is an incomplete role, and a scan that
@@ -334,8 +334,8 @@
             :aria-valuenow="strength"
             {{-- Its own getter, not `strengthLabel`: the label is '' on an untouched
                  field, and Alpine SETS an empty string rather than removing the
-                 attribute — so the meter used to ship `aria-valuetext=""`, which
-                 looks in the DOM exactly like an attribute somebody thought about.
+                 attribute, so the label would ship `aria-valuetext=""`, which looks
+                 in the DOM exactly like an attribute somebody thought about.
                  The getter returns false there, which is what Alpine removes on,
                  and the hydrated meter then matches the static one above. --}}
             :aria-valuetext="strengthValueText"

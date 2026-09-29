@@ -29,8 +29,8 @@
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // Accessible name for the responsive scroll wrapper, and the switch that makes it a
     // LANDMARK. The wrapper is keyboard-reachable either way (WCAG 2.1.1 — `tabindex="0"` is
-    // unconditional); the role only joins it once there is a name worth navigating to. It used
-    // to fall back to "Scrollable table", which made every table on a page answer to the same
+    // unconditional); the role only joins it once there is a name worth navigating to. A
+    // fallback such as "Scrollable table" would make every table on a page answer to the same
     // rotor entry — axe reports that as `landmark-unique`. Name it after the DATA
     // ("Customer list"), never after the widget.
     'tableLabel' => null,
@@ -47,7 +47,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('table', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $stickyHeader = BooleanProp::from($stickyHeader, false);
     // Same contract for the four whose default is spelled as a `config()` fallback rather
@@ -213,18 +213,15 @@
      parent so the scroll engages instead of the table forcing document
      overflow. --}}
 @if($responsive)
-{{-- A table that scrolls sideways said so with nothing but the scrollbar, and on
-     a phone there is no scrollbar until you are already dragging. A reader sees a column
-     cut off at the edge and no reason to believe more exists.
-
-     The apparatus for this shipped in 2.24 and no component template used it — the CSS
-     (`wk-scroll-shadow-start` / `-end`) and the Alpine factory with its inline-axis
-     sentinels were all already there. This is the wiring, not new machinery. --}}
+{{-- Without the scroll shadows, a table that scrolls sideways would say so with nothing
+     but the scrollbar, and on a phone there is no scrollbar until you are already
+     dragging: a reader sees a column cut off at the edge and no reason to believe more
+     exists. The CSS (`wk-scroll-shadow-start` / `-end`) and the Alpine factory with its
+     inline-axis sentinels do the work; this is the wiring. --}}
 {{-- `w-full min-w-0`: making the scroller a flex row gives it a max-content
      contribution its block ancestors then inherit, and a wrapper without an
-     explicit minimum resolves `min-width: auto` to that content width — so a
-     14-column table pushed this whole wrapper 449px past a phone-width docs
-     column. Measured, not reasoned: the frame-escape sweep named this element. --}}
+     explicit minimum resolves `min-width: auto` to that content width, so a wide
+     table would push this whole wrapper past a phone-width column. --}}
 {{-- `@container/wk-table` makes this frame the thing a column's `hide-below-container`
      measures against. NAMED on purpose: an anonymous container would also become the
      measuring context for every `@`-variant a caller nests inside the table, and

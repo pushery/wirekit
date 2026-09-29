@@ -55,7 +55,6 @@ Dev-only
 Fully
 LTR
 Logical,
-Measured
 NOTE:
 Nudge
 OUTSIDE
@@ -89,7 +88,6 @@ and
 any
 aria-hidden
 as
-asserted:
 auditor
 auto-derived
 avatar
@@ -139,7 +137,6 @@ follows
 for
 from
 further
-guard
 hand-rolling
 here
 if
@@ -197,13 +194,9 @@ property.
 props
 purely
 qualified:
-rather
 raw-div
 reach
 reading
-reason
-refutes
-renders
 replace.
 resizes
 result
@@ -220,7 +213,6 @@ stylesheet
 target's
 target;
 text
-than
 that
 that.
 the

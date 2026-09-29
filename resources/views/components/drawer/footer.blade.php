@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'scope' => null,
 ])
@@ -16,10 +15,10 @@
 
     // Footer classes — bottom section with top border and right-aligned buttons
     $classes = WireKit::resolveClasses('drawer.footer', 'base', implode(' ', [
-        // ONE TOKEN ON ALL FOUR SIDES, and the header's. The sides used to take 1.5rem against 1rem
-        // above and below, so the title started 1rem from the panel's edge and the content under it
-        // 1.5rem, and the content sat further from the sides than from the bottom. Equal padding
-        // on one token keeps a single edge down the panel, and a theme cannot pull the sides apart.
+        // One token on all four sides, and the header's. Wider side padding would start the content
+        // further in than the title above it and sit it further from the sides than from the
+        // bottom; equal padding on one token keeps a single edge down the panel, and a theme
+        // cannot pull the sides apart.
         'p-[var(--padding-wk-x-lg)]',
         'border-t',
         'border-[var(--color-wk-border-subtle)]',

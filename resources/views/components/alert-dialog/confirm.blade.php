@@ -46,26 +46,23 @@
      Capture phase, deliberately: the caller's handler sits on the button INSIDE this
      wrapper, so a bubbling listener here would run after it had already fired.
 
-     THE STATE GOES ON THE CONTROL, and both of those attributes used to be bound here
-     instead. A generic element passes neither down: `aria-disabled` on an ancestor says
-     nothing about the button, and a description is announced only when the element
-     carrying it is the focused one. The result was a button that read as ordinary and
-     enabled, refused the activation anyway, and explained nothing — the exact experience
-     the two bullets above promise it prevents. `syncConfirmControlState` therefore
-     writes both onto whatever control is inside, the default one or the caller's. --}}
-{{-- `x-id` DECLARES the scope the two `$id('alert-confirm-reason')` calls below share, and
-     without it they are not the same id. Alpine caches a generated id per ELEMENT: with no
+     The state goes on the control. A generic element passes neither attribute down:
+     `aria-disabled` on an ancestor says nothing about the button, and a description is
+     announced only when the element carrying it is the focused one. Bound here, they would
+     leave a button that reads as ordinary and enabled, refuses the activation anyway, and
+     explains nothing. `syncConfirmControlState` therefore writes both onto whatever
+     control is inside, the default one or the caller's. --}}
+{{-- `x-id` declares the scope the two `$id('alert-confirm-reason')` calls below share, and
+     without it they are not the same id. Alpine caches a generated id per element: with no
      scope root to resolve against, each call site increments a global counter instead, so
-     the `x-effect` here got `alert-confirm-reason-1` and the span's `x-bind:id` got
-     `alert-confirm-reason-2`. The button was therefore described by an element that does
-     not exist — `getElementById` on the value returned null — and a screen reader announces
-     nothing at all for a dangling `aria-describedby`. That is the precise failure the
-     comment above claims this component prevents: the control was focusable and marked
-     `aria-disabled` exactly as intended, and still explained nothing.
+     the `x-effect` here and the span's `x-bind:id` would get different ids. The button
+     would be described by an element that does not exist, and a screen reader announces
+     nothing at all for a dangling `aria-describedby`: the control would be focusable and
+     marked `aria-disabled` exactly as intended, and still explain nothing.
 
-     Declaring the scope HERE, on the wrapper, is also what keeps two dialogs on one page
+     Declaring the scope here, on the wrapper, is also what keeps two dialogs on one page
      apart: each wrapper is its own root, so each gets its own id and neither points at the
-     other's reason. Measured on the Type-to-Confirm preview before and after. --}}
+     other's reason. --}}
 <div
     data-wk-alert-confirm
     x-id="['alert-confirm-reason']"
@@ -107,12 +104,11 @@
         {{-- The caller supplied their own control. Matched on the RENDERED markup,
              because that is what a slot holds: by the time it is cast to a string
              Blade has already compiled `<x-wirekit::button>` into `<button>`, so a
-             test for the tag NAME never matched and every caller fell through to the
-             branch below -- which wrapped their finished button in a second one.
+             test for the tag NAME would never match and every caller would fall
+             through to the branch below -- which wraps its content in a second button.
              Nested buttons are invalid HTML, and a browser repairing them tears the
-             surrounding structure apart: the control rendered as an empty box beside
-             its own label, and on the documentation page every heading after it
-             stopped being a heading. --}}
+             surrounding structure apart: the control renders as an empty box beside
+             its own label, and every heading after it stops being a heading. --}}
         {{-- Caller supplied a full WireKit component — use it verbatim, the way
              alert-dialog.cancel does. --}}
         {{ $slot }}

@@ -19,10 +19,8 @@ namespace Pushery\WireKit\Support;
  * runs one script across many requests and receives them through its own client (Octane on
  * Swoole or RoadRunner) has it filled once, at boot, when there is no request, and nothing writes
  * it again; FrankenPHP's worker mode is the exception and refills it for each request it hands
- * over. Measured on one page with one cookie under two SAPIs: present under FPM, empty under a
- * long-lived CLI SAPI, where a rail then rendered collapsed and the client widened it a frame
- * later, 187px of column movement, 0.1097 CLS against a budget of 0.1. Nothing throws; the other
- * state simply renders.
+ * over. There a remembered rail would render in its other state and the client would correct it
+ * a frame later, moving the column. Nothing throws; the other state simply renders.
  *
  * The superglobal stays as a fallback because dropping it would be a regression, not a cleanup.
  * The cookie is written by JavaScript, so it arrives as plaintext, and Laravel's `EncryptCookies`

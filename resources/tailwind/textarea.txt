@@ -237,7 +237,6 @@ BooleanProp::from($resize,
 BooleanProp::isFalse($success);
 BooleanProp::stripFalseHtmlFlags($attributes);
 Border
-BrowserBaselineGuardTest,
 CSS
 Chrome
 DOM
@@ -261,7 +260,6 @@ Label
 Laravel
 Livewire
 Livewire's
-Measured
 Mirrors
 NOT
 No
@@ -353,7 +351,6 @@ __('wirekit::Saving'),
 a
 able
 above.
-accepted-use
 accepts
 across
 action
@@ -376,7 +373,6 @@ announced
 announced.
 announcement
 answer
-any
 appearing
 appears
 appended
@@ -397,7 +393,6 @@ array_values((array)
 arrives
 as
 as,
-asserted:
 assistive
 assume
 asterisk
@@ -453,7 +448,6 @@ capability
 carries
 carry
 cast
-claimed
 class
 class="select-none
 class="space-y-1.5
@@ -547,7 +541,6 @@ ever
 every
 exactly
 existed
-existed.
 exists.
 exit
 exit**:
@@ -571,7 +564,6 @@ field's
 field,
 field-sizing:
 fields
-file
 fires
 first
 first,
@@ -607,8 +599,6 @@ grow
 growing,
 grows
 growth,
-guard
-had
 hand-mount
 hardcoded
 has
@@ -617,7 +607,6 @@ header
 height
 height,
 here
-here,
 here.
 here.'),
 hint
@@ -746,6 +735,7 @@ optimistic-ui:
 opts
 or
 other
+otherwise
 out
 out.
 over
@@ -763,7 +753,6 @@ per
 person
 phones
 point:
-pointer
 polite
 precedence:
 presentational
@@ -797,7 +786,6 @@ recognizes
 red
 reference
 refusal
-refutes
 region
 releases.
 remove
@@ -863,7 +851,6 @@ spellings
 spreads
 sr-only
 stacked
-stand
 start;
 starting
 state
@@ -938,7 +925,6 @@ unsupported;
 untestable.
 up
 use
-used
 user
 uses
 valid

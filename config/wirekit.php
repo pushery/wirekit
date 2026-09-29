@@ -2,6 +2,19 @@
 
 declare(strict_types=1);
 
+use Pushery\WireKit\Support\EnvValue;
+
+/*
+|--------------------------------------------------------------------------
+| Environment variables
+|--------------------------------------------------------------------------
+|
+| Every `WIREKIT_*` variable below is read through EnvValue::get(), where a
+| blank value counts as unset: a line such as `WIREKIT_DEDUPE_IDS=` in your
+| `.env` keeps the default beside it, the same as leaving the line out.
+|
+*/
+
 return [
 
     /*
@@ -28,7 +41,7 @@ return [
     |
     */
 
-    'currency' => env('WIREKIT_CURRENCY', 'USD'),
+    'currency' => EnvValue::get('WIREKIT_CURRENCY', 'USD'),
 
     /*
     |--------------------------------------------------------------------------
@@ -60,7 +73,7 @@ return [
     */
 
     'validation' => [
-        'strict' => env('WIREKIT_STRICT_VALIDATION'),
+        'strict' => EnvValue::get('WIREKIT_STRICT_VALIDATION'),
 
         // Whether an invalid value (a bad prop value, an unknown icon alias)
         // should THROW rather than degrade to a fallback. Null (default) uses the
@@ -70,7 +83,7 @@ return [
         // throw, false to degrade — an explicit value wins in both directions.
         // A prop value throws only while `strict` is on as well; an unknown icon
         // alias reads this setting alone.
-        'throw_on_invalid' => env('WIREKIT_THROW_ON_INVALID'),
+        'throw_on_invalid' => EnvValue::get('WIREKIT_THROW_ON_INVALID'),
     ],
 
     /*
@@ -92,7 +105,7 @@ return [
     */
 
     'doctor' => [
-        'scan_logs' => env('WIREKIT_DOCTOR_SCAN_LOGS', true),
+        'scan_logs' => EnvValue::get('WIREKIT_DOCTOR_SCAN_LOGS', true),
 
         // How far back the log scan looks, in hours. Without a bound the check reads the
         // whole history, so a typo fixed weeks ago keeps its line in laravel.log forever
@@ -100,7 +113,7 @@ return [
         // exactly what they were told sees no change, and learns to stop reading it.
         //
         // 0 restores the old read-everything behavior.
-        'scan_logs_window_hours' => env('WIREKIT_DOCTOR_SCAN_LOGS_WINDOW_HOURS', 24),
+        'scan_logs_window_hours' => EnvValue::get('WIREKIT_DOCTOR_SCAN_LOGS_WINDOW_HOURS', 24),
     ],
 
     /*
@@ -112,12 +125,14 @@ return [
     | storage/logs/sandbox/YYYY-MM-DD.log. The client address is kept only as
     | a digest of its network (an IPv4 /24, an IPv6 /48), keyed with the
     | application key. Daily files older than the retention below are deleted
-    | when a new day's file is opened; null keeps them all.
+    | when a new day's file is opened; null keeps them all. Only files still
+    | named YYYY-MM-DD.log are deleted: a day that log rotation compressed or
+    | renamed stays until whatever rotated it removes it.
     |
     */
 
     'sandbox' => [
-        'audit_log_retention_days' => env('WIREKIT_SANDBOX_AUDIT_RETENTION_DAYS', 14),
+        'audit_log_retention_days' => EnvValue::get('WIREKIT_SANDBOX_AUDIT_RETENTION_DAYS', 14),
     ],
 
     /*
@@ -164,13 +179,13 @@ return [
     |
     */
     'theme' => [
-        'storage' => env('WIREKIT_THEME_STORAGE', 'local'),
-        'storage_key' => env('WIREKIT_THEME_STORAGE_KEY', 'wirekit-theme'),
-        'script' => env('WIREKIT_THEME_SCRIPT', 'inline'),
+        'storage' => EnvValue::get('WIREKIT_THEME_STORAGE', 'local'),
+        'storage_key' => EnvValue::get('WIREKIT_THEME_STORAGE_KEY', 'wirekit-theme'),
+        'script' => EnvValue::get('WIREKIT_THEME_SCRIPT', 'inline'),
         'cookie_attributes' => [
-            'same_site' => env('WIREKIT_THEME_COOKIE_SAME_SITE', 'Lax'),
-            'max_age' => (int) env('WIREKIT_THEME_COOKIE_MAX_AGE', 31536000),
-            'path' => env('WIREKIT_THEME_COOKIE_PATH', '/'),
+            'same_site' => EnvValue::get('WIREKIT_THEME_COOKIE_SAME_SITE', 'Lax'),
+            'max_age' => (int) EnvValue::get('WIREKIT_THEME_COOKIE_MAX_AGE', 31536000),
+            'path' => EnvValue::get('WIREKIT_THEME_COOKIE_PATH', '/'),
         ],
     ],
 
@@ -187,14 +202,14 @@ return [
     |
     */
     'a11y' => [
-        'announce_error' => env('WIREKIT_ANNOUNCE_ERROR', true),
+        'announce_error' => EnvValue::get('WIREKIT_ANNOUNCE_ERROR', true),
 
         // Give each form control a page-unique DOM id even when several share a
         // `name` (a create + an edit form, a filter bar + a modal, a repeater row).
         // The first occurrence keeps the clean derived id; later collisions get a
         // -2/-3 suffix, so `label[for]` and `aria-describedby` always resolve to
         // the right control. Set false to restore the pre-2.20 verbatim behavior.
-        'dedupe_ids' => env('WIREKIT_DEDUPE_IDS', true),
+        'dedupe_ids' => EnvValue::get('WIREKIT_DEDUPE_IDS', true),
 
         // Motion is decided by the operating system unless your application
         // states otherwise. Set `data-reduce-motion` on <html> to override it:
@@ -211,29 +226,19 @@ return [
         // auto-advance, revealing a streamed buffer at once) — so they cannot
         // disagree on the same page.
         //
-        // THIS IS A RECORD, NOT A SWITCH. Changing it changes nothing.
+        // This is a record, not a switch: changing it changes nothing. Nothing reads
+        // this key, not a component, not a class and not the JavaScript. Both halves
+        // carry the name literally, the stylesheet in its selectors and
+        // `resources/js/utils/motion.js` in its MOTION_ATTRIBUTE constant, and there
+        // is no .env variable for it.
         //
-        // It used to say the opposite — "every rule and every component reads this
-        // name" — and that was never true. Nothing reads this key: not a component,
-        // not a class, not the JavaScript. Both halves carry the name literally, the
-        // stylesheet in 26 selectors and `resources/js/utils/motion.js` in its
-        // MOTION_ATTRIBUTE constant. It also had an `env()` seam, so setting
-        // WIREKIT_MOTION_ATTRIBUTE in .env produced no effect and no error — an
-        // interface that looks like an interface and is not, which is worse than
-        // having none.
-        //
-        // It stays because the value is worth knowing: writing your own
+        // It is here because the value is worth knowing: writing your own
         // reduced-motion rules means matching this attribute, and reading it here
-        // beats grepping a minified bundle. It is now GUARDED — the build fails if
-        // this string stops matching what the shipped CSS and every JS bundle
-        // actually carry — so it is a checked fact rather than a decorative one.
+        // beats searching a minified bundle.
         //
-        // Making it a real switch was considered and rejected on the merits, not on
-        // effort: `[data-reduce-motion]` is a structural selector, so no CSS variable
-        // can parameterize it. A configurable name would mean giving up the prebuilt
-        // stylesheet and having every developer compile their own — a change to the
-        // architecture in exchange for renaming an attribute nobody has needed to
-        // rename.
+        // It is not configurable because `[data-reduce-motion]` is a structural
+        // selector, so no CSS variable can parameterize it. A configurable name would
+        // mean compiling the stylesheet yourself instead of using the prebuilt one.
         'motion_attribute' => 'data-reduce-motion',
 
         // The attribute an increased-contrast preference is expressed with, and like the
@@ -504,7 +509,7 @@ return [
     */
 
     'flags' => [
-        'path' => env('WIREKIT_FLAGS_PATH'),
+        'path' => EnvValue::get('WIREKIT_FLAGS_PATH'),
     ],
 
     /*
@@ -523,7 +528,7 @@ return [
     |                           adds nothing now. The name still resolves so an
     |                           existing config keeps booting.
     |   'heroicons-marketing' — stackable extension with marketing/landing aliases
-    |                           (sparkles, cursor-arrow-rays, cube, pulse, …)
+    |                           (sparkle, cursor-arrow-rays, cube-transparent, pulse, …)
     |   'lucide'              — mallardduck/blade-lucide-icons (~1,500 icons)
     |   'phosphor'            — codeat3/blade-phosphor-icons (~9,000 icons)
     |   'tabler'              — secondnetwork/blade-tabler-icons (~7,200 icons)
@@ -659,14 +664,10 @@ return [
         | Then reference `'Your Family Fallback'` after your family in the font
         | stack — that name is what this creates.
         |
-        | The placeholders are deliberate. This example previously named a real,
-        | widely used family and gave it ANOTHER family's numbers: it read
-        | 'Instrument Sans' and carried Inter's measurements, rounded — 107.4 /
-        | 90.2 / 22.4 against the 107.47 / 90.14 / 22.45 this package stores for
-        | Inter. A developer whose font actually was Instrument Sans read that as
-        | "already measured for me" and copied it, and it closed about a quarter
-        | of the gap it appeared to close. Values that look measured and are not
-        | are worse than a blank, because a blank cannot be pasted.
+        | The placeholders are deliberate. Real-looking numbers invite copying, and
+        | another family's metrics pasted for your own close only part of the gap
+        | they appear to close. Values that look measured and are not are worse
+        | than a blank, because a blank cannot be pasted.
         |
         | MEASURE THE FOUR VALUES. Do not estimate them. A guessed `size-adjust`
         | moves the layout in the OTHER direction and looks deliberate while doing
@@ -729,7 +730,7 @@ return [
     |
     | 'full' — All Alpine components including overlays.
     |          Includes Floating UI + focus-trap, bundled.
-    |          Current measured sizes: docs.wirekit.app/dependencies.
+    |          Current sizes: docs.wirekit.app/dependencies.
     |
     | 'core' — The chart and image-compare Alpine components, plus the one
     |          directive the zero-JS form primitives need.
@@ -738,7 +739,7 @@ return [
     |          overlay component: `x-teleport` throws when its target is missing
     |          and takes the page down, where an unregistered component is merely
     |          inert.
-    |          The measured sizes live at the address above rather than here:
+    |          The sizes live at the address above rather than here:
     |          this file is copied into your application when you publish it,
     |          and a figure written into it would stay behind as the bundle
     |          changes.
@@ -808,7 +809,7 @@ return [
     |
     | The default is NONE, and that is deliberate. Those handlers read a file
     | from the package directory — no session, no CSRF token, no auth, no model
-    | binding. Putting them in `web` used to add `StartSession`, which meant a
+    | binding. Putting them in `web` adds `StartSession`, which means a
     | session read and write for every stylesheet hit and, worse, a `Set-Cookie`
     | on a response that declares `public, max-age=31536000, immutable`. A shared
     | cache may keep that response for a year and hand it to the next visitor
@@ -849,7 +850,7 @@ return [
     */
 
     'translations' => [
-        'legacy_key_bridge' => env('WIREKIT_LEGACY_TRANSLATION_KEYS', true),
+        'legacy_key_bridge' => EnvValue::get('WIREKIT_LEGACY_TRANSLATION_KEYS', true),
     ],
 
 ];

@@ -31,10 +31,9 @@ final class IconSourceLocator
     /**
      * The directory under the package holding the MOST `.svg` files.
      *
-     * Not the deepest one, which is what this line used to say while the code beside
-     * `arsort()` said the opposite. The distinction is the whole reason the method exists:
-     * several of these packages ship a secondary set beside the main one — Lucide's `lab`
-     * folder — and depth does not tell them apart.
+     * Not the deepest one: several of these packages ship a secondary set beside the main
+     * one — Lucide's `lab` folder — and depth does not tell them apart, which is the whole
+     * reason the method exists.
      *
      * Returns null when the package is absent or ships no SVGs at all — a caller needs to
      * tell "not installed" apart from "installed and empty", and both are null here only

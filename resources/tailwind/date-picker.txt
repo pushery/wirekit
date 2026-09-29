@@ -213,16 +213,13 @@ $value['start']
 />`
 0.25rem.
 1.
-139/155
 16px
 2),
 2,
 2.
 2.1
-25px
 3.
 3.3.1
-310px
 330px,
 4.1.2
 :
@@ -293,7 +290,6 @@ BooleanProp::from($range,
 BooleanProp::from($required,
 BooleanProp::stripFalseHtmlFlags($attributes);
 Build
-CLIPS
 Caller-provided
 Change
 Compose
@@ -308,7 +304,7 @@ Everything
 Extra
 FILTER_VALIDATE_BOOLEAN);
 Fully
-German.
+German
 H:i:s`,
 HERE
 HTML
@@ -320,7 +316,6 @@ It
 JSON
 Livewire
 Livewire's
-Measured
 Mirrors
 NAMES,
 NOT
@@ -345,7 +340,6 @@ Pushery\WireKit\WireKit;
 REPLACES
 Range
 Rendered
-Reported
 Say
 Screen-reader-only
 Seeded
@@ -523,6 +517,7 @@ bag,
 bag.
 be
 because
+become
 becomes
 been
 before
@@ -578,13 +573,13 @@ class="sr-only">{{
 class="text-[color:var(--color-wk-danger-text)]
 class="w-full"
 class="wk-field
+clips
 closes
 comes
 comment
 commit
 common
 commonest
-company
 compiled
 compiles
 component
@@ -645,6 +640,7 @@ dies
 different
 disabled
 disables
+disagree:
 disclosure
 div
 do.
@@ -661,7 +657,6 @@ duplicate.
 duplicated:
 e:
 each
-edge,
 either
 element
 element.
@@ -680,10 +675,10 @@ end',
 end.
 ends
 entered
+entering
 error
 error,
 etc.),
-even
 ever
 every
 exactly
@@ -718,7 +713,6 @@ fine
 first
 first,
 first.
-fix:
 flags
 flex
 flex-1
@@ -756,6 +750,7 @@ half-applied.
 half.
 hand-mount
 hands
+happens
 has
 have
 here
@@ -816,7 +811,7 @@ landed
 lands
 language
 language;
-laptops
+laptop
 large
 last
 last.
@@ -910,7 +905,7 @@ only
 onto
 opens,
 operation.
-operators
+operator
 opposite
 opt
 optimistic
@@ -923,6 +918,7 @@ order.
 orders
 other
 other.
+otherwise
 out.
 outer
 over,
@@ -962,7 +958,6 @@ post
 pre-compiler
 precede
 precedence:
-preview
 previous
 print
 prod).
@@ -1044,7 +1039,6 @@ shape
 shared
 shipped
 ships
-shop
 shrink
 silent,
 silently
@@ -1061,7 +1055,6 @@ speak.
 spellings
 splatted
 split
-split.
 spreads
 sr-only
 stable
@@ -1166,7 +1159,6 @@ untestable.
 untouched,
 up
 use
-used
 user
 user's
 user-interface
@@ -1193,6 +1185,7 @@ wheel
 when
 whenever
 where
+wherever
 which
 whichever
 while
@@ -1207,9 +1200,7 @@ wiring:
 with
 without
 wk-field:
-word
 wording
-work
 works
 worth
 would

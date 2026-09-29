@@ -29,7 +29,6 @@ Declared
 Dev-only
 Fully
 It
-Measured
 NEITHER
 No
 Pushery\WireKit\WireKit;
@@ -51,10 +50,8 @@ action
 all,
 already
 and
-any
 arbitrary
 asked
-asserted:
 at
 attribute
 auto-derived
@@ -81,7 +78,6 @@ element,
 exists
 fallback
 fallback.
-file
 flags
 for
 for,
@@ -126,10 +122,7 @@ rather
 raw
 reach
 read
-reason
-refutes
 rendered
-renders
 rest
 result
 say
@@ -143,7 +136,6 @@ spaced
 spaces
 splits
 than
-that
 the
 theme
 there

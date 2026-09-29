@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 {{-- `legend` takes two shapes, and both render as the fieldset's FIRST child:
      the string prop `legend="Permissions"` (escaped), or the named slot
      `x-slot:legend` for rich content (markup, a badge, a help icon). The slot is

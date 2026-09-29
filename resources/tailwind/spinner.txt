@@ -104,7 +104,6 @@ GRAPHIC
 Glyph
 INSTEAD
 It
-Measured
 NOT
 OUTSIDE
 Optional
@@ -153,7 +152,6 @@ aria-live="polite"
 array_filter([
 array_keys($intentColors));
 as
-asserted:
 auto-derived
 badge
 be
@@ -205,7 +203,6 @@ every
 exactly
 exempts.
 fallback
-file
 fill="currentColor"
 fill="none"
 flags
@@ -216,7 +213,6 @@ front
 glyph
 glyph.
 guarantee
-guard
 has
 helper
 icon
@@ -288,19 +284,15 @@ props
 purpose:
 qualified:
 r="10"
-rather
 raw
 reach
 read.
 readable
 real
-reason
 reduced-motion
-refutes
 region.
 region;
 removable
-renders
 repoint
 resolveClasses
 resolves
@@ -342,7 +334,6 @@ success/warning/danger
 surface
 surrounding
 text
-than
 that
 the
 them.

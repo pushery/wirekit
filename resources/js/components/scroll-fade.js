@@ -5,8 +5,7 @@
  *
  * `fade="both"` is pure CSS: a `mask-image` on the scroll container, applied
  * unconditionally. That is the right default — no JavaScript, nothing to tear
- * down — but it cannot know two things the reader can see. Measured in a real
- * browser on a shipped preview:
+ * down — but it cannot know two things the reader can see:
  *
  *     scrolled to the very top      the TOP edge is faded, with nothing above it
  *     scrolled to the very bottom   the BOTTOM edge is faded, with nothing below

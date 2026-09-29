@@ -1,18 +1,10 @@
 /**
  * Password input — visibility toggle and the optional strength meter.
  *
- * This lived as an inline `x-data` object literal until it was measured against
- * Alpine's CSP parser and did not parse: a literal carrying a getter and a
- * method is not an expression that parser accepts. Under a strict
- * Content-Security-Policy the element ended up with an EMPTY scope, so the
- * show/hide toggle and the whole meter were dead — silently, because an x-data
- * that throws leaves no error on the element, just a component that does
- * nothing.
- *
- * The audit that scans directive expressions could not decide this one on its
- * own: the literal carries Blade `@if`, so it was listed under "read these by
- * hand" — and nobody did. The audit now substitutes the control flow and parses
- * the result, so this class cannot come back as a manual chore again.
+ * A factory rather than an inline `x-data` object literal, because Alpine's CSP
+ * parser does not accept a literal carrying a getter and a method. Under a strict
+ * Content-Security-Policy such an element ends up with an empty scope, and the
+ * show/hide toggle and the whole meter go dead without an error on the element.
  *
  * @param {Object}    config
  * @param {boolean}   config.strengthMeter    whether the meter is rendered at all

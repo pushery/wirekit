@@ -110,14 +110,14 @@ export default function wirekitInlineEdit(config = {}) {
 
                     // Resolved AT EVENT TIME, never captured at init.
                     //
-                    // `open()` sends `this.$root` — live — and this listener used to
-                    // compare against a `this.$el` frozen here. Identical elements in
-                    // the ordinary case, which is why it worked. But a Livewire morph
-                    // can swap the root element while Alpine keeps this instance
-                    // alive, and then the frozen reference points at a node that is no
-                    // longer in the document: the sender's live root matches neither
-                    // the stale `===` nor the stale `.contains()`, so the component
-                    // treats its OWN open as somebody else's and cancels itself.
+                    // `open()` sends `this.$root` — live — so this listener compares
+                    // against the live root too. A `this.$el` frozen here would be the
+                    // same element in the ordinary case, but a Livewire morph can swap
+                    // the root element while Alpine keeps this instance alive, and then
+                    // the frozen reference points at a node that is no longer in the
+                    // document: the sender's live root would match neither the stale
+                    // `===` nor the stale `.contains()`, so the component would treat its
+                    // OWN open as somebody else's and cancel itself.
                     //
                     // That exact self-cancel already happened once on the SENDER side
                     // and is documented above `open()`. It was fixed there and left
@@ -197,14 +197,11 @@ export default function wirekitInlineEdit(config = {}) {
          * Focus the control once it is on screen, and wire its description.
          *
          * `x-show` reveals the editor on an animation frame, and `$nextTick` does not
-         * wait for one, so which runs first is up to the engine. Measured after a real
-         * click on the trigger: Chromium revealed the editor 6ms after the click and
-         * focused 1ms later; WebKit focused 1ms after the click, on a control that was
-         * still `display: none`, and revealed it 10ms after that. Focus on a hidden
-         * element does nothing, so in WebKit, which is every browser on an iPhone,
-         * opening an editor left focus on the body. A control that is not displayed yet
-         * gets the frames that reveal it: a bounded number, and only while the editor
-         * is still open. After that the attempt is made anyway, as it always was.
+         * wait for one, so which runs first is up to the engine. WebKit, which is every
+         * browser on an iPhone, can focus before it reveals, on a control that is still
+         * `display: none`, and focus on a hidden element does nothing. A control that is
+         * not displayed yet gets the frames that reveal it: a bounded number, and only
+         * while the editor is still open. After that the attempt is made anyway.
          */
         _placeFocus(framesLeft = 10) {
             if (!this.editing) return;
@@ -470,19 +467,14 @@ export default function wirekitInlineEdit(config = {}) {
             }
 
             /*
-             * A blur is not evidence the reader left, and treating it as one threw away what
-             * they had typed.
+             * A blur is not evidence the reader left.
              *
              * A Livewire morph anywhere on the page patches the DOM around a focused input, and
              * the browser fires a blur while it does — focus returns immediately, so nobody went
-             * anywhere. This handler discarded on that event exactly as it discards on a real
-             * departure, so a round trip in an unrelated part of the page silently deleted an
-             * unsaved draft. No message, no undo.
-             *
-             * It read as a flaky test for weeks: the seam case failed in CI and in no local run,
-             * because a fast morph restores focus before anything observes the gap and a loaded
-             * machine does not. The instrumentation settled it — same node, same Alpine scope,
-             * value back at `_previous`, which only this function and cancel() write.
+             * anywhere. Discarding on that event as on a real departure would let a round trip in
+             * an unrelated part of the page delete an unsaved draft, with no message and no undo.
+             * A fast morph restores focus before anything observes the gap, so the loss would
+             * show only on a loaded machine.
              *
              * So ask where the focus went, and ask AFTER the browser has moved it: during a blur
              * activeElement is transitional whichever way it ends up, so a synchronous check
@@ -490,7 +482,7 @@ export default function wirekitInlineEdit(config = {}) {
              *
              * The same check covers alt-tab, the other blur nobody performs on purpose:
              * switching windows leaves activeElement on the control, so a draft survives that
-             * too. A `document.hasFocus()` test was tried and is worse in both directions —
+             * too. A `document.hasFocus()` test would be worse in both directions —
              * redundant here, and false in a headless browser, so it would suppress the
              * legitimate close on every automated run while looking correct in a real one.
              */

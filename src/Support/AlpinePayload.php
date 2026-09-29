@@ -14,7 +14,7 @@ use JsonException;
  * reason that only shows up under the CSP build. For anything that is not a
  * scalar it emits `JSON.parse('…')`, and Alpine's CSP evaluator resolves an
  * identifier against the Alpine scope alone — there is no window fallback — so
- * `JSON` is simply not there. Measured against Alpine's own evaluator:
+ * `JSON` is simply not there. Alpine's own evaluator answers:
  *
  *     JSON.parse('[1,2]')   ->  Undefined variable: JSON
  *
@@ -27,7 +27,7 @@ use JsonException;
  * array literals, and its evaluator returns them as-is. So that is what this
  * emits.
  *
- * ## The three escaping traps, all measured rather than assumed
+ * ## The three escaping traps
  *
  * **Unicode must stay literal.** `json_encode` escapes non-ASCII as `\u00fc` by
  * default, and Alpine's CSP tokenizer understands only `\n`, `\t`, `\r`, `\\`
@@ -37,7 +37,7 @@ use JsonException;
  * bundle. The 3.17.2 tokenizer decodes a four-digit escape of that kind, and
  * still drops the backslash of a hex or a code-point escape. A page runs
  * whichever Alpine its Livewire bundles, which this package does not pin, so
- * this emits the one form every tokenizer measured reads back: the literal
+ * this emits the one form every one of these tokenizers reads back: the literal
  * character. `JSON_UNESCAPED_UNICODE` is therefore not a preference, and neither
  * is `JSON_UNESCAPED_LINE_TERMINATORS`: without it U+2028 and U+2029, which
  * arrive in text pasted from PDF and office documents, are escaped as well and
@@ -46,7 +46,7 @@ use JsonException;
  * **A control character has no form every tokenizer reads.** JSON must escape
  * the characters below U+0020. Newline, tab and carriage return keep the three
  * escapes the tokenizer knows; every other one would arrive wrong — `\f` reads
- * back as the letter `f` and `\b` as `b` in every tokenizer measured, and
+ * back as the letter `f` and `\b` as `b` in every one of these tokenizers, and
  * `\u0001` as `u0001` below Alpine 3.17 — and written raw it would put a control
  * character into an HTML attribute. So each becomes U+FFFD, the replacement
  * character, which is also what the HTML parser itself puts in place of a NUL in
@@ -112,10 +112,9 @@ final class AlpinePayload
     /**
      * The same, for a value that must arrive in JavaScript as a STRING.
      *
-     * This exists because of what it replaces. Ninety-five places wrote a prop straight
-     * into a single-quoted JS literal — `x-data="wirekitModal('{{ $name }}')"` — and
-     * `{{ }}` does not protect that position: the browser decodes `&#039;` back to `'`
-     * before Alpine ever evaluates the attribute. Measured, with a benign control:
+     * A prop written straight into a single-quoted JS literal, as in
+     * `x-data="wirekitModal('{{ $name }}')"`, is not protected by `{{ }}`: the browser decodes
+     * `&#039;` back to `'` before Alpine ever evaluates the attribute:
      *
      *     value  "');alert(1);('"   ->  wirekitFoo('');alert(1);('')     <- Alpine runs it
      *     value  "plain-name"       ->  wirekitFoo('plain-name')         <- fine
@@ -141,7 +140,7 @@ final class AlpinePayload
 
     /**
      * Whether an escape, without its backslash, stands for a control character other than
-     * newline, tab and carriage return, the three every tokenizer measured reads back.
+     * newline, tab and carriage return, the three every one of those tokenizers reads back.
      */
     private static function isControlEscape(string $escape): bool
     {

@@ -7,7 +7,6 @@
 "no
 "pick
 "recents"
-"the
 #000,
 #000000),
 #00f
@@ -198,7 +197,6 @@ $wrapperClasses
 (height
 (it
 (its
-(keep
 (left→right)
 (like
 (localStorage,
@@ -424,12 +422,10 @@ $wrapperClasses
 @props([
 @props.
 A
-ABOUT
 ARBITRARY
 Alpha
 An
 BEFORE
-BLOCKER
 BOTH
 Because
 Blade
@@ -465,7 +461,6 @@ Developer
 EVENT,
 EXPLICIT:
 Each
-Enabling
 End
 English
 Escape
@@ -478,7 +473,6 @@ Floating-UI
 Form-category
 Format
 Fully
-GONE,
 HERE
 HSV
 HTML
@@ -486,7 +480,6 @@ HTML's
 Hidden
 Home
 Home/End
-Hooking
 Hue
 IS
 Illuminate\Support\Str;
@@ -531,9 +524,7 @@ Right/Left
 Right/Left,
 SECOND
 SERVER's
-SHAPE,
 SLOT
-SOLVED
 START
 STARTS
 SV-plane
@@ -544,10 +535,6 @@ Slightly
 Spelling
 Str::headline((string)
 Strip
-THAT
-THE
-THINGS
-TWO
 TYPED
 Tailwind
 Text
@@ -564,7 +551,6 @@ WCAG
 WHICH
 WHY
 WRAPS
-What
 Whether
 WireKit
 WireKit::resolveClasses('color-picker',
@@ -623,8 +609,8 @@ __('wirekit::Use
 `_commitRecent()`
 `_commitRecent()`,
 `_endDrag()`
-`_sync(true)`
-`_sync`
+`_sync(true)`,
+`_sync(true)`:
 `announcement`
 `any()`,
 `args`
@@ -710,7 +696,6 @@ announceErrors)
 announced
 announcement
 announces
-another
 answer
 any
 appears
@@ -718,10 +703,8 @@ appended
 appending
 application
 applies,
-applies.
 apply
 are
-argument
 arguments
 aria-atomic="true"
 aria-describedby
@@ -751,7 +734,6 @@ as,
 asks
 assistive
 association
-assumed.
 asterisk.
 at
 attribute
@@ -794,11 +776,10 @@ bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-input)]
 bg-[var(--color-wk-bg-muted)]
 bg-transparent',
-bind
+bind,
 binds
 block
 block,
-blocks
 blurry.
 body
 boolean
@@ -840,6 +821,7 @@ caller's
 caller's.
 calls
 can
+canceled
 cancellation
 cannot
 capability
@@ -896,7 +878,6 @@ clipping/stacking
 close()
 close()"
 closed
-closely:
 coarse)
 coarse)`)
 coerces
@@ -913,7 +894,6 @@ colors')
 comes
 command
 commit
-commit-boundary
 commits
 commonest
 compiles
@@ -922,7 +902,6 @@ component's
 component,
 component.
 computed
-concern).
 config('app.debug'),
 config('wirekit.a11y.announce_error',
 config('wirekit.components.color-picker.format',
@@ -951,7 +930,6 @@ convention
 copy
 costs
 could
-counting
 counts
 covered
 covers
@@ -988,7 +966,7 @@ describes
 description
 desktop
 destroy
-destroyed
+destroyed.
 developer
 deviation,
 device
@@ -1014,8 +992,8 @@ does:
 don't
 drag
 drag's
+drag).
 drag,
-drag-in-progress
 drive)
 dropped
 dropped.
@@ -1033,7 +1011,7 @@ element,
 element:
 element;
 elements
-else
+else.
 else:
 elsewhere
 elsewhere,
@@ -1080,7 +1058,6 @@ fell
 field
 field's
 field.
-fields
 file
 file.
 fill="none"
@@ -1121,9 +1098,7 @@ format'))
 format.
 formattedValue
 formattedValue,
-found
 four
-fourth
 fourth.
 free.
 from
@@ -1182,6 +1157,7 @@ hint
 hit
 hold
 holds
+hook
 hover:text-[color:var(--color-wk-danger-text)]
 hover:text-[color:var(--color-wk-text)]
 how
@@ -1247,12 +1223,11 @@ last
 later
 layer
 layout
-leak,
 learn
+leave
 left
 left/right
 legible
-let
 like
 like,
 line
@@ -1272,14 +1247,12 @@ localized
 long
 longer
 look
-looked
 looks
 lost
 made
 made.
 makes
 malformed
-mark
 mark,
 marker
 match
@@ -1293,7 +1266,6 @@ method
 mirror
 mirrors
 mistake:
-mixed-control
 mobile
 mode
 mode)
@@ -1306,7 +1278,6 @@ much
 must
 name
 name,
-name.
 name="{{
 named
 nameless
@@ -1318,7 +1289,6 @@ nativeOnMobile
 needed,
 needs
 neither,
-nested
 nesting
 nesting:
 network
@@ -1336,7 +1306,6 @@ not.
 note
 nothing
 nothing.
-now
 nowhere
 nudge.
 null
@@ -1348,16 +1317,12 @@ null,
 null;
 null])
 number
-number-input,
-number-input:
 numeric
-obstacle
 of
 off
 oklch
 old
 on
-on"
 on,
 on.
 on:
@@ -1379,11 +1344,10 @@ optimistic
 optimistic-ui:
 or
 order
-other
 otherwise
-otp-input
 out
 outline
+outlives
 outside
 outside.
 over
@@ -1433,11 +1397,10 @@ plane
 plane,
 plane.
 platform's
-plausible
 pointed
 pointer
 pointer`
-pointercancel
+pointercancel,
 pointerdown,
 pointers
 pointing
@@ -1493,7 +1456,6 @@ reading
 readout
 reads
 reads:
-real
 reason
 reasoning
 recent)"
@@ -1528,7 +1490,6 @@ request's
 resolve
 resolveClasses()
 resolves
-resolving
 response
 response.
 restore
@@ -1550,7 +1511,6 @@ root
 root)
 root,
 round
-round.
 rounded-[var(--radius-wk-lg)]
 rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
@@ -1560,7 +1520,6 @@ row
 row,
 row.
 rule
-rule,
 rules),
 s).replace(':brightness',
 sRGB
@@ -1575,7 +1534,6 @@ save.
 saved
 saved,
 saved:
-say
 saying
 says
 says,
@@ -1583,12 +1541,10 @@ scope
 screen
 screen".
 screen')
-seam
 second
 see
 selects
 semantics;
-separates
 separation,
 server
 server,
@@ -1606,8 +1562,6 @@ sheet
 sheet,
 sheets
 ship
-ship.
-shipped.
 should
 shown.
 shows
@@ -1615,13 +1569,11 @@ shows.
 sibling
 side
 silence.
-silently
 silently.
 silhouette
 since
 single
 site
-sites
 sits
 six
 slider
@@ -1630,7 +1582,6 @@ sliders:
 slot
 slot,
 so
-so),
 someone
 somewhere
 space-y-3
@@ -1741,7 +1692,6 @@ together
 toggle
 toggle,
 token:
-too,
 top
 top,
 top-1/2
@@ -1778,7 +1728,7 @@ typed
 typed**,
 typed,
 unchanged.
-uncommitted,
+uncommitted
 unconditional
 unconditionally
 undeclared
@@ -1792,14 +1742,11 @@ unlike
 unnamed
 unreachable,
 unrelated
-unsaved,
 untestable.
-until
 untranslated
 up
 uppercase
 use
-used
 user
 user-chosen
 uses
@@ -1815,7 +1762,6 @@ value
 value')
 value'))
 value'),
-value,
 value.
 value="{{
 vanish
@@ -1833,7 +1779,6 @@ w-4"
 w-[18rem]
 w-[var(--size-wk-target-min)]
 w-full
-waiting
 warning
 was
 way
@@ -1862,7 +1807,6 @@ width.
 window-scoped:
 winning
 wins
-wired
 wirekitColorPicker._anchor)
 wires
 wiring
@@ -1883,6 +1827,7 @@ written
 written.
 wrong
 wrote.
+wrote:
 x-bind:aria-busy="isPending"
 x-cloak
 x-data="wirekitColorPicker({{

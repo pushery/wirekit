@@ -85,11 +85,7 @@ export default function wirekitCombobox(config = {}) {
             // The seeded label is not a search, and treating it as one would make every option
             // but the current selection unreachable: the field pre-fills `query` with the chosen
             // row's label so it reads as the choice, and the filter would then match exactly that
-            // one row.
-            //
-            // Measured 2026-09-18 on a standalone combobox with an initial selection: 5 options,
-            // 1 filtered, before this component was embedded anywhere. It contradicts the
-            // component's own documented contract, which filters "as the user types".
+            // one row. The documented contract filters "as the user types", and nobody typed it.
             if (this.query === '' || this.query === this._seededQuery) {
                 return this.allOptions;
             }
@@ -188,15 +184,11 @@ export default function wirekitCombobox(config = {}) {
                 this._seededQuery = this.query;
             }
 
-            // `selected` also moves from OUTSIDE: `x-modelable` exposes it, so a `wire:model`
+            // `selected` also moves from outside: `x-modelable` exposes it, so a `wire:model`
             // round trip, a parent component's `x-model` or a reset all write it directly, and
-            // none of them goes through selectOption(). Without this the value was right and the
-            // field showed the previous label -- indefinitely, with nothing red anywhere.
-            //
-            // Measured 2026-09-18 in a browser, driving it from `phone`: typing `+43` moved the
-            // parent's country and `selected` followed to AT, while the visible text still read
-            // "Germany (+49)". `wire:model` has had the same hole for releases; it took embedding
-            // the component in another one to make anybody look.
+            // none of them goes through selectOption(). Without this the value would be right
+            // and the field would keep showing the previous label, for instance after `phone`
+            // moves the country to match a typed dialing code.
             //
             // selectOption() keeps its own call rather than leaning on this: that path runs
             // synchronously inside the click, and a watcher flushes a microtask later.
@@ -267,41 +259,32 @@ export default function wirekitCombobox(config = {}) {
                 return;
             }
 
-            // BOTH panels, because there are two: the options list and the
+            // Both panels, because there are two: the options list and the
             // "No results" panel, which is the same box with different content.
-            // Only the list was ever positioned — the empty state sat inline and
-            // `fixed`, so it landed wherever its static position happened to be.
-            // Teleporting them to escape the host's stacking context made that
-            // visible rather than causing it: an unpositioned fixed element at
-            // `<body>` goes to the viewport origin.
-            // By ID, not by `$refs`. Measured after the panels moved to `<body>`,
-            // `$refs.cbxList` is null, so this loop ran over two nulls and
-            // positioned nothing at all. The symptom looked like bad arithmetic —
-            // a panel at 0,1117 against a field at 12,451 — and was the absence of
-            // any arithmetic: a `fixed` element with no top/left sits at its static
-            // position, and getComputedStyle reports that resolved.
+            // Both are `fixed` and teleported to `<body>` to escape the host's
+            // stacking context, and a `fixed` element there that nobody positions
+            // sits at its static position, far from the field.
             //
-            // The teleport is not the cause. Alpine carries a ref across an
-            // `x-teleport`: the directive sets `_x_teleportBack` on the clone, and
-            // `findClosest` hops that back-pointer before it walks up the DOM, so
-            // `x-ref` still registers into the scope that declared the template
-            // (`context-menu.js` reads `this.$refs.panel` on a teleported panel).
-            // The cause is the nested scope, immediately below.
+            // By id, not by `$refs`, because a ref can land in another scope and
+            // leave `$refs.cbxList` null here, and a loop over two nulls positions
+            // nothing. The teleport is not what moves it. Alpine carries a ref
+            // across an `x-teleport`: the directive sets `_x_teleportBack` on the
+            // clone, and `findClosest` hops that back-pointer before it walks up
+            // the DOM, so `x-ref` still registers into the scope that declared the
+            // template (`context-menu.js` reads `this.$refs.panel` on a teleported
+            // panel). The nested scope, immediately below, is what moves it.
             const panels = [
                 this._listId ? document.getElementById(this._listId) : this.$refs.cbxList,
                 this._emptyId ? document.getElementById(this._emptyId) : this.$refs.cbxEmpty,
             ];
 
-            // The ANCHOR by id as well, and this is the half that actually bit.
+            // The anchor by id as well.
             //
-            // `x-ref` registers into the NEAREST `x-data` scope. With `optimistic`
-            // set, the input sits inside the nested optimistic component — so every
-            // ref of this component lands in the CHILD scope and `_place()`, which
-            // lives in the parent, sees an empty registry. Measured: `$refs` has no
-            // keys at all and `$refs.cbxInput` is null, so the positioner ran twice
-            // against a null reference and did nothing. The panel then sat at its
-            // static position and looked like a placement bug rather than an
-            // absent one.
+            // `x-ref` registers into the nearest `x-data` scope. With `optimistic`
+            // set, the input sits inside the nested optimistic component, so every
+            // ref of this component lands in the child scope and `_place()`, which
+            // lives in the parent, sees an empty registry: `$refs.cbxInput` is null
+            // there, and a positioner handed null places nothing.
             const anchor = this._inputId
                 ? document.getElementById(this._inputId)
                 : this.$refs.cbxInput;
@@ -339,13 +322,9 @@ export default function wirekitCombobox(config = {}) {
                     // replaces the whole attribute and every computed value is gone, while
                     // `open` never changed and nothing asks for a new placement.
                     //
-                    // Measured on a Livewire page with the list open and one refresh: `top`
-                    // went from `682.5px` to empty and the list from 683 to 2757, with the
-                    // field still at 679 and `aria-expanded` still true. It never came back.
-                    // That is what an application reported from its own test run — a list at
-                    // exactly `window.innerHeight`, which is where a `fixed` panel with no
-                    // `top` lands when the overlay root sits at the end of a page whose
-                    // content ends at the fold.
+                    // An open list would then drop to its static position after one refresh,
+                    // far from the field, while `aria-expanded` still says it is open, and
+                    // nothing would bring it back.
                     //
                     // `autoUpdate` watches the elements themselves rather than the framework,
                     // so it answers a wipe from any cause: the panel's box changes the moment
@@ -878,10 +857,10 @@ export default function wirekitCombobox(config = {}) {
             // value. Assigning `selected` alone updates the bound attribute and
             // nothing else: Livewire syncs on the event, not on the value.
             //
-            // $root, not $el. The clear button is a CHILD, and a lookup scoped
-            // to it finds no hidden input — measured: the value cleared on
-            // screen while zero input events fired, so wire:model kept the old
-            // one. $root is the x-data element whatever the handler sits on.
+            // $root, not $el. The clear button is a child, and a lookup scoped
+            // to it finds no hidden input: the value would clear on screen while
+            // no input event fired, and wire:model would keep the old one. $root
+            // is the x-data element whatever the handler sits on.
             const hidden = this.$root.querySelector('input[type=hidden]');
 
             if (hidden) {

@@ -1,17 +1,15 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'gap' => config('wirekit.components.row.gap', 'md'),
     'align' => 'center',
     // Line the CONTROLS up when this row holds form fields.
     //
     // A labeled field is taller than an unlabeled one and a field with a hint is taller
-    // still, so any single `align` value lines up the wrong edge for some mix of them.
-    // Measured across six combinations: `center` leaves the controls 13.5px apart, `end`
-    // fixes that and then breaks by 25.5px as soon as one field carries a hint, and
-    // `start`/`stretch`/`baseline` are worse than either.
+    // still, so any single `align` value lines up the wrong edge for some mix of them:
+    // `center` leaves the controls apart, `end` lines them up until one field carries a
+    // hint, and `start`/`stretch`/`baseline` are worse than either.
     //
     // With this on, the row becomes a three-row grid — labels, controls, messages — that
     // every field shares, so a control sits on the control row whatever its neighbors
@@ -29,8 +27,7 @@
     // kit's own components read `--gap-wk-*` in dozens of places. So a
     // repository that followed WireKit's example and wrote
     // `gap-[var(--gap-wk-md)]` could never turn that container into a `row`
-    // without re-spacing it, and kept the raw utility instead — reported by
-    // three separate developers, blocking a conversion sweep each time.
+    // without re-spacing it, and kept the raw utility instead.
     //
     // Default `space`, which is what this prop has always meant. The rung names
     // are unchanged too, so `gap="md"` still resolves exactly as before and
@@ -56,7 +53,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('row', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     // TRI-STATE, not a boolean: `false` (default) · `true` · `"responsive"`.
     //

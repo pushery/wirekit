@@ -16,18 +16,17 @@
  * WireKit ships only this Alpine glue (MIT).
  */
 import wirekitApexChart from './components/chart-apex.js';
-import { reportLateRegistration } from './utils/late-registration.js';
+import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 
 // HOW MANY TIMES THIS FILE IS ON THE PAGE — which is the question the warning below was
 // always trying to ask, and the one it could never answer.
 //
-// It used to count REGISTRATIONS, and this file registers twice by design: once eagerly when
-// Alpine is already present, once again on `alpine:init`. In a Livewire app both always
-// happen, because Livewire assigns `window.Alpine` long before it calls `start()` — so the
-// warning fired on every page of every Livewire application, including pages with no chart on
-// them, and told the developer to go looking for a second copy that was not there. The
-// documentation site instrumented the flag and traced both calls to this one file; that report
-// is what this is.
+// Counting REGISTRATIONS would not answer it, because this file registers twice by design:
+// once eagerly when Alpine is already present, once again on `alpine:init`. In a Livewire app
+// both always happen, because Livewire assigns `window.Alpine` long before it calls `start()` —
+// so a registration count would warn on every page of every Livewire application, including
+// pages with no chart on them, and send the developer looking for a second copy that is not
+// there.
 //
 // A module-scope counter answers the real question. The body runs once per copy of the script,
 // so two is two script tags, which IS the misconfiguration the text describes.
@@ -47,9 +46,9 @@ if (typeof window !== 'undefined') {
 function registerApexChartComponent() {
     // Detect a second registration instead of asserting it is fine.
     //
-    // The comment here used to say "Alpine.data() is idempotent — double-registration is
-    // safe", and that is true of the CALL: the second one simply overwrites the first. It
-    // is not true of the situation. Two entry paths registering the same name means the
+    // `Alpine.data()` is idempotent as a CALL — the second one simply overwrites the first —
+    // but a double registration is not safe as a situation. Two entry paths registering the
+    // same name means the
     // adapter arrived twice — typically `scripts.apex` emitting it while the app also
     // imports it — and whichever runs last silently wins. That is a configuration nobody
     // chose, and it is invisible: charts render, the wrong factory is behind them, and
@@ -78,12 +77,10 @@ document.addEventListener('alpine:init', () => {
 });
 
 // Fallback: if Alpine was already started before this script loaded, register now, so
-// charts in DOM Alpine has not walked yet still work. It does NOT rescue the charts
-// already on the page — measured: an element whose x-data named a component that did
-// not exist at walk time stays dead, and a re-walk does not revive it. The sentence
-// this comment used to carry ("otherwise the component never registers at all") was
-// true about the registration and wrong about the charts.
+// charts in DOM Alpine has not walked yet still work. It does not rescue the charts
+// already on the page: an element whose x-data named a component that did not exist
+// at walk time stays dead, and a re-walk does not revive it.
 if (window.Alpine?.version) {
-    registerApexChartComponent();
-    reportLateRegistration('wirekit-apex.js', () => reachedByInitEvent);
+    const names = registeredNames(window.Alpine, registerApexChartComponent);
+    reportLateRegistration('wirekit-apex.js', () => reachedByInitEvent, names);
 }

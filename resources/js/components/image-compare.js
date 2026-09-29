@@ -78,15 +78,13 @@ export default function wirekitImageCompare(config = {}) {
         startDrag(event) {
             event.preventDefault();
 
-            // Canceling pointerdown also cancels the FOCUS it would have moved to the
-            // pressed control — that move is part of the default action, and this component
-            // had no other route to it: there was no focus call in the file at all. Without
-            // this line the handle the reader just grabbed is not the focused element, so
-            // the focus ring never appears and the ArrowRight pressed to fine-tune scrolls
-            // the page instead of moving the divider. That pointer-then-keyboard sequence is
-            // how a compare slider is used, not an edge case. Measured in Chromium before
-            // the fix: `document.activeElement` was still `body` after a real click on the
-            // handle. Same defect, same fix, as the sibling range-slider.
+            // Canceling pointerdown also cancels the focus it would have moved to the
+            // pressed control — that move is part of the default action. Without this line
+            // the handle the reader just grabbed is not the focused element, so the focus
+            // ring never appears and the ArrowRight pressed to fine-tune scrolls the page
+            // instead of moving the divider. That pointer-then-keyboard sequence is how a
+            // compare slider is used, not an edge case. The sibling range-slider does the
+            // same.
             //
             // `preventScroll` because the control is already under the pointer — there is
             // nothing to bring into view, and scrolling here would pull the track out from

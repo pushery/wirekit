@@ -16,6 +16,7 @@ use Illuminate\View\Compilers\BladeCompiler;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Components\FieldSet;
+use Pushery\WireKit\Components\SidebarGroup;
 use Pushery\WireKit\Console\BoostSkillsCommand;
 use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
@@ -63,11 +64,11 @@ class WireKitServiceProvider extends ServiceProvider
         // A flat merge is correct only for a flat config. Ours nests — every
         // component's defaults live under `components.<name>` — so a published
         // `components` array REPLACES the package's entire section rather than
-        // adding to it. Measured: a config published when it carried one
-        // component override reduces every component section to that one, and
-        // each key added since becomes unreachable. Nothing fails; the components simply
+        // adding to it: a config published with one component override would
+        // reduce every component section to that one, and each key added since
+        // would be unreachable. Nothing would fail; the components would simply
         // fall back to their in-Blade defaults, and `config('wirekit.components.
-        // theme-controller.variant')` returns null forever.
+        // theme-controller.variant')` would return null forever.
         //
         // The published file is a snapshot by design; it must not also be a
         // ceiling.
@@ -191,12 +192,11 @@ class WireKitServiceProvider extends ServiceProvider
             // `lang/en.json` is the complete, generated reference of every such
             // key.
             //
-            // This paragraph used to describe the English wording as the key
-            // itself. That was true before the prefix, and it is the reason an
+            // The English wording is the VALUE, not the key, which is why an
             // app-side catalog written from memory resolves nothing: an app's
-            // own `de.json` is a different key from the one a component asks
-            // for. Copy the keys out of the reference rather than retyping the
-            // English.
+            // own `de.json` keyed by the English is a different key from the one
+            // a component asks for. Copy the keys out of the reference rather
+            // than retyping the English.
             //
             // WHAT THE PUBLISHED COPY IS: an inert REFERENCE, not a load path.
             // Laravel's JSON loader reads `lang/{locale}.json` plus any directory
@@ -206,33 +206,22 @@ class WireKitServiceProvider extends ServiceProvider
             // (`cp lang/vendor/wirekit/en.json lang/de.json`) and translate the
             // values there; the keys match, so the app copy wins per key.
             //
-            // This comment used to say the copy was RENAMED in place and picked up
-            // automatically. It is not, and renaming it does nothing at all — the
-            // failure is silent, which is the expensive kind. docs/localization.md
-            // has always described the working path correctly; only this comment,
-            // the one a developer reads while looking at the publish call, did not.
+            // Renaming the published copy in place does nothing, and silently: the
+            // copy has to move to the lang root. docs/localization.md describes the
+            // same path.
+            //
             // Every shipped catalog, not just the reference. A translated one is
             // already ACTIVE without publishing — `loadJsonTranslationsFrom`
             // below sees it — so this tag exists for the developer who wants to
             // adjust a phrase to their own product's voice, and that is as true
             // of German as of English.
             //
-            // DERIVED rather than listed, and the list is why. It named English and
-            // German at the moment those were the two catalogs; every language that
-            // landed afterwards shipped while the tag kept publishing the same pair,
-            // so the documentation promised the whole set and the command handed over
-            // a fraction of it. Nothing failed — a publish tag cannot notice a file it
-            // was never told about. Now a catalog is published by existing, and the
-            // next language needs no edit here at all. The glob runs only under
-            // `runningInConsole()`, so it costs the request path nothing.
-            //
-            // The tallies this paragraph used to carry are gone for the same reason
-            // the hand-written list is. It counted the catalogs that had shipped and
-            // the languages the docs promised — both correct on the day the glob
-            // replaced the list, and both wrong the moment the next catalog landed,
-            // which left the sentence describing the fix as the one thing still
-            // needing an edit by hand. A paragraph about a drift is a poor place to
-            // keep one.
+            // Derived from the files rather than listed: a publish tag cannot notice a
+            // catalog it was never told about, so a hand-written list would keep
+            // publishing the languages it named while new ones shipped beside it. A
+            // catalog is published by existing, and the next language needs no edit
+            // here. The glob runs only under `runningInConsole()`, so it costs the
+            // request path nothing.
             $catalogs = [];
 
             foreach (glob(__DIR__.'/../lang/*.json') ?: [] as $catalog) {
@@ -356,11 +345,15 @@ class WireKitServiceProvider extends ServiceProvider
         $this->callAfterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
             $blade->anonymousComponentPath(__DIR__.'/../resources/views/components', $prefix);
 
-            // One file on that path has a class behind it, under the same tag. A set hands the
-            // controls in its slot what they point at, and a slot renders before the view that
-            // holds it; only a constructor runs early enough. The markup and the declared props
-            // stay in the view, so every reader of `@props` still finds them there.
+            // Two files on that path have a class behind them, under the same tag. The markup and
+            // the declared props stay in the view, so every reader of `@props` still finds them
+            // there. A set hands the controls in its slot what they point at, and a slot renders
+            // before the view that holds it; only a constructor runs early enough.
             $blade->component(FieldSet::class, $prefix.'::field.set');
+
+            // The group does the opposite: it keeps its own `collapsible` from the rows in its
+            // slot, which read the sidebar's through `@aware`.
+            $blade->component(SidebarGroup::class, $prefix.'::sidebar.group');
         });
 
         // Register class-based Blade components with 'wirekit' prefix
@@ -422,10 +415,9 @@ class WireKitServiceProvider extends ServiceProvider
             $expression = trim($expression);
             $nonceExpr = $expression === '' ? "''" : $expression;
 
-            // The body used to inline the published-vs-dist decision, a copy of the one in
-            // scriptTag(). It now calls the shared helper, so the staleness rule cannot
-            // diverge between the stylesheet and the scripts again — which is exactly how
-            // the CSS half of a wrong rule went unreported.
+            // The body calls the shared helper rather than inlining the published-vs-dist
+            // decision a second time, so the staleness rule cannot diverge between the
+            // stylesheet and the scripts.
             return '<?php
                 $__wk_nonce = '.$nonceExpr.';
                 $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
@@ -761,15 +753,14 @@ class WireKitServiceProvider extends ServiceProvider
 
         // `data-navigate-once` — the bundle registers Alpine components and document
         // listeners, and that is a once-per-DOCUMENT job. Livewire's navigate re-executes a
-        // head script on every client-side hop unless the attribute is there, which its own
-        // bundle carries and this one did not: measured by an adopting application at one
-        // extra execution per hop against Livewire's steady one, with the listener set
-        // growing for as long as somebody navigates without a full reload. In a console
-        // shell that is the normal way to use the app.
+        // head script on every client-side hop unless the attribute is there, as its own
+        // bundle's tag has it. Without it the bundle runs once more per hop, and the
+        // listener set grows for as long as somebody navigates without a full reload,
+        // which in a console shell is the normal way to use the app.
         //
         // Counting <script> tags does not see it — the old tag is replaced rather than added,
-        // so the DOM keeps showing exactly one. The measurement that does is
-        // `performance.getEntriesByType('resource')` across two real hops.
+        // so the DOM keeps showing exactly one; `performance.getEntriesByType('resource')`
+        // across two real hops does.
         //
         // Unconditional rather than gated on Livewire being installed. It is an inert data
         // attribute to anything that does not read it, and a detection branch here would be
@@ -806,10 +797,8 @@ class WireKitServiceProvider extends ServiceProvider
     /**
      * The stylesheet tag, decided by the same rule as `scriptTag()`.
      *
-     * This exists because the rule used to live twice — once here, once inlined in the
-     * `@wirekitStyles` directive body — and the two were copy-paste twins. When the
-     * staleness comparison turned out to be wrong, the report named only the JS half,
-     * because that is the half anybody could see. One rule, one place.
+     * Both tags decide through `publishedIsStale()` and no directive inlines the rule, so
+     * the stylesheet and the scripts cannot disagree about which copy is current.
      *
      * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
      */
@@ -831,14 +820,12 @@ class WireKitServiceProvider extends ServiceProvider
     /**
      * Is the published copy something other than what this package ships?
      *
-     * COMPARED BY CONTENT, and the previous rule — `filemtime($dist) > filemtime($published)`
-     * — is why. A modification time answers "which file was written later", and that is not
-     * the question. Composer writes an upgraded `dist/` with whatever timestamp the archive
-     * or the filesystem hands it, and a `vendor:publish` from the PREVIOUS version can easily
-     * carry a later one. The comparison then says "the published copy is newer, therefore
-     * current" and serves the old bytes — confidently, with a fresh-looking `?v=` stamp taken
-     * from that same wrong file. There is no error anywhere; the developer sees an upgrade
-     * that did not arrive, and nothing in the page disagrees with them.
+     * Compared by content, not by modification time. A modification time answers "which
+     * file was written later", and that is not the question: Composer writes an upgraded
+     * `dist/` with whatever timestamp the archive or the filesystem hands it, and a
+     * `vendor:publish` from the previous version can carry a later one. A time comparison
+     * would then call the published copy current and serve the old bytes, with a
+     * fresh-looking `?v=` stamp and no error anywhere.
      *
      * A missing published file is stale by definition. Beyond that: sizes first, because two
      * files of different length cannot be equal and the check costs one stat; a hash only when
@@ -876,12 +863,12 @@ class WireKitServiceProvider extends ServiceProvider
     }
 
     /**
-     * Middleware for the asset routes — none by default, and that IS the point.
+     * Middleware for the asset routes: none by default.
      *
-     * These routes used to sit in the `web` group, which bought them
-     * `StartSession` and `AddQueuedCookiesToResponse`. The handlers below read a
-     * file off disk: no session, no CSRF token, no auth, no model binding. The
-     * group gave them nothing and cost them two things.
+     * The `web` group would add `StartSession` and `AddQueuedCookiesToResponse`.
+     * The handlers below read a file off disk: no session, no CSRF token, no auth,
+     * no model binding, so the group would give them nothing and cost them two
+     * things.
      *
      * The expensive one is a header combination. Every asset answer declares
      * `public, max-age=31536000, immutable`, and `web` added `Set-Cookie` beside
@@ -896,14 +883,10 @@ class WireKitServiceProvider extends ServiceProvider
      * can serve these files, and the cookie is exactly what makes a CDN decline
      * them. The header promised what the cookie prevented.
      *
-     * It is CONFIGURABLE rather than simply removed, because removing it would
-     * be a change with no way back. An application that hangs its own security
-     * headers or HTTPS enforcement in `web` would have no way to restore them
-     * for these asset routes short of forking. `wirekit.assets.middleware` is
-     * that way back — and the default is what makes the response honest.
-     *
-     * The sentence above names the set, not its size: a count beside the array it
-     * describes is a second copy of `count()`, and it is the copy that drifts.
+     * It is configurable rather than fixed, because an application that hangs its
+     * own security headers or HTTPS enforcement in `web` needs a way to restore
+     * them for these asset routes short of forking. `wirekit.assets.middleware` is
+     * that way, and the empty default is what keeps the response cacheable.
      *
      * @return array<int, string>
      */

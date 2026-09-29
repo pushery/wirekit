@@ -55,10 +55,8 @@ export function createFocusTrap(container, {
         // subsequent Tab is `preventDefault()`ed and handed to that same node — so
         // focus does not move at all.
         //
-        // Reachable from a shipped docs preview: the popover placement demo opens
-        // four panels whose entire content is plain text. `app-shell.blade.php`
-        // measured exactly this in a browser and fixed it locally with its own
-        // conditional `:tabindex`; the shared helper is where it belongs.
+        // Reachable whenever a panel's entire content is plain text, as in a
+        // popover that holds only a sentence.
         //
         // Lazy on purpose. The library only resolves this option once its tabbable
         // set comes up empty (`state.tabbableGroups.length <= 0 && !getNodeForOption(…)`

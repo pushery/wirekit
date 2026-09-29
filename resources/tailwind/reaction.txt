@@ -127,6 +127,7 @@ Pushery\WireKit\WireKit;
 SERVER
 Same
 Shown
+So
 The
 UNBOUND
 WHICH
@@ -190,12 +191,11 @@ axe
 bag
 been
 before
-being
 binds
 block,
-blocked
 boolean,
 browser
+browser:
 build
 built
 button
@@ -204,12 +204,10 @@ by
 call
 call,
 call.
-called
 caller's
 cannot
 capability
 carry
-case
 case,
 cast
 change
@@ -276,6 +274,7 @@ implode(',
 implode(…,
 imports
 in
+in,
 inside
 into
 is
@@ -311,7 +310,6 @@ no-JS
 node,
 not
 nothing
-now,
 null
 null,
 number
@@ -321,13 +319,13 @@ on.
 once
 one
 one's
-one,
 one.
 only
 opposite
 optimistic
 optimistic-ui:
 ordinary
+otherwise
 own
 owns
 page
@@ -335,7 +333,7 @@ paint
 people
 per
 person
-plan
+plural
 plus
 prod).
 prop's
@@ -377,7 +375,6 @@ separate
 server
 server-only
 server-side
-server:
 should
 show
 silently.
@@ -390,7 +387,6 @@ spreads
 state
 state.
 stays
-stopped
 str_replace('_',
 string,
 supported
@@ -419,10 +415,8 @@ undo
 undone.'),
 unknown
 unreachable,
-until
 up
 use
-used
 value.
 variant
 via

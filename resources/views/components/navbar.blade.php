@@ -48,7 +48,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('navbar', $attributes->getAttributes());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false);
     $forceMobile = BooleanProp::from($forceMobile, false);
@@ -75,8 +75,8 @@
     };
 
     // The CHROME layer, not the shared sticky one. A popover opened in page content is a
-    // teleported panel at --z-wk-dropdown (50); this bar used to sit at --z-wk-sticky (40)
-    // and was therefore painted over — arithmetic, not a quirk. A panel anchored INSIDE
+    // teleported panel at --z-wk-dropdown (50), and at --z-wk-sticky (40) this bar would be
+    // painted over — arithmetic, not a quirk. A panel anchored INSIDE
     // this bar opens downward and never overlaps it, so nothing is lost; a modal is still
     // above, which is correct.
     // Sticks BELOW a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
@@ -92,13 +92,12 @@
      * `box-sizing: border-box` the cap eats that padding — so the visible content edge
      * lands at (viewport - tier) / 2 + padding. `main`, `hero`, `cta` and `footer` all
      * use the opposite shape (padding on the outer element, cap on an inner one), so
-     * their content edge is (viewport - tier) / 2. A container-wrapped navbar therefore
-     * sat exactly one `--padding-wk-x-lg` INSIDE the spine every other page-edge
-     * component sits on -- 16px, on every page that used it.
+     * their content edge is (viewport - tier) / 2. With the plain cap, a container-wrapped
+     * navbar would sit exactly one `--padding-wk-x-lg` inside the spine every other
+     * page-edge component sits on.
      *
-     * Widening the cap by that padding puts the CONTENT box on the tier, which is what
-     * the prop is understood to mean. Measured on the stacked shell: brand at 240 became
-     * brand at 256, against a content column starting at 256.
+     * Widening the cap by that padding puts the content box on the tier, which is what
+     * the prop is understood to mean: the brand lines up with the content column below.
      *
      * Tailwind arbitrary values take no spaces, hence `calc(a+2*b)` unspaced.
      */
@@ -132,16 +131,12 @@
     // ONE navigation list, laid out two ways — a horizontal row beside the brand above the
     // breakpoint, a full-width stack under it below.
     //
-    // It used to be two: a row in the bar and a second copy in the disclosure. That is the
-    // same duplication the actions slot had, with the same consequence — a slot is rendered
-    // ONCE into a string and echoed twice, so every id inside it exists twice. Harmless for
+    // One list, not a row in the bar plus a copy in the disclosure: a slot is rendered once
+    // into a string, so echoing it twice makes every id inside it exist twice. Harmless for
     // plain links, which carry none; not harmless for a dropdown in the list, whose panel id,
-    // `aria-controls` and Alpine scope all appeared twice. Measured at 390px: three duplicate
-    // panel ids on one preview, and the visible trigger opening a panel anchored to the
-    // hidden copy.
-    //
-    // The reported symptom was in the actions slot. This is the same defect one slot over,
-    // found by generalizing the guard rather than by a second report.
+    // `aria-controls` and Alpine scope would all appear twice, with the visible trigger
+    // opening a panel anchored to the hidden copy. The actions cluster below is rendered
+    // once for the same reason.
     $navListClasses = $forceMobile
         ? implode(' ', [
             'w-full order-last flex-col items-stretch gap-1',
@@ -155,20 +150,14 @@
             'md:w-auto md:order-none md:flex-row md:items-center md:flex-1 md:ml-[var(--padding-wk-x-lg)]',
             'md:border-t-0 md:mt-0 md:pt-0 md:pb-0',
         ]);
-    // ONE actions cluster, in the bar, at every width — and the "one" is the point.
+    // One actions cluster, in the bar, at every width, and the "one" is the point. Hiding
+    // it below `md` and re-emitting the slot in the disclosure would look like a responsive
+    // move and be a duplication: every id inside the slot would exist twice, and a visible
+    // account trigger would open its panel at the viewport origin, anchored to the hidden
+    // copy, whose box is 0x0. A disclosure would also stack the actions in a column, turning
+    // a bell icon into a full-width row, where icons want to stand beside each other.
     //
-    // The bar used to hide this cluster below `md` and the disclosure below re-emitted the
-    // same slot, which looks like a responsive move and is a duplication: a slot is rendered
-    // ONCE into a string and echoed twice, so every id inside it exists twice. Measured at
-    // 390px on the stacked shell: `wk-dropdown-panel-1` appeared twice, and clicking the
-    // visible account trigger opened its panel at the viewport origin — Floating UI had
-    // anchored it to the hidden copy, whose box is 0x0 at 0,0. Reported as the account menu
-    // opening somewhere other than its button.
-    //
-    // The disclosure also stacked them in a column, so a bell icon became a 334px-wide row.
-    // Reported in the same breath: the icons want to stand beside each other.
-    //
-    // Both are gone with one render. An action cluster is icon-sized by convention — that is
+    // One render avoids both. An action cluster is icon-sized by convention — that is
     // what an actions slot in a bar is for — and beside the hamburger it fits the narrowest
     // supported width with room to spare.
     $actionsClasses = 'flex items-center gap-[var(--gap-wk-sm)]';
@@ -215,6 +204,9 @@
 
 <nav
     x-data="{ mobileOpen: false }"
+    {{-- Escape closes the disclosure from anywhere in the bar. A scrolling row has nothing to
+         close. --}}
+    @unless($scroll) x-on:keydown.escape="mobileOpen = false" @endunless
     {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
          attributes, and the bag renders after this line — so a caller's `aria-label` was
          parsed and then discarded, silently, on the one element whose name decides how the
@@ -227,10 +219,10 @@
     <div class="{{ $containerClasses }}">
         {{-- Brand / Logo slot.
 
-             A ROW, not a block. The canonical brand is a mark beside a wordmark, and the
+             A row, not a block. The canonical brand is a mark beside a wordmark, and the
              wordmark is `<x-wirekit::text>`, which renders a block `<p>` — so in a block
-             wrapper the two stacked: measured 38x53, with the name sitting a full line under
-             the avatar. Nothing in the slot can fix that from the inside, because the wrapper
+             wrapper the two would stack, with the name a full line under the mark. Nothing
+             in the slot can fix that from the inside, because the wrapper
              is what decides the flow, and a developer supplying a brand should not have to
              know to wrap it a second time.
 
@@ -258,6 +250,9 @@
             id="{{ $mobileId }}"
             @if(! $forceMobile) data-wk-navbar-items @endif
             x-show="mobileOpen"
+            {{-- Hiding the list drops the focus inside it, so Escape hands it to the menu button
+                 first. The key then reaches the bar, which closes the list. --}}
+            x-on:keydown.escape="mobileOpen && $refs.wkNavbarToggle.focus()"
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 -translate-y-1"
             x-transition:enter-end="opacity-100 translate-y-0"
@@ -282,6 +277,7 @@
         @unless($scroll)
         <button
             type="button"
+            x-ref="wkNavbarToggle"
             x-on:click="mobileOpen = !mobileOpen"
             :aria-expanded="mobileOpen ? 'true' : 'false'"
             aria-controls="{{ $mobileId }}"

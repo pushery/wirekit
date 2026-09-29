@@ -83,7 +83,6 @@ JSON_UNESCAPED_SLASHES
 JSON_UNESCAPED_UNICODE
 Latin-1
 Left
-Measured
 Offer
 Output
 PHP
@@ -133,7 +132,6 @@ alone
 already
 an
 and
-any
 application
 applies
 apply
@@ -142,7 +140,6 @@ array
 array_key_exists('@context',
 array_key_exists('@graph',
 as
-asserted:
 at
 attribute
 auto-derived
@@ -200,13 +197,11 @@ fails
 failures:
 false
 false)
-file
 flags
 footgun:
 for
 fragments,
 from
-guard
 hand-written
 harmless
 here
@@ -295,8 +290,6 @@ reach
 reaches
 readability.
 readable
-reason
-refutes
 reject
 rendered.');
 renders

@@ -19,13 +19,13 @@
  *
  * Pick exactly one — but loading this bundle onto a page that already has an
  * Alpine does not leave it inert. It registers every WireKit component on the
- * Alpine that is ALREADY RUNNING and does not start a second one, then
- * logs a console warning naming that choice; see the `hostAlpine` block below
- * for why skipping the registrations instead was the defect this replaced.
+ * Alpine that is already running and does not start a second one, then logs a
+ * console warning naming that choice; the `hostAlpine` block below says why the
+ * registrations cannot be skipped instead.
  *
- * The measured gzip size of every artifact lives in one place — the size table
- * in `dist/README.md`, which is checked against the real bytes. A second copy
- * here would have no measurement behind it and would drift on the next build.
+ * The gzip size of every artifact lives in one place, the size table in
+ * `dist/README.md`, which is checked against the real bytes; a second copy
+ * here would drift on the next build.
  */
 
 import Alpine from 'alpinejs';
@@ -138,8 +138,8 @@ import wirekitStream from './components/stream.js';
  * walk the same DOM, which produces a runtime warning that is hard to
  * debug — so this bundle does not start its own. It registers every
  * component on the Alpine that is already running and says so in the
- * console; the `hostAlpine` block below carries why skipping the
- * registrations instead was the defect that reading replaced.
+ * console; the `hostAlpine` block below carries why the registrations
+ * cannot be skipped instead.
  */
 function alreadyHasAlpine() {
     return typeof window !== 'undefined'
@@ -150,40 +150,27 @@ function alreadyHasAlpine() {
 /**
  * The Alpine that will actually walk this page — the host's if it brought one, ours if not.
  *
- * THIS IS THE WHOLE FIX, AND THE BUG IT REPLACES WAS THE OPPOSITE READING. When an Alpine was
- * already present, this bundle logged a warning and skipped EVERY `Alpine.data(...)` call. Its
- * intent was right — two Alpines must not both start — but skipping the registrations threw
- * out the half that still had to happen. The page then had one running Alpine walking markup
- * full of `x-data="wirekitDropdown()"` that nothing anywhere had registered.
+ * Two Alpines must not both start, but the registrations still have to happen: a page whose
+ * running Alpine walks markup full of `x-data="wirekitDropdown()"` that nothing registered
+ * renders perfectly and does nothing, with one "is not defined" error per component, each
+ * ending that component's init.
  *
- * The symptom was a page that renders perfectly and does nothing, which is the failure mode
- * this repository hunts. Measured on the sample's teleport-seam page under `?bundle=csp`:
- * 31 console errors, the readable ones being `wirekitDropdown is not defined`,
- * `wirekitAlertDialog is not defined`, `selected is not defined`, `dropdownOpen is not
- * defined` — one Alpine expression failure per component, each killing that component's init.
- * The thirteen `Illegal invocation` errors ahead of them came from inside `livewire.js`'s own
- * effect machinery, which is downstream damage and named a file with nothing to do with it.
- *
- * Registering on the host instead is what a self-contained bundle owes a page that already has
- * an Alpine: cooperate with the one that is running rather than compete with it and lose.
+ * Registering on the host is what a self-contained bundle owes a page that already has an
+ * Alpine: cooperate with the one that is running rather than compete with it and lose.
  */
 const hostAlpine = alreadyHasAlpine() ? window.Alpine : null;
 
 /** Where every registration below goes. */
 const target = hostAlpine ?? Alpine;
 
-// The overlay root goes in FIRST, and outside the branch below — it is plain DOM and
-// has nothing to do with which Alpine won.
+// The overlay root goes in first, and outside the branch below: it is plain DOM and
+// has nothing to do with which Alpine won. The markup teleports to `#wk-overlay-root`,
+// and `x-teleport` on a selector that matches nothing warns and then throws inside
+// Alpine's init walk, so one missing container would take the whole page's Alpine
+// down with it.
 //
-// It sat inside the else-branch, and that was a fatal in the exact configuration this
-// bundle is most often reached for. A Livewire app already has Alpine, so this bundle
-// skips itself by design — but the markup still teleports to `#wk-overlay-root`, and
-// `x-teleport` on a selector that matches nothing warns and then throws inside
-// Alpine's init walk. So one missing container takes the whole page's Alpine down with
-// it, and the visible symptom is every OTHER component reporting "is not defined".
-//
-// Cheap when it is redundant (one div), and the difference between an inert bundle and
-// a broken page when it is not.
+// Cheap when it is redundant (one div), and the difference between a working page and
+// a broken one when it is not.
 installOverlayRoot();
 
     // Alpine's collapse plugin, registered before any component.

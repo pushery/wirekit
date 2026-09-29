@@ -205,11 +205,11 @@ export default function wirekitColorPicker(config = {}) {
                 // control and it announces itself, while the wrapper is a plain div
                 // that would be a stop saying nothing.
                 initialFocus: () => this.$refs.plane ?? panel,
-                // WHERE FOCUS GOES WHEN THE TRAP LETS GO, named explicitly. The trap
+                // Where focus goes when the trap lets go, named explicitly. The trap
                 // otherwise returns focus to whatever held it at activation, and the
-                // panel is teleported out of this subtree — measured on the sibling
-                // popover, that left focus on <body>, which drops a keyboard reader
-                // back to the top of the page (WCAG 2.4.3).
+                // panel is teleported out of this subtree, so focus would land on
+                // <body>, which drops a keyboard reader back to the top of the page
+                // (WCAG 2.4.3).
                 setReturnFocus: () => this.$refs.trigger ?? false,
             });
             this._trap.activate();

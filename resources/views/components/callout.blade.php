@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'variant' => config('wirekit.components.callout.variant', 'info'), // back-compat alias of `intent`
     'intent' => null,            // canonical color axis: primary | neutral | info | success | warning | danger. null → falls back to `variant`
@@ -26,7 +25,7 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $icon = BooleanProp::from($icon, true);
     $bordered = BooleanProp::from($bordered, true);
@@ -117,16 +116,14 @@
 
      A PLAIN <div>, and the two roles it deliberately does NOT take:
 
-     It used to be an <aside>, for "semantic landmark (complementary content)". An <aside>
-     IS a landmark — role="complementary" — and a page already has one: the shell's own
-     sidebar. Showing a callout therefore put two same-role landmarks on the page with no
-     distinguishing name, and axe fails that. Worse, the violation it reports points at the
-     SIDEBAR, so the first place anyone looks is the wrong one. `complementary` is reserved
+     Not an <aside>: an <aside> IS a landmark — role="complementary" — and a page already has
+     one, the shell's own sidebar. A callout as an aside would put two same-role landmarks on
+     the page with no distinguishing name, which axe fails, and the violation it reports points
+     at the SIDEBAR, so the first place anyone looks is the wrong one. `complementary` is reserved
      for a self-contained section significant to the page; a note in the flow of the text is
      neither.
 
-     It is also NOT role="status" or role="alert", which is what the report proposed. Both
-     are live regions. This component is persistent content that is already present when the
+     It is also NOT role="status" or role="alert". Both are live regions. This component is persistent content that is already present when the
      page loads, so a live region announces nothing at load — and then announces the ENTIRE
      callout every time Livewire re-renders the element, though nothing about it changed.
      That trades a landmark warning for spurious speech, which is the worse defect.

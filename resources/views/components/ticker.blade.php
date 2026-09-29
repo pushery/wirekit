@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     'label' => null,
     'value' => null,
@@ -158,13 +157,10 @@
              bare `<svg>`, a canvas, an image sprite. Given one, the wrapper becomes the
              graphic and the name is the CALLER's rather than an invented one.
 
-             `hasActualContent()`, not `isNotEmpty()`, and this one is belt-and-braces rather
-             than a fix: `isNotEmpty()` is a strict `!== ''` and does not trim, which bit
-             `shell-bar` in this same campaign. It was measured here and does NOT bite — Blade
-             trims a default slot holding only whitespace before the component sees it, in
-             both the `Blade::render` and the test-helper path, with a blank line and with a
-             named-slot-only call. The trimming variant simply answers the question the line
-             is asking, so it does not depend on that staying true. --}}
+             `hasActualContent()`, not `isNotEmpty()`: `isNotEmpty()` is a strict `!== ''` and
+             does not trim. Blade trims a default slot holding only whitespace before the
+             component sees it, but the trimming variant answers the question the line is
+             asking, so it does not depend on that staying true. --}}
         <span
             @if(filled($trendLabel)) role="img" aria-label="{{ $trendLabel }}" @endif
             class="h-8 w-full"

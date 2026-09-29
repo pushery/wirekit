@@ -5,7 +5,6 @@
 "default"
 "heroicon-m-inbox"
 "overflow-{$overflow}".
-"when
 #1
 $_)
 $animateAttr
@@ -251,7 +250,6 @@ $warnNoBody
 (each
 (function_exists('svg')
 (inline-block
-(interactive)"
 (its
 (no
 (or
@@ -291,8 +289,6 @@ $warnNoBody
 2rem,
 3rem.
 500s
-50367,
-50600
 :
 </div>
 </span>
@@ -357,7 +353,6 @@ CALL
 COMPLETE
 CONTAINER,
 CSP
-CSS:
 Catching
 Check
 Comfortable
@@ -393,9 +388,9 @@ If
 In
 It
 Its
+Keyed
 Logger
 MOST
-Measured
 Merged
 Mirrors
 NOT
@@ -427,7 +422,6 @@ Read
 Reapply
 Render
 Renders
-Reported
 Resolve
 RuntimeException
 SAME
@@ -499,7 +493,6 @@ Written
 __('wirekit::(opens
 __toString
 `$as`
-`$href
 `$href`
 `$tag`),
 `$tag`,
@@ -524,21 +517,14 @@ __toString
 `as="a"`
 `as="button"`
 `as="div
-`as`
 `auto`
 `base`,
 `block`
-`border-[var(--color-wk-accent)]`
-`border-[var(--color-wk-border)]`
 `border-color`
-`border-transparent`
 `chevron`
 `class="h-12
 `console`
-`cursor-pointer`,
 `e()`
-`elevated`
-`flat`
 `heroicon-m-inbox`
 `href`
 `icon`
@@ -556,7 +542,6 @@ __toString
 `str_starts_with`
 `strip_tags()`
 `surface="outline"`
-`surface="soft"`
 `surface`
 `tabindex`
 `tagName()`
@@ -574,6 +559,7 @@ about.
 above.
 absent
 absent,
+accent
 accept
 accessibility
 accessible
@@ -584,7 +570,6 @@ action.
 acts
 actual
 add
-added
 admits
 affordance
 affordance.
@@ -596,6 +581,7 @@ all,
 all.
 allowed
 allowlist
+alone,
 along:
 already
 also
@@ -610,7 +596,6 @@ any
 app(IconResolver::class)->resolve($name);
 appending:
 application
-application's
 arbitrary
 are
 area
@@ -628,12 +613,10 @@ around
 array_filter([
 array_keys($sizeMap));
 arrive
-arrived:
 as
 as,
 asked
 asks
-asserted:
 at
 attachment-group
 attachment-group's
@@ -722,7 +705,6 @@ card:
 cards
 carries
 carry
-carrying
 case
 cast
 catch
@@ -763,7 +745,6 @@ collapsed
 column
 combinations
 comes
-comment
 compiles
 component
 component's
@@ -783,7 +764,6 @@ conflict
 console
 console).
 console.warn:
-consuming
 content
 content.
 context
@@ -871,7 +851,6 @@ either
 element
 element,
 elements
-elements.
 elevated
 else
 elseif
@@ -886,7 +865,6 @@ ends
 entry
 enum
 equality
-equated
 escapes
 escaping
 event
@@ -901,7 +879,6 @@ exists.
 explicitly
 express
 extends
-factory:
 fail
 failure
 fallback
@@ -913,7 +890,6 @@ false);
 false,
 false;
 feature
-file
 files
 fill
 filter,
@@ -963,15 +939,12 @@ glyph
 glyph.
 goes
 goes.
-got
 guarantees
-guard
 guard:
 guess
 h-5
 h/w
 half
-hand-rolling
 hand-written
 handler.
 hanging
@@ -1038,7 +1011,6 @@ inter-attribute
 interactive
 interactive,
 interactive-affordance
-interactive.
 interpolated
 into
 is
@@ -1090,7 +1062,6 @@ logger()->warning(
 look
 looked
 looks
-lose
 lost
 loudly,
 main
@@ -1107,9 +1078,10 @@ matching
 may
 mean
 means
-meant.
+meant:
 media
 merge
+message
 message:
 metric
 migrated.
@@ -1123,8 +1095,6 @@ misuse.
 modal
 modals,
 modifiers
-moment
-more.
 mouse,
 moves
 moving
@@ -1165,6 +1135,7 @@ not.
 nothing
 nothing,
 nothing.
+nothing:
 now.
 null
 null)
@@ -1176,7 +1147,6 @@ of
 off
 off,
 off;
-offset
 older
 omits.
 on
@@ -1210,9 +1180,9 @@ over
 overflow
 overflow,
 override
-override,
 override.
 own
+own,
 own.
 package
 padded
@@ -1238,7 +1208,6 @@ phone
 pinned
 place
 placeholder
-plus
 pointer
 post-process
 pre-checking
@@ -1254,8 +1223,6 @@ presets
 problem
 prod).
 produces
-project
-project,
 promise
 prop
 prop's
@@ -1280,7 +1247,6 @@ real
 reapply
 reason
 reason:
-refutes
 region
 registered
 registry
@@ -1301,7 +1267,6 @@ replaced
 replaces
 reported
 reports
-reproduced
 request
 require
 requires
@@ -1331,7 +1296,6 @@ rule
 rung
 runs
 safe:
-said
 sake.
 same
 sanitized
@@ -1383,6 +1347,7 @@ somebody
 someone
 something
 somewhere:
+sort
 source
 source-baked
 space
@@ -1400,7 +1365,6 @@ static
 stay
 stays
 still
-still,
 stop
 stop,
 stop.
@@ -1472,7 +1436,6 @@ title
 to
 to,
 toHtml().
-tokens
 told
 too
 took
@@ -1488,7 +1451,6 @@ treats
 tree:
 trim(
 trim($relAttr
-true
 true);
 true,
 true;
@@ -1517,7 +1479,6 @@ utilities
 utility
 utility,
 v1.5.0-identical).
-v2.43.0
 v4
 valid
 validateProp
@@ -1574,7 +1535,6 @@ why
 width
 winner
 wins
-wins,
 with
 without
 wolf.
@@ -1605,4 +1565,3 @@ yet.
 }}</span>
 }}>
 —
-…`,

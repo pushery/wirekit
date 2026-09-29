@@ -55,7 +55,6 @@ Dev-only
 Frame
 Fully
 It
-Measured
 Nothing
 Pushery\WireKit\WireKit;
 Rendering
@@ -76,7 +75,6 @@ address
 an
 and
 announced.
-any
 app
 app)
 are
@@ -86,7 +84,6 @@ aria-hidden="true">
 aria-hidden="true"></span>
 around
 as
-asserted:
 at
 auto-derived
 bar
@@ -131,14 +128,12 @@ early.
 element,
 every
 fake
-file
 filename
 flags
 for
 frame
 frame:
 from
-guard
 here
 imports
 in
@@ -180,11 +175,7 @@ props
 pure
 put
 qualified:
-rather
 reach
-reason
-refutes
-renders
 result
 screen-reader
 screenshot
@@ -196,7 +187,6 @@ so
 spans,
 tab
 tablet
-than
 that
 the
 them

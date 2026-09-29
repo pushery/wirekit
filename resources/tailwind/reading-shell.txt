@@ -453,7 +453,6 @@ $wpmInt
 (`milestones=false`);
 (a
 (a)
-(action-bar,
 (active
 (after
 (aria-hidden
@@ -616,6 +615,7 @@ $wpmInt
 1px-tall
 1rem
 1rem);
+1rem,
 2)
 2)`
 2.
@@ -626,7 +626,6 @@ $wpmInt
 20
 20"
 225,
-23
 25/50/75/100%
 2px
 2px)
@@ -644,7 +643,6 @@ $wpmInt
 3s
 40px
 40px`,
-41
 5.22a.75.75
 5.22z"
 5.5a.75.75
@@ -1240,10 +1238,11 @@ absolute
 abstract
 accept
 accessibility
-accordion's
+accordion
 across
 act
 action
+action-bar,
 active-section
 activeIndex
 actual
@@ -1387,6 +1386,7 @@ be
 be.
 beats
 because
+become
 becomes
 before
 before,
@@ -1485,7 +1485,7 @@ cap
 caps
 captions
 capture
-carousel's
+carousel
 carried
 carries
 carry
@@ -1584,7 +1584,6 @@ complementary
 component
 component's
 component:
-components
 components/reading-spine.js
 compose
 composed
@@ -1630,6 +1629,7 @@ count($segmentsArray)
 count,
 count.
 count;
+counts
 covered
 cross-tab
 crowd
@@ -1692,6 +1692,7 @@ deliberate.
 deliberately
 demo
 demos
+demos,
 density
 density's
 density-derived
@@ -1801,7 +1802,7 @@ encode
 enough
 entire
 entirely
-entries
+entries.
 environments
 equal
 equal-height
@@ -1970,7 +1971,6 @@ gray
 green
 group
 grows
-guard
 guard:
 gutter
 guttered
@@ -1980,7 +1980,6 @@ h-full
 h2,
 h3,
 had
-hand.
 handed
 handler
 handler.
@@ -2007,7 +2006,7 @@ height.
 height:
 height:0
 height;
-help,
+help
 here
 here.
 here:
@@ -2203,7 +2202,6 @@ links),
 list
 list-none"
 list.
-listed
 listen
 listener
 listener,
@@ -2264,7 +2262,6 @@ may
 md+
 md:block',
 mean
-measured
 measures
 menu
 merge
@@ -2285,7 +2282,6 @@ minimap
 minimap).
 mirror
 mirrors
-missed
 ml-2
 mobile
 mobile-hidden
@@ -2369,6 +2365,7 @@ of,
 off;
 off?');
 offset
+offset.
 old
 on
 on.
@@ -2624,7 +2621,6 @@ reading
 reading-*
 reading-bookmark
 reading-bookmark).
-reading-bookmark);
 reading-bookmark.
 reading-meta.
 reading-minimap
@@ -2765,7 +2761,7 @@ scroll)
 scroll).
 scroll-overflow
 scroll-position
-scroll-to-top,
+scroll-to-top
 scroll.
 scroll/observer
 scrollTo
@@ -2814,6 +2810,7 @@ setting,
 settle
 shallowest
 shape
+shape,
 shape.
 shape;
 shapes
@@ -2840,7 +2837,6 @@ shows
 shrink-0">
 shrinks
 sibling
-siblings
 side
 sidebar
 silence.
@@ -2853,7 +2849,6 @@ sit
 site
 site,
 site.
-site:
 sits
 size,
 sizing
@@ -2870,7 +2865,6 @@ some
 something
 source
 spacing
-spacing-step
 sparse
 speak.
 spec,
@@ -2902,6 +2896,7 @@ stay
 stayed
 stays
 step
+step.
 sticks
 sticky
 sticky-strip
@@ -2938,7 +2933,7 @@ stroke-width="2.5"
 stroke="var(--color-wk-border)"
 stroke="{{
 structure
-structure.
+structure,
 style
 style,
 style.
@@ -3032,6 +3027,7 @@ then
 there
 there"
 there's
+there,
 there.
 these
 they
@@ -3053,7 +3049,7 @@ ticks
 ticks/labels
 time
 title.
-titles,
+titles
 to
 toc
 together
@@ -3149,7 +3145,6 @@ uses
 uses.
 utilities
 utility
-utility,
 v4
 v4's
 valid
@@ -3310,7 +3305,7 @@ x-for="item
 x-init
 x-ref="hoverPreview"
 x-ref="renderedContainer"
-x-show,
+x-show
 x-show="bookmarkPct
 x-show="items.length
 x-show="matchesFilter(item)"

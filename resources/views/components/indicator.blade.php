@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     shown early. --}}
 @props([
     // Which corner the badge is anchored to. Logical, not physical: "end" is
     // the right edge in LTR and the left edge in RTL, so the anchor follows the

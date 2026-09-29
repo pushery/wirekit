@@ -386,7 +386,6 @@ $wrap
 1.4.13
 1.4.13.
 100),
-18.5
 1px
 2
 2.1.1).
@@ -495,7 +494,6 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
-CUT
 Catching
 Check
 Column
@@ -530,7 +528,6 @@ Generate
 Generic
 German
 Graceful
-HOVER,
 HOVERABLE:
 HTML,
 HTTP
@@ -549,13 +546,13 @@ JS
 KEY,
 Keyboard-
 LANDMARK
+Left
 Literal
 Livewire
 Logger
 MORPH
 MOST
 Make
-Measured
 Multi-line
 NON-interactive
 NOT
@@ -565,7 +562,6 @@ Normalize
 Normalized
 Nothing
 Null,
-OFF
 ONE
 ONLY
 OPENING
@@ -589,7 +585,6 @@ Render
 Rendered
 Renders
 Replay"
-Reported
 Resolve
 Rich
 RuntimeException
@@ -767,7 +762,7 @@ __toString
 `prop="false"`
 `role="img"`.
 `soft`
-`sortable="true"`
+`sortable`
 `span`:
 `surface="outline"`,
 `swapElements`
@@ -873,7 +868,6 @@ arrow
 as
 as,
 asks
-asserted:
 assertion
 assignment
 association
@@ -901,7 +895,6 @@ badges
 badges;
 baked
 bakes
-bar.
 bare
 base;
 based
@@ -972,7 +965,6 @@ browser's
 bubble's
 bubbles
 bug
-bug.
 build
 but
 button
@@ -1003,7 +995,6 @@ card's
 card,
 cards
 carousel's
-carried
 carries
 carry
 carrying
@@ -1028,7 +1019,6 @@ choice
 chose
 chosen
 chrome
-claimed
 claims
 class
 class="flex
@@ -1045,6 +1035,7 @@ clears
 client-only
 climbs
 clipping
+clipping,
 clone
 close
 close-icons,
@@ -1066,7 +1057,6 @@ column.'),
 columns
 come
 comes
-comment
 common
 compete
 compile
@@ -1093,7 +1083,6 @@ connects.
 console
 console).
 construction.
-consuming
 container
 containers.
 content
@@ -1116,6 +1105,7 @@ crossed
 currentColor
 currentColor;
 custom
+cut
 dark
 data-replayable="true"
 data-sortable-column
@@ -1243,7 +1233,6 @@ exhausting
 existing
 exists.
 expandos.
-expensive:
 explanation
 explicitly
 exposes
@@ -1254,8 +1243,7 @@ eyebrow).
 factory
 factory's
 factory,
-factory:
-fade="…">`
+fade="…">`,
 fail
 failed"
 fails
@@ -1274,13 +1262,11 @@ false);
 false,
 family
 feature
-feature:
 feedback
 fell
 few
 field
 field,
-file
 files
 fill
 fill:
@@ -1300,7 +1286,6 @@ fix.
 fixed
 fixed-height
 fixed`
-fixes
 flag
 flags
 flash
@@ -1444,7 +1429,7 @@ imports
 in
 in.
 in_array($surface,
-included
+included,
 included.
 including
 indicator
@@ -1576,7 +1561,6 @@ markers
 marketing
 marks
 markup
-markup,
 mask
 mask-image:
 masked
@@ -1592,6 +1576,7 @@ mechanism
 medium
 menus
 merge
+message
 messages.
 min-h-[120px]
 min-height
@@ -1613,7 +1598,6 @@ more
 morph
 move
 move.
-moved.
 moves
 moving
 ms-1
@@ -1651,7 +1635,6 @@ not.
 nothing
 nothing.
 now
-now,
 now.
 null
 null)
@@ -1717,6 +1700,7 @@ package
 padding
 padding,
 page
+page,
 page.
 pages
 pair
@@ -1786,9 +1770,7 @@ preview
 pricing-card
 problem
 prod).
-produced
 produces,
-project,
 prop
 prop's
 prop,
@@ -1799,7 +1781,6 @@ proxy
 purpose,
 put
 puts
-px
 px-2'
 px-2',
 px-2.5'
@@ -1845,7 +1826,6 @@ ref
 reference
 referenced.
 refuses.
-refutes
 region
 registered
 registers
@@ -1869,7 +1849,6 @@ replaces
 replay-button
 reported
 reports
-reproduced
 request
 request,
 requested
@@ -2014,7 +1993,7 @@ stringly-false
 strings
 strip
 style="display:inline-block;"></span>
-stylesheet
+stylesheet's
 stylesheet).
 subtle
 subtree
@@ -2045,7 +2024,6 @@ takes
 taking
 tall.
 teaches
-teleport
 teleport:
 teleported
 tell
@@ -2072,7 +2050,6 @@ that
 the
 their
 them
-them,
 them.
 theme
 theme's
@@ -2082,6 +2059,7 @@ themes.
 then
 there
 there).
+there:
 therefore
 things,
 third
@@ -2094,7 +2072,6 @@ throws
 tick
 tidy
 tile
-time
 time,
 time.
 timer
@@ -2164,7 +2141,6 @@ unknown-alias
 unknown.
 unless
 unlike
-unlocatable
 unnamed
 unsteady
 until
@@ -2173,7 +2149,6 @@ up
 usable
 use
 use:
-used
 useful
 users
 uses
@@ -2211,7 +2186,6 @@ w-max
 walk
 wants.
 warning
-warning,
 was
 way
 way,
@@ -2233,13 +2207,13 @@ whitespace
 who
 whole
 whose
-why
 widening
 width
 width)
 window,
 wins
 wire:key="wk-tooltip-panel"
+wires
 with
 within
 without

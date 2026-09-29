@@ -9,9 +9,21 @@
  * It reads its configuration from its own tag, which is what lets one file serve both deliveries:
  * `data-wk-theme-storage` is `local` or `cookie`, and `data-wk-theme-key` is the key the theme
  * controller writes the choice under.
+ *
+ * A page that fixes the mode says so on its root element, `data-wk-theme-fixed="light|dark"`, and
+ * that mode wins over the reader's choice, which stays stored for the pages that fix nothing.
  */
 (function () {
     try {
+        var root = document.documentElement;
+        var fixed = root.getAttribute('data-wk-theme-fixed');
+
+        if (fixed === 'light' || fixed === 'dark') {
+            root.classList.toggle('dark', fixed === 'dark');
+
+            return;
+        }
+
         var tag = document.currentScript;
         var key = (tag && tag.getAttribute('data-wk-theme-key')) || 'wirekit-theme';
         var stored = null;
@@ -37,7 +49,7 @@
         // Nothing stored follows the operating system, and an explicit choice always wins over it.
         var dark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-        document.documentElement.classList.toggle('dark', dark);
+        root.classList.toggle('dark', dark);
     } catch {
         // Storage throws in private mode and when it is disabled. Swallowing that leaves the page on
         // its default theme, which is the right fallback, and never a page that fails to render.
