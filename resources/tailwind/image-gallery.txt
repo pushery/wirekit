@@ -24,6 +24,7 @@ $alt
 $as
 $as);
 $attributes
+$attributes);
 $attributes->class([$classes]);
 $attributes->class([$figureClasses])
 $attributes->class([$wrapperClasses,
@@ -482,6 +483,7 @@ $zoomOverlay($items[$i],
 ($item['alt']
 ($item['src']
 ($items
+($lightbox
 ($min
 ($responsiveTemplate)
 ($src
@@ -496,6 +498,7 @@ $zoomOverlay($items[$i],
 (CLS-safe)
 (CLS-safe).
 (Level
+(Support\UnboundModel).
 (WireKit::validateProp('grid',
 (`[sidebar-start]
 (a
@@ -854,6 +857,7 @@ Written
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 \Pushery\WireKit\Support\SafeUrl::href($src,
+\Pushery\WireKit\Support\UnboundModel::drop('image-gallery',
 \Pushery\WireKit\WireKit::tagName('grid',
 \Pushery\WireKit\WireKit::warnUnknownProps('grid',
 \Pushery\WireKit\WireKit::warnUnknownProps('image',
@@ -943,6 +947,7 @@ __('wirekit::View
 `type`
 `width:
 `wirekit-lightbox-open`
+`x-model`
 `x-ref`
 `xs`…`2xl`
 `zoomOverlay`
@@ -1036,6 +1041,7 @@ at
 attribute
 attribute,
 attribute.
+attributes
 auto,
 auto-derived
 automated
@@ -1066,6 +1072,7 @@ better
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-overlay)]
 bg-transparent
+bind,
 binding,
 binding:
 black)
@@ -1434,6 +1441,7 @@ has
 have
 height="{{
 here
+here,
 here.
 hero
 historical
@@ -1573,6 +1581,7 @@ license
 light
 lightbox
 lightbox's
+lightbox,
 lightbox.
 lightbox;
 like
@@ -1851,6 +1860,7 @@ refuses
 region
 region,
 relative
+removed
 removed:
 removes.
 render
@@ -2199,6 +2209,7 @@ w-[90vw]
 w-[var(--size-wk-md)]
 w-auto
 w-full
+warning
 was
 watermark,
 way

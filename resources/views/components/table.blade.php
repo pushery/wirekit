@@ -205,6 +205,25 @@
     // the outermost element marks the boundary (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+
+    // The table element runs an Alpine component of its own while it sorts, or while it carries
+    // the debug warning about plain rows. An `x-model` on it would then take the value of a field
+    // in a cell, so it is removed there (Support\UnboundModel).
+    if ($alpineSort || $hasPlainHtmlDescendants) {
+        \Pushery\WireKit\Support\UnboundModel::drop('table', $attributes);
+    }
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // table, so they go on the outermost element (see Support\OuterAttributes). A responsive table
+    // sits inside the scroll-shadow frame, so they move there; without the frame the table is
+    // outermost and keeps them in its bag.
+    [$outerAttributes, $withoutOuterAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    if ($responsive) {
+        $attributes = $withoutOuterAttributes;
+    } else {
+        $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
+    }
 @endphp
 
 {{-- Wrap in responsive container for horizontal scroll on narrow screens.
@@ -231,7 +250,7 @@
      measures against. NAMED on purpose: an anonymous container would also become the
      measuring context for every `@`-variant a caller nests inside the table, and
      retarget it without anybody asking. --}}
-<div class="@container/wk-table relative w-full min-w-0" x-data="wirekitStickyPanelShadows()" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div class="@container/wk-table relative w-full min-w-0" x-data="wirekitStickyPanelShadows()" @if($callerRef !== '') data-wk-ref-scope @endif {{ $outerAttributes }}>
 <div
     x-ref="scroller"
     {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in

@@ -88,7 +88,7 @@
          order, and the arrow keys reach the rest. --}}
     tabindex="{{ $selected ? '0' : '-1' }}"
     @if($disabled) aria-disabled="true" @endif
-    {{ $tabAttributes->class([$tabClasses, $stateClasses]) }}
+    {{ $tabAttributes->class(['wk-tab', $tabClasses, $stateClasses]) }}
 >
     @if($icon)
         <x-wirekit::icon :name="$icon" class="h-4 w-4 shrink-0" />

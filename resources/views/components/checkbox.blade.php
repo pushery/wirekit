@@ -73,6 +73,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('checkbox', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Size scale (aligned with toggle/radio): sets the box w/h. The check +
     // indeterminate overlays are nested inside the box and fill it (w-full h-full),
     // so they need no size of their own and stay centered in every variant.
@@ -182,27 +187,28 @@
 
     // Visual box styling. The <input> uses .peer + .sr-only, and this box listens
     // to peer-checked / peer-focus-visible / peer-disabled via sibling selectors.
-    $boxClasses = WireKit::resolveClasses('checkbox', 'base', implode(' ', [
+    // A 2.75rem hit area centered on the box, which is 20px in the default size. The
+    // library ships this primitive, and the theme-controller consumes it too.
+    //
+    // On the box, not on the <label>, and that placement is the whole decision. The
+    // default label is the box plus its text, often many times wider than tall, so a hit
+    // area centered there would sit over the words rather than over the control.
+    //
+    // DEFAULT VARIANT ONLY, which is the counter-check this needs. In `card` the <label>
+    // IS the target: a bordered, full-width, already-tall clickable card. Hanging an
+    // absolutely-positioned 44px area off the box inside it would push roughly 12px past
+    // the card's own edge, so taps in the gap BETWEEN two cards would land on the upper
+    // card's checkbox. The card variant needs no reserve and must not grow one.
+    //
+    // Note this does not make the checkbox newly conformant: axe reports no `target-size`
+    // violation today, because 2.5.8's spacing exception counts the free room around the
+    // control. That is the point — conformance rested on nothing being placed beside it,
+    // and in a dense list (ten call sites in one adopting application, several of them
+    // dense) that room is exactly what runs out.
+    // The marker is set in front of the resolved block rather than inside it, so a
+    // personalization of the block keeps the hit area.
+    $boxClasses = ($variantValue === 'card' ? '' : 'wk-touch-target ').WireKit::resolveClasses('checkbox', 'base', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0',
-        // A 2.75rem hit area centered on the box, which is 20px in the default size. The
-        // library ships this primitive, and the theme-controller consumes it too.
-        //
-        // On the box, not on the <label>, and that placement is the whole decision. The
-        // default label is the box plus its text, often many times wider than tall, so a hit
-        // area centered there would sit over the words rather than over the control.
-        //
-        // DEFAULT VARIANT ONLY, which is the counter-check this needs. In `card` the <label>
-        // IS the target: a bordered, full-width, already-tall clickable card. Hanging an
-        // absolutely-positioned 44px area off the box inside it would push roughly 12px past
-        // the card's own edge, so taps in the gap BETWEEN two cards would land on the upper
-        // card's checkbox. The card variant needs no reserve and must not grow one.
-        //
-        // Note this does not make the checkbox newly conformant: axe reports no `target-size`
-        // violation today, because 2.5.8's spacing exception counts the free room around the
-        // control. That is the point — conformance rested on nothing being placed beside it,
-        // and in a dense list (ten call sites in one adopting application, several of them
-        // dense) that room is exactly what runs out.
-        $variantValue === 'card' ? '' : 'wk-touch-target',
         $sizing,
         'rounded-[var(--radius-wk-sm)]',
         'border-[length:var(--border-wk-width)]',
@@ -251,7 +257,7 @@
     ]);
 @endphp
 
-<div class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     <label for="{{ $id }}" class="{{ $labelClasses }}">
         {{-- Native checkbox: visually hidden but fully accessible + Livewire-compatible.
              Siblings below consume its :checked / :indeterminate / :focus-visible / :disabled state via peer-*. --}}
@@ -278,7 +284,7 @@
             {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                  caller's own class became a second class attribute and the browser kept only
                  this one. --}}
-            {{ $attributes->except(['id', 'name', 'aria-describedby'])->class(['peer', 'sr-only']) }}
+            {{ $attributes->except('type')->except(['id', 'name', 'aria-describedby'])->class(['peer', 'sr-only']) }}
         />
 
         {{-- Visual box — sibling of .peer (consumes peer-checked bg/border). The
@@ -288,7 +294,10 @@
              offsets them). They toggle via the label's group-has-[:checked] /
              group-has-[:indeterminate] (a nested element isn't a sibling of .peer,
              so peer-checked can't reach it; the box bg/border still use peer-*). --}}
-        <span class="{{ $boxClasses }}" aria-hidden="true">
+        {{-- `wk-choice-frame` marks the element whose edge is the control, outside the resolved block so a
+             personalization keeps it. Under a preset whose border width is 0px the edge is gone, and
+             `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet brings it back. --}}
+        <span class="wk-choice-frame {{ $boxClasses }}" aria-hidden="true">
             {{-- Checkmark --}}
             <svg
                 class="hidden group-has-[:checked]:block pointer-events-none w-full h-full p-0.5 text-[color:var(--color-wk-accent-fg)]"

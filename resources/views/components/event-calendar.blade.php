@@ -64,6 +64,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@pointerover', '@pointerout', '@focusin', '@focusout', '@scroll.capture.passive', '@keydown.escape.window']);
+
     $view = WireKit::validateProp('event-calendar', 'view', $view, ['month', 'week', 'agenda']);
 
     // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
@@ -192,7 +196,7 @@
          fallback the two halves disagree in every language but English — one band
          reading "Ganztägig" over a list announced as "All day". --}}
     x-data="wirekitEventCalendar({ events: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventsArr) }}, dayMarkers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, view: {{ \Pushery\WireKit\Support\AlpinePayload::string($view) }}, @if($date) date: {{ \Pushery\WireKit\Support\AlpinePayload::string($date) }}, @endif weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Showing :count of :total events')) }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
-    role="group"
+    @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ $ariaLabel }}"
     {{-- Delegated truncated-title tooltip: every [data-wk-tip] pill/chip/row shares
          ONE bubble (x-ref="tip" below). Root-level delegation = zero per-item
@@ -224,9 +228,11 @@
             @keydown.arrow-down.prevent="viewMove(1)"
             @keydown.arrow-left.prevent="viewMove(-1)"
             @keydown.arrow-up.prevent="viewMove(-1)">
-            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">{{ __('wirekit::Month') }}</button>
-            <button type="button" role="radio" data-view="week" @click="setView('week')" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">{{ __('wirekit::Week') }}</button>
-            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">{{ __('wirekit::Agenda') }}</button>
+            {{-- The checked view is a tint, which forced colors does not paint, so
+                 `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
+            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button {{ $viewTab }}">{{ __('wirekit::Month') }}</button>
+            <button type="button" role="radio" data-view="week" @click="setView('week')" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button {{ $viewTab }}">{{ __('wirekit::Week') }}</button>
+            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button {{ $viewTab }}">{{ __('wirekit::Agenda') }}</button>
         </div>
     </div>
 
@@ -236,8 +242,11 @@
              a toggle reads as "hide". Hidden while there is only one category, because one chip
              filters nothing. --}}
         <div x-show="categories.length > 1" x-cloak role="group" aria-label="{{ __('wirekit::Filter by category') }}" class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+            {{-- A shown category is a tint and a hidden one is struck through; the chosen day
+                 below is a tint in the weight today also has. `wk-state-button` frames both
+                 under forced colors, where the tints are not painted. --}}
             <template x-for="c in categories" :key="'cat-' + c">
-                <button type="button" @click="toggleCategory(c)" :aria-pressed="isCategoryShown(c) ? 'true' : 'false'" class="inline-flex items-center min-h-[var(--size-wk-target-min)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="isCategoryShown(c) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryShown) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden) }}" x-text="c"></button>
+                <button type="button" @click="toggleCategory(c)" :aria-pressed="isCategoryShown(c) ? 'true' : 'false'" class="wk-state-button inline-flex items-center min-h-[var(--size-wk-target-min)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="isCategoryShown(c) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryShown) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden) }}" x-text="c"></button>
             </template>
         </div>
         {{-- Outside the group on purpose: the count must still be announced when the group
@@ -263,7 +272,7 @@
                                      markup nor operable. Named with the full date, because "8" alone does not say
                                      which month it belongs to. 24px rather than the plain number's 20px: it is a
                                      target now, and the first pill sits too close for the spacing exception. --}}
-                                <button type="button" @click="selectDay(day.date)" :aria-label="longDate(day.date)" @if($dayDetail) :aria-pressed="isSelectedDay(day.date) ? 'true' : 'false'" @endif :aria-current="day.isToday ? 'date' : false" class="inline-flex items-center justify-center h-[var(--size-wk-target-min)] min-w-[var(--size-wk-target-min)] px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] cursor-pointer hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (isSelectedDay(day.date) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }}))" x-text="day.label"></button>
+                                <button type="button" @click="selectDay(day.date)" :aria-label="longDate(day.date)" @if($dayDetail) :aria-pressed="isSelectedDay(day.date) ? 'true' : 'false'" @endif :aria-current="day.isToday ? 'date' : false" class="wk-state-button inline-flex items-center justify-center h-[var(--size-wk-target-min)] min-w-[var(--size-wk-target-min)] px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] cursor-pointer hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (isSelectedDay(day.date) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }}))" x-text="day.label"></button>
                             @else
                                 <span class="inline-flex items-center justify-center h-5 min-w-5 px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }})" x-text="day.label"></span>
                             @endif

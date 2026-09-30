@@ -117,7 +117,7 @@
     data-wk-tool-call
     data-status="{{ $status }}"
     @if($isRunning) aria-busy="true" @endif
-    {{ $attributes->class([$rootClasses]) }}
+    {{ $attributes->except('aria-busy')->class([$rootClasses]) }}
 >
     <div class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">
         <x-wirekit::code data-wk-tool-call-name>{{ $toolName }}</x-wirekit::code>

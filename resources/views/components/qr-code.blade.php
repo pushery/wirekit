@@ -130,7 +130,7 @@
 
 @if($svgContent)
     <div
-        role="img"
+        @unless($attributes->has('role')) role="img" @endunless
         aria-label="{{ $resolvedLabel }}"
         {{ $attributes->class([$classes]) }}
     >
@@ -139,7 +139,7 @@
 @else
     {{-- Fallback placeholder when QR library is not available --}}
     <div
-        role="img"
+        @unless($attributes->has('role')) role="img" @endunless
         aria-label="{{ $resolvedLabel }}"
         {{ $attributes->merge(['style' => 'width: '.((int) $size).'px; height: '.((int) $size).'px;'])->class([$classes]) }}
     >

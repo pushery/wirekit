@@ -80,7 +80,7 @@
 
 <section
     data-wk-cart-summary
-    aria-label="{{ $label }}"
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
     {{ $attributes->class([$classes]) }}
 >
     <h{{ $levelValue }} data-wk-prose-skip class="{{ $headingClasses }}">{{ $label }}</h{{ $levelValue }}>

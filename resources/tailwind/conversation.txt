@@ -18,6 +18,7 @@
 #0a0a0a`
 $_)
 $alpineConfig
+$attributes
 $attributes->class([$classes])
 $attributes->class([$rootClasses])
 $attributes->except('rel');
@@ -118,6 +119,7 @@ $wrapLabel
 '.$iconOnlyBelow.'.
 '.$iconOnlySquareToken.';']);
 '.$message);
+'.WireKit::resolveClasses('conversation',
 '24rem'),
 '2xl'
 '2xl']);
@@ -211,6 +213,7 @@ $wrapLabel
 'opacity-[var(--opacity-wk-disabled)]
 'orientation'
 'outline'];
+'overflow-y-auto
 'primary'),
 'px-[calc(var(--padding-wk-x-lg)*1.25)]',
 'px-[var(--padding-wk-x-lg)]',
@@ -470,6 +473,7 @@ CSP
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Cast
 DECLARATIVE
 DISABLES
@@ -613,6 +617,7 @@ Without
 [scrollbar-gutter:stable]',
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::from((object)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -738,6 +743,7 @@ __('wirekit::Jump
 `wrap-label="false"`
 `wrapLabel`
 `wrapLabel`,
+`x-ref`
 `xs`
 `xs`,
 `xs`.
@@ -946,6 +952,7 @@ byte-identical
 bytes
 call
 caller
+caller's
 callout/alert).
 can
 candidate
@@ -1027,6 +1034,7 @@ compiled,
 compiles
 component
 component's
+component,
 component.
 concern
 conditionally
@@ -1319,6 +1327,7 @@ half.
 halves
 hand
 handed
+hands
 hang
 happened.
 happens
@@ -1455,6 +1464,7 @@ label,
 label.
 labeled
 labels
+lands
 last
 last:border-b-0
 last:border-e-0
@@ -1658,6 +1668,7 @@ other
 other.
 other:
 otherwise
+our
 ours
 out
 out,
@@ -1671,7 +1682,6 @@ over
 overflow-hidden
 overflow-x-auto
 overflow-x-hidden
-overflow-y-auto
 overflow-y-hidden
 overflow-y:auto
 oversight.
@@ -1848,6 +1858,8 @@ role="group"
 role="link"
 role="log"
 room
+root
+root,
 rotates
 rounded
 rounded-[var(--radius-wk-lg)]

@@ -115,6 +115,13 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // With the lightbox, the attributes land on the lightbox's own Alpine root, which holds no
+    // value to bind, so an `x-model` is removed here, where the warning can name this component
+    // (Support\UnboundModel).
+    if ($lightbox && $count > 0) {
+        \Pushery\WireKit\Support\UnboundModel::drop('image-gallery', $attributes);
+    }
 @endphp
 
 @if($count === 0)

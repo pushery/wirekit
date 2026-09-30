@@ -4,7 +4,10 @@
 !==
 "(€8.99
 "+12%"
+"0,532
+"1
 "1/1",
+"10,00
 "12%+"
 "4/3",
 "Copy
@@ -19,20 +22,20 @@
 "Send
 "Size
 "View
+"\u{00A0}".$unit
 "always
 "button"
 "default"
 "disables
 "gapped"
 "heroicon-m-inbox"
+"kg"
 "kg",
 "m".
 "old
 "pair",
 "per
 "the
-"{$sign}{$delta}";
-"{$sign}{$delta}%"
 #0a0a0a),
 #0a0a0a`
 $_)
@@ -46,9 +49,8 @@ $attributes->class([$baseClasses])
 $attributes->class([$classes])
 $attributes->class([$figureClasses])
 $attributes->class([WireKit::resolveClasses('icon',
-$attributes->except('aria-describedby')->class(['wk-field',
-$attributes->except('id')->class([$classes])
 $attributes->except('rel');
+$attributes->except('type')->except('aria-describedby')->class(['wk-field',
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['id',
@@ -70,11 +72,12 @@ $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
-$attributes->only(['wire:model',
 $attributes->whereStartsWith(['wire:model',
+$attributes]
 $base
 $base;
 $baseClasses
+$binding
 $boundModel
 $buttonBag
 $buttonBag->class([$baseClasses,
@@ -96,27 +99,25 @@ $cleaned
 $cleaned);
 $compareAt
 $computedRel
-$currency)
-$currency);
+$currency,
 $declarativeBusyOnly
 $declarativeBusyOnly);
 $declarativeLoading
 $declarativeLoading)
 $decreaseLabel
 $delta
+$delta,
 $deltaClasses
-$deltaFormat
 $deltaIntent
 $describedBy
+$details
+$details->hasActualContent())
 $disableOnLoading
 $disableOnLoading;
 $disabled
 $displayAmount
-$displayAmount,
 $displayBase
-$displayBase,
 $displayUnitPrice
-$displayUnitPrice,
 $e)
 $e;
 $emitAriaBusy
@@ -137,8 +138,6 @@ $formattedAmount
 $formattedBase
 $formattedDelta
 $formattedUnitPrice
-$formatter
-$formatter->formatCurrency((float)
 $hasError
 $hasWireAction
 $hasWireAction;
@@ -180,6 +179,9 @@ $linkDisabledClasses])
 $loading
 $loadingTarget
 $locale
+$locale)
+$locale));
+$locale);
 $m):
 $m[1]);
 $max
@@ -192,6 +194,10 @@ $metaClasses
 $min
 $minorUnits
 $minorUnits)
+$money
+$money($displayAmount);
+$money($displayBase)
+$money($displayUnitPrice)
 $name
 $name,
 $nameClasses
@@ -204,14 +210,19 @@ $optimistic,
 $optimisticArgs),
 $optimisticConfig
 $orientation
+$outerAttributes
 $placeholderAttributes
 $placeholderAttributes['role']
 $prefix
 $price
 $price;
+$quantity,
+$quantityText
 $radiusEnd
 $radiusStart
 $ratio
+$readonly
+$readonly)
 $relAttr
 $relAttr;
 $removable
@@ -225,9 +236,12 @@ $rounded
 $roundedClass
 $roundedClass])
 $roundedClass]);
+$rowAttributes
+$rowAttributes->class([$classes])
 $scope);
 $shouldSetHidden
 $sign
+$sign.($deltaFormat
 $size
 $size,
 $sizeClasses
@@ -272,10 +286,12 @@ $unitMeasure)
 $unitPrice
 $unitPrice;
 $validated
+$value,
 $variantClasses
 $variantClasses,
 $width
 $wrapLabel
+%`
 &&
 '
 '#'.$id.'-error',
@@ -498,6 +514,7 @@ $wrapLabel
 'py-[var(--padding-wk-y-md)]',
 'quantity'
 'ratio'
+'readonly'
 'reject',
 'removable'
 'required'
@@ -564,15 +581,17 @@ $wrapLabel
 'vertical')
 'width'
 'wire:'))
-'wire:model.live',
 'wk-button
 'wk-button',
 'wk-button-group',
 'wk-cart-item-'.substr(md5((string)
 'wk-touch-target
 'wrapLabel'
-'x-model'])
 'x-model'])->isNotEmpty();
+'x-model'])->whereDoesntStartWith('x-modelable')
+'x-model'])->whereDoesntStartWith('x-modelable');
+'x-on:blur',
+'x-on:change']);
 'xl'
 'xl',
 'xl']))
@@ -607,6 +626,7 @@ $wrapLabel
 ($stackBelow
 ($svgHtml
 ($unitPrice
+($value):
 ($wrapLabel
 ('xs').
 (($iconOnly
@@ -621,6 +641,7 @@ $wrapLabel
 (Preisangabenverordnung).
 (Price
 (SVG
+(Support\CallerListeners).
 (Tailwind's
 (UVP
 (WCAG
@@ -713,7 +734,9 @@ $wrapLabel
 .'label
 .'rendered
 .'src:
+.(filled($unit)
 ...>
+...array_keys($binding->getAttributes())]);
 .wk-button-group
 /
 /*
@@ -738,6 +761,7 @@ $wrapLabel
 160px
 16px
 1px
+2,
 2.2
 2.4.3
 2.4.3,
@@ -754,6 +778,7 @@ $wrapLabel
 2rem
 2rem,
 2xl
+3)
 32
 320px
 32px
@@ -808,6 +833,8 @@ $wrapLabel
 :src="$image"
 :step="$step"
 :suffix="$unit"
+:unit-measure="$unitMeasure"
+:unit-price="$unitPrice"
 :value="$quantity"
 <
 </bdi>
@@ -819,6 +846,7 @@ $wrapLabel
 </label>
 </li>
 </span>
+</span>{{
 </svg>
 </x-slot:iconLeft>
 </x-wirekit::button>
@@ -871,7 +899,6 @@ $wrapLabel
 ??
 ??=
 @aware(['announceErrors'
-@blur="value
 @click="decrease()"
 @click="increase()"
 @disabled($tag
@@ -879,7 +906,7 @@ $wrapLabel
 @elseif($hint)
 @elseif($iconOnlyBelow
 @elseif($loading)
-@elseif($removable)
+@elseif($removable
 @endif
 @endisset
 @endphp
@@ -914,6 +941,7 @@ $wrapLabel
 @if($prefix)
 @if($price
 @if($ratio)
+@if($readonly)
 @if($slot->hasActualContent())
 @if($stackBelow)
 @if($suffix)
@@ -922,6 +950,7 @@ $wrapLabel
 @if(filled($sizes))
 @if(filled($srcset))
 @if(filled($width))
+@if(isset($details)
 @if(isset($remove)
 @if(isset($suffix))
 @isset($iconLeft)
@@ -975,6 +1004,7 @@ BooleanProp::from($hideLabel,
 BooleanProp::from($iconOnly,
 BooleanProp::from($loading,
 BooleanProp::from($minorUnits,
+BooleanProp::from($readonly,
 BooleanProp::from($removable,
 BooleanProp::from($required,
 BooleanProp::from($rounded,
@@ -1013,6 +1043,7 @@ Dense,
 Derived
 Dev-only
 Directive
+Display
 Drop
 Dutch
 END
@@ -1028,19 +1059,22 @@ Examples
 Extra
 Fetch
 Flexbox
-Format
 Format:
 Fully
+Further
 German
+German,
 Germany
 Germany,
 Graceful
+Grundpreis
 HAVE
 HERE
 HORIZONTAL
 HTML
 HTTP
 Half
+Handed
 Hidden,
 Hide
 Holding
@@ -1078,6 +1112,10 @@ Literal
 Livewire
 Livewire's
 Loading
+Locale-aware
+LocalizedNumber::currency((float)
+LocalizedNumber::format((float)
+LocalizedNumber::percent((float)
 Logger
 Loud
 M
@@ -1102,7 +1140,6 @@ Normalized
 Nothing
 Null
 Number
-NumberFormatter
 ON
 ONE
 ONLY
@@ -1120,6 +1157,7 @@ Outside
 Own
 PAngV
 PAngV)
+PAngV:
 PERFECTLY
 PHP
 PHP,
@@ -1134,6 +1172,7 @@ Price
 Primary
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\LocalizedNumber;
 Pushery\WireKit\WireKit;
 Quantity"
 READ
@@ -1182,6 +1221,7 @@ Strike-through
 Strip
 Suffix
 Support\DomId
+Support\OuterAttributes.
 SvgNotFound
 SvgNotFound.
 Symmetric
@@ -1251,6 +1291,7 @@ Without
 Written
 Your
 [
+[$outerAttributes,
 [&::-webkit-inner-spin-button]:appearance-none',
 [&::-webkit-outer-spin-button]:appearance-none
 ['auto',
@@ -1261,6 +1302,7 @@ Your
 ['name'
 ['outlined'
 ['sm',
+['x-on:input',
 ['xs',
 [--wk-touch-min:0px]'
 [],
@@ -1268,12 +1310,12 @@ Your
 [overflow-wrap:anywhere]'
 \Illuminate\Support\Facades\Log::warning(
 \InvalidArgumentException('wirekit::button:
-\NumberFormatter($locale,
-\NumberFormatter::CURRENCY);
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($itemKey)
 \Pushery\WireKit\Support\AlpinePayload::from([
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1298,10 +1340,12 @@ __('wirekit::Decrease');
 __('wirekit::Increase
 __('wirekit::Increase');
 __('wirekit::Previous
+__('wirekit::Quantity')
 __('wirekit::Remove
 __('wirekit::Remove')
 __('wirekit::Saving'),
 __toString
+`$attributes`
 `$loading`;
 `$radiusLeft`
 `$size`
@@ -1309,9 +1353,12 @@ __toString
 `--size-wk-lg`
 `--size-wk-md`
 `--wk-touch-min`
+`-12,5
+`-12.5%`.
 `-`
 `.attr`
 `.blur`
+`.live.debounce…`
 `.live`
 `.wk-button-group[data-stack-below="…"]`
 `.wk-button`
@@ -1361,6 +1408,7 @@ __toString
 `bg-[var(--color-wk-danger)]`
 `bind:
 `bind`
+`blur`
 `border-b-[3px]`
 `border-box`
 `border-e-[3px]`
@@ -1475,6 +1523,7 @@ __toString
 `true`
 `true`,
 `uniqid()`
+`unitMeasure`
 `value`
 `value`:
 `variant="ghost"`
@@ -1483,9 +1532,12 @@ __toString
 `whitespace-nowrap`
 `width:
 `wire:*`
+`wire:key`,
 `wire:loading.attr`
 `wire:loading`
+`wire:model.live`
 `wire:model`
+`wire:show`
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
@@ -1494,6 +1546,7 @@ __toString
 `x-data`
 `x-model`)
 `x-ref`
+`x-show`,
 `x-wk-ref`,
 `xs`
 `xs`,
@@ -1554,6 +1607,7 @@ allow-list.
 allowed
 allows
 alone
+alone,
 alone:
 along
 alongside
@@ -1642,7 +1696,9 @@ array_keys($sizeMap));
 array_values((array)
 arrives
 arrives,
+arrives;
 arrows
+article
 as
 as,
 asked
@@ -1670,6 +1726,7 @@ automatically
 avatar.group
 avoid.
 away
+away.
 axe
 axe-core
 axis
@@ -1700,6 +1757,7 @@ because
 becomes
 been
 before
+before,
 behavior
 behavior,
 behind
@@ -1724,6 +1782,7 @@ bg-[var(--color-wk-danger)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
 bg-transparent
+binding
 blade-heroicons
 blade-icons
 blade-icons,
@@ -1778,6 +1837,7 @@ browse
 browser
 browser's
 browser.
+bubbling
 bug
 build
 build,
@@ -1926,6 +1986,7 @@ compiled
 compiles
 component
 component's
+component's,
 component,
 component.
 components
@@ -1952,6 +2013,7 @@ config.
 configuration
 configured
 configured.
+confirmation.
 conflict
 conflicting
 connection
@@ -2004,6 +2066,7 @@ cursor-pointer
 custom
 custom.
 customarily
+customer-facing
 cx="12"
 cy="12"
 d="M3
@@ -2021,6 +2084,8 @@ data-orientation
 data-orientation="{{
 data-stack-below="{{
 data-wk-cart-item
+data-wk-cart-item-details
+data-wk-cart-item-quantity
 data-wk-cart-item-total
 data-wk-cart-item-unit-price>
 data-wk-optimistic-announcer
@@ -2091,6 +2156,7 @@ did
 differ
 difference
 different
+digits
 dimensions
 direct
 direction
@@ -2113,6 +2179,7 @@ discount
 discrete
 dispatch
 display
+display,
 dist/wirekit.css
 distinguish:
 distribute,
@@ -2155,6 +2222,7 @@ each
 early
 early.
 easy
+echo
 ecommerce
 edge
 edge.
@@ -2170,6 +2238,7 @@ element
 element,
 element.
 else
+else,
 else.
 elseif
 elsewhere)
@@ -2203,6 +2272,7 @@ evaluate
 evaluator
 even
 event
+events
 ever
 every
 everything
@@ -2226,6 +2296,7 @@ exposed
 exposes
 expression
 expressions.
+extension:
 extra
 eye
 eye.
@@ -2317,6 +2388,7 @@ floor
 floor's
 flow
 flush
+fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -2343,9 +2415,12 @@ foreach
 forgot"
 forgotten
 form
+formats
 formatted
+formatter
 formatting
 formatting.
+forwarded
 found.`
 foundation
 frame.
@@ -2361,6 +2436,7 @@ fully
 function
 function).
 function_exists('svg'))
+further
 future
 g
 gap
@@ -2396,6 +2472,7 @@ glyph"
 glyph.
 go
 goes
+goes.
 goods
 got
 grand
@@ -2464,6 +2541,7 @@ higher.
 hint
 historical
 hit
+hold
 holding
 holds
 honoring
@@ -2572,6 +2650,7 @@ intent="neutral"
 intents
 inter-attribute
 interactive
+intl
 into
 intrinsic
 introduced
@@ -2585,6 +2664,7 @@ is
 is"
 is,
 is.
+is:
 is_string($label)
 isn't
 isset($sizeMap[$size])
@@ -2605,6 +2685,7 @@ its
 itself
 itself,
 itself.
+itself:
 joining
 joins
 jumps
@@ -2618,7 +2699,9 @@ keeping
 keeps
 kept
 key
+keys
 keystroke,
+kg"
 kg,
 kill
 kit
@@ -2631,6 +2714,7 @@ label.
 labeled
 labels
 labels).
+lacks
 ladder
 lands
 language
@@ -2638,6 +2722,7 @@ last:border-b-0
 last:border-e-0
 later
 latter
+law
 layer
 layout
 layout,
@@ -2668,6 +2753,7 @@ line
 line,
 line-through;
 line.
+line:
 lines
 link
 link()
@@ -2675,6 +2761,8 @@ link.
 list
 list,
 listed,
+listener
+listens
 literal
 literal;
 literally
@@ -2689,7 +2777,8 @@ loading="{{
 loadingTarget
 loads,
 loads.
-locale-aware
+locale's
+locale:
 log
 log.
 logger()->warning(
@@ -2744,6 +2833,7 @@ max-w-full',
 max-xl:[--wk-touch-min:0px]',
 max:
 max="{{
+maxPrecision:
 may
 md
 mean
@@ -2752,6 +2842,7 @@ meaningful
 means
 meant
 measure
+measured
 measures
 measures.
 mechanism
@@ -2853,6 +2944,7 @@ next
 next.
 nine
 no
+no-break
 no-ops
 nobody
 node,
@@ -2883,6 +2975,7 @@ now
 now.
 nowhere
 nowhere,
+nowhere.
 null
 null"
 null)
@@ -2904,6 +2997,7 @@ obvious
 occurrence
 odd
 of
+of.
 off
 offered
 often
@@ -2930,6 +3024,8 @@ only,
 onto
 open
 opening
+operable
+operated:
 opposite
 opt
 opt-in.
@@ -2956,6 +3052,7 @@ out
 out,
 out.
 outer
+outermost
 outline()
 outranks
 outside
@@ -2993,6 +3090,7 @@ pagination
 paint
 paints
 pair
+pair".
 pairing
 paragraph,
 parameterized
@@ -3076,6 +3174,7 @@ price"
 price",
 price')
 price,
+price-marking
 price.
 primary
 primary)
@@ -3096,6 +3195,8 @@ project
 promise.
 promises
 promoting
+promotion
+promotion.
 prop
 prop's
 prop,
@@ -3115,6 +3216,7 @@ purpose
 purpose.
 purpose:
 put
+puts
 py-[var(--padding-wk-y-md)]',
 py-[var(--padding-wk-y-sm)]',
 py-[var(--padding-wk-y-xs)]',
@@ -3161,11 +3263,13 @@ reason.
 reason:
 reasoning
 rebuilds.
+receipt,
 records
 red
 redone
 redundant
 reference
+reference,
 refinement,
 refinement.
 refreshes
@@ -3189,12 +3293,14 @@ remove.
 removed
 render
 render,
+render.
 rendered
 rendered,
 rendering
 renders
 renders,
 renders.
+renders:
 repaired
 repeated
 replaced
@@ -3279,9 +3385,11 @@ said
 sale
 same
 sane
+sat
 satisfied
 save.
 saved,
+saves,
 saw.
 say
 say,
@@ -3313,6 +3421,7 @@ selling
 semantic
 sensible
 separately
+separators,
 server
 server's.
 server-side
@@ -3347,6 +3456,7 @@ show.
 showed
 showing
 shown
+shown,
 shows
 shrink
 shrink-0
@@ -3416,6 +3526,7 @@ speaks
 specificity
 spelled
 spelling
+spelling,
 spelling.
 spellings
 spill
@@ -3541,6 +3652,7 @@ table,
 tables
 tabnabbing
 tabs
+tabular-nums
 tabular-nums',
 tag
 tag's
@@ -3549,6 +3661,7 @@ tag,
 tag.
 take
 takes
+takes.
 taking
 tall
 tall,
@@ -3583,6 +3696,7 @@ text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
 text-[length:var(--text-wk-lg)]',
+text-[length:var(--text-wk-md)]">
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]
 text-[length:var(--text-wk-sm)]">
@@ -3634,6 +3748,8 @@ throws.
 thumbnail
 thumbnail,
 tile
+till,
+time
 time,
 timing.
 tint
@@ -3673,6 +3789,7 @@ trade
 trade,
 trailing
 transition-colors
+transitions
 transitions,
 transitively
 translated
@@ -3714,6 +3831,7 @@ typing.
 typography,
 unbound
 unchanged).
+uncompiled.
 unconditional
 unconditionally
 under
@@ -3823,6 +3941,7 @@ way.
 ways
 ways,
 we
+weighed
 weight
 weight,
 weld
@@ -3911,6 +4030,7 @@ wraps,
 write
 writes
 writing
+writing,
 written
 wrong
 wrote
@@ -3922,6 +4042,7 @@ x-data>
 x-model
 x-model.number="value"
 x-on:blur="clampInput()"
+x-on:blur="value
 x-on:change="run($event.target.value)"
 x-on:click="$dispatch('wirekit:cart-remove',
 x-on:input="syncFromInput()"
@@ -3954,6 +4075,7 @@ zero
 }}-error"
 }}-hint"
 }}</bdi>
+}}</div>
 }}</p>
 }}</span>
 }}</x-wirekit::label>
@@ -3963,6 +4085,7 @@ zero
 ·
 —
 …
+€
 →
 ──
 ────────────────────────────────────

@@ -57,10 +57,13 @@
     // wins). Same convention as reading-spine + reading-bookmark.
     $resolvedTarget = $target ?? 'main, article';
 
-    $rootClass = WireKit::resolveClasses('reading-meta', 'base', implode(' ', [
-        'wk-reading-meta',
+    $rootClass = 'wk-reading-meta '.WireKit::resolveClasses('reading-meta', 'base', implode(' ', [
         'inline-flex items-center gap-1',
     ]), $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
@@ -77,8 +80,8 @@
         paragraphMinWords: {{ \Pushery\WireKit\Support\AlpinePayload::from($paragraphMinWordsInt) }},
         paragraphTemplate: {{ \Pushery\WireKit\Support\AlpinePayload::from($paragraphLabelTemplate) }},
     })"
-    role="status"
-    aria-live="polite"
+    @unless($attributes->has('role')) role="status" @endunless
+    @unless($attributes->has('aria-live')) aria-live="polite" @endunless
     {{-- Without this, a polite region announces only what CHANGED — and what changes here is
          the number. A reader scrolling heard "12", then "11", then "9": three bare integers
          with no unit and no idea what they count. `aria-atomic` makes the region announce

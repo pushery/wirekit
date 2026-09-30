@@ -68,6 +68,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('toggle-button', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -216,6 +220,26 @@
         'x-wk-ref' => $callerRef !== '' ? $callerRef : null,
         'data-wk-ref-scope' => $refScope === 'button' ? true : null,
     ]));
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // toggle button, so they go on the outermost element (see Support\OuterAttributes): the
+    // optimistic layer, else the tooltip's root. Without either the button is outermost and
+    // keeps them in its bag.
+    [$outerAttributes, $withoutOuterAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    if ($optimisticConfig || filled($tooltip)) {
+        $attributes = $withoutOuterAttributes;
+    } else {
+        $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
+    }
+
+    // Alpine's `x-show` removes an inline `display` whenever it shows an element, the first time
+    // included, so the layer's inline `display: contents` would give way to a block box. The
+    // utility class keeps it a layer without a box once the inline rule is gone.
+    $layerShows = $optimisticConfig && \Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
+
+    // The tooltip's root is outermost only without the layer, so only then does it take them.
+    $tooltipOuterAttributes = $optimisticConfig ? new \Illuminate\View\ComponentAttributeBag([]) : $outerAttributes;
 @endphp
 
 {{-- Composes the button rather than re-implementing it: intents, sizes, focus
@@ -232,12 +256,12 @@
      leaving its layout position — the mechanism the other optimistic components
      use too. See the note at the top for
      what it costs a caller's selectors. --}}
-<div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents" @if($refScope === 'layer') data-wk-ref-scope @endif>
+<div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents" @if($layerShows) class="contents" @endif @if($refScope === 'layer') data-wk-ref-scope @endif {{ $outerAttributes }}>
 @endif
 @if(filled($tooltip))
 {{-- The button is the focusable trigger, so the tooltip adds no tab stop of its own. When the
      tooltip text is the name, it does not also describe the button. --}}
-<x-wirekit::tooltip :text="$tooltip" :focusable-trigger="false" :describes="! $tooltipIsName" :data-wk-ref-scope="$refScope === 'tooltip' ? true : null">
+<x-wirekit::tooltip :text="$tooltip" :focusable-trigger="false" :describes="! $tooltipIsName" :data-wk-ref-scope="$refScope === 'tooltip' ? true : null" :attributes="$tooltipOuterAttributes">
     @include('wirekit::components.partials.toggle-button-control', [
     'attributes' => $attributes,
     'slot' => $slot,

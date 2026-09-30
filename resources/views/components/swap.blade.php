@@ -44,8 +44,7 @@
         default => 'wk-swap-fade',
     };
 
-    $classes = WireKit::resolveClasses('swap', 'base', implode(' ', [
-        'wk-swap',
+    $classes = 'wk-swap '.WireKit::resolveClasses('swap', 'base', implode(' ', [
         $effectClass,
         'relative inline-grid place-items-center',
     ]), $scope);

@@ -103,7 +103,7 @@
      name resolves to an empty element is worse than an unnamed one, because
      assistive technology announces the landmark and then has nothing to say. --}}
 <article
-    @if(filled($label)) aria-labelledby="{{ $tickerId }}-label" @endif
+    @if(filled($label)) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $tickerId }}-label" @endunless @endif
     {{ $attributes->class([$baseClasses]) }}
 >
     {{-- Label --}}

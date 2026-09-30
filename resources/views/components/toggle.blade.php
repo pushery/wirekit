@@ -70,6 +70,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('toggle', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'toggle-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
@@ -219,7 +224,7 @@
      full duration for a reader who had asked their operating system for no motion. The
      marker is also what lets an application's own motion setting win, since the
      `data-reduce-motion` escape hatch is written against the same selector. --}}
-<div class="wk-toggle space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} class="wk-toggle space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     <label for="{{ $id }}" class="inline-flex items-center gap-3 cursor-pointer">
         {{-- Switch visual: wrapper contains input (.peer), track, and knob as siblings --}}
         {{-- so peer-checked:* selectors resolve correctly (peer-checked targets siblings only). --}}
@@ -230,7 +235,7 @@
                 type="checkbox"
                 id="{{ $id }}"
                 name="{{ $name }}"
-                role="switch"
+                @unless($attributes->has('role')) role="switch" @endunless
                 @if($fallbackAriaLabel) aria-label="{{ $fallbackAriaLabel }}" @endif
                 @if($optimisticConfig)
                     x-ref="control"
@@ -243,11 +248,14 @@
                 {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                      caller's own class became a second class attribute and the browser kept
                      only this one. --}}
-                {{ $attributes->except(['id', 'name', 'aria-describedby'])->class(['peer', 'sr-only']) }}
+                {{ $attributes->except('type')->except(['id', 'name', 'aria-describedby'])->class(['peer', 'sr-only']) }}
             />
 
             {{-- Track: sibling of .peer, background color flips via peer-checked --}}
-            <span class="{{ $trackClasses }}" aria-hidden="true"></span>
+            {{-- `wk-choice-frame` marks the element whose edge is the control, outside the resolved block so a
+                 personalization keeps it. Under a preset whose border width is 0px the edge is gone, and
+                 `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet brings it back. --}}
+            <span class="wk-choice-frame {{ $trackClasses }}" aria-hidden="true"></span>
 
             {{-- Knob: sibling of .peer, slides via peer-checked:translate-x-*.
                  `wk-toggle-knob` is the marker the stylesheet's forced-colors rule selects,

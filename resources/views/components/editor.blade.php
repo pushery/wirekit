@@ -77,6 +77,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('editor', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // A caller-supplied `aria-label` names the CONTROL, not the wrapper `{{ $attributes }}`
     // lands on. `<x-wirekit::editor aria-label="…">` put the name on a roleless element,
     // so the control the user actually operates kept no accessible name at all — WCAG
@@ -262,7 +267,7 @@
 
 @endphp
 
-<div class="w-full space-y-1.5" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="w-full space-y-1.5" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <x-wirekit::label :for="$id" :id="$id.'-label'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif

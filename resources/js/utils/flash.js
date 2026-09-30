@@ -80,8 +80,11 @@ export function playFlash(el) {
 
     const animations = targets.map((target) => target.animate(
         // Reduced motion: the tint holds for the whole duration and ends at once. Otherwise the
-        // single keyframe fades to whatever the target paints on its own.
-        reduce ? [{ backgroundColor: color }, { backgroundColor: color }] : [{ backgroundColor: color }],
+        // tint is the starting keyframe and fades to whatever the target paints on its own. A
+        // single keyframe without an offset would be the end state instead (Web Animations
+        // computes its missing offset to 1), so the row would tint slowly and then snap back;
+        // `offset: 0` pins it to the start, and the browser supplies the end from the target.
+        reduce ? [{ backgroundColor: color }, { backgroundColor: color }] : [{ backgroundColor: color, offset: 0 }],
         { duration, easing: reduce ? 'linear' : easing },
     ));
 

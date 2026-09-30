@@ -5,12 +5,13 @@
 $announceError
 $announceErrors
 $attributes
+$attributes->except('type')->except(['id',
 $attributes->except(['announceErrors',
-$attributes->except(['id',
 $attributes->get('aria-describedby'),
 $attributes->get('name');
 $attributes->get('required',
 $attributes->getAttributes());
+$attributes]
 $boxClasses
 $describedBy
 $error
@@ -38,6 +39,7 @@ $optimistic
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $rawName
 $rawName,
 $scope);
@@ -54,6 +56,7 @@ $wkRequiredMarker
 '
 '#'.$id.'-error',
 ''
+').WireKit::resolveClasses('checkbox',
 ',
 'action'
 'announce-errors',
@@ -125,7 +128,7 @@ $wkRequiredMarker
 'w-5
 'w-6
 'wk-field-set']);
-'wk-touch-target',
+'wk-touch-target
 'wkFieldSet'
 'wkFieldSet',
 (!
@@ -139,6 +142,7 @@ $wkRequiredMarker
 ($isInvalid)
 ($size)
 ($variant)
+($variantValue
 (@aware
 (WCAG).
 (`min-w-0
@@ -161,6 +165,7 @@ $wkRequiredMarker
 (when
 );
 +
+--border-wk-width:
 --}}
 -2/-3
 .=
@@ -172,9 +177,11 @@ $wkRequiredMarker
 //
 />
 0
+0px
 12h14"
 12px
 13l4
+1px;
 2.5.8's
 2.75rem
 20px
@@ -299,6 +306,7 @@ Slot-based
 So
 Strip
 Support\DomId;
+Support\OuterAttributes.
 THE
 THROUGH
 TOP
@@ -309,6 +317,7 @@ These
 They
 Two
 UNBOUND
+Under
 VARIANT
 Visual
 WHICH
@@ -320,12 +329,14 @@ WireKit::resolveClasses('checkbox',
 WireKit::validateProp('checkbox',
 WireKit::warnUnknownProps('checkbox',
 [
+[$outerAttributes,
 ['default',
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\FieldGroup
 \Pushery\WireKit\Support\FieldGroup::describedBy(
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 ])
 ]),
 ]);
@@ -334,6 +345,7 @@ __('wirekit::Could
 __('wirekit::Saving'),
 `$variantValue`
 `--text-wk-md`
+`.wk-choice-frame
 `:group-error="false"`
 `<input>`,
 `<label>`,
@@ -362,10 +374,15 @@ __('wirekit::Saving'),
 `sr-only`
 `target-size`
 `true`.
+`wire:key`,
+`wire:show`
+`wk-choice-frame`
 `x-init="$el.indeterminate
+`x-show`,
 `{{
 a
 able
+about
 above
 absolutely-positioned
 accent
@@ -399,9 +416,11 @@ any
 appears
 appended
 application
+application's
 application,
 are
 area
+area.
 arguments
 aria-atomic="true"
 aria-describedby
@@ -427,6 +446,7 @@ attribute.
 attributes
 auto-derived
 axe
+back.
 bag
 bag,
 bag.
@@ -449,6 +469,7 @@ below,
 beside
 bg/border
 bg/border).
+block
 block,
 block-level
 boolean
@@ -464,6 +485,7 @@ box's
 box,
 branch
 branches:
+brings
 browser
 build
 buildable
@@ -510,6 +532,7 @@ class="space-y-1.5
 class="sr-only"
 class="text-[color:var(--color-wk-danger-text)]
 class="text-[length:var(--text-wk-sm)]
+class="wk-choice-frame
 class="{{
 clean
 clickable
@@ -628,8 +651,10 @@ formatting)
 forms
 free
 from
+front
 full-width,
 fully
+further
 gap
 gap-2
 gap-3
@@ -638,6 +663,8 @@ get
 give
 gives
 global
+go
+gone,
 gray
 group
 group's
@@ -684,6 +711,7 @@ identical
 if
 implode('
 in
+in:
 independent
 indeterminate
 inline-flex
@@ -739,6 +767,8 @@ longer
 make
 makes
 many
+marker
+marks
 match
 match-with-default
 matching
@@ -808,7 +838,9 @@ otherwise
 our
 out
 out.
+outermost
 outrank
+outside
 over
 overlays
 override
@@ -839,6 +871,7 @@ polite
 positions
 practically
 precedence:
+preset
 primitive,
 printing
 prod).
@@ -885,6 +918,7 @@ required.
 reserve
 resolve
 resolve.
+resolved
 rested
 rich
 rides
@@ -911,6 +945,7 @@ scale
 scopes
 seam
 second
+see
 select
 select-none
 selectable-option
@@ -921,6 +956,7 @@ separate
 server
 server-side
 serves
+set
 sets
 several
 share
@@ -970,6 +1006,7 @@ stroke-linecap="round"
 stroke-linejoin="round"
 stroke-width="3"
 stroke="currentColor"
+stylesheet
 styling.
 sub-pixel
 sub-pixel,
@@ -1035,6 +1072,7 @@ too.
 touch
 trailing
 transition-colors
+transitions
 trip
 true
 true"`
@@ -1089,6 +1127,7 @@ whole
 whose
 wide
 wider
+width
 will
 wire:model.live
 with
@@ -1109,6 +1148,7 @@ x-wk-indeterminate
 ||
 }
 };
+}`
 }}
 }}"
 }}">

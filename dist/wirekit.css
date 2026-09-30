@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.60.0 — MIT License
+ * WireKit CSS v2.61.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -272,6 +272,13 @@
     --font-wk-mono: ui-monospace, 'Fira Code', 'Cascadia Code', monospace;
     --font-wk-heading-weight: 600;
     --font-wk-heading-line-height: 1.25;
+    /* The weight of a chosen entry: the selected segment of a segmented control, a selected
+       option of a multi-select and the current item of a bottom nav. It follows the heading
+       weight until you set it. Each of the three also marks the choice another way (a raised
+       segment, a tick, a line on the tab), so var(--font-wk-body-weight) here leaves every
+       choice visible, in forced colors too. Where the weight is the only mark besides color,
+       a component keeps the heading weight and does not read this one. */
+    --font-wk-selected-weight: var(--font-wk-heading-weight);
 
     /* Heading-display sizes — used by hero/cta for the on-page H1/H2.
        The component's inner `class` chain steps from text-wk-2xl/3xl
@@ -543,6 +550,22 @@
        control that stands beside a field reads the same value to keep one type size in the row, and
        lowering it below 16px brings the zoom back. */
     --text-wk-touch-floor: 16px;
+
+    /* Each text token as the page sets it, for that floor. It is a floor and not a size: on a
+       touch screen a field lifts its own text tokens to at least 16px, and a field whose text is
+       already larger, from a larger token or a font scale above 1, keeps it. A token cannot name
+       itself in its own value, so the lift reads the page's value from these, taken here where a
+       theme or a font scale on :root has already applied. */
+    --wk-touch-given-text-2xs: var(--text-wk-2xs);
+    --wk-touch-given-text-xs: var(--text-wk-xs);
+    --wk-touch-given-text-sm: var(--text-wk-sm);
+    --wk-touch-given-text-md: var(--text-wk-md);
+    --wk-touch-given-text-lg: var(--text-wk-lg);
+    --wk-touch-given-text-xl: var(--text-wk-xl);
+    --wk-touch-given-text-2xl: var(--text-wk-2xl);
+    --wk-touch-given-text-3xl: var(--text-wk-3xl);
+    --wk-touch-given-text-4xl: var(--text-wk-4xl);
+    --wk-touch-given-text-5xl: var(--text-wk-5xl);
 
     /* Readable line-length measure for long-form prose (<x-wirekit::prose>).
        ~65ch is the established comfortable reading width; `wide` relaxes it. */
@@ -1733,15 +1756,27 @@ input.wk-field::-webkit-datetime-edit-text {
        --text-wk-sm (13px) sit below that floor, so every select / input /
        textarea must be lifted to the 16px threshold on touch devices. Desktop
        (pointer: fine) keeps the smaller design-token size, so this is a pure
-       touch-only adjustment with no effect on the desktop render. The element-
-       qualified `.wk-field` selectors carry specificity (0,1,1) so they win
-       over the Tailwind `text-[length:var(--text-wk-*)]` utility (0,1,0)
-       regardless of stylesheet load order. The marker class is applied in
-       select / input / textarea Blade. */
+       touch-only adjustment with no effect on the desktop render. The marker
+       class is applied in select / input / textarea Blade.
+
+       A floor, not a size. Every field takes its text from a token through a
+       `text-[length:var(--text-wk-*)]` utility, so the field lifts its own
+       tokens to at least the floor, and the utility it already carries does the
+       rest: 14px becomes 16px, and the 20px digits of a large one-time code or a
+       field under a font scale above 1 keep their size. A fixed 16px lowered both. */
     select.wk-field,
     input.wk-field,
     textarea.wk-field {
-        font-size: var(--text-wk-touch-floor);
+        --text-wk-2xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xs));
+        --text-wk-xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xs));
+        --text-wk-sm: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-sm));
+        --text-wk-md: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-md));
+        --text-wk-lg: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-lg));
+        --text-wk-xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xl));
+        --text-wk-2xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xl));
+        --text-wk-3xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-3xl));
+        --text-wk-4xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-4xl));
+        --text-wk-5xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-5xl));
     }
 
     /* The same floor for the OTHER kind of text entry, which the rule above cannot
@@ -1754,23 +1789,35 @@ input.wk-field::-webkit-datetime-edit-text {
 
        `[contenteditable]` is matched rather than the marker class alone, because the
        editable host is created by the editor library at runtime and the class is only
-       one of the two ways it is identifiable. The attribute is the invariant. */
+       one of the two ways it is identifiable. The attribute is the invariant.
+
+       The host inherits its text rather than carrying a token of its own, so `1em`
+       is the size it would have had: at least the floor, and more where the page
+       set more. */
     .wk-editor-content,
     [contenteditable="true"],
     [contenteditable=""] {
-        font-size: var(--text-wk-touch-floor);
+        font-size: max(var(--text-wk-touch-floor), 1em);
     }
 
     /* The same floor for a BUTTON, but only one that asks for it. A button
        keeps its designed size on touch, which is right on its own; a small one in a row
        with a small field then reads a size below the lifted field beside it.
-       `touch-text-floor` on the component emits this marker. Element-qualified for the
-       reason the field rule gives: (0,1,1) beats the button's
-       `text-[length:var(--text-wk-*)]` utility (0,1,0) in either stylesheet order. `a`
-       too, because a button with an href renders as an anchor. */
+       `touch-text-floor` on the component emits this marker. A floor for the reason the
+       field rule gives: the button lifts its own text tokens, so a larger button keeps
+       its size. `a` too, because a button with an href renders as an anchor. */
     button.wk-touch-text-floor,
     a.wk-touch-text-floor {
-        font-size: var(--text-wk-touch-floor);
+        --text-wk-2xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xs));
+        --text-wk-xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xs));
+        --text-wk-sm: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-sm));
+        --text-wk-md: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-md));
+        --text-wk-lg: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-lg));
+        --text-wk-xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xl));
+        --text-wk-2xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xl));
+        --text-wk-3xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-3xl));
+        --text-wk-4xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-4xl));
+        --text-wk-5xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-5xl));
     }
 
     /* Touch-target floor. The size ladder is built for a mouse: --size-wk-md is
@@ -1984,18 +2031,36 @@ input.wk-field::-webkit-datetime-edit-text {
 :where([data-wk-touch]) select.wk-field,
 :where([data-wk-touch]) input.wk-field,
 :where([data-wk-touch]) textarea.wk-field {
-    font-size: var(--text-wk-touch-floor);
+    --text-wk-2xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xs));
+    --text-wk-xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xs));
+    --text-wk-sm: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-sm));
+    --text-wk-md: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-md));
+    --text-wk-lg: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-lg));
+    --text-wk-xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xl));
+    --text-wk-2xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xl));
+    --text-wk-3xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-3xl));
+    --text-wk-4xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-4xl));
+    --text-wk-5xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-5xl));
 }
 
 :where([data-wk-touch]) .wk-editor-content,
 :where([data-wk-touch]) [contenteditable="true"],
 :where([data-wk-touch]) [contenteditable=""] {
-    font-size: var(--text-wk-touch-floor);
+    font-size: max(var(--text-wk-touch-floor), 1em);
 }
 
 :where([data-wk-touch]) button.wk-touch-text-floor,
 :where([data-wk-touch]) a.wk-touch-text-floor {
-    font-size: var(--text-wk-touch-floor);
+    --text-wk-2xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xs));
+    --text-wk-xs: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xs));
+    --text-wk-sm: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-sm));
+    --text-wk-md: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-md));
+    --text-wk-lg: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-lg));
+    --text-wk-xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-xl));
+    --text-wk-2xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-2xl));
+    --text-wk-3xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-3xl));
+    --text-wk-4xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-4xl));
+    --text-wk-5xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-5xl));
 }
 
 :where([data-wk-touch]) select.wk-field,
@@ -4889,12 +4954,14 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     background: var(--color-wk-accent);
 }
 
-/* Active-tab text (accent color + heavier weight) follows data-active, like the
+/* Active-tab text (accent color + the selected weight) follows data-active, like the
    marker line above — so the look tracks the state from ANY source: the server
-   `active` prop, or the interactive client-active mode's Alpine binding. */
+   `active` prop, or the interactive client-active mode's Alpine binding. The marker
+   line carries the state on its own, so a theme may set the selected weight to the
+   body weight. */
 .wk-bottom-nav-item[data-active="true"] {
     color: var(--color-wk-accent);
-    font-weight: var(--font-wk-heading-weight);
+    font-weight: var(--font-wk-selected-weight);
 }
 
 .wk-bottom-nav-item[data-active="false"] {
@@ -5546,7 +5613,9 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    itself from that palette (`Highlight` is the reader's own selection color).
    Where a BORDER can carry the signal it is used instead and no opt-out is
    needed: forced colors overrides colors, never widths or styles, so a border
-   declared here is painted.
+   declared here is painted. Every width that follows --border-wk-width has a
+   floor, because a theme may set that token to 0px, and a border of 0px is
+   painted as nothing.
 
    None of this changes anything outside the mode. Nothing below is reachable at
    baseline, which is the point: the defect is invisible until the palette is
@@ -5555,7 +5624,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     /* Outlined rather than filled, so the knob stays inside the reader's palette.
        Its POSITION is then the state, which is what a native switch shows here. */
     .wk-toggle-knob {
-        border: calc(var(--border-wk-width) * 2) solid CanvasText;
+        border: max(2px, calc(var(--border-wk-width) * 2)) solid CanvasText;
     }
 
     /* Filled rather than outlined: the dot is 6–10px across depending on `size`,
@@ -5565,10 +5634,18 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         background: Highlight;
     }
 
+    /* A status dot is a fill and nothing else, and this mode repaints every fill in the page's
+       own color, so the dot disappeared. It keeps a fill in the text color instead. The intent's
+       hue is gone in this mode either way; what the dot means is its name and its tooltip. */
+    .wk-status-dot {
+        forced-color-adjust: none;
+        background: CanvasText;
+    }
+
     /* The track needs an edge of its own or the filled part has nothing to be a
        fraction OF — a lone bar says "some progress" and not how much. */
     .wk-progress-track {
-        border: var(--border-wk-width) solid CanvasText;
+        border: max(1px, var(--border-wk-width)) solid CanvasText;
     }
 
     .wk-progress-fill {
@@ -5580,11 +5657,11 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        an unbordered track around an unbordered knob — and it needed no template
        change, because both markers were already emitted for other reasons. */
     .wk-theme-switch-track {
-        border: var(--border-wk-width) solid CanvasText;
+        border: max(1px, var(--border-wk-width)) solid CanvasText;
     }
 
     .wk-theme-switch-knob {
-        border: calc(var(--border-wk-width) * 2) solid CanvasText;
+        border: max(2px, calc(var(--border-wk-width) * 2)) solid CanvasText;
     }
 
     /* A pressed toggle-button is a background on a border of the same color, and this mode
@@ -5607,12 +5684,177 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         color: HighlightText;
     }
 
+    /* The opt-out on a pressed button also keeps its focus outline at the transparent color
+       `outline-hidden` draws it with, the color this mode would otherwise repaint, so a pressed
+       button that held focus showed no focus at all. The rule draws the whole outline instead of
+       recoloring that one, at the ring's width and offset: it runs outside the fill, on the page,
+       and takes the page's text color. */
+    [data-wk-toggle-button][aria-pressed="true"]:focus-visible,
+    [data-wk-toggle-button][data-wk-state="on"]:focus-visible {
+        outline-style: solid;
+        outline-width: max(2px, var(--ring-wk-width));
+        outline-offset: var(--ring-wk-offset);
+        outline-color: CanvasText;
+    }
+
     /* The second signal for the current tab, added so the state does not rely on
        hue — and then given the one paint this mode removes, which left it doing
        nothing precisely where it was needed most. See its rule further up. */
     .wk-bottom-nav-item[data-active="true"]::before {
         forced-color-adjust: none;
         background: Highlight;
+    }
+
+    /* A selected segment is a raised surface: a background and a shadow, the two paints this
+       mode removes. Its weight carries the state only while the selected weight is heavier
+       than the labels beside it, so the segment draws a frame in the reader's selection color.
+       The frame is a pseudo-element and the opt-out stays on it. On the segment itself the
+       opt-out would keep the focus outline at the transparent color it is drawn with outside
+       this mode, and focus sits on the selected segment. The width has a floor because a theme
+       may set the border width to 0px. */
+    .wk-segmented-control-segment[aria-checked="true"]::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: max(2px, calc(var(--border-wk-width) * 2)) solid Highlight;
+        border-radius: inherit;
+        pointer-events: none;
+        forced-color-adjust: none;
+    }
+
+    /* A calendar's chosen day is an accent fill and the days of a range a tint, and this mode
+       replaces both. The gridcell around the button says `aria-selected`, which is true for the
+       ends, the days between them and a single chosen day alike; the days between carry
+       `data-wk-in-range` as well. So the ends and a single day get a frame and the days between
+       a line above and below, which reads as a band between two framed ends. Drawn on `::before`
+       with the opt-out there, for the reason the segment's frame is. */
+    [role="gridcell"][aria-selected="true"] > .wk-calendar-day::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: max(2px, calc(var(--border-wk-width) * 2)) solid Highlight;
+        border-radius: inherit;
+        pointer-events: none;
+        forced-color-adjust: none;
+    }
+
+    [role="gridcell"][aria-selected="true"] > .wk-calendar-day[data-wk-in-range]::before {
+        border-inline-width: 0;
+        border-block-width: max(1px, var(--border-wk-width));
+        border-radius: 0;
+    }
+
+    /* The page a sidebar or a rail is on, and the chosen tab, are a tint, a fill, a raised
+       surface or a colored edge, all paints this mode replaces. An underlined tab fares no
+       better: every tab carries its underline, transparent until chosen, and this mode draws a
+       transparent border in the text color, so every tab ends up underlined. Each gets the frame
+       the segmented control has, on `::before` with the opt-out there. A rail that marks its
+       module with the edge bar keeps the bar instead of a frame, as it does outside this mode. */
+    .wk-sidebar-item[aria-current="page"]::before,
+    .wk-sidebar-item[aria-selected="true"]::before,
+    [data-indicator="pill"] .wk-rail-item[aria-current="page"]::before,
+    .wk-tab[aria-selected="true"]::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: max(2px, calc(var(--border-wk-width) * 2)) solid Highlight;
+        border-radius: inherit;
+        pointer-events: none;
+        forced-color-adjust: none;
+    }
+
+    /* A sidebar row and a rail module are the frame's containing block already; a tab is only
+       made one here, where the frame needs it. */
+    .wk-tab {
+        position: relative;
+    }
+
+    /* The rail's edge bar is the background of `::after`. It exists only where the rail draws
+       one, so this rule paints nothing on a rail with the pill. */
+    .wk-rail-item[aria-current="page"]::after {
+        forced-color-adjust: none;
+        background: Highlight;
+    }
+
+    /* Where the keyboard is, in a list that keeps DOM focus in its field or column and moves
+       `aria-activedescendant` over its options. That mark is a tint or an inset ring, both of
+       which this mode removes, and in these lists it is the focus indicator. A dashed frame,
+       set in from the row's edge, so it stays apart from the solid frame of a chosen row where
+       one row is both. The row carries `data-active` without a value, or `"true"` in the command
+       palette, whose other rows say `"false"`. */
+    .wk-listbox-option[data-active]:not([data-active="false"])::after,
+    .wk-sidebar-item[data-active]:not([data-active="false"])::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        border: max(2px, calc(var(--border-wk-width) * 2)) dashed Highlight;
+        border-radius: inherit;
+        pointer-events: none;
+        forced-color-adjust: none;
+    }
+
+    /* A sidebar row is the frame's containing block already; a listbox option is made one here. */
+    .wk-listbox-option {
+        position: relative;
+    }
+
+    /* The current step's circle is an outline in the accent color, and the circles of the steps
+       after it an outline in the border color, with the same fill, width and number. This mode
+       paints both outlines in one color, so the current step looked like the next one. The step
+       says `aria-current="step"`, and its circle gets the frame the segmented control has. A
+       stepper that follows a flow in the browser draws a circle per state and shows one of them,
+       and a hidden circle paints nothing, so the frame is on the circle that is shown. */
+    [data-wk-stepper-step][aria-current="step"] .wk-stepper-circle::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: max(2px, calc(var(--border-wk-width) * 2)) solid Highlight;
+        border-radius: inherit;
+        pointer-events: none;
+        forced-color-adjust: none;
+    }
+
+    .wk-stepper-circle {
+        position: relative;
+    }
+
+    /* A button whose pressed or checked state is a fill, a tint or a raised surface: an option of
+       a small switcher, a pressed reaction, a pressed command in the editor's toolbar. This mode
+       paints none of those, and it gives every reaction the border that only the pressed one shows
+       otherwise, so each such button looks like the others. The frame the segmented control has,
+       on `::before` with the opt-out there, so the focus outline keeps the color the system gives
+       it. The button is made the frame's containing block in this mode only. */
+    .wk-state-button[aria-pressed="true"]::before,
+    .wk-state-button[aria-checked="true"]::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: max(2px, calc(var(--border-wk-width) * 2)) solid Highlight;
+        border-radius: inherit;
+        pointer-events: none;
+        forced-color-adjust: none;
+    }
+
+    .wk-state-button {
+        position: relative;
+    }
+
+    /* A carousel's current slide dot is filled and the others are rings. This mode paints every
+       ring in one system color and takes the fill away, so the current dot would be a ring like the
+       rest. It gets a fill of its own on `::before`, where the opt-out sits for the reason the
+       frames above keep it there. The dot is made the fill's containing block in this mode only. */
+    .wk-carousel-dot {
+        position: relative;
+    }
+
+    .wk-carousel-dot[aria-current="true"]::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: Highlight;
+        pointer-events: none;
+        forced-color-adjust: none;
     }
 }
 
@@ -6197,6 +6439,18 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         font-size: var(--text-wk-sm);
         color: var(--color-wk-text);
     }
+}
+
+/* ─── Stepper: the current step's label ─── */
+/* The current step's circle and the circles after it differ in color alone, an outline in the
+   accent color against one in the border color, so the current step's label is set heavier as
+   well. The rule reads `aria-current="step"`, which the server writes on the current step and a
+   stepper following a flow moves in the browser, so the weight follows it and the first paint is
+   already right. It is the heading weight and not the selected weight: a theme may set the
+   selected weight to the body weight, and here the label is the only mark besides color. The
+   description under the label keeps its weight. */
+[data-wk-stepper-step][aria-current="step"] [data-wk-stepper-label] > :first-child {
+    font-weight: var(--font-wk-heading-weight);
 }
 
 /* ─── Timeline item content padding ───────────────────────── */

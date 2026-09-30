@@ -66,9 +66,9 @@
 
     // Command Palette — spotlight-style search modal (Cmd/Ctrl+K).
     // Uses combobox + listbox pattern with keyboard navigation.
-    $backdropClasses = WireKit::resolveClasses('command-palette', 'backdrop', implode(' ', [
-        'wk-overlay-fixed fixed inset-0',
-        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
+    $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-modal '.WireKit::resolveClasses('command-palette', 'backdrop', implode(' ', [
+        'fixed inset-0',
+        'z-[var(--z-wk-modal)]',
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 
@@ -113,8 +113,7 @@
     // Both doors are open, because they answer different questions. The variable
     // is for "taller, please" and needs no build step; the resolveClasses key is
     // for a scope that restyles the region wholesale, like its three siblings.
-    $listClasses = WireKit::resolveClasses('command-palette', 'list', implode(' ', [
-        'wk-scrollbar',
+    $listClasses = 'wk-scrollbar '.WireKit::resolveClasses('command-palette', 'list', implode(' ', [
         'max-h-[var(--wk-command-palette-list-max-height,18rem)]',
         'overflow-y-auto',
         'py-[var(--padding-wk-y-xs)]',
@@ -138,6 +137,10 @@
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text-muted)]',
     ]), $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

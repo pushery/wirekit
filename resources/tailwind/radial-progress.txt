@@ -3,6 +3,7 @@
 $animate
 $announced
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $classes
 $danger)
@@ -120,10 +121,13 @@ $warn)
 ??
 @endif
 @endphp
+@endunless
 @if($animate)
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 Accessible
 Announce
@@ -514,6 +518,7 @@ zero
 {
 {{
 {{--
+||
 }
 };
 }}

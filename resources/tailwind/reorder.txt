@@ -378,6 +378,13 @@ $wrapLabel
 'wk-tooltip-');
 'wk-touch-target
 'wrapLabel'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xl',
 'xl']),
@@ -409,6 +416,7 @@ $wrapLabel
 (($iconOnly
 (4.05
 (SVG
+(Support\CallerListeners).
 (Tailwind's
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -877,12 +885,14 @@ Without
 ['outlined'
 ['reorderComponent'
 ['sm',
+['x-on:mouseenter',
 ['xs',
 [--wk-touch-min:0px]'
 [overflow-wrap:anywhere]'
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -2113,6 +2123,7 @@ linked
 list
 list's
 listed,
+listener
 listens
 literal
 literal,
@@ -2735,6 +2746,7 @@ span).
 specificity
 spelled
 spelling
+spelling,
 spill
 spinner
 spinner,

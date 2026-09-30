@@ -131,7 +131,7 @@
     };
 @endphp
 
-<nav aria-label="{{ __('wirekit::Breadcrumb') }}" {{ $attributes->class([$navClasses]) }}>
+<nav @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Breadcrumb') }}" @endunless {{ $attributes->class([$navClasses]) }}>
     <ol data-wk-prose-skip role="list" class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
             @php

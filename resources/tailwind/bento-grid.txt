@@ -1,5 +1,6 @@
 $attributes->class([$classes])
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $classes
 $gap
 $gap,
@@ -76,10 +77,13 @@ $slot
 @2xl
 @endif
 @endphp
+@endunless
 @if($label)
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 Accessible
 Container
@@ -360,6 +364,7 @@ would
 {
 {{
 {{--
+||
 }
 };
 }}

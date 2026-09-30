@@ -146,8 +146,7 @@
     // print-stylesheet rules.
     // Class strings stay STATIC across the sticky/fixed branch so Tailwind v4's
     // content scanner picks both variants up cleanly.
-    $rootClass = WireKit::resolveClasses('reading-progress', 'base', implode(' ', [
-        'wk-reading-progress',
+    $rootClass = 'wk-reading-progress '.WireKit::resolveClasses('reading-progress', 'base', implode(' ', [
         // The dot's bottom offset carries `env(safe-area-inset-bottom, 0px)` in BOTH
         // branches. Sticky and fixed both settle against the viewport's bottom edge, and on
         // a phone with a home indicator the plain padding puts the dot inside the gesture
@@ -201,6 +200,10 @@
     // 25/50/75/100% threshold. Disabled by default (`milestones=false`); when true,
     // the developer can listen via `x-on:wirekit:reading-progress:milestone.window`.
     $milestonesEnabled = filter_var($milestones, FILTER_VALIDATE_BOOL);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 @if ($indicator === 'dot')
@@ -220,7 +223,7 @@
             showAfter: {{ (int) $showAfter }},
             milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
         })"
-        role="progressbar"
+        @unless($attributes->has('role')) role="progressbar" @endunless
         aria-valuemin="0"
         aria-valuemax="100"
         x-bind:aria-valuenow="roundedProgress()"
@@ -276,7 +279,7 @@
             showAfter: {{ (int) $showAfter }},
             milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
         })"
-        role="progressbar"
+        @unless($attributes->has('role')) role="progressbar" @endunless
         aria-valuemin="0"
         aria-valuemax="100"
         x-bind:aria-valuenow="roundedProgress()"

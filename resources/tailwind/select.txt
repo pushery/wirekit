@@ -12,6 +12,7 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('required',
 $attributes->getAttributes());
+$attributes]
 $candidate;
 $classes
 $describedBy
@@ -46,6 +47,7 @@ $optionLabel;
 $optionLabel['lang']
 $optionValue
 $optionValue)
+$outerAttributes
 $placeholder
 $required
 $reserveMessage
@@ -322,6 +324,7 @@ So
 Strip
 Success
 Support\DomId
+Support\OuterAttributes.
 Tailwind's
 The
 Tri-state
@@ -339,6 +342,7 @@ WireKit::warnUnknownProps('select',
 Without
 Written
 [
+[$outerAttributes,
 ['Europe'
 ['de'
 ['label'
@@ -346,6 +350,7 @@ Written
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ])
 ]),
@@ -383,9 +388,13 @@ __('wirekit::Saving'),
 `valid-lang`
 `value="pro"`
 `value`
+`wire:key`,
+`wire:show`
+`x-show`,
 `{{
 a
 able
+about
 absence.
 absolute
 accept
@@ -633,6 +642,7 @@ further
 gap
 give
 global
+go
 got
 green
 group
@@ -661,6 +671,7 @@ implode('
 imports
 in
 in.
+in:
 indicator
 input
 inset-y-0
@@ -776,6 +787,7 @@ options
 or
 otherwise
 out.
+outermost
 over
 overflow-hidden',
 own
@@ -930,6 +942,7 @@ their
 them
 then
 there
+they
 things
 this
 those
@@ -941,6 +954,7 @@ token
 tokens
 toolbar
 top
+transitions
 trim(
 true
 true);
@@ -990,6 +1004,7 @@ which
 whichever
 while
 whitespace,
+whole
 whose
 why
 wider

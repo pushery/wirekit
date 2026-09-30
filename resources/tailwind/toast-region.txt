@@ -8,6 +8,7 @@
 "default"
 "filled"
 "per-section
+$attributes
 $attributes->getAttributes());
 $attributes->merge(['style'
 $containerClasses
@@ -126,6 +127,7 @@ $variantMap
 ($isTrailingEdge)
 ($position)
 (10%)
+(Support\CallerListeners).
 (The
 (an
 (default
@@ -272,6 +274,7 @@ Blade
 BooleanProp::from($filled,
 CALLER
 CSS
+CallerRef::onRoot()
 Container:
 Content:
 DOM-containment
@@ -329,6 +332,7 @@ WireKit::resolveClasses
 WireKit::resolveClasses('toast-region',
 With
 [
+['@focusin']);
 ['top-left',
 \Pushery\WireKit\Support\AlpinePayload::from($eventScope)
 \Pushery\WireKit\Support\AlpinePayload::from($name)
@@ -349,6 +353,8 @@ With
 \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['icon'])
 \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['muted'])
 \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['text'])
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('toast-region',
 ]"
 ])
@@ -372,10 +378,12 @@ __('wirekit::Dismiss
 `remove()`
 `role="alert"`
 `role="region"`
+`x-ref`
 a
 able
 about
 above
+above.
 accessible
 across
 action
@@ -431,6 +439,7 @@ axe
 back
 background
 background,
+bag
 bar)
 base
 be
@@ -459,6 +468,7 @@ calc(1rem
 call
 called
 caller
+caller's
 callout)
 came
 can
@@ -503,6 +513,7 @@ compiled
 compiles
 component
 component's
+component,
 condition
 config('wirekit.components.toast-region.duration',
 config('wirekit.components.toast-region.max',
@@ -621,6 +632,7 @@ gap
 gap-3',
 gives:
 global
+goes
 gotcha:
 gutter
 gutter,
@@ -630,6 +642,7 @@ h-5"
 had
 half
 handled.
+hands
 happened.
 hardcoded
 has
@@ -677,6 +690,7 @@ is
 it
 it,
 it.
+it:
 items-center',
 items-end',
 items-start
@@ -685,6 +699,7 @@ its
 itself.
 job.
 just
+keep
 keeps
 keyboard
 laid
@@ -781,6 +796,7 @@ or
 order
 other
 otherwise
+our
 out
 out-bid
 outcomes.
@@ -849,8 +865,11 @@ right-0
 role
 role,
 role="region"
+root
+root,
 rotor
 rounded-[var(--radius-wk-sm)]
+run
 safe-area
 same
 says
@@ -889,6 +908,7 @@ so
 soon
 spelled,
 spelling
+spelling,
 stable
 stack
 stack,
@@ -989,6 +1009,7 @@ variant
 vertically
 via
 via:
+view
 view's
 viewBox="0
 viewport

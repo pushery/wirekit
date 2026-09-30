@@ -114,7 +114,7 @@
      convenience. Assistive tech reads aria-valuetext, so the two can never
      disagree — they are the same string. --}}
 <div
-    role="progressbar"
+    @unless($attributes->has('role')) role="progressbar" @endunless
     aria-valuenow="{{ round($numericValue, 2) }}"
     aria-valuemin="0"
     aria-valuemax="{{ round($numericMax, 2) }}"
@@ -124,7 +124,7 @@
          without a fallback a developer who omits it would ship a nameless
          progressbar. Fall back to
          a translatable generic name so the role is never anonymous. --}}
-    aria-label="{{ $label ?? __('wirekit::Progress') }}"
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label ?? __('wirekit::Progress') }}" @endunless
     {{-- Opt the animated ring INTO the docs.wirekit.app replay button so the sweep
          can be re-watched — a re-mount restarts the animation. No-op in a
          developer app (no such button); it only adds the attribute. --}}

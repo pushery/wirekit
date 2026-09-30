@@ -40,6 +40,7 @@ $attributes->get('rel',
 $attributes->get('role');
 $attributes->get('target',
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge()
 $b
 $b):
@@ -512,6 +513,8 @@ $wrapperClasses
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 @unless($splitLink)
 A
 A11y

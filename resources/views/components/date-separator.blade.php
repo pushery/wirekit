@@ -62,7 +62,7 @@
 @endphp
 
 <div
-    role="separator"
+    @unless($attributes->has('role')) role="separator" @endunless
     {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
          attributes, and the bag renders after this line — so a caller's `aria-label` was
          parsed and then discarded. The full date is the better default and stays one. --}}

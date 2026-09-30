@@ -48,6 +48,15 @@
 
     WireKit::warnUnknownProps('phone', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:input']);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     $id = DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'phone-');
     $name = $attributes->get('name', $id);
     $attributes = $attributes->except(['id', 'name']);
@@ -215,7 +224,7 @@
     $attributes = $attributes->except('x-ref');
 @endphp
 
-<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPhone({{ $config }})">
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPhone({{ $config }})">
     @if($label)
         <x-wirekit::label :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
@@ -264,7 +273,7 @@
             x-ref="number"
             x-model="national"
             x-on:input="onInput($refs.bound)"
-            autocomplete="tel"
+            @unless($attributes->has('autocomplete')) autocomplete="tel" @endunless
             inputmode="tel"
             @if($placeholder) placeholder="{{ $placeholder }}" @endif
             @if($required) required aria-required="true" @endif
@@ -273,7 +282,7 @@
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-            {{ $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(['wk-field', 'wk-touch-target', $numberClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(['wk-field', 'wk-touch-target', $numberClasses]) }}
         />
 
         {{-- What the server receives: E.164, assembled from the country and the digits. It is a
@@ -292,7 +301,7 @@
              reports it. It comes from the same `$value` the factory is initialized with, so the
              two cannot disagree: before Alpine binds, the field submits what it was loaded with;
              after, it submits what the reader built. --}}
-        <input type="hidden" x-ref="bound" name="{{ $name }}" value="{{ $value }}" x-bind:value="e164" {{ $attributes->whereStartsWith('wire:model') }} />
+        <input type="hidden" x-ref="bound" name="{{ $name }}" value="{{ $value }}" x-bind:value="e164" {{ $attributes->except('type')->whereStartsWith('wire:model') }} />
     </div>
 
     @if($hasError && $errorMessage)

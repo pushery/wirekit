@@ -41,6 +41,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('modal', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window']);
+
     // Title ID for aria-labelledby — links dialog to its header
     // Counted, not random, when there is no name. The same dialog renders the same id on the next
     // round trip, so Livewire's morph keeps the heading instead of replacing it, and a heading
@@ -71,7 +75,7 @@
     // question answerable at render time. The slot is already rendered by now.
     $hasHeader = str_contains((string) $slot, 'data-wk-modal-header');
 
-    if ($resolvedAriaLabel === null && ! $hasHeader) {
+    if ($resolvedAriaLabel === null && ! $hasHeader && ! $attributes->has('aria-labelledby')) {
         // Say it where the developer will see it: through the house strictness gate, as
         // an exception or a log line depending on its settings. Nothing downstream can
         // recover a name that was never given, and a nameless dialog is a WCAG 4.1.2
@@ -91,9 +95,9 @@
     $attributes = $attributes->except(array_keys($ariaAttributes));
 
     // Backdrop classes — semi-transparent overlay behind the dialog
-    $backdropClasses = WireKit::resolveClasses('modal', 'backdrop', implode(' ', [
-        'wk-overlay-fixed fixed inset-0',
-        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
+    $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-modal '.WireKit::resolveClasses('modal', 'backdrop', implode(' ', [
+        'fixed inset-0',
+        'z-[var(--z-wk-modal)]',
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 
@@ -107,12 +111,12 @@
     // does not, which keeps its top inside the scrollable
     // area. The panel's own cap below makes that case rare; this keeps it reachable when a
     // caller overrides the cap.
-    $containerClasses = WireKit::resolveClasses('modal', 'container', implode(' ', [
-        'wk-overlay-fixed fixed inset-0',
-        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
+    $containerClasses = 'wk-overlay-fixed wk-overlay-layer-modal wk-scrollbar '.WireKit::resolveClasses('modal', 'container', implode(' ', [
+        'fixed inset-0',
+        'z-[var(--z-wk-modal)]',
         'flex items-start justify-center',
         'p-[var(--padding-wk-y-xl)]',
-        'wk-scrollbar overflow-y-auto',
+        'overflow-y-auto',
     ]), $scope);
 
     // Panel classes — the dialog surface with shadow and rounded corners.
@@ -128,7 +132,7 @@
     // its overflow would simply be gone. With a body the body absorbs the overflow and the
     // panel never needs its own scrollbar. It carries `role="dialog"`, so the scroll region
     // already has an owner for its keyboard model.
-    $panelClasses = WireKit::resolveClasses('modal', 'panel', implode(' ', [
+    $panelClasses = 'wk-scrollbar '.WireKit::resolveClasses('modal', 'panel', implode(' ', [
         'relative w-full',
         'my-auto',
         'flex flex-col',
@@ -138,7 +142,7 @@
         'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-xl)]',
         'shadow-[var(--shadow-wk-lg)]',
-        'overflow-x-hidden overflow-y-auto wk-scrollbar',
+        'overflow-x-hidden overflow-y-auto',
     ]), $scope);
 
     // Size mapping to modal width tokens
@@ -224,7 +228,10 @@
                     aria-modal="true"
                     @if($resolvedAriaLabel !== null)
                         aria-label="{{ $resolvedAriaLabel }}"
-                    @else
+                    @elseif(! array_key_exists('aria-labelledby', $ariaAttributes))
+                        {{-- A caller's own aria-labelledby is forwarded below and names the
+                             dialog; the header's would stand beside it and the parser keeps
+                             the first. --}}
                         aria-labelledby="{{ $titleId }}"
                     @endif
                     @if($describedby) aria-describedby="{{ $describedby }}" @endif

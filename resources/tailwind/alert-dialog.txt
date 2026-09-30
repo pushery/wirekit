@@ -47,6 +47,7 @@ $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
+$attributes]
 $autocomplete
 $backdropClasses
 $baseClasses
@@ -155,6 +156,7 @@ $optimistic,
 $optimisticArgs),
 $optimisticConfig
 $orientation
+$outerAttributes
 $panelClasses
 $phraseClasses
 $placeholder
@@ -231,6 +233,7 @@ $wrapLabel
 '.$iconOnlySquareToken.';']);
 '.$message);
 '.((string)
+'.WireKit::resolveClasses('alert-dialog',
 '2',
 '2xl'
 '2xl']);
@@ -307,6 +310,7 @@ $wrapLabel
 'false'
 'false',
 'filled'),
+'fixed
 'fixed'
 'fixed',
 'flex
@@ -421,6 +425,7 @@ $wrapLabel
 'orientation'
 'outline'];
 'overflow-hidden',
+'overflow-y-auto',
 'p-[var(--padding-wk-y-xl)]',
 'panel',
 'pending'
@@ -508,17 +513,23 @@ $wrapLabel
 'wk-field',
 'wk-field-frame',
 'wk-overlay-fixed
-'wk-overlay-layer-modal
-'wk-scrollbar
 'wk-tooltip-');
 'wk-touch-target
 'wkDescId')"
 'wkTitleId')"
 'wrapLabel'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xl',
 'xl']),
 'xs'
+'z-[var(--z-wk-modal)]',
 'z-[var(--z-wk-tooltip)]',
 (!
 ("Fast
@@ -549,6 +560,7 @@ $wrapLabel
 (@aware
 (Cancel,
 (SVG
+(Support\CallerListeners).
 (Support\DomId).
 (Tailwind's
 (WCAG
@@ -1135,6 +1147,7 @@ Static
 Strip
 Success
 Support\DomId
+Support\OuterAttributes.
 Swaps
 Switch
 TELEPORTED
@@ -1226,12 +1239,14 @@ Written
 X
 Your
 [
+[$outerAttributes,
 [&:user-invalid]:*
 ['1',
 ['date',
 ['inverted',
 ['outlined'
 ['sm',
+['x-on:mouseenter',
 ['xs',
 [--wk-touch-min:0px]'
 [1,
@@ -1247,9 +1262,11 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Type
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1497,6 +1514,7 @@ __('wirekit::To
 `wire:key`,
 `wire:loading.attr`
 `wire:loading`
+`wire:show`
 `wk-field-affordance`
 `wk-field`
 `wk-touch-target`
@@ -1517,6 +1535,7 @@ __('wirekit::To
 `x-ref`.
 `x-show="open"`
 `x-show`
+`x-show`,
 `x-text`
 `x-wk-ref`,
 `xs`
@@ -2497,6 +2516,7 @@ full
 fully
 function-valued
 function;
+further
 future
 gap
 gap-1
@@ -2674,6 +2694,7 @@ imports
 in
 in-flight
 in.
+in:
 in_array($iconOnlyBelow,
 in_array($intent,
 in_array($stackBelow,
@@ -3101,6 +3122,7 @@ out
 out,
 out.
 outer
+outermost
 outline
 outline()
 output
@@ -3113,7 +3135,6 @@ overflow
 overflow-hidden
 overflow-hidden.
 overflow-x-auto
-overflow-y-auto',
 overflow-y-hidden
 overlay
 override
@@ -3609,6 +3630,7 @@ specificity
 spellcheck="false"
 spelled
 spelling
+spelling,
 spellings
 spill
 spinner
@@ -3866,6 +3888,7 @@ trade,
 trailing
 transformed
 transition-colors
+transitions
 transitions,
 translated
 trapped,
@@ -4101,6 +4124,8 @@ with.
 withholds
 without
 wk-field:
+wk-overlay-layer-modal
+wk-scrollbar
 wk-touch-text-floor'
 word
 word,
@@ -4208,7 +4233,6 @@ xmlns="http://www.w3.org/2000/svg"
 yields
 you
 your
-z-[var(--z-wk-modal)]',
 z-index
 zero
 zoom,

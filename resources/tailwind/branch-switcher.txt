@@ -13,6 +13,7 @@ $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->whereDoesntStartWith(['wire:model',
 $attributes->whereStartsWith(['wire:model',
 $buttonClasses
@@ -69,6 +70,7 @@ $validated
 '',
 ',
 '.
+'.WireKit::resolveClasses('branch-switcher',
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
 '2xl'
@@ -111,6 +113,7 @@ $validated
 'total'
 'true';
 'true']);
+'wk-touch-target
 'wk-transition',
 'x-model'])->class([$navClasses])
 'x-model'])->whereDoesntStartWith('x-modelable')
@@ -184,11 +187,14 @@ $validated
 @else
 @endif
 @endphp
+@endunless
 @if
 @if($total
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 A11y
 ALSO
@@ -589,7 +595,7 @@ it.
 it:
 items-center
 its
-justify-center
+justify-center',
 keep
 keeps
 kill
@@ -923,7 +929,6 @@ whole
 whose
 wins
 with
-wk-touch-target',
 would
 wrap-around
 wrap.

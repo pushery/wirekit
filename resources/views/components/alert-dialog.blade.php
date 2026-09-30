@@ -105,18 +105,18 @@
     $callerLabel = $attributes->get('aria-label');
     $attributes = $attributes->except(['aria-label']);
 
-    $backdropClasses = WireKit::resolveClasses('alert-dialog', 'backdrop', implode(' ', [
-        'wk-overlay-fixed fixed inset-0',
-        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
+    $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-modal '.WireKit::resolveClasses('alert-dialog', 'backdrop', implode(' ', [
+        'fixed inset-0',
+        'z-[var(--z-wk-modal)]',
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 
-    $containerClasses = WireKit::resolveClasses('alert-dialog', 'container', implode(' ', [
-        'wk-overlay-fixed fixed inset-0',
-        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
+    $containerClasses = 'wk-overlay-fixed wk-overlay-layer-modal wk-scrollbar '.WireKit::resolveClasses('alert-dialog', 'container', implode(' ', [
+        'fixed inset-0',
+        'z-[var(--z-wk-modal)]',
         'flex items-center justify-center',
         'p-[var(--padding-wk-y-xl)]',
-        'wk-scrollbar overflow-y-auto',
+        'overflow-y-auto',
     ]), $scope);
 
     $panelClasses = WireKit::resolveClasses('alert-dialog', 'panel', implode(' ', [
@@ -132,6 +132,10 @@
         'px-[var(--padding-wk-x-xl)]',
         'py-[var(--padding-wk-y-xl)]',
     ]), $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

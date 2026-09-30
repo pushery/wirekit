@@ -28,6 +28,7 @@ $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge($depthStyle
 $baseClasses
 $borderWidthClass
@@ -309,6 +310,13 @@ $wrap
 'wk-tooltip-');
 'wrap'
 'x-circle'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xs'
 'z-[var(--z-wk-tooltip)]',
@@ -330,6 +338,7 @@ $wrap
 (Blade
 (CTA
 (SOFT
+(Support\CallerListeners).
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -442,6 +451,7 @@ $wrap
 @endif
 @endif>
 @endphp
+@endunless
 @if
 @if($count
 @if($describes)
@@ -463,6 +473,8 @@ $wrap
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 A11y
 ALSO
@@ -666,10 +678,12 @@ Without
 ['sm',
 ['soft',
 ['style'
+['x-on:mouseenter',
 [])->class([$baseClasses,
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -1543,6 +1557,7 @@ lines:
 link
 linked
 list
+listener
 listens
 literal
 little
@@ -1890,6 +1905,7 @@ rounded
 rounded-full
 row.
 rule
+run
 rung
 runtime
 safe.
@@ -1970,6 +1986,7 @@ space).
 span
 span).
 spelled
+spelling,
 spells
 spilling
 split
@@ -2174,6 +2191,7 @@ variant
 variant),
 vertical
 via
+view
 view's
 viewport.
 visibility

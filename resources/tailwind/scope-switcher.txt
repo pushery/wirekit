@@ -41,7 +41,6 @@ $attributes->class([$classes]);
 $attributes->class([$wrapperClasses])
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel');
-$attributes->except(['class'])
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -1148,6 +1147,7 @@ __toString
 `break-word`
 `class="h-12
 `class="whitespace-normal"`
+`class`
 `clipboard-button`
 `clipboard-button`,
 `contain:
@@ -1417,6 +1417,7 @@ background)
 background,
 badge
 bag
+bag,
 baked
 bakes
 band
@@ -1437,6 +1438,7 @@ behind
 being
 bell
 belongs
+belongs,
 below
 below).
 below,
@@ -1606,6 +1608,7 @@ class="shrink-0">{{
 class="sr-only">{{
 class="truncate">{{
 class="wk-field
+class="wk-listbox-option
 class="wk-scroll-shadow-bottom"></div>
 class="wk-scroll-shadow-top"></div>
 class="wk-scrollbar
@@ -2188,6 +2191,7 @@ in_array($status,
 in_array($surface,
 include
 included
+included:
 including
 indicator,
 inert
@@ -2404,6 +2408,7 @@ media
 meet
 merely
 merge
+merges
 message
 mid-word
 middle

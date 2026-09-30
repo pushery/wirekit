@@ -199,9 +199,9 @@
      unconditionally — a marker that appears only inside a group would make the group's
      stylesheet depend on a state the markup does not carry. --}}
 <article
-    role="article"
+    @unless($attributes->has('role')) role="article" @endunless
     data-wk-message
-    aria-labelledby="{{ $messageId }}-header"
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $messageId }}-header" @endunless
     {{ $attributes->class([$baseClasses]) }}
 >
     {{-- Avatar --}}

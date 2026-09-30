@@ -111,7 +111,10 @@
         'transition-colors duration-[var(--transition-wk-duration)]',
     ]);
 
+    // `relative` holds the forced-colors mark the stylesheet draws on `::before`, through the
+    // `wk-calendar-day` marker each day button carries beside these classes.
     $dayBtnClasses = implode(' ', [
+        'relative',
         'flex items-center justify-center',
         'w-[var(--size-wk-md-compact)] h-[var(--size-wk-md-compact)]',
         'rounded-[var(--radius-wk-sm)]',
@@ -336,7 +339,7 @@
                                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay && month.offset === focusOffset ? '0' : '-1'"
                                                 :disabled="!day.isCurrentMonth"
-                                                class="{{ $dayBtnClasses }}"
+                                                class="wk-calendar-day {{ $dayBtnClasses }}"
                                                 x-on:mouseenter="hoverDay(day.date)"
                                 :data-wk-in-range="day.rangeMarker"
                                                 :class="{
@@ -389,7 +392,7 @@
                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay ? '0' : '-1'"
                                 :disabled="!day.isCurrentMonth"
-                                class="{{ $dayBtnClasses }}"
+                                class="wk-calendar-day {{ $dayBtnClasses }}"
                                 {{-- The in-between days get a TINT, not the accent, so the two ends
                                      stay what the eye lands on. --}}
                                 x-on:mouseenter="hoverDay(day.date)"

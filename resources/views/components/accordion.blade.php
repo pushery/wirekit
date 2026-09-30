@@ -55,6 +55,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('accordion', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown']);
+
     // Accordion container — visually a vertically stacked list with dividers.
     // `mode` controls whether multiple panels can be open at once:
     //   - 'single'   → opening one closes the others (like radio buttons)

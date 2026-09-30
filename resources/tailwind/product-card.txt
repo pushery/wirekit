@@ -48,8 +48,6 @@
 "set
 "take
 "the
-"{$sign}{$delta}";
-"{$sign}{$delta}%"
 "↻
 #0a0a0a),
 #0a0a0a`
@@ -121,8 +119,7 @@ $clearable
 $compareAt
 $computedRel
 $content
-$currency)
-$currency);
+$currency,
 $declarativeBusyOnly
 $declarativeBusyOnly);
 $declarativeLoading
@@ -130,8 +127,8 @@ $declarativeLoading)
 $delayHide
 $delayShow
 $delta
+$delta,
 $deltaClasses
-$deltaFormat
 $deltaIntent
 $depthStyle
 $depthStyle]
@@ -145,11 +142,8 @@ $dismissBtnClasses
 $dismissLabel
 $dismissible
 $displayAmount
-$displayAmount,
 $displayBase
-$displayBase,
 $displayUnitPrice
-$displayUnitPrice,
 $dot
 $dotColorClass
 $e)
@@ -172,8 +166,6 @@ $formattedAmount
 $formattedBase
 $formattedDelta
 $formattedUnitPrice
-$formatter
-$formatter->formatCurrency((float)
 $fraction
 $fraction)
 $fullStars
@@ -232,6 +224,9 @@ $linkDisabledClasses])
 $loading
 $loadingTarget
 $locale
+$locale)
+$locale));
+$locale);
 $m):
 $m[1]);
 $max));
@@ -245,6 +240,10 @@ $mergedAttributes->merge(['aria-hidden'
 $message
 $minorUnits
 $minorUnits)
+$money
+$money($displayAmount);
+$money($displayBase)
+$money($displayUnitPrice)
 $name
 $name,
 $name];
@@ -291,6 +290,7 @@ $shape['path']
 $shape['viewBox']
 $shouldSetHidden
 $sign
+$sign.($deltaFormat
 $size
 $size,
 $sizeClasses
@@ -345,6 +345,7 @@ $width
 $wrap
 $wrapLabel
 $wrapperClasses
+%`
 &&
 '
 '#'.$id.'-error',
@@ -747,6 +748,13 @@ $wrapperClasses
 'wrap'
 'wrapLabel'
 'x-circle'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xl',
 'xl']))
@@ -792,6 +800,7 @@ $wrapperClasses
 ($surface)
 ($svgHtml
 ($unitPrice
+($value):
 ($wrapLabel
 ('xs').
 (($iconOnly
@@ -814,6 +823,7 @@ $wrapperClasses
 (Price
 (SOFT
 (SVG
+(Support\CallerListeners).
 (Tailwind's
 (UVP
 (WCAG
@@ -1375,7 +1385,6 @@ Fetch
 Filled
 Floating
 For
-Format
 Format:
 Fully
 GLOBAL
@@ -1439,7 +1448,10 @@ Literal
 Livewire
 Livewire's
 Loading
+Locale-aware
+LocalizedNumber::currency((float)
 LocalizedNumber::format((float)
+LocalizedNumber::percent((float)
 Logger
 Loud
 MAINTENANCE
@@ -1470,7 +1482,6 @@ Not
 Nothing
 Null
 Null,
-NumberFormatter
 ONE
 ONLY
 OPENING
@@ -1682,6 +1693,7 @@ Written
 ['soft',
 ['style'
 ['value'
+['x-on:mouseenter',
 ['xs',
 [--wk-touch-min:0px]'
 [1,
@@ -1691,11 +1703,10 @@ Written
 [overflow-wrap:anywhere]'
 \Illuminate\Support\Facades\Log::warning(
 \InvalidArgumentException('wirekit::button:
-\NumberFormatter($locale,
-\NumberFormatter::CURRENCY);
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -1742,6 +1753,8 @@ __toString
 `+`
 `--opacity-wk-hover`
 `--wk-touch-min`
+`-12,5
+`-12.5%`.
 `-`
 `.attr`
 `.wk-button-group[data-stack-below="…"]`
@@ -2530,6 +2543,7 @@ compiles
 complain
 component
 component's
+component's,
 component,
 component.
 components
@@ -2770,6 +2784,7 @@ dismissLabel.
 dismissible
 dispatches
 display
+display,
 display:block,
 displaying
 dist/wirekit.css
@@ -2916,6 +2931,7 @@ exposing
 expression
 expressions
 expressions.
+extension:
 external-link
 extra
 eye
@@ -3030,6 +3046,7 @@ floor($numericValue);
 flow
 flow.
 flush
+fn
 focus
 focus,
 focus-visible:outline-hidden
@@ -3066,6 +3083,7 @@ forgotten
 form
 form,
 formatted
+formatter
 formatting
 formatting.
 forms.
@@ -3364,6 +3382,7 @@ interchangeable:
 interpolated
 interpolated)
 interrupt
+intl
 into
 intrinsic
 introduced
@@ -3379,6 +3398,7 @@ is
 is"
 is,
 is.
+is:
 isn't
 isolate`
 isset($badge))
@@ -3432,6 +3452,7 @@ labelable
 labeled
 labels
 labels).
+lacks
 ladder
 land
 landed
@@ -3507,8 +3528,9 @@ loading="{{
 loadingTarget
 loads,
 loads.
+locale's
 locale,
-locale-aware
+locale:
 localized
 log
 log.
@@ -4143,6 +4165,7 @@ removes
 removing
 render
 render,
+render.
 rendered
 rendered.
 rendering
@@ -4431,6 +4454,7 @@ specific
 specificity
 spelled
 spelling
+spelling,
 spellings
 spells
 spill
@@ -5053,6 +5077,7 @@ wraps
 write
 writes
 writing
+writing,
 written
 wrong
 wrong.

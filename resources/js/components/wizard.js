@@ -88,6 +88,15 @@ export default function wirekitWizard(config = {}) {
         },
 
         /**
+         * Alpine calls `init()` on the data object itself, at the moment an `x-init` on the root
+         * would run. Starting here rather than from an `x-init` in the view leaves that attribute
+         * to the caller: a second one on the same element would be dropped by the parser.
+         */
+        init() {
+            this.initWizard();
+        },
+
+        /**
          * Watch the steps for the one attribute this component reads off the DOM.
          *
          * Scoped to `data-wk-step-complete` on the component's own subtree, not to the

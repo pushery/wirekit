@@ -70,6 +70,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('profile', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.enter.prevent', 'x-on:keydown.space.prevent']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -191,7 +195,7 @@
          developer's click handler twice. --}}
     @if($interactive && $tag !== 'button')
         tabindex="0"
-        role="button"
+        @unless($attributes->has('role')) role="button" @endunless
         {{-- The bare `x-data` is what makes the two handlers below exist. Alpine walks
              only the trees rooted at an element carrying `x-data` or `x-init` — everything
              else in the document is never visited, so an `x-on:` on an unscoped element is
@@ -215,7 +219,9 @@
         x-on:keydown.enter.prevent="$el.click()"
         x-on:keydown.space.prevent="$el.click()"
     @endif
-    {{ $attributes->class([$classes]) }}
+    {{-- The row's own tab stop is part of its keyboard model, so a caller's copy leaves the
+         bag there; on a real button the component writes none and the caller's stays. --}}
+    {{ ($interactive && $tag !== 'button' ? $attributes->except('tabindex') : $attributes)->class([$classes]) }}
 >
     @if($avatarSrc)
         <img data-wk-prose-skip src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-full object-cover" />

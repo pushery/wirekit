@@ -74,8 +74,7 @@
         $accessibleName = trim($accessibleName.' '.__('wirekit::(opens in new tab)'));
     }
 
-    $classes = WireKit::resolveClasses('bottom-nav.item', 'base', implode(' ', [
-        'wk-bottom-nav-item',
+    $classes = 'wk-bottom-nav-item '.WireKit::resolveClasses('bottom-nav.item', 'base', implode(' ', [
         'relative flex flex-1 flex-col items-center justify-center gap-1',
         // Vertical padding gives the corner badge (-top-1.5 on the icon) room so it
         // does not break through the bar's top border line.

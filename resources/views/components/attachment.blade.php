@@ -180,8 +180,8 @@
          noise in the tree instead of structure. Same shape as accordion. --}}
     @unless($splitLink)
         @if(filled($accessibleName))
-            @if($tag === 'div') role="group" @endif
-            aria-label="{{ $accessibleName }}"
+            @if($tag === 'div') @unless($attributes->has('role')) role="group" @endunless @endif
+            @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $accessibleName }}" @endunless
         @endif
     @endunless
     @if($computedRel) rel="{{ $computedRel }}" @endif

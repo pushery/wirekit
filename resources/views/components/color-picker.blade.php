@@ -120,6 +120,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('color-picker', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@input', '@keydown.escape.window']);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
@@ -245,7 +254,7 @@
      unconditional on purpose: a wrapper that only appears when a message does gives the
      component two DOM shapes, and the one a developer inspects is whichever they hit
      first. --}}
-<div class="{{ $fieldClasses }}" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="{{ $fieldClasses }}" @if($callerRef !== '') data-wk-ref-scope @endif>
 @if(! $popoverValue)
     {{-- ── Native mode (default). ── Slightly wider swatch↔readout gap than the
          shared wrapper default: the hex pill sits inline next to the swatch, and
@@ -267,7 +276,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
                 @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-                {{ $attributes->except('aria-describedby')->class([$inputClasses]) }}
+                {{ $attributes->except('type')->except('aria-describedby')->class([$inputClasses]) }}
             />
             @if($slot->hasActualContent())
                 <span class="sr-only">{{ $slot }}</span>
@@ -460,7 +469,7 @@
         {{-- Hidden form field — mirrors the picked value in the active format. --}}
         {{-- `wire:model` and `x-model` bind here: this field carries the value, and the picker
              sends `input` and `change` from it on every pick and clear. --}}
-        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }} />
+        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" {{ $attributes->except('type')->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }} />
 
         {{-- Picker panel — teleported out of the document flow + Floating-UI positioned (see
              wirekitColorPicker._anchor) so it escapes any clipping/stacking

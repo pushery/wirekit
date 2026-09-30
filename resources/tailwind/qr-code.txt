@@ -136,10 +136,12 @@ $writer->writeString($value,
 @else
 @endif
 @endphp
+@endunless
 @if($svgContent)
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 Accessible
 BaconQrCode

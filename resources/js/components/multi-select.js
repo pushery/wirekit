@@ -9,6 +9,8 @@
  * @param {string} config.name - Input name for form submission
  * @param {Array<string>} [config.value] - Option keys to pre-select on load
  * @param {string} [config.id] - DOM id stem the option ids are minted from
+ * @param {string} [config.fieldId] - the text field's id: the caller's `id` when one was given,
+ *   the stem with `-input` after it otherwise
  * @param {string} [config.placement] - Where the panel opens against the field (Floating UI placement)
  * @param {string} [config.panelWidth] - 'trigger' matches the field; anything else lets the panel
  *   be wider than the field but never narrower
@@ -103,6 +105,9 @@ export default function wirekitMultiSelect(config = {}) {
         // `aria-activedescendant` are two readings of ONE string — the pairing
         // comes apart the moment those are written independently.
         _id: config.id || null,
+        // The text field's id comes from the Blade too: it is the caller's `id` when one was
+        // given, so a label of the caller's reaches the field, and the stem with `-input` otherwise.
+        _fieldId: config.fieldId || (config.id ? config.id + '-input' : null),
         // Validated by the Blade, which falls back to these same defaults.
         _placement: config.placement || 'bottom-start',
         _panelWidth: config.panelWidth || 'trigger',
@@ -282,8 +287,8 @@ export default function wirekitMultiSelect(config = {}) {
 
         /** The text field, which a `search-change` starts from (see utils/server-search.js). */
         _searchSource() {
-            const byId = this._id && typeof document !== 'undefined'
-                ? document.getElementById(this._id + '-input')
+            const byId = this._fieldId && typeof document !== 'undefined'
+                ? document.getElementById(this._fieldId)
                 : null;
 
             return byId ?? this.$refs?.filterInput ?? null;

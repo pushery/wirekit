@@ -38,6 +38,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:keydown.escape.window', 'x-on:click.outside', 'x-on:click']);
+
     // STABLE across re-renders, which the old `Str::random(12)` was not — and the
     // panel is the one place where that costs everything.
     //

@@ -66,6 +66,17 @@
     // reveal; the inner root keeps the counter scope.
     $needsEntranceWrapper = $animate && $animateAttr;
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // stat, so they go on the outermost element (see Support\OuterAttributes). With the entrance
+    // wrapper that is the wrapper; without it the root is outermost and keeps them in its bag.
+    [$outerAttributes, $withoutOuterAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    if ($needsEntranceWrapper) {
+        $attributes = $withoutOuterAttributes;
+    } else {
+        $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
+    }
+
     // ── The counter's MACHINE value, resolved here rather than in JavaScript ──
     //
     // `value` is a DISPLAY string — "€31.200", "$1,250.50", "42%", "10000". The
@@ -235,7 +246,7 @@
          contract is one x-data per element. The replayable contract
          attaches here too so the docs site can re-mount the entrance
          animation on click of the replay button. --}}
-    <div {!! $animateAttr !!} data-replayable="true">
+    <div {!! $animateAttr !!} data-replayable="true" {{ $outerAttributes }}>
 @endif
 
 <div

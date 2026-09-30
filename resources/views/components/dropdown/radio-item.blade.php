@@ -99,18 +99,21 @@
     {{-- Radio indicator — an ALWAYS-visible ring (so the whole group reads as a
          radio set, not just the selected row, and stays distinct from the
          checkbox-item's checkmark). Selected: the ring goes accent + a filled
-         center dot appears. Reserves its slot so labels stay aligned. --}}
+         center dot appears. Reserves its slot so labels stay aligned.
+         `wk-choice-frame` marks the ring: under a preset whose border width is 0px the ring is
+         gone, and `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet
+         brings it back. --}}
     <span class="shrink-0 w-4 h-4 flex items-center justify-center" aria-hidden="true">
         @if($isBound)
             <span
-                class="w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"
+                class="wk-choice-frame w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"
                 :class="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} ? 'border-[var(--color-wk-accent)]' : 'border-[var(--color-wk-border-strong)]'"
             >
                 <span x-show="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}" x-cloak class="w-1.5 h-1.5 rounded-full bg-[var(--color-wk-accent)]"></span>
             </span>
         @else
             {{-- Static (non-model) radio item: a plain outline ring as the affordance. --}}
-            <span class="w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span>
+            <span class="wk-choice-frame w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span>
         @endif
     </span>
 

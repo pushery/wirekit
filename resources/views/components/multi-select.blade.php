@@ -89,8 +89,23 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('multi-select', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@click.away', '@keydown.escape']);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'multi-select-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+
+    // A caller's `id` goes on the text field, the element a `<label for>` elsewhere on the
+    // page and a link to `#id` reach. Without one the field takes the component's id with
+    // `-input` after it, as before. The option and listbox ids keep `$id` as their stem.
+    $callerId = filled($attributes->get('id'));
+    $fieldId = $callerId ? $id : $id.'-input';
 
     // `id` and `name` are consumed above and re-emitted where they belong -- the
     // internal combobox input and the hidden inputs. Leaving them in the bag would
@@ -111,6 +126,11 @@
     // explicit `ariaLabel` prop wins, then the field's `label` prop (passed
     // down via attributes scan), then the `name`/`placeholder` as last resort.
     $resolvedAriaLabel = $ariaLabel ?? $attributes->get('aria-label') ?? $label ?? $placeholder ?? $name;
+
+    // On the text field the last two fallbacks step aside for a caller's `id`: the id is there
+    // so a label of the caller's can reach the field, and an aria-label would win over that
+    // label. The list and the result group keep the full chain; they are not the field.
+    $fieldAriaLabel = $ariaLabel ?? $attributes->get('aria-label') ?? $label ?? ($callerId ? null : ($placeholder ?? $name));
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -184,11 +204,21 @@
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
+    // A selected option is marked twice: by the selected weight and by the check at the end
+    // of its row. The check is ink, so it holds in grayscale and in forced colors, and it is
+    // what keeps the choice visible when a theme sets `--font-wk-selected-weight` to the body
+    // weight. Without it the weight would be the only mark on the row, and the highlight
+    // tint is the hover tint.
     $optionSelectedClasses = WireKit::resolveClasses('multi-select', 'option-selected', implode(' ', [
-        'font-[number:var(--font-wk-heading-weight)]',
+        'font-[number:var(--font-wk-selected-weight)]',
     ]), $scope);
 
+    $optionCheckClasses = WireKit::resolveClasses('multi-select', 'option-check', 'h-4 w-4 shrink-0', $scope);
+
+    // Every row lays its parts out in a line, so the check sits at the end whatever the label
+    // holds, and a row with a medium or a description keeps the same layout.
     $optionClasses = implode(' ', [
+        'flex items-center gap-[var(--gap-wk-sm)]',
         'p-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
@@ -230,8 +260,8 @@
         'hover:bg-[var(--color-wk-bg-muted)]',
     ]), $scope);
 
-    $listBoxClasses = WireKit::resolveClasses('multi-select', 'list-checkbox', implode(' ', [
-        'relative inline-flex items-center justify-center shrink-0 wk-touch-target w-5 h-5 mt-0.5',
+    $listBoxClasses = 'wk-touch-target '.WireKit::resolveClasses('multi-select', 'list-checkbox', implode(' ', [
+        'relative inline-flex items-center justify-center shrink-0 w-5 h-5 mt-0.5',
         'rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]',
         'peer-hover:border-[var(--color-wk-border-strong-hover)] bg-[var(--color-wk-bg-input)]',
         'peer-checked:bg-[var(--color-wk-accent)] peer-checked:border-[var(--color-wk-accent)]',
@@ -314,12 +344,6 @@
     }
     $richRows = $optionUses['media'] || $optionUses['descriptions'];
 
-    // A row with a medium or a description lays its parts out in a line; a list that uses
-    // neither keeps its plain row. The medium in a pill is smaller, since a pill is one short line.
-    if ($richRows) {
-        $optionClasses .= ' flex items-center gap-[var(--gap-wk-sm)]';
-    }
-
     // Normalize the `value` prop to an array of string option keys for
     // pre-selection. Accepts an array (['php', 'js']) or a comma-separated
     // string ('php,js') — mirrors the seeding contract of tags-input. The
@@ -389,9 +413,9 @@
     $attributes = $attributes->except('x-ref');
 @endphp
 
-<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :for="$id . '-input'" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- `x-modelable` is what makes `wire:model` work here, and without it the control
@@ -415,7 +439,7 @@
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         x-modelable="selected"
         {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
-        x-data="wirekitMultiSelect({ options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
+        x-data="wirekitMultiSelect({ options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, fieldId: {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
         @if($listLayout) data-wk-multi-select-layout="list" @endif
         @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
         @click.away="dropdownOpen = false"
@@ -437,7 +461,7 @@
                  open, so it is a search field rather than a combobox. --}}
             <input
                 type="search"
-                id="{{ $id }}-input"
+                id="{{ $fieldId }}"
                 x-ref="filterInput"
                 x-model="filter"
                 @input="onListInput()"
@@ -445,7 +469,7 @@
                 @if($required) aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                aria-label="{{ $resolvedAriaLabel }}"
+                @if($fieldAriaLabel !== null) aria-label="{{ $fieldAriaLabel }}" @endif
                 placeholder="{{ $placeholder }}"
                 {{-- `wk-field` is outside `resolveClasses()` so a personalization cannot take it off:
                      it holds the font-size floor that keeps iOS from zooming the page on focus. --}}
@@ -532,6 +556,7 @@
             {{-- Selected value pills --}}
             <template x-for="(val, i) in selected" :key="'pill-'+val">
                 <span class="{{ $pillClasses }}">
+                    {{-- The medium in a pill is smaller than in a row, since a pill is one short line. --}}
                     @if($optionUses['media'])
                         <template x-for="chosen in pillMedia(val)" :key="chosen.value">
                             @include('wirekit::components.partials.listbox-option-media', [
@@ -560,7 +585,7 @@
             {{-- Filter text input --}}
             <input
                 type="text"
-                id="{{ $id }}-input"
+                id="{{ $fieldId }}"
                 x-ref="filterInput"
                 x-model="filter"
                 @focus="dropdownOpen = true"
@@ -599,7 +624,7 @@
                 {{-- Wire an aria-label so WCAG 2.1 AA + axe label-rule are     --}}
                 {{-- satisfied even when the parent <x-wirekit::field label="..."> --}}
                 {{-- doesn't reach this internal combobox input.                 --}}
-                aria-label="{{ $resolvedAriaLabel }}"
+                @if($fieldAriaLabel !== null) aria-label="{{ $fieldAriaLabel }}" @endif
                 :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string($placeholder) }} : ''"
                 class="wk-field flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden"
             />
@@ -660,7 +685,10 @@
                          `optionId()`, so they cannot drift apart. --}}
                     :id="optionId(idx)"
                     :aria-selected="selected.includes(opt.value) ? 'true' : 'false'"
-                    class="{{ $optionClasses }}"
+                    {{-- `data-active` on the row the arrow keys are on, for the forced-colors
+                         mark the stylesheet draws through `wk-listbox-option`. --}}
+                    :data-active="idx === highlight ? '' : null"
+                    class="wk-listbox-option {{ $optionClasses }}"
                     {{-- One binding, because an attribute can only be bound
                          once, and the two conditions are independent: a row can
                          be highlighted, selected, both or neither. The strings
@@ -696,8 +724,12 @@
                             'descriptionClasses' => 'text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]',
                         ])
                     @else
-                        <span x-text="opt.label"></span>
+                        <span class="min-w-0 flex-1" x-text="opt.label"></span>
                     @endif
+                    {{-- The check of a selected option. `invisible` rather than removed, so the
+                         column is there on every row and a label keeps its width when it is
+                         picked. `aria-hidden`: the option already says `aria-selected`. --}}
+                    <svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="selected.includes(opt.value) ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                 </div>
             </template>
 

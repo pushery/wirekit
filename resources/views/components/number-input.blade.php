@@ -79,6 +79,15 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('number-input', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:input', 'x-on:blur', 'x-on:change']);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Auto-generate ID from name attribute
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'number-input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
@@ -265,7 +274,7 @@
      inline object literal cannot declare getters or methods under Alpine's CSP
      build, so under a strict policy both buttons rendered, looked enabled, and
      did nothing. --}}
-<div
+<div {{ $outerAttributes }}
     class="space-y-1.5 min-w-0"
     @if($callerRef !== '') data-wk-ref-scope @endif
     x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }} })"
@@ -327,7 +336,7 @@
                 x-on:blur="clampInput()"
             @else
                 x-model.number="value"
-                @blur="value = clamp(value)"
+                x-on:blur="value = clamp(value)"
             @endif
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
@@ -344,7 +353,7 @@
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
 
         {{-- Increase button — disabled at max boundary --}}

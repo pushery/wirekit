@@ -54,6 +54,7 @@ $attributes->has('aria-labelledby'))
 $attributes->merge
 $attributes->whereDoesntStartWith('wire:model');
 $attributes->whereStartsWith('wire:model')->getAttributes();
+$attributes]
 $baseClasses
 $buttonActive
 $buttonBag
@@ -160,6 +161,7 @@ $optionLabel['lang']
 $optionValue
 $optionValue)
 $orientation
+$outerAttributes
 $page):
 $pageAction
 $pageAction($paginator->currentPage()
@@ -824,6 +826,7 @@ $wrapLabel
 @endif>{{
 @endisset
 @endphp
+@endunless
 @foreach($optionLabel
 @foreach($options
 @foreach($paginator->linkCollection()->slice(1,
@@ -868,6 +871,8 @@ $wrapLabel
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 A11y:
 AA
@@ -1082,6 +1087,7 @@ Spelling
 Strip
 Success
 Support\DomId
+Support\OuterAttributes.
 TEXT
 THAT
 THEM
@@ -1150,6 +1156,7 @@ X
 XSS
 Y"
 [
+[$outerAttributes,
 [$queryName,
 ['Europe'
 ['WKPAGEFIRST',
@@ -1173,6 +1180,7 @@ Y"
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique('wk-per-page-'.$pagingName,
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1358,15 +1366,18 @@ __('wirekit::Showing
 `whitespace-normal`
 `whitespace-nowrap`
 `wire:*`
+`wire:key`,
 `wire:loading.attr`
 `wire:loading`
 `wire:model`
+`wire:show`
 `wirekit::`
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
 `wrapLabel`
 `wrapLabel`,
+`x-show`,
 `xs`
 `xs`,
 `xs`.
@@ -2302,6 +2313,7 @@ in
 in,
 in-flight
 in.
+in:
 in_array($iconOnlyBelow,
 in_array($intent,
 in_array($stackBelow,
@@ -2698,6 +2710,7 @@ out
 out,
 out.
 outer
+outermost
 outline()
 output
 outranks
@@ -3345,6 +3358,7 @@ trace.
 trade
 trade,
 transition-colors
+transitions
 transitions,
 translatable
 translated

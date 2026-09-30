@@ -225,7 +225,7 @@
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
                 :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? {{ \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses) }}"
-                class="{{ $tabClasses }}"
+                class="wk-tab {{ $tabClasses }}"
             >
                 @if($tab['icon'])
                     <x-wirekit::icon :name="$tab['icon']" class="h-4 w-4 shrink-0" />

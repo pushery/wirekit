@@ -184,6 +184,7 @@ $warnThreshold
 @props([
 @props.
 @unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 ABSOLUTE
 API

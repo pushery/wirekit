@@ -85,7 +85,7 @@
      screen reader announces drift apart, and the drift is invisible to the
      person authoring it. --}}
 <div
-    @if($label) role="group" aria-label="{{ $label }}" @endif
+    @if($label) @unless($attributes->has('role')) role="group" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
     data-wk-bento-grid
     {{ $attributes->class([$classes]) }}
 >

@@ -27,6 +27,7 @@ $attributes->get('aria-labelledby');
 $attributes->get('id')
 $attributes->get('id').'-label'
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $circumference
 $circumference;
@@ -272,6 +273,7 @@ $wrapperClasses
 @elseif($showValue
 @endif
 @endphp
+@endunless
 @if(!
 @if($count
 @if($isIndeterminate)
@@ -284,6 +286,8 @@ $wrapperClasses
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 ARIA
 Alpine

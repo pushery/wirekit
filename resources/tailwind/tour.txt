@@ -58,6 +58,7 @@ $titleId
 ($levelValue
 (0,
 (1-6).
+(Support\CallerListeners).
 (default),
 (e.g.
 (int)
@@ -125,6 +126,7 @@ Auto-assign
 Back/Next
 Blade
 CSS
+CallerRef::onRoot()
 DIALOG
 DOM
 Declared
@@ -184,6 +186,7 @@ WireKit::resolveClasses('tour.step',
 WireKit::validateProp('tour.step',
 [
 ['1',
+['@keydown.escape.window']);
 ['number'
 [1,
 [data-wk-tour-step]
@@ -191,6 +194,8 @@ WireKit::validateProp('tour.step',
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Next'))
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Step
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\WireKit::warnUnknownProps('tour',
 \Pushery\WireKit\WireKit::warnUnknownProps('tour.step',
@@ -210,7 +215,9 @@ __('wirekit::Tour
 `heading-order`
 `modal.blade.php`
 `tour.step`.
+`x-ref`
 a
+above.
 accessibility
 accessible
 after
@@ -261,6 +268,7 @@ be,
 because
 before
 behind
+belongs
 below
 best-practice
 between
@@ -297,6 +305,7 @@ class="wk-overlay-fixed
 client-only
 component
 component's
+component,
 computePosition()
 conditionally
 containing
@@ -345,6 +354,7 @@ enclosing
 escapes
 evaluates
 evaluation.
+event
 ever.
 every
 everything
@@ -376,10 +386,12 @@ gate
 gate,
 generated
 gets
+goes
 guessed
 h1,
 halves
 handed
+hands
 has
 have
 heading
@@ -414,6 +426,7 @@ invisible
 is
 it
 it.
+it:
 items-center
 its
 itself
@@ -421,6 +434,7 @@ joined
 jumps
 just
 justify-between">
+keep
 keeps
 key
 know
@@ -439,6 +453,8 @@ level
 line
 links
 list
+listener
+listens
 literal
 live
 lives
@@ -498,6 +514,8 @@ opens,
 optimistic-ui:
 order
 order.
+other
+our
 out
 outline
 outline:
@@ -566,6 +584,7 @@ right
 role="dialog"
 roll
 root
+root,
 rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
 rule
@@ -599,6 +618,7 @@ slot.
 so
 sources,
 specific
+spelling,
 spot.
 state
 step
@@ -673,6 +693,7 @@ value.
 values
 verbatim,
 via
+view
 view's
 view.
 viewport.

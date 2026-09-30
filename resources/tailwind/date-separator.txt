@@ -83,6 +83,7 @@ $variantValue
 @props([
 @props.
 @unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 Carbon
 Carbon::now($tz));

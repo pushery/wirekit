@@ -1,6 +1,7 @@
 "Replay"
 "used
 "↻"
+$attributes
 $attributes->getAttributes());
 $attributes->merge([
 $el.closest(selector)
@@ -8,6 +9,8 @@ $label,
 $slot
 $slot->hasActualContent())
 $target
+''),
+'.\Pushery\WireKit\WireKit::resolveClasses('replay-button',
 'aria-label'
 'base',
 'button',
@@ -15,8 +18,9 @@ $target
 'label'
 'target'
 'type'
-'wk-replay-button'),
+'wk-replay-button
 (16×16).
+(Support\CallerListeners).
 (an
 (badge[dismissible],
 (reveal,
@@ -43,6 +47,7 @@ $target
 <button
 <path
 <svg
+=
 =>
 >
 @else
@@ -53,6 +58,7 @@ $target
 @php
 @props([
 @props.
+A
 AND
 Accessible
 Alpine
@@ -61,6 +67,7 @@ Alpine.initTree()
 BEM
 CSP
 CSS
+CallerRef::onRoot()
 ComponentSlot),
 Declared
 Default
@@ -77,8 +84,10 @@ Style
 That
 The
 WireKit
+['x-on:click']);
 [data-replay-target]
-\Pushery\WireKit\WireKit::resolveClasses('replay-button',
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('replay-button',
 ])
 __('wirekit::Replay'),
@@ -87,7 +96,9 @@ __('wirekit::Replay'),
 `data-replayable="true"`
 `wk-*`
 `wk-replay-button`
+`x-ref`
 a
+above.
 affordance
 affordance.
 alert[dismissible]).
@@ -102,16 +113,20 @@ anticipate
 aria-hidden="true"
 auto-derived
 back.
+bag
 be
 because
 before
 being
+belongs
 block,
+both
 build
 button
 button.
 by
 call
+caller's
 calling
 can
 cannot
@@ -125,6 +140,7 @@ client-only
 closest
 component
 component's
+component,
 components
 constructed
 content
@@ -145,9 +161,11 @@ directive
 docs
 does
 early
+element
 emitted
 empty
 etc.
+event
 event,
 every
 existing
@@ -162,8 +180,10 @@ gated
 give
 given.
 glyph
+goes
 had
 handler
+hands
 has
 height="16"
 hold
@@ -180,10 +200,15 @@ interaction
 is
 isn't
 it
+it:
 its
+keep
 label
+lands
 later
 list
+listener
+listens
 live
 lives
 matches
@@ -204,7 +229,9 @@ one
 one.
 optimistic-ui:
 or
+other
 otherwise
+our
 override
 own
 owns,
@@ -232,7 +259,9 @@ return
 right
 roll
 root
+root,
 root.
+run
 scope
 scopes.
 screen
@@ -245,6 +274,7 @@ slot
 snapshot
 so
 something.
+spelling,
 stat[animate],
 state
 state-mutating
@@ -268,6 +298,7 @@ uses
 value
 verb
 via
+view
 view's
 viewBox="0
 walks
@@ -278,6 +309,7 @@ which
 whose
 width="16"
 with
+would
 wrapper
 x-data
 x-data="wirekitReplayButton"

@@ -85,8 +85,8 @@
         {{-- A group of buttons, named. NOT `toolbar`: that role promises an arrow-key
              model, and this has none — a reader who tries the arrows would find the
              promise broken rather than the widget rich. --}}
-        role="group"
-        aria-label="{{ $groupLabel }}"
+        @unless($attributes->has('role')) role="group" @endunless
+        @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $groupLabel }}" @endunless
         {{-- `x-data` makes this element an Alpine root, and without one the `x-on:click`
              below never initializes: a directive only runs inside a tree Alpine walks, so
              in a plain Blade page every chip would be a button that does nothing at all.

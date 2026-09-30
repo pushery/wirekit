@@ -152,9 +152,10 @@ $t['label'],
 $tab)
 $tabActiveClasses
 $tabAttributes
-$tabAttributes->class([$tabClasses,
+$tabAttributes->class(['wk-tab',
 $tabBase
 $tabClasses
+$tabClasses,
 $tabInactiveClasses
 $tabLabels
 $tabLabels)
@@ -401,6 +402,13 @@ ${$key}
 'wk-tooltip-');
 'wrap'
 'x-circle'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xs'
 'z-[var(--z-wk-tooltip)]',
@@ -432,6 +440,7 @@ ${$key}
 (CTA
 (Livewire
 (SOFT
+(Support\CallerListeners).
 (Tailwind's
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -952,6 +961,7 @@ Written
 ['soft',
 ['style'
 ['underline',
+['x-on:mouseenter',
 [['key'
 []
 [])->class([$baseClasses,
@@ -965,6 +975,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -1480,6 +1491,7 @@ class
 class="h-4
 class="inline-block
 class="shrink-0"
+class="wk-tab
 class="{{
 classes
 classes.
@@ -2634,6 +2646,7 @@ row
 row);
 row.
 rule
+run
 rung
 running
 runs
@@ -2754,6 +2767,7 @@ span
 span).
 spec
 spelled
+spelling,
 spellings,
 spells
 spilling

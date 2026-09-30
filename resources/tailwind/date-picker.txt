@@ -6,7 +6,7 @@
 $announceError
 $announceErrors
 $attributes
-$attributes->except('aria-describedby')->class(['wk-field',
+$attributes->except('type')->except('aria-describedby')->class(['wk-field',
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->get('aria-describedby',
@@ -17,6 +17,7 @@ $attributes->getAttributes());
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby');
 $attributes->whereStartsWith('wire:model')->first()));
+$attributes]
 $callerAriaLabel
 $callerRef
 $component`.
@@ -66,6 +67,7 @@ $needsSrOnlyFallback
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $placeholder
 $property
 $property)
@@ -73,10 +75,13 @@ $property.'.end';
 $property.'.start';
 $range
 $rangeEndAttributes
+$rangeEndAttributes->except('type')
 $rangeName
 $rangeName])
 $rangeStartAttributes
+$rangeStartAttributes->except('type')
 $rangeWrapperAttributes
+$rangeWrapperAttributes);
 $rangeWrapperAttributes->class('flex
 $required
 $scope);
@@ -181,6 +186,7 @@ $value['start']
 ($value[1]
 (4.1.2)
 (@aware
+(Support\UnboundModel).
 (`error=""`
 (`wire:model.live`,
 (arrow
@@ -226,6 +232,7 @@ $value['start']
 3.
 3.3.1
 330px,
+4.
 4.1.2
 :
 :appDate
@@ -356,6 +363,7 @@ Sizing
 So
 Str::headline((string)
 Strip
+Support\OuterAttributes.
 TEMPLATE
 TWO
 That
@@ -370,6 +378,7 @@ When
 WireKit::resolveClasses('date-picker',
 WireKit::stableId('wk-date',
 [
+[$outerAttributes,
 [$startValue,
 ['label'
 ['start'
@@ -385,6 +394,8 @@ WireKit::stableId('wk-date',
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your
 \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_',
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\UnboundModel::drop('date-picker',
 \Pushery\WireKit\WireKit::warnUnknownProps('date-picker',
 ])
 ]),
@@ -418,6 +429,7 @@ __('wirekit::Saving'),
 `data-*`,
 `date`
 `disabled="false"`
+`input`
 `label`
 `locale`
 `max`
@@ -437,12 +449,16 @@ __('wirekit::Saving'),
 `value`
 `value`.
 `w-full`
+`wire:key`,
 `wire:model.blur.debounce.500ms`);
 `wire:model.live`
 `wire:model="stay.end"`,
 `wire:model="stay.start"`
 `wire:model`
+`wire:show`
+`x-model`
 `x-ref`
+`x-show`,
 `x-wirekit::calendar`
 `x-wk-ref`
 `{property}.end`
@@ -450,6 +466,7 @@ __('wirekit::Saving'),
 `{{
 a
 able
+about
 above
 above).
 above.
@@ -685,11 +702,13 @@ end
 end',
 end.
 ends
+ends,
 entered
 entering
 error
 error,
 etc.),
+event,
 ever
 every
 exactly
@@ -746,6 +765,7 @@ formatted
 fragile
 frame
 from
+further
 gains
 gap,
 gap-[var(--padding-wk-x-sm)]')
@@ -753,6 +773,7 @@ gets
 give
 gives
 global
+go
 goes
 guarded
 had
@@ -785,6 +806,7 @@ implode('
 imports
 in
 in.
+in:
 input
 input.
 inputs
@@ -991,6 +1013,7 @@ put
 qualified:
 question,
 range
+range,
 range.
 rather
 raw
@@ -1011,6 +1034,7 @@ ref
 region
 rejected,
 remove
+removed
 render
 render,
 renders
@@ -1046,6 +1070,7 @@ screen
 scroll
 second
 see
+sent
 sentence
 separator
 server
@@ -1101,6 +1126,7 @@ system
 tag
 tag,
 tags,
+take
 takes
 tech.
 technology
@@ -1146,6 +1172,7 @@ token
 too.
 touch
 trade
+transitions
 translated
 travels
 trim(
@@ -1210,6 +1237,7 @@ whichever
 while
 whitespace,
 who
+whole
 whose
 why
 width

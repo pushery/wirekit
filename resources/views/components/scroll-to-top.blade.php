@@ -18,6 +18,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('scroll-to-top', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@click']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -26,13 +30,12 @@
     // Scroll-to-top button — appears after scrolling past a configurable
     // viewport multiplier (default: 1.5x viewport height). Uses Alpine.js
     // scroll listener with requestAnimationFrame for smooth performance.
-    $buttonClasses = WireKit::resolveClasses('scroll-to-top', 'base', implode(' ', [
+    $buttonClasses = 'wk-touch-target '.WireKit::resolveClasses('scroll-to-top', 'base', implode(' ', [
         'fixed z-[var(--z-wk-sticky)]',
         // Expands the tap area to 44×44 on coarse pointers without changing the
         // painted box, as on theme-controller and code-block. The class must not
         // force `position: relative` onto a host that is `fixed` by design, which
         // would throw the button off-screen.
-        'wk-touch-target',
         'inline-flex items-center justify-center',
         'rounded-full',
         'bg-[var(--color-wk-accent)]',
@@ -98,8 +101,27 @@
         'top-left' => 'top-[var(--padding-wk-x-lg)] left-[var(--padding-wk-x-lg)]',
         default => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
     };
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // The button shows and hides itself with an `x-show` of its own, so a caller's `x-show` or
+    // `wire:show` cannot sit on it as well: the parser drops a second attribute of one name, and
+    // a bound `wire:show` would toggle the button against the threshold instead of with it. They
+    // go on a wrapper that generates no box, with the rest of what is about the whole component
+    // (Support\OuterAttributes), and the button still waits for its threshold inside.
+    [$outerAttributes, $innerAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+    $showScope = \Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
+
+    if ($showScope) {
+        $attributes = $innerAttributes;
+    }
 @endphp
 
+@if($showScope)
+<div class="contents" {{ $outerAttributes }}>
+@endif
 {{-- Alpine: listens to scroll events and shows button after threshold.
      Uses requestAnimationFrame to avoid jank on frequent scroll events. --}}
 <button
@@ -124,10 +146,13 @@
          The default goes through the catalog: this button's only child is an
          aria-hidden glyph, so this string IS its accessible name, and a merge
          default a German app never overrides is announced in English. --}}
-    {{ $attributes->merge(['aria-label' => __('wirekit::Scroll to top')])->class([$buttonClasses, $sizeClasses, $positionClasses]) }}
+    {{ $attributes->except('type')->merge(['aria-label' => __('wirekit::Scroll to top')])->class([$buttonClasses, $sizeClasses, $positionClasses]) }}
 >
     {{-- Chevron up icon — decorative, label is on the button --}}
     <svg aria-hidden="true" class="{{ $iconSize }}" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z" clip-rule="evenodd"/>
     </svg>
 </button>
+@if($showScope)
+</div>
+@endif

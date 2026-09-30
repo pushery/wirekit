@@ -41,7 +41,7 @@ $attributes->class([$classes])->merge($navLabelAttrs)
 $attributes->class(['relative
 $attributes->class(['wk-sidebar-collapse-toggle
 $attributes->except('aria-label')->class([$classes])
-$attributes->except('rel')->class([$classes,
+$attributes->except('rel')->class(['wk-sidebar-item',
 $attributes->except(['mode',
 $attributes->except(['rel',
 $attributes->except(['role',
@@ -57,6 +57,7 @@ $attributes->merge(['rel'
 $badge
 $childClasses
 $classes
+$classes,
 $collapseBtnClasses
 $collapseName
 $collapsed
@@ -272,7 +273,7 @@ $zoneInset
 'hover:text-[color:var(--color-wk-text)]',
 'hover:text-[color:var(--color-wk-text-muted)]',
 'href'
-'href'])->class([$classes,
+'href'])->class(['wk-sidebar-item',
 'icon'
 'icon',
 'inline-flex
@@ -393,6 +394,13 @@ $zoneInset
 'wk-sidebar-option-'
 'wk-sidebar-option-'.\Illuminate\Support\Str::slug((string)
 'wk-tooltip-');
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'z-[var(--z-wk-tooltip)]',
 'zoneInset'
 (!
@@ -418,6 +426,7 @@ $zoneInset
 (0,1,0),
 (0.625rem
 (=
+(Support\CallerListeners).
 (WCAG
 (`--color-wk-rail-hover-fg`
 (`.wk-scroll-fade…:focus-within
@@ -1042,6 +1051,7 @@ ZONE
 ['navigation',
 ['seedKey'
 ['start',
+['x-on:mouseenter',
 []
 [];
 [transform-box:fill-box]
@@ -1054,6 +1064,7 @@ ZONE
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -2637,6 +2648,7 @@ list
 list,
 list.
 listbox
+listener
 listens
 literal
 literal)
@@ -3506,6 +3518,7 @@ span).
 specificity
 spell
 spelled
+spelling,
 spellings
 spending
 split

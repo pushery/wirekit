@@ -80,10 +80,12 @@
         width="{{ $intrinsicWidth }}"
         height="{{ $intrinsicHeight }}"
         alt="{{ $alt }}"
-        loading="lazy"
-        decoding="async"
+        {{-- How the image loads is the page's decision: a flag above the fold wants `eager`.
+             The size is the component's, derived from `size`, and reserves the box. --}}
+        @unless($attributes->has('loading')) loading="lazy" @endunless
+        @unless($attributes->has('decoding')) decoding="async" @endunless
         data-wk-flag
-        {{ $attributes->class([$classes]) }}
+        {{ $attributes->except(['width', 'height'])->class([$classes]) }}
     />
 @else
     {{-- The same box as the flag it stands in for, so a row of countries keeps its alignment

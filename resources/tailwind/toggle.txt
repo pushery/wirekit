@@ -7,8 +7,8 @@
 $announceError
 $announceErrors
 $attributes
+$attributes->except('type')->except(['id',
 $attributes->except(['announceErrors',
-$attributes->except(['id',
 $attributes->get('aria-describedby'),
 $attributes->get('name'),
 $attributes->get('name',
@@ -16,6 +16,7 @@ $attributes->get('required',
 $attributes->getAttributes());
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby');
+$attributes]
 $describedBy
 $error
 $errorMessage
@@ -44,6 +45,7 @@ $optimistic
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $scope);
 $sizing
 $sizing['knob'],
@@ -150,6 +152,7 @@ $wrapperClasses
 (when
 );
 +
+--border-wk-width:
 --}}
 ->
 -translate-y-1/2',
@@ -158,8 +161,10 @@ $wrapperClasses
 /
 //
 />
+0px
 1.4.11
 1ms
+1px;
 1x1,
 24px
 3.3.1
@@ -189,6 +194,7 @@ $wrapperClasses
 @endif
 @endif>
 @endphp
+@endunless
 @if($announceError)
 @if($describedBy
 @if($fallbackAriaLabel)
@@ -199,6 +205,7 @@ $wrapperClasses
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 A11y:
 AA
@@ -258,6 +265,7 @@ Size
 So
 Strip
 Support\DomId
+Support\OuterAttributes.
 Switch
 TEXT
 TOKEN
@@ -267,6 +275,7 @@ That
 The
 Track:
 UNBOUND
+Under
 Visible
 WCAG
 WHICH
@@ -282,18 +291,21 @@ With
 Wrapper
 Written
 [
+[$outerAttributes,
 ['track'
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\FieldGroup
 \Pushery\WireKit\Support\FieldGroup::describedBy(
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 ])
 ]),
 ]);
 ],
 __('wirekit::Could
 __('wirekit::Saving'),
+`.wk-choice-frame
 `:group-error="false"`
 `<label
 `@aware`
@@ -316,13 +328,18 @@ __('wirekit::Saving'),
 `start-0.5`,
 `transition-transform`
 `true`.
+`wire:key`,
+`wire:show`
 `wk-`
+`wk-choice-frame`
 `wk-spinner`
 `wk-toggle-knob`
 `wk-toggle`
+`x-show`,
 `{{
 a
 able
+about
 above
 above,
 accepts
@@ -385,6 +402,7 @@ auto-derived
 axe-core
 axis.
 back
+back.
 background
 backgrounds.
 bag
@@ -403,9 +421,11 @@ belongs
 below
 beside
 bg-muted
+block
 boolean
 border
 both
+brings
 browser
 build
 built
@@ -437,6 +457,7 @@ class="sr-only"
 class="text-[color:var(--color-wk-danger-text)]
 class="text-[length:var(--text-wk-md)]
 class="text-[length:var(--text-wk-sm)]
+class="wk-choice-frame
 class="wk-toggle
 class="wk-toggle-knob
 class="{{
@@ -552,6 +573,7 @@ form
 form,
 from
 full
+further
 gap-3
 gate
 gated
@@ -559,6 +581,8 @@ generate
 generated.
 give
 global
+go
+gone,
 group
 group's
 group's,
@@ -633,6 +657,7 @@ live
 load-bearing
 logged
 marker
+marks
 markup
 match
 matches
@@ -693,6 +718,7 @@ other
 otherwise
 out
 out.
+outermost
 outside
 own
 padding
@@ -706,6 +732,7 @@ peer-checked
 peer-checked:*
 peer-checked:translate-x-*.
 per
+personalization
 placed)
 points
 polite
@@ -714,6 +741,7 @@ positioning
 positive
 precedence:
 present
+preset
 printing
 prod).
 prop
@@ -748,6 +776,7 @@ requires
 reserve.
 resolve
 resolve.
+resolved
 responses
 rides
 right,
@@ -821,6 +850,7 @@ still
 stray
 string
 styles:
+stylesheet
 stylesheet's
 submit
 substring
@@ -853,6 +883,7 @@ their
 themed
 then
 there
+they
 thing
 this
 this,
@@ -868,6 +899,7 @@ toolbar
 top-1/2
 track
 track,
+transitions
 translation
 trap
 travel
@@ -912,6 +944,7 @@ white
 who
 whole
 whose
+width
 width/height
 will
 win
@@ -937,6 +970,7 @@ x-text="announcement"></div>
 {{--
 ||
 };
+}`
 }}
 }}"
 }}">

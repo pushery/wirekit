@@ -51,8 +51,8 @@ The inline list-style is a separate belt again: `list-none` exists only where a 
 build scanned this view, and the inline rule keeps the cart unmarked in a page whose
 stylesheet did not. The tokens resolve from dist/wirekit.css either way. --}}
 <ul data-wk-prose-skip
-    role="list"
-    aria-label="{{ $label }}"
+    @unless($attributes->has('role')) role="list" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
     data-wk-cart-list
     {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
 >

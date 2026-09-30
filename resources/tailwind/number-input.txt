@@ -9,7 +9,7 @@ $announceError
 $announceErrors
 $attributes
 $attributes->class([$classes])
-$attributes->except('aria-describedby')->class(['wk-field',
+$attributes->except('type')->except('aria-describedby')->class(['wk-field',
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['id',
@@ -21,6 +21,7 @@ $attributes->get('value',
 $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->whereStartsWith(['wire:model',
+$attributes]
 $boundModel
 $buttonBorder
 $buttonBorderColor
@@ -50,6 +51,7 @@ $optimistic
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $prefix
 $radiusEnd
 $radiusStart
@@ -165,10 +167,13 @@ $suffix
 'value',
 'value'`
 'x-model'])->isNotEmpty();
+'x-on:blur',
+'x-on:change']);
 ($errors
 ($hasError
 ($size)
 (@aware
+(Support\CallerListeners).
 (auto
 (because
 (below)
@@ -227,7 +232,6 @@ $suffix
 ??
 ??=
 @aware(['announceErrors'
-@blur="value
 @click="decrease()"
 @click="increase()"
 @else
@@ -328,6 +332,7 @@ Stepper
 Strip
 Suffix
 Support\DomId
+Support\OuterAttributes.
 Taking
 The
 Two
@@ -343,12 +348,16 @@ Without
 Written
 Your
 [
+[$outerAttributes,
 [&::-webkit-inner-spin-button]:appearance-none',
 [&::-webkit-outer-spin-button]:appearance-none
 ['field'
+['x-on:input',
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ])
 ]),
@@ -393,9 +402,12 @@ __('wirekit::Saving'),
 `true`,
 `value`
 `value`:
+`wire:key`,
 `wire:model`
+`wire:show`
 `x-model`)
 `x-ref`
+`x-show`,
 `x-wk-ref`,
 `{{
 a
@@ -602,6 +614,7 @@ easy
 edits
 either
 either,
+element
 element,
 element.
 elsewhere)
@@ -670,10 +683,13 @@ free
 free".
 friends,
 from
+further
 gap
 getters
 give
 global
+go
+goes
 got
 grid
 group
@@ -753,6 +769,8 @@ line
 lines
 list
 list,
+listener
+listens
 literal
 live
 lives
@@ -850,9 +868,11 @@ optimistic-ui:
 or
 order
 order,
+other
 otherwise
 out
 out.
+outermost
 outside,
 over
 overwritten
@@ -940,6 +960,7 @@ rounded
 rounding
 row
 row,
+run
 safety
 same
 save.
@@ -985,6 +1006,7 @@ snapping
 so
 space
 span
+spelling,
 spellings
 spinbutton
 spinner
@@ -1076,6 +1098,7 @@ toolbar
 top
 top/bottom
 top:
+transitions
 trap
 tree:
 trim($describedBy.'
@@ -1109,6 +1132,7 @@ values
 variable
 variant
 via
+view
 view's
 viewBox="0
 visible
@@ -1135,6 +1159,7 @@ which
 while
 whitespace,
 whoever
+whole
 whose
 why
 wider
@@ -1157,6 +1182,7 @@ x-data="wirekitOptimistic({{
 x-model
 x-model.number="value"
 x-on:blur="clampInput()"
+x-on:blur="value
 x-on:change="run($event.target.value)"
 x-on:input="syncFromInput()"
 x-text="announcement"></div>

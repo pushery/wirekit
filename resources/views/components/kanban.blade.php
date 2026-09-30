@@ -74,7 +74,7 @@
 @endphp
 
 <div
-    role="list"
+    @unless($attributes->has('role')) role="list" @endunless
     @if($sortable) data-sortable @endif
     {{-- The marker every column's sortable looks for before it lets a card leave. Only on a
          sortable board: a board that does not sort has nothing to connect. --}}

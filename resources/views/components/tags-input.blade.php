@@ -61,6 +61,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('tags-input', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
@@ -89,6 +94,12 @@
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'tags-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+
+    // A caller's `id` goes on the text field, the element a `<label for>` elsewhere on the
+    // page and a link to `#id` reach. Without one the field takes the component's id with
+    // `-input` after it, as before.
+    $callerId = filled($attributes->get('id'));
+    $fieldId = $callerId ? $id : $id.'-input';
 
     // Consumed above and re-emitted where they belong -- the text field and the
     // hidden inputs. A `name` left on the wrapper <div> names no form control.
@@ -211,9 +222,9 @@
     $attributes = $attributes->except('x-ref');
 @endphp
 
-<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :for="$id . '-input'" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     <div
@@ -226,9 +237,10 @@
              chips confirmed the choice while the server never heard about it. --}}
         x-modelable="tags"
         {{-- The whole bag, not just `class`, so everything else the caller wrote --
-             `wire:model`, `data-*` -- arrives here. `aria-describedby` is the exception:
-             it describes the text input, so it joins that input's list. --}}
-        {{ $attributes->except('aria-describedby') }}
+             `wire:model`, `data-*` -- arrives here. `aria-describedby` and `aria-label` are
+             the exceptions: both belong to the text input, which takes them itself, and
+             `aria-label` on this roleless element would be a prohibited attribute. --}}
+        {{ $attributes->except(['aria-describedby', 'aria-label']) }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
         {{-- The set's own live region, OUTSIDE the optimistic wrapper below.
@@ -315,7 +327,7 @@
             --}}
             <input
                 type="text"
-                id="{{ $id }}-input"
+                id="{{ $fieldId }}"
                 x-ref="input"
                 placeholder="{{ $placeholder }}"
                 {{-- When no visible <label> is rendered (no `label` prop), the
@@ -324,8 +336,12 @@
                      Fall back to the placeholder as the aria-label so the
                      control is always named; when a label IS present the
                      <label for> above owns the name and we must NOT override
-                     it with aria-label. --}}
-                @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @elseif(! $label) aria-label="{{ $placeholder }}" @endif
+                     it with aria-label. The same holds for a caller's `id`: it
+                     is there so a label of the caller's can reach the field, and
+                     an aria-label would win over that label, so the fallback
+                     steps aside and the placeholder names the field only when
+                     nothing else does. --}}
+                @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @elseif(! $label && ! $callerId) aria-label="{{ $placeholder }}" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($disabled) disabled @endif

@@ -29,6 +29,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('logo-cloud', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -54,7 +59,7 @@
      The inline list-style repeats list-none on purpose: `list-none` exists only where a
      Tailwind build scanned this view, and the inline rule keeps the list unmarked in a
      page whose stylesheet did not. The tokens resolve from dist/wirekit.css either way. --}}
-<div data-wk-logo-cloud {{ $attributes->only('class') }}>
+<div {{ $outerAttributes }} data-wk-logo-cloud {{ $attributes->only('class') }}>
     @if($label)
         <p data-wk-prose-skip class="mb-[var(--space-wk-md,1rem)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $label }}
@@ -62,7 +67,7 @@
     @endif
 
     <ul data-wk-prose-skip
-        role="list"
+        @unless($attributes->has('role')) role="list" @endunless
         @if($listLabel) aria-label="{{ $listLabel }}" @endif
         {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->except('class')->class([$classes]) }}
     >

@@ -23,14 +23,14 @@
         {{-- No `aria-current`, and that is the point of the mode rather than an omission.
              A page you are on and a value you have picked are two different claims; a row
              that made both would be wrong about one of them. --}}
-        {{ $attributes->except(['rel', 'href'])->class([$classes, $activeClasses => $isSelected]) }}
+        {{ $attributes->except(['rel', 'href'])->class(['wk-sidebar-item', $classes, $activeClasses => $isSelected]) }}
     >
 @else
 <a data-wk-prose-skip
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes, $activeClasses => $active]) }}
+    {{ $attributes->except('rel')->class(['wk-sidebar-item', $classes, $activeClasses => $active]) }}
 >
 @endif
     @if($icon)

@@ -1,6 +1,7 @@
 "3
-$attributes->class([$classes])
+$attributes->except('tabindex')->class([$classes])
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $classes
 $isRow
 $label
@@ -50,9 +51,12 @@ $slot
 ?
 ??
 @endphp
+@endunless
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 Accessible
 Blade
@@ -254,6 +258,7 @@ would
 {
 {{
 {{--
+||
 };
 }}
 }}"

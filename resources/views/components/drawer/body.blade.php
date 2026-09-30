@@ -25,13 +25,13 @@
     // holding nothing but text would have no tab stop here at all, and a keyboard could not
     // scroll it. drawer.js keeps initial focus off this wrapper whenever the drawer holds a
     // control.
-    $classes = WireKit::resolveClasses('drawer.body', 'base', implode(' ', [
+    $classes = 'wk-scrollbar '.WireKit::resolveClasses('drawer.body', 'base', implode(' ', [
         // One token on all four sides, and the header's. Wider side padding would start the content
         // further in than the title above it and sit it further from the sides than from the
         // bottom; equal padding on one token keeps a single edge down the panel, and a theme
         // cannot pull the sides apart.
         'p-[var(--padding-wk-x-lg)]',
-        'wk-scrollbar flex-1 overflow-y-auto',
+        'flex-1 overflow-y-auto',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',

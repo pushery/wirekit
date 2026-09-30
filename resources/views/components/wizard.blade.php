@@ -75,9 +75,9 @@
         announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($announcementTemplate) }},
         incompleteAnnouncement: {{ \Pushery\WireKit\Support\AlpinePayload::from($incompleteTemplate) }}
     })"
-    {{-- A single method call rather than an inline body: Alpine's CSP build parses one
-         expression per directive, so a body of several statements would never run there. --}}
-    x-init="initWizard()"
+    {{-- No `x-init` here: the factory starts itself from its own `init()`, so a caller's
+         `x-init` on the tag lands on this root and runs, instead of standing in the tag a second
+         time beside ours, where the parser would drop it. --}}
     {{ $attributes->class([$classes]) }}
 >
     @if($indicator && $stepNames !== [])

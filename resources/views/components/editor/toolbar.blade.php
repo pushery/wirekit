@@ -148,12 +148,19 @@
                         :disabled="!{{ $historyGuard[$command] }}"
                     @endif
                     @if($active)
+                        {{-- The pressed fill and text are the hover paint as well, so a pressed
+                             command also carries an inset edge, which a button the pointer rests
+                             on does not. `inset-ring` keeps the focus ring outside: it writes its
+                             own shadow rather than the ring's. The floor holds the edge under a
+                             theme whose border width is 0px. --}}
                         :aria-pressed="{{ $active }} ? 'true' : 'false'"
-                        :class="{{ $active }} ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : ''"
+                        :class="{{ $active }} ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-border-strong)]' : ''"
                     @endif
                     aria-label="{{ $label }}"
                     tabindex="{{ $commandKey === $tabStopKey ? '0' : '-1' }}"
-                    class="{{ $buttonClasses }}"
+                    {{-- A pressed command is a tint, which forced colors does not paint, so
+                         `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
+                    class="wk-state-button {{ $buttonClasses }}"
                 >
                     {{-- SVG glyphs are static blade-authored markup from the $meta map
                          above (same safe class as alert's $defaultIcon — never

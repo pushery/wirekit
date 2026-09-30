@@ -35,11 +35,11 @@ $as,
 $attributes
 $attributes->class([$classes])
 $attributes->class([$classes]);
-$attributes->class([$rootClasses])
 $attributes->class([$wrapperClasses])
 $attributes->class(['relative
 $attributes->class(['wk-collapsible',
 $attributes->class([WireKit::resolveClasses('icon',
+$attributes->except('aria-busy')->class([$rootClasses])
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -389,6 +389,13 @@ $wrapperClasses
 'wk-tooltip-');
 'wrap'
 'x-circle'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xs'
 'z-[var(--z-wk-tooltip)]',
@@ -416,6 +423,7 @@ $wrapperClasses
 (CTA
 (Enter/Space)
 (SOFT
+(Support\CallerListeners).
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -900,6 +908,7 @@ Written
 ['span',
 ['style'
 ['tool'
+['x-on:mouseenter',
 [])->class([$baseClasses,
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
@@ -907,6 +916,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -2012,6 +2022,7 @@ link
 linked
 links
 list
+listener
 listens
 literal
 literal,
@@ -2569,6 +2580,7 @@ span
 span).
 speech.
 spelled
+spelling,
 spelling:
 spells
 spilling
@@ -2853,6 +2865,7 @@ variant
 variant),
 vertical
 via
+view
 view's
 viewBox="0
 viewport.

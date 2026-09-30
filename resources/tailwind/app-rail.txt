@@ -29,6 +29,7 @@ $attributes->class([
 $attributes->class([$classes,
 $attributes->class(['relative
 $attributes->except('rel')->class([$classes,
+$attributes->except('rel')->class(['wk-rail-item',
 $attributes->except(['labels',
 $attributes->except(['labels']);
 $attributes->get('data-current');
@@ -359,6 +360,13 @@ $variant,
 'wk-rail-group-');
 'wk-rail-item-button'
 'wk-tooltip-');
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'z-[var(--z-wk-tooltip)]',
 (!
 (!el)
@@ -374,6 +382,7 @@ $variant,
 ()
 (2rem)
 (Js::from
+(Support\CallerListeners).
 (The
 (WCAG
 (`.wk-scroll-fade…:focus-within
@@ -791,6 +800,7 @@ Written
 ['local',
 ['pill',
 ['tooltip',
+['x-on:mouseenter',
 []
 []),
 [{{
@@ -802,6 +812,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($persistDriver)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($restingWidth)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
@@ -2093,6 +2104,7 @@ linked
 list
 list,
 list.
+listener
 listens
 lit
 literal
@@ -2615,6 +2627,7 @@ rule,
 rule.
 rule:
 rules
+run
 run,
 running
 runs
@@ -2760,6 +2773,7 @@ spans
 specificity
 specificity,
 spell
+spelling,
 spellings,
 spending
 splits

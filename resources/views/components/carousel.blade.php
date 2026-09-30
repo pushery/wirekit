@@ -25,6 +25,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('carousel', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:mouseenter', 'x-on:mouseleave', 'x-on:focusin', 'x-on:focusout']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -145,9 +149,9 @@
          it makes the carousel a landmark a screen-reader user can jump to; a plain
          group would take that landmark away. The label is configurable, so two
          carousels on one page can carry names that tell them apart. --}}
-    role="region"
+    @unless($attributes->has('role')) role="region" @endunless
     aria-roledescription="{{ __('wirekit::carousel') }}"
-    aria-label="{{ $label }}"
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
     data-wk-carousel
     data-wk-carousel-orientation="{{ $orientationValue }}"
     data-wk-carousel-per-view="{{ $perViewValue }}"
@@ -219,9 +223,17 @@
                      WCAG 2.5.8's own spacing exception is the exit here — `gap-4` puts the
                      centers 24px apart, which is exactly the distance at which the
                      standard's circles stop intersecting, and an 8px dot is then compliant
-                     without being any bigger. --}}
-                class="w-2 h-2 cursor-pointer rounded-full transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                :class="current === i ? 'bg-[var(--color-wk-accent)]' : 'bg-[var(--color-wk-border)]'"
+                     without being any bigger.
+                     `wk-carousel-dot` is the marker the stylesheet's forced-colors rule selects:
+                     that mode takes the current dot's fill away, so there it gets a fill of its own.
+                     A dot that is not current is a ring in the strong border color: it is a
+                     control, and its ring is what reaches 3:1 against the page, where a fill in
+                     the decorative border color stood at 1.29:1. The current dot is filled, so
+                     the two differ in shape and not only in color, which a colored accent next
+                     to that ring would not carry on its own. The width has a floor because a
+                     theme may set the border width to 0px, and the ring would vanish. --}}
+                class="wk-carousel-dot w-2 h-2 cursor-pointer rounded-full border-[length:max(1px,var(--border-wk-width))] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                :class="current === i ? 'bg-[var(--color-wk-accent)] border-[var(--color-wk-accent)]' : 'bg-transparent border-[var(--color-wk-border-strong)]'"
             ></button>
         </template>
 

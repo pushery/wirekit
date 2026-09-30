@@ -62,6 +62,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('radio', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Size scale (aligned with toggle/checkbox): the circle + its inner accent dot
     // scale together. The dot lives INSIDE the circle and is flex-centered by the
     // circle (items-center/justify-center), so it only needs a size — no left/top
@@ -140,15 +145,16 @@
     );
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
-    $boxClasses = WireKit::resolveClasses('radio', 'base', implode(' ', [
+    // The hit-area reserve, on the BOX rather than the label: the label is the box PLUS
+    // its text, so an area centered on it sits over the words instead of over the control.
+    // Not in the `card` variant — there the label IS the target, already bordered and
+    // full-width, and a 2.75rem area hung off the 20px box inside it reaches past the
+    // card's own edge, so a tap in the gap between two stacked cards lands on the upper
+    // one. Same split, and the same reasoning, as `checkbox.blade.php`.
+    // The marker is set in front of the resolved block rather than inside it, so a
+    // personalization of the block keeps the hit area.
+    $boxClasses = ($variantValue === 'card' ? '' : 'wk-touch-target ').WireKit::resolveClasses('radio', 'base', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0',
-        // The hit-area reserve, on the BOX rather than the label: the label is the box PLUS
-        // its text, so an area centered on it sits over the words instead of over the control.
-        // Not in the `card` variant — there the label IS the target, already bordered and
-        // full-width, and a 2.75rem area hung off the 20px box inside it reaches past the
-        // card's own edge, so a tap in the gap between two stacked cards lands on the upper
-        // one. Same split, and the same reasoning, as `checkbox.blade.php`.
-        $variantValue === 'card' ? '' : 'wk-touch-target',
         $sizing['box'],
         'rounded-full',
         'border-[length:var(--border-wk-width)]',
@@ -177,7 +183,7 @@
     }
 @endphp
 
-<div class="space-y-1.5 min-w-0">
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0">
     <label for="{{ $id }}" class="{{ $labelClasses }}">
         {{-- Native radio input — visually hidden but accessible + Livewire wire:model compatible --}}
         <input
@@ -189,7 +195,7 @@
             {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                  caller's own class became a second class attribute and the browser kept only
                  this one. --}}
-            {{ $attributes->except(['id', 'aria-describedby'])->class(['peer', 'sr-only']) }}
+            {{ $attributes->except('type')->except(['id', 'aria-describedby'])->class(['peer', 'sr-only']) }}
         />
 
         {{-- Visual circle — sibling of .peer, consumes peer-checked border. The
@@ -198,7 +204,10 @@
              and card variants. It toggles via the label's group-has-[:checked]
              (a nested element isn't a sibling of .peer, so peer-checked can't
              reach it; the circle border still uses peer-checked, unchanged). --}}
-        <span class="{{ $boxClasses }}" aria-hidden="true">
+        {{-- `wk-choice-frame` marks the element whose edge is the control, outside the resolved block so a
+             personalization keeps it. Under a preset whose border width is 0px the edge is gone, and
+             `.wk-choice-frame { --border-wk-width: 1px; }` in the application's stylesheet brings it back. --}}
+        <span class="wk-choice-frame {{ $boxClasses }}" aria-hidden="true">
             {{-- `wk-radio-dot` is the marker the stylesheet's forced-colors rule selects: the
                  dot's fill IS the selected state, and a background is the one paint that
                  mode takes away — so selected and empty render identically without it. --}}

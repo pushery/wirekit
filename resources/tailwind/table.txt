@@ -44,6 +44,7 @@ $attr
 $attr)
 $attributes
 $attributes),
+$attributes);
 $attributes->class([$classes,
 $attributes->class([$classes])
 $attributes->class(['relative
@@ -131,6 +132,7 @@ $forceLoading
 $handleClasses
 $hasDetails
 $hasPlainHtmlDescendants
+$hasPlainHtmlDescendants)
 $hasWireAction
 $hasWireAction;
 $headerScope
@@ -191,6 +193,7 @@ $openingTag)
 $openingTags)
 $opensNewTab
 $orientation
+$outerAttributes
 $ownMarkup
 $ownMarkup)
 $ownMarkup,
@@ -274,6 +277,8 @@ $variant
 $variant,
 $variantClasses
 $variantClasses,
+$withoutOuterAttributes;
+$withoutOuterAttributes]
 $wrap
 $wrapLabel
 $wrapWords
@@ -650,6 +655,13 @@ $wrapWords
 'words';
 'wrap'
 'wrapLabel'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xl',
 'xl']),
@@ -662,6 +674,7 @@ $wrapWords
 ("Fast
 ("Line
 ($align)
+($alpineSort
 ($attributes->getAttributes()
 ($callerAriaHidden
 ($column
@@ -688,6 +701,7 @@ $wrapWords
 ($relAttr
 ($reorderComponent
 ($resolvedAriaHidden
+($responsive)
 ($shouldSetHidden)
 ($size
 ($size)
@@ -711,6 +725,8 @@ $wrapWords
 (Livewire-sort
 (SVG
 (See
+(Support\CallerListeners).
+(Support\UnboundModel).
 (Tailwind's
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -1337,6 +1353,7 @@ Sticky
 Strip
 Striped
 Striped:
+Support\OuterAttributes).
 SvgNotFound
 SvgNotFound.
 Switch
@@ -1433,6 +1450,7 @@ Wrap
 Writing
 Written
 [
+[$outerAttributes,
 ['col',
 ['data-wk-icon-missing'
 ['filled',
@@ -1441,6 +1459,7 @@ Written
 ['outlined'
 ['reorderComponent'
 ['sm',
+['x-on:mouseenter',
 ['xs',
 [--wk-touch-min:0px]'
 [];
@@ -1452,14 +1471,18 @@ Written
 [table[data-wk-sticky-header]_&]:top-0
 [table[data-wk-sticky-header]_&]:z-10',
 \Illuminate\Support\HtmlString('<span
+\Illuminate\View\ComponentAttributeBag([]);
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning)
 \Pushery\WireKit\Support\AlpinePayload::string($column)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_',
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\UnboundModel::drop('table',
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1747,6 +1770,7 @@ __toString
 `wire:key`,
 `wire:loading.attr`
 `wire:loading`
+`wire:show`
 `wire:sort:item`.
 `wire:sort`
 `wirekitTableReorder`
@@ -1762,9 +1786,11 @@ __toString
 `wrap`.
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-model`
 `x-ref`
 `x-show="open"`
 `x-show`
+`x-show`,
 `x-wk-ref`
 `xs`
 `xs`,
@@ -1975,6 +2001,7 @@ backwards
 bad
 bag
 bag,
+bag.
 baked
 bakes
 band
@@ -2765,6 +2792,7 @@ four
 fragment
 frame
 frame)
+frame,
 framework
 freeze
 freezes
@@ -3149,6 +3177,7 @@ linked
 list
 list"),
 listed,
+listener
 listens
 lit
 literal
@@ -3835,6 +3864,7 @@ row.
 row:
 rows
 rows,
+rows.
 rule
 rules
 rules,
@@ -4016,6 +4046,7 @@ sort-action
 sortable
 sorting
 sorting,
+sorts,
 source
 source-baked
 source-detection
@@ -4033,6 +4064,7 @@ specificity)
 spelled
 spelled:
 spelling
+spelling,
 spells
 spends
 spill
@@ -4246,6 +4278,7 @@ then
 there
 there,
 there.
+there;
 therefore
 these
 they
@@ -4320,6 +4353,7 @@ trailing
 trailing-edge
 transformed
 transition-colors
+transitions
 transitions,
 transitively
 translated

@@ -47,6 +47,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navbar', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -173,9 +177,7 @@
     // and the row stays operable by touch, wheel and Tab, which scrolls each link into view.
     // With no scrollbar, `wk-scroll-fade` fades the edge that has entries behind it: the row's
     // script names that edge in `data-fade` as it scrolls, and without the script there is none.
-    $scrollListClasses = WireKit::resolveClasses('navbar', 'scroll', implode(' ', [
-        'wk-navbar-scroll',
-        'wk-scroll-fade',
+    $scrollListClasses = 'wk-navbar-scroll wk-scroll-fade '.WireKit::resolveClasses('navbar', 'scroll', implode(' ', [
         'flex flex-row flex-nowrap items-center gap-1',
         'min-w-0 flex-1',
         'overflow-x-auto overscroll-x-contain',

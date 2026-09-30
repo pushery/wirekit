@@ -286,7 +286,7 @@
     // already carries the pointer, and one without should not claim it.
     $buttonCursor = $railTag === 'button' ? 'cursor-pointer' : '';
 
-    $linkAttributes = $attributes->except('rel')->class([$classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']);
+    $linkAttributes = $attributes->except('rel')->class(['wk-rail-item', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']);
 @endphp
 
 {{-- THREE literal branches, and the shape is forced rather than chosen.

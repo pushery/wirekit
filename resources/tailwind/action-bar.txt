@@ -1,6 +1,7 @@
 !==
 "toolbar"
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(!$visible
 $classes
 $isFloating
@@ -55,10 +56,13 @@ $visible
 ?
 @endif
 @endphp
+@endunless
 @if($visible)
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 APPEAR,
 Action
@@ -414,6 +418,7 @@ wrapper
 z-[var(--z-wk-sticky)]'
 {{
 {{--
+||
 }}
 }}"
 —

@@ -2,6 +2,7 @@
 $attributes
 $attributes->class([$classes])
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $chipClasses
 $classes
 $entry
@@ -76,6 +77,8 @@ $scope);
 @if
 @php
 @props([
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 @unless($attributes->has('x-data'))
 A
 Alpine
@@ -375,6 +378,7 @@ x-on:click="$dispatch('wirekit:quick-replies-select',
 {
 {{
 {{--
+||
 }
 })"
 }}

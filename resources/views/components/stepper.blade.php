@@ -117,7 +117,7 @@
     `list-none m-0 p-0` classes in $listClasses do, so the list stays unmarked
     in a page whose stylesheet does not come from a Tailwind build that scanned this view.
 --}}
-<ol data-wk-prose-skip data-wk-stepper="{{ $isVertical ? 'vertical' : 'horizontal' }}" role="list" aria-label="{{ __('wirekit::Progress') }}" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0; --wk-stepper-count: '.$count.';'])->class([$listClasses]) }}>
+<ol data-wk-prose-skip data-wk-stepper="{{ $isVertical ? 'vertical' : 'horizontal' }}" @unless($attributes->has('role')) role="list" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Progress') }}" @endunless {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0; --wk-stepper-count: '.$count.';'])->class([$listClasses]) }}>
     @foreach($steps as $i => $step)
         @php
             // Normalize: accept a string (label only) or ['label' => .., 'description' => ..].
@@ -148,6 +148,10 @@
 
             // Visual treatment per state. Completed: filled accent. Current:
             // outlined accent (active ring). Upcoming: muted outline.
+            // Current and upcoming differ in color alone, and forced colors paints both outlines
+            // in one system color, so the stylesheet frames the circle of the step that says
+            // `aria-current="step"` through the `wk-stepper-circle` marker. The marker sits
+            // outside the resolved class list, so a personalized block cannot take it away.
             $completedClasses = 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] border-[var(--color-wk-accent)]';
             $currentClasses = 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-accent-text)] border-[var(--color-wk-accent)]';
             $upcomingClasses = 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text-muted)] border-[var(--color-wk-border)]';
@@ -196,7 +200,7 @@
                 ])
             >
                 @if($follow === null)
-                    <div class="{{ $circleBase }} {{ $stateClasses }}">
+                    <div class="wk-stepper-circle {{ $circleBase }} {{ $stateClasses }}">
                         @if($isCompleted)
                             {{-- Check mark — decorative; state is communicated via aria-current / visually-hidden text. --}}
                             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -217,19 +221,23 @@
                          sent with. The hidden ones ship as `display: none` so the first paint is
                          right before Alpine runs, and `display: none` keeps the "Completed:" of a
                          step that is not completed out of what a screen reader hears. --}}
-                    <div class="{{ $circleBase }} {{ $completedClasses }}" @unless($isCompleted) style="display: none;" @endunless x-show="{{ $follow }} > {{ $stepNumber }}">
+                    <div class="wk-stepper-circle {{ $circleBase }} {{ $completedClasses }}" @unless($isCompleted) style="display: none;" @endunless x-show="{{ $follow }} > {{ $stepNumber }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M16.704 5.29a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-3.5-3.5a.75.75 0 111.06-1.06L8.674 12.23l6.97-6.94a.75.75 0 011.06 0z" clip-rule="evenodd"/>
                         </svg>
                         <span class="sr-only">{{ __('wirekit::Completed') }}:</span>
                     </div>
-                    <div class="{{ $circleBase }} {{ $currentClasses }}" @unless($isCurrent) style="display: none;" @endunless x-show="{{ $follow }} === {{ $stepNumber }}">
+                    <div class="wk-stepper-circle {{ $circleBase }} {{ $currentClasses }}" @unless($isCurrent) style="display: none;" @endunless x-show="{{ $follow }} === {{ $stepNumber }}">
                         <span aria-hidden="true">{{ $stepNumber }}</span>
                     </div>
-                    <div class="{{ $circleBase }} {{ $upcomingClasses }}" @if($isCompleted || $isCurrent) style="display: none;" @endif x-show="{{ $follow }} < {{ $stepNumber }}">
+                    <div class="wk-stepper-circle {{ $circleBase }} {{ $upcomingClasses }}" @if($isCompleted || $isCurrent) style="display: none;" @endif x-show="{{ $follow }} < {{ $stepNumber }}">
                         <span aria-hidden="true">{{ $stepNumber }}</span>
                     </div>
                 @endif
+                {{-- The label is the block's first child: the shipped stylesheet sets the current
+                     step's label in the heading weight through `aria-current="step"`, so the
+                     current step is marked by more than the color of its circle, and the
+                     description after it keeps its weight. --}}
                 <div data-wk-stepper-label class="{{ $labelClasses }}">
                     <div>{{ $label }}</div>
                     @if($description)

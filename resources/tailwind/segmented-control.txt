@@ -11,7 +11,9 @@ $attributes->get('aria-describedby',
 $attributes->get('name'),
 $attributes->get('name',
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->whereStartsWith('wire:model')
+$attributes]
 $classes
 $containerClasses
 $describedBy
@@ -32,6 +34,7 @@ $optValue)
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $refs.hiddenInput
 $required
 $scope);
@@ -74,7 +77,7 @@ $value
 'focus-visible:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-body-weight)]',
-'font-[number:var(--font-wk-heading-weight)]',
+'font-[number:var(--font-wk-selected-weight)]',
 'font-medium',
 'hint'
 'hover:text-[color:var(--color-wk-text)]',
@@ -191,6 +194,8 @@ $value
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 @unless($optimisticConfig)
 A
 A11y:
@@ -268,6 +273,7 @@ Set
 So
 Static
 Support\DomId
+Support\OuterAttributes.
 TRACK
 Tailwind's
 The
@@ -285,6 +291,7 @@ Without
 Written
 Zero
 [
+[$outerAttributes,
 [],
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
@@ -292,6 +299,7 @@ Zero
 \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses)
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \Pushery\WireKit\WireKit::warnUnknownProps('segmented-control',
 ])
@@ -302,6 +310,7 @@ __('wirekit::Could
 __('wirekit::Saving'),
 _focusAt()
 `$selected`,
+`--font-wk-selected-weight`,
 `--size-wk-target-min`
 `--text-wk-sm`
 `.click()`,
@@ -328,6 +337,7 @@ _focusAt()
 `error`
 `fieldset[disabled]`.
 `id`
+`id`.
 `inline-flex`
 `input`:
 `label`
@@ -350,9 +360,13 @@ _focusAt()
 `this`,
 `transition-all`,
 `value`
+`wire:key`,
+`wire:show`
 `wk-`
+`wk-segmented-control-segment`
 `x-data`
 `x-ref`
+`x-show`,
 `{{
 a
 able
@@ -436,6 +450,7 @@ attribute
 attribute.
 attributes,
 auto-derived
+away.
 axe-core's
 axes
 back
@@ -443,6 +458,7 @@ back.
 background,
 bag
 bag.
+bag:
 bar
 bare
 be
@@ -467,6 +483,7 @@ binds
 block
 block,
 blocks
+body
 boots.
 both
 bound,
@@ -518,7 +535,7 @@ class="text-[length:var(--text-wk-sm)]
 class="w-px
 class="wk-scroll-shadow-end"></span>
 class="wk-scroll-shadow-start"></span>
-class="{{
+class="wk-segmented-control-segment
 classes
 classes:
 click
@@ -527,6 +544,7 @@ clipped
 close
 collapses
 colors
+colors,
 column,
 comes
 commonest
@@ -602,6 +620,7 @@ effect
 element
 element,
 element.
+elements.
 elevated
 elsewhere)
 empty
@@ -637,6 +656,7 @@ feeds
 few
 field
 field's
+field,
 file,
 fill.
 fills
@@ -657,12 +677,17 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
 focused
 for
+forced
+forced-colors
 form
 formatting.
 forms.
 four
+frame
+frames
 from
 full
+further
 gap
 gate
 generic
@@ -670,6 +695,7 @@ give
 gives
 glob
 global
+go
 group
 group,
 group:
@@ -707,6 +733,7 @@ immediately
 implode('
 imports
 in
+in:
 including
 indicator
 init()
@@ -765,6 +792,7 @@ line
 list
 listed
 listener
+lists,
 literals
 little
 live
@@ -773,6 +801,8 @@ lose
 loses
 machinery
 makes
+marker
+marks
 match
 may
 mean
@@ -802,6 +832,7 @@ multi-statement
 must
 muted
 n/a
+name
 name="{{
 native
 natively
@@ -863,6 +894,7 @@ our
 out
 out.
 out:
+outermost
 outside
 over
 overflow-x-auto
@@ -876,6 +908,7 @@ page
 page's
 page-unique
 page;
+painted,
 parent
 parent's
 parser
@@ -887,6 +920,7 @@ path,
 path.
 per
 personalization.
+personalized
 phantom
 pick
 pill
@@ -922,11 +956,13 @@ py-1.5
 py-2
 qualified:
 racing
+radio
 radio.
 radiogroup
 radiogroup,
 radiogroup;
 radios,
+raised
 rather
 re-initialize
 re-themes,
@@ -941,6 +977,7 @@ reads
 reason
 reasoning
 reduced-motion
+ref,
 reference
 region
 region,
@@ -991,6 +1028,7 @@ scanner
 scope
 scope.
 screen
+script
 scroll
 scroll-px-1',
 scrollbar
@@ -1010,6 +1048,7 @@ select():
 selectable.
 selected
 selection
+selects
 self-stretch
 send
 sent
@@ -1061,6 +1100,7 @@ static
 stay
 sticks
 still
+stood
 stop
 stray
 strict
@@ -1068,6 +1108,8 @@ string
 string,
 strings
 style="display:
+stylesheet
+stylesheet's
 styling
 submission
 submit
@@ -1086,6 +1128,7 @@ tabbing
 tabindex
 tabindex="{{
 tag,
+take
 taken
 target
 tell
@@ -1102,9 +1145,11 @@ than
 that
 that:
 the
+their
 them
 them.
 them:
+theme
 themes
 then
 then:
@@ -1126,6 +1171,7 @@ too
 top
 track
 trades
+transitions
 tree
 triggers
 trim(($error
@@ -1179,7 +1225,10 @@ waiting
 was
 watching
 way
+weight
+weight.
 well
+well,
 went
 were
 what

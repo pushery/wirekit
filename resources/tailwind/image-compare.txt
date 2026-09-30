@@ -114,6 +114,7 @@ $wrapperClasses
 ($attributes->getAttributes()
 ($isVertical
 ($wireModelValue
+(Support\CallerListeners).
 (alphanumerics,
 (and
 (bottom
@@ -268,10 +269,12 @@ We
 WireKit::personalize()
 WireKit::resolveClasses('image-compare',
 [
+['x-on:slide']);
 [];
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::percent%
 \Pushery\WireKit\Support\AlpinePayload::string($isVertical
 \Pushery\WireKit\Support\AlpinePayload::string($wireModelSafe)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('image-compare',
 ])
@@ -356,6 +359,7 @@ blocks
 body
 boots,
 border-[var(--color-wk-border)]',
+both
 bottom-LEFT
 bottom-RIGHT
 bound
@@ -430,6 +434,7 @@ element
 else
 empty
 entirely,
+event
 events
 every
 exposes
@@ -463,6 +468,7 @@ from
 fully
 get
 given;
+goes
 got
 grows
 guard
@@ -527,6 +533,8 @@ left-2'
 left-2'"
 line
 list
+listener
+listens
 literal
 live
 loading="{{
@@ -636,6 +644,7 @@ roll
 root
 root,
 rounded-[var(--radius-wk-sm)]',
+run
 same
 scanner
 scope.
@@ -660,6 +669,7 @@ snap
 so
 space
 space.
+spelling,
 src="{{
 starts
 state
@@ -733,6 +743,7 @@ value="{{
 vertical
 vertical.
 via
+view
 view's
 viewBox="0
 visible

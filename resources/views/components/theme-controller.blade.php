@@ -80,8 +80,8 @@
         'ghost' => 'border-transparent bg-transparent text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-subtle)] hover:text-[color:var(--color-wk-text)]',
         default => 'border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]',
     };
-    $controlClasses = WireKit::resolveClasses('theme-controller', 'control', implode(' ', [
-        'wk-touch-target inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)]',
+    $controlClasses = 'wk-touch-target '.WireKit::resolveClasses('theme-controller', 'control', implode(' ', [
+        'inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)]',
         $controlSize,
         $surfaceChrome,
     ]), $scope);
@@ -115,6 +115,10 @@
     // page's `data-wk-theme-fixed-reason`, or this one.
     $fixedReasonId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-theme-fixed-reason-');
     $fixedReasonRef = \Pushery\WireKit\Support\AlpinePayload::string($fixedReasonId);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
@@ -186,9 +190,19 @@
                  sat here doing nothing while an Alpine :class binding quietly did
                  the work. One mechanism, in the place that can actually see the
                  checkbox. --}}
+            {{-- The track is painted as the toggle's is: a fill in the border color and an edge in
+                 the strong border color, which carries the 3:1 a control's boundary needs (WCAG
+                 1.4.11); the muted fill it had stood at 1.09:1 against a light page. The edge is an
+                 inset ring rather than a border because the knob is a child of the track here, and a
+                 border would shrink the box it is placed in, so it would sit against the bottom and
+                 the end. The inset ring takes no room and leaves the outer focus ring alone.
+                 `wk-choice-frame` marks it for a preset whose border width is 0px: there the ring is
+                 gone, and `.wk-choice-frame { --border-wk-width: 1px; }` brings it back.
+                 `wk-touch-target` gives the 24px-tall track the hit area the toggle's has, on the
+                 box beside the hidden input rather than on the label, as checkbox and radio do. --}}
             <span
                 aria-hidden="true"
-                class="wk-theme-switch-track relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
+                class="wk-theme-switch-track wk-choice-frame wk-touch-target relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-border)] inset-ring-[length:var(--border-wk-width)] inset-ring-[var(--color-wk-border-strong)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-checked:inset-ring-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
             >
                 <span class="wk-theme-switch-knob absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
             </span>

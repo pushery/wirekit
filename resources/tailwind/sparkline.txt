@@ -33,6 +33,7 @@ $data[count($data)
 $defaultDisplay
 $defaultStyle
 $displayStyle
+$displayStyle.'height:
 $emitReplayable
 $first
 $first)
@@ -55,7 +56,7 @@ $scope,
 $sparkDatasets
 $sparkOptions
 $sparklineAttributes
-$sparklineAttributes->class([$rootClass])
+$sparklineAttributes->class([$rootClass])->merge(['style'
 $sparklineAttributes->get('aria-hidden'),
 $sparklineAttributes->has('inert'))
 $sparklineAttributes->merge(['inert'
@@ -81,6 +82,8 @@ $wrapperTag
 '');
 '';
 '.$callerStyle);
+'.$resolvedHeight.';
+'.($inline
 '1.25em'
 '100%'`
 '2.5rem');
@@ -241,7 +244,7 @@ $wrapperTag
 100%;
 100%;"
 100%;"></canvas>
-100%;'
+100%;')])
 100%;`
 100%`
 100);
@@ -287,12 +290,14 @@ $wrapperTag
 @endif
 @endonce
 @endphp
+@endunless
 @foreach
 @if
 @once('wirekit-chart-script:'.$wkChartScript)
 @php
 @props([
 @props.
+@unless($chartAttributes->has('role'))
 A
 ALSO
 API.
@@ -320,6 +325,7 @@ CRITICAL:
 CSS
 CSS-grid
 Caller-supplied
+CallerRef::onRoot()
 Chart
 Chart.js
 Chart.js:
@@ -361,6 +367,7 @@ Manual
 Marker
 Marking
 Merge
+Merged,
 Monthly
 NAME
 NOT
@@ -421,6 +428,7 @@ Wrapping
 \Illuminate\View\ComponentAttributeBag(
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
 \Pushery\WireKit\Support\AlpinePayload::from($chartData)
+\Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\WireKit::cspNonce()
 \Pushery\WireKit\WireKit::warnUnknownProps('sparkline',
 \RuntimeException(
@@ -489,10 +497,12 @@ __('wirekit::Chart'));
 `wk-*`
 `x-data`
 `x-data`,
+`x-ref`
 `↻
 a
 about
 above
+above.
 absolute-positioned
 accessibility
 accessible
@@ -573,6 +583,7 @@ back
 background).
 background-color:
 bag
+bag's
 bag,
 bag.
 bag;
@@ -582,6 +593,7 @@ because
 becomes
 before
 behavior;
+belongs
 below
 below.
 belt-and-
@@ -654,6 +666,7 @@ clear,
 clicking
 client-only
 clientHeight
+clip
 clips
 collapses
 colon)
@@ -843,6 +856,7 @@ fn
 focus
 focus,
 focusable
+follow
 follows
 for
 for:
@@ -860,6 +874,7 @@ gets
 given
 go
 goes
+gone.
 graphic
 graphical
 green
@@ -869,6 +884,7 @@ grid;
 guard
 half
 handle
+hands
 hardcoded
 has
 heard
@@ -1054,6 +1070,7 @@ on
 on.
 once,
 one
+one,
 one.
 ones).
 only
@@ -1069,9 +1086,11 @@ order
 other
 other,
 otherwise
+ours.
 out
 outer
 output
+overflow
 overflow:
 overflows
 override
@@ -1185,6 +1204,7 @@ role-less
 role.
 role="img"
 root
+root,
 rule
 rule,
 running
@@ -1245,6 +1265,7 @@ src/Components/Chart.php
 src="{{
 stable
 stamps
+stand
 starts
 state.
 statement
@@ -1317,6 +1338,7 @@ throw
 throws:
 ticker),
 tidy
+time,
 time.
 tints
 tiny
@@ -1388,6 +1410,7 @@ want
 warning
 was
 way
+way.
 we
 well
 what
@@ -1440,7 +1463,6 @@ x-ref="mount"
 }})"
 }};
 }}>
-}}height:
 ×
 —
 …>

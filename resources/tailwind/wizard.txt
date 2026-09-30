@@ -678,6 +678,8 @@ $wrapMode
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 @unless($isCompleted)
 @unless($isCurrent)
 @unless($isLast)
@@ -690,7 +692,6 @@ ARIA
 Accessible
 All
 Alpine
-Alpine's
 An
 And
 Auto-inject
@@ -718,7 +719,6 @@ Bypasses
 CAN
 COLUMNS
 CONTROLS
-CSP
 CSS
 CSS-pixel
 CSS.
@@ -730,6 +730,7 @@ Clamped
 Completed:
 Connector
 Connector:
+Current
 Current:
 DECLARATIVE
 DISABLES
@@ -996,6 +997,8 @@ __('wirekit::This
 `aria-busy="true"`
 `aria-busy`
 `aria-busy`,
+`aria-current="step"`
+`aria-current="step"`,
 `aria-current`
 `aria-disabled="true"`
 `aria-disabled`
@@ -1050,6 +1053,7 @@ __('wirekit::This
 `iconOnly`,
 `index`.
 `indicator="false"`
+`init()`,
 `inline-flex`
 `label`
 `lang`
@@ -1107,6 +1111,7 @@ __('wirekit::This
 `wizard`
 `wk-field`
 `wk-form-row`
+`wk-stepper-circle`
 `wk-touch-target`
 `wrap-label="false"`
 `wrapLabel`
@@ -1114,6 +1119,7 @@ __('wirekit::This
 `wrap`
 `x-if`
 `x-if`,
+`x-init`
 `x-ref`
 `x-show`
 `xs`
@@ -1173,6 +1179,7 @@ allow-list.
 allowed,
 allows
 alone
+alone,
 along
 alongside
 alongside,
@@ -1255,6 +1262,7 @@ automated
 automatically
 avatar.group
 avoid.
+away.
 axe
 axe-core
 axis
@@ -1312,12 +1320,12 @@ binding
 bindings,
 binds
 block
+block's
 block,
 blocked
 blocks
 blurs
 body
-body:
 boolean
 boolean:
 border
@@ -1414,10 +1422,12 @@ check:
 checking
 child
 child)
+child:
 children
 chosen
 circle
 circle's
+circle,
 circles
 circles.
 clamp
@@ -1436,6 +1446,7 @@ class="sr-only"
 class="sr-only">{{
 class="text-[length:var(--text-wk-xs)]
 class="w-4
+class="wk-stepper-circle
 class="{{
 classes
 classes.
@@ -1461,6 +1472,7 @@ color,
 color-mix
 color-mix(in
 color:
+colors
 colors,
 column
 column.
@@ -1614,7 +1626,6 @@ differ
 difference
 different
 differently
-directive,
 directives
 disable
 disable,
@@ -1719,6 +1730,7 @@ expression
 expressions
 expressions.
 extra
+factory
 fading
 fails
 failure
@@ -1806,6 +1818,7 @@ font-[number:var(--font-wk-body-weight)]
 for
 for.
 for:
+forced
 foreach
 form
 form's
@@ -1813,6 +1826,7 @@ four
 four-steps-at-once
 fragments
 frame
+frames
 frequently
 from
 full
@@ -1887,6 +1901,7 @@ helper
 here
 here,
 here.
+here:
 hid
 hidden
 hidden),
@@ -2126,8 +2141,10 @@ maps
 margin:
 margins
 mark
+marked
 marked.
 marker
+marker.
 markers
 markup
 markup,
@@ -2161,7 +2178,6 @@ merely
 merge
 message:
 messages
-method
 mid-word
 mid-word.
 middle
@@ -2317,6 +2333,7 @@ other:
 otherwise
 our
 ours
+ours,
 out
 out,
 out.
@@ -2324,6 +2341,7 @@ outer
 outline()
 outline.
 outlined
+outlines
 outranks
 outside
 outside;
@@ -2370,6 +2388,7 @@ panel,
 panel.
 panels
 parent
+parser
 parses
 part
 parts.
@@ -2390,6 +2409,7 @@ per-page
 percentage
 perception
 person
+personalized
 phone
 phone,
 phone.
@@ -2546,6 +2566,7 @@ reserve
 reserved
 reset
 resolve
+resolved
 resolver
 resolves
 responsive
@@ -2633,7 +2654,6 @@ set:
 sets
 setting
 setup
-several
 shadow-[var(--shadow-wk-none)]
 shadow-[var(--shadow-wk-sm)]
 shape
@@ -2730,13 +2750,13 @@ srgb,
 stable
 stacks
 stacks:
+standing
 stands
 started
 starting
 starts
 state
 state.
-statements
 states
 states,
 static
@@ -2809,6 +2829,7 @@ switches
 syllable,
 symptom
 syntax.
+system
 tab
 tab)')
 tabindex="-1"
@@ -3039,6 +3060,7 @@ waste
 way
 we
 weight
+weight.
 well
 well.
 went
@@ -3128,7 +3150,6 @@ x-bind:hidden="isFirst
 x-bind:hidden="isLast
 x-data="wirekitDevWarning({
 x-data="wirekitWizard({
-x-init="initWizard()"
 x-on:click="next()"
 x-on:click="prev()"
 x-show="current

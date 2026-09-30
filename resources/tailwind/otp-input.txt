@@ -31,11 +31,12 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('x-ref',
 $attributes->getAttributes());
-$attributes->only('class')->class([$wrapperClasses])
 $attributes->only(['dusk'])
+$attributes->only(['x-on:wirekit:otp-complete',
 $attributes->whereStartsWith('data-')
 $attributes->whereStartsWith('wire:model')
 $attributes->whereStartsWith('wire:model')->first();
+$attributes]
 $autofocus
 $autofocus)
 $b`
@@ -55,6 +56,7 @@ $group
 $group);
 $group,
 $group;
+$groupListeners
 $hasError
 $hasLower
 $hasLower;
@@ -78,6 +80,7 @@ $optimistic
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $required
 $scope);
 $size,
@@ -85,6 +88,8 @@ $sizeClasses
 $sizeClasses,
 $slot
 $stateClasses
+$wrapperAttributes
+$wrapperAttributes->class([$wrapperClasses])
 $wrapperClasses
 &&
 '
@@ -104,6 +109,7 @@ $wrapperClasses
 '.((string)
 '0123456789',
 '0123456789';
+'@wirekit:otp-complete'])
 '['.str_replace(
 '[0-9]'
 '\\-'],
@@ -116,6 +122,8 @@ $wrapperClasses
 'announce-errors']);
 'announceError'
 'args'
+'aria-describedby',
+'aria-label',
 'autofocus'
 'base',
 'bg-[var(--color-wk-bg-input)]',
@@ -126,11 +134,13 @@ $wrapperClasses
 'center'
 'center',
 'contents'
+'data-']);
 'debug'
 'digit',
 'disabled'
 'disabled:cursor-not-allowed',
 'disabled:opacity-[var(--opacity-wk-disabled)]',
+'dusk',
 'end'
 'end']);
 'end'],
@@ -161,7 +171,7 @@ $wrapperClasses
 'label'
 'length'
 'lg'
-'lg']))
+'lg',
 'masked'
 'md'
 'md'),
@@ -193,10 +203,13 @@ $wrapperClasses
 'tracking-[var(--font-wk-letter-spacing)]',
 'transition-colors
 'value'
+'w-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))]
 'w-[var(--size-wk-lg)]
 'w-[var(--size-wk-md)]
 'w-[var(--size-wk-sm)]
 'wrapper',
+'xl'
+'xl']))
 (!
 ($alphabet
 ($errors
@@ -223,7 +236,10 @@ $wrapperClasses
 +
 -
 --}}
+->except(['name',
+->whereDoesntStartWith(['wire:model',
 .
+...array_keys($groupListeners->getAttributes())])
 /
 //
 />
@@ -234,6 +250,7 @@ $wrapperClasses
 10
 1;
 2
+3.5rem
 320px
 32px,
 376px,
@@ -241,11 +258,13 @@ $wrapperClasses
 40px
 40px.
 44px
-48px.
+48px,
 5+1,
 5+3
+56px.
 6),
 6+2
+6rem,
 7x8
 8x40
 :
@@ -346,6 +365,7 @@ Hidden
 How
 I/1,
 IS
+In
 Individual
 It
 KEEPS
@@ -386,6 +406,7 @@ So
 StrictnessGate
 Strip
 Support\DomId
+Support\OuterAttributes.
 Tab
 Test
 That
@@ -400,6 +421,7 @@ WCAG
 WHICH
 WebKit
 What
+Whatever
 When
 Where
 Which
@@ -412,6 +434,7 @@ Without
 Wrapping
 Your
 [
+[$outerAttributes,
 ['\\',
 ['\\\\',
 ['position'
@@ -420,12 +443,14 @@ Your
 [0123456789]
 [],
 [range(0,
+\Illuminate\View\ComponentAttributeBag([]);
 \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold)
 \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars)
 \Pushery\WireKit\Support\AlpinePayload::from($boundModel)
 \Pushery\WireKit\Support\AlpinePayload::from($name)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\StrictnessGate::enforce(
 \Pushery\WireKit\WireKit::validateProp('otp-input',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
@@ -439,9 +464,9 @@ __('wirekit::One-time
 __('wirekit::Saving'),
 `!==`
 `$alphabetCaseFold`
-`$attributes->only('class')`
 `$x
 `--opacity-wk-disabled`
+`--size-wk-xl`
 `-0`.
 `-2`,
 `-3`,
@@ -469,6 +494,7 @@ __('wirekit::Saving'),
 `aria-disabled`
 `aria-label`
 `autofocus`
+`class`
 `class`,
 `code-2`
 `contents`
@@ -491,6 +517,7 @@ __('wirekit::Saving'),
 `keep`
 `length`
 `lg`
+`lg`,
 `maxlength="1"`
 `md`
 `ms-0.5`,
@@ -503,15 +530,22 @@ __('wirekit::Saving'),
 `required`
 `sm`
 `start`
+`style`,
+`title`.
 `trim()`
 `unsafe-eval`,
 `validateProp()`
 `value`
+`wire:key`,
+`wire:keydown`,
 `wire:model`
+`wire:show`
 `wirekit:otp-complete`
 `wirekitOtpInput`
 `x-ref`
+`x-show`,
 `x-wk-ref`,
+`xl`
 `xor`:
 `{{
 a
@@ -551,6 +585,8 @@ already
 also
 always
 ambiguity-free
+among
+amount
 an
 and
 announce-error
@@ -652,6 +688,7 @@ box:
 box;
 boxes
 boxes,
+boxes.
 boxes:
 branch
 break
@@ -662,6 +699,7 @@ briefly
 browser
 browser's
 browsers
+bubbles
 build
 building.
 built
@@ -676,6 +714,7 @@ call
 call,
 call.
 called
+caller
 caller's
 caller's.
 came
@@ -713,6 +752,7 @@ characters
 chose.
 chosen
 chunk
+circle.
 class
 class.
 class="sr-only"
@@ -746,6 +786,7 @@ comparison
 compatibility,
 compiles
 complain
+completion
 component
 component's
 component,
@@ -804,15 +845,18 @@ deduped
 dedupes
 default
 default,
+defaults,
 defect,
 definite
 deletion
 deliberately
 dense.
+denser
 depends
 derived
 descendant
 describes
+description
 design
 designed
 desktop
@@ -834,6 +878,7 @@ disarm,
 discard
 discarded,
 discards
+dispatched
 dispatches
 distribution
 div,
@@ -862,6 +907,7 @@ element,
 element.
 else
 else,
+elsewhere
 elsewhere)
 email
 emit
@@ -962,6 +1008,7 @@ from
 from.
 full
 fully
+further
 gap
 gap-2'
 gate
@@ -970,12 +1017,15 @@ give
 gives
 global
 glyph,
+go
 go.
 goes.
 group
+group,
 group.
 groups
 guard
+h-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))]
 h-[var(--size-wk-lg)]
 h-[var(--size-wk-md)]
 h-[var(--size-wk-sm)]
@@ -999,6 +1049,7 @@ heading,
 hear
 hears
 height,
+heights
 held
 help.
 here
@@ -1025,6 +1076,7 @@ import
 imports
 in
 in,
+in:
 in_array($justify,
 included.
 index
@@ -1048,6 +1100,7 @@ it
 it,
 it.
 it:
+it;
 items
 its
 itself
@@ -1072,6 +1125,7 @@ kiosk
 knows
 label
 label.
+ladder
 land
 landed
 lands
@@ -1100,6 +1154,9 @@ line
 list
 list,
 list.
+listener
+listener,
+listens
 literal.
 live
 lives
@@ -1115,6 +1172,7 @@ loses
 lowercase
 machine-readable
 make
+makes
 many
 markup
 match
@@ -1145,8 +1203,10 @@ missing,
 mixed-case
 mixing
 mobile
+mode
 mode,
 model:
+modifier
 moment
 more
 most
@@ -1190,12 +1250,14 @@ note,
 nothing
 nothing,
 nothing.
+now
 null
 null)
 null)?->first($name);
 null)?->has($name);
 null,
 null])
+number
 numeric
 numeric,
 occurrence;
@@ -1208,6 +1270,7 @@ omitted
 omitted,
 on
 on.
+on;
 once
 once,
 once:
@@ -1235,6 +1298,7 @@ out
 out.
 out:
 outer
+outermost
 output
 outside
 over
@@ -1242,6 +1306,7 @@ overflows
 overwrites
 own
 own,
+own.
 packs
 page
 page,
@@ -1251,6 +1316,7 @@ pair
 parent
 parent.
 parser
+parser.
 part
 passes
 passthrough
@@ -1262,6 +1328,7 @@ pattern="{{
 pending
 per
 phone.
+place
 plain
 plugged
 plus
@@ -1279,6 +1346,7 @@ preg_match('/\p{Lu}/u',
 presentational
 previous,
 prod).
+progress
 promise
 promises
 prop
@@ -1342,7 +1410,9 @@ retyped:
 right
 role="group"
 rollback
+roomier
 root
+rounded-[var(--radius-wk-lg)]',
 rounded-[var(--radius-wk-md)]',
 rounded-[var(--radius-wk-sm)]',
 route.
@@ -1352,6 +1422,8 @@ row:
 rows
 rule
 run
+rung
+rung:
 running
 running,
 runs
@@ -1442,6 +1514,8 @@ status
 stay
 stayed
 stays
+step
+step:
 still
 stop
 stops
@@ -1479,6 +1553,7 @@ test.
 text
 text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-text-muted)]">{{
+text-[length:var(--text-wk-2xl)]
 text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-xl)]
@@ -1489,8 +1564,10 @@ the
 their
 them
 them.
+theme
 theming
 then
+then,
 there
 there.
 there;
@@ -1500,6 +1577,7 @@ thing
 things
 this
 this,
+three.
 through
 thumbs
 till
@@ -1516,6 +1594,7 @@ top
 touch
 touches
 trailing
+transitions
 trim($describedBy.'
 trim('flex
 trim(($hint
@@ -1601,6 +1680,7 @@ wrap:
 wrapped
 wrapper
 wrapper,
+wrapper.
 wrapper:
 wrapping
 wraps,

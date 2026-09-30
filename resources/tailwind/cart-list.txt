@@ -1,6 +1,7 @@
 "false",
 "list,
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $classes
 $divided
@@ -34,9 +35,12 @@ $slot
 >
 ?
 @endphp
+@endunless
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 Accessible
 Blade
@@ -277,6 +281,7 @@ with
 would
 {{
 {{--
+||
 }}
 }}"
 —

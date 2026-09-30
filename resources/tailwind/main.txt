@@ -16,6 +16,7 @@ $slot
 ''
 '',
 ',
+'.WireKit::resolveClasses('main',
 '2xl'
 '2xl');
 '2xl',
@@ -42,6 +43,7 @@ $slot
 'md',
 'none'
 'none',
+'overflow-y-auto',
 'padding'
 'padding',
 'px-[var(--padding-wk-x-lg)]
@@ -111,7 +113,6 @@ UNBOUND
 Validated
 Vertical
 When
-WireKit::resolveClasses('main',
 WireKit::validateProp('main',
 WireKit::warnUnknownProps('main',
 [
@@ -244,7 +245,6 @@ opposite
 optimistic-ui:
 otherwise
 out
-overflow-y-auto',
 overrides.
 own
 padding

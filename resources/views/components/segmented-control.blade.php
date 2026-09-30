@@ -57,6 +57,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('segmented-control', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -111,11 +116,16 @@
     // still finds them here, through the views glob and through this component's
     // own source list alike: the scanner reads the text of the file, not the
     // branch of PHP that uses it.
+    //
+    // The weight is `--font-wk-selected-weight`, which a theme may set to the body
+    // weight. The raised surface marks the selected segment without it, and in forced
+    // colors, where the surface and its shadow are not painted, the stylesheet frames
+    // the segment through the `wk-segmented-control-segment` marker on the button.
     $segmentSelectedClasses = WireKit::resolveClasses('segmented-control', 'segment-selected', implode(' ', [
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[color:var(--color-wk-text)]',
         'shadow-[var(--shadow-wk-sm)]',
-        'font-[number:var(--font-wk-heading-weight)]',
+        'font-[number:var(--font-wk-selected-weight)]',
     ]), $scope);
 
     $segmentUnselectedClasses = WireKit::resolveClasses('segmented-control', 'segment-unselected', implode(' ', [
@@ -189,7 +199,7 @@
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
-<div class="space-y-1.5 min-w-0">
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0">
     @if($label)
         <x-wirekit::label>{{ $label }}</x-wirekit::label>
     @endif
@@ -225,9 +235,9 @@
              carries a live region, and a live region is not a radio. A
              radiogroup may only own radios, so the announcer cannot sit in it. --}}
         @unless($optimisticConfig)
-            role="radiogroup"
+            @unless($attributes->has('role')) role="radiogroup" @endunless
             @if($disabled) aria-disabled="true" @endif
-            @if($label) aria-label="{{ $label }}" @endif
+            @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
             {{-- On the GROUP: the message is about the choice, and repeating it on every
                  segment would have it read out once per option. --}}
             @if($error) aria-invalid="true" @endif
@@ -261,8 +271,12 @@
              on the wrapper and `data-wk-server-value`. Deriving it a second way
              would be the worse bug: a static value that disagrees with what Alpine
              writes a moment later trades an empty submission for a plausible
-             wrong one. --}}
-        <input type="hidden" id="{{ $id }}" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" />
+             wrong one.
+
+             No `id`. The script reaches the field through its ref, a label cannot
+             name a hidden field, and a caller's `id` already sits on the radio group
+             through the bag: written here as well, it stood on two elements. --}}
+        <input type="hidden" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" />
 
         @if($optimisticConfig)
             {{-- `display: contents` on both wrappers: the segments must keep
@@ -341,7 +355,10 @@
                     @keydown.home.prevent="focusFirst()"
                     @keydown.end.prevent="focusLast()"
                 @endif
-                class="{{ $segmentClasses }} {{ $sizeClasses }}"
+                {{-- `wk-segmented-control-segment` is the marker the stylesheet's forced-colors
+                     rule selects to frame the selected segment. It sits outside the resolved
+                     class lists, so a personalized block cannot take it away. --}}
+                class="wk-segmented-control-segment {{ $segmentClasses }} {{ $sizeClasses }}"
                 :class="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }}
                     ? {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentSelectedClasses) }}
                     : {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses) }}"

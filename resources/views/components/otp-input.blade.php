@@ -66,9 +66,8 @@
     // and when the row wraps, the second line sits under the start of the first rather
     // than under its middle.
     //
-    // A prop rather than a note, because the call site cannot reach the row:
-    // `$attributes->only('class')` lands on the outer wrapper, so a centering utility written
-    // on the tag never touches it. The only other way is a rule over this component's
+    // A prop rather than a note, because the call site cannot reach the row: a class written
+    // on the tag lands on the outer wrapper, so a centering utility there never touches it. The only other way is a rule over this component's
     // internal markup — `justify-content` on a descendant `[role="group"]` — which breaks
     // silently the day the markup moves.
     //
@@ -76,7 +75,7 @@
     // suggests would be right for most call sites and wrong for backward compatibility,
     // and the second consideration wins in a minor.
     'justify' => config('wirekit.components.otp-input.justify', 'start'),
-    // The size of every box: `sm` 32px, `md` 40px (the one that shipped), `lg` 48px.
+    // The size of every box: `sm` 32px, `md` 40px (the one that shipped), `lg` 48px, `xl` 56px.
     //
     // A touch device already lifts the boxes to the touch target, through the
     // `pointer: coarse` floor in the stylesheet. What it cannot reach is a surface that is
@@ -279,6 +278,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('otp-input', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'otp-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
     // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
@@ -290,10 +294,16 @@
 
     // One box per size: width, height, the digit's text size and the corner. `md` carries the
     // same four classes that shipped, so a field that passes nothing looks exactly as before.
-    $sizeClasses = match (WireKit::validateProp('otp-input', 'size', $size, ['sm', 'md', 'lg'])) {
+    //
+    // `xl` is one more step of the same ladder rather than a number of its own. The component
+    // heights step by the same amount from `sm` to `lg`, so the rung above `lg` is `lg` plus that
+    // step: 3.5rem at the defaults, and a theme that makes its controls denser or roomier moves it
+    // with the other three. `--size-wk-xl` is not that rung: it is 6rem, the progress circle.
+    $sizeClasses = match (WireKit::validateProp('otp-input', 'size', $size, ['sm', 'md', 'lg', 'xl'])) {
         'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]',
         'md' => 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]',
         'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]',
+        'xl' => 'w-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] h-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] text-[length:var(--text-wk-2xl)] rounded-[var(--radius-wk-lg)]',
     };
 
     // Individual digit input classes
@@ -369,9 +379,27 @@
     // (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+
+    // Whatever a caller writes on the tag that has no place of its own lands on the wrapper:
+    // `x-show`, a listener, `wire:keydown`, `style`, `title`. The wrapper took `class` alone and
+    // everything else was dropped, a listener for the completion among it; the event bubbles from
+    // the group to the wrapper, where such a listener now hears it. What belongs elsewhere stays
+    // out: the binding and the name on the hidden field, the test hooks and the name of the group,
+    // the description on the boxes.
+    //
+    // In optimistic mode the wrapper listens for the completion itself, and a second attribute of
+    // the same name on one element would be dropped by the parser. A caller's listener of exactly
+    // that name moves to the group then, which is the element the event is dispatched on; one with
+    // a modifier is another attribute and stays on the wrapper.
+    $groupListeners = $optimisticConfig
+        ? $attributes->only(['x-on:wirekit:otp-complete', '@wirekit:otp-complete'])
+        : new \Illuminate\View\ComponentAttributeBag([]);
+    $wrapperAttributes = $attributes
+        ->except(['name', 'dusk', 'aria-label', 'aria-describedby', ...array_keys($groupListeners->getAttributes())])
+        ->whereDoesntStartWith(['wire:model', 'data-']);
 @endphp
 
-<div {{ $attributes->only('class')->class([$wrapperClasses]) }}
+<div {{ $outerAttributes }} {{ $wrapperAttributes->class([$wrapperClasses]) }}
     @if($callerRef !== '') data-wk-ref-scope @endif
     @if($optimisticConfig)
         x-data="wirekitOptimistic({{ $optimisticConfig }})"
@@ -418,7 +446,7 @@
              control to a reader and to a test. Only `dusk` and `data-*`: before this line
              everything but `class`, `wire:model` and `aria-label` was dropped, so a suite
              that finds its fields by `dusk` could not find this one at all. --}}
-        {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }}
+        {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }} {{ $groupListeners }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         @if($required) aria-required="true" @endif
         aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"

@@ -34,8 +34,7 @@
     //
     // The basis itself is set by the parent's perView through the marker class in
     // dist/wirekit.css, so a slide does not need to know how many share the view.
-    $classes = WireKit::resolveClasses('carousel.slide', 'base', implode(' ', [
-        'wk-carousel-slide',
+    $classes = 'wk-carousel-slide '.WireKit::resolveClasses('carousel.slide', 'base', implode(' ', [
         'snap-start shrink-0 grow-0',
         'w-full',
     ]), $scope);

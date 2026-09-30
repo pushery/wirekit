@@ -64,6 +64,69 @@ final class LocalizedNumber
     }
 
     /**
+     * An amount in a currency, the way the active locale writes it: `1.234,56 €` in German,
+     * `€1,234.56` in English.
+     *
+     * Without intl there is no table of currency symbols and their positions to read, so the
+     * ISO code follows the number, grouped the way `format()` groups without intl:
+     * `1,234.56 EUR`. The amount stays exact and the currency unambiguous, which is what a price
+     * has to be; the symbol and where it goes are the part the extension adds. The same text
+     * stands in when the formatter refuses an amount or a code.
+     *
+     * @param  string  $currency  An ISO 4217 code, `EUR`.
+     */
+    public static function currency(
+        float $amount,
+        string $currency,
+        ?string $locale = null,
+        ?bool $intlAvailable = null,
+    ): string {
+        $intlAvailable ??= extension_loaded('intl');
+        $plain = number_format($amount, 2).' '.strtoupper($currency);
+
+        if (! $intlAvailable) {
+            return $plain;
+        }
+
+        $formatted = (new \NumberFormatter($locale ?? App::getLocale(), \NumberFormatter::CURRENCY))
+            ->formatCurrency($amount, $currency);
+
+        return $formatted === false ? $plain : $formatted;
+    }
+
+    /**
+     * A value that is already in percent, the way the active locale writes a percentage:
+     * `12.5` becomes `12,5 %` in German and French and `12.5%` in English, with at most
+     * `$maxPrecision` decimals and trailing zeros dropped.
+     *
+     * A negative value keeps the locale's minus. A plus sign is the caller's to put in front,
+     * because whether a rise is shown with one is a decision about the figure, not about the
+     * language it is written in.
+     *
+     * Without intl the number is written the way `format()` writes it without intl, with `%`
+     * after it.
+     */
+    public static function percent(
+        float $value,
+        int $maxPrecision = 2,
+        ?string $locale = null,
+        ?bool $intlAvailable = null,
+    ): string {
+        $intlAvailable ??= extension_loaded('intl');
+        $plain = self::withoutIntl($value, null, $maxPrecision).'%';
+
+        if (! $intlAvailable) {
+            return $plain;
+        }
+
+        $formatter = new \NumberFormatter($locale ?? App::getLocale(), \NumberFormatter::PERCENT);
+        $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, $maxPrecision);
+        $formatted = $formatter->format($value / 100);
+
+        return $formatted === false ? $plain : $formatted;
+    }
+
+    /**
      * The pre-existing behavior, kept verbatim for environments without intl.
      */
     private static function withoutIntl(float $value, ?int $precision, ?int $maxPrecision): string

@@ -125,7 +125,7 @@
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes, $disabledClasses]) }}
+    {{ $attributes->except('rel')->class(['wk-listbox-option', $classes, $disabledClasses]) }}
 >
     @if($icon)
         <span class="shrink-0 w-5 h-5 text-[color:var(--color-wk-text-muted)]" aria-hidden="true">

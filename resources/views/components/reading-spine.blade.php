@@ -45,6 +45,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-spine', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@mouseenter', '@mouseleave', '@focusin', '@focusout']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -194,10 +198,10 @@
     // produce a horizontal scrollbar inside the spine even though the
     // ellipsis truncation should clip them visually. Pinning x-axis to
     // hidden + y-axis to auto gives true vertical-only scroll.
-    $rootClass = WireKit::resolveClasses('reading-spine', 'base', implode(' ', [
+    $rootClass = 'wk-scrollbar '.WireKit::resolveClasses('reading-spine', 'base', implode(' ', [
         'wk-reading-spine',
         $boundaryClass,
-        'wk-scrollbar max-h-[calc(100vh-8rem)] overflow-x-hidden overflow-y-auto',
+        'max-h-[calc(100vh-8rem)] overflow-x-hidden overflow-y-auto',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         $positionClass,
         $hideBelowClass,
@@ -232,6 +236,23 @@
         // interpolated into a style string.
         'baseLevel' => min($levelsArray),
     ]);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // What is about the whole component goes on its outermost element (Support\OuterAttributes).
+    // In a container that is the pin wrapper below. In the viewport the aside is outermost, but
+    // it hides itself with an `x-show` of its own while the page has no headings, so a caller's
+    // `x-show` or `wire:show` cannot sit on it as well: the parser drops a second attribute of
+    // one name, and a bound `wire:show` would toggle the aside independently of it. Only then
+    // does the aside get a wrapper, one that generates no box.
+    [$outerAttributes, $innerAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+    $showScope = ! $useScoped && \Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
+
+    if ($useScoped || $showScope) {
+        $attributes = $innerAttributes;
+    }
 @endphp
 
 @if ($useScoped)
@@ -243,7 +264,9 @@
      spine's hover-expand still overlays. Viewport mode skips this (the aside is
      `fixed`). Inline-styled so it holds without a Tailwind build that scanned
      this view. --}}
-<div style="position: sticky; top: var(--reading-spine-offset-top, 1rem); height: 0; z-index: var(--z-wk-sticky);">
+<div style="position: sticky; top: var(--reading-spine-offset-top, 1rem); height: 0; z-index: var(--z-wk-sticky);" {{ $outerAttributes }}>
+@elseif ($showScope)
+<div class="contents" {{ $outerAttributes }}>
 @endif
 <aside
     x-data="wirekitReadingSpine({{ $alpineOptions }})"
@@ -385,6 +408,6 @@
         @endif
     </nav>
 </aside>
-@if ($useScoped)
+@if ($useScoped || $showScope)
 </div>
 @endif

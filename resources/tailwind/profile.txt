@@ -9,8 +9,10 @@
 #1
 $alt
 $as,
-$attributes->class([$classes])
+$attributes
+$attributes)->class([$classes])
 $attributes->class([$groupClasses])
+$attributes->except('tabindex')
 $attributes->getAttributes());
 $attributes->has('x-data'))
 $attributes->merge($avatarStyle
@@ -104,6 +106,7 @@ $total
 'border-[length:var(--border-wk-width)]',
 'border-[var(--color-wk-border-subtle)]',
 'busy'
+'button'
 'button')
 'button';
 'button']);
@@ -211,6 +214,7 @@ $total
 'w-[var(--size-wk-sm)]
 'w-[var(--size-wk-xs)]
 'wk-avatar-group',
+'x-on:keydown.space.prevent']);
 'xl'
 'xl',
 'xl']))
@@ -221,11 +225,13 @@ $total
 ($avatar['initials']
 ($avatar['src']
 ($fromInitials
+($interactive
 ($shape)
 ($size)
 ($status
 ($status)
 (RTL-safe)
+(Support\CallerListeners).
 (WireKit::validateProp('avatar',
 (WireKit::validateProp('profile',
 (`sidebar/item.blade.php`).
@@ -304,6 +310,7 @@ $total
 @endif
 @endif>+{{
 @endphp
+@endunless
 @if(!
 @if($alt)
 @if($avatarSrc)
@@ -319,6 +326,7 @@ $total
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 AA-contrast
 AFTER
@@ -427,8 +435,10 @@ Without
 ['dot',
 ['none',
 ['style'
+['x-on:keydown.enter.prevent',
 ['xs',
 [])->class([$baseClasses,
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('profile',
@@ -565,6 +575,7 @@ avatars
 avatars.
 background
 background,
+bag
 baked
 bare
 base
@@ -749,6 +760,7 @@ ends
 entries
 entry
 error,
+event
 event.
 every
 everything
@@ -914,6 +926,7 @@ label
 labels
 ladder
 ladder.
+lands
 language.
 later
 layer
@@ -925,6 +938,7 @@ like
 line.
 lines
 list
+listener
 listens
 literal
 live
@@ -962,6 +976,7 @@ mode.
 mode:
 mode;
 model
+model,
 more
 more:
 morph
@@ -985,6 +1000,7 @@ nesting
 never
 no
 nobody
+none
 none.
 nor
 normalizer.
@@ -1042,6 +1058,7 @@ pairs
 palette
 panel
 parent
+part
 pass
 passing
 passive
@@ -1151,6 +1168,7 @@ row's
 row,
 rows
 ruled
+run
 rung
 rung:
 runtime.
@@ -1203,6 +1221,7 @@ so
 something
 span
 spelling
+spelling,
 spine
 square
 sr-only
@@ -1217,8 +1236,10 @@ status
 status.
 status:
 stays
+stays.
 still
 stood
+stop
 stops
 string
 string,
@@ -1233,6 +1254,7 @@ surrounds
 synthesize
 synthesized
 synthesizes
+tab
 tabindex="0"
 tag
 takes
@@ -1259,6 +1281,7 @@ theme-independent.
 then
 there
 there.
+there;
 these
 they
 thin
@@ -1316,6 +1339,7 @@ var(--color-wk-bg-elevated),
 variant
 variant,
 via
+view
 view's
 viewBox="0
 visited,

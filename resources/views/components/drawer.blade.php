@@ -33,6 +33,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('drawer', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `dismissible="false"` would otherwise mean the opposite of what the call site reads as. The
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
@@ -82,24 +86,24 @@
     $callerLabel = $attributes->get('aria-label');
     $attributes = $attributes->except(['aria-label']);
 
-    $backdropClasses = WireKit::resolveClasses('drawer', 'backdrop', implode(' ', [
-        'wk-overlay-fixed fixed inset-0',
-        'wk-overlay-layer-drawer z-[var(--z-wk-drawer)]',
+    $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-drawer '.WireKit::resolveClasses('drawer', 'backdrop', implode(' ', [
+        'fixed inset-0',
+        'z-[var(--z-wk-drawer)]',
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 
     // Panel classes — the drawer surface
-    $panelClasses = WireKit::resolveClasses('drawer', 'panel', implode(' ', [
+    $panelClasses = 'wk-drawer-panel wk-overlay-layer-drawer wk-scrollbar '.WireKit::resolveClasses('drawer', 'panel', implode(' ', [
         // `wk-drawer-panel` carries the same geometry from the shipped stylesheet, so the
         // panel is a drawer even where no build scanned this package. The utilities stay:
         // with a build both say the same thing, and a `scope` override still wins.
-        'wk-drawer-panel fixed',
-        'wk-overlay-layer-drawer z-[var(--z-wk-drawer)]',
+        'fixed',
+        'z-[var(--z-wk-drawer)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-lg)]',
-        'wk-scrollbar overflow-y-auto',
+        'overflow-y-auto',
         'flex flex-col',
     ]), $scope);
 
@@ -160,6 +164,10 @@
         'top', 'bottom' => 'translate-y-0',
         default => 'translate-x-0',
     };
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- Drawer component — slides in from the edge of the screen.

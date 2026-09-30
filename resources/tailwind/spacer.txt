@@ -1,4 +1,4 @@
-$attributes->class([$classes])
+$attributes->except('aria-hidden')->class([$classes])
 $attributes->getAttributes());
 $classes
 $scope);

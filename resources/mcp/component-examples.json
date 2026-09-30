@@ -36,7 +36,7 @@
     "alert-dialog": [
         {
             "title": "Delete Confirmation",
-            "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'delete-project' })\">Delete Project</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"delete-project\" :dismissible=\"true\">\n    <x-wirekit::alert-dialog.title>Delete Project</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        This will permanently delete the project and all associated data. This action cannot be undone.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::button intent=\"danger\" size=\"sm\">Delete Project</x-wirekit::button>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
+            "code": "<x-wirekit::button intent=\"danger\"\n    @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'delete-project' })\">\n    Delete Project\n</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"delete-project\">\n    <x-wirekit::alert-dialog.title>Delete Project</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        This will permanently delete the project and all associated data. This action cannot be undone.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::button intent=\"danger\" size=\"sm\" wire:click=\"deleteProject\">Delete Project</x-wirekit::button>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>"
         },
         {
             "title": "Trigger in a stretched stack",
@@ -44,7 +44,7 @@
         },
         {
             "title": "Closing on confirm",
-            "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'archive-run' })\">Archive Run</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"archive-run\" close-on-confirm>\n    <x-wirekit::alert-dialog.title>Archive this run</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        The run moves out of the active list. You can restore it from the archive for thirty days.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Archive</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
+            "code": "<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'archive-run' })\">Archive Run</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"archive-run\" close-on-confirm>\n    <x-wirekit::alert-dialog.title>Archive this run</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        The run moves out of the active list. You can restore it from the archive for thirty days.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Archive</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>"
         }
     ],
     "alert": [
@@ -120,15 +120,15 @@
     "assistant-message": [
         {
             "title": "An assistant turn",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::assistant-message model=\"atlas-2\">\n        The export API allows 60 requests per minute per token. A 429 always includes a `Retry-After` header, in seconds.\n    </x-wirekit::assistant-message>\n</div>"
+            "code": "<x-wirekit::assistant-message model=\"atlas-2\">\n    The export API allows 60 requests per minute per token. A 429 always includes a `Retry-After` header, in seconds.\n</x-wirekit::assistant-message>"
         },
         {
             "title": "The three roles",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::assistant-message role=\"user\">Summarize the rate limits.</x-wirekit::assistant-message>\n        <x-wirekit::assistant-message role=\"assistant\" model=\"atlas-2\">Sixty requests a minute, per token.</x-wirekit::assistant-message>\n        <x-wirekit::assistant-message role=\"system\">Switched to the long-context model.</x-wirekit::assistant-message>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"md\">\n    <x-wirekit::assistant-message role=\"user\">Summarize the rate limits.</x-wirekit::assistant-message>\n    <x-wirekit::assistant-message role=\"assistant\" model=\"atlas-2\">Sixty requests a minute, per token.</x-wirekit::assistant-message>\n    <x-wirekit::assistant-message role=\"system\">Switched to the long-context model.</x-wirekit::assistant-message>\n</x-wirekit::stack>"
         },
         {
             "title": "State-tinted turns",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::assistant-message model=\"atlas-2\" intent=\"danger\">I could not reach the export API — it returned a 503. Nothing was changed.</x-wirekit::assistant-message>\n        <x-wirekit::assistant-message model=\"atlas-2\" intent=\"warning\">This will delete 1,204 rows and cannot be undone. Confirm to continue.</x-wirekit::assistant-message>\n        <x-wirekit::assistant-message model=\"atlas-2\" intent=\"success\">Done — all 412 rows imported cleanly.</x-wirekit::assistant-message>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"md\">\n    <x-wirekit::assistant-message model=\"atlas-2\" intent=\"danger\">I could not reach the export API — it returned a 503. Nothing was changed.</x-wirekit::assistant-message>\n    <x-wirekit::assistant-message model=\"atlas-2\" intent=\"warning\">This will delete 1,204 rows and cannot be undone. Confirm to continue.</x-wirekit::assistant-message>\n    <x-wirekit::assistant-message model=\"atlas-2\" intent=\"success\">Done — all 412 rows imported cleanly.</x-wirekit::assistant-message>\n</x-wirekit::stack>"
         }
     ],
     "attachment": [
@@ -170,7 +170,7 @@
         },
         {
             "title": "Every surface in every intent",
-            "code": "<x-wirekit::badge intent=\"{intent}\" surface=\"{surface}\">Beta</x-wirekit::badge>"
+            "code": "{{-- surface: soft, solid, outline --}}\n{{-- intent: primary, success, warning, danger, neutral --}}\n<x-wirekit::badge intent=\"primary\" surface=\"soft\">Beta</x-wirekit::badge>"
         }
     ],
     "band": [
@@ -214,7 +214,7 @@
     "bottom-nav": [
         {
             "title": "Bottom navigation with an active tab and a badge",
-            "code": "<div style=\"position: relative; height: 8rem; width: 22rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::bottom-nav label=\"Main\" :mobile-only=\"false\" interactive style=\"position: absolute;\">\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Home\" icon=\"home\" active />\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Search\" icon=\"search\" />\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Inbox\" icon=\"inbox\" badge=\"3\" />\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Profile\" icon=\"user\" />\n    </x-wirekit::bottom-nav>\n</div>"
+            "code": "<x-wirekit::bottom-nav label=\"Main\" :mobile-only=\"false\" interactive>\n    <x-wirekit::bottom-nav.item href=\"#\" label=\"Home\" icon=\"home\" active />\n    <x-wirekit::bottom-nav.item href=\"#\" label=\"Search\" icon=\"search\" />\n    <x-wirekit::bottom-nav.item href=\"#\" label=\"Inbox\" icon=\"inbox\" badge=\"3\" />\n    <x-wirekit::bottom-nav.item href=\"#\" label=\"Profile\" icon=\"user\" />\n</x-wirekit::bottom-nav>"
         }
     ],
     "branch-switcher": [
@@ -238,7 +238,7 @@
         },
         {
             "title": "Brand-bar — default vs container-wrapped",
-            "code": "<x-wirekit::stack gap=\"md\" class=\"w-full\">\n    <x-wirekit::brand-bar>\n        <x-slot:brand><x-wirekit::brand>Default (flush)</x-wirekit::brand></x-slot:brand>\n        <x-slot:actions>\n            <x-wirekit::button>Sign in</x-wirekit::button>\n        </x-slot:actions>\n    </x-wirekit::brand-bar>\n\n    <x-wirekit::brand-bar container max=\"xl\">\n        <x-slot:brand><x-wirekit::brand>container max=\"xl\"</x-wirekit::brand></x-slot:brand>\n        <x-slot:actions>\n            <x-wirekit::button>Sign in</x-wirekit::button>\n        </x-slot:actions>\n    </x-wirekit::brand-bar>\n</x-wirekit::stack>"
+            "code": "<x-wirekit::stack>\n    <x-wirekit::brand-bar>\n        <x-slot:brand><x-wirekit::brand>Default (flush)</x-wirekit::brand></x-slot:brand>\n        <x-slot:actions>\n            <x-wirekit::button>Sign in</x-wirekit::button>\n        </x-slot:actions>\n    </x-wirekit::brand-bar>\n\n    <x-wirekit::brand-bar container max=\"xl\">\n        <x-slot:brand><x-wirekit::brand>container max=\"xl\"</x-wirekit::brand></x-slot:brand>\n        <x-slot:actions>\n            <x-wirekit::button>Sign in</x-wirekit::button>\n        </x-slot:actions>\n    </x-wirekit::brand-bar>\n</x-wirekit::stack>"
         }
     ],
     "brand": [
@@ -398,21 +398,21 @@
     "chat-marker": [
         {
             "title": "A system note between messages",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Can you re-run the import?</x-wirekit::message>\n        <x-wirekit::chat-marker icon=\"refresh\">Re-ran the nightly import</x-wirekit::chat-marker>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:16\">Done — 412 rows.</x-wirekit::message>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"md\">\n    <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Can you re-run the import?</x-wirekit::message>\n    <x-wirekit::chat-marker icon=\"refresh\">Re-ran the nightly import</x-wirekit::chat-marker>\n    <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:16\">Done — 412 rows.</x-wirekit::message>\n</x-wirekit::stack>"
         },
         {
             "title": "A live, shimmering status row",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::chat-marker status shimmer>Generating response…</x-wirekit::chat-marker>\n        <x-wirekit::chat-marker status icon=\"check\">Explored 4 files</x-wirekit::chat-marker>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"md\">\n    <x-wirekit::chat-marker status shimmer>Generating response…</x-wirekit::chat-marker>\n    <x-wirekit::chat-marker status icon=\"check\">Explored 4 files</x-wirekit::chat-marker>\n</x-wirekit::stack>"
         },
         {
             "title": "System notes by intent",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"sm\">\n        <x-wirekit::chat-marker intent=\"info\" icon=\"info\">Model switched to the long-context variant</x-wirekit::chat-marker>\n        <x-wirekit::chat-marker intent=\"success\" icon=\"check\">Connection restored</x-wirekit::chat-marker>\n        <x-wirekit::chat-marker intent=\"warning\" icon=\"warning\">Approaching the rate limit</x-wirekit::chat-marker>\n        <x-wirekit::chat-marker intent=\"danger\" icon=\"danger\">Rate limit reached — retrying in 30s</x-wirekit::chat-marker>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::chat-marker intent=\"info\" icon=\"info\">Model switched to the long-context variant</x-wirekit::chat-marker>\n    <x-wirekit::chat-marker intent=\"success\" icon=\"check\">Connection restored</x-wirekit::chat-marker>\n    <x-wirekit::chat-marker intent=\"warning\" icon=\"warning\">Approaching the rate limit</x-wirekit::chat-marker>\n    <x-wirekit::chat-marker intent=\"danger\" icon=\"danger\">Rate limit reached — retrying in 30s</x-wirekit::chat-marker>\n</x-wirekit::stack>"
         }
     ],
     "chat": [
         {
             "title": "The suite in one thread",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::conversation max-height=\"22rem\" label=\"Support thread\">\n        <x-wirekit::stack gap=\"md\">\n            <x-wirekit::chat-marker variant=\"separator\">Today</x-wirekit::chat-marker>\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Morning — is the export API rate-limited?</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:15\" status=\"read\">Yes, 60 requests a minute per token.</x-wirekit::message>\n            <x-wirekit::assistant-message model=\"atlas-2\">\n                The export API allows 60 requests per minute per token. A 429 always includes a `Retry-After` header, in seconds.\n            </x-wirekit::assistant-message>\n        </x-wirekit::stack>\n        <x-slot:footer>\n            <x-wirekit::message-typing author=\"Ada\" />\n        </x-slot:footer>\n    </x-wirekit::conversation>\n</div>"
+            "code": "<x-wirekit::conversation max-height=\"22rem\" label=\"Support thread\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::chat-marker variant=\"separator\">Today</x-wirekit::chat-marker>\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Morning — is the export API rate-limited?</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:15\" status=\"read\">Yes, 60 requests a minute per token.</x-wirekit::message>\n        <x-wirekit::assistant-message model=\"atlas-2\">\n            The export API allows 60 requests per minute per token. A 429 always includes a `Retry-After` header, in seconds.\n        </x-wirekit::assistant-message>\n    </x-wirekit::stack>\n    <x-slot:footer>\n        <x-wirekit::message-typing author=\"Ada\" />\n    </x-slot:footer>\n</x-wirekit::conversation>"
         }
     ],
     "checkbox": [
@@ -422,7 +422,7 @@
         },
         {
             "title": "Every state a prop can set",
-            "code": "::state{label=\"Unchecked\"}\n<x-wirekit::checkbox name=\"c1\" label=\"Ship on Friday\" />\n::state{label=\"Checked\"}\n<x-wirekit::checkbox name=\"c2\" label=\"Ship on Friday\" checked />\n::state{label=\"Indeterminate\"}\n<x-wirekit::checkbox name=\"c3\" label=\"Ship on Friday\" indeterminate />\n::state{label=\"Disabled\"}\n<x-wirekit::checkbox name=\"c4\" label=\"Ship on Friday\" disabled />\n::state{label=\"Disabled and checked\"}\n<x-wirekit::checkbox name=\"c5\" label=\"Ship on Friday\" disabled checked />"
+            "code": "{{-- Unchecked --}}\n<x-wirekit::checkbox name=\"c1\" label=\"Ship on Friday\" />\n{{-- Checked --}}\n<x-wirekit::checkbox name=\"c2\" label=\"Ship on Friday\" checked />\n{{-- Indeterminate --}}\n<x-wirekit::checkbox name=\"c3\" label=\"Ship on Friday\" indeterminate />\n{{-- Disabled --}}\n<x-wirekit::checkbox name=\"c4\" label=\"Ship on Friday\" disabled />\n{{-- Disabled and checked --}}\n<x-wirekit::checkbox name=\"c5\" label=\"Ship on Friday\" disabled checked />"
         },
         {
             "title": "Checkbox sizes",
@@ -512,7 +512,7 @@
     "command-palette": [
         {
             "title": "Command Palette",
-            "code": "<div x-data style=\"height: 28rem; contain: layout; position: relative; --wk-command-palette-offset-top: 4rem;\">\n<x-wirekit::command-palette :teleport=\"false\" :lock-scroll=\"false\">\n    <x-wirekit::command-palette.group heading=\"Navigation\">\n        <x-wirekit::command-palette.item href=\"/dashboard\" icon=\"user\">Dashboard</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/projects\" icon=\"edit\">Projects</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n    <x-wirekit::command-palette.group heading=\"Settings\">\n        <x-wirekit::command-palette.item href=\"/settings/profile\" icon=\"user\">Profile</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/settings/appearance\" icon=\"eye\">Appearance</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n</x-wirekit::command-palette>\n<x-wirekit::center style=\"height: 100%\">\n<x-wirekit::button intent=\"neutral\" surface=\"outline\" @click=\"$dispatch('wirekit-command-palette-show')\">Open Command Palette</x-wirekit::button>\n</x-wirekit::center>\n</div>"
+            "code": "{{-- The preview above is boxed into a fixed-height frame and opts out of\n     teleporting so it can render inside the page. Yours needs neither: the\n     defaults teleport the panel to the body and lock background scroll. --}}\n<x-wirekit::command-palette>\n    <x-wirekit::command-palette.group heading=\"Navigation\">\n        <x-wirekit::command-palette.item href=\"/dashboard\" icon=\"user\">Dashboard</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/projects\" icon=\"edit\">Projects</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n    <x-wirekit::command-palette.group heading=\"Settings\">\n        <x-wirekit::command-palette.item href=\"/settings/profile\" icon=\"user\">Profile</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/settings/appearance\" icon=\"eye\">Appearance</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n</x-wirekit::command-palette>\n\n<x-wirekit::button intent=\"neutral\" surface=\"outline\"\n    @click=\"$dispatch('wirekit-command-palette-show')\">\n    Open Command Palette\n</x-wirekit::button>"
         }
     ],
     "container": [
@@ -546,11 +546,11 @@
     "conversation": [
         {
             "title": "A chat transcript",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::conversation max-height=\"16rem\" label=\"Support thread\">\n        <x-wirekit::stack gap=\"md\">\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Morning — is the export API rate-limited?</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:15\">Yes, 60 requests a minute per token.</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:16\">Perfect. Does a 429 include a Retry-After header?</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:17\">It does — always in seconds.</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:18\">That is everything I needed, thanks!</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:19\">Any time.</x-wirekit::message>\n        </x-wirekit::stack>\n    </x-wirekit::conversation>\n</div>"
+            "code": "<x-wirekit::conversation max-height=\"16rem\" label=\"Support thread\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Morning — is the export API rate-limited?</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:15\">Yes, 60 requests a minute per token.</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:16\">Perfect. Does a 429 include a Retry-After header?</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:17\">It does — always in seconds.</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:18\">That is everything I needed, thanks!</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:19\">Any time.</x-wirekit::message>\n    </x-wirekit::stack>\n</x-wirekit::conversation>"
         },
         {
             "title": "A pinned streaming footer",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::conversation max-height=\"14rem\" label=\"Assistant thread\">\n        <x-wirekit::stack gap=\"md\">\n            <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 11:02\">Summarize the release notes.</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'Assistant']\" timestamp=\"2026-07-17 11:02\">Sure — pulling the last three versions now.</x-wirekit::message>\n        </x-wirekit::stack>\n        <x-slot:footer>\n            <x-wirekit::row gap=\"sm\" align=\"center\">\n                <x-wirekit::spinner size=\"sm\" intent=\"accent\" />\n                <x-wirekit::text size=\"sm\" intent=\"muted\">Assistant is thinking…</x-wirekit::text>\n            </x-wirekit::row>\n        </x-slot:footer>\n    </x-wirekit::conversation>\n</div>"
+            "code": "<x-wirekit::conversation max-height=\"14rem\" label=\"Assistant thread\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 11:02\">Summarize the release notes.</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'Assistant']\" timestamp=\"2026-07-17 11:02\">Sure — pulling the last three versions now.</x-wirekit::message>\n    </x-wirekit::stack>\n    <x-slot:footer>\n        <x-wirekit::row gap=\"sm\" align=\"center\">\n            <x-wirekit::spinner size=\"sm\" intent=\"accent\" />\n            <x-wirekit::text size=\"sm\" intent=\"muted\">Assistant is thinking…</x-wirekit::text>\n        </x-wirekit::row>\n    </x-slot:footer>\n</x-wirekit::conversation>"
         }
     ],
     "countdown": [
@@ -616,7 +616,7 @@
         },
         {
             "title": "Date picker in a 12rem container",
-            "code": "<div style=\"max-width: 12rem;\">\n    <x-wirekit::date-picker name=\"start_date_narrow\" />\n</div>"
+            "code": "<x-wirekit::date-picker name=\"start_date_narrow\" />"
         },
         {
             "title": "Date range",
@@ -654,7 +654,7 @@
     "drawer": [
         {
             "title": "Drawer Panel",
-            "code": "<div x-data>\n<x-wirekit::drawer name=\"settings-drawer\">\n    <x-wirekit::drawer.header>Settings</x-wirekit::drawer.header>\n    <x-wirekit::drawer.body>Settings form content goes here...</x-wirekit::drawer.body>\n    <x-wirekit::drawer.footer>\n        <x-wirekit::drawer.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::drawer.close>\n        <x-wirekit::button size=\"sm\">Save</x-wirekit::button>\n    </x-wirekit::drawer.footer>\n</x-wirekit::drawer>\n<x-wirekit::button @click=\"$dispatch('wirekit-drawer-show', { name: 'settings-drawer' })\">Open Drawer</x-wirekit::button>\n</div>"
+            "code": "<x-wirekit::drawer name=\"settings-drawer\">\n    <x-wirekit::drawer.header>Settings</x-wirekit::drawer.header>\n    <x-wirekit::drawer.body>Settings form content goes here...</x-wirekit::drawer.body>\n    <x-wirekit::drawer.footer>\n        <x-wirekit::drawer.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::drawer.close>\n        <x-wirekit::button size=\"sm\" wire:click=\"save\">Save</x-wirekit::button>\n    </x-wirekit::drawer.footer>\n</x-wirekit::drawer>\n\n<x-wirekit::button @click=\"$dispatch('wirekit-drawer-show', { name: 'settings-drawer' })\">\n    Open Drawer\n</x-wirekit::button>"
         }
     ],
     "dropdown": [
@@ -716,25 +716,25 @@
     "fab": [
         {
             "title": "A speed dial with three actions",
-            "code": "<div style=\"position: relative; height: 14rem; width: 100%;\">\n    <x-wirekit::fab label=\"Create\" style=\"position: absolute; inset-block-end: 1rem;\">\n        <x-wirekit::fab.action label=\"New note\" icon=\"edit\" />\n        <x-wirekit::fab.action label=\"Upload file\" icon=\"upload\" />\n        <x-wirekit::fab.action label=\"Invite someone\" icon=\"users\" />\n    </x-wirekit::fab>\n</div>"
+            "code": "<x-wirekit::fab label=\"Create\">\n    <x-wirekit::fab.action label=\"New note\" icon=\"edit\" />\n    <x-wirekit::fab.action label=\"Upload file\" icon=\"upload\" />\n    <x-wirekit::fab.action label=\"Invite someone\" icon=\"users\" />\n</x-wirekit::fab>"
         },
         {
             "title": "A single-action FAB that opens a dialog",
-            "code": "<div style=\"position: relative; height: 11rem; width: 100%;\">\n    <x-wirekit::modal name=\"fab-feedback\">\n        <x-slot:trigger>\n            <x-wirekit::fab.button label=\"Send feedback\" icon=\"message\" style=\"position: absolute; inset-block-end: 1rem;\" />\n        </x-slot:trigger>\n        <x-wirekit::modal.header>Send feedback</x-wirekit::modal.header>\n        <x-wirekit::modal.body>\n            <x-wirekit::textarea name=\"feedback\" label=\"What went wrong?\" rows=\"3\" />\n        </x-wirekit::modal.body>\n        <x-wirekit::modal.footer>\n            <x-wirekit::modal.close>\n                <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n            </x-wirekit::modal.close>\n            <x-wirekit::button size=\"sm\">Send</x-wirekit::button>\n        </x-wirekit::modal.footer>\n    </x-wirekit::modal>\n</div>"
+            "code": "<x-wirekit::modal name=\"feedback\">\n    <x-slot:trigger>\n        <x-wirekit::fab.button label=\"Send feedback\" icon=\"message\" />\n    </x-slot:trigger>\n    <x-wirekit::modal.header>Send feedback</x-wirekit::modal.header>\n    <x-wirekit::modal.body>\n        <x-wirekit::textarea name=\"feedback\" label=\"What went wrong?\" rows=\"3\" />\n    </x-wirekit::modal.body>\n    <x-wirekit::modal.footer>\n        <x-wirekit::modal.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::modal.close>\n        <x-wirekit::button size=\"sm\">Send</x-wirekit::button>\n    </x-wirekit::modal.footer>\n</x-wirekit::modal>"
         },
         {
             "title": "With names on hover (default) and with hideLabel",
-            "code": "<div style=\"position: relative; height: 15rem; width: 100%; contain: layout;\">\n    <div style=\"position: absolute; inset-block-end: 1rem; inset-inline-start: 1rem;\">\n        <x-wirekit::fab label=\"Labeled actions\" position=\"start\">\n            <x-wirekit::fab.action icon=\"edit\" label=\"Write a post\" />\n            <x-wirekit::fab.action icon=\"image\" label=\"Upload an image\" />\n            <x-wirekit::fab.action icon=\"users\" label=\"Invite someone\" />\n        </x-wirekit::fab>\n    </div>\n    <div style=\"position: absolute; inset-block-end: 1rem; inset-inline-end: 1rem;\">\n        <x-wirekit::fab label=\"Bare actions\">\n            <x-wirekit::fab.action icon=\"edit\" label=\"Write a post\" hideLabel />\n            <x-wirekit::fab.action icon=\"image\" label=\"Upload an image\" hideLabel />\n            <x-wirekit::fab.action icon=\"users\" label=\"Invite someone\" hideLabel />\n        </x-wirekit::fab>\n    </div>\n</div>"
+            "code": "{{-- Names appear on hover and on keyboard focus --}}\n<x-wirekit::fab label=\"Labeled actions\">\n    <x-wirekit::fab.action icon=\"edit\" label=\"Write a post\" />\n    <x-wirekit::fab.action icon=\"image\" label=\"Upload an image\" />\n</x-wirekit::fab>\n\n{{-- Bare circles. The accessible name is unchanged. --}}\n<x-wirekit::fab label=\"Bare actions\">\n    <x-wirekit::fab.action icon=\"edit\" label=\"Write a post\" hideLabel />\n    <x-wirekit::fab.action icon=\"image\" label=\"Upload an image\" hideLabel />\n</x-wirekit::fab>"
         }
     ],
     "faq": [
         {
             "title": "FAQ with structured data",
-            "code": "<x-wirekit::faq label=\"Frequently asked questions\" style=\"width: 34rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::faq-item question=\"How do I install WireKit?\">\n        Require the package with Composer, then include the style and script\n        directives in your layout. No build step and no configuration file.\n    </x-wirekit::faq-item>\n    <x-wirekit::faq-item question=\"Is WireKit free to use commercially?\">\n        Yes. WireKit is MIT licensed, so you can use it in commercial products\n        without a fee and without asking.\n    </x-wirekit::faq-item>\n    <x-wirekit::faq-item question=\"Do I need to write any JavaScript?\">\n        No. Every interactive component ships its own behavior, and you compose\n        them from Blade like any other tag.\n    </x-wirekit::faq-item>\n</x-wirekit::faq>"
+            "code": "<x-wirekit::faq label=\"Frequently asked questions\">\n    <x-wirekit::faq-item question=\"How do I install WireKit?\">\n        Require the package with Composer, then include the style and script\n        directives in your layout. No build step and no configuration file.\n    </x-wirekit::faq-item>\n    <x-wirekit::faq-item question=\"Is WireKit free to use commercially?\">\n        Yes. WireKit is MIT licensed, so you can use it in commercial products\n        without a fee and without asking.\n    </x-wirekit::faq-item>\n    <x-wirekit::faq-item question=\"Do I need to write any JavaScript?\">\n        No. Every interactive component ships its own behavior, and you compose\n        them from Blade like any other tag.\n    </x-wirekit::faq-item>\n</x-wirekit::faq>"
         },
         {
             "title": "separated, md, and more than one answer open",
-            "code": "<x-wirekit::faq variant=\"separated\" size=\"md\" multiple label=\"Billing questions\" style=\"width: 34rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::faq-item question=\"When am I charged?\">\n        On the day you subscribe, and on the same day of each month after that.\n    </x-wirekit::faq-item>\n    <x-wirekit::faq-item question=\"Can I change plans mid-cycle?\">\n        Yes. The difference is prorated against the days left in the cycle, and\n        the new plan takes effect immediately.\n    </x-wirekit::faq-item>\n</x-wirekit::faq>"
+            "code": "<x-wirekit::faq variant=\"separated\" size=\"md\" multiple label=\"Billing questions\">\n    <x-wirekit::faq-item question=\"When am I charged?\">\n        On the day you subscribe, and on the same day of each month after that.\n    </x-wirekit::faq-item>\n    <x-wirekit::faq-item question=\"Can I change plans mid-cycle?\">\n        Yes. The difference is prorated against the days left in the cycle, and\n        the new plan takes effect immediately.\n    </x-wirekit::faq-item>\n</x-wirekit::faq>"
         }
     ],
     "feature-grid": [
@@ -1102,15 +1102,15 @@
     "liquid-glass": [
         {
             "title": "Frosted glass card",
-            "code": "<div class=\"glass-demo-backdrop\" style=\"--glass-demo-gradient: linear-gradient(-45deg, #667eea, #764ba2, #23a6d5, #23d5ab); padding: 3rem; border-radius: 1rem;\">\n    <x-wirekit::card class=\"wk-glass\" style=\"max-width: 24rem;\">\n        <x-wirekit::card.header>Frosted Glass</x-wirekit::card.header>\n        <x-wirekit::card.body>\n            This card uses the <code>wk-glass</code> class for a frosted backdrop effect. The colorful gradient and the dotted pattern behind it both bleed through softly — the dots make the transparency obvious.\n        </x-wirekit::card.body>\n    </x-wirekit::card>\n</div>"
+            "code": "<x-wirekit::card class=\"wk-glass\">\n    <x-wirekit::card.header>Frosted Glass</x-wirekit::card.header>\n    <x-wirekit::card.body>\n        This card uses the <code>wk-glass</code> class for a frosted backdrop effect.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
         },
         {
             "title": "Refraction glass card",
-            "code": "{{-- Injects the #wk-glass-refract SVG filter. Without it the card still\n     frosts, but the refraction this demo is about does nothing. --}}\n<x-wirekit::glass />\n<div class=\"glass-demo-backdrop\" style=\"--glass-demo-gradient: linear-gradient(-45deg, #f093fb, #f5576c, #4facfe, #a18cd1); padding: 3rem; border-radius: 1rem;\">\n    <x-wirekit::card class=\"wk-glass-refract\" style=\"max-width: 24rem;\">\n        <x-wirekit::card.header>Refraction Glass</x-wirekit::card.header>\n        <x-wirekit::card.body>\n            The background refracts through the card like looking through textured glass — watch the dotted pattern bend behind the box. The text on top is untouched.\n        </x-wirekit::card.body>\n    </x-wirekit::card>\n</div>"
+            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::card class=\"wk-glass-refract\">\n    <x-wirekit::card.header>Refraction Glass</x-wirekit::card.header>\n    <x-wirekit::card.body>\n        The background refracts through the card like looking through textured glass. The text on top is untouched.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
         },
         {
             "title": "Tier 1 vs Tier 2",
-            "code": "{{-- Injects the #wk-glass-refract SVG filter. Without it the card still\n     frosts, but the refraction this demo is about does nothing. --}}\n<x-wirekit::glass />\n<div class=\"glass-demo-backdrop\" style=\"--glass-demo-gradient: linear-gradient(-45deg, #a18cd1, #fbc2eb, #8ec5fc, #84fab0); padding: 2rem; border-radius: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap;\">\n    <x-wirekit::card class=\"wk-glass\" style=\"flex: 1; min-width: 14rem;\">\n        <x-wirekit::card.header>Tier 1 — Frosted</x-wirekit::card.header>\n        <x-wirekit::card.body>\n            <code>wk-glass</code> — all browsers. Dot pattern softly diffuses through the glass.\n        </x-wirekit::card.body>\n    </x-wirekit::card>\n    <x-wirekit::card class=\"wk-glass-refract\" style=\"flex: 1; min-width: 14rem;\">\n        <x-wirekit::card.header>Tier 2 — Refraction</x-wirekit::card.header>\n        <x-wirekit::card.body>\n            <code>wk-glass-refract</code> — dots distort organically behind the glass.\n        </x-wirekit::card.body>\n    </x-wirekit::card>\n</div>"
+            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::card class=\"wk-glass\">\n    <x-wirekit::card.header>Tier 1 — Frosted</x-wirekit::card.header>\n    <x-wirekit::card.body><code>wk-glass</code> — all browsers.</x-wirekit::card.body>\n</x-wirekit::card>\n\n<x-wirekit::card class=\"wk-glass-refract\">\n    <x-wirekit::card.header>Tier 2 — Refraction</x-wirekit::card.header>\n    <x-wirekit::card.body><code>wk-glass-refract</code> — the backdrop bends behind the glass.</x-wirekit::card.body>\n</x-wirekit::card>"
         }
     ],
     "list": [
@@ -1174,35 +1174,35 @@
     "message-group": [
         {
             "title": "Three messages, one sender",
-            "code": "<div style=\"width: 26rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::message-group :author=\"['name' => 'Ada']\">\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Found it: the export skips invoices without a due date.</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Only the ones created before March.</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:15\">Pushing a fix now.</x-wirekit::message>\n        </x-wirekit::message-group>\n        <x-wirekit::message :author=\"['name' => 'Grace']\" side=\"right\" timestamp=\"2026-07-17 09:16\">That explains the support tickets.</x-wirekit::message>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::message-group :author=\"['name' => 'Ada']\">\n    <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Found it: the export skips invoices without a due date.</x-wirekit::message>\n    <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Only the ones created before March.</x-wirekit::message>\n    <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:15\">Pushing a fix now.</x-wirekit::message>\n</x-wirekit::message-group>"
         },
         {
             "title": "A run on each side",
-            "code": "<div style=\"width: 26rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::message-group :author=\"['name' => 'Ada']\">\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Two minutes.</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:15\">Maybe three.</x-wirekit::message>\n        </x-wirekit::message-group>\n        <x-wirekit::message-group :author=\"['name' => 'You']\" side=\"right\">\n            <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:16\">No rush.</x-wirekit::message>\n            <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:16\">I will read it after the meeting.</x-wirekit::message>\n        </x-wirekit::message-group>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::message-group :author=\"['name' => 'Ada']\">\n    <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Two minutes.</x-wirekit::message>\n    <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:15\">Maybe three.</x-wirekit::message>\n</x-wirekit::message-group>\n\n<x-wirekit::message-group :author=\"['name' => 'You']\" side=\"right\">\n    <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:16\">No rush.</x-wirekit::message>\n    <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:16\">I will read it after the meeting.</x-wirekit::message>\n</x-wirekit::message-group>"
         }
     ],
     "message-typing": [
         {
             "title": "A typing indicator in a thread",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Give me one second…</x-wirekit::message>\n        <x-wirekit::message-typing author=\"Ada\" />\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"md\">\n    <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Give me one second…</x-wirekit::message>\n    <x-wirekit::message-typing author=\"Ada\" />\n</x-wirekit::stack>"
         },
         {
             "title": "Both sides",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::message-typing author=\"Ada\" side=\"left\" />\n        <x-wirekit::message-typing author=\"You\" side=\"right\" />\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"md\">\n    <x-wirekit::message-typing author=\"Ada\" side=\"left\" />\n    <x-wirekit::message-typing author=\"You\" side=\"right\" />\n</x-wirekit::stack>"
         }
     ],
     "message": [
         {
             "title": "Simple message",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::message :author=\"['name' => 'Alice']\">\n        Hey, how's the project going?\n    </x-wirekit::message>\n</div>"
+            "code": "<x-wirekit::message :author=\"['name' => 'Alice']\">\n    Hey, how's the project going?\n</x-wirekit::message>"
         },
         {
             "title": "Message with timestamp",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::message :author=\"['name' => 'Alice']\" timestamp=\"2026-04-20 14:30:00\">\n        The new dashboard looks great!\n    </x-wirekit::message>\n</div>"
+            "code": "<x-wirekit::message :author=\"['name' => 'Alice']\" timestamp=\"2026-04-20 14:30:00\">\n    The new dashboard looks great!\n</x-wirekit::message>"
         },
         {
             "title": "Left and right alignment",
-            "code": "<div style=\"width: 24rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"sm\">\n        <x-wirekit::message :author=\"['name' => 'Alice']\" timestamp=\"2026-04-20 14:30:00\">\n            Have you seen the latest designs?\n        </x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-04-20 14:31:00\">\n            Yes, they look amazing!\n        </x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'Alice']\" timestamp=\"2026-04-20 14:32:00\">\n            Great, I'll send the final files tomorrow.\n        </x-wirekit::message>\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::message :author=\"['name' => 'Alice']\" timestamp=\"2026-04-20 14:30:00\">\n        Have you seen the latest designs?\n    </x-wirekit::message>\n    <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-04-20 14:31:00\">\n        Yes, they look amazing!\n    </x-wirekit::message>\n    <x-wirekit::message :author=\"['name' => 'Alice']\" timestamp=\"2026-04-20 14:32:00\">\n        Great, I'll send the final files tomorrow.\n    </x-wirekit::message>\n</x-wirekit::stack>"
         }
     ],
     "mockup": [
@@ -1348,7 +1348,7 @@
     "page-progress": [
         {
             "title": "Start a request, then answer it",
-            "code": "<x-wirekit::page-progress />\n{{-- The wrapper carries `x-data` so `$dispatch` has a scope to fire from. Without it Alpine\n     never attaches the handler and both buttons are dead, silently, with nothing in the\n     console — which on a page whose whole subject is a control that reports is the one\n     defect a reader would not question. --}}\n<div x-data>\n<x-wirekit::stack gap=\"md\" style=\"padding: 1.5rem;\">\n    <x-wirekit::text>\n        The first button opens a request, the second answers it. Watch the top edge of\n        this frame. Press them in quick succession and nothing appears at all — that is\n        the delay doing its job.\n    </x-wirekit::text>\n    <x-wirekit::row gap=\"sm\" wrap>\n        <x-wirekit::button x-on:click=\"$dispatch('livewire:navigate')\">Open a request</x-wirekit::button>\n        <x-wirekit::button surface=\"outline\" intent=\"neutral\" x-on:click=\"$dispatch('livewire:navigated')\">Answer it</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::stack>\n</div>"
+            "code": "{{-- In your layout, once. Nothing else is needed: the component finds the\n     requests by itself. --}}\n<x-wirekit::page-progress />"
         }
     ],
     "pagination": [
@@ -1500,7 +1500,7 @@
     "quick-replies": [
         {
             "title": "Suggestions under an assistant message",
-            "code": "<div style=\"width: 26rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"sm\">\n        <x-wirekit::message :author=\"['name' => 'Assistant']\">Your order is on its way. Anything else?</x-wirekit::message>\n        <x-wirekit::quick-replies :replies=\"['Track it', 'Change the address', 'No, thanks']\" />\n    </x-wirekit::stack>\n</div>"
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::message :author=\"['name' => 'Assistant']\">Your order is on its way. Anything else?</x-wirekit::message>\n    <x-wirekit::quick-replies :replies=\"['Track it', 'Change the address', 'No, thanks']\" />\n</x-wirekit::stack>"
         },
         {
             "title": "Labels, values and a disabled suggestion",
@@ -1508,7 +1508,7 @@
         },
         {
             "title": "A suggestion that fills the composer",
-            "code": "<div x-data=\"{ draft: '' }\" style=\"width: 26rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::stack gap=\"sm\">\n        <x-wirekit::quick-replies\n            :replies=\"['Sounds good', 'Send me the details', 'Not right now']\"\n            x-on:wirekit:quick-replies-select=\"draft = $event.detail.value\"\n        />\n        <x-wirekit::textarea label=\"Your reply\" rows=\"2\" x-model=\"draft\" />\n    </x-wirekit::stack>\n</div>"
+            "code": "<div x-data=\"{ draft: '' }\">\n    <x-wirekit::quick-replies\n        :replies=\"['Sounds good', 'Send me the details', 'Not right now']\"\n        x-on:wirekit:quick-replies-select=\"draft = $event.detail.value\"\n    />\n    <x-wirekit::textarea label=\"Your reply\" rows=\"2\" x-model=\"draft\" />\n</div>"
         }
     ],
     "radial-progress": [
@@ -1923,6 +1923,20 @@
             "code": "<x-wirekit::stats cols=\"3\" stagger>\n    <x-wirekit::stat animateIn=\"slide-up\" animate label=\"Builds / day\" value=\"125000\" />\n    <x-wirekit::stat animateIn=\"slide-up\" animate label=\"Avg deploy\" value=\"847\" description=\"ms\" />\n    <x-wirekit::stat animateIn=\"slide-up\" animate label=\"Customer NPS\" value=\"74\" change=\"+8\" trend=\"up\" />\n</x-wirekit::stats>"
         }
     ],
+    "status-dot": [
+        {
+            "title": "Beside a number in a table",
+            "code": "<x-wirekit::table>\n    <x-wirekit::table.head>\n        <x-wirekit::table.row>\n            <x-wirekit::table.th>Product</x-wirekit::table.th>\n            <x-wirekit::table.th align=\"right\">Stock</x-wirekit::table.th>\n        </x-wirekit::table.row>\n    </x-wirekit::table.head>\n    <x-wirekit::table.body>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Espresso beans 1kg</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">42</x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Oat milk 1l</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">3 <x-wirekit::status-dot intent=\"warning\" label=\"Low stock: fewer than 5 left\" /></x-wirekit::table.td>\n        </x-wirekit::table.row>\n        <x-wirekit::table.row>\n            <x-wirekit::table.td>Paper cups 300ml</x-wirekit::table.td>\n            <x-wirekit::table.td align=\"right\">-1 <x-wirekit::status-dot intent=\"danger\" label=\"Oversold: more sold than in stock\" /></x-wirekit::table.td>\n        </x-wirekit::table.row>\n    </x-wirekit::table.body>\n</x-wirekit::table>"
+        },
+        {
+            "title": "Every intent",
+            "code": "<x-wirekit::row gap=\"md\">\n    <x-wirekit::status-dot intent=\"primary\" label=\"Primary\" />\n    <x-wirekit::status-dot intent=\"accent\" label=\"Accent\" />\n    <x-wirekit::status-dot intent=\"success\" label=\"Success\" />\n    <x-wirekit::status-dot intent=\"warning\" label=\"Warning\" />\n    <x-wirekit::status-dot intent=\"danger\" label=\"Danger\" />\n    <x-wirekit::status-dot intent=\"info\" label=\"Info\" />\n    <x-wirekit::status-dot label=\"Neutral\" />\n</x-wirekit::row>"
+        },
+        {
+            "title": "Three sizes",
+            "code": "<x-wirekit::row gap=\"md\">\n    <x-wirekit::status-dot intent=\"success\" size=\"sm\" label=\"Online\" />\n    <x-wirekit::status-dot intent=\"success\" label=\"Online\" />\n    <x-wirekit::status-dot intent=\"success\" size=\"lg\" label=\"Online\" />\n</x-wirekit::row>"
+        }
+    ],
     "status-matrix": [
         {
             "title": "Editable role × capability grants",
@@ -2166,15 +2180,15 @@
     "toast": [
         {
             "title": "Trigger a toast",
-            "code": "<div x-data>\n<x-wirekit::toast-region name=\"docs-trigger-demo\" position=\"top-right\" />\n<x-wirekit::button @click=\"$dispatch('wirekit-toast-docs-trigger-demo', {\n    variant: 'success',\n    title: 'Saved',\n    message: 'Your changes were saved successfully.'\n})\">\n    Save Changes\n</x-wirekit::button>\n</div>"
+            "code": "{{-- Mounted once in your layout, not per page --}}\n<x-wirekit::toast-region />\n\n<x-wirekit::button wire:click=\"save\">Save Changes</x-wirekit::button>\n\n{{-- php:\n// The toast reports what actually happened, so it is dispatched after the\n// write returns — not from the click. A failed save takes the other branch\n// and the user is told, instead of being congratulated by the markup.\npublic function save(): void\n{\n    try {\n        $this->post->save();\n    } catch (Throwable $e) {\n        $this->dispatch('wirekit-toast',\n            variant: 'danger',\n            title: 'Could not save',\n            message: $e->getMessage(),\n        );\n\n        return;\n    }\n\n    $this->dispatch('wirekit-toast',\n        variant: 'success',\n        title: 'Saved',\n        message: 'Your changes were saved successfully.',\n    );\n}\n--}}"
         },
         {
             "title": "Toast variants",
-            "code": "<div x-data>\n<x-wirekit::toast-region name=\"docs-variants-demo\" position=\"top-right\" />\n\n<x-wirekit::row wrap gap=\"sm\">\n<x-wirekit::button intent=\"neutral\" surface=\"outline\" @click=\"$dispatch('wirekit-toast-docs-variants-demo', {\n    variant: 'info',\n    title: 'Info',\n    message: 'This is an informational notice.'\n})\">\n    Show Info\n</x-wirekit::button>\n\n<x-wirekit::button @click=\"$dispatch('wirekit-toast-docs-variants-demo', {\n    variant: 'success',\n    title: 'Success',\n    message: 'Record created successfully.'\n})\">\n    Show Success\n</x-wirekit::button>\n\n<x-wirekit::button intent=\"neutral\" surface=\"outline\" @click=\"$dispatch('wirekit-toast-docs-variants-demo', {\n    variant: 'warning',\n    title: 'Warning',\n    message: 'Your trial expires in 3 days.'\n})\">\n    Show Warning\n</x-wirekit::button>\n\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-toast-docs-variants-demo', {\n    variant: 'danger',\n    title: 'Error',\n    message: 'Failed to save changes.'\n})\">\n    Show Danger\n</x-wirekit::button>\n</x-wirekit::row>\n</div>"
+            "code": "{{-- The four buttons above exist so you can see each variant on demand. In an\n     application the variant is not a choice the markup makes — it follows from\n     what happened, so one action dispatches whichever one fits. --}}\n<x-wirekit::toast-region />\n\n<x-wirekit::button wire:click=\"publish\">Publish</x-wirekit::button>\n\n{{-- php:\npublic function publish(): void\n{\n    if ($this->post->isEmpty()) {\n        $this->dispatch('wirekit-toast', variant: 'warning',\n            title: 'Nothing to publish', message: 'Add some content first.');\n\n        return;\n    }\n\n    $this->post->publish();\n\n    $this->dispatch('wirekit-toast', variant: 'success',\n        title: 'Published', message: 'Your post is live.');\n}\n--}}"
         },
         {
             "title": "Top-left position",
-            "code": "<div x-data>\n<x-wirekit::toast-region name=\"docs-top-left\" position=\"top-left\" />\n<x-wirekit::button @click=\"$dispatch('wirekit-toast-docs-top-left', {\n    variant: 'info',\n    title: 'Top-Left',\n    message: 'Toast anchored to the top-left corner.'\n})\">\n    Show Top-Left Toast\n</x-wirekit::button>\n</div>"
+            "code": "{{-- The scoped name above belongs to this page, which mounts several regions\n     at once. One region per layout needs none of it. --}}\n<x-wirekit::toast-region position=\"top-left\" />"
         }
     ],
     "toggle-button": [
@@ -2208,11 +2222,11 @@
     "tool-call": [
         {
             "title": "A finished tool call",
-            "code": "<x-wirekit::tool-call name=\"search_docs\" status=\"done\" :seconds=\"2\" :arguments=\"['query' => 'rate limits', 'limit' => 4]\">\n    Four passages matched. The closest is <em>Rate limits</em>, which gives sixty requests a minute per token.\n</x-wirekit::tool-call>"
+            "code": "<x-wirekit::tool-call\n    name=\"search_docs\"\n    status=\"done\"\n    :seconds=\"2\"\n    :arguments=\"['query' => 'rate limits', 'limit' => 4]\"\n>\n    Four passages matched. The closest is <em>Rate limits</em>, which gives sixty requests a minute per token.\n</x-wirekit::tool-call>"
         },
         {
             "title": "Every state a call can be in",
-            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::tool-call name=\"fetch_invoice\" status=\"pending\" />\n    <x-wirekit::tool-call name=\"get_weather\" status=\"running\" />\n    <x-wirekit::tool-call name=\"search_docs\" status=\"done\" :seconds=\"2\" />\n    <x-wirekit::tool-call name=\"charge_card\" status=\"failed\" :seconds=\"9\">Card declined — insufficient funds.</x-wirekit::tool-call>\n</x-wirekit::stack>"
+            "code": "<x-wirekit::tool-call name=\"fetch_invoice\" status=\"pending\" />\n<x-wirekit::tool-call name=\"get_weather\" status=\"running\" />\n<x-wirekit::tool-call name=\"search_docs\" status=\"done\" :seconds=\"2\" />\n<x-wirekit::tool-call name=\"charge_card\" status=\"failed\" :seconds=\"9\">\n    Card declined — insufficient funds.\n</x-wirekit::tool-call>"
         },
         {
             "title": "Three calls in the order they happened",
@@ -2250,7 +2264,7 @@
     "tour": [
         {
             "title": "Tour Setup",
-            "code": "<div x-data style=\"position: relative; min-height: 28rem; padding: 1rem; background: var(--color-wk-bg-subtle);\">\n<x-wirekit::row gap=\"sm\" align=\"start\" justify=\"between\" wrap>\n<div data-tour-demo=\"create\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">+ Create</div>\n<div data-tour-demo=\"header\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Dashboard</div>\n<div data-tour-demo=\"settings\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Settings</div>\n</x-wirekit::row>\n<div style=\"position: absolute; bottom: 1rem; left: 1rem;\">\n<x-wirekit::button x-on:click=\"$dispatch('wirekit-tour-start-onboarding')\" intent=\"neutral\" surface=\"outline\" size=\"sm\">Start Tour</x-wirekit::button>\n</div>\n<x-wirekit::tour name=\"onboarding\">\n<x-wirekit::tour.step :index=\"0\" target=\"[data-tour-demo='header']\" placement=\"bottom\">\n<x-slot:title>Welcome</x-slot:title>\nThis is the dashboard. Here you can manage all your projects.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"1\" target=\"[data-tour-demo='create']\" placement=\"bottom-start\">\n<x-slot:title>Create a Project</x-slot:title>\nClick here to create your first project.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"2\" target=\"[data-tour-demo='settings']\" placement=\"bottom-end\">\n<x-slot:title>Settings</x-slot:title>\nCustomize your workspace in the settings panel.\n</x-wirekit::tour.step>\n</x-wirekit::tour>\n</div>"
+            "code": "<div data-tour-demo=\"header\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Dashboard</div>\n<div data-tour-demo=\"create\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">+ Create</div>\n<div data-tour-demo=\"settings\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Settings</div>\n<x-wirekit::button x-on:click=\"$dispatch('wirekit-tour-start-onboarding')\" intent=\"neutral\" surface=\"outline\" size=\"sm\">Start Tour</x-wirekit::button>\n<x-wirekit::tour name=\"onboarding\">\n<x-wirekit::tour.step :index=\"0\" target=\"[data-tour-demo='header']\" placement=\"bottom\">\n<x-slot:title>Welcome</x-slot:title>\nThis is the dashboard. Here you can manage all your projects.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"1\" target=\"[data-tour-demo='create']\" placement=\"bottom-start\">\n<x-slot:title>Create a Project</x-slot:title>\nClick here to create your first project.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"2\" target=\"[data-tour-demo='settings']\" placement=\"bottom-end\">\n<x-slot:title>Settings</x-slot:title>\nCustomize your workspace in the settings panel.\n</x-wirekit::tour.step>\n</x-wirekit::tour>"
         }
     ],
     "tree-view": [

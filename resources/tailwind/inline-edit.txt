@@ -29,6 +29,7 @@ $attributes->class(['relative
 $attributes->except('aria-describedby')->class([
 $attributes->except('aria-describedby')->class([$rootClasses])
 $attributes->except('aria-describedby')->class(['wk-field',
+$attributes->except('type')->except('aria-describedby')->class(['wk-field',
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label']);
@@ -44,6 +45,7 @@ $attributes->get('value',
 $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->whereStartsWith(['wire:model',
+$attributes]
 $autocomplete
 $autosize
 $autosize.
@@ -155,6 +157,7 @@ $optionValue
 $optionValue)
 $options
 $options[$value]
+$outerAttributes
 $placeholder
 $prefix
 $prefixInputPadClass
@@ -244,7 +247,9 @@ $width
 '-error'
 '-hint'
 '.((string)
+'.WireKit::resolveClasses('inline-edit',
 '/[\s\x{00A0}\x{200B}]+/u',
+'@wirekit:inline-edit-failed.window']);
 'Germany',
 'Germany']
 'One']`
@@ -502,8 +507,16 @@ $width
 'wk-field-frame',
 'wk-tooltip-');
 'wk-touch-target
-'wk-touch-target',
 'x-model'])->isNotEmpty();
+'x-on:blur',
+'x-on:change']);
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'z-[var(--z-wk-tooltip)]',
 ("Fast
 ($attributes->get('value')
@@ -528,6 +541,7 @@ $width
 (($hasError
 (@aware
 (Named
+(Support\CallerListeners).
 (WCAG
 (`.wk-autosize`,
 (`.wk-scroll-fade…:focus-within
@@ -805,7 +819,6 @@ $width
 ??
 ??=
 @aware(['announceErrors'
-@blur="value
 @class
 @class([
 @click="clear()"
@@ -1115,6 +1128,7 @@ Strip
 Success
 Suffix
 Support\DomId
+Support\OuterAttributes.
 Swaps
 Switch
 THE
@@ -1188,9 +1202,11 @@ Written
 X
 Your
 [
+[$outerAttributes,
 [&::-webkit-inner-spin-button]:appearance-none',
 [&::-webkit-outer-spin-button]:appearance-none
 [&:user-invalid]:*
+['@wirekit:inline-edit-saved.window',
 ['Europe'
 ['always',
 ['auto',
@@ -1202,6 +1218,8 @@ Your
 ['label'
 ['sm',
 ['text',
+['x-on:input',
+['x-on:mouseenter',
 [[data-wk-touch]_&]:opacity-100',
 [])
 [],
@@ -1222,9 +1240,11 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::from(isset($editor))
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\SlotContent::text($slot),
 \Pushery\WireKit\Support\SlotContent::withoutComments($slot)
 \Pushery\WireKit\WireKit::warnUnknownProps('inline-edit',
@@ -1249,6 +1269,7 @@ __('wirekit::Not
 __('wirekit::Saving'),
 __('wirekit::Still
 `!==
+`#id`
 `$as`
 `$event.target.value`,
 `$hasError`
@@ -1263,6 +1284,7 @@ __('wirekit::Still
 `.live`
 `<button>`
 `<div>`
+`<label
 `<p></p>`,
 `<p>`
 `<select>`
@@ -1428,6 +1450,7 @@ __('wirekit::Still
 `wire:id`,
 `wire:key`,
 `wire:model`
+`wire:show`
 `wirekit:inline-edit-saved`
 `wk-autosize`
 `wk-editor-content`
@@ -1440,6 +1463,7 @@ __('wirekit::Still
 `x-ref`.
 `x-show="open"`
 `x-show`
+`x-show`,
 `x-wk-ref`,
 `{{
 a
@@ -2115,6 +2139,7 @@ elevated
 eligible
 ellipsis
 else
+elsewhere
 elsewhere)
 embedded
 emit
@@ -2222,6 +2247,7 @@ fill="currentColor"><path
 fill="none"
 fill="none"/></svg>
 filled
+filled($attributes->get('id'))
 filled($clearLabel)
 fills.
 find
@@ -2287,6 +2313,7 @@ for,
 for.
 for="{{
 for="…">
+for>`
 forced
 forever:
 form
@@ -2616,6 +2643,7 @@ link
 linked
 list
 list,
+listener
 listens
 lists
 literal
@@ -2652,6 +2680,7 @@ masked
 match
 match.
 matches
+matches.
 matching
 max
 max,
@@ -2869,6 +2898,7 @@ out
 out.
 outcome
 outcomes
+outermost
 output
 outside
 outside,
@@ -3044,6 +3074,7 @@ re-rendered
 re-renders.
 re-thrown
 reach
+reach.
 reachable
 reachable.
 reached.
@@ -3323,6 +3354,7 @@ span
 span).
 speak.
 spelled
+spelling,
 spellings
 spellings.
 spinbutton
@@ -3547,6 +3579,7 @@ towards
 trailing
 transformed
 transition-colors
+transitions
 transparent
 transport
 trap
@@ -3599,6 +3632,7 @@ unaffected.
 unbordered
 unbound
 uncaught
+unchanged
 unchanged.
 uncommitted
 unconditionally
@@ -3651,6 +3685,7 @@ variable
 variant
 vertical),
 via
+view
 view's
 viewBox="0
 viewport.
@@ -3777,6 +3812,7 @@ x-model.number="value"
 x-model="draft"
 x-on:blur="clampInput()"
 x-on:blur="onBlur()"
+x-on:blur="value
 x-on:change="commitFromControl()"
 x-on:change="run($event.target.value)"
 x-on:click="cancel()"

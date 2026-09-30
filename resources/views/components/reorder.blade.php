@@ -31,6 +31,10 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('reorder', $attributes->getAttributes());
 
     use Pushery\WireKit\Support\AlpinePayload;
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- The same controls as `table.reorder`, on an element that fits in any row: a list item, a

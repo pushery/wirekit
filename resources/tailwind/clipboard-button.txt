@@ -3,7 +3,7 @@
 "Copied!"
 "button"
 $attributes
-$attributes->class([$classes])
+$attributes->except('type')->class([$classes])
 $attributes->getAttributes());
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
@@ -52,6 +52,7 @@ $slot
 'value'
 'visible'
 (NOT
+(Support\CallerListeners).
 (a
 (int)
 (muted,
@@ -176,7 +177,9 @@ We
 WireKit::resolveClasses('clipboard-button',
 Without
 [
+['x-on:click']);
 \Pushery\WireKit\Support\AlpinePayload::from($value)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button',
 ])
@@ -316,6 +319,7 @@ display:none
 does
 duration:
 each
+element
 else.
 empty.
 end
@@ -403,6 +407,8 @@ leave
 leaves
 like
 list
+listener
+listens
 live
 lives
 look,
@@ -437,6 +443,7 @@ only
 opposite
 optimistic-ui:
 or
+other
 otherwise
 our
 out
@@ -477,6 +484,7 @@ root
 root,
 row-start-1"
 rows
+run
 runs,
 said
 same
@@ -499,6 +507,7 @@ so
 something
 space
 span
+spelling,
 stable-width
 stack
 state
@@ -558,6 +567,7 @@ uses.
 value
 value:
 via
+view
 view's
 viewBox="0
 visibility

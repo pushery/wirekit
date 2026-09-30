@@ -57,7 +57,11 @@
 
     // Marker class — reduced-motion and print rules in dist/wirekit.css scope to it,
     // and so does the RTL mirror of the fill's anchor.
-    $rootClass = WireKit::resolveClasses('page-progress', 'base', 'wk-page-progress', $scope);
+    $rootClass = 'wk-page-progress '.WireKit::resolveClasses('page-progress', 'base', '', $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- `aria-hidden` is a decision, not an omission. The bar carries no text, a
@@ -86,7 +90,7 @@
          It DOES take `--wk-strip-inset`, which is the other edge and a different question: a
          strip above the page is browser chrome, and the bar reports the application's request,
          so it runs along the top of the application — directly under the strip, not across it. --}}
-    {{ $attributes
+    {{ $attributes->except('aria-hidden')
         ->merge(['style' => 'position: fixed; inset-block-start: var(--wk-strip-inset, 0px); inset-inline: 0; z-index: var(--z-wk-tooltip); pointer-events: none; height: '.$heightToken.';'])
         ->class([$rootClass]) }}
 >

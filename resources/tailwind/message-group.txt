@@ -12,6 +12,7 @@ $alt
 $attributes->class([$baseClasses])
 $attributes->class([$groupClasses])
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
 $author;
 $authorAvatar
@@ -232,6 +233,7 @@ $total
 @endif
 @endif>+{{
 @endphp
+@endunless
 @if($alt)
 @if($authorAvatar
 @if($label)
@@ -244,6 +246,8 @@ $total
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 AA-contrast
 AND
 Accessible
