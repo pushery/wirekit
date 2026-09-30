@@ -13,6 +13,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('menubar', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown']);
+
     // Menubar — horizontal menu bar with dropdown menus (File, Edit, View pattern).
     // Follows WAI-ARIA menubar pattern with arrow key navigation between menus.
     $classes = WireKit::resolveClasses('menubar', 'base', implode(' ', [
@@ -38,7 +42,7 @@
          <body>, so a Blade x-on:click.outside on this root would fire when
          clicking inside an open panel (it's no longer a DOM descendant) and
          close the menu before the item's click registered. --}}
-    role="menubar"
+    @unless($attributes->has('role')) role="menubar" @endunless
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

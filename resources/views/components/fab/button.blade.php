@@ -126,8 +126,7 @@
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
-    $classes = WireKit::resolveClasses('fab.button', 'base', implode(' ', [
-        'wk-fab',
+    $classes = 'wk-fab '.WireKit::resolveClasses('fab.button', 'base', implode(' ', [
         $placementClass,
         // The layer TOKEN, as `fab` and the speed dial use: a number here stayed put when a theme
         // moved the layer, and the FAB ended up above or below scroll-to-top.

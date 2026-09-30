@@ -2,6 +2,7 @@
 "calc(100dvh
 $asideClasses
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $componentClasses
 $footer
@@ -126,6 +127,7 @@ $stickyClass,
 @else
 @endif
 @endphp
+@endunless
 @if($scrollShadow)
 @if(filled($label))
 @if(isset($footer))
@@ -133,6 +135,7 @@ $stickyClass,
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
 A
 ABOVE
 AND
@@ -598,6 +601,7 @@ your
 {$offset})";
 {{
 {{--
+||
 }
 };
 }}

@@ -22,6 +22,7 @@
 $_)
 $announceNewTab
 $ariaAttributes
+$ariaAttributes))
 $ariaKey
 $ariaLabel;
 $ariaValue
@@ -74,7 +75,6 @@ $external
 $finalRel
 $forceLoading
 $hasHeader
-$hasHeader)
 $hasWireAction
 $hasWireAction;
 $heightClasses
@@ -165,6 +165,8 @@ $wrapLabel
 '.$iconOnlyBelow.'.
 '.$iconOnlySquareToken.';']);
 '.$message);
+'.WireKit::resolveClasses('modal',
+'.WireKit::resolveClasses('modal.body',
 '2xl'
 '2xl']);
 '2xl'],
@@ -218,6 +220,7 @@ $wrapLabel
 'false'
 'false'"
 'filled'),
+'fixed
 'flex
 'focus-visible:outline-hidden
 'focus-visible:outline-hidden',
@@ -317,6 +320,7 @@ $wrapLabel
 'orientation'
 'outline'];
 'overflow-x-hidden
+'overflow-y-auto',
 'p-[var(--padding-wk-x-lg)]',
 'p-[var(--padding-wk-y-xl)]',
 'panel',
@@ -381,7 +385,6 @@ $wrapLabel
 'wk-modal-title-'
 'wk-modal-title-');
 'wk-overlay-fixed
-'wk-overlay-layer-modal
 'wk-scrollbar
 'wk-touch-target
 'wkTitleId')"
@@ -391,6 +394,7 @@ $wrapLabel
 'xl']))
 'xl']),
 'xs'
+'z-[var(--z-wk-modal)]',
 (!
 ($attributes->getAttributes()
 ($close)
@@ -413,6 +417,7 @@ $wrapLabel
 (4.05
 (No
 (SVG
+(Support\CallerListeners).
 (Tailwind's
 (WCAG
 (WireKit::validateProp('link',
@@ -583,6 +588,7 @@ $wrapLabel
 ??
 @disabled($tag
 @else
+@elseif(!
 @elseif($iconOnlyBelow
 @elseif($loading)
 @endforeach
@@ -861,8 +867,6 @@ WireKit::resolveClasses("{$component}.close",
 WireKit::resolveClasses('button',
 WireKit::resolveClasses('button.group',
 WireKit::resolveClasses('link',
-WireKit::resolveClasses('modal',
-WireKit::resolveClasses('modal.body',
 WireKit::resolveClasses('modal.footer',
 WireKit::resolveClasses('modal.header',
 WireKit::resolveClasses('modal.trigger',
@@ -885,12 +889,14 @@ X)
 ['rel',
 ['rel'])->class([$classes])
 ['sm',
+['x-on:keydown.escape.window']);
 ['xs',
 [--wk-touch-min:0px]'
 [overflow-wrap:anywhere]'
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::string($for)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -1213,6 +1219,7 @@ around
 array
 array:
 array_filter([
+array_key_exists('aria-labelledby',
 arrives
 arrow
 arrow,
@@ -1625,6 +1632,7 @@ dialog
 dialog',
 dialog's
 dialog,
+dialog;
 dialogs
 did),
 difference
@@ -1798,6 +1806,7 @@ finger
 finished,
 first
 first,
+first.
 fit
 fit.
 fits
@@ -1851,6 +1860,7 @@ forced
 forces
 foreach
 form
+forwarded
 four
 four,
 from
@@ -2375,7 +2385,6 @@ over.
 overflow
 overflow-hidden
 overflow-x-auto
-overflow-y-auto
 overflow-y-auto',
 overflow-y-hidden
 overflows
@@ -2415,6 +2424,7 @@ panel's
 panel,
 panel.
 parent
+parser
 parses
 part
 partial
@@ -2799,6 +2809,7 @@ specific
 specificity
 spelled
 spelling
+spelling,
 spill
 spinner
 spinner,
@@ -2819,6 +2830,7 @@ stacked
 stacking
 stacks
 stacks:
+stand
 standalone
 standard
 stands
@@ -3192,7 +3204,8 @@ with
 with.
 withholds
 without
-wk-scrollbar',
+wk-overlay-layer-modal
+wk-scrollbar
 wk-touch-text-floor'
 word
 word,
@@ -3246,7 +3259,6 @@ xmlns="http://www.w3.org/2000/svg"
 yet.
 yields
 you
-z-[var(--z-wk-modal)]',
 z-index
 zero
 {

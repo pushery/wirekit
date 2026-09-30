@@ -86,8 +86,8 @@
 </div>
 
 <div
-    role="group"
-    aria-label="{{ __('wirekit::Bulk actions') }}"
+    @unless($attributes->has('role')) role="group" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Bulk actions') }}" @endunless
     {{ $attributes->merge(!$visible ? ['style' => 'display: none;'] : [])->class([$classes]) }}
 >
     {{-- Why the announcement is translated, and when it fires.

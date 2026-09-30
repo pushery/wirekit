@@ -86,12 +86,12 @@
 @endphp
 
 <section
-    role="listitem"
+    @unless($attributes->has('role')) role="listitem" @endunless
     @if($isNamed)
         @if($hasCustomHeader)
-            aria-label="{{ $label }}"
+            @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
         @else
-            aria-labelledby="{{ $domId }}-label"
+            @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $domId }}-label" @endunless
         @endif
     @endif
     {{-- The marker stays bare without a `column-id`, so a column that does not name itself

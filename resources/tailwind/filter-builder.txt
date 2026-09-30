@@ -87,6 +87,7 @@ $valueArr),
 'w-full',
 'yes'
 ("false").
+(Support\CallerListeners).
 (accepts
 (anchored
 (appearance-none)
@@ -280,6 +281,7 @@ WireKit.
 WireKit::resolveClasses('filter-builder',
 Without
 [
+['x-on:keydown.escape.window']);
 [],
 [{field,op,value}]
 [{key,label,type,operators?,options?}];
@@ -292,6 +294,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Apply'))
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::stableId('filter-builder',
 \Pushery\WireKit\WireKit::warnUnknownProps('filter-builder',
@@ -585,6 +588,7 @@ gap-[var(--gap-wk-sm)]">
 gated
 gestures
 go
+goes
 guard
 handed
 hands
@@ -641,6 +645,8 @@ later
 leave
 left
 list
+listener
+listens
 literal,
 live
 lives
@@ -700,6 +706,7 @@ optimistic-ui:
 option's
 optional
 order
+other
 otherwise
 our
 out
@@ -779,6 +786,7 @@ rounded-[var(--radius-wk-full)]
 rounded-[var(--radius-wk-lg)]
 rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]"
+run
 run.
 same
 say
@@ -808,6 +816,7 @@ somewhere
 space
 space-y-[var(--space-wk-sm)]"
 spelled
+spelling,
 splice
 starting
 state
@@ -901,6 +910,7 @@ value="{{
 variant
 vertical
 via
+view
 view's
 viewBox="0
 visibly

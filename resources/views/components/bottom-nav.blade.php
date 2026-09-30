@@ -34,8 +34,7 @@
 
     $isInteractive = filter_var($interactive, FILTER_VALIDATE_BOOLEAN);
 
-    $classes = WireKit::resolveClasses('bottom-nav', 'base', implode(' ', [
-        'wk-bottom-nav',
+    $classes = 'wk-bottom-nav '.WireKit::resolveClasses('bottom-nav', 'base', implode(' ', [
         // The layer TOKEN rather than its number, so a theme that moves the layer moves this too.
         'fixed inset-x-0 bottom-0 z-[var(--z-wk-sticky)]',
         'flex items-stretch justify-around',
@@ -44,6 +43,10 @@
         'font-[family-name:var(--font-wk-sans)]',
         $mobileOnly ? 'md:hidden' : '',
     ]), $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- A real <nav> landmark, so a screen-reader user can jump straight to it.
@@ -52,7 +55,7 @@
      indicator, the bottom of the viewport is not the bottom of the usable screen,
      and a bar that ignores that puts its labels under the indicator. --}}
 <nav
-    aria-label="{{ $label }}"
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
     data-wk-bottom-nav
     @if($isInteractive) x-data="{ active: null }" @endif
     {{ $attributes->class([$classes]) }}

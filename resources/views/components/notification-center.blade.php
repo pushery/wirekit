@@ -34,6 +34,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('notification-center', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -188,9 +192,11 @@
                 @keydown.arrow-left.prevent="filterMove(-1)"
                 @keydown.arrow-up.prevent="filterMove(-1)"
                 class="flex flex-wrap items-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
-                <button type="button" role="radio" data-filter="all" @click="setFilter('all')" :aria-checked="activeFilter === 'all'" :tabindex="activeFilter === 'all' ? 0 : -1" :class="activeFilter === 'all' ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="{{ $tab }}">{{ __('wirekit::All') }}</button>
+                {{-- The checked filter is a fill, which forced colors does not paint, so
+                     `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
+                <button type="button" role="radio" data-filter="all" @click="setFilter('all')" :aria-checked="activeFilter === 'all'" :tabindex="activeFilter === 'all' ? 0 : -1" :class="activeFilter === 'all' ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="wk-state-button {{ $tab }}">{{ __('wirekit::All') }}</button>
                 <template x-for="t in types" :key="t">
-                    <button type="button" role="radio" :data-filter="t" @click="setFilter(t)" :aria-checked="activeFilter === t" :tabindex="activeFilter === t ? 0 : -1" x-text="t" :class="activeFilter === t ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="{{ $tab }} capitalize"></button>
+                    <button type="button" role="radio" :data-filter="t" @click="setFilter(t)" :aria-checked="activeFilter === t" :tabindex="activeFilter === t ? 0 : -1" x-text="t" :class="activeFilter === t ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="wk-state-button {{ $tab }} capitalize"></button>
                 </template>
             </div>
         @endif

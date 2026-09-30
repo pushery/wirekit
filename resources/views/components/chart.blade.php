@@ -128,6 +128,10 @@
     // who sets `data-wk-chart` themselves would otherwise put the attribute on
     // the tag twice, and a host reading it would get whichever the parser kept.
     $chartAttributes = $chartAttributes->except(['data-wk-chart']);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on the element
+    // that runs the chart, which would keep it: CallerRef::onRoot() hands it to the root above.
+    // The replay wrapper, when there is one, is no root, so it does not stand in the way.
+    $chartAttributes = \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
     $needsReplayWrapper = $emitReplayable || $callerReplayable !== null;
 
     // The scripts a custom adapter names in `scripts()`. Both built-in adapters name none, so
@@ -195,7 +199,7 @@
     {{ $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart', 'base', 'relative w-full')]) }}
     style="{{ $mergedStyle }}"
     wire:ignore
-    role="img"
+    @unless($chartAttributes->has('role')) role="img" @endunless
     aria-label="{{ $chartAriaLabel }}"
 >
     {{--

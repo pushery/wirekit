@@ -15,6 +15,7 @@
 $_)
 $ariaLabel
 $ariaLabel])
+$attributes
 $attributes->class([$classes])
 $attributes->except('rel');
 $attributes->except(['id',
@@ -533,6 +534,7 @@ $zoom
 @endif
 @endisset
 @endphp
+@endunless
 @if($attribution),
 @if($computedRel)
 @if($declarativeLoading)
@@ -552,6 +554,7 @@ $zoom
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 ABOVE
 ADDITION
@@ -586,6 +589,7 @@ Bypasses
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Counted,
 DECLARATIVE
 DISABLES
@@ -767,6 +771,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($reducedData)
 \Pushery\WireKit\Support\AlpinePayload::string($styleUrl)
 \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -914,6 +919,7 @@ _intentColor
 `wrap-label="false"`
 `wrapLabel`
 `wrapLabel`,
+`x-ref`
 `xs`
 `xs`,
 `xs`.
@@ -1134,6 +1140,7 @@ byte-identical
 bytes
 call
 caller
+caller's
 caller-supplied
 callout/alert).
 can
@@ -1238,6 +1245,7 @@ compiled
 compiles
 component
 component's
+component,
 component.
 computed
 concern
@@ -1576,6 +1584,7 @@ half.
 halves
 hand
 handler
+hands
 hang
 happens
 hard-disabled
@@ -1729,6 +1738,7 @@ label.
 labeled
 labels
 landmark
+lands
 largest
 last:border-b-0
 last:border-e-0
@@ -1971,6 +1981,7 @@ other
 other.
 other:
 otherwise
+our
 ours
 out
 out,
@@ -2211,6 +2222,8 @@ role="link"
 role="list"
 role="region"
 room
+root
+root,
 rotates
 rotor
 round

@@ -87,8 +87,8 @@
                  wire:stream / wire:poll text swap inside it actually announces.
                  A region that appears at the same moment its text does is inert
                  to assistive technology — the gotcha this bakes out. --}}
-            role="status"
-            aria-live="polite"
+            @unless($attributes->has('role')) role="status" @endunless
+            @unless($attributes->has('aria-live')) aria-live="polite" @endunless
         @endif
         {{-- aria-busy tracks shimmer, and is global — it does NOT depend on the
              live region. A `status` region carries it either way so the settled
@@ -97,7 +97,7 @@
              implies aria-busy with or without `status`. Present whenever there is
              something to say about — a region to settle, or a shimmer to flag. --}}
         @if($status || $shimmer) aria-busy="{{ $shimmer ? 'true' : 'false' }}" @endif
-        {{ $attributes->class([$classes]) }}
+        {{ $attributes->except('aria-busy')->class([$classes]) }}
     >
         @if($icon)
             <x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />

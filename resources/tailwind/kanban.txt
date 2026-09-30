@@ -48,11 +48,13 @@ $sortable
 >
 @endif
 @endphp
+@endunless
 @if($sortable
 @if($sortable)
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 ARMS
 ArrowLeft/ArrowRight

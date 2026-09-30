@@ -19,6 +19,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('fab', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.prevent', 'x-on:keydown.arrow-up', 'x-on:keydown.arrow-down']);
+
     $position = WireKit::validateProp('fab', 'position', $position, ['end', 'start', 'center']);
 
     $positionClass = match ($position) {
@@ -30,8 +34,7 @@
         default => 'end-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
     };
 
-    $classes = WireKit::resolveClasses('fab', 'base', implode(' ', [
-        'wk-fab',
+    $classes = 'wk-fab '.WireKit::resolveClasses('fab', 'base', implode(' ', [
         // The TOKEN, not its number. This was `z-40` — the value --z-wk-sticky happens to
         // hold — while scroll-to-top, a fixed overlay in the same corner of the same page,
         // reads the token. Retheming the layer moved everything except this one.
@@ -40,6 +43,10 @@
         $positionClass,
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- Escape is bound on the whole component, not on the trigger: by the time the

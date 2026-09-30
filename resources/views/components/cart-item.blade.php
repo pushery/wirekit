@@ -39,6 +39,17 @@
     'unit' => null,
     // Whether the built-in remove control renders. The `remove` slot overrides it entirely.
     'removable' => true,
+    // A line that is only shown, never operated: the customer-facing screen of a till, a
+    // receipt, an order confirmation. The quantity reads as text with its unit instead of a
+    // stepper, which on a screen nobody touches would look operable and do nothing, and the
+    // built-in remove control goes. A `remove` slot still renders: writing one is the caller's
+    // decision.
+    'readonly' => false,
+    // The unit price a measured article has to show beside its price, the Grundpreis of the
+    // German PAngV: "10,00 € / 1 pair". Handed to `price`, which formats it and puts it where
+    // price-marking law wants it; `unitMeasure` is the reference, "kg" or "1 pair".
+    'unitPrice' => null,
+    'unitMeasure' => null,
     'scope' => null,
 ])
 
@@ -48,17 +59,33 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('cart-item', $attributes->getAttributes());
 
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\LocalizedNumber;
     use Pushery\WireKit\WireKit;
 
     $size = WireKit::validateProp('cart-item', 'size', $size, ['sm', 'md', 'lg']);
     $removable = BooleanProp::from($removable, true);
     $minorUnits = BooleanProp::from($minorUnits, false);
+    $readonly = BooleanProp::from($readonly, false);
+
+    // The quantity as a reader sees it: in the locale's own digits and separators, "0,532 kg"
+    // for a weighed article in German, with a no-break space so the unit never wraps away.
+    $quantityText = LocalizedNumber::format((float) $quantity, maxPrecision: 3)
+        .(filled($unit) ? "\u{00A0}".$unit : '');
 
     // A stable identity for the row, so the remove dispatch says WHICH line and a Livewire
     // re-render keeps the quantity field's DOM. Derived from the name when the caller gives no
     // id, because `uniqid()` would differ between two renders of the same page and the overlay
     // identifiers of eight components were repaired for exactly that reason in v2.54.0.
     $itemKey = $attributes->get('id') ?: 'wk-cart-item-'.substr(md5((string) ($name ?? '')), 0, 8);
+
+    // A caller's binding belongs on the quantity field and nowhere else, in every form it takes.
+    // A fixed list of keys forwarded `wire:model` and `wire:model.live` and left `.blur` and
+    // `.live.debounce…` on the row alone, where `blur` never arrives; and the row rendered the
+    // whole bag, so even a forwarded binding sat on it too and wrote the property a second time
+    // from the input events bubbling up. On a line that is only shown there is no field, and
+    // the binding lands nowhere.
+    $binding = $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable');
+    $rowAttributes = $attributes->except(['id', ...array_keys($binding->getAttributes())]);
 
     // A sale is a compare-at that is actually higher. Passing a lower or equal one through would
     // draw a strike over a number that never came down, which reads as a discount that is not
@@ -91,7 +118,7 @@
 <li data-wk-prose-skip
     data-wk-cart-item
     id="{{ $itemKey }}"
-    {{ $attributes->except('id')->class([$classes]) }}
+    {{ $rowAttributes->class([$classes]) }}
 >
     @if($image)
         <div class="shrink-0 w-16">
@@ -116,11 +143,20 @@
                 <x-wirekit::price
                     :amount="$price"
                     :base="$onSale ? $compareAt : null"
+                    :unit-price="$unitPrice"
+                    :unit-measure="$unitMeasure"
                     :currency="$currency"
                     :minor-units="$minorUnits"
                     size="sm"
                 />
             </span>
+        @endif
+
+        {{-- Further lines about this line: what it saves, the promotion it is part of. Display
+             copy the application composes, for the reason the variant line above is a slot, and
+             it may hold components of its own, a badge for the promotion. --}}
+        @if(isset($details) && $details->hasActualContent())
+            <div data-wk-cart-item-details class="{{ $metaClasses }}">{{ $details }}</div>
         @endif
     </div>
 
@@ -147,19 +183,30 @@
              silently, because the overflow sits inside a clipping ancestor rather than on the
              page. The component already knows its size; imposing a second one can only ever
              disagree. --}}
-        <div class="shrink-0">
-            <x-wirekit::number-input
-                :label="__('wirekit::Quantity')"
-                hide-label
-                :value="$quantity"
-                :min="$min"
-                :max="$max"
-                :step="$step"
-                :size="$size"
-                :suffix="$unit"
-                {{ $attributes->only(['wire:model', 'wire:model.live', 'x-model']) }}
-            />
-        </div>
+        @if($readonly)
+            {{-- The quantity as text. The stepper's own label is what named it before, so the
+                 same word names it here, for a reader that does not see the column it sits in. --}}
+            <span data-wk-cart-item-quantity class="shrink-0 tabular-nums text-[length:var(--text-wk-md)]">
+                <span class="sr-only">{{ __('wirekit::Quantity') }} </span>{{ $quantityText }}
+            </span>
+        @else
+            <div class="shrink-0">
+                <x-wirekit::number-input
+                    :label="__('wirekit::Quantity')"
+                    hide-label
+                    :value="$quantity"
+                    :min="$min"
+                    :max="$max"
+                    :step="$step"
+                    :size="$size"
+                    :suffix="$unit"
+                    {{-- Written against `$attributes` itself: inside a component tag, Blade only reads an
+                         echo of `$attributes` as the caller's bag, and any other variable leaves the whole
+                         tag uncompiled. --}}
+                    {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
+                />
+            </div>
+        @endif
 
         {{-- The line total. `aria-live="polite"` sits HERE and on nothing else in the row: a
              quantity change moves this number and the cart's grand total, and announcing both
@@ -176,7 +223,7 @@
 
         @if(isset($remove) && $remove->hasActualContent())
             {{ $remove }}
-        @elseif($removable)
+        @elseif($removable && ! $readonly)
             {{-- `x-data` on the trigger itself, because Alpine never installs a handler on an
                  element with no scope and the failure is silent — the button looks fine and does
                  nothing. The accessible name carries the product, so ten of these in one cart are

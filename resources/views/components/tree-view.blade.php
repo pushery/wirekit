@@ -15,6 +15,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('tree-view', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@focusin', '@keydown.arrow-down.prevent', '@keydown.arrow-up.prevent', '@keydown.arrow-right.prevent', '@keydown.arrow-left.prevent', '@keydown.home.prevent', '@keydown.end.prevent', '@click', '@keydown.enter.prevent', '@keydown.space.prevent', '@keydown']);
+
     // Tree view container — WAI-ARIA tree pattern.
     // Uses role="tree" with keyboard navigation handled by Alpine.
     // Padding prevents node hover backgrounds from overlapping container borders.
@@ -47,7 +51,7 @@
 
 {{-- No x-cloak needed — tree has no hidden/shown toggle; Alpine only handles keyboard nav --}}
 <ul data-wk-prose-skip
-    role="tree"
+    @unless($attributes->has('role')) role="tree" @endunless
     {{-- A `role="tree"` is announced by its name and by nothing else, and this component had
          no way to give it one: no `label` prop, no default, and nothing in the props table.
          Two file trees on a page were two identical "tree"s.

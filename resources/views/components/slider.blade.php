@@ -128,6 +128,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('slider', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@input']);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
@@ -330,8 +339,7 @@
 
     // The native input — we make the thumb and track visible via `wk-slider`
     // utility class (see wirekit.css). Uses accent color for the fill.
-    $inputClasses = WireKit::resolveClasses('slider', 'input', implode(' ', [
-        'wk-slider',
+    $inputClasses = 'wk-slider '.WireKit::resolveClasses('slider', 'input', implode(' ', [
         // Inside a track overlay (tooltip / marks) the input fills its relative
         // container; otherwise it flexes directly in the wrapper row, or fills its grid
         // column when the value sits below (`flex-1` means nothing to a grid item).
@@ -463,7 +471,7 @@
      mutates no attribute, so it is invisible to x-effect and to a
      MutationObserver alike (verified) — the one reliable signal is Livewire's own
      commit hook, which is exactly the moment the two can diverge. --}}
-<div
+<div {{ $outerAttributes }}
     {{-- The mirror, the pct math and the announced text live in the factory
          (resources/js/components/slider.js). An inline object literal cannot
          carry methods or getters under Alpine's CSP build — it fails to parse,
@@ -581,7 +589,7 @@
             {{-- class / style are consumed by the wrapper above; everything
                  else (wire:model, aria-*, data-*) stays on the input. --}}
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-            {{ $attributes->except(['class', 'style', 'aria-describedby'])->whereDoesntStartWith('x-model')->class([$inputClasses]) }}
+            {{ $attributes->except('type')->except(['class', 'style', 'aria-describedby'])->whereDoesntStartWith('x-model')->class([$inputClasses]) }}
         />
 
         @if(! empty($normalizedMarks))

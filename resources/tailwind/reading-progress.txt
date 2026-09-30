@@ -1,5 +1,6 @@
 !==
 "bar
+$attributes
 $attributes->getAttributes());
 $attributes->merge(['style'
 $boundary
@@ -54,6 +55,7 @@ $variantValue
 '.$segmentsStyle
 '.($heightToken).';'.($segmentsStyle
 '.($positionMode).';
+'.WireKit::resolveClasses('reading-progress',
 '.implode(',
 '<css-selector-string>']
 '<selector>'
@@ -120,7 +122,7 @@ $variantValue
 'variant';
 'warning'
 'warning',
-'wk-reading-progress',
+'wk-reading-progress
 'wk-reading-progress--dot'])->merge(['aria-label'
 ($boundary
 ($effectiveIntent)
@@ -216,10 +218,12 @@ $variantValue
 @else
 @endif
 @endphp
+@endunless
 @if
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 Alpine
 Alpine's
@@ -236,6 +240,7 @@ CSP
 CSS
 CSS,
 CSS-only
+CallerRef::onRoot()
 Class
 DERIVED
 DOM
@@ -293,7 +298,6 @@ Validation
 Variant
 What
 When
-WireKit::resolveClasses('reading-progress',
 WireKit::validateProp(
 Without
 [
@@ -301,6 +305,7 @@ Without
 ['primary',
 [];
 \Pushery\WireKit\Support\AlpinePayload::from((string)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('reading-progress',
 ])
 ]),
@@ -346,10 +351,12 @@ __('wirekit::Reading
 `width`
 `wk-reading-progress--dot`
 `x-on:wirekit:reading-progress:milestone.window`.
+`x-ref`
 a
 above
 above);
 above,
+above.
 accept
 across
 action-bar,
@@ -404,6 +411,7 @@ background
 background-color
 background-color:
 background-gradient
+bag
 bar
 bar's
 bar,
@@ -413,6 +421,7 @@ beats
 because
 becomes
 behavior
+belongs
 below
 bg-transparent
 binding
@@ -449,6 +458,7 @@ calc('.$pct.'%
 calc(var(--transition-wk-duration)
 calculation
 call
+caller's
 can
 canonical
 cap
@@ -480,6 +490,7 @@ comment
 common
 compiles
 component's
+component,
 component:
 compositor
 compositor-only
@@ -608,6 +619,7 @@ gracefully).
 grammar
 grows
 h-full
+hands
 has
 hasn't
 have
@@ -646,8 +658,10 @@ is_numeric($v)
 it
 it's
 it.
+it:
 its
 itself
+keep
 keeps
 kept
 keyword
@@ -736,6 +750,7 @@ origin
 other
 otherwise
 otherwise.
+our
 out
 over
 overflow
@@ -835,6 +850,8 @@ rightward,
 ring
 role="progressbar"
 roll
+root
+root,
 rule
 rules
 rules.

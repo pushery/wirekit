@@ -31,6 +31,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-minimap', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@mousemove.passive']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -113,8 +117,7 @@
         default => 'right-0',
     };
 
-    $rootClass = WireKit::resolveClasses('reading-minimap', 'base', implode(' ', [
-        'wk-reading-minimap',
+    $rootClass = 'wk-reading-minimap '.WireKit::resolveClasses('reading-minimap', 'base', implode(' ', [
         'absolute top-0 bottom-0 z-[var(--z-wk-sticky)]',
         $positionClass,
         $hideBelowClass,
@@ -152,6 +155,10 @@
     ]);
 
     $autoFadeFlag = filter_var($autoFadeIdle, FILTER_VALIDATE_BOOL) ? 'true' : 'false';
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- The root deliberately carries NO `aria-hidden`. Every purely visual part

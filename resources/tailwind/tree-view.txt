@@ -77,6 +77,16 @@ $validated
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
+'@click',
+'@keydown']);
+'@keydown.arrow-down.prevent',
+'@keydown.arrow-left.prevent',
+'@keydown.arrow-right.prevent',
+'@keydown.arrow-up.prevent',
+'@keydown.end.prevent',
+'@keydown.enter.prevent',
+'@keydown.home.prevent',
+'@keydown.space.prevent',
 'Rendering
 'Run:
 '[WireKit]
@@ -131,6 +141,7 @@ $validated
 ($size
 ($svgHtml
 ('xs').
+(Support\CallerListeners).
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -211,6 +222,7 @@ $validated
 @elseif(!
 @endif
 @endphp
+@endunless
 @focusin="rove()"
 @if
 @if(!$hasChildren)
@@ -230,6 +242,7 @@ $validated
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 A11y
 ALSO
@@ -342,8 +355,10 @@ WireKit::resolveClasses('tree-view.node',
 WireKit::validateProp('icon',
 With
 [
+['@focusin',
 ['data-wk-icon-missing'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('tree-view',
@@ -468,6 +483,7 @@ block
 block,
 bootstrapped
 borders.
+both
 branch
 branch's
 break
@@ -609,6 +625,7 @@ empty-state
 entered
 entry
 escape
+event
 every
 everything
 exactly
@@ -780,6 +797,8 @@ line
 list
 list-none
 list-style
+listener
+listens
 literal
 live
 lives
@@ -996,6 +1015,7 @@ row.
 rows
 rule
 rule,
+run
 rung
 same
 screen
@@ -1033,6 +1053,7 @@ space
 space).
 spacer
 span
+spelling,
 state
 state.
 statements

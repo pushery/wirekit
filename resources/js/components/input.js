@@ -28,6 +28,9 @@
  *     component that no longer exists.
  *   - _copiedTimer (setTimeout) — cleared in destroy(). A 2 s timer that fires
  *     after teardown writes to a component that no longer exists.
+ *   - _unwatch (the unwatch function of `$wire.$watch`) — called in destroy().
+ *     Livewire also releases it when its component goes, but an island can go
+ *     before its component does.
  */
 export default function wirekitInput() {
     return {
@@ -36,6 +39,7 @@ export default function wirekitInput() {
         _copiedTimer: null,
         _frame: null,
         _onInput: null,
+        _unwatch: null,
 
         init() {
             // Read here, where `$el` is the island itself. In a method a button calls,
@@ -49,6 +53,7 @@ export default function wirekitInput() {
             }
 
             this.syncHasValue();
+            this._followBoundModel();
         },
 
         destroy() {
@@ -58,6 +63,11 @@ export default function wirekitInput() {
 
             this._frame = null;
             this._onInput = null;
+
+            if (this._unwatch) {
+                this._unwatch();
+                this._unwatch = null;
+            }
 
             if (this._copiedTimer) {
                 clearTimeout(this._copiedTimer);
@@ -71,12 +81,52 @@ export default function wirekitInput() {
         },
 
         /**
+         * The Livewire property the field is bound to, read from its own `wire:model`
+         * attribute whatever its modifiers: `wire:model.live.debounce.300ms="scan"` binds
+         * `scan`. Null when the field carries none.
+         */
+        _boundModel() {
+            for (const attribute of this._field()?.attributes ?? []) {
+                if (attribute.name.startsWith('wire:model') && attribute.value !== '') {
+                    return attribute.value;
+                }
+            }
+
+            return null;
+        },
+
+        /**
+         * Follow the bound property, so the X follows a value the server writes.
+         *
+         * Livewire writes a new value of the property into the field without an `input`
+         * event, so a server that empties the field after a scan left the X standing over an
+         * empty field until the next keystroke. `$wire.$watch` reports every change of the
+         * property, and the field is read one tick later, once the binding has written it,
+         * so the element stays the only source of its own value. Outside a Livewire component
+         * `$wire.$watch` returns nothing, which is why the result is checked.
+         */
+        _followBoundModel() {
+            const model = this._boundModel();
+
+            if (model === null || ! this.$wire || typeof this.$wire.$watch !== 'function') {
+                return;
+            }
+
+            const unwatch = this.$wire.$watch(model, () => this.$nextTick(() => this.syncHasValue()));
+
+            if (typeof unwatch === 'function') {
+                this._unwatch = unwatch;
+            }
+        },
+
+        /**
          * Track whether the field has content, so the X only appears when there
          * is something to clear.
          *
          * Called by the frame's `input` listener, which the field's own typing
-         * bubbles up to — which is why it reads the element instead of a copy
-         * the component would then have to keep in sync.
+         * bubbles up to, and after the server changes the bound property — which
+         * is why it reads the element instead of a copy the component would then
+         * have to keep in sync.
          */
         syncHasValue() {
             const field = this._field();

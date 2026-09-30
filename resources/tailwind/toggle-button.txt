@@ -133,6 +133,7 @@ $key
 $label
 $labelsChange
 $labelsChange,
+$layerShows
 $linkDisabled
 $linkDisabled)
 $linkDisabledClasses
@@ -166,6 +167,8 @@ $optimistic,
 $optimisticArgs),
 $optimisticConfig
 $orientation
+$outerAttributes
+$outerAttributes;
 $placeholderAttributes
 $placeholderAttributes['role']
 $pressed
@@ -223,6 +226,7 @@ $tooltipClasses
 $tooltipId
 $tooltipIsName
 $tooltipIsName"
+$tooltipOuterAttributes
 $tooltip]);
 $touchClasses
 $touchClasses,
@@ -231,6 +235,8 @@ $type
 $validated
 $variantClasses
 $variantClasses,
+$withoutOuterAttributes;
+$withoutOuterAttributes]
 $wrapLabel
 &&
 '
@@ -248,6 +254,7 @@ $wrapLabel
 '.$iconOnlySquareToken.';']);
 '.$message);
 '.($isPressed
+'.WireKit::resolveClasses('swap',
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
 '2xl'
@@ -481,7 +488,7 @@ $wrapLabel
 'wk-button
 'wk-button',
 'wk-button-group',
-'wk-swap',
+'wk-swap
 'wk-swap-fade',
 'wk-swap-flip',
 'wk-swap-rotate',
@@ -495,6 +502,13 @@ $wrapLabel
 'x-model']);
 'x-modelable'
 'x-on:click'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'x-wk-ref'
 'xl'
 'xl',
@@ -537,6 +551,7 @@ $wrapLabel
 (4.05
 (Alpine),
 (SVG
+(Support\CallerListeners).
 (Tailwind's
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -675,6 +690,7 @@ $wrapLabel
 :active="$isPressed"
 :aria-hidden="{{
 :aria-pressed="$labelsChange
+:attributes="$tooltipOuterAttributes">
 :data-active="{{
 :data-wk-active-intent="$hasIcon
 :data-wk-ref-scope="$refScope
@@ -747,6 +763,7 @@ $wrapLabel
 @if($isDynamic)
 @if($label)
 @if($labelsChange)
+@if($layerShows)
 @if($linkDisabled)
 @if($loading
 @if($loadingTarget)
@@ -976,6 +993,7 @@ Stable
 State
 Static
 Strip
+Support\OuterAttributes):
 SvgNotFound
 SvgNotFound.
 Switch
@@ -1033,7 +1051,6 @@ WireKit
 WireKit's
 WireKit::resolveClasses('button',
 WireKit::resolveClasses('button.group',
-WireKit::resolveClasses('swap',
 WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
 WireKit::validateProp('button',
@@ -1049,6 +1066,7 @@ With
 Without
 Wrap
 [
+[$outerAttributes,
 ['accent',
 ['data-wk-icon-missing'
 ['fade',
@@ -1056,18 +1074,25 @@ Wrap
 ['outlined'
 ['primary'
 ['sm',
+['x-on:click']);
+['x-on:mouseenter',
 ['xs',
 [--wk-touch-min:0px]'
 [],
 [];
 [overflow-wrap:anywhere]'
+\Illuminate\View\ComponentAttributeBag([])
+\Illuminate\View\ComponentAttributeBag([]);
 \InvalidArgumentException('wirekit::button:
 \InvalidArgumentException('wirekit::toggle-button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1180,6 +1205,7 @@ __toString
 `disabled`
 `disabled`,
 `display:
+`display`
 `div`
 `e()`
 `el.id`.
@@ -1275,6 +1301,7 @@ __toString
 `wire:loading`
 `wire:model`
 `wire:model`/`x-model`
+`wire:show`
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
@@ -1289,6 +1316,7 @@ __toString
 `x-ref`
 `x-show="open"`
 `x-show`
+`x-show`,
 `x-wk-ref`
 `xs`
 `xs`,
@@ -1470,6 +1498,7 @@ background
 background)
 background,
 bag
+bag.
 baked
 bakes
 baking
@@ -1553,6 +1582,7 @@ bound
 boundaries
 boundary
 box
+box.
 bracket
 branch
 branch's
@@ -1656,6 +1686,7 @@ class,
 class.
 class="animate-spin
 class="col-start-1
+class="contents"
 class="inline-flex"><x-wirekit::icon
 class="opacity-25"
 class="opacity-75"
@@ -2049,6 +2080,7 @@ filled($onIcon)
 filled($onLabel)
 filled($stackBelow)
 filled($tooltip)
+filled($tooltip))
 filled()
 filter_var($pressed,
 filter_var($selfToggle,
@@ -2158,6 +2190,7 @@ glyphs
 go
 goes
 goes,
+gone.
 grid
 group
 group.
@@ -2295,6 +2328,7 @@ in_array($stackBelow,
 in_array($surface,
 inactive
 include
+included,
 included.
 including
 indicator,
@@ -2392,6 +2426,7 @@ last:border-b-0
 last:border-e-0
 later
 layer
+layer's
 layer,
 layout
 layout,
@@ -2422,6 +2457,7 @@ link.
 linked
 list
 listed,
+listener
 listens
 literal
 literal;
@@ -2604,7 +2640,6 @@ nowhere
 nowhere,
 null
 null"
-null">
 null)
 null);
 null,
@@ -2905,6 +2940,7 @@ reliably
 reliably.
 remove.
 removed
+removes
 removing
 render
 render,
@@ -2963,6 +2999,7 @@ rollback
 room
 root
 root,
+root.
 root;
 rotates
 rounded
@@ -3113,6 +3150,7 @@ span).
 specificity
 spelled
 spelling
+spelling,
 spill
 spinner
 spinner,
@@ -3305,6 +3343,7 @@ throws
 throws.
 tick
 tile
+time
 time,
 time.
 timer
@@ -3354,6 +3393,7 @@ trade
 trade,
 transformed
 transition-colors
+transitions
 transitions,
 transitively
 translated

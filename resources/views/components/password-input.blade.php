@@ -93,6 +93,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('password-input', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'password-input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
@@ -226,7 +231,7 @@
      method is not an expression Alpine's CSP parser accepts, and under a strict
      policy the element would get an EMPTY scope, leaving the show/hide button and
      the whole meter dead with no error to say why. --}}
-<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
@@ -274,7 +279,7 @@
             @endif
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
 
         {{-- Toggle visibility button --}}

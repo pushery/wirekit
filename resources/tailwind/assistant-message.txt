@@ -66,6 +66,7 @@ $attributes->get('role');
 $attributes->get('target',
 $attributes->get('type',
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
 $attributes->merge($depthStyle
 $attributes->merge(['rel'
@@ -634,6 +635,13 @@ $x)`
 'wrap'
 'wrapper',
 'x-circle'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xl']))
 'xs'
@@ -672,6 +680,7 @@ $x)`
 (NOT
 (RTL-safe)
 (SOFT
+(Support\CallerListeners).
 (Tailwind
 (WCAG
 (WireKit::validateProp('avatar',
@@ -982,6 +991,7 @@ $x)`
 @props([
 @props.
 @tailwindcss/typography
+@unless($attributes->has('aria-label')
 @unless($openBool)
 A
 A).
@@ -1402,6 +1412,7 @@ Written
 ['soft',
 ['span',
 ['style'
+['x-on:mouseenter',
 ['xs',
 [])
 [])->class([$baseClasses,
@@ -1411,6 +1422,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
 \Pushery\WireKit\Support\AlpinePayload::from((object)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CitationList::from($citations);
 \Pushery\WireKit\Support\DomId::unique(
@@ -2858,6 +2870,7 @@ links
 list
 list-none
 list:
+listener
 listens
 literal
 literal,
@@ -3586,6 +3599,7 @@ speaking:
 spec
 specificity,
 spelled
+spelling,
 spells
 spent
 spilling
@@ -3955,6 +3969,7 @@ versions).
 vertical
 very
 via
+view
 view's
 viewBox="0
 viewport

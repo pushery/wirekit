@@ -9,6 +9,7 @@
 "Step
 "current";
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $circleBase
 $completedClasses
@@ -200,6 +201,8 @@ $upcomingClasses);
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 @unless($isCompleted)
 @unless($isCurrent)
 @unless($isLast)
@@ -216,6 +219,7 @@ Circle
 Completed:
 Connector
 Connector:
+Current
 Current:
 Declared
 Details
@@ -270,6 +274,8 @@ __('wirekit::Step
 `--wk-stepper-index`
 `<button>`
 `__()`,
+`aria-current="step"`
+`aria-current="step"`,
 `aria-current`
 `aria-hidden`:
 `current`
@@ -287,6 +293,7 @@ __('wirekit::Step
 `min-width:
 `wire:click`,
 `wizard`
+`wk-stepper-circle`
 a
 about
 above,
@@ -303,6 +310,7 @@ alert
 all
 all,
 allowed,
+alone,
 already
 an
 and
@@ -329,6 +337,7 @@ at
 attribute.
 auto-derived
 auto`
+away.
 back,
 back.
 be
@@ -343,9 +352,12 @@ below,
 beside
 between
 binding
+block
+block's
 block,
 border-[var(--color-wk-accent)]';
 border-[var(--color-wk-border)]';
+both
 break
 breaks
 browser
@@ -369,15 +381,18 @@ center.
 centered
 changes
 check
+child:
 chosen
 circle
 circle's
+circle,
 circles
 circles.
 class
 class="sr-only">{{
 class="text-[length:var(--text-wk-xs)]
 class="w-4
+class="wk-stepper-circle
 class="{{
 classes
 classes.
@@ -385,6 +400,9 @@ click
 clip-rule="evenodd"/>
 code
 colon
+color
+color,
+colors
 column
 columns
 come
@@ -468,8 +486,10 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]'
 follows
 for
+forced
 form
 form's
+frames
 from
 full
 gap
@@ -486,6 +506,7 @@ had
 hands
 has
 have
+heading
 heard:
 hears
 hears.
@@ -573,7 +594,9 @@ making
 many
 margin:
 mark
+marked
 marker
+marker.
 markers
 markup
 matching
@@ -633,6 +656,7 @@ ordered.
 out
 outline.
 outlined
+outlines
 outside
 over
 overflowed
@@ -649,10 +673,12 @@ page
 page.
 paint
 paint.
+paints
 part
 passes
 past
 per
+personalized
 phone
 phone.
 pins
@@ -686,6 +712,7 @@ render
 render,
 render.
 renders
+resolved
 restriction
 result
 right
@@ -721,6 +748,7 @@ shrink
 shrink-0',
 since
 single
+sits
 size
 size:
 small
@@ -759,7 +787,9 @@ styling
 such
 switch
 syllable,
+system
 tag
+take
 takes
 template.
 text,
@@ -817,6 +847,8 @@ w-[1px]
 was
 way
 we
+weight
+weight.
 well
 what
 when

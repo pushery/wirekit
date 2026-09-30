@@ -73,6 +73,11 @@ $weekStartsOn
 '4',
 '5',
 '6']);
+'@focusin',
+'@focusout',
+'@keydown.escape.window']);
+'@pointerout',
+'@scroll.capture.passive',
 'accent'
 'accent']"
 'accent']"></span>
@@ -161,6 +166,7 @@ $weekStartsOn
 (5rem
 (60rem
 (PHP
+(Support\CallerListeners).
 (YYYY-MM-DD)
 (_measureAgendaTime
 (`rowLabel`)
@@ -333,6 +339,7 @@ $weekStartsOn
 @endfor
 @endif
 @endphp
+@endunless
 @focusin="tipShow($event)"
 @focusout="tipHide($event)"
 @for
@@ -352,6 +359,7 @@ $weekStartsOn
 @props([
 @props.
 @scroll.capture.passive="tipHide()"
+@unless($attributes->has('role'))
 A
 AA-on-tint
 ACROSS
@@ -483,6 +491,7 @@ WireKit::validateProp('event-calendar',
 With
 [
 ['1',
+['@pointerover',
 ['month',
 [1,
 [],
@@ -511,6 +520,7 @@ With
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected)
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday)
 \Pushery\WireKit\Support\AlpinePayload::string($view)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar',
@@ -569,6 +579,7 @@ _measureAgendaTime()
 `tabindex="0"`
 `view-change`
 `wirekit:event-calendar-day-select`
+`wk-state-button`
 `x-ref`
 a
 about
@@ -751,6 +762,7 @@ change
 change;
 changes
 charts
+checked
 checks
 child
 children,
@@ -798,6 +810,7 @@ class="text-[length:var(--text-wk-xs)]
 class="w-full
 class="whitespace-nowrap"
 class="wk-avatar-group
+class="wk-state-button
 class="{{
 classes
 cleanly
@@ -811,6 +824,8 @@ color
 color,
 color-mix
 color:
+colors
+colors,
 column
 column's
 column.
@@ -999,10 +1014,12 @@ font-[number:var(--font-wk-heading-weight)]"
 font-[number:var(--font-wk-heading-weight)]'
 font-[number:var(--font-wk-heading-weight)]',
 for
+forced
 form
 former
 forms,
 fortnight
+frames
 fresh
 from
 full
@@ -1019,6 +1036,7 @@ gate
 gate,
 gave
 gives
+goes
 going
 gray).
 grid
@@ -1054,6 +1072,7 @@ happen.
 hard
 hardcoded
 has
+has.
 hatch
 hatch).
 hatch-only.
@@ -1103,6 +1122,7 @@ info
 inherit
 inheriting
 inline
+inline-flex
 inner
 inset
 inside
@@ -1169,7 +1189,9 @@ line-through',
 line:
 lines
 list
+listener
 listeners;
+listens
 literal
 literals)
 live
@@ -1212,6 +1234,7 @@ min-w-5
 min-w-[var(--size-wk-target-min)]
 minted
 mislabel
+mode.
 moment
 month
 monthWeeks"
@@ -1303,6 +1326,8 @@ padding
 padding)
 page
 paint
+paint,
+painted.
 pair
 pairings,
 panel
@@ -1490,6 +1515,7 @@ space-y-0.5">
 space-y-[var(--space-wk-sm)]',
 spacing
 span
+spelling,
 spells
 spine:
 sr-only
@@ -1513,8 +1539,10 @@ stroke-linecap="round"
 stroke-linejoin="round"><path
 stroke-width="2"
 stroke="currentColor"
+struck
 style
 style="width:
+stylesheet
 styling,
 sub-30-minute
 suites
@@ -1595,6 +1623,7 @@ thing,
 this
 three
 through
+through;
 throw
 thrown
 tight
@@ -1602,8 +1631,10 @@ time
 time,
 time-grid,
 tint
+tint,
 tint.
 tinted
+tints
 title
 title+time
 title,
@@ -1612,6 +1643,7 @@ titles
 to
 to,
 to.
+today
 today)
 toggle
 token
@@ -1699,6 +1731,7 @@ weekHasMarkers"
 weekStartsOn:
 weekday
 weekdayLabels"
+weight
 well.
 were
 what

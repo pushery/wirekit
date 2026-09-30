@@ -425,6 +425,13 @@ $wrap
 'wk-tooltip-');
 'wrap'
 'x-circle'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xs'
 'z-[var(--z-wk-tooltip)]',
@@ -459,6 +466,7 @@ $wrap
 (Blade
 (CTA
 (SOFT
+(Support\CallerListeners).
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -933,6 +941,7 @@ Zero
 ['soft',
 ['style'
 ['tristate',
+['x-on:mouseenter',
 []
 [])
 [])->class([$baseClasses,
@@ -955,6 +964,7 @@ Zero
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($rk)
 \Pushery\WireKit\Support\AlpinePayload::string($row['label'].',
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
@@ -1988,6 +1998,7 @@ lines:
 link
 linked
 list
+listener
 listens
 literal
 little
@@ -2426,6 +2437,7 @@ rows
 rows,
 rule
 rules
+run
 rung
 runtime
 safe.
@@ -2527,6 +2539,7 @@ span
 span).
 spelled
 spelling
+spelling,
 spells
 spilling
 split
@@ -2801,6 +2814,7 @@ variant
 variant),
 vertical
 via
+view
 view's
 viewBox="0
 viewport.

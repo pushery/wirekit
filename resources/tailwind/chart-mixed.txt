@@ -203,12 +203,14 @@ $wrapperTag
 @endif
 @endonce
 @endphp
+@endunless
 @foreach
 @if
 @once('wirekit-chart-script:'.$wkChartScript)
 @php
 @props([
 @props.
+@unless($chartAttributes->has('role'))
 A
 ALSO
 ANY
@@ -236,6 +238,7 @@ CLASS-based
 CRITICAL:
 CSS
 Caller-supplied
+CallerRef::onRoot()
 Chart
 Chart-mixed
 Chart.js
@@ -321,6 +324,7 @@ Wrapping
 \Illuminate\View\ComponentAttributeBag(
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
 \Pushery\WireKit\Support\AlpinePayload::from($chartData)
+\Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\WireKit::cspNonce()
 \Pushery\WireKit\WireKit::warnUnknownProps('chart-mixed',
 \RuntimeException(
@@ -374,11 +378,13 @@ __('wirekit::Chart'));
 `wk-*`
 `x-data`
 `x-data`,
+`x-ref`
 `yAxisID`
 `↻
 a
 about
 above
+above.
 absolute-positioned
 accessibility
 accessible
@@ -457,6 +463,7 @@ before
 behavior
 behavior;
 being
+belongs
 below
 below.
 belt-and-
@@ -700,6 +707,7 @@ grid
 guard
 half
 handle
+hands
 hardcoded
 has
 heard
@@ -766,6 +774,7 @@ key),
 keyed
 label
 labels
+lands
 later
 layout
 lazy-loader
@@ -855,6 +864,7 @@ on
 on.
 once,
 one
+one,
 one.
 ones
 ones).
@@ -969,6 +979,7 @@ role-less
 role.
 role="img"
 root
+root,
 rule,
 running
 runs
@@ -1021,6 +1032,7 @@ specific
 spelled
 src="{{
 stable
+stand
 starts
 state.
 static
@@ -1136,6 +1148,7 @@ want
 warning
 was
 way
+way.
 we
 what
 when

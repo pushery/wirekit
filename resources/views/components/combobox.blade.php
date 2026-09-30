@@ -93,6 +93,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('combobox', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@focus', '@input', '@keydown.arrow-down.prevent', '@keydown.arrow-up.prevent', '@keydown.home.prevent', '@keydown.end.prevent', '@keydown.enter.prevent', '@keydown.escape']);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -292,11 +301,15 @@
         default => 'p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-md)]',
     };
 
-    // A row with a medium or a description lays its parts out in a line. A list that uses
-    // neither keeps the plain row, so its markup does not change.
-    if ($richRows) {
-        $optionRowClasses .= ' flex items-center gap-[var(--gap-wk-sm)]';
-    }
+    // Every row lays its parts out in a line, so the check of the chosen option sits at the end
+    // whatever the label holds, and a row with a medium or a description keeps the same layout.
+    $optionRowClasses .= ' flex items-center gap-[var(--gap-wk-sm)]';
+
+    // The chosen option shows what `aria-selected` says: a check at the end of its row. The row's
+    // tint follows the highlight, which the keyboard and the pointer move, so without the check
+    // the chosen option looked like every other one once the list was open. The check is ink,
+    // so it holds in grayscale and in forced colors.
+    $optionCheckClasses = WireKit::resolveClasses('combobox', 'option-check', 'h-4 w-4 shrink-0', $scope);
 
     // Media and description sizes follow `size` the way the row text does. In the field the
     // medium is one step smaller than in the list, because the field is a single line of text.
@@ -384,10 +397,10 @@
 
     // Options list — dropdown panel.
     // list-none removes browser-default bullet points from the <ul>.
-    $listClasses = WireKit::resolveClasses('combobox', 'list', implode(' ', [
+    $listClasses = 'wk-scrollbar '.WireKit::resolveClasses('combobox', 'list', implode(' ', [
         'fixed z-[var(--z-wk-dropdown)]',  // fixed escapes a clipping card; width + height come from _place()
         'list-none',
-        'wk-scrollbar max-h-60 overflow-auto',
+        'max-h-60 overflow-auto',
         // `[overflow-wrap:anywhere]` lets an option name with no space or hyphen break inside the
         // word instead of widening its row past the panel. The panel takes its width from the field,
         // so a repository name with underscores scrolled the whole list sideways, and on a phone the
@@ -459,7 +472,7 @@
 {{-- `wk-combobox` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-` class
      token and its descendants, and this root is the first element above the chevrons to carry one:
      `wk-field` sits on the input, beside them, where the clamp never reaches them. --}}
-<div class="wk-combobox space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="wk-combobox space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
@@ -522,7 +535,7 @@
         type="text"
         x-ref="cbxInput"
         id="{{ $comboId }}"
-        role="combobox"
+        @unless($attributes->has('role')) role="combobox" @endunless
         aria-expanded="false"
         :aria-expanded="isOpen"
         aria-controls="{{ $listId }}"
@@ -555,7 +568,7 @@
              this element it would be a second model binding beside `x-model="query"`,
              pointed at the search text. --}}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
+        {{ $attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label', 'class', 'style', 'aria-describedby'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $inputClasses }}"
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     />
@@ -575,7 +588,7 @@
     <div
         x-ref="cbxInput"
         id="{{ $comboId }}"
-        role="combobox"
+        @unless($attributes->has('role')) role="combobox" @endunless
         tabindex="{{ $disabled ? '-1' : '0' }}"
         aria-haspopup="listbox"
         aria-expanded="false"
@@ -594,7 +607,7 @@
         {{-- `required` is an input attribute, and a `div` has no validity to carry it. --}}
         @if($attributes->get('required')) aria-required="true" @endif
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby', 'required', 'autocomplete', 'placeholder', 'readonly'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
+        {{ $attributes->except('aria-controls')->except('aria-expanded')->except(['aria-label', 'class', 'style', 'aria-describedby', 'required', 'autocomplete', 'placeholder', 'readonly'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $triggerClasses }}"
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     >
@@ -750,7 +763,10 @@
                                 : (opt._idx === highlight
                                     ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
                                     : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
-                            class="{{ $optionRowClasses }}"
+                            {{-- `data-active` on the row the arrow keys are on, for the forced-colors
+                                 mark the stylesheet draws through `wk-listbox-option`. --}}
+                            :data-active="opt._idx === highlight ? '' : null"
+                            class="wk-listbox-option {{ $optionRowClasses }}"
                             @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
                             @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                             @mouseenter="hoverOption(opt, opt._idx)"
@@ -762,8 +778,6 @@
                                     :aria-labelledby="{{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + opt._idx + '-label'"
                                     :aria-describedby="opt.description ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + opt._idx + '-desc' : null"
                                 @endif
-                            @else
-                                x-text="opt.label"
                             @endif
                         >@if($richRows)@include('wirekit::components.partials.listbox-option-content', [
                             'idExpression' => \Pushery\WireKit\Support\AlpinePayload::string($listId)." + '-opt-' + opt._idx",
@@ -774,7 +788,7 @@
                             'mediaIcon' => $rowMediaIcon,
                             'mediaInitials' => $mediaInitials,
                             'descriptionClasses' => $descriptionText.' text-[color:var(--color-wk-text-muted)]',
-                        ])@endif</li>
+                        ])@else<span class="min-w-0 flex-1" x-text="opt.label"></span>@endif<svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="selected === opt.value ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></li>
                     </template>
                 </ul>
             </li>
@@ -791,7 +805,8 @@
                     : (idx === highlight
                         ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
                         : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
-                class="{{ $optionRowClasses }}"
+                :data-active="idx === highlight ? '' : null"
+                class="wk-listbox-option {{ $optionRowClasses }}"
                 @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 @mouseenter="hoverOption(opt, idx)"
@@ -801,8 +816,6 @@
                         :aria-labelledby="{{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + idx + '-label'"
                         :aria-describedby="opt.description ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + idx + '-desc' : null"
                     @endif
-                @else
-                    x-text="opt.label"
                 @endif
             >@if($richRows)@include('wirekit::components.partials.listbox-option-content', [
                 'idExpression' => \Pushery\WireKit\Support\AlpinePayload::string($listId)." + '-opt-' + idx",
@@ -813,7 +826,7 @@
                 'mediaIcon' => $rowMediaIcon,
                 'mediaInitials' => $mediaInitials,
                 'descriptionClasses' => $descriptionText.' text-[color:var(--color-wk-text-muted)]',
-            ])@endif</li>
+            ])@else<span class="min-w-0 flex-1" x-text="opt.label"></span>@endif<svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="selected === opt.value ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></li>
         </template>
         @endif
         @if($server)

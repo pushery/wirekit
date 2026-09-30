@@ -6,6 +6,7 @@ namespace Pushery\WireKit;
 
 use Illuminate\Contracts\Foundation\CachesConfiguration;
 use Illuminate\Contracts\Translation\Loader;
+use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Blade;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
+use Illuminate\View\ComponentAttributeBag;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Components\FieldSet;
@@ -50,6 +52,8 @@ use Pushery\WireKit\Support\FlagPackage;
 use Pushery\WireKit\Support\LogThrottle;
 use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Support\TourStepCounter;
+use Pushery\WireKit\Support\UnboundModel;
+use Pushery\WireKit\Support\ValuelessDirectives;
 
 class WireKitServiceProvider extends ServiceProvider
 {
@@ -343,7 +347,33 @@ class WireKitServiceProvider extends ServiceProvider
         // The framework's helper is that hook PLUS "call it now if the service is already
         // resolved" — the half that was missing.
         $this->callAfterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
-            $blade->anonymousComponentPath(__DIR__.'/../resources/views/components', $prefix);
+            $componentsPath = __DIR__.'/../resources/views/components';
+            $blade->anonymousComponentPath($componentsPath, $prefix);
+
+            // A directive written on a tag without a value reaches the view as `true`, which the
+            // attribute bag renders as the directive's own name, and Alpine throws on a bare
+            // `x-transition` rendered that way (Support\ValuelessDirectives). Every component
+            // view gives such a directive an empty value before it renders. The anonymous views
+            // live in the namespace Laravel derives from the prefix, read back here rather than
+            // recomputed; the class components render theirs under `wirekit::`.
+            $namespaces = ['wirekit::components.*'];
+
+            foreach ($blade->getAnonymousComponentPaths() as $registered) {
+                if ($registered['path'] === $componentsPath) {
+                    $namespaces[] = $registered['prefixHash'].'::*';
+                }
+            }
+
+            // The same composer removes a caller's `x-model` from a component whose own Alpine root
+            // takes the caller's attributes and holds no value to bind (Support\UnboundModel).
+            $this->app->make('view')->composer($namespaces, static function (View $view): void {
+                $attributes = $view->getData()['attributes'] ?? null;
+
+                if ($attributes instanceof ComponentAttributeBag) {
+                    ValuelessDirectives::normalize($attributes);
+                    UnboundModel::dropFromView($view->name(), $attributes);
+                }
+            });
 
             // Two files on that path have a class behind them, under the same tag. The markup and
             // the declared props stay in the view, so every reader of `@props` still finds them

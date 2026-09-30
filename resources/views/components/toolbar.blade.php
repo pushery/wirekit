@@ -102,7 +102,7 @@
      wanted, the catalog has one: `<x-wirekit::editor.toolbar>` owns its own children
      and can therefore keep the promise. --}}
 <div
-    role="group"
+    @unless($attributes->has('role')) role="group" @endunless
     @if($ariaLabel) aria-label="{{ $ariaLabel }}" @endif
     {{ $attributes->class([$baseClasses]) }}
 >

@@ -15,10 +15,12 @@ $announceErrors
 $ariaLabel
 $attributes
 $attributes->class([$classes])
-$attributes->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(['wk-field',
+$attributes->except('aria-controls')->except('aria-expanded')->except(['aria-label',
+$attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label',
+$attributes->except('type')->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(['wk-field',
+$attributes->except('type')->whereStartsWith('wire:model')
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
-$attributes->except(['aria-label',
 $attributes->except(['id',
 $attributes->except(['value']);
 $attributes->get('aria-describedby');
@@ -30,8 +32,8 @@ $attributes->get('required',
 $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->only(['class',
-$attributes->whereStartsWith('wire:model')
 $attributes->whereStartsWith(['wire:model',
+$attributes]
 $b));
 $b):
 $boxClasses
@@ -154,6 +156,7 @@ $optimisticArgs),
 $optimisticConfig
 $option
 $option)
+$optionCheckClasses
 $optionRowClasses
 $optionRowClasses;
 $optionUses
@@ -167,6 +170,7 @@ $optionsAreAList
 $optionsAreAList);
 $ordered
 $ordered[$code]
+$outerAttributes
 $ownDescribedBy
 $panelWidth
 $panelWidth)
@@ -246,8 +250,16 @@ $value,
 '.$searchDebounce
 '.$searchMinLength.',
 '.((string)
+'.WireKit::resolveClasses('combobox',
 '.\Pushery\WireKit\Support\AlpinePayload::from([
 '0'
+'@input',
+'@keydown.arrow-down.prevent',
+'@keydown.arrow-up.prevent',
+'@keydown.end.prevent',
+'@keydown.enter.prevent',
+'@keydown.escape']);
+'@keydown.home.prevent',
 'DE'),
 'Germany',
 'Rain
@@ -318,6 +330,7 @@ $value,
 'font-[number:var(--font-wk-body-weight)]',
 'font-medium',
 'group',
+'h-4
 'h-[var(--size-wk-lg)]
 'h-[var(--size-wk-md)]
 'h-[var(--size-wk-sm)]
@@ -332,11 +345,13 @@ $value,
 'image'">
 'initialsClasses'
 'input',
+'invisible'"
 'label'
 'label']
 'lg'
 'list',
 'list-none',
+'max-h-60
 'md'),
 'media'
 'mediaBox'
@@ -352,6 +367,7 @@ $value,
 'optimistic'
 'optimisticArgs'
 'option'
+'option-check',
 'options'
 'p-[var(--padding-wk-y-md)]
 'p-[var(--padding-wk-y-sm)]
@@ -458,7 +474,6 @@ $value,
 ($options
 ($ordered
 ($ownDescribedBy
-($richRows)
 ($server)
 ($showsHint
 ($size)
@@ -466,6 +481,7 @@ $value,
 (+"
 (+'.DialingCodes::for($code).')',
 (@aware
+(Support\CallerListeners).
 (\Locale::getDisplayRegion('-'.$code,
 (`error=""`
 (`icon`,
@@ -526,6 +542,7 @@ $value,
 /
 //
 />
+/></svg></li>
 0
 0"
 0,
@@ -555,12 +572,15 @@ $value,
 11.06l3.71-3.83a.75.75
 11.06l3.72
 111.08
+13l4
 2
 2),
 20
 20"
 20rem']);
 2345
+24
+24"><path
 245
 245:
 24px
@@ -570,10 +590,12 @@ $value,
 3166-1
 4.39a.75.75
 4:3
+4L19
 5.22a.75.75
 5.22z"/>
 6.28
 6789`
+7"
 7.21a.75.75
 8.27a.75.75
 8.94
@@ -590,8 +612,11 @@ $value,
 :class="$selectClasses"
 :class="isOpen
 :class="opt.disabled
+:class="selected
 :clearable="false"
 :count
+:data-active="idx
+:data-active="opt._idx
 :disabled="$disabled
 :for="$comboId"
 :for="$id"
@@ -709,6 +734,8 @@ $value,
 @props([
 @props.
 @readonly($readonly)
+@unless($attributes->has('autocomplete'))
+@unless($attributes->has('role'))
 @unless($server)
 A
 A's
@@ -898,6 +925,7 @@ So
 Stable
 Static
 Strip
+Support\OuterAttributes.
 THE
 TRIGGER,
 TWO
@@ -938,7 +966,9 @@ Z,
 Zypern
 [
 [$normalized,
+[$outerAttributes,
 [$rowMediaBox,
+['@focus',
 ['count'
 ['de'
 ['dial'
@@ -949,6 +979,7 @@ Zypern
 ['size-7',
 ['trigger',
 ['value'
+['x-on:input']);
 [],
 [];
 \Collator($locale);
@@ -964,12 +995,14 @@ Zypern
 \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty')
 \Pushery\WireKit\Support\AlpinePayload::string($panelWidth)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\FlagPackage::attach($normalized);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
 \Pushery\WireKit\Support\IconSprite::attach($normalized,
 \Pushery\WireKit\Support\OptionMedia::fields('combobox',
 \Pushery\WireKit\Support\OptionMedia::uses($normalized);
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('combobox',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \uXXXX,
@@ -977,7 +1010,7 @@ Zypern
 ])
 ]),
 ]);
-])@endif</li>
+])@else<span
 ],
 ];
 __('wirekit::Clear
@@ -1025,6 +1058,7 @@ _place()
 `aria-invalid`
 `aria-labelledby`
 `aria-labelledby`.
+`aria-selected`
 `ariaLabel`
 `auto`
 `auto`,
@@ -1038,6 +1072,7 @@ _place()
 `contain:
 `countries`
 `cursor-pointer`
+`data-active`
 `data-wk-ref-scope`
 `description`,
 `disabled:`
@@ -1111,9 +1146,11 @@ _place()
 `wire:model*`
 `wire:model`
 `wire:model`,
+`wire:show`
 `wk-`
 `wk-combobox`
 `wk-field`
+`wk-listbox-option`.
 `x-data`,
 `x-model="query"`
 `x-model="query"`,
@@ -1123,6 +1160,7 @@ _place()
 `x-modelable`
 `x-ref`
 `x-ref`,
+`x-show`,
 `x-text`
 `x-wk-ref`,
 `{
@@ -1130,6 +1168,7 @@ _place()
 a
 a11y
 able
+about
 about.
 above
 above.
@@ -1366,11 +1405,11 @@ catalog,
 caught.
 certifies
 change).
-change.
 character.
 character:
 characters',
 character|[2,*]
+check
 chevron
 chevron.
 chevrons
@@ -1395,6 +1434,7 @@ class="block
 class="block"
 class="inline-flex
 class="max-w-[10rem]">`
+class="min-w-0
 class="mt-[var(--padding-wk-y-xs)]
 class="pointer-events-none
 class="px-[var(--padding-wk-x-md)]
@@ -1406,6 +1446,7 @@ class="text-[length:var(--text-wk-sm)]
 class="w-4
 class="wk-combobox
 class="wk-field
+class="wk-listbox-option
 class="{{
 class_exists(\Locale::class)
 classes
@@ -1434,6 +1475,7 @@ collides
 color
 color:
 colors
+colors.
 combobox
 combobox's
 combobox,
@@ -1511,6 +1553,7 @@ cursor-pointer'
 cursor-pointer')"
 cut
 cut.
+d="M5
 d="M5.23
 d="M6.28
 danger-text
@@ -1615,6 +1658,7 @@ empty.
 empty:
 emptyId:
 encode
+end
 end-3
 end-8
 ends
@@ -1678,6 +1722,7 @@ fighting
 fill,
 fill-rule="evenodd"
 fill="currentColor"
+fill="none"
 filter
 filtered
 filtered"
@@ -1698,6 +1743,7 @@ flag:
 flags
 flat
 flex
+flex-1"
 flex-1">
 flight
 flips
@@ -1724,6 +1770,8 @@ for
 for:
 for>
 forbidding
+forced
+forced-colors
 foreach
 form
 formatting.
@@ -1736,6 +1784,7 @@ from
 full
 fully
 function
+further
 gaining
 gap
 gap-2',
@@ -1755,6 +1804,7 @@ goes
 goes.
 gone,
 got
+grayscale
 group
 group's
 group-free
@@ -1794,6 +1844,7 @@ hidden.
 hides
 high
 highlight
+highlight,
 highlighted,
 highlighted.
 hint
@@ -1801,6 +1852,7 @@ hit),
 hold
 holding
 holds
+holds,
 house
 hover
 hover:bg-[var(--color-wk-bg-muted)]
@@ -1839,6 +1891,7 @@ implode('
 imports
 in
 in.
+in:
 in_array($panelWidth,
 includes
 incoming
@@ -1850,6 +1903,7 @@ init
 initialized
 initials
 initials'
+ink,
 inline
 inline-flex
 inner
@@ -1926,6 +1980,7 @@ layer
 layer's
 layout
 layout-neutral
+layout.
 layout`,
 lays
 lazy
@@ -1948,7 +2003,6 @@ like
 limit.
 line
 line,
-line.
 link
 list
 list's:
@@ -1959,6 +2013,7 @@ list.
 listId:
 listbox
 listener
+listens
 lists
 literal
 live
@@ -1973,6 +2028,7 @@ long
 longer
 longest
 look
+looked
 looking
 looks
 loses
@@ -1984,6 +2040,7 @@ mangled
 map
 margin
 margin:
+mark
 marked"
 marker
 markup
@@ -1993,7 +2050,6 @@ matches.
 matter.
 max(0,
 max(1,
-max-h-60
 max-w-[10rem]',
 may
 mean
@@ -2022,6 +2078,7 @@ morph
 morphs:
 most
 move
+move,
 moves
 ms-0.5"
 multi-select's
@@ -2133,6 +2190,7 @@ opt._idx
 opt._idx"
 opt._idx",
 opt._idx)"
+opt.value
 opt.value"
 optimistic
 optimistic-ui:
@@ -2159,6 +2217,7 @@ out
 out,
 out.
 outcome
+outermost
 outside
 over
 overflow-auto',
@@ -2223,6 +2282,7 @@ plus
 point
 point:
 pointed
+pointer
 pointer,
 pointing
 points
@@ -2369,6 +2429,7 @@ routed
 row
 row's
 row,
+row.
 row:
 rows
 rule
@@ -2388,6 +2449,7 @@ saying
 says
 says,
 says.
+says:
 scales
 scope
 scope),
@@ -2461,6 +2523,7 @@ shown
 shows
 showsInitials({{
 shrink-0
+shrink-0',
 sibling
 sibling,
 side
@@ -2499,6 +2562,7 @@ speaks
 specific
 spelled
 spelling
+spelling,
 spellings
 spinning
 spoken
@@ -2530,6 +2594,10 @@ string,
 string.
 strings.
 stripped
+stroke-linecap="round"
+stroke-linejoin="round"
+stroke-width="2"
+stroke="currentColor"
 strtoupper(trim($country))
 strtoupper(trim((string)
 style
@@ -2537,6 +2605,7 @@ style:
 style="display:
 style="list-style:
 style="{{
+stylesheet
 styling
 sub-component
 sub-options
@@ -2619,6 +2688,7 @@ through
 thrown
 time
 timing,
+tint
 to
 to,
 to:
@@ -2646,6 +2716,7 @@ trans_choice('wirekit::{1}
 transform
 transition-colors
 transition-transform
+transitions
 translated
 transparent
 travel
@@ -2744,6 +2815,7 @@ visibly
 visual
 visually
 vocabulary
+w-4
 w-full
 w-full'])
 waited
@@ -2760,6 +2832,7 @@ well
 well,
 were
 what
+whatever
 wheel
 when
 where
@@ -2852,8 +2925,8 @@ x-teleport="#wk-overlay-root">
 x-text="announcement"></div>
 x-text="grp.label"></div>
 x-text="opt.description"></span>
-x-text="opt.label"
 x-text="opt.label"></span>
+x-text="opt.label"></span>@endif<svg
 x-text="searchAnnouncement(filtered.length,
 x-text="searchEmptyText(typedQuery())"
 x-text="searchNote()"

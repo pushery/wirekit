@@ -18,8 +18,6 @@
 "key"
 "old
 "per
-"{$sign}{$delta}";
-"{$sign}{$delta}%"
 $actions
 $actions->hasActualContent())
 $amount
@@ -41,24 +39,18 @@ $borderColor
 $borderColor,
 $borderColor])></span>
 $classes
-$currency)
-$currency);
+$currency,
 $delta
+$delta,
 $deltaClasses
-$deltaFormat
 $deltaIntent
 $displayAmount
-$displayAmount,
 $displayBase
-$displayBase,
 $displayUnitPrice
-$displayUnitPrice,
 $formattedAmount
 $formattedBase
 $formattedDelta
 $formattedUnitPrice
-$formatter
-$formatter->formatCurrency((float)
 $headingClasses
 $isGridPair
 $isSummary
@@ -72,8 +64,15 @@ $layoutStyle]
 $level;
 $levelValue
 $locale
+$locale)
+$locale));
+$locale);
 $minorUnits
 $minorUnits)
+$money
+$money($displayAmount);
+$money($displayBase)
+$money($displayUnitPrice)
 $orientation,
 $orientationValue
 $scope),
@@ -81,6 +80,7 @@ $scope);
 $shipping
 $shippingNote
 $sign
+$sign.($deltaFormat
 $size,
 $sizeClasses
 $sizeClasses);
@@ -93,11 +93,13 @@ $unitMeasure)
 $unitPrice
 $unitPrice;
 $value
+$value,
 $valueStyle
 $variant,
 $variantValue
 $wrapperStyle
 $wrapperStyle])->class([$itemClasses])
+%`
 &&
 '
 '',
@@ -205,6 +207,7 @@ $wrapperStyle])->class([$itemClasses])
 ($layout)
 ($orientation)
 ($unitPrice
+($value):
 ($variant)
 ($variantValue)
 (<bdi>{{
@@ -227,6 +230,7 @@ $wrapperStyle])->class([$itemClasses])
 (preview
 (same
 (silent
+(string)
 (true)
 +
 --}}
@@ -335,6 +339,7 @@ $wrapperStyle])->class([$itemClasses])
 @elseif((float)
 @endif
 @endphp
+@endunless
 @if(!
 @if($discount
 @if($formattedBase
@@ -352,6 +357,8 @@ $wrapperStyle])->class([$itemClasses])
 @props
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 ALL
 AMOUNT
@@ -382,7 +389,6 @@ Each
 Every
 Everything
 FIRST
-Format
 Format:
 Forwarded
 Fully
@@ -407,19 +413,22 @@ Label:
 Laravel's
 Layouts:
 Livewire's
+Locale-aware
+LocalizedNumber::currency((float)
+LocalizedNumber::format((float)
+LocalizedNumber::percent((float)
 MSRP).
 NOT
 Native
 Neither
 Normalized
-NumberFormatter
 ONE
 PAngV
 PAngV)
-PHP
 Price
 Primary
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\LocalizedNumber;
 Pushery\WireKit\WireKit;
 RRP
 Read
@@ -453,6 +462,7 @@ Versand")
 Vertical
 What
 Wins
+WireKit
 WireKit::resolveClasses('cart-summary',
 WireKit::resolveClasses('data-list',
 WireKit::resolveClasses('divider',
@@ -464,8 +474,6 @@ WireKit::validateProp('divider',
 ['style'
 ['xs',
 [])->class([$classes])
-\NumberFormatter($locale,
-\NumberFormatter::CURRENCY);
 \Pushery\WireKit\WireKit::warnUnknownProps('cart-summary',
 \Pushery\WireKit\WireKit::warnUnknownProps('data-list',
 \Pushery\WireKit\WireKit::warnUnknownProps('data-list.item',
@@ -483,6 +491,8 @@ __('wirekit::Total')
 `--gap-wk-md:
 `--gap-wk-md`,
 `--text-wk-lg`
+`-12,5
+`-12.5%`.
 `-`
 `-md`:
 `0`
@@ -642,6 +652,7 @@ bridge.
 broken
 build
 builds
+built
 but
 by
 bypass
@@ -696,6 +707,7 @@ compare-at
 compiles
 component
 component's
+component's,
 component's.
 component,
 compound
@@ -759,7 +771,7 @@ digit
 digits
 direction
 directly
-display
+display,
 displayed
 dist/wirekit.css
 divider
@@ -794,6 +806,7 @@ equal
 ever
 every
 exactly
+exist
 existing
 exists
 explaining
@@ -801,8 +814,10 @@ explicit
 explicitly
 exposes
 express
+extension:
 eye
 eye.
+fail
 failure
 faint
 fallback
@@ -826,6 +841,7 @@ flex;
 flips
 floats
 flush
+fn
 folded
 following
 follows
@@ -835,6 +851,7 @@ for
 forces
 formats
 formatted
+formatter
 formatting
 from
 from-font;"
@@ -875,6 +892,7 @@ has
 hasActualContent()
 have
 heading
+helper
 here
 here,
 here:
@@ -901,6 +919,7 @@ intent
 inter-row
 interactive
 interpretation
+intl
 into
 invalid
 invoice
@@ -924,6 +943,7 @@ keeps
 key
 key-value
 kg,
+knows
 l,
 label
 label)
@@ -931,6 +951,7 @@ label.
 label/value
 label="OR"
 labels
+lacks
 lands
 later
 layout
@@ -957,8 +978,9 @@ live
 live,
 lived
 lives
-locale-aware
+locale's
 locale.
+locale:
 long
 longer
 loose
@@ -975,6 +997,7 @@ matches
 max-content
 max-content;
 max-content`)
+maxPrecision:
 may
 mean
 meaning
@@ -1009,7 +1032,6 @@ needs
 negative
 neither
 never
-new
 next
 no
 none
@@ -1090,6 +1112,7 @@ phrase
 piece
 pin
 plain
+plus
 point
 positive
 prefix
@@ -1139,12 +1162,14 @@ reduction.
 reference
 remove
 render
+render.
 rendered
 rendering
 renders
 renders,
 repeat(2,
 repository
+require
 required
 requires
 rest
@@ -1239,6 +1264,7 @@ stacked
 stacked,
 stand
 state
+static
 stays
 step,
 still
@@ -1248,6 +1274,7 @@ stray
 strike
 strike).
 strike,
+string
 string,
 strings.
 struck
@@ -1393,7 +1420,9 @@ wrap
 wrapper
 wrapper's
 wraps
+write
 writes
+writing,
 written
 wrong
 zero

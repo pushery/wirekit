@@ -26,6 +26,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -95,7 +99,7 @@
     @if($iconOnly && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby'))
         aria-label="{{ __('wirekit::Copy to clipboard') }}"
     @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->except('type')->class([$classes]) }}
 >
     {{-- Copy icon (shown when not copied). Muted/gray at rest — a copy affordance
          is subtle until it succeeds, then it pops to the success green below. --}}

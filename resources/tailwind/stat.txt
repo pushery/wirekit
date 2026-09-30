@@ -25,6 +25,7 @@ $animate
 $animate)
 $animateAttr
 $animateAttr;
+$attributes
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
@@ -87,6 +88,7 @@ $mergedAttributes->merge(['aria-hidden'
 $name,
 $name];
 $needsEntranceWrapper
+$outerAttributes
 $placeholderAttributes
 $placeholderAttributes['role']
 $probe
@@ -132,6 +134,8 @@ $validIntent
 $validated
 $value
 $value;
+$withoutOuterAttributes;
+$withoutOuterAttributes]
 &&
 '
 '%)'"
@@ -235,6 +239,7 @@ $value;
 ($intent
 ($intent)
 ($isInformative
+($needsEntranceWrapper)
 ($raw[$start
 ($resolvedAriaHidden
 ($shouldSetHidden)
@@ -268,6 +273,7 @@ $value;
 (regex
 (reported
 (same
+(see
 (separate
 (shouldSetHidden=true),
 (silent
@@ -473,6 +479,7 @@ Silent
 Size
 So
 Strip
+Support\OuterAttributes).
 SvgNotFound
 SvgNotFound.
 Symmetric
@@ -501,6 +508,7 @@ WireKit::warnUnknownProps('stat',
 With
 Wrap
 [
+[$outerAttributes,
 [$trendColor,
 ['data-wk-icon-missing'
 ['primary',
@@ -510,9 +518,11 @@ Wrap
 ['text-[color:var(--color-wk-text-muted)]',
 [])->class([$classes])
 [null,
+\Illuminate\View\ComponentAttributeBag([]);
 \InvalidArgumentException(
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\LocalizedNumber::format(1234.5,
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 ])
 ]),
@@ -551,9 +561,13 @@ __toString
 `trend="down"`
 `trend`
 `value`
+`wire:key`,
+`wire:show`
 `wirekit::Change:
+`x-show`,
 a
 a11y
+about
 above.
 absent,
 accent
@@ -625,6 +639,7 @@ background
 background-color:
 bad.
 badge's
+bag.
 baked
 bakes
 balanced
@@ -753,7 +768,6 @@ dash)
 dashboard
 data-locale="{{
 data-replayable="true"
-data-replayable="true">
 data-target
 data-target-decimals="{{
 data-target-prefix="{{
@@ -1119,6 +1133,7 @@ other
 otherwise
 our
 outer
+outermost
 over
 override.
 overrides
@@ -1327,6 +1342,7 @@ stale.
 standing,
 start,
 stat
+stat,
 state
 state.
 states
@@ -1416,6 +1432,7 @@ tokens
 too
 touches
 trailing
+transitions
 transitively
 tree:
 trend
@@ -1531,6 +1548,7 @@ zero,
 }}"
 }}</div>
 }}</span>
+}}>
 —
 …`
 →

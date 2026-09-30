@@ -124,6 +124,7 @@ $triggerClasses
 ($wkAncestorData('[data-wk-menubar-panel]',
 (ArrowRight
 (File,
+(Support\CallerListeners).
 (WAI-ARIA
 (WireKit
 (WireKit::validateProp('kbd',
@@ -179,6 +180,7 @@ $triggerClasses
 @endforeach
 @endif
 @endphp
+@endunless
 @foreach((array)
 @if($computedRel)
 @if($disabled)
@@ -191,6 +193,7 @@ $triggerClasses
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 ALSO
 AND
@@ -270,10 +273,12 @@ Wrapped
 [
 ['class'
 ['sm',
+['x-on:keydown']);
 [data-wk-menubar-panel]
 \Illuminate\Support\Str::slug($label);
 \Pushery\WireKit\Support\AlpinePayload::string($name)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('kbd',
@@ -438,11 +443,13 @@ each
 early.
 ease-in
 ease-out
+element
 element,
 else
 else.
 escapes
 establishes
+event
 every
 except('rel')
 explicit
@@ -476,6 +483,7 @@ gap-x-[var(--gap-wk-md)]
 gap-x-[var(--gap-wk-sm)]">
 gives
 global
+goes
 h-4"
 h-5"
 h-5'])
@@ -550,7 +558,9 @@ leading
 left
 link
 list
+listener
 listener,
+listens
 live
 lives
 longer
@@ -712,6 +722,7 @@ root.
 root:
 roving
 rule
+run
 said
 same
 scale-100"
@@ -738,6 +749,7 @@ sits
 size="sm">{{
 so
 so.
+spelling,
 state
 state.
 states
@@ -813,6 +825,7 @@ use
 user
 value
 via
+view
 view's
 viewBox="0
 viewport

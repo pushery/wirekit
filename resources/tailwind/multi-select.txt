@@ -21,7 +21,9 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes]
 $boxClasses
+$callerId
 $callerRef
 $classes
 $containerClasses
@@ -35,6 +37,8 @@ $encodedOptions,
 $error
 $errorMessage
 $errorMessage)
+$fieldAriaLabel
+$fieldId
 $hasError
 $hint
 $iconClasses
@@ -42,6 +46,7 @@ $iconSprite
 $iconSprite]
 $id
 $id);
+$id.'-input';
 $idExpression
 $initialsClasses
 $key)
@@ -65,6 +70,7 @@ $mediaInitials
 $mediaInitials,
 $mediaPerRow
 $name
+$name));
 $name;
 $normalizeOption;
 $optimistic
@@ -73,6 +79,7 @@ $optimisticArgs),
 $optimisticConfig
 $option
 $option,
+$optionCheckClasses
 $optionClasses
 $optionClasses:
 $optionHighlightedClasses
@@ -86,6 +93,7 @@ $option['value']
 $option]
 $option];
 $optionsAreAList
+$outerAttributes
 $panelWidth
 $panelWidth)
 $panelWidth);
@@ -138,15 +146,16 @@ $value,
 '-desc'"
 '-error'
 '-hint'
-'-input'"
 '-label'"
 '.$panelWidth.';';
 '.$searchDebounce
 '.$searchMinLength.',
 '.((string)
+'.WireKit::resolveClasses('multi-select',
 '.\Pushery\WireKit\Support\AlpinePayload::from([
 '.\Pushery\WireKit\Support\AlpinePayload::string($selectedMany)
 '.\Pushery\WireKit\Support\AlpinePayload::string($selectedOne).',
+'@keydown.escape']);
 'Rain
 '[]'
 '__COUNT__']);
@@ -198,9 +207,10 @@ $value,
 'font-[family-name:var(--font-wk-sans)]
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-body-weight)]',
-'font-[number:var(--font-wk-heading-weight)]',
+'font-[number:var(--font-wk-selected-weight)]',
 'font-medium',
 'group
+'h-4
 'hint'
 'hover:bg-[var(--color-wk-bg-muted)]',
 'icon'">
@@ -210,6 +220,7 @@ $value,
 'image'">
 'initialsClasses'
 'inline-flex
+'invisible'"
 'js'])
 'label'
 'layout'
@@ -236,6 +247,7 @@ $value,
 'optimistic'
 'optimisticArgs'
 'option'
+'option-check',
 'option-highlighted',
 'option-selected',
 'optionId(idx)',
@@ -297,14 +309,16 @@ $value,
 'truncated'
 'value'
 'width:
+'wk-touch-target
 (!
+($callerId
 ($errors
 ($hasError
 ($option,
 ($option['label']
 ($option['value']
 ($optionsAreAList)
-($richRows)
+($placeholder
 ($server)
 ($v)
 ('php,js')
@@ -314,6 +328,7 @@ $value,
 (4px)
 (@aware
 (Framework-agnostic:
+(Support\CallerListeners).
 (['php',
 (`icon`,
 (array
@@ -348,7 +363,6 @@ $value,
 .',
 ...,
 ...]`
-.=
 /
 /*
 //
@@ -379,6 +393,7 @@ $value,
 20rem']);
 24
 24"
+24"><path
 3.05
 3.05a.5.5
 3.75
@@ -403,8 +418,10 @@ $value,
 :aria-selected="selected.includes(opt.value)
 :checked="selected.includes(opt.value)"
 :class="(idx
+:class="selected.includes(opt.value)
 :count
-:for="$id
+:data-active="idx
+:for="$fieldId"
 :id="optionId(idx)"
 :key="'chosen-'+val">
 :key="'pill-'+val">
@@ -467,6 +484,7 @@ $value,
 @if($callerRef
 @if($describedBy
 @if($descriptions)
+@if($fieldAriaLabel
 @if($hasError
 @if($hasError)
 @if($label)
@@ -582,6 +600,7 @@ ONLY
 OPTION
 OPTION'S
 OR
+On
 One
 Only
 Open
@@ -621,6 +640,7 @@ Space,
 StrictnessGate
 Strip
 Support\DomId
+Support\OuterAttributes.
 THE
 TRUE
 Tab
@@ -651,6 +671,8 @@ WireKit::warnUnknownProps('multi-select',
 Without
 [
 [$encodedOptions,
+[$outerAttributes,
+['@click.away',
 ['count'
 ['dropdown',
 ['media'
@@ -665,6 +687,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(['options'
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove
+\Pushery\WireKit\Support\AlpinePayload::string($fieldId)
 \Pushery\WireKit\Support\AlpinePayload::string($id)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
 \Pushery\WireKit\Support\AlpinePayload::string($name.'[]')
@@ -673,12 +696,14 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($panelWidth)
 \Pushery\WireKit\Support\AlpinePayload::string($placeholder)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\FlagPackage::attach($encodedOptions);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
 \Pushery\WireKit\Support\IconSprite::attach($encodedOptions,
 \Pushery\WireKit\Support\OptionMedia::fields('multi-select',
 \Pushery\WireKit\Support\OptionMedia::uses($encodedOptions);
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ]
 ])
@@ -693,9 +718,13 @@ __('wirekit::Searching…'),
 __('wirekit::Select…'),
 __('wirekit::Type
 _place()
+`#id`
 `$id`
 `$refs`
+`--font-wk-selected-weight`
+`-input`
 `:class="…"`
+`<label
 `<use>`
 `@aware`
 `@props`
@@ -714,8 +743,10 @@ _place()
 `aria-describedby`.
 `aria-disabled`
 `aria-hidden`.
+`aria-hidden`:
 `aria-labelledby`
 `aria-selected`
+`aria-selected`.
 `ariaLabel`
 `auto`
 `auto`,
@@ -724,6 +755,7 @@ _place()
 `cloneNode(true)`
 `combobox`
 `cursor-*`
+`data-active`
 `data-wk-ref-scope`
 `description`,
 `disabled="false"`
@@ -737,8 +769,10 @@ _place()
 `flag`),
 `grid`
 `id`
+`id`:
 `image`,
 `input`
+`invisible`
 `key
 `keywords`
 `label
@@ -778,13 +812,16 @@ _place()
 `wire:id`,
 `wire:key`,
 `wire:model`
+`wire:show`
 `wk-field-frame`
 `wk-field`
+`wk-listbox-option`.
 `x-data`,
 `x-data`.
 `x-model`
 `x-modelable`
 `x-ref`
+`x-show`,
 `x-text`
 `x-wk-ref`,
 `{
@@ -881,6 +918,7 @@ arrows
 artwork
 as
 as,
+aside
 ask
 aspect-[4/3]
 associative
@@ -931,6 +969,7 @@ binding.)
 binds
 block
 block,
+body
 boolean
 border
 border-[length:var(--border-wk-width)]
@@ -966,10 +1005,12 @@ carry
 carrying
 cast
 certifies
+chain;
 changed.
 character.
 characters',
 character|[2,*]
+check
 checkbox
 checkbox,
 checkbox.
@@ -990,6 +1031,7 @@ class="h-3.5
 class="hidden
 class="inline-flex
 class="m-0
+class="min-w-0
 class="min-w-0"
 class="mt-[var(--space-wk-sm)]
 class="mt-[var(--space-wk-xs)]
@@ -1002,6 +1044,7 @@ class="text-[color:var(--color-wk-danger-text)]
 class="text-[length:var(--text-wk-sm)]
 class="text-[length:var(--text-wk-xs)]
 class="wk-field
+class="wk-listbox-option
 class="wk-touch-target
 class="{{
 classes
@@ -1017,6 +1060,8 @@ code,
 collapses
 collect($options)->map(function
 colors
+colors,
+column
 combobox
 combobox's
 combobox,
@@ -1155,9 +1200,11 @@ editable
 eight
 either
 either,
+element
 element,
 element.
 else
+elsewhere
 elsewhere)
 empty
 empty,
@@ -1186,6 +1233,7 @@ failed
 fails
 fails.
 fallback
+fallbacks
 falls
 false
 false"
@@ -1201,9 +1249,11 @@ field,
 field-emitted
 field.
 field:
+fieldId:
 fields
 fill="currentColor"><path
 fill="none"
+filled($attributes->get('id'));
 filter
 filter)"></div>
 filtered
@@ -1219,6 +1269,7 @@ flag,
 flags
 flex
 flex-1
+flex-1"
 flex-1">
 flex-col
 flex-col">
@@ -1247,7 +1298,10 @@ font-size
 for
 for.
 for="$id">
+for>`
 for`
+forced
+forced-colors
 form
 formatting.
 forms
@@ -1255,11 +1309,12 @@ frame
 free
 fresh
 from
+full
+further
 gap
 gap-1',
 gap-[var(--gap-wk-sm)]
 gap-[var(--gap-wk-sm)]',
-gap-[var(--gap-wk-sm)]';
 gap-[var(--gap-wk-xs)]"
 generic
 getLabel(val))"
@@ -1270,6 +1325,8 @@ gives.
 global
 glyph
 go
+goes
+grayscale
 group
 group-has-[:checked]:block
 grouped-option
@@ -1304,6 +1361,7 @@ highlight
 highlighted
 highlighted,
 holds
+holds,
 horizontal
 hover
 hover:bg-[var(--color-wk-bg-subtle)]
@@ -1339,6 +1397,7 @@ imports
 in
 in-place
 in.
+in:
 in_array($panelWidth,
 includes
 incoming
@@ -1350,6 +1409,7 @@ indistinguishable
 initial
 initials
 initials'
+ink,
 inline
 inline-flex
 input
@@ -1389,6 +1449,7 @@ jumping
 just
 justify-between
 justify-center
+keep
 keeping
 keeps
 key
@@ -1419,6 +1480,7 @@ layer
 layer's
 layer,
 layout
+layout.
 layout:
 lays
 lazy
@@ -1438,8 +1500,9 @@ letters
 like
 limit.
 line
+line,
 line.
-line;
+link
 list
 list,
 list-none
@@ -1468,6 +1531,7 @@ map
 map,
 margin:
 mark
+marked
 marked"
 matched
 matched.
@@ -1589,6 +1653,7 @@ optimistically.
 option
 option's
 option,
+option.
 option:
 optionId(idx)
 optional
@@ -1605,6 +1670,7 @@ our
 out
 out,
 out.
+outermost
 outside
 over
 overflow-hidden
@@ -1654,6 +1720,7 @@ photo
 photo's
 pick
 pick,
+picked.
 picker
 picking
 pill
@@ -1709,6 +1776,7 @@ rather
 re-emitted
 re-renders
 reach
+reach.
 reached
 reaches
 read
@@ -1732,6 +1800,7 @@ registers
 relative
 remove
 removed
+removed,
 removing
 render
 render,
@@ -1870,6 +1939,7 @@ shown
 shows
 showsInitials({{
 shrink-0
+shrink-0',
 sibling
 sibling,
 side
@@ -1890,7 +1960,7 @@ sizes
 sizing
 slot
 slot,
-smaller,
+smaller
 snapshot
 so
 solves
@@ -1901,6 +1971,7 @@ span
 speaker
 specific
 spelling
+spelling,
 spellings
 splices
 spoken:
@@ -1919,6 +1990,8 @@ state.
 stated
 status,
 stays
+stem.
+step
 still
 stop
 stopped
@@ -1930,6 +2003,7 @@ strings
 strings,
 stroke-linecap="round"
 stroke-linejoin="round"
+stroke-width="2"
 stroke-width="3"
 stroke="currentColor"
 style
@@ -1937,6 +2011,7 @@ style="display:
 style="list-style:
 style="{{
 styled
+stylesheet
 stylesheet,
 sub-component
 submission
@@ -1986,6 +2061,7 @@ them
 them),
 them.'),
 them;
+theme
 then
 there
 there.
@@ -2007,6 +2083,7 @@ tight
 time
 timing,
 tint
+tint.
 to
 together
 together,
@@ -2024,6 +2101,7 @@ touch
 track
 trans_choice('wirekit::{1}
 transition-colors
+transitions
 translate-y-0"
 translated
 trap
@@ -2041,6 +2119,7 @@ truthy
 turns
 twice,
 twice.
+twice:
 two
 two,
 two-way
@@ -2088,15 +2167,18 @@ variable
 versions.
 vertical
 via
+view
 view's
 viewBox="0
 viewport
 viewport.
+visible
 visibly
 visually
 vocabulary
 voice
 w-3.5"
+w-4
 w-5
 w-full
 w-max'
@@ -2106,6 +2188,8 @@ way
 way.
 way:
 wearing
+weight
+weight.
 were
 what
 whatever
@@ -2126,13 +2210,13 @@ wider
 widest
 width
 width,
+win
 wins,
 wire:key="wk-multi-select-listbox"
 with
 without
 wk-field-frame"
 wk-scrollbar{{
-wk-touch-target
 word
 work
 works
@@ -2215,7 +2299,6 @@ zooming
 }},
 }}-error"
 }}-hint"
-}}-input"
 }}-listbox"
 }}-results"
 }}.iconRef"></use></svg>

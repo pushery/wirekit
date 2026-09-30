@@ -26,6 +26,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('filter-builder', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window']);
+
     // Operator and boolean words for the Alpine factory. `resources/js` has no translator
     // and these strings are not decoration: every one of them ends up in `chipText()`,
     // which is the accessible name of a filter chip. Same server-translates-then-hands-down

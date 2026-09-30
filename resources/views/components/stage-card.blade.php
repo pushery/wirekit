@@ -63,7 +63,7 @@
      stage / roadmap quarter). --}}
 <div
     {{ $attributes->merge(['style' => $intentBorderStyle])->class([$classes]) }}
-    @if($label) role="group" aria-label="{{ $label }}" @endif
+    @if($label) @unless($attributes->has('role')) role="group" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
 >
     @if($label || $count !== null)
         <div class="flex items-center justify-between gap-2">

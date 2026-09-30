@@ -26,6 +26,10 @@ $action
 $action;
 $actionLabel
 $actionLabel,
+$after
+$after;
+$afterFor
+$afterFor($entry,
 $as
 $as);
 $attributes
@@ -78,11 +82,15 @@ $emitAriaBusy
 $entries
 $entries;
 $entries[$position]['action']
+$entries[$position]['after']
 $entries[]
 $entry)
+$entry,
 $entry['action']
 $entry['action'];
 $entry['action']])
+$entry['after']
+$entry['after'];
 $entry['attributes']->class([$linkClasses])
 $entry['attributes']->class([$menuLinkClasses,
 $entry['href']
@@ -119,6 +127,8 @@ $item
 $item)
 $item;
 $item['action']
+$item['after']
+$item['icon']
 $items)
 $key
 $label
@@ -133,6 +143,7 @@ $loading
 $loadingTarget
 $m):
 $m[1]);
+$menuAfter
 $menuEntries
 $menuLinkClasses
 $menuOrder
@@ -154,6 +165,9 @@ $overflowAction['label']
 $padded
 $paddingClasses
 $panelClasses
+$partsInMenu
+$partsInRow
+$place):
 $placeholderAttributes
 $placeholderAttributes['role']
 $position
@@ -163,6 +177,7 @@ $relAttr;
 $resolved
 $resolved);
 $resolvedAriaHidden
+$rowAfter
 $rowClasses
 $scope);
 $shouldSetHidden
@@ -230,8 +245,11 @@ $wrapperClasses
 '[WireKit]
 '__COUNT__']);
 '_blank');
+'a
 'a'
 'action'
+'after'
+'an
 'aria-[current=page]:bg-[var(--color-wk-bg-muted)]
 'aria-[current=page]:font-[number:var(--font-wk-heading-weight)]',
 'aria-busy'
@@ -321,6 +339,7 @@ $wrapperClasses
 'inverted',
 'items'
 'items.action.label',
+'items.after',
 'key'
 'label'
 'leading-[var(--font-wk-line-height)]',
@@ -349,6 +368,7 @@ $wrapperClasses
 'md',
 'md-compact'
 'md-compact',
+'menu'))
 'menu-link',
 'menuOrder'
 'min-h-[',
@@ -383,6 +403,7 @@ $wrapperClasses
 'rounded-[var(--radius-wk-lg)]',
 'rounded-[var(--radius-wk-md)]',
 'rounded-[var(--radius-wk-sm)]',
+'row'))
 'row',
 'scope'
 'shadow-[var(--shadow-wk-lg)]',
@@ -429,6 +450,13 @@ $wrapperClasses
 'wk-touch-target
 'wrapLabel'
 'wrapper',
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xl',
 'xl']),
@@ -441,10 +469,12 @@ $wrapperClasses
 ($action['attributes']
 ($action['icon']
 ($action['label']
+($after
 ($attributes->getAttributes()
 ($callerAriaHidden
 ($declarativeLoading
 ($entries
+($entry['after'])($place)
 ($forceLoading)
 ($iconOnly
 ($iconOnly)
@@ -469,6 +499,7 @@ $wrapperClasses
 (($iconOnly
 (4.05
 (SVG
+(Support\CallerListeners).
 (Tailwind's
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -505,12 +536,14 @@ $wrapperClasses
 (info
 (int)
 (is_array($menuOrder)
+(is_scalar($after))
 (is_string($key)
 (it
 (its
 (keyboard
 (label,
 (logical
+(markup
 (no
 (not
 (only
@@ -563,6 +596,7 @@ $wrapperClasses
 /*
 //
 /></x-slot:iconLeft>
+/>@endif<span
 0
 0.875
 018-8V0C5.373
@@ -616,6 +650,7 @@ $wrapperClasses
 :describes="false">
 :focusable-trigger="false"
 :label="__('wirekit::More
+:name="$entry['icon']"
 :name="$overflowAction['icon']"
 :text="$overflowAction['label']"
 </div>
@@ -671,6 +706,7 @@ $wrapperClasses
 @endif>
 @endisset
 @endphp
+@endunless
 @foreach($entries
 @foreach($menuEntries
 @if
@@ -700,8 +736,11 @@ $wrapperClasses
 @isset($iconLeft)
 @isset($iconRight)
 @php
+@php($menuAfter
+@php($rowAfter
 @props([
 @props.
+@unless($attributes->has('aria-label')
 A
 A11y
 ABOVE
@@ -719,6 +758,7 @@ Alpine
 Alpine's
 An
 And
+Anything
 Applied
 Auto-inject
 BELOW
@@ -751,6 +791,7 @@ CSS.
 CallerRef::onRoot()
 Catching
 Check
+Closure
 DECLARATIVE
 DISABLES
 DO
@@ -788,6 +829,8 @@ Holding
 HoverCard
 Hovers
 How
+Htmlable
+Htmlable',
 Htmlable,
 ID
 INNER
@@ -968,6 +1011,7 @@ Without
 [
 [$rank[$a['key']]
 [$rank[$b['key']]
+['a
 ['count'
 ['data-wk-icon-missing'
 ['inverted',
@@ -975,6 +1019,7 @@ Without
 ['overflowAction'
 ['sm',
 ['the
+['x-on:mouseenter',
 ['xs',
 [--wk-touch-min:0px]'
 [])
@@ -982,12 +1027,15 @@ Without
 [],
 [];
 [overflow-wrap:anywhere]'
+\Closure
+\Illuminate\Contracts\Support\Htmlable)
 \Illuminate\View\ComponentAttributeBag((array)
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($moreMany)
 \Pushery\WireKit\Support\AlpinePayload::string($moreOne)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SafeUrl::href((string)
@@ -1012,6 +1060,8 @@ __toString
 `$loading`;
 `$refs`
 `$size`
+`'menu'`,
+`'row'`
 `--wk-touch-min`
 `.attr`
 `.wk-button-group[data-stack-below="…"]`
@@ -1051,6 +1101,7 @@ __toString
 `__()`
 `_x_dataStack`,
 `action`
+`after`
 `anywhere`
 `aria-busy="true"`
 `aria-busy`
@@ -1124,6 +1175,7 @@ __toString
 `key`
 `keydownEscape()`
 `label`,
+`link`
 `loading-target="submit"`
 `loading=true`
 `loadingTarget`
@@ -1134,6 +1186,7 @@ __toString
 `mask-image`,
 `max-*`
 `max-3xl:`
+`menu-link`
 `menuOrder`
 `min-h`
 `mouseenter`
@@ -1196,6 +1249,7 @@ __toString
 `xs`
 `xs`,
 `xs`.
+`{{
 `{{--
 a
 a11y
@@ -1250,6 +1304,7 @@ allowed
 allowlist,
 allows
 alone
+alone.
 along
 alongside
 already
@@ -1410,6 +1465,7 @@ blade-ui-kit/blade-icons.
 block
 block,
 blocks
+blocks,
 blurs
 body
 boolean
@@ -1533,8 +1589,10 @@ class="animate-spin
 class="flex
 class="inline-flex
 class="m-0
+class="min-w-0">{{
 class="opacity-25"
 class="opacity-75"
+class="shrink-0"
 class="shrink-0">{{
 class="sr-only">{{
 class="{{
@@ -1732,6 +1790,7 @@ did.
 difference
 different
 direct
+directly.
 disable
 disable,
 disabled
@@ -1818,6 +1877,7 @@ ensures
 entirely,
 entries
 entry
+entry's
 entry).
 enum
 error
@@ -1884,7 +1944,10 @@ fill="currentColor"
 fill="none"
 filled
 filled($iconOnlyBelow)
+filled($item['icon']
 filled($label);
+filled($menuAfter))<span
+filled($rowAfter))<span
 filled($stackBelow)
 filled()
 filter
@@ -1971,6 +2034,7 @@ gap
 gap-1
 gap-2
 gap-[var(--gap-wk-xs)]"
+gap-[var(--gap-wk-xs)]';
 gap-x-2
 gaps:
 gate
@@ -1981,8 +2045,10 @@ generates
 generates:
 generic
 get
+get_debug_type($after),
 gets
 ghost()
+given
 given,
 gives
 gives,
@@ -2030,6 +2096,7 @@ hard-disabled
 hardcoded
 harder
 has
+has.
 hasActionForComponent()
 hatch
 have
@@ -2040,6 +2107,7 @@ heading
 height
 height,
 height.
+held
 helper
 here
 here,
@@ -2152,6 +2220,7 @@ inserts
 inside
 installed
 installed.'
+instanceof
 instead
 instead,
 instead.
@@ -2194,6 +2263,7 @@ it;
 item,
 items-center
 items-center"
+items-center">{{
 items-center',
 items-stretch
 its
@@ -2217,8 +2287,10 @@ kit
 knowing
 knows
 label
+label),
 label,
 label.
+label:
 labeled
 labels
 labels).
@@ -2271,6 +2343,7 @@ list-none
 list-none',
 list.
 listed,
+listener
 listens
 literal
 literal;
@@ -2316,6 +2389,7 @@ markers
 markers".
 marks
 markup
+markup,
 mask
 mask-image:
 masked
@@ -2458,6 +2532,7 @@ nowhere.
 null
 null)
 null);
+null)<x-wirekit::icon
 null,
 null;
 null])
@@ -2513,7 +2588,7 @@ other
 other.
 other:
 otherwise
-otherwise)
+otherwise),
 our
 ours
 out
@@ -2573,6 +2648,7 @@ paragraph's
 parser
 parses
 part
+parts
 pass
 passed
 passes
@@ -2597,6 +2673,7 @@ per-set
 perception
 person
 personalization
+personalized
 phone
 phone,
 phone.
@@ -2607,6 +2684,9 @@ picked
 picks
 pill
 place
+place)
+place,
+place.
 place:
 placeholder
 placement.
@@ -2944,6 +3024,7 @@ spec
 specificity
 spelled
 spelling
+spelling,
 spill
 spinner
 spinner,
@@ -2988,8 +3069,10 @@ stricter
 strictly
 strictness
 string
+string',
 string,
 strings
+string|\Illuminate\Contracts\Support\Htmlable|null
 strip
 stroke-width="4"></circle>
 stroke="currentColor"
@@ -3060,6 +3143,7 @@ teleport:
 teleported
 tells
 template
+template,
 templates
 ternary,
 test
@@ -3191,6 +3275,7 @@ turns
 twice
 twice.
 two
+two']);
 two.
 type="{{
 typed
@@ -3369,6 +3454,7 @@ word
 word,
 work,
 working
+working,
 works
 works.
 worse
@@ -3452,14 +3538,19 @@ zoom,
 }`)
 }}
 }}"
+}}">@if($entry['icon']
 }}">{{
 }})"
 }})">
 }},
-}}</a>
 }}</span>
+}}</span>@endif</span>@else{{
+}}</span>@if(filled($menuAfter))<span
+}}</span>@if(filled($rowAfter))<span
 }}>
-}}>{{
+}}>@if($entry['icon']
+}}@endif</a>
+}}`,
 —
 …
 →

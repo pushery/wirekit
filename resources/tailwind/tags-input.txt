@@ -1,3 +1,4 @@
+!
 !$hasError
 !==
 "false"
@@ -5,9 +6,9 @@ $announceError
 $announceErrors
 $attributes
 $attributes->class([$classes])
-$attributes->except('aria-describedby')
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
+$attributes->except(['aria-describedby',
 $attributes->except(['id',
 $attributes->get('aria-describedby',
 $attributes->get('aria-label')
@@ -15,6 +16,9 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes]
+$callerId
+$callerId)
 $callerRef
 $classes
 $containerClasses
@@ -25,18 +29,20 @@ $disabledClasses
 $error
 $errorMessage
 $errorMessage)
+$fieldId
 $hasError
 $hint
 $id
 $id);
+$id.'-input';
 $initialTags
 $label
-$label)
 $maxTags
 $name
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $placeholder
 $required
 $scope);
@@ -58,7 +64,6 @@ $value));
 ',
 '-error'
 '-hint'
-'-input'"
 '.((string)
 'Livewire']"`)
 'action'
@@ -66,6 +71,7 @@ $value));
 'announce-errors']);
 'announceError'
 'args'
+'aria-label'])
 'base',
 'bg-[var(--color-wk-bg-input)]',
 'bg-[var(--color-wk-bg-muted)]',
@@ -179,7 +185,7 @@ $value));
 :
 :aria-label="{{
 :count
-:for="$id
+:for="$fieldId"
 :key="'tag-'+i">
 :key="i">
 :name'))
@@ -301,6 +307,7 @@ Splitting
 StrictnessGate
 Strip
 Support\DomId
+Support\OuterAttributes.
 Symmetric
 TEMPLATES
 TYPED,
@@ -321,6 +328,7 @@ Wrapped
 X-button
 Your
 [
+[$outerAttributes,
 [],
 [];
 \Pushery\WireKit\Support\AlpinePayload::from($initialTags)
@@ -329,6 +337,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::string($name)
 \Pushery\WireKit\Support\AlpinePayload::string($name.'[]')
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \Pushery\WireKit\WireKit::warnUnknownProps('tags-input',
 ])
@@ -342,8 +351,11 @@ __('wirekit::Could
 __('wirekit::Maximum
 __('wirekit::Removed
 __('wirekit::Saving'),
+`#id`
 `$refs`
+`-input`
 `:value="['Laravel',
+`<label
 `<x-wirekit::input>`),
 `??`
 `@aware`
@@ -352,6 +364,7 @@ __('wirekit::Saving'),
 `args`
 `aria-describedby`
 `aria-disabled`
+`aria-label`
 `bind:
 `bind`
 `class`,
@@ -362,6 +375,8 @@ __('wirekit::Saving'),
 `disabled`:
 `display:
 `false`,
+`id`
+`id`:
 `isPending`
 `keep`
 `label`
@@ -384,13 +399,16 @@ __('wirekit::Saving'),
 `this`
 `value="Laravel,Livewire"`);
 `value`:
+`wire:key`,
 `wire:model`
 `wire:model`,
+`wire:show`
 `wizard`
 `wk-field-frame`:
 `x-model`,
 `x-modelable`
 `x-ref`
+`x-show`,
 `x-wk-ref`,
 `{{
 a
@@ -456,12 +474,14 @@ array_values(array_map(fn
 arrives
 as
 as,
+aside
 asked
 asking
 asterisk.
 asymmetric
 at
 attribute
+attribute.
 attributes
 auto-derived
 available:
@@ -479,6 +499,7 @@ because
 become
 been
 before
+before.
 behaves
 behind
 being
@@ -614,6 +635,7 @@ docs
 document,
 documentation
 does
+does.
 doubling
 down.
 dropped
@@ -631,6 +653,7 @@ element,
 element.
 else
 elseif
+elsewhere
 elsewhere)
 elsewhere,
 emit
@@ -647,7 +670,7 @@ every
 everything
 evidence
 exactly
-exception:
+exceptions:
 existed
 existing
 exists
@@ -663,6 +686,7 @@ fail
 failed
 fails
 fall
+fallback
 false
 false);
 false,
@@ -670,6 +694,7 @@ feature
 field
 field,
 fill="currentColor"><path
+filled($attributes->get('id'));
 finds
 first
 first,
@@ -691,6 +716,7 @@ folded
 for
 for.
 for>
+for>`
 forever
 form
 formatting.
@@ -703,6 +729,7 @@ from:
 full
 fully
 fully-lit
+further
 gap
 gap-1',
 generous
@@ -711,6 +738,8 @@ given
 gives
 giving
 global
+go
+goes
 got
 group
 guarantees
@@ -727,6 +756,7 @@ here
 here.
 here.'),
 hidden
+holds
 horizontal
 horizontal,
 horizontally
@@ -735,6 +765,7 @@ hover:text-[color:var(--color-wk-danger-text)]
 hug
 hugging
 i)
+id
 id;
 id="{{
 identical
@@ -744,12 +775,12 @@ ignoring
 implode('
 imports
 in
+in:
 indented
 indicator
 inflating
 initial
 input
-input's
 input,
 input-
 input-box
@@ -784,6 +815,7 @@ keys.
 keystroke
 knowing
 label
+label,
 labels;
 land
 landed
@@ -806,9 +838,9 @@ legitimate
 level
 like
 line
+link
 list
 list,
-list.
 list:
 literal
 live
@@ -895,6 +927,8 @@ otherwise
 our
 out
 out.
+outermost
+over
 override
 oversight.
 own
@@ -927,6 +961,7 @@ presentational
 previous-previous
 price
 prod).
+prohibited
 prop
 prop's
 prop),
@@ -944,6 +979,7 @@ qualified:
 rather
 re-emitted
 reach
+reach.
 reached
 reached'),
 reaches
@@ -986,6 +1022,7 @@ role
 role="group"
 role="list"
 role="listitem"
+roleless
 rollback
 rolling
 room
@@ -1051,6 +1088,7 @@ states
 stay
 stays
 step
+steps
 still
 stops
 stray
@@ -1115,6 +1153,7 @@ top
 touch
 trailing
 transition-colors
+transitions
 translated
 tree,
 trim($describedBy.'
@@ -1178,6 +1217,7 @@ whose
 why
 why.
 wider
+win
 wired.
 with
 within
@@ -1219,7 +1259,6 @@ x-wk-ref="{{
 }},
 }}-error"
 }}-hint"
-}}-input"
 }}.replace(':name',
 }}</p>
 }}</x-wirekit::label>

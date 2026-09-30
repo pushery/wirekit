@@ -40,6 +40,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('status-tiles', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -166,7 +171,7 @@
     $wrapperClasses = WireKit::resolveClasses('status-tiles', 'base', 'flex flex-col gap-[var(--gap-wk-md)]', $scope);
 @endphp
 
-<div {{ $attributes->only('class')->class([$wrapperClasses]) }}>
+<div {{ $outerAttributes }} {{ $attributes->only('class')->class([$wrapperClasses]) }}>
     @if($legend && count($tiles) > 0)
         {{-- Legend: intent word + count + shaped icon (never color alone). --}}
         <div class="flex flex-wrap gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-xs)]">

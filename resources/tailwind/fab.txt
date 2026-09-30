@@ -11,6 +11,7 @@
 "this
 $accessibleLabel
 $ariaLabel
+$attributes
 $attributes->class([$classes])
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel')->class([$classes.'
@@ -104,6 +105,9 @@ $validated
 '';
 ',
 '.
+'.WireKit::resolveClasses('fab',
+'.WireKit::resolveClasses('fab.action',
+'.WireKit::resolveClasses('fab.button',
 '.__('wirekit::(opens
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
@@ -184,9 +188,11 @@ $validated
 'true'"
 'true';
 'true']);
-'wk-fab',
-'wk-fab-action',
+'wk-fab
+'wk-fab-action
 'wk-fab-block-start'
+'x-on:keydown.arrow-down']);
+'x-on:keydown.arrow-up',
 'xl'
 'xs'
 (!
@@ -201,6 +207,7 @@ $validated
 ($svgHtml
 ('xs').
 (44px)
+(Support\CallerListeners).
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -343,6 +350,7 @@ Building
 CONTAINS
 CONTRACT,
 CSP
+CallerRef::onRoot()
 Carried
 Catching
 Check
@@ -448,9 +456,6 @@ Where
 Whether
 Which
 WireKit
-WireKit::resolveClasses('fab',
-WireKit::resolveClasses('fab.action',
-WireKit::resolveClasses('fab.button',
 WireKit::validateProp('fab',
 WireKit::validateProp('fab.action',
 WireKit::validateProp('fab.button',
@@ -464,7 +469,10 @@ Words
 ['class'
 ['data-wk-icon-missing'
 ['end',
+['x-on:keydown.escape.prevent',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('fab',
 \Pushery\WireKit\WireKit::warnUnknownProps('fab.action',
 \Pushery\WireKit\WireKit::warnUnknownProps('fab.button',
@@ -524,6 +532,7 @@ __toString
 `target="_blank"`
 `true`,
 `wk-fab-clearance`
+`x-ref`
 `z-40`
 a
 a11y
@@ -636,6 +645,7 @@ been
 before
 before.
 behind
+belongs
 below
 below,
 below.
@@ -975,6 +985,7 @@ half
 hand-rolled
 hand-written
 handler
+hands
 hanging
 happen.
 happens
@@ -1068,6 +1079,7 @@ itself,
 itself.
 justify-center
 justify-center',
+keep
 keeping
 keeps
 key.
@@ -1085,6 +1097,7 @@ labels).
 ladder
 laid
 land,
+lands
 landscape
 later
 layer
@@ -1108,6 +1121,8 @@ link
 links
 list
 list,
+listener
+listens
 literal
 literal,
 live
@@ -1385,6 +1400,7 @@ role="img"
 role="img".
 roll
 root
+root,
 root;
 rotate
 rounded-[var(--radius-wk-full)]
@@ -1394,6 +1410,7 @@ row-start-1"
 rule
 rule,
 rule:
+run
 rung
 safe-area
 said
@@ -1463,6 +1480,7 @@ span
 speed
 speed-dial
 spelled
+spelling,
 spirit:
 sr-only
 stack
@@ -1626,6 +1644,7 @@ value
 value,
 value.
 via
+view
 view's
 viewBox="0
 viewport

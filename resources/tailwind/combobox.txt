@@ -13,9 +13,10 @@ $announceErrors
 $ariaLabel
 $attributes
 $attributes->class([$classes])
+$attributes->except('aria-controls')->except('aria-expanded')->except(['aria-label',
+$attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label',
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
-$attributes->except(['aria-label',
 $attributes->get('aria-describedby');
 $attributes->get('aria-label');
 $attributes->get('required',
@@ -23,6 +24,7 @@ $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->only(['class',
 $attributes->whereStartsWith(['wire:model',
+$attributes]
 $boxClasses
 $callerAriaLabel
 $callerAriaLabel;
@@ -109,6 +111,7 @@ $optimisticArgs),
 $optimisticConfig
 $option
 $option)
+$optionCheckClasses
 $optionRowClasses
 $optionRowClasses;
 $optionUses
@@ -120,6 +123,7 @@ $option['label'];
 $option['selectedLabel']
 $optionsAreAList
 $optionsAreAList);
+$outerAttributes
 $ownDescribedBy
 $panelWidth
 $panelWidth)
@@ -187,8 +191,16 @@ $value,
 '.$searchDebounce
 '.$searchMinLength.',
 '.((string)
+'.WireKit::resolveClasses('combobox',
 '.\Pushery\WireKit\Support\AlpinePayload::from([
 '0'
+'@input',
+'@keydown.arrow-down.prevent',
+'@keydown.arrow-up.prevent',
+'@keydown.end.prevent',
+'@keydown.enter.prevent',
+'@keydown.escape']);
+'@keydown.home.prevent',
 'Germany',
 'Rain
 'Select…')`
@@ -248,6 +260,7 @@ $value,
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-body-weight)]',
 'font-medium',
+'h-4
 'h-[var(--size-wk-lg)]
 'h-[var(--size-wk-md)]
 'h-[var(--size-wk-sm)]
@@ -261,11 +274,13 @@ $value,
 'image'">
 'initialsClasses'
 'input',
+'invisible'"
 'label'
 'label']
 'lg'
 'list',
 'list-none',
+'max-h-60
 'md'),
 'media'
 'mediaBox'
@@ -279,6 +294,7 @@ $value,
 'optimistic'
 'optimisticArgs'
 'option'
+'option-check',
 'options'
 'p-[var(--padding-wk-y-md)]
 'p-[var(--padding-wk-y-sm)]
@@ -369,12 +385,12 @@ $value,
 ($option['value']
 ($options
 ($ownDescribedBy
-($richRows)
 ($server)
 ($showsHint
 ($size)
 (+"
 (@aware
+(Support\CallerListeners).
 (`error=""`
 (`icon`,
 (a
@@ -426,6 +442,7 @@ $value,
 /
 //
 />
+/></svg></li>
 0
 0"
 0,
@@ -451,19 +468,24 @@ $value,
 11.06l3.71-3.83a.75.75
 11.06l3.72
 111.08
+13l4
 2
 2),
 20
 20"
 20rem']);
+24
+24"><path
 3.3.1
 3.72a.75.75
 300),
 4.39a.75.75
 4:3
+4L19
 5.22a.75.75
 5.22z"/>
 6.28
+7"
 7.21a.75.75
 8.27a.75.75
 8.94
@@ -478,7 +500,10 @@ $value,
 :class="$hideLabel
 :class="isOpen
 :class="opt.disabled
+:class="selected
 :count
+:data-active="idx
+:data-active="opt._idx
 :for="$comboId"
 :id="$comboId.'-label'"
 :id="{{
@@ -578,6 +603,7 @@ $value,
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 @unless($server)
 A
 A11y:
@@ -728,6 +754,7 @@ So
 Stable
 Static
 Strip
+Support\OuterAttributes.
 THE
 TRIGGER,
 Teleported
@@ -757,7 +784,9 @@ WireKit::validateProp('combobox',
 Without
 [
 [$normalized,
+[$outerAttributes,
 [$rowMediaBox,
+['@focus',
 ['count'
 ['de'
 ['key'
@@ -781,19 +810,21 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty')
 \Pushery\WireKit\Support\AlpinePayload::string($panelWidth)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\FlagPackage::attach($normalized);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
 \Pushery\WireKit\Support\IconSprite::attach($normalized,
 \Pushery\WireKit\Support\OptionMedia::fields('combobox',
 \Pushery\WireKit\Support\OptionMedia::uses($normalized);
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('combobox',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ]
 ])
 ]),
 ]);
-])@endif</li>
+])@else<span
 ],
 __('wirekit::Clear
 __('wirekit::Could
@@ -834,6 +865,7 @@ _place()
 `aria-invalid`
 `aria-labelledby`
 `aria-labelledby`.
+`aria-selected`
 `ariaLabel`
 `auto`
 `auto`,
@@ -845,6 +877,7 @@ _place()
 `config(…,
 `contain:
 `cursor-pointer`
+`data-active`
 `data-wk-ref-scope`
 `description`,
 `disabled:`
@@ -914,9 +947,11 @@ _place()
 `wire:key`,
 `wire:model*`
 `wire:model`
+`wire:show`
 `wk-`
 `wk-combobox`
 `wk-field`
+`wk-listbox-option`.
 `x-data`,
 `x-model="query"`
 `x-model="query"`,
@@ -925,6 +960,7 @@ _place()
 `x-modelable`
 `x-ref`
 `x-ref`,
+`x-show`,
 `x-text`
 `x-wk-ref`,
 `{
@@ -932,6 +968,7 @@ _place()
 a
 a11y
 able
+about
 about.
 above
 above:
@@ -1132,10 +1169,10 @@ cast
 catalog,
 certifies
 change).
-change.
 character.
 characters',
 character|[2,*]
+check
 chevron
 chevron.
 chevrons
@@ -1160,6 +1197,7 @@ class="block
 class="block"
 class="inline-flex
 class="max-w-[10rem]">`
+class="min-w-0
 class="mt-[var(--padding-wk-y-xs)]
 class="pointer-events-none
 class="px-[var(--padding-wk-x-md)]
@@ -1169,6 +1207,7 @@ class="text-[color:var(--color-wk-danger-text)]
 class="w-4
 class="wk-combobox
 class="wk-field
+class="wk-listbox-option
 class="{{
 classes
 classes:
@@ -1193,6 +1232,7 @@ collides
 color
 color:
 colors
+colors.
 combobox
 combobox's
 combobox.
@@ -1258,6 +1298,7 @@ cursor-pointer'
 cursor-pointer')"
 cut
 cut.
+d="M5
 d="M5.23
 d="M6.28
 danger-text
@@ -1350,6 +1391,7 @@ empty($opt['group']))
 empty.
 empty:
 emptyId:
+end
 end-3
 end-8
 ends
@@ -1408,6 +1450,7 @@ fieldMedia"
 fields);
 fill-rule="evenodd"
 fill="currentColor"
+fill="none"
 filter
 filtered
 filtered"
@@ -1426,6 +1469,7 @@ flag,
 flags
 flat
 flex
+flex-1"
 flex-1">
 flight
 flips
@@ -1448,6 +1492,8 @@ font-[number:var(--font-wk-heading-weight)]
 for
 for:
 for>
+forced
+forced-colors
 foreach
 form
 formatting.
@@ -1458,6 +1504,7 @@ from
 full
 fully
 function
+further
 gap
 gap-[var(--gap-wk-sm)]';
 generic
@@ -1472,6 +1519,7 @@ go
 goes
 goes.
 got
+grayscale
 group
 group's
 group-free
@@ -1507,6 +1555,7 @@ hidden.
 hides
 high
 highlight
+highlight,
 highlighted,
 highlighted.
 hint
@@ -1514,6 +1563,7 @@ hit),
 hold
 holding
 holds
+holds,
 hover
 hover:bg-[var(--color-wk-bg-muted)]
 hover:bg-[var(--color-wk-bg-subtle)]
@@ -1550,6 +1600,7 @@ implode('
 imports
 in
 in.
+in:
 in_array($panelWidth,
 includes
 incoming
@@ -1560,6 +1611,7 @@ inherit
 init
 initials
 initials'
+ink,
 inline
 inline-flex
 inner
@@ -1622,6 +1674,7 @@ layer
 layer's
 layout
 layout-neutral
+layout.
 layout`,
 lays
 lazy
@@ -1641,7 +1694,6 @@ like
 limit.
 line
 line,
-line.
 list
 list's:
 list).
@@ -1651,6 +1703,7 @@ list.
 listId:
 listbox
 listener
+listens
 lists
 literal
 live
@@ -1661,6 +1714,7 @@ long
 longer
 longest
 look
+looked
 looks
 lowers
 made,
@@ -1668,6 +1722,7 @@ makes
 map
 margin
 margin:
+mark
 marked"
 marker
 markup
@@ -1676,7 +1731,6 @@ matches
 matches.
 max(0,
 max(1,
-max-h-60
 may
 mean
 means,
@@ -1703,6 +1757,7 @@ morph
 morphs:
 most
 move
+move,
 moves
 ms-0.5"
 multi-select's
@@ -1799,6 +1854,7 @@ opt._idx
 opt._idx"
 opt._idx",
 opt._idx)"
+opt.value
 opt.value"
 optimistic
 optimistic-ui:
@@ -1825,6 +1881,7 @@ out
 out,
 out.
 outcome
+outermost
 outside
 over
 overflow-auto',
@@ -1879,6 +1936,7 @@ plus
 point
 point:
 pointed
+pointer
 pointer,
 pointing
 points
@@ -2006,6 +2064,7 @@ routed
 row
 row's
 row,
+row.
 rows
 rules
 run
@@ -2023,6 +2082,7 @@ saying
 says
 says,
 says.
+says:
 scales
 scope
 scope),
@@ -2048,6 +2108,7 @@ searchTexts:
 searchable
 searchable:
 second
+see
 see.
 sees
 select
@@ -2086,6 +2147,7 @@ shown
 shows
 showsInitials({{
 shrink-0
+shrink-0',
 sibling
 sibling,
 side
@@ -2120,6 +2182,7 @@ speaking,
 speaks
 specific
 spelling
+spelling,
 spellings
 spoken
 spoken:
@@ -2147,10 +2210,15 @@ stray
 string
 string,
 strings.
+stroke-linecap="round"
+stroke-linejoin="round"
+stroke-width="2"
+stroke="currentColor"
 style
 style="display:
 style="list-style:
 style="{{
+stylesheet
 styling
 sub-component
 sub-options
@@ -2228,6 +2296,7 @@ throttles
 through
 time
 timing,
+tint
 to
 to,
 to:
@@ -2252,6 +2321,7 @@ trans_choice('wirekit::{1}
 transform
 transition-colors
 transition-transform
+transitions
 translated
 travel
 treat
@@ -2329,6 +2399,7 @@ values
 variable
 variant
 via
+view
 view's
 viewBox="0
 viewport
@@ -2339,6 +2410,7 @@ visibly
 visual
 visually
 vocabulary
+w-4
 w-full
 w-full'])
 walk
@@ -2352,6 +2424,7 @@ wearing
 well
 were
 what
+whatever
 when
 where
 wherever
@@ -2430,8 +2503,8 @@ x-teleport="#wk-overlay-root">
 x-text="announcement"></div>
 x-text="grp.label"></div>
 x-text="opt.description"></span>
-x-text="opt.label"
 x-text="opt.label"></span>
+x-text="opt.label"></span>@endif<svg
 x-text="searchAnnouncement(filtered.length,
 x-text="searchEmptyText(typedQuery())"
 x-text="searchNote()"

@@ -88,6 +88,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('select', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'select-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
@@ -201,7 +206,7 @@
     ]);
 @endphp
 
-<div class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` OUT of the bag, and the bag is what carries the

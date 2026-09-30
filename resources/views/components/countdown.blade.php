@@ -204,7 +204,7 @@
              English-configured machine must still pluralize German. --}}
         locale: {{ \Pushery\WireKit\Support\AlpinePayload::from($countdownLocale) }},
     })"
-    role="timer"
+    @unless($attributes->has('role')) role="timer" @endunless
     {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
          attributes, and the bag renders after this line — so a caller's `aria-label` was
          parsed and then discarded, silently. Same shape, same fix, as navbar. --}}

@@ -104,9 +104,11 @@ $wrapperClasses
 'whitespace-nowrap',
 'wk-context-submenu-');
 'wrapper',
+'x-on:keydown.escape.window']);
 ("Menu
 ($relAttr
 (12rem)
+(Support\CallerListeners).
 (WCAG
 (WireKit
 (and
@@ -261,7 +263,9 @@ Without
 Wrapped
 [
 ['class'
+['x-on:keydown',
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('context-menu',
@@ -550,6 +554,7 @@ gap-x-[var(--gap-wk-sm)]
 get
 give
 given,
+goes
 growing
 grows
 guard
@@ -646,7 +651,9 @@ line.
 lines
 link
 list
+listener
 listeners
+listens
 live
 lives
 long
@@ -867,6 +874,7 @@ site
 sits
 so
 something
+spelling,
 stacking
 standard
 state
@@ -954,6 +962,7 @@ uses,
 using
 usually
 value
+view
 view's
 viewBox="0
 viewport

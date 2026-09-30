@@ -14,6 +14,7 @@ $attributes->except('rel')->class([$classes,
 $attributes->get('rel',
 $attributes->get('target',
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge
 $classes
 $classes])
@@ -84,8 +85,10 @@ $triggerClasses
 'true'
 'wk-nav-item-');
 'wk-nav-panel-');
+'x-on:focusout']);
 ($relAttr
 (4px).
+(Support\CallerListeners).
 (WCAG
 (activeItem
 (and
@@ -138,6 +141,7 @@ $triggerClasses
 @else
 @endif
 @endphp
+@endunless
 @if($active)
 @if($computedRel)
 @if($href)
@@ -145,6 +149,7 @@ $triggerClasses
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
 A
 AND
 Alpine
@@ -218,8 +223,10 @@ With
 Without
 Wrapped
 [
+['x-on:keydown',
 \Illuminate\Support\Str::slug((string)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($name.'-panel',
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -453,6 +460,7 @@ gap-1',
 generic
 get
 global
+goes
 got
 grid
 guards)
@@ -524,6 +532,7 @@ list
 listener
 listener,
 listener.
+listens
 live
 location.
 longer
@@ -607,6 +616,7 @@ opposite
 optimistic-ui:
 or
 order
+other
 otherwise
 our
 out
@@ -693,6 +703,7 @@ root.
 route.
 rule
 rules
+run
 same
 scans
 scope
@@ -722,6 +733,7 @@ slug
 slugs
 so
 something
+spelling,
 stable
 state
 stay
@@ -787,6 +799,7 @@ utility
 value
 value;
 vanish
+view
 view's
 viewBox="0
 viewport
@@ -837,6 +850,7 @@ z-[var(--z-wk-dropdown)]',
 zone
 {{
 {{--
+||
 }}
 }}"
 }})"

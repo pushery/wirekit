@@ -13,6 +13,7 @@
 "{$sign}{$deltaText}%"
 $attributes->class([$baseClasses])
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $baseClasses
 $delta
 $delta,
@@ -118,6 +119,7 @@ $valueSizeClass
 ??
 @endif
 @endphp
+@endunless
 @if($deltaAriaLabel)
 @if($formattedDelta
 @if($trend
@@ -127,6 +129,7 @@ $valueSizeClass
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
 A
 Accept
 Auto-derive
@@ -550,6 +553,7 @@ wrote,
 {
 {{
 {{--
+||
 }
 };
 }}

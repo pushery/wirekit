@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\AlpineFactories;
 use Pushery\WireKit\Support\BlueprintSections;
 use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Support\PublicCssClassInventory;
@@ -178,6 +179,10 @@ class ExportApiMapCommand extends Command
                 'tag' => $selfClosingTag,
                 'category' => $meta['category'] ?? 'Other',
                 'description' => $meta['description'] ?? '',
+                // The Alpine factories the component starts, its sub-components and the
+                // components it renders included: the names an application passes to the ES
+                // module's `register()` when it registers only what its views use.
+                'factories' => AlpineFactories::of($name),
                 // docs_url drops to null when the docs page isn't publicly
                 // visitable — same contract as ExportJsonCommand. AI tooling
                 // consuming the api-map then knows the component exists

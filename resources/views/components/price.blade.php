@@ -17,6 +17,7 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\LocalizedNumber;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -36,12 +37,12 @@
     $displayBase = ($base !== null && $minorUnits) ? $base / 100 : $base;
     $displayUnitPrice = ($unitPrice !== null && $minorUnits) ? $unitPrice / 100 : $unitPrice;
 
-    // Format using PHP NumberFormatter for locale-aware currency display
-    $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
-    $formattedAmount = $formatter->formatCurrency((float) $displayAmount, $currency);
-    $formattedBase = $displayBase !== null
-        ? $formatter->formatCurrency((float) $displayBase, $currency)
-        : null;
+    // Locale-aware currency display, through the helper that also knows what to write without
+    // the intl extension: WireKit does not require it, and a formatter built here directly
+    // would not exist in an application that lacks it, so the whole page would fail to render.
+    $money = static fn ($value): string => LocalizedNumber::currency((float) $value, (string) $currency, $locale);
+    $formattedAmount = $money($displayAmount);
+    $formattedBase = $displayBase !== null ? $money($displayBase) : null;
 
     // Unit price (Grundpreis), required beside the selling price for goods offered by
     // weight, volume, length or area: EU Price Indication Directive 98/6/EC, and in
@@ -51,9 +52,7 @@
     // custom. Format: "(€8.99 / L)" beside the main price, in the same currency and the
     // same field of vision. The component does not validate the reference unit: which
     // one applies depends on the jurisdiction and the product.
-    $formattedUnitPrice = ($displayUnitPrice !== null && $unitMeasure)
-        ? $formatter->formatCurrency((float) $displayUnitPrice, $currency)
-        : null;
+    $formattedUnitPrice = ($displayUnitPrice !== null && $unitMeasure) ? $money($displayUnitPrice) : null;
 
     // Delta formatting
     $formattedDelta = null;
@@ -61,9 +60,12 @@
     if ($delta !== null) {
         $deltaIntent = $delta < 0 ? 'success' : ($delta > 0 ? 'danger' : 'neutral');
         $sign = $delta > 0 ? '+' : '';
-        $formattedDelta = $deltaFormat === 'percent'
-            ? "{$sign}{$delta}%"
-            : "{$sign}{$delta}";
+        // The number in the locale's own writing, beside an amount that already is: `-12,5 %`
+        // in German rather than `-12.5%`. The plus stays this component's, a minus comes with
+        // the number.
+        $formattedDelta = $sign.($deltaFormat === 'percent'
+            ? LocalizedNumber::percent((float) $delta, 2, $locale)
+            : LocalizedNumber::format((float) $delta, maxPrecision: 2, locale: $locale));
     }
 
     // The meaning is carried by CONTENT, not by an `aria-label` on the wrapper below. The

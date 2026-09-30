@@ -17,6 +17,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('hover-card', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@keydown.escape.window']);
+
     // Hover Card — rich tooltip-like overlay that shows on hover/focus.
     // Unlike tooltip, hover cards display structured content (avatar, bio, actions).
     // Uses Floating UI for positioning and role="dialog" for a11y.

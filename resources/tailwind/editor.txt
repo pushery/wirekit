@@ -46,6 +46,7 @@ $attributes->get('aria-label');
 $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->whereStartsWith('wire:model');
+$attributes]
 $autofocus
 $autofocus,
 $bottomBar
@@ -102,6 +103,7 @@ $optimistic
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $placeholder,
 $presetCommands
 $required
@@ -345,6 +347,13 @@ $wrapperClasses])
 'wk-editor-'.Str::slug($name)
 'wk-tooltip-');
 'wrapper',
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'z-[var(--z-wk-tooltip)]',
 '{}',
 '|'
@@ -374,6 +383,7 @@ $wrapperClasses])
 (.live
 (@aware
 (B
+(Support\CallerListeners).
 (Tiptap's
 (WCAG
 (`.wk-scroll-fade…:focus-within
@@ -425,6 +435,7 @@ $wrapperClasses])
 0
 0-7.07-7.07l-1.72
 0-7.54-.54l-3
+0px.
 1
 1'),
 1-2
@@ -695,6 +706,7 @@ Static
 Str::headline((string)
 StrictnessGate
 Strip
+Support\OuterAttributes.
 Switch
 TEXT
 THE
@@ -741,11 +753,13 @@ With
 Without
 Your
 [
+[$outerAttributes,
 ['bold',
 ['html',
 ['inverted',
 ['sm',
 ['undo'
+['x-on:mouseenter',
 [])
 []),
 [],
@@ -777,10 +791,12 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($command)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\EditorSeed::render($value)
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('editor',
 \Pushery\WireKit\WireKit::warnUnknownProps('editor.toolbar',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
@@ -854,6 +870,7 @@ __('wirekit::Saving'),
 `for`
 `full`
 `hidden`
+`inset-ring`
 `inverted`
 `isolation:
 `keep`
@@ -894,12 +911,15 @@ __('wirekit::Saving'),
 `wire:id`,
 `wire:key`,
 `wire:model`
+`wire:show`
+`wk-state-button`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
 `x-model`
 `x-ref`
 `x-show="open"`
 `x-show`
+`x-show`,
 `x-wk-ref`
 `{{
 a
@@ -1053,6 +1073,7 @@ block,
 body
 body.
 boolean
+border
 border,
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border)]'
@@ -1134,6 +1155,7 @@ class="text-[length:var(--text-wk-sm)]
 class="w-full
 class="wk-editor-content">{!!
 class="wk-field
+class="wk-state-button
 class="{{
 classes
 classes:
@@ -1310,6 +1332,7 @@ ease-out
 echoed.
 echoes
 edge
+edge,
 edge.
 editable
 editing
@@ -1395,6 +1418,7 @@ field,
 field.
 fifth
 file
+fill
 fill="none"
 fills
 finds
@@ -1412,6 +1436,7 @@ flex
 flex-col
 flex-wrap
 flips
+floor
 flow.
 fn
 focus
@@ -1431,6 +1456,7 @@ font-medium':
 for
 for>
 for>`
+forced
 form
 form.
 format="json"
@@ -1445,6 +1471,7 @@ from.
 front
 function-valued
 function;
+further
 gap
 gap-0.5',
 gap-3
@@ -1536,6 +1563,7 @@ implode('
 imports
 in
 in.
+in:
 included.
 indicator
 inert
@@ -1548,6 +1576,9 @@ inline-block'])
 input
 inserting
 inserts
+inset
+inset-ring-[length:max(1px,var(--border-wk-width))]
+inset-ring-[var(--color-wk-border-strong)]'
 inside
 inside.
 instanceof
@@ -1658,6 +1689,7 @@ make
 makes
 many
 map
+marker
 markers
 marks
 markup
@@ -1684,6 +1716,7 @@ mints
 mismatch
 mode"),
 mode,
+mode.
 model
 moment
 more
@@ -1790,6 +1823,7 @@ out
 out.
 outermost
 output
+outside:
 over
 over:
 overflow
@@ -1803,6 +1837,8 @@ package
 page
 page,
 page.
+paint
+paint,
 pair
 pairing
 pairing;
@@ -1856,6 +1892,7 @@ presentational
 preserved;
 preset
 preset,
+pressed
 preview
 prod).
 promises
@@ -1945,6 +1982,7 @@ rides
 right
 right'),
 ring
+ring's.
 role="toolbar"
 role="tooltip"
 roleless
@@ -2002,6 +2040,7 @@ set.
 set;
 settles
 seventeen
+shadow
 shadow.
 shape
 shared
@@ -2048,6 +2087,7 @@ spam
 span
 span).
 specific
+spelling,
 spellings
 spreads
 sr-only
@@ -2085,6 +2125,7 @@ style="display:
 style="max-height:
 style="max-width:
 styled,
+stylesheet
 stylesheet's
 stylesheet).
 submit
@@ -2130,7 +2171,6 @@ text-[0.8em]',
 text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text)]"
-text-[color:var(--color-wk-text)]'
 text-[color:var(--color-wk-text-muted)]">
 text-[color:var(--color-wk-text-muted)]">{{
 text-[length:var(--text-wk-md)]
@@ -2159,6 +2199,7 @@ then
 there
 there's
 therefore
+they
 thing
 things,
 this
@@ -2169,6 +2210,7 @@ time.
 timer
 timer,
 timer;
+tint,
 tip
 tip.
 to
@@ -2192,6 +2234,7 @@ top
 touch,
 towards
 transformed
+transitions
 translated
 translated.
 translator,
@@ -2225,6 +2268,7 @@ uncaught
 unchanged.
 unconditionally
 undeclared
+under
 undo.
 undo/redo
 undo/redo).
@@ -2283,6 +2327,7 @@ way
 way.
 wearing
 well
+well,
 well-formed
 were
 what
@@ -2297,6 +2342,7 @@ whose
 why
 widening
 wider
+width
 width)
 window,
 window.wirekitEditor)

@@ -15,6 +15,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('tour', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@keydown.escape.window']);
+
     // Tour — step-by-step product tour overlay.
     // Each step positions near a target element using Floating UI.
     $classes = WireKit::resolveClasses('tour', 'base', implode(' ', [
@@ -27,6 +31,10 @@
     // `Pushery\WireKit\Support\TourStepCounter` for the full mechanism and
     // the per-request reset the first tour relies on.
     TourStepCounter::reset();
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

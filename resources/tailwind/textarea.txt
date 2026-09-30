@@ -12,6 +12,7 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('required',
 $attributes->getAttributes());
+$attributes]
 $autosize
 $autosize.
 $autosize])
@@ -37,6 +38,7 @@ $optimistic
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $required
 $reserveMessage
 $resize
@@ -287,6 +289,7 @@ So
 Strip
 Success
 Support\DomId
+Support\OuterAttributes.
 Textarea
 The
 This
@@ -303,10 +306,12 @@ WireKit::warnUnknownProps('textarea',
 Written
 Your
 [
+[$outerAttributes,
 ['sm',
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\SlotContent::text($slot),
 \Pushery\WireKit\Support\SlotContent::withoutComments($slot)
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
@@ -346,10 +351,14 @@ __('wirekit::Saving'),
 `select-none`
 `true`
 `true`,
+`wire:key`,
+`wire:show`
 `wk-autosize`
+`x-show`,
 `{{
 a
 able
+about
 above.
 accepts
 across
@@ -587,11 +596,13 @@ formatting.
 free-text
 from
 from:
+further
 gap
 get
 give
 gives:
 global
+go
 goes.
 got
 green
@@ -622,6 +633,7 @@ identical
 implode('
 imports
 in
+in:
 indicator
 inherits
 input
@@ -738,6 +750,7 @@ other
 otherwise
 out
 out.
+outermost
 over
 own
 padding
@@ -896,6 +909,7 @@ their
 then
 there
 there,
+they
 thing
 things
 thirteen
@@ -907,6 +921,7 @@ together
 tokens
 toolbar
 top
+transitions
 trim(
 true
 true);

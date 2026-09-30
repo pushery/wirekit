@@ -11,7 +11,7 @@
 "you
 $attributes
 $attributes->class([$classes])
-$attributes->except('rel')->class([$classes,
+$attributes->except('rel')->class(['wk-listbox-option',
 $attributes->except(['aria-label']);
 $attributes->get('aria-label');
 $attributes->get('rel',
@@ -22,6 +22,7 @@ $attributes->merge(['role'
 $backdropClasses
 $callerLabel
 $classes
+$classes,
 $computedRel
 $disabled
 $disabledClasses
@@ -77,6 +78,7 @@ $wkCmdSlug(trim(strip_tags((string)
 ',
 '-');
 '-',
+'.WireKit::resolveClasses('command-palette',
 '_blank');
 'a'
 'backdrop',
@@ -102,6 +104,7 @@ $wkCmdSlug(trim(strip_tags((string)
 'duration-[var(--transition-wk-duration)]',
 'false'
 'filters',
+'fixed
 'flex
 'focus:outline-hidden',
 'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
@@ -174,8 +177,8 @@ $wkCmdSlug(trim(strip_tags((string)
 'wk-cmd-item-'.$wkCmdSlug((string)
 'wk-command-list-');
 'wk-overlay-fixed
-'wk-overlay-layer-modal
-'wk-scrollbar',
+'wk-scrollbar
+'z-[var(--z-wk-modal)]',
 ($href
 ($relAttr
 ($wkCmdDerivedId
@@ -277,6 +280,7 @@ Both
 Busy
 CLASS,
 CONTROL,
+CallerRef::onRoot()
 Choosing
 Command
 DERIVED,
@@ -360,6 +364,7 @@ Wrapped
 ['sm',
 \Pushery\WireKit\Support\AlpinePayload::from(filled($name)
 \Pushery\WireKit\Support\AlpinePayload::string($hotkey)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($wkCmdDerivedId,
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('command-palette',
@@ -417,10 +422,12 @@ __('wirekit::Search
 `wk-command-list`,
 `x-on:click.stop`
 `x-on:click="close()"`
+`x-ref`
 `{{
 a
 about
 above
+above.
 absence
 accessible
 accidentally
@@ -487,12 +494,14 @@ backdrop,
 backdrop.
 background
 backing.
+bag
 bare
 be
 because
 before
 behind
 being
+belongs
 beneath
 beside
 better
@@ -514,6 +523,7 @@ by
 by.
 call
 caller
+caller's
 caller-supplied
 calls
 can
@@ -774,6 +784,7 @@ itself
 justify-center
 justify-center',
 kbd's
+keep
 keeps
 kept
 key
@@ -918,6 +929,7 @@ other.
 others
 otherwise
 otherwise,
+our
 out
 outside
 overflow-y-auto"
@@ -1254,6 +1266,7 @@ wire:wirekit-command-palette-query="search($event.detail.query)"
 with
 withdrawn
 without
+wk-overlay-layer-modal
 would
 wrapper
 writing
@@ -1291,7 +1304,6 @@ x-transition:leave="transition
 yet"
 you
 z-[var(--z-wk-modal)]
-z-[var(--z-wk-modal)]',
 {
 {{
 {{--

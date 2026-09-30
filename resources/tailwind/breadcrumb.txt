@@ -21,6 +21,7 @@ $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $breadcrumbLdData
 $callerAriaHidden
 $callerAriaHidden;
@@ -299,6 +300,7 @@ $wkNonce
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
 @unless($isLast)
 A
 A11y

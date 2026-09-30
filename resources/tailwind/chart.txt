@@ -160,10 +160,12 @@ $wrapperTag
 @endif
 @endonce
 @endphp
+@endunless
 @foreach
 @if
 @once('wirekit-chart-script:'.$wkChartScript)
 @php
+@unless($chartAttributes->has('role'))
 A
 API.
 APP_DEBUG
@@ -183,6 +185,7 @@ CLASS-based
 CRITICAL:
 CSS
 Caller-supplied
+CallerRef::onRoot()
 Chart
 Chart.js
 Clipping
@@ -244,6 +247,7 @@ Wrapping
 [];
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
 \Pushery\WireKit\Support\AlpinePayload::from($chartData)
+\Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\WireKit::cspNonce()
 \RuntimeException(
 __('wirekit::Chart'));
@@ -295,10 +299,12 @@ __('wirekit::Chart'));
 `wk-chart`
 `x-data`
 `x-data`,
+`x-ref`
 `↻
 a
 about
 above
+above.
 absence
 absolute-positioned
 accessibility
@@ -370,6 +376,7 @@ because
 before
 behavior;
 behind
+belongs
 below
 below.
 belt-and-
@@ -436,6 +443,7 @@ come
 complete
 component
 component's
+component,
 composition,
 computation,
 concatenate
@@ -590,6 +598,7 @@ graphical
 guard
 half
 handle
+hands
 hard;
 hardcoded
 has
@@ -649,6 +658,7 @@ label
 labels
 landmark
 landmark.
+lands
 later
 layout
 lazy-loader
@@ -732,6 +742,7 @@ on.
 once
 once,
 one
+one,
 ones).
 only
 only,
@@ -831,6 +842,7 @@ role
 role.
 role="img"
 root
+root,
 rule
 rule,
 running
@@ -878,6 +890,7 @@ source
 spelled
 src="{{
 stable
+stand
 starts
 state.
 stay
@@ -1000,6 +1013,7 @@ waits
 want
 was
 way
+way.
 we
 what
 when

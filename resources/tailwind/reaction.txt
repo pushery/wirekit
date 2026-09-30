@@ -1,11 +1,12 @@
 $active
 $active,
 $ariaLabel
-$ariaLabel])->class([$baseClasses,
+$ariaLabel])->class(['wk-state-button',
 $attributes
+$attributes->except('type')->merge(['aria-label'
 $attributes->getAttributes());
-$attributes->merge(['aria-label'
 $baseClasses
+$baseClasses,
 $count
 $count,
 $count]);
@@ -154,6 +155,7 @@ __('wirekit::Saving'),
 `md5($emoji
 `prop="false"`
 `trans_choice`
+`wk-state-button`
 a
 able
 about.
@@ -163,6 +165,7 @@ action
 after
 against
 agreed
+alike
 all.
 always
 an
@@ -173,6 +176,7 @@ answer.
 anything
 app()->getLocale()),
 appended
+are
 arguments
 aria-atomic="true"
 aria-describedby="{{
@@ -194,6 +198,7 @@ before
 binds
 block,
 boolean,
+border
 browser
 browser:
 build
@@ -201,6 +206,7 @@ built
 button
 button's
 by
+by:
 call
 call,
 call.
@@ -241,6 +247,7 @@ each
 edge
 emoji
 empty:
+every
 exactly
 existed
 exposed
@@ -253,7 +260,9 @@ flags
 flip
 flips
 follow
+forced-colors
 forms
+frames
 from
 gap-x-1">
 gap-x-1',
@@ -292,11 +301,13 @@ list,
 live
 locale
 makes
+marker
 markup,
 may
 mean
 merge
 method
+mode
 moment
 name
 name.
@@ -335,6 +346,7 @@ per
 person
 plural
 plus
+pressed
 prod).
 prop's
 props
@@ -345,6 +357,7 @@ reacted'),
 reacted',
 reacted|[2,*]
 reaction
+reaction.
 reactions
 reactions|{1}
 reader
@@ -356,6 +369,7 @@ remember
 render
 rendered:
 renders
+repaints
 replaced
 reported
 resolved
@@ -364,6 +378,7 @@ rollback
 rollback.
 row
 row,
+rule
 run().
 runs,
 same
@@ -389,6 +404,7 @@ state.
 stays
 str_replace('_',
 string,
+stylesheet's
 supported
 surface
 tabular-nums"
@@ -404,6 +420,7 @@ things.
 this
 ticker's
 time.
+tint
 to
 told
 trans_choice('wirekit::{0}

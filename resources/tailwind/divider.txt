@@ -65,11 +65,13 @@ $variantValue
 @elseif($isVertical)
 @endif
 @endphp
+@endunless
 @if(!
 @if($label
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 Declared
 Dev-only
 Fully

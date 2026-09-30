@@ -35,8 +35,7 @@
         WireKit::validateProp('fab.action', 'label', '', ['a non-empty label describing the action']);
     }
 
-    $classes = WireKit::resolveClasses('fab.action', 'base', implode(' ', [
-        'wk-fab-action',
+    $classes = 'wk-fab-action '.WireKit::resolveClasses('fab.action', 'base', implode(' ', [
         // `relative` anchors the hover/focus label below, which is absolutely
         // positioned so it never affects the layout of the action column.
         'relative flex h-[var(--size-wk-touch-target)] w-[var(--size-wk-touch-target)] cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)]',

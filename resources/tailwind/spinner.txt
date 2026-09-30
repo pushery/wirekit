@@ -88,9 +88,12 @@ $wrapperClasses])
 ?
 ??
 @endphp
+@endunless
 @php
 @props([
 @props.
+@unless($attributes->has('aria-live'))
+@unless($attributes->has('role'))
 A
 An
 Color:

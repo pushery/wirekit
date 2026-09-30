@@ -21,7 +21,8 @@
 $announceError
 $announceErrors
 $attributes
-$attributes->except('aria-describedby')->class([$inputClasses])
+$attributes->except('type')->except('aria-describedby')->class([$inputClasses])
+$attributes->except('type')->whereStartsWith(['wire:model',
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-describedby',
@@ -29,7 +30,7 @@ $attributes->get('aria-describedby',
 $attributes->get('aria-label');
 $attributes->get('x-ref',
 $attributes->getAttributes());
-$attributes->whereStartsWith(['wire:model',
+$attributes]
 $callerLabel
 $callerRef
 $checker
@@ -57,6 +58,7 @@ $optimistic
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $pickerId
 $pickerId.'-error'
 $pickerId.'-hint'
@@ -99,6 +101,7 @@ $wrapperClasses])
 ',
 '.((string)
 '.__('wirekit::Cycle
+'@keydown.escape.window']);
 'absolute
 'action'
 'announce-errors']);
@@ -202,6 +205,7 @@ $wrapperClasses])
 (FormControlBorderTokenTest).
 (HTML
 (SV
+(Support\CallerListeners).
 (`>Color
 (`pickColor`,
 (angled
@@ -555,6 +559,7 @@ Slightly
 Spelling
 Str::headline((string)
 Strip
+Support\OuterAttributes.
 TYPED
 Tailwind
 Text
@@ -579,6 +584,8 @@ With
 Without
 Your
 [
+[$outerAttributes,
+['@input',
 ['color'
 ['hex',
 ['name'
@@ -594,7 +601,9 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Use
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::saturation
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique($id
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('color-picker',
 ])
 ]),
@@ -680,11 +689,14 @@ __('wirekit::Use
 `trigger`
 `undo`,
 `value`
+`wire:key`,
 `wire:model`
+`wire:show`
 `wk-color-brand-2`
 `wk-color-brand`,
 `x-model`
 `x-ref`
+`x-show`,
 `x-wk-ref`,
 `{{
 a
@@ -1064,6 +1076,7 @@ entirely,
 error
 escape
 escapes
+event
 events
 every
 everything
@@ -1216,6 +1229,7 @@ ignored
 implode('
 imports
 in
+in:
 init
 inline
 inline-block',
@@ -1280,6 +1294,7 @@ linear-gradient(to
 list
 list,
 listener
+listens
 literal
 literal,
 little
@@ -1388,9 +1403,11 @@ optimistic
 optimistic-ui:
 or
 order
+other
 otherwise
 ours,
 out
+outermost
 outline
 outlives
 outside
@@ -1568,6 +1585,7 @@ row,
 row.
 rule
 rules),
+run
 s).replace(':brightness',
 sRGB
 said
@@ -1638,6 +1656,7 @@ speaking
 spectrum
 spellcheck="false"
 spelling
+spelling,
 spellings,
 spells
 spoken
@@ -1750,6 +1769,7 @@ touch-none
 touch-primary
 trace
 tracking-wider',
+transitions
 translated
 translator,
 transparency
@@ -1822,6 +1842,7 @@ vanish
 var(--color-wk-border)
 variant
 via
+view
 view's
 viewBox="0
 visible

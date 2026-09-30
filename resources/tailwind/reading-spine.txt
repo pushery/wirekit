@@ -1,8 +1,10 @@
+!
 !==
 "Family
 "item.level"
 "no
 $alpineOptions
+$attributes
 $attributes->class([$rootClass])->merge(['aria-label'
 $attributes->getAttributes());
 $backToTop
@@ -28,6 +30,8 @@ $forceExpanded)
 $forceExpandedMd
 $hideBelowClass
 $hideBelowClass,
+$innerAttributes;
+$innerAttributes]
 $levels))
 $levelsArray
 $levelsArray,
@@ -38,6 +42,7 @@ $numbered
 $offset,
 $offsetPx
 $offsetPx,
+$outerAttributes
 $position
 $positionClass
 $positionClass,
@@ -47,6 +52,8 @@ $resolvedTarget,
 $rootClass
 $scope);
 $sectionEvents
+$showScope
+$showScope)
 $target
 $unit
 $useScoped
@@ -58,6 +65,7 @@ $val
 ',
 '--reading-spine-edge-offset:
 '.$edgeOffsetValue;
+'.WireKit::resolveClasses('reading-spine',
 '0'])
 '12px',
 '1rem',
@@ -66,6 +74,9 @@ $val
 '6rem')
 '6rem',
 '<css-selector-string>']
+'@focusin',
+'@focusout']);
+'@mouseleave',
 'absolute
 'always';
 'always-md';
@@ -97,6 +108,7 @@ $val
 'lg'
 'location'
 'main,
+'max-h-[calc(100vh-8rem)]
 'md'
 'md',
 'none'
@@ -125,10 +137,14 @@ $val
 ($edgeOffsetStyle
 ($hideBelow)
 ($position)
+($showScope)
+($useScoped
 ($useScoped)
 ($v)
 (<
 (CSS
+(Support\CallerListeners).
+(Support\OuterAttributes).
 (`levels="'2'"`)
 (a
 (collapsed-state
@@ -248,6 +264,7 @@ $val
 ??
 @click="scrollTo(item.id,
 @click="scrollToTop()"
+@elseif
 @endif
 @endphp
 @focusin="expandOnFocus()"
@@ -275,6 +292,7 @@ CSP
 CSS
 CSS).
 CSS,
+CallerRef::onRoot()
 Cheap
 Convert
 Declared
@@ -297,6 +315,7 @@ Held
 How
 INSIDE
 IO
+In
 Inline
 Inline-style
 Inline-styled
@@ -318,6 +337,7 @@ Not
 Null
 ONE
 OR
+Only
 Optional
 PHP-side
 PINS
@@ -355,17 +375,23 @@ Visible
 WCAG
 WHICH
 Were
+What
 Width
 WireKit
-WireKit::resolveClasses('reading-spine',
 WireKit::validateProp(
 WireKit::validateProp('reading-spine',
 Without
 [
+[$outerAttributes,
 ['0',
+['@mouseenter',
 ['container',
 [2,
 \Pushery\WireKit\Support\AlpinePayload::from([
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('reading-spine',
 ])
 ]),
@@ -430,8 +456,11 @@ __('wirekit::Page
 `w-*`
 `white-space:
 `width`,
+`wire:show`
 `x-init`
 `x-model`
+`x-ref`
+`x-show`
 `ü`,
 a
 about
@@ -494,12 +523,15 @@ back-to-top
 back.
 background-gradient,
 backslash
+bag
 base
 be
 because
 become
 before,
+belongs
 below)
+below.
 between
 bg-[var(--color-wk-bg-elevated)]
 block,
@@ -510,8 +542,10 @@ border-b
 both
 bottom
 bottom,
+bound
 boundary
 box
+box.
 break
 breakpoint)
 browser
@@ -523,6 +557,7 @@ by
 calc((${item.level}
 calc(),
 call
+caller's
 can
 can't
 cannot
@@ -540,6 +575,7 @@ changes
 check
 chose.
 class
+class="contents"
 class="flex
 class="h-4
 class="wk-reading-spine__back-to-top
@@ -565,6 +601,7 @@ compiles
 complementary
 component
 component's
+component,
 components/reading-spine.js
 composition
 computed
@@ -654,6 +691,7 @@ equal
 escape
 escapes
 even
+event
 every
 exist
 existing
@@ -713,6 +751,8 @@ gap:
 gated
 gating
 generate.
+generates
+get
 gives
 global
 goes
@@ -722,6 +762,7 @@ guttered
 h-[var(--size-wk-sm)]
 had
 handlers.
+hands
 has
 have
 heading
@@ -737,6 +778,7 @@ hidden
 hide
 hideBelow
 hideBelow's
+hides
 holds
 hook,
 hops
@@ -757,6 +799,7 @@ included,
 indent
 indent,
 indent.
+independently
 indicator
 inherits
 initializer.
@@ -793,6 +836,7 @@ its
 itself
 json_encode:
 justify-center
+keep
 keeps
 keyboard
 keys
@@ -800,6 +844,7 @@ label
 label.
 labels
 landmark,
+lands
 later
 layer
 layer.
@@ -820,6 +865,8 @@ link
 link's
 links
 list
+listener
+listens
 literal
 literal.
 live
@@ -834,7 +881,6 @@ matchMedia
 matches
 matches.
 math
-max-h-[calc(100vh-8rem)]
 may
 md+
 md:block',
@@ -855,6 +901,7 @@ moves.
 mt-2
 n/a
 name
+name,
 named
 names
 narrow
@@ -896,10 +943,13 @@ or
 ordinary
 other
 otherwise
+our
 out
 out-of-range
 outcome
 outer
+outermost
+outermost,
 outline
 outright
 over
@@ -923,6 +973,7 @@ pair
 pane,
 panel
 parse
+parser
 parses
 passing
 past
@@ -1002,6 +1053,7 @@ ring
 role="list"
 roll
 root
+root,
 rootMargin
 round($unit
 rounded-[var(--radius-wk-full,9999px)]"
@@ -1011,6 +1063,7 @@ routes
 rule
 rule,
 rules
+run
 same
 satisfies
 scale
@@ -1068,6 +1121,7 @@ so
 spacing
 spec,
 spelled
+spelling,
 spellings
 spine
 spine's
@@ -1137,6 +1191,7 @@ ticks
 ticks/labels
 titles
 to
+toggle
 toggles
 token.
 tokenizer
@@ -1187,7 +1242,7 @@ var(--reading-spine-padding-x);
 var(--reading-spine-padding-x)`
 var(--reading-spine-padding-y)
 var(--reading-spine-padding-y);
-var(--z-wk-sticky);">
+var(--z-wk-sticky);"
 variable
 verify
 vertical-only
@@ -1212,6 +1267,7 @@ w-[var(--size-wk-sm)]
 want
 wants
 was
+well:
 what
 when
 where
@@ -1232,6 +1288,7 @@ without
 would
 wrapped
 wrapper
+wrapper,
 writing
 x-axis
 x-bind:data-expand="expanded
@@ -1261,5 +1318,6 @@ zero-height
 }}"
 }})
 }})"
+}}>
 —
 →

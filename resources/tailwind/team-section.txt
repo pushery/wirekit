@@ -1,4 +1,5 @@
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $classes
 $label
@@ -24,9 +25,12 @@ $slot
 =>
 >
 @endphp
+@endunless
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 Accessible
 Declared
 Dev-only
@@ -142,6 +146,7 @@ whose
 with
 {{
 {{--
+||
 }}
 }}"
 —

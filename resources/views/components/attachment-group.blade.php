@@ -44,8 +44,8 @@
 @endphp
 
 <div
-    role="group"
-    aria-label="{{ $label }}"
+    @unless($attributes->has('role')) role="group" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
     {{-- The condition lives in the VALUE, not around the attribute. A `tabindex` behind
          `@if` reads as a keyboard model and is not one: the guard that holds this contract
          strips Blade conditionals before it looks at the wiring, so it was passing this
@@ -56,7 +56,7 @@
     tabindex="{{ $isRow ? '0' : '-1' }}"
     data-wk-attachment-group
     data-orientation="{{ $orientationValue }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->except('tabindex')->class([$classes]) }}
 >
     {{ $slot }}
 </div>

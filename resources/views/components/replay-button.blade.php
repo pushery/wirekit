@@ -17,6 +17,14 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('replay-button', $attributes->getAttributes());
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{--
@@ -43,7 +51,7 @@
 <button
     {{ $attributes->merge([
         'type' => 'button',
-        'class' => \Pushery\WireKit\WireKit::resolveClasses('replay-button', 'base', 'wk-replay-button'),
+        'class' => 'wk-replay-button '.\Pushery\WireKit\WireKit::resolveClasses('replay-button', 'base', ''),
         'aria-label' => $label,
     ]) }}
     @if($target)

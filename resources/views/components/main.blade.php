@@ -35,10 +35,10 @@
     // `wk-main` marker — load-bearing against developer prose
     // `max-width: 75ch` clamps (see footer.blade.php for the full
     // rationale).
-    $classes = WireKit::resolveClasses('main', 'base', implode(' ', [
+    $classes = 'wk-scrollbar '.WireKit::resolveClasses('main', 'base', implode(' ', [
         'wk-main',
         'flex-1',
-        'wk-scrollbar overflow-y-auto',
+        'overflow-y-auto',
     ]), $scope);
 
     // Horizontal padding uses the same `--padding-wk-x-{size}` tokens as

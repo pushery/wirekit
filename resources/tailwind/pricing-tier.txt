@@ -19,8 +19,6 @@
 "per
 "seat/mo"
 "year",
-"{$sign}{$delta}";
-"{$sign}{$delta}%"
 "↻
 $action
 $amount
@@ -52,13 +50,12 @@ $classes
 $cleaned
 $cleaned);
 $content
-$currency)
-$currency);
+$currency,
 $delayHide
 $delayShow
 $delta
+$delta,
 $deltaClasses
-$deltaFormat
 $deltaIntent
 $depthStyle
 $depthStyle]
@@ -69,11 +66,8 @@ $dismissBtnClasses
 $dismissLabel
 $dismissible
 $displayAmount
-$displayAmount,
 $displayBase
-$displayBase,
 $displayUnitPrice
-$displayUnitPrice,
 $dot
 $dotColorClass
 $e)
@@ -88,8 +82,6 @@ $formattedAmount
 $formattedBase
 $formattedDelta
 $formattedUnitPrice
-$formatter
-$formatter->formatCurrency((float)
 $intent,
 $intentClasses
 $intentClasses,
@@ -101,6 +93,9 @@ $isFeatured
 $isInformative
 $isInformative;
 $locale
+$locale)
+$locale));
+$locale);
 $m):
 $m[1]);
 $mergedAttributes
@@ -109,6 +104,10 @@ $mergedAttributes->merge($placeholderAttributes)
 $mergedAttributes->merge(['aria-hidden'
 $minorUnits
 $minorUnits)
+$money
+$money($displayAmount);
+$money($displayBase)
+$money($displayUnitPrice)
 $name
 $name,
 $name];
@@ -130,6 +129,7 @@ $resolvedAriaHidden
 $scope);
 $shouldSetHidden
 $sign
+$sign.($deltaFormat
 $size
 $size,
 $sizeClasses
@@ -159,7 +159,9 @@ $unitMeasure)
 $unitPrice
 $unitPrice;
 $validated
+$value,
 $wrap
+%`
 &&
 '
 ''
@@ -360,6 +362,13 @@ $wrap
 'wk-tooltip-');
 'wrap'
 'x-circle'
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'xl'
 'xl']))
 'xs'
@@ -384,6 +393,7 @@ $wrap
 ($surface)
 ($svgHtml
 ($unitPrice
+($value):
 ('xs').
 (1.5rem)
 (<bdi>{{
@@ -396,6 +406,7 @@ $wrap
 (Preisangabenverordnung).
 (Price
 (SOFT
+(Support\CallerListeners).
 (UVP
 (WCAG
 (WireKit::validateProp('price',
@@ -463,6 +474,7 @@ $wrap
 100),
 1px
 1rem),
+2,
 2.1.1).
 2rem,
 30%,
@@ -631,7 +643,6 @@ Falls
 Fast
 Floating
 For
-Format
 Format:
 Forwarded
 Fully
@@ -667,6 +678,10 @@ LEADING
 Left
 Literal
 Livewire
+Locale-aware
+LocalizedNumber::currency((float)
+LocalizedNumber::format((float)
+LocalizedNumber::percent((float)
 Logger
 MORPH
 MOST
@@ -681,7 +696,6 @@ Normalize
 Normalized
 Nothing
 Null,
-NumberFormatter
 ONE
 ONLY
 OPENING
@@ -698,13 +712,13 @@ Optional
 PAngV
 PAngV)
 PERFECTLY
-PHP
 Per-interval
 Pick
 Price
 Primary
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\LocalizedNumber;
 Pushery\WireKit\WireKit;
 RRP
 Raw
@@ -793,14 +807,14 @@ Without
 ['sm',
 ['soft',
 ['style'
+['x-on:mouseenter',
 ['xs',
 [])
 [])->class([$baseClasses,
-\NumberFormatter($locale,
-\NumberFormatter::CURRENCY);
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -818,6 +832,8 @@ __toString
 `$as`
 `$refs`
 `+`
+`-12,5
+`-12.5%`.
 `-`
 `<button>`
 `<div>`
@@ -1099,6 +1115,7 @@ bubble's
 bubbles
 bug
 build
+built
 but
 button
 button's
@@ -1189,6 +1206,7 @@ compile
 compiles
 component
 component's
+component's,
 component,
 components
 composer
@@ -1293,6 +1311,7 @@ different
 dim
 direct
 direction
+directly
 disabled
 disappearing,
 discoverable.
@@ -1300,7 +1319,7 @@ dismiss
 dismissLabel.
 dismissible
 dispatches
-display
+display,
 display:none),
 div
 do
@@ -1363,6 +1382,7 @@ events
 every
 exactly
 exhausting
+exist
 existing
 exists.
 expandos.
@@ -1371,6 +1391,7 @@ explicitly
 exposes
 exposing
 expression
+extension:
 external-link
 eye
 eye.
@@ -1425,6 +1446,7 @@ flex-1">
 flex-col',
 flips
 flow.
+fn
 focus
 focus,
 focus-within
@@ -1442,6 +1464,7 @@ forcing
 foreground
 foreground.
 formatted
+formatter
 formatting
 formatting.
 found.`
@@ -1594,6 +1617,7 @@ interpolated
 interpolated)
 interval
 interval.
+intl
 into
 invalid
 inventing
@@ -1601,6 +1625,7 @@ inverted
 invisible
 invocation`
 is
+is:
 is_array($periods)
 isn't
 isolate`
@@ -1636,6 +1661,7 @@ label;
 labels
 labels).
 labels,
+lacks
 ladder
 lands
 later
@@ -1668,6 +1694,7 @@ link
 linked
 list
 listed.
+listener
 listens
 lists
 literal
@@ -1675,8 +1702,9 @@ little
 live
 lives
 loads.
-locale-aware
+locale's
 locale-format
+locale:
 log
 logger()->warning(
 logic
@@ -1709,6 +1737,7 @@ masked
 match
 matches
 matching
+maxPrecision:
 maximum
 may
 mean
@@ -1770,7 +1799,6 @@ needs
 neither
 nested
 never
-new
 next
 no
 no-op
@@ -1902,6 +1930,7 @@ plan
 plan's
 plan.
 plans
+plus
 pointer
 pointer-events
 pointing
@@ -2004,6 +2033,7 @@ removes
 removing
 render
 render,
+render.
 rendered
 rendered,
 rendering
@@ -2049,6 +2079,7 @@ rounded-full
 row
 row.
 rule
+run
 rung
 runtime
 safe.
@@ -2130,6 +2161,7 @@ space).
 span
 span).
 spelled
+spelling,
 spells
 spilling
 split
@@ -2349,7 +2381,6 @@ use:
 used
 useful
 uses
-using
 utility
 v4
 valid
@@ -2365,6 +2396,7 @@ variant
 variant),
 vertical
 via
+view
 view's
 viewport.
 visibility
@@ -2434,7 +2466,9 @@ wrapper
 wrapper's
 wrapper)
 wrapping
+write
 writing
+writing,
 wrong
 wrong.
 x-cloak

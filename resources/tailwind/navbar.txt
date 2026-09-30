@@ -61,6 +61,7 @@ $variantClasses,
 '');
 '';
 ',
+'.WireKit::resolveClasses('navbar',
 '2xl'
 '2xl',
 '[&>*]:shrink-0
@@ -144,8 +145,7 @@ $variantClasses,
 'w-full',
 'wk-navbar-mobile',
 'wk-navbar-mobile-'
-'wk-navbar-scroll',
-'wk-scroll-fade',
+'wk-navbar-scroll
 'xl'
 'xl');
 'xl',
@@ -154,6 +154,7 @@ $variantClasses,
 ($variant)
 (40)
 (50),
+(Support\CallerListeners).
 (WireKit::validateProp('navbar',
 (`--wk-strip-inset`,
 (`aria-current="page"`,
@@ -314,6 +315,8 @@ With
 ['default',
 ['menu',
 ['sm',
+['x-on:keydown.escape']);
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\WireKit::warnUnknownProps('navbar',
@@ -456,6 +459,7 @@ border-[var(--color-wk-border)]
 border-[var(--color-wk-border)]',
 border-box`
 bordered,
+both
 both.
 bottom
 box
@@ -585,6 +589,7 @@ embedding
 entries
 entry
 entry.
+event
 every
 exactly
 except('rel')
@@ -635,6 +640,7 @@ gap-[var(--gap-wk-sm)]">
 gap-[var(--gap-wk-sm)]';
 generated
 gives
+goes
 grow
 grows
 h-6"
@@ -722,6 +728,8 @@ links,
 list
 list,
 list.
+listener
+listens
 literal
 live
 logo
@@ -900,6 +908,7 @@ row,
 row.
 row:
 rule
+run
 same
 scope
 screens
@@ -949,6 +958,7 @@ source
 space.
 spaces,
 spare.
+spelling,
 spine
 spine.
 stack
@@ -1033,6 +1043,7 @@ use
 values
 verbatim
 vertical
+view
 view's
 view.
 view:
@@ -1065,6 +1076,7 @@ wirekit:spine-participant
 with
 with,
 without
+wk-scroll-fade
 wordmark
 wordmark,
 would

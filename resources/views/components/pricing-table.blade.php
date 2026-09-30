@@ -82,6 +82,18 @@
         'x-wk-ref' => $callerRef !== '' ? $callerRef : null,
         'data-wk-ref-scope' => $callerRef !== '' && $intervalMap === null ? true : null,
     ]));
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // table, so they go on the outermost element (see Support\OuterAttributes). With intervals
+    // the list sits inside the toggle's wrapper, so they move there; without intervals the list
+    // is outermost and keeps them in its bag.
+    [$outerAttributes, $withoutOuterAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    if ($intervalMap !== null) {
+        $attributes = $withoutOuterAttributes;
+    } else {
+        $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
+    }
 @endphp
 
 {{-- A list, not a pile of divs: the tiers are a set the reader compares, and a
@@ -113,6 +125,7 @@
     @if($interval !== null) data-wk-server-value="{{ $serverInterval }}" @endif
     @if($callerRef !== '') data-wk-ref-scope @endif
     data-wk-pricing-intervals
+    {{ $outerAttributes }}
 >
     {{-- Inside the wrapper and BEFORE the <ul>, because a list may only hold list
          items — the same reason the toggle sits here. --}}
@@ -129,7 +142,9 @@
         class="mb-[var(--space-wk-md)] inline-flex items-center gap-[var(--space-wk-xs)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-subtle)] p-[var(--space-wk-xs)]"
     >
         @foreach($intervalMap as $intervalKey => $intervalLabelText)
-            {{-- aria-pressed, not just a tint: "this interval is selected" is a
+            {{-- `wk-state-button` is the marker the stylesheet's forced-colors rule frames the
+                 selected interval by: its raised surface and shadow are what that mode removes.
+                 aria-pressed, not just a tint: "this interval is selected" is a
                  state a reader who cannot see the fill still needs. --}}
             <button
                 type="button"
@@ -145,15 +160,15 @@
                 :class="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}
                     ? {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses) }}
                     : {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalUnselectedClasses) }}"
-                class="cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-state-button cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 data-wk-pricing-interval-toggle="{{ $intervalKey }}"
             >{{ $intervalLabelText }}</button>
         @endforeach
     </div>
 
     <ul data-wk-prose-skip
-        role="list"
-        aria-label="{{ $label }}"
+        @unless($attributes->has('role')) role="list" @endunless
+        @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
         data-wk-pricing-table
         {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->whereDoesntStartWith('wire:model')->class([$classes]) }}
     >
@@ -162,8 +177,8 @@
 </div>
 @else
 <ul data-wk-prose-skip
-    role="list"
-    aria-label="{{ $label }}"
+    @unless($attributes->has('role')) role="list" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
     data-wk-pricing-table
     {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
 >

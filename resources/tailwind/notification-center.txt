@@ -78,6 +78,7 @@ $title])
 ('time'
 (((array)
 (No
+(Support\CallerListeners).
 (WCAG
 (a
 (aria-checked
@@ -279,6 +280,7 @@ WireKit::resolveClasses('notification-center',
 WireKit::validateProp('notification-center',
 ['none',
 ['title'
+['x-on:keydown.escape.window']);
 [],
 [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
 \Illuminate\Support\Collection
@@ -287,6 +289,7 @@ WireKit::validateProp('notification-center',
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread.
 \Pushery\WireKit\Support\AlpinePayload::string($groupBy)
 \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::stableId('notification-center',
 \Pushery\WireKit\WireKit::warnUnknownProps('notification-center',
@@ -310,6 +313,7 @@ __('wirekit::Unread.')
 `prop="false"`
 `role="region"`
 `wire:model`:
+`wk-state-button`
 `x-ref`
 a
 above
@@ -417,6 +421,7 @@ caught
 center
 center:
 changes,
+checked
 choice.
 chrome
 class
@@ -435,6 +440,7 @@ class="px-[var(--padding-wk-x-sm)]
 class="sr-only"
 class="sticky
 class="text-[length:var(--text-wk-sm)]
+class="wk-state-button
 class="wk-touch-target
 class="{{
 click.outside
@@ -446,6 +452,7 @@ closes
 collect($itemsArr)->reject(fn
 color
 color/dot
+colors
 come
 comment
 comments
@@ -526,6 +533,7 @@ faq's
 feature
 feeds
 field
+fill,
 fill="none"
 filled($title)
 filter
@@ -549,7 +557,9 @@ font-[number:var(--font-wk-heading-weight)]
 footer
 for
 for.
+forced
 form
+frames
 fresh
 from
 full-width
@@ -564,6 +574,7 @@ generous
 ghost
 given.
 go
+goes
 group.items"
 groupBy:
 groups
@@ -653,6 +664,7 @@ list',
 list's
 list,
 listen
+listener
 listens
 literal
 literals,
@@ -661,6 +673,7 @@ lives
 longer
 makes
 mark-read,
+marker
 marks
 matches
 matching
@@ -670,6 +683,7 @@ mean
 middle-click
 min-w-[1rem]
 mirroring
+mode.
 morph
 move-and-select,
 moves
@@ -724,6 +738,7 @@ overflow-y-auto
 overflow.
 own
 page
+paint,
 paired
 panel
 panel),
@@ -791,6 +806,7 @@ roving
 row
 row's
 row.
+run
 same
 scans
 screen
@@ -820,6 +836,7 @@ smallest
 so
 space,
 spelling
+spelling,
 standard.
 start
 state
@@ -835,6 +852,7 @@ stroke-linejoin="round"><path
 stroke-width="1.5"
 stroke-width="1.8"
 stroke="currentColor"
+stylesheet
 submitted
 substance
 substituted
@@ -934,6 +952,7 @@ value.
 value="{{
 variants
 vertical
+view
 view's
 viewBox="0
 visible

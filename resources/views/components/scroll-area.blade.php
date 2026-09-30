@@ -63,11 +63,9 @@
     // that reading exists to avoid, for one frame or forever if scripts fail.
     $fadeIsAuto = $fadeValue === 'auto';
 
-    $classes = WireKit::resolveClasses('scroll-area', 'base', implode(' ', array_filter([
-        'wk-scrollbar',
+    $classes = 'wk-scrollbar '.($fadeValue ? 'wk-scroll-fade ' : '').WireKit::resolveClasses('scroll-area', 'base', implode(' ', array_filter([
         $overflowClass,
         'font-[family-name:var(--font-wk-sans)]',
-        $fadeValue ? 'wk-scroll-fade' : '',
     ])), $scope);
 
     // Inline style for max-height — common pattern for scroll containers
@@ -87,7 +85,7 @@
     @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
     @if($fadeValue) data-fade-axis="{{ $fadeAxis }}" @endif
     @if($fadeIsAuto) x-data="wirekitScrollFade" @elseif($fadeValue) data-fade="{{ $fadeValue }}" @endif
-    {{ $attributes->merge($inlineStyle ? ['style' => $inlineStyle] : [])->class([$classes]) }}
+    {{ $attributes->except('tabindex')->merge($inlineStyle ? ['style' => $inlineStyle] : [])->class([$classes]) }}
 >
     {{ $slot }}
 </div>

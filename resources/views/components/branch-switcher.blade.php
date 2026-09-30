@@ -52,11 +52,11 @@
         'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]',
     ]), $scope);
 
-    $buttonClasses = WireKit::resolveClasses('branch-switcher', 'button', implode(' ', [
+    $buttonClasses = 'wk-touch-target '.WireKit::resolveClasses('branch-switcher', 'button', implode(' ', [
         // `cursor-pointer` because a button shows the browser's default arrow (Tailwind v4's
         // preflight no longer sets a pointer), and the touch target floor because these two
         // are the smallest controls on an answer.
-        'inline-flex cursor-pointer items-center justify-center wk-touch-target',
+        'inline-flex cursor-pointer items-center justify-center',
         'size-[var(--size-wk-sm)] rounded-[var(--radius-wk-full)]',
         'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
@@ -78,8 +78,8 @@
         x-modelable="current"
         {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
         data-wk-branch-switcher
-        role="group"
-        aria-label="{{ $groupLabel }}"
+        @unless($attributes->has('role')) role="group" @endunless
+        @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $groupLabel }}" @endunless
         {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->class([$navClasses]) }}
     >
         <button

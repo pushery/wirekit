@@ -61,10 +61,14 @@
     // Progressive enhancement: browsers below the property's support (Safari
     // < 18.2) simply skip it (unknown-property → ignored) and keep today's
     // behavior; nothing depends on it.
-    $viewportClasses = WireKit::resolveClasses('conversation', 'viewport', implode(' ', [
-        'wk-scrollbar overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
+    $viewportClasses = 'wk-scrollbar '.WireKit::resolveClasses('conversation', 'viewport', implode(' ', [
+        'overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
         'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]',
     ]), $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

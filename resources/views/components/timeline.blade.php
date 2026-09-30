@@ -41,7 +41,7 @@
      deliberately, so a decorative list is not announced — and the consequence for a list
      that IS one is that VoiceOver stops saying "list, N items" and stops offering list
      navigation. No other engine shows it. --}}
-<ol data-wk-prose-skip role="list" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }} data-wk-timeline="{{ $variant }}" >
+<ol data-wk-prose-skip @unless($attributes->has('role')) role="list" @endunless {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }} data-wk-timeline="{{ $variant }}" >
     {{-- Optional "before" continuation line — indicates earlier events exist --}}
     @if($before)
         <li data-wk-prose-skip aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">

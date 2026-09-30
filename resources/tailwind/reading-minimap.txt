@@ -4,6 +4,7 @@
 "what's
 "where
 $alpineOptions
+$attributes
 $attributes->getAttributes());
 $attributes->merge(['style'
 $autoFadeFlag
@@ -42,6 +43,7 @@ $v
 ',
 '-1'
 '.($width).';'])->class([$rootClass])
+'.WireKit::resolveClasses('reading-minimap',
 '0'"
 '2,3',
 '60px',
@@ -99,7 +101,7 @@ $v
 'true'
 'width'
 'width:
-'wk-reading-minimap',
+'wk-reading-minimap
 'wk-reading-minimap__stripe--active'
 'xl'
 ($hideBelow)
@@ -112,6 +114,7 @@ $v
 (<
 (=
 (E4).
+(Support\CallerListeners).
 (WCAG
 (a
 (active
@@ -235,6 +238,7 @@ CSP
 CSS
 CSS)
 CSV
+CallerRef::onRoot()
 Catch
 Centering
 DOM
@@ -301,16 +305,18 @@ Viewport
 Visually
 Walks
 Which
-WireKit::resolveClasses('reading-minimap',
 WireKit::validateProp(
 Without
 Y
 [
+['@mousemove.passive']);
 ['left',
 ['line',
 ['stripes',
 [data-minimap-item]',
 \Pushery\WireKit\Support\AlpinePayload::from([
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('reading-minimap',
 ])
 ]),
@@ -343,8 +349,10 @@ __('wirekit::Section
 `top:
 `top`
 `transform:
+`x-ref`
 a
 above
+above.
 absolute
 abstract
 accessibility
@@ -388,11 +396,13 @@ avoids
 axe
 back-compat)
 back.
+bag
 band,
 be
 because
 before
 behind
+belongs
 bg-[var(--color-wk-tooltip-bg)]
 block,
 block-mode
@@ -407,6 +417,7 @@ but
 by
 call
 callback.
+caller's
 can
 canvas
 capture
@@ -436,6 +447,7 @@ column
 column,
 compiles
 component's
+component,
 condition
 constructed
 container,
@@ -495,6 +507,7 @@ encode
 equal-height
 escapes
 even
+event
 events
 events,
 every
@@ -528,12 +541,14 @@ from
 gives
 giving
 global
+goes
 gray
 h-full
 h2,
 h3,
 handler
 handler.
+hands
 has
 have
 heading
@@ -597,6 +612,7 @@ items"
 its
 itself
 json_encode:
+keep
 keeps
 key
 keyboard
@@ -604,6 +620,7 @@ label
 land
 landmark
 landmarks
+lands
 later
 layer
 layout"
@@ -622,6 +639,7 @@ list-none"
 list.
 listener
 listener.
+listens
 literal
 live
 lives
@@ -699,7 +717,9 @@ opts
 or
 order
 ordinary
+other
 otherwise
+our
 out
 outboard
 over
@@ -799,10 +819,12 @@ right-0
 roll
 room,
 root
+root,
 rotor
 rounded-[var(--radius-wk-sm)]
 row,
 rule
+run
 runs
 runtime
 same
@@ -847,6 +869,7 @@ something
 source
 sparse
 specific
+spelling,
 state
 stays
 still
@@ -933,6 +956,7 @@ variant.
 vertical
 vertically
 via
+view
 view's
 viewport
 viewport-overlay

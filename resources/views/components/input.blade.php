@@ -125,6 +125,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('input', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
@@ -314,7 +319,7 @@
     }
 @endphp
 
-<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <x-wirekit::label :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif

@@ -25,6 +25,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-bookmark', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -92,8 +97,7 @@
         // Playwright, which is why it survived every green mobile run.
         : 'fixed bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]';
 
-    $rootClass = WireKit::resolveClasses('reading-bookmark', 'base', implode(' ', [
-        'wk-reading-bookmark',
+    $rootClass = 'wk-reading-bookmark '.WireKit::resolveClasses('reading-bookmark', 'base', implode(' ', [
         $boundaryClass,
         'z-[var(--z-wk-sticky)]',
         'flex items-center gap-3 px-4 py-3',
@@ -113,17 +117,24 @@
     // and translated for the same reason the dismiss control's name is: a
     // sentence built inside the Alpine factory could not be.
     $resumePrompt = __('wirekit::Resume reading where you left off?');
+
+    // A caller's `x-ref` belongs to the caller's component. The bag lands on the pill, inside
+    // the wrapper that holds the Alpine scope, which would keep it, so the name moves to
+    // `x-wk-ref` on the pill and the wrapper marks the boundary (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
 {{-- A wrapper with no box of its own: it holds nothing but the Alpine scope, so the
      live region below can sit OUTSIDE the pill while still reading the pill's state.
      It takes no classes and is not positioned, so the pill's `fixed` / `absolute`
      resolves against exactly what it did before. --}}
-<div
+<div {{ $outerAttributes }}
     {{-- Bookmark key exposed as a data attribute so sibling primitives
          (reading-minimap E2) can wire to the same localStorage payload
          without re-declaring the key in their own prop list. --}}
     data-reading-bookmark-key="{{ $key }}"
+    @if($callerRef !== '') data-wk-ref-scope @endif
     {{-- Saving, restoring and the cross-tab sync live in the factory
          (resources/js/components/reading-bookmark.js). The block did not parse
          under Alpine's CSP build, so nothing was saved and the resume prompt
@@ -155,6 +166,7 @@
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-2"
         {{ $attributes->class([$rootClass]) }}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
         <span class="wk-reading-bookmark__label">{{ $resumePrompt }}</span>
         {{-- Both controls spell out `cursor-pointer` because nothing else supplies

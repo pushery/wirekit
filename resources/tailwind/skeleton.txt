@@ -7,6 +7,7 @@ $animation
 $animation,
 $animationValue
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $baseShimmer
 $c
@@ -165,6 +166,7 @@ $wrapperClasses
 @endfor
 @endif
 @endphp
+@endunless
 @for($c
 @for($i
 @for($r
@@ -172,6 +174,9 @@ $wrapperClasses
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('aria-live'))
+@unless($attributes->has('role'))
 Animation
 Animation:
 Avatar
@@ -673,6 +678,7 @@ wrapper
 {{
 {{--
 |
+||
 }
 };
 }}

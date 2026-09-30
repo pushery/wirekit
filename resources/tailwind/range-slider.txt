@@ -19,6 +19,7 @@ $attributes->get('aria-label');
 $attributes->get('name'),
 $attributes->get('name',
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes;
 $bindRangeValueText
 $callerAriaLabel
@@ -355,6 +356,8 @@ ${minPercent}%`
 @pointerdown="startDrag('min',
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 @unless($disabled)
 A
 A11y:

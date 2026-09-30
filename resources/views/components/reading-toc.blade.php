@@ -100,8 +100,7 @@
     // Sticky positioning + top/bottom offset are owned by the
     // `.wk-reading-toc` rule in `dist/wirekit.css` (selected per
     // `data-position` attribute below).
-    $rootClass = WireKit::resolveClasses('reading-toc', 'base', implode(' ', array_filter([
-        'wk-reading-toc',
+    $rootClass = 'wk-reading-toc '.WireKit::resolveClasses('reading-toc', 'base', implode(' ', array_filter([
         filter_var($flush, FILTER_VALIDATE_BOOL) ? 'wk-reading-toc--flush' : '',
         $hideBelowClass,
     ])), $scope);
@@ -123,8 +122,27 @@
         'levels' => $levelsArray,
         'offset' => $offsetPx,
     ]);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // The list hides itself with an `x-show` of its own while the page has no headings, so a
+    // caller's `x-show` or `wire:show` cannot sit on it as well: the parser drops a second
+    // attribute of one name, and a bound `wire:show` would toggle the list independently of it.
+    // They go on a wrapper that generates no box, with the rest of what is about the whole
+    // component (Support\OuterAttributes).
+    [$outerAttributes, $innerAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+    $showScope = \Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
+
+    if ($showScope) {
+        $attributes = $innerAttributes;
+    }
 @endphp
 
+@if($showScope)
+<div class="contents" {{ $outerAttributes }}>
+@endif
 <nav
     x-data="wirekitReadingToc({{ $alpineOptions }})"
     x-show="items.length > 0"
@@ -136,8 +154,10 @@
          `aria-label="…"` wins, exactly as before. The key ships in every locale
          file. reading-minimap names its own landmark differently, because two
          navigation landmarks with one name cannot be told apart. --}}
-    {{ $attributes->class([$rootClass])->merge(['aria-label' => __('wirekit::Page sections')]) }}
-    style="--reading-toc-offset: {{ $offsetCss }};"
+    {{-- The offset goes into the bag's `style` rather than an attribute of its own beside it: a
+         caller's `style` would stand in the tag a second time, and the parser keeps the first
+         one, so the offset would be gone. Merged, the caller's declarations follow ours. --}}
+    {{ $attributes->class([$rootClass])->merge(['aria-label' => __('wirekit::Page sections'), 'style' => '--reading-toc-offset: '.$offsetCss.';']) }}
 >
     {{--
         Inline-style the load-bearing list primitives. The Tailwind utility
@@ -169,3 +189,6 @@
         </template>
     </ol>
 </nav>
+@if($showScope)
+</div>
+@endif

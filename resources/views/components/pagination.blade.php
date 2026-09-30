@@ -381,7 +381,7 @@
     @php return; @endphp
 @endif
 
-<nav role="navigation" aria-label="{{ $navLabel }}" {{ $attributes->class([$navClasses]) }}>
+<nav @unless($attributes->has('role')) role="navigation" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $navLabel }}" @endunless {{ $attributes->class([$navClasses]) }}>
 
     @if($singlePage)
         {{-- Everything fits one page, and a choice of page size is on offer: the summary and the

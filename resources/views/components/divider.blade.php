@@ -53,7 +53,7 @@
          The caller still wins: a supplied `aria-label` / `aria-labelledby` suppresses this
          one, so nothing emits the attribute twice. --}}
     <div
-        role="separator"
+        @unless($attributes->has('role')) role="separator" @endunless
         @if(! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endif
         {{ $attributes->class([
             WireKit::resolveClasses('divider', 'base', implode(' ', [
@@ -71,7 +71,7 @@
 @elseif($isVertical)
     {{-- Vertical divider --}}
     <div
-        role="separator"
+        @unless($attributes->has('role')) role="separator" @endunless
         aria-orientation="vertical"
         {{ $attributes->class([
             WireKit::resolveClasses('divider', 'base', implode(' ', [
@@ -83,7 +83,7 @@
 @else
     {{-- Horizontal divider (no label) --}}
     <hr data-wk-prose-skip
-        role="separator"
+        @unless($attributes->has('role')) role="separator" @endunless
         {{ $attributes->class([
             WireKit::resolveClasses('divider', 'base', implode(' ', [
                 'border-t border-b-0 border-l-0 border-r-0',

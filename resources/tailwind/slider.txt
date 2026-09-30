@@ -8,9 +8,9 @@
 $announceError
 $announceErrors
 $attributes
+$attributes->except('type')->except(['class',
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
-$attributes->except(['class',
 $attributes->get('aria-describedby',
 $attributes->get('x-ref',
 $attributes->getAttributes());
@@ -22,6 +22,7 @@ $attributes->has('x-bind:aria-valuetext')
 $attributes->only(['class',
 $attributes->whereStartsWith('wire:model')->first())),
 $attributes->whereStartsWith('x-model')->whereDoesntStartWith('x-modelable')
+$attributes]
 $bindValueText
 $callerBindsValueText
 $callerBindsValueText;
@@ -83,6 +84,7 @@ $normalizedMarks[]
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $pairs
 $pct
 $pct,
@@ -148,6 +150,7 @@ $wrapperClasses
 '.',
 '.($label
 '.((string)
+'.WireKit::resolveClasses('slider',
 '0'),
 'A',
 'B']`
@@ -244,7 +247,7 @@ $wrapperClasses
 'valuePosition',
 'valueTextMap'
 'w-full'
-'wk-slider',
+'wk-slider
 'wk-slider-'
 'wrapper',
 (!
@@ -275,6 +278,7 @@ $wrapperClasses
 (-50%)
 (4.1.2)
 (@aware
+(Support\CallerListeners).
 (The
 ([$min,
 (`@input="current
@@ -540,6 +544,7 @@ Str::headline((string)
 StrictnessGate
 String(current)`,
 Strip
+Support\OuterAttributes.
 TEXT
 TEXT,
 THE
@@ -578,7 +583,9 @@ Wrapper
 Written
 [
 [$mValue,
+[$outerAttributes,
 [$v,
+['@input']);
 ['description'
 ['end',
 ['label'
@@ -594,7 +601,9 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from((object)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique(
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::validateProp('slider',
 \Pushery\WireKit\WireKit::warnUnknownProps('slider',
 ])
@@ -680,13 +689,16 @@ __('wirekit::Slider');
 `valueText`
 `value`:
 `w-full`
+`wire:key`,
 `wire:model.live`
 `wire:model`,
+`wire:show`
 `wk-slider`
 `x-model`
 `x-modelable`
 `x-ref`
 `x-ref`,
+`x-show`,
 `x-wk-ref`,
 `xs`
 `{{
@@ -1152,6 +1164,7 @@ give
 gives
 global
 glyph
+go
 goes
 grid
 grid,
@@ -1293,6 +1306,7 @@ list.
 list/map
 listen
 listener
+listens
 literal
 live
 longer
@@ -1447,6 +1461,7 @@ ours,
 out
 out-of-flow
 out.
+outermost
 outright.
 over
 overflow
@@ -1677,6 +1692,7 @@ spec,
 special
 specific
 spelled
+spelling,
 spellings
 spoken
 spoken-text
@@ -1796,6 +1812,7 @@ track.
 track:
 tracks
 transform:
+transitions
 translateX(-pct%)
 translateX(-{{
 transparent
@@ -1865,6 +1882,7 @@ variant
 verdict").
 vertical
 via
+view
 view's
 visible
 visual

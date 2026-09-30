@@ -13,6 +13,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:focusout']);
+
     // Navigation Menu — top-level nav with rich flyout panels (mega menu).
     // Uses disclosure pattern: hover or click to reveal content panels.
     $classes = WireKit::resolveClasses('navigation-menu', 'base', implode(' ', [
@@ -42,7 +46,7 @@
          separate listener in navigation-menu/item.blade.php. --}}
     x-on:keydown="handleBarKeydown($event)"
     x-on:focusout="handleBarFocusOut($event)"
-    aria-label="{{ __('wirekit::Main navigation') }}"
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Main navigation') }}" @endunless
     {{ $attributes->class(['wk-navigation-menu', $classes]) }}
 >
     {{ $slot }}

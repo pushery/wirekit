@@ -86,6 +86,7 @@ $trailing
 @elseif($slot->hasActualContent())
 @endif
 @endphp
+@endunless
 @if($ariaLabel)
 @if(isset($filters))
 @if(isset($leading))
@@ -93,6 +94,7 @@ $trailing
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 AND
 Adding

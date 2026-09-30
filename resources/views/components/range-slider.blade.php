@@ -307,9 +307,9 @@
 @endphp
 
 <div
-    role="group"
+    @unless($attributes->has('role')) role="group" @endunless
     @if($required) aria-required="true" @endif
-    @if($label) aria-labelledby="{{ $id }}-label" @endif
+    @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $id }}-label" @endunless @endif
     {{-- On the GROUP rather than on either thumb: the message is about the range, and a
          thumb-level describedby would read it out on both ends of it. --}}
     @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif

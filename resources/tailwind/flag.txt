@@ -1,7 +1,7 @@
 !==
 $alt
 $attributes->class([$classes,
-$attributes->class([$classes])
+$attributes->except(['width',
 $attributes->getAttributes());
 $classes
 $code
@@ -40,6 +40,7 @@ $url
 'h-5',
 'h-6',
 'h-8',
+'height'])->class([$classes])
 'inline-block
 'lg'
 'lg',
@@ -91,9 +92,12 @@ $url
 @else
 @endif
 @endphp
+@endunless
 @if
 @php
 @props([
+@unless($attributes->has('decoding'))
+@unless($attributes->has('loading'))
 A
 Case
 Dev-only
@@ -104,6 +108,7 @@ FlagPackage::url($code,
 Fully
 Give
 Heights
+How
 ISO
 It
 No
@@ -128,12 +133,15 @@ WireKit::validateProp('flag',
 `circle`
 `country`.
 `de`,
+`eager`.
 `eu`
 `gb-sct`.
 `rect`
+`size`,
 `square`
 `src`
 a
+above
 above.
 action
 align-middle',
@@ -168,6 +176,7 @@ class
 code
 codes
 component's
+component's,
 config('wirekit.components.flag.shape',
 config('wirekit.components.flag.size',
 corners
@@ -180,12 +189,14 @@ crops
 data-wk-flag
 data-wk-prose-skip
 debug
+decision:
 decoding="async"
 decorative
 decorative:
 default
 default,
 depend
+derived
 does
 drawn
 early.
@@ -196,6 +207,7 @@ every
 flag
 flag's
 flags
+fold
 follows
 for
 for,
@@ -226,6 +238,7 @@ ladder,
 like
 loaded.
 loading="lazy"
+loads
 makes
 manifest,
 match
@@ -256,6 +269,7 @@ own
 own,
 package
 package,
+page's
 pill.
 placeholder
 presentational
@@ -267,6 +281,7 @@ ratio
 ratio,
 region
 repeat
+reserves
 result
 role="img"
 round.
@@ -305,6 +320,7 @@ unknown
 unless
 use
 used
+wants
 was
 when
 where

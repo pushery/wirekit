@@ -91,9 +91,9 @@
 @endphp
 
 <div
-    role="status"
-    aria-live="polite"
-    aria-label="{{ __('wirekit::Loading') }}"
+    @unless($attributes->has('role')) role="status" @endunless
+    @unless($attributes->has('aria-live')) aria-live="polite" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless
     {{-- No aria-busy here, deliberately. This element IS the live region, and
          WAI-ARIA defines aria-busy on a live region as "wait before exposing
          this to the user" — set to true and never flipped back, it tells

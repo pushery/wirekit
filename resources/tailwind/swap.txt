@@ -21,6 +21,7 @@ $slot
 '';
 '('.$expression.')'
 ',
+'.WireKit::resolveClasses('swap',
 'active'
 'base',
 'effect'
@@ -38,7 +39,7 @@ $slot
 'scope'
 'true'
 'true'"
-'wk-swap',
+'wk-swap
 'wk-swap-fade',
 'wk-swap-flip',
 'wk-swap-rotate',
@@ -88,7 +89,6 @@ That
 The
 UNBOUND
 Use
-WireKit::resolveClasses('swap',
 WireKit::validateProp('swap',
 Wrap
 [

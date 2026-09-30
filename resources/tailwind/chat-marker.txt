@@ -17,9 +17,9 @@ $as
 $as,
 $attributes
 $attributes->class([
-$attributes->class([$classes])
 $attributes->class([$classes]);
 $attributes->class([WireKit::resolveClasses('icon',
+$attributes->except('aria-busy')->class([$classes])
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -276,6 +276,7 @@ $variantValue
 @elseif($isVertical)
 @endif
 @endphp
+@endunless
 @if
 @if(!
 @if($icon)
@@ -287,6 +288,8 @@ $variantValue
 @php
 @props([
 @props.
+@unless($attributes->has('aria-live'))
+@unless($attributes->has('role'))
 A
 A11y
 ALSO

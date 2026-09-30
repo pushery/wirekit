@@ -26,8 +26,8 @@
     // rounded edge. Deliberately not a landmark — see scroll-area for why a built-in name
     // would make every instance the same one. modal.js keeps initial focus off this wrapper
     // whenever the dialog holds a control.
-    $classes = WireKit::resolveClasses('modal.body', 'base', implode(' ', [
-        'min-h-0 overflow-y-auto wk-scrollbar',
+    $classes = 'wk-scrollbar '.WireKit::resolveClasses('modal.body', 'base', implode(' ', [
+        'min-h-0 overflow-y-auto',
         // One token on all four sides, and the header's. Wider side padding would start the content
         // further in than the title above it and sit it further from the sides than from the
         // bottom; equal padding on one token keeps a single edge down the panel, and a theme

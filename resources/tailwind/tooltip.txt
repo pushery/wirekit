@@ -55,8 +55,16 @@ $tooltipId
 'top'),
 'w-max',
 'wk-tooltip-');
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'z-[var(--z-wk-tooltip)]',
 ("Fast
+(Support\CallerListeners).
 (WCAG
 (`.wk-scroll-fade…:focus-within
 (`data-wk-tooltip-surface`
@@ -177,7 +185,9 @@ WireKit::warnUnknownProps('tooltip',
 With
 Without
 ['inverted',
+['x-on:mouseenter',
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 ])
@@ -475,6 +485,7 @@ gets
 global
 glyph
 go
+goes
 grid
 guard
 guarded
@@ -562,6 +573,7 @@ lets
 like
 linked
 list
+listener
 listens
 live
 lives
@@ -732,6 +744,7 @@ root,
 rounded
 row.
 rule
+run
 safe.
 safe:
 same
@@ -770,6 +783,7 @@ something
 space
 span
 span).
+spelling,
 stack
 stacking-context
 stands
@@ -867,6 +881,7 @@ value
 value,
 vanished
 via
+view
 viewport.
 visibility
 w-max

@@ -81,6 +81,10 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('tooltip', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:mouseenter', 'x-on:mouseleave', 'x-on:focusin', 'x-on:focusout', 'x-on:pointerdown', 'x-on:pointerup', 'x-on:pointerleave', 'x-on:keydown.escape.window']);
+
     // Generate unique ID for ARIA association between trigger and tooltip
     // Stable across re-renders. The trigger's aria-describedby and the bubble's id are the
     // two halves of one pairing; a fresh id per render would leave them naming different

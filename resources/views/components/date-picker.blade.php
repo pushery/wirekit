@@ -79,6 +79,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('date-picker', $attributes->getAttributes());
 
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // component, so they go on the outermost element while the bag lands further in: see
+    // Support\OuterAttributes.
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -283,6 +288,11 @@
         $rangeWrapperAttributes = $attributes
             ->whereDoesntStartWith('wire:model')
             ->except(['aria-label', 'aria-labelledby', 'aria-describedby']);
+
+        // 4. An `x-model` on the row would take the value of whichever date sent the last `input`
+        //    event, one end of the range and never the range, so it is removed there
+        //    (Support\UnboundModel). `wire:model` binds both ends, as in 1.
+        \Pushery\WireKit\Support\UnboundModel::drop('date-picker', $rangeWrapperAttributes);
     }
 @endphp
 
@@ -309,7 +319,7 @@
     ]);
 @endphp
 
-<div class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
             {{-- One marker, in the dense house form: no whitespace, `ms-0.5` carries the
@@ -356,7 +366,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @unless($label) aria-label="{{ __('wirekit:::label start', ['label' => $rangeName]) }}" @endunless
-                {{ $rangeStartAttributes }}
+                {{ $rangeStartAttributes->except('type') }}
                 class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
             <span aria-hidden="true" class="shrink-0 text-[color:var(--color-wk-text-muted)]">&ndash;</span>
@@ -373,7 +383,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 aria-label="{{ __('wirekit:::label end', ['label' => $rangeName]) }}"
-                {{ $rangeEndAttributes }}
+                {{ $rangeEndAttributes->except('type') }}
                 class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
         </div>
@@ -396,7 +406,7 @@
                 x-on:change="commitFromControl()"
             @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->class(['wk-field', $inputClasses]) }}
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         />
     @endif

@@ -1,8 +1,8 @@
 "Scrollable
 "max-height:
 "there's
+$attributes->except('tabindex')->merge($inlineStyle
 $attributes->getAttributes());
-$attributes->merge($inlineStyle
 $classes
 $fade
 $fade,
@@ -18,10 +18,12 @@ $overflowClass
 $overflowClass,
 $scope);
 $slot
+'
 ''
-'',
+'').WireKit::resolveClasses('scroll-area',
 '';
 ',
+'.($fadeValue
 'auto'
 'auto'.
 'auto';
@@ -48,8 +50,8 @@ $slot
 'start'
 'start',
 'vertical',
-'wk-scroll-fade'
-'wk-scrollbar',
+'wk-scroll-fade
+'wk-scrollbar
 'x'
 'y';
 ("Release
@@ -116,7 +118,6 @@ Scroll
 The
 UNCONDITIONAL
 WCAG
-WireKit::resolveClasses('scroll-area',
 WireKit::validateProp('scroll-area',
 Without
 ['both',

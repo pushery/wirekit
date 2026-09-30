@@ -256,6 +256,8 @@ $wrapLabel
 '.$iconOnlyBelow.'.
 '.$iconOnlySquareToken.';']);
 '.$message);
+'.WireKit::resolveClasses('swap',
+'.WireKit::resolveClasses('theme-controller',
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
 '2xl'
@@ -522,13 +524,16 @@ $wrapLabel
 'wk-dropdown-indicator',
 'wk-dropdown-panel-'
 'wk-dropdown-submenu-');
-'wk-swap',
+'wk-swap
 'wk-swap-fade',
 'wk-swap-flip',
 'wk-swap-rotate',
 'wk-theme-fixed-reason-');
 'wk-touch-target
 'wrapLabel'
+'x-on:click']);
+'x-on:click.outside',
+'x-on:keydown.escape.window',
 'xl'
 'xl',
 'xl']),
@@ -565,6 +570,7 @@ $wrapLabel
 (36px,
 (4.05
 (SVG
+(Support\CallerListeners).
 (Tailwind's
 (WAI-ARIA
 (WCAG
@@ -654,6 +660,7 @@ $wrapLabel
 -------
 --------
 -----------
+--border-wk-width:
 --color-wk-bg-elevated
 --color-wk-bg-elevated,
 --color-wk-bg-subtle
@@ -688,11 +695,15 @@ $wrapLabel
 0.875
 018-8V0C5.373
 0Z"
+0px
+0px:
 1
 1-7.5
 1.
 1.00:1
 1.04:1.
+1.09:1
+1.4.11);
 1.4.11:
 1.591M21
 1.591M5.25
@@ -714,6 +725,7 @@ $wrapLabel
 18.75V21m-4.773-4.227-1.591
 19.8:1
 1px
+1px;
 2.
 2.4.3
 2.4.3).
@@ -728,6 +740,7 @@ $wrapLabel
 24
 24"
 24">
+24px-tall
 24x24
 28px,
 2rem
@@ -1305,7 +1318,6 @@ WireKit::resolveClasses('dropdown.panel',
 WireKit::resolveClasses('dropdown.radio-item',
 WireKit::resolveClasses('dropdown.separator',
 WireKit::resolveClasses('dropdown.trigger',
-WireKit::resolveClasses('swap',
 WireKit::resolveClasses('theme-controller',
 WireKit::validateProp('button',
 WireKit::validateProp('button.group',
@@ -1331,6 +1343,7 @@ Written
 ['sm',
 ['style'
 ['system'
+['x-on:keydown',
 ['xs',
 [--wk-touch-min:0px]'
 [])->class([$classes])
@@ -1354,6 +1367,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($modeValue)
 \Pushery\WireKit\Support\AlpinePayload::string($panelId)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -1404,6 +1418,7 @@ _getItems()
 `.window`
 `.wk-button-group[data-stack-below="…"]`
 `.wk-button`
+`.wk-choice-frame
 `2xl`
 `2xl`,
 `2xl`.
@@ -1616,6 +1631,7 @@ _getItems()
 `wire:loading.attr`
 `wire:loading`
 `wirekitOptimistic`
+`wk-choice-frame`
 `wk-field`
 `wk-touch-target`
 `wrap-label="false"`
@@ -1700,6 +1716,7 @@ allow-list.
 allowed
 allows
 alone
+alone.
 along
 alongside
 already
@@ -1751,6 +1768,7 @@ appears.
 appended
 appending
 application
+application's
 applied
 applies
 applying
@@ -1899,6 +1917,7 @@ bg-[var(--color-wk-accent)]"></span>
 bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
+bg-[var(--color-wk-border)]
 bg-[var(--color-wk-danger)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
@@ -1950,6 +1969,7 @@ bottom
 bound
 bound.
 boundaries
+boundary
 box
 box:
 boxes).
@@ -2103,6 +2123,7 @@ class="w-1.5
 class="w-3
 class="w-3.5
 class="w-4
+class="wk-choice-frame
 class="wk-field
 class="wk-theme-switch-knob
 class="wk-theme-switch-track
@@ -2391,6 +2412,7 @@ distinguish:
 div
 div.
 do
+do.
 docblock
 docs
 docs,
@@ -2720,6 +2742,7 @@ go
 goes
 goes:
 going
+gone,
 got
 grandchild
 group
@@ -2767,6 +2790,7 @@ hard-disabled
 hardcoded
 harder
 has
+has,
 hasActionForComponent()
 hatch;
 have
@@ -2916,6 +2940,8 @@ input
 input's
 inserts
 inset
+inset-ring-[length:var(--border-wk-width)]
+inset-ring-[var(--color-wk-border-strong)]
 inside
 installed
 installed.'
@@ -2951,6 +2977,7 @@ is
 is"
 is,
 is.
+is:
 is_array($options)
 isn't
 isset($sizeMap[$size])
@@ -3062,7 +3089,9 @@ list
 list.
 listed
 listed,
+listener
 listener.
+listens
 listing
 literal
 literal;
@@ -3464,6 +3493,7 @@ peer,
 peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
 peer-checked:
 peer-checked:bg-[var(--color-wk-accent)]
+peer-checked:inset-ring-[var(--color-wk-accent)]
 peer-focus-visible:ring-[length:var(--ring-wk-width)]
 peer-focus-visible:ring-[var(--color-wk-ring)]
 per
@@ -3489,6 +3519,7 @@ place
 place-items-center',
 place.
 place:
+placed
 placeholder
 placement
 placement:
@@ -3739,6 +3770,7 @@ right:
 ring
 ring,
 ring.
+ring:
 role
 role,
 role-less
@@ -3977,6 +4009,7 @@ specs
 speed
 spelled
 spelling
+spelling,
 spill
 spinner
 spinner,
@@ -4017,6 +4050,7 @@ stays
 step
 step:
 still
+stood
 stop
 stopped
 stops
@@ -4046,6 +4080,7 @@ stroke-width="1.5"
 stroke-width="3"
 stroke-width="4"></circle>
 stroke="currentColor"
+strong
 style
 style="display:
 style="display:inline-block;"></span>
@@ -4221,6 +4256,7 @@ today
 today's
 together
 toggle
+toggle's
 toggle,
 toggle-button
 toggle.
@@ -4245,6 +4281,7 @@ touch-target
 touches
 touching
 toward
+track
 tracks
 trade
 trade,
@@ -4402,6 +4439,7 @@ w-11
 w-12"`
 w-12',
 w-3',
+w-3.5
 w-4
 w-4"
 w-4',
@@ -4503,6 +4541,8 @@ with.
 withholds
 within
 without
+wk-choice-frame
+wk-touch-target
 wk-touch-text-floor'
 word
 word,
@@ -4613,6 +4653,7 @@ zero
 });
 },
 };
+}`
 }}
 }}"
 }}">{{

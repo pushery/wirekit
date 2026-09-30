@@ -24,6 +24,7 @@ $attributes->except('class')
 $attributes->except('class')->class(['flex
 $attributes->getAttributes());
 $attributes->only('class')->class([$wrapperClasses])
+$attributes]
 $attrs
 $attrs->merge(['style'
 $baseTokens
@@ -80,6 +81,7 @@ $n)
 $occupied
 $occupied,
 $occupied[]
+$outerAttributes
 $responsiveTemplate
 $responsiveTemplate)
 $scale
@@ -660,6 +662,7 @@ Shown
 Soft
 Split
 Status-Tiles
+Support\OuterAttributes.
 Tailwind
 That
 The
@@ -685,6 +688,7 @@ WireKit::validateProp('grid',
 With
 Written
 [
+[$outerAttributes,
 ['a
 ['key'
 ['none',
@@ -696,6 +700,7 @@ Written
 [])
 [],
 [];
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\SafeUrl::href($item['href']
 \Pushery\WireKit\WireKit::tagName('grid',
 \Pushery\WireKit\WireKit::warnUnknownProps('grid',
@@ -758,6 +763,9 @@ __('wirekit::shop.example'),
 `style`:
 `template`
 `title=label`,
+`wire:key`,
+`wire:show`
+`x-show`,
 `xs`…`2xl`
 a
 about
@@ -822,6 +830,7 @@ axe
 axis
 badge
 badge-soft
+bag
 balances
 balancing
 base
@@ -941,6 +950,7 @@ compilation),
 compiles
 component
 component's
+component,
 components
 composed
 config('wirekit.components.grid.cols',
@@ -1092,6 +1102,7 @@ fr,
 free,
 free:
 from
+further
 gap
 gap-1
 gap-[var(--gap-wk-md)]',
@@ -1103,6 +1114,7 @@ generates
 get
 glance
 glued
+go
 grammar.
 greedy
 grid
@@ -1143,6 +1155,7 @@ implicit
 implode('
 imports
 in
+in:
 in_array(
 in_array($item['intent']
 including
@@ -1333,6 +1346,7 @@ otherwise
 out
 outer
 outer's
+outermost
 overflow
 overflows
 own
@@ -1451,6 +1465,7 @@ screen-reader-only
 screen.
 script
 second
+see
 sees
 semicolon
 sent
@@ -1604,6 +1619,7 @@ top-align
 track
 tracks
 transition-shadow
+transitions
 treatment.
 trick,
 trim((string)

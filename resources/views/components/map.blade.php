@@ -111,13 +111,17 @@
     $selectedClasses = $highlightClasses[$highlight][$highlightColor];
 
     $base = WireKit::resolveClasses('map', 'base', 'w-full font-[family-name:var(--font-wk-sans)]', $scope);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
     x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ (int) $zoom }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}, reducedData: {{ \Pushery\WireKit\Support\AlpinePayload::string($reducedData) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution) }}@endif, markerLabel: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map marker')) }} })"
-    role="group"
+    @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ $ariaLabel }}"
     {{-- NO flex gap between canvas and list: the list's own divider border (a top
          border when stacked, a left border when side by side) IS the separator. A

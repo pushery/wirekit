@@ -2,6 +2,7 @@
 "loading"
 "the
 $attributes
+$attributes->except('aria-hidden')
 $attributes->getAttributes());
 $ceiling
 $fillColor
@@ -11,7 +12,9 @@ $intent,
 $rootClass
 $scope);
 $showAfter
+'',
 '.$heightToken.';'])
+'.WireKit::resolveClasses('page-progress',
 'auto'
 'auto']))
 'base',
@@ -43,7 +46,7 @@ $showAfter
 'var(--page-progress-height-sm)',
 'warning'
 'warning',
-'wk-page-progress',
+'wk-page-progress
 (WireKit::validateProp('page-progress',
 (int)
 (silent
@@ -74,6 +77,7 @@ $showAfter
 @props.
 A
 Alpine's
+CallerRef::onRoot()
 DOES
 Declared
 Dev-only
@@ -100,9 +104,9 @@ Tailwind
 That
 The
 This
-WireKit::resolveClasses('page-progress',
 ['primary',
 ['sm',
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('page-progress',
 ])
 `!important`
@@ -115,8 +119,10 @@ WireKit::resolveClasses('page-progress',
 `progress`,
 `reading-progress`
 `transform-origin`
+`x-ref`
 a
 above
+above.
 across
 act
 add
@@ -156,12 +162,14 @@ axis
 back
 back.
 background-color:
+bag
 bar
 bar's
 be
 because
 been
 before
+belongs
 binding
 bleed
 blinks
@@ -175,6 +183,7 @@ built
 by
 calc(var(--transition-wk-duration)
 call
+caller's
 can
 cannot
 carries
@@ -191,6 +200,7 @@ client-only
 color
 compile
 component's
+component,
 components
 context
 copy
@@ -253,6 +263,7 @@ grows
 gutter
 h-full"
 halves
+hands
 has
 height
 height:
@@ -276,6 +287,7 @@ is.
 it
 it,
 it.
+it:
 its
 keep
 keeps
@@ -283,6 +295,7 @@ keystroke
 keyword
 knows,
 knows.
+lands
 later
 layout.
 left
@@ -334,6 +347,7 @@ opt-in,
 optimistic-ui:
 other
 otherwise
+our
 out".
 outranks
 over.
@@ -377,6 +391,8 @@ requests
 retint
 rightward.
 roll
+root
+root,
 round
 rule
 rule.

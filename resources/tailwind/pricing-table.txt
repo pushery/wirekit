@@ -5,6 +5,7 @@ $attributes
 $attributes->except('x-ref')->merge(array_filter([
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge(['style'
 $attributes->whereStartsWith('wire:model')
 $callerRef
@@ -26,9 +27,12 @@ $intervalUnselectedClasses
 $intervals
 $label
 $name
+$outerAttributes
 $scope);
 $serverInterval
 $slot
+$withoutOuterAttributes;
+$withoutOuterAttributes]
 &&
 ''
 '')
@@ -66,9 +70,11 @@ $slot
 'text-[color:var(--color-wk-text-muted)]',
 'true'
 'x-wk-ref'
+($intervalMap
 ((string)
 (never
 (resources/js/utils/caller-ref.js).
+(see
 (silent
 (string)
 (the
@@ -110,6 +116,7 @@ $slot
 @endforeach
 @endif
 @endphp
+@endunless
 @foreach($intervalMap
 @if($callerRef
 @if($interval
@@ -117,6 +124,8 @@ $slot
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 A
 Accessible
 Alpine
@@ -151,6 +160,7 @@ Pushery\WireKit\WireKit;
 SERVER
 STATIC
 Same
+Support\OuterAttributes).
 Tailwind
 The
 This
@@ -161,11 +171,14 @@ WireKit::resolveClasses('pricing-table',
 WireKit::scope(),
 With
 [
+[$outerAttributes,
 []
+\Illuminate\View\ComponentAttributeBag([]);
 \Pushery\WireKit\Support\AlpinePayload::from($defaultInterval)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($intervalUnselectedClasses)
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('pricing-table',
 ])
 ]));
@@ -180,9 +193,13 @@ __('wirekit::Pricing
 `intervals`,
 `list-none`
 `prices`.
+`wire:key`,
 `wire:model`
+`wire:show`
+`wk-state-button`
 `x-data`,
 `x-ref`
+`x-show`,
 `x-wk-ref`
 a
 about
@@ -210,6 +227,7 @@ at
 attribute
 auto-derived
 backwards
+bag.
 be
 because
 before
@@ -235,6 +253,7 @@ bullets
 bundle
 button
 by
+by:
 byte-identical
 byte-stable.
 caller's
@@ -249,8 +268,8 @@ changes
 checkout
 choice
 class
-class="cursor-pointer
 class="mb-[var(--space-wk-md)]
+class="wk-state-button
 client-only
 compares,
 component's
@@ -260,6 +279,7 @@ config('wirekit.components.pricing-table.label')
 contain
 content
 correct
+cursor-pointer
 data-wk-pricing-interval-toggle="{{
 data-wk-pricing-intervals
 data-wk-pricing-table
@@ -286,6 +306,7 @@ e.g.
 effect
 either
 element
+else
 evaluates
 every
 exactly
@@ -300,12 +321,15 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]"
 focus:outline-hidden
 for
+forced-colors
+frames
 free
 from
 gap-[var(--gap-wk-md)]',
 gap-[var(--space-wk-xs)]
 gappy
 given.
+go
 grid.
 group
 had
@@ -318,6 +342,7 @@ hidden
 historical
 hold
 identically
+if
 implode('
 imports
 in
@@ -345,6 +370,7 @@ items
 items"
 items,
 items-center
+its
 just
 keep
 keeps
@@ -373,6 +399,7 @@ make
 many
 map
 margin:
+marker
 markers
 marks
 match
@@ -380,14 +407,17 @@ may
 md:grid-cols-2
 md:grid-cols-2',
 meets
+mode
 monthly/yearly
 morph
 most.
+move
 moves
 n/a
 name
 name="{{
 needs.
+new
 nine
 no
 noise
@@ -451,6 +481,7 @@ py-[var(--padding-wk-y-sm)]
 qualified:
 queued
 quietly
+raised
 rather
 re-initializes
 reach
@@ -459,6 +490,7 @@ read
 reader
 reads
 reason
+removes.
 render
 rendered
 renders
@@ -497,6 +529,7 @@ server
 server's
 server-rendered
 set
+shadow
 should
 shown,
 side
@@ -512,10 +545,13 @@ still
 strict
 strings
 stylesheet
+stylesheet's
+surface
 surrounding
 survive
 switch
 table
+table,
 table.
 taken
 tech,
@@ -525,9 +561,12 @@ than
 that
 the
 their
+them
 them.
 then
 there
+there;
+they
 this
 three-column
 through
@@ -540,6 +579,7 @@ toggle's
 toggle.
 tokens
 transition-colors
+transitions
 trim((string)
 true
 type="button"
@@ -567,8 +607,10 @@ whose
 widest
 wins;
 with.
+without
 would
 wrapper
+wrapper,
 writes
 written
 wrong
@@ -578,6 +620,8 @@ x-ref="hiddenInput"
 {
 {{
 {{--
+||
+}
 })"
 };
 }}

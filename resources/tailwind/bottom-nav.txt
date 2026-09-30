@@ -21,6 +21,7 @@ $attributes->get('rel',
 $attributes->get('role');
 $attributes->get('target',
 $attributes->getAttributes());
+$attributes->has('aria-labelledby'))
 $attributes->merge()
 $attributes->merge([
 $badge
@@ -87,6 +88,8 @@ $validated
 '.$badge
 '.$key,
 '.$key.'
+'.WireKit::resolveClasses('bottom-nav',
+'.WireKit::resolveClasses('bottom-nav.item',
 '.__('wirekit::(opens
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
@@ -138,8 +141,8 @@ $validated
 'true'
 'true';
 'true']);
-'wk-bottom-nav',
-'wk-bottom-nav-item',
+'wk-bottom-nav
+'wk-bottom-nav-item
 'x-bind:aria-current'
 'x-bind:data-active'
 'x-init'
@@ -226,6 +229,7 @@ $validated
 @else
 @endif
 @endphp
+@endunless
 @if
 @if($active)
 @if($badge
@@ -236,6 +240,7 @@ $validated
 @php
 @props([
 @props.
+@unless($attributes->has('aria-label')
 A
 A11y
 ALSO
@@ -255,6 +260,7 @@ BooleanProp::from($interactive,
 BooleanProp::from($mobileOnly,
 CSP
 CSS
+CallerRef::onRoot()
 Catching
 Check
 DEFAULT
@@ -334,8 +340,6 @@ We
 What
 Which
 WireKit
-WireKit::resolveClasses('bottom-nav',
-WireKit::resolveClasses('bottom-nav.item',
 WireKit::validateProp('icon',
 With
 [
@@ -345,6 +349,7 @@ With
 \'true\'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($label);
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav',
 \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -377,6 +382,7 @@ __toString
 `prop="false"`
 `role="img"`.
 `true
+`x-ref`
 `{{
 a
 a11y
@@ -663,6 +669,7 @@ h-5
 h/w
 half
 hand-written
+hands
 hard
 harder
 has
@@ -725,6 +732,7 @@ isset($sizeMap[$size])
 it
 it,
 it.
+it:
 item
 item's
 items-center
@@ -736,6 +744,7 @@ job.
 jump
 justify-around',
 justify-center
+keep
 keeps
 key
 keyed
@@ -747,6 +756,7 @@ labels).
 ladder
 landmark
 landmark,
+lands
 later
 layer
 layout
@@ -942,6 +952,7 @@ role="img"
 role="img".
 room
 root
+root,
 root;
 rounded-[var(--radius-wk-full)]
 router.

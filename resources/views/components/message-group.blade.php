@@ -51,12 +51,12 @@
 @endphp
 
 <div
-    role="group"
+    @unless($attributes->has('role')) role="group" @endunless
     {{-- Named after the sender, so a reader who lands inside the run hears whose it is
          before the first message. Only with a name: `role="group"` with an empty label is
          a group that announces nothing, which is worse than an unnamed one. --}}
     @if(filled($authorName))
-        aria-label="{{ __('wirekit::Messages from :name', ['name' => $authorName]) }}"
+        @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Messages from :name', ['name' => $authorName]) }}" @endunless
     @endif
     {{ $attributes->class([$baseClasses]) }}
 >

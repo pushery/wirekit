@@ -116,6 +116,7 @@ $wrapperClasses
 ($levelValue
 ($variant)
 (1–6).
+(Support\CallerListeners).
 (`--border-wk-width`,
 (`lg`
 (back-compat).
@@ -297,11 +298,13 @@ WireKit::validateProp('accordion',
 [
 ['1',
 ['bordered',
+['x-on:keydown']);
 [1,
 \Pushery\WireKit\Support\AlpinePayload::from($itemId)
 \Pushery\WireKit\Support\AlpinePayload::string($mode)
 \Pushery\WireKit\Support\BooleanProp::from($animate,
 \Pushery\WireKit\Support\BooleanProp::from($findable,
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($id,
 \Pushery\WireKit\WireKit::warnUnknownProps('accordion',
@@ -578,6 +581,7 @@ engine
 entire
 escape
 even
+event
 every
 exactly
 exist
@@ -713,6 +717,8 @@ library,
 like
 lines
 list
+listener
+listens
 literal
 live
 lives
@@ -907,6 +913,7 @@ row.
 row:
 rows
 rule,
+run
 safe
 same
 scanner
@@ -940,6 +947,7 @@ skips
 sliver
 so
 spacious
+spelling,
 spelling.
 spellings
 spells
@@ -1056,6 +1064,7 @@ variants
 verbatim
 vertically
 via
+view
 view's
 viewBox="0
 visually

@@ -198,11 +198,15 @@ $widthStyle]
 'wk-dropdown-indicator',
 'wk-dropdown-panel-'
 'wk-dropdown-submenu-');
+'x-on:click']);
+'x-on:click.outside',
+'x-on:keydown.escape.window',
 'z-[var(--z-wk-dropdown)]',
 ("Menu
 ($active
 ($relAttr
 ($width)
+(Support\CallerListeners).
 (WAI-ARIA
 (WCAG
 (WireKit
@@ -237,6 +241,7 @@ $widthStyle]
 );
 +
 -
+--border-wk-width:
 --color-wk-bg-elevated
 --color-wk-bg-elevated,
 --color-wk-bg-subtle
@@ -248,6 +253,7 @@ $widthStyle]
 /></svg>
 0
 0,
+0px
 1
 1.
 1.00:1
@@ -256,6 +262,7 @@ $widthStyle]
 13l4
 17.2:1
 19.8:1
+1px;
 2.
 2.4.3).
 20
@@ -560,6 +567,7 @@ Wrapping
 [
 ['class'
 ['style'
+['x-on:keydown',
 [])->class([$classes])
 [],
 [checked]
@@ -571,6 +579,7 @@ Wrapping
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($panelId)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -595,6 +604,7 @@ _getItems()
 `#wk-overlay-root`;
 `--radius-wk-nav-item`
 `.window`
+`.wk-choice-frame
 `<body>`
 `<div>`
 `<x-slot:label>`
@@ -689,6 +699,7 @@ _getItems()
 `wire:id`,
 `wire:key`,
 `wirekitOptimistic`
+`wk-choice-frame`
 `x-bind:id="panelId"`
 `x-bind`.
 `x-data="{
@@ -761,6 +772,7 @@ appeared
 appears.
 appended
 application
+application's
 applied
 applies
 applying
@@ -872,6 +884,7 @@ box:
 boxes).
 break
 breakpoint.
+brings
 broken.
 browser
 browser's
@@ -945,6 +958,7 @@ class="w-1.5
 class="w-3
 class="w-3.5
 class="w-4
+class="wk-choice-frame
 classes
 click
 click.
@@ -1263,6 +1277,7 @@ global
 go
 goes
 goes:
+gone,
 got
 group
 group's
@@ -1432,7 +1447,9 @@ like
 lines"
 list
 list.
+listener
 listener.
+listens
 listing
 literal
 little
@@ -1690,6 +1707,7 @@ positioning.
 prefix,
 present
 presentational
+preset
 prevailing
 prevent.
 preview
@@ -1812,6 +1830,7 @@ right:
 ring
 ring,
 ring.
+ring:
 role
 role,
 role-less
@@ -1945,6 +1964,7 @@ spec
 spec's
 specs
 speed
+spelling,
 split
 spreads
 square
@@ -2154,6 +2174,7 @@ visited.
 visual
 visually
 vulnerability.
+w-3.5
 w-4
 w-5
 w-full"
@@ -2279,6 +2300,7 @@ zero
 }"`
 })"
 };
+}`
 }}
 }}"
 }})"

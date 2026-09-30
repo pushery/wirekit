@@ -210,6 +210,7 @@ $variant;
 @else
 @endif
 @endphp
+@endunless
 @if
 @if($after)
 @if($before)
@@ -222,6 +223,7 @@ $variant;
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 A11y
 ALSO

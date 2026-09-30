@@ -122,7 +122,7 @@
      wearing an attribute. --}}
 <{{ filled($label) ? 'aside' : 'div' }} data-wk-prose-skip
     {{ $attributes->merge(['style' => 'top: '.($offset).'; width: 100%; --wk-sticky-panel-w: '.($width).';'])->class([$asideClasses]) }}
-    @if(filled($label)) aria-label="{{ $label }}" @endif
+    @if(filled($label)) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
 >
     <div class="{{ $componentClasses }}" style="max-height: {{ $resolvedMaxHeight }};">
         @if(isset($header))

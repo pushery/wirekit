@@ -87,6 +87,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('inline-edit', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@wirekit:inline-edit-saved.window', '@wirekit:inline-edit-failed.window']);
+
     $openOnValueClick = BooleanProp::from($openOnValueClick, true);
     $exclusive = BooleanProp::from($exclusive, true);
     $actions = BooleanProp::from($actions, true);
@@ -194,7 +198,11 @@
     // and the label would miss again.
     // `$id` is already page-unique, so `$id-control` is too, and the single registration
     // that does happen is the control's own.
-    $controlId = $id.'-control';
+    //
+    // A caller's `id` goes on the control itself, the element a `<label for>` elsewhere on
+    // the page and a link to `#id` reach. It is not registered here either, so the control's
+    // own registration hands it back unchanged and the label below still matches.
+    $controlId = filled($attributes->get('id')) ? $id : $id.'-control';
     $attributes = $attributes->except(['id']);
 
     $hintId = $hint ? $id.'-hint' : null;
@@ -267,8 +275,7 @@
         default => '',
     };
 
-    $triggerClasses = WireKit::resolveClasses('inline-edit', 'trigger', implode(' ', [
-        'wk-touch-target',
+    $triggerClasses = 'wk-touch-target '.WireKit::resolveClasses('inline-edit', 'trigger', implode(' ', [
         'inline-flex shrink-0 items-center justify-center',
         'rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',

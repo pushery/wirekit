@@ -30,6 +30,7 @@ $wrapperClasses
 'text-[length:var(--text-wk-md)]',
 'w-72',
 'wrapper',
+(Support\CallerListeners).
 (an
 (and
 (aria-haspopup,
@@ -119,7 +120,9 @@ WINDOW,
 WireKit::resolveClasses('hover-card',
 Without
 [
+['@keydown.escape.window']);
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('hover-card',
 ])
@@ -237,6 +240,7 @@ end
 entering
 entirely
 error.
+event
 exists,
 fires
 first
@@ -254,6 +258,7 @@ from
 front
 full
 generic
+goes
 handler
 handler.
 hands
@@ -301,6 +306,7 @@ like
 lines
 links),
 list
+listener
 listens
 live
 longer
@@ -407,6 +413,7 @@ sits
 so
 something
 somewhere
+spelling,
 state
 steps
 still
@@ -442,6 +449,7 @@ usage
 use
 value
 via
+view
 view's
 viewport-relative
 visibility

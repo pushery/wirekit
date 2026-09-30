@@ -203,7 +203,9 @@
     :label="$dialogLabel"
     :padded="false"
     :scope="$scope"
-    {{ $attributes->except(['class']) }}
+    {{-- The whole bag, `class` included: the popover merges a class onto its wrapper, which is
+         where a caller's layout class belongs, and left out here it reached no element at all. --}}
+    {{ $attributes }}
     data-wk-scope-switcher
 >
     <x-slot:trigger>
@@ -364,7 +366,7 @@
                         x-on:pointermove.passive="setActive({{ \Pushery\WireKit\Support\AlpinePayload::string($row['key']) }}, false)"
                         data-label="{{ $row['label'] }}"
                         x-on:click="onItemClick($event, {{ $isCurrent ? 'true' : 'false' }})"
-                        class="{{ $itemClasses }}"
+                        class="wk-listbox-option {{ $itemClasses }}"
                     >
                         @if($row['image'])
                             <img data-wk-prose-skip src="{{ $row['image'] }}" alt="" class="h-5 w-5 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />

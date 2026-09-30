@@ -683,6 +683,7 @@ __('wirekit::Select
 `wirekit:data-table-columns-changed`,
 `wirekitStickyPanelShadows`,
 `wk-scroll-shadow-start`
+`wk-state-button`
 `x-data`
 `x-data`,
 `x-data`.
@@ -935,7 +936,6 @@ class="h-3
 class="h-4
 class="inline-flex
 class="px-[var(--padding-wk-x-md)]
-class="px-[var(--padding-wk-x-sm)]
 class="relative
 class="relative">
 class="shrink-0
@@ -948,6 +948,7 @@ class="w-px
 class="wk-field
 class="wk-scroll-shadow-end"></div>
 class="wk-scroll-shadow-start"></div>
+class="wk-state-button
 class="{{
 classes
 click
@@ -970,6 +971,7 @@ col.key
 col.key"
 collides
 color
+colors
 column
 column's
 column,
@@ -1212,9 +1214,11 @@ font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-heading-weight)]
 font-semibold"
 for
+forced
 foreach
 form
 four
+frames
 freeze
 freezes
 freezing
@@ -1437,6 +1441,7 @@ many
 map
 maps
 margin
+marker
 marks
 markup
 matched
@@ -1473,6 +1478,7 @@ missed
 mode
 mode)
 mode,
+mode.
 mode:
 model
 model.
@@ -1556,6 +1562,7 @@ opened
 opposite
 opt-in
 optimistic-ui:
+option
 or
 order
 order,
@@ -1591,6 +1598,7 @@ page:
 pages
 paging
 paint
+paint,
 pair
 pair.
 pairing
@@ -1634,6 +1642,7 @@ popover
 position
 positions,
 prefix
+pressed
 previous
 primary
 problem
@@ -1903,6 +1912,7 @@ strings.
 stroke-width="1.6"><path
 stroke="currentColor"
 strong|muted
+stylesheet
 stylesheet,
 subKey
 submission.
@@ -1986,11 +1996,13 @@ throttles
 through
 time
 times
+tint,
 tinted
 tints
 to
 to.
 toggle
+toggle.
 toggleColumn
 toggled
 token

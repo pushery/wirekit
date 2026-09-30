@@ -22,6 +22,7 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes]
 $autocomplete
 $callerRef
 $classes
@@ -71,6 +72,7 @@ $offset
 $optimistic,
 $optimisticArgs),
 $optimisticConfig
+$outerAttributes
 $placeholder
 $prefix
 $prefixInputPadClass
@@ -264,6 +266,13 @@ $useWrapper
 'wk-field',
 'wk-field-frame',
 'wk-tooltip-');
+'x-on:focusin',
+'x-on:focusout',
+'x-on:keydown.escape.window']);
+'x-on:mouseleave',
+'x-on:pointerdown',
+'x-on:pointerleave',
+'x-on:pointerup',
 'z-[var(--z-wk-tooltip)]',
 ("Fast
 ($attributes->get('value')
@@ -276,6 +285,7 @@ $useWrapper
 ($size)
 (($hasError
 (@aware
+(Support\CallerListeners).
 (WCAG
 (`.wk-scroll-fade…:focus-within
 (`data-wk-tooltip-surface`
@@ -581,6 +591,7 @@ Static
 Strip
 Success
 Support\DomId
+Support\OuterAttributes.
 Swaps
 Switch
 THE
@@ -621,18 +632,22 @@ Written
 X
 Your
 [
+[$outerAttributes,
 [&:user-invalid]:*
 ['date',
 ['inverted',
 ['sm',
+['x-on:mouseenter',
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ])
 ])),
@@ -728,6 +743,7 @@ __('wirekit::Saving'),
 `window.open`,
 `wire:id`,
 `wire:key`,
+`wire:show`
 `wk-field-affordance`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
@@ -736,6 +752,7 @@ __('wirekit::Saving'),
 `x-ref`.
 `x-show="open"`
 `x-show`
+`x-show`,
 `x-wk-ref`,
 `{{
 a
@@ -1232,6 +1249,7 @@ full
 fully
 function-valued
 function;
+further
 gap
 get
 gets
@@ -1242,6 +1260,7 @@ glyph
 glyph)
 glyph,
 go
+goes
 goes.
 got
 green
@@ -1321,6 +1340,7 @@ implode('
 imports
 in
 in.
+in:
 in_array($type,
 included.
 independently
@@ -1409,6 +1429,7 @@ lines
 link
 linked
 list
+listener
 listens
 literal
 live
@@ -1548,6 +1569,7 @@ our
 ours,
 out
 out.
+outermost
 output
 outside
 over
@@ -1710,6 +1732,7 @@ row,
 row.
 row:
 rule
+run
 runs
 safe.
 safe:
@@ -1786,6 +1809,7 @@ space,
 space;
 span
 span).
+spelling,
 spellings
 spreads
 sr-only
@@ -1923,6 +1947,7 @@ towards
 trailing
 transformed
 transition-colors
+transitions
 travel
 treated
 treatment:
@@ -1980,6 +2005,7 @@ values
 vanished
 variable
 via
+view
 view's
 viewBox="0
 viewport.

@@ -109,6 +109,7 @@ $wkStart),
 'pl-[var(--padding-wk-x-sm)]
 'range'
 'reject',
+'relative',
 'reverted'
 'rounded-[var(--radius-wk-lg)]',
 'rounded-[var(--radius-wk-sm)]',
@@ -377,6 +378,7 @@ __('wirekit::Previous
 __('wirekit::Saving'),
 __('wirekit::Year')
 `/`.
+`::before`,
 `<select>`
 `Undefined
 `YYYY-MM-DD/YYYY-MM-DD`,
@@ -398,6 +400,7 @@ __('wirekit::Year')
 `optimistic="method"`
 `prop="false"`
 `pt_BR`
+`relative`
 `run()`.
 `selected`,
 `selected`;
@@ -406,6 +409,7 @@ __('wirekit::Year')
 `viewMonth`
 `viewYear`
 `weekdayHeaders`
+`wk-calendar-day`
 `x-ref`
 `{{
 a
@@ -498,6 +502,7 @@ browser's
 browser's.
 build
 built
+button
 button.
 buttons
 by
@@ -534,8 +539,10 @@ class="sr-only"
 class="text-center
 class="w-5
 class="w-full"
+class="wk-calendar-day
 class="wk-field
 class="{{
+classes.
 classic
 clicked.
 clip
@@ -611,6 +618,7 @@ does
 doing
 double
 down
+draws
 drift.
 drives
 duration-[var(--transition-wk-duration)]',
@@ -675,6 +683,7 @@ font-[number:var(--font-wk-body-weight)]
 font-[number:var(--font-wk-heading-weight)]
 for
 for="{{
+forced-colors
 form
 formats,
 formatter,
@@ -714,6 +723,7 @@ here
 here.
 here:
 hidden
+holds
 honest
 house
 hover:bg-[var(--color-wk-bg-subtle)]':
@@ -782,6 +792,8 @@ locale:
 looking
 makes
 mangled.
+mark
+marker
 markup
 matches
 matching
@@ -999,6 +1011,7 @@ stroke-linejoin="round"
 stroke-width="2"
 stroke="currentColor"
 style="display:
+stylesheet
 submission
 submitted
 submitting
@@ -1031,6 +1044,7 @@ them
 then
 there
 there,
+these
 they
 this
 those

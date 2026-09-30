@@ -48,6 +48,8 @@ $titleId
 '-me-[var(--padding-wk-x-sm)]',
 '-translate-x-full',
 '-translate-y-full',
+'.WireKit::resolveClasses('drawer',
+'.WireKit::resolveClasses('drawer.body',
 'backdrop',
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
@@ -68,7 +70,10 @@ $titleId
 'drawer',
 'false'
 'false'"
+'fixed
+'fixed',
 'flex
+'flex-1
 'focus-visible:outline-hidden
 'focus-visible:outline-hidden',
 'focus-visible:ring-[length:var(--ring-wk-width)]',
@@ -93,6 +98,7 @@ $titleId
 'md';
 'modal'])
 'name'
+'overflow-y-auto',
 'p-[var(--padding-wk-x-lg)]',
 'panel',
 'position'
@@ -137,12 +143,13 @@ $titleId
 'wk-drawer-title-'
 'wk-drawer-title-');
 'wk-overlay-fixed
-'wk-overlay-layer-drawer
 'wk-scrollbar
 'wkTitleId')"
+'z-[var(--z-wk-drawer)]',
 (!
 ($close)
 ($position)
+(Support\CallerListeners).
 (`--size-wk-drawer-inset`)
 (`x-bind:id`),
 (a
@@ -241,6 +248,7 @@ BooleanProp::from($dismissible,
 BooleanProp::from($lockScroll,
 But
 By
+CallerRef::onRoot()
 Clamp
 Clamping
 Close
@@ -315,8 +323,6 @@ When
 Whether
 Wider
 WireKit::resolveClasses("{$component}.close",
-WireKit::resolveClasses('drawer',
-WireKit::resolveClasses('drawer.body',
 WireKit::resolveClasses('drawer.footer',
 WireKit::resolveClasses('drawer.header',
 WireKit::validateProp('drawer',
@@ -327,7 +333,10 @@ Wrapping,
 ['component'
 ['left',
 ['sm',
+['x-on:keydown.escape.window']);
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('drawer',
 \Pushery\WireKit\WireKit::warnUnknownProps('drawer.body',
@@ -380,6 +389,7 @@ __('wirekit::Close')
 `warnUnknownProps`
 `wirekit:drawer-dismissed`).
 `wk-drawer-panel`
+`x-ref`
 `x-show="dismissible"`
 `{{
 a
@@ -449,6 +459,7 @@ back
 back.
 backdrop
 background.
+bag
 bare
 be
 bears
@@ -464,6 +475,7 @@ before:left-1/2
 before:top-1/2
 before:w-[var(--size-wk-touch-target)]
 behind
+belongs
 below,
 beside
 better
@@ -496,6 +508,7 @@ buttons
 by
 call
 caller
+caller's
 caller-supplied
 calls
 can
@@ -532,6 +545,7 @@ closing
 compiles
 component
 component's
+component,
 composed
 condition
 config('wirekit.components.drawer.dismissible',
@@ -646,12 +660,9 @@ find.
 first
 fit
 fix
-fixed
-fixed',
 fixing
 flags
 flex
-flex-1
 flex-1"
 flex-col',
 flex-wrap
@@ -680,6 +691,7 @@ gates
 geometry
 gets
 given
+goes
 goes;
 guard
 guarded
@@ -690,6 +702,7 @@ h-[var(--size-wk-drawer-md)]',
 h-[var(--size-wk-drawer-sm)]',
 handler,
 handling:
+hands
 has
 has.
 have
@@ -858,8 +871,10 @@ opposite
 optimistic-ui:
 or
 original
+other
 other.
 otherwise
+our
 out
 out-of-set
 outer
@@ -967,6 +982,7 @@ role="dialog"
 roleless
 roll
 root
+root,
 round
 row
 rule
@@ -1036,6 +1052,7 @@ something
 sound
 span,
 spelled
+spelling,
 stack
 stacked
 standard
@@ -1142,6 +1159,7 @@ v4's
 value
 variable
 via
+view
 view's
 viewBox="0
 viewport
@@ -1180,6 +1198,8 @@ wins.
 wire:ignore.self
 with
 without
+wk-overlay-layer-drawer
+wk-scrollbar
 would
 wrapper
 wrapping.
@@ -1205,7 +1225,6 @@ x-transition:enter-start="opacity-0"
 x-transition:enter-start="{{
 x-transition:enter="transition
 you
-z-[var(--z-wk-drawer)]',
 {
 {{
 {{--

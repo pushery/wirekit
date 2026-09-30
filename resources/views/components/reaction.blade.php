@@ -123,10 +123,12 @@
     @if(count($userList) > 0)
         aria-describedby="{{ $reactionUsersId }}"
     @endif
-    {{-- aria-label via merge so a caller's aria-label OVERRIDES the default —
+    {{-- `wk-state-button` is the marker the stylesheet's forced-colors rule frames a pressed
+         reaction by: its tint and its border are what that mode repaints alike on every reaction.
+         aria-label via merge so a caller's aria-label OVERRIDES the default —
          a hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins). --}}
-    {{ $attributes->merge(['aria-label' => $ariaLabel])->class([$baseClasses, $stateClasses]) }}
+    {{ $attributes->except('type')->merge(['aria-label' => $ariaLabel])->class(['wk-state-button', $baseClasses, $stateClasses]) }}
 >
     <span class="[font-variant-emoji:emoji]" aria-hidden="true">{{ $emoji }}</span>
     @if($reactionOptimistic)

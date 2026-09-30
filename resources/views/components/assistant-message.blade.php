@@ -143,6 +143,10 @@
     // as `\u00fc`, which some CSP tokenizers flatten to `u00fc` (`Support/AlpinePayload.php`
     // names the versions).
     $alpineConfig = \Pushery\WireKit\Support\AlpinePayload::from((object) ['announce' => $announceValue]);
+
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <article
@@ -150,7 +154,7 @@
     data-wk-assistant-message
     data-role="{{ $roleValue }}"
     role="article"
-    aria-label="{{ $speaker }}"
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $speaker }}" @endunless
     {{ $attributes->class([$classes]) }}
 >
     {{-- A system turn is not a person, so it gets no avatar. --}}
