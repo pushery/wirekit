@@ -118,6 +118,9 @@
     // only known in the browser, and a sentence assembled from fragments there cannot be
     // translated: ":current of :total" is not the word order every language uses.
     $announcementTemplate = __('wirekit::Slide :current of :total');
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- The APG carousel shape, without the tabs.

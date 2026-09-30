@@ -21,6 +21,7 @@
 import wirekitChartJs from './components/chart.js';
 import wirekitImageCompare from './components/image-compare.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
 import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
@@ -42,6 +43,9 @@ function registerCoreComponents() {
     // and says nothing, so the failure is silent on exactly the bundle chosen
     // for being small. It costs one directive and no dependency.
     registerIndeterminateDirective(Alpine);
+    // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
+    // root the component renders. See utils/caller-ref.js.
+    registerCallerRefDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
     // A field Livewire emptied after a successful action is not the reader's mistake.

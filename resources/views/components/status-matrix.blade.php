@@ -215,6 +215,9 @@
 
     // BCP-47 for `Intl.PluralRules` — the APPLICATION's locale, not the browser's.
     $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

@@ -220,10 +220,19 @@
             'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
+
+    // A caller's `x-ref` belongs to the caller's component. The caller's attributes land on our
+    // root, and a root registers a ref on itself, where the caller's `$refs` never reads it.
+    // The name moves to `x-wk-ref`, which registers the root on the root above it: the root is
+    // also the outermost element, so it carries `data-wk-ref-scope` itself
+    // (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
 <div
     {{ $attributes->except(['aria-label', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
+    @if($callerRef !== '') data-wk-ref-scope x-wk-ref="{{ $callerRef }}" @endif
     {{-- The server's own channel — see segmented-control for why this is a
          plain attribute rather than the hidden input this component binds. --}}
     data-wk-server-value="{{ $clamped }}"

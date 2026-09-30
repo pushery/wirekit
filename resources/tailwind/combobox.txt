@@ -13,11 +13,13 @@ $announceErrors
 $ariaLabel
 $attributes
 $attributes->class([$classes])
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label',
 $attributes->get('aria-describedby');
 $attributes->get('aria-label');
 $attributes->get('required',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->only(['class',
 $attributes->whereStartsWith(['wire:model',
@@ -25,6 +27,7 @@ $boxClasses
 $callerAriaLabel
 $callerAriaLabel;
 $callerDescribedBy
+$callerRef
 $classes
 $clearable
 $clearable)
@@ -168,6 +171,7 @@ $value,
 '')
 '')));
 '')).'
+''));
 '',
 '';
 ',
@@ -395,6 +399,7 @@ $value,
 (opt._idx
 (optional):
 (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw)$/',
+(resources/js/utils/caller-ref.js).
 (see
 (silent
 (sizes),
@@ -529,6 +534,7 @@ $value,
 @elseif($resolvedAriaLabel)
 @elseif($showsHint)
 @endif
+@endif>
 @endif>{{
 @endphp
 @endunless
@@ -537,6 +543,7 @@ $value,
 @if(!$disabled
 @if($announceError)
 @if($attributes->get('required'))
+@if($callerRef
 @if($describedBy)
 @if($descriptions)
 @if($disabled)
@@ -838,6 +845,7 @@ _place()
 `config(…,
 `contain:
 `cursor-pointer`
+`data-wk-ref-scope`
 `description`,
 `disabled:`
 `disabled="false"`
@@ -915,7 +923,10 @@ _place()
 `x-model`
 `x-model`,
 `x-modelable`
+`x-ref`
+`x-ref`,
 `x-text`
+`x-wk-ref`,
 `{
 `{{
 a
@@ -1059,6 +1070,7 @@ behavior
 behavior:
 behind
 being
+belongs
 below
 below,
 below.
@@ -1255,6 +1267,7 @@ data-*,
 data-wk-flag
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-server-options="{{
 debug
 decided
@@ -1676,7 +1689,7 @@ method
 min-content
 min-h-[24px]
 min-w-0
-min-w-0">
+min-w-0"
 min-w-[24px]
 minimum:
 mirrors
@@ -1690,6 +1703,7 @@ morph
 morphs:
 most
 move
+moves
 ms-0.5"
 multi-select's
 multi-select.
@@ -1806,6 +1820,7 @@ other
 other,
 otherwise
 our
+ours,
 out
 out,
 out.
@@ -1834,6 +1849,7 @@ panels
 paragraph
 parent
 parent's
+parser
 part
 parts
 passes.
@@ -2422,6 +2438,7 @@ x-text="searchNote()"
 x-text="selectedText"
 x-text="{{
 x-wirekit::label
+x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet
 yet,

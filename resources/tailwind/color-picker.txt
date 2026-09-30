@@ -1,3 +1,4 @@
+!==
 "No
 "clear"
 "duplicate"
@@ -21,9 +22,16 @@ $announceError
 $announceErrors
 $attributes
 $attributes->except('aria-describedby')->class([$inputClasses])
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
+$attributes->except(['aria-describedby',
 $attributes->get('aria-describedby',
+$attributes->get('aria-label');
+$attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes->whereStartsWith(['wire:model',
+$callerLabel
+$callerRef
 $checker
 $controlDescribedBy
 $controlDescribedBy).'
@@ -69,6 +77,7 @@ $swatchClasses
 $swatchSize
 $swatchSize,
 $trigger
+$triggerLabel
 $value
 $value,
 $valueClasses
@@ -79,11 +88,14 @@ $withClear,
 $withEyedropper
 $withRecents
 $wrapperClasses
+$wrapperClasses])
 &&
 '#'.$pickerId.'-error',
 '#000000',
 ''"></span>
+'')
 '')))
+''));
 ',
 '.((string)
 '.__('wirekit::Cycle
@@ -92,6 +104,7 @@ $wrapperClasses
 'announce-errors']);
 'announceError'
 'args'
+'aria-label'])->whereDoesntStartWith(['wire:model',
 'background-image:
 'border-0
 'border-[length:var(--border-wk-width)]',
@@ -174,6 +187,8 @@ $wrapperClasses
 'wk-color-');
 'wk-color-'.$name
 'wrapper',
+'x-model'])->class(['relative',
+'x-model'])->whereDoesntStartWith('x-modelable')
 ($errors
 ($format)
 ($hint
@@ -209,6 +224,7 @@ $wrapperClasses
 (pointer:
 (popover
 (rendered
+(resources/js/utils/caller-ref.js).
 (see
 (silent
 (structural,
@@ -372,11 +388,13 @@ $wrapperClasses
 @elseif($hint)
 @endforeach
 @endif
+@endif>
 @endisset
 @endphp
 @foreach($presets
 @if(!
 @if($announceError)
+@if($callerRef
 @if($controlDescribedBy)
 @if($disabled)
 @if($hasError
@@ -393,6 +411,7 @@ $wrapperClasses
 @if($withClear)
 @if($withEyedropper)
 @if($withRecents)
+@if(filled($callerLabel))
 @input="current
 @input="onInput($event.target.value)"
 @isset($trigger)
@@ -516,6 +535,7 @@ Pushery\WireKit\WireKit;
 REPLACES
 REQUIRED
 ROW,
+Read
 Recent
 Rendered
 Replaced
@@ -619,10 +639,12 @@ __('wirekit::Use
 `aria-valuetext`
 `bind`:
 `button`,
+`change`
 `class`.
 `config()`
 `cursor-pointer`.
 `cursor:
+`data-wk-ref-scope`
 `describedby`
 `disabled="false"`
 `display:
@@ -633,6 +655,7 @@ __('wirekit::Use
 `formattedValue`
 `h`/`s`/`v`/`a`
 `hint`
+`input`
 `isPending`
 `items-start`
 `keep`
@@ -657,8 +680,12 @@ __('wirekit::Use
 `trigger`
 `undo`,
 `value`
+`wire:model`
 `wk-color-brand-2`
 `wk-color-brand`,
+`x-model`
+`x-ref`
+`x-wk-ref`,
 `{{
 a
 able
@@ -739,6 +766,7 @@ at
 attribute
 attribute.
 attribute:
+attributes
 auto-derived
 away
 axes
@@ -776,7 +804,9 @@ bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-input)]
 bg-[var(--color-wk-bg-muted)]
 bg-transparent',
+bind
 bind,
+bindings
 binds
 block
 block,
@@ -797,6 +827,7 @@ boundary
 boundary,
 box,
 branch
+branch:
 branches
 branches,
 brightness
@@ -807,6 +838,7 @@ browser's
 browser.
 bubbles
 build
+built
 but
 button
 button.
@@ -836,6 +868,7 @@ cast
 catalog
 chain
 chain.
+change
 changed
 channel.
 check.
@@ -865,6 +898,7 @@ class="wk-field
 class="{{
 clean
 clear
+clear.
 cleared
 cleared'))
 cleared);
@@ -948,6 +982,7 @@ d="m2
 d="m4.5
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 date-picker
 debug
 decided
@@ -1031,6 +1066,7 @@ escape
 escapes
 events
 every
+everything
 exactly
 existed
 existed.
@@ -1057,11 +1093,14 @@ feed
 fell
 field
 field's
+field,
 field.
 file
 file.
 fill="none"
+filled($callerLabel)
 fills
+finds
 fire
 first
 first,
@@ -1117,6 +1156,7 @@ gap.
 gesture
 get
 gets
+gets,
 getter
 give
 gives
@@ -1145,11 +1185,13 @@ hands
 has
 have
 heard
+hears
 height
 held
 here
 here,
 here.'),
+here:
 hex
 hidden
 hidden.
@@ -1217,6 +1259,7 @@ keypresses
 keys
 label
 label's
+land
 landed
 lands
 last
@@ -1339,12 +1382,14 @@ opaque
 opaque.
 open
 opens
+operates:
 opposite
 optimistic
 optimistic-ui:
 or
 order
 otherwise
+ours,
 out
 outline
 outlives
@@ -1384,6 +1429,7 @@ pick
 picked
 picker
 picker')
+picker'));
 picker's
 picker.
 picker<`),
@@ -1473,6 +1519,7 @@ regardless
 region
 region,
 regions.
+registers
 rejected-state
 released
 remove
@@ -1545,6 +1592,8 @@ second
 see
 selects
 semantics;
+sends
+sends,
 separation,
 server
 server,
@@ -1651,6 +1700,7 @@ teleporting
 teleports
 tell
 tempting
+test
 text
 text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-success)]"
@@ -1709,9 +1759,12 @@ transparent→black
 trap
 travels
 trigger
+trigger,
 trigger-slot
+trigger.
 trigger:
 trim(((string)
+trim((string)
 trip
 true);
 true,
@@ -1762,6 +1815,7 @@ value
 value')
 value'))
 value'),
+value,
 value.
 value="{{
 vanish
@@ -1860,6 +1914,7 @@ x-text="format"
 x-text="hexError"></span>
 x-text="{{
 x-transition.opacity
+x-wk-ref="{{
 z-[var(--z-wk-dropdown,50)]
 zone
 {

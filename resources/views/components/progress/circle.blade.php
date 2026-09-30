@@ -15,7 +15,7 @@
     'max' => 100,
     'label' => null,
     'showValue' => false,
-    'variant' => config('wirekit.components.progress.variant', 'accent'), // back-compat alias of `intent`
+    'variant' => config('wirekit.components.progress.variant', 'primary'), // back-compat alias of `intent`
     'intent' => null,            // canonical color axis: success | warning | danger (anything else = accent). null → falls back to `variant`
     'size' => config('wirekit.components.progress.circle-size', 'md'),
     'scope' => null,

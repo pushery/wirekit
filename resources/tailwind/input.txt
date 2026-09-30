@@ -14,13 +14,16 @@ $attributes->class([$classes])
 $attributes->class(['relative
 $attributes->except('aria-describedby')->class([
 $attributes->except('aria-describedby')->class(['wk-field',
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['id',
 $attributes->get('aria-describedby',
 $attributes->get('name'),
 $attributes->get('name',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $autocomplete
+$callerRef
 $classes
 $clearLabel
 $clearText
@@ -108,6 +111,7 @@ $useWrapper
 '')))
 ''),
 '',
+'';
 ',
 '.((string)
 '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
@@ -263,6 +267,7 @@ $useWrapper
 'z-[var(--z-wk-tooltip)]',
 ("Fast
 ($attributes->get('value')
+($callerRef
 ($errors
 ($hasError
 ($hasSuccess
@@ -295,6 +300,7 @@ $useWrapper
 (null
 (opt-in;
 (required,
+(resources/js/utils/caller-ref.js).
 (silent
 (string)
 (the
@@ -390,6 +396,7 @@ $useWrapper
 </button>
 </div>
 </label>
+</span>
 </svg>
 </template>
 </x-wirekit::tooltip>
@@ -430,6 +437,7 @@ $useWrapper
 @endphp
 @if($announceError)
 @if($autocomplete
+@if($callerRef
 @if($clearable)
 @if($copyable)
 @if($describedBy
@@ -452,7 +460,6 @@ $useWrapper
 @if($surface
 @if($useWrapper)
 @if(isset($content))
-@input="syncHasValue()"
 @php
 @props([
 @props.
@@ -487,6 +494,7 @@ Border
 Both
 CALLER's
 CSP
+CallerRef::onRoot()
 Clear
 Copy-to-clipboard
 DOM
@@ -580,7 +588,6 @@ Teleporting
 That
 The
 There
-They
 This
 Tooltip
 Trailing
@@ -623,6 +630,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
@@ -638,7 +646,7 @@ __('wirekit::Could
 __('wirekit::Saving'),
 `!==
 `$as`
-`$event.target.value`
+`$event.target.value`,
 `$refs`
 `<button>`
 `<div>`
@@ -665,6 +673,7 @@ __('wirekit::Saving'),
 `clearable`
 `cloneNode(true)`,
 `copyable`
+`data-wk-ref-scope`
 `delayHide`
 `delayHide`.
 `delayShow`
@@ -723,9 +732,11 @@ __('wirekit::Saving'),
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
 `x-ref="control"`:
-`x-ref="wkField"`
+`x-ref`
+`x-ref`.
 `x-show="open"`
 `x-show`
+`x-wk-ref`,
 `{{
 a
 a11y
@@ -806,6 +817,7 @@ aria-live="assertive"
 aria-live="polite"
 armed,
 arms
+around
 array_filter([
 array_values((array)
 arrive
@@ -854,6 +866,7 @@ belongs
 below
 below,
 below;
+beside
 between
 bg-transparent
 bind
@@ -881,7 +894,7 @@ bubble's
 bubbles
 bug
 build
-build,
+build.
 but
 button
 button,
@@ -898,6 +911,7 @@ call,
 call.
 caller
 caller's
+caller's.
 calls.
 can
 cancel
@@ -1026,6 +1040,7 @@ dark
 dark:
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
@@ -1301,6 +1316,7 @@ id;
 id="{{
 identical
 identity
+if
 implode('
 imports
 in
@@ -1346,6 +1362,7 @@ it.
 it:
 item,
 items-center
+items-center">
 items-center'
 items-center',
 its
@@ -1355,6 +1372,7 @@ jumps
 jumps,
 just
 justify-center
+keep
 keeping
 keeps
 kept
@@ -1510,6 +1528,8 @@ one,
 one.
 one:
 only
+only,
+only:
 onmouseover=alert(1)"`
 onto
 open
@@ -1524,9 +1544,12 @@ or
 other
 other.
 otherwise
+our
+ours,
 out
 out.
 output
+outside
 over
 over,
 overflow
@@ -1580,7 +1603,6 @@ pointer
 pointer-events
 pointer;
 pointing
-policy.
 polite
 popover's
 popovers
@@ -1638,7 +1660,6 @@ recognizes
 red
 red:
 ref
-ref.
 reference
 reflect
 refocuses
@@ -1666,7 +1687,7 @@ requires
 reserved
 resolved
 resolves
-resources/js/components/input.js.
+resources/js/components/input.js,
 rests
 result
 resync
@@ -1723,7 +1744,6 @@ separate
 server
 server-side
 set
-set,
 set.
 sets
 settles
@@ -1740,7 +1760,7 @@ shows
 shrink-0
 sibling
 siblings
-siblings;
+siblings.
 sidebar
 silently
 silently.
@@ -1790,7 +1810,6 @@ stop
 stops
 strategy:
 stray
-strict
 string
 string,
 stringly-false
@@ -1913,6 +1932,7 @@ trigger
 trigger's
 trigger,
 trim(
+trim((string)
 true
 true);
 true,
@@ -2027,6 +2047,7 @@ write
 writes
 writing
 written
+written.
 wrong
 wrong.
 wrote
@@ -2048,7 +2069,6 @@ x-on:pointerleave="pointerleave($event)"
 x-on:pointerup="pointerup($event)"
 x-ref="tooltip"
 x-ref="trigger"
-x-ref="wkField"
 x-show="!
 x-show="copied"
 x-show="hasValue"
@@ -2063,6 +2083,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 you
 your
@@ -2072,6 +2093,7 @@ zoom,
 {{--
 |
 ||
+}
 })"
 };
 }`)

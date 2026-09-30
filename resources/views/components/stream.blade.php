@@ -132,6 +132,9 @@
     // their own explicit top margins so the streamed text stays tight while the
     // controls get clear breathing room.
     $wrapperClasses = WireKit::resolveClasses('stream', 'base', 'wk-stream flex flex-col', $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- Plain <div> host (never a component tag) so the {{ \Pushery\WireKit\Support\AlpinePayload::from(...) }} config is compiled and

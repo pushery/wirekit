@@ -132,6 +132,9 @@
     // attributes on one element means the browser keeps the first and drops the
     // rest, so a caller styling this figure would take the aspect ratio with it.
     $figureStyle = 'touch-action: none;'.($ratio ? ' aspect-ratio: '.$ratio.';' : '');
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <figure

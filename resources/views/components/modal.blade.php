@@ -150,9 +150,12 @@
         'full' => 'max-w-[var(--size-wk-modal-full)]',
         default => 'max-w-[var(--size-wk-modal-md)]',
     };
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
-{{-- Modal component — teleported to body for proper stacking context.
+{{-- Modal component — teleported to the overlay root for proper stacking context.
 
      ESC handling: the JS component uses `focus-trap` with `escapeDeactivates`,
      which listens on the document once the trap is active. The trap is armed

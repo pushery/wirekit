@@ -40,6 +40,9 @@
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- No x-cloak needed — tree has no hidden/shown toggle; Alpine only handles keyboard nav --}}

@@ -1,6 +1,7 @@
 !isOpen"
 "Details"
 "trigger"
+$attributes
 $attributes->class(['wk-collapsible',
 $attributes->get('id')
 $attributes->get('id').'-panel'
@@ -101,6 +102,7 @@ Blade
 BooleanProp::from($findable,
 BooleanProp::from($open,
 COMPONENT
+CallerRef::onRoot()
 Chevron
 Closed
 Collapsible
@@ -141,6 +143,7 @@ WireKit
 WireKit::resolveClasses('collapsible',
 [
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\WireKit::stableId(
 \Pushery\WireKit\WireKit::warnUnknownProps('collapsible',
@@ -160,10 +163,12 @@ WireKit::resolveClasses('collapsible',
 `x-cloak`
 `x-collapse`
 `x-collapse`,
+`x-ref`
 `x-show`.
 `x-wk-findable.collapse`
 a
 about
+above.
 across
 after
 against
@@ -189,9 +194,11 @@ attribute
 auto-derived
 avoids
 back.
+bag
 bag.
 bare
 base
+belongs
 below
 below.
 between
@@ -208,6 +215,7 @@ but
 by
 call
 caller
+caller's
 caller-supplied
 cannot
 card
@@ -232,6 +240,7 @@ collapsible
 collapsing
 compiles
 component's
+component,
 config('wirekit.components.collapsible.findable',
 content
 content,
@@ -292,6 +301,7 @@ gone,
 group
 h-4
 had
+hands
 has
 hash
 height
@@ -333,6 +343,7 @@ items
 items-center
 its
 justify-between
+keep
 keeps
 keyboard-operable
 keys
@@ -395,6 +406,7 @@ optimistic-ui:
 ordinary
 other
 otherwise
+our
 outside
 over-spacing
 own
@@ -441,6 +453,7 @@ replays
 resolve
 rich
 roll
+root
 root,
 root.
 rotates

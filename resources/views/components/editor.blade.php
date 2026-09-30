@@ -149,6 +149,12 @@
     // and fires its input event on), NOT the wrapper div — otherwise Livewire binds to a
     // div that never emits input and the value is silently lost. Modifiers (.live / .blur
     // / .debounce) are preserved; everything else but the description lands on the wrapper.
+    // A caller's `x-ref` belongs to the caller's component. The root below is a root of ours and
+    // may sit inside the optimistic layer, so the name moves to `x-wk-ref` on the root and the
+    // outermost element marks the boundary (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
+
     $wireModel = $attributes->whereStartsWith('wire:model');
     $rest = $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model');
 
@@ -256,7 +262,7 @@
 
 @endphp
 
-<div class="w-full space-y-1.5">
+<div class="w-full space-y-1.5" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <x-wirekit::label :for="$id" :id="$id.'-label'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
@@ -284,6 +290,7 @@
         x-modelable="content"
         @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
         {{ $rest->class(['w-full', $wrapperClasses]) }}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
         {{-- Toolbar: auto-rendered preset, OR the custom slot when toolbar="custom". --}}
         @if($editable && $toolbarValue === 'custom' && isset($toolbar) && $toolbar instanceof \Illuminate\View\ComponentSlot)

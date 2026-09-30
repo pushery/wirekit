@@ -79,6 +79,10 @@ export default function wirekitPopover(config = {}) {
 
             await this.$nextTick();
 
+            // Closed inside the tick. `close()` found no observer and no trap then, so
+            // anything taken from here on would be left on a hidden panel.
+            if (!this.isOpen) return;
+
             const trigger = this.$refs.trigger;
             const panel = this.$refs.panel;
 
@@ -95,7 +99,21 @@ export default function wirekitPopover(config = {}) {
                     // Follow the trigger on scroll/resize; torn down in every close path.
                     autoReposition: true,
                 });
+
+                // The placement can wait frames for the panel to get a box, and the popover
+                // can close meanwhile: its observer would then follow a hidden panel.
+                if (!this.isOpen) {
+                    stop();
+                    return;
+                }
+
+                // One observer at a time: a showing that began after this one may have
+                // stored its own first.
+                this._stopAutoUpdate?.();
                 this._stopAutoUpdate = stop;
+
+                // A showing that began after this one may have armed the panel already.
+                if (this._trap) return;
 
                 // Activate focus trap — ESC deactivates and closes
                 this._trap = createFocusTrap(panel, {

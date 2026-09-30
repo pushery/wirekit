@@ -31,6 +31,8 @@ function focusableFrom(target) {
  *                                `wirekit-lightbox-open` event.
  * @param {number} config.count - Number of items.
  * @param {boolean} config.loop - Whether prev/next wraps at the ends.
+ * @param {boolean} [config.lockScroll=true] - Whether opening locks the page's scroll and makes
+ *                                the page behind inert, as the other modal overlays do.
  */
 export default function wirekitLightbox(config = {}) {
     /*
@@ -52,6 +54,9 @@ export default function wirekitLightbox(config = {}) {
         count: config.count || 0,
         loop: config.loop !== false,
         _name: config.name || '',
+        // False for a viewer inside a page region, such as a preview: it takes neither the
+        // page's scroll lock nor its inert hold, so the page around it keeps working.
+        _lockScroll: config.lockScroll !== false,
         // The captions travel with the config so the template can ask for the
         // current one by name rather than reach into the array itself:
         // `slides[current]?.caption` is an optional chain, and Alpine's CSP
@@ -216,8 +221,10 @@ export default function wirekitLightbox(config = {}) {
              * frozen after the last one closes — `command-palette` carries a comment about
              * exactly that, from when it did keep its own.
              */
-            self._holdsScrollLock = true;
-            lockScroll();
+            if (self._lockScroll) {
+                self._holdsScrollLock = true;
+                lockScroll();
+            }
 
             self.$nextTick(() => {
                 const container = self.$refs.stage;
@@ -252,7 +259,7 @@ export default function wirekitLightbox(config = {}) {
                 });
                 self._trap.activate();
 
-                if (! self._holdsPageInert && inOverlayRoot(container)) {
+                if (self._lockScroll && ! self._holdsPageInert && inOverlayRoot(container)) {
                     self._holdsPageInert = holdPageInert();
                 }
             });

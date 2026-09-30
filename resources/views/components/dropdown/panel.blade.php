@@ -79,7 +79,7 @@
      the instant it is asked to — and it avoids a race where Alpine's ~150ms leave
      transition leaves the panel visible long enough to break synchronous browser test
      assertions like `assertDontSee`. --}}
-{{-- Teleported to <body>: `position: fixed` escapes a clipping ancestor but not a
+{{-- Teleported to the overlay root at the end of <body>: `position: fixed` escapes a clipping ancestor but not a
      STACKING context. A host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after it covers the
      menu however high the z-index goes: a menu open inside a preview renders under

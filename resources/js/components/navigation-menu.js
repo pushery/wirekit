@@ -83,7 +83,8 @@ export default function wirekitNavigationMenu() {
             // ignored so a long mega-menu can scroll internally.
             this._onScroll = (event) => {
                 if (!this.activeItem) return;
-                // Panel is teleported to <body>; resolve via the teleport-safe ref.
+                // The panel is teleported to the overlay root at the end of <body>; resolve
+                // it via the teleport-safe ref.
                 const panel = this.$refs[`panel-${this.activeItem}`];
                 if (panel && event.target instanceof Node && panel.contains(event.target)) {
                     return;
@@ -107,7 +108,7 @@ export default function wirekitNavigationMenu() {
                 const target = event.target;
                 if (!(target instanceof Node)) return;
                 if (this.$root.contains(target)) return;
-                // The flyout panel is teleported to <body>, so a tap inside it
+                // The flyout panel is teleported to the overlay root, so a tap inside it
                 // is NOT inside the nav root — without this guard the panel would
                 // close before an in-panel link/button click registered.
                 const panel = this.$refs[`panel-${this.activeItem}`];
@@ -168,8 +169,8 @@ export default function wirekitNavigationMenu() {
             // nav element), NOT $el — open() runs off the trigger's x-on:click
             // (and the wrapper's mouseenter), where Alpine binds $el to the
             // event element rather than the nav root, so $el.querySelector
-            // would miss the trigger and positioning would never run. Panel is
-            // teleported to <body> → resolve via the teleport-safe ref.
+            // would miss the trigger and positioning would never run. The panel is
+            // teleported to the overlay root → resolve it via the teleport-safe ref.
             const trigger = this.$root.querySelector(`[data-wk-nav-trigger="${name}"]`);
             const panel = this.$refs[`panel-${name}`];
 

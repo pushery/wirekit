@@ -414,7 +414,12 @@ export default function wirekitNotificationCenter(config = {}) {
         },
 
         _emit(name, detail) {
-            this.$dispatch(name, detail);
+            // From the component's root, not through `$dispatch`: that starts the event at the
+            // element whose handler called in, and the rows and "mark all read" sit in the panel
+            // teleported to the overlay root, outside the component. The event would climb to
+            // <body> past every element of it, and a listener on its tag would never hear it.
+            // A component already taken out of the page has no root, and nothing to tell.
+            this.$root?.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
             if (this.$refs.model) {
                 this.$refs.model.value = String(this.unreadCount);
                 this.$refs.model.dispatchEvent(new Event('input', { bubbles: true }));

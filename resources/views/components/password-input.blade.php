@@ -102,6 +102,12 @@
     // accepts silently by keeping the first, which is why nothing ever went red over it.
     $attributes = $attributes->except(['id', 'name']);
 
+    // A caller's `x-ref` belongs to the caller's component, and this one renders its own root
+    // around the field, which would take it. The name moves to `x-wk-ref`, which registers
+    // the field on the root above `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
+
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
@@ -220,7 +226,7 @@
      method is not an expression Alpine's CSP parser accepts, and under a strict
      policy the element would get an EMPTY scope, leaving the show/hide button and
      the whole meter dead with no error to say why. --}}
-<div class="space-y-1.5 min-w-0" x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
+<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
@@ -266,6 +272,7 @@
                      the event that ends the input is leaving the field. --}}
                 x-on:change="run($event.target.value)"
             @endif
+            @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />

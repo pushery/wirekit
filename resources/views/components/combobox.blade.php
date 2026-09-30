@@ -447,12 +447,19 @@
             'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
+
+    // A caller's `x-ref` belongs to the caller's component. The field sits in a root of ours,
+    // which would take it, and it already carries our own `x-ref`, which a parser keeps over a
+    // second one. The name moves to `x-wk-ref`, which registers the field on the root above
+    // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
 {{-- `wk-combobox` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-` class
      token and its descendants, and this root is the first element above the chevrons to carry one:
      `wk-field` sits on the input, beside them, where the clamp never reaches them. --}}
-<div class="wk-combobox space-y-1.5 min-w-0">
+<div class="wk-combobox space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
@@ -547,6 +554,7 @@
         {{-- `wire:model*` is excluded here and rendered on the Alpine root above: on
              this element it would be a second model binding beside `x-model="query"`,
              pointed at the search text. --}}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $inputClasses }}"
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
@@ -585,6 +593,7 @@
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
         {{-- `required` is an input attribute, and a `div` has no validity to carry it. --}}
         @if($attributes->get('required')) aria-required="true" @endif
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby', 'required', 'autocomplete', 'placeholder', 'readonly'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $triggerClasses }}"
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif

@@ -4,6 +4,7 @@
 "Strong"
 "Weak"
 $announce
+$attributes
 $attributes->class([$classes])
 $attributes->getAttributes());
 $barColor
@@ -133,6 +134,7 @@ BARS
 BooleanProp::from($announce,
 BooleanProp::from($showLevel,
 CHANGE
+CallerRef::onRoot()
 DOM:
 Dev-only
 Each
@@ -172,6 +174,7 @@ WireKit::resolveClasses('strength-meter',
 ['label'
 [])
 [__('wirekit::Weak'),
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('strength-meter',
 ])
 ]),
@@ -189,7 +192,9 @@ __('wirekit::Strong')];
 `show-level`
 `strength-meter`
 `x-data`
+`x-ref`
 a
+above.
 accepts
 accessible
 across
@@ -220,6 +225,7 @@ arrives
 as
 at
 attribute
+bag
 bar
 bar's
 bar.
@@ -230,6 +236,7 @@ bars,
 be
 be.
 before
+belongs
 below
 beside
 block,
@@ -240,6 +247,7 @@ built
 but
 by
 called,
+caller's
 can
 cannot
 carries
@@ -257,6 +265,7 @@ class="{{
 color
 complete
 component
+component,
 construction.
 could
 count
@@ -297,6 +306,7 @@ function
 gap-1"
 gap-[var(--gap-wk-sm)]',
 grid:
+hands
 has
 have
 here,
@@ -316,6 +326,7 @@ is_numeric($value)
 it
 it,
 it.
+it:
 items-center
 its
 judge
@@ -323,6 +334,7 @@ judges.
 keep
 kept
 ladder
+lands
 later
 left
 length
@@ -373,6 +385,7 @@ only
 only,
 optimistic-ui:
 other
+our
 page
 per
 polite
@@ -399,6 +412,8 @@ return
 rewritten
 role="meter"
 role="status"
+root
+root,
 round((float)
 rounded-full
 rounds.

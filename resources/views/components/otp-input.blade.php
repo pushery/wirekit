@@ -361,9 +361,18 @@
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);
+
+    // A caller's `x-ref` belongs to the caller's component, and on the group of boxes, the
+    // element that is the control to a reader and to a test, where `dusk` and `data-*` land
+    // too. The group is a root of ours, which would take it, so the name moves to `x-wk-ref`,
+    // which registers the group on the root above `data-wk-ref-scope`
+    // (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
 <div {{ $attributes->only('class')->class([$wrapperClasses]) }}
+    @if($callerRef !== '') data-wk-ref-scope @endif
     @if($optimisticConfig)
         x-data="wirekitOptimistic({{ $optimisticConfig }})"
         {{-- The boundary: the code is whole. The field syncs on every character,
@@ -410,6 +419,7 @@
              everything but `class`, `wire:model` and `aria-label` was dropped, so a suite
              that finds its fields by `dusk` could not find this one at all. --}}
         {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         @if($required) aria-required="true" @endif
         aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"
         {{-- On the GROUP as well as on every box: a reader who lands on the group

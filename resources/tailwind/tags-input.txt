@@ -6,13 +6,16 @@ $announceErrors
 $attributes
 $attributes->class([$classes])
 $attributes->except('aria-describedby')
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['id',
 $attributes->get('aria-describedby',
 $attributes->get('aria-label')
 $attributes->get('name'),
 $attributes->get('name',
+$attributes->get('x-ref',
 $attributes->getAttributes());
+$callerRef
 $classes
 $containerClasses
 $describedBy
@@ -136,6 +139,7 @@ $value));
 (left
 (matching
 (no
+(resources/js/utils/caller-ref.js).
 (silent
 (string)
 (uniform
@@ -213,9 +217,11 @@ $value));
 @elseif(!
 @elseif($hint)
 @endif
+@endif>
 @endphp
 @if($announceError)
 @if($attributes->get('aria-label'))
+@if($callerRef
 @if($describedBy
 @if($disabled)
 @if($hasError
@@ -336,6 +342,7 @@ __('wirekit::Could
 __('wirekit::Maximum
 __('wirekit::Removed
 __('wirekit::Saving'),
+`$refs`
 `:value="['Laravel',
 `<x-wirekit::input>`),
 `??`
@@ -350,6 +357,7 @@ __('wirekit::Saving'),
 `class`,
 `config/wirekit.php`
 `data-*`
+`data-wk-ref-scope`
 `disabled="false"`
 `disabled`:
 `display:
@@ -382,6 +390,8 @@ __('wirekit::Saving'),
 `wk-field-frame`:
 `x-model`,
 `x-modelable`
+`x-ref`
+`x-wk-ref`,
 `{{
 a
 able
@@ -452,6 +462,7 @@ asterisk.
 asymmetric
 at
 attribute
+attributes
 auto-derived
 available:
 away
@@ -472,6 +483,7 @@ behaves
 behind
 being
 belong
+belongs
 below
 below.
 beside
@@ -573,6 +585,7 @@ dark
 dark:
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-tag-remove
 debug
 decision
@@ -761,6 +774,7 @@ it:
 items
 items-center
 its
+itself,
 itself:
 joins
 just
@@ -771,6 +785,7 @@ keystroke
 knowing
 label
 labels;
+land
 landed
 lands
 language
@@ -812,12 +827,13 @@ mean
 meant
 message
 method
-min-w-0">
+min-w-0"
 min-w-[80px]
 mode,
 more
 most:
 move
+moves
 moving
 ms-0.5"
 multi-word
@@ -876,6 +892,7 @@ order
 order,
 other
 otherwise
+our
 out
 out.
 override
@@ -938,11 +955,13 @@ real
 reason
 reason.
 reason:
+ref
 reference
 refusal
 refused
 region
 region,
+registers
 regular
 remaining
 removal
@@ -971,6 +990,8 @@ rollback
 rolling
 room
 room.
+root
+root,
 round.
 rounded-[var(--radius-wk-sm)]
 row
@@ -1098,6 +1119,7 @@ translated
 tree,
 trim($describedBy.'
 trim(($hint
+trim((string)
 true);
 truthy
 tuple
@@ -1183,6 +1205,7 @@ x-ref="input"
 x-text="announcement"></div>
 x-text="tag"></span>
 x-text="tagAnnouncement"></div>
+x-wk-ref="{{
 {
 {{
 {{--

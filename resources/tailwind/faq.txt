@@ -291,6 +291,7 @@ CLASS
 CONTAINER
 CSP
 CSS.
+CallerRef::onRoot()
 Child
 Closed
 Closed,
@@ -437,6 +438,7 @@ XSS
 \Pushery\WireKit\Support\AlpinePayload::string($mode)
 \Pushery\WireKit\Support\BooleanProp::from($animate,
 \Pushery\WireKit\Support\BooleanProp::from($findable,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($id,
 \Pushery\WireKit\WireKit::cspNonce();
 \Pushery\WireKit\WireKit::warnUnknownProps('accordion',
@@ -494,6 +496,7 @@ __('wirekit::Frequently
 `x-collapse`
 `x-data`
 `x-on:beforematch`
+`x-ref`
 `x-show`
 `x-show`,
 `x-wk-findable.collapse`
@@ -501,6 +504,7 @@ __('wirekit::Frequently
 `{{
 a
 above,
+above.
 accepts
 access
 accessibility
@@ -586,6 +590,7 @@ back
 back,
 back.
 bad
+bag
 bag.
 bare
 based
@@ -644,6 +649,7 @@ by
 byte-identical
 call
 caller
+caller's
 calls
 came
 can
@@ -878,6 +884,7 @@ hand-written
 handful
 handle
 handler
+hands
 harmless
 has
 hatch
@@ -948,6 +955,7 @@ json_encode($payload,
 jump
 just
 justify-between
+keep
 keeps
 kept
 key
@@ -1095,6 +1103,7 @@ other
 other's
 others
 otherwise
+our
 out
 out,
 outer
@@ -1235,6 +1244,7 @@ role=region
 roll
 roomier
 root
+root,
 rotates
 rounded
 row

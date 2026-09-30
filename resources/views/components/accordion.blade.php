@@ -111,6 +111,9 @@
     // `separated` carry no chrome of their own, and a marker living in one arm of
     // three is a marker two variants do not have.
     $classes = WireKit::resolveClasses('accordion', 'base', 'wk-accordion '.$containerClasses, $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- Accordion root — holds the mode flag and exposes a tiny Alpine API:

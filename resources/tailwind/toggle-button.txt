@@ -37,6 +37,7 @@ $attributes->class([$classes])
 $attributes->class(['relative
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel');
+$attributes->except('x-ref')->merge(array_filter([
 $attributes->except(['aria-label',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
@@ -44,6 +45,7 @@ $attributes->get('aria-labelledby');
 $attributes->get('rel',
 $attributes->get('role');
 $attributes->get('target',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->has('aria-busy');
 $attributes->has('aria-label')
@@ -65,6 +67,7 @@ $callerAriaLabelledBy
 $callerNamed
 $callerNamed)
 $callerNamed;
+$callerRef
 $callerRole
 $classes
 $cleaned
@@ -166,6 +169,7 @@ $orientation
 $placeholderAttributes
 $placeholderAttributes['role']
 $pressed
+$refScope
 $refuse
 $refuse('`aria-label`
 $refuse('`on-icon`
@@ -218,7 +222,7 @@ $text
 $tooltipClasses
 $tooltipId
 $tooltipIsName
-$tooltipIsName">
+$tooltipIsName"
 $tooltip]);
 $touchClasses
 $touchClasses,
@@ -232,6 +236,7 @@ $wrapLabel
 '
 ''
 '')
+''));
 '');
 '',
 '';
@@ -273,12 +278,14 @@ $wrapLabel
 'border-[length:var(--border-wk-width)]',
 'button'
 'button')
+'button'));
 'button',
 'button';
 'calc(var(--size-wk-lg)*1.1)',
 'calc(var(--size-wk-sm)*0.875)',
 'cursor-pointer',
 'danger',
+'data-wk-ref-scope'
 'data-wk-state'
 'debug'
 'delayHide'
@@ -357,6 +364,8 @@ $wrapLabel
 'isPressed'
 'label'
 'labelsChange'
+'layer'
+'layer')
 'leading-[var(--font-wk-line-height)]',
 'lg'
 'lg',
@@ -486,6 +495,7 @@ $wrapLabel
 'x-model']);
 'x-modelable'
 'x-on:click'
+'x-wk-ref'
 'xl'
 'xl',
 'xl']),
@@ -510,6 +520,7 @@ $wrapLabel
 ($isPressed
 ($labelsChange
 ($onIcon
+($optimisticConfig
 ($optimisticConfig)
 ($orientation
 ($relAttr
@@ -552,6 +563,7 @@ $wrapLabel
 (e.g.
 (filled($onIcon)
 (filled($onLabel)
+(filled($tooltip)
 (function_exists('logger'))
 (function_exists('svg')
 (info
@@ -568,6 +580,7 @@ $wrapLabel
 (preserving
 (provides
 (regex
+(resources/js/utils/caller-ref.js).
 (same
 (see
 (segmented
@@ -664,6 +677,7 @@ $wrapLabel
 :aria-pressed="$labelsChange
 :data-active="{{
 :data-wk-active-intent="$hasIcon
+:data-wk-ref-scope="$refScope
 :data-wk-state="$labelsChange
 :describes="!
 :focusable-trigger="false"
@@ -738,6 +752,7 @@ $wrapLabel
 @if($loadingTarget)
 @if($opensNewTab)
 @if($optimisticConfig)
+@if($refScope
 @if($stackBelow)
 @if($surface
 @if($swapsIcons)
@@ -801,6 +816,7 @@ CANNOT
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Catching
 Change
 Check
@@ -1050,6 +1066,7 @@ Wrap
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -1269,8 +1286,10 @@ __toString
 `x-model`
 `x-modelable`
 `x-modelable`.
+`x-ref`
 `x-show="open"`
 `x-show`
+`x-wk-ref`
 `xs`
 `xs`,
 `xs`.
@@ -1532,6 +1551,7 @@ both,
 bottom
 bound
 boundaries
+boundary
 box
 bracket
 branch
@@ -1692,6 +1712,7 @@ compiles
 compiles,
 component
 component's
+component,
 component-tag
 component.
 components
@@ -1729,7 +1750,7 @@ content
 content,
 content.
 contents
-contents">
+contents"
 contents`
 context
 contexts
@@ -1780,6 +1801,7 @@ data-orientation="{{
 data-stack-below="{{
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-swap
 data-wk-swap-off
 data-wk-swap-on
@@ -2370,6 +2392,7 @@ last:border-b-0
 last:border-e-0
 later
 layer
+layer,
 layout
 layout,
 lazy
@@ -2581,6 +2604,7 @@ nowhere
 nowhere,
 null
 null"
+null">
 null)
 null);
 null,
@@ -2645,6 +2669,7 @@ out
 out,
 out.
 outer
+outermost
 outline
 outline()
 output
@@ -3044,6 +3069,7 @@ silently.
 simply
 since
 single
+sit
 site
 sits
 six
@@ -3313,6 +3339,7 @@ too.
 took
 toolbar,
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -3340,6 +3367,7 @@ trigger
 trigger's
 trigger,
 trim($relAttr.'
+trim((string)
 trim(strip_tags((string)
 true
 true))

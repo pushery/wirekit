@@ -125,6 +125,20 @@
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
+    // A caller's `x-ref` belongs to the caller's component, and the native field sits in a
+    // root of ours, which would take it. The name moves to `x-wk-ref`, which registers the
+    // field on the root above `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
+
+    // A caller's `aria-label` names the control a reader operates: the native field a phone
+    // gets, a trigger in the slot, or the default trigger, which otherwise takes a name built
+    // from `name`. Read once here, so no element below reads the bag for it.
+    $callerLabel = $attributes->get('aria-label');
+    $triggerLabel = filled($callerLabel)
+        ? $callerLabel
+        : ($name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker'));
+
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
@@ -231,7 +245,7 @@
      unconditional on purpose: a wrapper that only appears when a message does gives the
      component two DOM shapes, and the one a developer inspects is whichever they hit
      first. --}}
-<div class="{{ $fieldClasses }}">
+<div class="{{ $fieldClasses }}" @if($callerRef !== '') data-wk-ref-scope @endif>
 @if(! $popoverValue)
     {{-- ── Native mode (default). ── Slightly wider swatch↔readout gap than the
          shared wrapper default: the hex pill sits inline next to the swatch, and
@@ -252,6 +266,7 @@
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
+                @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
                 {{ $attributes->except('aria-describedby')->class([$inputClasses]) }}
             />
             @if($slot->hasActualContent())
@@ -344,7 +359,13 @@
 @endif
     <div
         x-data="wirekitColorPicker({{ \Pushery\WireKit\Support\AlpinePayload::from($jsConfig) }})"
-        class="relative {{ $wrapperClasses }}"
+        {{-- The caller's attributes land here, on the element that holds everything the
+             picker renders, as they land on the field in the native branch: a listener hears
+             the input and change events the hidden field below sends, and a test hook finds
+             the control inside it. The model bindings go to that field, and a caller's
+             `aria-label` names the trigger. --}}
+        {{ $attributes->except(['aria-describedby', 'aria-label'])->whereDoesntStartWith(['wire:model', 'x-model'])->class(['relative', $wrapperClasses]) }}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{-- Resolves because the layer WRAPS this element: `isPending` lives on
              the parent, and a child reads its parent through the scope chain. --}}
         @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
@@ -372,6 +393,7 @@
                         type="color"
                         @if($required) aria-required="true" @endif
                         id="{{ $pickerId }}-native"
+                        @if(filled($callerLabel)) aria-label="{{ $callerLabel }}" @endif
                         :value="hex"
                         @input="onInput($event.target.value)"
                         @change="pickColor($event.target.value)"
@@ -403,6 +425,7 @@
                 @click="togglePanel()"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
+                @if(filled($callerLabel)) aria-label="{{ $callerLabel }}" @endif
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
@@ -418,7 +441,7 @@
                 @click="togglePanel()"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
-                aria-label="{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}"
+                aria-label="{{ $triggerLabel }}"
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
@@ -435,7 +458,9 @@
         @endif
 
         {{-- Hidden form field — mirrors the picked value in the active format. --}}
-        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" />
+        {{-- `wire:model` and `x-model` bind here: this field carries the value, and the picker
+             sends `input` and `change` from it on every pick and clear. --}}
+        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }} />
 
         {{-- Picker panel — teleported out of the document flow + Floating-UI positioned (see
              wirekitColorPicker._anchor) so it escapes any clipping/stacking

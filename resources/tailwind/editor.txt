@@ -38,10 +38,12 @@ $attributes->class([$classes])
 $attributes->class([$toolbarClasses])
 $attributes->class(['relative
 $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model');
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label']);
 $attributes->get('aria-describedby',
 $attributes->get('aria-label');
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->whereStartsWith('wire:model');
 $autofocus
@@ -49,6 +51,7 @@ $autofocus,
 $bottomBar
 $buttonClasses
 $callerLabel
+$callerRef
 $classes
 $command)
 $commandKey
@@ -396,6 +399,7 @@ $wrapperClasses])
 (link,
 (not
 (overflow-y-auto);
+(resources/js/utils/caller-ref.js).
 (same
 (see
 (silent
@@ -523,6 +527,7 @@ $wrapperClasses])
 @if($active)
 @if($announceError)
 @if($autofocus)
+@if($callerRef
 @if($command
 @if($describedBy
 @if($describes)
@@ -576,6 +581,7 @@ CEILING
 CONTROL,
 CSS
 CSS,
+CallerRef::onRoot()
 Cap
 CharacterCount
 Command
@@ -771,6 +777,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($command)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\EditorSeed::render($value)
@@ -890,8 +897,10 @@ __('wirekit::Saving'),
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
 `x-model`
+`x-ref`
 `x-show="open"`
 `x-show`
+`x-wk-ref`
 `{{
 a
 able
@@ -1024,6 +1033,7 @@ before
 before;
 behaves
 being
+belongs
 below
 below,
 below.
@@ -1230,6 +1240,7 @@ data-autofocus)
 data-wk-editor-seed
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
@@ -1471,6 +1482,7 @@ handler
 handler.
 handlers
 handles
+hands
 hangs
 happen
 hardcoded
@@ -1604,6 +1616,7 @@ lands
 later
 layer
 layer's
+layer,
 least.
 leave
 leaves
@@ -1646,6 +1659,7 @@ makes
 many
 map
 markers
+marks
 markup
 markup,
 mask
@@ -1770,8 +1784,11 @@ or
 other
 other.
 otherwise
+our
+ours
 out
 out.
+outermost
 output
 over
 over:
@@ -2005,6 +2022,7 @@ silently
 silently.
 simply
 single
+sit
 site
 sits
 size
@@ -2024,7 +2042,7 @@ someone
 something
 source,
 space
-space-y-1.5">
+space-y-1.5"
 spacing
 spam
 span
@@ -2184,6 +2202,7 @@ trigger's
 trigger,
 trim($describedBy.'
 trim(($hint
+trim((string)
 true
 true);
 true,
@@ -2352,6 +2371,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ref="{{
 you
 zoom,
 {

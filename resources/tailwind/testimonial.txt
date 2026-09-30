@@ -33,6 +33,7 @@ $announcedValue,
 $attributes
 $attributes->class([$classes])
 $attributes->class([$groupClasses])
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label',
 $attributes->except(['id',
@@ -41,6 +42,7 @@ $attributes->get('aria-label')
 $attributes->get('aria-label'))
 $attributes->get('name'),
 $attributes->get('name',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->merge($avatarStyle
 $attributes->whereStartsWith('wire:model')
@@ -49,6 +51,7 @@ $avatarStyle
 $avatarStyle]
 $baseClasses
 $callerDescribedBy
+$callerRef
 $chipClasses
 $chipSize
 $chipSize,
@@ -342,6 +345,7 @@ $wrapperClasses
 (no
 (non-Latin
 (rating
+(resources/js/utils/caller-ref.js).
 (silent
 (string)
 (the
@@ -522,6 +526,7 @@ $wrapperClasses
 @if($announceError)
 @if($avatar
 @if($callerDescribedBy
+@if($callerRef
 @if($describedBy
 @if($error)
 @if($isPartial)
@@ -757,6 +762,7 @@ __('wirekit::Saving'),
 `$error
 `$id`
 `$logo`,
+`$refs`
 `$this->validate()`
 `'3/1'`.
 `'width/height'`
@@ -782,6 +788,7 @@ __('wirekit::Saving'),
 `class="cirlce"`
 `clearTarget()`
 `closest('[x-data]')`
+`data-wk-ref-scope`
 `data-wk-server-value`
 `default
 `disabled="false"`
@@ -812,6 +819,8 @@ __('wirekit::Saving'),
 `value`
 `w-auto`
 `x-data`,
+`x-ref`
+`x-wk-ref`,
 `xs`
 `{{
 a
@@ -1110,6 +1119,7 @@ dark:
 data,
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-server-value="{{
 data-wk-testimonial
 data-wk-testimonial-author
@@ -1406,10 +1416,12 @@ it
 it"
 it,
 it.
+it:
 item.
 items-center
 its
 itself
+itself,
 jump
 just
 justify-center
@@ -1427,6 +1439,7 @@ label,
 label.
 labelable
 labels
+land
 land.
 landed
 lands
@@ -1514,6 +1527,7 @@ more:
 morph
 most
 move
+moves
 ms-0.5"
 must
 muted
@@ -1589,9 +1603,11 @@ or
 orphan
 other
 otherwise
+our
 out
 out.
 outer
+outermost
 output
 outrank
 outside
@@ -1720,11 +1736,13 @@ record
 record,
 records
 redundant
+ref
 reference
 regenerated
 region
 region,
 region.
+registers
 reliably
 rem
 remove
@@ -1761,6 +1779,8 @@ role="status"
 role="status".
 rollback
 rollback.
+root
+root,
 roster,
 rounded-[var(--radius-wk-sm)]
 rounding
@@ -2108,6 +2128,7 @@ x-data
 x-data="wirekitOptimistic({{
 x-data="wirekitRating({{
 x-text="announcement"></div>
+x-wk-ref="{{
 you
 zero
 zero,

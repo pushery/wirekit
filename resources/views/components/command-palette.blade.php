@@ -21,6 +21,11 @@
     // `wirekit:command-palette-state` with a `name` in their detail reach only the palette of
     // that name. Without one they reach every palette on the page, as they always have.
     'name' => null,
+    // With a `name`, answer only the events that carry it: an event without a name, which
+    // reaches every palette otherwise, passes this one by. For a palette that shares a page
+    // with others it must never open for, such as a site search beside demos. Without a
+    // `name` it changes nothing.
+    'namedOnly' => false,
     // The dialog's accessible name, announced first when the palette opens. A search
     // is announced as a search this way, and two palettes on one page need not share
     // a name. Empty keeps the translated default.
@@ -57,6 +62,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $teleport = BooleanProp::from($teleport, true);
     $lockScroll = BooleanProp::from($lockScroll, true);
+    $namedOnly = BooleanProp::from($namedOnly, false);
 
     // Command Palette — spotlight-style search modal (Cmd/Ctrl+K).
     // Uses combobox + listbox pattern with keyboard navigation.
@@ -135,7 +141,7 @@
 @endphp
 
 <div
-    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }} })"
+    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }}, namedOnly: {{ $namedOnly ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
     {{-- Overlay markup. Wrapped in `<template x-teleport="#wk-overlay-root">` by default so

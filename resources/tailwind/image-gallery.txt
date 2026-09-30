@@ -23,6 +23,7 @@ $alignClasses,
 $alt
 $as
 $as);
+$attributes
 $attributes->class([$classes]);
 $attributes->class([$figureClasses])
 $attributes->class([$wrapperClasses,
@@ -90,6 +91,7 @@ $lightbox
 $lightboxId
 $lightboxItems
 $loading
+$lockScroll
 $loop
 $loop)
 $match))
@@ -337,6 +339,7 @@ $zoomOverlay($items[$i],
 'lg:grid-cols-[var(--wk-grid-template-lg)]',
 'lightbox'
 'loading'
+'lockScroll'
 'loop'
 'low'
 'low']),
@@ -428,6 +431,7 @@ $zoomOverlay($items[$i],
 'template'
 'template')
 'template',
+'true'
 'true'"
 'type'
 'var(--color-wk-overlay)';
@@ -701,6 +705,7 @@ Backdrop
 Blade
 Blade's
 BooleanProp::from($lightbox,
+BooleanProp::from($lockScroll,
 BooleanProp::from($loop,
 BooleanProp::from($rounded,
 BooleanProp::from($showCaptions,
@@ -711,6 +716,7 @@ CONTENT
 CSP
 CSS
 CSS,
+CallerRef::onRoot()
 Caption
 Corner
 Counted
@@ -731,6 +737,7 @@ External
 FALLBACK
 FIRST
 FIRST,
+False
 Fetch
 Fully
 HTML
@@ -843,6 +850,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate)
 \Pushery\WireKit\Support\AlpinePayload::from($slides)
 \Pushery\WireKit\Support\AlpinePayload::from((bool)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 \Pushery\WireKit\Support\SafeUrl::href($src,
@@ -935,6 +943,7 @@ __('wirekit::View
 `type`
 `width:
 `wirekit-lightbox-open`
+`x-ref`
 `xs`…`2xl`
 `zoomOverlay`
 a
@@ -943,6 +952,7 @@ about
 above
 above),
 above-the-fold
+above.
 above:
 absolute
 absolute-fill
@@ -1034,6 +1044,7 @@ back.
 backdrop,
 bad
 badge,
+bag
 base
 base,
 base.
@@ -1047,6 +1058,7 @@ before
 before).
 behind
 being
+belongs
 below
 below.
 beside
@@ -1062,7 +1074,6 @@ block
 block,
 blurry,
 body
-body,
 border-0
 both
 both.
@@ -1098,6 +1109,7 @@ callback
 callback's
 callback,
 caller
+caller's
 came
 can
 cannot
@@ -1176,6 +1188,7 @@ compete.
 compiles
 component
 component's
+component,
 components
 composed
 compromise
@@ -1465,6 +1478,7 @@ in_array($type,
 including
 incorrect
 index
+inert.
 inline
 inset-0
 inset-0"
@@ -1511,6 +1525,7 @@ job
 justify-center
 justify-center"
 justify-center">
+keep
 keeps
 kept
 key
@@ -1526,6 +1541,7 @@ label,
 ladder
 laid
 land
+lands
 language
 large
 later
@@ -1581,6 +1597,8 @@ loading="lazy"
 loading="{{
 loads,
 locale
+lockScroll:
+locks
 log
 long
 longer
@@ -1710,6 +1728,7 @@ order,
 origin
 other
 otherwise
+our
 out
 over
 overflow
@@ -1727,6 +1746,7 @@ owns,
 p-0
 p-[var(--space-wk-md)]"
 page
+page's
 page;
 painful
 paint
@@ -1776,6 +1796,7 @@ prev()
 prev/next
 prev/next/close
 preview
+preview,
 printed,
 priority
 prod).
@@ -1828,6 +1849,7 @@ reasoning
 receive
 refuses
 region
+region,
 relative
 removed:
 removes.
@@ -1859,6 +1881,8 @@ right
 right-[var(--space-wk-md)]
 role="dialog"
 roll
+root
+root,
 rounded
 rounded-[var(--radius-wk-md)]
 rounded-full
@@ -1892,6 +1916,7 @@ screen.
 scrim
 script-execution
 scroll
+scrolling.
 second
 see
 sees

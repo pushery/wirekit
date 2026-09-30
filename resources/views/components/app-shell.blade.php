@@ -303,6 +303,9 @@
     $sidebarDrawerLabelFallback = is_string($sidebarAuthoredLabel) && $sidebarAuthoredLabel !== ''
         ? \Pushery\WireKit\Support\AlpinePayload::string($sidebarAuthoredLabel)
         : 'null';
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

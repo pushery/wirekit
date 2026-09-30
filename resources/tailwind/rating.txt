@@ -20,6 +20,7 @@ $announcedValue
 $announcedValue,
 $attributes
 $attributes->class([$classes])
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label',
 $attributes->except(['id',
@@ -28,9 +29,11 @@ $attributes->get('aria-label')
 $attributes->get('aria-label'))
 $attributes->get('name'),
 $attributes->get('name',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->whereStartsWith('wire:model')
 $callerDescribedBy
+$callerRef
 $clamped
 $classes
 $clearable
@@ -177,6 +180,7 @@ $wrapperClasses
 (less).
 (more),
 (rating
+(resources/js/utils/caller-ref.js).
 (silent
 (the
 (when
@@ -313,6 +317,7 @@ $wrapperClasses
 @for($i
 @if($announceError)
 @if($callerDescribedBy
+@if($callerRef
 @if($describedBy
 @if($error)
 @if($isPartial)
@@ -470,6 +475,7 @@ __('wirekit::Saving'),
 `$clamped`
 `$error
 `$id`
+`$refs`
 `$this->validate()`
 `:class`
 `:error`
@@ -489,6 +495,7 @@ __('wirekit::Saving'),
 `block`,
 `clearTarget()`
 `closest('[x-data]')`
+`data-wk-ref-scope`
 `data-wk-server-value`
 `disabled="false"`
 `error`
@@ -507,6 +514,8 @@ __('wirekit::Saving'),
 `this`,
 `value`
 `x-data`,
+`x-ref`
+`x-wk-ref`,
 `{{
 a
 able
@@ -645,6 +654,7 @@ cannot
 capability
 card,
 carried
+carries
 carry
 carrying
 cast
@@ -715,6 +725,7 @@ dark
 dark:
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-server-value="{{
 debug
 decimal
@@ -928,9 +939,11 @@ it
 it"
 it,
 it.
+it:
 item.
 its
 itself
+itself,
 jump
 just
 keeps
@@ -945,6 +958,7 @@ label,
 label.
 labelable
 labels
+land
 landed
 lands
 last
@@ -1002,6 +1016,7 @@ moment
 morph
 most
 move
+moves
 ms-0.5"
 must
 n/a
@@ -1064,8 +1079,10 @@ or
 orphan
 other
 otherwise
+our
 out
 out.
+outermost
 outrank
 outside
 over
@@ -1159,11 +1176,13 @@ receives
 record
 records
 redundant
+ref
 reference
 regenerated
 region
 region,
 region.
+registers
 remove
 render
 rendered
@@ -1188,6 +1207,8 @@ role="radio"
 role="radiogroup"
 rollback
 rollback.
+root
+root,
 rounded-[var(--radius-wk-sm)]
 rounding
 roving
@@ -1444,6 +1465,7 @@ x-data
 x-data="wirekitOptimistic({{
 x-data="wirekitRating({{
 x-text="announcement"></div>
+x-wk-ref="{{
 zero
 zero,
 {

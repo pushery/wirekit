@@ -7,15 +7,18 @@ $accept
 $announceError
 $announceErrors
 $attributes
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label',
 $attributes->get('aria-describedby',
 $attributes->get('aria-label')
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->whereStartsWith('wire:model')
 $attributes->whereStartsWith('wire:model')->first();
 $boundModel
 $boundModel));
+$callerRef
 $capture,
 $captureValue
 $compactSizing
@@ -152,6 +155,7 @@ $variantValue
 (not
 (p-0.5
 (resources/js/components/file-upload.js).
+(resources/js/utils/caller-ref.js).
 (silent
 (some
 (standard
@@ -267,6 +271,7 @@ $variantValue
 @if($accept)
 @if($announceError)
 @if($attributes->get('aria-label'))
+@if($callerRef
 @if($captureValue)
 @if($describedBy
 @if($disabled)
@@ -396,6 +401,7 @@ __('wirekit::Drop
 __('wirekit::Remove
 __('wirekit::Removed
 `$hasError`
+`$refs`
 `.blur`)
 `.value`
 `:name`
@@ -421,6 +427,7 @@ __('wirekit::Removed
 `compact`
 `config()`
 `const`,
+`data-wk-ref-scope`
 `default`
 `disabled="false"`
 `flex`)
@@ -447,8 +454,11 @@ __('wirekit::Removed
 `whereStartsWith`
 `wire:model*`
 `wire:model`
+`x-ref`
+`x-wk-ref`,
 `{{
 a
+above
 above,
 absent
 accept="{{
@@ -670,6 +680,7 @@ danger
 dashed
 data-wk-file-remove
 data-wk-prose-skip
+data-wk-ref-scope
 date-picker,
 debug
 decides
@@ -729,6 +740,7 @@ either,
 either:
 element
 element's
+element,
 element.
 element:
 else
@@ -917,6 +929,7 @@ key
 keyboard
 label
 label:
+land
 landed
 lands
 language.
@@ -1048,8 +1061,10 @@ or,
 order
 other
 otherwise
+our
 out
 out.
+outermost
 over
 overflowing
 own
@@ -1139,9 +1154,11 @@ received
 recognizes
 rectangle
 red
+ref
 reference
 region
 region.
+registers
 removal
 removal's
 remove
@@ -1169,6 +1186,8 @@ reword.
 right
 ring
 role="list"
+root
+root,
 round
 rounded
 rounded-[var(--radius-wk-md)]',
@@ -1320,6 +1339,7 @@ tree,
 triggers
 trim($describedBy.'
 trim(($hint
+trim((string)
 trip
 true
 true"
@@ -1414,6 +1434,7 @@ x-show="files.length
 x-text="file.name"></span>
 x-text="fileAnnouncement"></div>
 x-text="formatBytes(file.size)"></span>
+x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 {
 {{

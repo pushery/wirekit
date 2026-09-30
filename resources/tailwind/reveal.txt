@@ -8,6 +8,7 @@ $allowedBases,
 $allowedFull
 $allowedFull);
 $allowedFull,
+$attributes
 $attributes->except('style')->merge(['data-replayable'
 $attributes->get('style',
 $attributes->getAttributes());
@@ -168,6 +169,7 @@ $validatedTrigger,
 @php
 @props([
 @props.
+A
 ASCII
 Alpine
 Alpine's
@@ -179,6 +181,7 @@ Blade's
 CONTEXT,
 CSP
 CSS
+CallerRef::onRoot()
 Compose
 CustomEvent('wirekit:reveal'))).
 Declared
@@ -218,6 +221,7 @@ Without
 ['viewport',
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($validatedPreset)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('reveal',
 ])
 ]);
@@ -242,9 +246,11 @@ Without
 `u003C`.
 `warnUnknownProps`
 `wirekit:reveal`
+`x-ref`
 `{{
 a
 above
+above.
 accept
 adds
 against
@@ -273,6 +279,7 @@ attributes
 auto-derived
 back.
 backslash
+bag
 bare
 base
 be
@@ -280,6 +287,7 @@ because
 before
 begins
 begins.
+belongs
 block,
 bool
 bounce,
@@ -302,6 +310,7 @@ client-only
 combines
 common
 component's
+component,
 composes
 composition
 config('wirekit.components.reveal.delay',
@@ -360,6 +369,7 @@ from
 gallery
 get
 hand-picked
+hands
 happens
 harmful.
 has
@@ -385,8 +395,11 @@ is
 is_int($delay)
 it
 it,
+it:
 its
+keep
 keeps
+lands
 later
 learn
 letters,
@@ -452,6 +465,7 @@ resolve
 resolver
 rhythm)
 roll
+root
 root,
 rotate,
 routed

@@ -71,6 +71,7 @@ $attributes->class([$figureClasses])
 $attributes->class(['relative
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel');
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label',
 $attributes->except(['id',
@@ -85,6 +86,7 @@ $attributes->get('name',
 $attributes->get('rel',
 $attributes->get('role');
 $attributes->get('target',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->has('aria-busy');
 $attributes->has('aria-label')
@@ -108,6 +110,7 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerDescribedBy
+$callerRef
 $callerRole
 $caption
 $clamped
@@ -876,6 +879,7 @@ $wrapperClasses
 (rating
 (regex
 (renders
+(resources/js/utils/caller-ref.js).
 (same
 (see
 (segmented
@@ -1179,6 +1183,7 @@ $wrapperClasses
 @if
 @if($announceError)
 @if($callerDescribedBy
+@if($callerRef
 @if($caption)
 @if($computedRel)
 @if($declarativeLoading)
@@ -1320,6 +1325,7 @@ CSS-pixel
 CSS.
 CTA
 CTA.
+CallerRef::onRoot()
 Catching
 Change
 Check
@@ -1690,6 +1696,7 @@ Written
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -1820,6 +1827,7 @@ __toString
 `clipboard-button`,
 `cloneNode(true)`,
 `closest('[x-data]')`
+`data-wk-ref-scope`
 `data-wk-server-value`
 `default`
 `delayHide`
@@ -1959,8 +1967,10 @@ __toString
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
+`x-wk-ref`,
 `xs`
 `xs`,
 `xs`.
@@ -2651,6 +2661,7 @@ data-wk-product-card-reviews
 data-wk-product-card-sale>
 data-wk-product-card-stock
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-server-value="{{
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
@@ -3154,6 +3165,7 @@ handler
 handler.
 handlers
 handles
+hands
 hang
 hangs
 happens
@@ -3797,6 +3809,7 @@ out
 out,
 out.
 outer
+outermost
 outline
 outline()
 outline:
@@ -5077,6 +5090,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ref="{{
 xl
 xmlns="http://www.w3.org/2000/svg"
 yet.

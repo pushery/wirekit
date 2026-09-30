@@ -236,12 +236,15 @@ export default function wirekitMenubar() {
         async _positionActiveMenu(name) {
             await this.$nextTick();
 
+            // Closed, or moved on to another menu, inside the tick: nothing to place.
+            if (this.activeMenu !== name) return;
+
             // Trigger stays in the bar (not teleported). Query from $root (the
             // menubar element), NOT $el — when this runs off a trigger's
             // x-on:click, Alpine binds $el to the clicked menuitem button
             // (no trigger descendants), so $el.querySelector would miss and
-            // positioning would silently never run. Panel is teleported to
-            // <body> → resolve via the teleport-safe ref.
+            // positioning would silently never run. The panel is teleported to the
+            // overlay root → resolve it via the teleport-safe ref.
             const trigger = this.$root.querySelector(`[data-wk-menubar-trigger="${name}"]`);
             const panel = this.$refs[`panel-${name}`];
 
@@ -252,6 +255,17 @@ export default function wirekitMenubar() {
                     offset: 4,
                     autoReposition: true,
                 });
+
+                // The bar can close, or move to another menu, while this one is placed: its
+                // observer would then follow a panel nobody sees.
+                if (this.activeMenu !== name) {
+                    stop();
+                    return;
+                }
+
+                // One observer at a time: a menu opened after this one may have stored its
+                // own first.
+                this._stopAutoUpdate?.();
                 this._stopAutoUpdate = stop;
             }
         },
@@ -380,7 +394,8 @@ export default function wirekitMenubar() {
          */
         _getActiveItems() {
             if (!this.activeMenu) return [];
-            // Panel is teleported to <body>; resolve via the teleport-safe ref.
+            // The panel is teleported to the overlay root at the end of <body>; resolve it
+            // via the teleport-safe ref.
             const panel = this.$refs[`panel-${this.activeMenu}`];
             if (!panel) return [];
             return [...panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')]

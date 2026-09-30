@@ -29,6 +29,7 @@ $active
 $activeClasses
 $activeClasses,
 $ariaLabelFallback
+$attributes
 $attributes->class([$classes,
 $attributes->class([$classes])
 $attributes->class([$itemClasses,
@@ -383,6 +384,7 @@ C
 CAREFUL:
 CSP
 CSRF
+CallerRef::onRoot()
 Change
 Checkbox
 Child
@@ -569,6 +571,7 @@ Wrapping
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($panelId)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown',
@@ -702,6 +705,7 @@ about
 about.
 about.');
 above
+above.
 absent
 absent.
 accent
@@ -820,6 +824,7 @@ back.
 backend;
 background
 background.
+bag
 bag's
 bag.
 bare
@@ -969,6 +974,7 @@ comparison
 compiles
 component
 component's
+component,
 component.
 components
 composed
@@ -1135,6 +1141,7 @@ empty
 empty-name
 empty:
 enabled
+end
 ends
 engine.
 engines,
@@ -1281,6 +1288,7 @@ handled
 handler
 handlers
 handling
+hands
 happened
 has
 hatch;
@@ -1364,6 +1372,7 @@ is
 it
 it,
 it.
+it:
 it;
 item
 item's

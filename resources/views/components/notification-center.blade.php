@@ -68,6 +68,9 @@
     // Shared row chrome for both row variants (a real <a> when the item carries
     // an href, a <button> otherwise) — ONE interactive element per row.
     $row = 'w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors cursor-pointer border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
@@ -82,13 +85,15 @@
     x-on:keydown.escape.window="isOpen && close(true)"
     {{ $attributes->only('class')->class([$base]) }}
 >
-    @if($name)
+    {{-- For a `name` or a `wire:model`: the root leaves the binding off, so without this field
+         a binding on the tag would reach no element. --}}
+    @if(filled($name) || $attributes->whereStartsWith('wire:model')->isNotEmpty())
         {{-- Mirrors the live unread count for a wire:model bridge. --}}
         {{-- Static value as well as the bound one: the field is empty until Alpine
          boots, and a form submitted in that window sends nothing while the
          visible control already shows the value. Both come from the same PHP
          expression that feeds the factory, so they cannot drift. --}}
-        <input type="hidden" x-ref="model" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} value="{{ $serverUnread }}" :value="unreadCount" />
+        <input type="hidden" x-ref="model" @if(filled($name)) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ $serverUnread }}" :value="unreadCount" />
     @endif
 
     {{-- Screen-reader announcement for new notifications. Fed from the SAME

@@ -1,3 +1,4 @@
+$attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
 $delayHide
@@ -74,11 +75,13 @@ $wrapperClasses
 @props([
 @props.
 @username
+A
 AND
 ARIA
 Alpine
 Alpine's
 Both
+CallerRef::onRoot()
 Card
 DOM
 Declared
@@ -117,6 +120,7 @@ WireKit::resolveClasses('hover-card',
 Without
 [
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('hover-card',
 ])
 ]),
@@ -135,11 +139,13 @@ __('wirekit::Hover
 `open`
 `position:
 `tabFromTrigger()`
+`x-ref`
 `x-teleport="#wk-overlay-root"`
 a
 a11y.
 able
 above,
+above.
 across
 actions).
 actually
@@ -167,9 +173,11 @@ axe-core's
 back
 back.
 backwards
+bag
 be
 because
 behavior.
+belongs
 below
 bindings
 bio,
@@ -184,6 +192,7 @@ browser
 but
 buttons
 calculations
+caller's
 cancels
 card
 card')
@@ -196,6 +205,7 @@ class="{{
 client-only
 close()"
 component's
+component,
 content
 content)
 control
@@ -246,6 +256,7 @@ full
 generic
 handler
 handler.
+hands
 has
 hid
 hide
@@ -270,14 +281,17 @@ into
 irrelevant).
 is
 it
+it:
 its
 itself
 just
+keep
 keeps
 key
 keyboard
 keystroke.
 land
+lands
 last
 later
 leave
@@ -323,6 +337,7 @@ optimistic-ui:
 or
 order
 other
+our
 out
 out.
 overlay
@@ -371,6 +386,7 @@ role="dialog"
 roll
 root
 root)
+root,
 root.
 rule.
 run

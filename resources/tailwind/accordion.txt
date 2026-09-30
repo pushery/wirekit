@@ -220,6 +220,7 @@ CLASS
 CONTAINER
 CSP
 CSS.
+CallerRef::onRoot()
 Child
 Closed
 Closed,
@@ -301,6 +302,7 @@ WireKit::validateProp('accordion',
 \Pushery\WireKit\Support\AlpinePayload::string($mode)
 \Pushery\WireKit\Support\BooleanProp::from($animate,
 \Pushery\WireKit\Support\BooleanProp::from($findable,
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($id,
 \Pushery\WireKit\WireKit::warnUnknownProps('accordion',
 \Pushery\WireKit\WireKit::warnUnknownProps('accordion.item',
@@ -337,12 +339,14 @@ WireKit::validateProp('accordion',
 `x-collapse`
 `x-data`
 `x-on:beforematch`
+`x-ref`
 `x-show`
 `x-show`,
 `x-wk-findable.collapse`
 `x-wk-findable`
 `{{
 a
+above.
 accepts
 access
 accessibility
@@ -407,6 +411,7 @@ back
 back,
 back.
 bad
+bag
 bag.
 bare
 based
@@ -451,6 +456,7 @@ buttons)
 by
 byte-identical
 caller
+caller's
 calls
 came
 can
@@ -623,6 +629,7 @@ half-turn
 halves
 handle
 handler
+hands
 has
 hatch
 have
@@ -682,6 +689,7 @@ itself
 jump
 just
 justify-between
+keep
 keeps
 kept
 key
@@ -784,6 +792,7 @@ original
 other
 others
 otherwise
+our
 out
 outer
 outline
@@ -889,6 +898,7 @@ role=region
 roll
 roomier
 root
+root,
 rotates
 rounded
 row

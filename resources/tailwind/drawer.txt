@@ -966,6 +966,7 @@ role,
 role="dialog"
 roleless
 roll
+root
 round
 row
 rule

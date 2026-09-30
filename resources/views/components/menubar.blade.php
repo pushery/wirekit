@@ -25,6 +25,9 @@
         'p-[var(--padding-wk-y-xs)]',
         'shadow-[var(--shadow-wk-sm)]',
     ]), $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

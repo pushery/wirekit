@@ -539,8 +539,17 @@ export default function wirekitFilterBuilder(config = {}) {
 
         // ── Emission ─────────────────────────────────────────────────────
         _emit() {
-            // Primary contract: a bubbling event carrying the normalized array.
-            this.$dispatch('filter-change', { filters: this.filters });
+            // Primary contract: a bubbling event carrying the normalized array, dispatched
+            // from the component's root. `$dispatch` would start it at the element whose
+            // handler called in, and Apply sits in the panel teleported to the overlay root,
+            // outside the builder: the event would climb to <body> past every element of the
+            // builder, and a listener on its tag would never hear it. The root comes from the
+            // same cache the focus helper uses.
+            rootOf(this)?.dispatchEvent(new CustomEvent('filter-change', {
+                detail: { filters: this.filters },
+                bubbles: true,
+                composed: true,
+            }));
             // Form / Livewire bridge: JSON in a hidden input + native input event.
             if (this.$refs.model) {
                 this.$refs.model.value = JSON.stringify(this.filters);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Components;
 
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
@@ -11,13 +12,20 @@ use Illuminate\View\Component;
  * The class behind `sidebar.group`, registered under the same tag as the anonymous file.
  *
  * Everything the group renders stays in `sidebar/group.blade.php`, and so does its `@props`
- * block, which is what every catalog, manifest and guard reads. The class exists for one prop.
+ * block, which is what every catalog, manifest and guard reads. The class exists because of one
+ * prop.
  * `collapsible` on a group means "this group folds its rows"; on the sidebar it means "this
  * column can become an icon rail", and each row reads the sidebar's through `@aware`. `@aware`
  * answers with the nearest ancestor that was called with the name, and an anonymous component
  * hands every attribute of its tag to that search. A class component hands its descendants
  * only its public properties, so taking `collapsible` as a constructor parameter keeps the
  * group's meaning to the group, and the rows reach the sidebar's value past it.
+ *
+ * Every other prop the view declares is a constructor parameter too. An attribute a class
+ * component's constructor does not take reaches its view through the attribute bag, and Blade
+ * escapes a bound string on its way in there; `@props` reads it back escaped, and the view's
+ * `{{ }}` escapes it a second time, so a label `A & B` would print as `A &amp;amp; B`. A
+ * parameter receives the value as written.
  */
 final class SidebarGroup extends Component
 {
@@ -29,6 +37,10 @@ final class SidebarGroup extends Component
     public function __construct(
         private readonly bool|int|float|string|null $collapsible = false,
         private readonly bool|int|float|string|null $forceOpen = false,
+        private readonly Htmlable|string|int|float|null $label = null,
+        private readonly bool|int|float|string|null $open = true,
+        private readonly bool|int|float|string|null $persist = null,
+        private readonly ?string $scope = null,
     ) {}
 
     public function render(): View
@@ -47,6 +59,10 @@ final class SidebarGroup extends Component
         return view($view, [
             'collapsible' => $this->collapsible,
             'forceOpen' => $this->forceOpen,
+            'label' => $this->label,
+            'open' => $this->open,
+            'persist' => $this->persist,
+            'scope' => $this->scope,
         ]);
     }
 }

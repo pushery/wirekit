@@ -29,6 +29,7 @@ $attributes->class(['relative
 $attributes->except('aria-describedby')->class([
 $attributes->except('aria-describedby')->class([$rootClasses])
 $attributes->except('aria-describedby')->class(['wk-field',
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label']);
 $attributes->except(['id',
@@ -40,6 +41,7 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('required',
 $attributes->get('value',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->whereStartsWith(['wire:model',
 $autocomplete
@@ -53,6 +55,7 @@ $buttonBorderColor,
 $buttonClasses
 $buttonPadding
 $callerAriaLabel
+$callerRef
 $candidate;
 $classes
 $clearLabel
@@ -504,6 +507,7 @@ $width
 'z-[var(--z-wk-tooltip)]',
 ("Fast
 ($attributes->get('value')
+($callerRef
 ($candidate):
 ($control
 ($displayIsMarkup)
@@ -562,6 +566,7 @@ $width
 (opt-in;
 (or
 (required,
+(resources/js/utils/caller-ref.js).
 (silent
 (string)
 (the
@@ -824,6 +829,7 @@ $width
 @if($announceError)
 @if($autocomplete
 @if($boundModel)
+@if($callerRef
 @if($clearable)
 @if($copyable)
 @if($describedBy
@@ -857,7 +863,6 @@ $width
 @if($width
 @if(is_array($optionLabel)
 @if(isset($content))
-@input="syncHasValue()"
 @param
 @php
 @props([
@@ -920,6 +925,7 @@ COMMITTING
 CONTROL,
 CSP
 CSS
+CallerRef::onRoot()
 Cancel
 Change
 Chrome
@@ -1120,7 +1126,6 @@ Textarea
 That
 The
 There
-They
 This
 Title"
 Tooltip
@@ -1217,6 +1222,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::from(isset($editor))
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SlotContent::text($slot),
@@ -1244,7 +1250,7 @@ __('wirekit::Saving'),
 __('wirekit::Still
 `!==
 `$as`
-`$event.target.value`
+`$event.target.value`,
 `$hasError`
 `$id-control`
 `$id`
@@ -1306,6 +1312,7 @@ __('wirekit::Still
 `config`
 `control`
 `copyable`
+`data-wk-ref-scope`
 `delayHide`
 `delayHide`.
 `delayShow`
@@ -1429,9 +1436,11 @@ __('wirekit::Still
 `x-data`,
 `x-model`)
 `x-ref="control"`:
-`x-ref="wkField"`
+`x-ref`
+`x-ref`.
 `x-show="open"`
 `x-show`
+`x-wk-ref`,
 `{{
 a
 a11y
@@ -1641,6 +1650,7 @@ below,
 below.
 below:
 below;
+beside
 between
 bg-transparent
 bind
@@ -1691,6 +1701,7 @@ bubbles
 bug
 build
 build,
+build.
 built
 built-in
 bullets
@@ -1955,6 +1966,7 @@ dark:
 data-loss
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
@@ -2540,6 +2552,7 @@ jumps,
 just
 justify-center
 justify-center',
+keep
 keeping
 keeps
 kept
@@ -2825,6 +2838,7 @@ one-directional:
 one.
 one:
 only
+only,
 only:
 onmouseover=alert(1)"`
 onto
@@ -2849,6 +2863,8 @@ order,
 other
 other.
 otherwise
+our
+ours,
 out
 out.
 outcome
@@ -2954,7 +2970,6 @@ pointer;
 pointing
 points
 policy
-policy.
 polite
 polite:
 popover's
@@ -3060,7 +3075,6 @@ recolors
 red
 red:
 ref
-ref.
 reference
 reference,
 reflect
@@ -3117,7 +3131,7 @@ resolve
 resolved
 resolves
 resolving
-resources/js/components/input.js.
+resources/js/components/input.js,
 resources/js/components/number-input.js.
 rest.
 rests
@@ -3232,7 +3246,6 @@ server-rendered
 server-side
 set
 set')
-set,
 set.
 sets
 sets,
@@ -3267,7 +3280,7 @@ shrink
 shrink-0
 sibling
 siblings
-siblings;
+siblings.
 sidebar
 sideways
 sighted
@@ -3744,6 +3757,7 @@ write
 writes
 writing
 written
+written.
 wrong
 wrong.
 wrote
@@ -3785,7 +3799,6 @@ x-ref="control",
 x-ref="status"
 x-ref="tooltip"
 x-ref="trigger"
-x-ref="wkField"
 x-show
 x-show="!
 x-show="!editing"
@@ -3803,6 +3816,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet
 yields

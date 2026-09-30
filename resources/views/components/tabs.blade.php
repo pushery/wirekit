@@ -158,6 +158,9 @@
         }
     }
     $warnWireModelInDebug = $hasWireModel && config('app.debug');
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- Tabs root — holds shared Alpine state and ARIA wiring.

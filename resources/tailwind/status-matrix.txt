@@ -21,6 +21,7 @@ $ariaLabel
 $ariaLabelResolved
 $as
 $as);
+$attributes
 $attributes->class(['relative
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->except(['id',
@@ -719,6 +720,7 @@ CELLS
 COMPOSITE
 CORNER
 COUNT
+CallerRef::onRoot()
 Catching
 Check
 Computed
@@ -953,6 +955,7 @@ Zero
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($rk)
 \Pushery\WireKit\Support\AlpinePayload::string($row['label'].',
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
 \Pushery\WireKit\WireKit::stableId('status-matrix',
@@ -1089,6 +1092,7 @@ __toString
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 a
@@ -1229,6 +1233,7 @@ badge-width
 badge;
 badges
 badges;
+bag
 baked
 bakes
 bare
@@ -1428,6 +1433,7 @@ compile
 compiles
 component
 component's
+component,
 components
 composer
 composite
@@ -1789,6 +1795,7 @@ handler
 handler.
 handlers
 handles
+hands
 hangs
 hard
 harder
@@ -1928,6 +1935,7 @@ judgment
 just
 justify-center
 justify-center',
+keep
 keeps
 key
 key,

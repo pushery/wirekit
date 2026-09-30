@@ -28,6 +28,7 @@ $actionLabel
 $actionLabel,
 $as
 $as);
+$attributes
 $attributes->class([$classes])
 $attributes->class([$wrapperClasses])
 $attributes->class(['min-w-0'])
@@ -747,6 +748,7 @@ CALLER's
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Catching
 Check
 DECLARATIVE
@@ -986,6 +988,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($moreMany)
 \Pushery\WireKit\Support\AlpinePayload::string($moreOne)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SafeUrl::href((string)
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -1187,6 +1190,7 @@ __toString
 `wrapLabel`,
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 `xs`
@@ -1583,6 +1587,7 @@ compiled
 compiles
 component
 component's
+component,
 component.
 components
 composer
@@ -1803,6 +1808,7 @@ emitted
 empty
 empty-state
 enabled
+end
 end.
 ending
 ends

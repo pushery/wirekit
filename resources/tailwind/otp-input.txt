@@ -23,11 +23,13 @@ $announceErrors
 $attributes
 $attributes->class([$classes])
 $attributes->except('id');
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->get('aria-describedby',
 $attributes->get('aria-label')
 $attributes->get('name'),
 $attributes->get('name',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->only('class')->class([$wrapperClasses])
 $attributes->only(['dusk'])
@@ -39,6 +41,7 @@ $autofocus)
 $b`
 $boundModel
 $c):
+$callerRef
 $classes
 $describedBy
 $digitClasses
@@ -208,6 +211,7 @@ $wrapperClasses
 (int)
 (no
 (range-slider
+(resources/js/utils/caller-ref.js).
 (silent
 (string
 (string)
@@ -276,6 +280,7 @@ $wrapperClasses
 @foreach($digitGroup
 @foreach($digitGroups
 @if($announceError)
+@if($callerRef
 @if($disabled)
 @if($hasError
 @if($hasError)
@@ -467,7 +472,9 @@ __('wirekit::Saving'),
 `class`,
 `code-2`
 `contents`
+`data-*`
 `data-*`:
+`data-wk-ref-scope`
 `dedupe_ids`
 `disabled:`
 `disabled="false"`
@@ -503,12 +510,15 @@ __('wirekit::Saving'),
 `wire:model`
 `wirekit:otp-complete`
 `wirekitOtpInput`
+`x-ref`
+`x-wk-ref`,
 `xor`:
 `{{
 a
 able
 about
 about.
+above
 above,
 above.
 accept
@@ -618,6 +628,7 @@ behaved
 behaves
 behavior:
 being
+belongs
 below
 between
 binding
@@ -783,6 +794,7 @@ dark:
 data,
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 day
 debug
 decides
@@ -1143,6 +1155,7 @@ mouse
 mouseup
 move
 move.
+moves
 moves.
 moving
 ms-0.5"
@@ -1217,6 +1230,7 @@ orders
 other
 otherwise
 otp-input
+ours,
 out
 out.
 out:
@@ -1301,6 +1315,7 @@ refusal
 refuses
 region
 registered
+registers
 rejecting
 rejects
 relaxed
@@ -1327,6 +1342,7 @@ retyped:
 right
 role="group"
 rollback
+root
 rounded-[var(--radius-wk-md)]',
 rounded-[var(--radius-wk-sm)]',
 route.
@@ -1452,11 +1468,13 @@ syncs
 tabular-nums',
 tag
 tag,
+take
 takes
 taking
 target,
 tell
 test
+test,
 test.
 text
 text-[color:var(--color-wk-danger-text)]">{{
@@ -1501,6 +1519,7 @@ trailing
 trim($describedBy.'
 trim('flex
 trim(($hint
+trim((string)
 true))
 true);
 true.
@@ -1596,6 +1615,7 @@ x-data="wirekitOtpInput({
 x-on:wirekit:otp-complete="run($event.detail.value)"
 x-ref="digit{{
 x-text="announcement"></div>
+x-wk-ref="{{
 xor
 {
 {{

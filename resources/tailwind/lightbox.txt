@@ -1,5 +1,6 @@
 "of"
 #$i
+$attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
 $backdrop
@@ -15,6 +16,7 @@ $item['caption']
 $item['poster']
 $item['type']
 $lightboxId
+$lockScroll
 $loop
 $loop)
 $name
@@ -54,6 +56,7 @@ $wrapperClasses
 'image';
 'image'|'video'|'embed']
 'items'
+'lockScroll'
 'loop'
 'min-h-[10rem]
 'name'
@@ -65,6 +68,7 @@ $wrapperClasses
 'showCaptions'
 'slideOverlay'
 'src'
+'true'
 'true'"
 'type'
 'var(--color-wk-overlay)';
@@ -184,10 +188,12 @@ Anything
 BOTH
 Backdrop
 Blade
+BooleanProp::from($lockScroll,
 BooleanProp::from($loop,
 BooleanProp::from($showCaptions,
 CSP
 CSS
+CallerRef::onRoot()
 Caption
 Counted,
 Declared
@@ -195,6 +201,7 @@ Dev-only
 Each
 Everything
 External
+False
 Fully
 HTML
 HtmlString
@@ -247,6 +254,7 @@ Wraps
 \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate)
 \Pushery\WireKit\Support\AlpinePayload::from($slides)
 \Pushery\WireKit\Support\AlpinePayload::from((bool)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 \Pushery\WireKit\Support\SafeUrl::href($src,
@@ -283,9 +291,11 @@ __('wirekit::Slide
 `title`,
 `type`
 `wirekit-lightbox-open`
+`x-ref`
 a
 about
 above
+above.
 above:
 absolute
 actually
@@ -332,9 +342,12 @@ back
 back.
 backdrop,
 bad
+bag
 be
 becomes
 before
+behind
+belongs
 below
 below.
 bg-[var(--color-wk-bg-elevated)]
@@ -344,7 +357,6 @@ binding:
 black)
 blank
 block,
-body,
 both
 box).
 box:
@@ -361,6 +373,7 @@ by
 call
 callback's
 caller
+caller's
 can
 cannot
 cap)
@@ -404,6 +417,7 @@ comes
 compiles
 component
 component's
+component,
 content
 content')
 context
@@ -533,6 +547,7 @@ imports
 in
 in_array($type,
 index
+inert.
 inline
 inset-0
 inset-0"
@@ -550,6 +565,7 @@ isset($item['poster'])
 it
 it,
 it.
+it:
 item
 item's
 item)">
@@ -562,11 +578,13 @@ itself).
 justify-center
 justify-center"
 justify-center">
+keep
 keeps
 keyboard.
 keys
 label,
 laid
+lands
 language
 large
 later
@@ -594,6 +612,8 @@ loaded"
 loaded:
 loading="lazy"
 locale
+lockScroll:
+locks
 long
 loop:
 lost
@@ -647,6 +667,7 @@ opacity-[var(--opacity-wk-disabled)]'"
 open
 openAt(index)
 opened
+opening
 opposite
 opt
 optimistic-ui:
@@ -657,6 +678,7 @@ order,
 origin
 other
 otherwise
+our
 out
 over
 overlay
@@ -667,6 +689,7 @@ own
 owns,
 p-[var(--space-wk-md)]"
 page
+page's
 paint
 paints
 passes
@@ -682,6 +705,7 @@ preload="metadata"
 prev()
 prev/next
 prev/next/close
+preview,
 prod).
 prop's
 props
@@ -702,6 +726,7 @@ reads
 reason
 refuses
 region
+region,
 removed:
 render
 render-callback:
@@ -714,6 +739,8 @@ returns
 right-[var(--space-wk-md)]
 role="dialog"
 roll
+root
+root,
 rounded-[var(--radius-wk-md)]
 rounded-full
 route
@@ -733,6 +760,8 @@ scoped
 screen
 scrim
 script-execution
+scroll
+scrolling.
 see
 semi-transparent
 sentence
@@ -780,6 +809,7 @@ stroke="currentColor"
 style.
 style="background:
 subtle
+such
 surface
 surface.
 swaps

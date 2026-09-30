@@ -17,6 +17,7 @@
 "not
 "the
 "these
+$attributes
 $attributes->except(['id',
 $attributes->get('id',
 $attributes->get('name')));
@@ -24,6 +25,7 @@ $attributes->get('name');
 $attributes->getAttributes());
 $attributes->only('class')->class([$base])
 $attributes->whereStartsWith('wire:model')
+$attributes->whereStartsWith('wire:model')->isNotEmpty()))
 $avatarKey
 $avatarKey)
 $avatarKey);
@@ -61,7 +63,6 @@ $loading
 $loading,
 $mode
 $name
-$name)
 $pillClass
 $pluralLocale
 $prominenceClasses
@@ -234,6 +235,7 @@ $value]))
 (client
 (client-side
 (density
+(filled($name)
 (filled($value)
 (indeterminate
 (info
@@ -372,6 +374,7 @@ $value]))
 @if($stickyColumn)
 @if(filled($bulkActionsLabel))
 @if(filled($caption))
+@if(filled($name))
 @input{{
 @isset($empty)
 @isset($rowActions)
@@ -416,6 +419,7 @@ CHARACTER.
 CONTENT
 COUNT
 CSP
+CallerRef::onRoot()
 Capping
 Column
 Configurable
@@ -436,6 +440,7 @@ English
 Every
 FILTER_VALIDATE_BOOLEAN)
 FIRST
+For
 Form
 Freeze
 Fully
@@ -554,6 +559,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($rowKey)
 \Pushery\WireKit\Support\AlpinePayload::string('
 \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
 \Pushery\WireKit\WireKit::stableId('data-table',
 \Pushery\WireKit\WireKit::warnUnknownProps('data-table',
@@ -635,6 +641,7 @@ __('wirekit::Select
 `menuitem`s,
 `mode`)
 `muted`
+`name`
 `name`,
 `neutral`:
 `number`
@@ -672,6 +679,7 @@ __('wirekit::Select
 `white-space`
 `whitespace-normal`
 `whitespace-nowrap`.
+`wire:model`:
 `wirekit:data-table-columns-changed`,
 `wirekitStickyPanelShadows`,
 `wk-scroll-shadow-start`
@@ -680,10 +688,12 @@ __('wirekit::Select
 `x-data`.
 `x-for`
 `x-model`
+`x-ref`
 a
 about
 about.
 above
+above.
 absence
 absolute`,
 accent
@@ -790,6 +800,7 @@ badge
 badge's
 badge.
 badgeItems(row,
+bag
 bar
 bar,
 barcode,
@@ -856,6 +867,7 @@ by
 call
 called
 caller
+caller's
 calls
 came
 can
@@ -1098,6 +1110,7 @@ eight-letter
 either
 element
 element,
+element.
 else,
 email,
 emit
@@ -1243,6 +1256,7 @@ halves
 handed
 handler
 handles
+hands
 happen.
 happens
 has
@@ -1518,6 +1532,7 @@ objects,
 observer
 of
 off
+off,
 offset
 oklch
 omission:
@@ -1547,6 +1562,7 @@ order,
 ordinary
 other
 otherwise
+our
 ours
 ourselves
 out
@@ -1726,7 +1742,9 @@ role
 role="group"
 role="region"
 role="status"
+root
 root).
+root,
 rotor
 round
 rounded-[var(--radius-wk-full)]

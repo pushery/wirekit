@@ -731,6 +731,7 @@ CONTENT
 CONTROL
 CSP
 CSS
+CallerRef::onRoot()
 Chevron
 Child
 Children
@@ -1053,6 +1054,7 @@ ZONE
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
@@ -1327,6 +1329,7 @@ __()
 `x-cloak`,
 `x-data`
 `x-data`,
+`x-ref`
 `x-show="!
 `x-show="open"`
 `x-show`

@@ -203,9 +203,15 @@
         'errorRegion' => '#'.$id.'-error',
     ]);
 
+    // A caller's `x-ref` belongs to the caller's component. The caller's attributes land on our
+    // root, and a root registers a ref on itself, where the caller's `$refs` never reads it.
+    // The name moves to `x-wk-ref`, which registers the root on the root above
+    // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
-<div class="space-y-1.5 min-w-0">
+<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <x-wirekit::label :for="$id . '-input'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
@@ -223,6 +229,7 @@
              `wire:model`, `data-*` -- arrives here. `aria-describedby` is the exception:
              it describes the text input, so it joins that input's list. --}}
         {{ $attributes->except('aria-describedby') }}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
         {{-- The set's own live region, OUTSIDE the optimistic wrapper below.
              Unconditional and starting empty, for the reason the optimistic announcer

@@ -54,6 +54,9 @@
         'shadow-[var(--shadow-wk-md)]',
         'overflow-hidden',
     ]), $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

@@ -1,4 +1,5 @@
 !==
+$attributes
 $attributes->class([$classes])
 $attributes->getAttributes());
 $chipClasses
@@ -83,6 +84,7 @@ AlpinePayload::string($item['value'])
 An
 Blade
 BooleanProp::from($entry['disabled']
+CallerRef::onRoot()
 DOES
 Dev-only
 Emitted
@@ -106,6 +108,7 @@ Wrapping
 [])
 [],
 [];
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('quick-replies',
 ])
 ]),
@@ -117,7 +120,9 @@ __('wirekit::Suggested
 `value`
 `x-data`
 `x-on:click`
+`x-ref`
 a
+above.
 all.
 also
 an
@@ -141,8 +146,10 @@ at
 attributes,
 back
 back.
+bag
 be
 behind
+belongs
 below
 block,
 border-[var(--color-wk-border)]',
@@ -152,6 +159,7 @@ button
 buttons
 buttons,
 call
+caller's
 can
 caption.
 case:
@@ -161,6 +169,7 @@ class="{{
 client-only
 common
 component
+component,
 continue;
 control
 could
@@ -220,17 +229,20 @@ inside
 is
 is_array($reply)
 it
+it:
 items-center
 items-center',
 its
 itself:
 justify-center',
+keep
 keeps
 know
 label
 label)
 label,
 label:
+lands
 last
 later
 live
@@ -258,6 +270,7 @@ null,
 of
 offer
 offered.
+on
 once.
 one
 one.
@@ -266,6 +279,7 @@ optimistic-ui:
 optional
 or
 order
+our
 own
 page
 performs
@@ -295,6 +309,7 @@ result
 rich.
 role
 role="group"
+root
 root,
 runs
 same

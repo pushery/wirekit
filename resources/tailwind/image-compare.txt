@@ -11,6 +11,7 @@ $attrKey
 $attrKey;
 $attrValue)
 $attrValue;
+$attributes
 $attributes->getAttributes());
 $attributes->merge(['style'
 $before
@@ -198,6 +199,7 @@ $wrapperClasses
 @pointerdown="startDrag($event)"
 @props([
 @props.
+A
 AFTER
 APG
 AT
@@ -217,6 +219,7 @@ BooleanProp::from($decorative,
 BooleanProp::from($labels,
 Both
 Built
+CallerRef::onRoot()
 Class
 Click/drag
 Clipping
@@ -269,6 +272,7 @@ WireKit::resolveClasses('image-compare',
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::percent%
 \Pushery\WireKit\Support\AlpinePayload::string($isVertical
 \Pushery\WireKit\Support\AlpinePayload::string($wireModelSafe)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('image-compare',
 ])
 ]),
@@ -292,8 +296,10 @@ __('wirekit::Image
 `wire()`
 `wire:model.live.debounce.200ms`).
 `wire:model`,
+`x-ref`
 a
 above
+above.
 absolutely-positioned
 active:cursor-grabbing',
 after
@@ -338,6 +344,7 @@ be
 because
 before/after
 before/after-slider
+belongs
 below
 below.
 between
@@ -360,6 +367,7 @@ browser
 by
 call
 caller
+caller's
 can
 cannot
 case
@@ -381,6 +389,7 @@ comparison
 compiles
 component
 component's
+component,
 contract).
 control
 controlled
@@ -466,6 +475,7 @@ halves.
 hand-rolled
 handle
 handle,
+hands
 harmless
 has
 height
@@ -501,7 +511,9 @@ is
 isolate',
 it
 it.
+it:
 its
+keep
 keeps
 key
 keyboard.
@@ -567,6 +579,7 @@ orientation:
 original
 other
 otherwise
+our
 out
 outer
 outward.
@@ -620,6 +633,8 @@ role="slider"
 role="slider".
 role=presentation
 roll
+root
+root,
 rounded-[var(--radius-wk-sm)]',
 same
 scanner

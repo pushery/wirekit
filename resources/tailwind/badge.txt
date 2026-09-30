@@ -13,6 +13,7 @@
 "↻
 $as
 $as);
+$attributes
 $attributes->class(['relative
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
@@ -420,6 +421,7 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
+CallerRef::onRoot()
 Catching
 Check
 DO
@@ -573,6 +575,7 @@ Without
 [])->class([$baseClasses,
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 ])
@@ -659,6 +662,7 @@ __toString
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 a
@@ -762,6 +766,7 @@ badge).
 badge-width
 badges
 badges;
+bag
 baked
 bakes
 bare
@@ -776,6 +781,7 @@ before
 before;
 behalf,
 being
+belongs
 below
 below,
 below.
@@ -900,6 +906,7 @@ compile
 compiles
 component
 component's
+component,
 components
 composer
 concept,
@@ -1158,6 +1165,7 @@ handler
 handler.
 handlers
 handles
+hands
 hangs
 hard
 harder
@@ -1263,6 +1271,7 @@ itself,
 itself.
 just
 justify-center',
+keep
 keeps
 key
 keyboard

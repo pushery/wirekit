@@ -255,8 +255,10 @@
     };
 
     // Trailing affordances (clearable / copyable) route the field through the
-    // flex wrapper so the buttons sit as inline siblings; when set, the wrapper
-    // also carries the tiny Alpine island that drives clear() / copy().
+    // flex wrapper so the buttons sit as inline siblings. The Alpine island that
+    // drives clear() / copy() holds the buttons only, beside the field and never
+    // around it, so an `x-ref` the caller puts on the field registers on the
+    // caller's component.
     $hasAffordances = $clearable || $copyable;
 
     // How large the clear and copy buttons are. 24px meets WCAG 2.2 AA and is fine under a
@@ -277,11 +279,9 @@
 @php
     // `failure: 'keep'` is what makes this component eligible at all.
     //
-    // No `x-ref="control"`: with affordances the field already carries
-    // `x-ref="wkField"` and an element gets one ref. The commit reads
-    // `$event.target.value` instead, which is what the change event hands over
-    // anyway, and `keep` never writes on failure — so the resync the ref would
-    // enable has nothing to do.
+    // No `x-ref="control"`: the commit reads `$event.target.value`, which is
+    // what the change event hands over anyway, and `keep` never writes on
+    // failure — so the resync the ref would enable has nothing to do.
     //
     // `value` IS handed over, and it is not the same decision. The two were
     // once treated as one, and the layer was dead in every render: this layer is
@@ -303,9 +303,18 @@
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);
+
+    // With the optimistic layer this component renders a root around the field, which would
+    // take a caller's `x-ref`. The name then moves to `x-wk-ref`, which registers the field on
+    // the root above `data-wk-ref-scope` (resources/js/utils/caller-ref.js). Without the layer
+    // there is no root of ours, and the caller's `x-ref` stays as written.
+    $callerRef = $optimisticConfig ? trim((string) $attributes->get('x-ref', '')) : '';
+    if ($callerRef !== '') {
+        $attributes = $attributes->except('x-ref');
+    }
 @endphp
 
-<div class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <x-wirekit::label :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
@@ -315,14 +324,6 @@
              affordance buttons) as inline siblings so the input padding adjusts
              to the actual content width instead of a hardcoded value. --}}
         <div
-            @if($hasAffordances)
-                {{-- clear() / copy() live in resources/js/components/input.js.
-                     They cannot live here: an inline object literal cannot
-                     declare methods under Alpine's CSP build, so both buttons
-                     rendered and did nothing under a strict policy. --}}
-                x-data="wirekitInput"
-                @input="syncHasValue()"
-            @endif
             @class([
             'flex items-center',
             // The frame is the field a finger aims at, so on a coarse pointer it takes the 44px
@@ -375,7 +376,7 @@
                 @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                @if($hasAffordances) x-ref="wkField" @endif
+                @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
                 @if($optimisticConfig)
                     x-bind:aria-busy="isPending"
                     {{-- `change`, not `input`: typing fires input per keystroke,
@@ -409,54 +410,62 @@
                 <span class="shrink-0 inline-flex items-center pr-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)]">{{ $trailing }}</span>
             @endif
 
-            @if($copyable)
-                {{-- Copy-to-clipboard button. Swaps to a check icon and announces
-                     "Copied" via the polite live region below for ~2s. Static
-                     aria-label is the no-JS fallback; Alpine :aria-label swaps it
-                     to reflect the copied state. ring-inset so the focus ring is
-                     never clipped by the wrapper's overflow-hidden. --}}
-                <button
-                    type="button"
-                    @click="copy()"
-                    @if($disabled) disabled @endif
-                    aria-label="{{ __('wirekit::Copy to clipboard') }}"
-                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
-                    class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
-                >
-                    <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z"/>
-                        <path d="M4.5 6A1.5 1.5 0 003 7.5v9A1.5 1.5 0 004.5 18h7a1.5 1.5 0 001.5-1.5v-5.879a1.5 1.5 0 00-.44-1.06L9.44 6.439A1.5 1.5 0 008.378 6H4.5z"/>
-                    </svg>
-                    <svg x-show="copied" x-cloak class="w-4 h-4 text-[color:var(--color-wk-success-text)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
-                    </svg>
-                </button>
-            @endif
-
-            @if($clearable)
-                {{-- Clear button. Only visible when the field has content
-                     (hasValue); empties + refocuses the field. An icon-only button, so its
-                     name is also its tooltip; the tooltip does not describe the button a
-                     second time, because the name already says the same words. --}}
-                <x-wirekit::tooltip :text="$clearText" :focusable-trigger="false" :describes="false" x-show="hasValue" x-cloak class="shrink-0">
-                <button
-                    type="button"
-                    @click="clear()"
-                    @if($disabled) disabled @endif
-                    aria-label="{{ $clearText }}"
-                    class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
-                >
-                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
-                    </svg>
-                </button>
-                </x-wirekit::tooltip>
-            @endif
-
             @if($hasAffordances)
+                {{-- The island that drives clear() / copy(). Its methods live in
+                     resources/js/components/input.js, because an inline object literal
+                     cannot declare methods under Alpine's CSP build. It holds the
+                     buttons and the live region only: the field stays outside it, in
+                     the caller's scope, so an `x-ref` on the field is the caller's.
+                     The island reaches the field through the frame it sits in. --}}
+                <span x-data="wirekitInput" class="shrink-0 inline-flex items-center">
+                @if($copyable)
+                    {{-- Copy-to-clipboard button. Swaps to a check icon and announces
+                         "Copied" via the polite live region below for ~2s. Static
+                         aria-label is the no-JS fallback; Alpine :aria-label swaps it
+                         to reflect the copied state. ring-inset so the focus ring is
+                         never clipped by the wrapper's overflow-hidden. --}}
+                    <button
+                        type="button"
+                        @click="copy()"
+                        @if($disabled) disabled @endif
+                        aria-label="{{ __('wirekit::Copy to clipboard') }}"
+                        :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
+                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                    >
+                        <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z"/>
+                            <path d="M4.5 6A1.5 1.5 0 003 7.5v9A1.5 1.5 0 004.5 18h7a1.5 1.5 0 001.5-1.5v-5.879a1.5 1.5 0 00-.44-1.06L9.44 6.439A1.5 1.5 0 008.378 6H4.5z"/>
+                        </svg>
+                        <svg x-show="copied" x-cloak class="w-4 h-4 text-[color:var(--color-wk-success-text)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                @endif
+
+                @if($clearable)
+                    {{-- Clear button. Only visible when the field has content
+                         (hasValue); empties + refocuses the field. An icon-only button, so its
+                         name is also its tooltip; the tooltip does not describe the button a
+                         second time, because the name already says the same words. --}}
+                    <x-wirekit::tooltip :text="$clearText" :focusable-trigger="false" :describes="false" x-show="hasValue" x-cloak class="shrink-0">
+                    <button
+                        type="button"
+                        @click="clear()"
+                        @if($disabled) disabled @endif
+                        aria-label="{{ $clearText }}"
+                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+                        </svg>
+                    </button>
+                    </x-wirekit::tooltip>
+                @endif
+
                 {{-- Polite live region announces the copy success to screen readers. --}}
                 {{-- The only feedback a screen-reader user gets after copying — nothing changes visually. --}}
                 <span aria-live="polite" aria-atomic="true" class="sr-only" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : ''"></span>
+                </span>
             @endif
         </div>
     @else
@@ -472,6 +481,7 @@
             @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
                 x-on:change="run($event.target.value)"

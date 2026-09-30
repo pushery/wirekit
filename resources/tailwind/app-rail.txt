@@ -567,6 +567,7 @@ CONTENT
 CSP
 CSS
 CSS.
+CallerRef::onRoot()
 Centered
 Centering
 Consistent
@@ -801,6 +802,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($persistDriver)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($restingWidth)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
 \Pushery\WireKit\Support\SlotContent::text($slot);
@@ -998,6 +1000,7 @@ __('wirekit::Modules'),
 `wire:poll`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 `x-wirekit::`

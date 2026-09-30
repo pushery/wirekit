@@ -47,6 +47,7 @@ $active
 $activeClasses
 $activeClasses,
 $ariaLabelFallback
+$attributes
 $attributes->class([$classes,
 $attributes->class([$classes])
 $attributes->class([$itemClasses,
@@ -984,6 +985,7 @@ CSS
 CSS-pixel
 CSS.
 Caller
+CallerRef::onRoot()
 Catching
 Change
 Check
@@ -1352,6 +1354,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($modeValue)
 \Pushery\WireKit\Support\AlpinePayload::string($panelId)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -2161,6 +2164,7 @@ compiled
 compiles
 component
 component's
+component,
 component.
 components
 composed
@@ -2483,6 +2487,7 @@ empty-name
 empty-state
 empty:
 enabled
+end
 end.
 ending
 ends
@@ -2753,6 +2758,7 @@ handled
 handler
 handlers
 handling
+hands
 hang
 happened
 happens

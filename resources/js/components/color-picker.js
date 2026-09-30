@@ -117,8 +117,9 @@ export default function wirekitColorPicker(config = {}) {
             // We sync only once the user actually changes the color.
 
             // Anchor AND focus the teleported panel whenever it opens (any trigger
-            // path: swatch click, programmatic). The panel teleports to <body>, so
-            // it needs Floating UI to position it relative to the swatch — and for
+            // path: swatch click, programmatic). The panel teleports to the overlay
+            // root at the end of <body>, so it needs Floating UI to position it
+            // relative to the swatch — and for
             // the same reason it needs the focus handling below: in the document it
             // sits LAST, so a reader who activated the swatch would otherwise tab
             // through the whole rest of the page to reach the sliders.
@@ -184,14 +185,20 @@ export default function wirekitColorPicker(config = {}) {
 
             await this._anchor();
 
+            // Closed while the panel was being placed: `close()` found no trap to release
+            // then, so one armed now would hold a hidden panel.
+            //
+            // And one trap at a time. An opening that began after this one can have armed the
+            // panel first; that trap is kept rather than released, because releasing it runs
+            // its `onDeactivate`, which is the close path, and would shut the picker it holds.
+            if (! this.isOpen || this._trap) {
+                return;
+            }
+
             const panel = this.$refs.panel;
             if (! panel) {
                 return;
             }
-
-            // A previous trap can still be standing if `open` was flipped off and on
-            // again within one tick; releasing it first keeps the stack to one.
-            this._trap?.deactivate({ returnFocus: false });
 
             this._trap = createFocusTrap(panel, {
                 escapeDeactivates: true,
@@ -284,6 +291,18 @@ export default function wirekitColorPicker(config = {}) {
                     // Follow the swatch on scroll/resize; torn down on close/destroy.
                     autoReposition: true,
                 });
+
+                // The placement can wait frames for the panel to get a box, and the picker can
+                // close meanwhile: its observer would then follow a hidden panel.
+                if (! this.isOpen) {
+                    stop();
+
+                    return;
+                }
+
+                // One observer at a time: an opening that began after this one may have
+                // stored its own first.
+                this._stopAutoUpdate?.();
                 this._stopAutoUpdate = stop;
             }
         },

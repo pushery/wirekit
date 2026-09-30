@@ -91,6 +91,9 @@
         'pt-[var(--padding-wk-y-lg)]',
         'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]',
     ]), $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- `wk-collapsible` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-`

@@ -177,6 +177,9 @@
     // Underscores to hyphens because Laravel spells a regional locale `pt_BR`
     // while Intl reads BCP-47. Same shape as <x-wirekit::calendar>.
     $eventCalendarLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', $locale ?? app()->getLocale()));
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

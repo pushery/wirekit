@@ -24,6 +24,8 @@ import { withOpenAlias } from '../utils/open-alias.js';
  * @param {string|null} [config.name] - The palette's name. An event that carries
  *   `detail.name` reaches only the palette of that name; an event without one reaches every
  *   palette on the page.
+ * @param {boolean} [config.namedOnly=false] - With a name, answer only the events that carry
+ *   it, so an event without a name passes this palette by. Without a name it changes nothing.
  * @param {boolean} [config.lockScroll=true] - Whether to hold the page still while the palette
  *   is open, with the counted lock modal and drawer share. Set to false when the palette is
  *   embedded inside a scoped container (e.g. docs preview card) where a global body-scroll lock
@@ -40,13 +42,21 @@ export default function wirekitCommandPalette(config = {}) {
 
     const name = typeof config.name === 'string' && config.name !== '' ? config.name : null;
 
+    // A named palette that answers only its own name. Without a name there is nothing to
+    // answer to, so the setting then changes nothing.
+    const namedOnly = config.namedOnly === true && name !== null;
+
     // Whether an event is meant for this palette. Without a `detail.name` it is meant for every
-    // palette on the page, which is how these events have always been read; with one, only for
-    // the palette of that name.
+    // palette on the page, which is how these events have always been read, unless this one
+    // answers only its name; with one, only for the palette of that name.
     const addressed = (event) => {
         const target = event?.detail?.name;
 
-        return target === undefined || target === null || target === '' || target === name;
+        if (target === undefined || target === null || target === '') {
+            return ! namedOnly;
+        }
+
+        return target === name;
     };
 
     return withOpenAlias({
