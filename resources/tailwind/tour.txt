@@ -503,6 +503,7 @@ outline
 outline:
 outrank
 over
+overlay
 overlay.
 overwrites
 own
@@ -564,6 +565,7 @@ resolves,
 right
 role="dialog"
 roll
+root
 rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-sm)]
 rule

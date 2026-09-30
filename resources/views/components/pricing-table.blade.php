@@ -74,6 +74,14 @@
     $intervalUnselectedClasses = WireKit::resolveClasses('pricing-table', 'interval-unselected', implode(' ', [
         'text-[color:var(--color-wk-text-muted)]',
     ]), $scope);
+    // A caller's `x-ref` belongs to the caller's component. With intervals the list sits inside
+    // the toggle's root, which would keep it, so the name moves to `x-wk-ref` on the list and
+    // the outermost element marks the boundary (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref')->merge(array_filter([
+        'x-wk-ref' => $callerRef !== '' ? $callerRef : null,
+        'data-wk-ref-scope' => $callerRef !== '' && $intervalMap === null ? true : null,
+    ]));
 @endphp
 
 {{-- A list, not a pile of divs: the tiers are a set the reader compares, and a
@@ -103,6 +111,7 @@
          attribute stays byte-stable. Only the observed value had to leave. --}}
     x-data="wirekitPricingTable({ default: {{ \Pushery\WireKit\Support\AlpinePayload::from($defaultInterval) }} })"
     @if($interval !== null) data-wk-server-value="{{ $serverInterval }}" @endif
+    @if($callerRef !== '') data-wk-ref-scope @endif
     data-wk-pricing-intervals
 >
     {{-- Inside the wrapper and BEFORE the <ul>, because a list may only hold list

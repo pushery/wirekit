@@ -148,6 +148,10 @@ export default function wirekitDropdown(config = {}) {
             // Wait for Alpine to render the panel, then position it
             await this.$nextTick();
 
+            // Closed inside the tick: `close()` found no observer then, so one started from
+            // here would follow a hidden panel.
+            if (! this.isOpen) return;
+
             const trigger = this._triggerElement();
             const panel = this.$refs.panel;
 
@@ -164,6 +168,18 @@ export default function wirekitDropdown(config = {}) {
                     // Follow the trigger while open; teardown handle stored for close().
                     autoReposition: true,
                 });
+
+                // The placement can wait frames for the panel to get a box, and the dropdown
+                // can close meanwhile: its observer would then follow a hidden panel, and the
+                // focus below would reach for an item nobody sees.
+                if (! this.isOpen) {
+                    stop();
+                    return;
+                }
+
+                // One observer at a time: a showing that began after this one may have
+                // stored its own first.
+                this._stopAutoUpdate?.();
                 this._stopAutoUpdate = stop;
 
                 // Focus the first menu item for keyboard users, unless the reader already moved

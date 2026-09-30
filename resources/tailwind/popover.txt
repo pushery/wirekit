@@ -1,5 +1,6 @@
 "Popover",
 "Theme
+$attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
 $label
@@ -69,6 +70,7 @@ AFTER
 ARIA
 Applied
 BooleanProp::from($padded,
+CallerRef::onRoot()
 Declared
 Dev-only
 Escape,
@@ -98,6 +100,7 @@ Width:
 WireKit::resolveClasses('popover',
 [
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('popover',
 ])
 ]),
@@ -106,9 +109,11 @@ __('wirekit::Popover')
 `false`
 `position:
 `role="dialog"`,
+`x-ref`
 a
 a11y.
 above
+above.
 above:
 accessible
 after
@@ -131,13 +136,16 @@ aria-modal="true"
 as
 asking
 assistive
+at
 attribute
 attributes
 auto-derived
 axe-core's
 back
 back.
+bag
 behind
+belongs
 between
 block,
 border
@@ -145,6 +153,7 @@ border-[var(--color-wk-border)]',
 but
 by
 caller
+caller's
 caller,
 can
 can't
@@ -163,6 +172,7 @@ closed
 closed.
 closes
 component's
+component,
 config('wirekit.components.popover.offset',
 config('wirekit.components.popover.placement',
 console.warn.
@@ -192,6 +202,7 @@ ease-out
 edges,
 element
 else
+end
 entry
 error
 escapes
@@ -240,9 +251,12 @@ is
 it
 it)
 it.
+it:
 its
 itself,
+keep
 keeps
+lands
 later
 layer
 layout`,
@@ -279,9 +293,11 @@ open;
 opens
 optimistic-ui:
 or
+our
 out
 outside
 outside-click
+overlay
 own
 owns,
 padding
@@ -319,6 +335,8 @@ rich),
 role;
 role="dialog"
 roll
+root
+root,
 rule.
 said
 same

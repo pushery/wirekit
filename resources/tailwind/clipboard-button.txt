@@ -2,6 +2,7 @@
 "Copied
 "Copied!"
 "button"
+$attributes
 $attributes->class([$classes])
 $attributes->getAttributes());
 $attributes->has('aria-label')
@@ -140,6 +141,7 @@ Blade
 BooleanProp::from($iconOnly,
 Button
 CSP
+CallerRef::onRoot()
 Check
 Clipboard
 Copy
@@ -175,6 +177,7 @@ WireKit::resolveClasses('clipboard-button',
 Without
 [
 \Pushery\WireKit\Support\AlpinePayload::from($value)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button',
 ])
 ]),
@@ -190,8 +193,10 @@ __('wirekit::Copy
 `style="visibility:
 `wirekit::Copied!`
 `wirekit::Copied`,
+`x-ref`
 a
 above
+above.
 action
 addslashes,
 affordance
@@ -229,11 +234,13 @@ back
 back.
 back:
 backslash
+bag
 bare
 bargain
 be
 because
 before
+belongs
 below
 below.
 better
@@ -281,6 +288,7 @@ comment
 compact
 compiles
 component's
+component,
 components
 control).
 copied
@@ -349,6 +357,7 @@ green
 green.
 grid
 h-4
+hands
 has
 here:
 hidden"
@@ -371,12 +380,14 @@ it
 it).
 it,
 it.
+it:
 items-center
 items-center">
 iteration
 its
 just
 justify-center',
+keep
 keeps
 key
 keys
@@ -384,6 +395,7 @@ kit
 label
 label,
 label:
+lands
 later
 layout
 layout.
@@ -426,6 +438,7 @@ opposite
 optimistic-ui:
 or
 otherwise
+our
 out
 over
 own
@@ -460,6 +473,8 @@ rest
 role="alert">{{
 role="status"
 roll
+root
+root,
 row-start-1"
 rows
 runs,

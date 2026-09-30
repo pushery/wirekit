@@ -722,6 +722,7 @@ CSP
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Check
 Children
 Circle
@@ -921,6 +922,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($incompleteTemplate)
 \Pushery\WireKit\Support\AlpinePayload::from($missingIndexWarning)
 \Pushery\WireKit\Support\AlpinePayload::from($stepNames)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1112,6 +1114,7 @@ __('wirekit::This
 `wrap`
 `x-if`
 `x-if`,
+`x-ref`
 `x-show`
 `xs`
 `xs`,
@@ -1374,6 +1377,7 @@ byte-identically.
 bytes
 call
 caller
+caller's
 callout/alert).
 can
 candidate
@@ -2042,6 +2046,7 @@ labels
 labels,
 labels:
 ladder
+lands
 language.
 last
 last:border-b-0
@@ -2310,6 +2315,7 @@ other
 other.
 other:
 otherwise
+our
 ours
 out
 out,
@@ -2563,6 +2569,8 @@ role="status"
 role=list
 roll
 room
+root
+root,
 rotates
 rounded
 rounded-[var(--radius-wk-lg)]

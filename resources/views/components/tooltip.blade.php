@@ -118,6 +118,9 @@
         // The panel binds `mouseenter`/`mouseleave` below; the `offset` gap between
         // trigger and panel is crossed well inside `delayHide`.
     ])), $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- Tooltip wrapper — handles hover, focus, touch, and keyboard events --}}

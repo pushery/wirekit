@@ -380,9 +380,16 @@
             'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
+
+    // A caller's `x-ref` belongs to the caller's component. The caller's attributes land on our
+    // root, and a root registers a ref on itself, where the caller's `$refs` never reads it.
+    // The name moves to `x-wk-ref`, which registers the root on the root above
+    // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
-<div class="space-y-1.5 min-w-0">
+<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <x-wirekit::label :for="$id . '-input'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
@@ -405,6 +412,7 @@
          `Support/AlpinePayload.php` names the versions. --}}
     <div
         {{ $attributes->except('aria-describedby')->class(['relative']) }}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         x-modelable="selected"
         {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
         x-data="wirekitMultiSelect({ options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
@@ -598,7 +606,7 @@
         </div>
 
         {{-- Dropdown listbox --}}
-        {{-- Teleported to <body>. `position: fixed` escapes a clipping ancestor but NOT
+        {{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but NOT
              a stacking context — the same trap the combobox and dropdown panels were in. --}}
         <template x-teleport="#wk-overlay-root">
         <div

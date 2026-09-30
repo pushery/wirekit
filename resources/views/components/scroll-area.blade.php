@@ -44,8 +44,11 @@
         default => 'overflow-y-auto overflow-x-hidden',
     };
 
-    // Normalize the fade prop. Falsy / 'none' → no fade; otherwise validate to
-    // the allowed edge set so an invalid value resolves to a real one.
+    // Normalize the fade prop. Falsy / 'none' → no fade; `true` (a bare `fade`) is both edges;
+    // otherwise validate to the allowed edge set so an invalid value resolves to a real one.
+    if ($fade === true) {
+        $fade = 'both';
+    }
     $fadeValue = ($fade === false || $fade === null || $fade === '' || $fade === 'none')
         ? null
         : (in_array($fade, ['both', 'start', 'end', 'auto'], true)

@@ -42,7 +42,7 @@
     @keydown.escape.window="active && dismiss()"
     {{ $attributes->class([$classes]) }}
 >
-    {{-- Teleported to body — escapes any ancestor containing blocks
+    {{-- Teleported to the overlay root — escapes any ancestor containing blocks
          (e.g. transform: translateZ(0) in docs PreviewRenderer) so
          fixed positioning resolves against the viewport. --}}
     <template x-teleport="#wk-overlay-root">

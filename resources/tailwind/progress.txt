@@ -64,7 +64,6 @@ $wrapperClasses
 '';
 ',
 'accent'
-'accent'),
 'accent',
 'animation'
 'animation',

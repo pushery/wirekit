@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Components;
 
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use Pushery\WireKit\Support\FieldGroup;
@@ -31,12 +32,20 @@ final class FieldSet extends Component
      * component hands every attribute that is not a constructor parameter to its view under the
      * name it was written with, so `announce-error` reached `@props` in kebab case and never
      * became `$announceError`. A constructor parameter is matched in camel case.
+     *
+     * `legend` and `scope` are taken for their VALUE. An attribute that is not a constructor
+     * parameter reaches the view through the attribute bag, and Blade escapes a bound string on
+     * its way in there; `@props` reads it back escaped and the view's `{{ }}` escapes it again,
+     * so a legend `A & B` would print as `A &amp;amp; B`. A named `legend` slot still arrives as
+     * the slot: it is handed to the view after this data.
      */
     public function __construct(
         string|Stringable|null $name = null,
         string|Stringable|null $error = null,
         string|Stringable|null $hint = null,
         private readonly bool|string|null $announceError = null,
+        private readonly Htmlable|string|int|float|null $legend = null,
+        private readonly ?string $scope = null,
     ) {
         $this->wkFieldSet = FieldGroup::open($name, $error, $hint);
     }
@@ -48,6 +57,10 @@ final class FieldSet extends Component
 
         // Handed to the view as data rather than held in a public property: a public property is
         // part of what `@aware` searches, and this setting belongs to the set alone.
-        return view($view, ['announceError' => $this->announceError]);
+        return view($view, [
+            'announceError' => $this->announceError,
+            'legend' => $this->legend,
+            'scope' => $this->scope,
+        ]);
     }
 }

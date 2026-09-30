@@ -439,6 +439,13 @@
             'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
+
+    // A caller's `x-ref` belongs to the caller's component. The field sits in a root of ours,
+    // which would take it, and it already carries our own `x-ref`, which a parser keeps over a
+    // second one. The name moves to `x-wk-ref`, which registers the field on the root above
+    // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
 {{-- Alpine tracks the current value so the display (and the tooltip bubble /
@@ -464,6 +471,7 @@
     x-data="wirekitSlider({ current: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $currentValue) }}, min: {{ $min }}, max: {{ $max }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $valueTextMap) }} })"
     x-modelable="current"
     x-init="initResync()"
+    @if($callerRef !== '') data-wk-ref-scope @endif
     {{-- Caller layout attributes (class / style — e.g. a width constraint)
          bind to the WRAPPER, not the <input>. The tooltip bubble + tick marks
          are positioned `left: pct%` relative to the overlay container, which
@@ -572,6 +580,7 @@
             @if($disabled) disabled @endif
             {{-- class / style are consumed by the wrapper above; everything
                  else (wire:model, aria-*, data-*) stays on the input. --}}
+            @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{ $attributes->except(['class', 'style', 'aria-describedby'])->whereDoesntStartWith('x-model')->class([$inputClasses]) }}
         />
 

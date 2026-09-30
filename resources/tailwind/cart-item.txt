@@ -49,6 +49,7 @@ $attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('aria-describedby')->class(['wk-field',
 $attributes->except('id')->class([$classes])
 $attributes->except('rel');
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['id',
 $attributes->get('aria-describedby',
@@ -63,6 +64,7 @@ $attributes->get('required',
 $attributes->get('role');
 $attributes->get('target',
 $attributes->get('value',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->has('aria-busy');
 $attributes->has('aria-label')
@@ -86,6 +88,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerRef
 $callerRole
 $caption
 $classes
@@ -668,6 +671,7 @@ $wrapLabel
 (provides
 (regex
 (renders
+(resources/js/utils/caller-ref.js).
 (same
 (see
 (segmented
@@ -882,6 +886,7 @@ $wrapLabel
 @if
 @if($announceError)
 @if($boundModel)
+@if($callerRef
 @if($caption)
 @if($computedRel)
 @if($declarativeLoading)
@@ -1370,6 +1375,7 @@ __toString
 `clipboard-button`
 `clipboard-button`,
 `close`,
+`data-wk-ref-scope`
 `default`
 `dir="rtl"`
 `disableOnLoading`
@@ -1487,6 +1493,8 @@ __toString
 `wrapLabel`,
 `x-data`
 `x-model`)
+`x-ref`
+`x-wk-ref`,
 `xs`
 `xs`,
 `xs`.
@@ -2017,6 +2025,7 @@ data-wk-cart-item-total
 data-wk-cart-item-unit-price>
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 de-emphasis
 debounces
 debug
@@ -3166,6 +3175,7 @@ regardless
 regardless"
 region
 registered
+registers
 registry
 regression
 rel
@@ -3677,6 +3687,7 @@ trim($describedBy.'
 trim($label)
 trim($relAttr.'
 trim(($hint
+trim((string)
 trim(strip_tags((string)
 true
 true)
@@ -3915,6 +3926,7 @@ x-on:change="run($event.target.value)"
 x-on:click="$dispatch('wirekit:cart-remove',
 x-on:input="syncFromInput()"
 x-text="announcement"></div>
+x-wk-ref="{{
 xl
 xmlns="http://www.w3.org/2000/svg"
 yet.

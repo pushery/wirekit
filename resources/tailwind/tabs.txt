@@ -676,6 +676,7 @@ CALLER's
 CSP
 CSS
 CSS.
+CallerRef::onRoot()
 Catching
 Check
 Chromium
@@ -964,6 +965,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\TablistStyles::list($variant,
@@ -1130,6 +1132,7 @@ __toString
 `x-on:beforematch`,
 `x-on:click.prevent`
 `x-on:click="()
+`x-ref`
 `x-show="open"`
 `x-show`
 `{{
@@ -1927,6 +1930,7 @@ handler,
 handler.
 handlers
 handles
+hands
 hangs
 happens
 hard

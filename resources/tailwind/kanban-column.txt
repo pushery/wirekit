@@ -19,6 +19,7 @@
 "↻
 $as
 $as);
+$attributes
 $attributes->class([$baseClasses])
 $attributes->class(['relative
 $attributes->class([WireKit::resolveClasses('icon',
@@ -494,6 +495,7 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
+CallerRef::onRoot()
 Catching
 Check
 Column
@@ -668,6 +670,7 @@ Without
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('kanban-column',
@@ -779,6 +782,7 @@ __toString
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 a
@@ -893,6 +897,7 @@ badge).
 badge-width
 badges
 badges;
+bag
 baked
 bakes
 bare
@@ -1063,6 +1068,7 @@ compile
 compiles
 component
 component's
+component,
 components
 composer
 composite-widget
@@ -1368,6 +1374,7 @@ handler
 handler.
 handlers
 handles
+hands
 hangs
 hard
 harder
@@ -1492,6 +1499,7 @@ itself.
 just
 justify-between
 justify-center',
+keep
 keeps
 key
 keyboard

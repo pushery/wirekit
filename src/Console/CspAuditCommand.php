@@ -1055,6 +1055,19 @@ class CspAuditCommand extends Command
                 if ($base === false || in_array($base, self::WIRE_NON_EXPRESSION, true)) {
                     continue;
                 }
+
+                // `wire:sort:item`, `wire:sort:handle`, `wire:sort:group` and the other
+                // `wire:sort:` names belong to Livewire's sort support, which reads every
+                // `wire:sort…` attribute itself: it binds an item's value to `x-sort:item`
+                // through a function that returns the value, so the key is a literal and is
+                // never parsed, and it reads the others as names. The base name is cut at the
+                // first `.` only, so it is `sort:item` rather than `sort`, and the list above
+                // cannot match it. Livewire's wildcard also binds these names as `x-on:`
+                // listeners, for events nothing dispatches, and the CSP build parses a
+                // listener's expression only when the listener runs.
+                if (str_starts_with($base, 'sort:')) {
+                    continue;
+                }
             }
 
             // Blade in a value is a server-side hole in a client-side expression: a comment,

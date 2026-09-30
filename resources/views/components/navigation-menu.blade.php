@@ -19,6 +19,9 @@
         'relative flex items-center gap-1',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 {{-- `wk-navigation-menu` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-`
@@ -27,7 +30,7 @@
     x-data="wirekitNavigationMenu()"
     {{-- Outside-click close is handled in wirekitNavigationMenu()'s
          document-level pointerdown listener, not here: the flyout panels
-         teleport to <body>, so a Blade x-on:click.outside on this root would
+         teleport to the overlay root, so a Blade x-on:click.outside on this root would
          fire when clicking inside an open panel (no longer a DOM descendant)
          and close it before an in-panel click registered. --}}
     {{-- One keydown listener for the whole bar rather than one per item: a

@@ -84,7 +84,7 @@
      The reset reads the menubar's reactive `activeMenu` and compares it to the
      name of the containing menu panel (discovered from the DOM via the nearest
      [data-wk-menubar-panel] — no prop needed, and it survives the panel's
-     teleport to <body> since the whole subtree moves together). When this
+     teleport to the overlay root since the whole subtree moves together). When this
      menu is no longer the active one, the submenu resets.
 
      The menubar's ArrowRight moves between TOP-LEVEL menus; onTriggerKey here

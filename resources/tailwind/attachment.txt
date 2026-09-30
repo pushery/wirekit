@@ -191,7 +191,6 @@ $wrapperClasses
 'a'
 'a')
 'accent'
-'accent'),
 'accent',
 'animate'
 'animation'

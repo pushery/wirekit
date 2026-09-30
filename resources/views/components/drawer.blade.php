@@ -178,7 +178,7 @@
     @if($dismissible) x-on:keydown.escape.window="isOpen && isTopmost && dismissByReader('escape')" @endif
     {{ $attributes }}
 >
-    {{-- Drawer overlay and panel — teleported to body --}}
+    {{-- Drawer overlay and panel — teleported to the overlay root --}}
     <template x-teleport="#wk-overlay-root">
         <div x-show="isOpen" x-cloak>
             {{-- Backdrop.

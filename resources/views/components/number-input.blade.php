@@ -89,6 +89,12 @@
     // accepts silently by keeping the first, which is why nothing ever went red over it.
     $attributes = $attributes->except(['id', 'name']);
 
+    // A caller's `x-ref` belongs to the caller's component, and this one renders its own root
+    // around the field, which would take it. The name moves to `x-wk-ref`, which registers
+    // the field on the root above `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
+
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -261,6 +267,7 @@
      did nothing. --}}
 <div
     class="space-y-1.5 min-w-0"
+    @if($callerRef !== '') data-wk-ref-scope @endif
     x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }} })"
 >
 @if($optimisticConfig)
@@ -335,6 +342,7 @@
             step="{{ $step }}"
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />

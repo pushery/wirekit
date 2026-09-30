@@ -29,6 +29,7 @@ $slot
 'auto'],
 'base',
 'both'
+'both';
 'end'
 'end',
 'fade'
@@ -55,6 +56,7 @@ $slot
 ($fade
 ($orientation)
 (WCAG
+(a
 (a11y:
 (in_array($fade,
 (mask-image,
@@ -124,12 +126,14 @@ Without
 ])
 ])),
 `??`:
+`fade`)
 `filled()`
 `landmark-unique`,
 `role="region"`
 `scrollable-region-focusable`
 `tabindex="0"`
 `tabindex`
+`true`
 a
 adds
 after
@@ -160,6 +164,7 @@ axis
 axis:
 background
 background-agnostic
+bare
 beats
 block,
 both
@@ -201,6 +206,7 @@ does
 edge
 edge(s)
 edges
+edges;
 element
 emits
 empty
@@ -393,6 +399,7 @@ y
 {{--
 |
 ||
+}
 };
 }}
 }}"

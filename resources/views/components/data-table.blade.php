@@ -306,6 +306,9 @@
     $columnsButtonId = $columnsPanelId.'-button';
 
     $iconBtn = 'inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer';
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
@@ -327,13 +330,15 @@
          applies. --}}
     <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::from(['rows' => $rowsArr, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading, 'hidden' => $hiddenArr]) }}"></template>
 
-    @if($selectable && $name)
+    {{-- For a `name` or a `wire:model`: the root leaves the binding off, so without this field
+         a binding on the tag would reach no element. --}}
+    @if($selectable && (filled($name) || $attributes->whereStartsWith('wire:model')->isNotEmpty()))
         {{-- Selection bridge for wire:model / form submission. --}}
         {{-- Static value as well as the bound one: the field is empty until Alpine
              boots, and a form submitted in that window sends nothing while the
              visible control already shows the value. The serialization matches
              what the factory's own getter produces from the same data. --}}
-        <input type="hidden" x-ref="selModel" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} value="[]" :value="selectedJson()" />
+        <input type="hidden" x-ref="selModel" @if(filled($name)) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="[]" :value="selectedJson()" />
     @endif
 
     {{-- Toolbar: search + density toggle + column manager + caller actions. --}}

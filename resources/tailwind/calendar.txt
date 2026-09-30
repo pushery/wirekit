@@ -7,6 +7,7 @@
 "Today"
 "o'clock"
 "too
+$attributes
 $attributes->class([$classes])
 $attributes->get('name',
 $attributes->getAttributes());
@@ -278,6 +279,7 @@ Both
 Built
 CSP
 Calendar
+CallerRef::onRoot()
 Change
 Chevron
 Clamped
@@ -361,6 +363,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Today'));
 \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_',
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('calendar',
 \u
 ])
@@ -403,12 +406,14 @@ __('wirekit::Year')
 `viewMonth`
 `viewYear`
 `weekdayHeaders`
+`x-ref`
 `{{
 a
 abbr="{{
 abbreviation
 able
 above
+above.
 absolute
 accent,
 accessible
@@ -469,11 +474,13 @@ back
 back.
 back;
 backslash,
+bag
 be
 because
 been
 before
 before,
+belongs
 below
 beside
 between
@@ -501,6 +508,7 @@ calendar's
 call
 call,
 call.
+caller's
 can
 cannot
 capability
@@ -735,6 +743,7 @@ into
 is
 it
 it,
+it:
 items-center
 its
 jump
@@ -852,6 +861,7 @@ or
 order
 other
 otherwise
+our
 out
 outside
 over,
@@ -924,6 +934,8 @@ role="row">
 roles
 rollback
 rolls
+root
+root,
 rotate
 row
 row,

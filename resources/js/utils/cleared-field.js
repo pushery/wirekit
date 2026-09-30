@@ -28,7 +28,12 @@
  */
 export const WK_CLEARED_ATTRIBUTE = 'data-wk-cleared';
 
-let installed = false;
+/**
+ * The installation is remembered on `window`, the one scope a second bundle on the page, or a
+ * second evaluation of this one, shares with the first. Each bundle carries its own copy of this
+ * module, so a flag in the module would be one flag per copy.
+ */
+const INSTALLED_FLAG = '__wirekitClearedFieldMemory';
 
 /** When the reader last typed into a field, so their own emptying is not taken for the server's. */
 const typedAt = new WeakMap();
@@ -86,14 +91,15 @@ function hookLivewire(livewire) {
 }
 
 /**
- * Install the memory once. Safe to call from every bundle: the second call does nothing.
+ * Install the memory once per page. Safe to call from every bundle, and from a bundle evaluated
+ * again: every call after the first does nothing.
  */
 export function registerClearedFieldMemory() {
-    if (installed || typeof document === 'undefined' || typeof window === 'undefined') {
+    if (typeof document === 'undefined' || typeof window === 'undefined' || window[INSTALLED_FLAG]) {
         return;
     }
 
-    installed = true;
+    window[INSTALLED_FLAG] = true;
 
     // Capture phase: `invalid` does not bubble, and a field's own handler may stop `input`.
     document.addEventListener('input', (event) => {

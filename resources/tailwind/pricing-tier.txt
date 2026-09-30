@@ -27,6 +27,7 @@ $amount
 $amount;
 $as
 $as);
+$attributes
 $attributes->class([$baseClasses])
 $attributes->class([$classes])
 $attributes->class(['relative
@@ -597,6 +598,7 @@ Both
 CALLER's
 CONTENT,
 CTA
+CallerRef::onRoot()
 Catching
 Check
 Convert
@@ -799,6 +801,7 @@ Without
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('price',
@@ -900,6 +903,7 @@ __toString
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 a
@@ -1022,6 +1026,7 @@ badge-width
 badge.
 badges
 badges;
+bag
 baked
 bakes
 balanced
@@ -1039,6 +1044,7 @@ before;
 behalf,
 behind
 being
+belongs
 below
 below,
 below.
@@ -1493,6 +1499,7 @@ handler
 handler.
 handlers
 handles
+hands
 hang
 hangs
 hard
@@ -1613,6 +1620,7 @@ jumps
 jurisdiction
 just
 justify-center',
+keep
 keeps
 key
 keyboard

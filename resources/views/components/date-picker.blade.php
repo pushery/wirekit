@@ -217,6 +217,13 @@
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
     $fallbackLabel = $name ? Str::headline((string) $name) : __('wirekit::Date');
 
+    // A caller's `x-ref` belongs to the caller's component. The range row and the optimistic
+    // layer are roots of ours and would keep it, and the optimistic input carries a ref of its
+    // own, so the name moves to `x-wk-ref` on the element the bag lands on and the outermost
+    // element marks the boundary (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
+
     // The range arm renders the attribute bag too. Otherwise `class`, `style`, every
     // `data-*`, every `aria-*` and `wire:model` would be parsed off the tag and dropped:
     // `<x-wirekit::date-picker range wire:model="stay" />` would bind nothing, with no
@@ -302,7 +309,7 @@
     ]);
 @endphp
 
-<div class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
             {{-- One marker, in the dense house form: no whitespace, `ms-0.5` carries the
@@ -334,6 +341,7 @@
                  exceed anything under roughly 330px, and a frame that does not scroll
                  clips the excess: the end date would become unreachable on a phone. --}}
             {{ $rangeWrapperAttributes->class('flex items-center gap-[var(--padding-wk-x-sm)]') }}
+            @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         >
             <input
                 type="date"
@@ -389,6 +397,7 @@
             @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses]) }}
+            @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         />
     @endif
 

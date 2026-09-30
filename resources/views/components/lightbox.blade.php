@@ -12,6 +12,10 @@
     'items' => [],
     // Whether prev/next wraps around at the ends (true) or stops (false).
     'loop' => true,
+    // Whether opening locks the page's scroll and makes the page behind inert. False for a
+    // viewer that lives inside a page region, such as a preview, where the page around it has
+    // to keep scrolling.
+    'lockScroll' => true,
     // Show each item's caption inside the lightbox.
     'showCaptions' => true,
     // Backdrop color / opacity for THIS instance (any CSS color). Null → the
@@ -40,6 +44,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $loop = BooleanProp::from($loop, true);
     $showCaptions = BooleanProp::from($showCaptions, true);
+    $lockScroll = BooleanProp::from($lockScroll, true);
 
     // Normalize each entry to ['src','alt','caption','type','poster']. `poster`
     // is a video-only still shown before the clip paints its first frame (so the
@@ -100,10 +105,13 @@
     $backdrop = $overlay ?: 'var(--color-wk-overlay)';
 
     $wrapperClasses = WireKit::resolveClasses('lightbox', 'base', '', $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
-    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }} })"
+    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }} })"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Optional trigger content (thumbnails / buttons). Anything here can call
@@ -113,7 +121,7 @@
     {{ $slot }}
 
     @if($count > 0)
-        {{-- The overlay — teleported to body, focus-trapped, arrow/Escape keyboard.
+        {{-- The overlay — teleported to the overlay root, focus-trapped, arrow/Escape keyboard.
              createFocusTrap returns focus to the trigger on close. --}}
         <template x-teleport="#wk-overlay-root">
             <div

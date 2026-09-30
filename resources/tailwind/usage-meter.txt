@@ -118,7 +118,6 @@ $wrapperClasses
 '2',
 '3']);
 'accent'
-'accent'),
 'accent',
 'animation'
 'animation',

@@ -2,6 +2,7 @@
 "false"
 "field
 $addLabel
+$attributes
 $attributes->except(['id',
 $attributes->get('id',
 $attributes->get('name')));
@@ -215,6 +216,7 @@ $valueArr),
 @php
 @props([
 @props.
+A
 ALWAYS
 Actions
 Active-filter
@@ -226,6 +228,7 @@ Blade
 BooleanProp::from($searchable,
 Both
 CHARACTER,
+CallerRef::onRoot()
 Clear
 Clear-all
 Collections
@@ -289,6 +292,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Apply'))
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::stableId('filter-builder',
 \Pushery\WireKit\WireKit::warnUnknownProps('filter-builder',
 ])
@@ -328,7 +332,9 @@ __('wirekit::starts
 `searchable="false"`
 `tags-input`
 `wizard`
+`x-ref`
 a
+above.
 absent
 absolute
 accessible
@@ -376,10 +382,12 @@ at,
 attribute
 auto-derived
 backwards
+bag
 bar
 be
 because
 before
+belongs
 below
 below.
 beside
@@ -415,6 +423,7 @@ button):
 by
 by,
 call
+caller's
 can
 cannot
 carries
@@ -457,6 +466,7 @@ close(true)"
 coerces
 compiles
 component's
+component,
 components
 concatenated
 condition
@@ -577,6 +587,7 @@ gestures
 go
 guard
 handed
+hands
 has
 hear
 here
@@ -611,16 +622,19 @@ it
 it).
 it,
 it.
+it:
 items-center
 its
 json_encode(array_values((array)
 justify-end
+keep
 key
 keyboard
 keystroke
 known
 labels.
 land
+lands
 language
 last
 later
@@ -687,6 +701,7 @@ option's
 optional
 order
 otherwise
+our
 out
 over
 overlay

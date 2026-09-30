@@ -56,6 +56,9 @@
     // caller asking for an unpadded panel means it whatever the theme did.
     $padded = BooleanProp::from($padded, true);
     $paddingClasses = $padded ? '' : 'p-0';
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
@@ -80,7 +83,7 @@
     </div>
 
     {{-- Popover panel — positioned via Floating UI, focus-trapped --}}
-{{-- Teleported to <body>. `position: fixed` escapes a clipping ancestor but NOT a
+{{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but NOT a
      stacking context: a host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after that ancestor
      covers the panel however high the z-index goes. --}}

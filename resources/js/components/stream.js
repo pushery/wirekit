@@ -199,9 +199,10 @@ export default function wirekitStream(config = {}) {
         /**
          * Begin (or restart) streaming. No-op while already streaming.
          *
-         * The optional payload sets the body for THIS run, so the common shape is
-         * one call: `$refs.stream.start({ text, target })`. Omit it and the body
-         * stays whatever it was, which is what every existing call site does.
+         * The optional payload sets the body for THIS run, so one call starts a run
+         * with the body it needs: `start(payload)` from markup in the stream's scope,
+         * or the `wirekit-stream-start` event with `detail.body` from anywhere else.
+         * Omit it and the body stays whatever it was.
          */
         start(payload) {
             if (payload !== undefined) {

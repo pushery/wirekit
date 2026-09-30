@@ -13,6 +13,7 @@
 "today"
 "unavailable".
 $ariaLabel
+$attributes
 $attributes->except(['id',
 $attributes->get('id')
 $attributes->getAttributes());
@@ -380,6 +381,7 @@ Both
 CONTENT
 CONTINUOUSLY
 COUNTED
+CallerRef::onRoot()
 Category
 Current-time
 Day
@@ -509,6 +511,7 @@ With
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected)
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday)
 \Pushery\WireKit\Support\AlpinePayload::string($view)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar',
 ])
@@ -566,6 +569,7 @@ _measureAgendaTime()
 `tabindex="0"`
 `view-change`
 `wirekit:event-calendar-day-select`
+`x-ref`
 a
 about
 about.
@@ -645,6 +649,7 @@ back,
 back-to-back
 back.
 background
+bag
 band
 band.
 band:
@@ -717,6 +722,7 @@ calendar's
 calendar,
 calendars
 caller
+caller's
 came
 can't
 cannot
@@ -818,6 +824,7 @@ compact
 compiles
 component
 component's
+component,
 config('wirekit.components.event-calendar.view',
 config('wirekit.components.event-calendar.week-starts-on',
 conforming
@@ -1042,6 +1049,7 @@ h1,
 had
 half
 halves
+hands
 happen.
 hard
 hardcoded
@@ -1274,6 +1282,7 @@ or
 order
 other
 otherwise
+our
 out
 outline
 outline:
@@ -1399,6 +1408,7 @@ role="region"
 role="status"
 rollback
 room
+root
 root,
 rotor
 rotor.

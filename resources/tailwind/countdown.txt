@@ -14,6 +14,7 @@ $activeUnits[]
 $animate
 $animateOn
 $animateStyle
+$attributes
 $attributes->class([$baseClasses])
 $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
@@ -200,6 +201,7 @@ BooleanProp::from($showSeconds,
 BooleanProp::from(),
 Both
 CSP
+CallerRef::onRoot()
 Carbon
 Carbon,
 Carbon.
@@ -294,6 +296,7 @@ Wrapping
 \Pushery\WireKit\Support\AlpinePayload::from($warnSeconds)
 \Pushery\WireKit\Support\AlpinePayload::from((bool)
 \Pushery\WireKit\Support\AlpinePayload::from((object)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
 \Pushery\WireKit\WireKit::warnUnknownProps('countdown',
 ])
@@ -327,10 +330,12 @@ __('wirekit::Years'),
 `until`
 `urgent`,
 `value
+`x-ref`
 a
 a11y
 about
 above
+above.
 absolute
 accent
 accent-tint
@@ -450,6 +455,7 @@ color
 color.
 compiles
 component's
+component,
 compute
 computed"
 concatenated,
@@ -551,6 +557,7 @@ grows
 guard
 half
 handles
+hands
 hard
 has
 have
@@ -588,12 +595,14 @@ it
 it)
 it,
 it.
+it:
 items-baseline
 items-center
 items-stretch
 its
 just
 justify-center
+keep
 keeps
 key
 key,
@@ -605,6 +614,7 @@ label,
 labels
 ladder
 ladder,
+lands
 lang/en.json
 language
 large
@@ -699,6 +709,7 @@ order.
 ordered
 other.
 otherwise
+our
 out
 outermost
 over
@@ -769,6 +780,8 @@ right
 rise
 role="timer"
 room
+root
+root,
 rounded-[var(--radius-wk-md)]
 row
 runs

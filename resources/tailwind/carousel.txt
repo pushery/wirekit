@@ -7,6 +7,7 @@
 "group"
 "slide"
 $announcementTemplate
+$attributes
 $attributes->class([$classes])
 $attributes->getAttributes());
 $attributes->has('aria-label')
@@ -199,6 +200,7 @@ Blade
 BooleanProp::from($autoplay,
 BooleanProp::from($loop,
 CSS,
+CallerRef::onRoot()
 Declared
 Deliberately
 Dev-only
@@ -267,6 +269,7 @@ WireKit::validateProp('carousel',
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Go
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Play
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('carousel',
 \Pushery\WireKit\WireKit::warnUnknownProps('carousel.slide',
 ])
@@ -303,8 +306,10 @@ __()
 `style="height:
 `w-`)
 `wk-touch-target`
+`x-ref`
 a
 about
+above.
 absolutely
 accessibility
 accessible
@@ -356,6 +361,7 @@ autoplay
 autoplay:
 away.
 back.
+bag
 baseline
 basis
 basis.
@@ -364,6 +370,7 @@ beats
 because
 before,
 being
+belongs
 below
 between
 bg-[var(--color-wk-bg-elevated)]
@@ -387,6 +394,7 @@ button
 by
 call
 caller
+caller's
 caller-supplied
 calls
 came
@@ -435,6 +443,7 @@ compiles
 compliant
 component
 component's
+component,
 configurable,
 conformance
 construction:
@@ -550,6 +559,7 @@ h-[var(--size-wk-md)]
 h-full
 h-full,
 handler
+hands
 happens
 has
 have
@@ -594,12 +604,14 @@ is:
 it
 it,
 it.
+it:
 items-center
 its
 itself
 jump
 justify-center
 justify-center',
+keep
 keeps
 key
 keyboard
@@ -783,6 +795,7 @@ role="tabpanel"
 roll
 root
 root's
+root,
 rounded-full
 rounded-full',
 row

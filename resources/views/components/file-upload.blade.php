@@ -270,6 +270,14 @@
     // Assembled from a `:name` placeholder because a sentence concatenated in
     // JavaScript cannot be translated and word order is not the same in every language.
     $removedMessage = __('wirekit::Removed :name');
+
+    // A caller's `x-ref` belongs to the caller's component. The caller's attributes land on our
+    // root, and a root registers a ref on itself, where the caller's `$refs` never reads it.
+    // The name moves to `x-wk-ref`, which registers the root on the root above it: the root is
+    // also the outermost element, so it carries `data-wk-ref-scope` itself
+    // (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
 {{-- Alpine: tracks drag-over state + an array of selected file metadata for preview.
@@ -296,6 +304,7 @@
         'w-full' => $variantValue !== 'compact',
         'inline-flex max-w-full flex-col items-start align-middle' => $variantValue === 'compact',
     ]) }}
+    @if($callerRef !== '') data-wk-ref-scope x-wk-ref="{{ $callerRef }}" @endif
 >
     {{-- The removal's own live region. Unconditional and starting EMPTY, for the reason
          the pattern states everywhere it appears: a live region that arrives together

@@ -666,6 +666,7 @@ CAREFUL:
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Capped
 Centered,
 Click
@@ -890,6 +891,7 @@ X)
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::string($for)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -1089,6 +1091,7 @@ __('wirekit::Close')
 `x-data`
 `x-data`,
 `x-on:click`
+`x-ref`
 `x-show="dismissible"`
 `xl`.
 `xs`
@@ -1491,6 +1494,7 @@ complete
 compliance.
 component
 component's
+component,
 component.
 concern
 condition
@@ -2087,6 +2091,7 @@ labeling
 labels
 ladder
 landmark
+lands
 last:border-b-0
 last:border-e-0
 later
@@ -2624,6 +2629,7 @@ roleless
 roll
 room
 root
+root,
 rotates
 round
 rounded

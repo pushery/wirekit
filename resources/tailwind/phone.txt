@@ -16,6 +16,7 @@ $ariaLabel
 $attributes
 $attributes->class([$classes])
 $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(['wk-field',
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label',
 $attributes->except(['id',
@@ -26,6 +27,7 @@ $attributes->get('aria-label');
 $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('required',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->only(['class',
 $attributes->whereStartsWith('wire:model')
@@ -38,6 +40,7 @@ $c):
 $callerAriaLabel
 $callerAriaLabel;
 $callerDescribedBy
+$callerRef
 $classes
 $clearable
 $clearable)
@@ -226,6 +229,7 @@ $value,
 ''))
 '')));
 '')).'
+''));
 '');
 '',
 '';
@@ -490,6 +494,7 @@ $value,
 (opt._idx
 (optional):
 (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw)$/',
+(resources/js/utils/caller-ref.js).
 (see
 (silent
 (sizes),
@@ -655,6 +660,7 @@ $value,
 @elseif($resolvedAriaLabel)
 @elseif($showsHint)
 @endif
+@endif>
 @endif>{{
 @endphp
 @endunless
@@ -663,6 +669,7 @@ $value,
 @if(!$disabled
 @if($announceError)
 @if($attributes->get('required'))
+@if($callerRef
 @if($describedBy
 @if($describedBy)
 @if($descriptions)
@@ -1031,6 +1038,7 @@ _place()
 `contain:
 `countries`
 `cursor-pointer`
+`data-wk-ref-scope`
 `description`,
 `disabled:`
 `disabled="false"`
@@ -1113,7 +1121,10 @@ _place()
 `x-model`,
 `x-modelable="selected"`.
 `x-modelable`
+`x-ref`
+`x-ref`,
 `x-text`
+`x-wk-ref`,
 `{
 `{{
 a
@@ -1509,6 +1520,7 @@ data-*,
 data-wk-flag
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-server-options="{{
 date-separator
 debug
@@ -1996,7 +2008,6 @@ min-content
 min-h-[24px]
 min-w-0
 min-w-0"
-min-w-0">
 min-w-[24px]
 minimum:
 mirrors
@@ -2011,6 +2022,7 @@ morph
 morphs:
 most
 move
+moves
 ms-0.5"
 multi-select's
 multi-select.
@@ -2142,6 +2154,7 @@ other
 other,
 otherwise
 our
+ours,
 out
 out,
 out.
@@ -2173,6 +2186,7 @@ panels
 paragraph
 parent
 parent's
+parser
 parses
 part
 part.
@@ -2846,6 +2860,7 @@ x-text="searchNote()"
 x-text="selectedText"
 x-text="{{
 x-wirekit::label
+x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet
 yet,

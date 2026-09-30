@@ -258,8 +258,12 @@ function warnIfStylesheetMissing(root) {
     );
 }
 
-/** Set once the navigation listeners are bound, so a second install does not double them. */
-let navigationListenersBound = false;
+/**
+ * Set on `window` once the navigation listeners are bound, so a second install does not double
+ * them. `window` is the one scope a second bundle on the page, or a second evaluation of this
+ * one, shares with the first; each bundle carries its own copy of this module.
+ */
+const NAVIGATION_LISTENERS_FLAG = '__wirekitOverlayNavigation';
 
 /**
  * Rebuild the container across a `wire:navigate`, in the one window that is early enough.
@@ -290,11 +294,11 @@ let navigationListenersBound = false;
  * partially covered page beats an uncovered one.
  */
 function bindNavigationListeners() {
-    if (navigationListenersBound) {
+    if (typeof window === 'undefined' || window[NAVIGATION_LISTENERS_FLAG]) {
         return;
     }
 
-    navigationListenersBound = true;
+    window[NAVIGATION_LISTENERS_FLAG] = true;
 
     document.addEventListener('alpine:navigating', (event) => {
         const onSwap = event?.detail?.onSwap;

@@ -206,9 +206,16 @@
         ($hasError ? $id.'-error' : ($hint ? $id.'-hint' : ''))
         .' '.((string) $attributes->get('aria-describedby', ''))
     );
+
+    // A caller's `x-ref` belongs to the caller's component. The field sits in a root of ours,
+    // which would take it, and it already carries our own `x-ref`, which a parser keeps over a
+    // second one. The name moves to `x-wk-ref`, which registers the field on the root above
+    // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
-<div class="space-y-1.5 min-w-0" x-data="wirekitPhone({{ $config }})">
+<div class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPhone({{ $config }})">
     @if($label)
         <x-wirekit::label :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
@@ -265,6 +272,7 @@
             @readonly($readonly)
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{ $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(['wk-field', 'wk-touch-target', $numberClasses]) }}
         />
 

@@ -31,6 +31,7 @@ $attributes->class(['relative
 $attributes->except('aria-describedby')->class([
 $attributes->except('aria-describedby')->class(['wk-field',
 $attributes->except('rel');
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-label']);
 $attributes->except(['id',
@@ -40,6 +41,7 @@ $attributes->get('name'),
 $attributes->get('name',
 $attributes->get('rel',
 $attributes->get('target',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->has('aria-busy');
 $attributes->has('aria-label')
@@ -53,6 +55,7 @@ $buttonBag->class([$baseClasses,
 $buttonBag->merge(['style'
 $callerLabel
 $callerLabel)
+$callerRef
 $classes
 $clearLabel
 $clearText
@@ -521,6 +524,7 @@ $wrapLabel
 ("Fast
 ($attributes->get('value')
 ($attributes->getAttributes()
+($callerRef
 ($declarativeLoading
 ($errors
 ($forceLoading)
@@ -590,6 +594,7 @@ $wrapLabel
 (opt-in;
 (or
 (required,
+(resources/js/utils/caller-ref.js).
 (see
 (segmented
 (silent
@@ -760,6 +765,7 @@ $wrapLabel
 </h{{
 </label>
 </p>
+</span>
 </svg>
 </template>
 </x-wirekit::alert-dialog.cancel>
@@ -831,6 +837,7 @@ $wrapLabel
 @if(!
 @if($announceError)
 @if($autocomplete
+@if($callerRef
 @if($clearable)
 @if($computedRel)
 @if($copyable)
@@ -867,7 +874,6 @@ $wrapLabel
 @if($tag
 @if($useWrapper)
 @if(isset($content))
-@input="syncHasValue()"
 @isset($iconLeft)
 @isset($iconRight)
 @isset($trigger)
@@ -944,6 +950,7 @@ CSS
 CSS-pixel
 CSS.
 Caller
+CallerRef::onRoot()
 Cancel
 Capture
 Case,
@@ -1149,7 +1156,6 @@ Teleporting
 That
 The
 There
-They
 This
 Tooltip
 Trailing
@@ -1241,6 +1247,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Type
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -1277,7 +1284,7 @@ __('wirekit::To
 `$as`
 `$dispatch('wirekit-alert-dialog-close',
 `$el.addEventListener`
-`$event.target.value`
+`$event.target.value`,
 `$id('alert-confirm-reason')`
 `$loading`;
 `$refs`
@@ -1369,6 +1376,7 @@ __('wirekit::To
 `confirmation-phrase`.
 `contents`
 `copyable`
+`data-wk-ref-scope`
 `default`
 `delayHide`
 `delayHide`.
@@ -1505,10 +1513,12 @@ __('wirekit::To
 `x-on:click="close()"`
 `x-on:click`,
 `x-ref="control"`:
-`x-ref="wkField"`
+`x-ref`
+`x-ref`.
 `x-show="open"`
 `x-show`
 `x-text`
+`x-wk-ref`,
 `xs`
 `xs`,
 `xs`.
@@ -1825,7 +1835,7 @@ bubbles
 bubbling
 bug
 build
-build,
+build.
 built
 busy
 but
@@ -2120,6 +2130,7 @@ data-wk-alert-confirm
 data-wk-desc-id="{{
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-title-id
 data-wk-title-id="{{
 data-wk-tooltip-describedby="{{
@@ -2741,6 +2752,7 @@ it:
 it;
 item,
 items-center
+items-center">
 items-center'
 items-center',
 items-stretch
@@ -3050,6 +3062,7 @@ one:
 ones
 only
 only,
+only:
 onmouseover=alert(1)"`
 onto
 open
@@ -3081,7 +3094,9 @@ other,
 other.
 other:
 otherwise
+our
 ours
+ours,
 out
 out,
 out.
@@ -3197,7 +3212,6 @@ pointer-events-none'
 pointer;
 pointing
 points
-policy.
 polite
 popover's
 popovers
@@ -3313,7 +3327,6 @@ red
 red:
 redone
 ref
-ref.
 reference
 reference.
 refinement,
@@ -3378,7 +3391,7 @@ resolve
 resolved
 resolver
 resolves
-resources/js/components/input.js.
+resources/js/components/input.js,
 responsive
 restored
 rests
@@ -3495,7 +3508,6 @@ server,
 server-side
 server.
 set
-set,
 set.
 sets
 setting
@@ -3530,7 +3542,7 @@ shrink-0
 shrinks
 sibling
 siblings
-siblings;
+siblings.
 side,
 side:
 sidebar
@@ -3647,7 +3659,6 @@ straight
 strategy:
 stray
 stretches
-strict
 stricter
 strictly
 strictness
@@ -3873,6 +3884,7 @@ trigger,
 trigger.
 trim(
 trim($relAttr.'
+trim((string)
 trim(strip_tags((string)
 trimmed,
 trip,
@@ -4122,6 +4134,7 @@ write.
 writes
 writing
 written
+written.
 wrong
 wrong.
 wrote
@@ -4168,7 +4181,6 @@ x-on:pointerup="pointerup($event)"
 x-ref="panel"
 x-ref="tooltip"
 x-ref="trigger"
-x-ref="wkField"
 x-show:
 x-show="!
 x-show="copied"
@@ -4190,6 +4202,7 @@ x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ref="{{
 xl
 xmlns="http://www.w3.org/2000/svg"
 yields

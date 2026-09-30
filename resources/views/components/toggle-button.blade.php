@@ -206,6 +206,16 @@
 
     // The icon follows the button's size one step down, the proportion a button keeps elsewhere.
     $iconSize = $size === 'lg' ? 'md' : 'sm';
+    // A caller's `x-ref` belongs to the caller's component. The button can carry `x-data` of its
+    // own and sit inside the tooltip's root and the optimistic layer, each of which would keep
+    // it, so the name moves to `x-wk-ref` on the button and the outermost element this view
+    // renders marks the boundary (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $refScope = $callerRef === '' ? null : ($optimisticConfig ? 'layer' : (filled($tooltip) ? 'tooltip' : 'button'));
+    $attributes = $attributes->except('x-ref')->merge(array_filter([
+        'x-wk-ref' => $callerRef !== '' ? $callerRef : null,
+        'data-wk-ref-scope' => $refScope === 'button' ? true : null,
+    ]));
 @endphp
 
 {{-- Composes the button rather than re-implementing it: intents, sizes, focus
@@ -222,12 +232,12 @@
      leaving its layout position — the mechanism the other optimistic components
      use too. See the note at the top for
      what it costs a caller's selectors. --}}
-<div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+<div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents" @if($refScope === 'layer') data-wk-ref-scope @endif>
 @endif
 @if(filled($tooltip))
 {{-- The button is the focusable trigger, so the tooltip adds no tab stop of its own. When the
      tooltip text is the name, it does not also describe the button. --}}
-<x-wirekit::tooltip :text="$tooltip" :focusable-trigger="false" :describes="! $tooltipIsName">
+<x-wirekit::tooltip :text="$tooltip" :focusable-trigger="false" :describes="! $tooltipIsName" :data-wk-ref-scope="$refScope === 'tooltip' ? true : null">
     @include('wirekit::components.partials.toggle-button-control', [
     'attributes' => $attributes,
     'slot' => $slot,

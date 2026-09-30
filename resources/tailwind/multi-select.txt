@@ -12,14 +12,17 @@ $ariaLabel
 $attributes
 $attributes->class([$classes])
 $attributes->except('aria-describedby')->class(['relative'])
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['id',
 $attributes->get('aria-describedby',
 $attributes->get('aria-label')
 $attributes->get('name'),
 $attributes->get('name',
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $boxClasses
+$callerRef
 $classes
 $containerClasses
 $describedBy
@@ -324,6 +327,7 @@ $value,
 (or
 (passed
 (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw)$/',
+(resources/js/utils/caller-ref.js).
 (see
 (selected.includes(opt.value)
 (silent
@@ -455,10 +459,12 @@ $value,
 @else
 @elseif($hint)
 @endif
+@endif>
 @endphp
 @endunless
 @focus="dropdownOpen
 @if($announceError)
+@if($callerRef
 @if($describedBy
 @if($descriptions)
 @if($hasError
@@ -688,6 +694,7 @@ __('wirekit::Select…'),
 __('wirekit::Type
 _place()
 `$id`
+`$refs`
 `:class="…"`
 `<use>`
 `@aware`
@@ -717,6 +724,7 @@ _place()
 `cloneNode(true)`
 `combobox`
 `cursor-*`
+`data-wk-ref-scope`
 `description`,
 `disabled="false"`
 `display:
@@ -776,7 +784,9 @@ _place()
 `x-data`.
 `x-model`
 `x-modelable`
+`x-ref`
 `x-text`
+`x-wk-ref`,
 `{
 `{{
 a
@@ -903,6 +913,7 @@ before
 before.
 behaves
 belong
+belongs
 below
 below,
 below.
@@ -1080,6 +1091,7 @@ data-wk-multi-select-remove
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-prose-skip>
+data-wk-ref-scope
 data-wk-server-options="{{
 debug
 decided
@@ -1152,6 +1164,7 @@ empty,
 empty.
 empty:
 encode
+end
 error
 escapes
 even
@@ -1368,6 +1381,7 @@ items-center">
 items-start
 its
 itself
+itself,
 jacket']`
 joins
 json_encode,
@@ -1394,6 +1408,7 @@ label="...">
 label`
 labels
 label}
+land
 landed
 landing
 lands
@@ -1469,7 +1484,7 @@ message
 method
 min-h-[var(--size-wk-md)]',
 min-w-0
-min-w-0">
+min-w-0"
 min-w-[80px]
 minimum:
 mirrors
@@ -1481,6 +1496,7 @@ more
 more.
 morph
 move
+moves
 ms-0.5"
 mt-0.5',
 multi-select
@@ -1585,6 +1601,7 @@ order.
 origin.
 other
 otherwise
+our
 out
 out,
 out.
@@ -1705,11 +1722,13 @@ reasoning.
 reasons.
 received
 receives
+ref
 reference
 refuse.
 region
 region.
 region:
+registers
 relative
 remove
 removed
@@ -2171,6 +2190,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ref="{{
 yet
 yet,
 yet.

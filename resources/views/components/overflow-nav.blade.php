@@ -111,6 +111,9 @@
     // there for the number.
     $moreOne = trans_choice('wirekit:::count more link|:count more links', 1, ['count' => '__COUNT__']);
     $moreMany = trans_choice('wirekit:::count more link|:count more links', 2, ['count' => '__COUNT__']);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <{{ $tag }} data-wk-prose-skip data-wk-overflow-nav

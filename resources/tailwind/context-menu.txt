@@ -3,6 +3,7 @@
 "copy
 "menu":
 "open
+$attributes
 $attributes->class([$classes])
 $attributes->class([$itemClasses,
 $attributes->class([$wrapperClasses])
@@ -194,6 +195,7 @@ Blade
 BooleanProp::from($danger,
 BooleanProp::from($disabled,
 BooleanProp::from($teleport,
+CallerRef::onRoot()
 Child
 Command-Palette
 Command-Palette.
@@ -260,6 +262,7 @@ Wrapped
 [
 ['class'
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('context-menu',
 \Pushery\WireKit\WireKit::warnUnknownProps('context-menu.item',
@@ -310,6 +313,7 @@ _getItems().
 `x-teleport`
 a
 about
+above.
 accessible
 across
 action
@@ -365,6 +369,7 @@ becomes
 behavior
 behavior.
 behind
+belongs
 below
 between
 binding
@@ -421,6 +426,7 @@ cmd-click,
 compiles
 component
 component's
+component,
 computed
 confirming
 contain
@@ -603,6 +609,7 @@ isn't
 it
 it,
 it.
+it:
 it;
 item
 item,
@@ -627,6 +634,7 @@ keypress.
 keys,
 label
 labels
+lands
 later
 layout`
 leading
@@ -719,6 +727,7 @@ optimistic-ui:
 or
 other
 otherwise
+our
 out
 outer
 outside

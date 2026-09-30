@@ -124,6 +124,9 @@
         'removed' => __('wirekit::Filter removed: :name'),
         'cleared' => __('wirekit::All filters cleared'),
     ]);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div
@@ -214,7 +217,7 @@
                 <span>{{ $addLabel }}</span>
             </button>
 
-            {{-- Teleported to <body> + Floating-UI positioned (see wirekitFilterBuilder)
+            {{-- Teleported to the overlay root at the end of <body> + Floating-UI positioned (see wirekitFilterBuilder)
                  so the panel escapes any clipping/stacking ancestor and flips/shifts to
                  stay on-screen. click.outside lives HERE (on the panel), not the root,
                  because teleporting moves the panel out of the root's subtree. --}}

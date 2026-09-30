@@ -6,6 +6,7 @@
 "link-name"
 "true".
 $active
+$attributes
 $attributes->class('relative')
 $attributes->class(['wk-navigation-menu',
 $attributes->except('rel')->class($triggerClasses)
@@ -121,7 +122,6 @@ $triggerClasses
 <a
 <body>
 <body>),
-<body>,
 <button
 <div
 <nav
@@ -156,6 +156,7 @@ Blade
 BooleanProp::from($active,
 Both
 COUNTED,
+CallerRef::onRoot()
 Chevron
 Context-Menu,
 DOM
@@ -219,6 +220,7 @@ Wrapped
 [
 \Illuminate\Support\Str::slug((string)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($name.'-panel',
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu',
@@ -255,6 +257,7 @@ __('wirekit::Main
 a
 a11y
 above
+above.
 accessible
 across
 actually
@@ -293,6 +296,7 @@ avoids
 axe-core's
 back
 back.
+bag
 bag:
 bar
 bar's
@@ -305,6 +309,7 @@ before:absolute
 before:h-2",
 before:left-0
 before:right-0
+belongs
 below
 beside
 bled
@@ -349,6 +354,7 @@ compares
 compile
 compiles
 component's
+component,
 container
 containing
 content
@@ -492,6 +498,7 @@ invisible
 is
 it
 it,
+it:
 item
 item's
 item.
@@ -508,6 +515,7 @@ keydown
 keys
 kinds
 label
+lands
 later
 link
 link.

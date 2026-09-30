@@ -62,6 +62,9 @@
     $incompleteTemplate = $stepNames !== [] && trim($stepNames[0] ?? '') !== ''
         ? __('wirekit:::label is not complete yet.')
         : __('wirekit::This step is not complete yet.');
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <div

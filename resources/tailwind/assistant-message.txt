@@ -46,6 +46,7 @@ $announceValue]);
 $as
 $as);
 $as,
+$attributes
 $attributes->class([$classes,
 $attributes->class([$classes])
 $attributes->class([$classes]);
@@ -1048,6 +1049,7 @@ CONTEXT
 CSP
 CSS
 CSS)
+CallerRef::onRoot()
 Catching
 Check
 Chevron
@@ -1409,6 +1411,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
 \Pushery\WireKit\Support\AlpinePayload::from((object)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CitationList::from($citations);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -1621,6 +1624,7 @@ __toString
 `x-collapse`
 `x-collapse`,
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 `x-show`.
@@ -2084,6 +2088,7 @@ compile
 compiles
 component
 component's
+component,
 components
 composer
 composes
@@ -2343,6 +2348,7 @@ emitting
 empty
 empty-state
 encoder
+end
 ended:
 ends
 engine

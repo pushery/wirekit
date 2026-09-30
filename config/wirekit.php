@@ -348,7 +348,7 @@ return [
         'table.td' => [],
         'pagination' => ['variant' => 'full', 'justify' => 'between'],
         'empty-state' => ['variant' => 'default'],
-        'progress' => ['variant' => 'accent', 'size' => 'md', 'circle-size' => 'md'],
+        'progress' => ['variant' => 'primary', 'size' => 'md', 'circle-size' => 'md'],
         'usage-meter' => ['warn' => 0.8, 'danger' => 1.0],
         // The two string defaults are null on purpose. A literal here WINS over the
         // component's `__()` fallback — `config(key, default)` never reaches its second

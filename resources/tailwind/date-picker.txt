@@ -7,15 +7,18 @@ $announceError
 $announceErrors
 $attributes
 $attributes->except('aria-describedby')->class(['wk-field',
+$attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->get('aria-describedby',
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby');
 $attributes->whereStartsWith('wire:model')->first()));
 $callerAriaLabel
+$callerRef
 $component`.
 $date
 $date->format('Y-m-d')
@@ -95,6 +98,7 @@ $value['start']
 '#'.$errorId,
 '')
 '')));
+''));
 ''),
 ',
 '-',
@@ -189,6 +193,7 @@ $value['start']
 (humanized)
 (is_array($value))
 (is_string($value)
+(resources/js/utils/caller-ref.js).
 (s)
 (see
 (silent
@@ -252,6 +257,7 @@ $value['start']
 @endphp
 @endunless
 @if($announceError)
+@if($callerRef
 @if($describedBy
 @if($disabled)
 @if($formatHint)
@@ -436,7 +442,9 @@ __('wirekit::Saving'),
 `wire:model="stay.end"`,
 `wire:model="stay.start"`
 `wire:model`
+`x-ref`
 `x-wirekit::calendar`
+`x-wk-ref`
 `{property}.end`
 `{property}.start`
 `{{
@@ -524,6 +532,7 @@ before
 before,
 before.
 behaves
+belongs
 below
 below.
 between
@@ -535,6 +544,7 @@ boolean
 border
 both
 bound
+boundary
 brackets,
 browser
 browser,
@@ -612,6 +622,7 @@ counted
 current
 data-wk-optimistic-announcer
 data-wk-prose-skip
+data-wk-ref-scope
 date
 date-picker
 dates
@@ -833,6 +844,7 @@ makes
 margin
 marker
 marker,
+marks
 markup
 match
 max="{{
@@ -856,6 +868,7 @@ morph
 mounts
 move
 moved,
+moves
 ms-0.5"
 must
 name
@@ -919,11 +932,14 @@ orders
 other
 other.
 otherwise
+ours
 out.
 outer
+outermost
 over,
 overwhelmingly
 own
+own,
 owns
 padding
 page
@@ -991,6 +1007,7 @@ reads,
 real
 record
 red
+ref
 region
 rejected,
 remove
@@ -1009,6 +1026,7 @@ role
 rollback
 rolling
 rolls
+roots
 roughly
 round
 row
@@ -1132,6 +1150,7 @@ translated
 travels
 trim(
 trim($describedBy.'
+trim((string)
 trip
 true
 true);
@@ -1221,6 +1240,7 @@ x-on:change="s
 x-ref="control"
 x-text="announcement"></div>
 x-text="message"
+x-wk-ref="{{
 yields
 you
 zero-dependency

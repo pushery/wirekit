@@ -35,6 +35,7 @@
 $_)
 $as
 $as);
+$attributes
 $attributes->class([$classes])
 $attributes->class([$classes]);
 $attributes->class([$wrapperClasses])
@@ -802,6 +803,7 @@ COMPILE
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Catching
 Check
 Choosing
@@ -1060,6 +1062,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($id)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($row['key'])
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
 \Pushery\WireKit\Support\SafeUrl::href((string)
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -1235,6 +1238,7 @@ __toString
 `wrapLabel`
 `wrapLabel`,
 `x-data="wirekitPopover(…)"`,
+`x-ref`
 `xs`
 `xs`,
 `xs`.
@@ -1652,6 +1656,7 @@ compiles
 complete
 component
 component's
+component,
 component.
 components
 composer

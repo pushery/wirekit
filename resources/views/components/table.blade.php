@@ -200,6 +200,11 @@
             }
         }
     }
+    // A caller's `x-ref` belongs to the caller's component. A responsive table sits inside the
+    // scroll-shadow root, which would keep it, so the name moves to `x-wk-ref` on the table and
+    // the outermost element marks the boundary (resources/js/utils/caller-ref.js).
+    $callerRef = trim((string) $attributes->get('x-ref', ''));
+    $attributes = $attributes->except('x-ref');
 @endphp
 
 {{-- Wrap in responsive container for horizontal scroll on narrow screens.
@@ -226,7 +231,7 @@
      measures against. NAMED on purpose: an anonymous container would also become the
      measuring context for every `@`-variant a caller nests inside the table, and
      retarget it without anybody asking. --}}
-<div class="@container/wk-table relative w-full min-w-0" x-data="wirekitStickyPanelShadows()">
+<div class="@container/wk-table relative w-full min-w-0" x-data="wirekitStickyPanelShadows()" @if($callerRef !== '') data-wk-ref-scope @endif>
 <div
     x-ref="scroller"
     {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in
@@ -277,6 +282,7 @@
 @endif
     <table data-wk-prose-skip
         {{ $attributes->class([$classes]) }}
+        @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @if(! $responsive) data-wk-ref-scope @endif @endif
         @foreach($tableAttrs as $attr) {{ $attr }} @endforeach
         {{-- Debug-only composition warning. It cannot be an inline console.warn:
              under Alpine's CSP build naming `console` throws while BUILDING the

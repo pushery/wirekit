@@ -2,6 +2,7 @@
 "false",
 $as
 $as);
+$attributes
 $attributes->class(['relative
 $attributes->getAttributes());
 $content
@@ -112,6 +113,7 @@ BooleanProp::from($disabled,
 BooleanProp::from($focusableTrigger,
 Both
 CALLER's
+CallerRef::onRoot()
 Declared
 Default
 Deliberately
@@ -176,6 +178,7 @@ With
 Without
 ['inverted',
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 ])
 ])),
@@ -233,11 +236,13 @@ Without
 `wire:key`,
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 a
 able
 about
+above.
 absence
 accessible
 across
@@ -288,6 +293,7 @@ avoid
 back.
 background
 background,
+bag
 be
 because
 become
@@ -296,6 +302,7 @@ becoming
 been
 before;
 being
+belongs
 below
 below,
 below;
@@ -359,6 +366,7 @@ compete
 compiles
 component
 component's
+component,
 config('wirekit.components.tooltip.delay-hide',
 config('wirekit.components.tooltip.delay-show',
 config('wirekit.components.tooltip.offset',
@@ -479,6 +487,7 @@ handler
 handler.
 handlers
 handles
+hands
 hangs
 has
 hatch
@@ -533,6 +542,7 @@ its
 itself
 itself,
 just
+keep
 keeps
 key
 keyboard
@@ -632,6 +642,7 @@ or
 other
 other.
 otherwise
+our
 out
 out.
 output

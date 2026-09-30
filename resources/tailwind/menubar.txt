@@ -1,6 +1,7 @@
 !
 "Export
 "menu":
+$attributes
 $attributes->class('relative')
 $attributes->class([$classes])
 $attributes->class([$itemClasses,
@@ -203,6 +204,7 @@ BooleanProp::from($danger,
 BooleanProp::from($disabled,
 Bound
 CSS
+CallerRef::onRoot()
 Carries
 Child
 Context-Menu,
@@ -272,6 +274,7 @@ Wrapped
 \Illuminate\Support\Str::slug($label);
 \Pushery\WireKit\Support\AlpinePayload::string($name)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('kbd',
 \Pushery\WireKit\WireKit::warnUnknownProps('menubar',
@@ -302,6 +305,7 @@ _getActiveItems().
 `x-data`
 `x-ref`
 a
+above.
 accessible
 across
 action
@@ -339,11 +343,13 @@ avoids
 back
 back.
 badge.
+bag
 bar
 bare
 be
 because
 before
+belongs
 between
 binding
 block
@@ -356,6 +362,7 @@ button
 buttons
 by
 call
+caller's
 came
 carried
 carry
@@ -518,6 +525,7 @@ is,
 it
 it,
 it.
+it:
 it;
 item
 item's
@@ -528,6 +536,7 @@ its
 just
 justify-between
 justify-center',
+keep
 keeps
 key
 keyboard
@@ -535,6 +544,7 @@ keydowns
 keys
 label
 label.
+lands
 later
 leading
 left
@@ -611,6 +621,7 @@ optional
 or
 other
 otherwise
+our
 out
 overlay
 overrides

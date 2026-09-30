@@ -32,6 +32,7 @@ import Alpine from 'alpinejs';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerScrollToMagic } from './utils/scroll-to.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
@@ -218,6 +219,9 @@ if (hostAlpine) {
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(target);
+    // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
+    // root the component renders. See utils/caller-ref.js.
+    registerCallerRefDirective(target);
     registerFlashDirective(target);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(target);

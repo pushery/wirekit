@@ -26,6 +26,7 @@ $arrowSize,
 $arrowSurface,
 $as
 $as);
+$attributes
 $attributes->class([$classes])
 $attributes->class(['inline-flex
 $attributes->class(['relative
@@ -663,6 +664,7 @@ CALLER's
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Catching
 Check
 DECLARATIVE
@@ -881,6 +883,7 @@ Without
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -1076,6 +1079,7 @@ __toString
 `wrapLabel`,
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 `xs`
@@ -1456,6 +1460,7 @@ compiled
 compiles
 component
 component's
+component,
 component.
 components
 components.
@@ -1878,6 +1883,7 @@ handler
 handler.
 handlers
 handles
+hands
 hang
 hangs
 happens

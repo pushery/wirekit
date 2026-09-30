@@ -207,6 +207,7 @@ BooleanProp::from($disabled,
 BooleanProp::from($required,
 Both
 CSP
+CallerRef::onRoot()
 Change
 Container
 Content-Security-Policy
@@ -289,6 +290,7 @@ Zero
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($segmentSelectedClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \Pushery\WireKit\WireKit::warnUnknownProps('segmented-control',
@@ -350,11 +352,13 @@ _focusAt()
 `value`
 `wk-`
 `x-data`
+`x-ref`
 `{{
 a
 able
 about
 above
+above.
 accent
 accepts
 access
@@ -449,6 +453,7 @@ before
 before,
 before.
 behavior
+belongs
 below
 below,
 beneath
@@ -673,6 +678,7 @@ had
 hand-mount
 hand-quoted
 handlers
+hands
 hardcoded
 has
 have
@@ -723,6 +729,7 @@ is
 it
 it,
 it.
+it:
 item
 item,
 items-center
@@ -852,6 +859,7 @@ or
 order,
 other
 otherwise
+our
 out
 out.
 out:
@@ -959,6 +967,7 @@ role="radio"
 role="radiogroup"
 rollback
 root
+root,
 round
 routes
 row

@@ -192,6 +192,9 @@
         // the chosen one", which here means the scope the page is already showing.
         'data-[active]:bg-[var(--color-wk-bg-muted)]',
     ]), $scope);
+    // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
+    // which would keep it: CallerRef::onRoot() hands it to the root above.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <x-wirekit::popover

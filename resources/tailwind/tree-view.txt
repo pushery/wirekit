@@ -6,6 +6,7 @@
 "heroicon-m-inbox"
 "tree
 "tree"s.
+$attributes
 $attributes->class([$nodeClasses])
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
@@ -253,6 +254,7 @@ Bound
 CLASS
 COUNTED
 CSP
+CallerRef::onRoot()
 Catching
 Check
 DO
@@ -342,6 +344,7 @@ With
 [
 ['data-wk-icon-missing'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('tree-view',
 \Pushery\WireKit\WireKit::warnUnknownProps('tree-view.node',
@@ -377,6 +380,7 @@ __toString
 `wk-`
 `wk-tree-view`
 `x-collapse`'s
+`x-ref`
 a
 a11y
 above.
@@ -443,11 +447,13 @@ available
 back.
 background
 backgrounds
+bag
 baked
 bakes
 be
 because
 becomes
+belongs
 below
 below,
 below.
@@ -523,6 +529,7 @@ color,
 compiles
 component
 component's
+component,
 components
 composer
 condition
@@ -677,6 +684,7 @@ had
 hand-written
 handled
 handles
+hands
 happens
 hard
 harder
@@ -738,12 +746,14 @@ isset($sizeMap[$size])
 it
 it,
 it.
+it:
 item
 item,
 items
 items-center
 its
 itself,
+keep
 keeps
 key
 key,
@@ -976,6 +986,7 @@ role="tree"
 role="treeitem"
 roll
 root
+root,
 root;
 rotated
 roving

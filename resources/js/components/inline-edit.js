@@ -264,18 +264,18 @@ export default function wirekitInlineEdit(config = {}) {
         /**
          * The element carrying `x-ref="control"`.
          *
-         * `$refs` alone missed every WireKit component placed in the editor slot.
          * Alpine files a ref under the CLOSEST component root, and an element with
-         * its own `x-data` is its own closest root, so on a tags-input, a combobox
-         * or an editor the ref lands on THAT component. `$refs` read from here walks
-         * upward and never sees it. The attribute is still in the document, so the
-         * lookup falls back to it.
-         *
-         * The built-in controls still resolve through `$refs`: their ref sits on a
-         * plain element whose closest root is this component.
+         * its own `x-data` is its own closest root, so a control that renders a
+         * root of its own keeps the ref to itself, and `$refs` read from here walks
+         * upward and never sees it. A WireKit field hands the ref on through
+         * `x-wk-ref` (utils/caller-ref.js), so `$refs` resolves it. A control of
+         * the caller's own with an `x-data` does not, and its attribute is still
+         * in the document, so the lookup falls back to it, in either spelling.
          */
         _control() {
-            return this.$refs.control ?? this.$root?.querySelector?.('[x-ref="control"]') ?? null;
+            return this.$refs.control
+                ?? this.$root?.querySelector?.('[x-ref="control"], [x-wk-ref="control"]')
+                ?? null;
         },
 
         /**

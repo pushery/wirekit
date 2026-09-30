@@ -674,6 +674,17 @@ export default function wirekitMultiSelect(config = {}) {
                 // fixed-positioning switch made most visibly pin on scroll.
                 autoReposition: true,
             });
+
+            // The placement can wait frames for the panel to get a box, and the list can
+            // close meanwhile: its observer would then follow a hidden panel.
+            if (! this.dropdownOpen) {
+                stop();
+                return;
+            }
+
+            // One observer at a time: a placement that began after this one may have stored
+            // its own first.
+            this._stopAutoUpdate?.();
             this._stopAutoUpdate = stop;
         },
     };

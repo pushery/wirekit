@@ -6,6 +6,7 @@
 "heroicon-m-inbox"
 $active
 $active,
+$attributes
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
@@ -201,6 +202,7 @@ Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
 BooleanProp::from($loop,
+CallerRef::onRoot()
 Catching
 Check
 Clamped,
@@ -269,6 +271,7 @@ With
 ['current'
 ['data-wk-icon-missing'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('branch-switcher',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 ])
@@ -296,6 +299,7 @@ __toString
 `wire:model`
 `wire:model`:
 `x-modelable`
+`x-ref`
 a
 a11y
 about.
@@ -348,11 +352,13 @@ attribute
 attribute,
 auto-derived
 back
+bag
 baked
 bakes
 be
 because
 becomes
+belongs
 below
 below,
 below.
@@ -407,6 +413,7 @@ close
 close-icons,
 collapsed
 component's
+component,
 components
 composer
 condition
@@ -529,6 +536,7 @@ h/w
 hand
 hand-written
 handed
+hands
 hard
 harder
 has
@@ -578,15 +586,18 @@ isset($sizeMap[$size])
 it
 it,
 it.
+it:
 items-center
 its
 justify-center
+keep
 keeps
 kill
 know
 label
 labels).
 ladder
+lands
 last
 later
 layout
@@ -755,6 +766,7 @@ role="img"
 role="img".
 role="status"
 root
+root,
 root;
 rounded-[var(--radius-wk-full)]',
 rule

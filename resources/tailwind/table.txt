@@ -42,6 +42,7 @@ $as
 $as);
 $attr
 $attr)
+$attributes
 $attributes),
 $attributes->class([$classes,
 $attributes->class([$classes])
@@ -50,6 +51,7 @@ $attributes->class(['w-px
 $attributes->class([WireKit::resolveClasses('icon',
 $attributes->class([\Pushery\WireKit\WireKit::resolveClasses('table.reorder-head',
 $attributes->except('rel');
+$attributes->except('x-ref');
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -57,6 +59,7 @@ $attributes->get('rel',
 $attributes->get('role');
 $attributes->get('target',
 $attributes->get('wire:key')
+$attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->has('aria-busy');
 $attributes->has('aria-label')
@@ -73,6 +76,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerRef
 $callerRole
 $cellPadding
 $cellPadding,
@@ -208,6 +212,7 @@ $resolved
 $resolved);
 $resolvedAriaHidden
 $responsive
+$responsive)
 $scope);
 $scope)])
 $scope.
@@ -277,6 +282,7 @@ $wrapWords
 '
 ''
 '')
+''));
 '');
 '',
 '';
@@ -753,6 +759,7 @@ $wrapWords
 (preserving
 (provides
 (regex
+(resources/js/utils/caller-ref.js).
 (row,
 (same
 (see
@@ -1006,7 +1013,9 @@ $wrapWords
 @endphp
 @foreach($tableAttrs
 @if
+@if(!
 @if($alpineSort)
+@if($callerRef
 @if($column)
 @if($computedRel)
 @if($declarativeLoading)
@@ -1122,6 +1131,7 @@ CSP
 CSS
 CSS-pixel
 CSS.
+CallerRef::onRoot()
 Capped
 Caption
 Catching
@@ -1448,6 +1458,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($column)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_',
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -1751,8 +1762,10 @@ __toString
 `wrap`.
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
+`x-wk-ref`
 `xs`
 `xs`,
 `xs`.
@@ -2047,6 +2060,7 @@ both.
 bottom
 bound
 boundaries
+boundary
 bounded
 bounds
 box
@@ -2365,6 +2379,7 @@ data-orientation="{{
 data-stack-below="{{
 data-wk-hoverable
 data-wk-prose-skip
+data-wk-ref-scope
 data-wk-reorder-arrow="down"
 data-wk-reorder-arrow="up"
 data-wk-reorder-key="{{
@@ -2827,6 +2842,7 @@ handler
 handler.
 handlers
 handles
+hands
 hang
 hangs
 happens
@@ -3431,6 +3447,7 @@ out
 out,
 out.
 outer
+outermost
 outline()
 output
 outranks
@@ -3865,6 +3882,7 @@ scroll
 scroll,
 scroll-confined
 scroll-demo
+scroll-shadow
 scrollbar
 scrollbar,
 scrolled.
@@ -4602,7 +4620,7 @@ x
 x-cloak
 x-data.
 x-data="wirekitDevWarning({
-x-data="wirekitStickyPanelShadows()">
+x-data="wirekitStickyPanelShadows()"
 x-data="wirekitTableReorder({
 x-data="wirekitTableSort({
 x-data="wirekitTooltip({
@@ -4636,6 +4654,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ref="{{
 xl
 xl:nth-last-2:border-b-0',
 xl:w-full',

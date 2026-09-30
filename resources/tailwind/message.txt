@@ -32,6 +32,7 @@ $alt
 $as
 $as);
 $attachments
+$attributes
 $attributes->class([$baseClasses])
 $attributes->class([$groupClasses])
 $attributes->class(['relative
@@ -760,6 +761,7 @@ Bubble
 CALLER's
 CLASS,
 CSS
+CallerRef::onRoot()
 Carbon
 Carbon::parse($statusTime);
 Carbon::parse($timestamp);
@@ -980,6 +982,7 @@ Without
 [],
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
@@ -1102,6 +1105,7 @@ __toString
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
+`x-ref`
 `x-show="open"`
 `x-show`
 `x-wirekit::message-group`
@@ -1238,6 +1242,7 @@ badge).
 badge-width
 badges
 badges;
+bag
 baked
 bakes
 bare
@@ -1256,6 +1261,7 @@ behalf
 behalf,
 behind
 being
+belongs
 below
 below,
 below.
@@ -1421,6 +1427,7 @@ compile
 compiles
 component
 component's
+component,
 components
 composer
 computed
@@ -1775,6 +1782,7 @@ handler
 handler.
 handlers
 handles
+hands
 hangs
 happened:
 hard

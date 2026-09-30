@@ -47,6 +47,7 @@ $listId
 $loading
 $lockScroll
 $name
+$namedOnly
 $opensNewTab
 $panelClasses
 $placeholder
@@ -128,6 +129,7 @@ $wkCmdSlug(trim(strip_tags((string)
 'md'
 'md',
 'name'
+'namedOnly'
 'noopener')
 'opacity-[var(--opacity-wk-disabled)]
 'overflow-hidden',
@@ -269,6 +271,7 @@ Belongs
 Blade
 BooleanProp::from($disabled,
 BooleanProp::from($lockScroll,
+BooleanProp::from($namedOnly,
 BooleanProp::from($teleport,
 Both
 Busy
@@ -290,6 +293,7 @@ FIRST
 FULL
 Files
 Filter
+For
 Fully
 IS
 In
@@ -348,6 +352,7 @@ WireKit::resolveClasses('command-palette.empty',
 WireKit::resolveClasses('command-palette.group',
 WireKit::resolveClasses('command-palette.item',
 WireKit::resolveClasses('kbd',
+With
 Without
 Wrapped
 [
@@ -395,6 +400,7 @@ __('wirekit::Search
 `id`,
 `loading`
 `name`
+`name`,
 `prop="false"`
 `public-css-api.md`
 `resolveClasses('kbd',
@@ -488,6 +494,7 @@ before
 behind
 being
 beneath
+beside
 better
 between
 bg-elevated,
@@ -504,6 +511,7 @@ browser
 build
 but
 by
+by.
 call
 caller
 caller-supplied
@@ -590,6 +598,7 @@ default
 default).
 default.
 deliberately
+demos.
 derivation
 derive
 derives
@@ -675,6 +684,7 @@ flow
 follows
 footer
 for
+for,
 from
 full
 function
@@ -749,6 +759,7 @@ is.
 isset($error))
 it
 it.
+it:
 item
 item's
 item),
@@ -839,6 +850,7 @@ name,
 name.
 name:
 named.
+namedOnly:
 namely
 names
 narrow
@@ -862,6 +874,7 @@ noreferrer"
 noreferrer')
 not
 nothing
+nothing.
 nothing:
 null
 null)
@@ -902,6 +915,7 @@ order
 order:
 other
 other.
+others
 otherwise
 otherwise,
 out
@@ -933,6 +947,7 @@ paragraph
 parent
 pass
 passed,
+passes
 passthrough
 patch
 pattern
@@ -988,6 +1003,7 @@ re-render,
 re-render:
 re-runs
 reach
+reaches
 read
 readable
 reader
@@ -1073,6 +1089,7 @@ shape
 share
 share,
 shared
+shares
 shortcut
 should
 showed
@@ -1121,6 +1138,7 @@ strtolower(preg_replace('/[^A-Za-z0-9]+/',
 stylesheet
 styling
 sub-component
+such
 survive
 survives
 svg(\Pushery\WireKit\WireKit::icon($icon),

@@ -6,6 +6,7 @@
 "used
 "↻
 $announce
+$attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
 $autoStart
@@ -135,6 +136,7 @@ Blade
 BooleanProp::from($autoStart,
 CHOSE
 CONTENT
+CallerRef::onRoot()
 Declared
 Dev-only
 Developer
@@ -213,6 +215,7 @@ Writing
 ['status',
 \Pushery\WireKit\Support\AlpinePayload::from($config)
 \Pushery\WireKit\Support\AlpinePayload::from(...)
+\Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('stream',
 ])
 ],
@@ -229,6 +232,7 @@ __()
 `output`
 `prop="false"`
 `x-if`
+`x-ref`
 `x-show`
 `x-text="text"`
 a
@@ -236,6 +240,7 @@ a11y
 abort
 about
 above
+above.
 accessibility
 address
 adoptable
@@ -278,11 +283,13 @@ at
 attribute
 auto-announced.
 auto-derived
+bag
 bare
 be
 because
 before
 belong
+belongs
 below
 between
 bg-[var(--color-wk-text-muted)]"
@@ -303,6 +310,7 @@ but
 by
 call
 caller
+caller's
 caller,
 can
 cannot
@@ -330,6 +338,7 @@ completed
 completion
 component
 component's
+component,
 concatenation
 config
 connection
@@ -455,10 +464,12 @@ is
 isStreaming
 it
 it.
+it:
 its
 job
 keep
 keys
+lands
 lang
 language
 language.
@@ -534,6 +545,7 @@ opts
 or
 order
 otherwise
+our
 out
 output
 output,
@@ -613,6 +625,8 @@ role="alert"
 role="status"
 room
 room.
+root
+root,
 route
 same
 sayable
