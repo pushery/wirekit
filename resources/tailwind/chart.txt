@@ -246,7 +246,7 @@ Wrapping
 []
 [];
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
-\Pushery\WireKit\Support\AlpinePayload::from($chartData)
+\Pushery\WireKit\Support\AlpinePayload::json($chartData)
 \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\WireKit::cspNonce()
 \RuntimeException(

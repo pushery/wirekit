@@ -77,8 +77,8 @@ $wrapperClasses
 'wk-lightbox-');
 ($item['alt']
 ($item['src']
-($items
 ($type
+(\Pushery\WireKit\Support\ListProp::records($items)
 (a
 (any
 (false).

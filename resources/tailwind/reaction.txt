@@ -14,7 +14,6 @@ $emoji
 $emoji,
 $optimistic
 $optimistic,
-$optimisticArgs),
 $reactionLayer
 $reactionOptimistic
 $reactionUsersId
@@ -71,6 +70,7 @@ $users
 'transition-[background-color,border-color,box-shadow]',
 'true'
 'users'
+(array)
 (bool)
 (first
 (int)
@@ -107,6 +107,7 @@ Alpine.
 Blade
 BooleanProp::from($active,
 Change
+Collection,
 Declared
 Dev-only
 Extra
@@ -139,6 +140,8 @@ WireKit::resolveClasses('reaction',
 [];
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
+\Pushery\WireKit\Support\ListProp::renumbered($users);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{0}
 \Pushery\WireKit\WireKit::warnUnknownProps('reaction',
 ])
@@ -147,6 +150,7 @@ WireKit::resolveClasses('reaction',
 ],
 __('wirekit::Could
 __('wirekit::Saving'),
+`$post->likers->pluck('name')`.
 `$tickerId`.
 `active`
 `active`;
@@ -184,7 +188,7 @@ aria-hidden="true">{{
 aria-label
 aria-live="assertive"
 aria-pressed="{{
-array_values((array)
+arrive
 arrives
 as
 as,
@@ -405,6 +409,7 @@ stays
 str_replace('_',
 string,
 stylesheet's
+such
 supported
 surface
 tabular-nums"

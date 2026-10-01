@@ -1,7 +1,7 @@
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { sanitizeMinimapHtml } from '../utils/sanitize-minimap-html.js';
 import { accessibleText } from '../utils/accessible-text.js';
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 
 /**
  * Reading-minimap — every-item density overview + literal page-preview
@@ -397,9 +397,9 @@ export default (options = {}) => ({
         const targetScroll = Math.max(0, item.top - clientHeight / 2);
         const reducedMotion = prefersReducedMotion();
         if (host === document.documentElement) {
-            window.scrollTo({ top: targetScroll, behavior: reducedMotion ? 'auto' : 'smooth' });
+            window.scrollTo({ top: targetScroll, behavior: scrollBehavior(!reducedMotion) });
         } else {
-            host.scrollTo({ top: targetScroll, behavior: reducedMotion ? 'auto' : 'smooth' });
+            host.scrollTo({ top: targetScroll, behavior: scrollBehavior(!reducedMotion) });
         }
     },
 
@@ -1012,7 +1012,7 @@ export default (options = {}) => ({
         const el = document.getElementById(anchor.id);
         if (!el) return;
         const reduced = prefersReducedMotion();
-        el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+        el.scrollIntoView({ behavior: scrollBehavior(!reduced), block: 'start' });
         // Update the URL fragment without pushing a history entry (back-
         // button still goes to the previous PAGE, not the previous heading).
         //

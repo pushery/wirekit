@@ -298,7 +298,7 @@
     $optimisticConfig = ($optimistic === null || $disabled || $readonly) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => (string) ($attributes->get('value') ?? ''),
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',

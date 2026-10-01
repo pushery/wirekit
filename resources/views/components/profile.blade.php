@@ -181,6 +181,8 @@
     // passing an array crashed with `htmlspecialchars(): Argument #1
     // must be of type string, array given` because the renderer did
     // `<img src="{{ $avatar }}">` without a normalizer.
+    // The array shape may arrive as a Collection or as a model; both are read as the record.
+    $avatar = \Pushery\WireKit\Support\ListProp::from($avatar);
     $avatarSrc = is_array($avatar) ? ($avatar['src'] ?? null) : (is_string($avatar) ? $avatar : null);
     $avatarInitials = is_array($avatar) ? ($avatar['initials'] ?? null) : null;
     $avatarAlt = is_array($avatar) ? ($avatar['alt'] ?? '') : '';

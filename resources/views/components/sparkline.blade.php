@@ -41,6 +41,12 @@
     // Trend resolution — auto compares first vs last data point and tints
     // green (up), red (down), or neutral (flat). Manual override via prop;
     // invalid prop values fall through to auto-detection.
+    // Data usually arrives as a Collection; the closure below and the payload take an array. The
+    // points are renumbered in the order they are walked: the trend reads the first and the last
+    // of them by position, the chart is given one empty label per point, and a Collection that was
+    // filtered or sorted, or a series keyed by name, carries other keys than 0 to n-1.
+    $data = \Pushery\WireKit\Support\ListProp::renumbered($data);
+
     $resolveTrend = static function ($trendProp, array $data): string {
         // Explicit override — only when the prop is one of the canonical values.
         if (in_array($trendProp, ['up', 'down', 'neutral'], true)) {

@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.62.0 — MIT License
+ * WireKit CSS v2.63.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -1820,6 +1820,24 @@ input.wk-field::-webkit-datetime-edit-text {
         --text-wk-5xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-5xl));
     }
 
+    /* The same floor for a field built by hand, and again only for one that asks for it.
+       The field rule above lifts tokens, so it reaches a control through a size that is a
+       token and through nothing else. A control whose size is written as a literal
+       (`text-[15px]`) or inherited has no token to lift and keeps its size, which on iOS
+       is the zoom this floor exists to prevent. With the marker such a control takes at
+       least the floor, and at least the size of the text around it: in a `font-size`,
+       `1em` is the parent's.
+
+       A literal cannot be read back from the control, so while this rule applies it stands
+       in place of that literal. That is why the marker is opt-in rather than part of
+       `wk-field`, and why a control that names a text token in its classes is left out: its
+       tokens are lifted already, and larger text there keeps its size. */
+    select.wk-touch-text-floor:not([class*="--text-wk-"]),
+    input.wk-touch-text-floor:not([class*="--text-wk-"]),
+    textarea.wk-touch-text-floor:not([class*="--text-wk-"]) {
+        font-size: max(var(--text-wk-touch-floor), 1em);
+    }
+
     /* Touch-target floor. The size ladder is built for a mouse: --size-wk-md is
        2.5rem (40px), which clears the WCAG 2.5.8 AA minimum of 24px but misses
        the 2.5.5 AAA target of 44x44, for input / select / button alike.
@@ -2061,6 +2079,12 @@ input.wk-field::-webkit-datetime-edit-text {
     --text-wk-3xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-3xl));
     --text-wk-4xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-4xl));
     --text-wk-5xl: max(var(--text-wk-touch-floor), var(--wk-touch-given-text-5xl));
+}
+
+:where([data-wk-touch]) select.wk-touch-text-floor:not([class*="--text-wk-"]),
+:where([data-wk-touch]) input.wk-touch-text-floor:not([class*="--text-wk-"]),
+:where([data-wk-touch]) textarea.wk-touch-text-floor:not([class*="--text-wk-"]) {
+    font-size: max(var(--text-wk-touch-floor), 1em);
 }
 
 :where([data-wk-touch]) select.wk-field,

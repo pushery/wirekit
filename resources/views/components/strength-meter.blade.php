@@ -37,6 +37,8 @@
 
     // Translated here, since a word chosen in JavaScript cannot be. Four bars have a word for
     // each step; any other count says where it stands instead of borrowing four words for it.
+    // A Collection is read as the list it holds rather than as no words at all.
+    $levels = \Pushery\WireKit\Support\ListProp::from($levels);
     if (is_array($levels) && $levels !== []) {
         $levels = array_values(array_map('strval', $levels));
     } elseif ($max === 4) {

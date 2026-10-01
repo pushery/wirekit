@@ -50,6 +50,11 @@
     $featured = BooleanProp::from($featured, false);
     $minorUnits = BooleanProp::from($minorUnits, false);
 
+    // The amounts and the periods per billing interval may arrive as Collections; the template
+    // below tests both for an array.
+    $prices = \Pushery\WireKit\Support\ListProp::from($prices);
+    $periods = \Pushery\WireKit\Support\ListProp::from($periods);
+
     $isFeatured = filter_var($featured, FILTER_VALIDATE_BOOLEAN);
 
     // The contact-us placeholder ("Let's talk") must not out-shout a real price.

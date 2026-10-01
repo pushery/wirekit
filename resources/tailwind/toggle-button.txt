@@ -164,7 +164,6 @@ $onLabel,
 $opensNewTab
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $orientation
 $outerAttributes
@@ -565,6 +564,7 @@ $wrapLabel
 (an
 (aria-pressed)
 (array
+(array)
 (avoids
 (bool)
 (button
@@ -1092,6 +1092,7 @@ Wrap
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -1456,7 +1457,6 @@ around
 array:
 array_filter([
 array_keys($sizeMap));
-array_values((array)
 arrive
 arrives
 arrives,

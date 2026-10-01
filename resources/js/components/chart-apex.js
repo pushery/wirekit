@@ -32,15 +32,29 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     // runtime rejects falls back to the browser's own preference instead of breaking the hover.
     const appLocale = (cfg.tooltip && cfg.tooltip.wkLocale) || undefined;
     const dateOptions = { month: 'short', day: '2-digit', year: 'numeric' };
-    const fmtTs = (v) => {
-        if (!(typeof v === 'number' && v > 1e10)) {
-            return v;
+    // A date is written as the chart's date axis writes one: in `tooltip.x.format` when the options
+    // give one, otherwise as a date in the application's locale, and in UTC unless
+    // `xaxis.labels.datetimeUTC` is false, which is the zone the axis itself is labeled in.
+    const xaxis = cfg.xaxis || {};
+    const dateAxis = xaxis.type === 'datetime';
+    const utc = !(xaxis.labels && xaxis.labels.datetimeUTC === false);
+    const xFormat = (cfg.tooltip && cfg.tooltip.x && typeof cfg.tooltip.x.format === 'string') ? cfg.tooltip.x.format : null;
+    const writeDate = (ms) => {
+        // A number past the range a Date holds is no instant; it is written as the number it is.
+        if (Number.isNaN(new Date(ms).getTime())) {
+            return String(ms);
         }
 
+        if (xFormat) {
+            return formatApexDate(new Date(ms), xFormat, utc, appLocale);
+        }
+
+        // The Gregorian calendar, as the axis is labeled, whatever calendar the locale prefers.
+        const options = { ...dateOptions, calendar: 'gregory', ...(utc ? { timeZone: 'UTC' } : {}) };
         try {
-            return new Date(v).toLocaleDateString(appLocale, dateOptions);
+            return new Date(ms).toLocaleDateString(appLocale, options);
         } catch {
-            return new Date(v).toLocaleDateString(undefined, dateOptions);
+            return new Date(ms).toLocaleDateString(undefined, options);
         }
     };
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
@@ -107,6 +121,49 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         xLabel = g.seriesX[seriesIndex][dataPointIndex];
     }
 
+    // On a date axis the point's x is a date, which ApexCharts parsed into `seriesX` from a number
+    // or from a string such as `2024-12-02`. Written as handed over, the title was the raw
+    // timestamp, or the string without its format. ApexCharts titles with a date when the x it
+    // drew is numeric; a timeline's x is its category, which stays the title.
+    if (dateAxis && g.isXNumeric) {
+        const parsed = g.seriesX && g.seriesX[seriesIndex] ? g.seriesX[seriesIndex][dataPointIndex] : undefined;
+        const instant = typeof parsed === 'number' ? parsed : xLabel;
+        if (typeof instant === 'number' && Number.isFinite(instant)) {
+            // ApexCharts reads `tooltip.x.format` only where neither the title nor the axis labels
+            // have a formatter; where one is set, it decides the title, with the arguments
+            // ApexCharts hands it. The component's options are JSON, so such a formatter comes from
+            // the page's own options, and what it returns is written as text like every title.
+            const ownTitle = typeof (cfg.tooltip && cfg.tooltip.x && cfg.tooltip.x.formatter) === 'function';
+            const ownLabels = typeof (xaxis.labels && xaxis.labels.formatter) === 'function';
+            const titled = (w.formatters && w.formatters.ttKeyFormatter) || g.ttKeyFormatter;
+            if ((ownTitle || ownLabels) && typeof titled === 'function') {
+                xLabel = (ownTitle
+                    ? titled(instant, { series, seriesIndex, dataPointIndex, w })
+                    : titled(instant, instant, {
+                        i: undefined,
+                        dateFormatter: (date, format) => formatApexDate(date, format, utc, appLocale),
+                        w,
+                    })) ?? instant;
+            } else {
+                xLabel = writeDate(instant);
+            }
+        }
+    }
+
+    // The two ends of a range, as ApexCharts parsed them from whichever form the point took
+    // (`{ x, y: [a, b] }`, `[x, [a, b]]`), and the given pair where it has not parsed any.
+    // ApexCharts writes them as dates on a timeline on a date axis and as values on every other
+    // range chart, a range column or a range area, whose dates are on the other axis.
+    const timeline = dateAxis && Boolean(g.isRangeBar);
+    const writeRange = (sIdx, given) => {
+        const start = g.seriesRangeStart && g.seriesRangeStart[sIdx] ? g.seriesRangeStart[sIdx][dataPointIndex] : undefined;
+        const end = g.seriesRangeEnd && g.seriesRangeEnd[sIdx] ? g.seriesRangeEnd[sIdx][dataPointIndex] : undefined;
+        const ends = (start !== undefined && end !== undefined) ? [start, end] : given;
+        const writeEnd = (v) => ((timeline && typeof v === 'number' && Number.isFinite(v)) ? writeDate(v) : fmtValue(v));
+
+        return `${writeEnd(ends[0])} – ${writeEnd(ends[1])}`;
+    };
+
     // Per-series row builder — extracts the {label, value} pairs for ONE
     // series at the given data-point index. Used in both shared and
     // single-series modes. Each pair becomes one body row.
@@ -115,6 +172,24 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         const sName = (typeof entry === 'object' && entry.name) || '';
         const rawPoint = entry && entry.data && entry.data[dataPointIndex];
         const rows = [];
+
+        // A candlestick and a boxplot are read from what ApexCharts parsed, because the length of
+        // a point does not say what it is: ApexCharts takes `{ x, y: [...] }`, `[x, [...]]` and a
+        // flat list with the x in front, where a candle `[x, open, high, low, close]` is as long
+        // as the five numbers of a boxplot.
+        const kind = (typeof entry === 'object' && entry.type) || apexType;
+        if (kind === 'candlestick' || kind === 'boxPlot') {
+            const [o, h, m, l, c] = ['O', 'H', 'M', 'L', 'C'].map((part) => {
+                const parsed = g[`seriesCandle${part}`];
+
+                return parsed && parsed[sIdx] ? parsed[sIdx][dataPointIndex] : undefined;
+            });
+            if (o !== undefined && c !== undefined) {
+                return kind === 'boxPlot'
+                    ? [{ label: 'Max', value: c }, { label: 'Q3', value: l }, { label: 'Median', value: m }, { label: 'Q1', value: h }, { label: 'Min', value: o }]
+                    : [{ label: 'Open', value: o }, { label: 'High', value: h }, { label: 'Low', value: l }, { label: 'Close', value: c }];
+            }
+        }
 
         if (Array.isArray(rawPoint) && rawPoint.length === 5) {
             // Boxplot tuple [min, Q1, median, Q3, max]
@@ -149,7 +224,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
                 rows.push({ label: 'Low', value: l });
                 rows.push({ label: 'Close', value: c });
             } else if (Array.isArray(y) && y.length === 2) {
-                rows.push({ label: sName, value: `${fmtTs(y[0])} – ${fmtTs(y[1])}` });
+                rows.push({ label: sName, value: writeRange(sIdx, y) });
             } else if (y !== undefined) {
                 rows.push({ label: sName, value: y });
             }
@@ -157,7 +232,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
                 rows.push({ label: 'Size', value: rawPoint.z });
             }
         } else if (Array.isArray(rawPoint) && rawPoint.length === 2 && (apexType === 'rangeBar' || apexType === 'rangeArea')) {
-            rows.push({ label: sName, value: `${fmtTs(rawPoint[0])} – ${fmtTs(rawPoint[1])}` });
+            rows.push({ label: sName, value: writeRange(sIdx, Array.isArray(rawPoint[1]) ? rawPoint[1] : rawPoint) });
         } else if (Array.isArray(series[sIdx])) {
             // Cartesian (bar / line / area / radar) — series[i] is number[]
             rows.push({ label: sName, value: series[sIdx][dataPointIndex] });
@@ -181,18 +256,27 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     // shared-mode rendering is OUR responsibility inside the custom
     // callback.
     const sharedMode = cfg.tooltip && cfg.tooltip.shared === true;
+    // The index is shared, the x need not be: two series with dates of their own have different
+    // points at the same index, and the values of one do not belong under the date of the other.
+    // So a shared tooltip leaves out a series whose x at the index is another one than the hovered.
+    // Where ApexCharts keeps no x for a series, on an axis of categories, the index is the category.
+    const xAt = (sIdx) => (g.seriesX && g.seriesX[sIdx] ? g.seriesX[sIdx][dataPointIndex] : undefined);
+    const hoveredX = xAt(seriesIndex);
     const seriesIndices = (sharedMode && Array.isArray(cfg.series) && cfg.series.length > 1)
-        ? cfg.series.map((_, i) => i)
+        ? cfg.series.map((_, i) => i).filter((i) => hoveredX === undefined || xAt(i) === undefined || xAt(i) === hoveredX)
         : [seriesIndex];
 
     // Accumulate rows from every contributing series. Each row carries its
     // own series color so multi-series tooltips render the correct marker
-    // color per row.
+    // color per row. A series without a value at the index, a shorter one or one the reader
+    // switched off in the legend, has no row, as in ApexCharts' own tooltip.
     const bodyRows = [];
     seriesIndices.forEach((sIdx) => {
         const color = (g.colors && g.colors[sIdx]) || '#888';
         rowsForSeries(sIdx).forEach((r) => {
-            bodyRows.push({ ...r, color });
+            if (r.value !== undefined && r.value !== null) {
+                bodyRows.push({ ...r, color });
+            }
         });
     });
 
@@ -221,6 +305,293 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
 // the public default export; esbuild tree-shakes this unused named export out of
 // the browser bundles, so it adds no shipped weight.
 export { renderUnifiedTooltip };
+
+/**
+ * A date written in an ApexCharts date format such as `MMM dd, yyyy HH:mm`, with the tokens
+ * ApexCharts' own tooltip reads, and the month and weekday names in `locale`.
+ *
+ * The format is read in one pass, longest token first, so a name that holds a token letter is
+ * never read again; a backslash keeps the character after it as written, as in ApexCharts.
+ *
+ * @param {Date} date
+ * @param {string} format
+ * @param {boolean} utc - Write the date in UTC rather than the reader's zone.
+ * @param {string|undefined} locale - A BCP-47 tag; the runtime's own when it rejects the tag.
+ * @returns {string}
+ */
+export function formatApexDate(date, format, utc, locale) {
+    if (Number.isNaN(date.getTime())) {
+        return String(date);
+    }
+
+    const timeZone = utc ? 'UTC' : undefined;
+    // The names come from the Gregorian calendar the numbers are read in, also for a locale whose
+    // own calendar is another one, as ApexCharts writes them.
+    const name = (options) => {
+        try {
+            return new Intl.DateTimeFormat(locale, { ...options, timeZone, calendar: 'gregory' }).format(date);
+        } catch {
+            return new Intl.DateTimeFormat(undefined, { ...options, timeZone, calendar: 'gregory' }).format(date);
+        }
+    };
+    const pad = (n) => String(n).padStart(2, '0');
+    const year = String(utc ? date.getUTCFullYear() : date.getFullYear());
+    const month = (utc ? date.getUTCMonth() : date.getMonth()) + 1;
+    const day = utc ? date.getUTCDate() : date.getDate();
+    const hours = utc ? date.getUTCHours() : date.getHours();
+    const minutes = utc ? date.getUTCMinutes() : date.getMinutes();
+    const seconds = utc ? date.getUTCSeconds() : date.getSeconds();
+    const milliseconds = utc ? date.getUTCMilliseconds() : date.getMilliseconds();
+    // The shorter fractions are rounded from the longer one, as ApexCharts does: `ff` is hundredths,
+    // `f` tenths.
+    const hundredths = Math.round(milliseconds / 10);
+    const twelve = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+    const meridiem = hours < 12 ? 'AM' : 'PM';
+    // `K` is the zone as an offset, `Z` in UTC and for a reader whose zone has none.
+    const offset = -date.getTimezoneOffset();
+    const zone = (utc || offset === 0)
+        ? 'Z'
+        : `${offset > 0 ? '+' : '-'}${pad(Math.floor(Math.abs(offset) / 60))}:${pad(Math.abs(offset) % 60)}`;
+    const values = {
+        yyyy: year, yy: year.slice(2, 4), y: year,
+        MMMM: () => name({ month: 'long' }), MMM: () => name({ month: 'short' }), MM: pad(month), M: String(month),
+        dddd: () => name({ weekday: 'long' }), ddd: () => name({ weekday: 'short' }), dd: pad(day), d: String(day),
+        HH: pad(hours), H: String(hours), hh: pad(twelve), h: String(twelve),
+        mm: pad(minutes), m: String(minutes), ss: pad(seconds), s: String(seconds),
+        fff: String(milliseconds).padStart(3, '0'), ff: pad(hundredths), f: String(Math.round(hundredths / 10)),
+        TT: meridiem, T: meridiem.charAt(0), tt: meridiem.toLowerCase(), t: meridiem.charAt(0).toLowerCase(),
+        K: zone,
+    };
+
+    return format.replace(/\\(.)|y{4,}|yy|y|M{4,}|MMM|MM|M|d{4,}|ddd|dd|d|H{2,}|H|h{2,}|h|m{2,}|m|s{2,}|s|f{3,}|ff|f|T{2,}|T|t{2,}|t|K/g, (token, escaped) => {
+        if (escaped !== undefined) {
+            return escaped;
+        }
+
+        // A run longer than a token reads as the longest token it starts with: `yyyyy` as `yyyy`.
+        const value = values[token] ?? values[token.slice(0, 4)] ?? values[token.slice(0, 3)] ?? values[token.slice(0, 2)];
+
+        return typeof value === 'function' ? value() : value;
+    });
+}
+
+/**
+ * A value from the chart's data, as text inside markup.
+ *
+ * @param {*} value
+ * @returns {string}
+ */
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+}
+
+/**
+ * A data point whose goals carry their name, value and color as text, and any other point as it is.
+ *
+ * ApexCharts writes the goals of a bar into its tooltip as markup, the color inside a `style`
+ * attribute, and it does so behind `tooltip.custom` as well. A valid color holds none of the
+ * characters escaping changes, and neither does a number, so a goal draws as before.
+ *
+ * @param {*} point
+ * @returns {*}
+ */
+export function goalsAsText(point) {
+    if (! point || typeof point !== 'object' || ! Array.isArray(point.goals)) {
+        return point;
+    }
+
+    return Object.assign({}, point, {
+        goals: point.goals.map((goal) => {
+            if (! goal || typeof goal !== 'object') {
+                return goal;
+            }
+
+            const own = Object.assign({}, goal);
+            for (const key of ['name', 'value', 'strokeColor']) {
+                if (typeof own[key] === 'string') {
+                    own[key] = escapeHtml(own[key]);
+                }
+            }
+
+            return own;
+        }),
+    });
+}
+
+/**
+ * The series of a chart with the goals of every point as text (`goalsAsText()`).
+ *
+ * @param {*} series
+ * @returns {*}
+ */
+export function seriesAsText(series) {
+    if (! Array.isArray(series)) {
+        return series;
+    }
+
+    return series.map((one) => (one && typeof one === 'object' && Array.isArray(one.data)
+        ? Object.assign({}, one, { data: one.data.map(goalsAsText) })
+        : one));
+}
+
+/**
+ * A function the page set for every chart through ApexCharts' global options, `window.Apex`.
+ *
+ * ApexCharts lays a chart's own options over those globals, so a formatter or a handler set on the
+ * chart here would hide one the page set there. Where the page set one, it stays in charge.
+ *
+ * @param {string[]} path - The keys down to the option, as in `['legend', 'formatter']`.
+ * @returns {Function|undefined}
+ */
+function pageWideApexOption(path) {
+    let node = typeof window === 'undefined' ? undefined : window.Apex;
+    for (const key of path) {
+        if (node === null || typeof node !== 'object') {
+            return undefined;
+        }
+        node = node[key];
+    }
+
+    return typeof node === 'function' ? node : undefined;
+}
+
+/**
+ * The title ApexCharts writes over a tooltip when no formatter is set, on an axis that holds no dates:
+ * the label through the value axis of a horizontal bar chart, through the category axis otherwise.
+ *
+ * @param {*} value - The label of the hovered point.
+ * @param {Object} [opts] - What ApexCharts hands a formatter, `w` among it.
+ * @returns {*}
+ */
+function defaultApexTitle(value, opts) {
+    const w = opts && opts.w;
+    const formatters = w && w.formatters;
+    if (!formatters) {
+        return value;
+    }
+
+    const formatter = w.globals && w.globals.isBarHorizontal
+        ? (Array.isArray(formatters.yLabelFormatters) ? formatters.yLabelFormatters[0] : undefined)
+        : formatters.xLabelFormatter;
+    if (typeof formatter !== 'function') {
+        return value;
+    }
+
+    const shown = formatter(value, opts);
+
+    return shown === undefined || shown === null ? value : shown;
+}
+
+/**
+ * Give every legend entry under `root` the name it shows as its accessible name.
+ *
+ * ApexCharts builds the accessible name of a legend entry from the same string it writes into the
+ * entry as markup, so with the name escaped for that markup the entry was named `R&amp;D` where it
+ * shows `R&D`. The chart component hides its mount from assistive technology, but the factory can be
+ * mounted without that, and then the legend is what a screen reader reads. Once an entry is toggled,
+ * ApexCharts builds the name from the text the entry shows; this does the same after every draw. An
+ * accessible name that does not begin with the escaped text came from a formatter of the developer and
+ * is left as it is.
+ *
+ * @param {Element} [root] - The element the chart was drawn into.
+ */
+export function legendNamesAsText(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') {
+        return;
+    }
+
+    for (const entry of root.querySelectorAll('.apexcharts-legend-series[aria-label]')) {
+        const text = entry.querySelector('.apexcharts-legend-text');
+        const label = entry.getAttribute('aria-label');
+        if (!text || label === null) {
+            continue;
+        }
+
+        const name = text.textContent;
+        const escaped = escapeHtml(name);
+        if (escaped !== name && label.startsWith(`${escaped}, `)) {
+            entry.setAttribute('aria-label', name + label.slice(escaped.length));
+        }
+    }
+}
+
+/**
+ * Hand ApexCharts the labels and series names of the chart as text wherever it writes them as markup.
+ *
+ * ApexCharts draws its axes and data labels as SVG text, but it writes a series name or a label into
+ * its legend and into its own tooltip with `innerHTML`: the legend entry, the tooltip's title and the
+ * name in front of each value. It writes the tooltip's parts even while `tooltip.custom` draws the
+ * tooltip the reader sees, into elements the custom markup has replaced, and an image in such a string
+ * still loads. So a label from the application's data, a product a user named
+ * `<img src=x onerror=…>`, ran in the page when the chart was drawn or hovered.
+ *
+ * A formatter on each of the three places returns the text escaped, and otherwise the text ApexCharts'
+ * own default gives: a label of several lines stays a list of lines, and the title of a horizontal bar
+ * goes through the value axis as ApexCharts' own title does. On a date axis the title is left to
+ * ApexCharts, which writes a date formatted with `tooltip.x.format` there rather than the label itself;
+ * a formatter of ours would replace that date with the raw value. A timeline, a horizontal chart on a
+ * date axis, titles its tooltip with the category instead and so keeps the formatter. A formatter
+ * that the options or the page's global options already carry is left alone: it is the developer's,
+ * and it owns what it returns.
+ *
+ * ApexCharts also gives a legend entry the escaped string as its accessible name, so after every draw
+ * the name is taken from the text the entry shows (`legendNamesAsText()`), and a `mounted` or `updated`
+ * handler the options or the page already carry still runs after it.
+ *
+ * The goals of a bar have no formatter to go through, so their name, value and color are handed
+ * over as text in the series itself (`seriesAsText()`), here and wherever new data reaches the chart.
+ *
+ * @param {Object} config - The ApexCharts options, completed in place.
+ */
+export function textOnlyInApexMarkup(config) {
+    config.series = seriesAsText(config.series);
+
+    config.legend = Object.assign({}, config.legend);
+    if (typeof config.legend.formatter !== 'function' && !pageWideApexOption(['legend', 'formatter'])) {
+        // ApexCharts joins the lines of a list with a space, in the entry and in its name.
+        config.legend.formatter = (name) => (Array.isArray(name) ? name.map(escapeHtml) : escapeHtml(name));
+    }
+
+    config.tooltip = Object.assign({}, config.tooltip);
+    config.tooltip.x = Object.assign({}, config.tooltip.x);
+    // A horizontal chart on a date axis, a timeline, titles its tooltip with the category from the
+    // data rather than with a date, so it needs the escaping formatter like any other category.
+    const horizontal = Boolean(config.plotOptions && config.plotOptions.bar && config.plotOptions.bar.horizontal);
+    const datesInTitle = Boolean(config.xaxis && config.xaxis.type === 'datetime') && !horizontal;
+    if (!datesInTitle && typeof config.tooltip.x.formatter !== 'function' && !pageWideApexOption(['tooltip', 'x', 'formatter'])) {
+        config.tooltip.x.formatter = (value, opts) => escapeHtml(defaultApexTitle(value, opts));
+    }
+
+    // `tooltip.y` may be one object for every series or one per series.
+    const pageWideTitle = pageWideApexOption(['tooltip', 'y', 'title', 'formatter']);
+    const titled = (y) => {
+        const own = Object.assign({}, y);
+        own.title = Object.assign({}, own.title);
+        if (typeof own.title.formatter !== 'function' && !pageWideTitle) {
+            // ApexCharts' own default, with the name escaped.
+            own.title.formatter = (name) => (name ? `${escapeHtml(name)}: ` : '');
+        }
+
+        return own;
+    };
+    config.tooltip.y = Array.isArray(config.tooltip.y) ? config.tooltip.y.map(titled) : titled(config.tooltip.y);
+
+    config.chart = Object.assign({}, config.chart);
+    config.chart.events = Object.assign({}, config.chart.events);
+    for (const name of ['mounted', 'updated']) {
+        const given = typeof config.chart.events[name] === 'function'
+            ? config.chart.events[name]
+            : pageWideApexOption(['chart', 'events', name]);
+        config.chart.events[name] = (chart, options) => {
+            legendNamesAsText(chart && chart.el);
+            if (given) {
+                given(chart, options);
+            }
+        };
+    }
+}
 
 /**
  * WireKit ApexCharts Alpine Component.
@@ -276,6 +647,9 @@ export default function wirekitApexChart(config) {
         // it fires on class mutations that have nothing to do with the theme, and this
         // is what tells those apart from a real one.
         _themeSignature: null,
+        // The config a theme swap re-themes from, holding the data the chart shows now: a
+        // Livewire update and a streamed point write theirs into it (see init()).
+        _rawConfig: null,
         // The bounded retry for the first render, and the standing watch that
         // keeps the tab stops stripped through every later rebuild. Declared
         // here with the other handles so destroy() has a complete list to work
@@ -475,6 +849,12 @@ window.ApexCharts = ApexCharts;</pre>
                 // is; the call covers a caller who passes a reactive object.
                 const rawConfig = this._flattenApexConfig(Alpine.raw(config));
 
+                // A theme swap re-themes from this config, so it has to hold the data the chart
+                // shows: a Livewire update and a streamed point write theirs into it too. New
+                // arrays are assigned rather than shared ones changed, because the copy above is
+                // shallow and its arrays belong to the factory's argument.
+                this._rawConfig = rawConfig;
+
                 // Read CSS variables off the mount element — resolves correctly
                 // regardless of whether .dark is on <html>, <body>, or an ancestor.
                 const style = getComputedStyle(mount);
@@ -497,6 +877,8 @@ window.ApexCharts = ApexCharts;</pre>
                 if (themed.tooltip && themed.tooltip.custom === 'WIREKIT_DEFAULT_TOOLTIP') {
                     themed.tooltip.custom = renderUnifiedTooltip;
                 }
+
+                textOnlyInApexMarkup(themed);
 
                 // Per-type tooltip auto-formatters. ApexCharts' native
                 // renderers don't always handle tuple-shaped y-values
@@ -1034,14 +1416,26 @@ window.ApexCharts = ApexCharts;</pre>
                 return;
             }
 
-            const next = { series: payload.series };
+            // New data reaches ApexCharts' markup as the first data did (`textOnlyInApexMarkup()`).
+            const next = { series: seriesAsText(payload.series) };
+
+            // The data a later theme swap re-themes from: as handed over, since the swap escapes it.
+            if (this._rawConfig) {
+                this._rawConfig.series = payload.series;
+            }
 
             if (Array.isArray(payload.labels)) {
                 next.labels = payload.labels;
+                if (this._rawConfig) {
+                    this._rawConfig.labels = payload.labels;
+                }
             }
 
             if (Array.isArray(payload.xaxis?.categories)) {
                 next.xaxis = { categories: payload.xaxis.categories };
+                if (this._rawConfig) {
+                    this._rawConfig.xaxis = Object.assign({}, this._rawConfig.xaxis, { categories: payload.xaxis.categories });
+                }
             }
 
             try {
@@ -1139,16 +1533,29 @@ window.ApexCharts = ApexCharts;</pre>
                 // touching the underlying series state.
                 const maxIdx = queue.reduce((m, q) => Math.max(m, q.seriesIndex), 0);
                 const payload = [];
+                const given = [];
                 for (let i = 0; i <= maxIdx; i++) {
-                    payload.push({ data: queue.filter((q) => q.seriesIndex === i).map((q) => q.point) });
+                    given.push(queue.filter((q) => q.seriesIndex === i).map((q) => q.point));
+                    payload.push({ data: given[i].map(goalsAsText) });
                 }
                 this.chart.appendData(payload);
+
+                // The points belong to the data a theme swap re-themes from as well.
+                if (this._rawConfig && Array.isArray(this._rawConfig.series)) {
+                    this._rawConfig.series = this._rawConfig.series.map((series, i) => (
+                        given[i] && given[i].length && series && Array.isArray(series.data)
+                            ? Object.assign({}, series, { data: series.data.concat(given[i]) })
+                            : series
+                    ));
+                }
             };
 
             this._wireStreamHandler = (event) => {
                 if (!this.chart) return;
                 const detail = event.detail || {};
                 const seriesIndex = detail.datasetIndex ?? 0;
+                // Queued as handed over: the flush escapes it for ApexCharts and keeps it as it is for
+                // the data a theme swap re-themes from, which escapes it there.
                 const point = detail.point;
                 if (point === undefined) return;
 
@@ -1204,6 +1611,9 @@ window.ApexCharts = ApexCharts;</pre>
                     this._themeSignature = signature;
 
                     const themed = this._themeApexConfig(rawConfig, colors, fontFamily);
+
+                    // The theme swap hands ApexCharts the options again; the labels stay text.
+                    textOnlyInApexMarkup(themed);
 
                     // Smooth transition — collapsed to instant
                     // under prefers-reduced-motion.

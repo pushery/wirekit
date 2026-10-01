@@ -153,7 +153,6 @@ $name)
 $offset
 $opensNewTab
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $orientation
 $outerAttributes
@@ -573,6 +572,7 @@ $wrapLabel
 (an
 (and
 (aria-live="polite")
+(array)
 (auto
 (avoids
 (bool)
@@ -1268,6 +1268,7 @@ Your
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -1697,7 +1698,6 @@ arms
 around
 array:
 array_filter([
-array_values((array)
 arrive
 arrives
 arrives,

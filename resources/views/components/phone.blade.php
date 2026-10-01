@@ -65,7 +65,10 @@
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
     // The offered set. An unknown code in `countries` is dropped rather than rendered as an
-    // empty row: a picker line with no dialing code behind it cannot do anything.
+    // empty row: a picker line with no dialing code behind it cannot do anything. A Collection
+    // is read as the codes it holds; cast with `(array)`, an object becomes its properties.
+    $countries = \Pushery\WireKit\Support\ListProp::from($countries);
+    $countryOrder = \Pushery\WireKit\Support\ListProp::from($countryOrder);
     $offered = $countries === null
         ? DialingCodes::countries()
         : array_values(array_filter(

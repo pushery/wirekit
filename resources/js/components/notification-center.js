@@ -23,6 +23,7 @@
  * @param {string} config.realtimeEvent - optional window event name to listen for new items
  */
 import { focusIsWithin, position } from '../utils/floating.js';
+import { isComposing } from '../utils/ime.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { safeHref } from '../utils/safe-href.js';
@@ -228,6 +229,9 @@ export default function wirekitNotificationCenter(config = {}) {
          * @param {KeyboardEvent} event
          */
         escapeFlyout(event) {
+            // An Escape that abandons an input method's conversion belongs to the input method.
+            if (isComposing(event)) return;
+
             if (! this.isOpen || event?.defaultPrevented) return;
 
             event?.preventDefault();

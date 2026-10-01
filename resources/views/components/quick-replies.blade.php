@@ -27,7 +27,7 @@
     // reader sees are the value the application gets back.
     $items = [];
 
-    foreach ($replies as $reply) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($replies) as $reply) {
         $entry = is_array($reply) ? $reply : ['label' => $reply];
         $itemLabel = (string) ($entry['label'] ?? '');
 

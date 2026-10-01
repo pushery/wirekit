@@ -14,7 +14,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/carousel/
  */
-import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior, watchReducedMotion } from '../utils/motion.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 export default function wirekitCarousel(config = {}) {
     return {
@@ -175,7 +175,7 @@ export default function wirekitCarousel(config = {}) {
 
             // Smooth scrolling is motion too. Jumping is the honest fallback —
             // the slide still changes, it just does not travel.
-            const behavior = this._prefersReducedMotion() ? 'auto' : 'smooth';
+            const behavior = scrollBehavior(!this._prefersReducedMotion());
 
             // Measure against the viewport's own box rather than offsetLeft:
             // offsetLeft is relative to the nearest positioned ancestor, and the

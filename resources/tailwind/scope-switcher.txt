@@ -134,7 +134,6 @@ $item['label'],
 $item['meta']
 $item['status']
 $item['url']))
-$item['url']),
 $key
 $key,
 $label
@@ -245,7 +244,6 @@ $wrapperClasses
 '
 ''
 '')
-''));
 ''),
 '');
 '',
@@ -484,7 +482,6 @@ $wrapperClasses
 ("3
 ($attributes->getAttributes()
 ($callerAriaHidden
-($create['url']
 ($current
 ($declarativeLoading
 ($forceLoading)
@@ -495,7 +492,6 @@ $wrapperClasses
 ($isInformative
 ($item['keywords']
 ($item['meta']
-($items
 ($orientation
 ($relAttr
 ($resolvedAriaHidden
@@ -515,6 +511,7 @@ $wrapperClasses
 (Tailwind's
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
+(\Pushery\WireKit\Support\ListProp::records($items)
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
 (`--z-wk-dropdown`),
@@ -570,6 +567,7 @@ $wrapperClasses
 (text
 (transparent
 (true
+(utils/ime.js).
 (which
 (wire:click
 ));
@@ -838,6 +836,7 @@ HERE,
 HORIZONTAL
 HTML
 HTTP
+Handed
 Header.
 Hidden
 Hidden,
@@ -861,6 +860,7 @@ JAWS
 JavaScript
 Joining
 Kept
+Key
 Keys
 LINE
 LIST
@@ -966,6 +966,7 @@ Soft
 Spelled
 Spelling
 Stable
+Stringable
 Strip
 SvgNotFound
 SvgNotFound.
@@ -1063,7 +1064,8 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($row['key'])
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
-\Pushery\WireKit\Support\SafeUrl::href((string)
+\Pushery\WireKit\Support\SafeUrl::href($create['url']
+\Pushery\WireKit\Support\SafeUrl::href($item['url']),
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1413,6 +1415,7 @@ axis:
 back
 back.
 back:
+backed
 background)
 background,
 badge
@@ -1663,6 +1666,7 @@ component,
 component.
 components
 composer
+composing
 concatenation
 concern
 condition
@@ -1883,6 +1887,7 @@ ends
 ends,
 enough
 entry
+enum.
 error
 error,
 errors.
@@ -2237,6 +2242,7 @@ is
 is"
 is,
 is.
+is:
 is_array($item)
 is_string($name)
 isn't
@@ -2410,6 +2416,7 @@ merely
 merge
 merges
 message
+method
 mid-word
 middle
 middle,
@@ -2704,6 +2711,7 @@ presentational
 preserves
 preset
 pressed
+presses
 prevent
 preventDefault
 preventDefault,
@@ -3527,6 +3535,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0
 x-transition:leave-start="opacity-100
 x-transition:leave="transition
+x-wk-ime
 xl
 xmlns="http://www.w3.org/2000/svg"
 yet.

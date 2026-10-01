@@ -149,7 +149,6 @@ $offset
 $openOnValueClick
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $optionLabel
 $optionLabel)
@@ -556,6 +555,7 @@ $width
 (an
 (and
 (aria-live="polite")
+(array)
 (arrow-key
 (auto
 (avoids
@@ -841,6 +841,7 @@ $width
 @endphp
 @foreach($optionLabel
 @foreach($options
+@foreach(\Pushery\WireKit\Support\ListProp::from($options)
 @if
 @if($actions)
 @if($announceError)
@@ -1251,6 +1252,8 @@ Your
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::from($options);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\SlotContent::text($slot),
 \Pushery\WireKit\Support\SlotContent::withoutComments($slot)
@@ -1606,7 +1609,6 @@ array
 array_filter([
 array_filter([$hintId,
 array_key_exists('label',
-array_values((array)
 arrays,
 arrive
 arrives
@@ -3877,6 +3879,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ime
 x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet

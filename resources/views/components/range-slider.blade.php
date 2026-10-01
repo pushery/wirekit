@@ -112,6 +112,7 @@
     // Spoken-value map, string-keyed so the JS lookup matches (Alpine compares the
     // numeric value against object keys, which are always strings).
     $rangeValueTextMap = [];
+    $valueTextMap = \Pushery\WireKit\Support\ListProp::from($valueTextMap);
     if (is_array($valueTextMap)) {
         foreach ($valueTextMap as $mValue => $mLabel) {
             $rangeValueTextMap[(string) $mValue] = (string) $mLabel;
@@ -293,7 +294,7 @@
         // cannot run against a region nobody pointed at.
         'errorRegion' => '#'.$id.'-error',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second commit while one is in flight would resolve by whichever
         // answer arrives last — network timing, which is both wrong and

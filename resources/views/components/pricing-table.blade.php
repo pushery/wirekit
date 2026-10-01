@@ -51,7 +51,9 @@
         'items-stretch',
     ]), $scope);
 
-    // Normalize the intervals map and pick the one selected on first paint.
+    // Normalize the intervals map and pick the one selected on first paint. It may arrive as a
+    // Collection, which is what `pluck('label', 'key')` gives.
+    $intervals = \Pushery\WireKit\Support\ListProp::from($intervals);
     $intervalMap = is_array($intervals) && $intervals !== [] ? $intervals : null;
     $defaultInterval = $intervalMap !== null ? (string) array_key_first($intervalMap) : null;
 

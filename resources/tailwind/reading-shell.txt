@@ -161,6 +161,7 @@ $scope)])
 $sectionEvents
 $segmentColor
 $segmentColor.'
+$segments
 $segmentsArray
 $segmentsStyle
 $showAfter
@@ -1094,6 +1095,7 @@ Y
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\ListProp::from($segments);
 \Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('reading-bookmark',

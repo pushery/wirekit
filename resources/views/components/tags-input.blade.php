@@ -111,7 +111,9 @@
     // Normalize the initial value into an array of strings. Accepts a real
     // array (e.g. `:value="['Laravel', 'Livewire']"`) or a comma-separated
     // string (e.g. `value="Laravel,Livewire"`); both shapes appear in
-    // existing developer codebases.
+    // existing developer codebases. A Collection is read as the list it holds; the branch
+    // below would otherwise take it for no value and start the field empty.
+    $value = \Pushery\WireKit\Support\ListProp::from($value);
     if (is_string($value)) {
         $initialTags = array_values(array_filter(array_map('trim', explode(',', $value)), fn ($t) => $t !== ''));
     } elseif (is_array($value)) {
@@ -203,7 +205,7 @@
     $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'tags',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
@@ -269,7 +271,9 @@
         {{-- Hidden inputs for form submission — one per tag --}}
         <template x-for="(tag, i) in tags" :key="i">
             {{-- A disabled field is left out of the form data, as a native one is. --}}
-            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="tag" @if($disabled) disabled @endif />
+            {{-- The name ends in `[]` once, whether the caller wrote `skills` or `skills[]`, the way a
+                 native multiple select is written. Twice, PHP reads a list of one-item lists. --}}
+            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" :value="tag" @if($disabled) disabled @endif />
         </template>
 
         {{-- `wk-field-frame`: on a coarse pointer the frame takes the 44px touch floor and the text
@@ -327,6 +331,8 @@
                 breathing room.
             --}}
             <input
+                {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
+                x-wk-ime
                 type="text"
                 id="{{ $fieldId }}"
                 x-ref="input"
@@ -358,7 +364,10 @@
                 @keydown.comma.prevent="addTag()"
                 @keydown.backspace="onBackspace($event)"
                 @keydown.escape="onEscape($event)"
-                class="wk-field flex-1 min-w-[80px] px-2 bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden disabled:cursor-not-allowed"
+                {{-- `w-0`: the input grows into the row through `flex-1`, and asks for no more than its
+                     minimum. Without it WebKit takes a text input's default width as its minimum, and
+                     a framed field 258px wide stood 13px past its container. --}}
+                class="wk-field flex-1 w-0 min-w-[80px] px-2 bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden disabled:cursor-not-allowed"
             />
         </div>
 @if($optimisticConfig)

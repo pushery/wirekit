@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — client-only
      A timer. --}}
 @props([
-    // The ABSOLUTE target instant — a Carbon, an ISO-8601 string, or a unix
+    // The ABSOLUTE target instant — a date object of any class, an ISO-8601 string, or a unix
     // timestamp. Absolute, never a duration: a duration drifts the moment the
     // tab sleeps or the page is cached; an absolute instant is recomputed from
     // the real clock on every tick.
@@ -27,6 +27,10 @@
     'separators' => true,
     // BCP-47 locale for the separators. Null → the app locale.
     'locale' => null,
+    // The zone the deadline is written in for the reader, a name such as "Europe/Berlin": the
+    // deadline in the accessible name and the `datetime` of the time element. Null → the zone of
+    // the value given. The countdown itself counts to the same instant either way.
+    'timezone' => null,
     // Change animation. For the segments variant, choose the style:
     //   true / "box"  → the whole box pulses (border + accent flash + scale pop)
     //   "text"        → only the changing number briefly flashes the accent color
@@ -37,8 +41,9 @@
 ])
 
 @php
+    use Carbon\CarbonImmutable;
     use Pushery\WireKit\Support\BooleanProp;
-    use Carbon\Carbon;
+    use Pushery\WireKit\Support\Moment;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -57,17 +62,14 @@
         default => WireKit::validateProp('countdown', 'variant', $variant, ['inline', 'segments']),
     };
 
-    // Resolve the target to a Carbon. Invalid / null `until` degrades to "now" so
-    // a misconfigured deadline reads as immediately-overdue rather than throwing.
-    $target = null;
-    if ($until !== null) {
-        $target = $until instanceof Carbon
-            ? $until
-            : (is_numeric($until) ? Carbon::createFromTimestamp((int) $until) : Carbon::parse((string) $until));
-    }
-    $targetMs = $target ? $target->getTimestampMs() : Carbon::now()->getTimestampMs();
-    $targetIso = ($target ?? Carbon::now())->toIso8601String();
-    $humanDeadline = ($target ?? Carbon::now())->isoFormat('LLL');
+    // Resolve the target to the instant it names; a date object of any class keeps its zone
+    // (Support\Moment). A null `until` degrades to "now" so a missing deadline reads as
+    // immediately overdue rather than throwing.
+    $target = Moment::of($until) ?? CarbonImmutable::now();
+    $shownTarget = Moment::in($target, $timezone, 'countdown');
+    $targetMs = $target->getTimestampMs();
+    $targetIso = $shownTarget->toIso8601String();
+    $humanDeadline = $shownTarget->isoFormat('LLL');
 
     $expiredLabel = $expiredText ?? __('wirekit::Overdue');
     $warnSeconds = $warnThreshold !== null ? (int) $warnThreshold : null;

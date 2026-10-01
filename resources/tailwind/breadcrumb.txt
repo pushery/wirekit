@@ -36,7 +36,10 @@ $currentClasses
 $data;
 $e)
 $e;
+$hasItems
+$hasItems)
 $href
+$href;
 $i
 $icon
 $iconWrap
@@ -46,7 +49,7 @@ $isLast
 $item)
 $item,
 $item;
-$item['href']
+$items
 $items,
 $json
 $label
@@ -182,7 +185,6 @@ $wkNonce
 ($callerAriaHidden
 ($isInformative
 ($item):
-($item['href']
 ($item['icon']
 ($item['label']
 ($json
@@ -238,7 +240,6 @@ $wkNonce
 />
 />@endif
 /docs,
-0)
 0;
 0;">
 1
@@ -284,13 +285,15 @@ $wkNonce
 ?
 ??
 @else
-@elseif(!$href)
+@elseif($href
 @endforeach
 @endif
 @endphp
 @endunless
 @foreach($items
 @if
+@if($hasItems
+@if($hasItems)
 @if($icon)<x-wirekit::icon
 @if($isLast)
 @if($json
@@ -327,6 +330,8 @@ COMPILED,
 CSP
 Catching
 Check
+Collection;
+Compared
 Consecutive
 Content
 Current
@@ -377,6 +382,7 @@ Latin-1
 Left
 Link
 ListItem
+ListProp::records($items);
 Logger
 MOST
 Muted
@@ -403,6 +409,7 @@ Policy,
 Product
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\ListProp;
 Pushery\WireKit\WireKit;
 Reapply
 Render
@@ -413,6 +420,7 @@ SVG
 SVG/icon),
 SVG:
 Safe
+SafeUrl
 Same
 Schema.org
 Schema::breadcrumbItems(),
@@ -436,6 +444,8 @@ Turn
 U+FFFD
 UNBOUND
 URL
+URL,
+URL.
 URLs
 UTF-8
 UTF-8,
@@ -464,6 +474,7 @@ XSS
 [structured-data]:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Schema\Schema::breadcrumbItems(array_values(array_map(
+\Pushery\WireKit\Support\SafeUrl::href($item['href']
 \Pushery\WireKit\WireKit::cspNonce();
 \Pushery\WireKit\WireKit::warnUnknownProps('breadcrumb',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -478,6 +489,7 @@ XSS
 __('wirekit::Breadcrumb')
 __toString
 `$linkClasses`
+`0`
 `</script>`
 `<`
 `<`/`>`.
@@ -493,19 +505,23 @@ __toString
 `Svg
 `ancestor`
 `aria-hidden="true"`
+`aria-hidden`
 `aria-label`
 `aria-labelledby`
+`array_key_last()`
 `class="h-12
 `class="…"`
 `current`
 `flex-wrap`,
 `group-data-`
 `heroicon-m-inbox`
+`href`
 `icon`
 `implode('
 `inbox`
 `inline-flex`
 `items-center`
+`javascript:`
 `resolveClasses()`
 `role="img"`.
 `schema="false"`
@@ -513,6 +529,7 @@ __toString
 `script-src`
 `self-center`
 `slot`
+`wire:key`
 `wk-touch-target`
 `x-wirekit::`
 a
@@ -542,6 +559,7 @@ allow
 allowed
 alone
 already
+among
 an
 anchored
 and
@@ -552,6 +570,7 @@ any
 anything.
 app(IconResolver::class)->resolve($name);
 application
+application's
 applies
 apply
 are
@@ -580,6 +599,7 @@ array_key_exists('@context',
 array_key_exists('@graph',
 array_key_last($items);
 array_keys($sizeMap));
+arrives
 as
 asked.
 at
@@ -587,8 +607,10 @@ at.
 attempted
 attribute
 attribute,
+attributes,
 auto-derived
 back
+back.
 baked
 bakes
 bar
@@ -628,10 +650,12 @@ branch's
 breadcrumb
 break
 breaks
+bring
 browser-default
 bug
 build
 builders
+built
 but
 button
 buttons).
@@ -650,6 +674,7 @@ case.
 cast
 catalog's
 catch
+category
 caught
 centers
 changes
@@ -702,6 +727,7 @@ containing
 content
 context
 control
+control,
 copy
 copy-link
 costs
@@ -711,6 +737,7 @@ counted
 covered
 crawler
 crumb
+crumb:
 crumbs
 current
 data
@@ -746,6 +773,7 @@ did
 diff
 direct
 discards
+display
 document
 document:
 does
@@ -763,6 +791,7 @@ either
 either.
 element
 element,
+element.
 else
 else.
 elseif
@@ -774,12 +803,12 @@ emitting.
 emphasis
 emphasized.
 empty
-empty($item['href'])
 empty-state
 encoded
 encodes
 enough
 entry
+escaping
 every
 everywhere
 exactly
@@ -816,6 +845,7 @@ fn
 focus
 fold
 folded
+folder
 followable.
 font-[number:var(--font-wk-body-weight)]',
 footgun:
@@ -840,6 +870,7 @@ gate,
 generic
 get
 gets
+gives
 global
 glyph
 glyph.
@@ -853,6 +884,7 @@ hard
 harder
 harmless
 has
+has.
 have
 have)
 height
@@ -908,7 +940,9 @@ inventory
 is
 is.
 is_array($item)
+is_countable($items)
 isn't
+isset($actions))
 isset($sizeMap[$size])
 it
 it,
@@ -983,6 +1017,7 @@ margin:
 marker-indent
 markers
 marks
+markup:
 match
 matching
 may
@@ -1048,6 +1083,7 @@ null,
 null;
 occurrence
 of
+often
 on
 once
 once,
@@ -1087,8 +1123,10 @@ page.
 page:
 pages
 passed
+passes
 past
 path
+path),
 pattern
 per
 per-set
@@ -1151,10 +1189,13 @@ reapply
 reason.
 reason:
 reasoning
+refused
+refuses
 region
 registered
 registry
 reject
+relative
 remains.
 removed
 render
@@ -1252,6 +1293,7 @@ stays
 step
 steps
 still
+stop
 stopped
 stops
 storage/logs/laravel.log.
@@ -1265,6 +1307,7 @@ structured
 style:
 style="display:inline-block;"></span>
 style="list-style:
+stylesheet
 such
 svg($resolved,
 svg()
@@ -1277,9 +1320,11 @@ tag.
 takes
 taking
 tall
+target
 teaches
 tells
 test
+tested
 text
 text,
 text-[length:var(--text-wk-sm)]',
@@ -1288,6 +1333,7 @@ that
 the
 their
 them
+them,
 them.
 then
 there
@@ -1306,6 +1352,7 @@ tile
 to
 toHtml().
 toggle
+too,
 tool
 top
 top-level
@@ -1316,9 +1363,11 @@ trail,
 trail.
 trails
 transitively
+tree,
 tree:
 true);
 true,
+truth:
 truthy
 try
 two
@@ -1339,6 +1388,7 @@ use
 useful
 user-controlled
 uses
+usually
 utility
 valid
 valid.

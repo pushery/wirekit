@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use BackedEnum;
 use Stringable;
 
 /**
@@ -22,6 +23,12 @@ use Stringable;
  * colon. Anything else before the first colon, a slash or a space, makes the URL relative, and a
  * relative URL stays on the page's own scheme.
  *
+ * It is read a second time with its character references decoded. `{{ }}` escapes an ampersand,
+ * and an application that has called `Blade::withoutDoubleEncoding()` tells it to leave one that
+ * begins a character reference as it is. The browser then reads `&#106;avascript:` in the attribute
+ * as `javascript:`, after a check on the text took it for a relative URL. A URL is kept only when
+ * both readings are allowed, so the link is the same whichever way the page echoes it.
+ *
  * `resources/js/utils/safe-href.js` applies the same rule to values that arrive in the browser, and
  * both give the same answer for the same value.
  */
@@ -34,29 +41,47 @@ final class SafeUrl
     public const LOAD_SCHEMES = ['http', 'https'];
 
     /**
+     * The named character references that decode to a character a scheme can hold, or one the URL
+     * parser removes before it reads the scheme. Every other name decodes to a character that ends
+     * the scheme, which is what the ampersand it begins with does as well.
+     */
+    private const SCHEME_REFERENCES = ['Tab' => "\t", 'NewLine' => "\n", 'colon' => ':', 'plus' => '+', 'period' => '.', 'fjlig' => 'fj'];
+
+    /**
      * The URL without surrounding whitespace, or '' when its scheme is not one of `$schemes`.
      *
      * '' is also what an empty or absent URL gives, so a caller has one value to test for "no link".
      *
      * @param  list<string>  $schemes  lowercase
      */
-    public static function href(string|Stringable|null $url, array $schemes = self::LINK_SCHEMES): string
+    public static function href(string|Stringable|BackedEnum|null $url, array $schemes = self::LINK_SCHEMES): string
     {
-        $href = self::trim((string) $url);
+        // A backed enum is its value, as it is to Blade's own echo.
+        $href = self::trim((string) ($url instanceof BackedEnum ? $url->value : $url));
 
         return self::allows($href, $schemes) ? $href : '';
     }
 
     /**
-     * Whether the browser would read no scheme from the URL, or one of `$schemes`.
+     * Whether the browser would read no scheme from the URL, or one of `$schemes`, both from the
+     * text and from the text with its character references decoded.
      *
      * @param  list<string>  $schemes  lowercase
      */
     public static function allows(string $url, array $schemes = self::LINK_SCHEMES): bool
     {
-        $scheme = self::scheme($url);
+        if (! self::isOneOf(self::scheme($url), $schemes)) {
+            return false;
+        }
 
-        return $scheme === null || in_array($scheme, $schemes, true);
+        // Only an ampersand can begin a character reference.
+        if (! str_contains($url, '&')) {
+            return true;
+        }
+
+        $decoded = self::withReferencesDecoded($url);
+
+        return $decoded !== null && self::isOneOf(self::scheme($decoded), $schemes);
     }
 
     /**
@@ -67,7 +92,55 @@ final class SafeUrl
         // Control characters and spaces before the URL, then tabs and newlines anywhere in it.
         $url = str_replace(["\t", "\n", "\r"], '', ltrim($url, "\x00..\x20"));
 
-        return preg_match('/^([a-z][a-z0-9+.\-]*):/i', $url, $match) === 1 ? strtolower($match[1]) : null;
+        // The class is written out rather than matched without regard to case: that flag takes its
+        // letter pairs from the process's locale, and `strtolower()` is ASCII-only.
+        return preg_match('/^([A-Za-z][A-Za-z0-9+.\-]*):/', $url, $match) === 1 ? strtolower($match[1]) : null;
+    }
+
+    /**
+     * Whether a scheme is none, which is a relative URL, or one of `$schemes`.
+     *
+     * @param  list<string>  $schemes  lowercase
+     */
+    private static function isOneOf(?string $scheme, array $schemes): bool
+    {
+        return $scheme === null || in_array($scheme, $schemes, true);
+    }
+
+    /**
+     * The URL as an HTML parser reads it from an attribute whose character references were left
+     * standing: every numeric reference, with or without its semicolon, and the named ones that
+     * matter to a scheme. Null when the pattern could not be applied.
+     */
+    private static function withReferencesDecoded(string $url): ?string
+    {
+        return preg_replace_callback(
+            '/&(?:#(?:[xX]([0-9A-Fa-f]+)|([0-9]+));?|(Tab|NewLine|colon|plus|period|fjlig);)/',
+            static function (array $reference): string {
+                $name = $reference[3] ?? '';
+
+                if ($name !== '') {
+                    return self::SCHEME_REFERENCES[$name];
+                }
+
+                $hexadecimal = $reference[1] ?? '';
+                $digits = ltrim($hexadecimal !== '' ? $hexadecimal : ($reference[2] ?? ''), '0');
+
+                // U+10FFFF is the last code point: six hexadecimal digits, seven decimal ones.
+                $point = strlen($digits) > 7 ? 0 : intval($digits, $hexadecimal !== '' ? 16 : 10);
+
+                // The parser puts U+FFFD in place of a reference to U+0000, to a surrogate or to a
+                // number past the last code point.
+                if ($point === 0 || $point > 0x10FFFF || ($point >= 0xD800 && $point <= 0xDFFF)) {
+                    return "\u{FFFD}";
+                }
+
+                $character = mb_chr($point, 'UTF-8');
+
+                return $character === false ? "\u{FFFD}" : $character;
+            },
+            $url,
+        );
     }
 
     /**
@@ -78,6 +151,6 @@ final class SafeUrl
      */
     private static function trim(string $url): string
     {
-        return (string) preg_replace('/^[\s\p{Z}\x{FEFF}]+|[\s\p{Z}\x{FEFF}]+$/u', '', $url);
+        return BrowserTrim::trim($url) ?? '';
     }
 }

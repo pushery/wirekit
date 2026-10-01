@@ -31,10 +31,10 @@ final class AiManifestStalenessCheck extends VerifyCheck
      */
     private function checkAiManifestStaleness(): void
     {
-        // The newest mtime among the package sources the manifests are built
-        // from — the registry + the component views. If a manifest predates it,
+        // When the package sources the manifests are built from last changed — the
+        // registry, the component views, and the install. If a manifest predates it,
         // it was generated against an older package.
-        $packageNewest = $this->packageNewestMtime();
+        $packageNewest = $this->packageChangedAt();
 
         $manifests = [
             '.boost/wirekit.json' => 'php artisan wirekit:boost-skills --force',

@@ -102,9 +102,9 @@
 
     // Normalize axes to plain arrays of {key,label}.
     $toAxis = function ($items) {
-        $items = $items instanceof \Illuminate\Support\Collection ? $items->all() : (array) $items;
+        $items = (array) \Pushery\WireKit\Support\ListProp::from($items);
         return array_values(array_map(function ($it) {
-            $it = (array) $it;
+            $it = (array) \Pushery\WireKit\Support\ListProp::from($it);
             return ['key' => (string) ($it['key'] ?? $it['label'] ?? ''), 'label' => (string) ($it['label'] ?? $it['key'] ?? '')];
         }, $items));
     };
@@ -120,9 +120,10 @@
     $isCompositeGrid = $isCompositeGrid && $rowList !== [] && $colList !== [];
 
     // Normalize cells into a flat ["row:col" => value] lookup (accepts nested too).
-    $cellsArr = $cells instanceof \Illuminate\Support\Collection ? $cells->all() : (array) $cells;
+    $cellsArr = (array) \Pushery\WireKit\Support\ListProp::from($cells);
     $flatCells = [];
     foreach ($cellsArr as $k => $v) {
+        $v = \Pushery\WireKit\Support\ListProp::from($v);
         if (is_array($v)) {
             foreach ($v as $ck => $cv) {
                 $flatCells[$k.':'.$ck] = $cv;
@@ -232,7 +233,7 @@
              boots, and a form submitted in that window sends nothing while the
              visible control already shows the value. The serialization matches
              what the factory's own getter produces from the same data. --}}
-        <input type="hidden" x-ref="model" @if($name) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ json_encode((object) $flatCells, JSON_THROW_ON_ERROR) }}" :value="cellsJson()" />
+        <input type="hidden" x-ref="model" @if($name) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ \Pushery\WireKit\Support\AlpinePayload::json((object) $flatCells) }}" :value="cellsJson()" />
     @endif
 
     {{-- Scroll region — keyboard-reachable per WCAG 2.1.1 (tabindex + focus ring, both

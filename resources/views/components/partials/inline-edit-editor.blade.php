@@ -71,6 +71,7 @@
         :rows="$rows"
         x-ref="control"
         x-model="draft"
+        x-wk-ime
         x-on:keydown="onKeydown($event)"
         x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"
@@ -112,6 +113,7 @@
         :size="$size"
         x-ref="control"
         x-model="draft"
+        x-wk-ime
         x-on:keydown="onKeydown($event)"
         x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"
@@ -126,6 +128,7 @@
         :size="$size"
         x-ref="control"
         x-model="draft"
+        x-wk-ime
         x-on:keydown="onKeydown($event)"
         x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"

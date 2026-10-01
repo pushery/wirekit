@@ -62,7 +62,6 @@ $minValue
 $min]
 $name
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $priceRange
 $rangeValueTextMap
@@ -87,6 +86,7 @@ $tickPercents
 $tickPercents[]
 $val)
 $val;
+$valueTextMap
 $wireModel
 $wireModelKey
 $wrapperClasses
@@ -194,6 +194,7 @@ ${minPercent}%`
 (a
 (and
 (announced
+(array)
 (auto
 (bool)
 (centering
@@ -515,6 +516,8 @@ Y
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Range:
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::from($valueTextMap);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ])
 ]),
@@ -673,7 +676,6 @@ aria-valuenow="{{
 arming
 around.
 array
-array_values((array)
 arrive
 arrives
 arrows

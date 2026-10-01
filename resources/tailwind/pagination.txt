@@ -152,7 +152,6 @@ $offersPerPage
 $opensNewTab
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $optionLabel)
 $optionLabel))
@@ -599,6 +598,7 @@ $wrapLabel
 (`loading`
 (`withQueryString()`,
 (a
+(array)
 (array_filter(explode('&',
 (auto
 (avoids
@@ -828,9 +828,9 @@ $wrapLabel
 @endphp
 @endunless
 @foreach($optionLabel
-@foreach($options
 @foreach($paginator->linkCollection()->slice(1,
 @foreach($perPageQuery
+@foreach(\Pushery\WireKit\Support\ListProp::from($options)
 @if($announceError)
 @if($computedRel)
 @if($declarativeLoading)
@@ -1180,6 +1180,8 @@ Y"
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique('wk-per-page-'.$pagingName,
+\Pushery\WireKit\Support\ListProp::from($perPageOptions);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -1525,7 +1527,6 @@ array_filter(array_map('intval',
 array_key_exists('label',
 array_pad(explode('=',
 array_values($sizes)),
-array_values((array)
 array_values(array_unique($sizes));
 arrays,
 arrive

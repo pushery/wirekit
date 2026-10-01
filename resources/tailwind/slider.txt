@@ -69,6 +69,7 @@ $mark)
 $mark['description']
 $mark['label']
 $mark['pct']
+$marks
 $marks)
 $marksIsList
 $max
@@ -82,7 +83,6 @@ $needsSrOnlyFallback
 $normalizedMarks
 $normalizedMarks[]
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $pairs
@@ -290,6 +290,7 @@ $wrapperClasses
 (a
 (and
 (aria-valuetext,
+(array)
 (axe
 (bool)
 (class
@@ -456,6 +457,7 @@ Caller
 Casting
 Centering
 Change
+Collection;
 DECLARED
 DESCRIPTION
 DOM
@@ -500,6 +502,7 @@ MEAN
 MEANS
 MIRROR
 MOVE
+Marks
 Mirrors
 MutationObserver
 NO
@@ -603,6 +606,9 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique(
+\Pushery\WireKit\Support\ListProp::from($valueTextMap);
+\Pushery\WireKit\Support\ListProp::records($marks);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::validateProp('slider',
 \Pushery\WireKit\WireKit::warnUnknownProps('slider',
@@ -787,7 +793,7 @@ array_map('strval',
 array_map(fn
 array_values($marks)
 array_values($valueTextMap));
-array_values((array)
+arrive
 arrives
 arrow
 arrow-key

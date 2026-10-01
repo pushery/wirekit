@@ -14,6 +14,7 @@ $attributes->class([$groupClasses])
 $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
+$author
 $author;
 $authorAvatar
 $authorName
@@ -248,6 +249,7 @@ $total
 @props.
 @unless($attributes->has('aria-label')
 @unless($attributes->has('role'))
+A
 AA-contrast
 AND
 Accessible
@@ -261,6 +263,7 @@ BooleanProp::from($fromInitials,
 Box-shadow
 CLASS,
 CSS
+Collection
 Combine
 Counter
 Declared
@@ -321,6 +324,7 @@ With
 ['xs',
 [])->class([$baseClasses,
 [],
+\Pushery\WireKit\Support\ListProp::from($author);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('message-group',
@@ -574,6 +578,7 @@ hid
 hidden
 hidden.
 hides
+holds,
 hook
 how
 icon
@@ -650,6 +655,7 @@ mirrors
 mode
 mode.
 mode;
+model
 moment.
 more
 more:
@@ -738,6 +744,7 @@ reading
 reads
 real
 reasoning
+record
 redundant
 region
 region,

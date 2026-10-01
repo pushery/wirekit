@@ -52,8 +52,14 @@
     //
     // Detection: PHP 8.1+ array_is_list() returns true for a zero-indexed
     // sequential array (the shape of array-of-objects). Keyed-assoc returns false.
+    //
+    // The items may arrive as a Collection. One that was filtered keeps the keys it had, so a
+    // list of tab records is also recognized by its records: every entry an array with a `key`.
     $tabs = [];
-    if (is_array($items) && array_is_list($items)) {
+    $items = \Pushery\WireKit\Support\ListProp::records($items);
+    $itemsAreRecords = is_array($items) && $items !== []
+        && array_all($items, static fn ($item): bool => is_array($item) && isset($item['key']));
+    if (is_array($items) && (array_is_list($items) || $itemsAreRecords)) {
         foreach ($items as $item) {
             if (is_array($item) && isset($item['key'])) {
                 $tabs[$item['key']] = [
@@ -204,8 +210,9 @@
     {{ $attributes->class([$rootClasses]) }}
 >
     {{-- Tablist — the row (or column, when vertical) of tab buttons.
-         role="tablist" groups the tab buttons as a single keyboard navigation unit. --}}
-    <div role="tablist" aria-label="{{ $label }}" aria-orientation="{{ $orientationValue }}" class="{{ $tablistClasses }}">
+         role="tablist" groups the tab buttons as a single keyboard navigation unit. Without
+         tabs the row carries no role: a tablist that owns no tab reads out as an empty control. --}}
+    <div @if($tabs !== []) role="tablist" aria-label="{{ $label }}" aria-orientation="{{ $orientationValue }}" @endif class="{{ $tablistClasses }}">
         @foreach($tabs as $key => $tab)
             <button
                 type="button"

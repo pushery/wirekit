@@ -221,6 +221,7 @@
     // for a select it is wrong every single time, which is why that one
     // resolves itself instead of waiting for the caller to notice.
     $resolvedDisplay = $displayValue;
+    $options = \Pushery\WireKit\Support\ListProp::from($options);
     if ($resolvedDisplay === null && $control === 'select' && $options !== []) {
         $resolvedDisplay = $options[$value] ?? null;
     }

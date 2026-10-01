@@ -30,7 +30,7 @@
  *   scroll callbacks can fire AFTER destroy() has torn the component down.
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 export default function wirekitConversation(config = {}) {
     return {
         // True while the reader is parked at (or within `threshold` of) the
@@ -169,7 +169,7 @@ export default function wirekitConversation(config = {}) {
             }
             this._viewport.scrollTo({
                 top: this._viewport.scrollHeight,
-                behavior: smooth && !this._prefersReducedMotion() ? 'smooth' : 'auto',
+                behavior: scrollBehavior(smooth && !this._prefersReducedMotion()),
             });
             this.atBottom = true;
             this.unread = 0;
@@ -182,12 +182,15 @@ export default function wirekitConversation(config = {}) {
             if (!this._viewport) {
                 return;
             }
-            const target = this._viewport.querySelector(`[data-wk-message-id="${id}"]`);
+            // The id is the caller's own, written on the row they tagged; a quote or a backslash in
+            // it would make the selector invalid, and querySelector throws on that.
+            const value = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(String(id)) : String(id);
+            const target = this._viewport.querySelector(`[data-wk-message-id="${value}"]`);
             if (!target) {
                 return;
             }
             target.scrollIntoView({
-                behavior: smooth && !this._prefersReducedMotion() ? 'smooth' : 'auto',
+                behavior: scrollBehavior(smooth && !this._prefersReducedMotion()),
                 block: 'center',
             });
         },

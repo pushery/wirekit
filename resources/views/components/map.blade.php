@@ -71,8 +71,14 @@
     // caller supplied one — that is what the list's landmark role is gated on.
     $listLabelResolved = filled($listLabel) ? $listLabel : __('wirekit::Locations');
 
-    $centerArr = array_values((array) $center);
-    $markersArr = $markers instanceof \Illuminate\Support\Collection ? $markers->values()->all() : array_values((array) $markers);
+    // Plain lists, whatever the caller passed: an array, a Collection, a lazy one or a paginator.
+    // Each marker carries the keys the map reads and no other, because the list is written into
+    // the page: a marker built from a model would otherwise put each of its attributes there.
+    $centerArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($center);
+    $markersArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
+        $markers,
+        ['id', 'lat', 'lng', 'label', 'body', 'image', 'tooltip', 'intent'],
+    ));
 
     // Marker dot intents (PHP literals → Tailwind-compiled + drift-traced). The
     // list pairs the dot color with the text label, so color is never the sole

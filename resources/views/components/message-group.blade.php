@@ -32,6 +32,8 @@
 
     // Read exactly as `message` reads it, including the string shorthand, so the two can be
     // given the same `$author` array without a second shape to remember.
+    // A Collection or a model is read as the record it holds, as `message` reads it.
+    $author = \Pushery\WireKit\Support\ListProp::from($author);
     $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;
     $authorAvatar = is_array($author) ? ($author['avatar'] ?? null) : null;
 

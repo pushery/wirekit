@@ -61,6 +61,7 @@ $countries
 $countries),
 $countryOptions
 $countryOptions[$code]
+$countryOrder
 $countryOrder),
 $describedBy
 $descriptionClasses
@@ -152,7 +153,6 @@ $opt,
 $opt['group'];
 $opt['value']
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $option
 $option)
@@ -166,6 +166,7 @@ $optionUses['media']
 $optionUses['media'],
 $option['label'];
 $option['selectedLabel']
+$options
 $optionsAreAList
 $optionsAreAList);
 $ordered
@@ -518,6 +519,7 @@ $value,
 (string
 (string)
 (the
+(utils/ime.js).
 (utils/server-search.js).
 (when
 (whether
@@ -781,6 +783,7 @@ Chevron
 Clear
 Close
 Codes
+Collection
 Combobox
 Control
 DECORATIVE:
@@ -984,9 +987,9 @@ Zypern
 \Pushery\WireKit\Support\AlpinePayload::from($normalized)
 \Pushery\WireKit\Support\AlpinePayload::from($value)
 \Pushery\WireKit\Support\AlpinePayload::from([
-\Pushery\WireKit\Support\AlpinePayload::from(['options'
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options'))
+\Pushery\WireKit\Support\AlpinePayload::json(['options'
 \Pushery\WireKit\Support\AlpinePayload::string($comboId)
 \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding)
 \Pushery\WireKit\Support\AlpinePayload::string($listId)
@@ -999,6 +1002,10 @@ Zypern
 \Pushery\WireKit\Support\FlagPackage::attach($normalized);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
 \Pushery\WireKit\Support\IconSprite::attach($normalized,
+\Pushery\WireKit\Support\ListProp::from($countries);
+\Pushery\WireKit\Support\ListProp::from($countryOrder);
+\Pushery\WireKit\Support\ListProp::records($options);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OptionMedia::fields('combobox',
 \Pushery\WireKit\Support\OptionMedia::uses($normalized);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
@@ -1027,6 +1034,7 @@ _place()
 `$listId`
 `$refs`.
 `$value`
+`(array)`,
 `+4915123456789`.
 `+49`
 `0151
@@ -1272,7 +1280,6 @@ array_is_list(collect($options)->all());
 array_key_exists('label',
 array_key_exists('value',
 array_map(fn
-array_values((array)
 array_values(array_filter(
 arrive
 arrived
@@ -1318,6 +1325,7 @@ be
 be.
 beats
 because
+becomes
 been
 before
 before,
@@ -1496,6 +1504,7 @@ component,
 component.
 component;
 components
+composing
 computed
 config
 config('app.debug'),
@@ -1853,6 +1862,7 @@ hold
 holding
 holds
 holds,
+holds;
 house
 hover
 hover:bg-[var(--color-wk-bg-muted)]
@@ -2298,6 +2308,7 @@ prefix
 present
 presentational
 pressed
+presses
 prevent,
 prevents
 preview
@@ -2311,6 +2322,7 @@ prop
 prop's
 prop,
 properties
+properties.
 property
 props
 pt-[var(--padding-wk-y-sm)]
@@ -2589,6 +2601,7 @@ status,
 stays
 step
 still
+stop
 stops;
 stranded
 stray
@@ -2939,6 +2952,7 @@ x-text="searchNote()"
 x-text="selectedText"
 x-text="{{
 x-wirekit::label
+x-wk-ime
 x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet

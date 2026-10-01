@@ -107,7 +107,6 @@ $opt,
 $opt['group'];
 $opt['value']
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $option
 $option)
@@ -121,6 +120,7 @@ $optionUses['media']
 $optionUses['media'],
 $option['label'];
 $option['selectedLabel']
+$options
 $optionsAreAList
 $optionsAreAList);
 $outerAttributes
@@ -398,6 +398,7 @@ $value,
 (an
 (aria-describedby,
 (aria-hidden)
+(array)
 (auto
 (bool)
 (compact
@@ -423,6 +424,7 @@ $value,
 (space-y-1.5
 (string)
 (the
+(utils/ime.js).
 (utils/server-search.js).
 (when
 (whether
@@ -800,9 +802,9 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($normalized)
 \Pushery\WireKit\Support\AlpinePayload::from($value)
 \Pushery\WireKit\Support\AlpinePayload::from([
-\Pushery\WireKit\Support\AlpinePayload::from(['options'
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options'))
+\Pushery\WireKit\Support\AlpinePayload::json(['options'
 \Pushery\WireKit\Support\AlpinePayload::string($comboId)
 \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding)
 \Pushery\WireKit\Support\AlpinePayload::string($listId)
@@ -815,6 +817,8 @@ Without
 \Pushery\WireKit\Support\FlagPackage::attach($normalized);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
 \Pushery\WireKit\Support\IconSprite::attach($normalized,
+\Pushery\WireKit\Support\ListProp::records($options);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OptionMedia::fields('combobox',
 \Pushery\WireKit\Support\OptionMedia::uses($normalized);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
@@ -1061,7 +1065,6 @@ array_is_list($opt);
 array_is_list(collect($options)->all());
 array_key_exists('label',
 array_key_exists('value',
-array_values((array)
 arrive
 arrived
 arrives
@@ -1252,6 +1255,7 @@ component,
 component.
 component;
 components
+composing
 computed
 config
 config('app.debug'),
@@ -1947,6 +1951,7 @@ precedence:
 present
 presentational
 pressed
+presses
 prevent,
 prevents
 preview
@@ -2202,6 +2207,7 @@ status,
 stays
 step
 still
+stop
 stranded
 stray
 string
@@ -2510,6 +2516,7 @@ x-text="searchNote()"
 x-text="selectedText"
 x-text="{{
 x-wirekit::label
+x-wk-ime
 x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet

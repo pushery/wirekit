@@ -64,7 +64,7 @@
     $safeEmbedSrc = static fn (string $src): string => \Pushery\WireKit\Support\SafeUrl::href($src, \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 
     $slides = [];
-    foreach ($items as $item) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($items) as $item) {
         if (is_array($item)) {
             $type = $item['type'] ?? 'image';
             $slides[] = [

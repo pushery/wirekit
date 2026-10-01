@@ -30,6 +30,7 @@ $rootClass
 $scope);
 $segmentColor
 $segmentColor.'
+$segments
 $segmentsArray
 $segmentsStyle
 $showAfter
@@ -306,6 +307,7 @@ Without
 [];
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\ListProp::from($segments);
 \Pushery\WireKit\WireKit::warnUnknownProps('reading-progress',
 ])
 ]),

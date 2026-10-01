@@ -158,8 +158,14 @@ export const TOUCH_SURFACE_ATTRIBUTE = 'data-wk-touch';
  * Asked by an observer on the container rather than by each component, so every panel that
  * teleports here inherits it, the ones a developer writes included.
  *
- * Once per container: a `wire:navigate` builds a new one, and it gets its own observer. The old
- * one is disconnected at the swap, by `releaseTouchSurfaces()`, rather than left watching a
+ * The attribute also has to outlast a server round trip. A Livewire morph compares an open panel
+ * with a fresh clone of its template, a clone that is never placed here and so never carries the
+ * attribute, and it removes from the live panel every attribute the clone lacks. A second observer
+ * watches that one attribute on the panels and puts it back, as long as the panel still came from a
+ * touch surface. It sees nothing else a panel does.
+ *
+ * Once per container: a `wire:navigate` builds a new one, and it gets its own observers. The old
+ * ones are disconnected at the swap, by `releaseTouchSurfaces()`, rather than left watching a
  * container that has left the page.
  */
 function inheritTouchSurfaces(root) {
@@ -177,16 +183,35 @@ function inheritTouchSurfaces(root) {
 
     [...root.children].forEach(mark);
 
-    const observer = new MutationObserver((records) => {
+    const arrivals = new MutationObserver((records) => {
         for (const record of records) {
             record.addedNodes.forEach(mark);
         }
     });
 
-    observer.observe(root, { childList: true });
+    arrivals.observe(root, { childList: true });
 
-    // Kept on the container, so the navigation that discards it can stop it.
-    root._wkTouchSurfaces = observer;
+    const keeper = new MutationObserver((records) => {
+        for (const record of records) {
+            const panel = record.target;
+
+            // A panel is a child of the container; an element deeper down that carries the
+            // attribute in its own markup is left to that markup.
+            if (panel.parentNode === root && !panel.hasAttribute(TOUCH_SURFACE_ATTRIBUTE)) {
+                mark(panel);
+            }
+        }
+    });
+
+    keeper.observe(root, { subtree: true, attributes: true, attributeFilter: [TOUCH_SURFACE_ATTRIBUTE] });
+
+    // Kept on the container, so the navigation that discards it can stop both.
+    root._wkTouchSurfaces = {
+        disconnect() {
+            arrivals.disconnect();
+            keeper.disconnect();
+        },
+    };
 }
 
 /** Stop watching a container that leaves the page with the body a navigation replaced. */

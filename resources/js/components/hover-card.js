@@ -33,6 +33,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
  */
 import { position } from '../utils/floating.js';
+import { isComposing } from '../utils/ime.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { outOfReachBeside } from '../utils/teleport.js';
 
@@ -314,6 +315,9 @@ export default function wirekitHoverCard(config = {}) {
          * @param {KeyboardEvent} event
          */
         escapeAnywhere(event) {
+            // An Escape that abandons an input method's conversion belongs to the input method.
+            if (isComposing(event)) return;
+
             if (! this.isOpen) return;
 
             event?.preventDefault();

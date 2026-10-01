@@ -20,7 +20,7 @@
  * @param {number}  [config.threshold]  fraction of a viewport height to pass
  *        before the button appears
  */
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { FOCUSABLE } from '../utils/first-control.js';
 
 export default function wirekitScrollToTop(config = {}) {
@@ -72,7 +72,7 @@ export default function wirekitScrollToTop(config = {}) {
              * Every animated scroll in this bundle therefore has to consult the
              * preference itself, and this one was the last that did not.
              */
-            window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+            window.scrollTo({ top: 0, behavior: scrollBehavior(!prefersReducedMotion()) });
 
             // The button promises the top of the page, and the focus stayed at the bottom, on a
             // button that hides as soon as the page is back up there: the next Tab continued from

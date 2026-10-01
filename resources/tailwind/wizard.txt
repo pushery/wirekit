@@ -143,14 +143,15 @@ $step)
 $step,
 $step;
 $stepAction
+$stepAction;
 $stepHref
+$stepHref;
 $stepIsOperable
 $stepIsOperable,
 $stepNames
 $stepNumber
 $stepNumber,
 $stepTag
-$step['action']
 $steps
 $surface
 $surface);
@@ -444,7 +445,6 @@ $wrapMode
 ($step)
 ($stepHref
 ($step['description']
-($step['href']
 ($step['label']
 ($step['wire:click']
 ($wrapLabel
@@ -532,6 +532,7 @@ $wrapMode
 //
 />
 0
+0)
 0);
 0.5rem
 0.75rem
@@ -651,6 +652,7 @@ $wrapMode
 @endunless
 @foreach($steps
 @if($computedRel)
+@if($count
 @if($declarativeLoading)
 @if($description)
 @if($emitAriaBusy)
@@ -727,6 +729,10 @@ Check
 Children
 Circle
 Clamped
+Collection
+Collection,
+Collection;
+Compared
 Completed:
 Connector
 Connector:
@@ -774,6 +780,8 @@ Label
 Let
 Letting
 Line
+ListProp::records($steps);
+ListProp::renumbered(ListProp::records($steps));
 Literal
 Lives
 Livewire
@@ -815,6 +823,7 @@ PREVIEW
 PROBLEM
 Per-intent
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\ListProp;
 Pushery\WireKit\WireKit;
 REPLACES
 RTL-safe
@@ -828,6 +837,7 @@ SCOPES
 SOLUTION
 SR
 STEPS
+SafeUrl
 Same
 Scope
 See
@@ -843,6 +853,7 @@ Spelled
 Spelling
 Step
 Stepper
+Steps
 TEMPLATE
 TEXT
 TEXT,
@@ -865,6 +876,7 @@ This
 Two
 UA
 UNBOUND
+URL.
 USED
 USER
 Unset
@@ -924,6 +936,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($missingIndexWarning)
 \Pushery\WireKit\Support\AlpinePayload::from($stepNames)
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\SafeUrl::href($step['href']
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -963,6 +976,7 @@ __('wirekit::This
 `.attr`
 `.wk-button-group[data-stack-below="…"]`
 `.wk-button`
+`0`
 `2xl`
 `2xl`,
 `2xl`.
@@ -1004,6 +1018,7 @@ __('wirekit::This
 `aria-disabled`
 `aria-hidden`:
 `aria-label`
+`array_key_last()`
 `as`
 `badge`'s
 `bg-[var(--color-wk-danger)]`
@@ -1055,6 +1070,8 @@ __('wirekit::This
 `indicator="false"`
 `init()`,
 `inline-flex`
+`is_array()`
+`javascript:`
 `label`
 `lang`
 `list-none
@@ -1104,6 +1121,7 @@ __('wirekit::This
 `whitespace-normal`
 `whitespace-nowrap`
 `wire:*`
+`wire:click`
 `wire:click`,
 `wire:loading.attr`
 `wire:loading`
@@ -1199,6 +1217,7 @@ announcement,
 announcement:
 announces
 anonymous
+another
 answer
 anticipate
 any
@@ -1213,6 +1232,7 @@ appear.';
 appearance
 appears
 application
+application's
 application,
 applied
 arbitrary
@@ -1224,6 +1244,7 @@ aria-current
 aria-current="step"
 aria-disabled="true"
 aria-hidden,
+aria-hidden="true"
 aria-hidden="true">
 aria-hidden="true"></span>
 aria-hidden="true">{{
@@ -1232,10 +1253,12 @@ aria-label="{{
 aria-labelledby.';
 aria-live="polite"
 around
+array.
 array:
 array_filter([
 array_key_last($steps);
 array_values(array_map(
+arrive
 arrives
 arrives,
 as
@@ -1255,6 +1278,7 @@ attribute
 attribute's
 attribute,
 attribute.
+attributes
 auto-derived
 auto-inject).
 auto`
@@ -1278,6 +1302,7 @@ bag
 bag.
 bar
 bar's
+bare
 base
 baseline.
 be
@@ -1453,6 +1478,7 @@ classes.
 classes:
 clears
 click
+click,
 click.
 client-only
 clip-rule="evenodd"/>
@@ -1615,6 +1641,8 @@ design
 designed
 desktop
 destination
+destination,
+destination.
 destroys
 developer
 developer's
@@ -1711,6 +1739,7 @@ error,
 escaping
 etc.)
 etc.),
+evaluates
 ever
 every
 everything
@@ -1764,6 +1793,7 @@ filled
 filled($iconOnlyBelow)
 filled($stackBelow)
 filled()
+filtered
 finds
 finger
 finished
@@ -2018,6 +2048,7 @@ is_array($step)
 is_array($steps)
 is_countable($steps)
 is_string($follow)
+is_string($stepAction)
 is_string($wrap)
 it
 it,
@@ -2030,6 +2061,7 @@ items-center
 items-center',
 items-start
 items-stretch
+items:
 its
 itself
 itself.
@@ -2045,7 +2077,10 @@ keep
 keeps
 kept
 key
+key,
+key.
 keyboard
+keyed
 keys
 kit
 kit's
@@ -2212,6 +2247,7 @@ multiply
 must
 muted
 muted.
+n-1.
 n/a
 name
 name,
@@ -2342,6 +2378,7 @@ outline()
 outline.
 outlined
 outlines
+outrank
 outranks
 outside
 outside;
@@ -2444,6 +2481,7 @@ prefers
 prefix
 prefixes
 preflight
+preflight):
 preg_match('/^[A-Za-z_$][\w$]*$/',
 present
 presentational
@@ -2529,6 +2567,7 @@ refinement.
 reflects
 reflow
 refreshes
+refused
 regardless
 regardless"
 region
@@ -2538,6 +2577,7 @@ reimplemented.
 rel
 rel="noopener
 rel="{{
+relative
 relative',
 reliably
 reliably.
@@ -2551,6 +2591,7 @@ rendered
 rendering
 renders
 renders,
+renumbered,
 repairs.
 replaces
 report
@@ -2856,6 +2897,7 @@ template.
 templates
 ternary,
 test".
+tested
 text
 text,
 text-[color:var(--color-wk-accent-content)]
@@ -2946,6 +2988,7 @@ treatment
 tree
 trim($label)
 trim($relAttr.'
+trim($stepAction)
 trim($stepNames[0]
 trim(strip_tags((string)
 true
@@ -2956,6 +2999,7 @@ true);
 true,
 true:
 true;
+truth:
 truthy
 turn
 turns
@@ -3003,6 +3047,7 @@ user
 uses
 uses.
 using
+usually
 utilities
 utility
 utility,
@@ -3136,6 +3181,7 @@ wrapper.
 wrapping
 wrapping,
 wraps
+write,
 writes
 written
 wrong

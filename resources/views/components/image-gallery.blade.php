@@ -73,7 +73,7 @@
     // renders byte-identically. `??` alone would NOT do that: an entry carrying `'full' => ''`
     // is a developer's own empty variable, and honoring it would point the lightbox at nothing.
     $items = [];
-    foreach ($images as $img) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($images) as $img) {
         if (is_array($img)) {
             $src = (string) ($img['src'] ?? '');
             $full = trim((string) ($img['full'] ?? ''));

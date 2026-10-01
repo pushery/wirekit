@@ -65,7 +65,6 @@ $name
 $name)
 $needsSrOnlyFallback
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $placeholder
@@ -97,6 +96,7 @@ $toDay($value);
 $value
 $value)
 $value,
+$value->all();
 $value['end']
 $value['start']
 &&
@@ -189,6 +189,7 @@ $value['start']
 (Support\UnboundModel).
 (`error=""`
 (`wire:model.live`,
+(array)
 (arrow
 (bool)
 (default)
@@ -305,6 +306,7 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Build
 Caller-provided
 Change
+Collection
 Compose
 DIRECTIVE
 Date
@@ -385,6 +387,7 @@ WireKit::stableId('wk-date',
 [],
 [];
 \DateTimeInterface
+\Illuminate\Support\Enumerable)
 \Illuminate\View\ComponentAttributeBag($endPairs);
 \Illuminate\View\ComponentAttributeBag($startPairs);
 \Pushery\WireKit\Support\AlpinePayload::from($endValue)
@@ -394,6 +397,7 @@ WireKit::stableId('wk-date',
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your
 \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_',
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\UnboundModel::drop('date-picker',
 \Pushery\WireKit\WireKit::warnUnknownProps('date-picker',
@@ -521,7 +525,7 @@ array
 array.
 array_map($toDay,
 array_pad(explode('/',
-array_values((array)
+arrive
 arrives
 as
 as,
@@ -1226,6 +1230,7 @@ was
 way
 way.
 ways
+well.
 what
 wheel
 when

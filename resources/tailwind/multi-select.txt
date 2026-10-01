@@ -72,11 +72,11 @@ $mediaInitials,
 $mediaPerRow
 $name
 $name));
+$name,
 $name;
 $normalizeOption;
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $option
 $option,
@@ -93,6 +93,7 @@ $optionUses['media'],
 $option['value']
 $option]
 $option];
+$options
 $optionsAreAList
 $outerAttributes
 $panelWidth
@@ -160,6 +161,7 @@ $value,
 '@keydown.escape']);
 'Rain
 '[]'
+'[]'))
 '__COUNT__']);
 '_afterToggle',
 '_afterToggle'`
@@ -336,6 +338,7 @@ $value,
 (['php',
 (`icon`,
 (array
+(array)
 (auto
 (bool)
 (int)
@@ -353,6 +356,7 @@ $value,
 (sizes),
 (string)
 (the
+(utils/ime.js).
 (utils/server-search.js).
 (when
 (whether
@@ -388,6 +392,7 @@ $value,
 12
 12"
 13l4
+13px
 2
 2)
 2),
@@ -398,6 +403,7 @@ $value,
 24
 24"
 24"><path
+258px
 3.05
 3.05a.5.5
 3.75
@@ -547,6 +553,7 @@ CSP
 CSS
 Change
 Characters
+Collection
 Container
 DECLARED
 DESCRIPTIONS.
@@ -583,6 +590,7 @@ JS
 JavaScript
 KEY.
 Keep
+Key
 LIST
 Label
 Leaving
@@ -655,6 +663,7 @@ The
 This
 Those
 Three
+Twice,
 Type
 UNBOUND
 URL
@@ -666,6 +675,7 @@ WCAG
 WHEN
 WHICH
 We
+WebKit
 When
 Where
 Wire
@@ -691,23 +701,26 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions)
 \Pushery\WireKit\Support\AlpinePayload::from($selectedValues)
 \Pushery\WireKit\Support\AlpinePayload::from([
-\Pushery\WireKit\Support\AlpinePayload::from(['options'
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove
+\Pushery\WireKit\Support\AlpinePayload::json(['options'
 \Pushery\WireKit\Support\AlpinePayload::string($fieldId)
 \Pushery\WireKit\Support\AlpinePayload::string($id)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
-\Pushery\WireKit\Support\AlpinePayload::string($name.'[]')
 \Pushery\WireKit\Support\AlpinePayload::string($optionHighlightedClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($optionSelectedClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($panelWidth)
 \Pushery\WireKit\Support\AlpinePayload::string($placeholder)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\FlagPackage::attach($encodedOptions);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
 \Pushery\WireKit\Support\IconSprite::attach($encodedOptions,
+\Pushery\WireKit\Support\ListProp::from($value);
+\Pushery\WireKit\Support\ListProp::records($options);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OptionMedia::fields('multi-select',
 \Pushery\WireKit\Support\OptionMedia::uses($encodedOptions);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
@@ -742,6 +755,7 @@ _place()
 `Support/AlpinePayload.php`
 `['value'
 `[31
+`[]`
 `[overflow-wrap:anywhere]`
 `\u00fc`,
 `after:
@@ -775,12 +789,14 @@ _place()
 `filteredOptions`,
 `fixed`
 `flag`),
+`flex-1`,
 `grid`
 `id`
 `id`:
 `image`,
 `input`
 `invisible`
+`is_array()`
 `key
 `keywords`
 `label
@@ -813,10 +829,13 @@ _place()
 `selected`
 `selected`,
 `selected`.
+`skills[]`,
+`skills`
 `this`,
 `trigger`
 `trigger`,
 `value`
+`w-0`:
 `wire:id`,
 `wire:key`,
 `wire:model`
@@ -913,7 +932,6 @@ around.
 array
 array.
 array_is_list(collect($options)->all());
-array_values((array)
 array_values(array_filter(array_map('trim',
 array_values(array_map(fn
 arrays,
@@ -928,6 +946,7 @@ as
 as,
 aside
 ask
+asks
 aspect-[4/3]
 associative
 asterisk.
@@ -1001,6 +1020,7 @@ by
 call
 call,
 call.
+caller
 caller's
 caller's.
 can
@@ -1089,6 +1109,7 @@ component,
 component.
 component:
 components
+composing
 computed
 conditions
 config('app.debug'),
@@ -1106,6 +1127,7 @@ constraint,
 consumed
 contain
 container
+container.
 containing
 content,
 contents">
@@ -1223,6 +1245,7 @@ empty.
 empty:
 encode
 end
+ends
 error
 escapes
 even
@@ -1318,6 +1341,7 @@ form
 formatting.
 forms
 frame
+framed
 free
 fresh
 from
@@ -1343,6 +1367,7 @@ group
 group-has-[:checked]:block
 grouped-option
 groups,
+grows
 h-5
 h-full
 had
@@ -1375,6 +1400,7 @@ highlighted
 highlighted,
 holds
 holds,
+holds;
 horizontal
 hover
 hover:bg-[var(--color-wk-bg-subtle)]
@@ -1426,6 +1452,7 @@ ink,
 inline
 inline-flex
 input
+input's
 input,
 input.
 inputs
@@ -1526,6 +1553,7 @@ listOptions"
 listbox
 listener
 listens
+lists.
 literal
 live
 lives
@@ -1565,6 +1593,8 @@ min-h-[var(--size-wk-md)]',
 min-w-0
 min-w-0"
 min-w-[80px]
+minimum,
+minimum.
 minimum:
 mirrors
 mode
@@ -1580,6 +1610,7 @@ ms-0.5"
 mt-0.5',
 multi-select
 multi-selects
+multiple
 must
 mutation
 n/a
@@ -1652,6 +1683,7 @@ once.
 once:
 one
 one,
+one-item
 one.
 one;
 only
@@ -1762,10 +1794,12 @@ polite
 positively,
 pr-1
 pre-select
+pre-selection
 pre-selection.
 precedence:
 present
 presentational
+presses
 problem
 prod).
 projects
@@ -2013,6 +2047,7 @@ stays
 stem.
 step
 still
+stood
 stop
 stopped
 stray
@@ -2199,6 +2234,7 @@ visibly
 visually
 vocabulary
 voice
+w-0
 w-3.5"
 w-4
 w-5
@@ -2249,7 +2285,9 @@ wraps
 write
 writes
 written
+written.
 wrong
+wrote
 wrote.
 x-bind:aria-busy="isPending"
 x-bind:aria-busy="searchAriaBusy()"
@@ -2298,6 +2336,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ime
 x-wk-ref="{{
 yet
 yet,

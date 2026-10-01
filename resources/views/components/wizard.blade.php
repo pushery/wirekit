@@ -22,11 +22,15 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('wizard', $attributes->getAttributes());
 
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\ListProp;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `indicator="false"` would draw the stepper it was asked to suppress.
     $indicator = BooleanProp::from($indicator, true);
+
+    // Steps usually arrive as a Collection, which `is_array()` below would read as no steps.
+    $steps = ListProp::records($steps);
 
     $stepNames = array_values(array_map(
         fn ($step) => is_array($step) ? ($step['label'] ?? '') : (string) $step,

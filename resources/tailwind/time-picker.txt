@@ -30,7 +30,6 @@ $min
 $name
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $required
@@ -136,6 +135,7 @@ $value
 ($time)
 ($value
 (@aware
+(array)
 (auto
 (bool)
 (dist/wirekit.css)
@@ -242,6 +242,7 @@ WireKit::resolveClasses('time-picker',
 \DateTimeInterface
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \Pushery\WireKit\WireKit::warnUnknownProps('time-picker',
@@ -303,7 +304,6 @@ aria-hidden="true">*</span>@endif
 aria-invalid="true"
 aria-live="assertive"
 aria-live="polite"
-array_values((array)
 arrives
 as
 as,

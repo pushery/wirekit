@@ -210,7 +210,6 @@ $onSale
 $opensNewTab
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $orientation
 $outerAttributes
@@ -658,6 +657,7 @@ $wrapLabel
 (a
 (alt="").
 (array
+(array)
 (auto
 (avoids
 (because
@@ -1320,6 +1320,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
@@ -1698,7 +1699,6 @@ arithmetic
 around
 array:
 array_keys($sizeMap));
-array_values((array)
 arrives
 arrives,
 arrives;

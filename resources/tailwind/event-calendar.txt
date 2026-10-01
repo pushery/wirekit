@@ -23,25 +23,25 @@ $categoryHidden
 $categoryShown
 $dayDetail
 $dayDetail;
-$dayMarkers
-$dayMarkers);
-$dayMarkers->values()->all()
+$dayMarkers,
 $dayNumberInMonth
 $dayNumberOutside
 $dayNumberSelected
 $dayNumberToday
 $detailLevel
+$event)
+$event))
 $eventCalendarLocale
 $eventClasses
 $eventDot
-$events
-$events);
-$events->values()->all()
+$events,
 $eventsArr
+$eventsArr[$index]['attendees']
 $filterable
 $i
 $i++)
 $id
+$index
 $level
 $level)
 $level,
@@ -85,7 +85,10 @@ $weekStartsOn
 'agenda'
 'agenda'"
 'agenda']);
+'allDay',
 'ariaLabel'
+'attendees'],
+'avatar']),
 'base',
 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))]
 'bg-[color-mix(in_oklch,var(--color-wk-danger)_14%,transparent)]
@@ -102,6 +105,8 @@ $weekStartsOn
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-warning)]',
+'blocked'],
+'category',
 'category-hidden',
 'category-shown',
 'class'])
@@ -113,6 +118,7 @@ $weekStartsOn
 'day-number-today',
 'dayDetail'
 'dayMarkers'
+'end',
 'event-calendar-');
 'events'
 'false'
@@ -122,6 +128,8 @@ $weekStartsOn
 'holiday',
 'info'
 'inline-flex
+'intent',
+'label',
 'level'
 'level',
 'locale'
@@ -134,6 +142,7 @@ $weekStartsOn
 'rounded-[var(--radius-wk-sm)]
 'scope'
 'selectableDays'
+'start',
 'success'
 'text-[color:var(--color-wk-accent-text)]
 'text-[color:var(--color-wk-accent-text)]'
@@ -142,7 +151,9 @@ $weekStartsOn
 'text-[color:var(--color-wk-text-muted)]
 'text-[color:var(--color-wk-text-muted)]'"
 'text-[color:var(--color-wk-text-subtle)]',
+'title',
 'true'
+'type',
 'view'
 'view',
 'w-full
@@ -156,6 +167,7 @@ $weekStartsOn
 'working'
 ("12
 ($eventClasses)
+($eventsArr
 ($i
 ($levelValue
 (--color-wk-info
@@ -172,6 +184,7 @@ $weekStartsOn
 (`rowLabel`)
 (an
 (and
+(array)
 (axe:
 (day-level
 (day.inMonth
@@ -179,6 +192,7 @@ $weekStartsOn
 (info
 (int)
 (isSelectedDay(day.date)
+(is_array($event)
 (it
 (left/right
 (natural
@@ -200,6 +214,8 @@ $weekStartsOn
 (unavailable)
 (x-ref="tip"
 ({{
+));
+);
 *
 *-text
 */
@@ -391,6 +407,7 @@ CONTINUOUSLY
 COUNTED
 CallerRef::onRoot()
 Category
+Collection,
 Current-time
 Day
 Day-marker
@@ -401,6 +418,7 @@ Defined
 Delegated
 Dev-only
 Dropping
+Each
 English
 Event
 Events
@@ -446,6 +464,7 @@ Off
 One
 Outside
 PROHIBITS
+Plain
 Pressed
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -492,13 +511,15 @@ With
 [
 ['1',
 ['@pointerover',
+['date',
+['id',
 ['month',
+['name',
 [1,
 [],
 [data-wk-tip]
 [{date,label,type?,blocked?}]
 [{id,title,start,end?,allDay?,intent?}]
-\Illuminate\Support\Collection
 \Pushery\WireKit\Support\AlpinePayload::from($dayDetail
 \Pushery\WireKit\Support\AlpinePayload::from($eventClasses)
 \Pushery\WireKit\Support\AlpinePayload::from($eventDot)
@@ -523,6 +544,9 @@ With
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::only($event['attendees'],
+\Pushery\WireKit\Support\ListProp::renumbered(
+\Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
 \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar',
 ])
 ];
@@ -640,7 +664,8 @@ aria-label
 aria-label="{{
 aria-live="polite"
 around
-array_values((array)
+array,
+array_key_exists('attendees',
 arrive
 arrows
 as
@@ -649,7 +674,9 @@ at,
 ate
 attendeeOverflow(ev)"></span>
 attendeeStack(ev)"
+attendees
 attribute
+attributes
 auto-derived
 avatar
 away
@@ -1017,6 +1044,7 @@ font-[number:var(--font-wk-heading-weight)]'
 font-[number:var(--font-wk-heading-weight)]',
 for
 forced
+foreach
 form
 former
 forms,
@@ -1128,7 +1156,6 @@ inline-flex
 inner
 inset
 inside
-instanceof
 instead
 instead.
 intent
@@ -1172,6 +1199,7 @@ language
 later
 later.
 layer
+lazy
 leading-[var(--leading-wk-tight)]
 leads
 leaves
@@ -1194,6 +1222,7 @@ list
 listener
 listeners;
 listens
+lists
 literal
 literals)
 live
@@ -1237,6 +1266,7 @@ min-w-[var(--size-wk-target-min)]
 minted
 mislabel
 mode.
+model
 moment
 month
 monthWeeks"
@@ -1306,6 +1336,7 @@ optimistic-ui:
 or
 order
 other
+other,
 otherwise
 our
 out
@@ -1327,6 +1358,8 @@ p-1
 padding
 padding)
 page
+page:
+paginator.
 paint
 paint,
 painted.
@@ -1336,7 +1369,9 @@ panel
 parentheses.
 part
 part:
+passed:
 path:
+payload,
 per
 per-column
 per-item
@@ -1612,6 +1647,7 @@ that
 that,
 the
 their
+theirs.
 them
 them.
 them;
@@ -1619,6 +1655,7 @@ theme
 themes.
 then
 there
+there,
 therefore
 they
 thing,

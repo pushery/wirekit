@@ -162,7 +162,7 @@
         // above, so the layer starts from the time the reader sees.
         'value' => (string) ($value ?? ''),
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [

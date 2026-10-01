@@ -39,7 +39,6 @@ $oLabel
 $oLang
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $optionLabel)
 $optionLabel))
@@ -178,6 +177,7 @@ $value
 (($hasError
 (@aware
 (Named
+(array)
 (auto
 (bool)
 (dist/wirekit.css)
@@ -249,7 +249,7 @@ $value
 @endif>
 @endphp
 @foreach($optionLabel
-@foreach($options
+@foreach(\Pushery\WireKit\Support\ListProp::from($options)
 @if($announceError)
 @if($describedBy
 @if($hasError
@@ -350,6 +350,7 @@ Written
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ])
@@ -439,7 +440,6 @@ aria-live="assertive"
 aria-live="polite"
 array
 array_key_exists('label',
-array_values((array)
 arrays,
 arrive
 arrives

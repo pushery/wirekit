@@ -255,6 +255,32 @@
         'text-[color:var(--color-wk-text)]',
         'uppercase tracking-wider',
     ]), $scope);
+
+    // The presets as colors the picker reads: a hex color, rgb(), hsl() or oklch(). Each one is
+    // written into its swatch's `style`, where escaping does not stop a `;`, so an entry that
+    // carried more than a color would style the swatch itself. And a value the picker cannot
+    // parse would be a swatch whose click picks nothing. Any other entry goes through the
+    // strictness gate like every rejected prop value, and draws no swatch.
+    $presetList = \Pushery\WireKit\Support\ListProp::from($presets);
+    $presetColors = [];
+
+    foreach (is_array($presetList) ? $presetList : [] as $preset) {
+        $presetColor = is_string($preset) ? \Pushery\WireKit\Support\CssColor::value($preset) : '';
+
+        if ($presetColor === '') {
+            \Pushery\WireKit\Support\StrictnessGate::reject(
+                'color-picker',
+                'presets',
+                is_scalar($preset) ? (string) $preset : get_debug_type($preset),
+                'a color the picker reads: a hex color, rgb(), hsl() or oklch()',
+                '',
+            );
+
+            continue;
+        }
+
+        $presetColors[] = $presetColor;
+    }
 @endphp
 
 {{-- The field wrapper wraps BOTH branches so the hint / error paragraph below is a
@@ -350,7 +376,7 @@
         $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
             'value' => $value,
             'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
             'failure' => 'keep',
             // The field's own error region, so the layer stays quiet when that
             // paragraph is already speaking — one announcement per deviation, not
@@ -677,10 +703,10 @@
                 @endif
             </div>
 
-            @if(! empty($presets))
-                {{-- Developer preset swatches. --}}
+            @if($presetColors !== [])
+                {{-- Developer preset swatches, each one checked above to be a color and nothing more. --}}
                 <div class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('wirekit::Preset colors') }}">
-                    @foreach($presets as $preset)
+                    @foreach($presetColors as $preset)
                         <button
                             type="button"
                             @click="pickColor({{ \Pushery\WireKit\Support\AlpinePayload::from($preset) }})"

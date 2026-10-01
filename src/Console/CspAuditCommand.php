@@ -111,8 +111,9 @@ class CspAuditCommand extends Command
      * `x-wk-findable` is WireKit's own and belongs here for the reason the others do: it
      * takes the place of `x-show` on a disclosure panel and hands its value to
      * `evaluateLater()`, so under the CSP build it meets the same parser. Its `.collapse`
-     * modifier is covered by the modifier part of the name pattern. The kit's other two
-     * directives, `x-wk-indeterminate` and `x-wk-flash`, evaluate nothing and stay off.
+     * modifier is covered by the modifier part of the name pattern. The kit's other
+     * directives evaluate nothing and stay off: `x-wk-indeterminate`, `x-wk-flash`, `x-wk-ime`,
+     * and `x-wk-ref`, whose value is a ref name.
      */
     private const EXPRESSION_ATTRIBUTES = [
         'x-data', 'x-show', 'x-if', 'x-text', 'x-html', 'x-model', 'x-modelable',

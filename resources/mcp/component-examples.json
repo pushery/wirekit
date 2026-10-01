@@ -1664,7 +1664,7 @@
         },
         {
             "title": "Two levels, each switchable",
-            "code": "<x-wirekit::row gap=\"xs\" style=\"align-items: center;\">\n    <x-wirekit::scope-switcher\n        name=\"teams\"\n        label=\"Team\"\n        current=\"dev\"\n        :items=\"[\n            ['key' => 'dev', 'label' => 'dev', 'url' => '#', 'icon' => 'users'],\n            ['key' => 'ops', 'label' => 'ops', 'url' => '#', 'icon' => 'users'],\n        ]\"\n    />\n    <x-wirekit::text intent=\"muted\" aria-hidden=\"true\">/</x-wirekit::text>\n    <x-wirekit::scope-switcher\n        name=\"breadcrumb-sites\"\n        label=\"Site\"\n        current=\"www\"\n        :items=\"[\n            ['key' => 'www', 'label' => 'www.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'danger'],\n            ['key' => 'shop', 'label' => 'shop.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'success'],\n            ['key' => 'staging', 'label' => 'staging.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'success'],\n        ]\"\n        :create=\"['label' => 'New site', 'url' => '#']\"\n    />\n</x-wirekit::row>"
+            "code": "<x-wirekit::row gap=\"xs\" wrap style=\"align-items: center;\">\n    <x-wirekit::scope-switcher\n        name=\"teams\"\n        label=\"Team\"\n        current=\"dev\"\n        :items=\"[\n            ['key' => 'dev', 'label' => 'dev', 'url' => '#', 'icon' => 'users'],\n            ['key' => 'ops', 'label' => 'ops', 'url' => '#', 'icon' => 'users'],\n        ]\"\n    />\n    <x-wirekit::text intent=\"muted\" aria-hidden=\"true\">/</x-wirekit::text>\n    <x-wirekit::scope-switcher\n        name=\"breadcrumb-sites\"\n        label=\"Site\"\n        current=\"www\"\n        :items=\"[\n            ['key' => 'www', 'label' => 'www.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'danger'],\n            ['key' => 'shop', 'label' => 'shop.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'success'],\n            ['key' => 'staging', 'label' => 'staging.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'success'],\n        ]\"\n        :create=\"['label' => 'New site', 'url' => '#']\"\n    />\n</x-wirekit::row>"
         }
     ],
     "scroll-area": [
@@ -1822,7 +1822,7 @@
         },
         {
             "title": "Brand left, actions right",
-            "code": "<x-wirekit::row>\n    <x-wirekit::badge intent=\"primary\" size=\"lg\">MyApp</x-wirekit::badge>\n    <x-wirekit::spacer />\n    <x-wirekit::row gap=\"sm\">\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Docs</x-wirekit::button>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Pricing</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\" size=\"sm\">Sign Up</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::row>"
+            "code": "<x-wirekit::row wrap>\n    <x-wirekit::badge intent=\"primary\" size=\"lg\">MyApp</x-wirekit::badge>\n    <x-wirekit::spacer />\n    <x-wirekit::row gap=\"sm\" wrap>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Docs</x-wirekit::button>\n        <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Pricing</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\" size=\"sm\">Sign Up</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::row>"
         },
         {
             "title": "Spacer pushing footer to bottom",

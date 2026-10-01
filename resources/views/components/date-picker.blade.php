@@ -124,6 +124,10 @@
     // encoded as JSON an ISO timestamp, and the field reads either as no value at all. The same
     // holds for `min`, `max` and both ends of a range.
     $toDay = static fn ($date) => $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : $date;
+    // The two ends of a range may arrive in a Collection as well.
+    if ($value instanceof \Illuminate\Support\Enumerable) {
+        $value = $value->all();
+    }
     $value = is_array($value) ? array_map($toDay, $value) : $toDay($value);
     $min = $toDay($min);
     $max = $toDay($max);
@@ -306,7 +310,7 @@
         // or the layer mounts empty and the first rollback restores nothing.
         'value' => (string) ($value ?? ''),
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.

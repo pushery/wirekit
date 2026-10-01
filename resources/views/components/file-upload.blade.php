@@ -339,7 +339,8 @@
         <input
             type="file"
             x-ref="input"
-            @if($name) name="{{ $multiple ? $name . '[]' : $name }}" @endif
+            {{-- With `multiple` the name ends in `[]` once, whether the caller wrote `files` or `files[]`. --}}
+            @if($name) name="{{ $multiple ? \Illuminate\Support\Str::finish($name, '[]') : $name }}" @endif
             id="{{ $uploadId }}"
             @if($multiple) multiple @endif
             {{-- Native, on the file input itself: it is a real form control, so the browser's

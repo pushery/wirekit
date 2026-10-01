@@ -57,6 +57,7 @@
     // `per-page-options="10,25,50,100"` works as well as a bound array. The paginator's own size joins
     // them when it is missing, or the select would show a size the list is not using.
     $perPageChoices = [];
+    $perPageOptions = \Pushery\WireKit\Support\ListProp::from($perPageOptions);
 
     if (filled($perPageOptions) && $paginator && method_exists($paginator, 'perPage')) {
         $sizes = is_array($perPageOptions)

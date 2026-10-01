@@ -28,6 +28,7 @@ $chartAttributes->except(['data-wk-chart']);
 $chartAttributes->get('data-replayable');
 $chartLibrary
 $dataset)
+$datasets
 $defaultDisplay
 $defaultStyle
 $emitReplayable
@@ -246,6 +247,8 @@ Chart.js's
 Chart.js:
 ChartJsAdapter::normalizeData
 Clipping
+Collection
+Collections;
 Component
 DIFFERENT
 DOES
@@ -322,8 +325,9 @@ Wrapping
 [],
 [];
 \Illuminate\View\ComponentAttributeBag(
+\Pushery\WireKit\Components\Chart::datasetsFrom($datasets);
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
-\Pushery\WireKit\Support\AlpinePayload::from($chartData)
+\Pushery\WireKit\Support\AlpinePayload::json($chartData)
 \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\WireKit::cspNonce()
 \Pushery\WireKit\WireKit::warnUnknownProps('chart-mixed',
@@ -434,6 +438,8 @@ array."
 array;
 array_diff_key
 array_filter(
+arrays
+arrive
 as
 as,
 assistive
@@ -578,6 +584,7 @@ data-wk-chart="{{
 data-wk-prose-skip
 dataset
 datasets
+datasets,
 debug
 decision
 declarations
@@ -625,6 +632,7 @@ drifts
 drop
 duplicate
 each
+each,
 earlier
 early.
 echoed
@@ -802,6 +810,7 @@ looking.
 made.
 maintainAspectRatio:
 makes
+malformed
 management.
 manual
 mapType('mixed')).
@@ -1124,6 +1133,7 @@ updates
 usage
 use
 uses
+usually
 utilities
 utilities,
 utility

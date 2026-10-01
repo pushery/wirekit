@@ -60,9 +60,38 @@
     $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('filter-builder', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
-    // Normalize to plain arrays for the directive payload (accepts Collections too).
-    $fieldsArr = $fields instanceof \Illuminate\Support\Collection ? $fields->values()->all() : array_values((array) $fields);
-    $valueArr = $value instanceof \Illuminate\Support\Collection ? $value->values()->all() : array_values((array) $value);
+    // Plain lists for the directive payload, whatever the caller passed and whatever keys it had.
+    // A field's own lists as well: the factory takes `options` and `operators` only as arrays of
+    // records, and a filtered Collection of them would reach it as an object and offer nothing.
+    // Only such a list is renumbered. A map of values to labels is another shape, which the
+    // factory does not read, and it is handed on as it was.
+    $recordList = static function ($list) {
+        $list = \Pushery\WireKit\Support\ListProp::from($list);
+
+        if (! is_array($list)) {
+            return $list;
+        }
+
+        foreach ($list as $key => $record) {
+            if (! is_int($key) || $record === null || is_scalar($record)) {
+                return $list;
+            }
+        }
+
+        return array_values($list);
+    };
+    $fieldsArr = array_map(static function ($field) use ($recordList) {
+        if (is_array($field)) {
+            foreach (['options', 'operators'] as $list) {
+                if (array_key_exists($list, $field)) {
+                    $field[$list] = $recordList($field[$list]);
+                }
+            }
+        }
+
+        return $field;
+    }, (array) \Pushery\WireKit\Support\ListProp::renumbered($fields));
+    $valueArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($value);
 
     $popoverTitleId = $id.'-popover-title';
 
@@ -162,7 +191,7 @@
         x-ref="model"
         @if($name) name="{{ $name }}" @endif
         {{ $attributes->whereStartsWith('wire:model') }}
-        value="{{ json_encode(array_values((array) $valueArr), JSON_THROW_ON_ERROR) }}"
+        value="{{ \Pushery\WireKit\Support\AlpinePayload::json(array_values((array) $valueArr)) }}"
         :value="filtersJson()"
     />
 
@@ -322,7 +351,7 @@
                         <input type="date" x-model="draft.value" class="wk-field {{ $control }}" />
                     </template>
                     <template x-if="draftValueType() === 'text'">
-                        <input type="text" x-model="draft.value" @keydown.enter.prevent="apply()" class="wk-field {{ $control }}" />
+                        <input type="text" x-wk-ime x-model="draft.value" @keydown.enter.prevent="apply()" class="wk-field {{ $control }}" />
                     </template>
                 </label>
 

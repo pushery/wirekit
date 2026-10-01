@@ -23,7 +23,6 @@ $_)
 $a,
 $a['index']]
 $action
-$action;
 $actionLabel
 $actionLabel,
 $after
@@ -129,7 +128,6 @@ $item;
 $item['action']
 $item['after']
 $item['icon']
-$items)
 $key
 $label
 $lines
@@ -154,6 +152,8 @@ $mergedAttributes->merge(['aria-hidden'
 $message
 $moreMany
 $moreOne
+$name)
+$name):
 $name,
 $name];
 $named
@@ -219,7 +219,7 @@ $wrapLabel
 $wrapperClasses
 &&
 '
-'#')),
+'#'),
 ''
 '')
 ''));
@@ -326,6 +326,7 @@ $wrapperClasses
 'hover:bg-[var(--color-wk-bg-muted)]
 'hover:bg-[var(--color-wk-bg-muted)]',
 'href'
+'href',
 'icon'
 'icon-only
 'iconOnly'
@@ -483,7 +484,6 @@ $wrapperClasses
 ($isInformative
 ($item['attributes']
 ($item['current']
-($item['href']
 ($item['key']
 ($item['label']
 ($orientation
@@ -535,6 +535,7 @@ $wrapperClasses
 (hover)
 (info
 (int)
+(int|string
 (is_array($menuOrder)
 (is_scalar($after))
 (is_string($key)
@@ -568,6 +569,7 @@ $wrapperClasses
 (what
 (which
 (wire:click
+)),
 );
 *
 *-bg
@@ -750,6 +752,7 @@ AND
 ANY
 API:
 ARIA
+ARRAY_FILTER_USE_KEY,
 AT
 Accessible
 Adding
@@ -793,6 +796,7 @@ CallerRef::onRoot()
 Catching
 Check
 Closure
+Collection
 DECLARATIVE
 DISABLES
 DO
@@ -824,6 +828,7 @@ HOVERABLE:
 HTML
 HTML,
 HTTP
+Handed
 Hidden
 Hidden,
 Holding
@@ -937,6 +942,7 @@ Soft
 Spelled
 Spelling
 Stable
+Stringable
 Strip
 SvgNotFound
 SvgNotFound.
@@ -1025,12 +1031,14 @@ Without
 [--wk-touch-min:0px]'
 [])
 [])),
+[]),
 [],
 [];
 [overflow-wrap:anywhere]'
 \Closure
 \Illuminate\Contracts\Support\Htmlable)
 \Illuminate\View\ComponentAttributeBag((array)
+\Illuminate\View\ComponentAttributeBag(array_filter(
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($moreMany)
@@ -1039,7 +1047,10 @@ Without
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
-\Pushery\WireKit\Support\SafeUrl::href((string)
+\Pushery\WireKit\Support\ListProp::from($action);
+\Pushery\WireKit\Support\ListProp::from($menuOrder);
+\Pushery\WireKit\Support\ListProp::records($items))
+\Pushery\WireKit\Support\SafeUrl::href($item['href']
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1063,6 +1074,7 @@ __toString
 `$size`
 `'menu'`,
 `'row'`
+`(array)`,
 `--wk-touch-min`
 `.attr`
 `.wk-button-group[data-stack-below="…"]`
@@ -1412,6 +1424,7 @@ axis:
 back
 back.
 back:
+backed
 background
 background)
 background,
@@ -1469,6 +1482,7 @@ blocks
 blocks,
 blurs
 body
+bool
 boolean
 bootstrapped
 border
@@ -1817,6 +1831,7 @@ document
 documented
 does
 does),
+does.
 does;
 dotted-read
 double
@@ -1846,6 +1861,7 @@ early
 early.
 ease-in
 ease-out
+echo
 edge
 edge.
 edges,
@@ -1882,6 +1898,7 @@ entry
 entry's
 entry).
 enum
+enum,
 error
 error,
 escape
@@ -2135,6 +2152,7 @@ hit,
 hoists
 holding
 holds
+holds:
 honoring
 honors
 hook
@@ -2253,6 +2271,7 @@ is
 is"
 is,
 is.
+is:
 isn't
 isolate`
 isset($sizeMap[$size])
@@ -2540,6 +2559,7 @@ null,
 null;
 null])
 number.
+object
 object,
 occurrence
 of
@@ -2598,6 +2618,7 @@ ours
 out
 out,
 out.
+out:
 outer
 outline()
 output
@@ -2747,6 +2768,7 @@ prop's
 prop,
 prop.
 properties).
+properties,
 property
 property,
 props
@@ -2811,6 +2833,7 @@ refinement,
 refinement.
 refreshes
 refuse.
+refused.
 refuses.
 regardless
 regardless"
@@ -3082,6 +3105,7 @@ string|\Illuminate\Contracts\Support\Htmlable|null
 strip
 stroke-width="4"></circle>
 stroke="currentColor"
+strtolower((string)
 style
 style="display:
 style="display:inline-block;"></span>
@@ -3478,6 +3502,7 @@ wraps
 writes
 writing
 written
+written.
 wrong
 wrong.
 wrote

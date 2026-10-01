@@ -60,6 +60,11 @@
     // date picker, each end a date object or a `YYYY-MM-DD` string.
     $toDay = static fn ($date) => $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : $date;
 
+    // The two ends may arrive in a Collection as well.
+    if ($value instanceof \Illuminate\Support\Enumerable) {
+        $value = $value->all();
+    }
+
     if (is_array($value)) {
         $value = implode('/', array_filter(
             [$toDay($value['start'] ?? ($value[0] ?? null)), $toDay($value['end'] ?? ($value[1] ?? null))],
@@ -113,10 +118,17 @@
 
     // `relative` holds the forced-colors mark the stylesheet draws on `::before`, through the
     // `wk-calendar-day` marker each day button carries beside these classes.
+    //
+    // A day takes the width of its column up to the token's size and stays square, and shrinks
+    // with its column down to the WCAG 2.5.8 target. At the token's size the seven columns need
+    // 280px of grid, which a phone column does not always leave; at the target they need 196px,
+    // and the panel 222px. How wide the grid wants to be, where nothing presses it, comes from
+    // the sizing row below the body (`partials/calendar-sizing-row`), so a calendar in a container that sizes to
+    // its content is as wide as it always was.
     $dayBtnClasses = implode(' ', [
         'relative',
         'flex items-center justify-center',
-        'w-[var(--size-wk-md-compact)] h-[var(--size-wk-md-compact)]',
+        'w-full max-w-[var(--size-wk-md-compact)] min-w-[var(--size-wk-target-min)] aspect-square mx-auto',
         'rounded-[var(--radius-wk-sm)]',
         'text-[length:var(--text-wk-sm)]',
         'tabular-nums',
@@ -197,7 +209,7 @@
         'bind' => 'selected',
         'after' => '_notify',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -246,8 +258,11 @@
         @if($selectableHeader)
             {{-- Native month + year selects: full keyboard + AT support for free,
                  bound straight to the view state so changing them re-renders the
-                 grid(s). aria-live mirror keeps the change announced. --}}
-            <div class="flex items-center gap-[var(--padding-wk-x-sm)]">
+                 grid(s). aria-live mirror keeps the change announced. The year wraps under the
+                 month where the header is narrower than the two side by side: on a touch screen
+                 both take the 16px text and the 44px target, which a phone column does not hold
+                 beside the two arrows. --}}
+            <div class="flex flex-wrap items-center justify-center gap-[var(--padding-wk-x-sm)]">
                 <label class="sr-only" for="{{ $name }}-month">{{ __('wirekit::Month') }}</label>
                 <div class="relative">
                     <select id="{{ $name }}-month" x-model.number="viewMonth" aria-label="{{ __('wirekit::Month') }}" class="wk-field {{ $headerSelectClasses }}">
@@ -356,6 +371,7 @@
                                 </tr>
                             </template>
                         </tbody>
+                        @include('wirekit::components.partials.calendar-sizing-row')
                     </table>
                 </div>
             </template>
@@ -411,6 +427,7 @@
                 </tr>
             </template>
         </tbody>
+        @include('wirekit::components.partials.calendar-sizing-row')
     </table>
     @endif
 

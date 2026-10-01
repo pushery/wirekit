@@ -103,3 +103,17 @@ export function watchReducedMotion(onChange) {
         observer?.disconnect();
     };
 }
+
+/**
+ * The `behavior` of a scroll a component starts: smooth when it may animate, otherwise a jump.
+ *
+ * A jump is `'instant'` rather than `'auto'`. `'auto'` means "as the scroller's CSS says", so an
+ * application that sets `scroll-behavior: smooth` on its root, as Tailwind's `scroll-smooth` does,
+ * turned a jump asked for under reduced motion back into an animation of the whole page.
+ *
+ * @param {boolean} animate - Whether this scroll may animate, reduced motion already weighed in.
+ * @returns {'smooth'|'instant'}
+ */
+export function scrollBehavior(animate) {
+    return animate ? 'smooth' : 'instant';
+}

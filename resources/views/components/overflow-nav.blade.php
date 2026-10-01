@@ -31,17 +31,27 @@
 
     // Each entry as the template needs it. The index is the key the component hides and shows
     // by, so the rows and the menu name the same entry without depending on the label.
+    // A Collection is read as the list it holds: cast with `(array)`, an object becomes its
+    // properties, and every entry lost its label and its link.
     $entries = [];
-    foreach (array_values((array) $items) as $index => $item) {
+    foreach (array_values((array) \Pushery\WireKit\Support\ListProp::records($items)) as $index => $item) {
         $item = (array) $item;
         $entries[] = [
             'index' => $index,
             'label' => (string) ($item['label'] ?? ''),
             // A link row built from data (open records, recent pages). A target that could run
-            // script leaves the entry without an href, so it navigates nowhere.
-            'href' => \Pushery\WireKit\Support\SafeUrl::href((string) ($item['href'] ?? '#')),
+            // script leaves the entry without an href, so it navigates nowhere. Handed over as it
+            // is: the rule takes a string, a Stringable and a backed enum, as Blade's echo does.
+            'href' => \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? '#'),
             'current' => (bool) ($item['current'] ?? false),
-            'attributes' => new \Illuminate\View\ComponentAttributeBag((array) ($item['attributes'] ?? [])),
+            // The developer's own attributes for the anchor, as written. An `href` among them is
+            // left out: it would reach the link past the rule above, and would be the only target
+            // of an entry whose own was refused.
+            'attributes' => new \Illuminate\View\ComponentAttributeBag(array_filter(
+                (array) ($item['attributes'] ?? []),
+                static fn (int|string $name): bool => strtolower((string) $name) !== 'href',
+                ARRAY_FILTER_USE_KEY,
+            )),
             'key' => (string) ($item['key'] ?? $index),
             'icon' => filled($item['icon'] ?? null) ? (string) $item['icon'] : null,
             'after' => $item['after'] ?? null,
@@ -106,7 +116,7 @@
             continue;
         }
 
-        $action = (array) $action;
+        $action = (array) \Pushery\WireKit\Support\ListProp::from($action);
         $actionLabel = trim((string) ($action['label'] ?? ''));
 
         if ($actionLabel === '') {
@@ -125,6 +135,7 @@
 
     // The menu in the order the caller gives, the rest after it in the order of the rows.
     $menuEntries = $entries;
+    $menuOrder = \Pushery\WireKit\Support\ListProp::from($menuOrder);
     if (is_array($menuOrder) && $menuOrder !== []) {
         $rank = array_flip(array_map('strval', array_values($menuOrder)));
         usort($menuEntries, static fn (array $a, array $b): int => [$rank[$a['key']] ?? PHP_INT_MAX, $a['index']] <=> [$rank[$b['key']] ?? PHP_INT_MAX, $b['index']]);
