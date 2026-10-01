@@ -191,7 +191,9 @@
         // The browser prompt shown when inserting a link. resources/js has no translator,
         // and this string is a question put to the reader.
         'linkPromptLabel' => __('wirekit::Link URL'),
-        'value' => $value !== null && ! is_string($value) ? json_encode($value) : $value,
+        // A document given as an array reaches the factory as JSON text it parses. Written by
+        // the JSON encoder, a character reference in it cannot end a string of that text.
+        'value' => $value !== null && ! is_string($value) ? \Pushery\WireKit\Support\AlpinePayload::json($value) : $value,
         'format' => $formatValue,
         'editable' => (bool) $editable,
         'extensions' => $extensions ?? config('wirekit.components.editor.extensions', []),
@@ -261,7 +263,7 @@
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
         'errorRegion' => '#'.$errorId,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
@@ -373,7 +375,7 @@
                 class="wk-field block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-hidden {{ $minHeight }}"
                 {{-- wire:model binds to the textarea the editor writes to. --}}
                 {{ $wireModel }}
-            >{{ is_string($value) ? $value : ($value !== null ? json_encode($value) : '') }}</textarea>
+            >{{ is_string($value) ? $value : ($value !== null ? \Pushery\WireKit\Support\AlpinePayload::json($value) : '') }}</textarea>
         @endif
 
         @if(($maxLength && $editable) || isset($bottomBar))

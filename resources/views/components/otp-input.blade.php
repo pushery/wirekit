@@ -356,7 +356,7 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => '',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
         // A second commit while one is in flight would resolve by whichever
@@ -471,6 +471,8 @@
         <div class="{{ $group === null ? 'contents' : 'flex gap-2' }}">
         @foreach($digitGroup as $i)
             <input
+                {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
+                x-wk-ime
                 type="{{ $masked ? 'password' : 'text' }}"
                 {{-- A numeric keypad is right only for a numeric alphabet; offering
                      one for a code containing letters hides the keys the reader

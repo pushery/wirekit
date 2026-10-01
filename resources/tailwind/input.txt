@@ -70,7 +70,6 @@ $mono
 $name
 $offset
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $placeholder
@@ -293,6 +292,7 @@ $useWrapper
 (an
 (and
 (aria-live="polite")
+(array)
 (auto
 (avoids
 (bool)
@@ -649,6 +649,7 @@ Your
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ])
@@ -839,7 +840,6 @@ armed,
 arms
 around
 array_filter([
-array_values((array)
 arrive
 arrives
 arrives,

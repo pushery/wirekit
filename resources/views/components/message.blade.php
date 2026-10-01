@@ -25,13 +25,16 @@
     // to the old hardcoded format), "21:15" for de and other 24h locales. Pass an
     // explicit format (e.g. 'H:i') to override.
     'timeFormat' => null,
+    // The zone the timestamp and the status time are written in for the reader, a name such as
+    // "Europe/Berlin". Null → the zone of the value given.
+    'timezone' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\Moment;
     use Pushery\WireKit\WireKit;
-    use Carbon\Carbon;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -72,16 +75,20 @@
         ? ''
         : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [[data-wk-touch]_&]:opacity-100 transition-opacity duration-[var(--transition-wk-duration)]';
 
-    // Parse author data
+    // Parse author data. A Collection or a model is read as the record it holds: cast to a
+    // string it would be its JSON, and every attribute of it would be written into the name.
+    $author = \Pushery\WireKit\Support\ListProp::from($author);
     $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;
     $authorAvatar = is_array($author) ? ($author['avatar'] ?? null) : null;
     $authorRole = is_array($author) ? ($author['role'] ?? null) : null;
 
     // Format timestamp
-    $carbonTimestamp = null;
+    // A date object of any class is read as the instant it holds (Support\Moment), and written in
+    // the reader's zone when `timezone` names one.
+    $carbonTimestamp = Moment::of($timestamp);
     $formattedTime = '';
-    if ($timestamp !== null) {
-        $carbonTimestamp = $timestamp instanceof Carbon ? $timestamp : Carbon::parse($timestamp);
+    if ($carbonTimestamp !== null) {
+        $carbonTimestamp = Moment::in($carbonTimestamp, $timezone, 'message');
         // Locale-aware short time by default (isoFormat('LT') honors the Carbon
         // locale): "9:15 PM" for en — byte-identical to the old hardcoded
         // 'g:i A' — but "21:15" for de and other 24h locales. An explicit
@@ -168,7 +175,7 @@
     // the message timestamp; an explicit timeFormat overrides.
     $statusTimeText = '';
     if ($statusValue !== null && $statusTime !== null && $statusTime !== '') {
-        $statusCarbon = $statusTime instanceof Carbon ? $statusTime : Carbon::parse($statusTime);
+        $statusCarbon = Moment::in(Moment::of($statusTime), $timezone, 'message');
         $statusTimeText = $timeFormat !== null
             ? $statusCarbon->format($timeFormat)
             : $statusCarbon->isoFormat('LT');

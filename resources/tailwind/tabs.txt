@@ -87,6 +87,8 @@ $item['icon']
 $item['key'],
 $item['label']
 $items
+$itemsAreRecords
+$itemsAreRecords))
 $key
 $key)
 $key):
@@ -418,6 +420,7 @@ ${$key}
 ($callerAriaHidden
 ($intent)
 ($isInformative
+($item):
 ($items
 ($orientation)
 ($p):
@@ -454,6 +457,7 @@ ${$key}
 (adapts
 (an
 (array
+(array_is_list($items)
 (array_key_first($tabs)
 (button
 (default)
@@ -620,6 +624,7 @@ ${$key}
 @if($surface
 @if($tab['badge']
 @if($tab['icon'])
+@if($tabs
 @if($tooltip)
 @if($trailingIcon)
 @if((string)
@@ -690,6 +695,7 @@ CallerRef::onRoot()
 Catching
 Check
 Chromium
+Collection.
 ComponentSlot
 Composed
 DO
@@ -965,6 +971,7 @@ Written
 ['x-on:mouseenter',
 [['key'
 []
+[])
 [])->class([$baseClasses,
 [],
 [];
@@ -980,6 +987,7 @@ Written
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::records($items);
 \Pushery\WireKit\Support\TablistStyles::list($variant,
 \Pushery\WireKit\Support\TablistStyles::tab($variant,
 \Pushery\WireKit\Support\TablistStyles::tabActive($variant);
@@ -1083,6 +1091,7 @@ __toString
 `inline-flex`
 `inverted`
 `isolation:
+`key`.
 `keydownEscape()`
 `mask-image`,
 `max-w-full
@@ -1259,8 +1268,8 @@ arrangement
 array
 array-of-objects
 array-of-objects).
+array_all($items,
 array_filter([
-array_is_list($items))
 array_is_list()
 array_keys($sizeMap));
 array_keys($tabs))),
@@ -1582,6 +1591,7 @@ contract:
 contrast
 contrasts
 control
+control.
 controls
 copies
 copy
@@ -1832,6 +1842,7 @@ filled
 filled()
 filled-background
 filter_var($wrap,
+filtered
 find
 findable
 finds
@@ -1935,6 +1946,7 @@ h-5
 h-auto
 h/w
 had
+had,
 half
 halves
 hand,
@@ -2087,10 +2099,13 @@ inverted
 invocation`
 is
 is.
+is_array($item)
+is_array($items)
 is_string($key)
 isn't
 isolate`
 isset($item['key']))
+isset($item['key']));
 isset($sizeMap[$size])
 it
 it"
@@ -2100,6 +2115,7 @@ it:
 item
 item,
 item.
+items
 items-center
 items-start'
 items-stretch
@@ -2560,8 +2576,11 @@ rebuilds.
 rebuilt.
 receive
 receiver,
+recognized
 recognizes
 recomputed
+records
+records:
 rectangle.
 red
 red:
@@ -2631,6 +2650,7 @@ ring
 ring,
 role
 role,
+role:
 role="img"
 role="img".
 role="tab"

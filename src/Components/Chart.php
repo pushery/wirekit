@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Components;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\View\Component;
 use Illuminate\View\View;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Charts\TypeNotSupportedException;
 use Pushery\WireKit\Contracts\ChartAdapter;
+use Pushery\WireKit\Support\ListProp;
 use RuntimeException;
 
 /**
@@ -21,6 +23,20 @@ use RuntimeException;
  */
 final class Chart extends Component
 {
+    /**
+     * X-axis / segment labels, as a list whatever the caller passed and whatever keys it had.
+     *
+     * @var list<mixed>
+     */
+    public array $labels = [];
+
+    /**
+     * The datasets, as an array whatever the caller passed, each dataset's `data` included.
+     *
+     * @var array<array-key, mixed>
+     */
+    public array $datasets = [];
+
     /** @var array<string, mixed> */
     public array $chartConfig = [];
 
@@ -75,8 +91,12 @@ final class Chart extends Component
 
     /**
      * @param  string  $type  Chart type — validated against the active adapter's supportedTypes().
-     * @param  array<int, string>  $labels  X-axis / segment labels.
-     * @param  array<int, array<string, mixed>>  $datasets  Dataset array (adapter-specific shape).
+     * @param  array<int, string>|Arrayable<int, string>  $labels  X-axis / segment labels, as an
+     *                                                             array or a Collection.
+     * @param  array<int, array<string, mixed>>|Arrayable<int, array<string, mixed>>  $datasets  Dataset
+     *                                                                                           array (adapter-specific shape), or a
+     *                                                                                           Collection; each dataset's `data` may
+     *                                                                                           be a Collection as well.
      * @param  array<string, mixed>  $options  Adapter-specific options, deep-merged on top of adapter defaults.
      * @param  string  $height  CSS height value (e.g. '380px', '24rem'). Default '380px' is the minimum that comfortably hosts an ApexCharts legend (~50px top), plot area, and x-axis labels (~40px bottom) without bottom-clipping when the chart wrapper carries `overflow: hidden` (which it does, to prevent SVG line overshoots from escaping the wrapper into surrounding page content).
      * @param  string|null  $wireStream  Livewire event name to subscribe to for real-time data
@@ -118,8 +138,10 @@ final class Chart extends Component
      */
     public function __construct(
         public string $type = 'bar',
-        public array $labels = [],
-        public array $datasets = [],
+        // Not promoted: a list usually arrives as a Collection in a Laravel application, and the
+        // properties the view and the adapters read stay arrays. Normalized first thing below.
+        array|Arrayable $labels = [],
+        array|Arrayable $datasets = [],
         public array $options = [],
         public string $height = '380px',
         public ?string $wireStream = null,
@@ -149,6 +171,12 @@ final class Chart extends Component
         public ?string $valuePrefix = null,
         public ?string $valueSuffix = null,
     ) {
+        // Labels are a list whatever keys they arrive with: a Collection that was filtered or
+        // sorted keeps its keys, and with those the config would carry an object where both
+        // libraries read an array.
+        $labels = $this->labels = array_values(self::listFrom($labels));
+        $datasets = $this->datasets = self::datasetsFrom($datasets);
+
         /** @var ChartManager $manager Resolved from the container singleton */
         $manager = app(ChartManager::class);
 
@@ -257,6 +285,52 @@ final class Chart extends Component
             $adapter->scripts(),
             static fn (string $src): bool => trim($src) !== '',
         ));
+    }
+
+    /**
+     * A list prop of the chart as an array, whether it arrived as one or as a Collection.
+     *
+     * @internal Public because the `chart-mixed` view reads its datasets through it; not a
+     *           promise to a developer.
+     *
+     * @param  array<array-key, mixed>|Arrayable<array-key, mixed>  $list
+     * @return array<array-key, mixed>
+     */
+    public static function listFrom(array|Arrayable $list): array
+    {
+        return (array) ListProp::from($list);
+    }
+
+    /**
+     * The datasets as an array, each dataset's `data` as an array too.
+     *
+     * `$stats->pluck('revenue')` is the natural way to write a series in a Laravel application,
+     * and the adapters and `chart-mixed` read `data` as an array. A dataset that is not an
+     * array is left alone, so the validation that names it still sees what was passed.
+     *
+     * A series is renumbered in the order it is walked when every key is an integer, which is
+     * what `filter()` or `sortBy()` leave behind: with those keys the config would carry an
+     * object, the points would lose their order, and neither library draws them where the labels
+     * are. A series with a name for a key is a map by intent and reaches the chart as one.
+     *
+     * @internal Public because the `chart-mixed` view calls it before its own validation; not
+     *           a promise to a developer.
+     *
+     * @param  array<array-key, mixed>|Arrayable<array-key, mixed>  $datasets
+     * @return array<array-key, mixed>
+     */
+    public static function datasetsFrom(array|Arrayable $datasets): array
+    {
+        return array_map(static function ($dataset) {
+            // A dataset may be a model, as a row of a query is.
+            $dataset = ListProp::from($dataset);
+
+            if (is_array($dataset) && array_key_exists('data', $dataset)) {
+                $dataset['data'] = ListProp::renumberedUnlessNamed($dataset['data']);
+            }
+
+            return $dataset;
+        }, self::listFrom($datasets));
     }
 
     public function render(): View

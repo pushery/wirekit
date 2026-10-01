@@ -56,7 +56,6 @@ $nativeOnMobile,
 $nativeWrapperClasses
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $pickerId
@@ -68,6 +67,11 @@ $popoverValue
 $popoverValue)
 $preset
 $preset)
+$presetColor
+$presetColor;
+$presetColors
+$presetColors[]
+$presetList
 $preset])
 $readoutExpr
 $recentsKey,
@@ -98,10 +102,13 @@ $wrapperClasses])
 '')
 '')))
 ''));
+'',
+'';
 ',
 '.((string)
 '.__('wirekit::Cycle
 '@keydown.escape.window']);
+'a
 'absolute
 'action'
 'announce-errors']);
@@ -114,6 +121,7 @@ $wrapperClasses])
 'border-[var(--color-wk-border)]',
 'border-[var(--color-wk-border-error)]'
 'border-[var(--color-wk-border-strong)]'"
+'color-picker',
 'copiedLabel'
 'cursor-pointer',
 'debug'
@@ -161,6 +169,7 @@ $wrapperClasses])
 'popover'
 'popoverValue'
 'presets'
+'presets',
 'recentsKey'
 'reject',
 'relative
@@ -196,6 +205,7 @@ $wrapperClasses])
 ($format)
 ($hint
 ($name
+($presetColor
 ($required)
 ($size)
 ($swatchClasses),
@@ -210,11 +220,13 @@ $wrapperClasses])
 (`>Color
 (`pickColor`,
 (angled
+(array)
 (bool)
 (change
 (default).
 (h/s/v/a
 (height
+(is_array($presetList)
 (it
 (its
 (left→right)
@@ -232,11 +244,13 @@ $wrapperClasses])
 (resources/js/utils/caller-ref.js).
 (see
 (silent
+(string)
 (structural,
 (the
 (top→bottom)
 (useNative,
 (which
+);
 **The
 +
 --gap-wk-md
@@ -396,7 +410,7 @@ $wrapperClasses])
 @endif>
 @endisset
 @endphp
-@foreach($presets
+@foreach($presetColors
 @if(!
 @if($announceError)
 @if($callerRef
@@ -409,6 +423,7 @@ $wrapperClasses])
 @if($nativeOnMobile)</template>@endif
 @if($nativeOnMobile)<template
 @if($optimisticConfig)
+@if($presetColors
 @if($required)
 @if($showValue)
 @if($slot->hasActualContent())
@@ -449,6 +464,8 @@ A
 ARBITRARY
 Alpha
 An
+And
+Any
 BEFORE
 BOTH
 Because
@@ -590,7 +607,10 @@ Your
 ['color'
 ['hex',
 ['name'
+[]
+[])
 [],
+[];
 \Pushery\WireKit\Support\AlpinePayload::from($jsConfig)
 \Pushery\WireKit\Support\AlpinePayload::from($preset)
 \Pushery\WireKit\Support\AlpinePayload::from($value)
@@ -603,8 +623,12 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Use
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::saturation
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CssColor::value($preset)
 \Pushery\WireKit\Support\DomId::unique($id
+\Pushery\WireKit\Support\ListProp::from($presets);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\StrictnessGate::reject(
 \Pushery\WireKit\WireKit::warnUnknownProps('color-picker',
 ])
 ]),
@@ -629,6 +653,7 @@ __('wirekit::Use
 `$controlDescribedBy`
 `(pointer:
 `:error="$errors->first('brand_color')"`
+`;`,
 `<input
 `<label
 `@aware`
@@ -687,6 +712,7 @@ __('wirekit::Use
 `run()`.
 `slider`
 `sr-only`
+`style`,
 `this.run`,
 `trigger`
 `undo`,
@@ -768,7 +794,6 @@ aria-valuemax="360"
 aria-valuemin="0"
 arm
 around
-array_values((array)
 arrives
 arrow
 arrow-key
@@ -889,6 +914,7 @@ change
 changed
 channel.
 check.
+checked
 checker
 checker.
 checkmark.
@@ -940,6 +966,7 @@ color')
 color'),
 color',
 color)
+color,
 colors
 colors')
 comes
@@ -969,6 +996,7 @@ contents">
 contents`
 context
 context,
+continue;
 contract,
 contrast
 control
@@ -1047,6 +1075,7 @@ drag
 drag's
 drag).
 drag,
+draws
 drive)
 dropped
 dropped.
@@ -1071,7 +1100,6 @@ elsewhere,
 emptied
 empties
 empty
-empty($presets))
 empty).
 empty:
 enclosing
@@ -1079,9 +1107,11 @@ end
 ends
 entirely
 entirely,
+entry
 error
 escape
 escapes
+escaping
 event
 events
 every
@@ -1150,6 +1180,7 @@ font-[number:var(--font-wk-body-weight)]
 for
 for="{{
 for>`
+foreach
 form
 form's
 format
@@ -1173,8 +1204,10 @@ gap-[var(--gap-wk-md)]',
 gap-[var(--gap-wk-xs)]',
 gap-[var(--padding-wk-x-sm)]',
 gap.
+gate
 gesture
 get
+get_debug_type($preset),
 gets
 gets,
 getter
@@ -1224,6 +1257,7 @@ hover:text-[color:var(--color-wk-danger-text)]
 hover:text-[color:var(--color-wk-text)]
 how
 hsl
+hsl()
 hue
 icon
 icon-button).
@@ -1261,6 +1295,8 @@ invisible)
 invisible.
 is
 is)
+is_scalar($preset)
+is_string($preset)
 it
 it,
 it.
@@ -1339,6 +1375,8 @@ mode)
 model
 model,
 moment
+more
+more.
 morph
 moves
 much
@@ -1389,6 +1427,8 @@ of
 off
 offers
 oklch
+oklch()',
+oklch().
 old
 on
 on,
@@ -1443,6 +1483,7 @@ panel.
 paragraph
 parent
 parent,
+parse
 parser
 part
 partial
@@ -1490,6 +1531,7 @@ precedence:
 preflight
 present
 preset
+presets
 pressed
 previous
 price
@@ -1549,6 +1591,7 @@ region
 region,
 regions.
 registers
+rejected
 rejected-state
 released
 remove
@@ -1574,6 +1617,7 @@ restore
 restores
 reverse,
 rgb
+rgb(),
 right
 right,
 ring
@@ -1684,10 +1728,12 @@ static
 stays
 step
 still
+stop
 stray
 stream
 streaming
 stretch
+strictness
 string,
 strings
 strip
@@ -1698,6 +1744,7 @@ stroke-width
 stroke-width="2"
 stroke="currentColor"
 structural
+style
 style="background-color:
 style="background:
 style="display:
@@ -1715,10 +1762,11 @@ supports
 surface
 survives
 swatch
+swatch's
 swatch,
 swatch.
 swatches
-swatches.
+swatches,
 swatch↔readout
 switch
 tabindex="0"

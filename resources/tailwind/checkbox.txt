@@ -37,7 +37,6 @@ $labelClasses
 $name
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $rawName
@@ -148,6 +147,7 @@ $wkRequiredMarker
 (`min-w-0
 (a
 (aligned
+(array)
 (bool)
 (card
 (consumes
@@ -336,6 +336,7 @@ WireKit::warnUnknownProps('checkbox',
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\FieldGroup
 \Pushery\WireKit\Support\FieldGroup::describedBy(
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 ])
 ]),
@@ -433,7 +434,6 @@ aria-invalid="true"
 aria-live="assertive"
 aria-live="polite"
 around
-array_values((array)
 arrives
 as
 as,

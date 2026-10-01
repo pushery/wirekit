@@ -39,8 +39,8 @@ $initialTags
 $label
 $maxTags
 $name
+$name,
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $placeholder
@@ -52,6 +52,7 @@ $t
 $t,
 $tagAnnouncements
 $tagClasses
+$value
 $value)),
 $value));
 &&
@@ -66,6 +67,7 @@ $value));
 '-hint'
 '.((string)
 'Livewire']"`)
+'[]'))
 'action'
 'added'
 'announce-errors']);
@@ -137,6 +139,7 @@ $value));
 (WCAG
 (`p-1`
 (`p-1`)
+(array)
 (auto
 (bool)
 (e.g.
@@ -149,6 +152,7 @@ $value));
 (silent
 (string)
 (uniform
+(utils/ime.js).
 (when
 *
 */
@@ -169,8 +173,10 @@ $value));
 0L6
 12
 12"
+13px
 2.1
 2.25a.5.5
+258px
 3.05
 3.05a.5.5
 3.75
@@ -259,6 +265,7 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Both
 CONTAINER
 COPY,
+Collection
 Consumed
 Container
 DECLARED
@@ -281,6 +288,7 @@ Inside
 JavaScript
 JavaScript.
 KEEPS
+Key
 Label
 Livewire
 Mirrors
@@ -294,6 +302,7 @@ OUTSIDE
 Only
 Outside
 Own
+PHP
 PRESENCE,
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -315,10 +324,12 @@ Tag
 Text
 The
 Tight
+Twice,
 UNBOUND
 Unconditional
 Undeclared,
 WHICH
+WebKit
 What
 When
 WireKit::resolveClasses('label',
@@ -335,8 +346,10 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove
 \Pushery\WireKit\Support\AlpinePayload::string($name)
-\Pushery\WireKit\Support\AlpinePayload::string($name.'[]')
+\Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string)
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::from($value);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \Pushery\WireKit\WireKit::warnUnknownProps('tags-input',
@@ -360,6 +373,7 @@ __('wirekit::Saving'),
 `??`
 `@aware`
 `@props`
+`[]`
 `announcement`
 `args`
 `aria-describedby`
@@ -375,6 +389,7 @@ __('wirekit::Saving'),
 `disabled`:
 `display:
 `false`,
+`flex-1`,
 `id`
 `id`:
 `isPending`
@@ -394,11 +409,14 @@ __('wirekit::Saving'),
 `required`
 `resolveClasses()`,
 `role="group"`
+`skills[]`,
+`skills`
 `tagAnnouncement`,
 `tags`
 `this`
 `value="Laravel,Livewire"`);
 `value`:
+`w-0`:
 `wire:key`,
 `wire:model`
 `wire:model`,
@@ -468,7 +486,6 @@ aria-required,
 aria-required="true"
 around
 array
-array_values((array)
 array_values(array_filter(array_map('trim',
 array_values(array_map(fn
 arrives
@@ -477,6 +494,7 @@ as,
 aside
 asked
 asking
+asks
 asterisk.
 asymmetric
 at
@@ -519,6 +537,7 @@ border.
 both
 bottom)
 box
+branch
 breathing
 bridge
 build
@@ -574,6 +593,7 @@ component's
 component,
 component.
 components
+composing
 concatenated
 config
 config('app.debug'),
@@ -586,6 +606,7 @@ confirmed
 constraint,
 container
 container's
+container.
 contents">
 contents`
 control
@@ -662,7 +683,9 @@ empties
 empty
 empty,
 empty-state
+empty.
 empty:
+ends
 enough
 entry
 error
@@ -724,6 +747,7 @@ formatting.
 fourth
 frame
 frame.
+framed
 freeze
 from
 from:
@@ -743,6 +767,7 @@ go
 goes
 got
 group
+grows
 guarantees
 gutter
 half
@@ -754,10 +779,12 @@ have
 heard
 height.
 here
+here,
 here.
 here.'),
 hidden
 holds
+holds;
 horizontal
 horizontal,
 horizontally
@@ -782,6 +809,7 @@ indicator
 inflating
 initial
 input
+input's
 input,
 input-
 input-box
@@ -813,6 +841,7 @@ joins
 just
 keeps
 key
+keys
 keys.
 keystroke
 knowing
@@ -844,6 +873,7 @@ link
 list
 list,
 list:
+lists.
 literal
 live
 lives
@@ -863,6 +893,8 @@ message
 method
 min-w-0"
 min-w-[80px]
+minimum,
+minimum.
 mode,
 more
 most:
@@ -871,6 +903,7 @@ moves
 moving
 ms-0.5"
 multi-word
+multiple
 must
 n/a
 name
@@ -911,8 +944,10 @@ of
 off,
 on
 on.
+once,
 once:
 one
+one-item
 one.
 ones
 only
@@ -945,6 +980,7 @@ parent's
 parser
 part
 passthrough
+past
 paths
 per
 picked
@@ -960,6 +996,7 @@ pr-1
 precedence:
 present
 presentational
+presses
 previous-previous
 price
 prod).
@@ -1047,6 +1084,7 @@ scope,
 screen
 search
 see
+select
 sentence
 sentences
 server
@@ -1083,6 +1121,7 @@ span
 spellings
 spreads
 standing
+start
 starting
 statement
 statement,
@@ -1092,6 +1131,8 @@ stays
 step
 steps
 still
+stood
+stop
 stops
 stray
 string
@@ -1199,6 +1240,7 @@ viewBox="0
 visible
 visibly
 visual
+w-0
 w-3.5"
 walk
 wanted:
@@ -1218,7 +1260,9 @@ whole
 whose
 why
 why.
+wide
 wider
+width
 win
 wired.
 with
@@ -1234,6 +1278,7 @@ wraps
 write
 writes
 written
+written.
 wrote
 wrote.
 x-bind:aria-busy="isPending"
@@ -1247,6 +1292,7 @@ x-ref="input"
 x-text="announcement"></div>
 x-text="tag"></span>
 x-text="tagAnnouncement"></div>
+x-wk-ime
 x-wk-ref="{{
 {
 {{

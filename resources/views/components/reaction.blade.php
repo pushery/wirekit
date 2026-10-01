@@ -41,6 +41,8 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false);
 
+    // The names may arrive as a Collection, such as `$post->likers->pluck('name')`.
+    $users = \Pushery\WireKit\Support\ListProp::renumbered($users);
     $userList = is_array($users) ? $users : [];
 
     // The server-side name stays the FIRST paint and the no-JS answer. It is
@@ -60,7 +62,7 @@
     $reactionLayer = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'active',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [

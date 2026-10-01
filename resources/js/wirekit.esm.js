@@ -15,6 +15,7 @@ import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerScrollToMagic } from './utils/scroll-to.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
+import { registerImeDirective } from './utils/ime.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
@@ -164,6 +165,9 @@ export function installRuntime(Alpine) {
     // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
     // root the component renders. See utils/caller-ref.js.
     registerCallerRefDirective(Alpine);
+    // A key press that belongs to an input method's composition stops at the field. See
+    // utils/ime.js.
+    registerImeDirective(Alpine);
     registerFlashDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);

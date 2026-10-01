@@ -65,7 +65,6 @@ $offset
 $opensNewTab
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $panelClasses
 $panelId
@@ -212,6 +211,7 @@ $widthStyle]
 (WireKit
 (`_applyPanelId`),
 (aria-haspopup,
+(array)
 (bool)
 (bubble
 (button/link)
@@ -583,6 +583,7 @@ Wrapping
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.checkbox-item',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.indicator',
@@ -807,7 +808,6 @@ aria-labelledby="{{
 aria-live="assertive"
 arithmetic
 around
-array_values((array)
 arrived
 arrives
 arriving

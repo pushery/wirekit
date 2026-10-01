@@ -475,14 +475,12 @@ $zoomOverlay($items[$i],
 ("16/9",
 ($align
 ($fit)
-($images
 ($img['alt']
 ($img['full']
 ($img['src']
 ($invalid
 ($item['alt']
 ($item['src']
-($items
 ($lightbox
 ($min
 ($responsiveTemplate)
@@ -500,6 +498,8 @@ $zoomOverlay($items[$i],
 (Level
 (Support\UnboundModel).
 (WireKit::validateProp('grid',
+(\Pushery\WireKit\Support\ListProp::records($images)
+(\Pushery\WireKit\Support\ListProp::records($items)
 (`[sidebar-start]
 (a
 (alt="").

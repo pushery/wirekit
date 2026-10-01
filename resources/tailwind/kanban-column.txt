@@ -241,7 +241,7 @@ $wrap
 'min-h-5
 'min-h-6
 'min-h-7
-'min-w-[280px]
+'min-w-[min(280px,100%)]
 'moved'
 'movedToColumn'
 'name'
@@ -399,6 +399,7 @@ $wrap
 1px
 2
 2.1.1).
+280px,
 2rem,
 30%,
 300),
@@ -489,6 +490,7 @@ Alpine's
 Also
 An
 Any
+At
 Aurora
 BOTH
 Back
@@ -1297,6 +1299,7 @@ fill:
 filled
 filled($label);
 filled-background
+fills
 filter_var($wrap,
 finds
 fine).
@@ -1422,6 +1425,7 @@ hit,
 hoists
 holds
 honest,
+horizontal
 host
 house
 hover
@@ -1542,12 +1546,14 @@ layout
 layout,
 leading
 leadingIcon,
+least
 least.
 leave
 leaves
 leaving
 left
 legitimately
+less:
 let
 lets
 lift
@@ -1640,6 +1646,7 @@ named
 names
 names.
 naming
+narrower
 native
 needed
 needs
@@ -1747,6 +1754,7 @@ passed
 passes
 passes,
 passthrough
+past
 patch,
 patches
 patching
@@ -1762,6 +1770,7 @@ per-set
 per-surface
 personalization
 phase,
+phone
 phrasing
 picked
 pill
@@ -2002,6 +2011,7 @@ stack
 stacking-context
 stadium
 stand
+standing
 stands
 state
 state.

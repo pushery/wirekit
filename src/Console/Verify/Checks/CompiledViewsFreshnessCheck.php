@@ -73,7 +73,7 @@ final class CompiledViewsFreshnessCheck extends VerifyCheck
         // comparison above stayed green while every compiled template still held the
         // previous version's markup. That is precisely the state a developer is in right
         // after an upgrade — and the state in which `view:clear` is the answer.
-        $newestSource = max($newestSource, $this->packageNewestMtime());
+        $newestSource = max($newestSource, $this->packageChangedAt());
 
         $lagSeconds = $newestSource - $newestCompiled;
         $thresholdSeconds = 60;

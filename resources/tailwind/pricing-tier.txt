@@ -116,6 +116,7 @@ $outlineClasses
 $outlineClasses,
 $period
 $period)
+$periods
 $pillRadius
 $pillRadius,
 $placeholderAttributes
@@ -614,6 +615,7 @@ CTA
 CallerRef::onRoot()
 Catching
 Check
+Collections;
 Convert
 Copy
 DO
@@ -818,6 +820,8 @@ Without
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::from($periods);
+\Pushery\WireKit\Support\ListProp::from($prices);
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('price',
 \Pushery\WireKit\WireKit::warnUnknownProps('pricing-tier',
@@ -1009,6 +1013,7 @@ aria-labelledby
 armed,
 arms
 around
+array.
 array_filter([
 array_keys($sizeMap));
 arrive
@@ -1919,6 +1924,7 @@ per-instance
 per-set
 per-surface
 period
+periods
 personalization
 phase,
 phone.
@@ -2248,6 +2254,7 @@ tell
 tells
 template
 test
+tests
 text
 text,
 text-[color:var(--color-wk-accent-content)]

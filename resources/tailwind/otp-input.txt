@@ -78,7 +78,6 @@ $masked
 $name
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $ownDescribedBy
@@ -220,6 +219,7 @@ $wrapperClasses
 (@aware
 (WireKit::validateProp('otp-input',
 (`--size-wk-md`,
+(array)
 (auto
 (bool)
 (int)
@@ -230,6 +230,7 @@ $wrapperClasses
 (string
 (string)
 (the
+(utils/ime.js).
 (when
 )))
 ).']';
@@ -371,6 +372,7 @@ In
 Individual
 It
 KEEPS
+Key
 LATER
 LINE,
 LITERAL
@@ -453,6 +455,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from($name)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\StrictnessGate::enforce(
 \Pushery\WireKit\WireKit::validateProp('otp-input',
@@ -623,7 +626,6 @@ around
 array_chunk(range(0,
 array_map(static
 array_map(strval(...),
-array_values((array)
 array_values(array_unique(array_merge(
 array_values(array_unique(mb_str_split($alphabet)));
 arrived
@@ -798,6 +800,7 @@ component's
 component,
 component.
 components
+composing
 concatenation:
 config('app.debug'),
 config('wirekit.a11y.announce_error',
@@ -1354,6 +1357,7 @@ preference
 preg_match('/\p{Ll}/u',
 preg_match('/\p{Lu}/u',
 presentational
+presses
 previous,
 prod).
 progress
@@ -1707,6 +1711,7 @@ x-data="wirekitOtpInput({
 x-on:wirekit:otp-complete="run($event.detail.value)"
 x-ref="digit{{
 x-text="announcement"></div>
+x-wk-ime
 x-wk-ref="{{
 xor
 {

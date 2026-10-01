@@ -74,7 +74,10 @@
 
     $baseClasses = WireKit::resolveClasses('kanban-column', 'base', implode(' ', [
         'flex flex-col',
-        'min-w-[280px] max-w-[320px]',
+        // At least 280px, or the board's width where that is less: a column in a vertical board
+        // on a phone fills the board instead of standing out past it, and a horizontal board
+        // narrower than one column shows one column at a time.
+        'min-w-[min(280px,100%)] max-w-[320px]',
         'rounded-[var(--radius-wk-lg)]',
         'bg-[var(--color-wk-bg-muted)]',
         'border-[length:var(--border-wk-width)]',

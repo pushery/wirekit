@@ -43,7 +43,6 @@ $name
 $name));
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $scope);
@@ -139,6 +138,7 @@ $wrapperClasses
 (.peer),
 (@aware
 (absolutely
+(array)
 (bool)
 (kept
 (neutral-100)
@@ -298,6 +298,7 @@ Written
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\FieldGroup
 \Pushery\WireKit\Support\FieldGroup::describedBy(
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 ])
 ]),
@@ -388,7 +389,6 @@ aria-label="{{
 aria-live="assertive"
 aria-live="polite"
 around
-array_values((array)
 arrives
 as
 asked

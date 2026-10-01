@@ -70,7 +70,7 @@ $variantValue
 '-error';
 '-hint';
 '.((string)
-'[]'
+'[]')
 'accept'
 'announce-errors']);
 'announceError'
@@ -387,11 +387,13 @@ What
 WireKit::resolveClasses('file-upload',
 WireKit::stableId('wk-upload',
 WireKit::validateProp('file-upload',
+With
 X
 X),
 [
 ['default',
 ['user',
+\Illuminate\Support\Str::finish($name,
 \Pushery\WireKit\Support\AlpinePayload::from($boundModel)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string(($hasError
@@ -414,6 +416,7 @@ __('wirekit::Removed
 `@if($hint
 `@props`
 `MessageBag::has(null)`
+`[]`
 `_focusAfterRemoval`
 `accept="image/*;capture=camera"`
 `accept`:
@@ -433,6 +436,8 @@ __('wirekit::Removed
 `data-wk-ref-scope`
 `default`
 `disabled="false"`
+`files[]`.
+`files`
 `flex`)
 `focus-within`
 `has-[:focus-visible]`
@@ -757,6 +762,7 @@ empties
 empty
 empty,
 enables
+ends
 enlarged.
 enough
 ensures
@@ -1051,6 +1057,7 @@ omitted
 on
 on.
 once
+once,
 once.
 once:
 one
@@ -1437,6 +1444,7 @@ wrap
 wrapper
 written
 wrong
+wrote
 x-bind:class.
 x-cloak>
 x-data="wirekitFileUpload({

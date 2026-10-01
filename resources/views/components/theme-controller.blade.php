@@ -100,6 +100,7 @@
 
     // Caller wording wins per key, so overriding one option does not silently
     // drop the other two.
+    $options = \Pushery\WireKit\Support\ListProp::from($options);
     $optionLabels = array_merge(
         ['system' => __('wirekit::System'), 'light' => __('wirekit::Light'), 'dark' => __('wirekit::Dark')],
         is_array($options) ? $options : [],

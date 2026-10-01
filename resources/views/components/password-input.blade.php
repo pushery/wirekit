@@ -212,7 +212,7 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'password',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
         // A second commit while one is in flight would resolve by whichever

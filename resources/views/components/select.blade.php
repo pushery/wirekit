@@ -195,7 +195,7 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => (string) ($value ?? ''),
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [
@@ -257,7 +257,7 @@
                 wcag312 tag but only validates a lang attribute that is PRESENT; with none
                 there are no nodes to judge, and the scan reports zero violations.
             --}}
-            @foreach($options as $optionValue => $optionLabel)
+            @foreach(\Pushery\WireKit\Support\ListProp::from($options) as $optionValue => $optionLabel)
                 @if(is_array($optionLabel) && ! array_key_exists('label', $optionLabel))
                     <optgroup label="{{ $optionValue }}">
                         @foreach($optionLabel as $subValue => $subLabel)

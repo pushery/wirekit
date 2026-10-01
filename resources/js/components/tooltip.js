@@ -5,6 +5,7 @@
  * Positioning via Floating UI with auto flip/shift.
  */
 import { position } from '../utils/floating.js';
+import { isComposing } from '../utils/ime.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
@@ -228,6 +229,9 @@ export default function wirekitTooltip(config = {}) {
          * @param {KeyboardEvent} [event]
          */
         keydownEscape(event) {
+            // An Escape that abandons an input method's conversion belongs to the input method.
+            if (isComposing(event)) return;
+
             if (this.isOpen) {
                 event?.preventDefault();
             }

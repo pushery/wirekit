@@ -135,6 +135,7 @@ BooleanProp::from($announce,
 BooleanProp::from($showLevel,
 CHANGE
 CallerRef::onRoot()
+Collection
 DOM:
 Dev-only
 Each
@@ -175,6 +176,7 @@ WireKit::resolveClasses('strength-meter',
 [])
 [__('wirekit::Weak'),
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\ListProp::from($levels);
 \Pushery\WireKit\WireKit::warnUnknownProps('strength-meter',
 ])
 ]),
@@ -200,6 +202,7 @@ accessible
 across
 action
 after
+all.
 alone
 already
 an
@@ -310,6 +313,7 @@ hands
 has
 have
 here,
+holds
 how
 if
 implode('
@@ -340,6 +344,7 @@ left
 length
 lengths
 levels:
+list
 list).
 lit
 live
@@ -400,6 +405,7 @@ range(1,
 rather
 re-initializes
 reach
+read
 reader.
 reads
 refuse.

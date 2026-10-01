@@ -15,6 +15,7 @@ import {
     releasePageInert,
     unlockScroll as unlockPageScroll,
 } from '../utils/overlay.js';
+import { isComposing } from '../utils/ime.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
@@ -391,7 +392,7 @@ export default function wirekitCommandPalette(config = {}) {
             const items = this._getItems();
 
             // Enter while an input method composes text confirms the composition, not a choice.
-            if (event.key === 'Enter' && (event.isComposing || event.keyCode === 229)) return;
+            if (event.key === 'Enter' && isComposing(event)) return;
 
             // Enter with no option highlighted belongs to the host. A search submits its query to
             // a full results page, takes its single hit, or jumps where the query points; the

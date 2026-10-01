@@ -122,12 +122,9 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
      * field's default width until the application was rebuilt. Tailwind only generates the
      * classes it scanned, and the manifest is the one record of when it scanned.
      *
-     * "Installed" is the newest of the package directory, its Blade templates and its token
-     * lists. Composer creates the package directory when it installs a version, which dates a
-     * dist install whose files keep the archive's timestamps; a source install dates every file
-     * a checkout changes. A running dev server (`public/hot`) builds on demand and is left out,
-     * and a difference of a few seconds is ignored, because an install and a build on the same
-     * machine can land in the same second.
+     * When the package was installed is read by `installedAt()`. A running dev server
+     * (`public/hot`) builds on demand and is left out, and a difference of a few seconds is
+     * ignored, because an install and a build on the same machine can land in the same second.
      */
     private function reportABuildOlderThanTheInstalledTemplates(string $manifestPath): void
     {
@@ -137,7 +134,7 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
 
         clearstatcache(true, $manifestPath);
         $builtAt = @filemtime($manifestPath);
-        $installedAt = $this->installedAt();
+        $installedAt = self::installedAt(dirname(__DIR__, 4));
 
         if ($builtAt === false || $installedAt === null || $builtAt >= $installedAt - 2) {
             return;
@@ -152,12 +149,24 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
     }
 
     /**
-     * When the installed package last changed, read off the files a build scans.
+     * When the package at `$root` was installed, or last changed, as a Unix timestamp.
+     *
+     * The newest of the modification times of its directory, its Blade templates and its token
+     * lists, and the time its directory last changed status. Composer unpacks a release archive and
+     * moves the unpacked folder into place. The unpacking keeps the archive's times on every file
+     * and directory, so their modification times date the release rather than the install; the
+     * move is what changes the directory's status, so its status time dates the install. A source
+     * install dates every file a checkout changes.
+     *
+     * A deploy that copies a vendor directory onto a server gives the copy as the install there,
+     * also when the build it copied with it is older. Run the check where the build runs.
+     *
+     * Public so it can be read on a directory other than the one this package is installed in.
      */
-    private function installedAt(): ?int
+    public static function installedAt(string $root): ?int
     {
-        $root = dirname(__DIR__, 4);
-        $times = [@filemtime($root)];
+        clearstatcache(true, $root);
+        $times = [@filemtime($root), @filectime($root)];
 
         foreach (glob($root.'/resources/tailwind/*.txt') ?: [] as $file) {
             $times[] = @filemtime($file);

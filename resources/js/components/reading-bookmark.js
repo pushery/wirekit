@@ -36,7 +36,7 @@
  * @param {number} config.minDwell       seconds on the page before a stored position is worth offering
  * @param {string} config.promptMessage  the offer, already translated, for the live region to speak
  */
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
 
 export default function wirekitReadingBookmark(config = {}) {
@@ -170,7 +170,7 @@ export default function wirekitReadingBookmark(config = {}) {
             // this, and the OS preference alone cannot see it. Reading matchMedia
             // was what the inline version did — invisible to the guard while it
             // lived in a template, caught the moment it moved here.
-            const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+            const behavior = scrollBehavior(!prefersReducedMotion());
 
             const target = this._internallyScrollableTarget();
 

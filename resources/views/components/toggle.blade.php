@@ -194,7 +194,7 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => (bool) ($attributes->get('checked') ?? false),
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         // Developer warning only where warnings belong; the same gate every other
         // dev-warning call site in the catalog uses.
         'debug' => (bool) config('app.debug'),

@@ -242,16 +242,31 @@ abstract class VerifyCheck
     }
 
     /**
-     * The newest mtime the PACKAGE itself carries — its registry plus every component view.
+     * When the PACKAGE itself last changed: its registry, every component view, and its install.
      *
      * A `composer update pushery/wirekit` moves this and touches nothing under
      * `resources/views/`, so any check that compares the app's own sources against a cache
      * is blind to it by construction.
+     *
+     * The install is the time the package directory last changed status. Composer unpacks a
+     * release archive and keeps the archive's modification times on every file, so on an install
+     * from a release those times date the release rather than the update; moving the unpacked
+     * folder into place is what dates the update.
      */
-    protected function packageNewestMtime(): int
+    protected function packageChangedAt(): int
     {
-        $newest = filemtime(dirname(__DIR__).'/../ComponentRegistry.php') ?: 0;
-        $componentsDir = dirname(__DIR__).'/../../resources/views/components';
+        return self::changedAt(dirname(__DIR__, 3));
+    }
+
+    /**
+     * `packageChangedAt()` for the package at `$root`, as a Unix timestamp, 0 when nothing there
+     * can be read. Public so it can be read on a directory other than the installed package.
+     */
+    public static function changedAt(string $root): int
+    {
+        clearstatcache(true, $root);
+        $newest = max(@filemtime($root.'/src/ComponentRegistry.php') ?: 0, @filectime($root) ?: 0);
+        $componentsDir = $root.'/resources/views/components';
 
         if (is_dir($componentsDir)) {
             foreach (File::allFiles($componentsDir) as $file) {

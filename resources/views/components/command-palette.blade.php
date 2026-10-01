@@ -213,6 +213,8 @@
                             @endif
                         </div>
                         <input
+                            {{-- Key presses of an input method composing text stop here, before the keys of the panel (utils/ime.js). --}}
+                            x-wk-ime
                             x-ref="input"
                             x-model="query"
                             type="text"

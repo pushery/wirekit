@@ -50,7 +50,7 @@ $scope);
 ($entry['value']
 ($itemLabel
 ($items
-($replies
+(\Pushery\WireKit\Support\ListProp::records($replies)
 (defaults
 (silent
 (string)

@@ -349,6 +349,7 @@ Box-shadow
 CLASS,
 CSS
 Closed
+Collection
 Combine
 Corner
 Counter
@@ -439,6 +440,7 @@ Without
 ['xs',
 [])->class([$baseClasses,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\ListProp::from($avatar);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('profile',
@@ -555,6 +557,7 @@ arm
 around
 array
 array_filter([$fromInitialsStyle,
+arrive
 as
 as,
 asked
@@ -977,6 +980,7 @@ mode:
 mode;
 model
 model,
+model;
 more
 more:
 morph
@@ -1121,6 +1125,7 @@ reason
 reasoning
 rebuilt
 recommend.
+record.
 redefines
 redundant
 reflow

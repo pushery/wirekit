@@ -52,9 +52,6 @@ $cellBox
 $cellButton
 $cellType
 $cellType,
-$cells
-$cells->all()
-$cells;
 $cellsArr
 $changePhrases
 $ci
@@ -87,7 +84,7 @@ $editable
 $empty
 $emptyText
 $flatCells
-$flatCells,
+$flatCells)
 $flatCells[$k.':'.$ck]
 $flatCells[$k]
 $flatCells[$r.':'.$c]
@@ -112,13 +109,10 @@ $isEditable
 $isInformative
 $isInformative;
 $it
-$it;
 $it['key']
 $it['label']
 $items
 $items));
-$items->all()
-$items;
 $k
 $legend
 $m):
@@ -788,7 +782,6 @@ Its
 JAVASCRIPT
 JS
 JSON
-JSON_THROW_ON_ERROR)
 KEY,
 Keyboard-
 LANDMARK
@@ -951,7 +944,6 @@ Zero
 [colKey
 [rowKey
 [{key,label}]
-\Illuminate\Support\Collection
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from(
 \Pushery\WireKit\Support\AlpinePayload::from($flatCells)
@@ -960,6 +952,7 @@ Zero
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Off'))
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::On'))
 \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_',
+\Pushery\WireKit\Support\AlpinePayload::json((object)
 \Pushery\WireKit\Support\AlpinePayload::string($cellType)
 \Pushery\WireKit\Support\AlpinePayload::string($ck)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
@@ -968,6 +961,10 @@ Zero
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::from($cells);
+\Pushery\WireKit\Support\ListProp::from($it);
+\Pushery\WireKit\Support\ListProp::from($items);
+\Pushery\WireKit\Support\ListProp::from($v);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
 \Pushery\WireKit\WireKit::stableId('status-matrix',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -1908,7 +1905,6 @@ inside
 installed
 installed.
 installed.'
-instanceof
 instead
 instead,
 intact
@@ -1943,7 +1939,6 @@ itself
 itself,
 itself.
 job
-json_encode((object)
 judgment
 just
 justify-center

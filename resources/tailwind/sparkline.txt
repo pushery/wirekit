@@ -25,6 +25,7 @@ $chartAttributes->except(['data-replayable']);
 $chartAttributes->except(['data-wk-chart']);
 $chartAttributes->get('data-replayable');
 $chartLibrary
+$data
 $data),
 $data):
 $data);
@@ -330,11 +331,14 @@ Chart
 Chart.js
 Chart.js:
 Clipping
+Collection
+Collection;
 Component
 DIFFERENT
 DOES
 DOM
 DOMContentLoaded.
+Data
 Debug
 December.
 Declared
@@ -427,8 +431,9 @@ Wrapping
 [];
 \Illuminate\View\ComponentAttributeBag(
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
-\Pushery\WireKit\Support\AlpinePayload::from($chartData)
+\Pushery\WireKit\Support\AlpinePayload::json($chartData)
 \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
+\Pushery\WireKit\Support\ListProp::renumbered($data);
 \Pushery\WireKit\WireKit::cspNonce()
 \Pushery\WireKit\WireKit::warnUnknownProps('sparkline',
 \RuntimeException(
@@ -553,9 +558,11 @@ aria-hidden="true"
 aria-label
 aria-label="{{
 array
+array.
 array_filter(
 array_map(static
 arrive
+arrives
 as
 as,
 assistive
@@ -668,6 +675,7 @@ client-only
 clientHeight
 clip
 clips
+closure
 collapses
 colon)
 color
@@ -803,6 +811,7 @@ emit
 emits
 emitted
 emitting
+empty
 ends
 enhancement
 entrance
@@ -958,6 +967,7 @@ key),
 keyboard
 keyboard;
 keyed
+keys
 label
 labels
 lands
@@ -1034,8 +1044,10 @@ morphing
 mount
 mountElement
 must
+n-1.
 n/a
 name
+name,
 named
 names
 naming
@@ -1127,9 +1139,11 @@ placeholder,
 plain
 plot
 point
+point,
 point-radius
 point.
 points
+position,
 position:
 positioning
 pre-resolve
@@ -1187,6 +1201,7 @@ rendered
 rendering
 renders
 rendersTo():
+renumbered
 replay
 replay-worthy:
 reported
@@ -1256,6 +1271,7 @@ small,
 smooth-line
 so
 something
+sorted,
 source
 sparkline
 sparkline's
@@ -1305,6 +1321,7 @@ table
 tag
 tag.
 tags
+take
 takes
 tall
 target
@@ -1328,6 +1345,7 @@ then
 there
 there,
 these
+they
 they're
 thin
 things
@@ -1382,6 +1400,7 @@ updates
 usage
 use
 uses
+usually
 utilities
 utilities,
 utility
@@ -1406,6 +1425,7 @@ visibly
 visual
 vs
 w-full')])
+walked:
 want
 warning
 was

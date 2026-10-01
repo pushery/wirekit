@@ -24,11 +24,22 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\ListProp;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `schema="false"` would otherwise KEEP emitting. Normalized against the prop's own
     // default so a cast never leaves a second BreadcrumbList competing with the first.
     $schema = BooleanProp::from($schema, true);
+
+    // A trail usually arrives as a Collection; `array_key_last()` below takes an array.
+    $items = ListProp::records($items);
+
+    // An application's trail is empty on its home page. An empty list inside the landmark reads
+    // out as a breadcrumb with nothing in it, so the list is left out, and the landmark is hidden
+    // unless the slot beside the trail holds a control, `aria-hidden` too, so a stylesheet that
+    // gives the nav a display of its own cannot bring the empty landmark back. It stays in the
+    // markup: the caller's attributes, a `wire:key` among them, still have their element.
+    $hasItems = is_countable($items) && count($items) > 0;
 
     use Pushery\WireKit\WireKit;
 
@@ -131,13 +142,20 @@
     };
 @endphp
 
-<nav @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Breadcrumb') }}" @endunless {{ $attributes->class([$navClasses]) }}>
+<nav @if($hasItems || isset($actions)) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Breadcrumb') }}" @endunless @else hidden aria-hidden="true" @endif {{ $attributes->class([$navClasses]) }}>
+    @if($hasItems)
     <ol data-wk-prose-skip role="list" class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
             @php
                 // Normalize item: accept ['label' => .., 'href' => .., 'icon' => ..] or just a string label.
                 $label = is_array($item) ? ($item['label'] ?? '') : (string) $item;
-                $href = is_array($item) ? ($item['href'] ?? null) : null;
+                // A trail is often built from data (a category tree, a folder path), and escaping
+                // does not stop a `javascript:` URL, so the target passes SafeUrl like every link a
+                // component reads from its items. A refused target leaves the crumb without a link,
+                // the shape an item without `href` already has.
+                // Compared with '' rather than tested for truth: `0` is a relative URL.
+                $href = is_array($item) ? \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? null) : '';
+                $href = $href === '' ? null : $href;
                 // Optional decorative icon alias (e.g. 'home') rendered before the
                 // label. The label stays the accessible text, so the icon is
                 // aria-hidden. When present, the crumb element becomes an
@@ -153,7 +171,7 @@
                         @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
                         {{ $label }}
                     </span>
-                @elseif(!$href)
+                @elseif($href === null)
                     {{-- An unlinked crumb that is NOT the last one: a real position in
                          the trail that simply has no page to point at. It reads as plain
                          text and carries no aria-current, because only one crumb in a
@@ -180,6 +198,7 @@
             </li>
         @endforeach
     </ol>
+    @endif
 
     @if(isset($actions))
         {{-- Inside the nav landmark, outside the list: the control belongs to the trail, but it
@@ -192,7 +211,7 @@
      <x-wirekit::structured-data>, which bakes JSON_HEX_TAG in: without it a
      user-controlled item label containing </script> could break out of the
      JSON-LD block. --}}
-@if($schema && count($items) > 0)
+@if($schema && $hasItems)
     @php
         // Built by Schema::breadcrumbItems(), the one rule every producer shares: a step with no
         // page of its own stays in the visible trail above but not in here, because Google
@@ -205,7 +224,9 @@
             'itemListElement' => \Pushery\WireKit\Schema\Schema::breadcrumbItems(array_values(array_map(
                 static fn ($item): array => [
                     'name' => is_array($item) ? (string) ($item['label'] ?? '') : (string) $item,
-                    'url' => is_array($item) && ! empty($item['href']) ? (string) $item['href'] : null,
+                    // The same target as the visible crumb: one the trail refuses is no page here
+                    // either. A refused target is '', which the schema reads as no page.
+                    'url' => is_array($item) ? \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? null) : null,
                 ],
                 $items,
             ))),

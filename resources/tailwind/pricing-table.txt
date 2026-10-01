@@ -60,6 +60,7 @@ $withoutOuterAttributes]
 'intervalLabel'
 'intervals'
 'items-stretch',
+'key')`
 'label'
 'list-none',
 'list-style:
@@ -134,6 +135,7 @@ Billing
 Blade
 Both
 CSP
+Collection,
 Column
 Declared
 Default
@@ -178,6 +180,7 @@ With
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($intervalUnselectedClasses)
+\Pushery\WireKit\Support\ListProp::from($intervals);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('pricing-table',
 ])
@@ -192,6 +195,7 @@ __('wirekit::Pricing
 `interval`
 `intervals`,
 `list-none`
+`pluck('label',
 `prices`.
 `wire:key`,
 `wire:model`
@@ -220,6 +224,7 @@ aria-label="{{
 aria-pressed,
 aria-pressed="{{
 array_key_first($intervalMap)
+arrive
 arriving,
 as
 assistive
@@ -329,6 +334,7 @@ gap-[var(--gap-wk-md)]',
 gap-[var(--space-wk-xs)]
 gappy
 given.
+gives.
 go
 grid.
 group

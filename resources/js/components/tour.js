@@ -8,8 +8,9 @@
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { position } from '../utils/floating.js';
+import { isComposing } from '../utils/ime.js';
 import { holdPageInert, inOverlayRoot, releasePageInert } from '../utils/overlay.js';
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 
 /**
  * @param {Object} config - Tour configuration from Blade
@@ -154,6 +155,9 @@ export default function wirekitTour(config = {}) {
          * @param {KeyboardEvent} event
          */
         escapeTour(event) {
+            // An Escape that abandons an input method's conversion belongs to the input method.
+            if (isComposing(event)) return;
+
             if (! this.active) return;
 
             event?.preventDefault();
@@ -222,7 +226,7 @@ export default function wirekitTour(config = {}) {
                 // Same reason as scroll-to-top: an explicit `behavior` argument wins
                 // over the CSS reduced-motion rule, so it has to ask itself.
                 targetEl.scrollIntoView({
-                    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                    behavior: scrollBehavior(!prefersReducedMotion()),
                     block: 'center',
                 });
             }

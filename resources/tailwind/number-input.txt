@@ -52,7 +52,6 @@ $min
 $name
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $prefix
@@ -178,6 +177,7 @@ $suffix
 (@aware
 (Support\CallerListeners).
 (`locked`).
+(array)
 (auto
 (because
 (below)
@@ -362,6 +362,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 ])
@@ -462,7 +463,6 @@ aria-live="assertive"
 aria-live="polite"
 arithmetic
 around
-array_values((array)
 arrives
 arrows
 as

@@ -194,9 +194,12 @@
     $name = $name ?? $attributes->get('name');
     $captionId = $id.'-caption';
 
-    $rowsArr = $rows instanceof \Illuminate\Support\Collection ? $rows->values()->all() : array_values((array) $rows);
-    $colsArr = $columns instanceof \Illuminate\Support\Collection ? $columns->values()->all() : array_values((array) $columns);
-    $hiddenArr = array_values((array) $hidden);
+    // Plain lists for the payload, whatever the caller passed: an array, a Collection, a lazy
+    // one, or a paginator, which hands over the items of its page. Cast with `(array)`, such an
+    // object would be read as its own properties.
+    $rowsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($rows);
+    $colsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($columns);
+    $hiddenArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($hidden);
 
     // Avatar tints are resolved HERE, in PHP, and that is the whole reason an
     // avatar cell is expressible at all. `AvatarPalette` hashes a key with crc32
@@ -205,8 +208,8 @@
     // person renders one color in a table cell and another on their profile
     // avatar — a divergence nothing would catch, because each side stays
     // internally consistent. The rows already travel through PHP on their way to
-    // Alpine (`AlpinePayload::from($rowsArr)` below), so the pair is computed once
-    // per DISTINCT key and handed over as ordinary data.
+    // Alpine (the state carrier below), so the pair is computed once per DISTINCT
+    // key and handed over as ordinary data.
     //
     // Keyed by the value rather than merged into the row: a derived field would
     // have to invent a name no application already uses, and rows arrive here as
@@ -227,6 +230,33 @@
                 $avatarTints[(string) $value] = AvatarPalette::for((string) $value);
             }
         }
+    }
+
+    // The rows as they go into the page. The table reads a row through its key, its sort key and
+    // the fields its columns name, and each row carries those and no other: a row built from a
+    // model would otherwise put each of its attributes into the page, the columns on screen or
+    // not. A `rowActions` slot has the whole row in scope as `row`, so with one the rows go as
+    // they are, and the docs say so.
+    $rowsPayload = $rowsArr;
+
+    if (! isset($rowActions)) {
+        $rowFields = [(string) $rowKey];
+
+        if (filled($sortKey)) {
+            $rowFields[] = (string) $sortKey;
+        }
+
+        foreach ($colsArr as $col) {
+            foreach (['key', 'subKey', 'hrefKey', 'intentKey', 'avatarKey'] as $field) {
+                $named = data_get($col, $field);
+
+                if (is_string($named) && $named !== '') {
+                    $rowFields[] = $named;
+                }
+            }
+        }
+
+        $rowsPayload = \Pushery\WireKit\Support\ListProp::only($rowsArr, array_values(array_unique($rowFields)));
     }
 
     // Soft tinted intent pills for `cellType: 'badge'` columns. Defined here (PHP
@@ -328,7 +358,7 @@
 
          A `<template>` so it has no box at all, and an attribute so Blade's own escaping
          applies. --}}
-    <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::from(['rows' => $rowsArr, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading, 'hidden' => $hiddenArr]) }}"></template>
+    <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::json(['rows' => $rowsPayload, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading, 'hidden' => $hiddenArr]) }}"></template>
 
     {{-- For a `name` or a `wire:model`: the root leaves the binding off, so without this field
          a binding on the tag would reach no element. --}}
@@ -361,7 +391,9 @@
                     />
                 @endif
             </div>
-            <div class="flex items-center gap-[var(--space-wk-sm)]">
+            {{-- Wraps as well: the density toggle and the column button need more than a phone
+                 column holds beside each other. --}}
+            <div class="flex flex-wrap items-center gap-[var(--space-wk-sm)]">
                 {{ $toolbar ?? '' }}
                 {{-- Density toggle. The pressed option is a tint, which forced colors does not paint,
                      so `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}

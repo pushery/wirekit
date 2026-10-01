@@ -314,6 +314,7 @@
     // numeric string key into an integer, so deciding by the key's type read `[31 => 'Rain
     // jacket']` and every `pluck('name', 'id')` as a list and submitted the NAMES — the pills
     // looked right and `wire:model` received labels instead of ids.
+    $options = \Pushery\WireKit\Support\ListProp::records($options);
     $optionsAreAList = array_is_list(collect($options)->all());
     $encodedOptions = collect($options)->map(function ($option, $key) use ($optionsAreAList) {
         if (is_array($option)) {
@@ -354,6 +355,10 @@
     // resulting keys seed the Alpine `selected` array so the matching pills
     // render on load. (Framework-agnostic: works in plain Blade forms and as
     // the initial display alongside a two-way binding.)
+    //
+    // A Collection is read as the list it holds; `is_array()` would take it for no
+    // pre-selection and render the field empty.
+    $value = \Pushery\WireKit\Support\ListProp::from($value);
     $selectedValues = is_array($value)
         ? array_values(array_map(fn ($v) => (string) $v, $value))
         : (is_string($value) && $value !== ''
@@ -375,7 +380,7 @@
                 'truncated' => __('wirekit::More results. Keep typing to narrow them.'),
                 'empty' => __('wirekit::No results'),
             ]);
-        $serverOptions = \Pushery\WireKit\Support\AlpinePayload::from(['options' => $encodedOptions, 'truncated' => $truncated]);
+        $serverOptions = \Pushery\WireKit\Support\AlpinePayload::json(['options' => $encodedOptions, 'truncated' => $truncated]);
     }
 @endphp
 
@@ -398,7 +403,7 @@
         // cannot run against a region nobody pointed at.
         'errorRegion' => '#'.$id.'-error',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -458,7 +463,9 @@
         {{-- Hidden inputs for form submission --}}
         <template x-for="(val, i) in selected" :key="i">
             {{-- A disabled field is left out of the form data, as a native one is. --}}
-            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="val" @if($disabled) disabled @endif />
+            {{-- The name ends in `[]` once, whether the caller wrote `skills` or `skills[]`, the way a
+                 native multiple select is written. Twice, PHP reads a list of one-item lists. --}}
+            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" :value="val" @if($disabled) disabled @endif />
         </template>
 
         @if($listLayout)
@@ -593,6 +600,8 @@
 
             {{-- Filter text input --}}
             <input
+                {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
+                x-wk-ime
                 type="text"
                 id="{{ $fieldId }}"
                 x-ref="filterInput"
@@ -636,7 +645,10 @@
                 {{-- doesn't reach this internal combobox input.                 --}}
                 @if($fieldAriaLabel !== null) aria-label="{{ $fieldAriaLabel }}" @endif
                 :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string($placeholder) }} : ''"
-                class="wk-field flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden"
+                {{-- `w-0`: the input grows into the row through `flex-1`, and asks for no more than its
+                     minimum. Without it WebKit takes a text input's default width as its minimum, and
+                     a framed field 258px wide stood 13px past its container. --}}
+                class="wk-field flex-1 w-0 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden"
             />
         </div>
 

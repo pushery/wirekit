@@ -9,6 +9,7 @@
  * the moment focus or a press lands in it.
  */
 import { createFocusTrap as createFocusTrapLib } from 'focus-trap';
+import { isComposing } from './ime.js';
 import { belongsThroughTeleports, teleportedRootOf } from './teleport.js';
 
 // Re-exported: the trap is where the adoption of teleported panels lives, and callers that
@@ -24,15 +25,18 @@ export { belongsThroughTeleports, teleportedRootOf };
  * reads Escape in the bubble phase so that the element's own handler has run first, and asks
  * `escapeDeactivates` with the event for exactly this check.
  *
+ * An Escape that abandons an input method's conversion in a field of the dialog is the input
+ * method's as well, and the dialog stays open for the same reason.
+ *
  * @param {boolean|Function} setting - The caller's `escapeDeactivates`.
  * @returns {boolean|Function} What focus-trap receives: `false` stays `false`.
  */
 export function escapeUnlessHandled(setting) {
     if (typeof setting === 'function') {
-        return (event) => ! event?.defaultPrevented && setting(event) !== false;
+        return (event) => ! event?.defaultPrevented && ! isComposing(event) && setting(event) !== false;
     }
 
-    return setting ? (event) => ! event?.defaultPrevented : false;
+    return setting ? (event) => ! event?.defaultPrevented && ! isComposing(event) : false;
 }
 
 /**
@@ -123,6 +127,23 @@ function isTab(event) {
 const TAB_STOP = 'a[href], area[href], button, input, select, textarea, iframe, summary, audio[controls], video[controls], [contenteditable], [tabindex]';
 
 /**
+ * Whether a radio leaves its Tab stop to the checked one of its group.
+ *
+ * A group of radios is one stop, and the checked radio is the one that takes it. A group with
+ * nothing checked keeps each of its radios, as the browsers differ on which one they pick.
+ *
+ * @param {Element} el
+ * @param {Element} container
+ * @returns {boolean}
+ */
+function yieldsToTheCheckedRadio(el, container) {
+    if (el.type !== 'radio' || el.checked || ! el.name) return false;
+
+    return [...container.querySelectorAll('input[type="radio"]')]
+        .some((other) => other !== el && other.checked === true && other.name === el.name && other.form === el.form);
+}
+
+/**
  * The elements of a container a Tab stops on, in document order.
  *
  * @param {Element} container
@@ -131,9 +152,12 @@ const TAB_STOP = 'a[href], area[href], button, input, select, textarea, iframe, 
 export function tabStopsOf(container) {
     return [...container.querySelectorAll(TAB_STOP)].filter((el) => el.tabIndex >= 0
         && ! el.disabled
+        // A control inside a disabled fieldset is disabled without saying so itself.
+        && ! (typeof el.matches === 'function' && el.matches(':disabled'))
         && el.type !== 'hidden'
         && ! el.closest?.('[inert]')
-        && (typeof el.getClientRects !== 'function' || el.getClientRects().length > 0));
+        && (typeof el.getClientRects !== 'function' || el.getClientRects().length > 0)
+        && ! yieldsToTheCheckedRadio(el, container));
 }
 
 /**
@@ -176,6 +200,153 @@ export function wrapTabLeavingTheTrap(event, traps = liveTraps, doc = globalThis
     }
 }
 
+/**
+ * Whether the focus is on no element of the page.
+ *
+ * @param {Document} doc
+ * @returns {boolean}
+ */
+function focusIsNowhere(doc) {
+    const active = doc?.activeElement;
+
+    return ! active || active === doc.body || active === doc.documentElement;
+}
+
+/**
+ * Put the focus on the stop that follows an element inside a container, in the direction of a Tab.
+ *
+ * The stops are tried in order, around the end of the container, and the first that takes the
+ * focus keeps it. An element can be in the list and still refuse: one that is not visible does.
+ *
+ * @param {Element} container
+ * @param {Element} from - The element the Tab started on. It need not be a stop itself.
+ * @param {boolean} backward - Shift+Tab.
+ * @param {Document} [doc]
+ * @returns {Element|null} The element that took the focus.
+ */
+export function focusTheStopAfter(container, from, backward, doc = globalThis.document) {
+    const stops = tabStopsOf(container);
+    const at = stops.indexOf(from);
+    let before;
+    let after;
+
+    if (at !== -1) {
+        before = stops.slice(0, at);
+        after = stops.slice(at + 1);
+    } else {
+        // Not a stop itself: split the list where the element stands in the document.
+        const follows = (stop) => typeof from?.compareDocumentPosition === 'function' && (from.compareDocumentPosition(stop) & 4) !== 0;
+        const next = stops.findIndex(follows);
+        const cut = next === -1 ? stops.length : next;
+
+        before = stops.slice(0, cut);
+        after = stops.slice(cut);
+    }
+
+    const order = backward
+        ? [...before.reverse(), ...after.reverse()]
+        : [...after, ...before];
+
+    for (const stop of order) {
+        stop.focus();
+
+        if (doc?.activeElement === stop) {
+            return stop;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * The Tab the browser is about to act on, from the key press until the focus has moved.
+ *
+ * @type {{ entry: Object, from: Element, backward: boolean }|null}
+ */
+let tabInFlight = null;
+
+/**
+ * Remember a Tab pressed on an element inside an active trap.
+ *
+ * The trap moves the focus itself at its two edges and leaves each step between two controls to
+ * the browser, and a browser may pass a control by on that step. Safari, as it ships, stops a Tab
+ * on text fields and lists and reaches buttons, links, checkboxes and radios with Option+Tab.
+ * When nothing it stops on is left in the dialog, it takes the focus out of the page: the dialog
+ * stays open, and the keyboard is no longer in it. So the key is remembered here, and
+ * `keepTheFocusInTheTrap()` acts when the focus leaves for nowhere.
+ *
+ * A Tab with Option, Control or Command is another command and is left alone, and so is one that
+ * something already took, which includes the trap's own wrap at its edges. A Tab in a panel the
+ * trap has taken in is that panel's own.
+ *
+ * @param {KeyboardEvent} event
+ * @param {Iterable<{ trap: Object|null, container: HTMLElement, extras: Set<Element> }>} [traps]
+ * @param {Document} [doc]
+ * @param {Function} [later] - Runs a callback once the browser has acted on the key.
+ */
+export function noteTabInsideATrap(event, traps = liveTraps, doc = globalThis.document, later = (run) => setTimeout(run, 0)) {
+    tabInFlight = null;
+
+    if (! isTab(event) || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+
+    const from = doc?.activeElement;
+
+    if (! from) return;
+
+    for (const entry of traps) {
+        const trap = entry.trap;
+
+        if (! trap || ! trap.active || trap.paused) continue;
+        if (! entry.container.contains(from)) continue;
+
+        const flight = { entry, from, backward: event.shiftKey === true };
+
+        tabInFlight = flight;
+
+        // Once the browser has moved the focus the key is spent. A browser that moved it out of
+        // the page without an event this module heard is caught here.
+        later(() => {
+            if (tabInFlight === flight) {
+                tabInFlight = null;
+            }
+
+            if (trap.active && ! trap.paused && focusIsNowhere(doc)) {
+                focusTheStopAfter(entry.container, from, flight.backward, doc);
+            }
+        });
+
+        return;
+    }
+}
+
+/**
+ * Keep the focus in the trap when a Tab takes it from an element to nowhere.
+ *
+ * Called as the element the Tab started on loses the focus. A focus that moves on to another
+ * element has found its stop, and the trap's own check deals with one that lies outside. A focus
+ * that moves to no element at all has left the page, and the next stop of the dialog takes it:
+ * the control the browser passed by.
+ *
+ * @param {FocusEvent} event - The `focusout` of the element.
+ * @param {Document} [doc]
+ * @returns {Element|null} The element that took the focus, when this acted.
+ */
+export function keepTheFocusInTheTrap(event, doc = globalThis.document) {
+    const flight = tabInFlight;
+
+    if (! flight || event?.target !== flight.from) return null;
+
+    tabInFlight = null;
+
+    if (event.relatedTarget) return null;
+
+    const trap = flight.entry.trap;
+
+    if (! trap || ! trap.active || trap.paused) return null;
+
+    return focusTheStopAfter(flight.entry.container, flight.from, flight.backward, doc);
+}
+
 let adoptionListening = false;
 
 /** Installed once, with the first trap, and only where there is a window to listen on. */
@@ -196,11 +367,19 @@ function listenForTeleportedPanels() {
         window.addEventListener(type, adopt, { capture: true, passive: true });
     }
 
-    // In the bubble phase, after the handler of the panel the Tab started in.
+    // In the bubble phase, after the handler of the panel the Tab started in. A Tab the wrap took
+    // is spent, so the note below leaves it alone.
     window.addEventListener('keydown', (event) => {
         if (liveTraps.size === 0) return;
         wrapTabLeavingTheTrap(event);
+        noteTabInsideATrap(event);
     });
+
+    // As the element that Tab started on loses the focus: see `keepTheFocusInTheTrap()`.
+    window.addEventListener('focusout', (event) => {
+        if (liveTraps.size === 0) return;
+        keepTheFocusInTheTrap(event);
+    }, { capture: true, passive: true });
 }
 
 /**

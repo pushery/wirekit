@@ -90,8 +90,27 @@
      */
     $id = $attributes->get('id') ?? \Pushery\WireKit\Support\DomId::unique(null, 'event-calendar-');
 
-    $eventsArr = $events instanceof \Illuminate\Support\Collection ? $events->values()->all() : array_values((array) $events);
-    $markersArr = $dayMarkers instanceof \Illuminate\Support\Collection ? $dayMarkers->values()->all() : array_values((array) $dayMarkers);
+    // Plain lists for the payload, whatever the caller passed: an array, a Collection, a lazy
+    // one or a paginator. Each event and each marker carries the keys the calendar reads and no
+    // other, because both lists are written into the page: an event built from a model would
+    // otherwise put each of its attributes there, and its attendees each of theirs.
+    $eventsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
+        $events,
+        ['id', 'title', 'start', 'end', 'allDay', 'intent', 'category', 'attendees'],
+    ));
+
+    foreach ($eventsArr as $index => $event) {
+        if (is_array($event) && array_key_exists('attendees', $event)) {
+            $eventsArr[$index]['attendees'] = \Pushery\WireKit\Support\ListProp::renumbered(
+                \Pushery\WireKit\Support\ListProp::only($event['attendees'], ['name', 'avatar']),
+            );
+        }
+    }
+
+    $markersArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
+        $dayMarkers,
+        ['date', 'label', 'type', 'blocked'],
+    ));
 
     // Event intent → block classes (tinted surface + intent left-stripe). Defined
     // here (PHP literals) so Tailwind compiles them AND the drift inventory traces

@@ -227,7 +227,7 @@
      never reached a drawn chart. This element is updated like any other, and the factory
      follows its attribute and updates the chart in place, with no rebuild and no entrance
      animation. A `template` renders nothing. --}}
-<template data-wk-chart-data="{{ \Pushery\WireKit\Support\AlpinePayload::from($chartData) }}"></template>
+<template data-wk-chart-data="{{ \Pushery\WireKit\Support\AlpinePayload::json($chartData) }}"></template>
 @if ($needsReplayWrapper)
     </{{ $wrapperTag }}>
 @endif

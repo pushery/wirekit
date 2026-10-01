@@ -161,6 +161,10 @@
         default => 'px-[var(--padding-wk-x-md)] py-1.5 text-[length:var(--text-wk-md)]',
     };
 
+    // The options usually come from `pluck('label', 'value')`, which is a Collection; the first
+    // key below and the loop over them take an array. The keys are the values and stay.
+    $options = \Pushery\WireKit\Support\ListProp::from($options);
+
     // Determine the default selected value
     $selected = $value ?? array_key_first($options);
 @endphp
@@ -184,7 +188,7 @@
         // cannot run against a region nobody pointed at.
         'errorRegion' => '#'.$id.'-error',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.

@@ -61,6 +61,7 @@ function parseDay(value) {
  *   component prints. Supplied by the component from the application locale.
  */
 import { position } from '../utils/floating.js';
+import { isComposing } from '../utils/ime.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 
 export default function wirekitEventCalendar(config = {}) {
@@ -807,6 +808,9 @@ export default function wirekitEventCalendar(config = {}) {
          * @param {KeyboardEvent} event
          */
         tipEscape(event) {
+            // An Escape that abandons an input method's conversion belongs to the input method.
+            if (isComposing(event)) return;
+
             if (! this.tipOpen) return;
 
             event?.preventDefault();

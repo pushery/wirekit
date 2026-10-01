@@ -23,10 +23,10 @@
  *     touches nothing that is still in use.
  *   - _scrollRaf (a requestAnimationFrame id) — canceled in destroy().
  *
- * Honors `prefers-reduced-motion: reduce` — the scrollTo handler picks
- * 'auto' over 'smooth' when the OS preference is set.
+ * Honors `prefers-reduced-motion: reduce` — the scrollTo handler jumps
+ * (`'instant'`) instead of scrolling smoothly when the preference is set.
  */
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
@@ -262,7 +262,7 @@ export default (options = {}) => ({
         // because the page is not what moves, and `_line()` already stands on the region's top.
         const top = el.getBoundingClientRect().top - this._line(root) + (root ? root.scrollTop : window.scrollY);
 
-        (root ?? window).scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
+        (root ?? window).scrollTo({ top, behavior: scrollBehavior(!reduced) });
 
         // The jump holds its section until the reader moves the page themselves, so the scroll it
         // starts cannot walk the mark through every section on the way.

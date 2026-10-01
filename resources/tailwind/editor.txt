@@ -101,7 +101,6 @@ $name)
 $offset
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $placeholder,
@@ -397,6 +396,7 @@ $wrapperClasses])
 (an
 (and
 (any
+(array)
 (auto
 (bool)
 (canUndo()/canRedo())
@@ -652,6 +652,7 @@ It
 It's
 Its
 JS
+JSON
 KEEPS
 KEY,
 LITERALLY,
@@ -757,6 +758,7 @@ WireKit::validateProp('tooltip',
 WireKit::warnUnknownProps('tooltip',
 With
 Without
+Written
 Your
 [
 [$outerAttributes,
@@ -795,6 +797,7 @@ Your
 \Illuminate\View\ComponentSlot)
 \Pushery\WireKit\Support\AlpinePayload::from($jsConfig)
 \Pushery\WireKit\Support\AlpinePayload::from([
+\Pushery\WireKit\Support\AlpinePayload::json($value)
 \Pushery\WireKit\Support\AlpinePayload::string($command)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
@@ -802,6 +805,7 @@ Your
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\EditorSeed::render($value)
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
 \Pushery\WireKit\WireKit::warnUnknownProps('editor',
@@ -1021,7 +1025,6 @@ array
 array_filter([
 array_keys(array_filter(
 array_keys(array_filter($commands,
-array_values((array)
 arrive
 arrives
 arrives,
@@ -1379,6 +1382,8 @@ empty($presetCommands))
 empty,
 empty.
 empty:
+encoder,
+end
 ends
 enforcement
 engine
@@ -1497,6 +1502,7 @@ generic
 get
 gets
 give
+given
 gives
 gives:
 global
@@ -1638,7 +1644,6 @@ itself,
 itself.
 joins
 json
-json_encode($value)
 just
 justify-between
 justify-center
@@ -1877,6 +1882,7 @@ paragraph's
 parent
 parser
 parses
+parses.
 passed
 passes,
 passes.
@@ -2211,6 +2217,7 @@ text-[color:var(--color-wk-text-muted)]">{{
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
 text-level
+text.
 textAlign:
 textarea
 textarea,

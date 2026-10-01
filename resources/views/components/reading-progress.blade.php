@@ -166,6 +166,7 @@
     // Segments prop — a numeric array of fractional positions (0..1) where chapter
     // boundaries land. Renders as 1px-tall dividers via background-gradient stops.
     // CSS-only — no extra DOM nodes per segment.
+    $segments = \Pushery\WireKit\Support\ListProp::from($segments);
     $segmentsArray = is_array($segments) ? array_values(array_filter($segments, fn ($v) => is_numeric($v) && $v >= 0 && $v <= 1)) : null;
 
     $segmentsStyle = '';

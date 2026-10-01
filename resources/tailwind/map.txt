@@ -33,7 +33,6 @@ $baseClasses
 $buttonBag
 $buttonBag->class([$baseClasses,
 $buttonBag->merge(['style'
-$center);
 $centerArr
 $classes
 $computedRel
@@ -86,9 +85,7 @@ $listLabel
 $listLabelResolved
 $loading
 $loadingTarget
-$markers
-$markers);
-$markers->values()->all()
+$markers,
 $markersArr
 $message
 $opensNewTab
@@ -164,6 +161,7 @@ $zoom
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-warning)]',
+'body',
 'border-[length:var(--border-wk-width)]',
 'button'
 'button')
@@ -220,17 +218,22 @@ $zoom
 'iconOnlyBelow'
 'iconOnlyBelow',
 'ignore'
+'image',
 'info'
 'inline-flex
 'intent'
 'intent',
+'intent'],
 'label'
+'label',
+'lat',
 'leading-[var(--font-wk-line-height)]',
 'leaflet']);
 'lg'
 'lg',
 'list'
 'listLabel'
+'lng',
 'loading'
 'loadingTarget'
 'map-');
@@ -300,6 +303,7 @@ $zoom
 'text-[length:var(--text-wk-md)]',
 'text-[length:var(--text-wk-sm)]
 'text-[length:var(--text-wk-sm)]',
+'tooltip',
 'touchTextFloor'
 'tracking-[var(--font-wk-letter-spacing)]',
 'transition-colors',
@@ -359,6 +363,7 @@ $zoom
 (`loading`
 (a
 (a11y).
+(array)
 (asserted
 (avoids
 (axe:
@@ -405,6 +410,7 @@ $zoom
 (when
 (which
 (wire:click
+));
 *
 *-bg
 */
@@ -590,6 +596,7 @@ CSS
 CSS-pixel
 CSS.
 CallerRef::onRoot()
+Collection,
 Counted,
 DECLARATIVE
 DISABLES
@@ -601,6 +608,7 @@ Default
 Dev-only
 EITHER
 EVERY
+Each
 Emitting
 Every
 Examples
@@ -670,6 +678,7 @@ PREVIEW
 PROBLEM
 Panning
 Per-intent
+Plain
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 REPLACES
@@ -746,6 +755,7 @@ Withholding
 Without
 [
 ['accent',
+['id',
 ['label'
 ['maplibre',
 ['outlined'
@@ -759,7 +769,6 @@ Without
 [overflow-wrap:anywhere]'
 [role="application"],
 [{id,lat,lng,label,body?,intent?}]
-\Illuminate\Support\Collection
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::from($attribution)
 \Pushery\WireKit\Support\AlpinePayload::from($centerArr)
@@ -773,6 +782,8 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($center);
+\Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1009,8 +1020,8 @@ aria-label
 aria-label="{{
 aria-labelledby.';
 around
+array,
 array:
-array_values((array)
 arrives
 as
 as,
@@ -1028,6 +1039,7 @@ attribute's
 attribute,
 attribute.
 attribute:
+attributes
 attribution
 attribution:
 audit.)
@@ -1687,7 +1699,6 @@ inset-0,
 inset-0`
 inside
 instance
-instanceof
 instead
 instead.
 instead:
@@ -1728,6 +1739,7 @@ justify-start
 keep
 keeps
 keyboard
+keys
 kills
 kit
 knowing
@@ -1779,6 +1791,7 @@ list:
 list="false"
 listed
 listed,
+lists,
 literal
 literal;
 literally
@@ -1881,6 +1894,7 @@ mobile
 mode
 mode").
 mode:
+model
 modes
 moment
 most
@@ -1978,6 +1992,7 @@ org
 original
 orphaned
 other
+other,
 other.
 other:
 otherwise
@@ -2015,7 +2030,9 @@ padding.
 padding:
 page
 page.
+page:
 pagination
+paginator.
 painting
 paints
 pairing
@@ -2030,6 +2047,7 @@ parent's
 parses
 part
 pass
+passed:
 passes
 passthrough
 passthrough:

@@ -405,8 +405,11 @@ Chart.register(...registerables);</pre>
                     rawConfig.options.animations = false;
                 }
 
-                this.chart = new Chart(ctx, rawConfig);
-                getRegistry().add(this.chart);
+                // The registry holds the chart itself: read back through `this.chart` it would be
+                // Alpine's Proxy of it, which Chart.js does not know as the chart.
+                const chart = new Chart(ctx, rawConfig);
+                this.chart = chart;
+                getRegistry().add(chart);
 
                 // A Livewire update renders new labels and series beside the chart, outside its
                 // `wire:ignore`; follow them and update the chart in place.
@@ -440,13 +443,14 @@ Chart.register(...registerables);</pre>
                     return;
                 }
 
-                this.chart.options = this.chart.options || {};
-                this.chart.options.animation = reduced ? false : undefined;
-                this.chart.options.animations = reduced ? false : undefined;
+                // The chart itself, not Alpine's reactive Proxy of it: see `_rawChart()`.
+                const chart = this._rawChart();
+                chart.options.animation = reduced ? false : undefined;
+                chart.options.animations = reduced ? false : undefined;
 
                 // `'none'` — repaint without animating the change itself. Animating the
                 // switch to no-animation is the one transition nobody asked for.
-                try { this.chart.update('none'); } catch { /* defensive */ }
+                chart.update('none');
             });
 
             // Cleanup on Livewire navigation (SPA mode)
@@ -484,7 +488,7 @@ Chart.register(...registerables);</pre>
          * @param {{data?: {labels?: Array, datasets?: Array<object>}}} payload
          */
         _applyServerData(payload) {
-            const chart = this.chart;
+            const chart = this._rawChart();
             const next = payload?.data;
 
             if (! chart || ! next || ! Array.isArray(next.datasets)) {
@@ -518,7 +522,21 @@ Chart.register(...registerables);</pre>
             });
             chart.data.datasets.length = incoming.length;
 
-            try { chart.update(); } catch { /* defensive: the chart may be mid-teardown */ }
+            chart.update();
+        },
+
+        /**
+         * The chart itself, for every call that changes or redraws it.
+         *
+         * `this.chart` read through the component is Alpine's reactive Proxy of the chart. A change
+         * or an `update()` through that Proxy runs into Chart.js's own option Proxies until the call
+         * stack overflows, so the data is set and the chart is never drawn again. Every such call
+         * goes through the chart Alpine wraps.
+         *
+         * @returns {Chart|null}
+         */
+        _rawChart() {
+            return this.chart ? Alpine.raw(this.chart) : null;
         },
 
         /**
@@ -548,17 +566,19 @@ Chart.register(...registerables);</pre>
                 const point = detail.point;
                 if (point === undefined) return;
 
-                const dataset = this.chart.data.datasets[datasetIndex];
+                // The chart itself, not Alpine's reactive Proxy of it: see `_rawChart()`.
+                const chart = this._rawChart();
+                const dataset = chart.data.datasets[datasetIndex];
                 if (!dataset) return;
 
                 dataset.data.push(point);
                 if (mode === 'strict' && dataset.data.length > cap) {
                     dataset.data.shift();
-                    if (Array.isArray(this.chart.data.labels) && this.chart.data.labels.length > cap) {
-                        this.chart.data.labels.shift();
+                    if (Array.isArray(chart.data.labels) && chart.data.labels.length > cap) {
+                        chart.data.labels.shift();
                     }
                 }
-                this.chart.update('none');
+                chart.update('none');
             };
 
             window.addEventListener(eventName, this._wireStreamHandler);
@@ -586,11 +606,8 @@ Chart.register(...registerables);</pre>
                 this._darkModeDebounce = setTimeout(() => {
                     if (!this.chart || !this.$refs.canvas) return;
 
-                    // Alpine.raw() strips the reactive Proxy wrapper.
-                    // Without this, mutating chart.options triggers Alpine's
-                    // Proxy getter recursively through Chart.js's internal
-                    // option-resolver Proxies → infinite call stack.
-                    const chart = Alpine.raw(this.chart);
+                    // The chart itself, not Alpine's reactive Proxy of it: see `_rawChart()`.
+                    const chart = this._rawChart();
 
                     // Read from canvas element — resolves correctly regardless
                     // of whether .dark is on <html>, <body>, or a wrapper.
@@ -694,11 +711,14 @@ Chart.register(...registerables);</pre>
                 }
                 this._wireStreamHandler = null;
             }
-            if (this.chart) {
-                getRegistry().delete(this.chart);
-                try { Chart.animator?.remove?.(this.chart); } catch { /* defensive */ }
-                try { this.chart.stop?.(); } catch { /* defensive */ }
-                try { this.chart.destroy(); } catch { /* defensive */ }
+            // The chart itself: Chart.js's animator keeps its charts by identity and does not know
+            // Alpine's Proxy of one, so it lets go only of the chart itself.
+            const chart = this._rawChart();
+            if (chart) {
+                getRegistry().delete(chart);
+                try { Chart.animator?.remove?.(chart); } catch { /* defensive */ }
+                try { chart.stop?.(); } catch { /* defensive */ }
+                try { chart.destroy(); } catch { /* defensive */ }
                 this.chart = null;
             }
         },

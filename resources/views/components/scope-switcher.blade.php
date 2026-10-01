@@ -89,7 +89,7 @@
     $seen = [];
     $rows = [];
 
-    foreach ($items as $item) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($items) as $item) {
         if (! is_array($item) || ! isset($item['key'], $item['label'], $item['url'])) {
             throw new InvalidArgumentException(
                 'wirekit::scope-switcher: every item needs at least `key`, `label` and `url`.'
@@ -120,8 +120,9 @@
             'key' => $key,
             'label' => (string) $item['label'],
             // Tenant lists are data. A target that could run script leaves the row without
-            // an href, so it navigates nowhere instead of running on the click.
-            'url' => \Pushery\WireKit\Support\SafeUrl::href((string) $item['url']),
+            // an href, so it navigates nowhere instead of running on the click. Handed over as
+            // it is: the rule takes a string, a Stringable and a backed enum.
+            'url' => \Pushery\WireKit\Support\SafeUrl::href($item['url']),
             'icon' => $item['icon'] ?? null,
             'image' => $item['image'] ?? null,
             'status' => $status,
@@ -278,6 +279,8 @@
             <x-wirekit::icon name="search" class="h-4 w-4 shrink-0 text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
 
             <input
+                {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
+                x-wk-ime
                 type="text"
                 role="combobox"
                 x-ref="search"
@@ -452,7 +455,7 @@
                      are not. --}}
                 {{-- The same rule as the rows: a target that could run script leaves the action
                      without an href, so it navigates nowhere. --}}
-                @php $createUrl = \Pushery\WireKit\Support\SafeUrl::href((string) ($create['url'] ?? '')); @endphp
+                @php $createUrl = \Pushery\WireKit\Support\SafeUrl::href($create['url'] ?? ''); @endphp
                 <a data-wk-prose-skip
                     @if($createUrl !== '') href="{{ $createUrl }}" wire:navigate @endif
                     class="{{ $itemClasses }} text-[color:var(--color-wk-accent-content)]"

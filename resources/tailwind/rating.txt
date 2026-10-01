@@ -68,7 +68,6 @@ $numericValue
 $numericValue,
 $numericValue;
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $ratingSeed
 $readonly
@@ -171,6 +170,7 @@ $wrapperClasses
 (@aware
 (APG):
 (a
+(array)
 (auto
 (bool)
 (driven
@@ -461,6 +461,7 @@ Written
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \Pushery\WireKit\WireKit::warnUnknownProps('rating',
 ])
@@ -578,7 +579,6 @@ aria-live="polite"
 aria-required,
 aria-required="true"
 around.
-array_values((array)
 arrives
 as
 as,

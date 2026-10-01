@@ -2,6 +2,7 @@
 "1
 "26831d").
 "73y
+"Europe/Berlin":
 "box"
 "days
 "none"
@@ -31,19 +32,20 @@ $scope);
 $separators
 $separators)
 $showSeconds
+$shownTarget
+$shownTarget->isoFormat('LLL');
+$shownTarget->toIso8601String();
 $slot
 $target
-$target->getTimestampMs()
+$target->getTimestampMs();
 $targetIso
 $targetMs
+$timezone,
 $unitLabels
 $unitOrder
 $unitPhrases
 $unitPhrases)
 $units))
-$until
-$until)
-$until));
 $variant,
 $variantValue
 $warnSeconds
@@ -59,6 +61,7 @@ $warnThreshold
 'base',
 'box'
 'box',
+'countdown');
 'days'
 'days',
 'expiredText'
@@ -98,6 +101,7 @@ $warnThreshold
 'text-[color:var(--color-wk-warning-text)]'
 'text-[length:var(--text-wk-2xl)]
 'text-[length:var(--text-wk-md)]',
+'timezone'
 'units'
 'until'
 'variant'
@@ -107,12 +111,11 @@ $warnThreshold
 ("1
 ($activeUnits
 ($showSeconds)
-($target
 ($u)
 ($units
-($until
 ($variant)
 ('false'
+(Support\Moment).
 (aria-hidden)
 (border
 (default):
@@ -120,7 +123,6 @@ $warnThreshold
 (full
 (ignored
 (int)
-(is_numeric($until)
 (like
 (min-w-[3.5rem]
 (no
@@ -203,15 +205,8 @@ BooleanProp::from(),
 Both
 CSP
 CallerRef::onRoot()
-Carbon
-Carbon,
-Carbon.
-Carbon::createFromTimestamp((int)
-Carbon::now())->isoFormat('LLL');
-Carbon::now())->toIso8601String();
-Carbon::now()->getTimestampMs();
-Carbon::parse((string)
-Carbon\Carbon;
+CarbonImmutable::now();
+Carbon\CarbonImmutable;
 Change
 Declared
 Decorative
@@ -233,7 +228,6 @@ Headless
 ISO-8601
 Include
 Intl.PluralRules.
-Invalid
 It
 JavaScript
 Keeping
@@ -245,6 +239,8 @@ Localized
 Lowercasing
 Machine-readable
 Making
+Moment::in($target,
+Moment::of($until)
 NOT
 Normalized
 Null
@@ -258,6 +254,7 @@ Passing
 PluralPhrases
 Polish,
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\Moment;
 Pushery\WireKit\WireKit;
 Resend
 Resolve
@@ -315,6 +312,7 @@ __('wirekit::Years'),
 `Unexpected
 `animate`
 `aria-label`
+`datetime`
 `de_DE`,
 `done`
 `done`,
@@ -341,6 +339,7 @@ absolute
 accent
 accent-tint
 accepts
+accessible
 active
 activeUnits:
 actually
@@ -439,6 +438,8 @@ changed
 changing
 choose
 chooses
+class
+class,
 class="mt-[var(--space-wk-xs)]
 class="sr-only"
 class="tabular-nums"
@@ -466,9 +467,11 @@ cosmetic
 count
 countdown
 counted
+counts
 covered
 crawlers.
 dashboard
+date
 datetime="{{
 days":
 days'),
@@ -507,6 +510,8 @@ duration:
 e.g.
 each
 ease-out
+either
+element.
 else
 elsewhere
 enter
@@ -553,6 +558,7 @@ gap-[var(--space-wk-xs)]'
 gap-[var(--space-wk-xs)]',
 gated
 genuinely
+given.
 go
 grows
 guard
@@ -573,7 +579,7 @@ hours'),
 hour|[2,*]
 identical
 if
-immediately-overdue
+immediately
 implode('
 imports
 in
@@ -583,7 +589,6 @@ index)
 index)"></span>
 index)"></span><span
 inline
-instanceof
 instant
 intentionally
 intentions:
@@ -601,6 +606,7 @@ items-baseline
 items-center
 items-stretch
 its
+itself
 just
 justify-center
 keep
@@ -658,7 +664,7 @@ minimum
 minutes"
 minutes'),
 minute|[2,*]
-misconfigured
+missing
 mode
 mode.
 mode:
@@ -669,6 +675,7 @@ must
 n/a
 name
 names
+names;
 navbar.
 needed,
 never
@@ -682,7 +689,6 @@ nothing
 noun
 nouns;
 null
-null)
 null,
 null;
 number
@@ -714,6 +720,7 @@ our
 out
 outermost
 over
+overdue
 overflow
 own
 owns
@@ -763,6 +770,7 @@ reach
 reachable
 reaches
 read
+reader,
 reads
 real
 recomputed
@@ -846,6 +854,7 @@ style.
 style:
 subset,
 substitute
+such
 suffix
 supported
 surface:
@@ -939,6 +948,7 @@ view's
 visible
 warnSeconds:
 was
+way.
 were
 what
 whatever
@@ -980,6 +990,7 @@ years
 years'),
 year|[2,*]
 zero-units
+zone
 {
 {{
 {{--

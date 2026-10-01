@@ -127,11 +127,13 @@
     // tally each intent for the legend.
     $tiles = [];
     $counts = array_fill_keys($intents, 0);
-    foreach ($items as $item) {
+    foreach (\Pushery\WireKit\Support\ListProp::from($items) as $item) {
         $intent = in_array($item['intent'] ?? 'neutral', $intents, true) ? $item['intent'] : 'neutral';
         // Tiles come from a database, and a target that could run script draws as a tile
         // without a link, the same as a tile that never had one.
-        $href = \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? null) ?: null;
+        // Compared with '' rather than tested for truth: `0` is a relative URL.
+        $href = \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? null);
+        $href = $href === '' ? null : $href;
 
         // The word the tile SAYS, which is not the same question as how severe it is.
         //

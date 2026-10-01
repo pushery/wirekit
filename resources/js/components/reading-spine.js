@@ -33,7 +33,7 @@
  * dist/wirekit.css cuts every width / opacity / color transition on this
  * component short. The plugin itself never animates anything in JS.
  */
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
@@ -464,7 +464,7 @@ export default (options = {}) => ({
     scrollToTop() {
         const root = this.items[0] ? scrollRootOf(this.items[0].el) : null;
 
-        (root ?? window).scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+        (root ?? window).scrollTo({ top: 0, behavior: scrollBehavior(!prefersReducedMotion()) });
     },
 
     /**
@@ -482,7 +482,7 @@ export default (options = {}) => ({
         const root = scrollRootOf(el);
         const top = el.getBoundingClientRect().top - (this._line(root) - 8) + (root ? root.scrollTop : window.scrollY);
         const reduced = prefersReducedMotion();
-        (root ?? window).scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
+        (root ?? window).scrollTo({ top, behavior: scrollBehavior(!reduced) });
 
         // The jump holds its section until the reader moves the page themselves, so the scroll it
         // starts cannot walk the mark through every section on the way. The hold also covers a

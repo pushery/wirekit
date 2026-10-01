@@ -5,6 +5,7 @@
  * Both Modal and Drawer share identical logic for these concerns.
  */
 import { createFocusTrap } from './focus-trap.js';
+import { isComposing } from './ime.js';
 
 /**
  * Global scroll lock reference counter.
@@ -827,7 +828,9 @@ export function createOverlay({
          * @param {KeyboardEvent} event
          */
         onWindowEscape(event) {
-            if (event?.defaultPrevented || !this.isOpen || !this.isTopmost) return;
+            // An Escape that abandons an input method's conversion, in a field of the panel, is
+            // the input method's and not the reader leaving the dialog.
+            if (event?.defaultPrevented || isComposing(event) || !this.isOpen || !this.isTopmost) return;
             this.dismissByReader('escape');
         },
 

@@ -49,6 +49,7 @@ $gapClasses
 $gapClasses,
 $href
 $href,
+$href;
 $intent
 $intent):
 $intentColor
@@ -415,7 +416,6 @@ $wrapperClasses
 ($invalid
 ($item['key']
 ($item['label']
-($items
 ($min
 ($responsiveTemplate)
 ($templateAt
@@ -427,6 +427,7 @@ $wrapperClasses
 ($value)
 (Level
 (WireKit::validateProp('grid',
+(\Pushery\WireKit\Support\ListProp::from($items)
 (`[sidebar-start]
 (a
 (anything
@@ -565,7 +566,6 @@ $wrapperClasses
 =>
 >
 ?
-?:
 ??
 @else
 @endforeach
@@ -613,6 +613,7 @@ CSP
 CSS
 CSS,
 Centering
+Compared
 DISTINCT
 DOES
 Declared
@@ -674,6 +675,7 @@ Tokens
 Translatable.
 Two
 UNBOUND
+URL.
 Under
 VALUE
 VIEWPORT,
@@ -720,6 +722,7 @@ __('wirekit::shop.example'),
 `$colsMap`
 `'unsafe-inline'`
 `--gap-wk-md`
+`0`
 `10rem
 `:`
 `<x-wirekit::empty-state>`
@@ -1416,6 +1419,7 @@ really
 reason
 reasoning
 regardless
+relative
 removes.
 render
 render,
@@ -1566,6 +1570,7 @@ tells
 template
 template="lg:[1fr_20rem]"`
 ternary
+tested
 text,
 text-[color:var(--color-wk-text)]">{{
 text-[color:var(--color-wk-text-muted)]"
@@ -1628,6 +1633,7 @@ true)
 true,
 true;
 truncated
+truth:
 truthy
 twice:
 two

@@ -190,6 +190,7 @@
     };
 
     $normalized = [];
+    $options = \Pushery\WireKit\Support\ListProp::records($options);
     $optionsAreAList = array_is_list(collect($options)->all());
     foreach ($options as $key => $opt) {
         $isGroup = is_array($opt) && ! array_key_exists('label', $opt) && ! array_key_exists('value', $opt);
@@ -248,7 +249,7 @@
                 'truncated' => __('wirekit::More results. Keep typing to narrow them.'),
                 'empty' => __('wirekit::No results'),
             ]);
-        $serverOptions = \Pushery\WireKit\Support\AlpinePayload::from(['options' => $normalized, 'truncated' => $truncated]);
+        $serverOptions = \Pushery\WireKit\Support\AlpinePayload::json(['options' => $normalized, 'truncated' => $truncated]);
     }
 
     // The bag read is guarded on the name, exactly as field.blade.php does.
@@ -450,7 +451,7 @@
         // cannot run against a region nobody pointed at.
         'errorRegion' => '#'.$errorId,
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -533,6 +534,8 @@
     {{-- Visible text input — role=combobox + aria-expanded + aria-controls
          satisfies the WAI-ARIA 1.2 combobox pattern. --}}
     <input
+        {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
+        x-wk-ime
         type="text"
         x-ref="cbxInput"
         id="{{ $comboId }}"

@@ -11,8 +11,9 @@
 ])
 
 @php
+    use Carbon\CarbonImmutable;
+    use Pushery\WireKit\Support\Moment;
     use Pushery\WireKit\WireKit;
-    use Carbon\Carbon;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -24,10 +25,12 @@
         default => WireKit::validateProp('date-separator', 'variant', $variant, ['inline', 'sticky']),
     };
 
-    // Parse date with timezone support
+    // The date and the reference day in the reader's zone (Support\Moment). A date object of any
+    // class is read as the instant it holds and is not itself changed; a string that names no zone
+    // of its own is read in this one.
     $tz = $timezone ?? config('app.timezone', 'UTC');
-    $carbonDate = $date instanceof Carbon ? $date->timezone($tz) : Carbon::parse($date, $tz);
-    $reference = $now instanceof Carbon ? $now->timezone($tz) : ($now ? Carbon::parse($now, $tz) : Carbon::now($tz));
+    $carbonDate = Moment::in(Moment::of($date, $tz) ?? CarbonImmutable::now($tz), $tz, 'date-separator');
+    $reference = Moment::in(Moment::of($now, $tz) ?? CarbonImmutable::now($tz), $tz, 'date-separator');
 
     // Human-friendly relative label
     if ($format !== null) {

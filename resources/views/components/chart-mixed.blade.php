@@ -57,7 +57,9 @@
 
     // Validate every dataset has a sensible type entry — empty type falls
     // through to the chart-level default (line for ApexCharts, bar for Chart.js
-    // via mapType('mixed')). Throws on entirely-malformed input.
+    // via mapType('mixed')). Throws on entirely-malformed input. The datasets, and the data of
+    // each, usually arrive as Collections; read as arrays first, a Collection is no malformed input.
+    $datasets = \Pushery\WireKit\Components\Chart::datasetsFrom($datasets);
     foreach ($datasets as $i => $dataset) {
         if (! is_array($dataset)) {
             throw new InvalidArgumentException(

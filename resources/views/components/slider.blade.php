@@ -171,6 +171,8 @@
     $normalizedMarks = [];
     // Initialized beside the marks it describes, so the reader below does not depend on
     // `! empty($normalizedMarks) &&` short-circuiting to avoid an undefined variable.
+    // Marks may arrive as a Collection; the shape test below takes an array.
+    $marks = \Pushery\WireKit\Support\ListProp::records($marks);
     $marksIsList = true;
     $hasLabeledMarks = false;
     if (! empty($marks)) {
@@ -252,6 +254,7 @@
     $callerBindsValueText = $attributes->has('aria-valuetext')
         || $attributes->has('x-bind:aria-valuetext')
         || $attributes->has(':aria-valuetext');
+    $valueTextMap = \Pushery\WireKit\Support\ListProp::from($valueTextMap);
     $explicitValueTextMap = is_array($valueTextMap) && $valueTextMap !== [] ? $valueTextMap : null;
 
     // A marks MAP opts into aria-valuetext ONLY when a label carries meaning beyond the
@@ -436,7 +439,7 @@
         // cannot run against a region nobody pointed at.
         'errorRegion' => '#'.$sliderId.'-error',
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second commit while one is in flight would resolve by whichever
         // answer arrives last — network timing, which is both wrong and

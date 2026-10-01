@@ -9,6 +9,7 @@
 "5
 "9:15
 "Build
+"Europe/Berlin".
 "Failed"
 "Hoverable"
 "Most
@@ -45,6 +46,7 @@ $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
 $attributes->merge($depthStyle
+$author
 $author;
 $authorAvatar
 $authorName
@@ -186,6 +188,7 @@ $text
 $textAlign
 $timeFormat
 $timestamp
+$timezone,
 $tooltipClasses
 $tooltipId
 $total
@@ -340,6 +343,7 @@ $wrap
 'md'
 'md'),
 'md',
+'message');
 'message-'
 'message-'.md5($authorName.$timestamp)
 'min-h-5
@@ -434,6 +438,7 @@ $wrap
 'text-[length:var(--text-wk-sm)]',
 'timeFormat'
 'timestamp'
+'timezone'
 'tooltip'
 'top'),
 'trailingIcon'
@@ -485,6 +490,7 @@ $wrap
 ($author['name']
 ($author['role']
 ($callerAriaHidden
+($carbonTimestamp
 ($fromInitials
 ($intent)
 ($intentValue)
@@ -502,7 +508,6 @@ $wrap
 ($statusValue)
 ($surface)
 ($svgHtml
-($timestamp
 ('xs').
 (AA
 (Alpine
@@ -512,6 +517,7 @@ $wrap
 (RTL-safe)
 (SOFT
 (Support\CallerListeners).
+(Support\Moment),
 (WCAG
 (WireKit::validateProp('avatar',
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -776,11 +782,9 @@ CLASS,
 CSS
 CallerRef::onRoot()
 Carbon
-Carbon::parse($statusTime);
-Carbon::parse($timestamp);
-Carbon\Carbon;
 Catching
 Check
+Collection
 Combine
 Counter
 DO
@@ -839,6 +843,7 @@ Inline
 It
 Its
 JS
+JSON,
 KEY,
 Keyboard-
 Left
@@ -850,6 +855,9 @@ MORPH
 MOST
 Make
 Message
+Moment::in($carbonTimestamp,
+Moment::in(Moment::of($statusTime),
+Moment::of($timestamp);
 Multi-line
 NON-interactive
 NOT
@@ -884,6 +892,7 @@ Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\AvatarPalette.
 Pushery\WireKit\Support\AvatarPalette;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\Moment;
 Pushery\WireKit\WireKit;
 Reactions
 Reapply
@@ -1000,6 +1009,7 @@ Without
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::from($author);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -1110,6 +1120,7 @@ __toString
 `tagName()`
 `this.$refs.tooltip`
 `timeFormat`).
+`timezone`
 `uniqid()`
 `variant="outlined"`;
 `window.open`,
@@ -1500,7 +1511,6 @@ d="M1
 d="M12
 d="M7
 dark
-data
 data-replayable="true"
 data-status="{{
 data-wk-check-double
@@ -1513,6 +1523,8 @@ data-wk-prose-skip
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
+data.
+date
 datetime="{{
 de
 dead.
@@ -1755,6 +1767,7 @@ genuinely
 get
 gets
 given,
+given.
 glance
 global
 glyph
@@ -1835,6 +1848,7 @@ historically
 hit,
 hoists
 holds
+holds:
 honors
 host
 house
@@ -1899,7 +1913,7 @@ inside
 installed
 installed.
 installed.'
-instanceof
+instant
 instead
 instead,
 intact
@@ -2111,6 +2125,7 @@ null)
 null,
 null.
 null;
+object
 object,
 object-cover"
 occurrence
@@ -2303,6 +2318,8 @@ read,
 read.
 read;
 reader
+reader's
+reader,
 readers
 readers).
 reading
@@ -2316,6 +2333,7 @@ reasoning
 receive
 receiver,
 recipient,
+record
 rectangle.
 red:
 reduced
@@ -2545,6 +2563,7 @@ stylesheet).
 subtle
 subtree
 subtree,
+such
 supplementary
 support,
 support;
@@ -2833,6 +2852,7 @@ wrapper
 wrapper)
 wrapping
 writing
+written
 wrong
 wrong.
 x-cloak
@@ -2865,6 +2885,7 @@ yet.
 you
 your
 zero
+zone
 zoom,
 {
 {!!

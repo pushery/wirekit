@@ -36,7 +36,6 @@ $minRows
 $name
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $outerAttributes
 $required
@@ -154,6 +153,7 @@ $textareaClasses,
 ($size)
 (($hasError
 (@aware
+(array)
 (auto
 (bool)
 (dist/wirekit.css)
@@ -311,6 +311,7 @@ Your
 [],
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\Support\SlotContent::text($slot),
 \Pushery\WireKit\Support\SlotContent::withoutComments($slot)
@@ -398,7 +399,6 @@ aria-invalid="true"
 aria-live="assertive"
 aria-live="polite"
 around
-array_values((array)
 arrives
 as
 as,

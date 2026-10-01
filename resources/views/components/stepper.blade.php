@@ -15,6 +15,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\ListProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -42,6 +43,10 @@
     // How many steps there are, for the line the compact form draws under the row: it names
     // the current step as "Step 3 of 7", and the shipped stylesheet stretches it over every
     // column by this count (`--wk-stepper-count` on the list, `--wk-stepper-index` per step).
+    // Steps usually arrive as a Collection; `array_key_last()` below takes an array. They are
+    // renumbered, because a step's number and its place in the row are read from its key, and a
+    // filtered Collection or steps keyed by name carry other keys than 0 to n-1.
+    $steps = ListProp::renumbered(ListProp::records($steps));
     $count = is_countable($steps) ? count($steps) : 0;
 
     // Outer list — <ol> since steps are ordered. role="list" is redundant but
@@ -117,7 +122,11 @@
     `list-none m-0 p-0` classes in $listClasses do, so the list stays unmarked
     in a page whose stylesheet does not come from a Tailwind build that scanned this view.
 --}}
-<ol data-wk-prose-skip data-wk-stepper="{{ $isVertical ? 'vertical' : 'horizontal' }}" @unless($attributes->has('role')) role="list" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Progress') }}" @endunless {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0; --wk-stepper-count: '.$count.';'])->class([$listClasses]) }}>
+{{-- Without steps the list is hidden, from assistive technology as well (its `flex` class would
+     outrank a bare `hidden` without the application's preflight): an empty list reads out as
+     progress with nothing in it. It stays in the markup, so the caller's attributes still have
+     their element. --}}
+<ol data-wk-prose-skip data-wk-stepper="{{ $isVertical ? 'vertical' : 'horizontal' }}" @unless($attributes->has('role')) role="list" @endunless @if($count > 0) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Progress') }}" @endunless @else hidden aria-hidden="true" @endif {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0; --wk-stepper-count: '.$count.';'])->class([$listClasses]) }}>
     @foreach($steps as $i => $step)
         @php
             // Normalize: accept a string (label only) or ['label' => .., 'description' => ..].
@@ -128,8 +137,19 @@
             // A step may carry a destination or a Livewire action. Both are third keys on a
             // shape that already takes `label` and `description`, which is why this is the
             // small variant: no new concept, and a plain string step keeps working untouched.
-            $stepHref = is_array($step) ? ($step['href'] ?? null) : null;
-            $stepAction = is_array($step) ? ($step['wire:click'] ?? $step['action'] ?? null) : null;
+            // The target passes SafeUrl like every link a component reads from its items: escaping
+            // does not stop a `javascript:` URL. A refused or empty one reads as no destination, so
+            // the step stays a button when it carries an action and plain text when it does not.
+            // Compared with '' rather than tested for truth: `0` is a relative URL.
+            $stepHref = is_array($step) ? \Pushery\WireKit\Support\SafeUrl::href($step['href'] ?? null) : '';
+            $stepHref = $stepHref === '' ? null : $stepHref;
+
+            // The action is read from `wire:click` and from no other key. Livewire evaluates the
+            // value as an expression on the click, so it is the developer's to write, and a field
+            // of the same step with another name never becomes one. An empty expression is no
+            // action, as an empty target is no destination.
+            $stepAction = is_array($step) ? ($step['wire:click'] ?? null) : null;
+            $stepAction = is_string($stepAction) && trim($stepAction) === '' ? null : $stepAction;
 
             $isCompleted = $stepNumber < $current;
             $isCurrent = $stepNumber === $current;

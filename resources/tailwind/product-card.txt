@@ -254,7 +254,6 @@ $offset
 $onSale
 $opensNewTab
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $orientation
 $outlineClasses
@@ -841,6 +840,7 @@ $wrapperClasses
 (alt="").
 (an
 (array
+(array)
 (auto
 (avoids
 (bool)
@@ -1711,6 +1711,7 @@ Written
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -2158,7 +2159,6 @@ around.
 array:
 array_filter([
 array_keys($sizeMap));
-array_values((array)
 arrive
 arrives
 arrives,

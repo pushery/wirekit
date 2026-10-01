@@ -32,8 +32,8 @@ $optLabel)
 $optValue
 $optValue)
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
+$options
 $outerAttributes
 $refs.hiddenInput
 $required
@@ -124,6 +124,7 @@ $value
 'transition-all
 'true'
 'value'
+'value')`,
 'wk-transition',
 '{{
 ("Rock
@@ -131,6 +132,7 @@ $value
 ($optimistic
 ($size)
 (@aware
+(array)
 (auto
 (bool)
 (gold
@@ -214,6 +216,7 @@ Both
 CSP
 CallerRef::onRoot()
 Change
+Collection;
 Container
 Content-Security-Policy
 DOM
@@ -299,6 +302,8 @@ Zero
 \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses)
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
+\Pushery\WireKit\Support\ListProp::from($options);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \Pushery\WireKit\WireKit::warnUnknownProps('segmented-control',
@@ -348,6 +353,7 @@ _focusAt()
 `overflow-x-auto`
 `overflow-y-hidden`
 `overflow-y`
+`pluck('label',
 `prop="false"`
 `run()`.
 `scroll-px-1`
@@ -435,8 +441,8 @@ aria-live="assertive"
 aria-live="polite"
 around
 around.
+array.
 array_key_first($options);
-array_values((array)
 arrives
 arrow-key
 arrows
@@ -546,6 +552,7 @@ collapses
 colors
 colors,
 column,
+come
 comes
 commonest
 compiles
@@ -800,6 +807,7 @@ literals
 little
 live
 live.
+loop
 lose
 loses
 machinery
@@ -1101,6 +1109,7 @@ state
 state-dependent
 static
 stay
+stay.
 sticks
 still
 stood
@@ -1209,6 +1218,7 @@ use.
 used,
 user
 uses
+usually
 validation
 value
 value,

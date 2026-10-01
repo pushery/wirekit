@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Schema;
 
+use Pushery\WireKit\Support\SafeUrl;
+
 /**
  * Typed schema.org builders for `<x-wirekit::structured-data>`.
  *
@@ -229,7 +231,10 @@ final class Schema
      * The last step is the page the reader is on and may go without a URL.
      *
      * One rule for every producer: the breadcrumb component and `breadcrumbList()` above both
-     * build their trail here, so the two cannot answer the question differently.
+     * build their trail here, so the two cannot answer the question differently. That includes
+     * which address is a page at all. A URL is read through the rule the component links by:
+     * `http`, `https`, `mailto`, `tel` or a relative address. Any other scheme, `javascript:`
+     * among them, is a step without a page.
      *
      * Internal: public only so `breadcrumb.blade.php` can reach it from another
      * namespace, which is a PHP visibility necessity rather than an API promise. The
@@ -248,7 +253,8 @@ final class Schema
         $last = array_key_last($steps);
 
         foreach ($steps as $index => $step) {
-            $url = $step['url'] !== null && $step['url'] !== '' ? $step['url'] : null;
+            $url = SafeUrl::href($step['url']);
+            $url = $url === '' ? null : $url;
 
             if ($url === null && $index !== $last) {
                 continue;

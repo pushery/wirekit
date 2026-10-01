@@ -54,7 +54,14 @@
     $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('notification-center', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
-    $itemsArr = $items instanceof \Illuminate\Support\Collection ? $items->values()->all() : array_values((array) $items);
+    // A plain list for the payload, whatever the caller passed: an array, a Collection, a lazy
+    // one or a paginator, which hands over the notifications of its page. Each notification
+    // carries the keys the panel reads and no other, because the list is written into the page:
+    // a notification built from a model would otherwise put each of its attributes there.
+    $itemsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
+        $items,
+        ['id', 'type', 'title', 'body', 'timeLabel', 'read', 'group', 'href', 'actionLabel'],
+    ));
     // Server-side unread count for the no-flash initial badge.
     $serverUnread = collect($itemsArr)->reject(fn ($i) => (bool) (((array) $i)['read'] ?? false))->count();
 

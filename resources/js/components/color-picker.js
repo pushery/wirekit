@@ -628,7 +628,11 @@ export default function wirekitColorPicker(config = {}) {
                 // Coerce to an array: a corrupted write, a key collision, or another
                 // script could leave a non-array value here, which would crash
                 // _commitRecent (`.filter`) and the x-for that iterates recents.
-                this.recents = Array.isArray(parsed) ? parsed : [];
+                // And keep only colors: each entry is written into a swatch's `style`,
+                // where a string that carries more than a color would style the swatch.
+                this.recents = Array.isArray(parsed)
+                    ? parsed.filter((entry) => parseColor(entry) !== null).slice(0, 8)
+                    : [];
             } catch {
                 this.recents = [];
             }

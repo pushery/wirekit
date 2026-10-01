@@ -72,7 +72,7 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => (bool) filter_var($checked, FILTER_VALIDATE_BOOLEAN),
         'action' => $optimistic,
-        'args' => array_values((array) $optimisticArgs),
+        'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // Twice-toggled would otherwise resolve by whichever answer arrives last
         // — network timing, which is both wrong and untestable.

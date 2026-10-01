@@ -172,7 +172,6 @@ $on
 $opensNewTab
 $optimistic
 $optimistic,
-$optimisticArgs),
 $optimisticConfig
 $optionLabel
 $optionLabel)
@@ -585,6 +584,7 @@ $wrapLabel
 (a
 (aria-haspopup,
 (array
+(array)
 (avoids
 (bool)
 (bordered,
@@ -1371,6 +1371,8 @@ Written
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::from($options);
+\Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1820,7 +1822,6 @@ around
 array:
 array_keys($sizeMap));
 array_merge(
-array_values((array)
 arrival
 arrived
 arrives

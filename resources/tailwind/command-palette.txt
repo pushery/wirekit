@@ -195,6 +195,7 @@ $wkCmdSlug(trim(strip_tags((string)
 (string
 (string)
 (the
+(utils/ime.js).
 (wrapper
 (wrapping
 +
@@ -304,6 +305,7 @@ In
 It
 Its
 Kept
+Key
 Light
 Livewire
 Livewire's
@@ -580,6 +582,7 @@ component
 component's
 component,
 component:
+composing
 config('wirekit.components.command-palette.hotkey',
 config('wirekit.components.command-palette.placeholder')
 confines
@@ -728,6 +731,7 @@ heading
 hear
 height
 here
+here,
 highlight
 highlighted
 hint
@@ -843,6 +847,7 @@ means;
 measures
 menu-ish
 message
+method
 min-w-5',
 min-w-6',
 min-w-7',
@@ -979,6 +984,7 @@ polite
 poor
 presentational
 preset
+presses
 preview
 previews
 previews)
@@ -1142,6 +1148,7 @@ stay
 step
 step;
 still
+stop
 str_contains($relAttr,
 str_contains($targetAttr,
 string
@@ -1301,6 +1308,7 @@ x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-ime
 yet"
 you
 z-[var(--z-wk-modal)]

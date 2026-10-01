@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Stringable;
 
 use function Illuminate\Support\enum_value;
@@ -41,8 +42,10 @@ final class CitationList
         foreach ($citations as $citation) {
             $label = self::text(self::field($citation, 'label'));
 
-            // A plain string is the shortest spelling of a citation: a title and nothing else.
-            if ($label === null && (is_string($citation) || $citation instanceof Stringable)) {
+            // A plain string is the shortest spelling of a citation: a title and nothing else. A
+            // model casts to a string as well, to its JSON, and is no title: one without a label
+            // is an entry without a label.
+            if ($label === null && (is_string($citation) || ($citation instanceof Stringable && ! $citation instanceof Arrayable))) {
                 $label = self::text($citation);
             }
 
@@ -73,7 +76,9 @@ final class CitationList
      */
     private static function field(mixed $citation, string $key): mixed
     {
-        if (is_string($citation) || $citation instanceof Stringable) {
+        // A string has no fields. An object is asked for the field even when it casts to a
+        // string: an Eloquent model does, and it is a record all the same.
+        if (is_string($citation)) {
             return null;
         }
 
