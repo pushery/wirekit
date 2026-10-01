@@ -32,6 +32,12 @@ let scrollLockSnapshot = null;
  * document as well). With two open modals, two
  * window listeners both fire on a single ESC — without this stack guard
  * both modals would close instead of just the top one.
+ *
+ * The guard alone does not hold once a trap is armed. The trap of the top
+ * overlay closes it on `document`, before the window hears the key, and that
+ * close makes the one below topmost within the same press. The window
+ * listener therefore also leaves alone a press that is already handled
+ * (`onWindowEscape`), and the trap marks the press it acts on.
  */
 const overlayStack = [];
 
@@ -688,8 +694,15 @@ export function createOverlay({
                         // ESC closes when EITHER the overlay is generally
                         // dismissible OR the caller opted into the
                         // ESC-always-closes contract (alert-dialog's
-                        // escape hatch — see option doc above).
-                        escapeDeactivates: dismissible || escapeAlwaysCloses,
+                        // escape hatch — see option doc above), and only
+                        // while this overlay is the topmost one. An overlay
+                        // opened above it may not hold a trap of its own
+                        // yet (it arms once its panel is shown), and the
+                        // press then belongs to that overlay's window
+                        // listener, not to this trap.
+                        escapeDeactivates: (dismissible || escapeAlwaysCloses)
+                            ? () => isTopmostOverlay(stackToken)
+                            : false,
                         // onDeactivate fires when ESC is pressed — close without
                         // calling deactivate() again (it's already deactivating)
                         onDeactivate: () => this._closeFromTrap(),
@@ -800,6 +813,22 @@ export function createOverlay({
             if (!this.isOpen) return;
             this.dismissOverlay();
             this._announceDismissal(via);
+        },
+
+        /**
+         * Escape as the window hears it, which is after every element on its way there.
+         *
+         * A press some element already acted on carries `defaultPrevented` and is left alone: a
+         * menu or a list inside the panel closed on it, or the focus trap of an overlay above
+         * this one closed that overlay. The last case is why the check cannot be `isTopmost`
+         * alone. The trap works on `document`, before the window, and closing the overlay above
+         * makes this one topmost within the same press.
+         *
+         * @param {KeyboardEvent} event
+         */
+        onWindowEscape(event) {
+            if (event?.defaultPrevented || !this.isOpen || !this.isTopmost) return;
+            this.dismissByReader('escape');
         },
 
         _announceDismissal(via) {

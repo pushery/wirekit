@@ -362,7 +362,7 @@ $variant,
 'wk-tooltip-');
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -568,6 +568,7 @@ Both
 Bound
 CALLER
 CALLER's
+CAPTURE
 COLLIDE
 COLUMN,
 COMPILED
@@ -1916,6 +1917,7 @@ here;
 hidden
 hidden`
 hide
+hides
 high
 hint
 history
@@ -2139,12 +2141,14 @@ many
 mark
 mark's
 mark.
+marked
 marked.
 marker
 marker,
 marker.
 markers
 markers,
+marks
 markup
 markup.
 mask
@@ -2180,6 +2184,7 @@ missing"
 missing:
 mistake
 mistake.
+modal
 mode
 mode"),
 mode,
@@ -2293,6 +2298,7 @@ omission.
 on
 on,
 on.
+on:
 once
 once,
 once.
@@ -2413,6 +2419,7 @@ persistence
 persisting
 person
 person's
+phase,
 phone
 phone.
 phrasing
@@ -2452,6 +2459,7 @@ present
 presentation:
 presentational
 presented
+press
 prevent:
 preventing
 prod).
@@ -2976,6 +2984,7 @@ token.
 told
 tone
 tone,
+too,
 tooltip
 tooltip's
 tooltip,
@@ -3162,6 +3171,7 @@ width.
 widths
 widths,
 win
+window
 window,
 window.localStorage.getItem(cfg.wkSeedKey);
 window.matchMedia
@@ -3209,7 +3219,7 @@ x-data="wirekitTooltip({
 x-on:click="toggle()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

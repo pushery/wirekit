@@ -17,7 +17,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@keydown.escape.window']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@keydown.escape.window.capture']);
 
     // Tour — step-by-step product tour overlay.
     // Each step positions near a target element using Floating UI.
@@ -47,7 +47,7 @@
         name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }},
         announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Step :current of :total')) }}
     })"
-    @keydown.escape.window="active && dismiss()"
+    @keydown.escape.window.capture="escapeTour($event)"
     {{ $attributes->class([$classes]) }}
 >
     {{-- Teleported to the overlay root — escapes any ancestor containing blocks

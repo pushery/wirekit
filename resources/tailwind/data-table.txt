@@ -378,7 +378,7 @@ $value]))
 @input{{
 @isset($empty)
 @isset($rowActions)
-@keydown.escape="isOpen
+@keydown.escape="escapeMenu($event)"
 @php
 @props([
 @props.
@@ -1044,8 +1044,10 @@ dashboard
 data
 data,
 data-table
+data-wk-clear-selection
 data-wk-data-table-state="{{
 data-wk-prose-skip
+data-wk-select-all
 data-wk-sticky-column
 data.
 data_get($col,

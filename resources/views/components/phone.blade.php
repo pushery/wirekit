@@ -211,10 +211,9 @@
     $selectClasses = WireKit::resolveClasses('phone', 'country', 'shrink-0 max-w-[10rem]', $scope);
     $numberClasses = WireKit::resolveClasses('phone', 'number', $fieldShape.' min-w-0 grow', $scope);
 
-    $describedBy = trim(
-        ($hasError ? $id.'-error' : ($hint ? $id.'-hint' : ''))
-        .' '.((string) $attributes->get('aria-describedby', ''))
-    );
+    // The group takes the component's own id; the number box takes it and the caller's after it.
+    $ownDescribedBy = $hasError ? $id.'-error' : ($hint ? $id.'-hint' : '');
+    $describedBy = trim($ownDescribedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
     // A caller's `x-ref` belongs to the caller's component. The field sits in a root of ours,
     // which would take it, and it already carries our own `x-ref`, which a parser keeps over a
@@ -234,7 +233,10 @@
          the field's name so a screen reader announces it once and then each part. It is
          deliberately NOT a combobox relationship: the number box is free text, and a listbox
          link would promise a keyboard model it does not have. --}}
-    <div role="group" @if($label) aria-label="{{ $label }}" @endif class="{{ $groupClasses }}">
+    {{-- The group carries the hint or the error too, as the range slider's does: the country
+         control is part of the value and has no description of its own, so a reader who tabs
+         back to it hears the message on the way into the group. --}}
+    <div role="group" @if($label) aria-label="{{ $label }}" @endif @if($ownDescribedBy !== '') aria-describedby="{{ $ownDescribedBy }}" @endif class="{{ $groupClasses }}">
         {{-- The country control is a combobox, which is what buys the flag: an <option> carries
              no image, so the native select this replaced could never show one. What it costs is
              named rather than glossed over — the phone's own country wheel is gone, and with it
@@ -301,7 +303,8 @@
              reports it. It comes from the same `$value` the factory is initialized with, so the
              two cannot disagree: before Alpine binds, the field submits what it was loaded with;
              after, it submits what the reader built. --}}
-        <input type="hidden" x-ref="bound" name="{{ $name }}" value="{{ $value }}" x-bind:value="e164" {{ $attributes->except('type')->whereStartsWith('wire:model') }} />
+        {{-- A disabled field is left out of the form data, as a native one is. --}}
+        <input type="hidden" x-ref="bound" name="{{ $name }}" value="{{ $value }}" x-bind:value="e164" @if($disabled) disabled @endif {{ $attributes->except('type')->whereStartsWith('wire:model') }} />
     </div>
 
     @if($hasError && $errorMessage)

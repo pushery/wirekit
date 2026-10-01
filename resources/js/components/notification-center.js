@@ -26,6 +26,7 @@ import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { safeHref } from '../utils/safe-href.js';
+import { outOfReachBeside } from '../utils/teleport.js';
 
 /**
  * What counts as a tab stop, for the two edges of the teleported panel.
@@ -214,6 +215,25 @@ export default function wirekitNotificationCenter(config = {}) {
                 });
             }
         },
+        /**
+         * Escape closes the open flyout and hands the focus back to the bell.
+         *
+         * Heard on the bell, in the panel, and on the window for a press from anywhere
+         * else. The press that closes the flyout is marked as handled, so a modal or a
+         * drawer around the bell stays open: its focus trap reads Escape on the document,
+         * after the bell and the panel. A press that something else already handled is
+         * left alone, which is the window listener's case when a modal opened above the
+         * open flyout: that press closed the modal, and the flyout is the next one's.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeFlyout(event) {
+            if (! this.isOpen || event?.defaultPrevented) return;
+
+            event?.preventDefault();
+            this.close(true);
+        },
+
         close(restoreFocus = false) {
             this.isOpen = false;
             this._stopRepair?.();
@@ -243,19 +263,24 @@ export default function wirekitNotificationCenter(config = {}) {
          * beside the bell, so leaving it should continue from the bell and not
          * from the end of the document, where the panel's markup happens to
          * live. Anything inside the bell is skipped (a descendant also "follows"
-         * it by document position) and so is the overlay root, which holds this
-         * panel and every other teleported one.
+         * it by document position), and so is this component's own panel. On the
+         * page the whole overlay root is skipped, since it holds every other
+         * teleported panel. Inside a modal or drawer the bell sits in that
+         * dialog's teleported clone, and only the clone is in reach (see
+         * `outOfReachBeside()`).
          */
         _focusAfterBell() {
             const bell = this.$refs.bell;
 
             if (! bell) return;
 
-            const overlayRoot = document.getElementById('wk-overlay-root');
+            const outOfReach = outOfReachBeside(bell);
+            const panel = this.$refs.panel;
 
             const next = [...document.querySelectorAll(PANEL_FOCUSABLE)].find((el) => {
                 if (bell.contains(el)) return false;
-                if (overlayRoot?.contains(el)) return false;
+                if (panel?.contains(el)) return false;
+                if (outOfReach(el)) return false;
                 if (! isTabStop(el)) return false;
 
                 return Boolean(bell.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -374,8 +399,40 @@ export default function wirekitNotificationCenter(config = {}) {
             this._emit('notification-action', { id: item.id, href: item.href ?? null });
         },
         markAllRead() {
+            // The button shows only while something is unread, so it takes itself away, and it
+            // held the focus: the browser would drop it to the page with the panel still open.
+            // Whether it held it is read now, while it is still in the document; the first row
+            // takes it once the list has re-rendered, or the list itself when it is empty.
+            const handOver = typeof document !== 'undefined'
+                && document.activeElement
+                && typeof document.activeElement.hasAttribute === 'function'
+                && document.activeElement.hasAttribute('data-wk-mark-all-read');
+
             this.items = this.items.map((i) => ({ ...i, read: true }));
             this._emit('notification-read-all', {});
+
+            if (handOver) {
+                const place = () => {
+                    const panel = this.$refs && this.$refs.panel;
+
+                    if (! panel || typeof panel.querySelector !== 'function') {
+                        return;
+                    }
+
+                    const target = panel.querySelector('[data-wk-notification-row]')
+                        ?? panel.querySelector('[data-wk-notification-list]');
+
+                    if (target && typeof target.focus === 'function') {
+                        target.focus();
+                    }
+                };
+
+                if (typeof this.$nextTick === 'function') {
+                    this.$nextTick(place);
+                } else {
+                    place();
+                }
+            }
         },
         setFilter(type) {
             this.activeFilter = type;

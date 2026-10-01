@@ -268,7 +268,7 @@ $useWrapper
 'wk-tooltip-');
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -452,6 +452,7 @@ $useWrapper
 @if($copyable)
 @if($describedBy
 @if($describes)
+@if($disabled
 @if($disabled)
 @if($focusableTrigger)
 @if($hasAffordances)
@@ -503,6 +504,7 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Border
 Both
 CALLER's
+CAPTURE
 CSP
 CallerRef::onRoot()
 Clear
@@ -687,6 +689,7 @@ __('wirekit::Saving'),
 `clearTimeout`
 `clearable`
 `cloneNode(true)`,
+`copyable
 `copyable`
 `data-wk-ref-scope`
 `delayHide`
@@ -1112,6 +1115,7 @@ does.
 don't
 double
 drag-select
+drawer
 drift
 drives
 dropped
@@ -1308,6 +1312,7 @@ here.'),
 here:
 hidden`
 hide
+hides
 high
 hint
 hint)
@@ -1442,8 +1447,10 @@ looks
 make
 makes
 many
+marked
 marker
 markers
+marks
 markup
 mask
 mask-image:
@@ -1471,6 +1478,7 @@ min-w-0"
 minlength,
 mints
 mismatch
+modal
 mode
 mode"),
 mode,
@@ -1526,6 +1534,7 @@ not
 not,
 note
 nothing
+nothing,
 nothing.
 null
 null)
@@ -1543,6 +1552,7 @@ old
 omission.
 on
 on.
+on:
 once
 one
 one,
@@ -1612,6 +1622,7 @@ pending
 pending,
 per
 per-instance
+phase,
 phone
 phones
 phrasing
@@ -1638,6 +1649,7 @@ prefix/suffix:
 present
 presentational
 preserving
+press
 previous
 prod).
 produce
@@ -1671,6 +1683,7 @@ readers
 readers.
 reading
 readonly
+readonly`
 reads
 real
 reason
@@ -1828,6 +1841,7 @@ stay
 stayed
 stays
 stays,
+stays:
 step).
 still
 stop
@@ -1930,8 +1944,10 @@ to
 to,
 to.
 together
+token
 tokens
 too
+too,
 too.
 toolbar
 tools
@@ -2047,6 +2063,7 @@ widening
 wider
 width
 width)
+window
 window,
 wins
 wins).
@@ -2087,7 +2104,7 @@ x-model
 x-on:change="run($event.target.value)"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

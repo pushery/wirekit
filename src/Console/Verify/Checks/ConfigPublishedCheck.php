@@ -37,6 +37,91 @@ final class ConfigPublishedCheck extends VerifyCheck
         $this->reportPass('config/wirekit.php published');
 
         $this->checkConfigDrift();
+        $this->checkEnvReads();
+    }
+
+    /**
+     * Report the `WIREKIT_*` switches the published config still reads through `env()`.
+     *
+     * Since 2.59.0 the stub reads every switch through `EnvValue::get()`, where a blank line
+     * such as `WIREKIT_DEDUPE_IDS=` in `.env` keeps the default. `env()` returns that line as
+     * an empty string, and a config published before then keeps calling it: the fix lives in
+     * the stub and never reaches the copy. Information, like a config that predates options,
+     * because the copy still works as it did.
+     */
+    private function checkEnvReads(): void
+    {
+        $source = file_get_contents(config_path('wirekit.php'));
+
+        if (! is_string($source)) {
+            return;
+        }
+
+        $switches = self::switchesReadThroughEnv($source);
+
+        if ($switches === []) {
+            return;
+        }
+
+        $this->reportInfo('published config reads '.count($switches).' WIREKIT_* switch(es) through env()');
+        $this->line('  '.implode(', ', $switches));
+        $this->line('  Since 2.59.0 the config stub reads them through EnvValue::get(), which keeps');
+        $this->line('  the default for a blank line such as WIREKIT_DEDUPE_IDS= in .env; env()');
+        $this->line('  returns it as an empty string. Replace each env(\'WIREKIT_…\') with');
+        $this->line('  \\Pushery\\WireKit\\Support\\EnvValue::get(\'WIREKIT_…\').');
+    }
+
+    /**
+     * The `WIREKIT_*` names a PHP source passes to the `env()` helper as its first argument, in
+     * order of appearance and without repeats.
+     *
+     * Read with PHP's tokenizer, so a mention in a comment or inside a string does not count,
+     * and neither does a method or a static call that happens to be named `env`.
+     *
+     * @return list<string>
+     */
+    private static function switchesReadThroughEnv(string $source): array
+    {
+        $tokens = array_values(array_filter(
+            token_get_all($source),
+            static fn (array|string $token): bool => ! is_array($token)
+                || ! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true),
+        ));
+
+        $names = [];
+
+        foreach ($tokens as $i => $token) {
+            if (! is_array($token)) {
+                continue;
+            }
+
+            $isHelper = ($token[0] === T_STRING && strtolower($token[1]) === 'env')
+                || ($token[0] === T_NAME_FULLY_QUALIFIED && strtolower($token[1]) === '\\env');
+
+            if (! $isHelper) {
+                continue;
+            }
+
+            $before = $tokens[$i - 1] ?? null;
+
+            if (is_array($before) && in_array($before[0], [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION], true)) {
+                continue;
+            }
+
+            $argument = $tokens[$i + 2] ?? null;
+
+            if (($tokens[$i + 1] ?? null) !== '(' || ! is_array($argument) || $argument[0] !== T_CONSTANT_ENCAPSED_STRING) {
+                continue;
+            }
+
+            $name = substr($argument[1], 1, -1);
+
+            if (str_starts_with($name, 'WIREKIT_') && ! in_array($name, $names, true)) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
     }
 
     /**

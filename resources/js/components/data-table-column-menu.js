@@ -112,6 +112,18 @@ export default function wirekitDataTableColumnMenu() {
             button.focus();
         },
 
+        /**
+         * Escape closes an open menu and marks the press as handled, so that a modal or a drawer
+         * around the table stays open. With the menu already closed the press is left to them.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeMenu(event) {
+            if (! this.isOpen) return;
+            event?.preventDefault();
+            this.isOpen = false;
+        },
+
         place() {
             if (typeof window.wirekitPosition !== 'function') {
                 return;

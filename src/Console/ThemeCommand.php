@@ -48,9 +48,11 @@ class ThemeCommand extends Command
         // shared by `default` (the "return to bundled values" preset) and
         // by every other preset (so re-applying a new preset doesn't
         // accumulate stacked theme blocks). Idempotent — running the same
-        // preset twice produces byte-identical output.
+        // preset twice produces byte-identical output. The block is written
+        // with a line break in front of its start marker, so the pattern
+        // takes that break with it; left behind, every run added one more.
         $newContent = preg_replace(
-            '/\/\* wirekit:theme start \*\/.*?\/\* wirekit:theme end \*\/\n?/s',
+            '/\n?\/\* wirekit:theme start \*\/.*?\/\* wirekit:theme end \*\/\n?/s',
             '',
             $content
         );

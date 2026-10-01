@@ -380,7 +380,7 @@ $wrapLabel
 'wrapLabel'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -669,6 +669,7 @@ Both
 Built
 Bypasses
 CALLER's
+CAPTURE
 CSS
 CSS-pixel
 CSS.
@@ -1146,6 +1147,7 @@ allowed
 allowlist,
 allows
 alone
+alone.
 along
 alongside
 already
@@ -1647,6 +1649,7 @@ drag.
 drags
 drags.
 draw
+drawer
 drawn
 draws
 driven
@@ -2161,6 +2164,7 @@ manually
 many
 map.
 margins
+marked
 marked.
 marker
 markers
@@ -2306,6 +2310,7 @@ omission.
 omission:
 on
 on.
+on:
 once
 one
 one,
@@ -2417,6 +2422,7 @@ per-set
 perception
 person
 personalization
+phase,
 phone
 phone,
 phone.
@@ -2460,6 +2466,7 @@ present
 presentational
 preserves
 preset
+press
 pressed
 prevent
 primary
@@ -2938,6 +2945,7 @@ tokens
 tokens.
 tone
 too
+too,
 too.
 took
 tooltip
@@ -3186,7 +3194,7 @@ x-on:click="remember('down',
 x-on:click="remember('up',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

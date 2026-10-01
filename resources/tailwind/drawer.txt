@@ -246,6 +246,7 @@ Body
 BooleanProp::from($close,
 BooleanProp::from($dismissible,
 BooleanProp::from($lockScroll,
+Both
 But
 By
 CallerRef::onRoot()
@@ -410,6 +411,7 @@ all
 all,
 all.
 allowed
+alone
 alone.
 alongside
 already
@@ -419,6 +421,7 @@ an
 and
 announcement
 announces
+another
 anticipate
 any
 anything
@@ -510,7 +513,6 @@ call
 caller
 caller's
 caller-supplied
-calls
 can
 candidate
 cannot
@@ -539,6 +541,8 @@ clips
 close
 close-X
 closeable
+closed
+closes
 closes,
 closes.
 closing
@@ -597,10 +601,8 @@ dialog's
 did
 did),
 direction
-directly
 disabled.
 dismiss
-dismissByReader('escape')"
 dismissible
 dismissible:
 docs
@@ -700,6 +702,7 @@ h-4
 h-[var(--size-wk-drawer-lg)]',
 h-[var(--size-wk-drawer-md)]',
 h-[var(--size-wk-drawer-sm)]',
+handled,
 handler,
 handling:
 hands
@@ -746,7 +749,6 @@ into
 invalid
 invite
 is
-isTopmost
 it
 it,
 it.
@@ -809,6 +811,7 @@ may
 md
 mean
 means
+menu
 merely
 message
 mirrors
@@ -1213,7 +1216,7 @@ x-on:click.stop
 x-on:click="close()"
 x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
-x-on:keydown.escape.window="isOpen
+x-on:keydown.escape.window="onWindowEscape($event)"
 x-ref="panel"
 x-show/x-teleport
 x-show="dismissible"

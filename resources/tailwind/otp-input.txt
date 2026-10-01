@@ -81,6 +81,7 @@ $optimistic,
 $optimisticArgs),
 $optimisticConfig
 $outerAttributes
+$ownDescribedBy
 $required
 $scope);
 $size,
@@ -306,6 +307,7 @@ $wrapperClasses
 @if($i
 @if($label)
 @if($optimisticConfig)
+@if($ownDescribedBy
 @if($required)
 @input="onInput($event,
 @keydown="onKeydown($event,
@@ -402,6 +404,7 @@ Same
 See
 Selects
 Set
+Shift+Tab
 So
 StrictnessGate
 Strip
@@ -565,6 +568,7 @@ action
 actually
 additive
 adjustment
+advance
 after
 again
 against
@@ -683,6 +687,7 @@ boundary
 boundary.
 boundary:
 box
+box,
 box.
 box:
 box;
@@ -766,6 +771,7 @@ clear
 clearing
 clears
 click
+click,
 coarse`
 code
 code".
@@ -813,6 +819,7 @@ contributes
 control
 control"
 control's
+control,
 control.
 control:
 controls
@@ -869,6 +876,7 @@ different
 differently
 digit
 digit's
+digit.
 digits
 digits.
 directly,
@@ -923,6 +931,7 @@ enter.
 enterable.
 entered
 entered;
+enters
 entropy
 entry
 error
@@ -1059,6 +1068,7 @@ here.'),
 hidden
 hides
 hiding
+hint
 holds
 honored
 hooks
@@ -1490,6 +1500,7 @@ size.
 size:
 size;
 sizes
+slider's
 slot
 slot,
 so
@@ -1564,6 +1575,7 @@ the
 their
 them
 them.
+them:
 theme
 theming
 then
@@ -1595,7 +1607,7 @@ touch
 touches
 trailing
 transitions
-trim($describedBy.'
+trim($ownDescribedBy.'
 trim('flex
 trim(($hint
 trim((string)

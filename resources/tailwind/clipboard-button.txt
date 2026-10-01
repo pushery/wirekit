@@ -15,6 +15,7 @@ $scope)
 $scope);
 $slot
 &&
+''"></span>
 '',
 ',
 'base',
@@ -161,6 +162,7 @@ Once
 Pre-Alpine
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
+Rendered
 Requires
 Screen
 Stable-width
@@ -179,12 +181,13 @@ Without
 [
 ['x-on:click']);
 \Pushery\WireKit\Support\AlpinePayload::from($value)
+\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied
+\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button',
 ])
 ]),
-__('wirekit::Copied
 __('wirekit::Copied'),
 __('wirekit::Copy
 `aria-label`
@@ -210,19 +213,19 @@ already
 an
 and
 announced
-announcement
 announcement.
 announces
 answer
 anticipate
 apostrophe
+appears
 application
 aria-hidden="true"
 aria-hidden="true">
 aria-label
 aria-label="{{
 aria-live.
-aria-live="polite">{{
+aria-live="polite"
 arrow
 as
 as,
@@ -284,6 +287,7 @@ client-only
 clipboard
 clipboard"
 clipboard')
+clipboard'))
 collapse
 color
 color,
@@ -301,6 +305,7 @@ copied-just-now
 copies
 copy
 copy).
+copy:
 correcting
 currently
 d="M12
@@ -321,6 +326,7 @@ duration:
 each
 element
 else.
+empty
 empty.
 end
 enforced
@@ -330,6 +336,7 @@ event
 exclamation
 failed
 failed')
+failed'))
 failure
 fallback
 false);
@@ -426,8 +433,10 @@ name.
 named
 neither
 never
+new
 newline
 no
+node,
 none
 none,
 not
@@ -471,13 +480,14 @@ refusal
 refusal,
 refused).
 regardless
+region
 registers.
 regression
 rendered,
 reserved
 resources/js/components/clipboard-button.js.
 rest
-role="alert">{{
+role="alert"
 role="status"
 roll
 root
@@ -510,6 +520,7 @@ span
 spelling,
 stable-width
 stack
+start
 state
 state,
 statements
@@ -549,6 +560,7 @@ this,
 three
 through
 to
+together
 toggle
 toggles
 told.
@@ -587,7 +599,6 @@ without
 worse
 would
 write
-x-cloak
 x-cloak>
 x-data="wirekitClipboardButton({
 x-on:click="copy()"
@@ -595,6 +606,8 @@ x-show
 x-show="copied"
 x-show="failed"
 x-show="idle"
+x-text="copied
+x-text="failed
 {{
 {{--
 }"

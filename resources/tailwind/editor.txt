@@ -142,6 +142,7 @@ $wrapperClasses])
 '',
 '';
 ',
+'-',
 '-1'
 '.$svgAttrs.'><path
 '.((string)
@@ -274,6 +275,7 @@ $wrapperClasses])
 'link'
 'link',
 'linkPromptLabel'
+'locale'
 'max-w-[var(--size-wk-tooltip-max)]',
 'maxHeight'
 'maxLength'
@@ -292,6 +294,7 @@ $wrapperClasses])
 'ordered-list'
 'ordered-list',
 'ordered-list'],
+'overPhrases'
 'overflow-hidden',
 'panel',
 'paragraph'
@@ -308,6 +311,7 @@ $wrapperClasses])
 'redo'
 'redo'],
 'reject',
+'remainingPhrases'
 'required'
 'right'
 'rounded-[var(--radius-wk-md)]',
@@ -349,7 +353,7 @@ $wrapperClasses])
 'wrapper',
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -489,6 +493,7 @@ $wrapperClasses])
 :class="{
 :class="{{
 :commands="$presetCommands"
+:count
 :disabled
 :disabled.
 :disabled="!{{
@@ -588,6 +593,7 @@ BooleanProp::isFalse($toolbar)
 BooleanProp::stripFalseHtmlFlags($attributes);
 Both
 CALLER's
+CAPTURE
 CEILING
 CONTROL,
 CSS
@@ -797,6 +803,7 @@ Your
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\EditorSeed::render($value)
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
 \Pushery\WireKit\WireKit::warnUnknownProps('editor',
 \Pushery\WireKit\WireKit::warnUnknownProps('editor.toolbar',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
@@ -953,6 +960,7 @@ all.
 allowlist,
 alone
 alone):
+alone.
 already
 also
 always
@@ -973,11 +981,13 @@ answer
 anticipate
 any
 anything
+app()->getLocale()),
 appear
 appears
 appended
 appends
 application
+application's
 applied
 applies
 arbitration
@@ -1088,6 +1098,7 @@ box
 branch
 brand
 browser
+browser,
 bubble's
 bubbles
 bubbles,
@@ -1136,6 +1147,7 @@ center'),
 chain
 change
 character
+characters
 check
 checks
 child
@@ -1163,6 +1175,7 @@ classic
 clears
 click
 clicking
+client
 client-only
 climbs
 clipping
@@ -1257,6 +1270,7 @@ d="m9
 danger-text
 dark
 dark:
+data
 data-autofocus
 data-autofocus)
 data-wk-editor-seed
@@ -1312,11 +1326,13 @@ document's
 document.
 documented
 does
+does.
 doesn't
 double
 double-announce.
 down.
 downward.
+drawer
 drives
 dropped
 drops
@@ -1462,6 +1478,7 @@ form.
 format="json"
 formatting'),
 formatting.
+forms
 four
 fragment
 frames
@@ -1528,6 +1545,7 @@ hidden,
 hidden.
 hidden`
 hide
+hides
 high
 hint
 hint.
@@ -1664,7 +1682,9 @@ letterform
 level:
 lg
 like
+limit'),
 limit:
+limit|[2,*]
 line
 line)
 line:
@@ -1680,6 +1700,8 @@ listens
 literal
 live
 lives
+lives,
+locale,
 long
 looked
 looks
@@ -1689,6 +1711,7 @@ make
 makes
 many
 map
+marked
 marker
 markers
 marks
@@ -1714,6 +1737,7 @@ min-height
 min-w-[var(--size-wk-sm)]
 mints
 mismatch
+modal
 mode"),
 mode,
 mode.
@@ -1780,6 +1804,7 @@ null,
 null;
 null])
 null],
+number
 numbered.
 object,
 of
@@ -1790,6 +1815,7 @@ omission.
 on
 on),
 on.
+on:
 onCreate
 once
 once:
@@ -1865,13 +1891,16 @@ pending
 pending,
 per
 per-instance
+phase,
 phrasing
+picks
 pictographic
 placed
 placement.
 placement:
 placement="bottom"
 plain
+plural
 point
 pointed
 pointer
@@ -1892,6 +1921,7 @@ presentational
 preserved;
 preset
 preset,
+press
 pressed
 preview
 prod).
@@ -1953,6 +1983,8 @@ registers
 regularly
 relative
 remaining
+remaining'),
+remaining|[2,*]
 remove
 removes
 removing
@@ -2029,6 +2061,7 @@ sees.
 selection
 selects
 sent
+sentence
 separator.
 serialized
 server
@@ -2110,6 +2143,7 @@ stopped.
 stops
 stored
 stored.
+str_replace('_',
 strategy:
 stray
 string
@@ -2151,6 +2185,7 @@ tabbed
 tabindex
 tabindex="0"
 tabindex="{{
+table's
 tabular-nums">
 tag
 tag,
@@ -2221,6 +2256,7 @@ toggle)].
 token.
 tokens
 too
+too,
 toolbar
 toolbar's
 toolbar.
@@ -2240,6 +2276,7 @@ translated.
 translator,
 translator.
 travel
+travels
 trigger
 trigger's
 trigger,
@@ -2344,6 +2381,7 @@ widening
 wider
 width
 width)
+window
 window,
 window.wirekitEditor)
 window.wirekitEditor).
@@ -2390,7 +2428,7 @@ x-on:focusout="focusout()"
 x-on:keydown.arrow-left.prevent="focusToolbarCommand($event,
 x-on:keydown.arrow-right.prevent="focusToolbarCommand($event,
 x-on:keydown.end.prevent="focusToolbarCommand($event,
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.home.prevent="focusToolbarCommand($event,
 x-on:mousedown.prevent=""
 x-on:mouseenter="mouseenter()"

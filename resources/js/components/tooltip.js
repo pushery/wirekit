@@ -205,19 +205,33 @@ export default function wirekitTooltip(config = {}) {
         },
 
         /**
-         * ESC key — immediately hide tooltip and clear all pending timers.
+         * Escape anywhere: hide the tooltip and clear every pending timer.
          *
-         * Reached from a listener on the WINDOW, not on the component, because a
-         * tooltip is normally opened by a pointer and a pointer moves no focus: a
-         * key bound inside the component never saw the keystroke that was meant for
-         * it. WCAG 1.4.13 names Escape as the way hover-shown content is dismissed
-         * without moving the pointer or the focus.
+         * Heard on the WINDOW, not on the component, because a tooltip is normally
+         * opened by a pointer and a pointer moves no focus: a key bound inside the
+         * component never saw the keystroke that was meant for it. WCAG 1.4.13 names
+         * Escape as the way hover-shown content is dismissed without moving the
+         * pointer or the focus.
+         *
+         * Heard in the CAPTURE phase, and a tooltip on screen marks the press as
+         * handled. A modal or a drawer around the reader reads Escape later, on the
+         * document and on the window, and leaves a marked press alone: the reader
+         * asked the tooltip to go, and nothing else. A tooltip only shows for what the
+         * reader points at or stands on, so nothing on screen sits above it to take
+         * the key first.
          *
          * Clearing the timers is not housekeeping here — it is the point. A pending
          * `delayShow` that survives Escape puts the panel on screen a moment AFTER
-         * the key that was meant to answer it.
+         * the key that was meant to answer it. A press that only cleared a pending
+         * show stays unmarked: nothing was on screen for the reader to dismiss.
+         *
+         * @param {KeyboardEvent} [event]
          */
-        keydownEscape() {
+        keydownEscape(event) {
+            if (this.isOpen) {
+                event?.preventDefault();
+            }
+
             this._clearAllTimers();
             this.close();
         },

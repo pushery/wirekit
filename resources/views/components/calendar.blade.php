@@ -218,12 +218,12 @@
 >
     {{-- Hidden input for form submission --}}
     {{-- Static value as well as the bound one: the field is empty until Alpine boots, and a form submitted in that window sends nothing while the visible control already shows the value. Both come from the same PHP expression that feeds the factory, so they cannot drift. --}}
-    <input type="hidden" name="{{ $name }}" x-ref="hiddenInput" value="{{ $value }}" :value="rangeValue" />
+    {{-- In range mode this field keeps the combined value for wire:model and carries no name:
+         the form receives the two ends below instead. A name sent both as a string and as an
+         array reaches PHP as the array alone, so a combined field of the same name never arrived. --}}
+    <input type="hidden" @unless($range) name="{{ $name }}" @endunless x-ref="hiddenInput" value="{{ $value }}" :value="rangeValue" />
     @if($range)
-        {{-- The two ends as named fields as well, matching date-picker's
-             `name[start]` / `name[end]`. The combined field above stays, so a
-             handler written for a single date still receives something it
-             understands when a calendar is switched to range mode. --}}
+        {{-- The two ends as named fields, matching date-picker's `name[start]` / `name[end]`. --}}
         <input type="hidden" name="{{ $name }}[start]" x-ref="hiddenStart" value="{{ $rangeStart }}" :value="rangeStartValue" />
         <input type="hidden" name="{{ $name }}[end]" x-ref="hiddenEnd" value="{{ $rangeEnd }}" :value="rangeEndValue" />
     @endif

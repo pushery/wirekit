@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.61.0 — MIT License
+ * WireKit CSS v2.62.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -5638,6 +5638,14 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        own color, so the dot disappeared. It keeps a fill in the text color instead. The intent's
        hue is gone in this mode either way; what the dot means is its name and its tooltip. */
     .wk-status-dot {
+        forced-color-adjust: none;
+        background: CanvasText;
+    }
+
+    /* The unread dot of a notification is a fill as well, and under a theme whose heading weight
+       is the body weight it is the only thing that tells an unread row from a read one. It keeps
+       a fill in the text color; a read row carries no dot to keep. */
+    .wk-unread-dot {
         forced-color-adjust: none;
         background: CanvasText;
     }

@@ -92,6 +92,7 @@
         'hover:bg-[var(--color-wk-bg-subtle)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-default',
+        'aria-disabled:opacity-[var(--opacity-wk-disabled)] aria-disabled:cursor-default',
         $isVertical ? 'left-1/2 -translate-x-1/2' : 'top-1/2 -translate-y-1/2',
     ]);
     // Horizontal arrows sit at the root's inline edges (left-0 / right-0), which
@@ -181,7 +182,12 @@
     <button
         type="button"
         x-on:click="prev()"
-        :disabled="!loop && current === 0"
+        {{-- At an end the arrow says it is unavailable rather than going `disabled`: a
+             disabled button cannot hold the focus, so pressing Next onto the last slide would
+             drop the reader's place on the page. prev() and next() do nothing there already.
+             Only a carousel with nothing to step through takes the arrows out of the order. --}}
+        :aria-disabled="!loop && current === 0"
+        :disabled="total <= 1"
         class="{{ $buttonClasses }} {{ $prevPosClass }}"
         aria-label="{{ __('wirekit::Previous slide') }}"
         data-wk-carousel-prev
@@ -194,7 +200,8 @@
     <button
         type="button"
         x-on:click="next()"
-        :disabled="!loop && current === total - 1"
+        :aria-disabled="!loop && current === total - 1"
+        :disabled="total <= 1"
         class="{{ $buttonClasses }} {{ $nextPosClass }}"
         aria-label="{{ __('wirekit::Next slide') }}"
         data-wk-carousel-next

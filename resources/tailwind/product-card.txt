@@ -750,7 +750,7 @@ $wrapperClasses
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -1327,6 +1327,7 @@ Built
 By
 Bypasses
 CALLER's
+CAPTURE
 CONTENT,
 CONTROL.
 CSP
@@ -2812,6 +2813,7 @@ down
 down.
 download
 draw
+drawer
 drawn
 draws
 drift
@@ -3780,6 +3782,7 @@ on
 on-color
 on-fill
 on.
+on:
 once
 one
 one,
@@ -3929,6 +3932,7 @@ permanent
 permanently,
 person
 personalization
+phase,
 phone
 phone,
 phone.
@@ -3997,6 +4001,7 @@ present
 presentational
 preserves
 preset
+press
 pressed
 prevent
 preview
@@ -4758,6 +4763,7 @@ tokens.
 told
 tone
 too
+too,
 too.
 took
 tooltip
@@ -5095,7 +5101,7 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

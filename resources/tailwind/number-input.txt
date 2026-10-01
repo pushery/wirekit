@@ -20,6 +20,8 @@ $attributes->get('required',
 $attributes->get('value',
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes->has('disabled')
+$attributes->has('readonly');
 $attributes->whereStartsWith(['wire:model',
 $attributes]
 $boundModel
@@ -35,6 +37,7 @@ $describedBy
 $error
 $errorMessage
 $errorMessage)
+$fieldLocked
 $hasError
 $hideLabel
 $hint
@@ -174,6 +177,7 @@ $suffix
 ($size)
 (@aware
 (Support\CallerListeners).
+(`locked`).
 (auto
 (because
 (below)
@@ -204,11 +208,11 @@ $suffix
 3v10M3
 8h10"
 :
-:aria-disabled="atMax"
-:aria-disabled="atMin"
+:aria-disabled="atMax
+:aria-disabled="atMin
 :class="$hideLabel
-:disabled="atMax"
-:disabled="atMin"
+:disabled="atMax
+:disabled="atMin
 :field',
 :for="$id"
 :required="(bool)
@@ -242,6 +246,7 @@ $suffix
 @if($boundModel)
 @if($callerRef
 @if($describedBy
+@if($fieldLocked)
 @if($hasError
 @if($hasError)
 @if($label)
@@ -447,6 +452,7 @@ aria-atomic="true"
 aria-controls="{{
 aria-describedby
 aria-describedby="{{
+aria-disabled="true"
 aria-hidden="true"
 aria-hidden="true">*</span>@endif
 aria-hidden="true">{{
@@ -484,6 +490,7 @@ below
 below,
 below.
 between
+bindings
 block,
 boolean
 border
@@ -521,6 +528,7 @@ case:
 cast
 catalog
 cell,
+change
 changes
 clamp(value)"
 class="flex
@@ -597,6 +605,7 @@ destroyed.
 detection:
 did
 disabled
+disabled,
 disabled:cursor-not-allowed',
 disables
 disagree
@@ -614,6 +623,7 @@ easy
 edits
 either
 either,
+either.
 element
 element,
 element.
@@ -733,6 +743,7 @@ into
 invalid
 inverts
 is
+is:
 is_string($label)
 it
 it,
@@ -774,6 +785,7 @@ listens
 literal
 live
 lives
+locked"
 logically
 looked
 looks
@@ -856,6 +868,7 @@ omission.
 on
 on.
 on:
+once
 once:
 one
 one.
@@ -883,6 +896,7 @@ package
 padding
 page
 page-unique
+paint;
 parameterized
 parent
 parent's
@@ -928,6 +942,8 @@ question
 rather
 reach
 reaches
+read
+read-only,
 reader
 reader's
 reading
@@ -961,6 +977,7 @@ rounding
 row
 row,
 run
+runs,
 safety
 same
 save.

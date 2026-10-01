@@ -452,7 +452,7 @@ $wrapperClasses
 'wrapper',
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -785,6 +785,7 @@ Both
 Built
 Bypasses
 CALLER's
+CAPTURE
 CSS
 CSS-pixel
 CSS.
@@ -1820,6 +1821,7 @@ does;
 dotted-read
 double
 down
+drawer
 drawn
 draws
 driven
@@ -2383,6 +2385,7 @@ many
 map.
 margin:
 margins
+marked
 marked.
 marker
 markers
@@ -2549,6 +2552,7 @@ omission.
 omission:
 on
 on.
+on:
 once
 one
 one,
@@ -2674,6 +2678,7 @@ perception
 person
 personalization
 personalized
+phase,
 phone
 phone,
 phone.
@@ -2724,6 +2729,7 @@ present
 presentational
 preserves
 preset
+press
 pressed
 prevent
 primary
@@ -3487,7 +3493,7 @@ x-on:click.outside="close()"
 x-on:click="toggle()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

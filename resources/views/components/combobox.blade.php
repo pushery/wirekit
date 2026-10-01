@@ -525,7 +525,8 @@
              boots, and a form submitted in that window sends nothing while the
              visible control already shows the value. Both come from the same PHP
              expression that feeds the factory, so they cannot drift. --}}
-        <input type="hidden" name="{{ $name }}" value="{{ $value }}" :value="submittedValue" />
+        {{-- A disabled field is left out of the form data, as a native one is. --}}
+        <input type="hidden" name="{{ $name }}" value="{{ $value }}" :value="submittedValue" @if($disabled) disabled @endif />
     @endif
 
     @if($searchable)
@@ -554,7 +555,7 @@
              `run(undefined)` would send the server a value nobody chose and then
              roll back from it. --}}
         @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(highlightedValue())' : 'activateHighlighted()' }}"
-        @keydown.escape="isOpen = false"
+        @keydown.escape="escapeList($event)"
         @if($disabled) disabled @endif
         @if($hasError) aria-invalid="true" @endif
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
@@ -639,6 +640,7 @@
     @if(!$disabled && $clearable)
         <button
             type="button"
+            data-wk-combobox-clear
             x-show="selected"
             x-cloak
             {{-- run(null), not runIf: clearing IS a choice — "none of them" — and it
@@ -865,13 +867,11 @@
              outcome that only appears on screen reaches nobody using a screen
              reader: the input goes on saying aria-expanded="true" with no active
              option, which reads as an open list that happens to have nothing
-             highlighted. `role="status"` is an implicit polite, atomic live
-             region, and this node is teleported once and then only toggled, so
-             the text arrives INTO a region that was already there — which is the
-             condition for it being spoken at all. --}}
-        {{-- In server mode the status region below speaks instead, since it also has to say that
-             a search is out while results are still on screen and this panel is hidden. --}}
-        @unless($server) role="status" @endunless
+             highlighted. This panel is not the region that says it. It is toggled
+             with `x-show`, and an element under `display: none` is not in the
+             accessibility tree, so a live region here would arrive together with
+             its text. The region below the panel is present from the first render
+             and speaks it, in both modes. --}}
         class="{{ $listClasses }}"
         @if($panelWidthStyle !== '') style="{{ $panelWidthStyle }}" @endif
         x-ref="cbxEmpty"
@@ -898,6 +898,10 @@
              results were cut. Present from the first render: a region that arrives together with
              its text is a new node, and nothing is announced at all. --}}
         <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="searchAnnouncement(filtered.length, typedQuery())"></div>
+    @else
+        {{-- "No results", spoken when the panel above shows it, from a region present since the
+             first render for the same reason. --}}
+        <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="isOpen && filtered.length === 0 && query !== '' ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No results')) }} : ''"></div>
     @endif
 
     @if($showsError)

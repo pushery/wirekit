@@ -44,6 +44,8 @@ $attributes->get('required',
 $attributes->get('value',
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes->has('disabled')
+$attributes->has('readonly');
 $attributes->whereStartsWith(['wire:model',
 $attributes]
 $autocomplete
@@ -94,6 +96,7 @@ $errorMessage
 $errorMessage)
 $errorMessage;
 $exclusive
+$fieldLocked
 $focusableTrigger
 $fontFamilyClass
 $fontFamilyClass,
@@ -512,7 +515,7 @@ $width
 'x-on:change']);
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -548,6 +551,7 @@ $width
 (`data-wk-tooltip-surface`
 (`data-wk-touch`)
 (`error=""`
+(`locked`).
 (a
 (an
 (and
@@ -736,8 +740,8 @@ $width
 :actions="$actions"
 :aria-busy="saving"
 :aria-describedby="$describedBy"
-:aria-disabled="atMax"
-:aria-disabled="atMin"
+:aria-disabled="atMax
+:aria-disabled="atMin
 :aria-disabled="saving"
 :aria-invalid="$hasError
 :aria-label
@@ -749,8 +753,8 @@ $width
 :control="$control"
 :described-by="$describedBy"
 :describes="false"
-:disabled="atMax"
-:disabled="atMin"
+:disabled="atMax
+:disabled="atMin
 :editor="$editor
 :field
 :field',
@@ -847,8 +851,10 @@ $width
 @if($copyable)
 @if($describedBy
 @if($describes)
+@if($disabled
 @if($disabled)
 @if($editor
+@if($fieldLocked)
 @if($focusableTrigger)
 @if($hasAffordances)
 @if($hasError
@@ -934,6 +940,7 @@ Build
 But
 CALLER's
 CANNOT
+CAPTURE
 COMMITTING
 CONTROL,
 CSP
@@ -1333,6 +1340,7 @@ __('wirekit::Still
 `config.unknownMessage
 `config`
 `control`
+`copyable
 `copyable`
 `data-wk-ref-scope`
 `delayHide`
@@ -1575,6 +1583,7 @@ aria-describedby,
 aria-describedby.
 aria-describedby="{{
 aria-disabled
+aria-disabled="true"
 aria-hidden
 aria-hidden="true"
 aria-hidden="true">
@@ -1679,6 +1688,7 @@ between
 bg-transparent
 bind
 binding
+bindings
 binds
 blank
 blank.
@@ -2097,6 +2107,7 @@ down.
 draft
 draft;
 drag-select
+drawer
 draws
 draws,
 drift
@@ -2542,6 +2553,7 @@ invite
 invocation`
 is
 is.
+is:
 isFalse
 is_array($optionLabel)
 is_array($subLabel)
@@ -2652,6 +2664,7 @@ lives
 lives.
 load.
 loading:
+locked"
 logger()->warning('[WireKit]
 logically
 long
@@ -2668,8 +2681,10 @@ make
 makes
 making
 many
+marked
 marker
 markers
+marks
 markup
 markup,
 markup.
@@ -2737,6 +2752,7 @@ mispronounced.
 miss
 missing,
 mixed|null
+modal
 mode
 mode"),
 mode,
@@ -2819,6 +2835,7 @@ not,
 notches
 note
 nothing
+nothing,
 nothing.
 nothing:
 nothing;
@@ -2927,6 +2944,7 @@ page,
 page-unique
 page-unique,
 paint
+paint;
 painting
 paints
 pair
@@ -2972,6 +2990,7 @@ per-branch
 per-instance
 per-trigger
 person
+phase,
 phone
 phone.
 phones
@@ -3025,6 +3044,7 @@ preg_replace(
 present
 presentational
 preserving
+press
 previous
 price
 primitive,
@@ -3082,6 +3102,7 @@ reaches
 reaching
 read
 read-only
+read-only,
 readable
 reader
 reader's
@@ -3091,6 +3112,7 @@ readers
 readers.
 reading
 readonly
+readonly`
 reads
 reads:
 real
@@ -3210,6 +3232,7 @@ rules,
 run
 running
 runs
+runs,
 runtime
 safe
 safe.
@@ -3385,6 +3408,7 @@ stay
 stayed
 stays
 stays,
+stays:
 step
 step).
 step-grid
@@ -3753,6 +3777,7 @@ width)
 width,
 width:
 will
+window
 window,
 wins
 wins).
@@ -3822,7 +3847,7 @@ x-on:click="open()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:input="syncFromInput()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown="onKeydown($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

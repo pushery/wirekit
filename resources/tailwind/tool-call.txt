@@ -391,7 +391,7 @@ $wrapperClasses
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -680,6 +680,7 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
+CAPTURE
 COMPONENT
 CSP
 CSS
@@ -1106,6 +1107,7 @@ allowed
 allowlist
 allowlist,
 alone
+alone.
 already
 also
 always
@@ -1174,6 +1176,7 @@ aria-labelledby
 aria-live="polite"
 armed,
 arms
+around
 array
 array_filter([
 array_keys($sizeMap));
@@ -1570,6 +1573,7 @@ done.
 dot
 double
 down
+drawer
 draws
 drift
 drives
@@ -2054,6 +2058,7 @@ many
 map.
 margin
 markdown
+marked
 marker
 markers
 markers,
@@ -2168,6 +2173,7 @@ on
 on-color
 on-fill
 on.
+on:
 once
 one
 one's
@@ -2275,6 +2281,7 @@ per-surface
 perceived
 person
 personalization
+phase,
 phrasing
 pill
 pill,
@@ -2313,6 +2320,7 @@ present
 presentational
 preserves
 preset
+press
 preview
 pricing-card
 printed
@@ -2762,6 +2770,7 @@ toggles
 token
 token,
 tone
+too,
 took,
 tool
 toolbar
@@ -2919,6 +2928,7 @@ widening
 wider
 width
 width)
+window
 window,
 wins
 wire:key="wk-tool-call-{{
@@ -2964,7 +2974,7 @@ x-on:click="dismiss()"
 x-on:click="isOpen
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

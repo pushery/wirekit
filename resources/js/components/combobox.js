@@ -36,6 +36,7 @@
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
+import { foldForSearch } from '../utils/search-fold.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { serverSearchState } from '../utils/server-search.js';
 import { withOpenAlias } from '../utils/open-alias.js';
@@ -90,7 +91,7 @@ export default function wirekitCombobox(config = {}) {
                 return this.allOptions;
             }
 
-            const q = this.query.toLowerCase();
+            const q = foldForSearch(this.query);
 
             return this.allOptions.filter((o) => optionMatches(o, q));
         },
@@ -465,6 +466,19 @@ export default function wirekitCombobox(config = {}) {
             this._queueSearch(this.typedQuery());
         },
 
+        /**
+         * Escape folds an open list without choosing, and marks the press as handled so that a
+         * modal or a drawer around the field stays open. With the list already folded the press
+         * is left to them.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeList(event) {
+            if (! this.isOpen) return;
+            event?.preventDefault();
+            this.isOpen = false;
+        },
+
         /** The text field, which a `search-change` starts from (see utils/server-search.js). */
         _searchSource() {
             const byId = this._inputId && typeof document !== 'undefined'
@@ -554,6 +568,8 @@ export default function wirekitCombobox(config = {}) {
             // The field now shows the choice, which is not a search: the application goes back
             // to what it lists before one.
             this._queueSearch('');
+
+            this._keepFocusThroughClear();
         },
 
         /**
@@ -739,7 +755,7 @@ export default function wirekitCombobox(config = {}) {
             }
 
             if (key === 'Escape') {
-                this.isOpen = false;
+                this.escapeList(event);
             } else if (key === 'ArrowDown' && ! altKey) {
                 event.preventDefault();
                 this.moveHighlight(1);
@@ -866,6 +882,40 @@ export default function wirekitCombobox(config = {}) {
             if (hidden) {
                 hidden.value = '';
                 hidden.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            this._keepFocusThroughClear();
+        },
+
+        /**
+         * Keep the focus in the component when the clear button takes itself away.
+         *
+         * The button shows only while there is a value (`x-show="selected"`), so clearing hides the
+         * control that holds the focus, and the browser drops it to the page: the next Tab starts
+         * somewhere the reader never was. The field takes it instead, with the list kept shut,
+         * because the field's own `@focus` opens it and a clear is about taking a value away.
+         *
+         * Called from both ways a clear arrives, the plain one and the optimistic write (through
+         * `_syncQuery`, its `after` hook), while the button is still in the document. It acts only
+         * when the value is empty and the focus is on the clear button, so a choice, a rollback or
+         * a clear the focus was elsewhere for moves nothing.
+         */
+        _keepFocusThroughClear() {
+            if (this.selected !== null || typeof document === 'undefined') {
+                return;
+            }
+
+            const active = document.activeElement;
+
+            if (! active || typeof active.hasAttribute !== 'function' || ! active.hasAttribute('data-wk-combobox-clear')) {
+                return;
+            }
+
+            const field = this._searchSource();
+
+            if (field && typeof field.focus === 'function') {
+                field.focus();
+                this.isOpen = false;
             }
         },
     });

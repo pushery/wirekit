@@ -142,6 +142,25 @@ export default function wirekitTour(config = {}) {
         },
 
         /**
+         * Escape anywhere while the tour runs ends it, and that press is spent.
+         *
+         * Heard on the window in the capture phase. A step sits above everything on the page,
+         * an open modal or drawer included, and both of those read Escape later, on the
+         * document and on the window: the tour holds a trap of its own, so theirs is paused,
+         * but a modal's window listener would still take the same press and close as well.
+         * Marked, the press ends the tour and nothing else. Heard wherever the focus is, so a
+         * press still ends the tour when the focus has fallen to the body.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeTour(event) {
+            if (! this.active) return;
+
+            event?.preventDefault();
+            this.dismiss();
+        },
+
+        /**
          * Position the current step popup near its target element.
          */
         async _positionStep() {
@@ -266,8 +285,9 @@ export default function wirekitTour(config = {}) {
 
             this._trap = createFocusTrap(stepEl, {
                 // The Blade template keeps a window-level Escape handler so a press
-                // still dismisses when focus has fallen to the body; letting the
-                // trap deactivate on Escape as well would run the teardown twice.
+                // still dismisses when focus has fallen to the body (`escapeTour()`);
+                // letting the trap deactivate on Escape as well would run the teardown
+                // twice.
                 escapeDeactivates: false,
                 initialFocus: stepEl,
                 // Every step after the first activates while the PREVIOUS panel

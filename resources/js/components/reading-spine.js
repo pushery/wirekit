@@ -37,6 +37,7 @@ import { prefersReducedMotion } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
+import { foldForSearch } from '../utils/search-fold.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
     // A selector for subtrees whose headings are NOT this page's structure — an embedded
@@ -512,8 +513,9 @@ export default (options = {}) => ({
      */
     matchesFilter(item) {
         if (!this.filter) return true;
-        const needle = this.filter.toLowerCase();
-        return item.text.toLowerCase().includes(needle);
+        // Accents folded away on both sides, so `munchen` finds `München` (utils/search-fold.js).
+        const needle = foldForSearch(this.filter);
+        return foldForSearch(item.text).includes(needle);
     },
 
     /**

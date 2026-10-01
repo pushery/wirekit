@@ -85,6 +85,7 @@ $valueArr),
 'value'
 'w-full
 'w-full',
+'x-on:keydown.escape']);
 'yes'
 ("false").
 (Support\CallerListeners).
@@ -224,6 +225,7 @@ Active-filter
 Add-filter
 Alpine
 Alpine-only
+An
 Assembled
 Blade
 BooleanProp::from($searchable,
@@ -281,7 +283,7 @@ WireKit.
 WireKit::resolveClasses('filter-builder',
 Without
 [
-['x-on:keydown.escape.window']);
+['x-on:keydown.escape.window',
 [],
 [{field,op,value}]
 [{key,label,type,operators?,options?}];
@@ -419,6 +421,7 @@ broke.
 browser
 browser.
 bubbling
+builder
 builds
 but
 button
@@ -466,6 +469,7 @@ clip-rule="evenodd"
 clipping/stacking
 close()
 close(true)"
+closes
 coerces
 compiles
 component's
@@ -516,7 +520,9 @@ dispatches
 docs
 documented
 does
+does.
 draftOptions()"
+drawer
 drawn
 drawn.
 dropdown
@@ -591,9 +597,11 @@ go
 goes
 guard
 handed
+handled,
 hands
 has
 hear
+heard
 here
 here,
 hidden-input
@@ -653,6 +661,7 @@ lives
 longer
 looking
 loop
+marked
 marker
 match
 matches
@@ -662,6 +671,7 @@ may
 mb-1';
 mean
 mirrored
+modal
 model
 morph
 move
@@ -697,6 +707,7 @@ one.
 only
 op
 open
+open;
 openAdd()"
 opens
 operator
@@ -705,6 +716,7 @@ opposite
 optimistic-ui:
 option's
 optional
+or
 order
 other
 otherwise
@@ -737,6 +749,7 @@ pr-1
 pr-2.5">
 pr-8';
 precedes
+press
 prod).
 prop's
 props
@@ -862,6 +875,7 @@ than
 that
 the
 them
+there
 there.
 these
 they
@@ -878,8 +892,10 @@ transition-colors
 translated
 translator
 transparent
+trap
 trigger
 trigger).
+trigger,
 trip.
 truth
 truthy
@@ -920,6 +936,7 @@ w-4
 w-[18rem]
 wait
 was
+way
 what
 whatever
 when
@@ -929,6 +946,8 @@ while
 who
 whole
 why
+window
+window,
 wire:model
 wired
 wirekitFilterBuilder)
@@ -958,6 +977,7 @@ x-model="draft.op"
 x-model="draft.value"
 x-on:click.outside="close()"
 x-on:keydown.escape.window="isOpen
+x-on:keydown.escape="escapePanel($event)"
 x-on:keydown.tab="tabWithinPanel($event)"
 x-ref="fieldSelect"
 x-ref="model"

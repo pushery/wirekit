@@ -221,6 +221,12 @@ final class Chart extends Component
         // formatter opts out — their override wins via array_replace_recursive,
         // the sentinel is gone, and we skip the injection.
         if (($mergedOptions['tooltip']['custom'] ?? null) === 'WIREKIT_DEFAULT_TOOLTIP') {
+            // The application's locale for the dates the renderer formats, in the BCP-47
+            // spelling Intl reads (Laravel writes `pt_BR`). Without it the renderer falls back
+            // to the reader's browser, which is not the language of the page around the chart.
+            // A locale the developer set on the tooltip stays theirs.
+            $mergedOptions['tooltip']['wkLocale'] ??= str_replace('_', '-', app()->getLocale());
+
             // Normalize valueDecimals to an int in [0, 100] or null. is_numeric
             // accepts "2" / 2 / "0"; anything else (null, "", "x") → null = unset.
             // The 0–100 clamp is mandatory: the JS side feeds this to

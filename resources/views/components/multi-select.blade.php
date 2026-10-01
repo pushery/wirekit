@@ -12,6 +12,9 @@
     // a legitimate attribute all the way down. The result was a required field that submits
     // empty, in the same form as a plain input that behaves correctly.
     'required' => false,
+    // `disabled` — declared for the reason `required` is: undeclared, it landed on the wrapper
+    // div, where HTML gives it no meaning, and the field it names stayed in use.
+    'disabled' => false,
     // Livewire method to call optimistically. It receives the FULL new
     // selection as an array. The pill appears immediately and is removed again
     // if the call fails. Absent -> this component renders exactly as before.
@@ -78,6 +81,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `required="false"` would read as TRUE and mark the field required anyway.
     $required = BooleanProp::from($required, false);
+    $disabled = BooleanProp::from($disabled, false);
     $server = BooleanProp::from($server, false);
     $truncated = BooleanProp::from($truncated, false);
     $searchMinLength = max(1, (int) $searchMinLength);
@@ -172,7 +176,7 @@
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'focus-within:ring-[length:var(--ring-wk-width)] focus-within:ring-[var(--color-wk-ring)]',
-        'cursor-text',
+        $disabled ? 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]' : 'cursor-text',
     ]), $scope);
 
     $stateClasses = $hasError
@@ -443,7 +447,7 @@
         @if($listLayout) data-wk-multi-select-layout="list" @endif
         @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
         @click.away="dropdownOpen = false"
-        @keydown.escape="dropdownOpen = false"
+        @keydown.escape="escapeDropdown($event)"
     >
         @if($optimisticConfig)
             {{-- `display: contents` so the panel keeps `relative` above it as its
@@ -453,7 +457,8 @@
 
         {{-- Hidden inputs for form submission --}}
         <template x-for="(val, i) in selected" :key="i">
-            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="val" />
+            {{-- A disabled field is left out of the form data, as a native one is. --}}
+            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="val" @if($disabled) disabled @endif />
         </template>
 
         @if($listLayout)
@@ -463,6 +468,7 @@
                 type="search"
                 id="{{ $fieldId }}"
                 x-ref="filterInput"
+                @if($disabled) disabled @endif
                 x-model="filter"
                 @input="onListInput()"
                 aria-controls="{{ $id }}-results"
@@ -494,6 +500,7 @@
                                     type="checkbox"
                                     class="peer sr-only"
                                     data-wk-multi-select-option
+                                    @if($disabled) disabled @endif
                                     :value="opt.value"
                                     :checked="selected.includes(opt.value)"
                                     @change="{{ $optimisticConfig ? 'run(nextWith(opt.value))' : 'toggleFromList(opt.value)' }}"
@@ -534,6 +541,7 @@
                             <button
                                 type="button"
                                 data-wk-multi-select-remove
+                                @if($disabled) disabled @endif
                                 @click="{{ $optimisticConfig ? 'run(nextWith(val))' : 'removeFromList(val)' }}"
                                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
                                 class="wk-touch-target relative p-1 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
@@ -574,6 +582,7 @@
                              the same server mutation as picking one, so it takes
                              the same path and is undone the same way. --}}
                         @click.stop="{{ $optimisticConfig ? 'run(nextWith(val))' : 'deselect(val)' }}"
+                        @if($disabled) disabled @endif
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
                         class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
@@ -587,6 +596,7 @@
                 type="text"
                 id="{{ $fieldId }}"
                 x-ref="filterInput"
+                @if($disabled) disabled @endif
                 x-model="filter"
                 @focus="dropdownOpen = true"
                 {{-- A fresh filter is a fresh list, so the old index means
@@ -792,6 +802,15 @@
                  and a row that says "Searching" is only read when the keyboard lands on it.
                  Present from the first render for the reason the announcer above gives. --}}
             <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="searchAnnouncement({{ $listLayout ? 'listOptions' : 'filteredOptions' }}.length, filter)"></div>
+        @else
+            {{-- "No results", spoken when a filter matches nothing. The row that shows it is only
+                 read when the keyboard lands on it, so without this a reader who typed hears
+                 nothing at all. Present from the first render for the reason above. --}}
+            @if($listLayout)
+                <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="listOptions.length === 0 && filter !== '' ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No results')) }} : ''"></div>
+            @else
+                <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="dropdownOpen && filteredOptions.length === 0 && filter !== '' ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No results')) }} : ''"></div>
+            @endif
         @endif
 
         {{-- The symbols the option icons point at, rendered with the component so a Livewire

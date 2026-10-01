@@ -580,6 +580,7 @@ cut
 danger-text
 dark
 dark:
+data,
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-server-value="{{
@@ -753,6 +754,7 @@ interpolated,
 interrupt
 into
 is
+is.
 it
 it,
 it.
@@ -785,6 +787,7 @@ layer,
 layout
 leave
 leaves
+left
 less
 let
 level

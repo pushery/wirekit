@@ -427,7 +427,7 @@ $wrap
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -723,6 +723,7 @@ Border
 Both
 CALLER
 CALLER's
+CAPTURE
 CELL
 CELLS
 COMPOSITE
@@ -1142,6 +1143,7 @@ all.
 allowed
 allowlist,
 alone,
+alone.
 already
 also
 alternative
@@ -1581,6 +1583,7 @@ dot
 double
 down
 down.
+drawer
 drawn.
 draws
 drift
@@ -2031,6 +2034,7 @@ map
 map.
 map:
 margin
+marked
 markers
 marketing
 marks
@@ -2150,6 +2154,7 @@ on
 on-color
 on-fill
 on.
+on:
 once
 once.
 one
@@ -2234,6 +2239,7 @@ per-set
 per-surface
 personalization
 phantom
+phase,
 phrasing
 picks
 picks.
@@ -2268,6 +2274,7 @@ present
 presentational
 preserves
 preset
+press
 preview
 pricing-card
 printed).
@@ -2716,6 +2723,7 @@ token,
 tokens
 tone
 too).
+too,
 tooltip
 tooltip,
 tooltip.
@@ -2906,7 +2914,7 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

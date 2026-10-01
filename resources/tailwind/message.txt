@@ -467,7 +467,7 @@ $wrap
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -771,6 +771,7 @@ Both
 Box-shadow
 Bubble
 CALLER's
+CAPTURE
 CLASS,
 CSS
 CallerRef::onRoot()
@@ -1581,6 +1582,7 @@ double
 double-check
 double-ring
 down
+drawer
 draws
 drift
 drop
@@ -2006,6 +2008,7 @@ makes
 many
 map.
 margin
+marked
 marker
 markers
 marketing
@@ -2121,6 +2124,7 @@ on
 on-color
 on-fill
 on.
+on:
 once
 one
 one,
@@ -2209,6 +2213,7 @@ permanently
 person
 person,
 personalization
+phase,
 phone
 phrasing
 pick
@@ -2245,6 +2250,7 @@ presentational
 preserves
 preset
 preset:
+press
 preview
 pricing-card
 prints
@@ -2660,6 +2666,7 @@ token
 token,
 told
 tone
+too,
 tooltip
 tooltip,
 tooltip.
@@ -2806,6 +2813,7 @@ width
 width)
 width,
 widths
+window
 window,
 wins
 wire:key="wk-tooltip-panel"
@@ -2833,7 +2841,7 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

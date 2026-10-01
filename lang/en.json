@@ -418,6 +418,8 @@
     "wirekit::unread. Latest:": "unread. Latest:",
     "wirekit::with :names": "with :names",
     "wirekit::{0} no reactions|{1} :count person reacted|[2,*] :count people reacted": "{0} no reactions|{1} :count person reacted|[2,*] :count people reacted",
+    "wirekit::{1} :count character over the limit|[2,*] :count characters over the limit": "{1} :count character over the limit|[2,*] :count characters over the limit",
+    "wirekit::{1} :count character remaining|[2,*] :count characters remaining": "{1} :count character remaining|[2,*] :count characters remaining",
     "wirekit::{1} :count day|[2,*] :count days": "{1} :count day|[2,*] :count days",
     "wirekit::{1} :count hour|[2,*] :count hours": "{1} :count hour|[2,*] :count hours",
     "wirekit::{1} :count minute|[2,*] :count minutes": "{1} :count minute|[2,*] :count minutes",

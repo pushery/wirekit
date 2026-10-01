@@ -228,9 +228,9 @@ $value,
 '#'.$errorId,
 ''
 ''"
+''"></div>
 ''">{{
 '')
-''))
 '')));
 '')).'
 ''));
@@ -534,7 +534,6 @@ $value,
 -strong
 -translate-y-1/2
 .
-.'
 .',
 ..,
 ...]]`).
@@ -710,6 +709,7 @@ $value,
 @if($optimisticConfig)
 @if($optionUses['descriptions'])
 @if($optionUses['media'])
+@if($ownDescribedBy
 @if($panelWidthStyle
 @if($placeholder)
 @if($required)
@@ -725,7 +725,7 @@ $value,
 @keydown.arrow-up.prevent="moveHighlight(-1)"
 @keydown.end.prevent="openAtLast()"
 @keydown.enter.prevent="{{
-@keydown.escape="isOpen
+@keydown.escape="escapeList($event)"
 @keydown.home.prevent="openAtFirst()"
 @keydown="{{
 @mousedown.prevent
@@ -736,7 +736,6 @@ $value,
 @readonly($readonly)
 @unless($attributes->has('autocomplete'))
 @unless($attributes->has('role'))
-@unless($server)
 A
 A's
 A11y:
@@ -823,7 +822,6 @@ Hidden
 Hoisted
 How
 INSIDE
-INTO
 IS
 ISO
 IconSprite
@@ -987,6 +985,7 @@ Zypern
 \Pushery\WireKit\Support\AlpinePayload::from($value)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(['options'
+\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options'))
 \Pushery\WireKit\Support\AlpinePayload::string($comboId)
 \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding)
@@ -1119,7 +1118,6 @@ _place()
 `relative`
 `required`
 `role="combobox"`,
-`role="status"`
 `run()`.
 `run(undefined)`
 `runIf()`.
@@ -1179,6 +1177,7 @@ absolute
 accented
 accept
 accepts
+accessibility
 accessible
 across
 action
@@ -1294,7 +1293,6 @@ associates
 asterisk
 at
 at.
-atomic
 attached.
 attribute
 attribute,
@@ -1327,7 +1325,6 @@ before.
 behavior
 behavior:
 behind
-being
 belongs
 below
 below,
@@ -1500,7 +1497,6 @@ component.
 component;
 components
 computed
-condition
 config
 config('app.debug'),
 config('wirekit.a11y.announce_error',
@@ -1559,7 +1555,9 @@ d="M6.28
 danger-text
 dark
 dark:
+data,
 data-*,
+data-wk-combobox-clear
 data-wk-flag
 data-wk-optimistic-announcer
 data-wk-prose-skip
@@ -1622,6 +1620,7 @@ document.
 documentation
 does
 does.
+does:
 down
 draw
 drawn
@@ -1808,6 +1807,7 @@ grayscale
 group
 group's
 group-free
+group.
 grow',
 grp.options"
 guard
@@ -1834,13 +1834,13 @@ header
 heading
 headings,
 hear
+hears
 hears,
 height
 here
 here,
 here.
 hidden
-hidden.
 hides
 high
 highlight
@@ -1871,6 +1871,7 @@ icons
 id
 id),
 id,
+id;
 id="{{
 identical
 identify
@@ -1886,7 +1887,6 @@ image
 image,
 image.
 immediately
-implicit
 implode('
 imports
 in
@@ -1916,7 +1916,6 @@ inputId:
 inputmode="tel"
 inside
 instead
-instead,
 instead.
 int
 intact.
@@ -2072,6 +2071,7 @@ mode
 mode,
 model
 model.
+modes.
 moment
 more.
 morph
@@ -2126,6 +2126,7 @@ none,
 none;
 none;"
 none;">
+none`
 nor
 normalizes
 not
@@ -2224,6 +2225,7 @@ overflow-auto',
 overflow-hidden
 overlay
 own
+own,
 own.
 p-0.5
 package
@@ -2287,7 +2289,6 @@ pointer,
 pointing
 points
 polite
-polite,
 position
 positioned
 positively,
@@ -2328,6 +2329,7 @@ query
 quiet
 radius
 raises
+range
 rather
 re-renders,
 re-renders.
@@ -2345,6 +2347,7 @@ readonly
 reads
 real
 reason
+reason.
 reason:
 reasoning
 reasoning.
@@ -2358,7 +2361,6 @@ ref
 reference
 refuse.
 region
-region,
 region.
 region:
 registers
@@ -2396,7 +2398,9 @@ restyle.
 result
 results
 results"
+results",
 results')
+results'))
 results'),
 results.
 results:
@@ -2409,7 +2413,6 @@ role="group"
 role="listbox"
 role="none"
 role="option"
-role="status"
 role=combobox
 role=option
 roleless
@@ -2544,6 +2547,7 @@ size).
 size-full
 sizes
 sizing
+slider's
 slot
 slot,
 smaller
@@ -2581,7 +2585,6 @@ state
 state:
 stated
 states:
-status
 status,
 stays
 step
@@ -2630,6 +2633,7 @@ tabindex="-1"
 tabindex="{{
 tabindex=-1
 table
+tabs
 tag
 tag,
 take
@@ -2697,7 +2701,7 @@ today;
 together
 together,
 together.
-toggled,
+toggled
 toggles
 token
 tokenizer
@@ -2721,12 +2725,13 @@ translated
 transparent
 travel
 treat
+tree,
 tree.
 trigger
 trigger,
 trigger.
 trigger;
-trim(
+trim($ownDescribedBy.'
 trim(((string)
 trim((string)
 trip
@@ -2924,6 +2929,7 @@ x-show="selectedText
 x-teleport="#wk-overlay-root">
 x-text="announcement"></div>
 x-text="grp.label"></div>
+x-text="isOpen
 x-text="opt.description"></span>
 x-text="opt.label"></span>
 x-text="opt.label"></span>@endif<svg

@@ -504,7 +504,7 @@ $wrapLabel
 'x-on:click'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -830,6 +830,7 @@ Built
 Bypasses
 CALLER's
 CANNOT
+CAPTURE
 CSS
 CSS-pixel
 CSS.
@@ -1380,6 +1381,7 @@ allowed
 allowlist,
 allows
 alone
+alone.
 along
 alongside
 already
@@ -1936,6 +1938,7 @@ dotted-read
 double
 down
 down,
+drawer
 drawn
 draws
 drift
@@ -2498,6 +2501,7 @@ manually
 many
 map.
 margins
+marked
 marked.
 marker
 markers
@@ -2659,6 +2663,7 @@ on
 on"
 on,
 on.
+on:
 once
 one
 one,
@@ -2785,6 +2790,7 @@ perception
 performs
 person
 personalization
+phase,
 phone
 phone,
 phone.
@@ -2832,6 +2838,7 @@ presentational
 preserves
 preset
 preset,
+press
 pressed
 pressed"
 pressed-state
@@ -3638,7 +3645,7 @@ x-data="wirekitOptimistic({{
 x-data="wirekitTooltip({
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

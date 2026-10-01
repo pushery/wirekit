@@ -520,7 +520,7 @@ $wrapLabel
 'wrapLabel'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -857,6 +857,7 @@ $wrapLabel
 @if($describedBy
 @if($describedbyEnabled)
 @if($describes)
+@if($disabled
 @if($disabled)
 @if($dismissible)
 @if($emitAriaBusy)
@@ -956,6 +957,7 @@ Bound
 Built
 Bypasses
 CALLER's
+CAPTURE
 CONTENT
 CSP
 CSS
@@ -1392,6 +1394,7 @@ __('wirekit::To
 `confirmation-phrase`,
 `confirmation-phrase`.
 `contents`
+`copyable
 `copyable`
 `data-wk-ref-scope`
 `default`
@@ -2266,6 +2269,7 @@ double
 doubled
 down:
 drag-select
+drawer
 drawn
 draws
 drift
@@ -2904,6 +2908,7 @@ marked
 marked.
 marker
 markers
+marks
 markup
 markup,
 mask
@@ -3074,6 +3079,7 @@ omission:
 on
 on,
 on.
+on:
 once
 one
 one,
@@ -3253,6 +3259,7 @@ prefix/suffix:
 present
 presentational
 preserving
+press
 pressed
 prevent
 preview,
@@ -3329,6 +3336,7 @@ readers
 readers.
 reading
 readonly
+readonly`
 reads
 real
 really
@@ -3669,6 +3677,7 @@ stay,
 stayed
 stays
 stays,
+stays:
 step
 step).
 still
@@ -3868,6 +3877,7 @@ tokens.
 told
 tone
 too
+too,
 too.
 took
 toolbar
@@ -4195,7 +4205,7 @@ x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:keydown.enter.capture="blockUnlessConfirmed($event)"
 x-on:keydown.enter="confirmed()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.space.capture="blockUnlessConfirmed($event)"
 x-on:keydown.space="confirmed()"
 x-on:mouseenter="mouseenter()"

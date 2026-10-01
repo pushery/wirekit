@@ -125,6 +125,20 @@ export default function wirekitFab() {
             first.focus();
         },
 
+        /**
+         * Escape closes the open menu, and that press is spent: it is marked so that a layer
+         * further out leaves it alone. With the menu closed it is not this component's, and it
+         * goes on unmarked.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeMenu(event) {
+            if (! this.isOpen) return;
+
+            event?.preventDefault();
+            this.close();
+        },
+
         close({ restoreFocus = true } = {}) {
             const wasOpen = this.isOpen;
             this.isOpen = false;

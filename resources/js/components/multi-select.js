@@ -19,12 +19,20 @@
  */
 import { position } from '../utils/floating.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
+import { foldForSearch } from '../utils/search-fold.js';
 import { serverSearchState } from '../utils/server-search.js';
 
 export default function wirekitMultiSelect(config = {}) {
     return {
         /** Focus the filter and open the list — one act, so one method. */
         focusAndOpen() {
+            // A click on the frame of a disabled field opens nothing. The field itself takes
+            // neither focus nor keys then, so this is the one way in; the state is read from
+            // the field, which also covers a state Livewire set after the page loaded.
+            if (this.$refs.filterInput?.disabled) {
+                return;
+            }
+
             if (this.$refs.filterInput) {
                 this.$refs.filterInput.focus();
             }
@@ -123,7 +131,7 @@ export default function wirekitMultiSelect(config = {}) {
                 return this._options.filter((opt) => ! this.selected.includes(opt.value));
             }
 
-            const term = this.filter.toLowerCase();
+            const term = foldForSearch(this.filter);
             return this._options.filter(
                 (opt) =>
                     !this.selected.includes(opt.value) &&
@@ -144,7 +152,7 @@ export default function wirekitMultiSelect(config = {}) {
                 return this._options;
             }
 
-            const term = this.filter.toLowerCase();
+            const term = foldForSearch(this.filter);
 
             return this._options.filter((opt) => optionMatches(opt, term));
         },
@@ -332,6 +340,18 @@ export default function wirekitMultiSelect(config = {}) {
         openAtLast() {
             this.dropdownOpen = true;
             this.highlightLast();
+        },
+
+        /**
+         * Escape folds an open list and marks the press as handled, so that a modal or a drawer
+         * around the field stays open. With the list already folded the press is left to them.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeDropdown(event) {
+            if (! this.dropdownOpen) return;
+            event?.preventDefault();
+            this.dropdownOpen = false;
         },
 
         /**

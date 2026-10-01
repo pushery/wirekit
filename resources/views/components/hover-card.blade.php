@@ -19,7 +19,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@keydown.escape.window']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@keydown.escape.window.capture']);
 
     // Hover Card — rich tooltip-like overlay that shows on hover/focus.
     // Unlike tooltip, hover cards display structured content (avatar, bio, actions).
@@ -56,9 +56,12 @@
          That is not a nicety. WCAG 1.4.13 requires content shown on hover or
          focus to be dismissible without moving the pointer or the focus, and
          Escape is the mechanism it names.
-         Guarded on `open` so a page full of these does not run a handler each
-         keystroke. --}}
-    @keydown.escape.window="isOpen && close()"
+         In the CAPTURE phase, and the press that closes the card is marked: a modal
+         or a drawer around the reader reads the key on the document and on the
+         window too, and leaves a marked press alone. `escapeAnywhere()` returns at
+         once while the card is closed, so a page full of these does not do work on
+         each keystroke. --}}
+    @keydown.escape.window.capture="escapeAnywhere($event)"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Trigger element.

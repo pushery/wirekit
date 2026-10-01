@@ -312,7 +312,7 @@ $wrap
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -507,6 +507,7 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
+CAPTURE
 CallerRef::onRoot()
 Catching
 Check
@@ -830,6 +831,7 @@ all,
 all.
 allowed
 allowlist,
+alone.
 already
 also
 always-filled
@@ -876,6 +878,7 @@ aria-labelledby
 aria-labelledby="{{
 armed,
 arms
+around
 array_filter([
 array_keys($sizeMap));
 arrive
@@ -1196,6 +1199,7 @@ dot
 double
 down
 drag-only
+drawer
 draws
 drift
 drop
@@ -1676,6 +1680,7 @@ on,
 on-color
 on-fill
 on.
+on:
 once
 one
 one's
@@ -1756,6 +1761,7 @@ per-instance
 per-set
 per-surface
 personalization
+phase,
 phrasing
 picked
 pill
@@ -1789,6 +1795,7 @@ present,
 presentational
 preserves
 preset
+press
 preview
 pricing-card
 problem
@@ -2114,6 +2121,7 @@ toHtml().
 token
 token,
 tone
+too,
 tooltip
 tooltip,
 tooltip.
@@ -2236,6 +2244,7 @@ whose
 widening
 width
 width)
+window
 window,
 wins
 wire:key="wk-tooltip-panel"
@@ -2272,7 +2281,7 @@ x-on:dragover="dragover($event)"
 x-on:dragstart="dragstart($event)"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown="keydown($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

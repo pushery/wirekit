@@ -2,7 +2,7 @@
     "accordion": [
         {
             "title": "Single-Open Accordion",
-            "code": "<x-wirekit::accordion>\n    <x-wirekit::accordion.item title=\"What is WireKit?\" id=\"faq-1\">\n        WireKit is a free, MIT-licensed UI component library for Laravel Livewire built on Tailwind CSS v4.\n    </x-wirekit::accordion.item>\n    <x-wirekit::accordion.item title=\"Is it free?\" id=\"faq-2\">\n        Yes, WireKit is completely free and open source under the MIT license.\n    </x-wirekit::accordion.item>\n    <x-wirekit::accordion.item title=\"Does it support dark mode?\" id=\"faq-3\">\n        Absolutely — all components auto-switch via the `.dark` class on any ancestor.\n    </x-wirekit::accordion.item>\n</x-wirekit::accordion>"
+            "code": "<x-wirekit::accordion>\n    <x-wirekit::accordion.item title=\"What is WireKit?\" id=\"faq-1\">\n        WireKit is a free, MIT-licensed UI component library for Laravel Livewire built on Tailwind CSS v4.\n    </x-wirekit::accordion.item>\n    <x-wirekit::accordion.item title=\"Is it free?\" id=\"faq-2\">\n        Yes, WireKit is completely free and open source under the MIT license.\n    </x-wirekit::accordion.item>\n    <x-wirekit::accordion.item title=\"Does it support dark mode?\" id=\"faq-3\">\n        Absolutely — all components auto-switch via the <code>.dark</code> class on any ancestor.\n    </x-wirekit::accordion.item>\n</x-wirekit::accordion>"
         },
         {
             "title": "Single-Mode Accordion",
@@ -120,7 +120,7 @@
     "assistant-message": [
         {
             "title": "An assistant turn",
-            "code": "<x-wirekit::assistant-message model=\"atlas-2\">\n    The export API allows 60 requests per minute per token. A 429 always includes a `Retry-After` header, in seconds.\n</x-wirekit::assistant-message>"
+            "code": "<x-wirekit::assistant-message model=\"atlas-2\">\n    The export API allows 60 requests per minute per token. A 429 always includes a <code>Retry-After</code> header, in seconds.\n</x-wirekit::assistant-message>"
         },
         {
             "title": "The three roles",
@@ -412,7 +412,7 @@
     "chat": [
         {
             "title": "The suite in one thread",
-            "code": "<x-wirekit::conversation max-height=\"22rem\" label=\"Support thread\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::chat-marker variant=\"separator\">Today</x-wirekit::chat-marker>\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Morning — is the export API rate-limited?</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:15\" status=\"read\">Yes, 60 requests a minute per token.</x-wirekit::message>\n        <x-wirekit::assistant-message model=\"atlas-2\">\n            The export API allows 60 requests per minute per token. A 429 always includes a `Retry-After` header, in seconds.\n        </x-wirekit::assistant-message>\n    </x-wirekit::stack>\n    <x-slot:footer>\n        <x-wirekit::message-typing author=\"Ada\" />\n    </x-slot:footer>\n</x-wirekit::conversation>"
+            "code": "<x-wirekit::conversation max-height=\"22rem\" label=\"Support thread\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::chat-marker variant=\"separator\">Today</x-wirekit::chat-marker>\n        <x-wirekit::message :author=\"['name' => 'Ada']\" timestamp=\"2026-07-17 09:14\">Morning — is the export API rate-limited?</x-wirekit::message>\n        <x-wirekit::message :author=\"['name' => 'You']\" side=\"right\" timestamp=\"2026-07-17 09:15\" status=\"read\">Yes, 60 requests a minute per token.</x-wirekit::message>\n        <x-wirekit::assistant-message model=\"atlas-2\">\n            The export API allows 60 requests per minute per token. A 429 always includes a <code>Retry-After</code> header, in seconds.\n        </x-wirekit::assistant-message>\n    </x-wirekit::stack>\n    <x-slot:footer>\n        <x-wirekit::message-typing author=\"Ada\" />\n    </x-slot:footer>\n</x-wirekit::conversation>"
         }
     ],
     "checkbox": [

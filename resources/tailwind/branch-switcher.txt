@@ -82,6 +82,7 @@ $validated
 'Run:
 '[WireKit]
 'announcement'
+'aria-disabled:cursor-not-allowed
 'base',
 'button',
 'count'
@@ -158,6 +159,7 @@ $validated
 0)
 0,
 1
+1"
 1,
 1-based
 1-based,
@@ -170,6 +172,7 @@ $validated
 :total',
 </button>
 </div>
+<=
 <button
 <div
 <span
@@ -204,6 +207,7 @@ AT
 Adding
 AlpinePayload::from([
 An
+At
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -240,6 +244,7 @@ OPENING
 OR
 OUTER
 Off
+Only
 Operating
 Out
 PERFECTLY
@@ -297,6 +302,7 @@ __toString
 `aria-labelledby`
 `class="h-12
 `cursor-pointer`
+`disabled`:
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -337,6 +343,8 @@ any
 app(IconResolver::class)->resolve($name);
 are
 are.
+aria-disabled:hover:bg-transparent',
+aria-disabled:opacity-[var(--opacity-wk-disabled)]
 aria-hidden
 aria-hidden,
 aria-hidden="'.htmlspecialchars($resolvedAriaHidden,
@@ -349,6 +357,7 @@ aria-live
 aria-live="polite"
 array_keys($sizeMap));
 arrow
+arrows
 as
 assistant
 assistive
@@ -464,12 +473,14 @@ dev
 developer
 developer's
 direct
+disabled
 disabled:hover:bg-transparent',
 disabled:opacity-[var(--opacity-wk-disabled)]
 does
 down
 down.
 draws
+drop
 dropdown
 dropdowns
 drops
@@ -484,6 +495,7 @@ embedded
 emit
 empty
 empty-state
+end
 ends
 entry
 every
@@ -513,6 +525,7 @@ fix
 fix.
 flags
 floor
+focus,
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
 followable.
@@ -535,6 +548,7 @@ global
 glyph
 glyph.
 goes
+going
 group
 guarantees
 h-5
@@ -553,6 +567,7 @@ here
 here,
 hidden
 historical
+hold
 house
 hover:text-[color:var(--color-wk-text)]',
 icon
@@ -652,6 +667,7 @@ needs
 neither
 nested
 never
+next()
 no
 nobody
 non-input
@@ -683,9 +699,11 @@ open
 opening
 optimistic-ui:
 or
+order.
 ordinary
 other
 our
+out
 over
 override.
 own
@@ -699,6 +717,7 @@ per
 per-set
 personalization
 place
+place.
 placeholder
 placeholders
 plain
@@ -715,6 +734,7 @@ present
 presentational
 preserves
 preset
+previous()
 problem
 prod).
 props
@@ -731,6 +751,7 @@ re-renders
 reach
 reaches
 reader
+reader's
 real
 reapply
 reason
@@ -850,6 +871,7 @@ the
 their
 them,
 them.
+themselves.
 then
 there
 therefore
@@ -879,6 +901,7 @@ turn
 turn's
 two
 type="button"
+unavailable
 unknown
 unknown-alias
 unknown.
@@ -932,7 +955,8 @@ with
 would
 wrap-around
 wrap.
-x-bind:disabled="!
+x-bind:aria-disabled="!
+x-bind:disabled="total
 x-data="wirekitBranchSwitcher({{
 x-modelable="current"
 x-on:click="next()"

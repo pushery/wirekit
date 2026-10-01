@@ -36,7 +36,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape', 'x-on:keydown.escape.window']);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
@@ -84,9 +84,13 @@
          replay affordance so a "used-up" preview can be reset (mirrors alert/badge). --}}
     data-replayable="true"
     x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
-    {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
-         escape stays here (window-scoped, teleport-agnostic). --}}
-    x-on:keydown.escape.window="isOpen && close(true)"
+    {{-- click.outside lives on the teleported panel (it's no longer in this subtree).
+         Escape is heard on the bell here, in the panel below, and on the window for a
+         press from anywhere else. The bell and the panel mark the press they close on,
+         so a modal or a drawer around the bell stays open; the window listener leaves a
+         press alone that something else already handled (escapeFlyout()). --}}
+    x-on:keydown.escape="escapeFlyout($event)"
+    x-on:keydown.escape.window="escapeFlyout($event)"
     {{ $attributes->only('class')->class([$base]) }}
 >
     {{-- For a `name` or a `wire:model`: the root leaves the binding off, so without this field
@@ -156,12 +160,13 @@
         x-transition.origin.top.left
         x-on:click.outside="close()"
         {{-- Tab containment lives HERE, on the teleported panel: its events bubble
-             to <body> and never reach the component root, where the window-scoped
-             Escape handler sits. Both edges are wrong by default — the panel is
-             drawn beside the bell and sits at the end of <body> — so leaving it
-             either way closes it and continues from the bell's position. See
-             wirekitNotificationCenter.tabWithinPanel. --}}
+             to <body> and never reach the component root. Both edges are wrong by
+             default — the panel is drawn beside the bell and sits at the end of
+             <body> — so leaving it either way closes it and continues from the bell's
+             position. See wirekitNotificationCenter.tabWithinPanel. Escape is heard
+             here for the same reason, before a dialog around the bell reads it. --}}
         x-on:keydown.tab="tabWithinPanel($event)"
+        x-on:keydown.escape="escapeFlyout($event)"
         role="dialog"
         aria-labelledby="{{ $titleId }}"
         class="fixed z-[var(--z-wk-dropdown)] w-[22rem] max-w-[calc(100vw-2rem)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] focus-visible:outline-hidden overflow-hidden"
@@ -171,6 +176,7 @@
             <p data-wk-prose-skip id="{{ $titleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $titleResolved }}</p>
             <button
                 type="button"
+                data-wk-mark-all-read
                 x-show="unreadCount > 0"
                 x-cloak
                 @click="markAllRead()"
@@ -204,7 +210,7 @@
         {{-- List — a labeled, keyboard-reachable scroll region (WCAG 2.1.1). --}}
         {{-- Reachability unconditional (WCAG 2.1.1), landmark only when the caller named the
              center: the derived name was the same on every unnamed one. --}}
-        <div @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => $title]) }}" @endif tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <div data-wk-notification-list @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => $title]) }}" @endif tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             {{-- Empty state --}}
             <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
@@ -226,6 +232,7 @@
                         <div class="contents">
                             <template x-if="item.href">
                                 <a data-wk-prose-skip
+                                    data-wk-notification-row
                                     :href="item.href"
                                     @click="activate(item)"
                                     class="{{ $row }}"
@@ -238,9 +245,11 @@
                                          the content instead, which reads in visual order: unread
                                          prefix, title, body, time, action. --}}
                                     {{-- Unread dot — paired with the visually hidden "Unread."
-                                         prefix below, so the state is never color alone. --}}
+                                         prefix below, so the state is never color alone. The
+                                         marker is on the unread dot only: the forced-colors rule
+                                         keeps it filled, and a read row stays without one. --}}
                                     <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
-                                    <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'bg-[var(--color-wk-accent)]'"></span>
+                                    <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
                                     <span class="min-w-0 flex-1">
                                         <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
                                         <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
@@ -252,14 +261,17 @@
                             <template x-if="!item.href">
                                 <button
                                     type="button"
+                                    data-wk-notification-row
                                     @click="activate(item)"
                                     class="{{ $row }}"
                                 >
                                     {{-- No aria-label here either — same reason as the link row. --}}
                                     {{-- Unread dot — paired with the visually hidden "Unread."
-                                         prefix below, so the state is never color alone. --}}
+                                         prefix below, so the state is never color alone. The
+                                         marker is on the unread dot only: the forced-colors rule
+                                         keeps it filled, and a read row stays without one. --}}
                                     <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
-                                    <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'bg-[var(--color-wk-accent)]'"></span>
+                                    <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
                                     <span class="min-w-0 flex-1">
                                         {{-- leading-snug tightens the title's line-box so the
                                              time/body sit closer to the name (the default

@@ -9,7 +9,6 @@ $scope);
 $slot
 $trigger
 $wrapperClasses
-&&
 ',
 'bg-[var(--color-wk-bg-elevated)]',
 'border-[length:var(--border-wk-width)]
@@ -69,7 +68,7 @@ $wrapperClasses
 @focusin="focusin()"
 @focusout="focusout()"
 @keydown.escape.prevent="closeAndFocusTrigger()"
-@keydown.escape.window="isOpen
+@keydown.escape.window.capture="escapeAnywhere($event)"
 @mouseenter="mouseenter()"
 @mouseleave="mouseleave()"
 @php
@@ -82,6 +81,7 @@ ARIA
 Alpine
 Alpine's
 Both
+CAPTURE
 CallerRef::onRoot()
 Card
 DOM
@@ -92,12 +92,12 @@ Floating
 Focus
 Forwards
 Fully
-Guarded
 HTML5
 Hover
 Hover-card
 INNER
 INTO
+In
 Its
 LEGITIMATELY
 NOT
@@ -120,7 +120,7 @@ WINDOW,
 WireKit::resolveClasses('hover-card',
 Without
 [
-['@keydown.escape.window']);
+['@keydown.escape.window.capture']);
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -139,7 +139,7 @@ __('wirekit::Hover
 `@keydown.escape`,
 `@mouseenter`
 `body`
-`open`
+`escapeAnywhere()`
 `position:
 `tabFromTrigger()`
 `x-ref`
@@ -155,6 +155,7 @@ actually
 after
 again.
 allows
+alone.
 already
 an
 and
@@ -165,6 +166,7 @@ aria-expanded)
 aria-label="{{
 armed;
 arms
+around
 arrived.
 as
 at
@@ -206,7 +208,8 @@ carries
 case
 class="{{
 client-only
-close()"
+closed,
+closes
 component's
 component,
 content
@@ -222,9 +225,12 @@ descendant
 developer
 dismissible
 display
+do
+document
 document.
 document;
 does
+drawer
 dropping
 duration-[var(--transition-wk-duration)]"
 each
@@ -259,7 +265,6 @@ front
 full
 generic
 goes
-handler
 handler.
 hands
 has
@@ -300,6 +305,7 @@ lands
 last
 later
 leave
+leaves
 leaving
 lifts
 like
@@ -313,8 +319,11 @@ longer
 lookup
 machine
 makes
+marked
+marked:
 may
 mechanism
+modal
 moves
 moving
 must
@@ -334,6 +343,7 @@ of
 off
 offset:
 on
+once
 one
 one.
 only
@@ -355,6 +365,7 @@ panel
 panel></div></span>…</p>`.
 parser
 pending
+phase,
 phrasing
 placed
 placement.
@@ -367,6 +378,7 @@ position
 positioned
 positioning
 precedes
+press
 pressed
 prod).
 promise
@@ -380,12 +392,14 @@ reachable
 reaches
 read-only
 reader
+reads
 refs
 rejects
 renders
 requires
 resolve
 rest
+returns
 reveals
 rich
 role="dialog"
@@ -435,6 +449,7 @@ these
 this
 to
 to.
+too,
 tooltip,
 tooltip-like
 trigger
@@ -459,6 +474,7 @@ when
 which
 while
 whole
+window
 with
 without
 work

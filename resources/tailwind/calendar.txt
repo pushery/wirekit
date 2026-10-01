@@ -256,6 +256,7 @@ $wkStart),
 @endforeach
 @endif
 @endphp
+@endunless
 @foreach($weekdays
 @if($months
 @if($optimisticConfig)
@@ -265,6 +266,7 @@ $wkStart),
 @php
 @props([
 @props.
+@unless($range)
 A
 APPLICATION's
 AT
@@ -303,6 +305,7 @@ HTML
 Hidden
 Home/End.
 INSIDE
+In
 Intl
 JS
 JSON
@@ -428,6 +431,7 @@ again
 against
 all.
 allowed
+alone,
 alone;
 already
 also
@@ -457,12 +461,14 @@ aria-live="polite"
 aria-live="polite"></span>
 aria-selected
 around.
+array
 array_filter(
 array_merge(array_slice($weekdays,
 array_pad(explode('/',
 array_slice($weekdays,
 array_values((array)
 arrive
+arrived.
 arrives
 arrow
 arrows,
@@ -508,7 +514,6 @@ buttons
 by
 byte-identical.
 byte.
-calendar
 calendar's
 call
 call,
@@ -658,7 +663,7 @@ fast
 feature
 feeds
 field
-fields
+fields,
 file
 fill-rule="evenodd"
 fill="currentColor"
@@ -747,6 +752,7 @@ inset-y-0
 inside
 instanceof
 instead
+instead.
 interchangeable
 interchangeable:
 into
@@ -806,7 +812,7 @@ means
 method
 mirror
 mirrored
-mode.
+mode
 model
 moment
 month
@@ -968,6 +974,7 @@ selection.
 selects
 selects:
 sends
+sent
 server
 server's
 shape
@@ -985,7 +992,6 @@ snapping
 snapshot,
 so
 some
-something
 spacing
 spelling
 spells
@@ -1000,7 +1006,6 @@ static
 stay
 stayed
 stays
-stays,
 still
 straight
 string
@@ -1019,7 +1024,6 @@ support
 supported
 surface
 surrounding
-switched
 synced
 tables
 tag
@@ -1070,7 +1074,6 @@ typed.
 umlaut
 unchanged.
 unconditionally
-understands
 undo
 undone.'),
 unknown
@@ -1103,9 +1106,7 @@ weekday
 weeksOf(days)"
 weeksOf(month.days)"
 well
-well,
 what
-when
 where
 which
 whichever
@@ -1119,6 +1120,7 @@ width
 width:100%
 window
 wins.
+wire:model
 with
 without
 wk-calendar:

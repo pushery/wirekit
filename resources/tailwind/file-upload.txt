@@ -66,6 +66,7 @@ $variantValue
 ''));
 '');
 ',
+'-',
 '-error';
 '-hint';
 '.((string)
@@ -79,12 +80,13 @@ $variantValue
 'border-[length:var(--border-wk-width)]
 'border-[var(--color-wk-accent)]
 'border-[var(--color-wk-border-error)]'
-'border-[var(--color-wk-border-strong)]').'
+'border-[var(--color-wk-border-strong)]').($disabled
 'capture'
 'capture',
 'compact'
 'compact',
 'compact']),
+'cursor-not-allowed
 'cursor-pointer',
 'default',
 'disabled'
@@ -264,7 +266,7 @@ $variantValue
 @change="handleFiles($event.target.files)"
 @click="removeFile(index)"
 @dragleave.prevent="dragging
-@dragover.prevent="dragging
+@dragover.prevent="dragOver()"
 @drop.prevent="handleDrop($event)"
 @endif
 @endphp
@@ -393,6 +395,7 @@ X),
 \Pushery\WireKit\Support\AlpinePayload::from($boundModel)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string(($hasError
+\Pushery\WireKit\Support\AlpinePayload::string(str_replace('_',
 \Pushery\WireKit\WireKit::warnUnknownProps('file-upload',
 ])
 ]),
@@ -491,6 +494,7 @@ any.
 anything
 apart
 apart,
+app()->getLocale()))
 appears
 appears:
 are
@@ -701,6 +705,7 @@ did
 differ
 different
 differs.
+dims
 directly
 disabled
 disables
@@ -723,6 +728,7 @@ draws
 drifting
 driven
 drop
+drop,
 dropped
 dropping
 drops
@@ -788,6 +794,7 @@ field
 field.blade.php
 file
 file's
+file,
 file-upload
 file-uploader
 file.name)"
@@ -876,7 +883,7 @@ hover,
 hover-reveal
 hover.
 hover:bg-[var(--color-wk-bg-subtle)]
-hover:border-[var(--color-wk-accent)]')
+hover:border-[var(--color-wk-accent)]'))
 hover:text-[color:var(--color-wk-danger-text)]
 hugs
 icon
@@ -944,6 +951,7 @@ left
 legacy
 legitimate
 less
+lights
 like
 line
 line.
@@ -955,6 +963,7 @@ literal
 literal,
 live
 lives
+locale:
 long
 long.
 looked
@@ -1051,6 +1060,7 @@ ones:
 only
 only,
 onto
+opacity-[var(--opacity-wk-disabled)]'
 opened
 opposite
 opt
@@ -1108,7 +1118,9 @@ pointed
 pointer
 pointer,
 pointer/touch
+pointer;
 pointing
+points
 polite
 position
 posts
@@ -1342,7 +1354,6 @@ trim(($hint
 trim((string)
 trip
 true
-true"
 true);
 truncate
 truncates
@@ -1360,6 +1371,7 @@ unguarded
 unknown
 unlike
 unrelated
+up
 up,
 upload
 use

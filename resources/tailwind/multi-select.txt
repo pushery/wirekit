@@ -31,6 +31,7 @@ $describedBy
 $descriptionClasses
 $descriptionClasses,
 $descriptions
+$disabled
 $emptyRowClasses
 $encodedOptions
 $encodedOptions,
@@ -135,6 +136,7 @@ $value,
 '#'.$id.'-error',
 ''
 ''"
+''"></div>
 '')
 '')"
 ''))
@@ -187,12 +189,14 @@ $value,
 'boxClasses'
 'chosen',
 'cursor-default',
+'cursor-not-allowed
 'cursor-pointer',
 'cursor-text',
 'debug'
 'descriptionClasses'
 'descriptions'
 'deselect(val)'
+'disabled'
 'dropdown',
 'empty'
 'error'
@@ -484,6 +488,7 @@ $value,
 @if($callerRef
 @if($describedBy
 @if($descriptions)
+@if($disabled)
 @if($fieldAriaLabel
 @if($hasError
 @if($hasError)
@@ -509,7 +514,7 @@ $value,
 @keydown.backspace="onBackspace($event)"
 @keydown.end.prevent="openAtLast()"
 @keydown.enter.prevent="{{
-@keydown.escape="dropdownOpen
+@keydown.escape="escapeDropdown($event)"
 @keydown.home.prevent="openAtFirst()"
 @mouseenter="hoverOption(idx)"
 @php
@@ -531,6 +536,7 @@ An
 BEATS
 BOTH
 Blade
+BooleanProp::from($disabled,
 BooleanProp::from($required,
 BooleanProp::from($server,
 BooleanProp::from($truncated,
@@ -686,6 +692,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($selectedValues)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(['options'
+\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove
 \Pushery\WireKit\Support\AlpinePayload::string($fieldId)
 \Pushery\WireKit\Support\AlpinePayload::string($id)
@@ -759,6 +766,7 @@ _place()
 `data-wk-ref-scope`
 `description`,
 `disabled="false"`
+`disabled`
 `display:
 `dropdownOpen`
 `dropdown`
@@ -1129,6 +1137,7 @@ d="M5
 danger-text
 dark
 dark:
+data,
 data-wk-flag
 data-wk-multi-select-layout="list"
 data-wk-multi-select-option
@@ -1142,6 +1151,7 @@ debug
 decided
 decides.
 deciding
+declared
 decode:
 decoration:
 decorative
@@ -1161,6 +1171,7 @@ developer
 did
 different
 direction
+disabled
 disables
 disagrees
 disappears)
@@ -1258,6 +1269,7 @@ filter
 filter)"></div>
 filtered
 filteredOptions"
+filteredOptions.length
 finds
 fires
 first
@@ -1349,6 +1361,7 @@ heading
 hear
 hear.
 heard
+hears
 hears,
 hedged,
 here
@@ -1431,6 +1444,7 @@ into.
 invalid
 is
 is.
+is:
 is;
 is_array($value)
 it
@@ -1541,6 +1555,7 @@ max(0,
 max(1,
 may
 mean
+meaning,
 means
 medium
 medium,
@@ -1640,6 +1655,7 @@ one,
 one.
 one;
 only
+opacity-[var(--opacity-wk-disabled)]'
 open
 open,
 opened,
@@ -1829,8 +1845,10 @@ result
 resulting
 results
 results"
+results",
 results":
 results')
+results'))
 results'),
 results.
 results:
@@ -1974,6 +1992,7 @@ spelling
 spelling,
 spellings
 splices
+spoken
 spoken:
 spreads
 sprite
@@ -1989,6 +2008,7 @@ state,
 state.
 stated
 status,
+stayed
 stays
 stem.
 step
@@ -2134,6 +2154,7 @@ typing
 unaffected:
 unanchored
 unconditionally
+undeclared,
 under
 undo
 undone
@@ -2151,6 +2172,7 @@ up,
 update
 update,
 use
+use.
 user
 uses
 uses,
@@ -2258,6 +2280,8 @@ x-show="opt.description"
 x-show="selected.length
 x-teleport="#wk-overlay-root">
 x-text="announcement"></div>
+x-text="dropdownOpen
+x-text="listOptions.length
 x-text="opt.description"
 x-text="opt.description"></span>
 x-text="opt.label"></span>

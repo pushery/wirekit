@@ -469,7 +469,7 @@ Words
 ['class'
 ['data-wk-icon-missing'
 ['end',
-['x-on:keydown.escape.prevent',
+['x-on:keydown.escape',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -502,6 +502,7 @@ __toString
 `class="h-12
 `default
 `env(safe-area-inset-right)`
+`escapeMenu()`
 `fab.button`
 `fab/button`,
 `fab`
@@ -1004,6 +1005,7 @@ hiding
 hint
 historical
 hold
+holds
 home
 honestly.
 horizontal
@@ -1321,6 +1323,7 @@ present
 presentational
 preserves
 preset
+press
 pressed
 primitive
 problem
@@ -1711,7 +1714,7 @@ x-data="wirekitFab()"
 x-on:click="toggle()"
 x-on:keydown.arrow-down="move(1,
 x-on:keydown.arrow-up="move(-1,
-x-on:keydown.escape.prevent="close()"
+x-on:keydown.escape="escapeMenu($event)"
 x-ref="trigger"
 x-show="isOpen"
 yet.

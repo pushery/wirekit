@@ -105,6 +105,14 @@
     $nativeOnMobile = BooleanProp::from($nativeOnMobile, false);
     $required = BooleanProp::from($required, false);
 
+    // A required color has no "no color" state, so the popover offers no button that empties
+    // it. The popover's own field is a trigger button, where `aria-required` does not apply,
+    // and the form value is a hidden field, where `required` does not apply: taking the way to
+    // an empty value out is what keeps the requirement.
+    if ($required) {
+        $withClear = false;
+    }
+
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
@@ -468,8 +476,9 @@
 
         {{-- Hidden form field — mirrors the picked value in the active format. --}}
         {{-- `wire:model` and `x-model` bind here: this field carries the value, and the picker
-             sends `input` and `change` from it on every pick and clear. --}}
-        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" {{ $attributes->except('type')->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }} />
+             sends `input` and `change` from it on every pick and clear. A disabled picker leaves
+             it out of the form data, as a native field is left out. --}}
+        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" @if($disabled) disabled @endif {{ $attributes->except('type')->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }} />
 
         {{-- Picker panel — teleported out of the document flow + Floating-UI positioned (see
              wirekitColorPicker._anchor) so it escapes any clipping/stacking

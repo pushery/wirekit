@@ -66,7 +66,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@pointerover', '@pointerout', '@focusin', '@focusout', '@scroll.capture.passive', '@keydown.escape.window']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@pointerover', '@pointerout', '@focusin', '@focusout', '@scroll.capture.passive', '@keydown.escape.window.capture']);
 
     $view = WireKit::validateProp('event-calendar', 'view', $view, ['month', 'week', 'agenda']);
 
@@ -207,7 +207,7 @@
     @focusin="tipShow($event)"
     @focusout="tipHide($event)"
     @scroll.capture.passive="tipHide()"
-    @keydown.escape.window="tipHide()"
+    @keydown.escape.window.capture="tipEscape($event)"
     {{ $attributes->only('class')->class([$base]) }}
 >
     {{-- Header: navigation + title + view switcher --}}
@@ -309,7 +309,7 @@
                             {{-- "+N more" is actionable: it jumps to the week view focused on
                                  that day so the hidden events become visible (showMore). A plain
                                  span gave no affordance — the overflow count read as dead text. --}}
-                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($dayDetail ? __('wirekit:::count more events on :date') : __('wirekit:::count more events on :date, open week view')) }}.replace(':count', day.overflow).replace(':date', longDate(day.date))" class="block w-full text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> {{ __('wirekit::more') }}</button>
+                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" data-wk-show-more :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($dayDetail ? __('wirekit:::count more events on :date') : __('wirekit:::count more events on :date, open week view')) }}.replace(':count', day.overflow).replace(':date', longDate(day.date))" class="block w-full text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> {{ __('wirekit::more') }}</button>
                         </div>
                     </div>
                 </template>
@@ -352,7 +352,7 @@
     @endif
 
     {{-- ── Week view (time grid) ───────────────────────────────────── --}}
-    <div x-show="view === 'week'" x-cloak @if(filled($weekLabel)) role="region" aria-label="{{ $weekLabel }}" @endif tabindex="0" class="max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    <div data-wk-week-view x-show="view === 'week'" x-cloak @if(filled($weekLabel)) role="region" aria-label="{{ $weekLabel }}" @endif tabindex="0" class="max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- Sticky top region: day-name headers + the all-day band. Both pin to
              the top of the scroll region so they stay visible while the hour grid
              scrolls underneath. --}}

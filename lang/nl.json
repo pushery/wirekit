@@ -418,6 +418,8 @@
     "wirekit::unread. Latest:": "ongelezen. Nieuwste:",
     "wirekit::with :names": "met :names",
     "wirekit::{0} no reactions|{1} :count person reacted|[2,*] :count people reacted": "{0} geen reacties|{1} :count persoon heeft gereageerd|[2,*] :count personen hebben gereageerd",
+    "wirekit::{1} :count character over the limit|[2,*] :count characters over the limit": "{1} :count teken boven de limiet|[2,*] :count tekens boven de limiet",
+    "wirekit::{1} :count character remaining|[2,*] :count characters remaining": "{1} :count teken over|[2,*] :count tekens over",
     "wirekit::{1} :count day|[2,*] :count days": "{1} :count dag|[2,*] :count dagen",
     "wirekit::{1} :count hour|[2,*] :count hours": "{1} :count uur|[2,*] :count uur",
     "wirekit::{1} :count minute|[2,*] :count minutes": "{1} :count minuut|[2,*] :count minuten",
