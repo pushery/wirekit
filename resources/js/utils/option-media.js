@@ -1,3 +1,5 @@
+import { foldForSearch } from './search-fold.js';
+
 /**
  * What `combobox` and `multi-select` share about an option's extra keys: which text the search
  * reads, which text the field or a pill shows, and when an avatar falls back to initials.
@@ -15,18 +17,20 @@
  * than the reader typed it for.
  *
  * @param {{ label: string, selectedLabel?: string, keywords?: string }} option
- * @param {string} query  already lower-cased by the caller, once per keystroke
+ * Accents are folded away on both sides, so `munchen` finds `München` (utils/search-fold.js).
+ *
+ * @param {string} query  already folded with `foldForSearch` by the caller, once per keystroke
  */
 export function optionMatches(option, query) {
-    if (option.label.toLowerCase().includes(query)) {
+    if (foldForSearch(option.label).includes(query)) {
         return true;
     }
 
-    if (option.selectedLabel && option.selectedLabel.toLowerCase().includes(query)) {
+    if (option.selectedLabel && foldForSearch(option.selectedLabel).includes(query)) {
         return true;
     }
 
-    return Boolean(option.keywords) && option.keywords.toLowerCase().includes(query);
+    return Boolean(option.keywords) && foldForSearch(option.keywords).includes(query);
 }
 
 /**

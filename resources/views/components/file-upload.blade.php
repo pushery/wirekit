@@ -219,7 +219,9 @@
 
     $dropzoneClasses = WireKit::resolveClasses('file-upload', 'dropzone', implode(' ', [
         $dropzoneShape,
-        'cursor-pointer',
+        // A disabled upload takes no file, by click or by drop, so it neither points nor
+        // lights up under the pointer; it dims the way a disabled field does.
+        $disabled ? 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]' : 'cursor-pointer',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'has-[:focus-visible]:ring-[length:var(--ring-wk-width)]',
@@ -288,7 +290,7 @@
          four statements and a `const`, which Alpine's CSP build does not parse —
          under a strict Content-Security-Policy dropping a file did nothing while
          clicking the label still worked. --}}
-    x-data="wirekitFileUpload({ removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
+    x-data="wirekitFileUpload({ locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_', '-', app()->getLocale())) }}, removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
     {{-- `wire:model` is peeled off here and re-attached to the file input below.
          Livewire decides what a model binding MEANS by reading the element's
          type: on a `<input type="file">` it takes the upload path, and on
@@ -317,9 +319,9 @@
         for="{{ $uploadId }}"
         :class="dragging
             ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-bg-muted)]'
-            : {{ \Pushery\WireKit\Support\AlpinePayload::string(($hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]').' hover:border-[var(--color-wk-accent)]') }}"
+            : {{ \Pushery\WireKit\Support\AlpinePayload::string(($hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]').($disabled ? '' : ' hover:border-[var(--color-wk-accent)]')) }}"
         class="{{ $dropzoneClasses }}"
-        @dragover.prevent="dragging = true"
+        @dragover.prevent="dragOver()"
         @dragleave.prevent="dragging = false"
         @drop.prevent="handleDrop($event)"
     >

@@ -18,6 +18,7 @@ import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { isRendered } from '../utils/rendered.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { outOfReachBeside } from '../utils/teleport.js';
 
 // Long-press tuning. 500ms is the platform-conventional touch-hold threshold
 // (matches iOS/Android long-press); a 10px movement budget distinguishes a
@@ -401,7 +402,10 @@ export default function wirekitContextMenu() {
          *
          * Two exclusions, each for a reason. Every teleported panel is skipped —
          * ours and every other overlay's — because they sit at the end of `<body>` while
-         * being drawn somewhere else entirely, so one is never a sensible neighbor. And a
+         * being drawn somewhere else entirely, so one is never a sensible neighbor. Inside
+         * a modal or a drawer the trigger sits in that dialog's teleported clone, and then
+         * only the clone is in reach (`outOfReachBeside()`): skipping the whole overlay root
+         * there skipped the dialog's own controls and landed behind it. And a
          * present but `display: none` element is skipped because `focus()` on one does
          * nothing: the browser drops focus on `<body>` instead, which is the outcome this
          * whole branch exists to prevent.
@@ -415,7 +419,7 @@ export default function wirekitContextMenu() {
             if (!trigger || typeof trigger.compareDocumentPosition !== 'function') return null;
 
             const panel = this.$refs.panel;
-            const overlayRoot = document.getElementById('wk-overlay-root');
+            const outOfReach = outOfReachBeside(trigger);
             const wanted = forward
                 ? Node.DOCUMENT_POSITION_FOLLOWING
                 : Node.DOCUMENT_POSITION_PRECEDING;
@@ -424,7 +428,7 @@ export default function wirekitContextMenu() {
                 // `panel` as well as the overlay root: with `teleport="false"` the panel
                 // stays inside the component, where the overlay-root test cannot see it.
                 if (panel?.contains?.(el)) return false;
-                if (overlayRoot?.contains?.(el)) return false;
+                if (outOfReach(el)) return false;
                 if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return false;
 
                 return Boolean(trigger.compareDocumentPosition(el) & wanted);

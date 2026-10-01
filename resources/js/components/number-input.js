@@ -153,6 +153,18 @@ export default function wirekitNumberInput(config = {}) {
         },
 
         /**
+         * Whether the field is out of use, disabled or read-only. Read from the field
+         * itself rather than kept as a flag, because Livewire can set either state after
+         * the page loaded: the buttons read it through their bindings, and each step
+         * checks it again when it runs.
+         */
+        get locked() {
+            const el = this._input();
+
+            return !!el && (el.disabled || el.readOnly);
+        },
+
+        /**
          * Step down to the previous grid point, anchored at `min` (or 0).
          *
          * The 1e-10 tolerance absorbs binary-float drift, so a value that is
@@ -160,6 +172,10 @@ export default function wirekitNumberInput(config = {}) {
          * neighbor rather than to itself.
          */
         decrease() {
+            if (this.locked) {
+                return;
+            }
+
             const origin = this.min !== null ? this.min : 0;
             const ratio = (this.value - origin) / this.step;
             const prevSteps = Math.ceil(ratio - 1e-10) - 1;
@@ -172,6 +188,10 @@ export default function wirekitNumberInput(config = {}) {
 
         /** Step up to the next grid point. The mirror of decrease(). */
         increase() {
+            if (this.locked) {
+                return;
+            }
+
             const origin = this.min !== null ? this.min : 0;
             const ratio = (this.value - origin) / this.step;
             const nextSteps = Math.floor(ratio + 1e-10) + 1;

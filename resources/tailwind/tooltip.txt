@@ -57,7 +57,7 @@ $tooltipId
 'wk-tooltip-');
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -121,6 +121,7 @@ BooleanProp::from($disabled,
 BooleanProp::from($focusableTrigger,
 Both
 CALLER's
+CAPTURE
 CallerRef::onRoot()
 Declared
 Default
@@ -264,6 +265,7 @@ against
 agree
 all.
 allowlist,
+alone.
 already
 also
 among
@@ -285,6 +287,7 @@ aria-describedby
 aria-describedby="{{
 armed,
 arms
+around
 array_filter([
 arrive
 arrives
@@ -422,6 +425,7 @@ document
 documented
 does
 double
+drawer
 duration-100"
 duration-75"
 each
@@ -508,6 +512,7 @@ here,
 here:
 hidden`
 hide
+hides
 high
 hit,
 hoists
@@ -582,7 +587,9 @@ looks
 make
 makes
 many
+marked
 markers
+marks
 markup
 mask
 mask-image:
@@ -593,6 +600,7 @@ mechanism
 menus
 mints
 mismatch
+modal
 mode"),
 mode,
 model
@@ -635,6 +643,7 @@ offset:
 omission.
 on
 on.
+on:
 once
 one
 one,
@@ -684,6 +693,7 @@ pending
 pending,
 per
 per-instance
+phase,
 phrasing
 placement.
 placement:
@@ -696,6 +706,7 @@ popovers
 position
 positioning
 present
+press
 prod).
 prop
 prop's
@@ -843,6 +854,7 @@ tip.
 to
 to,
 to.
+too,
 tooltip
 tooltip,
 tooltip.
@@ -902,6 +914,7 @@ whole
 whose
 widening
 width)
+window
 window,
 wire:key="wk-tooltip-panel"
 with
@@ -920,7 +933,7 @@ x-cloak
 x-data="wirekitTooltip({
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

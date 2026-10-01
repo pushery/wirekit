@@ -2,6 +2,7 @@ import { resolveThemeColors, palette, resolveCssVarsDeep, themeModeOf } from '..
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
 import { followChartServerData } from '../utils/chart-server-data.js';
+import { formatDecimal } from '../utils/locale-number.js';
 
 /**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
@@ -26,9 +27,22 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     const cfg = (w && w.config) || {};
     const g = (w && w.globals) || {};
     const apexType = cfg.chart && cfg.chart.type;
-    const fmtTs = (v) => (typeof v === 'number' && v > 1e10)
-        ? new Date(v).toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' })
-        : v;
+    // The application's locale, handed over by the PHP side as `tooltip.wkLocale`, so a date
+    // reads in the language of the page around it rather than of the reader's browser. A tag the
+    // runtime rejects falls back to the browser's own preference instead of breaking the hover.
+    const appLocale = (cfg.tooltip && cfg.tooltip.wkLocale) || undefined;
+    const dateOptions = { month: 'short', day: '2-digit', year: 'numeric' };
+    const fmtTs = (v) => {
+        if (!(typeof v === 'number' && v > 1e10)) {
+            return v;
+        }
+
+        try {
+            return new Date(v).toLocaleDateString(appLocale, dateOptions);
+        } catch {
+            return new Date(v).toLocaleDateString(undefined, dateOptions);
+        }
+    };
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
@@ -53,7 +67,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     const fmtValue = (v) => {
         if (typeof v === 'number' && Number.isFinite(v)) {
             const n = (wkDecimals !== null)
-                ? v.toFixed(wkDecimals)
+                ? formatDecimal(v, appLocale, wkDecimals, wkDecimals)
                 : String(v);
             return `${wkPrefix}${n}${wkSuffix}`;
         }
@@ -1582,7 +1596,9 @@ window.ApexCharts = ApexCharts;</pre>
                     strokeDashArray: 0,
                 }),
                 xaxis: this._themeAxis(rawConfig.xaxis, colors, fontFamily),
-                yaxis: this._themeYaxis(rawConfig.yaxis, colors, fontFamily),
+                // The application's locale for a decimal tick, handed over on the tooltip by the
+                // PHP side; without it the tick keeps the English spelling it always had.
+                yaxis: this._themeYaxis(rawConfig.yaxis, colors, fontFamily, rawConfig?.tooltip?.wkLocale),
                 tooltip: Object.assign({}, rawConfig.tooltip, {
                     theme: isDark ? 'dark' : 'light',
                     // Object.assign is shallow — without nesting the style
@@ -1661,7 +1677,7 @@ window.ApexCharts = ApexCharts;</pre>
          * `42 / 58 / 71 / 89` instead of `42.00000000000000 …`. Developer-
          * supplied formatters always win.
          */
-        _themeYaxis(yaxis, colors, fontFamily) {
+        _themeYaxis(yaxis, colors, fontFamily, locale) {
             const themeOne = (axis) => {
                 const themed = this._themeAxis(axis, colors, fontFamily);
                 if (! themed.labels) themed.labels = {};
@@ -1678,7 +1694,7 @@ window.ApexCharts = ApexCharts;</pre>
                         const rounded = Math.round(n * 100) / 100;
                         return Number.isInteger(rounded)
                             ? String(rounded)
-                            : rounded.toFixed(2).replace(/\.?0+$/, '');
+                            : formatDecimal(rounded, locale, 2);
                     };
                 }
                 return themed;

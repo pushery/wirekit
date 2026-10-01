@@ -230,6 +230,12 @@
         // Plumbed to the Tiptap path too (not just the textarea fallback's
         // data-autofocus) — editor.js focuses the editor in onCreate when set.
         'autofocus' => (bool) $autofocus,
+        // The character count is announced from the browser, where the count lives, so its
+        // sentence travels as the plural forms of one key and the client picks the form for
+        // the number with the application's locale, as the data table's selection does.
+        'remainingPhrases' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count character remaining|[2,*] :count characters remaining'),
+        'overPhrases' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count character over the limit|[2,*] :count characters over the limit'),
+        'locale' => str_replace('_', '-', app()->getLocale()),
     ];
 
     $wrapperClasses = WireKit::resolveClasses('editor', 'wrapper', implode(' ', [

@@ -637,7 +637,7 @@ $x)`
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -1050,6 +1050,7 @@ Border
 Both
 Box-shadow
 CALLER's
+CAPTURE
 CAREFUL:
 CLASS,
 COLUMN
@@ -2315,6 +2316,7 @@ dot
 double
 double-ring
 down
+drawer
 draws
 drift
 drives
@@ -2911,6 +2913,7 @@ margin,
 margin-left.
 margin.
 margin:
+marked
 marker
 marker,
 marker.
@@ -3077,6 +3080,7 @@ on
 on-color
 on-fill
 on.
+on:
 once
 once,
 one
@@ -3200,6 +3204,7 @@ person
 person).
 person,
 personalization
+phase,
 phrasing
 pick
 pill
@@ -3250,6 +3255,7 @@ presentational
 preserve
 preserves
 preset
+press
 press.
 preview
 previews
@@ -4037,6 +4043,7 @@ width)
 width,
 width;
 widths
+window
 window,
 wins
 wire:click
@@ -4090,7 +4097,7 @@ x-on:click="isOpen
 x-on:click="toggle()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

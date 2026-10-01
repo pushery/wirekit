@@ -21,7 +21,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.prevent', 'x-on:keydown.arrow-up', 'x-on:keydown.arrow-down']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape', 'x-on:keydown.arrow-up', 'x-on:keydown.arrow-down']);
 
     $position = WireKit::validateProp('fab', 'position', $position, ['end', 'start', 'center']);
 
@@ -51,10 +51,11 @@
 
 {{-- Escape is bound on the whole component, not on the trigger: by the time the
      reader wants out, focus is on an action, and a handler on the trigger would
-     never see the key. --}}
+     never see the key. `escapeMenu()` marks the press only when it closed the menu, so
+     an Escape on the closed trigger still reaches what holds the page. --}}
 <div
     x-data="wirekitFab()"
-    x-on:keydown.escape.prevent="close()"
+    x-on:keydown.escape="escapeMenu($event)"
     {{-- No `.prevent` on the arrows, and the reason is the order Alpine applies its
          modifiers. `.prevent` wraps the handler and calls `preventDefault()` before the
          expression is evaluated, so an `open &&` guard inside the expression would decide

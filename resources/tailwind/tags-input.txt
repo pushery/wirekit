@@ -604,6 +604,7 @@ d="M3.05
 danger-text
 dark
 dark:
+data,
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-ref-scope
@@ -798,6 +799,7 @@ internal
 into
 invalid
 is
+is.
 it
 it,
 it.

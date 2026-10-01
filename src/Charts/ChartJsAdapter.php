@@ -114,6 +114,11 @@ final class ChartJsAdapter implements ChartAdapter
         return [
             'responsive' => true,
             'maintainAspectRatio' => false,
+            // Chart.js formats tick and tooltip numbers with Intl in this locale, and without
+            // one it takes the reader's browser: a German page on an English laptop grouped its
+            // numbers the English way. BCP-47 spelling, since Laravel writes `pt_BR`. A locale
+            // in the developer's own options replaces this one.
+            'locale' => str_replace('_', '-', app()->getLocale()),
             'plugins' => [
                 'legend' => [
                     'display' => true,

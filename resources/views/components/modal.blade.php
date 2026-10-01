@@ -164,15 +164,17 @@
      ESC handling: the JS component uses `focus-trap` with `escapeDeactivates`,
      which listens on the document once the trap is active. The trap is armed
      after the panel has settled, so a window-level ESC listener covers the time
-     before that: it catches the event regardless of focus location and calls
-     `dismissByReader('escape')` directly (which closes, deactivates the focus trap
+     before that: it catches the event regardless of focus location and closes
+     through `dismissByReader('escape')` (which closes, deactivates the focus trap
      and announces `wirekit:modal-dismissed`). It is guarded against re-entry, so the extra
      call is safe when focus-trap catches the key too, and the announcement is
-     made once. Only registered when the
+     made once. Both leave alone an Escape that an element inside the panel
+     already handled, such as a menu or a list that closed on it, and so does
+     the listener of a modal another overlay covers. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
     x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
-    @if($dismissible) x-on:keydown.escape.window="isOpen && isTopmost && dismissByReader('escape')" @endif
+    @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
     {{ $attributes }}
 >
     {{-- Trigger slot — always visible, clicking opens the modal.

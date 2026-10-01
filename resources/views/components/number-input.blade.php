@@ -70,6 +70,11 @@
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
+    // The steppers change the field's value, so they are out of use while the field is:
+    // disabled, or read-only, where the native spinner does not step either. Rendered for the
+    // first paint; once Alpine runs, the bindings read the field itself (`locked`).
+    $fieldLocked = $attributes->has('disabled') || $attributes->has('readonly');
+
     // Same trap one level in: an UNBOUND `hideLabel="false"` reaches here as the
     // truthy string 'false' and would hide the label the call site asked to show.
     $hideLabel = BooleanProp::from($hideLabel, false);
@@ -318,8 +323,9 @@
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusStart }} {{ $sizeClasses }}"
             aria-label="{{ $decreaseLabel }}"
             aria-controls="{{ $id }}"
-            :disabled="atMin"
-            :aria-disabled="atMin"
+            @if($fieldLocked) disabled aria-disabled="true" @endif
+            :disabled="atMin || locked"
+            :aria-disabled="atMin || locked"
             @click="decrease()"
         >
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>
@@ -363,8 +369,9 @@
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusEnd }} {{ $sizeClasses }}"
             aria-label="{{ $increaseLabel }}"
             aria-controls="{{ $id }}"
-            :disabled="atMax"
-            :aria-disabled="atMax"
+            @if($fieldLocked) disabled aria-disabled="true" @endif
+            :disabled="atMax || locked"
+            :aria-disabled="atMax || locked"
             @click="increase()"
         >
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>

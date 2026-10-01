@@ -55,6 +55,8 @@ const sameKeys = (a, b) => a.length === b.length && [...a].sort().join('\u0000')
 
 import { pluralize } from '../utils/plural.js';
 import { safeHref } from '../utils/safe-href.js';
+import { sortCollator } from '../utils/sort-collator.js';
+import { foldForSearch } from '../utils/search-fold.js';
 
 export default function wirekitDataTable(config = {}) {
     return {
@@ -310,25 +312,29 @@ export default function wirekitDataTable(config = {}) {
 
         // ── Search + sort (client mode) ─────────────────────────────────
         get filteredRows() {
-            const q = this.search.trim().toLowerCase();
+            // Accents folded away on both sides, so `munchen` finds `München` (utils/search-fold.js).
+            const q = foldForSearch(this.search.trim());
             if (!q || this.mode === 'server') return this.rows;
-            return this.rows.filter((r) => this.columns.some((c) => String(r[c.key] ?? '').toLowerCase().includes(q)));
+            return this.rows.filter((r) => this.columns.some((c) => foldForSearch(r[c.key]).includes(q)));
         },
         get displayRows() {
             if (this.mode === 'server' || !this.sortKey) return this.filteredRows;
             const rows = [...this.filteredRows];
             const key = this.sortKey;
             const dir = this.sortDir === 'asc' ? 1 : -1;
+            // Text is compared in the application's locale, as the table component does: a
+            // comparison of code units put every letter outside ASCII after "z" and "Item 10"
+            // before "Item 9". Two numbers still compare as numbers.
+            const collator = sortCollator(this._locale);
             rows.sort((a, b) => {
-                let av = a[key];
-                let bv = b[key];
-                if (typeof av !== 'number' || typeof bv !== 'number') {
-                    av = String(av ?? '').toLowerCase();
-                    bv = String(bv ?? '').toLowerCase();
+                const av = a[key];
+                const bv = b[key];
+                if (typeof av === 'number' && typeof bv === 'number') {
+                    if (av < bv) return -1 * dir;
+                    if (av > bv) return 1 * dir;
+                    return 0;
                 }
-                if (av < bv) return -1 * dir;
-                if (av > bv) return 1 * dir;
-                return 0;
+                return collator.compare(String(av ?? ''), String(bv ?? '')) * dir;
             });
             return rows;
         },
@@ -381,8 +387,27 @@ export default function wirekitDataTable(config = {}) {
             this._emitSelection();
         },
         clearSelection() {
+            // The clear button sits in the bar that shows only while rows are selected, so
+            // clearing hides the control that holds the focus, and the browser drops it to the
+            // page. Whether the button held it is read now, while it is still in the document.
+            // The header checkbox takes it, since it selects again, or else the first row's; both
+            // sit outside the bar, so the move does not wait for the bar to go.
+            const handOver = typeof document !== 'undefined'
+                && document.activeElement
+                && typeof document.activeElement.hasAttribute === 'function'
+                && document.activeElement.hasAttribute('data-wk-clear-selection');
+
             this.selected = [];
             this._emitSelection();
+
+            if (handOver && this.$root && typeof this.$root.querySelector === 'function') {
+                const target = this.$root.querySelector('[data-wk-select-all]')
+                    ?? this.$root.querySelector('tbody input[type="checkbox"]');
+
+                if (target && typeof target.focus === 'function') {
+                    target.focus();
+                }
+            }
         },
         // Sample counts -> translated templates, and the app locale. The selection count
         // only exists in the browser, so the plural form is chosen here.

@@ -171,6 +171,7 @@ $value,
 '#'.$errorId,
 ''
 ''"
+''"></div>
 ''">{{
 '')
 '')));
@@ -595,7 +596,7 @@ $value,
 @keydown.arrow-up.prevent="moveHighlight(-1)"
 @keydown.end.prevent="openAtLast()"
 @keydown.enter.prevent="{{
-@keydown.escape="isOpen
+@keydown.escape="escapeList($event)"
 @keydown.home.prevent="openAtFirst()"
 @keydown="{{
 @mousedown.prevent
@@ -604,7 +605,6 @@ $value,
 @props([
 @props.
 @unless($attributes->has('role'))
-@unless($server)
 A
 A11y:
 AFTER
@@ -667,7 +667,6 @@ HTML
 Hidden
 How
 INSIDE
-INTO
 IS
 IconSprite
 Icons
@@ -802,6 +801,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($value)
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(['options'
+\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options'))
 \Pushery\WireKit\Support\AlpinePayload::string($comboId)
 \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding)
@@ -921,7 +921,6 @@ _place()
 `relative`
 `required`
 `role="combobox"`,
-`role="status"`
 `run()`.
 `run(undefined)`
 `runIf()`.
@@ -976,6 +975,7 @@ absence
 absolute
 accept
 accepts
+accessibility
 across
 action
 activation.
@@ -1079,7 +1079,6 @@ associates
 asterisk
 at
 at.
-atomic
 attribute
 attribute,
 attribute:
@@ -1106,7 +1105,6 @@ before.
 behavior
 behavior:
 behind
-being
 belongs
 below
 below,
@@ -1255,7 +1253,6 @@ component.
 component;
 components
 computed
-condition
 config
 config('app.debug'),
 config('wirekit.a11y.announce_error',
@@ -1304,7 +1301,9 @@ d="M6.28
 danger-text
 dark
 dark:
+data,
 data-*,
+data-wk-combobox-clear
 data-wk-flag
 data-wk-optimistic-announcer
 data-wk-prose-skip
@@ -1551,7 +1550,6 @@ here
 here,
 here.
 hidden
-hidden.
 hides
 high
 highlight
@@ -1595,7 +1593,6 @@ image
 image,
 image.
 immediately
-implicit
 implode('
 imports
 in
@@ -1622,7 +1619,6 @@ input.blade.php
 inputId:
 inside
 instead
-instead,
 instead.
 intact.
 integer,
@@ -1751,6 +1747,7 @@ mismatch).
 mode
 mode,
 model
+modes.
 moment
 more.
 morph
@@ -1800,6 +1797,7 @@ non-input
 none;
 none;"
 none;">
+none`
 nor
 normalizes
 not
@@ -1941,7 +1939,6 @@ pointer,
 pointing
 points
 polite
-polite,
 position
 positioned
 positively,
@@ -1990,6 +1987,7 @@ readonly
 reads
 real
 reason
+reason.
 reason:
 reasoning.
 receive
@@ -2000,7 +1998,6 @@ ref
 reference
 refuse.
 region
-region,
 region.
 region:
 registers
@@ -2031,7 +2028,9 @@ restyle.
 result
 results
 results"
+results",
 results')
+results'))
 results'),
 results.
 results:
@@ -2044,7 +2043,6 @@ role="group"
 role="listbox"
 role="none"
 role="option"
-role="status"
 role=combobox
 role=option
 roleless
@@ -2200,7 +2198,6 @@ state
 state:
 stated
 states:
-status
 status,
 stays
 step
@@ -2304,7 +2301,7 @@ today's
 together
 together,
 together.
-toggled,
+toggled
 toggles
 token
 tokens
@@ -2325,6 +2322,7 @@ transitions
 translated
 travel
 treat
+tree,
 tree.
 trigger
 trigger,
@@ -2502,6 +2500,7 @@ x-show="selectedText
 x-teleport="#wk-overlay-root">
 x-text="announcement"></div>
 x-text="grp.label"></div>
+x-text="isOpen
 x-text="opt.description"></span>
 x-text="opt.label"></span>
 x-text="opt.label"></span>@endif<svg

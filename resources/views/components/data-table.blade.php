@@ -395,7 +395,7 @@
                          (a landmark would make every table on the page the same region).
                          The scroll region keeps a keyboard model through that group role and
                          its focusable checkboxes, which the factory focuses on open. --}}
-                    <div x-data="wirekitDataTableColumnMenu()" @click.outside="isOpen = false" @keydown.escape="isOpen = false" class="relative">
+                    <div x-data="wirekitDataTableColumnMenu()" @click.outside="isOpen = false" @keydown.escape="escapeMenu($event)" class="relative">
                         <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="isOpen = !isOpen" :aria-expanded="isOpen" aria-controls="{{ $columnsPanelId }}" class="{{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
                             {{ __('wirekit::Columns') }}
@@ -431,7 +431,7 @@
                 <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" aria-live="polite" aria-atomic="true" x-text="selectionSummary"></span>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $bulkActions ?? '' }}
-                <button type="button" @click="clearSelection()" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">{{ __('wirekit::Clear') }}</button>
+                <button type="button" data-wk-clear-selection @click="clearSelection()" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">{{ __('wirekit::Clear') }}</button>
             </div>
         </div>
     @endif
@@ -480,7 +480,7 @@
                     @if($selectable)
                         <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)] {{ $stickyHeadSelection }}">
                             {{-- Tri-state header selection (indeterminate set reactively). --}}
-                            <input type="checkbox" :checked="allSelected" @change="toggleSelectAll()" x-effect="$el.indeterminate = someSelected" aria-label="{{ __('wirekit::Select all rows') }}" class="{{ $checkboxClass }}" />
+                            <input type="checkbox" data-wk-select-all :checked="allSelected" @change="toggleSelectAll()" x-effect="$el.indeterminate = someSelected" aria-label="{{ __('wirekit::Select all rows') }}" class="{{ $checkboxClass }}" />
                         </th>
                     @endif
                     <template x-for="col in visibleColumns" :key="col.key">

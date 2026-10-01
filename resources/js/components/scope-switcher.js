@@ -19,6 +19,7 @@
  * to the ends of the query while the list moves, and the two fight each other.
  */
 import { pluralize } from '../utils/plural.js';
+import { foldForSearch } from '../utils/search-fold.js';
 
 export default function wirekitScopeSwitcher(config = {}) {
     return {
@@ -158,11 +159,7 @@ export default function wirekitScopeSwitcher(config = {}) {
          * is wrong for the next language somebody uses.
          */
         _normalize(value) {
-            return String(value ?? '')
-                .normalize('NFD')
-                .replace(/\p{M}/gu, '')
-                .toLowerCase()
-                .trim();
+            return foldForSearch(value).trim();
         },
 
         /**

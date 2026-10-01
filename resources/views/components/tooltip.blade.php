@@ -83,7 +83,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:mouseenter', 'x-on:mouseleave', 'x-on:focusin', 'x-on:focusout', 'x-on:pointerdown', 'x-on:pointerup', 'x-on:pointerleave', 'x-on:keydown.escape.window']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:mouseenter', 'x-on:mouseleave', 'x-on:focusin', 'x-on:focusout', 'x-on:pointerdown', 'x-on:pointerup', 'x-on:pointerleave', 'x-on:keydown.escape.window.capture']);
 
     // Generate unique ID for ARIA association between trigger and tooltip
     // Stable across re-renders. The trigger's aria-describedby and the bubble's id are the
@@ -150,13 +150,16 @@
          to, the one case that needs it least. WCAG 1.4.13 requires
          content shown on hover or focus to be dismissible without moving the pointer or
          the focus, and Escape is the mechanism it names.
+         In the CAPTURE phase, because a modal or a drawer around the reader reads the
+         key on the document and on the window too, and a tooltip on screen marks the
+         press it hides on: the overlay leaves a marked press alone.
          Deliberately NOT guarded on `open`, unlike the hover card's counterpart: a
          tooltip opens on a `delayShow` timer, so the key regularly arrives while the
          panel is still pending, and a guard on `open` would let it appear a moment
          after the Escape that was meant to answer it. `keydownEscape()` clears the
          pending show as well as the open panel, and on a tooltip with nothing to
          dismiss it costs four no-op `clearTimeout` calls. --}}
-    x-on:keydown.escape.window="keydownEscape()"
+    x-on:keydown.escape.window.capture="keydownEscape($event)"
     {{ $attributes->class(['relative inline-block']) }}
 >
     {{-- Trigger element — linked to tooltip via aria-describedby --}}

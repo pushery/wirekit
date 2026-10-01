@@ -158,8 +158,10 @@
         </span>
     @endunless
 
-    {{-- Screen reader announcement --}}
-    <span x-show="copied" class="sr-only" role="status" aria-live="polite">{{ __('wirekit::Copied to clipboard') }}</span>
+    {{-- Screen reader announcement. Rendered from the start and empty until the copy: a live
+         region that appears together with its text is a new node, and a screen reader
+         announces nothing for it. --}}
+    <span class="sr-only" role="status" aria-live="polite" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : ''"></span>
     {{-- The deviation announcement. The success above is OPTIMISTIC — it fires before the
          write is attempted, on purpose, because a promise that never settles would leave the
          reader with no feedback at all. That bargain only holds if a refusal takes it back:
@@ -168,5 +170,5 @@
 
          `role="alert"` rather than `status`, because this one interrupts: it is correcting
          something the reader was already told. --}}
-    <span x-show="failed" x-cloak class="sr-only" role="alert">{{ __('wirekit::Copy failed') }}</span>
+    <span class="sr-only" role="alert" x-text="failed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy failed')) }} : ''"></span>
 </button>

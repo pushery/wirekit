@@ -1,3 +1,5 @@
+import { foldForSearch } from './search-fold.js';
+
 /**
  * Roving focus across a composite widget's items, resolved from the DOM at call time.
  *
@@ -79,7 +81,8 @@ export function typeAheadIndex(labels, buffer, currentIndex) {
         return -1;
     }
 
-    const typed = String(buffer).toLowerCase();
+    // Folded like a search, so typing `u` reaches `Über` and `i` reaches `İzmir`.
+    const typed = foldForSearch(buffer);
     const sameChar = [...typed].every((c) => c === typed[0]);
     const term = sameChar ? typed[0] : typed;
 
@@ -91,7 +94,7 @@ export function typeAheadIndex(labels, buffer, currentIndex) {
     for (let i = 0; i < labels.length; i += 1) {
         const index = (from + offset + i) % labels.length;
 
-        if (String(labels[index] ?? '').trim().toLowerCase().startsWith(term)) {
+        if (foldForSearch(String(labels[index] ?? '').trim()).startsWith(term)) {
             return index;
         }
     }

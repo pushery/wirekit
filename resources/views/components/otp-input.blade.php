@@ -333,11 +333,11 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    $ownDescribedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
     // A caller's aria-describedby joins this list, because the control is what it describes
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
-    // ids first, then the caller's.
-    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // ids first, then the caller's. The group takes the component's own ids only.
+    $describedBy = trim($ownDescribedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
     // The Livewire property the hidden field is bound to. The boxes read it back, so they
     // show what the property holds when something other than the boxes sets it, the
@@ -453,6 +453,12 @@
         {{-- On the GROUP as well as on every box: a reader who lands on the group
              before reaching a digit has to hear that the code is not enterable. --}}
         @if($disabled) aria-disabled="true" @endif
+        {{-- The hint or the error on the GROUP as well as on the first box, as the range
+             slider's group carries them: a reader who enters at another box, by Shift+Tab or a
+             click, hears them on the way in, and the automatic advance from box to box does
+             not read them out again at every digit. A caller's own reference describes the
+             control, so it stays on the box. --}}
+        @if($ownDescribedBy !== '') aria-describedby="{{ $ownDescribedBy }}" @endif
     >
         @foreach($digitGroups as $digitGroup)
         {{-- `contents` when ungrouped, so the boxes stay flex items of the row above. A

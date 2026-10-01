@@ -88,6 +88,10 @@
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
+    // The show-password button belongs to the field, so it takes the field's state, as the
+    // clear and copy buttons of an input do. Read after the strip above, so `disabled="false"`
+    // leaves it working.
+    $fieldDisabled = $attributes->has('disabled');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
@@ -292,7 +296,8 @@
                      icon button whose painted box stays small. It is OUTSIDE any class seam a
                      developer can replace, like `wk-field`, because a floor that an override can
                      remove is not a floor. --}}
-                class="wk-touch-target absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
+                class="wk-touch-target absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
+                @if($fieldDisabled) disabled @endif
                 @click="showPassword = !showPassword"
                 {{-- Static aria-label and aria-pressed guard the pre-Alpine render
                      (axe scans the DOM before hydration may complete); the bound

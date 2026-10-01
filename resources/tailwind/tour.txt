@@ -25,7 +25,6 @@ $slot
 $target
 $title
 $titleId
-&&
 ',
 '2',
 '3',
@@ -113,7 +112,7 @@ $titleId
 @endphp
 @if($hasCallerName)
 @isset($title)
-@keydown.escape.window="active
+@keydown.escape.window.capture="escapeTour($event)"
 @php
 @props([
 @props.
@@ -186,7 +185,7 @@ WireKit::resolveClasses('tour.step',
 WireKit::validateProp('tour.step',
 [
 ['1',
-['@keydown.escape.window']);
+['@keydown.escape.window.capture']);
 ['number'
 [1,
 [data-wk-tour-step]
@@ -333,7 +332,6 @@ did-you-mean,
 didn't
 difference
 different
-dismiss()"
 dist/wirekit.css
 docs
 document

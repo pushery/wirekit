@@ -276,7 +276,8 @@
              No `id`. The script reaches the field through its ref, a label cannot
              name a hidden field, and a caller's `id` already sits on the radio group
              through the bag: written here as well, it stood on two elements. --}}
-        <input type="hidden" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" />
+        {{-- A disabled field is left out of the form data, as a native one is. --}}
+        <input type="hidden" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" @if($disabled) disabled @endif />
 
         @if($optimisticConfig)
             {{-- `display: contents` on both wrappers: the segments must keep

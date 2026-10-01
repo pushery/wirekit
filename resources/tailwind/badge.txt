@@ -261,7 +261,7 @@ $wrap
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -429,6 +429,7 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
+CAPTURE
 CallerRef::onRoot()
 Catching
 Check
@@ -703,6 +704,7 @@ all,
 all.
 allowed
 allowlist,
+alone.
 already
 also
 always-filled
@@ -744,6 +746,7 @@ aria-label="{{
 aria-labelledby
 armed,
 arms
+around
 array_filter([
 array_keys($sizeMap));
 arrive
@@ -1014,6 +1017,7 @@ does
 dot
 double
 down
+drawer
 draws
 drift
 drop
@@ -1340,6 +1344,7 @@ makes
 many
 map.
 margin
+marked
 markers
 marketing
 marks
@@ -1429,6 +1434,7 @@ on
 on-color
 on-fill
 on.
+on:
 once
 one
 one,
@@ -1501,6 +1507,7 @@ per-instance
 per-set
 per-surface
 personalization
+phase,
 phrasing
 pill
 pill,
@@ -1528,6 +1535,7 @@ present
 presentational
 preserves
 preset
+press
 preview
 pricing-card
 problem
@@ -1818,6 +1826,7 @@ toHtml().
 token
 token,
 tone
+too,
 tooltip
 tooltip,
 tooltip.
@@ -1932,6 +1941,7 @@ whose
 widening
 width
 width)
+window
 window,
 wins
 wire:key="wk-tooltip-panel"
@@ -1958,7 +1968,7 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

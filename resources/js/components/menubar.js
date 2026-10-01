@@ -36,6 +36,7 @@ import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
+import { outOfReachBeside } from '../utils/teleport.js';
 
 /**
  * What the browser would consider a tab stop OUTSIDE this bar.
@@ -201,7 +202,10 @@ export default function wirekitMenubar() {
          *
          * Every teleported panel is skipped along with this component's own: they
          * sit at the end of `<body>` while being drawn somewhere else entirely,
-         * so one is never a sensible neighbor of anything. And a present but
+         * so one is never a sensible neighbor of anything. Inside a modal or a
+         * drawer the bar sits in that dialog's teleported clone, and then only the
+         * clone is in reach (`outOfReachBeside()`), so a Tab out of a menu stays in
+         * the dialog. And a present but
          * `display: none` element is skipped because `focus()` on one does
          * nothing — the browser drops focus on `<body>` instead, which is the
          * outcome this whole branch exists to prevent.
@@ -214,14 +218,14 @@ export default function wirekitMenubar() {
 
             if (! root || typeof root.compareDocumentPosition !== 'function') return null;
 
-            const overlayRoot = document.getElementById('wk-overlay-root');
+            const outOfReach = outOfReachBeside(root);
             const wanted = forward
                 ? Node.DOCUMENT_POSITION_FOLLOWING
                 : Node.DOCUMENT_POSITION_PRECEDING;
 
             const outside = [...document.querySelectorAll(TAB_STOP)].filter((el) => {
                 if (root.contains(el)) return false;
-                if (overlayRoot?.contains(el)) return false;
+                if (outOfReach(el)) return false;
                 if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return false;
 
                 return Boolean(root.compareDocumentPosition(el) & wanted);
@@ -511,6 +515,10 @@ export default function wirekitMenubar() {
                 }
 
                 case 'Escape':
+                    // Only a press that closes a menu is spent here. With the bar closed it
+                    // belongs to whatever holds the bar, such as the modal it sits in.
+                    if (! this.activeMenu) break;
+
                     event.preventDefault();
                     this.closeAndFocusTrigger();
                     break;

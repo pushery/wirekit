@@ -396,7 +396,7 @@ $zoneInset
 'wk-tooltip-');
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -731,6 +731,7 @@ Browser
 By
 CALLER
 CALLER's
+CAPTURE
 CARD,
 CAREFUL:
 COLUMN
@@ -2747,6 +2748,7 @@ missing:
 mistake
 ml-auto
 ml-auto.
+modal
 mode
 mode"),
 mode,
@@ -3024,6 +3026,7 @@ persisted
 persistence
 persists
 personalization
+phase,
 phone
 phone.
 phrasing
@@ -3070,6 +3073,7 @@ present
 presentational
 preserved),
 preserving
+press
 pressed.
 prevent:
 previews
@@ -4036,7 +4040,7 @@ x-on:focusout="focusout()"
 x-on:keydown.down.prevent="moveActive(1)"
 x-on:keydown.end.prevent="moveToLast()"
 x-on:keydown.enter.prevent="selectActive()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.home.prevent="moveToFirst()"
 x-on:keydown.space.prevent="selectActive()"
 x-on:keydown.up.prevent="moveActive(-1)"

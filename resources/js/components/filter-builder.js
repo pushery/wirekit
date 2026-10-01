@@ -43,6 +43,7 @@
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { outOfReachBeside } from '../utils/teleport.js';
 
 /**
  * What counts as focusable inside the popover. Same selector hover-card and
@@ -295,6 +296,22 @@ export default function wirekitFilterBuilder(config = {}) {
         },
 
         /**
+         * Escape heard on the popover or on the trigger, on its way to the window listener.
+         *
+         * An open popover closes with focus back on the trigger, and the press is marked as
+         * handled, so that a modal or a drawer around the builder stays open: the focus trap of
+         * that overlay reads Escape on the document, before the window hears it. With the popover
+         * closed the press is left to them.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapePanel(event) {
+            if (! this.isOpen) return;
+            event?.preventDefault();
+            this.close(true);
+        },
+
+        /**
          * Focusable controls inside the popover, in DOM order.
          *
          * Resolved through the ref rather than a descendant query on the root:
@@ -317,19 +334,24 @@ export default function wirekitFilterBuilder(config = {}) {
          * beside the trigger, so leaving it should continue from the trigger and
          * not from the end of the document, where the panel's markup happens to
          * live. Anything inside the trigger is skipped (a descendant also
-         * "follows" it by document position) and so is the overlay root, which
-         * holds this panel and every other teleported one.
+         * "follows" it by document position), and so is this component's own
+         * panel. On the page the whole overlay root is skipped, since it holds
+         * every other teleported panel. Inside a modal or drawer the trigger sits
+         * in that dialog's teleported clone, and only the clone is in reach (see
+         * `outOfReachBeside()`).
          */
         _focusAfterTrigger() {
             const trigger = this.$refs.trigger;
 
             if (! trigger) return;
 
-            const overlayRoot = document.getElementById('wk-overlay-root');
+            const outOfReach = outOfReachBeside(trigger);
+            const panel = this.$refs.panel;
 
             const next = [...document.querySelectorAll(PANEL_FOCUSABLE)].find((el) => {
                 if (trigger.contains(el)) return false;
-                if (overlayRoot?.contains(el)) return false;
+                if (panel?.contains(el)) return false;
+                if (outOfReach(el)) return false;
                 if (! isRendered(el)) return false;
 
                 return Boolean(trigger.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);

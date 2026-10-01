@@ -28,7 +28,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape.window', 'x-on:keydown.escape']);
 
     // Operator and boolean words for the Alpine factory. `resources/js` has no translator
     // and these strings are not decoration: every one of them ends up in `chipText()`,
@@ -140,6 +140,11 @@
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
     x-on:keydown.escape.window="isOpen && close(true)"
+    {{-- The same key on the trigger, heard on the way to the window, and on the
+         panel below. An open popover closes there and the press is marked as
+         handled, so a modal or a drawer around the builder stays open; the focus
+         trap of that overlay reads the key before the window does. --}}
+    x-on:keydown.escape="escapePanel($event)"
     {{ $attributes->only('class')->class([$base]) }}
 >
     {{-- The set's own live region.
@@ -240,6 +245,7 @@
                      Opening moves focus in here, so without this a reader was put
                      somewhere they could not Tab out of sensibly. --}}
                 x-on:keydown.tab="tabWithinPanel($event)"
+                x-on:keydown.escape="escapePanel($event)"
                 role="dialog"
                 aria-labelledby="{{ $popoverTitleId }}"
                 class="fixed z-[var(--z-wk-dropdown)] w-[18rem] max-w-[calc(100vw-2rem)] p-[var(--padding-wk-x-md)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] space-y-[var(--space-wk-sm)]"

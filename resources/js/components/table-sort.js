@@ -15,6 +15,7 @@
  *   breaks the whole scope under the CSP build — see utils/dev-warning.js.
  */
 import { devWarn } from '../utils/dev-warning.js';
+import { sortCollator } from '../utils/sort-collator.js';
 
 export default function wirekitTableSort(config = {}) {
     return {
@@ -265,13 +266,11 @@ export default function wirekitTableSort(config = {}) {
              * call — the single most expensive thing a comparator can do. Hoisting it is
              * the documented reason `Intl.Collator` exists as a separate object.
              *
-             * `undefined` for the locale is the runtime's default, the same one a bare
-             * `localeCompare` call uses.
+             * In the application's locale rather than the runtime's default, which is the
+             * reader's browser: where a letter such as "Ä" sorts depends on the language the
+             * page is written in, and only the server knows that.
              */
-            const collator = new Intl.Collator(undefined, {
-                numeric: true,
-                sensitivity: 'base',
-            });
+            const collator = sortCollator(this._locale);
 
             const direction = this.sortDirection === 'asc' ? 1 : -1;
 

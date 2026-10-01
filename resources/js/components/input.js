@@ -147,11 +147,15 @@ export default function wirekitInput() {
          * `x-on:wirekit:input-cleared` on the component hears it. A deferred
          * `wire:model` sends nothing until the next request, and this is the moment
          * the caller can act on instead.
+         *
+         * A disabled or read-only field is left as it is. The view disables the
+         * button in both states, and the state is read from the field here as well,
+         * because Livewire can set it after the page loaded.
          */
         clear() {
             const field = this._field();
 
-            if (! field) {
+            if (! field || field.disabled || field.readOnly) {
                 return;
             }
 

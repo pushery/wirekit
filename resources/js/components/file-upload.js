@@ -1,3 +1,5 @@
+import { formatDecimal } from '../utils/locale-number.js';
+
 /**
  * File upload — the drop zone, and keeping the native input in step with it.
  *
@@ -35,6 +37,7 @@
  *   with `:name` standing in for the file that went
  * @param {string|null} [config.model]  the Livewire property the input is bound to, read
  *   from its `wire:model` attribute; null when it is bound to nothing
+ * @param {string} [config.locale]  the application's locale, BCP-47, for the file sizes
  */
 export default function wirekitFileUpload(config = {}) {
     // The control's root element, resolved ONCE while something is still attached to
@@ -71,6 +74,9 @@ export default function wirekitFileUpload(config = {}) {
         _rawFiles: [],
 
         removeLabel: config.removeLabel || '',
+
+        // The application's locale, so a size reads "1,5 MB" on a German page as the server writes it.
+        _locale: config.locale || null,
 
         /**
          * The sentence spoken after a removal, as a TEMPLATE handed in from the Blade.
@@ -198,7 +204,16 @@ export default function wirekitFileUpload(config = {}) {
             const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
             const i = Math.min(sizes.length - 1, Math.max(0, Math.floor(Math.log(bytes) / Math.log(k))));
 
-            return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+            // In the application's locale, as the server writes the same sizes elsewhere.
+            return `${formatDecimal(bytes / Math.pow(k, i), this._locale, 1, 1)} ${sizes[i]}`;
+        },
+
+        /**
+         * Light the zone up while a file is dragged over it, unless the field is disabled:
+         * a zone that lights up promises to take the file, and handleDrop() will not.
+         */
+        dragOver() {
+            this.dragging = ! this.$refs.input?.disabled;
         },
 
         /**
@@ -221,6 +236,14 @@ export default function wirekitFileUpload(config = {}) {
          */
         handleDrop(event) {
             this.dragging = false;
+
+            // A disabled field takes no file by drop either. Its own picker is closed by
+            // the browser; a drop reaches it only through here, so the state is read from
+            // the field at the moment of the drop, which also covers a state Livewire set
+            // after the page loaded.
+            if (this.$refs.input?.disabled) {
+                return;
+            }
 
             const transfer = event.dataTransfer;
 

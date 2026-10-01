@@ -71,6 +71,8 @@ $attributes->getAttributes());
 $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
+$attributes->has('disabled')
+$attributes->has('readonly');
 $attributes->merge
 $attributes->whereStartsWith(['wire:model',
 $attributes]
@@ -127,6 +129,7 @@ $errorMessage)
 $fetchpriority
 $fetchpriority,
 $fetchpriorityValue
+$fieldLocked
 $figureClasses
 $finalRel
 $fit,
@@ -651,6 +654,7 @@ $wrapLabel
 (\Throwable
 (`@container/wk-table`)
 (`loading`
+(`locked`).
 (a
 (alt="").
 (array
@@ -813,13 +817,13 @@ $wrapLabel
 :alt="$imageAlt"
 :amount="$lineTotal"
 :amount="$price"
-:aria-disabled="atMax"
-:aria-disabled="atMin"
+:aria-disabled="atMax
+:aria-disabled="atMin
 :base="$onSale
 :class="$hideLabel
 :currency="$currency"
-:disabled="atMax"
-:disabled="atMin"
+:disabled="atMax
+:disabled="atMin
 :field',
 :for="$id"
 :label="__('wirekit::Quantity')"
@@ -920,6 +924,7 @@ $wrapLabel
 @if($describedBy
 @if($emitAriaBusy)
 @if($fetchpriorityValue
+@if($fieldLocked)
 @if($formattedBase
 @if($formattedDelta
 @if($formattedUnitPrice
@@ -1783,6 +1788,7 @@ bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
 bg-transparent
 binding
+bindings
 blade-heroicons
 blade-icons
 blade-icons,
@@ -2779,6 +2785,7 @@ loads,
 loads.
 locale's
 locale:
+locked"
 log
 log.
 logger()->warning(
@@ -3088,6 +3095,7 @@ page.
 pages
 pagination
 paint
+paint;
 paints
 pair
 pair".
@@ -3248,6 +3256,7 @@ reaches
 reacts
 read
 read,
+read-only,
 readable
 reader
 reader's
@@ -3376,6 +3385,7 @@ run
 run.
 rung
 runs
+runs,
 runtime
 runtime.
 safelist

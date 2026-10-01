@@ -1180,6 +1180,7 @@ announced
 announcement
 announces
 anonymous
+another
 answer
 answerable
 anticipate
@@ -1382,7 +1383,6 @@ caller's
 callers
 calling
 callout/alert).
-calls
 can
 candidate
 candidates
@@ -1465,6 +1465,7 @@ close-X
 closeable
 closed
 closer
+closes
 closes,
 closes.
 cluster).
@@ -1638,7 +1639,6 @@ did),
 difference
 different
 dim
-directly
 disable
 disable,
 disabled
@@ -1651,7 +1651,6 @@ disagree
 disagreeing
 discoverable,
 dismiss
-dismissByReader('escape')"
 dismissal
 dismissible
 dismissible:
@@ -1917,6 +1916,7 @@ halves
 hand
 hand-build
 hand-written
+handled,
 handler
 handler,
 handlers
@@ -2058,7 +2058,6 @@ is"
 is,
 is.
 is;
-isTopmost
 it
 it":
 it,
@@ -2209,6 +2208,7 @@ measures.
 mechanism
 media
 meet
+menu
 merely
 merge
 method.
@@ -3243,7 +3243,7 @@ x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
 x-on:click="show()"
 x-on:click="show()">
-x-on:keydown.escape.window="isOpen
+x-on:keydown.escape.window="onWindowEscape($event)"
 x-ref="panel"
 x-show/x-teleport
 x-show="dismissible"

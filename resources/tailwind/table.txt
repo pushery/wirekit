@@ -657,7 +657,7 @@ $wrapWords
 'wrapLabel'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -1139,6 +1139,7 @@ Both
 Built
 Bypasses
 CALLER's
+CAPTURE
 CI
 CONDITION,
 CONTENT
@@ -1859,6 +1860,7 @@ allowed
 allowlist,
 allows
 alone
+alone.
 alone:
 along
 alongside
@@ -2555,6 +2557,7 @@ dragging:
 drags
 drags.
 draw
+drawer
 drawn
 drawn:
 draws
@@ -3228,6 +3231,7 @@ maps
 margin
 margins
 mark
+marked
 marked.
 marker
 markers
@@ -3427,6 +3431,7 @@ omission.
 omission:
 on
 on.
+on:
 once
 one
 one,
@@ -3571,6 +3576,7 @@ permissions
 permits
 person
 personalization
+phase,
 phone
 phone,
 phone-width
@@ -3628,6 +3634,7 @@ present
 presentational
 preserves
 preset
+press
 pressed
 prettier
 prevent
@@ -4662,7 +4669,7 @@ x-on:click="remember('down',
 x-on:click="remember('up',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

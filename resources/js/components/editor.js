@@ -21,6 +21,7 @@
  * never hard-couples to one vendor.
  */
 import { moveRovingFocus } from '../utils/roving-focus.js';
+import { pluralize } from '../utils/plural.js';
 
 /**
  * What counts as a toolbar command for focus purposes.
@@ -58,6 +59,11 @@ export default function wirekitEditor(config = {}) {
         // numeric string (from a plain `max-length="500"` Blade attribute).
         charCount: 0,
         charAnnounce: '',
+        // The announced sentence's plural forms and the locale that picks between them, handed
+        // in translated from Blade. Empty when mounted by hand, which keeps the English sentence.
+        _remainingPhrases: config.remainingPhrases || {},
+        _overPhrases: config.overPhrases || {},
+        _locale: config.locale || 'en',
         _announceTimer: null,
         _maxLength: config.maxLength != null && Number.isFinite(Number(config.maxLength))
             ? Number(config.maxLength)
@@ -216,9 +222,12 @@ export default function wirekitEditor(config = {}) {
             clearTimeout(this._announceTimer);
             this._announceTimer = setTimeout(() => {
                 const remaining = this._maxLength - this.charCount;
-                this.charAnnounce = remaining >= 0
-                    ? `${remaining} characters remaining`
-                    : `${-remaining} characters over the limit`;
+                const phrases = remaining >= 0 ? this._remainingPhrases : this._overPhrases;
+                const count = Math.abs(remaining);
+
+                this.charAnnounce = Object.keys(phrases).length > 0
+                    ? pluralize(phrases, count, this._locale)
+                    : (remaining >= 0 ? `${count} characters remaining` : `${count} characters over the limit`);
             }, 500);
         },
 

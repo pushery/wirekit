@@ -21,6 +21,7 @@
  *        before the button appears
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+import { FOCUSABLE } from '../utils/first-control.js';
 
 export default function wirekitScrollToTop(config = {}) {
     return {
@@ -72,6 +73,25 @@ export default function wirekitScrollToTop(config = {}) {
              * preference itself, and this one was the last that did not.
              */
             window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+
+            // The button promises the top of the page, and the focus stayed at the bottom, on a
+            // button that hides as soon as the page is back up there: the next Tab continued from
+            // where the reader had left. When the button held the focus, the first control of the
+            // document takes it (a skip link, usually), without a scroll of its own so the smooth
+            // one is not cut short.
+            const button = this.$root;
+
+            if (typeof document !== 'undefined' && button && document.activeElement === button) {
+                const first = [...document.querySelectorAll(FOCUSABLE)].find((el) => el !== button
+                    && ! el.disabled
+                    && el.tabIndex >= 0
+                    && el.getClientRects().length > 0
+                    && ! el.closest('[inert]'));
+
+                if (first) {
+                    first.focus({ preventScroll: true });
+                }
+            }
         },
     };
 }

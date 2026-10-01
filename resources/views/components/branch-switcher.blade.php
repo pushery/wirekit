@@ -61,6 +61,7 @@
         'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
         'disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)] disabled:hover:bg-transparent',
+        'aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)] aria-disabled:hover:bg-transparent',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'wk-transition',
     ]), $scope);
@@ -87,7 +88,12 @@
             data-wk-branch-previous
             class="{{ $buttonClasses }}"
             aria-label="{{ __('wirekit::Previous response') }}"
-            x-bind:disabled="! canGoPrevious()"
+            {{-- At an end the arrow says it is unavailable rather than going `disabled`: a
+                 disabled button cannot hold the focus, so stepping onto the last variant would
+                 drop the reader's place. previous() and next() check the ends themselves. Only a
+                 single variant takes the arrows out of the order. --}}
+            x-bind:aria-disabled="! canGoPrevious()"
+            x-bind:disabled="total <= 1"
             x-on:click="previous()"
             x-on:keydown.arrow-left.prevent="previous()"
             x-on:keydown.arrow-right.prevent="next()"
@@ -105,7 +111,8 @@
             data-wk-branch-next
             class="{{ $buttonClasses }}"
             aria-label="{{ __('wirekit::Next response') }}"
-            x-bind:disabled="! canGoNext()"
+            x-bind:aria-disabled="! canGoNext()"
+            x-bind:disabled="total <= 1"
             x-on:click="next()"
             x-on:keydown.arrow-left.prevent="previous()"
             x-on:keydown.arrow-right.prevent="next()"

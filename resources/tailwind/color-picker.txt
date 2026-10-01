@@ -196,6 +196,7 @@ $wrapperClasses])
 ($format)
 ($hint
 ($name
+($required)
 ($size)
 ($swatchClasses),
 (+
@@ -644,6 +645,7 @@ __('wirekit::Use
 `any()`,
 `args`
 `aria-label`
+`aria-required`
 `aria-valuenow`
 `aria-valuetext`
 `bind`:
@@ -743,6 +745,8 @@ appending
 application
 applies,
 apply
+apply,
+apply:
 are
 arguments
 aria-atomic="true"
@@ -853,6 +857,7 @@ build
 built
 but
 button
+button,
 button.
 buttons
 by
@@ -992,6 +997,7 @@ d="M6
 d="m15
 d="m2
 d="m4.5
+data,
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-ref-scope
@@ -1100,6 +1106,7 @@ false
 false),
 false);
 false,
+false;
 far
 feature
 feed
@@ -1225,6 +1232,7 @@ id="{{
 identical
 idref
 ids
+if
 ignored
 implode('
 imports
@@ -1282,6 +1290,7 @@ layer
 layout
 learn
 leave
+leaves
 left
 left/right
 legible
@@ -1378,6 +1387,7 @@ number
 numeric
 of
 off
+offers
 oklch
 old
 on
@@ -1407,6 +1417,7 @@ other
 otherwise
 ours,
 out
+out.
 outermost
 outline
 outlives
@@ -1468,6 +1479,7 @@ pointerdown,
 pointers
 pointing
 popover
+popover's
 popover-only.
 popover.
 position
@@ -1551,6 +1563,8 @@ replaces
 represent
 request
 request's
+required
+requirement.
 resolve
 resolveClasses()
 resolves
@@ -1665,6 +1679,7 @@ stacking
 started
 starting
 state
+state,
 static
 stays
 step
@@ -1711,6 +1726,7 @@ tag
 take
 takes
 takes.
+taking
 tap
 technology
 technology,
@@ -1943,6 +1959,7 @@ zone
 {{--
 |
 ||
+}
 }"
 };
 }}

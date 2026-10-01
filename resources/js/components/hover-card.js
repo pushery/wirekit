@@ -34,6 +34,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  */
 import { position } from '../utils/floating.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { outOfReachBeside } from '../utils/teleport.js';
 
 /**
  * What counts as focusable inside the card. Same selector navigation-menu's
@@ -294,25 +295,57 @@ export default function wirekitHoverCard(config = {}) {
         },
 
         /**
+         * Escape anywhere while the card is on screen.
+         *
+         * Heard on the WINDOW, because a hover card opens on a pointer or on the focus
+         * reaching its trigger, and neither puts the focus inside the teleported panel:
+         * the panel's own handler never hears that key. WCAG 1.4.13 requires content
+         * shown on hover or focus to be dismissible without moving the pointer or the
+         * focus, and Escape is the mechanism it names.
+         *
+         * Heard in the CAPTURE phase, and the press that closes the card is marked as
+         * handled. A modal or a drawer around the reader reads Escape later, on the
+         * document and on the window, and leaves a marked press alone: the reader asked
+         * the card to go, and nothing else. A card only shows for what the reader points
+         * at or stands on, so nothing on screen sits above it to take the key first.
+         * With the focus inside the card, the panel's own handler still runs after this
+         * one and hands the focus back to the trigger.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeAnywhere(event) {
+            if (! this.isOpen) return;
+
+            event?.preventDefault();
+            this.close();
+        },
+
+        /**
          * Move to the control that FOLLOWS the trigger on the page.
          *
          * Where forward-Tab out of the card belongs: the panel is drawn beside
          * the trigger, so leaving it should continue from the trigger, not from
          * the end of the document where the panel's markup happens to live.
          * Anything inside the trigger is skipped (a descendant also "follows"
-         * it by document position) and so is the overlay root, which holds this
-         * panel and every other teleported one.
+         * it by document position), and so is this component's own panel. On the
+         * page the whole overlay root is skipped, since it holds every other
+         * teleported panel. Inside a modal or drawer the trigger sits in that
+         * dialog's teleported clone, and only the clone is in reach (see
+         * `outOfReachBeside()`). A control that is not rendered takes no focus.
          */
         _focusAfterTrigger() {
             const trigger = this.$refs.trigger;
 
             if (! trigger) return;
 
-            const overlayRoot = document.getElementById('wk-overlay-root');
+            const outOfReach = outOfReachBeside(trigger);
+            const panel = this.$refs.panel;
 
             const next = [...document.querySelectorAll(CARD_FOCUSABLE)].find((el) => {
                 if (trigger.contains(el)) return false;
-                if (overlayRoot?.contains(el)) return false;
+                if (panel?.contains(el)) return false;
+                if (outOfReach(el)) return false;
+                if (el.getClientRects().length === 0) return false;
 
                 return Boolean(trigger.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
             });

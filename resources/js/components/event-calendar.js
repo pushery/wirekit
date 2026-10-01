@@ -1,4 +1,23 @@
 /**
+ * A calendar day read as a calendar day.
+ *
+ * `new Date('2026-06-01')` is midnight UTC, which is the evening before anywhere west of it: a
+ * calendar opening on that date showed May in New York and the week before in the week view. A
+ * `YYYY-MM-DD` string becomes local midnight, as the day markers already read theirs; a value
+ * with a time, a Date or a timestamp is read as before.
+ *
+ * @param {string|number|Date} value
+ * @returns {Date}
+ */
+function parseDay(value) {
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+        return new Date(value.trim() + 'T00:00:00');
+    }
+
+    return new Date(value);
+}
+
+/**
  * WireKit Event Calendar Alpine component.
  *
  * A read-focused scheduling calendar with three views — month (a 7xN day grid
@@ -97,7 +116,7 @@ export default function wirekitEventCalendar(config = {}) {
         })) : [],
         view: config.view || 'month',
         weekStartsOn: Number.isInteger(config.weekStartsOn) ? config.weekStartsOn : 1,
-        focusedDate: config.date ? new Date(config.date) : new Date(),
+        focusedDate: config.date ? parseDay(config.date) : new Date(),
         now: new Date(),
         _clock: null,
 
@@ -198,10 +217,10 @@ export default function wirekitEventCalendar(config = {}) {
             return this._addDays(x, -diff);
         },
         _eventStart(e) {
-            return new Date(e.start);
+            return parseDay(e.start);
         },
         _eventEnd(e) {
-            return e.end ? new Date(e.end) : new Date(new Date(e.start).getTime() + 3600000);
+            return e.end ? parseDay(e.end) : new Date(parseDay(e.start).getTime() + 3600000);
         },
         // The events every view reads. An event without a `category` is never filtered: it
         // belongs to no chip, so no toggle could bring it back.
@@ -604,8 +623,26 @@ export default function wirekitEventCalendar(config = {}) {
 
                 return;
             }
-            this.focusedDate = new Date(date);
+            // The "+N more" button belongs to the month grid, which the switch hides, and it held
+            // the focus: the browser would drop it to the page. Whether the focus was inside is
+            // read now; the week view, which now shows that day, takes it once it is visible.
+            const handOver = typeof document !== 'undefined'
+                && this.$root
+                && typeof this.$root.contains === 'function'
+                && this.$root.contains(document.activeElement);
+
+            this.focusedDate = parseDay(date);
             this.setView('week');
+
+            if (handOver && typeof this.$nextTick === 'function') {
+                this.$nextTick(() => {
+                    const week = this.$root.querySelector('[data-wk-week-view]');
+
+                    if (week && typeof week.focus === 'function') {
+                        week.focus();
+                    }
+                });
+            }
         },
 
         // ── Day selection (opt-in) ───────────────────────────────────────
@@ -624,7 +661,7 @@ export default function wirekitEventCalendar(config = {}) {
         // not a selection, and a host listening for `wirekit:event-calendar-day-select` should not have to tell the
         // two apart.
         selectDay(date) {
-            const day = this._startOfDay(new Date(date));
+            const day = this._startOfDay(parseDay(date));
 
             if (this.dayDetail && this.isSelectedDay(day)) {
                 this.selectedDate = null;
@@ -754,6 +791,26 @@ export default function wirekitEventCalendar(config = {}) {
             this._tipTarget = null;
             this._stopTipRepair?.();
             this._stopTipRepair = null;
+        },
+
+        /**
+         * Escape anywhere while the bubble is on screen, heard on the window before anything
+         * else.
+         *
+         * WCAG 1.4.13 asks for content shown on hover or focus to be dismissible without moving
+         * the pointer or the focus, and Escape is the mechanism it names, so the key is heard
+         * wherever the focus is. The bubble only ever shows for what the reader points at or
+         * stands on, so nothing on screen sits above it, and the press that hides it is marked
+         * as handled: a modal or a drawer around the calendar reads Escape later, on the document
+         * and on the window, and leaves a marked press alone.
+         *
+         * @param {KeyboardEvent} event
+         */
+        tipEscape(event) {
+            if (! this.tipOpen) return;
+
+            event?.preventDefault();
+            this.tipHide();
         },
     };
 }

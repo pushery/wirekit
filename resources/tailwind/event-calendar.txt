@@ -75,7 +75,7 @@ $weekStartsOn
 '6']);
 '@focusin',
 '@focusout',
-'@keydown.escape.window']);
+'@keydown.escape.window.capture']);
 '@pointerout',
 '@scroll.capture.passive',
 'accent'
@@ -352,7 +352,7 @@ $weekStartsOn
 @keydown.arrow-left.prevent="viewMove(-1)"
 @keydown.arrow-right.prevent="viewMove(1)"
 @keydown.arrow-up.prevent="viewMove(-1)">
-@keydown.escape.window="tipHide()"
+@keydown.escape.window.capture="tipEscape($event)"
 @php
 @pointerout="tipHide($event)"
 @pointerover="tipShow($event)"
@@ -867,6 +867,8 @@ data-view="agenda"
 data-view="month"
 data-view="week"
 data-wk-prose-skip
+data-wk-show-more
+data-wk-week-view
 date
 date,
 date:

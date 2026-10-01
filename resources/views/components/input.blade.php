@@ -456,7 +456,10 @@
                     <button
                         type="button"
                         @click="clear()"
-                        @if($disabled) disabled @endif
+                        {{-- A read-only field keeps its value, so the button that empties it is
+                             out of use there too. The copy button above stays: copying changes
+                             nothing, and `copyable readonly` is the documented token field. --}}
+                        @if($disabled || $readonly) disabled @endif
                         aria-label="{{ $clearText }}"
                         class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                     >

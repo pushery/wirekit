@@ -41,13 +41,11 @@ $titleId
 $titleResolved
 $titleResolved]))
 $title])
-&&
 ''
 '99+'
 'all'
 'all'"
 'base',
-'bg-[var(--color-wk-accent)]'"></span>
 'bg-[var(--color-wk-bg-inverse)]
 'bg-transparent'
 'class'])->whereDoesntStartWith('wire:model')
@@ -74,6 +72,8 @@ $title])
 'true'
 'type']);
 'w-full
+'wk-unread-dot
+'x-on:keydown.escape.window']);
 ($i)
 ('time'
 (((array)
@@ -87,6 +87,7 @@ $title])
 (button-in-button
 (decorative
 (e.g.
+(escapeFlyout()).
 (inline
 (it's
 (items[0])
@@ -101,7 +102,6 @@ $title])
 (silent
 (subtle
 (the
-(window-scoped,
 ({id,
 (~10px
 +
@@ -280,7 +280,7 @@ WireKit::resolveClasses('notification-center',
 WireKit::validateProp('notification-center',
 ['none',
 ['title'
-['x-on:keydown.escape.window']);
+['x-on:keydown.escape',
 [],
 [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
 \Illuminate\Support\Collection
@@ -332,6 +332,7 @@ all
 all"
 all").
 all'),
+alone
 alone).
 alone.
 already
@@ -346,6 +347,7 @@ announcement
 announces
 another.
 any
+anywhere
 application
 are
 aria-atomic="true"
@@ -356,6 +358,7 @@ aria-label).
 aria-label="{{
 aria-labelledby="{{
 aria-live="polite"
+around
 array_values((array)
 arrows
 as
@@ -374,12 +377,14 @@ bag
 be
 because
 becomes
+before
 bell
 bell's
 belongs
 below
 below,
 beside
+bg-[var(--color-wk-accent)]'"></span>
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-elevated)]"
 bg-[var(--color-wk-danger)]
@@ -446,7 +451,7 @@ class="{{
 click.outside
 client-only
 clipping/stacking
-close(true)"
+close
 closer
 closes
 collect($itemsArr)->reject(fn
@@ -484,6 +489,9 @@ d="M22
 data-filter="all"
 data-replayable="true"
 data-table
+data-wk-mark-all-read
+data-wk-notification-list
+data-wk-notification-row
 data-wk-prose-skip
 debug
 declares
@@ -495,6 +503,7 @@ demos)
 derived
 destroy-and-rebuild,
 developer
+dialog
 different
 dispatches
 docs
@@ -502,6 +511,7 @@ document
 does
 does.
 dot
+drawer
 drawn
 drift.
 dropped
@@ -512,10 +522,11 @@ either
 element
 element.
 elements
+else
+else.
 embeds
 empty
 end
-escape
 escapes
 even
 event
@@ -536,6 +547,7 @@ field
 fill,
 fill="none"
 filled($title)
+filled,
 filter
 filter-builder
 filter_var($open,
@@ -558,6 +570,7 @@ footer
 for
 for.
 forced
+forced-colors
 form
 frames
 fresh
@@ -584,14 +597,16 @@ h-4
 h-[var(--size-wk-md)]
 had
 hand-rolled,
-handler
+handled
 hands
 have
 header
 heading
 heading,
 headline
+heard
 here
+here,
 here.
 here.)
 hidden
@@ -642,6 +657,7 @@ its
 justify-between
 justify-center
 keep
+keeps
 keyboard-reachable
 label)
 labeled
@@ -672,6 +688,7 @@ live
 lives
 longer
 makes
+mark
 mark-read,
 marker
 marks
@@ -683,6 +700,7 @@ mean
 middle-click
 min-w-[1rem]
 mirroring
+modal
 mode.
 morph
 move-and-select,
@@ -713,6 +731,7 @@ of
 off,
 off.
 on
+on,
 on-screen
 on.
 once.
@@ -720,8 +739,10 @@ one
 one.
 one:
 only
+only:
 open
 open:
+open;
 opens
 opposite
 opt
@@ -751,6 +772,7 @@ position.
 positioned
 prefix
 prefix,
+press
 preview
 prod).
 prop's
@@ -775,6 +797,7 @@ real
 realtime):
 realtimeEvent:
 reason
+reason,
 record
 region
 relative
@@ -795,6 +818,7 @@ role="status"
 root
 root's
 root,
+root.
 round
 rounded-[var(--radius-wk-full)]
 rounded-[var(--radius-wk-full)]"
@@ -806,6 +830,7 @@ roving
 row
 row's
 row.
+rule
 run
 same
 scans
@@ -829,11 +854,11 @@ single-select
 sit
 site
 sits
-sits.
 size
 small
 smallest
 so
+something
 space,
 spelling
 spelling,
@@ -856,7 +881,7 @@ stylesheet
 submitted
 substance
 substituted
-subtree);
+subtree).
 subtree.
 supplied
 surely
@@ -873,7 +898,6 @@ tabs
 tabs:
 tag
 taller
-teleport-agnostic).
 teleported
 teleporting
 text
@@ -970,13 +994,11 @@ well
 were
 what
 when
-where
 whether
 which
 while
 whole
 window
-window-scoped
 wire:model
 wirekitNotificationCenter._anchor)
 wirekitNotificationCenter.tabWithinPanel.
@@ -996,7 +1018,8 @@ x-for="t
 x-if="!item.href">
 x-if="item.href">
 x-on:click.outside="close()"
-x-on:keydown.escape.window="isOpen
+x-on:keydown.escape.window="escapeFlyout($event)"
+x-on:keydown.escape="escapeFlyout($event)"
 x-on:keydown.tab="tabWithinPanel($event)"
 x-ref="bell"
 x-ref="model"

@@ -404,7 +404,7 @@ ${$key}
 'x-circle'
 'x-on:focusin',
 'x-on:focusout',
-'x-on:keydown.escape.window']);
+'x-on:keydown.escape.window.capture']);
 'x-on:mouseleave',
 'x-on:pointerdown',
 'x-on:pointerleave',
@@ -682,6 +682,7 @@ Bound
 Bounded
 But
 CALLER's
+CAPTURE
 CSP
 CSS
 CSS.
@@ -1199,6 +1200,7 @@ allowed
 allowlist,
 allows
 alone,
+alone.
 along
 alongside
 already
@@ -1704,6 +1706,7 @@ don't
 dot
 double
 down
+drawer
 draws
 drift
 drive
@@ -2192,6 +2195,7 @@ map
 map.
 margin
 margins
+marked
 marked.
 markers
 marketing
@@ -2325,6 +2329,7 @@ on
 on-color
 on-fill
 on.
+on:
 once
 once,
 one
@@ -2447,6 +2452,7 @@ permission
 personalization
 phantom
 phase
+phase,
 phrasing
 picked
 picks
@@ -2485,6 +2491,7 @@ present
 presentational
 preserves
 preset
+press
 preview
 pricing-card
 primary
@@ -2973,6 +2980,7 @@ tokens.
 told
 tone
 tone,
+too,
 tooltip
 tooltip,
 tooltip.
@@ -3188,7 +3196,7 @@ x-on:keydown.arrow-left.prevent="moveFocus('prev')"
 x-on:keydown.arrow-right.prevent="moveFocus('next')"
 x-on:keydown.arrow-up.prevent="moveFocus('prev')"
 x-on:keydown.end.prevent="moveFocus('last')"
-x-on:keydown.escape.window="keydownEscape()"
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.home.prevent="moveFocus('first')"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

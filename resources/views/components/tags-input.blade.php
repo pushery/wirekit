@@ -268,7 +268,8 @@
 @endif
         {{-- Hidden inputs for form submission — one per tag --}}
         <template x-for="(tag, i) in tags" :key="i">
-            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="tag" />
+            {{-- A disabled field is left out of the form data, as a native one is. --}}
+            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="tag" @if($disabled) disabled @endif />
         </template>
 
         {{-- `wk-field-frame`: on a coarse pointer the frame takes the 44px touch floor and the text

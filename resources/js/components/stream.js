@@ -518,7 +518,7 @@ export default function wirekitStream(config = {}) {
         /** Settle the stream as failed, with a message the reader is told. */
         fail(message) {
             if (this.status !== 'failed') {
-                this._fail(message || 'Stream failed');
+                this._fail(message || this._failMessages.generic);
             }
         },
 

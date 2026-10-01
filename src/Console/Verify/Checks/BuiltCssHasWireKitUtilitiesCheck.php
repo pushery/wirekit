@@ -103,6 +103,7 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
             // selector of its own.
             if ($this->cssHasWireKitRuleOutsideThemeScope($css)) {
                 $this->reportPass('Built app CSS contains WireKit utility rules');
+                $this->reportABuildOlderThanTheInstalledTemplates($manifestPath);
 
                 return;
             }
@@ -110,6 +111,71 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
 
         $this->reportFail('Built app CSS does not reference WireKit utilities');
         $this->line('    Hint: run `npm run build` after adding the @source line for WireKit templates to app.css.');
+    }
+
+    /**
+     * A build older than the templates it was made from lacks every class they gained since.
+     *
+     * The bundle still carries WireKit rules then, so the check above passes, and a component
+     * whose update brought a new class renders without it and without an error anywhere: after
+     * an update that added a larger size to a one-time-code input, its cells fell back to a
+     * field's default width until the application was rebuilt. Tailwind only generates the
+     * classes it scanned, and the manifest is the one record of when it scanned.
+     *
+     * "Installed" is the newest of the package directory, its Blade templates and its token
+     * lists. Composer creates the package directory when it installs a version, which dates a
+     * dist install whose files keep the archive's timestamps; a source install dates every file
+     * a checkout changes. A running dev server (`public/hot`) builds on demand and is left out,
+     * and a difference of a few seconds is ignored, because an install and a build on the same
+     * machine can land in the same second.
+     */
+    private function reportABuildOlderThanTheInstalledTemplates(string $manifestPath): void
+    {
+        if (file_exists(public_path('hot'))) {
+            return;
+        }
+
+        clearstatcache(true, $manifestPath);
+        $builtAt = @filemtime($manifestPath);
+        $installedAt = $this->installedAt();
+
+        if ($builtAt === false || $installedAt === null || $builtAt >= $installedAt - 2) {
+            return;
+        }
+
+        $this->reportWarn(sprintf(
+            'Built app CSS is older than the installed WireKit templates (built %s UTC, installed %s UTC)',
+            gmdate('Y-m-d H:i', $builtAt),
+            gmdate('Y-m-d H:i', $installedAt)
+        ));
+        $this->line('    Hint: run `npm run build`. Tailwind only generates the classes it scanned, so a class a newer template uses is missing from this bundle.');
+    }
+
+    /**
+     * When the installed package last changed, read off the files a build scans.
+     */
+    private function installedAt(): ?int
+    {
+        $root = dirname(__DIR__, 4);
+        $times = [@filemtime($root)];
+
+        foreach (glob($root.'/resources/tailwind/*.txt') ?: [] as $file) {
+            $times[] = @filemtime($file);
+        }
+
+        if (is_dir($root.'/resources/views')) {
+            $views = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root.'/resources/views', \FilesystemIterator::SKIP_DOTS));
+
+            foreach ($views as $file) {
+                if ($file instanceof \SplFileInfo && str_ends_with($file->getFilename(), '.blade.php')) {
+                    $times[] = $file->getMTime();
+                }
+            }
+        }
+
+        $times = array_filter($times, is_int(...));
+
+        return $times === [] ? null : max($times);
     }
 
     /**
