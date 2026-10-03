@@ -258,6 +258,11 @@ export default function wirekitMenubar() {
                     placement: 'bottom-start',
                     offset: 4,
                     autoReposition: true,
+                    // A framework update patches the teleported panel against its template, whose
+                    // `style` carries none of what this call writes: the placement is gone while the
+                    // panel stays open, with its box unchanged, so `autoReposition`, which watches
+                    // boxes, sees nothing. This watches the attribute that is actually removed.
+                    repairErasure: true,
                 });
 
                 // The bar can close, or move to another menu, while this one is placed: its

@@ -9,7 +9,6 @@
 $adapterScripts
 $alpineComponent
 $attributes->except(['aria-label',
-$attributes->get('aria-label',
 $attributes->get('style',
 $attributes->getAttributes());
 $attributes->has('aria-label'))
@@ -19,6 +18,7 @@ $callerReplayable
 $callerStyle
 $chartAriaAttributes
 $chartAriaLabel
+$chartAriaLabel])
 $chartAttributes
 $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart',
 $chartAttributes->except(['data-replayable']);
@@ -90,6 +90,7 @@ $wrapperTag
 '2.5rem');
 ';
 'WireKit:
+'aria-label',
 'aria-labelledby'])->getAttributes(),
 'aria-labelledby']);
 'auto',
@@ -419,6 +420,7 @@ Without
 Wrapper
 Wrapping
 [
+['ariaLabel'
 ['display'
 ['enabled'
 ['show'
@@ -431,7 +433,8 @@ Wrapping
 [];
 \Illuminate\View\ComponentAttributeBag(
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
-\Pushery\WireKit\Support\AlpinePayload::json($chartData)
+\Pushery\WireKit\Support\AlpinePayload::json($chartData
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\Support\ListProp::renumbered($data);
 \Pushery\WireKit\WireKit::cspNonce()
@@ -649,6 +652,7 @@ cells
 cells).
 cells.
 change
+changes
 chart
 chart's
 chart,
@@ -726,6 +730,7 @@ custom
 dashboard
 dashboard-cell
 data
+data,
 data-*
 data-navigate-once="true"@if
 data-replayable="true"
@@ -917,6 +922,7 @@ hyphen),
 identifier
 if
 iframe-srcdoc,
+ignored
 images
 imperative
 implementation
@@ -1368,6 +1374,7 @@ top).
 trace;
 track
 track.
+travels
 treatment
 tree
 trend
@@ -1433,6 +1440,7 @@ way
 way.
 we
 well
+well.
 what
 whatever
 when

@@ -16,6 +16,10 @@
  *   - _stopRepair (MutationObserver) — puts the panel's placement back when a
  *     framework update erases it; released on every re-anchor, in close() and in
  *     destroy(). See the note beside `repairErasure` in _anchor().
+ *   - _modelEvents — `change` and `blur` on the unread-count bridge for `wire:model.change`
+ *     and `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change`
+ *     with every notification read or arrived, and `blur` when the reader leaves the bell and
+ *     its panel. Disposed in destroy().
  *
  * @param {Object} config
  * @param {Array}  config.items - notifications [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
@@ -28,6 +32,11 @@ import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { safeHref } from '../utils/safe-href.js';
 import { outOfReachBeside } from '../utils/teleport.js';
+import { watchModelEvents } from '../utils/model-events.js';
+import { jsonValue, observeServerValue } from '../utils/server-value.js';
+
+/** The attribute that carries the notifications; see init(). */
+const ITEMS_ATTRIBUTE = 'data-wk-items';
 
 /**
  * What counts as a tab stop, for the two edges of the teleported panel.
@@ -120,11 +129,40 @@ export default function wirekitNotificationCenter(config = {}) {
         // Disconnects the observer that puts the placement back after a framework update erases
         // it. See the note beside `repairErasure` in _anchor().
         _stopRepair: null,
+        // The task that reads, after a Tab the browser handled, whether the focus left the panel.
+        _tabLeftTimer: null,
+        _modelEvents: null,
         // Where the bell stood when the panel opened — see utils/scroll-anchor.js.
         _anchorAt: null,
         _onResize: null,
+        // The observer that follows the server's notifications; see init(). Disconnected in
+        // destroy().
+        _stopItemsSync: null,
 
         init() {
+            // The notifications reach this component on an attribute of the root rather than in
+            // `x-data`, so that attribute renders the same on every update. A morph that changed
+            // it would have Alpine reset the component to the new expression and initialize it
+            // again, which closed an open panel under the reader each time a notification arrived.
+            // Read here, followed below; items passed in `config`, as by a factory built outside
+            // Blade, come first. `$root` is checked rather than assumed for the same reason.
+            if (config.items === undefined && typeof this.$root?.getAttribute === 'function') {
+                const items = jsonValue(this.$root.getAttribute(ITEMS_ATTRIBUTE));
+
+                if (Array.isArray(items)) {
+                    this.items = items.map(intake);
+                }
+            }
+
+            // Notifications the server changed replace the list, and an open panel stays open.
+            this._stopItemsSync = observeServerValue(this.$root, (raw) => {
+                const items = jsonValue(raw);
+
+                if (Array.isArray(items)) {
+                    this.items = items.map(intake);
+                }
+            }, ITEMS_ATTRIBUTE);
+
             // Optional realtime bridge: dispatch `new CustomEvent(name, {detail})`
             // on window (e.g. from Laravel Echo) and the panel prepends it.
             if (config.realtimeEvent) {
@@ -156,8 +194,14 @@ export default function wirekitNotificationCenter(config = {}) {
             // Demos / inline embeds can start open — anchor the teleported panel
             // once it's in the DOM.
             if (this.isOpen) this.$nextTick(() => this._anchor());
+
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.model);
         },
         destroy() {
+            this._stopItemsSync?.();
+            this._stopItemsSync = null;
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
             this._stopRepair?.();
             this._stopRepair = null;
 
@@ -173,6 +217,9 @@ export default function wirekitNotificationCenter(config = {}) {
                 window.removeEventListener('resize', this._onResize);
                 this._onResize = null;
             }
+
+            clearTimeout(this._tabLeftTimer);
+            this._tabLeftTimer = null;
         },
 
         // ── Derived state ────────────────────────────────────────────────
@@ -326,7 +373,11 @@ export default function wirekitNotificationCenter(config = {}) {
             const focusables = this._panelFocusables();
 
             if (event.shiftKey) {
-                if (document.activeElement !== panel && document.activeElement !== focusables[0]) return;
+                if (document.activeElement !== panel && document.activeElement !== focusables[0]) {
+                    this._closeOnceTabHasLeft(true);
+
+                    return;
+                }
 
                 event.preventDefault();
                 // Identical to Escape: close and hand focus back to the bell.
@@ -339,7 +390,11 @@ export default function wirekitNotificationCenter(config = {}) {
             // the last stop the reader can be standing on.
             const last = focusables.length ? focusables[focusables.length - 1] : panel;
 
-            if (document.activeElement !== last) return;
+            if (document.activeElement !== last) {
+                this._closeOnceTabHasLeft(false);
+
+                return;
+            }
 
             event.preventDefault();
             // Focus moves BEFORE the panel hides. `x-show` writes `display: none`,
@@ -348,6 +403,39 @@ export default function wirekitNotificationCenter(config = {}) {
             // accomplished nothing.
             this._focusAfterBell();
             this.close();
+        },
+
+        /**
+         * A Tab that is no edge by the list above is the browser's to handle, and its tab order
+         * is not always that list: WebKit passes buttons and links by unless the reader has
+         * asked for them, so its last stop inside the flyout can come before the last element
+         * here. The key then carries the focus out, and no edge was seen.
+         *
+         * So the outcome is read in the task after the key: a focus that has left the panel
+         * closes the flyout as an edge does, back to the bell or on to the control after it.
+         *
+         * @param {boolean} backward - Shift was held.
+         */
+        _closeOnceTabHasLeft(backward) {
+            const panel = this.$refs.panel;
+
+            clearTimeout(this._tabLeftTimer);
+            this._tabLeftTimer = setTimeout(() => {
+                this._tabLeftTimer = null;
+
+                if (! this.isOpen || focusIsWithin(panel)) {
+                    return;
+                }
+
+                if (backward) {
+                    this.close(true);
+
+                    return;
+                }
+
+                this._focusAfterBell();
+                this.close();
+            }, 0);
         },
 
         // Anchor the teleported (fixed) panel to the bell. Prefers opening toward
@@ -485,6 +573,9 @@ export default function wirekitNotificationCenter(config = {}) {
                 this.$refs.model.value = String(this.unreadCount);
                 this.$refs.model.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            // Every emission is a notification read or arrived, committed at once.
+            this._modelEvents?.commit();
         },
     });
 }

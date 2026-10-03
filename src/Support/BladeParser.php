@@ -645,7 +645,11 @@ final class BladeParser
                 // survives the round trip.
                 $php = '<?php     '.mb_substr($body, mb_strlen('@php'), mb_strlen($body) - mb_strlen('@php') - mb_strlen('@endphp'));
 
-                foreach (array_reverse(token_get_all($php, TOKEN_PARSE)) as $token) {
+                // Tokenized without TOKEN_PARSE, which would check the syntax: Blade compiles
+                // every block into one file, so a block may hold half a statement, a `try` whose
+                // `finally` sits in the next block, and does not parse on its own. Comments come
+                // out as the same tokens either way.
+                foreach (array_reverse(token_get_all($php)) as $token) {
                     if (! is_array($token) || ! in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
                         continue;
                     }

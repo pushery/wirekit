@@ -3,6 +3,19 @@ import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
 import { followChartServerData } from '../utils/chart-server-data.js';
 import { formatDecimal } from '../utils/locale-number.js';
+import { keepRaw } from '../utils/keep-raw.js';
+
+/**
+ * The y-axis label formatters the kit sets itself, on an axis that has none of its own. They are the
+ * axis' default, so the tooltip leaves its values to its own formatting rather than to one of them.
+ */
+const kitAxisFormatters = new WeakSet();
+
+/**
+ * The tooltip title formatters the kit sets itself, the escaped series name and a colon, where the
+ * page sets none. The tooltip writes that default itself, as text.
+ */
+const kitTitleFormatters = new WeakSet();
 
 /**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
@@ -88,6 +101,35 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         return v;
     };
 
+    // A value of a series is written with the chart's own `valueDecimals`, `valuePrefix` or
+    // `valueSuffix` where it sets one. Otherwise a formatter of the page writes it, as it does in
+    // ApexCharts' own tooltip: `tooltip.y.formatter` (the series' entry where `tooltip.y` is a
+    // list), else the label formatter of the series' y-axis. The chart's options are JSON, so such a
+    // formatter is one the page set for every chart. What it returns is written as text.
+    const chartFormatsValues = wkDecimals !== null || wkPrefix !== '' || wkSuffix !== '';
+    const yaxes = Array.isArray(cfg.yaxis) ? cfg.yaxis : [cfg.yaxis];
+    const pageValueFormatter = (sIdx) => {
+        const y = tcfg.y;
+        const forTooltip = Array.isArray(y) ? y[sIdx] && y[sIdx].formatter : y && y.formatter;
+        if (typeof forTooltip === 'function') {
+            return forTooltip;
+        }
+        const axis = yaxes[sIdx] || yaxes[0];
+        const forAxis = axis && axis.labels && axis.labels.formatter;
+
+        return (typeof forAxis === 'function' && ! kitAxisFormatters.has(forAxis)) ? forAxis : null;
+    };
+    const writeValue = (v, sIdx) => {
+        const formatter = (! chartFormatsValues && typeof v === 'number' && Number.isFinite(v)) ? pageValueFormatter(sIdx) : null;
+        if (formatter) {
+            const written = formatter(v, { series, seriesIndex: sIdx, dataPointIndex, w });
+
+            return written === undefined || written === null ? v : written;
+        }
+
+        return fmtValue(v);
+    };
+
     // Resolve x-label (header). Priority: hovered series' data-point `x`
     // (scatter / bubble / range-bar object form) → globals.labels (bar /
     // line / area / heatmap) → globals.categoryLabels → seriesX (numeric).
@@ -159,7 +201,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         const start = g.seriesRangeStart && g.seriesRangeStart[sIdx] ? g.seriesRangeStart[sIdx][dataPointIndex] : undefined;
         const end = g.seriesRangeEnd && g.seriesRangeEnd[sIdx] ? g.seriesRangeEnd[sIdx][dataPointIndex] : undefined;
         const ends = (start !== undefined && end !== undefined) ? [start, end] : given;
-        const writeEnd = (v) => ((timeline && typeof v === 'number' && Number.isFinite(v)) ? writeDate(v) : fmtValue(v));
+        const writeEnd = (v) => ((timeline && typeof v === 'number' && Number.isFinite(v)) ? writeDate(v) : writeValue(v, sIdx));
 
         return `${writeEnd(ends[0])} – ${writeEnd(ends[1])}`;
     };
@@ -224,23 +266,23 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
                 rows.push({ label: 'Low', value: l });
                 rows.push({ label: 'Close', value: c });
             } else if (Array.isArray(y) && y.length === 2) {
-                rows.push({ label: sName, value: writeRange(sIdx, y) });
+                rows.push({ label: sName, value: writeRange(sIdx, y), named: true });
             } else if (y !== undefined) {
-                rows.push({ label: sName, value: y });
+                rows.push({ label: sName, value: y, named: true });
             }
             if ('z' in rawPoint) {
-                rows.push({ label: 'Size', value: rawPoint.z });
+                rows.push({ label: 'Size', value: rawPoint.z, size: true });
             }
         } else if (Array.isArray(rawPoint) && rawPoint.length === 2 && (apexType === 'rangeBar' || apexType === 'rangeArea')) {
-            rows.push({ label: sName, value: writeRange(sIdx, Array.isArray(rawPoint[1]) ? rawPoint[1] : rawPoint) });
+            rows.push({ label: sName, value: writeRange(sIdx, Array.isArray(rawPoint[1]) ? rawPoint[1] : rawPoint), named: true });
         } else if (Array.isArray(series[sIdx])) {
             // Cartesian (bar / line / area / radar) — series[i] is number[]
-            rows.push({ label: sName, value: series[sIdx][dataPointIndex] });
+            rows.push({ label: sName, value: series[sIdx][dataPointIndex], named: true });
         } else if (typeof series[sIdx] === 'number') {
             // Pie / donut / radialBar / polarArea — series itself is number[]
             rows.push({ label: '', value: series[sIdx] });
         } else if (rawPoint !== undefined) {
-            rows.push({ label: sName, value: String(rawPoint) });
+            rows.push({ label: sName, value: String(rawPoint), named: true });
         }
         return rows;
     };
@@ -262,20 +304,27 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     // Where ApexCharts keeps no x for a series, on an axis of categories, the index is the category.
     const xAt = (sIdx) => (g.seriesX && g.seriesX[sIdx] ? g.seriesX[sIdx][dataPointIndex] : undefined);
     const hoveredX = xAt(seriesIndex);
-    const seriesIndices = (sharedMode && Array.isArray(cfg.series) && cfg.series.length > 1)
+    // `tooltip.enabledOnSeries` lists the series a tooltip shows at all, and `tooltip.inverseOrder`
+    // lists them from the last, as in ApexCharts' own tooltip.
+    const enabledOn = Array.isArray(tcfg.enabledOnSeries) ? tcfg.enabledOnSeries : null;
+    const seriesIndices = ((sharedMode && Array.isArray(cfg.series) && cfg.series.length > 1)
         ? cfg.series.map((_, i) => i).filter((i) => hoveredX === undefined || xAt(i) === undefined || xAt(i) === hoveredX)
-        : [seriesIndex];
+        : [seriesIndex]).filter((i) => ! enabledOn || enabledOn.includes(i));
+    if (tcfg.inverseOrder === true) {
+        seriesIndices.reverse();
+    }
 
     // Accumulate rows from every contributing series. Each row carries its
     // own series color so multi-series tooltips render the correct marker
     // color per row. A series without a value at the index, a shorter one or one the reader
-    // switched off in the legend, has no row, as in ApexCharts' own tooltip.
+    // switched off in the legend, has no row, as in ApexCharts' own tooltip, and with
+    // `tooltip.hideEmptySeries` neither has a value of zero.
     const bodyRows = [];
     seriesIndices.forEach((sIdx) => {
         const color = (g.colors && g.colors[sIdx]) || '#888';
         rowsForSeries(sIdx).forEach((r) => {
-            if (r.value !== undefined && r.value !== null) {
-                bodyRows.push({ ...r, color });
+            if (r.value !== undefined && r.value !== null && ! (tcfg.hideEmptySeries === true && r.value === 0)) {
+                bodyRows.push({ ...r, color, sIdx });
             }
         });
     });
@@ -284,13 +333,26 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         ? `<div class="apexcharts-tooltip-title" style="font-family: inherit; font-size: 12px;">${esc(xLabel)}</div>`
         : '';
 
-    const bodyHtml = bodyRows.map(({ label, value, color }) => {
-        const labelHtml = label ? `<span class="apexcharts-tooltip-text-y-label">${esc(label)}: </span>` : '';
+    // The name in front of a series' value goes through a `tooltip.y.title.formatter` of the page
+    // (the series' entry where `tooltip.y` is a list), as in ApexCharts' own tooltip, which writes
+    // what it returns in place of the name and the colon.
+    const pageTitleFormatter = (sIdx) => {
+        const y = tcfg.y;
+        const forSeries = Array.isArray(y) ? y[sIdx] : y;
+        const formatter = forSeries && forSeries.title && forSeries.title.formatter;
+
+        return (typeof formatter === 'function' && ! kitTitleFormatters.has(formatter)) ? formatter : null;
+    };
+
+    const bodyHtml = bodyRows.map(({ label, value, color, sIdx, size, named }) => {
+        const titled = named ? pageTitleFormatter(sIdx) : null;
+        const name = titled ? (titled(label, { series, seriesIndex: sIdx, dataPointIndex, w }) ?? '') : (label ? `${label}: ` : '');
+        const labelHtml = name ? `<span class="apexcharts-tooltip-text-y-label">${esc(name)}</span>` : '';
         return `<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">
             <span class="apexcharts-tooltip-marker" style="background: ${esc(color)};"></span>
             <div class="apexcharts-tooltip-text" style="font-family: inherit; font-size: 12px;">
                 <div class="apexcharts-tooltip-y-group">
-                    ${labelHtml}<span class="apexcharts-tooltip-text-y-value">${esc(fmtValue(value))}</span>
+                    ${labelHtml}<span class="apexcharts-tooltip-text-y-value">${esc(size ? fmtValue(value) : writeValue(value, sIdx))}</span>
                 </div>
             </div>
         </div>`;
@@ -572,6 +634,7 @@ export function textOnlyInApexMarkup(config) {
         if (typeof own.title.formatter !== 'function' && !pageWideTitle) {
             // ApexCharts' own default, with the name escaped.
             own.title.formatter = (name) => (name ? `${escapeHtml(name)}: ` : '');
+            kitTitleFormatters.add(own.title.formatter);
         }
 
         return own;
@@ -995,7 +1058,8 @@ window.ApexCharts = ApexCharts;</pre>
                 // vars. Without this walk, every such reference silently
                 // falls back to ApexCharts' default first-series blue.
                 const resolvedThemed = resolveCssVarsDeep(themed, style, new Map(), { host: this.$refs?.mount?.parentElement ?? null });
-                this.chart = new ApexCharts(mount, resolvedThemed);
+                // Kept out of Alpine's reactivity, so every call reaches ApexCharts itself.
+                this.chart = keepRaw(new ApexCharts(mount, resolvedThemed));
                 this.chart.render();
                 this._removeHiddenTabStop(mount);
 
@@ -2106,6 +2170,7 @@ window.ApexCharts = ApexCharts;</pre>
                             ? String(rounded)
                             : formatDecimal(rounded, locale, 2);
                     };
+                    kitAxisFormatters.add(themed.labels.formatter);
                 }
                 return themed;
             };

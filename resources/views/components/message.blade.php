@@ -81,6 +81,12 @@
     $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;
     $authorAvatar = is_array($author) ? ($author['avatar'] ?? null) : null;
     $authorRole = is_array($author) ? ($author['role'] ?? null) : null;
+    // Without a picture the avatar shows the sender's initials; without those it would fall back
+    // to the silhouette, and every sender who has no picture would look the same. `initials` in
+    // the record replaces the pair derived from the name, for a name whose first letters are not
+    // how its owner is known.
+    $authorInitials = (is_array($author) ? ($author['initials'] ?? null) : null)
+        ?? \Pushery\WireKit\Support\Initials::from($authorName);
 
     // Format timestamp
     // A date object of any class is read as the instant it holds (Support\Moment), and written in
@@ -103,14 +109,15 @@
     $textAlign = $sideValue === 'right' ? 'items-end' : 'items-start';
 
     // Bubble background + border based on side and intent.
-    // 'primary' and 'info' both tint with --color-wk-accent — they are visual
-    // synonyms here, distinguished only by the prop value the developer passed.
+    // 'primary' tints with --color-wk-accent and 'info' with --color-wk-info-tone, which
+    // aliases the accent until an application gives info a hue of its own.
     // Non-neutral intents tint BOTH the background AND the border (mirrors the
     // callout palette) so a system message reads as a colored callout rather
     // than a tinted bubble inside a generic gray frame.
     $bubbleClasses = match (true) {
         $intentValue !== 'neutral' => match ($intentValue) {
-            'primary', 'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
+            'primary' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
+            'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
             'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
             'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
             'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
@@ -217,6 +224,8 @@
             <x-wirekit::avatar
                 :src="$authorAvatar"
                 :alt="$authorName"
+                :initials="$authorInitials"
+                from-initials
                 size="sm"
             />
         </div>

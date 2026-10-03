@@ -497,6 +497,7 @@ $zoomOverlay($items[$i],
 (CLS-safe).
 (Level
 (Support\UnboundModel).
+(Support\UrlProp).
 (WireKit::validateProp('grid',
 (\Pushery\WireKit\Support\ListProp::records($images)
 (\Pushery\WireKit\Support\ListProp::records($items)
@@ -732,6 +733,7 @@ DomId::unique()'s
 ENTIRELY
 Each
 Eager
+Echoed
 Elsewhere
 Enable
 Every
@@ -858,6 +860,7 @@ Written
 \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 \Pushery\WireKit\Support\SafeUrl::href($src,
 \Pushery\WireKit\Support\UnboundModel::drop('image-gallery',
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::tagName('grid',
 \Pushery\WireKit\WireKit::warnUnknownProps('grid',
 \Pushery\WireKit\WireKit::warnUnknownProps('image',
@@ -1084,6 +1087,7 @@ body
 border-0
 both
 both.
+bound,
 box
 box).
 box:
@@ -1328,6 +1332,7 @@ entries
 entry
 equal
 erase
+escaped
 escaped).
 escaping
 evaluates
@@ -1708,6 +1713,7 @@ omit
 on
 on.
 on:
+once
 one
 one,
 one.
@@ -2066,6 +2072,7 @@ swaps
 switch
 syntax
 tab
+tag
 tag,
 take
 takes

@@ -55,7 +55,7 @@ export default function wirekitClipboardButton(config = {}) {
             // writeText rejects when the permission is denied. Neither belongs
             // in the developer's console as an uncaught error.
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(this._value).catch(() => this._announceFailure());
+                navigator.clipboard.writeText(this._value).then(() => this._tell(true), () => this._announceFailure());
             } else {
                 // No clipboard API at all — outside a secure context, or an old engine. The
                 // optimistic flip above already told the reader it worked, so it has to be
@@ -79,11 +79,24 @@ export default function wirekitClipboardButton(config = {}) {
         _announceFailure() {
             this.copied = false;
             this.failed = true;
+            this._tell(false);
 
             clearTimeout(this._resetTimer);
             this._resetTimer = setTimeout(() => {
                 this.failed = false;
             }, this._duration);
+        },
+
+        /**
+         * `wirekit:copied` on the button, bubbling, once the write has succeeded or been refused.
+         *
+         * Not at the optimistic flip: the page wants the result, and the label had to move before
+         * it was known. Dispatched for every copy, a second one with the same result included.
+         */
+        _tell(succeeded) {
+            const button = this.$root || this.$el;
+
+            button?.dispatchEvent?.(new CustomEvent('wirekit:copied', { bubbles: true, detail: { succeeded } }));
         },
 
         _scheduleReset() {

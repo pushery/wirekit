@@ -241,7 +241,7 @@ $wpmInt
 '<css-selector-string>']
 '<selector>'
 '@focusin',
-'@focusout']);
+'@focusout',
 '@mouseleave',
 'a,
 'absolute
@@ -429,6 +429,7 @@ $wpmInt
 'wk-reading-toc--flush'
 'wk-scrollbar
 'wpm'
+'x-on:keydown.escape.window.capture']);
 'xl'
 'z-[var(--z-wk-sticky)]',
 (!
@@ -785,7 +786,7 @@ $wpmInt
 @endphp
 @endunless
 @focusin="expandOnFocus()"
-@focusout="collapseOnFocus()"
+@focusout="collapseOnFocus($event)"
 @if
 @if($callerRef
 @if($showScope)
@@ -2618,7 +2619,6 @@ previewMode,
 previews).
 previous
 primary
-primary,
 primary==info
 primitive
 primitive-level
@@ -3239,6 +3239,7 @@ vanish,
 var(--color-wk-accent))',
 var(--color-wk-border-strong))';
 var(--color-wk-danger))',
+var(--color-wk-info-tone))',
 var(--color-wk-success))',
 var(--color-wk-text)`
 var(--color-wk-text-muted))',
@@ -3385,6 +3386,7 @@ x-for="(anchor,
 x-for="(item,
 x-for="item
 x-init
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-ref="hoverPreview"
 x-ref="renderedContainer"
 x-show

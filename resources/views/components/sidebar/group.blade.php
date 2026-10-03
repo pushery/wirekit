@@ -83,7 +83,7 @@
     // sidebar.toggle was corrected to, which this component had not caught up with.
     $groupLabel = $attributes->has('aria-labelledby')
         ? null
-        : ($attributes->get('aria-label') ?: ((string) $label !== '' ? $label : null));
+        : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: ((string) $label !== '' ? $label : null));
 
     // The role is coupled to the NAME, which is the house rule rather than a preference:
     // a role that names a boundary and then cannot say what the boundary is for is noise

@@ -25,7 +25,7 @@
     // close button the original single-child layout is preserved.
     $classes = WireKit::resolveClasses('drawer.header', 'base', implode(' ', [
         'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-md)]',
+        'py-[var(--padding-wk-x-lg)]',
         'border-b',
         'border-[var(--color-wk-border-subtle)]',
         'text-[length:var(--text-wk-lg)]',

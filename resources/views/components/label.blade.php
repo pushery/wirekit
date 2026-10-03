@@ -3,6 +3,14 @@
      shown early. --}}
 @props([
     'required' => false,
+    // An explanation of the field, shown in a tooltip from a question mark beside the label.
+    'help' => null,
+    // The id of the hidden copy of `help`, which the field's control lists in aria-describedby.
+    // Set by the field components; without it the help is the tooltip alone.
+    'helpId' => null,
+    // The name of the field the help explains, which a click on the question mark reports as
+    // `name` in `wirekit:field-help`. Set by the field components.
+    'helpField' => null,
     'scope' => null,
 ])
 
@@ -24,14 +32,33 @@
     $classes = WireKit::resolveClasses('label', 'base', implode(' ', [
         'block',
         'font-[family-name:var(--font-wk-sans)]',
-        'font-[number:var(--font-wk-body-weight)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'text-[length:var(--text-wk-md)]',
+        // A label is medium weight. `--font-wk-body-weight` sat beside it from the token
+        // migration on and never took effect: two weights on one element are decided by the
+        // stylesheet's order, and `font-medium` sorts last.
         'font-medium',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 
+@if(filled($help))
+    {{-- The label and its help share a row, and the caller's classes go on the row: they place
+         the label (`sr-only`, a column width in a horizontal field), and the help belongs in the
+         same place. A label that is visually hidden shows no button, see the partial. --}}
+    <div data-wk-label-row class="{{ trim('flex items-center gap-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
+        <label {{ $attributes->except('class')->class([$classes]) }}>
+            {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
+        </label>
+        @include('wirekit::components.partials.field-help', [
+            'helpText' => (string) $help,
+            'helpName' => trim(html_entity_decode(strip_tags((string) $slot), ENT_QUOTES | ENT_HTML5)),
+            'helpId' => $helpId,
+            'helpButton' => ! in_array('sr-only', preg_split('/\s+/', (string) $attributes->get('class', '')) ?: [], true),
+            'helpField' => (string) $helpField,
+        ])
+    </div>
+@else
 <label {{ $attributes->class([$classes]) }}>
     {{-- Required indicator uses danger-text variable (auto dark mode, no dark: needed).
          Dense, on one line with the slot, and that is not formatting. A newline between
@@ -40,3 +67,4 @@
          write it dense. --}}
     {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
 </label>
+@endif

@@ -22,7 +22,6 @@ $attributes
 $attributes->class([$wrapperClasses])
 $attributes->class(['w-full
 $attributes->except(['aria-label',
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('id')
 $attributes->get('id').'-label'
@@ -87,11 +86,13 @@ $wrapperClasses
 'accent',
 'animation'
 'animation',
+'aria-label');
 'aria-labelledby']);
 'base',
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-danger)]',
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-warning)]',
@@ -107,6 +108,7 @@ $wrapperClasses
 'h-1',
 'h-2',
 'h-3',
+'info'
 'info',
 'inline-flex
 'intent'
@@ -149,6 +151,7 @@ $wrapperClasses
 'valueExpression'
 'var(--color-wk-accent)',
 'var(--color-wk-danger)',
+'var(--color-wk-info-tone)',
 'var(--color-wk-success)',
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
@@ -183,7 +186,6 @@ $wrapperClasses
 (determinate
 (e.g.
 (float)
-(info
 (int)
 (invisible
 (kanban
@@ -206,7 +208,7 @@ $wrapperClasses
 *
 +
 -
---color-wk-info
+--color-wk-info-tone,
 --}}
 -rotate-90"
 .
@@ -371,6 +373,7 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($valueExpression)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle',
@@ -434,6 +437,7 @@ alert).
 alias
 alias).
 alias.
+aliases
 already
 always
 an
@@ -450,6 +454,7 @@ another
 anything
 anything,
 apart
+application
 applied
 arc
 are
@@ -533,7 +538,6 @@ chain.
 change
 changes
 changes.
-charts
 chrome,
 circle
 circle)
@@ -645,10 +649,10 @@ file
 fill
 fill,
 fill="none"
+fills
 first
 fit
 flags
-flash
 flex
 flex-col
 flight"
@@ -691,6 +695,7 @@ here
 here.
 hit
 house
+hue
 id
 id)
 id,
@@ -841,6 +846,7 @@ overflow-hidden',
 overflowing.
 override
 own
+own,
 package,
 palette
 palette:
@@ -879,7 +885,7 @@ purpose
 put
 put.
 px-[var(--padding-wk-x-sm)]
-py-[var(--padding-wk-y-md)]',
+py-[var(--padding-wk-x-md)]',
 qualified:
 quarter).
 r="{{
@@ -894,7 +900,6 @@ re-renders:
 re-resolve
 reach
 read
-read),
 readable
 reader
 readout
@@ -949,7 +954,6 @@ sets
 settled
 shape
 share
-shares
 shimmer
 shortest
 should
@@ -1004,7 +1008,6 @@ stylesheet's
 sub-component
 success
 superseded
-surface
 surrounding
 sweep).
 synonym.
@@ -1040,16 +1043,13 @@ through
 throw),
 tick.
 time,
-tint
 tinted
 title
 to
 token
-token,
 token.
 tokens
 tokens.
-tone
 too,
 track
 track,
@@ -1068,6 +1068,7 @@ under
 unit.
 unknown
 unresolvable
+until
 up
 up.
 updates.

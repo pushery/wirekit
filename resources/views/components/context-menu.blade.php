@@ -104,10 +104,16 @@
         );
     @endphp
 
+    {{-- The wrapper's focus indication is an OUTLINE set one ring width inward. It wraps whatever
+         the caller passed, and two shapes of that content defeat the other forms: a table with
+         rounded, clipped corners cuts an outer ring off at both sides of a row that fills it, and
+         content with a background of its own (a card) covers an inset ring, which is painted
+         beneath the wrapper's children. An outline is painted above them and stays inside the
+         box, so it shows on all four sides in both cases. --}}
     <div
         @unless($contextMenuTriggerIsFocusable)
             tabindex="0"
-            class="focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+            class="focus-visible:outline-[length:var(--ring-wk-width)] focus-visible:-outline-offset-[var(--ring-wk-width)] focus-visible:outline-[color:var(--color-wk-ring)]"
         @endunless
         x-on:contextmenu="openAt($event)"
         x-on:touchstart.passive="onTouchStart($event)"

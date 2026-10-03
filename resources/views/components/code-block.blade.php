@@ -20,6 +20,10 @@
     // Name it after the row, not after the language: "Change 4471" locates the block; "PHP
     // code" only says what everything on the page already is.
     'label' => null,
+    // Break long lines instead of scrolling them. Nothing overflows then, so the block is no
+    // longer a tab stop of its own: a stop that scrolls nothing is one more press for every
+    // keyboard reader on the way through a page of examples.
+    'wrap' => false,
     'scope' => null,
 ])
 
@@ -36,6 +40,7 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $copy = BooleanProp::from($copy, false);
+    $wrap = BooleanProp::from($wrap, false);
 
     $wrapperClasses = WireKit::resolveClasses('code-block', 'base', implode(' ', [
         'relative',
@@ -58,9 +63,11 @@
     ]);
 
     $codeClasses = implode(' ', [
-        'wk-scrollbar block overflow-x-auto',
-        // A tab stop must show that it has focus.
-        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        $wrap ? 'block whitespace-pre-wrap [overflow-wrap:anywhere]' : 'wk-scrollbar block overflow-x-auto',
+        // A tab stop must show that it has focus. The ring is drawn inside the box: the region
+        // fills the wrapper edge to edge, and the wrapper clips to its border, so a ring drawn
+        // outside would be cut on every side the two share.
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)]',
         'p-[var(--space-wk-md,1rem)]',
         'bg-transparent border-0 rounded-none',
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
@@ -156,10 +163,13 @@
          focusable region a screen-reader user cannot identify or jump to. Not a hypothetical
          spelling: the documented use is an interpolated caller value
          (`:label="__('Change :id', ['id' => $change->id])"`), and the same shape over a record
-         with no title produces exactly it. A blank name is no name. --}}
+         with no title produces exactly it. A blank name is no name.
+
+         `wrap` breaks the lines, so nothing scrolls and the stop has nothing to reach: the
+         block then takes no tabindex. A name still makes it a landmark. --}}
     <pre data-wk-prose-skip @class([$preClasses])><code data-wk-prose-skip
         @class([$codeClasses])
-        tabindex="0"
+        @unless($wrap) tabindex="0" @endunless
         @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
         @if($language) data-language="{{ $language }}" @endif
     >{{ $slot }}</code></pre>

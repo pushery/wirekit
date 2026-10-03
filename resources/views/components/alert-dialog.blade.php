@@ -102,7 +102,7 @@
     // dialog — WCAG 4.1.2. It is pulled out here and applied to the panel below, where
     // `label` already goes; the two are the same intent spelled two ways, so `label` wins
     // when both are given rather than emitting a conflicting pair.
-    $callerLabel = $attributes->get('aria-label');
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
     $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-modal '.WireKit::resolveClasses('alert-dialog', 'backdrop', implode(' ', [
@@ -128,9 +128,10 @@
         'rounded-[var(--radius-wk-xl)]',
         'shadow-[var(--shadow-wk-lg)]',
         'overflow-hidden',
-        // Padding matching modal body — ensures consistent spacing between dialog types.
+        // The same distance on every side, as a container's padding is: the vertical padding takes
+        // the x tier the sides use.
         'px-[var(--padding-wk-x-xl)]',
-        'py-[var(--padding-wk-y-xl)]',
+        'py-[var(--padding-wk-x-xl)]',
     ]), $scope);
 
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
@@ -172,10 +173,12 @@
 
             {{-- Dialog container — click handler on container (not backdrop)
                  because this div is layered on top and intercepts pointer events.
-                 Panel has x-on:click.stop so clicks inside don't bubble. --}}
+                 `.self` closes only on a click on the container itself, beside the
+                 panel, so a click inside the dialog is not stopped and reaches the
+                 document, where a listener the page delegates hears it. --}}
             <div
                 class="{{ $containerClasses }}"
-                @if($dismissible) x-on:click="handleBackdropClick()" @endif
+                @if($dismissible) x-on:click.self="handleBackdropClick()" @endif
             >
                 <div
                     x-ref="panel"
@@ -195,7 +198,6 @@
                     @endif
                     @if($describedbyEnabled) aria-describedby="{{ $descId }}" @endif
                     class="{{ $panelClasses }}"
-                    x-on:click.stop
                     data-wk-title-id="{{ $titleId }}"
                     data-wk-desc-id="{{ $descId }}"
                 >

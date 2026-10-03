@@ -58,6 +58,9 @@
     // Blade folds an undeclared prop into the attribute bag without complaint. Every sibling
     // control has carried it for releases.
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     // Accessible name for the combobox. Mirrors select / multi-select: a visible
     // `label` renders an associated x-wirekit::label (for={comboId}); `hideLabel`
     // keeps it in the DOM for assistive tech but visually hidden (compact
@@ -83,7 +86,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -95,7 +98,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@focus', '@input', '@keydown.arrow-down.prevent', '@keydown.arrow-up.prevent', '@keydown.home.prevent', '@keydown.end.prevent', '@keydown.enter.prevent', '@keydown.escape']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@focus', '@input', '@keydown.arrow-down.prevent', '@keydown.arrow-up.prevent', '@keydown.home.prevent', '@keydown.end.prevent', '@keydown.enter.prevent', '@keydown.escape', '@keydown.tab']);
 
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
@@ -119,7 +122,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 @endphp
 
 
@@ -270,8 +273,15 @@
     // (label wins, no aria-label needed). Otherwise fall back to the ariaLabel
     // prop, then a caller-passed aria-label attribute — applied to the VISIBLE
     // role="combobox" input (the labelable control), never the roleless wrapper.
-    $callerAriaLabel = $attributes->get('aria-label');
+    $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $resolvedAriaLabel = $ariaLabel ?? $callerAriaLabel;
+
+    // Inside a labeled field with no name of its own, the field's label names the control: by
+    // `for` when it is the search input, by reference when it is the select-only trigger, a div
+    // (Support\FieldControl). The returned id names the list as well.
+    $fieldLabelId = ! $label && ! filled($resolvedAriaLabel) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel($searchable ? $comboId : null)
+        : null;
 
     // Merge a caller aria-describedby with our own error target into ONE attribute on
     // the input, so a caller description reaches the labelable control and
@@ -284,6 +294,11 @@
     $ownDescribedBy = $showsError ? $errorId : ($showsHint ? $hintId : null);
     $callerDescribedBy = $attributes->get('aria-describedby');
     $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
+    $describedBy = $describedBy !== '' ? $describedBy : null;
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $comboId.'-help' : null;
+    $describedBy = trim(($describedBy ?? '').' '.($helpId ?? ''));
     $describedBy = $describedBy !== '' ? $describedBy : null;
 
     // Sizing.
@@ -449,7 +464,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$errorId,
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
         'action' => $optimistic,
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -480,17 +495,23 @@
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
         @if($searchable)
-            <x-wirekit::label :for="$comboId" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+            {{-- The id is for the list, which a label cannot name by `for`. --}}
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $comboId" :for="$comboId" :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
         @else
             {{-- A `div` is not a labelable element, so `for` would point at nothing: the trigger
                  takes its name from this label through `aria-labelledby` instead. --}}
-            <x-wirekit::label :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $comboId" :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
         @endif
     @endif
 <div
-    {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
-    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }}{{ $serverConfig }} })"
-    @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
+    {{-- The value and the options travel on attributes of their own, so `x-data` renders the
+         same on every update: a morph that changed it would have Alpine reset the component to
+         the new expression and initialize it again, dropping the open list and the reader's
+         typing. The factory reads both once and follows Livewire's later renders of them. In
+         server mode the options are the search results on `data-wk-server-options`. --}}
+    x-data="wirekitCombobox({ listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }}{{ $serverConfig }} })"
+    data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json($value) }}"
+    @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @else data-wk-options="{{ \Pushery\WireKit\Support\AlpinePayload::json($normalized) }}" @endif
     @click.outside="isOpen = false"
     {{-- The chosen option, exposed by name so a binding on the component tag reaches
          the SELECTION rather than the search field: the bag below is routed to the
@@ -554,11 +575,14 @@
         @keydown.arrow-up.prevent="moveHighlight(-1)"
         @keydown.home.prevent="openAtFirst()"
         @keydown.end.prevent="openAtLast()"
-        {{-- runIf, not run: Enter can fire with nothing highlighted, and
-             `run(undefined)` would send the server a value nobody chose and then
-             roll back from it. --}}
-        @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(highlightedValue())' : 'activateHighlighted()' }}"
+        {{-- runIf, not run: Enter can fire with nothing highlighted, and on a closed
+             list it only opens it, and `run(undefined)` would send the server a value
+             nobody chose and then roll back from it. --}}
+        @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(enterValue())' : 'enterKey()' }}"
         @keydown.escape="escapeList($event)"
+        {{-- Tab leaves the field, and an open list leaves with it. The key keeps its meaning:
+             nothing is chosen, and the focus moves on by itself. --}}
+        @keydown.tab="isOpen = false"
         @if($disabled) disabled @endif
         @if($hasError) aria-invalid="true" @endif
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
@@ -599,7 +623,7 @@
         :aria-expanded="isOpen"
         aria-controls="{{ $listId }}"
         :aria-activedescendant="isOpen && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
-        @if($label) aria-labelledby="{{ $comboId }}-label" @elseif($resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
+        @if($label) aria-labelledby="{{ $comboId }}-label" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @elseif($resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
         @if($disabled)
             aria-disabled="true"
         @else
@@ -649,7 +673,7 @@
             {{-- run(null), not runIf: clearing IS a choice — "none of them" — and it
                  is a mutation the server has to hear about. `undefined` would be
                  the absence of a choice; null is a choice. --}}
-            @click.stop="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
+            @click="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
             class="absolute end-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
             aria-label="{{ __('wirekit::Clear selection') }}"
         >
@@ -674,7 +698,7 @@
              button (which happens when it toggles the panel closed), the browser
              flags "aria-hidden on a focused element". Refocusing the input every
              time keeps focus on the real control and clears that warning. --}}
-        @click.stop="toggleAndFocus()"
+        @click="toggleAndFocus()"
         @if($disabled) disabled @endif
         tabindex="-1"
         aria-hidden="true"
@@ -736,7 +760,17 @@
         id="{{ $listId }}"
         x-ref="cbxList"
         role="listbox"
-        aria-label="{{ $resolvedAriaLabel }}"
+        {{-- Named from the same source as the field it belongs to. A list needs a name, and an
+             empty `aria-label` gives it none, so with no source at all none is written. --}}
+        @if($label) aria-labelledby="{{ $comboId }}-label" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @elseif(filled($resolvedAriaLabel)) aria-label="{{ $resolvedAriaLabel }}" @endif
+        @if($searchable)
+            {{-- A press on the list with a mouse or a pen leaves the focus in the text field: a
+                 row cannot take it, so it would fall to the page, and the next Tab would start
+                 from there. A finger is left alone (utils/option-press.js). Without a text field
+                 the options keep the focus on the trigger themselves, for every pointer. --}}
+            @pointerdown="notePress($event)"
+            @mousedown="keepFocusOnPress($event)"
+        @endif
         class="{{ $listClasses }}"
         style="list-style: none; margin: 0; padding: 0;{{ $panelWidthStyle !== '' ? ' '.$panelWidthStyle : '' }}"
         {{-- The results on screen answer an older search while a newer one is out. --}}
@@ -878,6 +912,11 @@
         class="{{ $listClasses }}"
         @if($panelWidthStyle !== '') style="{{ $panelWidthStyle }}" @endif
         x-ref="cbxEmpty"
+        @if($searchable)
+            {{-- A press here must not take the focus off the field either, as on the list above. --}}
+            @pointerdown="notePress($event)"
+            @mousedown="keepFocusOnPress($event)"
+        @endif
         {{-- A server search shows this before anything is typed too: "Type to search" is the
              answer to an empty field there, where the list is empty until the reader asks. --}}
         @if($server)

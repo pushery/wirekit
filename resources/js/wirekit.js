@@ -11,8 +11,12 @@ import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerImeDirective } from './utils/ime.js';
 import { registerFlashDirective } from './utils/flash.js';
+import { registerScrollIntoViewDirective } from './utils/scroll-into-view.js';
+import { registerStuckDirective } from './utils/stuck.js';
+import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { installScrollInset } from './utils/scroll-inset.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
@@ -78,6 +82,7 @@ import wirekitRangeSlider from './components/range-slider.js';
 import wirekitPopover from './components/popover.js';
 import wirekitScopeSwitcher from './components/scope-switcher.js';
 import wirekitCommandPalette from './components/command-palette.js';
+import wirekitCommandPaletteTrigger from './components/command-palette-trigger.js';
 import wirekitContextMenu from './components/context-menu.js';
 import wirekitMenubar from './components/menubar.js';
 import wirekitNavigationMenu from './components/navigation-menu.js';
@@ -160,11 +165,20 @@ function registerComponents() {
     // utils/ime.js.
     registerImeDirective(Alpine);
     registerFlashDirective(Alpine);
+    // A result that appears after an action comes into view. See utils/scroll-into-view.js.
+    registerScrollIntoViewDirective(Alpine);
+    // A sticky element says when it rests at its line. See utils/stuck.js.
+    registerStuckDirective(Alpine);
+    // A form that holds what its server does not have yet says so. See utils/unsaved.js.
+    registerUnsavedDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
+    // See utils/scroll-inset.js.
+    installScrollInset();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
@@ -229,6 +243,7 @@ function registerComponents() {
     Alpine.data('wirekitPopover', wirekitPopover);
     Alpine.data('wirekitScopeSwitcher', wirekitScopeSwitcher);
     Alpine.data('wirekitCommandPalette', wirekitCommandPalette);
+    Alpine.data('wirekitCommandPaletteTrigger', wirekitCommandPaletteTrigger);
     Alpine.data('wirekitContextMenu', wirekitContextMenu);
     Alpine.data('wirekitMenubar', wirekitMenubar);
     Alpine.data('wirekitNavigationMenu', wirekitNavigationMenu);

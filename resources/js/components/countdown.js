@@ -41,6 +41,7 @@
  */
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { pluralize } from '../utils/plural.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 export default function wirekitCountdown(config = {}) {
     return {
@@ -106,7 +107,7 @@ export default function wirekitCountdown(config = {}) {
 
             // An already-past deadline still notifies.
             sync();
-            this.$watch('now', () => sync());
+            watchCurrent(this, 'now', () => sync());
 
             // And the deadline gets its own timer, which is what lets the display tick be
             // coarse without making the EVENT coarse. `sync()` hangs on the interval, so a
@@ -119,7 +120,7 @@ export default function wirekitCountdown(config = {}) {
 
             // Re-assert after any write that clears `done` while the deadline is
             // past — that write is the entangle copy, not the application.
-            this.$watch('done', (value) => {
+            watchCurrent(this, 'done', (value) => {
                 if (! value && this.expired) {
                     this.done = true;
                 }

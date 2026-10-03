@@ -8,9 +8,10 @@
 "o'clock"
 "too
 $attributes
-$attributes->class([$classes])
 $attributes->get('name',
 $attributes->getAttributes());
+$attributes->whereDoesntStartWith('wire:model')->class([$classes])
+$attributes->whereStartsWith('wire:model')
 $calendarLocale
 $classes
 $column
@@ -195,6 +196,7 @@ $wkStart),
 24
 24"
 280px
+4
 4.5
 4.5a.75.75
 44px
@@ -293,6 +295,7 @@ APPLICATION's
 AT
 Absent
 Alpine
+Alpine's
 AlpinePayload,
 At
 BCP-47.
@@ -409,6 +412,7 @@ __('wirekit::Next
 __('wirekit::Previous
 __('wirekit::Saving'),
 __('wirekit::Year')
+`.self`
 `/`.
 `::before`,
 `<select>`
@@ -426,6 +430,7 @@ __('wirekit::Year')
 `calendar`,
 `date`
 `display:
+`input`
 `monthLabelId(0)`,
 `months
 `name[end]`.
@@ -443,7 +448,9 @@ __('wirekit::Year')
 `viewYear`
 `w-full`,
 `weekdayHeaders`
+`wire:model`
 `wk-calendar-day`
+`x-model`
 `x-ref`
 `{{
 a
@@ -457,6 +464,7 @@ accent,
 accessible
 across
 action
+adds
 after
 again
 against
@@ -532,6 +540,7 @@ belongs
 below
 beside
 between
+binding
 binds
 block
 block,
@@ -572,6 +581,7 @@ cell
 cell's
 cell,
 change
+changed.
 changing
 chevron
 child
@@ -666,6 +676,7 @@ did
 direction
 directive:
 discrete
+dispatched
 display
 dist/wirekit.css
 document
@@ -676,6 +687,7 @@ down
 draws
 drift.
 drives
+dropped
 duration-[var(--transition-wk-duration)]',
 each
 element
@@ -692,6 +704,7 @@ escapes
 escapes,
 evaluator
 event-calendar
+events
 every
 exactly
 example
@@ -780,8 +793,10 @@ have
 header
 header,
 heading
+heard
 height,
 here
+here,
 here.
 here:
 hidden
@@ -823,6 +838,7 @@ it;
 item,
 items-center
 its
+itself
 jump
 just
 justify-between',
@@ -990,6 +1006,7 @@ prod).
 prop
 prop's
 properties
+property
 props
 purpose:
 put
@@ -1036,6 +1053,7 @@ rolls
 room,
 root
 root,
+root.
 rotate
 row
 row,
@@ -1056,6 +1074,7 @@ selection.
 selects
 selects:
 sends
+sends:
 sent
 server
 server's

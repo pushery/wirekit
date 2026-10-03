@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.63.0 — MIT License
+ * WireKit CSS v2.64.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -154,6 +154,15 @@
     --color-wk-info-text: var(--color-wk-accent-content);
     --color-wk-accent-text: var(--color-wk-accent-content);
 
+    /* The tone every `info` surface is tinted or filled with, the foreground on an info fill, and
+       the fill of an info button under the pointer. All three alias the accent, so an info hint
+       looks like the brand until an application says otherwise. An application whose accent reads
+       as success, a green brand for one, sets them and `--color-wk-info-text` to a hue of their
+       own, on `:root` and on `.dark`. */
+    --color-wk-info-tone: var(--color-wk-accent);
+    --color-wk-info-fg: var(--color-wk-accent-fg);
+    --color-wk-info-hover: var(--color-wk-accent-hover);
+
     /* The informational SERIES color, and it is a chart token rather than a surface one.
        `chart-theme-colors.js` reads `--color-wk-info` for dataset slot 5 and falls back to a
        hardcoded cyan when it resolves to nothing — which it always did, because the token was
@@ -244,6 +253,10 @@
        border-error) so a success-state input border and its confirmation text
        read as one coherent pair. */
     --color-wk-border-success: oklch(45.6% 0.17 149.7);
+    /* border-unsaved frames a field whose value the server does not have yet (x-wk-unsaved):
+       blue, beside the red of an error and the green of a success, and at least 3:1 against
+       the field in both themes, because the frame tells a state (WCAG 1.4.11). */
+    --color-wk-border-unsaved: oklch(54.6% 0.245 262.881);
 
     /* ─── Focus Ring ─── */
     --color-wk-ring: oklch(14.5% 0 0);
@@ -272,12 +285,13 @@
     --font-wk-mono: ui-monospace, 'Fira Code', 'Cascadia Code', monospace;
     --font-wk-heading-weight: 600;
     --font-wk-heading-line-height: 1.25;
-    /* The weight of a chosen entry: the selected segment of a segmented control, a selected
-       option of a multi-select and the current item of a bottom nav. It follows the heading
+    /* The weight of a chosen entry: the selected segment of a segmented control, the current
+       item of a bottom nav and the current link of an overflow nav. It follows the heading
        weight until you set it. Each of the three also marks the choice another way (a raised
-       segment, a tick, a line on the tab), so var(--font-wk-body-weight) here leaves every
-       choice visible, in forced colors too. Where the weight is the only mark besides color,
-       a component keeps the heading weight and does not read this one. */
+       segment, a line on the tab, a fill that forced colors replace with a frame), so
+       var(--font-wk-body-weight) here leaves every choice visible, in forced colors too. Where
+       the weight is the only mark besides color, a component keeps the heading weight and does
+       not read this one. */
     --font-wk-selected-weight: var(--font-wk-heading-weight);
 
     /* Heading-display sizes — used by hero/cta for the on-page H1/H2.
@@ -675,6 +689,26 @@
     padding-block: 0;
 }
 
+/* ─── Scroll inset ───
+   A browser brings an element that takes the focus, or a fragment link's target, to the edge
+   of its scroll container, less that container's scroll-padding. A bar pinned to the edge covers
+   it there (WCAG 2.4.11). A pinned surface carries data-wk-scroll-inset, or
+   data-wk-scroll-inset="bottom", and the script writes the band it covers, plus
+   --wk-scroll-inset-gap, as --wk-scroll-inset-top and --wk-scroll-inset-bottom on its container:
+   <html> for the page, or a box it marks data-wk-scroll-inset-box. A strip alone needs no script,
+   since its inset is a token.
+
+   :where() on both, so a scroll-padding the developer sets wins. */
+:where(:root) {
+    scroll-padding-top: max(var(--wk-strip-inset, 0px), var(--wk-scroll-inset-top, 0px));
+    scroll-padding-bottom: var(--wk-scroll-inset-bottom, 0px);
+}
+
+:where([data-wk-scroll-inset-box]) {
+    scroll-padding-top: var(--wk-scroll-inset-top, 0px);
+    scroll-padding-bottom: var(--wk-scroll-inset-bottom, 0px);
+}
+
 /* On a touch screen the finger still needs its 44px, so the hit area comes back as a centered
    patch rather than as height: the same move as `wk-touch-target`, the drawn button unchanged. It
    paints nothing and catches only taps meant for the button. */
@@ -732,6 +766,8 @@
 @property --color-wk-rail-ring { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
 @property --color-wk-rail-badge { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
 @property --color-wk-rail-badge-fg { syntax: "<color>"; inherits: true; initial-value: #fff; }
+@property --color-wk-rail-badge-on-fill { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
+@property --color-wk-rail-badge-fg-on-fill { syntax: "<color>"; inherits: true; initial-value: #fff; }
 /* The radius of an item INSIDE a navigation surface — registered for the same reason the
    colors are, and inherited so a rounded container can re-point it for its own subtree. */
 @property --radius-wk-nav-item { syntax: "<length>"; inherits: true; initial-value: 0.5rem; }
@@ -851,6 +887,12 @@
        says "there is something here" would be the one thing in the column nobody could see. */
     --color-wk-rail-badge: var(--color-wk-accent);
     --color-wk-rail-badge-fg: var(--color-wk-accent-fg);
+    /* The counter on a FILLED item: the current module with the pill indicator, and an item
+       under the pointer. On the neutral, muted and inverse tones the fill leaves the counter
+       readable and these repeat the column's pair; on the accent tone the fill is the
+       counter's own color, so there they invert with the label. */
+    --color-wk-rail-badge-on-fill: var(--color-wk-accent);
+    --color-wk-rail-badge-fg-on-fill: var(--color-wk-accent-fg);
     --color-wk-rail-ring: var(--color-wk-ring);
 
     /* ─── Overlay: Tooltip (inverted: dark bg, light text) ─── */
@@ -1002,6 +1044,7 @@
     --color-wk-border-subtle: oklch(26.9% 0 0);
     --color-wk-border-error: oklch(70.4% 0.191 22.216);
     --color-wk-border-success: oklch(79.2% 0.209 151.711);
+    --color-wk-border-unsaved: oklch(70.7% 0.165 254.624);
 
     /* Focus Ring */
     --color-wk-ring: oklch(98.5% 0 0);
@@ -1069,6 +1112,7 @@
     --color-wk-border-subtle: oklch(94% 0 0);
     --color-wk-border-error: oklch(50.5% 0.213 27.518);
     --color-wk-border-success: oklch(45.6% 0.17 149.7);
+    --color-wk-border-unsaved: oklch(54.6% 0.245 262.881);
     --color-wk-ring: oklch(14.5% 0 0);
     --color-wk-ring-offset: #fff;
     --shadow-wk-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -1099,6 +1143,9 @@
 :where(.dark) {
     --color-wk-info-text: var(--color-wk-accent-content);
     --color-wk-accent-text: var(--color-wk-accent-content);
+    --color-wk-info-tone: var(--color-wk-accent);
+    --color-wk-info-fg: var(--color-wk-accent-fg);
+    --color-wk-info-hover: var(--color-wk-accent-hover);
     --color-wk-code: var(--color-wk-text);
     --color-wk-code-bg: var(--color-wk-bg-muted);
     --shadow-wk-badge: 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
@@ -1113,6 +1160,8 @@
     --color-wk-rail-border: var(--color-wk-border);
     --color-wk-rail-badge: var(--color-wk-accent);
     --color-wk-rail-badge-fg: var(--color-wk-accent-fg);
+    --color-wk-rail-badge-on-fill: var(--color-wk-accent);
+    --color-wk-rail-badge-fg-on-fill: var(--color-wk-accent-fg);
     --color-wk-rail-ring: var(--color-wk-ring);
     --color-wk-tooltip-bg: var(--color-wk-text);
     --color-wk-tooltip-text: var(--color-wk-bg);
@@ -1267,6 +1316,38 @@
     .wk-form-row > [data-wk-field] > [data-wk-field-part] {
         display: block;
     }
+}
+
+/* ─── Page header: actions beside a title with no description ────────────────
+   A page header with actions and no description was as tall as its tallest action, so a
+   button taller than the title line pushed what came next down by the difference. While the
+   actions share the title's line they now add nothing to its height and sit centered on the
+   title; once they wrap to a line of their own they lay out as they always have.
+
+   CSS cannot ask whether a flex item wrapped, so the frame answers it by width. It grows to
+   fill its line, and the title column grows 999 times faster, so the frame is as wide as the
+   header (`100cqi`, the header being the component's size container) only on a line of its
+   own. A percentage margin is read against the containing block's width even in the block
+   direction, so the row turns that comparison into its own block margin: a large negative one
+   while the frame is narrower than the header, which takes the row out of the line's height
+   and, being equal on both sides, keeps it centered; none once the frame is the header's
+   width. The half pixel keeps a frame of exactly that width from reading as narrower.
+
+   The same comparison sets the row's width: as wide as its buttons beside the title, at the
+   frame's end, and the frame's full width once it wrapped, so the buttons start where a line
+   starts, as before. A personalized column without the faster growth therefore still keeps
+   the actions at the end. */
+.wk-page-header-actions-frame {
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    align-items: center;
+    align-self: center;
+}
+
+.wk-page-header-actions-frame > [data-wk-page-header-actions] {
+    margin-block: clamp(-999px, calc((100cqi - 100% - 0.5px) * -99999), 0px);
+    min-inline-size: clamp(0px, calc((0.5px - (100cqi - 100%)) * 99999), 100%);
 }
 
 /* ─── The rail scroller has ONE scroll axis, and it has to say so ─────────── */
@@ -1676,6 +1757,21 @@
     transform: translate(-50%, -50%);
 }
 
+/* The track takes a click as well: the nearer handle comes to that point, which is the way to
+   set a value with one pointer and no drag (WCAG 2.2 SC 2.5.7). The track is drawn 8px tall, so
+   the same invisible ::before gives it a target of the minimum size across its full width,
+   without changing what is drawn. The track is already positioned, and the handles stack above
+   this box, so a press on a handle still reaches the handle. */
+.wk-range-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: var(--size-wk-target-min);
+    transform: translateY(-50%);
+}
+
 /* Flag. A hairline just inside the flag's edge, so a white flag keeps its shape on a white page.
    An outline rather than a border or an inset shadow: an outline paints over the image, where an
    inset shadow would sit beneath it and vanish, and it takes no space, so the flag stays exactly
@@ -1703,6 +1799,59 @@
    a value. */
 input.wk-field::-webkit-datetime-edit-text {
     color: var(--color-wk-text-placeholder);
+}
+
+/* A field whose value the server does not have yet, inside `x-wk-unsaved`: see
+   resources/js/utils/unsaved.js. The frame says it in its own color, so it reads as neither an
+   error nor a success. An invalid field keeps its error border: the rule skips `aria-invalid`, and
+   it sits before the `:user-invalid` rule below, which wins a tie by coming later.
+
+   The second selector is for a component whose `wire:model` sits on its root rather than on the
+   field, and `:where()` keeps it at the weight of the first, below `:user-invalid`.
+
+   A field inside a frame (a prefix, a clear button, the pills of a multi-select) draws no border
+   of its own, so there the frame takes the color, and the field inside is left out by a `:where()`
+   that adds no weight.
+
+   The outline draws the same edge again inside the border box. With a border it lies on the
+   border in the same color and adds nothing to see; under a theme whose border width is 0px, as
+   in the Material and Minimal presets, it is the only edge, and it takes no room, so the field
+   does not move when it becomes unsaved. */
+.wk-field[data-wk-unsaved]:not([aria-invalid="true"]):where(:not(.wk-field-frame .wk-field)),
+:where([data-wk-unsaved]:not(.wk-field)) .wk-field:not([aria-invalid="true"]):where(:not(.wk-field-frame .wk-field)),
+.wk-field-frame:has(.wk-field[data-wk-unsaved]:not([aria-invalid="true"])),
+:where([data-wk-unsaved]:not(.wk-field)) .wk-field-frame:has(.wk-field:not([aria-invalid="true"])) {
+    border-color: var(--color-wk-border-unsaved);
+    outline: max(1px, var(--border-wk-width)) solid var(--color-wk-border-unsaved);
+    outline-offset: calc(max(1px, var(--border-wk-width)) * -1);
+}
+
+/* Forced colors replace the color, so the edge says nothing there, and the field's own focus
+   outline for that mode, which lives in the utilities, comes back. */
+@media (forced-colors: active) {
+    .wk-field[data-wk-unsaved]:not([aria-invalid="true"]):where(:not(.wk-field-frame .wk-field)),
+    :where([data-wk-unsaved]:not(.wk-field)) .wk-field:not([aria-invalid="true"]):where(:not(.wk-field-frame .wk-field)),
+    .wk-field-frame:has(.wk-field[data-wk-unsaved]:not([aria-invalid="true"])),
+    :where([data-wk-unsaved]:not(.wk-field)) .wk-field-frame:has(.wk-field:not([aria-invalid="true"])) {
+        outline: revert-layer;
+        outline-offset: revert-layer;
+    }
+}
+
+/* The sentence of `<x-wirekit::unsaved-hint>`. The live region stays in the page so that the
+   change from saved to unsaved is spoken; while nothing is unsaved it takes no room, so an empty
+   hint in a row of buttons adds no gap, and its text is out of the accessibility tree. */
+[data-wk-unsaved-hint]:not([data-wk-unsaved-shown]) {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+[data-wk-unsaved-hint]:not([data-wk-unsaved-shown]) [data-wk-unsaved-text] {
+    display: none;
 }
 
 /* A required field the reader left invalid is red: every field, not only the ones that spell
@@ -1741,6 +1890,16 @@ input.wk-field::-webkit-datetime-edit-text {
        it empty. See resources/js/utils/cleared-field.js. */
     .wk-field:user-invalid:not([data-wk-cleared]) {
         border-color: var(--color-wk-border-error);
+        /* An unsaved field draws its edge as an outline too; an invalid one draws it in red. */
+        outline-color: var(--color-wk-border-error);
+    }
+
+    /* The same for a field in a frame that is unsaved, whose frame the unsaved rule above colors
+       over the frame's own error border. */
+    .wk-field-frame:has(.wk-field[data-wk-unsaved]:user-invalid:not([data-wk-cleared])),
+    :where([data-wk-unsaved]:not(.wk-field)) .wk-field-frame:has(.wk-field:user-invalid:not([data-wk-cleared])) {
+        border-color: var(--color-wk-border-error);
+        outline-color: var(--color-wk-border-error);
     }
 }
 
@@ -2016,6 +2175,14 @@ input.wk-field::-webkit-datetime-edit-text {
     .wk-fab-action-labeled .wk-fab-action-label {
         opacity: 1;
     }
+
+    /* The same for the step controls of a resizable handle: they show on hover and on focus, and
+       a coarse pointer has no hover, so they are always shown there. The rule that hides them at
+       rest is with the other resizable rules further down and carries less specificity than this
+       one, so the order of the two decides nothing. */
+    [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step] {
+        visibility: visible;
+    }
 }
 
 /* touch-surface: generated section begins ─────────────────────────
@@ -2149,6 +2316,10 @@ input.wk-field::-webkit-datetime-edit-text {
     opacity: 1;
 }
 
+:where([data-wk-touch]) [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step] {
+    visibility: visible;
+}
+
 /* touch-surface: generated section ends ─────────────────────────── */
 
 
@@ -2261,6 +2432,8 @@ input.wk-field::-webkit-datetime-edit-text {
        relying on the surface it happens to sit on. */
     --color-wk-rail-badge: var(--color-wk-accent);
     --color-wk-rail-badge-fg: var(--color-wk-accent-fg);
+    --color-wk-rail-badge-on-fill: var(--color-wk-accent);
+    --color-wk-rail-badge-fg-on-fill: var(--color-wk-accent-fg);
 }
 
 /* inverse — the dark chrome column of a light application.
@@ -2288,6 +2461,8 @@ input.wk-field::-webkit-datetime-edit-text {
        here entirely. The digits that ride on it in a wide rail flip with it. */
     --color-wk-rail-badge: oklch(98.5% 0 0);
     --color-wk-rail-badge-fg: oklch(20.5% 0 0);
+    --color-wk-rail-badge-on-fill: oklch(98.5% 0 0);
+    --color-wk-rail-badge-fg-on-fill: oklch(20.5% 0 0);
 }
 
 /* accent — the brand-colored chrome column.
@@ -2328,6 +2503,26 @@ input.wk-field::-webkit-datetime-edit-text {
        an accent dot on an accent column is the same color as its own background. */
     --color-wk-rail-badge: var(--color-wk-accent-fg);
     --color-wk-rail-badge-fg: var(--color-wk-accent);
+    /* And back again on a filled item: the current module and the hover fill ARE accent-fg
+       here, so a counter in the column's color is the color of what it sits on. It takes
+       the label's color on that fill instead, the accent, with its digits in accent-fg. */
+    --color-wk-rail-badge-on-fill: var(--color-wk-accent);
+    --color-wk-rail-badge-fg-on-fill: var(--color-wk-accent-fg);
+}
+
+/* A counter on a filled item takes the role for a fill: the current module where the pill marks
+   it, and an item under the pointer, whose fill only a device with hover paints. On the edge
+   indicator the current module keeps the column behind it, and so does its counter. */
+[data-wk-rail][data-indicator="pill"] [data-wk-rail-item][aria-current] [data-wk-rail-badge] {
+    background-color: var(--color-wk-rail-badge-on-fill);
+    color: var(--color-wk-rail-badge-fg-on-fill);
+}
+
+@media (hover: hover) {
+    [data-wk-rail] [data-wk-rail-item]:not([aria-current]):hover [data-wk-rail-badge] {
+        background-color: var(--color-wk-rail-badge-on-fill);
+        color: var(--color-wk-rail-badge-fg-on-fill);
+    }
 }
 
 /* ─── The brand row sits on the same spine as the modules ─── */
@@ -3268,6 +3463,20 @@ tr:has(> th .wk-sideways) > th {
    SSR-without-Tailwind contexts the item's inline layout styles target. */
 .wk-data-list-item:not(:last-child) {
     border-bottom: 1px solid var(--color-wk-border-subtle);
+}
+
+/* A `grid` data list sets its items in two columns, and in one on a narrow screen. The columns
+   live here rather than in the list's inline style, which cannot change at a breakpoint. At 40rem
+   two items side by side leave each label and value too little room. `minmax(0, 1fr)` lets a
+   long value wrap inside its column instead of widening it. */
+dl[data-layout="grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 40rem) {
+    dl[data-layout="grid"] {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 /* ─── Prose readable measure ───────────────────────────────── */
@@ -4724,6 +4933,32 @@ tr:has(> th .wk-sideways) > th {
     display: none;
 }
 
+/* The switch's state in words (`on-label`, `off-label`). Both words share one grid cell, so the
+   row keeps the width of the longer one and nothing beside it moves when the switch flips. The
+   visible word follows the checkbox itself, so it changes with the click, before a server or an
+   optimistic layer has answered. The words are hidden from assistive technology on the element
+   that holds them: the switch announces its own state. `start` puts them before the switch. */
+.wk-toggle [data-wk-toggle-state] {
+    display: inline-grid;
+}
+
+.wk-toggle [data-wk-toggle-state="start"] {
+    order: -1;
+}
+
+.wk-toggle [data-wk-toggle-state] > * {
+    grid-area: 1 / 1;
+}
+
+.wk-toggle [data-wk-toggle-state] > [data-wk-toggle-state-on],
+.wk-toggle:has(input:checked) [data-wk-toggle-state] > [data-wk-toggle-state-off] {
+    visibility: hidden;
+}
+
+.wk-toggle:has(input:checked) [data-wk-toggle-state] > [data-wk-toggle-state-on] {
+    visibility: visible;
+}
+
 /* How many slides share the view. Set on the viewport by the component, applied
    to the slides here — a slide never needs to know how many siblings it has.
 
@@ -5776,16 +6011,19 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         border-radius: 0;
     }
 
-    /* The page a sidebar or a rail is on, and the chosen tab, are a tint, a fill, a raised
-       surface or a colored edge, all paints this mode replaces. An underlined tab fares no
+    /* The page a sidebar, a rail or an overflow nav is on, and the chosen tab, are a tint, a
+       fill, a raised surface or a colored edge, all paints this mode replaces. An underlined tab fares no
        better: every tab carries its underline, transparent until chosen, and this mode draws a
        transparent border in the text color, so every tab ends up underlined. Each gets the frame
        the segmented control has, on `::before` with the opt-out there. A rail that marks its
-       module with the edge bar keeps the bar instead of a frame, as it does outside this mode. */
-    .wk-sidebar-item[aria-current="page"]::before,
+       module with the edge bar keeps the bar instead of a frame, as it does outside this mode.
+       A sidebar row or a rail module is current with any value of `aria-current`, `location` for
+       one that leads the section the page lies in as well as `page`. */
+    .wk-sidebar-item[aria-current]::before,
     .wk-sidebar-item[aria-selected="true"]::before,
-    [data-indicator="pill"] .wk-rail-item[aria-current="page"]::before,
-    .wk-tab[aria-selected="true"]::before {
+    [data-indicator="pill"] .wk-rail-item[aria-current]::before,
+    .wk-tab[aria-selected="true"]::before,
+    .wk-overflow-nav-link[aria-current="page"]::before {
         content: "";
         position: absolute;
         inset: 0;
@@ -5795,15 +6033,16 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         forced-color-adjust: none;
     }
 
-    /* A sidebar row and a rail module are the frame's containing block already; a tab is only
-       made one here, where the frame needs it. */
-    .wk-tab {
+    /* A sidebar row and a rail module are the frame's containing block already; a tab and a link
+       of an overflow nav are only made one here, where the frame needs it. */
+    .wk-tab,
+    .wk-overflow-nav-link {
         position: relative;
     }
 
     /* The rail's edge bar is the background of `::after`. It exists only where the rail draws
        one, so this rule paints nothing on a rail with the pill. */
-    .wk-rail-item[aria-current="page"]::after {
+    .wk-rail-item[aria-current]::after {
         forced-color-adjust: none;
         background: Highlight;
     }
@@ -6253,8 +6492,9 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* carrying three dots aligned with the drag axis so the user can */
 /* tell at a glance which direction the handle resizes. The pill   */
 /* is absolutely positioned relative to the handle and cannot be   */
-/* tabbed or clicked independently (the whole handle is the hit    */
-/* target; the pill is purely visual decoration).                  */
+/* tabbed to. It takes the pointer as part of the handle: a press  */
+/* on it starts a drag, and the step controls beside it are        */
+/* reached without leaving the handle, so they stay shown.         */
 [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
     position: absolute;
     left: 50%;
@@ -6263,7 +6503,6 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     background-color: var(--color-wk-bg);
     border: 1px solid var(--color-wk-border);
     border-radius: var(--radius-wk-sm);
-    pointer-events: none;
     background-image:
         radial-gradient(circle at center, var(--color-wk-text-muted) 1.25px, transparent 1.75px),
         radial-gradient(circle at center, var(--color-wk-text-muted) 1.25px, transparent 1.75px),
@@ -6305,6 +6544,103 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     background-color: var(--color-wk-bg-subtle);
 }
 
+/* Step controls: the way to resize with one pointer and no drag (WCAG 2.2 SC 2.5.7). Two
+   round controls sit on the divider on either side of the grip, each a target of the minimum
+   size, and a click moves the divider a few pixels, so the control is still under the pointer
+   for the next click. They show while the handle is hovered or focused, and always on a coarse
+   pointer, which has no hover to reveal them. A drag hides them. The handle stacks above the
+   panels so the half of a control that reaches over the next panel is not painted under it. */
+[data-wk-resizable] > [data-wk-resizable-handle] {
+    z-index: 1;
+}
+[data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step] {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--size-wk-target-min);
+    height: var(--size-wk-target-min);
+    color: var(--color-wk-text-muted);
+    cursor: pointer;
+    transition: color var(--transition-wk-duration) ease;
+}
+
+/* Hidden at rest, at the specificity of one attribute: the coarse-pointer rule further up and its
+   `data-wk-touch` twin show the controls from an earlier place in this sheet. */
+:where([data-wk-resizable] > [data-wk-resizable-handle]) > [data-wk-resizable-step] {
+    visibility: hidden;
+}
+
+/* The circle that is drawn, inside the square target. The target stays square so that it
+   meets the grip edge to edge: a pointer moving from the line to a control never leaves the
+   handle, and the controls do not vanish under it on the way. */
+[data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step]::after {
+    content: '';
+    position: absolute;
+    inset: 0.125rem;
+    border: 1px solid var(--color-wk-border);
+    border-radius: var(--radius-wk-full);
+    background-color: var(--color-wk-bg);
+    transition: border-color var(--transition-wk-duration) ease;
+}
+
+/* The chevron: two borders of a small square, turned to point along the axis. */
+[data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step]::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-top: 1.5px solid currentColor;
+    border-right: 1.5px solid currentColor;
+}
+
+/* Horizontal layout: the controls stand left and right of the line at its middle, beside the
+   grip, each pointing the way it moves the line. Across the line rather than along it, so a
+   split only one control tall still holds both. */
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-handle] > [data-wk-resizable-step="-1"] {
+    transform: translate(calc(-50% - 1rem), -50%);
+}
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-handle] > [data-wk-resizable-step="1"] {
+    transform: translate(calc(-50% + 1rem), -50%);
+}
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-handle] > [data-wk-resizable-step="-1"]::before {
+    transform: translate(-30%, -50%) rotate(-135deg);
+}
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-handle] > [data-wk-resizable-step="1"]::before {
+    transform: translate(-70%, -50%) rotate(45deg);
+}
+
+/* Vertical layout: the controls stand above and below the line at its middle. */
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-handle] > [data-wk-resizable-step="-1"] {
+    transform: translate(-50%, calc(-50% - 1rem));
+}
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-handle] > [data-wk-resizable-step="1"] {
+    transform: translate(-50%, calc(-50% + 1rem));
+}
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-handle] > [data-wk-resizable-step="-1"]::before {
+    transform: translate(-50%, -30%) rotate(-45deg);
+}
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-handle] > [data-wk-resizable-step="1"]::before {
+    transform: translate(-50%, -70%) rotate(135deg);
+}
+
+[data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step]:hover {
+    color: var(--color-wk-accent);
+}
+[data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step]:hover::after {
+    border-color: var(--color-wk-accent);
+}
+
+[data-wk-resizable] > [data-wk-resizable-handle]:hover > [data-wk-resizable-step],
+[data-wk-resizable] > [data-wk-resizable-handle]:focus-visible > [data-wk-resizable-step] {
+    visibility: visible;
+}
+[data-wk-resizable] > [data-wk-resizable-handle][data-dragging="true"] > [data-wk-resizable-step] {
+    visibility: hidden;
+}
+
 /* Reduced motion. This component is reached by nothing else: its root is built from
    arbitrary-value utilities, which the blanket clamp deliberately does not match, and the
    handle and grip carry no class of their own — so both fades sit outside every motion
@@ -6315,7 +6651,9 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    selected few — the same standard by which the logo-cloud fade is already gated. */
 @media (prefers-reduced-motion: reduce) {
     :root:not([data-reduce-motion="no-preference"]) [data-wk-resizable] > [data-wk-resizable-handle],
-    :root:not([data-reduce-motion="no-preference"]) [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip],
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step],
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step]::after {
         transition: none;
     }
 }
@@ -6323,8 +6661,40 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. */
 :root[data-reduce-motion="reduce"] [data-wk-resizable] > [data-wk-resizable-handle],
-:root[data-reduce-motion="reduce"] [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
+:root[data-reduce-motion="reduce"] [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip],
+:root[data-reduce-motion="reduce"] [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step],
+:root[data-reduce-motion="reduce"] [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-step]::after {
     transition: none;
+}
+
+/* ─── Sortable items ─────────────────────────────────────── */
+/* The cards of a sortable list take the focus (the sortable gives them a tabindex), and a
+   card lifted to be moved has to look lifted. A lifted card always has the focus, so the
+   lifted rule names the focused state as well and wins over the ring: a dashed outline in
+   the accent and a raised shadow, a change of shape and not of color alone. */
+:where([data-sortable-items]) > [data-sortable-id]:focus-visible {
+    outline: var(--ring-wk-width) solid var(--color-wk-ring);
+    outline-offset: var(--ring-wk-offset);
+}
+:where([data-sortable-items]) > [data-sortable-lifted],
+:where([data-sortable-items]) > [data-sortable-lifted]:focus-visible {
+    outline: var(--ring-wk-width) dashed var(--color-wk-accent);
+    outline-offset: var(--ring-wk-offset);
+    box-shadow: var(--shadow-wk-lg);
+}
+
+/* In reorder mode a click picks a card up or places it, and the cards say they take one. */
+:where([data-sortable-items][data-wk-sortable-reordering]) > [data-sortable-id] {
+    cursor: pointer;
+}
+
+/* The Reorder button of a sortable column, pressed: the accent, so the mode is plain to see on
+   the column's muted ground, where the muted fill of a pressed toggle would not show. The
+   hovered half outranks the ghost surface's own hover background. */
+[data-wk-sortable-reorder][aria-pressed="true"],
+[data-wk-sortable-reorder][aria-pressed="true"]:hover {
+    background-color: var(--color-wk-accent);
+    color: var(--color-wk-accent-fg);
 }
 
 /* ─── Slider (range input) styling ───────────────────────── */
@@ -8566,6 +8936,20 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 .wk-sidebar[data-collapsed] .wk-shell-foot:has([data-wk-sidebar-collapse]) .wk-shell-bar,
 .wk-sidebar[data-settling] .wk-shell-foot:has([data-wk-sidebar-collapse]) .wk-shell-bar {
     padding-inline: 0;
+}
+
+/*
+ * And the strip in that bar stops reaching into the padding the bar no longer has.
+ *
+ * The strip keeps room for a focus ring as padding and gives it back as a negative margin,
+ * which the bar's inline padding absorbs. With that padding gone, the margin would carry the
+ * strip past both edges of the folded column, and the column would scroll sideways by it.
+ * Without the margin the room stays inside the strip: the control in it is narrower by the
+ * room on each side, and its whole ring shows within the column.
+ */
+.wk-sidebar[data-collapsed] .wk-shell-foot:has([data-wk-sidebar-collapse]) .wk-shell-bar > .wk-shell-bar-strip,
+.wk-sidebar[data-settling] .wk-shell-foot:has([data-wk-sidebar-collapse]) .wk-shell-bar > .wk-shell-bar-strip {
+    margin-inline: 0;
 }
 
 .wk-sidebar[data-collapsed] .wk-shell-foot:has([data-wk-sidebar-collapse]),

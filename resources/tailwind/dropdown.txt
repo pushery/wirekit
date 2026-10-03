@@ -206,6 +206,7 @@ $widthStyle]
 ($relAttr
 ($width)
 (Support\CallerListeners).
+(Support\UrlProp).
 (WAI-ARIA
 (WCAG
 (WireKit
@@ -418,6 +419,7 @@ ESC
 EVERY
 EXCLUSIVE
 Each
+Echoed
 End
 English
 Escape
@@ -539,6 +541,7 @@ UI,
 UI.
 UNBOUND
 UNCHECKED
+URL
 UX.
 User
 Uses
@@ -584,6 +587,7 @@ Wrapping
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.checkbox-item',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.indicator',
@@ -879,6 +883,7 @@ both):
 both,
 both.
 bound
+bound,
 box
 box:
 boxes).
@@ -1173,6 +1178,7 @@ equals
 error
 erroring:
 escape
+escaped
 escapes
 established
 etc.).
@@ -2028,6 +2034,7 @@ tab)')
 tabindex="-1"
 tabnabbing
 tabular-nums"
+tag
 takes
 target
 target="_blank".

@@ -37,6 +37,9 @@
     // an app that runs its OWN error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'value' => 0,
     'max' => config('wirekit.components.rating.max', 5),
     'icon' => 'star',
@@ -130,6 +133,10 @@
     // A readonly rating describes nothing of its own, so a caller's list goes on its image alone.
     $callerDescribedBy = trim((string) $attributes->get('aria-describedby', ''));
     $describedBy = trim(($error ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.$callerDescribedBy);
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     $wrapperClasses = WireKit::resolveClasses('rating', 'base', implode(' ', [
         'inline-flex flex-col gap-1',
@@ -208,7 +215,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
         'action' => $optimistic,
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -252,14 +259,23 @@
                  element that does not exist — and a <label> with no control is
                  not a label at all, it is an orphan that assistive tech may drop
                  on the floor along with the text inside it. --}}
-            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+            @if(filled($help))
+                {{-- The help still explains the rating; with no control to describe, the
+                     tooltip on the button is all of it. --}}
+                <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+                    <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+                    @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => null, 'helpField' => (string) ($name)])
+                </div>
+            @else
+                <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+            @endif
         @else
             {{-- NO `for`, and that is the fix rather than an omission. The only element
                  carrying `$id` is the hidden input below, and a hidden input is not a
                  labelable element — the association resolved to nothing at all, so the
                  visible text was an orphan while the group named itself separately.
                  The control here is the GROUP, so the group is named BY this label. --}}
-            <x-wirekit::label id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
         @endif
     @endif
 
@@ -312,7 +328,7 @@
                  as "Average rating — 4.2 out of 5 stars".
 
                  An explicit aria-label still wins: the caller knows their page. --}}
-            aria-label="{{ $attributes->get('aria-label') ?? __('wirekit:::value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
+            aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? __('wirekit:::value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
             @if($callerDescribedBy !== '') aria-describedby="{{ $callerDescribedBy }}" @endif
         @else
             role="radiogroup"
@@ -321,10 +337,10 @@
                  the text on the screen rather than a second copy of it. An explicit
                  `aria-label` from the caller still wins: they know their page, and
                  `aria-labelledby` would otherwise silently outrank what they wrote. --}}
-            @if($label && ! $attributes->get('aria-label'))
+            @if($label && ! \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'))
                 aria-labelledby="{{ $id }}-label"
             @else
-                aria-label="{{ $attributes->get('aria-label') ?? $label ?? __('wirekit::Rating') }}"
+                aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $label ?? __('wirekit::Rating') }}"
             @endif
             {{-- On the GROUP, not on each star: the message is about the rating, and
                  repeating it on five buttons would read it out five times. --}}

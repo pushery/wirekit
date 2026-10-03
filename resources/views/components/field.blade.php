@@ -5,6 +5,8 @@
     'label' => null,
     'name' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label (partials/field-help).
+    'help' => null,
     'error' => null,
     // When true (default), the error message renders as an ARIA live region
     // (aria-live="polite") so a validation error that appears dynamically — e.g.
@@ -66,6 +68,14 @@
     // we fall back to `name` so the wrapped input's auto-generated id (= name) matches.
     $targetId = $for ?? $name;
 
+    // A composite control in the slot gives its own field an id of its own, so `name` would name
+    // nothing. Such a control takes the label through `wkField` (Support\FieldControl, built by the
+    // class behind this view before the slot rendered) and records the element a label can name:
+    // the label points there, or names by reference only when the control has no such element.
+    $fieldControl = isset($wkField) && $wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null;
+    $labelFor = $fieldControl !== null ? $fieldControl->forId() : $targetId;
+    $labelId = $fieldControl?->labelId();
+
     // Error detection: explicit prop OR Laravel validation bag (keyed by `name`)
     $hasError = $error || ($name && ($errors ?? null)?->has($name));
     $errorMessage = $error ?? ($name ? ($errors ?? null)?->first($name) : null);
@@ -77,6 +87,9 @@
     // the message on the control to get the link for free, or reference the id by
     // hand when the slot holds markup the caller wrote.
     $hintId = $targetId ? "{$targetId}-hint" : null;
+    // The help's hidden copy takes a stable id on the same terms: offered for a caller's own
+    // `aria-describedby`, since a WireKit control links only the help it was given itself.
+    $helpId = $targetId && filled($help) ? "{$targetId}-help" : null;
     $errorId = $targetId ? "{$targetId}-error" : null;
 
     // Wrapper spacing — vertical stacks (space-y); horizontal lets the inner flex row drive layout.
@@ -93,7 +106,7 @@
              take the remaining inline space. --}}
         <div class="flex items-start gap-[var(--padding-wk-x-lg)]">
             @if($label)
-                <x-wirekit::label :for="$targetId" :required="$required" :scope="$scope" class="w-1/3 shrink-0 pt-[var(--padding-wk-y-sm)]">
+                <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $targetId" :for="$labelFor" :id="$labelId" :required="$required" :scope="$scope" class="w-1/3 shrink-0 pt-[var(--padding-wk-y-sm)]">
                     {{ $label }}
                 </x-wirekit::label>
             @endif
@@ -109,7 +122,7 @@
     @else
         {{-- Vertical (default): label above the control. --}}
         @if($label)
-            <x-wirekit::label :for="$targetId" :required="$required" :scope="$scope">
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $targetId" :for="$labelFor" :id="$labelId" :required="$required" :scope="$scope">
                 {{ $label }}
             </x-wirekit::label>
         @elseif($inAlignedRow)

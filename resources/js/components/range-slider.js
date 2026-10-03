@@ -2,7 +2,7 @@
  * WireKit Range Slider Alpine Component.
  *
  * Dual-handle slider for selecting a value range.
- * Supports keyboard navigation, pointer drag, and step increments.
+ * Supports keyboard navigation, pointer drag, a click on the track, and step increments.
  *
  * @param {Object} config
  * @param {number} config.min - Minimum track value
@@ -11,14 +11,43 @@
  * @param {number} config.minValue - Initial minimum selection
  * @param {number} config.maxValue - Initial maximum selection
  * @param {string} config.name - Input name for form submission
+ * @param {string} config.labelId - The visible label, whose click focuses the first thumb
  *
  * Lifecycle resources held on `this`:
  *   - _resizes (ResizeObserver) on the track and both badges, disconnected in destroy()
  *     and null-guarded in its callback against a notification that arrives after it.
  *   - _dragMove, _dragEnd (document listeners) during a drag, released in destroy().
  *   - _measureFrame (a frame-coalesced measurement), canceled in destroy().
+ *   - _modelEvents — `change` and `blur` on both hidden inputs for `wire:model.change`,
+ *     `wire:model.lazy` and `wire:model.blur`, which listen on those inputs alone
+ *     (utils/model-events.js): `change` at the commit boundary, a key press or the end of a drag,
+ *     and `blur` when the reader leaves the slider. Disposed in destroy().
+ *   - _label, _onLabelClick — a click listener on the visible label, which sits outside the
+ *     root, released in destroy().
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
+import { watchModelEvents } from '../utils/model-events.js';
+
+/**
+ * The most places after the point that any of `numbers` carries.
+ *
+ * Binary floating point holds no tenth exactly, so 0.1 + 0.2 is 0.30000000000000004. The numbers
+ * a slider is configured with say how many places its values can need, and rounding to that many
+ * gives the value a decimal step means. `String()` writes very small numbers with an exponent
+ * (`1e-7`), which is counted as places too.
+ *
+ * @param {...number} numbers
+ * @returns {number}
+ */
+function decimalPlaces(...numbers) {
+    return Math.max(0, ...numbers.map((number) => {
+        const [mantissa, exponent = '0'] = String(number).toLowerCase().split('e');
+        const fraction = (mantissa.split('.')[1] || '').replace(/0+$/, '');
+
+        return Math.min(100, Math.max(0, fraction.length - Number(exponent)));
+    }));
+}
+
 export default function wirekitRangeSlider(config = {}) {
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
@@ -26,12 +55,22 @@ export default function wirekitRangeSlider(config = {}) {
         _dragRect: null,
         _measureFrame: null,
         _resizes: null,
+        _modelEvents: null,
+        _label: null,
+        _onLabelClick: null,
 
         minVal: config.minValue ?? config.min ?? 0,
         maxVal: config.maxValue ?? config.max ?? 100,
         _min: config.min ?? 0,
         _max: config.max ?? 100,
         _step: config.step ?? 1,
+
+        /*
+         * The places a value on this slider can carry: as many as the bounds, the step or a
+         * starting value has. Every value written is rounded to them (`_toPlaces()`), so a step
+         * of 0.1 lands on 0.3 and not on its binary neighbor.
+         */
+        _places: decimalPlaces(config.min ?? 0, config.max ?? 100, config.step ?? 1, config.minValue ?? 0, config.maxValue ?? 0),
         _dragging: null,
         /*
          * The three document-level drag listeners, held so a teardown can reach them.
@@ -49,6 +88,18 @@ export default function wirekitRangeSlider(config = {}) {
          */
         _dragMove: null,
         _dragEnd: null,
+
+        /*
+         * Whether the press behind the next click on the track began on the track itself.
+         *
+         * A click is dispatched at the nearest element that both the press and the release were
+         * over. A handle dragged until it stops against the other one leaves the pointer over the
+         * track, so the click that ends that drag reaches the track too, and acting on it would
+         * move a handle the reader never pointed at. A press on a handle bubbles to the track as
+         * well, so every press inside the track sets this, and only a click it allowed counts.
+         */
+        _trackPressed: false,
+
         // True when the two thumbs are close enough that their individual value
         // badges would overlap — the blade then shows ONE merged "min – max"
         // badge instead. Set by _measureBubbles() from the badges' real boxes.
@@ -143,12 +194,12 @@ export default function wirekitRangeSlider(config = {}) {
          * binds are built here — the same reason the geometry above lives in JS.
          */
         get minThumbCeiling() {
-            return Math.max(this._min, this.maxVal - this._step);
+            return this._toPlaces(Math.max(this._min, this.maxVal - this._step));
         },
 
         /** The lowest value the UPPER handle can hold — the mirror of `minThumbCeiling`. */
         get maxThumbFloor() {
-            return Math.min(this._max, this.minVal + this._step);
+            return this._toPlaces(Math.min(this._max, this.minVal + this._step));
         },
 
         /**
@@ -196,24 +247,24 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         /**
-         * The one place `minVal` is written by a keyboard gesture.
+         * The one place `minVal` is written by a keyboard gesture or a click on the track.
          *
          * Every key path funnels through here so the clamp, the gesture mark, the
          * hidden-input dispatch and the commit boundary are stated once. A key
          * press IS a completed decision, so it commits immediately — unlike a
-         * drag, which commits at pointerup.
+         * drag, which commits at pointerup. A click on the track is one as well.
          */
         _setMin(value) {
             this._markGesture();
-            this.minVal = Math.max(this._min, Math.min(value, this.maxVal - this._step));
+            this.minVal = this._toPlaces(Math.max(this._min, Math.min(value, this.maxVal - this._step)));
             this._dispatchInputEvent();
             this._commit();
         },
 
-        /** The one place `maxVal` is written by a keyboard gesture. */
+        /** The one place `maxVal` is written by a keyboard gesture or a click on the track. */
         _setMax(value) {
             this._markGesture();
-            this.maxVal = Math.min(this._max, Math.max(value, this.minVal + this._step));
+            this.maxVal = this._toPlaces(Math.min(this._max, Math.max(value, this.minVal + this._step)));
             this._dispatchInputEvent();
             this._commit();
         },
@@ -249,9 +300,51 @@ export default function wirekitRangeSlider(config = {}) {
          * property the whole opt-in shape rests on.
          */
         _commit() {
+            // The same boundary is the inputs' `change`, as a native range input fires it.
+            this._modelEvents?.commit();
+
             if (typeof this.run === 'function') {
                 this.run([this.minVal, this.maxVal]);
             }
+        },
+
+        /**
+         * A press inside the track: whether it began on the track itself or on a handle.
+         */
+        pressTrack(event) {
+            this._trackPressed = ! event?.target?.closest?.('[role="slider"]');
+        },
+
+        /**
+         * A click on the track brings the nearer handle to that point.
+         *
+         * Dragging was the only way a pointer could set a value, and WCAG 2.2 SC 2.5.7 asks for a
+         * single-pointer way that does not drag. A native range input moves its thumb to a click
+         * on its track; with two handles the nearer one comes, on the same step grid and inside
+         * the same bounds a drag keeps. It takes the focus, so an arrow key fine-tunes from there,
+         * and one click is one completed decision, so it commits at once, like a key press.
+         */
+        clickTrack(event) {
+            if (! this._trackPressed) return;
+
+            this._trackPressed = false;
+
+            const track = this.$refs.track;
+            if (!track) return;
+
+            const value = this._pointerValue(event.clientX, track.getBoundingClientRect());
+            const lower = Math.abs(value - this.minVal) <= Math.abs(value - this.maxVal);
+
+            if (lower) {
+                this._setMin(this._snapToStep(value));
+            } else {
+                this._setMax(this._snapToStep(value));
+            }
+
+            // The handles in document order, the lower one first: the role is what the keyboard
+            // bindings sit on, so it is the element that has to end up focused.
+            const handles = typeof track.querySelectorAll === 'function' ? track.querySelectorAll('[role="slider"]') : [];
+            handles[lower ? 0 : 1]?.focus?.({ preventScroll: true });
         },
 
         /**
@@ -330,19 +423,6 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         /**
-         * Alpine's teardown hook. This component had none.
-         *
-         * Without it a drag interrupted by a morph or a navigation left three handlers on
-         * `document` writing into a scope nobody owns any more — and `_onDrag` reads
-         * `this.$refs.track`, so the leak is not merely idle: every pointer move on the
-         * page ran a measurement against a detached element.
-         *
-         * `_commit()` is deliberately NOT called here. Teardown is not a commit boundary
-         * — the component is going away, and sending a value the reader never let go of
-         * would be the optimistic layer's worst case: a write nobody asked for, on a
-         * surface that no longer exists to roll it back.
-         */
-        /**
          * Watch the track and both badges.
          *
          * Whether the badges merge compares their widths with the track's, and `x-effect` runs
@@ -353,6 +433,13 @@ export default function wirekitRangeSlider(config = {}) {
          * changes no size watched here and cannot answer itself.
          */
         init() {
+            // First, because the returns below are about measuring, and a slider bound with
+            // `.change` or `.blur` needs these events wherever it is drawn.
+            this._modelEvents = watchModelEvents(this.$root, () => [this.$refs?.minInput, this.$refs?.maxInput]);
+
+            // Before the returns below too: the label is not about measuring.
+            this._wireLabel();
+
             if (typeof ResizeObserver !== 'function') {
                 return;
             }
@@ -374,7 +461,50 @@ export default function wirekitRangeSlider(config = {}) {
             watched.forEach((el) => this._resizes.observe(el));
         },
 
+        /**
+         * A click on the visible label focuses the first thumb that can move.
+         *
+         * A label names an element by `for` and focuses it on a click, and a thumb is a
+         * `div[role="slider"]`, which `for` cannot name. So the label names the group by
+         * reference instead, and the click is wired here: this component's own label, or a
+         * field's that took its place. Both sit outside the root.
+         */
+        _wireLabel() {
+            const label = config.labelId && typeof document !== 'undefined' && typeof document.getElementById === 'function'
+                ? document.getElementById(config.labelId)
+                : null;
+
+            if (!label) return;
+
+            this._label = label;
+            this._onLabelClick = () => {
+                // Torn down between the click and this callback.
+                if (!this._label) return;
+
+                this.$root?.querySelector('[role="slider"]:not([aria-disabled="true"])')?.focus();
+            };
+            label.addEventListener('click', this._onLabelClick);
+        },
+
+        /**
+         * Alpine's teardown hook. This component had none.
+         *
+         * Without it a drag interrupted by a morph or a navigation left three handlers on
+         * `document` writing into a scope nobody owns any more — and `_onDrag` reads
+         * `this.$refs.track`, so the leak is not merely idle: every pointer move on the
+         * page ran a measurement against a detached element.
+         *
+         * `_commit()` is deliberately NOT called here. Teardown is not a commit boundary
+         * — the component is going away, and sending a value the reader never let go of
+         * would be the optimistic layer's worst case: a write nobody asked for, on a
+         * surface that no longer exists to roll it back.
+         */
         destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
+            this._label?.removeEventListener('click', this._onLabelClick);
+            this._label = null;
+            this._onLabelClick = null;
             this._releaseDragListeners();
             this._resizes?.disconnect();
             this._resizes = null;
@@ -396,19 +526,41 @@ export default function wirekitRangeSlider(config = {}) {
             // Use the per-drag cached rect (set in startDrag); fall back to a
             // fresh read only if it's somehow absent.
             const rect = this._dragRect || track.getBoundingClientRect();
-            const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-            const rawValue = this._min + percent * (this._max - this._min);
-
-            // Snap to step
-            const stepped = Math.round(rawValue / this._step) * this._step;
+            const stepped = this._snapToStep(this._pointerValue(event.clientX, rect));
 
             if (this._dragging === 'min') {
-                this.minVal = Math.max(this._min, Math.min(stepped, this.maxVal - this._step));
+                this.minVal = this._toPlaces(Math.max(this._min, Math.min(stepped, this.maxVal - this._step)));
             } else {
-                this.maxVal = Math.min(this._max, Math.max(stepped, this.minVal + this._step));
+                this.maxVal = this._toPlaces(Math.min(this._max, Math.max(stepped, this.minVal + this._step)));
             }
 
             this._dispatchInputEvent();
+        },
+
+        /**
+         * The value under a pointer at `clientX`, before it goes on the step grid: what a drag
+         * and a click on the track both read, so the two cannot disagree about a point. A pointer
+         * past either end of the track reads as that end.
+         */
+        _pointerValue(clientX, rect) {
+            const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+
+            return this._min + percent * (this._max - this._min);
+        },
+
+        /**
+         * A pointer's value on the step grid, before the clamp of the handle it moves.
+         *
+         * The grid starts at `min`, as a native range input's does, so it is the grid the arrow
+         * keys walk from `min` as well, and `min` itself is a point on it.
+         */
+        _snapToStep(value) {
+            return this._toPlaces(this._min + Math.round((value - this._min) / this._step) * this._step);
+        },
+
+        /** A value rounded to the places this slider's numbers carry (`_places`). */
+        _toPlaces(value) {
+            return Number(value.toFixed(this._places));
         },
 
         /**
@@ -443,7 +595,6 @@ export default function wirekitRangeSlider(config = {}) {
             }
         },
 
-        /** x-effect entry point: re-measure after the values settle. */
         /**
          * Re-measure whenever either handle moves.
          *
@@ -483,11 +634,23 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         /**
-         * Dispatch input events on hidden inputs for Livewire.
+         * Write both values into the hidden inputs and fire `input` on them, for `wire:model`.
+         *
+         * The inputs are bound with `:value`, and Alpine writes a binding a microtask later. Fired
+         * right after the assignment, the events found the inputs still holding the previous
+         * values, which is what `wire:model` reads, so the server stayed one step behind every key
+         * press and every move of a drag. So the values are written here as well, before the
+         * events.
          */
         _dispatchInputEvent() {
-            this.$refs.minInput?.dispatchEvent(new Event('input', { bubbles: true }));
-            this.$refs.maxInput?.dispatchEvent(new Event('input', { bubbles: true }));
+            for (const [input, value] of [[this.$refs.minInput, this.minVal], [this.$refs.maxInput, this.maxVal]]) {
+                if (! input) {
+                    continue;
+                }
+
+                input.value = String(value);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         },
     };
 }

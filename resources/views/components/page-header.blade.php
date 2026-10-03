@@ -49,6 +49,11 @@
     // and not its meanings: `sm` here is 24rem of HEADER, where a viewport `sm` is 40rem of
     // window. Null keeps today's behavior exactly, so no existing header moves.
     'stackBelow' => null,
+    // Stick to the top of the box the page scrolls in, `--wk-strip-inset` below a strip of chrome.
+    // Resting there, the header keeps as much space above its content as below it and fades in a
+    // bottom border, so what scrolls under it is set apart; in the flow of the page it draws no
+    // border. The resting state is `data-wk-stuck`, which `x-wk-stuck` writes.
+    'sticky' => false,
     'scope' => null,
 ])
 
@@ -62,6 +67,13 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `heading-focusable="false"` would mean the opposite of what the call site reads as.
     $headingFocusable = BooleanProp::from($headingFocusable, false);
+    $sticky = BooleanProp::from($sticky, false);
+
+    // A sticky header is an Alpine root of its own, for the directive that marks its resting state,
+    // and a caller's `x-model` on it would take the value of a field in its actions slot.
+    if ($sticky) {
+        \Pushery\WireKit\Support\UnboundModel::drop('page-header', $attributes);
+    }
 
     /*
      * The forced break, and it works through the SAME mechanism the natural one does: the title
@@ -122,6 +134,32 @@
     ]), $scope);
 
     /*
+     * The sticky header, in its own block so a call site can retune the resting state without
+     * rewriting the row above.
+     *
+     * The same padding above and below at all times, so the header is as tall resting as in the
+     * flow and nothing under it moves when it starts to stick; resting at its line, the space
+     * above its content is the padding, as below it. The page's background, so what scrolls under
+     * it does not show through. The border is there all along and transparent until
+     * `data-wk-stuck`, so fading it in moves nothing either; at least a pixel wide, so a preset
+     * that sets `--border-wk-width` to 0 still separates the header from what scrolls under it.
+     *
+     * Two knobs, read with a fallback and declared nowhere: `--wk-page-header-top` moves the line
+     * the header sticks to, for a box that scrolls with a padding of its own, and
+     * `--wk-page-header-rest-gap` the padding above and below.
+     */
+    $stickyClasses = $sticky ? WireKit::resolveClasses('page-header', 'sticky', implode(' ', [
+        'wk-page-header-sticky',
+        'sticky top-[var(--wk-page-header-top,var(--wk-strip-inset,0px))]',
+        'z-[var(--z-wk-sticky)]',
+        'bg-[var(--color-wk-bg)]',
+        'py-[var(--wk-page-header-rest-gap,var(--padding-wk-y-md))]',
+        'border-b-[length:max(1px,var(--border-wk-width))] border-b-transparent',
+        'data-[wk-stuck]:border-b-[var(--color-wk-border)]',
+        'transition-[border-color] duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
+    ]), $scope) : '';
+
+    /*
      * The two structures BESIDE the root, named so a call site can reach them.
      *
      * Naming them is the point: without a resolvable block for the title column, the only way
@@ -132,18 +170,6 @@
      * rendered moves; what changes is that a developer can now say so through
      * `WireKit::personalize()`, a scope, or `components.page-header.classes.{block}`.
      */
-    $columnClasses = WireKit::resolveClasses('page-header', 'column', implode(' ', array_filter([
-        // `min-w-0` is not decoration: a flex child defaults to `min-width: auto`, so a long
-        // unbroken word would push the column past the row instead of wrapping inside it.
-        //
-        // `grow`, not the `flex` shorthand: `flex-1` sets `flex-basis: 0%`, and beside a
-        // `basis-[16rem]` longhand both are single-class selectors, so which one applies would
-        // be decided by their order in the compiled stylesheet, which this component does not
-        // control. Three longhands say the same thing with nothing left to order.
-        'min-w-0 grow basis-[16rem]',
-        $stackClass,
-    ])), $scope);
-
     // Whether the title and the description come from their slots, asked as `hasActualContent()`.
     // `filled()` counts the comment markers Livewire writes around an `@if` as content, and a
     // call site that makes its `actions` slot conditional leaves two of them in the DEFAULT slot:
@@ -153,6 +179,27 @@
     $hasDescription = $description instanceof \Illuminate\View\ComponentSlot
         ? $description->hasActualContent()
         : filled($description);
+
+    // Actions beside a title with no description sit centered on the title and add nothing to
+    // the header's height (`.wk-page-header-actions-frame` in the stylesheet says how). With a
+    // description the column is the taller part anyway, and the actions keep to its top.
+    $actionsBesideTitle = isset($actions) && ! $hasDescription;
+
+    $columnClasses = WireKit::resolveClasses('page-header', 'column', implode(' ', array_filter([
+        // `min-w-0` is not decoration: a flex child defaults to `min-width: auto`, so a long
+        // unbroken word would push the column past the row instead of wrapping inside it.
+        //
+        // `grow`, not the `flex` shorthand: `flex-1` sets `flex-basis: 0%`, and beside a
+        // `basis-[16rem]` longhand both are single-class selectors, so which one applies would
+        // be decided by their order in the compiled stylesheet, which this component does not
+        // control. Three longhands say the same thing with nothing left to order.
+        //
+        // Beside the actions frame, which grows too, the column grows 999 times faster: it keeps
+        // all but a hair of the free space, as it did when it was the only thing growing, and the
+        // frame stays as wide as its buttons until it wraps to a line of its own.
+        $actionsBesideTitle ? 'min-w-0 grow-[999] basis-[16rem]' : 'min-w-0 grow basis-[16rem]',
+        $stackClass,
+    ])), $scope);
 
     // A `meta` slot: short facts about the thing the title names, a status badge or a count,
     // drawn in the title's row and outside the heading. Inside the heading they would become part
@@ -168,7 +215,7 @@
     ]), $scope);
 @endphp
 
-<div data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<div data-wk-prose-skip @if($sticky) x-data x-wk-stuck data-wk-scroll-inset="top" @endif {{ $attributes->class([$classes, $stickyClasses]) }}>
     <div class="{{ $columnClasses }}">
         {{-- With meta, the heading and the meta share a row that wraps. Without it the heading is
              the column's first child exactly as before, so no existing header changes. --}}
@@ -198,12 +245,23 @@
                  taking a `--gap-wk-*` value is what `SpacingFamilyRatchetTest` freezes, and
                  it caught this line. The tight end of it, because the sentence belongs to
                  the title above it: a distance the size of the row's own gap would read as
-                 a third block rather than as the title's second line. --}}
-            <x-wirekit::text intent="muted" class="mt-[var(--space-wk-xs)]" :scope="$scope">{{ $description }}</x-wirekit::text>
+                 a third block rather than as the title's second line. The sentence keeps to the
+                 wide reading measure: in a page's full width it ran to two lines of about 190
+                 characters, which the eye cannot follow back to the start of the next. --}}
+            <x-wirekit::text intent="muted" measure="wide" class="mt-[var(--space-wk-xs)]" :scope="$scope">{{ $description }}</x-wirekit::text>
         @endif
     </div>
 
     @isset($actions)
-        <div data-wk-page-header-actions class="{{ $actionsClasses }}">{{ $actions }}</div>
+        @if($actionsBesideTitle)
+            {{-- The frame grows to fill its line, which is how the stylesheet tells beside the
+                 title from wrapped below it. The row keeps its name and its block, so a call site
+                 that reaches for `[data-wk-page-header-actions]` finds the same element. --}}
+            <div data-wk-page-header-actions-frame class="wk-page-header-actions-frame">
+                <div data-wk-page-header-actions class="{{ $actionsClasses }}">{{ $actions }}</div>
+            </div>
+        @else
+            <div data-wk-page-header-actions class="{{ $actionsClasses }}">{{ $actions }}</div>
+        @endif
     @endisset
 </div>

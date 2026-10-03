@@ -47,7 +47,7 @@
     // applied in the markup and change nothing a screen reader says.
     // `accessibleLabel` still wins over both; this only decides what happens
     // when a caller reaches for the attribute instead of the prop.
-    $resolvedLabel = $accessibleLabel ?: ($attributes->get('aria-label') ?: __('wirekit::QR code'));
+    $resolvedLabel = $accessibleLabel ?: (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: __('wirekit::QR code'));
     $attributes = $attributes->except('aria-label');
 
     $hasQrLibrary = class_exists('\BaconQrCode\Renderer\ImageRenderer');

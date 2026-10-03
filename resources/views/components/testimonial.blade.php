@@ -46,21 +46,8 @@
     $ratingValue = ($rating === null || $rating === '') ? null : (float) $rating;
 
     // Derive initials from the author name so an avatar-less testimonial still
-    // shows a person, not a blank disc. Take the first letter of the first and
-    // last word — "Ada Lovelace" -> "AL", "Ada" -> "A". mb_* throughout: names
-    // are exactly where non-ASCII lives, and substr() would slice a codepoint
-    // in half and emit broken UTF-8.
-    $derivedInitials = $initials;
-
-    if ($derivedInitials === null && $author !== '') {
-        $words = preg_split('/\s+/u', trim($author), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        $derivedInitials = match (count($words)) {
-            0 => null,
-            1 => mb_strtoupper(mb_substr($words[0], 0, 1)),
-            default => mb_strtoupper(mb_substr($words[0], 0, 1).mb_substr($words[count($words) - 1], 0, 1)),
-        };
-    }
+    // shows a person, not a blank disc: "Ada Lovelace" -> "AL", "Ada" -> "A".
+    $derivedInitials = $initials ?? \Pushery\WireKit\Support\Initials::from($author);
 
     $classes = WireKit::resolveClasses('testimonial', 'base', implode(' ', [
         'flex h-full flex-col gap-[var(--gap-wk-md)]',

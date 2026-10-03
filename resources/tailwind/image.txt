@@ -72,6 +72,7 @@ $width
 ($src
 (--radius-wk-md).
 (CLS-safe)
+(Support\UrlProp).
 (a
 (alt="").
 (e.g.
@@ -136,6 +137,7 @@ Debug
 Declared
 Dev-only
 Eager
+Echoed
 Fetch
 Fully
 HTML
@@ -166,6 +168,7 @@ With
 ['cover',
 [image]:
 \Illuminate\Support\Facades\Log::warning(
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('image',
 ])
 ]),
@@ -202,6 +205,7 @@ be
 because
 before
 block,
+bound,
 box
 browser
 browser.
@@ -249,6 +253,7 @@ early.
 either,
 element,
 empty
+escaped
 even
 exception:
 failure
@@ -287,6 +292,7 @@ in-flow
 in_array($fetchpriority,
 incorrect
 interactive
+into
 intrinsic
 is
 it
@@ -338,6 +344,7 @@ of
 omit
 on
 on.
+once
 one
 one.
 only
@@ -405,6 +412,7 @@ string
 string,
 style="aspect-ratio:
 supplies
+tag
 takes
 text-[color:var(--color-wk-text-muted)]">
 text-[length:var(--text-wk-sm)]

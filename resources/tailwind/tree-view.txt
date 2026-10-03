@@ -7,10 +7,9 @@
 "tree
 "tree"s.
 $attributes
+$attributes->class([$iconClasses]);
 $attributes->class([$nodeClasses])
-$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -21,6 +20,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $classes
 $cleaned
@@ -30,6 +30,7 @@ $e;
 $expanded
 $groupId
 $hasChildren
+$iconClasses
 $isInformative
 $isInformative;
 $label
@@ -54,7 +55,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -67,12 +68,17 @@ $validated
 ''
 ''"
 '')
+''));
 '',
 ',
 '-1'
 '.
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '0'
 '2xl'
 '<svg
@@ -90,6 +96,7 @@ $validated
 'Rendering
 'Run:
 '[WireKit]
+'aria-label');
 'base',
 'bg-[var(--color-wk-bg-muted)]
 'cursor-pointer
@@ -142,6 +149,7 @@ $validated
 ($svgHtml
 ('xs').
 (Support\CallerListeners).
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -181,7 +189,9 @@ $validated
 1.4.1),
 16
 16"
+16px
 1rem;"
+20px,
 250ms
 2rem,
 3l5
@@ -258,6 +268,7 @@ Alpine.
 An
 ArrowRight/ArrowLeft
 BENEATH
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -316,6 +327,7 @@ Padding
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\DomId;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 RECEIVES
 Reapply
@@ -346,10 +358,12 @@ UNBOUND
 Uniform
 Unlike
 Uses
+UtilityClasses::without($iconClasses,
 VISIBLE,
 WAI-ARIA
 We
 WireKit
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('tree-view',
 WireKit::resolveClasses('tree-view.node',
 WireKit::validateProp('icon',
@@ -357,7 +371,9 @@ With
 [
 ['@focusin',
 ['data-wk-icon-missing'
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -372,7 +388,9 @@ __toString
 `-1`
 `-1`,
 `0`
+`:class`
 `<span>`
+`@class`
 `Svg
 `aria-hidden="true"`
 `aria-label`
@@ -380,7 +398,11 @@ __toString
 `aria-selected="true"`
 `bg-[var(--color-wk-bg)]`
 `class="h-12
+`class`
 `data-reduce-motion`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -413,6 +435,7 @@ all
 all,
 allowed
 alone
+alone,
 already
 also
 an
@@ -428,6 +451,7 @@ any
 anyone
 app(IconResolver::class)->resolve($name);
 application's
+applies
 are
 aria-expanded
 aria-expanded,
@@ -445,8 +469,10 @@ aria-owns
 aria-owns="{{
 aria-selected
 aria-selected="true"
+array,
 array_filter([
 array_keys($sizeMap));
+arrives
 arrow
 as
 as,
@@ -454,11 +480,13 @@ asked
 at
 attempted
 attribute
+attribute's
 attribute,
 audience.
 authoring
 auto-derived
 available
+axis.
 back.
 background
 backgrounds
@@ -468,6 +496,7 @@ bakes
 be
 because
 becomes
+before
 belongs
 below
 below,
@@ -484,6 +513,7 @@ block,
 bootstrapped
 borders.
 both
+bound
 branch
 branch's
 break
@@ -594,11 +624,13 @@ descendants
 dev
 developer
 developer's
+did
 direct
 directly
 disc
 documented
 does
+does.
 down
 draws
 dropdown
@@ -702,6 +734,7 @@ hand-written
 handled
 handles
 hands
+happened
 happens
 hard
 harder
@@ -789,6 +822,7 @@ later
 layout
 leave
 leaves
+left
 level
 level.
 library's
@@ -809,6 +843,7 @@ logger()->warning(
 longer
 looked
 lost
+lost,
 loudly,
 m-0
 m-0',
@@ -868,6 +903,7 @@ none;
 nor
 not
 not.
+not:
 nothing
 nothing.
 now.
@@ -897,6 +933,7 @@ opposite
 optimistic-ui:
 optional
 or
+order
 other
 otherwise
 our
@@ -989,6 +1026,7 @@ resolved
 resolves
 resources/js/components/tree-view-node.js:
 respect
+responsive
 rest
 restores
 result
@@ -1045,8 +1083,10 @@ site
 size
 size,
 size="sm"
+sized
 so
 somebody
+sorts
 source
 source-baked
 space
@@ -1074,6 +1114,7 @@ style="display:inline-block;"></span>
 style="list-style:
 style="margin-left:
 styled
+stylesheet's
 substring
 substring,
 subtree
@@ -1117,6 +1158,7 @@ throws
 tile
 tint
 to
+toCssClasses()
 toHtml().
 toggle
 toggle;
@@ -1159,6 +1201,7 @@ valid
 validateProp
 value
 value,
+variant
 via
 view
 view's
@@ -1190,11 +1233,14 @@ wherever
 whether
 which
 whichever
+while
 whitespace
 whitespace.
 who
 whole
 whose
+width
+win.
 wins
 with
 would

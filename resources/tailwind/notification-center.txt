@@ -294,9 +294,9 @@ WireKit::validateProp('notification-center',
 ['x-on:keydown.escape',
 [],
 [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
-\Pushery\WireKit\Support\AlpinePayload::from($itemsArr)
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title,
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread.
+\Pushery\WireKit\Support\AlpinePayload::json($itemsArr)
 \Pushery\WireKit\Support\AlpinePayload::string($groupBy)
 \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
@@ -325,6 +325,7 @@ __('wirekit::Unread.')
 `role="region"`
 `wire:model`:
 `wk-state-button`
+`x-data`
 `x-ref`
 a
 above
@@ -337,6 +338,7 @@ actions
 activate(item),
 active
 affordance
+again,
 against
 alert/badge).
 all
@@ -371,6 +373,7 @@ aria-labelledby="{{
 aria-live="polite"
 around
 array,
+arrived.
 arrows
 as
 as,
@@ -438,6 +441,7 @@ catalog,
 caught
 center
 center:
+changed
 changes,
 checked
 choice.
@@ -467,6 +471,7 @@ clipping/stacking
 close
 closer
 closes
+closing
 collect($itemsArr)->reject(fn
 color
 color/dot
@@ -502,6 +507,7 @@ d="M22
 data-filter="all"
 data-replayable="true"
 data-table
+data-wk-items="{{
 data-wk-mark-all-read
 data-wk-notification-list
 data-wk-notification-row
@@ -547,6 +553,7 @@ events
 every
 everything
 expression
+factory
 factory,
 fallback
 false))->count();
@@ -577,6 +584,7 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]">
 focus-visible:ring-inset
+follows
 font-[family-name:var(--font-wk-sans)]',
 font-[number:var(--font-wk-heading-weight)]
 footer
@@ -645,6 +653,7 @@ in-panel-action
 indicator
 indicator;
 initial
+initialize
 inline-block
 inline-end
 inline-flex
@@ -664,7 +673,6 @@ item's
 items
 items-center
 items-start
-items:
 its
 justify-between
 justify-center
@@ -750,6 +758,7 @@ on
 on,
 on-screen
 on.
+once
 once.
 one
 one.
@@ -776,6 +785,7 @@ overflow-hidden"
 overflow-y-auto
 overflow.
 own
+own,
 page
 page.
 page:
@@ -946,7 +956,9 @@ text-link
 text-link,
 that
 the
+their
 them
+them.
 them;
 there.
 they
@@ -971,6 +983,7 @@ transition-colors"
 transition-colors">{{
 transition-colors';
 translated
+travel
 triages
 trigger,
 trigger.
@@ -993,6 +1006,7 @@ unreadCount">{{
 unreadCount)
 until
 up"),
+update:
 uppercase
 use
 used

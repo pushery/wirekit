@@ -230,6 +230,21 @@ export default function wirekitHoverCard(config = {}) {
         },
 
         /**
+         * The box the card is placed against.
+         *
+         * The control the reader sees and focuses, not the wrapper around it. The wrapper is an
+         * inline span whose box is the line's, shorter than a button inside it, so a gap counted
+         * from the wrapper's edge would put the card over the button's focus ring, which reaches
+         * past the button by its offset and its width. A trigger with no control of its own, or
+         * one that is not rendered, keeps the wrapper.
+         */
+        _placementReference() {
+            const control = this._triggerControl();
+
+            return control && control.getClientRects().length > 0 ? control : this.$refs.trigger;
+        },
+
+        /**
          * Tab pressed while the trigger has focus — step into the card.
          *
          * Only forwards, and only when there is something in there to use: a
@@ -369,13 +384,14 @@ export default function wirekitHoverCard(config = {}) {
 
             const trigger = this.$refs.trigger;
             const panel = this.$refs.panel;
+            const reference = this._placementReference();
 
             if (trigger && panel) {
                 // Drop the previous showing's observer before making another one.
                 this._stopRepair?.();
                 this._stopRepair = null;
 
-                const placement = await position(trigger, panel, {
+                const placement = await position(reference, panel, {
                     placement: this._placement,
                     offset: this._offset,
 

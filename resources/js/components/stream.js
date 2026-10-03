@@ -294,7 +294,6 @@ export default function wirekitStream(config = {}) {
             });
         },
 
-        /** Append one chunk. Buffered (not shown) under reduced motion. */
         /**
          * POST the request and read the response body as it arrives.
          *
@@ -522,6 +521,7 @@ export default function wirekitStream(config = {}) {
             }
         },
 
+        /** Append one chunk. Buffered (not shown) under reduced motion. */
         _push(chunk) {
             if (this.status !== 'streaming') {
                 return;

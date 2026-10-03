@@ -37,6 +37,8 @@ $stickyClasses,
 ''`,
 ',
 '-1'
+'-m-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
+'-my-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 '0'
 'align'
 'align',
@@ -93,6 +95,7 @@ $stickyClasses,
 (above),
 (below),
 (default)
+(its
 (none)
 (see
 (silent
@@ -125,6 +128,7 @@ $stickyClasses,
 @endphp
 @if($bleed)
 @if($ruleOnTop)
+@if($sticky)
 @if(filled($label)
 @isset($end)
 @isset($start)
@@ -180,6 +184,7 @@ On
 One
 Outside
 PLUS
+Padding
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 ROLE
@@ -259,6 +264,7 @@ Without
 `none`
 `overflow-hidden`
 `overflow-x-auto`,
+`overflow-x:
 `overflow:
 `position:
 `rule="false"`
@@ -280,6 +286,7 @@ a
 about
 above
 above:
+absorbs
 accepts
 accessible
 account
@@ -335,8 +342,10 @@ attribute's
 attribute.
 attributes
 auto-derived
+auto`
 automatic
 away
+axis
 back
 back.
 background
@@ -387,6 +396,7 @@ bug
 build
 built-in
 but
+button's
 buttons
 by
 caller
@@ -462,6 +472,7 @@ cut
 dark
 data-wk-bleed
 data-wk-rule-top
+data-wk-scroll-inset="top"
 data-wk-shell-bar
 dead
 debug
@@ -499,6 +510,7 @@ earlier
 edge
 edge,
 edge.
+edges.
 either
 either,
 element
@@ -511,6 +523,8 @@ empty
 empty".
 empty,
 ends
+ends,
+ends.
 enforces
 engages
 engages.
@@ -534,8 +548,10 @@ false
 false);
 false,
 far
+farthest
 file;
 fill,
+fills
 filter
 first
 fit
@@ -570,6 +586,7 @@ gate
 generates
 get
 gets
+given
 gives
 gone.
 gray
@@ -585,12 +602,14 @@ hamburger,
 hand-aligned
 hang
 has
+has),
 head
 head,
 headers.
 heading
 hear
 height
+height,
 height.
 heights
 here
@@ -643,6 +662,7 @@ itself
 joins
 keep
 keeping
+keeps
 keyboard
 keyboard-operable,
 keyboard-operable.
@@ -666,8 +686,11 @@ left
 less
 let
 lets
+lie
 light
 line
+link
+link.
 links
 links,
 list
@@ -683,6 +706,7 @@ lost
 main
 makes
 margin
+margin,
 margins
 mark
 marker
@@ -731,6 +755,7 @@ next
 no
 no-op.
 nobody
+none,
 none`
 normalization
 normalizer
@@ -743,6 +768,7 @@ obligation
 of
 off
 off.
+offset,
 omit
 on
 on.
@@ -761,6 +787,7 @@ other
 otherwise
 out
 outcome
+outside
 overflow
 overflow,
 overflow-x-auto',
@@ -772,6 +799,7 @@ own
 own,
 own.
 owns,
+p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 padding
 padding,
 padding;
@@ -786,6 +814,7 @@ parent
 part
 pass
 passing
+past
 phantom
 phone
 phone-sized
@@ -812,6 +841,7 @@ push
 pushes
 put
 put.
+py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 qualified:
 question
 rail
@@ -841,9 +871,11 @@ right
 right,
 right-to-left
 ring
+ring;
 role
 role="group"
 roll
+room
 row
 row,
 rows
@@ -859,6 +891,8 @@ says
 scale.
 scanner
 scroll
+scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]'
+scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]'
 scrollable
 scrollbar
 scrolled
@@ -884,6 +918,7 @@ shift
 short
 should
 show
+shows
 shrink
 shrink-0
 side
@@ -928,12 +963,14 @@ sticks
 sticky`
 still
 stop
+stops
 stops;
 strict
 string
 string,
 strings,
 strip
+strip's
 strip,
 strips
 stylesheet
@@ -987,6 +1024,7 @@ token
 token's
 tone
 toned
+too,
 top
 top-[var(--wk-strip-inset,0px)]
 touch,
@@ -1047,6 +1085,7 @@ while
 whole
 whose
 why
+wide
 wide,
 widening
 width

@@ -67,8 +67,8 @@
         ? 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-lg)] text-[length:var(--text-wk-lg)]'
         : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)]';
     $panelPad = $itemSize === 'lg'
-        ? 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-lg)]'
-        : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]';
+        ? 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-x-lg)]'
+        : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)]';
 
     // In `separated` mode each item is its own card (the container draws no
     // border/bg), so the item carries the chrome. bordered/flush leave this

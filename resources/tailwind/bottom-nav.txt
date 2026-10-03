@@ -11,11 +11,10 @@ $accessibleName
 $active
 $attributes
 $attributes->class([$classes])
-$attributes->class([WireKit::resolveClasses('icon',
+$attributes->class([$iconClasses]);
 $attributes->except('rel')->class([$classes])
 $attributes->except(['interactive']);
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('rel',
 $attributes->get('role');
@@ -29,6 +28,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $classes
 $cleaned
@@ -38,6 +38,7 @@ $e)
 $e;
 $finalRel
 $href
+$iconClasses
 $interactive
 $isInformative
 $isInformative;
@@ -67,7 +68,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -81,6 +82,7 @@ $validated
 '#',
 ''
 '')
+''));
 '');
 '',
 ',
@@ -93,6 +95,10 @@ $validated
 '.__('wirekit::(opens
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -102,6 +108,7 @@ $validated
 '_blank');
 'active
 'active'
+'aria-label');
 'badge'
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
@@ -165,6 +172,8 @@ $validated
 ('xs').
 (-top-1.5
 (Alpine),
+(Support\UrlProp).
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -198,6 +207,8 @@ $validated
 />
 1
 1.4.1).
+16px
+20px,
 27-inch
 2rem,
 3"
@@ -252,6 +263,7 @@ Alpine
 AlpinePayload,
 An
 Auto-inject
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -272,6 +284,7 @@ Drop
 EMPTY
 ENT_QUOTES).'"',
 EVERY
+Echoed
 Every
 FILTER_VALIDATE_BOOLEAN);
 Fully
@@ -311,6 +324,7 @@ Optional
 PERFECTLY
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Read
 Reapply
@@ -334,12 +348,15 @@ The
 This
 Throwing
 UNBOUND
+URL
 Unconditional,
+UtilityClasses::without($iconClasses,
 Vertical
 We
 What
 Which
 WireKit
+WireKit::resolveClasses('icon',
 WireKit::validateProp('icon',
 With
 [
@@ -347,9 +364,12 @@ With
 \'false\'',
 \'page\'
 \'true\'
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($label);
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav',
 \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -360,9 +380,12 @@ With
 ];
 __('wirekit::Main'),
 __toString
+`$href`.
 `$href`:
+`:class`
 `<span>`
 `@aware`
+`@class`
 `@props`
 `Svg
 `active`
@@ -371,7 +394,11 @@ __toString
 `aria-label`
 `aria-labelledby`
 `class="h-12
+`class`
 `fab.action`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `href`
 `icon`
@@ -387,6 +414,7 @@ __toString
 a
 a11y
 above
+above,
 above.
 absent,
 accepts
@@ -406,6 +434,7 @@ all
 all,
 all.
 allowed
+alone,
 already
 also
 always
@@ -422,6 +451,7 @@ anything.
 app
 app(IconResolver::class)->resolve($name);
 appear.
+applies
 are
 aria-current="page"
 aria-hidden
@@ -434,14 +464,18 @@ aria-label
 aria-label,
 aria-label="{{
 aria-labelledby
+array,
 array_keys($sizeMap));
+arrives
 as
 as,
 at
 attempted
 attribute
+attribute's
 attribute,
 auto-derived
+axis.
 back
 badge
 badge:
@@ -456,6 +490,7 @@ be
 became
 because
 becomes
+before
 behavior
 belongs
 below,
@@ -468,6 +503,7 @@ blade-icons,
 blade-ui-kit/blade-heroicons.
 blade-ui-kit/blade-icons
 blade-ui-kit/blade-icons.
+block
 block,
 bootstrapped
 border
@@ -475,6 +511,8 @@ border-[var(--color-wk-border)]',
 both
 bottom
 bottom-0
+bound
+bound,
 branch's
 break
 bug
@@ -505,7 +543,6 @@ chose
 claims,
 class
 class="absolute
-class="h-6
 class="relative
 class="truncate">{{
 classes
@@ -549,6 +586,7 @@ data-wk-bottom-nav
 data-wk-bottom-nav-badge
 data-wk-bottom-nav-item
 data-wk-prose-skip
+data-wk-scroll-inset="bottom"
 debug
 decided
 decision,
@@ -563,6 +601,7 @@ default.
 default:
 define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
+defines
 degradation:
 degrades,
 deliberate.
@@ -571,6 +610,7 @@ deserves
 dev
 developer
 developer's
+did
 different
 direct
 directives,
@@ -607,6 +647,7 @@ empty-state
 entirely
 entry
 entry's.
+escaped
 escaping
 every
 exactly
@@ -670,6 +711,7 @@ h/w
 half
 hand-written
 hands
+happened
 hard
 harder
 has
@@ -678,6 +720,7 @@ have)
 header
 header,
 heavier
+height
 helper
 here
 here,
@@ -762,6 +805,8 @@ layer
 layout
 leading-4
 leave
+left
+like
 line
 line.
 link
@@ -779,6 +824,7 @@ logger()->warning(
 long
 look
 lost
+lost,
 loudly,
 makes
 mangled
@@ -828,6 +874,7 @@ noreferrer"
 noreferrer')
 not
 not.
+not:
 nothing
 nothing.
 now.
@@ -858,6 +905,7 @@ opening
 opposite
 optimistic-ui:
 or
+order
 other
 otherwise
 our
@@ -941,6 +989,7 @@ requires
 resolved
 resolves
 respect
+responsive
 rest
 result
 return
@@ -959,6 +1008,7 @@ router.
 rule
 rule:
 rung
+runs
 safe-area
 same
 say.
@@ -991,9 +1041,12 @@ sit
 site
 size
 size,
+size="lg"
+sized
 small
 so
 somebody
+sorts
 source
 source-baked
 space).
@@ -1018,6 +1071,7 @@ string
 string,
 strip
 style="display:inline-block;"></span>
+stylesheet's
 survive
 survives
 svg($resolved,
@@ -1028,6 +1082,7 @@ tab)'));
 tab,
 tab;
 table
+tag
 tag's
 tag,
 tag.
@@ -1062,6 +1117,7 @@ throws
 tile
 to
 to.
+toCssClasses()
 toHtml().
 tokenizer
 too.
@@ -1105,6 +1161,7 @@ validateProp
 value
 value,
 value.
+variant
 via
 view's
 viewport
@@ -1115,7 +1172,6 @@ w-4',
 w-5
 w-5',
 w-5';
-w-6"
 w-6',
 w-8',
 warning
@@ -1133,9 +1189,12 @@ wherever
 whether
 which
 which.
+while
 whitespace
 who
 whose
+width
+win.
 wins
 with
 without

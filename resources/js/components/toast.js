@@ -139,14 +139,6 @@ export default function wirekitToast(config = {}) {
         },
 
         /**
-         * Add a new toast to the queue.
-         * @param {Object} detail - Toast payload
-         * @param {string} [detail.title] - Bold heading
-         * @param {string} [detail.message] - Body text
-         * @param {string} [detail.variant='info'] - info|success|warning|danger
-         * @param {number} [detail.duration] - Override auto-dismiss ms (0 = persistent)
-         */
-        /**
          * Write a toast's text into the persistent live region.
          *
          * The regions live OUTSIDE the x-for and start empty, because a live region
@@ -172,6 +164,14 @@ export default function wirekitToast(config = {}) {
             });
         },
 
+        /**
+         * Add a new toast to the queue.
+         * @param {Object} detail - Toast payload
+         * @param {string} [detail.title] - Bold heading
+         * @param {string} [detail.message] - Body text
+         * @param {string} [detail.variant='info'] - info|success|warning|danger
+         * @param {number} [detail.duration] - Override auto-dismiss ms (0 = persistent)
+         */
         add(detail) {
             const id = this._nextId++;
             const duration = detail.duration !== undefined ? detail.duration : this._duration;

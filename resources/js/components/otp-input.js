@@ -1,3 +1,5 @@
+import { watchModelEvents } from '../utils/model-events.js';
+
 /**
  * One-time-code input — one box per character, with auto-advance and paste
  * distribution.
@@ -38,6 +40,9 @@
  * Lifecycle resources held on `this`, each released in destroy():
  *   - _unwatch (the unwatch function of `$wire.$watch`). Livewire also releases it when the
  *     element goes; it is nulled so a second destroy() cannot call it twice.
+ *   - _modelEvents — `change` and `blur` on the hidden field for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that field alone (utils/model-events.js): `change` when
+ *     the code becomes whole and when the reader leaves after an edit, then `blur`.
  *
  * @param {Object}  config
  * @param {number}  config.length    number of boxes
@@ -60,6 +65,7 @@ export default function wirekitOtpInput(config = {}) {
 
         _model: typeof config.model === 'string' && config.model !== '' ? config.model : null,
         _unwatch: null,
+        _modelEvents: null,
 
         /**
          * Follow the bound property: its value when the field starts, and every change after.
@@ -70,6 +76,10 @@ export default function wirekitOtpInput(config = {}) {
          * a no-op returning nothing, which is why the result is checked rather than assumed.
          */
         init() {
+            // First, because the returns below are about following the property, and a field bound
+            // with `.change` or `.blur` needs these events whether it follows anything or not.
+            this._modelEvents = watchModelEvents(this.$root, () => this._hiddenField());
+
             if (this._model === null || ! this.$wire || typeof this.$wire.$watch !== 'function') {
                 return;
             }
@@ -92,6 +102,16 @@ export default function wirekitOtpInput(config = {}) {
                 this._unwatch();
                 this._unwatch = null;
             }
+
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
+        },
+
+        /** The hidden field the code is bound through. It sits beside the boxes, outside this root. */
+        _hiddenField() {
+            const parent = this.$root?.parentElement;
+
+            return parent ? parent.querySelector('input[name="' + this._name + '"]') : null;
         },
 
         /**
@@ -335,8 +355,7 @@ export default function wirekitOtpInput(config = {}) {
                 combined += (ref && ref.value) || '';
             }
 
-            const parent = this.$root.parentElement;
-            const hidden = parent ? parent.querySelector('input[name="' + this._name + '"]') : null;
+            const hidden = this._hiddenField();
 
             if (hidden) {
                 hidden.value = combined;
@@ -372,6 +391,10 @@ export default function wirekitOtpInput(config = {}) {
                     detail: { value: combined },
                     bubbles: true,
                 }));
+
+                // The same boundary is the field's `change`, so `wire:model.change` hears the
+                // code once it is whole.
+                this._modelEvents?.commit();
             }
 
             this._wasComplete = complete;

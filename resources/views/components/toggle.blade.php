@@ -27,8 +27,23 @@
     // screen. Mirrors input / select / textarea / combobox / checkbox `hideLabel`.
     'hideLabel' => false,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'size' => config('wirekit.components.toggle.size', 'md'),
+    // The state in words beside the switch, such as "On" and "Off". Drawn from the checkbox
+    // itself, so the word follows the click before a server has answered, and hidden from a
+    // screen reader, which hears the switch announce its own state.
+    'onLabel' => null,
+    'offLabel' => null,
+    // Where the words sit: `end` after the switch and its label, `start` before the switch.
+    'statePosition' => 'end',
+    // The track's color for each state: `accent`, `success`, `danger` or `neutral`. On is the
+    // accent and off is neutral, as before; "green on, red off" is `on-intent="success"
+    // off-intent="danger"`.
+    'onIntent' => 'accent',
+    'offIntent' => 'neutral',
     // Take the surrounding field.set's group error, or decline it. A control that belongs to
     // the group but neither causes the rejection nor can resolve it says `:group-error="false"`
     // and is then neither announced as invalid nor described by the group's message.
@@ -113,6 +128,11 @@
         $attributes->get('aria-describedby'),
         $groupError,
     );
+    // The field's help, after its own messages: what the field is for (partials/field-help).
+    // Only with a label to stand beside, which is also where its hidden copy is rendered.
+    $helpLabel = (string) ($label ?? '');
+    $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
+    $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // Size scale: track width/height + knob offset distance
     // Knob diameter = track height minus 4px of padding
@@ -143,17 +163,42 @@
         $sizing['track'],
     ]);
 
-    // Track: OFF state uses border color (neutral-300) for visible contrast against white backgrounds.
-    // Old bg-muted (neutral-100) was ~1.04:1 contrast — nearly invisible. WCAG 1.4.11 requires ≥3:1.
+    // The track's color for each state. Literal arms, because Tailwind reads class names as text
+    // and never one assembled at runtime.
+    //
+    // Neutral fills the track with --color-wk-border-strong, the contrast-bound border of every
+    // form control. The knob shows the state, and WCAG 1.4.11 asks 3:1 for it against the part of
+    // the component it sits on: on the decorative --color-wk-border the white knob stood at 1.3:1
+    // in light and 1.42:1 in dark, on -strong it stands at 3.11:1 and 3.12:1, and the track
+    // itself at 3.11:1 and 3.45:1 against the page.
+    //
+    // Each list starts with that state's default: an unknown value falls back to the first entry.
+    $offTrack = match (WireKit::validateProp('toggle', 'offIntent', (string) $offIntent, ['neutral', 'accent', 'success', 'danger'])) {
+        'accent' => ['border-[var(--color-wk-accent)]', 'bg-[var(--color-wk-accent)]'],
+        'success' => ['border-[var(--color-wk-success)]', 'bg-[var(--color-wk-success)]'],
+        'danger' => ['border-[var(--color-wk-danger)]', 'bg-[var(--color-wk-danger)]'],
+        default => ['border-[var(--color-wk-border-strong)]', 'bg-[var(--color-wk-border-strong)]'],
+    };
+    $onTrack = match (WireKit::validateProp('toggle', 'onIntent', (string) $onIntent, ['accent', 'success', 'danger', 'neutral'])) {
+        'success' => ['peer-checked:bg-[var(--color-wk-success)]', 'peer-checked:border-[var(--color-wk-success)]'],
+        'danger' => ['peer-checked:bg-[var(--color-wk-danger)]', 'peer-checked:border-[var(--color-wk-danger)]'],
+        'neutral' => ['peer-checked:bg-[var(--color-wk-border-strong)]', 'peer-checked:border-[var(--color-wk-border-strong)]'],
+        default => ['peer-checked:bg-[var(--color-wk-accent)]', 'peer-checked:border-[var(--color-wk-accent)]'],
+    };
+
+    // The words for the state, when either is given. Where they go is the caller's choice.
+    $hasStateText = filled($onLabel) || filled($offLabel);
+    $statePosition = WireKit::validateProp('toggle', 'statePosition', (string) $statePosition, ['end', 'start']);
+
+    // Track: the neutral fill is the contrast-bound control border, see the arms above. WCAG 1.4.11
+    // asks 3:1 of the track against the page and of the knob against the track.
     // MUST be a direct sibling of .peer for peer-checked:* to resolve.
     $trackClasses = WireKit::resolveClasses('toggle', 'track', implode(' ', [
         'absolute inset-0',
         'rounded-full',
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border-strong)]',
-        'bg-[var(--color-wk-border)]',
-        'peer-checked:bg-[var(--color-wk-accent)]',
-        'peer-checked:border-[var(--color-wk-accent)]',
+        ...$offTrack,
+        ...$onTrack,
         'peer-focus-visible:ring-[length:var(--ring-wk-width)]',
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'peer-focus-visible:ring-[var(--color-wk-ring)]',
@@ -210,7 +255,7 @@
         // The field's own error region. Where it carries a message, this layer
         // stays silent on failure: "Email is required" is actionable, "could
         // not save" is not, and WCAG 3.3.1 wants the specific one heard.
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 @endphp
 
@@ -225,6 +270,11 @@
      marker is also what lets an application's own motion setting win, since the
      `data-reduce-motion` escape hatch is written against the same selector. --}}
 <div {{ $outerAttributes }} class="wk-toggle space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+    {{-- With help, the label shares a row with its button, which may not sit inside the
+         label: it would become part of the control's name. --}}
+    @if($helpId)
+    <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+    @endif
     <label for="{{ $id }}" class="inline-flex items-center gap-3 cursor-pointer">
         {{-- Switch visual: wrapper contains input (.peer), track, and knob as siblings --}}
         {{-- so peer-checked:* selectors resolve correctly (peer-checked targets siblings only). --}}
@@ -273,7 +323,19 @@
 @endphp
             <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
+
+        @if($hasStateText)
+            {{-- The state in words. Hidden from a screen reader, which hears the switch say it.
+                 Both words are always in the markup and the stylesheet shows the one the
+                 checkbox matches (`[data-wk-toggle-state]` in dist/wirekit.css), so it changes
+                 with the click; `start` moves it before the switch there, by `order`. --}}
+            <span data-wk-toggle-state="{{ $statePosition }}" aria-hidden="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] select-none"><span data-wk-toggle-state-off>{{ $offLabel }}</span><span data-wk-toggle-state-on>{{ $onLabel }}</span></span>
+        @endif
     </label>
+    @if($helpId)
+        @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => ! $hideLabel, 'helpField' => (string) ($name)])
+    </div>
+    @endif
 
     @if($optimisticConfig)
         {{-- Rendered unconditionally and starting EMPTY. A live region that

@@ -9,6 +9,9 @@
     'label' => null,
     'value' => '',
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     // Names the RECORD as well as the field. "Edit: Title" is useless in a list
     // of twenty rows — a screen reader then reads twenty identical entries and
@@ -75,7 +78,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -121,9 +124,9 @@
     // rendered a name on a div while the <input> kept none at all (WCAG 4.1.2). It is
     // NOT folded into `label`: that renders a VISIBLE label, and a caller reaching for
     // `aria-label` is asking for the opposite.
-    $callerAriaLabel = $attributes->get('aria-label');
+    $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
     $trigger = in_array($trigger, ['always', 'hover', 'focus-only'], true) ? $trigger : 'always';
@@ -205,6 +208,23 @@
     $controlId = filled($attributes->get('id')) ? $id : $id.'-control';
     $attributes = $attributes->except(['id']);
 
+    // With an `editor` slot the control is the caller's own, and Blade cannot put
+    // `$controlId` on slot content: a `for` would point at an element that does not exist,
+    // naming nothing and focusing nothing on a click. So that label carries an id instead,
+    // and the factory hands it to the control when the editor opens, by reference, the way
+    // it already hands over the description (`_placeFocus()`).
+    $labelId = $label && isset($editor) ? $id.'-label' : null;
+
+    // Inside a labeled field the field's label names the control (Support\FieldControl): by
+    // `for` on the built-in path, by reference on the slot path, as this component's own label
+    // does. A WireKit control in the slot renders first and may have taken the label already,
+    // and is named by it then. Either way the label sits outside this component's scope, so the
+    // factory wires the press on it, and on the slot path the click.
+    $fieldLabelId = ! $label && ! filled($callerAriaLabel) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel(isset($editor) ? null : $controlId)
+        : null;
+    $fieldLabelPressed = $wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField->labelId() : null;
+
     $hintId = $hint ? $id.'-hint' : null;
     $errorId = $showsError ? $id.'-error' : null;
     // Composed, and never emitted empty: an empty aria-describedby is a
@@ -212,6 +232,10 @@
     // A caller's aria-describedby joins the list after the component's own ids: the list goes
     // to the control, while the attribute bag goes to the root, where it describes nothing.
     $describedBy = trim(implode(' ', array_filter([$hintId, $errorId, trim((string) $attributes->get('aria-describedby', ''))]))) ?: null;
+    // The field's help, after its own messages: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered (partials/field-help).
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // ── Read mode shows the READABLE value ───────────────────────────────
     //
@@ -255,9 +279,11 @@
         $hasValue = trim((string) $resolvedDisplay) !== '';
     }
 
+    // The field the trigger names: this component's label, the field's label it took, or the name.
+    $triggerField = $label ?? ($fieldLabelId !== null ? $wkField->labelText() : $name);
     $triggerLabel = $context !== null && $context !== ''
-        ? __('wirekit::Edit :field of :context', ['field' => $label ?? $name, 'context' => $context])
-        : __('wirekit::Edit :field', ['field' => $label ?? $name]);
+        ? __('wirekit::Edit :field of :context', ['field' => $triggerField, 'context' => $context])
+        : __('wirekit::Edit :field', ['field' => $triggerField]);
 
     $rootClasses = WireKit::resolveClasses('inline-edit', 'root', implode(' ', [
         'group/inline-edit',
@@ -312,6 +338,9 @@
         loading: {{ \Pushery\WireKit\Support\AlpinePayload::from($loading) }},
         describedBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($describedBy) }},
         hasSlotEditor: {{ \Pushery\WireKit\Support\AlpinePayload::from(isset($editor)) }},
+        labelledBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($labelId ?? (isset($editor) ? $fieldLabelId : null)) }},
+        fieldLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldLabelPressed) }},
+        fieldLabelFocuses: {{ \Pushery\WireKit\Support\AlpinePayload::from(isset($editor) && $fieldLabelId !== null) }},
         {{-- The give-up bound and what it says. Both were read from `config` by the
              JS and neither was ever passed, so the bound worked only by its
              hard-coded fallback and the message resolved to the empty string. --}}
@@ -329,9 +358,24 @@
          Inside it, the field would be unlabeled while reading and the label
          would jump into place on open — a layout shift caused by a11y markup. --}}
     @if($label)
-        <label for="{{ $controlId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        {{-- A click on a label focuses its control. Without a `for` the slot path does that
+             through the factory, and only while the editor is open, as a label does for a
+             built-in control, which is hidden in read mode. --}}
+        {{-- A press on the label of an open editor keeps the focus where it is: some engines move
+             it to the page on the press, and the blur that follows would close the editor and
+             drop the draft before the click could focus the field again. --}}
+        {{-- With help, the label shares a row with its button, outside the label so it stays
+             out of the field's name. --}}
+        @if($helpId)
+        <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+        @endif
+        <label @if($labelId) id="{{ $labelId }}" x-on:click="focusFromLabel()" @else for="{{ $controlId }}" @endif x-on:mousedown="keepFocusOnLabel($event)" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
         </label>
+        @if($helpId)
+            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $id)])
+        </div>
+        @endif
     @endif
 
     {{-- Read mode --}}

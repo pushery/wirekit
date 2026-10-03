@@ -1,3 +1,5 @@
+import { watchCurrent } from '../utils/watch-current.js';
+
 /**
  * WireKit Image Compare Alpine Component.
  *
@@ -37,7 +39,7 @@ export default function wirekitImageCompare(config = {}) {
             // Livewire property. Deferred mode (default) skips per-step network
             // round-trips; only the final value is pushed when drag ends.
             if (this._wireModel && this.$wire) {
-                this.$watch('value', (v) => {
+                watchCurrent(this, 'value', (v) => {
                     // Third arg `live` controls whether Livewire immediately
                     // issues a network roundtrip. For deferred bindings we pass
                     // false and let a blur/commit drive the sync.

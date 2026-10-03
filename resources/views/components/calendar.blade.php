@@ -226,14 +226,18 @@
 
 <div
     x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }}, range: {{ $range ? 'true' : 'false' }}, locale: {{ $calendarLocale }}, todayLabel: {{ $todayLiteral }} })"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->whereDoesntStartWith('wire:model')->class([$classes]) }}
 >
     {{-- Hidden input for form submission --}}
     {{-- Static value as well as the bound one: the field is empty until Alpine boots, and a form submitted in that window sends nothing while the visible control already shows the value. Both come from the same PHP expression that feeds the factory, so they cannot drift. --}}
     {{-- In range mode this field keeps the combined value for wire:model and carries no name:
          the form receives the two ends below instead. A name sent both as a string and as an
          array reaches PHP as the array alone, so a combined field of the same name never arrived. --}}
-    <input type="hidden" @unless($range) name="{{ $name }}" @endunless x-ref="hiddenInput" value="{{ $value }}" :value="rangeValue" />
+    {{-- `wire:model` binds here, on the field that carries the value, and not on the root above.
+         Livewire 4 adds `.self` to it, so a binding on the root heard only events dispatched on the
+         root itself and dropped the `input` this field sends: the property never changed. Alpine's
+         own `x-model` has no `.self` and stays on the root. --}}
+    <input type="hidden" @unless($range) name="{{ $name }}" @endunless x-ref="hiddenInput" value="{{ $value }}" :value="rangeValue" {{ $attributes->whereStartsWith('wire:model') }} />
     @if($range)
         {{-- The two ends as named fields, matching date-picker's `name[start]` / `name[end]`. --}}
         <input type="hidden" name="{{ $name }}[start]" x-ref="hiddenStart" value="{{ $rangeStart }}" :value="rangeStartValue" />

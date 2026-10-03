@@ -27,11 +27,13 @@
 
     // Body section — main content area. `wk-card-body` is the marker the
     // table-aware padding rule keys off; the padding utilities drop out when
-    // padded=false.
+    // padded=false. A container pads evenly, so the vertical padding takes the
+    // x tier the sides use: a button at the end sits as far from the bottom as
+    // from the side.
     $classes = WireKit::resolveClasses('card.body', 'base', implode(' ', array_filter([
         'wk-card-body',
         $padded ? 'px-[var(--padding-wk-x-lg)]' : null,
-        $padded ? 'py-[var(--padding-wk-y-lg)]' : null,
+        $padded ? 'py-[var(--padding-wk-x-lg)]' : null,
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',

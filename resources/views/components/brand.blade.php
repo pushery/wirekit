@@ -74,6 +74,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('brand', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // `aspect-ratio` when the caller declared one, and a square floor either way. Both are
     // inline rather than utility classes: the ratio is caller data, and a Tailwind class

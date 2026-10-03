@@ -35,6 +35,9 @@
     // combobox.
     'hideLabel' => false,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'size' => config('wirekit.components.number-input.size', 'md'),
     'min' => null,
@@ -130,20 +133,34 @@
         'ease-[var(--transition-wk-easing)]',
         'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
-        'focus-visible:ring-[var(--color-wk-ring)]',
+        // The steppers sit flush on both sides, and the increase button comes after the field,
+        // so it would be painted over the right side of the field's ring. A flex item takes a z-index
+        // without a position: the focused field rises above both buttons, as a focused child of
+        // `[data-wk-button-group]` does.
+        'focus-visible:z-[1]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
         // Hide native spinner arrows
         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
     ]), $scope);
 
+    // A width utility in the caller's `class` replaces the field's own `w-16`. Beside it, the
+    // stylesheet's order decided rather than the attribute: `w-full` from an inline edit won only
+    // because it sorts after `w-16`, and a `w-12` would have lost. A width under a variant
+    // is left alone, because it applies at a width of its own.
+    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
+        $inputClasses = \Pushery\WireKit\Support\UtilityClasses::without($inputClasses, '/^w-/');
+    }
+
     // Border color switches between normal and error state. Only the top/bottom
     // border is colored on the input itself because the stepper buttons sit
     // flush against it and provide the left/right border — see $buttonBorder
     // below for the matching error-aware color on those buttons.
+    // The focus-ring color is chosen here as well: a second one in the base list would be
+    // decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = $hasError
         ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
-        : 'border-[var(--color-wk-border-strong)]';
+        : 'border-[var(--color-wk-border-strong)] focus-visible:ring-[var(--color-wk-ring)]';
 
     // Size classes
     $sizeClasses = match ($size) {
@@ -216,6 +233,10 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // ── A caller's model on the field ────────────────────────────────────
     //
@@ -269,7 +290,7 @@
             'pending' => __('wirekit::Saving'),
             'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 
 @endphp
@@ -298,7 +319,7 @@
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     <div class="flex items-center">

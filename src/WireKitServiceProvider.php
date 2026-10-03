@@ -17,6 +17,7 @@ use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\ComponentAttributeBag;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Components\Field;
 use Pushery\WireKit\Components\FieldSet;
 use Pushery\WireKit\Components\SidebarGroup;
 use Pushery\WireKit\Console\BoostSkillsCommand;
@@ -46,6 +47,7 @@ use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
+use Pushery\WireKit\Support\ContainedFile;
 use Pushery\WireKit\Support\DomId;
 use Pushery\WireKit\Support\FaqCollector;
 use Pushery\WireKit\Support\FlagPackage;
@@ -375,11 +377,15 @@ class WireKitServiceProvider extends ServiceProvider
                 }
             });
 
-            // Two files on that path have a class behind them, under the same tag. The markup and
+            // Three files on that path have a class behind them, under the same tag. The markup and
             // the declared props stay in the view, so every reader of `@props` still finds them
             // there. A set hands the controls in its slot what they point at, and a slot renders
             // before the view that holds it; only a constructor runs early enough.
             $blade->component(FieldSet::class, $prefix.'::field.set');
+
+            // A field does the same for the one control it labels: the control learns the label
+            // it is named by, and the field learns the element its label points at.
+            $blade->component(Field::class, $prefix.'::field');
 
             // The group does the opposite: it keeps its own `collapsible` from the rows in its
             // slot, which read the sidebar's through `@aware`.
@@ -974,12 +980,12 @@ class WireKitServiceProvider extends ServiceProvider
         // files it @font-face-references, which are siblings of it.
         Route::group(['middleware' => $this->assetRouteMiddleware()], function (): void {
             Route::get('wirekit/fonts/{path}', function (string $path) {
-                $root = realpath(__DIR__.'/../resources/fonts');
-                $file = realpath(__DIR__.'/../resources/fonts/'.$path);
-
                 // Path traversal: a resolved path that escapes the font root is
-                // refused rather than served.
-                if ($root === false || $file === false || ! str_starts_with($file, $root) || ! is_file($file)) {
+                // refused rather than served, and so is a sibling whose name
+                // merely begins with `fonts`.
+                $file = ContainedFile::resolve(__DIR__.'/../resources/fonts', $path);
+
+                if ($file === null) {
                     abort(404);
                 }
 
@@ -1044,11 +1050,12 @@ class WireKitServiceProvider extends ServiceProvider
         Route::group(['middleware' => $this->assetRouteMiddleware()], function () use ($assets): void {
             foreach ($assets as $uri => $meta) {
                 Route::get($uri, function () use ($meta) {
-                    $path = realpath(__DIR__.'/../dist/'.$meta['file']);
-                    $distDir = realpath(__DIR__.'/../dist');
+                    // Guard against missing dist files and path traversal. The
+                    // file name comes from the map above rather than the request;
+                    // the check is the same one the font route makes.
+                    $path = ContainedFile::resolve(__DIR__.'/../dist', $meta['file']);
 
-                    // Guard against missing dist files and path traversal
-                    if ($path === false || $distDir === false || ! str_starts_with($path, $distDir)) {
+                    if ($path === null) {
                         abort(404);
                     }
 

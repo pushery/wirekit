@@ -51,6 +51,9 @@
     // an app that runs its OWN error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'min' => config('wirekit.components.slider.min', 0),
     'max' => config('wirekit.components.slider.max', 100),
     'step' => config('wirekit.components.slider.step', 1),
@@ -75,7 +78,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -85,7 +88,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
@@ -161,6 +164,10 @@
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
     $describedBy = trim(($error ? $sliderId.'-error' : ($hint ? $sliderId.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered (partials/field-help).
+    $helpId = filled($help) && filled($label) ? $sliderId.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
     $currentValue = $value ?? $min;
 
     // Normalize marks to [['value'=>, 'label'=>, 'pct'=>], ...]. A LIST (`[0, 25, 50]`)
@@ -421,6 +428,16 @@
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
     $fallbackLabel = $name ? Str::headline((string) $name) : __('wirekit::Slider');
 
+    // Inside a labeled field the field's label names the slider by `for`, where the hidden one
+    // made from the name would (Support\FieldControl).
+    $fieldLabelId = $needsSrOnlyFallback && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel($sliderId)
+        : null;
+
+    if ($fieldLabelId !== null) {
+        $needsSrOnlyFallback = false;
+    }
+
     // `bind` rather than `value`: `current` already exists on the component this
     // layer nests inside, so binding to it keeps ONE truth for the value.
     //
@@ -437,7 +454,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$sliderId.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($sliderId.'-error'),
         'action' => $optimistic,
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -514,7 +531,16 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
+        {{-- With help, the label and its button are one item of the row, the button outside the
+             label so it stays out of the field's name. --}}
+        @if($helpId)
+        <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+        @endif
         <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</label>
+        @if($helpId)
+            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $sliderId)])
+        </div>
+        @endif
     @elseif($needsSrOnlyFallback)
         {{-- sr-only label fallback so the input always has an accessible
              name (axe rule "label" / WCAG 4.1.2). --}}

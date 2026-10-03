@@ -69,16 +69,16 @@
     }
 
     // The exact map progress uses, so a dashboard reads the same in both shapes.
-    // info falls to the accent fill because info has no surface token
-    // (--color-wk-info is the tone the charts and the flash tint read); neutral takes the muted text token
-    // for a low-emphasis ring. Full literal token per arm — the drift auditor
+    // info takes --color-wk-info-tone; neutral takes the muted text token for a low-emphasis
+    // ring. Full literal token per arm — the drift auditor
     // reads these statically and cannot follow an interpolated name.
     $fillToken = match ($effectiveIntent) {
         'success' => 'var(--color-wk-success)',
         'warning' => 'var(--color-wk-warning)',
         'danger' => 'var(--color-wk-danger)',
         'neutral' => 'var(--color-wk-text-muted)',
-        default => 'var(--color-wk-accent)', // primary + accent + info
+        'info' => 'var(--color-wk-info-tone)',
+        default => 'var(--color-wk-accent)', // primary + accent
     };
 
     $sizeClass = match ($size) {

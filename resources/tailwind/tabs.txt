@@ -28,14 +28,13 @@ $at);
 $at,
 $at;
 $attributes
+$attributes->class([$iconClasses]);
 $attributes->class([$listClasses])
 $attributes->class([$rootClasses])
 $attributes->class(['relative
-$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except(['variant',
 $attributes->filter(fn
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('id')
 $attributes->get('role');
@@ -50,6 +49,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $cleaned
 $cleaned);
@@ -73,6 +73,7 @@ $ends
 $findable
 $focusableTrigger
 $hasWireModel
+$iconClasses
 $intent,
 $intentClasses
 $intentClasses,
@@ -129,7 +130,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
@@ -189,6 +190,7 @@ ${$key}
 '
 ''
 '')
+''));
 '');
 '',
 '';
@@ -198,6 +200,10 @@ ${$key}
 '.
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '0'
 '2xl'
 '<svg
@@ -212,13 +218,14 @@ ${$key}
 'accent',
 'active'
 'aria-disabled="true"'))
+'aria-label');
 'as'
 'badge'
 'badgeIntent'
 'base',
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
-'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]',
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]',
 'bg-[var(--color-wk-accent)]
@@ -229,6 +236,9 @@ ${$key}
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
+'bg-[var(--color-wk-info-fg)]',
+'bg-[var(--color-wk-info-tone)]
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-success-fg)]',
@@ -240,9 +250,9 @@ ${$key}
 'bg-[var(--color-wk-warning-fg)]',
 'bg-transparent
 'billing'
-'border-[color-mix(in_srgb,var(--color-wk-accent)_20%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-accent)_25%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-danger)_25%,transparent)]',
+'border-[color-mix(in_srgb,var(--color-wk-info-tone)_20%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-success)_25%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-warning)_25%,transparent)]',
 'border-[length:var(--border-wk-badge-width,var(--border-wk-width))]';
@@ -334,7 +344,7 @@ ${$key}
 'primary'
 'primary',
 'profile',
-'pt-[var(--padding-wk-y-md)]',
+'pt-[var(--wk-tabs-panel-gap,var(--padding-wk-y-md))]',
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-xs)]',
 'role="tab"')
@@ -368,6 +378,7 @@ ${$key}
 'text-[color:var(--color-wk-accent-content)]',
 'text-[color:var(--color-wk-accent-fg)]',
 'text-[color:var(--color-wk-danger-text)]',
+'text-[color:var(--color-wk-info-text)]',
 'text-[color:var(--color-wk-success-text)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-tooltip-text)]',
@@ -445,6 +456,7 @@ ${$key}
 (SOFT
 (Support\CallerListeners).
 (Tailwind's
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -472,14 +484,12 @@ ${$key}
 (hover
 (icon
 (inert
-(info
 (int)
 (is_array($item)
 (is_array($items)
 (is_string($key)
 (legacy):
 (matches
-(no
 (not
 (only
 (or
@@ -515,16 +525,17 @@ ${$key}
 --border-wk-badge-width
 --border-wk-width
 --color-wk-bg:
---color-wk-info
---color-wk-info-fg
---color-wk-info-hover):
---color-wk-info-text
+--color-wk-info-fg,
+--color-wk-info-tone
+--color-wk-info-tone,
 --color-wk-warning-bg
 --shadow-wk-badge
 --}}
 --}}`
 -1.
 -1`
+-fg
+-hover,
 -mb-[length:var(--border-wk-width)]
 -me-[length:var(--border-wk-width)]
 -text
@@ -542,10 +553,12 @@ ${$key}
 1.4.13.
 100),
 12%,
+16px
 1px
 2.1.1
 2.1.1).
 2.4.3,
+20px,
 2N
 2rem,
 3,
@@ -668,6 +681,7 @@ BOUND:
 BUILDING
 Backgrounds:
 Base
+Beside
 Blade
 Blade's
 Blade-heroicons'
@@ -759,7 +773,6 @@ IconResolver,
 If
 In
 Inactive
-Info
 Inherits
 Initial
 Inside
@@ -831,6 +844,7 @@ Production
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\TablistStyles;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 READS
 REMAIN
@@ -915,9 +929,11 @@ UI
 UNBOUND
 URL,
 Unique
+Unset,
 Upstream
 Use
 Uses
+UtilityClasses::without($iconClasses,
 VERTICAL
 Validate
 Variant
@@ -940,7 +956,9 @@ Whether
 Which
 WireKit
 WireKit's
+WireKit's.
 WireKit::resolveClasses('badge',
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('tabs',
 WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
@@ -969,12 +987,14 @@ Written
 ['style'
 ['underline',
 ['x-on:mouseenter',
+[--color-wk-ring:var(--color-wk-accent-fg)]
 [['key'
 []
 [])
 [])->class([$baseClasses,
 [],
 [];
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($key)
 \Pushery\WireKit\Support\AlpinePayload::from($wireModelWarning)
@@ -983,6 +1003,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
@@ -1009,8 +1030,11 @@ __toString
 `$as`
 `$current`
 `$refs`
+`--padding-wk-y-md`,
+`--wk-tabs-panel-gap`
 `-1`
 `-2`,
+`:class`
 `:selected="$key
 `<button>`
 `<div>`
@@ -1024,6 +1048,7 @@ __toString
 `<x-wirekit::tabs>`
 `=`,
 `@aware`
+`@class`
 `@props`
 `@source
 `@source`
@@ -1057,6 +1082,7 @@ __toString
 `card`
 `class="`;
 `class="h-12
+`class`
 `clearTimeout`
 `cloneNode(true)`,
 `current
@@ -1082,6 +1108,9 @@ __toString
 `focusable-trigger`
 `foreground
 `gap-1`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `hidden="until-found"`
 `icon`
@@ -1170,7 +1199,7 @@ absence
 absent
 absent,
 accent
-accent-content.
+accent,
 accent-fg
 accept
 accepts
@@ -1201,7 +1230,6 @@ agree
 alert;
 alias
 alias,
-aliases
 all
 all,
 all.
@@ -1266,6 +1294,7 @@ arms
 around
 arrangement
 array
+array,
 array-of-objects
 array-of-objects).
 array_all($items,
@@ -1296,6 +1325,7 @@ at
 at,
 attempted
 attribute
+attribute's
 attribute,
 attribute.
 attributes
@@ -1310,6 +1340,7 @@ avoid.
 axe
 axe-core
 axis
+axis.
 back
 back-compat
 back.
@@ -1359,6 +1390,7 @@ bg
 bg).
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
@@ -1366,6 +1398,7 @@ bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-danger)]
+bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
 bg-transparent
@@ -1392,6 +1425,7 @@ border,
 border-[color:var(--color-wk-accent)]',
 border-[color:var(--color-wk-border)]',
 border-[color:var(--color-wk-danger)]',
+border-[color:var(--color-wk-info-tone)]',
 border-[color:var(--color-wk-success)]',
 border-[color:var(--color-wk-warning)]',
 border-[length:var(--border-wk-width)]
@@ -1401,6 +1435,8 @@ border-[var(--color-wk-border)]
 border-[var(--color-wk-border)]'
 border-[var(--color-wk-danger)]
 border-[var(--color-wk-danger)]',
+border-[var(--color-wk-info-tone)]
+border-[var(--color-wk-info-tone)]',
 border-[var(--color-wk-success)]
 border-[var(--color-wk-success)]',
 border-[var(--color-wk-text)]',
@@ -1468,6 +1504,7 @@ captured
 card
 card's
 card,
+cards
 carries
 carry
 case
@@ -1484,7 +1521,6 @@ changed.
 changes
 changing
 channel,
-charts
 check
 checks
 chevrons,
@@ -1499,7 +1535,6 @@ chosen
 chrome
 clash
 class
-class="h-4
 class="inline-block
 class="shrink-0"
 class="wk-tab
@@ -1701,6 +1736,7 @@ dismissLabel.
 dismissible
 dispatch
 dispatches
+distance
 div
 div's
 do
@@ -1711,6 +1747,7 @@ docs,
 document
 documented
 does
+does.
 doesn't
 don't
 dot
@@ -1829,6 +1866,7 @@ false,
 false.
 false;
 family
+far
 feature
 few
 field
@@ -1837,10 +1875,10 @@ file
 files
 fill
 fill,
-fill:
 filled
 filled()
 filled-background
+fills
 filter_var($wrap,
 filtered
 find
@@ -1862,7 +1900,6 @@ fixed
 fixed-height
 fixed`
 flags
-flash
 flatten
 flattened
 flattens
@@ -1876,6 +1913,7 @@ focus,
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
+focus-visible:ring-inset
 focus-within
 focus;
 focusable
@@ -1924,6 +1962,7 @@ get
 gets
 ghost()
 given.
+gives
 glob
 global
 glyph
@@ -1959,6 +1998,7 @@ handlers
 handles
 hands
 hangs
+happened
 happens
 hard
 harder
@@ -1998,6 +2038,7 @@ hover,
 hover.
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
@@ -2006,6 +2047,7 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
 hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
+hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
 hover:opacity-100',
@@ -2014,6 +2056,7 @@ hover:underline
 how
 however
 https://docs.wirekit.app/components/tabs
+hue
 human
 iOS
 icon
@@ -2052,7 +2095,6 @@ indicator,
 inert
 infer.
 info
-info-specific
 info:
 informative
 informative.
@@ -2202,6 +2244,7 @@ looks.
 lookup:
 loses
 lost
+lost,
 loudly
 loudly,
 make
@@ -2319,6 +2362,7 @@ nor
 normal.
 normalized
 not
+not:
 nothing
 nothing.
 now.
@@ -2377,6 +2421,7 @@ ordinary
 originates
 orphaned
 other
+other,
 other.
 others
 otherwise
@@ -2510,8 +2555,6 @@ preset
 press
 preview
 pricing-card
-primary
-primary)
 primary:
 problem
 prod).
@@ -2561,8 +2604,6 @@ reachability,
 reachable
 reaches
 read
-read,
-read;
 reader
 reader's
 reading
@@ -2632,6 +2673,7 @@ resolver
 resolves
 respect
 responding
+responsive
 rest
 rest,
 rest.
@@ -2735,7 +2777,6 @@ shape,
 shapes:
 share,
 shared
-shares
 shipped
 shipping.
 shorthand
@@ -2744,7 +2785,6 @@ show
 shown
 shows
 shrink-0
-shrink-0"
 sibling
 siblings
 sidebar
@@ -2756,6 +2796,7 @@ silently.
 simply
 single
 single-line
+sit
 site
 site's
 sits
@@ -2765,6 +2806,7 @@ size
 size,
 size="sm"
 size="xs"
+sized
 sizes
 skips
 slightly
@@ -2780,10 +2822,10 @@ soft()
 soft).
 soft-chip
 soft-tone
-solid
 some
 somebody
 something
+sorts
 source
 source-baked
 source-detection
@@ -2929,6 +2971,8 @@ text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-bg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
+text-[color:var(--color-wk-info-fg)]
+text-[color:var(--color-wk-info-text)]
 text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -2990,6 +3034,7 @@ to
 to,
 to.
 to:
+toCssClasses()
 toHtml().
 today
 together.
@@ -2998,7 +3043,6 @@ token,
 tokens
 tokens.
 told
-tone
 tone,
 too,
 tooltip
@@ -3031,6 +3075,7 @@ trigger
 trigger's
 trigger,
 triggers
+trio
 trip
 trip.
 trips
@@ -3121,7 +3166,6 @@ w-1.5
 w-12"`
 w-12',
 w-3',
-w-4
 w-4',
 w-5
 w-5',
@@ -3170,6 +3214,7 @@ widget
 width
 width)
 width.
+win.
 window
 window,
 wins

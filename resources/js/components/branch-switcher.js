@@ -12,7 +12,10 @@
  * buttons is a plain label for the same reason: making it live would interrupt the reader in
  * the middle of moving.
  *
- * Lifecycle resources held on `this`: NONE. Both handlers are bound declaratively in the
+ * Lifecycle resources held on `this`: `_modelEvents`, released in destroy(). It fires `change`
+ * and `blur` on the root, which `wire:model` binds through `x-modelable`, with the index as the
+ * event's detail, so `wire:model.live.change` sends when the reader steps and `.live.blur` when
+ * they leave (utils/model-events.js). Both button handlers are bound declaratively in the
  * template, so Alpine tears them down with the component.
  *
  * @param {Object} config
@@ -22,6 +25,8 @@
  * @param {string} [config.countLabel]    ":current of :total", translated in the template
  * @param {string} [config.announcement]  "Showing response :current of :total", likewise
  */
+import { watchModelEvents } from '../utils/model-events.js';
+
 export default function wirekitBranchSwitcher(config = {}) {
     return {
         total: Number(config.total) || 0,
@@ -33,12 +38,21 @@ export default function wirekitBranchSwitcher(config = {}) {
         countLabel: config.countLabel || ':current of :total',
         announcement: config.announcement || 'Showing response :current of :total',
         announced: '',
+        _modelEvents: null,
 
         init() {
             // Clamped on the way in as well as in the template: a server that regenerates can
             // hand over an index whose variant no longer exists, and an out-of-range current
             // would disable both buttons and strand the reader.
             this.current = this.clamp(this.current);
+
+            const root = this.$root;
+            this._modelEvents = watchModelEvents(root, () => root, { detail: () => this.current });
+        },
+
+        destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
         },
 
         clamp(value) {
@@ -91,6 +105,7 @@ export default function wirekitBranchSwitcher(config = {}) {
             }
 
             this.current = target;
+            this._modelEvents?.commit();
 
             // The whole sentence, and a fresh one: a live region handed the same string twice
             // may announce nothing the second time, and a reader who steps forward and back is

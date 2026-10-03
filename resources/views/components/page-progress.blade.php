@@ -52,7 +52,8 @@
         'danger' => 'var(--page-progress-fill, var(--color-wk-danger))',
         'neutral' => 'var(--page-progress-fill, var(--color-wk-text-muted))',
         'auto' => 'var(--page-progress-fill, currentColor)',
-        'primary', 'info' => 'var(--page-progress-fill, var(--color-wk-accent))',
+        'primary' => 'var(--page-progress-fill, var(--color-wk-accent))',
+        'info' => 'var(--page-progress-fill, var(--color-wk-info-tone))',
     };
 
     // Marker class — reduced-motion and print rules in dist/wirekit.css scope to it,

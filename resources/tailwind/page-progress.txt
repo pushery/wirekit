@@ -34,6 +34,7 @@ $showAfter
 'neutral'
 'neutral',
 'position:
+'primary'
 'primary',
 'scope'
 'showAfter'
@@ -478,6 +479,7 @@ value
 values
 var(--color-wk-accent))',
 var(--color-wk-danger))',
+var(--color-wk-info-tone))',
 var(--color-wk-success))',
 var(--color-wk-text-muted))',
 var(--color-wk-warning))',

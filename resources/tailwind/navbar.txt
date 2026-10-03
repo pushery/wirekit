@@ -38,6 +38,7 @@ $mobile
 $mobile,
 $mobileId
 $navClasses
+$navClasses,
 $navId.'-mobile'
 $navListClasses
 $navListClasses,
@@ -139,6 +140,7 @@ $variantClasses,
 'text-[length:var(--text-wk-sm)]'
 'transition-colors',
 'transparent'
+'transparent')
 'true'
 'variant'
 'w-full
@@ -151,10 +153,12 @@ $variantClasses,
 'xl',
 ($navId
 ($relAttr
+($variant
 ($variant)
 (40)
 (50),
 (Support\CallerListeners).
+(Support\UrlProp).
 (WireKit::validateProp('navbar',
 (`--wk-strip-inset`,
 (`aria-current="page"`,
@@ -234,6 +238,7 @@ $variantClasses,
 @if($computedRel)
 @if($opensNewTab)
 @if($scroll)
+@if($sticky)
 @isset($actions)
 @isset($brand)
 @php
@@ -266,6 +271,7 @@ Default
 Defaults
 Dev-only
 Each
+Echoed
 Escape
 FILTER_VALIDATE_BOOL);
 FIRST
@@ -300,6 +306,7 @@ Tailwind
 The
 This
 UNBOUND
+URL
 Useful
 Variants:
 What
@@ -319,6 +326,9 @@ With
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
+\Pushery\WireKit\Support\UrlProp::text($href);
+\Pushery\WireKit\Support\UtilityClasses::BACKGROUND_COLOR,
+\Pushery\WireKit\Support\UtilityClasses::without(
 \Pushery\WireKit\WireKit::warnUnknownProps('navbar',
 \Pushery\WireKit\WireKit::warnUnknownProps('navbar.item',
 ])
@@ -338,6 +348,8 @@ __('wirekit::Toggle
 `active`
 `aria-controls`
 `aria-label`
+`bg-[var(…)]`.
+`bg-transparent`
 `box-sizing:
 `calc(a+2*b)`
 `compact`
@@ -425,6 +437,7 @@ attributes,
 auto-derived
 avoids
 back
+background
 bag
 bag,
 bar
@@ -462,6 +475,7 @@ bordered,
 both
 both.
 bottom
+bound,
 box
 brand
 brand-bar
@@ -480,6 +494,7 @@ call
 caller
 caller's
 caller-supplied
+came
 can
 canonical
 cap
@@ -506,6 +521,7 @@ cluster
 cluster,
 color
 color.
+colors
 column
 column,
 column.
@@ -537,7 +553,9 @@ data-fade-axis="x"
 data-wk-navbar-items
 data-wk-navbar-scroll
 data-wk-prose-skip
+data-wk-scroll-inset="top"
 debug
+decided
 decides
 dedicated
 default
@@ -589,6 +607,7 @@ embedding
 entries
 entry
 entry.
+escaped
 event
 every
 exactly
@@ -657,6 +676,7 @@ header
 height
 held
 hence
+here
 here,
 hidden
 hidden).
@@ -677,6 +697,7 @@ id:
 id="{{
 identical
 ids,
+if
 implode('
 imports
 in
@@ -735,6 +756,7 @@ live
 logo
 long,
 look
+loses
 lost;
 makes
 margin
@@ -819,6 +841,8 @@ opinionated
 opposite
 optimistic-ui:
 optional
+or
+order,
 order-last
 origin,
 other
@@ -842,6 +866,7 @@ page's
 page-edge
 page-level
 painted
+pair
 pairing
 panel
 parsed
@@ -851,6 +876,7 @@ passthrough
 pb-[var(--padding-wk-y-md)]',
 per
 personalization
+personalized
 plain
 plus
 point,
@@ -897,6 +923,7 @@ responsive.
 reveal.
 revealed
 reveals.
+right
 room
 root
 root,
@@ -925,6 +952,7 @@ security
 see
 select
 sets
+setting
 several
 shadow-[var(--shadow-wk-sm)]',
 shape
@@ -954,6 +982,7 @@ slots
 small
 so
 someone
+sorts
 source
 space.
 spaces,
@@ -983,6 +1012,7 @@ stroke-linejoin="round"
 stroke-width="2"
 stroke="currentColor"
 stylesheet
+stylesheet's
 subject
 supplying
 supported
@@ -990,7 +1020,9 @@ survives
 swallow.
 switches
 tab)')
+tag
 take
+takes
 target
 target="_blank".
 teleported
@@ -1015,10 +1047,12 @@ toggle.
 tokens
 told
 too
+too.
 top
 top-[var(--wk-strip-inset,0px)]
 touch,
 translate-y-0"
+transparent
 transparent,
 treats
 trigger
@@ -1084,6 +1118,7 @@ wrap
 wrapper
 wraps
 writes
+written
 x-cloak
 x-cloak>
 x-data="wirekitNavbarScroll()"

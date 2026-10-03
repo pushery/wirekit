@@ -63,4 +63,13 @@
     {{ $attributes->class([$classes]) }}
 >
     <span data-wk-resizable-grip aria-hidden="true"></span>
+    {{-- Two step controls beside the grip, the way to resize with one pointer and no drag
+         (WCAG 2.5.7): each click moves the handle a few pixels, little enough that the control
+         is still under the pointer for the next click. Spans rather than buttons, and hidden
+         from assistive technology: the handle is the focusable control with the keyboard
+         model, and a focusable control inside it would be nested interactive content.
+         `select-none` because two quick clicks are a double click, which would otherwise
+         start a text selection at the divider. --}}
+    <span class="select-none" data-wk-resizable-step="-1" aria-hidden="true" x-on:click="stepFromControl(-1)"></span>
+    <span class="select-none" data-wk-resizable-step="1" aria-hidden="true" x-on:click="stepFromControl(1)"></span>
 </div>

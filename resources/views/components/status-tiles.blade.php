@@ -70,7 +70,7 @@
         'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))] border-[color-mix(in_srgb,var(--color-wk-success)_25%,transparent)]',
         'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))] border-[color-mix(in_srgb,var(--color-wk-warning)_25%,transparent)]',
         'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))] border-[color-mix(in_srgb,var(--color-wk-danger)_25%,transparent)]',
-        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))] border-[color-mix(in_srgb,var(--color-wk-accent)_20%,transparent)]',
+        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))] border-[color-mix(in_srgb,var(--color-wk-info-tone)_20%,transparent)]',
         default => 'bg-[var(--color-wk-bg-muted)] border-[var(--color-wk-border-subtle)]',
     };
 

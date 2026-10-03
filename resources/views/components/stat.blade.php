@@ -159,7 +159,7 @@
         'rounded-[var(--radius-wk-lg)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
-        'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-lg)]',
+        'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-x-lg)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
@@ -183,7 +183,8 @@
             'warning' => 'var(--color-wk-warning)',
             'danger' => 'var(--color-wk-danger)',
             'neutral' => 'var(--color-wk-text-muted)',
-            default => 'var(--color-wk-accent)', // primary + accent + info
+            'info' => 'var(--color-wk-info-tone)',
+            default => 'var(--color-wk-accent)', // primary + accent
         };
         $intentTileStyle = "border-color: color-mix(in srgb, {$intentToken} 40%, var(--color-wk-border)); background-color: color-mix(in srgb, {$intentToken} 8%, var(--color-wk-bg-elevated));";
     }

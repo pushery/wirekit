@@ -241,9 +241,6 @@ export default function wirekitTooltip(config = {}) {
         },
 
         /**
-         * Show tooltip and position via Floating UI.
-         */
-        /**
          * Is this tooltip switched off right now?
          *
          * Read off the ROOT ATTRIBUTE rather than held as state, and that is the
@@ -264,6 +261,9 @@ export default function wirekitTooltip(config = {}) {
             return this.$root?.getAttribute('data-wk-tooltip-disabled') === 'true';
         },
 
+        /**
+         * Show tooltip and position via Floating UI.
+         */
         async show() {
             if (this.isOpen) return;
 

@@ -76,3 +76,22 @@ export function observeServerValue(el, onChange, attribute = WK_SERVER_VALUE_ATT
 
     return () => observer.disconnect();
 }
+
+/**
+ * The value an attribute written with `AlpinePayload::json()` carries, or `undefined` when there is
+ * no attribute or its text does not parse. `null` is a value: the server saying there is none.
+ *
+ * @param {string|null|undefined} raw the attribute's text, as `getAttribute()` returns it
+ * @returns {*}
+ */
+export function jsonValue(raw) {
+    if (raw === null || raw === undefined || raw === '') {
+        return undefined;
+    }
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return undefined;
+    }
+}

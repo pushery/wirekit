@@ -17,6 +17,8 @@ $attributes->class([$groupClasses])
 $attributes->getAttributes());
 $attributes->merge($avatarStyle
 $author
+$author)
+$authorInitials
 $author])
 $avatarStyle
 $avatarStyle]
@@ -166,6 +168,7 @@ $total
 ($status
 ($status)
 (RTL-safe)
+(Support\UrlProp).
 (WireKit::validateProp('avatar',
 (default)
 (default).
@@ -176,7 +179,6 @@ $total
 (for
 (int)
 (no
-(same
 (silent
 (string)
 (with
@@ -208,6 +210,7 @@ $total
 4zm0
 :
 :alt="$author"
+:initials="$authorInitials"
 </div>
 </span>
 </svg>
@@ -264,6 +267,7 @@ Counter
 Declared
 Decorative:
 Dev-only
+Echoed
 English,
 Fixed
 Fully
@@ -271,6 +275,7 @@ Hidden
 How
 Ignored
 Inline
+It
 Literal
 Normalized
 Null
@@ -300,6 +305,7 @@ Through
 Turn
 Two
 UNBOUND
+URL
 WHO
 When
 Who
@@ -318,6 +324,8 @@ With
 ['style'
 ['xs',
 [])->class([$baseClasses,
+\Pushery\WireKit\Support\Initials::from((string)
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('message-typing',
@@ -336,6 +344,7 @@ __('wirekit::Typing…');
 `class="cirlce"`
 `default
 `initials`
+`message`
 `prop="false"`
 `ring-*`
 `ring-offset-*`
@@ -355,7 +364,6 @@ affects
 after
 against
 alignment
-aligns
 all.
 almost
 alone,
@@ -408,6 +416,7 @@ both
 bottom-0
 bottom-right
 bottom-right)
+bound,
 box
 box-shadow
 box-shadow.
@@ -444,7 +453,6 @@ colored
 column
 compare
 compiles
-component
 component's
 computed
 concentric
@@ -483,6 +491,7 @@ dot
 dots
 dots,
 double-ring
+draws
 each
 early.
 edge
@@ -493,7 +502,9 @@ elevated
 else
 emitted
 empty
+escaped
 every
+everywhere.
 exact
 existed
 fact
@@ -568,6 +579,7 @@ indicator
 individual
 information
 initials
+initials,
 initials-fallback
 inline
 inline-flex
@@ -588,6 +600,7 @@ keeps
 key
 keystroke-driven
 know
+knows
 label
 labels
 land.
@@ -645,11 +658,13 @@ nothing.
 null
 null,
 null.
+null;
 object-cover"
 of
 on
 on,
 on.
+once
 one
 one-off
 one.
@@ -674,8 +689,8 @@ per
 per-app
 person
 person,
+picture:
 place
-placeholder
 places
 premise
 presence
@@ -716,7 +731,6 @@ render
 rendered
 rendering
 renders
-renders).
 replaces
 result
 right
@@ -731,6 +745,7 @@ role="status"
 role="status".
 roster,
 rounded-[var(--radius-wk-lg)]
+row
 row.
 same
 says
@@ -741,6 +756,7 @@ screen
 screen-reader
 second
 sees
+sender
 separated
 set
 set,
@@ -784,6 +800,7 @@ style
 surface
 surface-color
 surrounds
+tag
 technology
 technology.
 text
@@ -865,6 +882,7 @@ with
 without
 working"
 would
+written
 you
 {
 {$gap}px

@@ -427,14 +427,11 @@ export default function wirekitScopeSwitcher(config = {}) {
         },
 
         /**
-         * Empty the query when the panel closes.
+         * Clear the search when the panel closes, driven by the popover's own `open`.
          *
          * Without this, reopening shows yesterday's search over a list the reader has
          * already forgotten typing into — it reads as a broken list rather than as a
          * remembered one.
-         */
-        /**
-         * Clear the search when the panel closes, driven by the popover's own `open`.
          *
          * The call shape is not incidental. Alpine's CSP build interprets expressions
          * against a narrower grammar that has no statements in it, so the `if (! open)

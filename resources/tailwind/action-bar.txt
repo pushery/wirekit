@@ -19,14 +19,14 @@ $visible
 'display:
 'false'
 'fixed
-'flex
 'floating'
 'floating',
 'font-[family-name:var(--font-wk-sans)]',
 'inline-flex';
+'items-center
 'mode'
 'px-[var(--padding-wk-x-lg)]',
-'py-[var(--padding-wk-y-sm)]',
+'py-[var(--padding-wk-x-lg)]',
 'rounded-[var(--radius-wk-xl)]',
 'scope'
 'shadow-[var(--shadow-wk-lg)]',
@@ -57,6 +57,7 @@ $visible
 @endif
 @endphp
 @endunless
+@if($isFloating)
 @if($visible)
 @php
 @props([
@@ -120,11 +121,15 @@ __('wirekit::Bulk
 `display:
 `env()`
 `env(safe-area-inset-*)`
+`flex`
+`inline-flex`
+`inline-flex`.
 `position:
 `prop="false"`
 `role="group"`
 a
 above
+above,
 accessibility
 action
 actions
@@ -155,6 +160,7 @@ axe
 bar
 bar,
 be
+beside
 between
 block,
 bottom
@@ -176,6 +182,8 @@ change
 changes,
 check
 children
+choice
+chosen
 chrome.
 class="sr-only">
 clear
@@ -193,9 +201,11 @@ controls,
 costs
 could
 dashboard
+data-wk-scroll-inset="bottom"
 debug
 dedicated
 default
+display
 display-none
 distinction
 do
@@ -222,6 +232,7 @@ first
 fixed
 fixed`.
 flags
+flex'
 flip
 flipping
 flips
@@ -230,6 +241,7 @@ for
 from
 gap-[var(--gap-wk-md)]',
 green
+happened
 has
 headless
 here
@@ -254,7 +266,6 @@ it,
 it.
 it:
 items
-items-center
 its
 jumping
 keeps
@@ -264,6 +275,7 @@ label
 language.
 later
 layout
+left
 left-1/2
 list
 literal
@@ -291,10 +303,13 @@ null,
 of
 on
 on.
+once
 one
 one.
+only
 opposite
 optimistic-ui:
+order,
 ordinary
 otherwise
 over
@@ -306,7 +321,9 @@ paint
 panel
 part
 path
+per
 phone
+pick
 pinned
 point.
 populated,
@@ -359,6 +376,7 @@ somebody,
 stays
 stop
 string,
+stylesheet's
 subtree
 surrounding
 survived
@@ -415,7 +433,7 @@ with
 without
 would
 wrapper
-z-[var(--z-wk-sticky)]'
+z-[var(--z-wk-sticky)]
 {{
 {{--
 ||

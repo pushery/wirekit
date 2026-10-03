@@ -41,6 +41,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('link', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.

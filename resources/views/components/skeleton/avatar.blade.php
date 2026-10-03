@@ -21,7 +21,11 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $shimmer = BooleanProp::from($shimmer, true);
 
-    $baseShimmer = 'wk-skeleton bg-[var(--color-wk-bg-skeleton)] rounded-[var(--radius-wk-md)]';
+    // The surface and the radius are two strings because the avatar's circle takes a radius of
+    // its own: beside `rounded-[var(--radius-wk-md)]` the stylesheet's order decided, and the
+    // circle came out as a square with rounded corners.
+    $surface = 'wk-skeleton bg-[var(--color-wk-bg-skeleton)]';
+    $baseShimmer = $surface.' rounded-[var(--radius-wk-md)]';
     // Animation: shimmer (default) | pulse | none. Legacy `shimmer=false` → pulse.
     $wkAnim = in_array($animation, ['pulse', 'none'], true) ? $animation
         : (filter_var($shimmer, FILTER_VALIDATE_BOOL) ? 'shimmer' : 'pulse');
@@ -55,7 +59,7 @@
     {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 60px;'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
 >
     <div class="flex items-center gap-3">
-        <div class="{{ $baseShimmer }} h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-full)]" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton);"></div>
+        <div class="{{ $surface }} h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-full)]" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton);"></div>
         <div class="flex flex-col gap-2 flex-1">
             <div class="{{ $baseShimmer }} h-3 w-1/3" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
             <div class="{{ $baseShimmer }} h-2 w-1/4" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>

@@ -15,6 +15,9 @@
     // an app that runs its OWN error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     // Livewire method to call optimistically. The segment moves immediately and
     // is put back if the call fails. Absent -> this component renders exactly as
     // it did before, down to the byte.
@@ -72,6 +75,10 @@
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
     $describedBy = trim(($error ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
     $name = $attributes->get('name', $id);
 
     // Container wrapping the pill-style segments
@@ -186,7 +193,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
         'action' => $optimistic,
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -205,7 +212,7 @@
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0">
     @if($label)
-        <x-wirekit::label>{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name">{{ $label }}</x-wirekit::label>
     @endif
 
     <div

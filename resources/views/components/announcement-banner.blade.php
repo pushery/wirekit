@@ -158,14 +158,14 @@
         // its own contrast-paired foreground. `promo` was always a solid accent fill, so both
         // surfaces render it the same way and nothing about an existing promo bar changes.
         $surfaceValue === 'solid' => match ($intentValue) {
-            'info' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+            'info' => 'bg-[var(--color-wk-info-tone)] text-[color:var(--color-wk-info-fg)]',
             'success' => 'bg-[var(--color-wk-success)] text-[color:var(--color-wk-success-fg)]',
             'warning' => 'bg-[var(--color-wk-warning)] text-[color:var(--color-wk-warning-fg)]',
             'danger' => 'bg-[var(--color-wk-danger)] text-[color:var(--color-wk-danger-fg)]',
             default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
         },
         default => match ($intentValue) {
-            'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
+            'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
@@ -177,7 +177,7 @@
         // The strip is browser chrome, so it takes chrome's stacking level: above sticky page
         // content, below every dialog. A strip that stayed clickable over a modal backdrop
         // would break the modality the backdrop exists to enforce.
-        $strip => 'sticky top-0 z-[var(--z-wk-chrome)] h-[var(--wk-strip-height)] py-0 font-[number:var(--font-wk-heading-weight)]',
+        $strip => 'sticky top-0 z-[var(--z-wk-chrome)] h-[var(--wk-strip-height)] font-[number:var(--font-wk-heading-weight)]',
         $isSticky && $positionValue === 'bottom' => 'sticky bottom-0 z-30',
         // An ordinary sticky bar sits below a strip; only the strip itself owns the edge.
         $isSticky => 'sticky top-[var(--wk-strip-inset,0px)] z-30',
@@ -190,9 +190,10 @@
     $classes = WireKit::resolveClasses('announcement-banner', 'base', implode(' ', array_filter([
         'wk-announcement-banner',
         'flex w-full items-center justify-center gap-[var(--gap-wk-sm)]',
-        // A strip's height is a token and its padding would only fight it, so it is left out
-        // there (`py-0` in the sticky classes) and the text is centered on the fixed line instead.
-        'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-sm)]',
+        // A strip's height is a token and a vertical padding would only fight it, so a strip
+        // gets none and its text is centered on the fixed line instead. Left out rather than
+        // zeroed: a zero padding beside this one lost to it in the stylesheet's order.
+        $strip ? 'px-[var(--padding-wk-x-lg)]' : 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-x-lg)]',
         'text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)]',
         $intentClasses,
         $stickyClasses,
@@ -206,6 +207,7 @@
      x-cloak keeps a previously-dismissed bar from flashing on every page load
      before Alpine reads localStorage. --}}
 <div
+    @if($isSticky && ! $strip) data-wk-scroll-inset="{{ $positionValue }}" @endif
     @if($isDismissible)
         x-data="wirekitDismissible({@if($persistsDismissal) persistKey: {{ \Pushery\WireKit\Support\AlpinePayload::string('wk-banner:'.$dismissKey) }} @endif })"
         x-show="shown"

@@ -13,6 +13,10 @@
  *   - _onScroll / _onResize (window listeners) — close the fixed-position
  *     popover when the page scrolls or the viewport resizes under it (it is
  *     anchored once on open, so it would strand otherwise). Removed in destroy().
+ *   - _modelEvents — `change` and `blur` on the JSON bridge for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change`
+ *     with every filter applied or removed, and `blur` when the reader leaves the builder and
+ *     its panel. Disposed in destroy().
  * Everything else is plain reactive state (`open`) plus Alpine's own
  * `@click.outside` / `@keydown.escape` directives, whose teardown Alpine manages.
  *
@@ -44,6 +48,7 @@ import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { outOfReachBeside } from '../utils/teleport.js';
+import { watchModelEvents } from '../utils/model-events.js';
 
 /**
  * What counts as focusable inside the popover. Same selector hover-card and
@@ -229,9 +234,12 @@ export default function wirekitFilterBuilder(config = {}) {
         // Disconnects the observer that puts the placement back after a framework update erases
         // it. See the note beside `repairErasure` in _focusFirstControl().
         _stopRepair: null,
+        // The task that reads, after a Tab the browser handled, whether the focus left the panel.
+        _tabLeftTimer: null,
         // Where the trigger stood when the popover opened — see utils/scroll-anchor.js.
         _anchorAt: null,
         _onResize: null,
+        _modelEvents: null,
         init() {
             // Close on page scroll / viewport resize. The popover is teleported +
             // position:fixed, anchored ONCE on open — a page scroll under it
@@ -252,8 +260,12 @@ export default function wirekitFilterBuilder(config = {}) {
                 this._onResize = () => { if (this.isOpen) this.close(); };
                 window.addEventListener('resize', this._onResize, { passive: true });
             }
+
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.model);
         },
         destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
             this._stopRepair?.();
             this._stopRepair = null;
 
@@ -265,6 +277,9 @@ export default function wirekitFilterBuilder(config = {}) {
                 window.removeEventListener('resize', this._onResize);
                 this._onResize = null;
             }
+
+            clearTimeout(this._tabLeftTimer);
+            this._tabLeftTimer = null;
         },
 
         // ── Popover control ──────────────────────────────────────────────
@@ -397,7 +412,44 @@ export default function wirekitFilterBuilder(config = {}) {
                 // which would then have accomplished nothing.
                 this._focusAfterTrigger();
                 this.close();
+
+                return;
             }
+
+            this._closeOnceTabHasLeft(event.shiftKey);
+        },
+
+        /**
+         * A Tab that is no edge by the list above is the browser's to handle, and its tab order
+         * is not always that list: WebKit passes buttons and links by unless the reader has
+         * asked for them, so its last stop inside the popover can come before the last element
+         * here. The key then carries the focus out, and no edge was seen.
+         *
+         * So the outcome is read in the task after the key: a focus that has left the panel
+         * closes the popover as an edge does, back to the trigger or on to the control after it.
+         *
+         * @param {boolean} backward - Shift was held.
+         */
+        _closeOnceTabHasLeft(backward) {
+            const panel = this.$refs.panel;
+
+            clearTimeout(this._tabLeftTimer);
+            this._tabLeftTimer = setTimeout(() => {
+                this._tabLeftTimer = null;
+
+                if (! this.isOpen || focusIsWithin(panel)) {
+                    return;
+                }
+
+                if (backward) {
+                    this.close(true);
+
+                    return;
+                }
+
+                this._focusAfterTrigger();
+                this.close();
+            }, 0);
         },
 
         // When the draft field changes, reset the operator to the first valid
@@ -577,6 +629,9 @@ export default function wirekitFilterBuilder(config = {}) {
                 this.$refs.model.value = JSON.stringify(this.filters);
                 this.$refs.model.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            // Every emission is a filter applied or removed, committed at once.
+            this._modelEvents?.commit();
         },
 
         // Move focus into the popover when it opens (a11y). $nextTick waits for

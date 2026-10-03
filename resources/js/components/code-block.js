@@ -71,6 +71,7 @@ export default function wirekitCodeBlock(config = {}) {
         _announce(succeeded) {
             this.copied = succeeded;
             this.srMessage = succeeded ? this._copiedMessage : this._failedMessage;
+            this._tell(succeeded);
 
             // A message still pending from an earlier copy would otherwise clear
             // this one early.
@@ -87,6 +88,19 @@ export default function wirekitCodeBlock(config = {}) {
                 this.copied = false;
                 this.srMessage = '';
             }, 2000);
+        },
+
+        /**
+         * `wirekit:copied` on the block, bubbling, with whether the copy happened.
+         *
+         * Dispatched for every copy, a second one with the same result included, which changes
+         * nothing in the live region and so could not be read from it. The block is the target,
+         * so a listener on the page can tell which block was copied.
+         */
+        _tell(succeeded) {
+            const block = this.$el?.closest?.('[data-wk-code-block]');
+
+            block?.dispatchEvent?.(new CustomEvent('wirekit:copied', { bubbles: true, detail: { succeeded } }));
         },
     };
 }

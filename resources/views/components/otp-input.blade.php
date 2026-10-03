@@ -34,6 +34,9 @@
     'announceError' => null,
     'label' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'length' => config('wirekit.components.otp-input.length', 6),
     'masked' => config('wirekit.components.otp-input.masked', false),
@@ -73,7 +76,8 @@
     //
     // `start` by default, so no existing field moves. The centered default the report
     // suggests would be right for most call sites and wrong for backward compatibility,
-    // and the second consideration wins in a minor.
+    // and the second consideration wins in a minor. `stretch` fills the control's width
+    // instead; see the alignment block below.
     'justify' => config('wirekit.components.otp-input.justify', 'start'),
     // The size of every box: `sm` 32px, `md` 40px (the one that shipped), `lg` 48px, `xl` 56px.
     //
@@ -186,17 +190,25 @@
 
     // Fully qualified: this view's `WireKit` import lives in a LATER `@php` block, and a
     // later block does not reach this one.
-    if (! in_array($justify, ['start', 'center', 'end'], true)) {
-        \Pushery\WireKit\WireKit::validateProp('otp-input', 'justify', $justify, ['start', 'center', 'end']);
+    if (! in_array($justify, ['start', 'center', 'end', 'stretch'], true)) {
+        \Pushery\WireKit\WireKit::validateProp('otp-input', 'justify', $justify, ['start', 'center', 'end', 'stretch']);
         $justify = 'start';
     }
+
+    // `stretch`: the boxes share the control's width, so the row ends flush with a sentence and
+    // a button above and below it. Each box keeps its square, grows from the touch target (or
+    // its size, when that is larger) up to twice its size, and the gap stays the token. Where
+    // every box has reached that cap the row sits as `center` does, which is why the row below
+    // centers in this mode too. Groups grow by their number of boxes, so every box has the same
+    // width, and a row too narrow for the next group still breaks at the group boundary.
+    $stretch = $justify === 'stretch';
 
     // The default emits NOTHING rather than the leading-edge utility, so a field that
     // does not ask for an alignment renders the markup it always did, byte for byte. The
     // flex default already packs to the leading edge; naming it would change every
     // rendered page to say what was already true.
     $justifyClass = match ($justify) {
-        'center' => 'justify-center',
+        'center', 'stretch' => 'justify-center',
         'end' => 'justify-end',
         default => '',
     };
@@ -300,10 +312,18 @@
     // step: 3.5rem at the defaults, and a theme that makes its controls denser or roomier moves it
     // with the other three. `--size-wk-xl` is not that rung: it is 6rem, the progress circle.
     $sizeClasses = match (WireKit::validateProp('otp-input', 'size', $size, ['sm', 'md', 'lg', 'xl'])) {
-        'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]',
-        'md' => 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]',
-        'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]',
-        'xl' => 'w-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] h-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] text-[length:var(--text-wk-2xl)] rounded-[var(--radius-wk-lg)]',
+        'sm' => $stretch
+            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-sm))] max-w-[calc(var(--size-wk-sm)*2)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]'
+            : 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]',
+        'md' => $stretch
+            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-md))] max-w-[calc(var(--size-wk-md)*2)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]'
+            : 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]',
+        'lg' => $stretch
+            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-lg))] max-w-[calc(var(--size-wk-lg)*2)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]'
+            : 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]',
+        'xl' => $stretch
+            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),calc(var(--size-wk-lg)*2_-_var(--size-wk-md)))] max-w-[calc((var(--size-wk-lg)*2_-_var(--size-wk-md))*2)] text-[length:var(--text-wk-2xl)] rounded-[var(--radius-wk-lg)]'
+            : 'w-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] h-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] text-[length:var(--text-wk-2xl)] rounded-[var(--radius-wk-lg)]',
     };
 
     // Individual digit input classes
@@ -338,6 +358,10 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's. The group takes the component's own ids only.
     $describedBy = trim($ownDescribedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // The Livewire property the hidden field is bound to. The boxes read it back, so they
     // show what the property holds when something other than the boxes sets it, the
@@ -369,7 +393,7 @@
             // is a credential.
             'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 
     // A caller's `x-ref` belongs to the caller's component, and on the group of boxes, the
@@ -411,7 +435,7 @@
     @if($label)
         {{-- `-digit-0`, not `-0`. See the digit id below for why the segment is
              there; this must move with it or every otp-input loses its label. --}}
-        <x-wirekit::label :for="$id . '-digit-0'" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id . '-digit-0'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- Hidden input holds the combined OTP value for form submission / wire:model.
@@ -449,7 +473,7 @@
         {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }} {{ $groupListeners }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         @if($required) aria-required="true" @endif
-        aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"
+        aria-label="{{ $label ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? __('wirekit::One-time code') }}"
         {{-- On the GROUP as well as on every box: a reader who lands on the group
              before reaching a digit has to hear that the code is not enterable. --}}
         @if($disabled) aria-disabled="true" @endif
@@ -468,7 +492,7 @@
              Grouped, it is a row that does not wrap: the groups wrap against each other
              in the row above, so a break can only happen at a group boundary. Eight
              digits with `group="4"` are one row where it fits and 4+4 where it does not. --}}
-        <div class="{{ $group === null ? 'contents' : 'flex gap-2' }}">
+        <div class="{{ $group === null ? 'contents' : ($stretch ? 'flex gap-2 justify-center' : 'flex gap-2') }}"@if($group !== null && $stretch) style="flex: {{ count($digitGroup) }} 1 0%"@endif>
         @foreach($digitGroup as $i)
             <input
                 {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}

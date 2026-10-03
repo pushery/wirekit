@@ -30,6 +30,7 @@
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 /**
  * What counts as focusable inside a flyout panel. Same selector app-shell's
@@ -61,7 +62,7 @@ export default function wirekitNavigationMenu() {
             // FOUR separate places clear `activeItem` — the SPA cleanup, the delayed close, the
             // immediate close and a switch to another item — so hooking one of them would leave
             // an observer alive on the other three.
-            this.$watch('activeItem', (name) => {
+            watchCurrent(this, 'activeItem', (name) => {
                 if (name) {
                     return;
                 }

@@ -24,6 +24,9 @@
     // label is redundant. Mirrors input / select / textarea / combobox `hideLabel`.
     'hideLabel' => false,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'indeterminate' => false,
     // Take the surrounding field.set's group error, or decline it. A control that belongs to
@@ -184,6 +187,11 @@
         $attributes->get('aria-describedby'),
         $groupError,
     );
+    // The field's help, after its own messages: what the field is for (partials/field-help).
+    // Only with a label to stand beside, which is also where its hidden copy is rendered.
+    $helpLabel = $slot->hasActualContent() ? trim(html_entity_decode(strip_tags((string) $slot), ENT_QUOTES | ENT_HTML5)) : (string) ($label ?? '');
+    $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
+    $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // Visual box styling. The <input> uses .peer + .sr-only, and this box listens
     // to peer-checked / peer-focus-visible / peer-disabled via sibling selectors.
@@ -212,8 +220,13 @@
         $sizing,
         'rounded-[var(--radius-wk-sm)]',
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border-strong)]',
-        'peer-hover:border-[var(--color-wk-border-strong-hover)]',
+        // One border color for the state, chosen here rather than appended afterwards: an error
+        // class added after the block lost to the resting one, because both are single classes
+        // and the stylesheet sorts `-error` before `-strong`, so an invalid box stayed gray. The
+        // hover border belongs to the resting state only, for the same reason the fields' does.
+        $isInvalid
+            ? 'border-[var(--color-wk-border-error)]'
+            : 'border-[var(--color-wk-border-strong)] peer-hover:border-[var(--color-wk-border-strong-hover)]',
         'bg-[var(--color-wk-bg-input)]',
         'peer-checked:bg-[var(--color-wk-accent)]',
         'peer-checked:border-[var(--color-wk-accent)]',
@@ -237,9 +250,6 @@
         'text-[color:var(--color-wk-accent-fg)]',
     ]), $scope);
 
-    if ($isInvalid) {
-        $boxClasses .= ' border-[var(--color-wk-border-error)]';
-    }
 @endphp
 
 @php
@@ -253,11 +263,16 @@
             'pending' => __('wirekit::Saving'),
             'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 @endphp
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+    {{-- With help, the label shares a row with its button, which may not sit inside the
+         label: it would become part of the control's name. --}}
+    @if($helpId)
+    <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+    @endif
     <label for="{{ $id }}" class="{{ $labelClasses }}">
         {{-- Native checkbox: visually hidden but fully accessible + Livewire-compatible.
              Siblings below consume its :checked / :indeterminate / :focus-visible / :disabled state via peer-*. --}}
@@ -328,6 +343,10 @@
             <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
+    @if($helpId)
+        @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => ! $hideLabel, 'helpField' => (string) ($name)])
+    </div>
+    @endif
 
     @if($optimisticConfig)
         {{-- Rendered unconditionally and starting empty: a live region that

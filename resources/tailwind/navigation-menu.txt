@@ -89,6 +89,7 @@ $triggerClasses
 ($relAttr
 (4px).
 (Support\CallerListeners).
+(Support\UrlProp).
 (WCAG
 (activeItem
 (and
@@ -170,6 +171,7 @@ Deliberately
 Derived
 Dev-only
 DomId's
+Echoed
 Escape
 Floating
 Flyout
@@ -214,6 +216,7 @@ Tooltip.
 Trigger
 UI
 UNBOUND
+URL
 Uses
 We
 WireKit::resolveClasses('navigation-menu',
@@ -230,6 +233,7 @@ Wrapped
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($name.'-panel',
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu',
 \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu.link',
@@ -325,6 +329,7 @@ block,
 border-[var(--color-wk-border)]',
 both
 bound
+bound,
 browser
 bubble
 bubbles
@@ -415,6 +420,7 @@ either
 element
 emits.
 end
+escaped
 escapes
 establishes
 event
@@ -604,6 +610,7 @@ off
 offset
 on
 on.
+once
 one
 one.
 open
@@ -752,6 +759,7 @@ styling
 subtree
 summon
 tab)')
+tag
 takes
 target.
 target="_blank".
@@ -824,6 +832,7 @@ working,
 would
 wrap
 writing
+written
 x-cloak
 x-data="wirekitNavigationMenu()"
 x-on:click.outside

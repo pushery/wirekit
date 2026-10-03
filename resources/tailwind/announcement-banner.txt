@@ -40,6 +40,7 @@ $sticky
 $stickyClasses
 $stickyClasses,
 $strip
+$strip)
 $surface
 $surface,
 $surfaceValue
@@ -57,13 +58,14 @@ $surfaceValue
 '0'),
 'base',
 'bg-[color-mix(in_srgb,oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))_12%,var(--color-wk-bg-elevated))]
-'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg-elevated))]
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg-elevated))]
 'bg-[oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))]
 'bg-[var(--color-wk-accent)]
 'bg-[var(--color-wk-danger)]
+'bg-[var(--color-wk-info-tone)]
 'bg-[var(--color-wk-success)]
 'bg-[var(--color-wk-warning)]
 'bottom'
@@ -88,6 +90,7 @@ $surfaceValue
 'position',
 'promo',
 'px-[var(--padding-wk-x-lg)]
+'px-[var(--padding-wk-x-lg)]'
 'scope'
 'soft',
 'solid'
@@ -116,7 +119,6 @@ $surfaceValue
 (--padding-wk-x-lg),
 (`--theme-hue`)
 (`--wk-banner-hue`)
-(`py-0`
 (accent),
 (and
 (below)
@@ -175,6 +177,7 @@ $surfaceValue
 @endisset
 @endphp
 @if($isDismissible)
+@if($isSticky
 @if($strip)
 @if(filled($label))
 @isset($action)
@@ -347,6 +350,7 @@ belongs
 below
 below,
 below;
+beside
 between
 block,
 blue
@@ -388,7 +392,6 @@ class="h-4
 class="min-w-0
 class="ms-auto
 class="shrink-0">{{
-classes)
 clickable
 close
 color
@@ -418,6 +421,7 @@ data-wk-announcement-action
 data-wk-announcement-banner
 data-wk-announcement-content
 data-wk-announcement-dismiss
+data-wk-scroll-inset="{{
 data-wk-viewport-strip
 debug
 declared,
@@ -580,7 +584,6 @@ landmark.
 landmarks
 last
 later
-left
 let
 lets
 level:
@@ -598,6 +601,7 @@ load-bearing:
 loads
 loads.
 localStorage.
+lost
 make
 makes
 margin.
@@ -627,6 +631,7 @@ never
 never,
 next
 no
+none
 normalized
 not
 not.
@@ -653,6 +658,7 @@ opt-in
 optimistic-ui:
 options
 or
+order.
 ordinary
 other
 otherwise
@@ -689,8 +695,7 @@ prop's
 property
 props
 purpose,
-py-0
-py-[var(--padding-wk-y-sm)]',
+py-[var(--padding-wk-x-lg)]',
 qualified:
 ran.
 rather
@@ -781,6 +786,7 @@ style
 styles,
 styles;
 stylesheet
+stylesheet's
 such
 supplied
 surface
@@ -796,6 +802,7 @@ text
 text-[color:var(--color-wk-accent-fg)]',
 text-[color:var(--color-wk-banner-hue-fg)]',
 text-[color:var(--color-wk-danger-fg)]',
+text-[color:var(--color-wk-info-fg)]',
 text-[color:var(--color-wk-success-fg)]',
 text-[color:var(--color-wk-text)]',
 text-[color:var(--color-wk-warning-fg)]',
@@ -855,6 +862,7 @@ validates
 value
 value,
 var(--wk-banner-hue))`
+vertical
 via
 view's
 viewBox="0
@@ -896,6 +904,8 @@ x-show="shown"
 xmlns="http://www.w3.org/2000/svg"
 z-30',
 z-[var(--z-wk-chrome)]
+zero
+zeroed:
 {
 {{
 {{--

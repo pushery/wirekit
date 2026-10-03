@@ -14,10 +14,9 @@
 $actions
 $actionsClasses
 $ancestorClasses
+$attributes->class([$iconClasses]);
 $attributes->class([$navClasses])
-$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -27,6 +26,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $canonicalUrl,
 $cleaned
@@ -42,6 +42,7 @@ $href
 $href;
 $i
 $icon
+$iconClasses
 $iconWrap
 $isInformative
 $isInformative;
@@ -84,7 +85,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $svgHtml
@@ -95,6 +96,7 @@ $wkNonce
 '
 ''
 '')
+''));
 '',
 '';
 ',
@@ -102,6 +104,10 @@ $wkNonce
 '/',
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -118,6 +124,7 @@ $wkNonce
 '[WireKit]
 'actions',
 'ancestor',
+'aria-label');
 'arrow'
 'base',
 'chevron'
@@ -199,6 +206,7 @@ $wkNonce
 (JSON-LD),
 (JSON_INVALID_UTF8_SUBSTITUTE).
 (NAN,
+(UtilityClasses::has($callerClass,
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -243,9 +251,11 @@ $wkNonce
 0;
 0;">
 1
+16px
 2.
 2.5.8
 20px
+20px,
 24x24
 2rem,
 3.
@@ -319,6 +329,7 @@ BETWEEN
 BOTH
 BOX
 Back-compatible:
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -410,6 +421,7 @@ Product
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\ListProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Reapply
 Render
@@ -450,6 +462,7 @@ URLs
 UTF-8
 UTF-8,
 Usage:
+UtilityClasses::without($iconClasses,
 Vite
 WCAG
 We
@@ -458,6 +471,7 @@ When
 WireKit
 WireKit::cspNonce().
 WireKit::resolveClasses('breadcrumb',
+WireKit::resolveClasses('icon',
 WireKit::validateProp('icon',
 With
 Without
@@ -472,8 +486,10 @@ XSS
 [...])`
 [],
 [structured-data]:
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Schema\Schema::breadcrumbItems(array_values(array_map(
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\SafeUrl::href($item['href']
 \Pushery\WireKit\WireKit::cspNonce();
 \Pushery\WireKit\WireKit::warnUnknownProps('breadcrumb',
@@ -490,6 +506,7 @@ __('wirekit::Breadcrumb')
 __toString
 `$linkClasses`
 `0`
+`:class`
 `</script>`
 `<`
 `<`/`>`.
@@ -497,6 +514,7 @@ __toString
 `<ol>`,
 `<span>`
 `>`
+`@class`
 `@context`
 `@graph`
 `@type`
@@ -511,9 +529,13 @@ __toString
 `array_key_last()`
 `class="h-12
 `class="…"`
+`class`
 `current`
 `flex-wrap`,
 `group-data-`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `href`
 `icon`
@@ -558,6 +580,7 @@ all.
 allow
 allowed
 alone
+alone,
 already
 among
 an
@@ -594,6 +617,7 @@ aria-labelledby
 aria-pressed>`,
 around
 array
+array,
 array.
 array_key_exists('@context',
 array_key_exists('@graph',
@@ -606,9 +630,11 @@ at
 at.
 attempted
 attribute
+attribute's
 attribute,
 attributes,
 auto-derived
+axis.
 back
 back.
 baked
@@ -644,6 +670,7 @@ body
 bootstrapped
 borrowing
 both.
+bound
 box
 branch
 branch's
@@ -777,6 +804,7 @@ display
 document
 document:
 does
+does.
 doesn't
 down
 draws
@@ -880,6 +908,7 @@ guarantees
 h-5
 h/w
 hand-written
+happened
 hard
 harder
 harmless
@@ -1007,6 +1036,7 @@ long
 longest
 loop
 lost
+lost,
 loudly,
 m-0
 makes
@@ -1072,6 +1102,7 @@ none;
 nor
 not
 not.
+not:
 nothing
 nothing.
 now.
@@ -1101,6 +1132,7 @@ opening
 optimistic-ui:
 options:
 or
+order
 other
 otherwise
 our
@@ -1215,6 +1247,7 @@ resolved
 resolves
 respect
 response
+responsive
 rest
 restyle
 result
@@ -1272,11 +1305,13 @@ sits
 size
 size,
 size="sm"
+sized
 skip.
 slightly
 slot
 so
 somebody
+sorts
 source
 source-baked
 source.
@@ -1286,6 +1321,7 @@ span
 splits
 stamping
 standard
+state
 state.
 static
 stay
@@ -1308,6 +1344,7 @@ style:
 style="display:inline-block;"></span>
 style="list-style:
 stylesheet
+stylesheet's
 such
 svg($resolved,
 svg()
@@ -1350,6 +1387,7 @@ throw,
 throws
 tile
 to
+toCssClasses()
 toHtml().
 toggle
 too,
@@ -1374,6 +1412,7 @@ two
 type
 type="application/ld+json">
 type="application/ld+json"@if($wkNonce)
+under
 unescaped)
 unknown
 unknown-alias
@@ -1423,12 +1462,15 @@ where
 wherever
 whether
 which
+while
 whitespace
 who
 whole
 whose
 why.
+width
 width,
+win.
 wins
 with
 without

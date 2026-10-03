@@ -790,7 +790,6 @@ preserving
 preview
 previews).
 primary
-primary,
 primary==info
 print
 print-stylesheet
@@ -1029,6 +1028,7 @@ vanish,
 var(--color-wk-accent))',
 var(--color-wk-border-strong))';
 var(--color-wk-danger))',
+var(--color-wk-info-tone))',
 var(--color-wk-success))',
 var(--color-wk-text)`
 var(--color-wk-text-muted))',

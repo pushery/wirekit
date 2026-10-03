@@ -98,6 +98,11 @@ export default function wirekitPopover(config = {}) {
                     crossAxisShift: true,
                     // Follow the trigger on scroll/resize; torn down in every close path.
                     autoReposition: true,
+                    // A framework update patches the teleported panel against its template, whose
+                    // `style` carries none of what this call writes: the placement is gone while the
+                    // panel stays open, with its box unchanged, so `autoReposition`, which watches
+                    // boxes, sees nothing. This watches the attribute that is actually removed.
+                    repairErasure: true,
                 });
 
                 // The placement can wait frames for the panel to get a box, and the popover

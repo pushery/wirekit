@@ -141,6 +141,7 @@ $wkMobileStyle
 (0,2,0)
 (1.5,
 (640px)
+(Support\UrlProp).
 (`alt=""`
 (`merge()`
 (`sm:inline-flex`
@@ -234,6 +235,7 @@ Defaults
 Dev-only
 EXPLICITLY,
 Eager
+Echoed
 Emitting
 Empty
 Every
@@ -298,6 +300,7 @@ Without
 ['xs',
 [null,
 \Illuminate\View\ComponentSlot)
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('brand',
 ])
 ]),
@@ -429,6 +432,7 @@ block,
 boolean
 both
 both.
+bound,
 branches
 branches'
 brand
@@ -542,6 +546,7 @@ elsewhere
 empty
 ends
 enum
+escaped
 every
 everything
 exactly
@@ -729,6 +734,7 @@ of
 off
 often
 on
+once
 once.
 one
 one,
@@ -885,6 +891,7 @@ swap:
 swaps
 tab
 tab)')
+tag
 tags:
 take
 taken

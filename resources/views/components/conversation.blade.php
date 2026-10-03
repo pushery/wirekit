@@ -100,7 +100,9 @@
     {{-- Jump-to-latest. Only offered while the reader is scrolled away, and the
          count is the point: "4 new" tells them how much they missed, where "there
          is more" leaves them scrolling to find out. x-cloak keeps it hidden until
-         Alpine evaluates atBottom, so it never flashes on load. --}}
+         Alpine evaluates atBottom, so it never flashes on load. Its shadow is the filled
+         surface's own: a second shadow class beside it is decided by the stylesheet's order,
+         not by this attribute, and a larger one here never took effect. --}}
     <x-wirekit::button
         type="button"
         size="sm"
@@ -111,7 +113,7 @@
         x-transition.opacity
         @click="scrollToBottom()"
         ::aria-label="unread > 0 ? jumpLabelCount.replace(':count', unread) : jumpLabel"
-        class="absolute bottom-[var(--space-wk-sm)] left-1/2 -translate-x-1/2 shadow-[var(--shadow-wk-md)]"
+        class="absolute bottom-[var(--space-wk-sm)] left-1/2 -translate-x-1/2"
     >
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />

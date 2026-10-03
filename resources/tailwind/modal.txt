@@ -36,7 +36,6 @@ $attributes->except($as
 $attributes->except('rel');
 $attributes->except(['for',
 $attributes->except(array_keys($ariaAttributes));
-$attributes->get('aria-label');
 $attributes->get('rel',
 $attributes->get('target',
 $attributes->get('type',
@@ -58,6 +57,7 @@ $close
 $closeClasses
 $component
 $computedRel
+$confirmDiscard
 $containerClasses
 $declarativeBusyOnly
 $declarativeBusyOnly);
@@ -68,6 +68,8 @@ $describedby
 $disableOnLoading
 $disableOnLoading;
 $disabled
+$discardQuestion
+$discardQuestionText
 $dismissible
 $emitAriaBusy
 $extLink
@@ -167,6 +169,7 @@ $wrapLabel
 '.$message);
 '.WireKit::resolveClasses('modal',
 '.WireKit::resolveClasses('modal.body',
+'/^(?:min-h|h|w|p[xytrblse]?)-/');
 '2xl'
 '2xl']);
 '2xl'],
@@ -182,6 +185,7 @@ $wrapLabel
 'aria-'))
 'aria-busy'
 'aria-label')
+'aria-label');
 'ariaLabel'
 'ariaLabel',
 'as'
@@ -203,6 +207,7 @@ $wrapLabel
 'calc(var(--size-wk-sm)*0.875)',
 'close'
 'close',
+'confirmDiscard'
 'container',
 'cursor-pointer',
 'data-wk-modal-header');
@@ -213,6 +218,7 @@ $wrapLabel
 'disabled'
 'disabled:opacity-[var(--opacity-wk-disabled)]',
 'disabled:pointer-events-none',
+'discardQuestion'
 'dismissible'
 'duration-[var(--transition-wk-duration)]',
 'ease-[var(--transition-wk-easing)]',
@@ -316,6 +322,7 @@ $wrapLabel
 'none'
 'none']))
 'noopener')
+'null'
 'opacity-[var(--opacity-wk-disabled)]
 'orientation'
 'outline'];
@@ -410,6 +417,7 @@ $wrapLabel
 ($size
 ($size)
 ($stackBelow
+($surface
 ($value,
 ($wrapLabel
 (($iconOnly
@@ -418,12 +426,14 @@ $wrapLabel
 (No
 (SVG
 (Support\CallerListeners).
+(Support\UrlProp).
 (Tailwind's
 (WCAG
 (WireKit::validateProp('link',
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (`@container/wk-table`)
 (`loading`
+(`p-0
 (a
 (avoids
 (bool)
@@ -436,8 +446,8 @@ $wrapLabel
 (e.g.
 (even
 (external
+(filled($discardQuestion)
 (function_exists('logger'))
-(info
 (is_string($key)
 (it
 (its
@@ -469,16 +479,15 @@ $wrapLabel
 --------
 -----------
 --color-wk-bg:
---color-wk-info
---color-wk-info-fg
---color-wk-info-hover):
---color-wk-info-text
+--color-wk-info-tone,
 --color-wk-warning-bg
 --size-wk-sm
 --}}
 --}}`
 ->all();
 ->filter(fn
+-fg
+-hover,
 -mb-[length:var(--border-wk-width)]
 -me-[length:var(--border-wk-width)]
 -ms-1
@@ -649,11 +658,13 @@ Backdrop.
 Backgrounds:
 Base
 Below
+Beside
 Blade
 Blade's
 Body
 BooleanProp::from($announceNewTab,
 BooleanProp::from($close,
+BooleanProp::from($confirmDiscard,
 BooleanProp::from($disableOnLoading,
 BooleanProp::from($disabled,
 BooleanProp::from($dismissible,
@@ -673,6 +684,7 @@ CSS
 CSS-pixel
 CSS.
 CallerRef::onRoot()
+Cancel
 Capped
 Centered,
 Click
@@ -694,11 +706,13 @@ Dynamic
 ESC
 ESC.
 EVERY
+Echoed
 Emitting
 Enter
 Enter.
 Equal
 Escape
+Escape,
 Even
 Every
 Examples
@@ -724,7 +738,6 @@ ITS
 Icon
 Icon-only
 Included
-Info
 Instant
 Is
 It
@@ -838,6 +851,7 @@ To
 Trigger
 Two
 UNBOUND
+URL
 USER
 UX
 Unconditional,
@@ -891,14 +905,21 @@ X)
 ['sm',
 ['x-on:keydown.escape.window']);
 ['xs',
+[--color-wk-ring:var(--color-wk-accent-fg)]
 [--wk-touch-min:0px]'
 [overflow-wrap:anywhere]'
 \InvalidArgumentException('wirekit::button:
+\Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText)
 \Pushery\WireKit\Support\AlpinePayload::string($for)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\UrlProp::text($href);
+\Pushery\WireKit\Support\UtilityClasses::PADDING);
+\Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
+\Pushery\WireKit\Support\UtilityClasses::without($sizeClasses,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -920,6 +941,7 @@ X)
 ]);
 __('wirekit::(opens
 __('wirekit::Close')
+__('wirekit::Discard
 `$loading`;
 `$size`
 `(string)
@@ -927,6 +949,7 @@ __('wirekit::Close')
 `--wk-touch-min`
 `.attr`
 `.prevent`
+`.self`
 `.stop`
 `.wk-button-group[data-stack-below="…"]`
 `.wk-button`
@@ -986,6 +1009,7 @@ __('wirekit::Close')
 `button`.
 `class="contents"`
 `class="whitespace-normal"`
+`click.outside`
 `clipboard-button`
 `clipboard-button`,
 `close=true`
@@ -998,6 +1022,7 @@ __('wirekit::Close')
 `disabled:`
 `disabled`
 `disabled`,
+`discardQuestion`
 `dismissByReader('escape')`
 `dismissible="false"`
 `dvh`
@@ -1115,7 +1140,7 @@ absent
 absolutely,
 absorbs
 accent
-accent-content.
+accent,
 accept
 accessibility
 accessible
@@ -1147,7 +1172,6 @@ against
 agreed
 air.
 alias
-aliases
 aligned
 alike,
 all
@@ -1226,6 +1250,7 @@ arrow
 arrow,
 as
 as,
+ask.
 asked
 asking
 asks
@@ -1257,6 +1282,7 @@ avatar
 avatar,
 avatar.group
 avoid.
+away
 axe
 axe-core
 axis
@@ -1282,6 +1308,7 @@ bears
 beat
 because
 becomes
+been
 before
 before.
 before:-translate-x-1/2
@@ -1304,6 +1331,7 @@ better
 between
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
@@ -1311,6 +1339,7 @@ bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-danger)]
+bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
 bg-transparent
@@ -1326,6 +1355,7 @@ border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]
 border-[var(--color-wk-border)]
 border-[var(--color-wk-danger)]
+border-[var(--color-wk-info-tone)]
 border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
@@ -1340,6 +1370,7 @@ both,
 bottom
 bottom;
 bound
+bound,
 boundaries
 box
 box.
@@ -1359,7 +1390,6 @@ brighter,
 brought
 browser
 browser's
-bubble
 bubbles.
 build
 built
@@ -1414,10 +1444,11 @@ chain.
 change
 changes
 changes,
+changes.
+changes?'))
 changing
 channel
 channel,
-charts
 check
 check:
 checkbox
@@ -1454,7 +1485,6 @@ click
 click.
 clicked
 clicking
-clicks
 client-only
 clipboard"
 clipped,
@@ -1468,6 +1498,7 @@ closer
 closes
 closes,
 closes.
+closing
 cluster).
 coarse-pointer
 coarse`,
@@ -1510,6 +1541,7 @@ config
 config('wirekit.components.button.intent',
 config('wirekit.components.button.size',
 config('wirekit.components.button.surface',
+config('wirekit.components.modal.confirm-discard',
 config('wirekit.components.modal.dismissible',
 config('wirekit.components.modal.size',
 configuration
@@ -1649,6 +1681,7 @@ disabled:opacity-[var(--opacity-wk-disabled)]
 disabling.
 disagree
 disagreeing
+discardQuestion:
 discoverable,
 dismiss
 dismissal
@@ -1665,10 +1698,10 @@ docs
 docs,
 docs.
 document
+document,
 does
 does),
 does;
-don't
 done
 dotted-read
 double
@@ -1737,6 +1770,7 @@ error
 error,
 error.
 escape-free.
+escaped
 escaping
 etc.)
 etc.),
@@ -1817,7 +1851,6 @@ fixed-height
 fixed.
 fixes
 flags
-flash
 flashes
 flex
 flex-1
@@ -1836,6 +1869,8 @@ floating
 floor
 floor's
 flow
+flows
+flush
 focus
 focus-trap
 focus-visible:outline-hidden
@@ -1908,6 +1943,7 @@ guess,
 h-3.5
 h-4
 h-auto
+h-auto`).
 had
 half
 half,
@@ -1939,10 +1975,12 @@ header's
 header's.
 header,
 heading
+hear
 height
 height,
 height.
 here
+here,
 here.
 here;
 hidden
@@ -1960,6 +1998,7 @@ hint
 hint)
 hint;
 hit
+hold
 holding
 holds
 honoring
@@ -1970,6 +2009,7 @@ house
 hover
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
@@ -1978,6 +2018,7 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
 hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
+hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
 hover:text-[color:var(--color-wk-text)]
@@ -1986,6 +2027,7 @@ how
 however
 href
 href="{{
+hue
 hyphen,
 icon
 icon,
@@ -2017,7 +2059,7 @@ independent
 indicator,
 inert
 inert.
-info-specific
+info
 info:
 inheritance
 inherited
@@ -2101,6 +2143,7 @@ labels
 ladder
 landmark
 lands
+language
 last:border-b-0
 last:border-e-0
 later
@@ -2113,6 +2156,7 @@ lazy
 leave
 leaves
 leaves.
+left
 left-to-right;
 lets
 lg
@@ -2367,6 +2411,7 @@ other
 other.
 other:
 otherwise
+otherwise.
 our
 ours
 out
@@ -2487,8 +2532,6 @@ preserved.
 pressed
 prevent
 preview,
-primary
-primary)
 primary:
 primitive
 primitive.
@@ -2524,6 +2567,7 @@ py-[var(--padding-wk-y-xs)]',
 qualified:
 query
 question
+question,
 quietly
 r="10"
 races
@@ -2548,8 +2592,8 @@ reaches
 reaching
 reacts
 read
-read,
 reader
+reader's
 reading
 reads
 real
@@ -2768,6 +2812,7 @@ sits.
 six
 six.
 size
+size's
 size,
 size.
 size;
@@ -2798,6 +2843,7 @@ some
 somebody
 someone
 something
+sorting
 sound
 source
 source-detection
@@ -2842,11 +2888,13 @@ states
 static
 stay
 stay,
+stay.
 stayed
 stays
 step
 still
 stop
+stopped:
 stops
 str_contains($relAttr,
 str_contains($targetAttr,
@@ -2871,6 +2919,7 @@ styled,
 styles
 styles,
 stylesheet
+stylesheet's
 styling
 stylistic
 sub-component
@@ -2939,6 +2988,8 @@ text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
+text-[color:var(--color-wk-info-fg)]
+text-[color:var(--color-wk-info-text)]
 text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -2975,6 +3026,7 @@ those
 three
 three-line
 threshold
+threw
 through
 throw
 throwing
@@ -2999,7 +3051,6 @@ token
 token,
 tokens
 tokens.
-tone
 too
 too,
 took
@@ -3031,6 +3082,7 @@ trigger,
 trim($relAttr.'
 trim((string)
 trim(strip_tags((string)
+trio
 trip,
 true))
 true),
@@ -3207,6 +3259,7 @@ without
 wk-overlay-layer-modal
 wk-scrollbar
 wk-touch-text-floor'
+won
 word
 word,
 work,
@@ -3237,7 +3290,7 @@ x-data
 x-data="wirekitModal({
 x-data="wirekitModalTrigger({
 x-on:click.prevent.stop="openNamedOverlay()"
-x-on:click.stop
+x-on:click.self="handleBackdropClick()"
 x-on:click="close()"
 x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
@@ -3259,6 +3312,7 @@ xmlns="http://www.w3.org/2000/svg"
 yet.
 yields
 you
+your
 z-index
 zero
 {

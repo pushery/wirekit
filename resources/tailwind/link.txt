@@ -102,6 +102,7 @@ $variantClasses,
 'xs'
 ($relAttr
 ($size
+(Support\UrlProp).
 (WireKit::validateProp('link',
 (even
 (external
@@ -159,6 +160,7 @@ DEFAULT
 Declared
 Deliberately
 Dev-only
+Echoed
 Enter.
 Font
 Fully
@@ -188,6 +190,7 @@ Tailwind
 The
 To
 UNBOUND
+URL
 Unconditional,
 Where
 Whether
@@ -200,6 +203,7 @@ Without
 ['rel',
 ['rel'])->class([$classes])
 ['xs',
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::tagName('link',
 \Pushery\WireKit\WireKit::warnUnknownProps('link',
 ])
@@ -276,6 +280,7 @@ between
 block,
 body
 both
+bound,
 branch.
 browser's
 build
@@ -336,6 +341,7 @@ emits
 emitted
 empty
 entry
+escaped
 escaping
 ever
 every
@@ -446,6 +452,7 @@ of
 often
 on
 on.
+once
 one
 one.
 only
@@ -612,6 +619,7 @@ wire:click
 with
 worth.
 would
+written
 wrong
 xmlns="http://www.w3.org/2000/svg"
 {

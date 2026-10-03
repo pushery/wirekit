@@ -21,9 +21,20 @@
  *   - End                     — snap to maxSize
  *   - Enter / Space           — reset to the panel's declared defaultSize
  *
+ * Pointer: drag the handle, or click one of the two step controls beside the grip, which move
+ * it a few pixels per click without a drag (WCAG 2.2 SC 2.5.7).
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
+
+/**
+ * How far a click on a step control moves the handle, in CSS pixels. Less than half of a
+ * control's target, so the control, which moves with the handle, is still under the pointer for
+ * the next click. A larger step carried it away, and the next click landed on the panel or on
+ * the other control.
+ */
+const CONTROL_STEP_PX = 10;
 
 export default function wirekitResizableHandle() {
     return {
@@ -134,6 +145,12 @@ export default function wirekitResizableHandle() {
             if (!this.wrapper || !this.panel) {
                 return;
             }
+            // A press on a step control is the start of a click, not of a drag. Capturing the
+            // pointer here would send the release to the handle, and the click would never reach
+            // the control it began on.
+            if (event.target?.closest?.('[data-wk-resizable-step]')) {
+                return;
+            }
             event.preventDefault();
             this.dragging = true;
             this.$el.dataset.dragging = 'true';
@@ -231,11 +248,19 @@ export default function wirekitResizableHandle() {
             if (!this.dragging) {
                 return;
             }
+
+            // The drag ends where the pointer last moved to. A frame still waiting holds that
+            // position, and a release that comes before the frame runs would drop the last
+            // stretch of the drag, and the whole of a quick one. Applied here, while the drag
+            // and its pair sum still stand.
+            if (this._pendingPointer) {
+                this._applyPointer();
+            }
+
             this.dragging = false;
             this.dragPairSum = null;
 
-            // Drop a frame that has been scheduled but not yet run, so the drag
-            // cannot take one more step after the pointer was released.
+            // Then drop the frame, so the drag cannot take one more step after the release.
             this._dragFrame?.cancel();
             this._pendingPointer = null;
 
@@ -324,6 +349,29 @@ export default function wirekitResizableHandle() {
             if (handled) {
                 event.preventDefault();
             }
+        },
+
+        /**
+         * One step from a control beside the grip: `CONTROL_STEP_PX` of the layout.
+         *
+         * Dragging was the only way a pointer could resize, and WCAG 2.2 SC 2.5.7 asks for a
+         * single-pointer way that does not drag. `direction` is -1 to make the controlled panel
+         * smaller and 1 to make it larger, which moves the handle the way the arrow keys do, and
+         * the bounds are the ones a drag keeps.
+         */
+        stepFromControl(direction) {
+            if (!this.wrapper || !this.panel) {
+                return;
+            }
+
+            const rect = this.wrapper.getBoundingClientRect();
+            const length = this.direction === 'horizontal' ? rect.width : rect.height;
+
+            if (!(length > 0)) {
+                return;
+            }
+
+            this._setSize(this.currentSize + (direction * (CONTROL_STEP_PX / length) * 100));
         },
 
         /**
@@ -420,9 +468,14 @@ export default function wirekitResizableHandle() {
          * 30 against a `valuemin` of 30.4 announces a value below its own minimum.
          */
         _announceRange(lower, upper, current) {
-            this.$el.setAttribute('aria-valuemin', String(Math.round(lower)));
-            this.$el.setAttribute('aria-valuemax', String(Math.round(upper)));
-            this.$el.setAttribute('aria-valuenow', String(Math.round(current)));
+            // The handle, wherever the call came from. `$el` is the element whose directive is
+            // running, and for a step control's click that is the control, not the separator a
+            // reader is on.
+            const handle = this.$root ?? this.$el;
+
+            handle.setAttribute('aria-valuemin', String(Math.round(lower)));
+            handle.setAttribute('aria-valuemax', String(Math.round(upper)));
+            handle.setAttribute('aria-valuenow', String(Math.round(current)));
         },
 
         /**

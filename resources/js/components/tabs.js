@@ -31,6 +31,7 @@
 import { devWarn } from '../utils/dev-warning.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 export default function wirekitTabs(config = {}) {
     return {
@@ -69,7 +70,7 @@ export default function wirekitTabs(config = {}) {
             // unobserved CustomEvent is a no-op — so this stays zero-config and
             // backward-compatible for every existing usage. Listen with
             // @wirekit:tab-changed on any ancestor, or on window.
-            this.$watch('active', (value) => this.$dispatch('wirekit:tab-changed', {
+            watchCurrent(this, 'active', (value) => this.$dispatch('wirekit:tab-changed', {
                 tab: value,
                 label: this.labels[value] ?? value,
             }));

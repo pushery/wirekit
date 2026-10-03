@@ -53,6 +53,7 @@ $wrapperClasses
 '6']);
 'animate'
 'animate']);
+'aria-label')
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
 'border-[length:var(--border-wk-width)]',
@@ -198,7 +199,7 @@ $wrapperClasses
 @if
 @if($animate)
 @if($findable)
-@if(($attributes->get('aria-label')
+@if((\Pushery\WireKit\Support\AttributeText::get($attributes,
 @php
 @props([
 @props.
@@ -853,10 +854,10 @@ prop.
 property
 props
 push
+py-[var(--padding-wk-x-lg)]'
+py-[var(--padding-wk-x-md)]';
 py-[var(--padding-wk-y-lg)]
-py-[var(--padding-wk-y-lg)]'
 py-[var(--padding-wk-y-md)]
-py-[var(--padding-wk-y-md)]';
 qualified:
 query
 quoted

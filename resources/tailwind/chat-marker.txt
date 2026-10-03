@@ -18,10 +18,9 @@ $as,
 $attributes
 $attributes->class([
 $attributes->class([$classes]);
-$attributes->class([WireKit::resolveClasses('icon',
+$attributes->class([$iconClasses]);
 $attributes->except('aria-busy')->class([$classes])
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -36,6 +35,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $classes
 $cleaned
@@ -43,6 +43,7 @@ $cleaned);
 $duration)
 $e)
 $e;
+$iconClasses
 $intent
 $intent,
 $intentClass
@@ -75,7 +76,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -95,11 +96,16 @@ $variantValue
 '
 ''
 '')
+''));
 '',
 ',
 '.
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -107,6 +113,7 @@ $variantValue
 'Run:
 '[WireKit]
 'active'
+'aria-label');
 'as'
 'as',
 'base',
@@ -205,6 +212,7 @@ $variantValue
 ($variant)
 ($variantValue)
 ('xs').
+(UtilityClasses::has($callerClass,
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -240,6 +248,8 @@ $variantValue
 />
 />`,
 1
+16px
+20px,
 2rem,
 3rem.
 4
@@ -300,6 +310,7 @@ AT
 Adding
 An
 Animation
+Beside
 Bind
 Blade
 Blade-heroicons'
@@ -355,6 +366,7 @@ Per-instance
 Present
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 React-only
 Reapply
@@ -382,6 +394,7 @@ Throwing
 Two
 UNBOUND
 Use
+UtilityClasses::without($iconClasses,
 Validate
 Vertical
 WITHOUT
@@ -390,6 +403,7 @@ Whether
 WireKit
 WireKit::resolveClasses('chat-marker',
 WireKit::resolveClasses('divider',
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('shimmer',
 WireKit::validateProp('chat-marker',
 WireKit::validateProp('divider',
@@ -402,7 +416,9 @@ With
 ['horizontal',
 ['neutral',
 ['span',
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\WireKit::warnUnknownProps('chat-marker',
 \Pushery\WireKit\WireKit::warnUnknownProps('divider',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -413,9 +429,11 @@ With
 ];
 __toString
 `:aria-label`
+`:class`
 `:label`
 `<span>`
 `<x-wirekit::divider
+`@class`
 `Svg
 `active="false"`
 `aria-hidden="true"`
@@ -425,8 +443,12 @@ __toString
 `chat-marker`
 `childrenPresentational:
 `class="h-12
+`class`
 `config()`
 `date-separator`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -457,6 +479,7 @@ alias
 all,
 allowed
 allowlist
+alone,
 alongside
 already
 also
@@ -473,6 +496,7 @@ any
 app(IconResolver::class)->resolve($name);
 appears
 applied
+applies
 are
 aria-busy
 aria-busy="{{
@@ -488,8 +512,10 @@ aria-labelledby
 aria-live="polite"
 aria-orientation="vertical"
 around
+array,
 array_filter([
 array_keys($sizeMap));
+arrives
 as
 as,
 as.
@@ -499,9 +525,11 @@ assistive
 at
 attempted
 attribute
+attribute's
 attribute,
 auditor
 auto-derived
+axis.
 background-clip:text
 baked
 bakes
@@ -509,6 +537,7 @@ be
 because
 become
 becomes
+before
 below
 below,
 below.
@@ -530,6 +559,7 @@ border-l-0
 border-r-0',
 border-t',
 both
+bound
 boundaries)
 branch's
 break
@@ -635,6 +665,7 @@ divider
 divider's
 docs
 does
+does.
 done.
 down
 draws
@@ -726,12 +757,14 @@ h/w
 had
 hairline
 hand-written
+happened
 hard
 harder
 harvest
 has
 have
 have)
+height
 helper
 here
 here,
@@ -804,6 +837,7 @@ leading
 leave
 left
 letterforms
+like
 limit
 line
 list
@@ -816,6 +850,7 @@ loads.
 log
 logger()->warning(
 lost
+lost,
 loudly,
 make
 makes
@@ -850,6 +885,7 @@ non-null
 none,
 nor
 not
+not:
 note
 notes
 nothing
@@ -876,6 +912,7 @@ opening
 opposite
 optimistic-ui:
 or
+order
 other
 otherwise
 our
@@ -955,6 +992,7 @@ resolved
 resolves
 respect
 response…");
+responsive
 rest
 result
 return
@@ -1006,10 +1044,12 @@ site
 size
 size,
 size="sm"
+sized
 small
 so
 somebody
 something
+sorts
 source
 source-baked
 space).
@@ -1034,6 +1074,7 @@ string,
 strings
 strip
 style="display:inline-block;"></span>
+stylesheet's
 supplied
 suppresses
 svg($resolved,
@@ -1074,6 +1115,7 @@ throw,
 throws
 tile
 to
+toCssClasses()
 toHtml().
 toggle
 token
@@ -1110,6 +1152,7 @@ valid
 validateProp
 value
 value,
+variant
 version.
 via
 view's
@@ -1142,6 +1185,8 @@ who
 whole
 whose
 why,
+width
+win.
 wins
 wins:
 wire:poll

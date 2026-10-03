@@ -26,9 +26,8 @@ $animate)
 $animateAttr
 $animateAttr;
 $attributes
-$attributes->class([WireKit::resolveClasses('icon',
+$attributes->class([$iconClasses]);
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -37,6 +36,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $change
 $change);
@@ -70,6 +70,7 @@ $end
 $end);
 $groupSeparator
 $hasDescriptionAnim
+$iconClasses
 $iconSlot
 $intent,
 $intentTileStyle
@@ -108,7 +109,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -142,6 +143,7 @@ $withoutOuterAttributes]
 '%,
 ''
 '')
+''));
 ''),
 '',
 '';
@@ -157,6 +159,10 @@ $withoutOuterAttributes]
 '.';
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '0'),
 '2xl'
 '<svg
@@ -168,6 +174,7 @@ $withoutOuterAttributes]
 'accent',
 'animate'
 'animateIn'
+'aria-label');
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
 'border-[length:var(--border-wk-width)]',
@@ -191,6 +198,7 @@ $withoutOuterAttributes]
 'h-8
 'icon'
 'img';
+'info'
 'info',
 'intent'
 'intent',
@@ -219,6 +227,7 @@ $withoutOuterAttributes]
 'value'
 'var(--color-wk-accent)',
 'var(--color-wk-danger)',
+'var(--color-wk-info-tone)',
 'var(--color-wk-success)',
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
@@ -251,6 +260,7 @@ $withoutOuterAttributes]
 ('xs').
 ((1
 (0
+(UtilityClasses::has($callerClass,
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -313,10 +323,12 @@ $withoutOuterAttributes]
 1.2s
 100)
 1234.5
+16px
 1;
 1]
 1][1]
 2.4%,
+20px,
 2rem,
 31,200
 31.2,
@@ -392,6 +404,7 @@ An
 Animation
 BCP-47
 BOTH
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -464,6 +477,7 @@ Pick
 Pure
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Re-deriving
 Reapply
@@ -494,6 +508,7 @@ Trend
 Two
 UNBOUND
 Use
+UtilityClasses::without($iconClasses,
 Validate
 Value
 WHOLE
@@ -501,6 +516,7 @@ We
 When
 WireKit
 WireKit::resolveAnimateIn($animateIn,
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('stat',
 WireKit::validateProp('icon',
 WireKit::validateProp('stat',
@@ -518,9 +534,11 @@ Wrap
 ['text-[color:var(--color-wk-text-muted)]',
 [])->class([$classes])
 [null,
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\View\ComponentAttributeBag([]);
 \InvalidArgumentException(
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\LocalizedNumber::format(1234.5,
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -537,7 +555,9 @@ __toString
 `$`.
 `+`
 `-`,
+`:class`
 `<span>`
+`@class`
 `Svg
 `animate`
 `animating`
@@ -546,7 +566,11 @@ __toString
 `aria-labelledby`
 `change="+0.3%"`,
 `class="h-12
+`class`
 `data-target`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -586,6 +610,7 @@ all
 all,
 allowed
 allows
+alone,
 already
 also
 an
@@ -609,6 +634,7 @@ app()->getLocale());
 app(IconResolver::class)->resolve($name);
 application
 application.
+applies
 are
 argument
 aria-hidden
@@ -621,7 +647,9 @@ aria-label
 aria-label="{{
 aria-labelledby
 around
+array,
 array_keys($sizeMap));
+arrives
 arrow
 arrow,
 as
@@ -630,8 +658,10 @@ at
 attaches
 attempted
 attribute
+attribute's
 attribute,
 auto-derived
+axis.
 back
 back,
 back.
@@ -670,6 +700,7 @@ bootstrapped
 border
 both
 bounce
+bound
 branch's
 break
 browser
@@ -822,6 +853,7 @@ do.
 docs
 documented
 does
+does.
 down
 draws
 drives:
@@ -939,6 +971,7 @@ hand-written
 handed
 handle
 handler
+happened
 happens
 hard
 harder
@@ -946,6 +979,7 @@ has
 have
 have)
 heading-weight
+height
 helper
 here
 here,
@@ -1024,6 +1058,8 @@ leaning
 learns
 leave
 leaves
+left
+like
 line
 list
 listener
@@ -1036,6 +1072,7 @@ locale.
 log
 logger()->warning(
 lost
+lost,
 loudly,
 ltrim((string)
 machine
@@ -1096,6 +1133,7 @@ non-visual
 none,
 nor
 not
+not:
 nothing
 nothing.
 now.
@@ -1128,6 +1166,7 @@ opposite
 optimistic-ui:
 optional
 or
+order
 ordinary
 other
 otherwise
@@ -1200,7 +1239,7 @@ props
 provides
 put
 puzzle.
-py-[var(--padding-wk-y-lg)]',
+py-[var(--padding-wk-x-lg)]',
 qualified:
 rate),
 rather
@@ -1245,6 +1284,7 @@ resolve
 resolved
 resolves
 respect
+responsive
 rest
 result
 return
@@ -1322,10 +1362,12 @@ site
 size
 size,
 size="sm"
+sized
 slot
 slots
 so
 somebody
+sorts
 source
 source-baked
 space
@@ -1365,6 +1407,7 @@ stripe
 structural
 style
 style="display:inline-block;"></span>
+stylesheet's
 styling,
 substr($raw,
 subtle).
@@ -1425,6 +1468,7 @@ timeline
 tinted
 to
 to,
+toCssClasses()
 toHtml().
 token
 token.
@@ -1445,6 +1489,7 @@ two
 types
 typography
 unchanged.
+under
 unknown
 unknown-alias
 unknown.
@@ -1468,6 +1513,7 @@ var(--color-wk-bg-elevated));";
 var(--color-wk-border));
 var(--color-wk-text)
 var(--color-wk-text-muted)
+variant
 via
 view
 view's
@@ -1504,6 +1550,8 @@ whitespace,
 who
 whole
 whose
+width
+win.
 wins
 wirekitStatAnimate
 wiring

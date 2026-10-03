@@ -28,7 +28,7 @@
 @else
 <a data-wk-prose-skip
     href="{{ $href }}"
-    @if($active) aria-current="page" @endif
+    @if($active) aria-current="{{ $ariaCurrent }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class(['wk-sidebar-item', $classes, $activeClasses => $active]) }}
 >

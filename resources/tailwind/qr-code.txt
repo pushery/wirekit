@@ -81,6 +81,7 @@ $writer->writeString($value,
 'a
 'accessibleLabel'
 'aria-hidden='))
+'aria-label')
 'background'
 'base',
 'color'
@@ -92,9 +93,9 @@ $writer->writeString($value,
 'size'
 'value'
 'width:
-($attributes->get('aria-label')
 ($errorCorrection)
 ($hasQrLibrary
+(\Pushery\WireKit\Support\AttributeText::get($attributes,
 (\Throwable
 (`#fff`
 (array

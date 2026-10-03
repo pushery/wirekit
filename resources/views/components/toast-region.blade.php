@@ -156,11 +156,11 @@
                 'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
             ],
             'info' => [
-                'border' => 'border-[var(--color-wk-accent)]',
-                'bg' => 'bg-[var(--color-wk-accent)]',
-                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
-                'text' => 'text-[color:var(--color-wk-accent-fg)]',
-                'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
+                'border' => 'border-[var(--color-wk-info-tone)]',
+                'bg' => 'bg-[var(--color-wk-info-tone)]',
+                'icon' => 'text-[color:var(--color-wk-info-fg)]',
+                'text' => 'text-[color:var(--color-wk-info-fg)]',
+                'muted' => 'text-[color-mix(in_srgb,var(--color-wk-info-fg)_80%,transparent)]',
             ],
         ];
     } else {
@@ -187,9 +187,9 @@
                 'muted' => 'text-[color:var(--color-wk-text-muted)]',
             ],
             'info' => [
-                'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,var(--color-wk-border))]',
-                'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]',
-                'icon' => 'text-[color:var(--color-wk-accent-text)]',
+                'border' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_35%,var(--color-wk-border))]',
+                'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_10%,var(--color-wk-bg-elevated))]',
+                'icon' => 'text-[color:var(--color-wk-info-text)]',
                 'text' => 'text-[color:var(--color-wk-text)]',
                 'muted' => 'text-[color:var(--color-wk-text-muted)]',
             ],
@@ -277,6 +277,7 @@
                  the focus it is about to strand was sitting in. The valueless
                  attribute above stays what everything selects on. --}}
             :data-wk-toast-id="toast.id"
+            :data-intent="['success','warning','danger'].includes(toast.variant) ? toast.variant : 'info'"
             @mouseenter="pause(toast.id)"
             @mouseleave="resume(toast.id)"
             @focusin="pause(toast.id)"

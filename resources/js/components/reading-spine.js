@@ -38,6 +38,7 @@ import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
 import { foldForSearch } from '../utils/search-fold.js';
+import { isComposing } from '../utils/ime.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
     // A selector for subtrees whose headings are NOT this page's structure — an embedded
@@ -73,6 +74,9 @@ export default (options = {}) => ({
 
     _hovering: false,
     _focused: false,
+    // Set by Escape: the reader folded the spine, and it stays folded until the pointer and the
+    // focus have both left it.
+    _dismissed: false,
     // Debounce timer for collapseOnHover — prevents the rapid expand/
     // collapse flicker when the cursor jitters across the spine's
     // boundary (sub-pixel mouse movements at the top/left edge fire
@@ -425,7 +429,7 @@ export default (options = {}) => ({
             this._collapseTimer = null;
         }
         this._hovering = true;
-        this.expanded = true;
+        this.expanded = !this._dismissed;
     },
     collapseOnHover() {
         // Debounce the collapse to absorb cursor jitter at the spine's
@@ -436,12 +440,61 @@ export default (options = {}) => ({
         if (this._collapseTimer) clearTimeout(this._collapseTimer);
         this._collapseTimer = setTimeout(() => {
             this._hovering = false;
-            this.expanded = this._focused;
+            this._settle();
             this._collapseTimer = null;
         }, 120);
     },
-    expandOnFocus() { this._focused = true; this.expanded = true; },
-    collapseOnFocus() { this._focused = false; this.expanded = this._hovering; },
+    expandOnFocus() { this._focused = true; this.expanded = !this._dismissed; },
+    /**
+     * Focus left an element of the spine.
+     *
+     * Focus that moves from one entry to the next stays in the spine, so it changes nothing:
+     * without the check the spine folded and unfolded between the two, and an Escape that
+     * folded it would have been undone by the next Tab.
+     *
+     * @param {FocusEvent} [event]  focusout, whose relatedTarget is where the focus goes
+     */
+    collapseOnFocus(event) {
+        if (event?.relatedTarget && this.$root?.contains?.(event.relatedTarget)) return;
+
+        this._focused = false;
+        this._settle();
+    },
+    /** Expanded while pointer or focus is in the spine and the reader has not folded it. */
+    _settle() {
+        if (!this._hovering && !this._focused) this._dismissed = false;
+
+        this.expanded = (this._hovering || this._focused) && !this._dismissed;
+    },
+
+    /**
+     * Escape folds a spine the pointer or the focus opened, and it stays folded until both have
+     * left it.
+     *
+     * The expanded list lies over the article, and WCAG 1.4.13 asks content shown on hover or
+     * focus to be dismissible without moving either. Heard on the window in the capture phase,
+     * as the tooltip's Escape is: a pointer moves no focus, so a key bound on the spine would
+     * miss the press meant for it. A press that folded the spine is marked handled, so a dialog
+     * around it leaves that press alone. A spine that is open because the page opened it, with
+     * neither pointer nor focus in it, is not this reader's to dismiss and lets the key pass.
+     *
+     * @param {KeyboardEvent} [event]
+     */
+    keydownEscape(event) {
+        // An Escape that abandons an input method's conversion belongs to the input method.
+        if (isComposing(event)) return;
+        if (!this.expanded || !(this._hovering || this._focused)) return;
+
+        event?.preventDefault();
+
+        if (this._collapseTimer) {
+            clearTimeout(this._collapseTimer);
+            this._collapseTimer = null;
+        }
+
+        this._dismissed = true;
+        this.expanded = false;
+    },
 
     /**
      * Tick width per heading level — h2 wider than h3 wider than h4,

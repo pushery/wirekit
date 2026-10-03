@@ -707,10 +707,10 @@ prop.
 property
 props
 puts
+py-[var(--padding-wk-x-lg)]'
+py-[var(--padding-wk-x-md)]';
 py-[var(--padding-wk-y-lg)]
-py-[var(--padding-wk-y-lg)]'
 py-[var(--padding-wk-y-md)]
-py-[var(--padding-wk-y-md)]';
 qualified:
 question
 question.

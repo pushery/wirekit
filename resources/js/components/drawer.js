@@ -13,6 +13,8 @@ import { firstControl } from '../utils/first-control.js';
  * @param {string} config.name - Unique drawer identifier
  * @param {boolean} config.dismissible - Whether ESC/backdrop closes the drawer
  * @param {boolean} [config.lockScroll=true] - Whether opening locks the page's scroll
+ * @param {string|null} [config.discardQuestion=null] - Asked before the reader closes a drawer
+ *   whose fields they changed (utils/discard-guard.js)
  */
 export default function wirekitDrawer(config = {}) {
     const overlay = createOverlay({
@@ -28,6 +30,8 @@ export default function wirekitDrawer(config = {}) {
         // and it wraps everything inside the drawer — start on the first CONTROL instead, and
         // on the body only when there is none. utils/first-control.js.
         initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-drawer-body'),
+        // Asked before the reader closes a drawer whose fields they changed; null asks nothing.
+        discardQuestion: typeof config.discardQuestion === 'string' && config.discardQuestion !== '' ? config.discardQuestion : null,
     });
 
     return withOpenAlias({

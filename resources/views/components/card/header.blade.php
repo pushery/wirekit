@@ -16,7 +16,7 @@
     // Header section — title area with bottom border separator
     $classes = WireKit::resolveClasses('card.header', 'base', implode(' ', [
         'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-md)]',
+        'py-[var(--padding-wk-x-lg)]',
         'border-b-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border-subtle)]',
         'font-[family-name:var(--font-wk-sans)]',

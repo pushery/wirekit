@@ -399,7 +399,10 @@ final class ClassInventory
     }
 
     /**
-     * Token names declared in dist/wirekit.css.
+     * Token names declared in the stylesheets that ship: dist/wirekit.css, and every sheet under
+     * resources/ that reaches an application as it is, the glass extension's among them. The same
+     * set `tokenReferences()` reads references from, so a token the glass sheet both declares and
+     * reads counts as declared.
      *
      * Captures every `--name: value;` declaration (token definition).
      * Distinct from `tokenReferences()` which captures `var(--name)`
@@ -417,12 +420,14 @@ final class ClassInventory
     {
         $declared = [];
 
-        foreach ($this->filesUnder('dist', ['css'], []) as $file) {
-            $contents = (string) preg_replace('!/\*.*?\*/!s', '', (string) file_get_contents($file->getPathname()));
+        foreach (['dist', 'resources'] as $root) {
+            foreach ($this->filesUnder($root, ['css'], []) as $file) {
+                $contents = (string) preg_replace('!/\*.*?\*/!s', '', (string) file_get_contents($file->getPathname()));
 
-            if (preg_match_all('/(--[a-zA-Z0-9_-]+)\s*:/u', $contents, $matches) !== false) {
-                foreach ($matches[1] as $name) {
-                    $declared[$name] = true;
+                if (preg_match_all('/(--[a-zA-Z0-9_-]+)\s*:/u', $contents, $matches) !== false) {
+                    foreach ($matches[1] as $name) {
+                        $declared[$name] = true;
+                    }
                 }
             }
         }

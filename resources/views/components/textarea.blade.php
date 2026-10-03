@@ -32,6 +32,9 @@
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     // Keep the message line's height whether or not there is a message.
     //
     // Wasted space in a stacked form, and the difference between a working
@@ -54,7 +57,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -71,7 +74,14 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `field` does: a button beside it then
+    // stands level with the control whatever is above or below it. Not inside a `field`,
+    // which takes the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 @endphp
 
 
@@ -123,6 +133,10 @@
         ($hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')))
         .' '.((string) $attributes->get('aria-describedby', ''))
     );
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Auto-size: `rows="auto"` grows the textarea with its content via CSS
     // `field-sizing: content`, which is ABOVE the WireKit browser baseline —
@@ -160,11 +174,9 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:border-[var(--color-wk-border-strong-hover)]',
         'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
-        'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         '[&:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]',
         '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
@@ -172,11 +184,15 @@
         'disabled:cursor-not-allowed',
     ]), $scope);
 
-    // Border color switches between error, success, and normal state — all via tokens
+    // Border and focus-ring color switch between error, success, and normal state — all via
+    // tokens. Each state names its own ring color: a second one in the base list would be
+    // decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = match (true) {
         (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
         $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
-        default => 'border-[var(--color-wk-border-strong)]',
+        // Hover belongs to the resting state only, so an error or a success border keeps its
+        // color under the pointer.
+        default => 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:ring-[var(--color-wk-ring)]',
     };
 
     // Size classes: padding (horizontal + vertical), font size, radius — all from sizing tokens
@@ -228,17 +244,20 @@
             // is whether their text survived.
             'kept' => __('wirekit::Could not save. Your text is still here.'),
         ],
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+    @elseif($inAlignedRow)
+        {{-- An empty label track, held so that the control stays on the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     <textarea
@@ -264,6 +283,11 @@
          and pushes every sibling in a horizontal row. It is `select-none` for the same
          reason it is `aria-hidden` — it holds space, not text, and a drag-select across the
          form should not carry its no-break space into the clipboard. --}}
+    @if($inAlignedRow && ! ($reserveMessage || ($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
+        {{-- Nothing below the control, and the track still ends here, or the row's next field
+             would be pulled up into it. --}}
+        <span data-wk-field-part="message" aria-hidden="true"></span>
+    @endif
     @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
         <p data-wk-prose-skip aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif

@@ -26,13 +26,12 @@ $animationValue
 $ariaLabelAttr
 $ariaLabelledbyAttr
 $attributes
+$attributes->class([$iconClasses]);
 $attributes->class([$wrapperClasses])
 $attributes->class(['w-full
-$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel')->class([$rootClasses])
 $attributes->except(['aria-label',
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('id')
 $attributes->get('id').'-label'
@@ -50,6 +49,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $circumference
 $circumference;
@@ -85,6 +85,7 @@ $hintsNewTabInLabel)
 $href
 $i
 $i++;
+$iconClasses
 $intent
 $isImage
 $isIndeterminate
@@ -132,7 +133,7 @@ $shown
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $sizeText
@@ -167,6 +168,7 @@ $wrapperClasses
 '
 ''
 '')
+''));
 '');
 '',
 '';
@@ -179,6 +181,10 @@ $wrapperClasses
 '/')
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -196,12 +202,14 @@ $wrapperClasses
 'animate'
 'animation'
 'animation',
+'aria-label');
 'aria-labelledby']);
 'base',
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-bg-elevated)]',
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-danger)]',
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-warning)]',
@@ -233,6 +241,7 @@ $wrapperClasses
 'icon'
 'idle',
 'img';
+'info'
 'info',
 'inline-flex
 'intent'
@@ -334,6 +343,8 @@ $wrapperClasses
 (NOT
 (PDF,
 (PHP-side
+(Support\UrlProp).
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -354,7 +365,6 @@ $wrapperClasses
 (every
 (float)
 (function_exists('svg')
-(info
 (int)
 (invisible
 (links
@@ -385,7 +395,7 @@ $wrapperClasses
 */
 +
 -
---color-wk-info
+--color-wk-info-tone,
 --}}
 -rotate-90"
 .
@@ -426,9 +436,11 @@ $wrapperClasses
 1024;
 15.9155
 15.9155;
+16px
 2
 2.
 2.4
+20px,
 2rem,
 3.
 36
@@ -534,6 +546,7 @@ Auto-inject
 B';
 BAR
 BELOW
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -567,6 +580,7 @@ Drop
 ENT_QUOTES).'"',
 EVERY
 Each
+Echoed
 Extract
 Fallback:
 File
@@ -637,6 +651,7 @@ Purely
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\LocalizedNumber;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 RANGE
 Raw
@@ -669,8 +684,10 @@ Throwing
 Track
 Two
 UNBOUND
+URL
 Upload
 Uploaded")
+UtilityClasses::without($iconClasses,
 Validate
 Validated
 Value
@@ -682,6 +699,7 @@ We
 When
 WireKit
 WireKit::resolveClasses('attachment',
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('progress',
 WireKit::validateProp('attachment',
 WireKit::validateProp('icon',
@@ -697,12 +715,15 @@ Without
 ['none',
 ['primary',
 [0,
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($valueExpression)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('attachment',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle',
@@ -721,8 +742,10 @@ __toString
 `+
 `--font-scale-wk`
 `.0`,
+`:class`
 `<div>`
 `<span>`
+`@class`
 `DomId::unique`
 `Str::random(6)`
 `Svg
@@ -731,7 +754,11 @@ __toString
 `aria-labelledby`
 `aria-valuenow`
 `class="h-12
+`class`
 `div`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `id`
@@ -790,9 +817,11 @@ alert).
 alias
 alias).
 alias.
+aliases
 all
 all,
 allowed
+alone,
 already
 also
 alt=""
@@ -817,7 +846,9 @@ anything,
 apart
 app(IconResolver::class)->resolve($name);
 appear.
+application
 applied
+applies
 arc
 are
 aria-hidden
@@ -841,6 +872,7 @@ aria-valuenow
 aria-valuenow="{{
 arithmetic
 around
+array,
 array_keys($sizeMap));
 array_values(array_filter([$label,
 arrives
@@ -851,6 +883,7 @@ at
 attached
 attempted
 attribute
+attribute's
 attribute,
 attributes
 author
@@ -858,6 +891,7 @@ auto-derived
 available,
 axe
 axe-core
+axis.
 axis:
 axis;
 back
@@ -899,6 +933,7 @@ border
 border-[var(--color-wk-border)]',
 both
 bound
+bound,
 boundary
 branch
 branch's
@@ -942,7 +977,6 @@ chain.
 change
 changes
 changes.
-charts
 check
 checks
 chevrons,
@@ -1063,6 +1097,7 @@ developer
 developer's
 developer's.
 developers
+did
 dimensions
 direct
 directory
@@ -1071,6 +1106,7 @@ display
 dist/wirekit.css)
 div
 does
+does.
 done
 down
 download
@@ -1112,6 +1148,7 @@ enough
 entry
 enum;
 error.
+escaped
 evaluated
 even
 every
@@ -1149,6 +1186,7 @@ fill
 fill,
 fill="none"
 filled($accessibleName);
+fills
 finds
 fire
 first
@@ -1157,7 +1195,6 @@ fix
 fix.
 flag
 flags
-flash
 flex
 flex-1
 flex-1">
@@ -1223,6 +1260,7 @@ half
 half-wired
 hand-roll
 hand-written
+happened
 hard
 harder
 has
@@ -1242,6 +1280,7 @@ house
 how
 href
 href="{{
+hue
 human
 icon
 icon's
@@ -1349,6 +1388,7 @@ loads.
 log
 logger()->warning(
 lost
+lost,
 loudly,
 low-emphasis
 made
@@ -1431,6 +1471,7 @@ noreferrer')
 normal
 not
 not.
+not:
 nothing
 nothing.
 now
@@ -1573,7 +1614,6 @@ re-resolve
 reach
 reaches
 read
-read),
 readable
 reader
 reader.
@@ -1617,6 +1657,7 @@ resolved
 resolves
 resolving.)
 respect
+responsive
 rest
 result
 retunes
@@ -1675,7 +1716,6 @@ shape
 shape.
 shapes.
 share
-shares
 shimmer
 short
 shortest
@@ -1698,6 +1738,7 @@ size
 size,
 size="md"
 size="sm"
+sized
 sizes
 slot,
 sm
@@ -1707,6 +1748,7 @@ smooth
 so
 soften
 somebody
+sorts
 source
 source-baked
 space).
@@ -1750,7 +1792,6 @@ sub-component
 subtype.
 success
 superseded
-surface
 surrounding
 svg($resolved,
 svg()
@@ -1814,12 +1855,11 @@ tile:
 time,
 tint
 to
+toCssClasses()
 toHtml().
 token
-token,
 tokens
 tokens.
-tone
 too,
 took
 touches
@@ -1879,6 +1919,7 @@ values
 values.
 var(--transition-wk-duration)
 var(--transition-wk-easing)"
+variant
 variants
 via
 view's
@@ -1921,6 +1962,7 @@ whole-card-clickable
 whose
 width
 will
+win.
 wins
 wire:poll
 with
@@ -1932,6 +1974,7 @@ would
 wrapper
 wrapper).
 wrapper,
+written
 x-bind:aria-valuenow="ariaValueNow()"
 x-bind:class="fillClasses()"
 x-bind:style="fillStyle()"

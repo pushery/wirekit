@@ -74,7 +74,7 @@
     // `filled()` rather than a null check: an interpolated caller value over a
     // record with no title yields `""`, and an empty `aria-label` names nothing at
     // all. Honoring it would trade the heading for no name.
-    $callerAriaLabel = $attributes->get('aria-label');
+    $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $hasCallerName = filled($callerAriaLabel);
 
     // Out of the bag, so the winner is emitted once rather than joined by a loser

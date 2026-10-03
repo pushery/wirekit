@@ -243,6 +243,8 @@ final class SandboxSchemaRegistry
                 ],
             ],
             'copy' => ['type' => 'bool', 'default' => false],
+            // Wraps long lines instead of scrolling them, and leaves out the tab stop then.
+            'wrap' => ['type' => 'bool', 'default' => false],
             'body' => ['type' => 'string', 'default' => "<?php\necho 'hello';"],
         ]);
 
@@ -280,6 +282,8 @@ final class SandboxSchemaRegistry
             'wrap' => ['type' => 'bool', 'default' => true],
             'family' => ['type' => 'string', 'default' => 'sans', 'allowed_values' => ['sans', 'mono']],
             'tabular' => ['type' => 'bool', 'default' => false],
+            // No default: an unset measure lets the text run as wide as its container.
+            'measure' => ['type' => 'string', 'allowed_values' => ['default', 'wide', 'none']],
             'body' => ['type' => 'string', 'default' => 'Text body'],
         ]);
 

@@ -186,6 +186,7 @@ $wrapMode
 '.$iconOnlyBelow.'.
 '.$iconOnlySquareToken.';']);
 '.$message);
+'/^(?:min-h|h|w|p[xytrblse]?)-/');
 '2xl'
 '2xl']))
 '2xl']);
@@ -318,6 +319,7 @@ $wrapMode
 'leading-[var(--font-wk-line-height)]',
 'lg'
 'lg',
+'link')
 'list',
 'list-none
 'list-style:
@@ -447,12 +449,14 @@ $wrapMode
 ($step['description']
 ($step['label']
 ($step['wire:click']
+($surface
 ($wrapLabel
 ($wrapMode)
 (($iconOnly
 (4.05
 (BooleanProp::from($wrap,
 (SVG
+(Support\UrlProp).
 (Tailwind's
 (WCAG
 (WireKit::validateProp('row',
@@ -460,6 +464,7 @@ $wrapMode
 (`--wk-stepper-count`
 (`@container/wk-table`)
 (`loading`
+(`p-0
 (a
 (active
 (and
@@ -474,14 +479,12 @@ $wrapMode
 (e.g.
 (function_exists('logger'))
 (index
-(info
 (int)
 (is_string($key)
 (it
 (its
 (label
 (logical
-(no
 (only
 (or
 (see
@@ -507,14 +510,13 @@ $wrapMode
 --------
 -----------
 --color-wk-bg:
---color-wk-info
---color-wk-info-fg
---color-wk-info-hover):
---color-wk-info-text
+--color-wk-info-tone,
 --color-wk-warning-bg
 --wk-stepper-count:
 --}}
 --}}`
+-fg
+-hover,
 -mb-[length:var(--border-wk-width)]
 -me-[length:var(--border-wk-width)]
 -ms-1
@@ -703,6 +705,7 @@ Back
 Backgrounds:
 Base
 Below
+Beside
 Blade
 Blade's
 BooleanProp::from($alignFields,
@@ -749,6 +752,7 @@ Dev-only
 Draw
 EVERY
 Each
+Echoed
 Emitting
 Every
 Examples
@@ -769,7 +773,6 @@ Hovers
 How
 Icon
 Icon-only
-Info
 It
 Its
 JavaScript
@@ -876,6 +879,7 @@ This
 Two
 UA
 UNBOUND
+URL
 URL.
 USED
 USER
@@ -923,6 +927,7 @@ Without
 ['space',
 ['start',
 ['xs',
+[--color-wk-ring:var(--color-wk-accent-fg)]
 [--wk-touch-min:0px]'
 []
 [])
@@ -937,6 +942,10 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($stepNames)
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\SafeUrl::href($step['href']
+\Pushery\WireKit\Support\UrlProp::text($href);
+\Pushery\WireKit\Support\UtilityClasses::PADDING);
+\Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
+\Pushery\WireKit\Support\UtilityClasses::without($sizeClasses,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -1157,7 +1166,7 @@ absent
 absolutely
 absolutely,
 accent
-accent-content.
+accent,
 accent.
 accept
 accessibility
@@ -1187,7 +1196,6 @@ agree
 alert
 alert-dialog
 alias
-aliases
 aligned
 all
 all,
@@ -1279,6 +1287,7 @@ attribute's
 attribute,
 attribute.
 attributes
+auto
 auto-derived
 auto-inject).
 auto`
@@ -1331,6 +1340,7 @@ bespoke
 between
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
@@ -1338,6 +1348,7 @@ bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-danger)]
+bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
 bg-transparent
@@ -1360,6 +1371,7 @@ border-[var(--color-wk-accent)]';
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border)]';
 border-[var(--color-wk-danger)]
+border-[var(--color-wk-info-tone)]
 border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
@@ -1371,6 +1383,7 @@ border:
 both
 both,
 bottom
+bound,
 boundaries
 box
 bracket
@@ -1441,7 +1454,6 @@ changes
 changes,
 channel
 channel,
-charts
 check
 check:
 checking
@@ -1736,6 +1748,7 @@ entry
 equal
 error
 error,
+escaped
 escaping
 etc.)
 etc.),
@@ -1810,7 +1823,6 @@ fixed-height
 fixed.
 fixes
 flags
-flash
 flashes
 flex
 flex-1
@@ -1830,12 +1842,15 @@ floor's
 flow
 flow,
 flow.
+flows
+flush
 fn
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]'
+focus-visible:ring-inset
 focus:
 focusable
 focused
@@ -1904,6 +1919,7 @@ h-[1px]',
 h-[calc(100%-0.5rem)]
 h-[var(--wk-stepper-circle,var(--size-wk-sm))]
 h-auto
+h-auto`).
 had
 half
 half,
@@ -1960,6 +1976,7 @@ horizontally
 hover
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
@@ -1968,6 +1985,7 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
 hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
+hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
 hover:opacity-[var(--opacity-wk-hover)]'
@@ -1977,6 +1995,7 @@ how
 how;
 href
 href="{{
+hue
 hydration
 hyphen,
 hyphenate.
@@ -2013,7 +2032,7 @@ indicator;
 indicators
 inert
 inert.
-info-specific
+info
 info:
 inheritance
 inline
@@ -2493,8 +2512,6 @@ pressing
 prevent
 prevent.
 preview,
-primary
-primary)
 primary:
 primitive
 prod).
@@ -2545,7 +2562,6 @@ reachable
 reaches
 reacts
 read
-read,
 reader
 reader,
 reading
@@ -2687,6 +2703,7 @@ semantics
 sent
 sentence
 sentence,
+sentence.
 separately
 server
 set
@@ -2724,6 +2741,7 @@ shrink-0
 shrink-0',
 shrinks
 sibling
+sides
 sideways.
 sighted
 silent
@@ -2739,6 +2757,7 @@ sits
 six
 six.
 size
+size's
 size,
 size.
 size:
@@ -2766,11 +2785,13 @@ soft-wrapping.
 some
 somebody
 something
+sorting
 source
 source-detection
 space
 spacing
 span
+specific
 specificity
 spelled
 spelling
@@ -2803,6 +2824,7 @@ states,
 static
 stay
 stay,
+stay.
 stayed
 staying
 stays
@@ -2846,6 +2868,7 @@ style="--wk-stepper-index:
 style="display:
 styled,
 stylesheet
+stylesheet's
 styling
 stylistic
 sub-component,
@@ -2905,6 +2928,8 @@ text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
+text-[color:var(--color-wk-info-fg)]
+text-[color:var(--color-wk-info-text)]
 text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -2964,7 +2989,6 @@ token)
 token,
 tokens
 tokens.
-tone
 too
 too,
 too-long
@@ -2991,6 +3015,7 @@ trim($relAttr.'
 trim($stepAction)
 trim($stepNames[0]
 trim(strip_tags((string)
+trio
 true
 true"
 true))
@@ -3163,6 +3188,7 @@ without
 wizard
 wizard.step:
 wk-touch-text-floor'
+won
 word
 word,
 word:

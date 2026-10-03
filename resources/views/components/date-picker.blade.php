@@ -41,6 +41,9 @@
     'placeholder' => null,
     'error' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     // Say so when the browser writes dates in a different order than the page, rather than
     // change the order — which no author can do. A native `<input type="date">` takes its
     // format from the BROWSER's user-interface language and from nothing else; it is not an
@@ -69,7 +72,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -96,7 +99,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 @endphp
 
 
@@ -215,6 +218,10 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own messages: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $dateId.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) requires every input to
     // have a programmatically-determinable name. When no visible `label`
@@ -224,6 +231,18 @@
     // `aria-label` always wins.
     $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
+
+    // Inside a labeled field the field's label names the date, where a hidden label made from the
+    // name would (Support\FieldControl). Its `for` points at the date, or at the first date of a
+    // range, as this component's own label does; the two dates of a range carry its text in their
+    // names, which no single `for` can give both.
+    $fieldLabelId = $needsSrOnlyFallback && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel($dateId)
+        : null;
+
+    if ($fieldLabelId !== null) {
+        $needsSrOnlyFallback = false;
+    }
     $fallbackLabel = $name ? Str::headline((string) $name) : __('wirekit::Date');
 
     // A caller's `x-ref` belongs to the caller's component. The range row and the optimistic
@@ -274,8 +293,8 @@
         //    An idref cannot be suffixed the way a string can, so a caller-supplied
         //    `aria-labelledby` lands on both ends unchanged and names them alike; a `label`
         //    prop or an `aria-label` is what tells the two apart.
-        $callerAriaLabel = $attributes->get('aria-label');
-        $rangeName = filled($label) ? $label : (filled($callerAriaLabel) ? (string) $callerAriaLabel : $fallbackLabel);
+        $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
+        $rangeName = filled($label) ? $label : (filled($callerAriaLabel) ? (string) $callerAriaLabel : ($fieldLabelId !== null ? $wkField->labelText() : $fallbackLabel));
 
         if ($attributes->has('aria-labelledby')) {
             $startPairs['aria-labelledby'] = $attributes->get('aria-labelledby');
@@ -319,18 +338,27 @@
             'pending' => __('wirekit::Saving'),
             'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
-        'errorRegion' => '#'.$errorId,
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
     ]);
 @endphp
 
 <div {{ $outerAttributes }} class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
+        {{-- With help, the label shares a row with its button, outside the label so it stays out
+             of the field's name, and the row takes the space below. --}}
+        @if($helpId)
+        <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)] mb-[var(--space-wk-xs)]">
+        @endif
+        <label for="{{ $dateId }}" @class(['block', 'mb-[var(--padding-wk-y-xs)]' => ! $helpId, 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]'])>
             {{-- One marker, in the dense house form: no whitespace, `ms-0.5` carries the
                  gap, as in every field component. A second marker in this label would print
                  two asterisks on a required field. --}}
             {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
         </label>
+        @if($helpId)
+            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $dateId)])
+        </div>
+        @endif
     @elseif($needsSrOnlyFallback)
         {{-- Screen-reader-only label fallback. Visible-label-less demos still
              pass WCAG 4.1.2 because the input has a programmatically-

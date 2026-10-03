@@ -1,5 +1,6 @@
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { safeObserver } from '../utils/safe-observer.js';
+import { watchModelEvents } from '../utils/model-events.js';
 
 /**
  * Segmented control — a radiogroup that behaves like the native one it imitates.
@@ -29,6 +30,9 @@ import { safeObserver } from '../utils/safe-observer.js';
  *     queued before teardown.
  *   - _edgeHintObserver (IntersectionObserver over the two edge sentinels, through
  *     safeObserver) — stopped, which also turns a delivery already queued into a no-op.
+ *   - _modelEvents — `change` and `blur` on the hidden input for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change` with
+ *     every segment chosen, as a radio button fires it, and `blur` when the reader leaves the group.
  *
  * @param {Object} config
  * @param {string} config.selected  the option value selected at render time
@@ -52,6 +56,8 @@ export default function wirekitSegmentedControl(config = {}) {
         endHint: false,
 
         _edgeHintObserver: null,
+
+        _modelEvents: null,
 
         init() {
             // Seed from the server attribute when the caller passed nothing.
@@ -139,11 +145,16 @@ export default function wirekitSegmentedControl(config = {}) {
                 this._writeHiddenInput();
                 this._scheduleReveal();
             });
+
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.hiddenInput);
         },
 
         destroy() {
             // The observer outlives the scope otherwise, and fires into it.
             this._stopServerSync?.();
+
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
 
             this._trackResizeObserver?.disconnect();
             this._trackResizeObserver = null;
@@ -186,6 +197,9 @@ export default function wirekitSegmentedControl(config = {}) {
             // hand — without it wire:model on the hidden input would never see
             // the change, which is the whole reason the input exists.
             input?.dispatchEvent(new Event('input', { bubbles: true }));
+
+            // A chosen segment is committed at once, as a radio button commits its choice.
+            this._modelEvents?.commit();
         },
 
         /**

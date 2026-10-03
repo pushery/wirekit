@@ -13,6 +13,8 @@ import { firstControl } from '../utils/first-control.js';
  * @param {string} config.name - Unique modal identifier
  * @param {boolean} config.dismissible - Whether ESC/backdrop closes the modal
  * @param {boolean} [config.lockScroll=true] - Whether opening locks the page's scroll
+ * @param {string|null} [config.discardQuestion=null] - Asked before the reader closes a dialog
+ *   whose fields they changed (utils/discard-guard.js)
  */
 export default function wirekitModal(config = {}) {
     const overlay = createOverlay({
@@ -26,6 +28,8 @@ export default function wirekitModal(config = {}) {
         lockScroll: config.lockScroll !== false,
         // Start on the first CONTROL, not on the scrolling body — utils/first-control.js.
         initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-modal-body'),
+        // Asked before the reader closes a dialog whose fields they changed; null asks nothing.
+        discardQuestion: typeof config.discardQuestion === 'string' && config.discardQuestion !== '' ? config.discardQuestion : null,
     });
 
     return withOpenAlias({

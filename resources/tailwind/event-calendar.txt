@@ -12,6 +12,7 @@
 "pressed",
 "today"
 "unavailable".
+"μ.μ.")
 $ariaLabel
 $attributes
 $attributes->except(['id',
@@ -21,6 +22,7 @@ $attributes->only('class')->class([$base])
 $base
 $categoryHidden
 $categoryShown
+$date
 $dayDetail
 $dayDetail;
 $dayMarkers,
@@ -93,6 +95,7 @@ $weekStartsOn
 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))]
 'bg-[color-mix(in_oklch,var(--color-wk-danger)_14%,transparent)]
 'bg-[color-mix(in_oklch,var(--color-wk-danger)_16%,var(--color-wk-bg))]
+'bg-[color-mix(in_oklch,var(--color-wk-info-tone)_16%,var(--color-wk-bg))]
 'bg-[color-mix(in_oklch,var(--color-wk-success)_16%,var(--color-wk-bg))]
 'bg-[color-mix(in_oklch,var(--color-wk-warning)_14%,transparent)]
 'bg-[color-mix(in_oklch,var(--color-wk-warning)_16%,var(--color-wk-bg))]
@@ -103,6 +106,7 @@ $weekStartsOn
 'bg-[var(--color-wk-bg-subtle)]'">
 'bg-[var(--color-wk-border)]',
 'bg-[var(--color-wk-danger)]',
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-warning)]',
 'blocked'],
@@ -166,11 +170,11 @@ $weekStartsOn
 'wk-day-blocked
 'working'
 ("12
+("p.m.",
 ($eventClasses)
 ($eventsArr
 ($i
 ($levelValue
-(--color-wk-info
 (.wk-day-blocked
 (1-6).
 (2xs)
@@ -179,6 +183,7 @@ $weekStartsOn
 (60rem
 (PHP
 (Support\CallerListeners).
+(WCAG
 (YYYY-MM-DD)
 (_measureAgendaTime
 (`rowLabel`)
@@ -186,10 +191,10 @@ $weekStartsOn
 (and
 (array)
 (axe:
+(blockTip()).
 (day-level
 (day.inMonth
 (default
-(info
 (int)
 (isSelectedDay(day.date)
 (is_array($event)
@@ -222,6 +227,8 @@ $weekStartsOn
 +
 +2px
 -
+--color-wk-info-tone,
+--color-wk-info-tone.
 --wk-agenda-time
 --wk-agenda-time,
 --}}
@@ -242,6 +249,7 @@ $weekStartsOn
 1),
 1);
 1-hour
+1.4.12)
 12L6
 16
 16"
@@ -293,7 +301,7 @@ $weekStartsOn
 :class="view
 :class="{{
 :count
-:data-wk-tip="b.event.title"
+:data-wk-tip="blockTip(b)"
 :data-wk-tip="ev.title"
 :data-wk-tip="m.label"
 :date')
@@ -446,6 +454,7 @@ Laravel
 Left
 Lighthouse.
 Livewire
+Livewire's
 Mon
 Month
 NUMBER
@@ -503,6 +512,7 @@ WCAG
 WEEK
 WORD,
 Week
+When
 Width
 WireKit::resolveClasses('event-calendar',
 WireKit::scope()
@@ -523,24 +533,22 @@ With
 \Pushery\WireKit\Support\AlpinePayload::from($dayDetail
 \Pushery\WireKit\Support\AlpinePayload::from($eventClasses)
 \Pushery\WireKit\Support\AlpinePayload::from($eventDot)
-\Pushery\WireKit\Support\AlpinePayload::from($eventsArr)
 \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked)
 \Pushery\WireKit\Support\AlpinePayload::from($markerChip)
 \Pushery\WireKit\Support\AlpinePayload::from($markerClasses)
-\Pushery\WireKit\Support\AlpinePayload::from($markersArr)
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Showing
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with
 \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_',
+\Pushery\WireKit\Support\AlpinePayload::json($eventsArr)
+\Pushery\WireKit\Support\AlpinePayload::json($markersArr)
 \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden)
 \Pushery\WireKit\Support\AlpinePayload::string($categoryShown)
-\Pushery\WireKit\Support\AlpinePayload::string($date)
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth)
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside)
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected)
 \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday)
-\Pushery\WireKit\Support\AlpinePayload::string($view)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -604,6 +612,7 @@ _measureAgendaTime()
 `view-change`
 `wirekit:event-calendar-day-select`
 `wk-state-button`
+`x-data`
 `x-ref`
 a
 about
@@ -612,19 +621,20 @@ above
 above)
 above.
 accent
-accent.
 accessible
 actionable:
 actually
 adds
 affordance
 affordance.
+again,
 agenda
 agenda's
 agendaDays"
 agendaEmpty
 ai">
 ai)
+aliases
 align
 all
 all-day
@@ -646,6 +656,7 @@ announcement
 announcement.
 announces
 announcing
+another
 anybody
 anyway.
 app
@@ -683,6 +694,7 @@ away
 axe
 axe's
 axis
+back
 back,
 back-to-back
 back.
@@ -726,6 +738,7 @@ border-[var(--color-wk-border)]">
 border-[var(--color-wk-border)]"></div>
 border-[var(--color-wk-border)]',
 border-[var(--color-wk-danger-text)]',
+border-[var(--color-wk-info-tone)]',
 border-[var(--color-wk-success-text)]',
 border-[var(--color-wk-warning-text)]',
 border-b
@@ -787,8 +800,8 @@ centered
 centers
 change
 change;
+changed
 changes
-charts
 checked
 checks
 child
@@ -893,12 +906,15 @@ data-agenda-time
 data-view="agenda"
 data-view="month"
 data-view="week"
+data-wk-date="{{
+data-wk-day-markers="{{
+data-wk-events="{{
 data-wk-prose-skip
 data-wk-show-more
+data-wk-view="{{
 data-wk-week-view
 date
 date,
-date:
 dates.
 day
 day"
@@ -919,7 +935,6 @@ day.markers"
 day.overflow).replace(':date',
 day.visibleEvents"
 dayDetail:
-dayMarkers:
 dead
 debug
 decided
@@ -927,6 +942,7 @@ default
 default,
 delegation
 deliberately
+descender
 descenders),
 described-by
 design
@@ -962,6 +978,7 @@ each
 earlier
 edge
 edge.
+edge:
 edit
 editing
 element
@@ -971,6 +988,7 @@ emits
 empty
 ends.
 engine
+enlarges
 enough
 entries
 errors;
@@ -985,7 +1003,6 @@ events
 events'))
 events,
 events.
-events:
 events;
 ever
 every
@@ -994,7 +1011,9 @@ exception
 exception.
 exist.
 existed
+expression
 faces
+factory
 factory's
 factory,
 failure
@@ -1022,7 +1041,6 @@ fixed
 fixed-position
 flagged
 flags
-flash
 flex
 flex-1
 flex-col
@@ -1133,6 +1151,7 @@ house
 hover/focus
 hover:bg-[var(--color-wk-bg-muted)]
 hover:text-[color:var(--color-wk-text)]
+hue
 hue,
 hugs
 hyphens
@@ -1149,14 +1168,17 @@ in
 in.
 in_array((int)
 info
+info's
 inherit
 inheriting
+initialize
 inline
 inline-flex
 inner
 inset
 inside
 instead
+instead,
 instead.
 intent
 intent's
@@ -1208,6 +1230,7 @@ left-0
 left-stripe).
 left:calc('+b.left+'%
 lets
+letter
 level
 lifts
 light
@@ -1233,6 +1256,7 @@ locale:
 longDate(day.date))"
 looked
 lookup
+loses
 lost
 m.type
 makes
@@ -1321,13 +1345,15 @@ off:
 old
 on
 on,
+on.
+once
 once.
 one
 one-category
 one.
 only
-onto
 open
+opened
 opens
 operable.
 opt-in.
@@ -1353,6 +1379,7 @@ overlap
 overrides
 own
 own,
+own.
 p-0.5
 p-1
 padding
@@ -1370,6 +1397,7 @@ parentheses.
 part
 part:
 passed:
+past
 path:
 payload,
 per
@@ -1428,7 +1456,6 @@ reach
 reachable
 reaches
 read
-read),
 readable
 reader
 reader's
@@ -1450,6 +1477,7 @@ rendered
 renders
 reported
 reports,
+reset
 resolved
 resolves.
 rest
@@ -1491,6 +1519,7 @@ row,
 rows
 rule
 run
+runs
 runtime
 runtime,
 same
@@ -1514,6 +1543,7 @@ selectableDays:
 selectedDayEvents"
 selection
 selection,
+sending
 sense
 sentence
 separates
@@ -1523,6 +1553,7 @@ sets
 shadow-[var(--shadow-wk-md)]
 shape
 shaped
+shared
 shares
 show
 showing
@@ -1551,6 +1582,7 @@ space-y-0.5
 space-y-0.5">
 space-y-[var(--space-wk-sm)]',
 spacing
+spacing.
 span
 spelling,
 spells
@@ -1600,7 +1632,7 @@ tabular-nums
 tabular-nums"
 tag
 tags
-take
+takes
 tall
 target
 target's
@@ -1671,9 +1703,9 @@ time,
 time-grid,
 tint
 tint,
-tint.
 tinted
 tints
+tip
 title
 title+time
 title,
@@ -1685,11 +1717,9 @@ to.
 today
 today)
 toggle
-token
-token).
 token,
 tokens
-tone
+tone.
 too
 tooltip
 tooltip:
@@ -1700,6 +1730,7 @@ total).
 traces
 transition-colors';
 translation
+travel
 trip
 true)
 truncate
@@ -1729,6 +1760,7 @@ until
 up
 up.
 update
+update:
 use
 user-facing
 uses.
@@ -1744,13 +1776,11 @@ view
 view')
 view'))
 view's
-view:
 viewBox="0
 viewMove(),
 views
 views.
 visible
-visible.
 visibly
 visual
 visually,

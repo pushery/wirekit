@@ -36,10 +36,9 @@ $attachments
 $attributes
 $attributes->class([$baseClasses])
 $attributes->class([$groupClasses])
+$attributes->class([$iconClasses]);
 $attributes->class(['relative
-$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -49,6 +48,7 @@ $attributes->merge($depthStyle
 $author
 $author;
 $authorAvatar
+$authorInitials
 $authorName
 $authorName)
 $authorRole
@@ -62,6 +62,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $carbonTimestamp
 $carbonTimestamp->format($timeFormat)
@@ -93,6 +94,7 @@ $fromInitials
 $fromInitialsStyle
 $gap
 $groupClasses
+$iconClasses
 $initials
 $initials);
 $intent,
@@ -138,7 +140,7 @@ $sideValue
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeClasses,
 $sizeClasses])
 $sizeMap
@@ -198,6 +200,7 @@ $wrap
 '
 ''
 '')
+''));
 '',
 '';
 ''])));
@@ -207,6 +210,10 @@ $wrap
 '.__('wirekit::at').'
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -222,16 +229,18 @@ $wrap
 'alt'
 'always'
 'always']),
+'aria-label');
 'as'
 'author'
 'away'
 'base',
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
-'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_8%,var(--color-wk-bg-elevated))]
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]',
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-success)_8%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]',
@@ -245,6 +254,9 @@ $wrap
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
+'bg-[var(--color-wk-info-fg)]',
+'bg-[var(--color-wk-info-tone)]
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-success-fg)]',
@@ -255,9 +267,9 @@ $wrap
 'bg-[var(--color-wk-warning)]',
 'bg-[var(--color-wk-warning-fg)]',
 'bg-transparent
-'border-[color-mix(in_srgb,var(--color-wk-accent)_20%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-accent)_25%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-danger)_25%,transparent)]',
+'border-[color-mix(in_srgb,var(--color-wk-info-tone)_20%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-success)_25%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-warning)_25%,transparent)]',
 'border-[length:var(--border-wk-badge-width,var(--border-wk-width))]';
@@ -428,6 +440,7 @@ $wrap
 'text-[color:var(--color-wk-accent-fg)]',
 'text-[color:var(--color-wk-accent-text)]',
 'text-[color:var(--color-wk-danger-text)]',
+'text-[color:var(--color-wk-info-text)]',
 'text-[color:var(--color-wk-success-text)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-muted)]',
@@ -487,6 +500,7 @@ $wrap
 ("Read
 ($actionsReveal)
 ($author['avatar']
+($author['initials']
 ($author['name']
 ($author['role']
 ($callerAriaHidden
@@ -518,6 +532,8 @@ $wrap
 (SOFT
 (Support\CallerListeners).
 (Support\Moment),
+(Support\UrlProp).
+(UtilityClasses::has($callerClass,
 (WCAG
 (WireKit::validateProp('avatar',
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -553,6 +569,7 @@ $wrap
 (inert
 (int)
 (intent-tinted
+(is_array($author)
 (isoFormat('LT')
 (matches
 (mirrors
@@ -585,7 +602,9 @@ $wrap
 --border-wk-width
 --color-wk-accent
 --color-wk-accent)
---color-wk-info
+--color-wk-info-fg,
+--color-wk-info-tone
+--color-wk-info-tone,
 --shadow-wk-badge
 --}}
 -text
@@ -616,11 +635,13 @@ $wrap
 12c2.21
 15"
 16.8
+16px
 18
 1px
 2,
 2.1.1).
 2.5,
+20px,
 24
 24"
 24h
@@ -645,6 +666,7 @@ $wrap
 9:15
 :
 :alt="$authorName"
+:initials="$authorInitials"
 :name="$leadingIcon"
 :name="$statusIcon"
 :name="$trailingIcon"
@@ -759,6 +781,7 @@ Avatar
 AvatarPalette::for((string)
 BOTH
 Base
+Beside
 Blade
 Blade's
 Blade-heroicons'
@@ -806,6 +829,7 @@ Drop
 ENT_QUOTES).'"',
 EVERY
 Each
+Echoed
 English
 English,
 Escape
@@ -893,6 +917,7 @@ Pushery\WireKit\Support\AvatarPalette.
 Pushery\WireKit\Support\AvatarPalette;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\Moment;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Reactions
 Reapply
@@ -951,7 +976,9 @@ Trigger
 Two
 UI
 UNBOUND
+URL
 Uses
+UtilityClasses::without($iconClasses,
 VISIBLY
 Validate
 VariantResolver::INTENTS
@@ -970,6 +997,7 @@ WireKit's
 WireKit::resolveClasses('avatar',
 WireKit::resolveClasses('avatar.group',
 WireKit::resolveClasses('badge',
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('message',
 WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
@@ -1003,13 +1031,17 @@ Without
 [[data-wk-touch]_&]:opacity-100
 [])->class([$baseClasses,
 [],
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\Initials::from($authorName);
 \Pushery\WireKit\Support\ListProp::from($author);
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -1035,6 +1067,7 @@ __toString
 `$refs`
 `--color-wk-bg-elevated`,
 `-2`,
+`:class`
 `:remaining="7"`
 `<button>`
 `<div>`
@@ -1044,6 +1077,7 @@ __toString
 `<template>`
 `<x-wirekit::scroll-area
 `=`,
+`@class`
 `Illegal
 `Svg
 `_x_dataStack`,
@@ -1057,6 +1091,7 @@ __toString
 `card`
 `class="cirlce"`
 `class="h-12
+`class`
 `clearTimeout`
 `cloneNode(true)`,
 `data-wk-message-*`
@@ -1077,6 +1112,9 @@ __toString
 `focus-within`
 `focusable-trigger`
 `group`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -1165,6 +1203,7 @@ agree
 alert;
 alias
 alias,
+aliases
 aligns
 all).
 all,
@@ -1228,6 +1267,7 @@ arm
 armed,
 arms
 around
+array,
 array_filter([
 array_filter([$fromInitialsStyle,
 array_keys($sizeMap));
@@ -1246,6 +1286,7 @@ association
 at
 attempted
 attribute
+attribute's
 attribute,
 attribute.
 attributes
@@ -1258,6 +1299,8 @@ avatar,
 avatars
 avatars.
 avoid
+axis.
+back
 back-compat
 back.
 background
@@ -1315,11 +1358,13 @@ border
 border,
 border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
 border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
+border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
 border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
 border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
 border-[color:var(--color-wk-accent)]',
 border-[color:var(--color-wk-border)]',
 border-[color:var(--color-wk-danger)]',
+border-[color:var(--color-wk-info-tone)]',
 border-[color:var(--color-wk-success)]',
 border-[color:var(--color-wk-warning)]',
 border-[length:var(--border-wk-width)]">
@@ -1327,6 +1372,7 @@ border-[var(--color-wk-accent)]',
 border-[var(--color-wk-border)]'
 border-[var(--color-wk-border-subtle)]',
 border-[var(--color-wk-danger)]',
+border-[var(--color-wk-info-tone)]',
 border-[var(--color-wk-success)]',
 border-[var(--color-wk-text)]',
 border-[var(--color-wk-warning)]',
@@ -1337,6 +1383,7 @@ bottom-0
 bottom-right
 bottom-right)
 bound
+bound,
 box
 box-shadow
 box-shadow.
@@ -1389,7 +1436,6 @@ catch.
 caught
 cell
 centering,
-charts
 chat
 check
 check.
@@ -1569,6 +1615,7 @@ developer
 developer's
 dialect
 dialog
+did
 different
 dim
 dims
@@ -1582,13 +1629,13 @@ dismiss
 dismissLabel.
 dismissible
 dispatches
-distinguished
 div
 do
 docs
 document
 documented
 does
+does.
 dot
 double
 double-check
@@ -1641,6 +1688,7 @@ enum-alias
 equivalent
 error
 escape
+escaped
 escapes
 escaping
 evaluated
@@ -1674,6 +1722,7 @@ failed"
 failed.
 fails
 faint
+fall
 fallback
 fallback,
 fallback.
@@ -1689,11 +1738,11 @@ field
 field,
 files
 fill
-fill:
 fill="currentColor"
 fill="none"
 filled
 filled-background
+fills
 filter_var($wrap,
 finds
 fine).
@@ -1707,7 +1756,6 @@ fixed
 fixed-height
 fixed`
 flags
-flash
 flatten
 flattened
 flattens
@@ -1768,6 +1816,7 @@ get
 gets
 given,
 given.
+gives
 glance
 global
 glyph
@@ -1813,6 +1862,7 @@ handlers
 handles
 hands
 hangs
+happened
 happened:
 hard
 hardcoded
@@ -1860,6 +1910,7 @@ hover/focus
 hover:opacity-100',
 how
 however
+hue
 icon
 icon's
 icon,
@@ -1900,6 +1951,7 @@ init
 initialized.
 initials
 initials-fallback
+initials;
 injected
 inline
 inline,
@@ -1959,6 +2011,7 @@ keyboard
 keyboard,
 keyboard-focusable
 kill
+known.
 knows
 label
 label.
@@ -1982,6 +2035,7 @@ left
 legitimately
 let
 lets
+letters
 lift
 lifted
 light
@@ -2014,6 +2068,7 @@ looking
 looks
 loses
 lost
+lost,
 loudly
 loudly,
 made
@@ -2162,6 +2217,7 @@ opposite
 optimistic-ui:
 optional
 or
+order
 other
 other.
 otherwise
@@ -2184,6 +2240,8 @@ oversized
 own
 own,
 own.
+own;
+owner
 owns,
 package
 padding
@@ -2208,7 +2266,6 @@ paragraph's
 parser
 pass
 passed
-passed.
 passes
 passes,
 passthrough
@@ -2232,6 +2289,7 @@ phase,
 phone
 phrasing
 pick
+picture
 pill
 pill,
 pills.
@@ -2316,7 +2374,6 @@ read
 read)
 read,
 read.
-read;
 reader
 reader's
 reader,
@@ -2374,6 +2431,7 @@ reset
 resolved
 resolves
 respect
+responsive
 rest
 rests
 result
@@ -2416,6 +2474,7 @@ runtime
 safe.
 safe:
 same
+same.
 say
 says
 scale
@@ -2439,6 +2498,7 @@ semantic
 semantically.
 send'),
 sender
+sender's
 sending
 sensible
 sent
@@ -2458,7 +2518,6 @@ shadows:
 shape
 shape,
 shared
-shares
 shares:
 shipped
 short
@@ -2479,6 +2538,7 @@ silence
 silences
 silently
 silently.
+silhouette,
 simply
 single
 single-line
@@ -2489,6 +2549,7 @@ size
 size,
 size="sm"
 size="xs"
+sized
 sizes
 sizing
 sizing.
@@ -2502,9 +2563,9 @@ soft
 soft).
 soft-chip
 soft-tone
-solid
 somebody
 something
+sorts
 source
 source-baked
 space
@@ -2582,7 +2643,6 @@ svg(),
 swapped
 sweep
 switches
-synonyms
 system
 tab
 tab-stop
@@ -2611,6 +2671,8 @@ text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-bg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
+text-[color:var(--color-wk-info-fg)]
+text-[color:var(--color-wk-info-text)]
 text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -2674,17 +2736,18 @@ timestamp.
 timestamp;
 tint
 tinted
+tints
 tip
 tip.
 title
 to
 to,
 to.
+toCssClasses()
 toHtml().
 token
 token,
 told
-tone
 too,
 tooltip
 tooltip,
@@ -2832,6 +2895,7 @@ width
 width)
 width,
 widths
+win.
 window
 window,
 wins
@@ -2851,6 +2915,7 @@ wrapped
 wrapper
 wrapper)
 wrapping
+writes
 writing
 written
 wrong

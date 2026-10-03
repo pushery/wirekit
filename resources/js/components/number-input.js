@@ -1,3 +1,5 @@
+import { watchModelEvents } from '../utils/model-events.js';
+
 /**
  * Number input — the stepper's arithmetic.
  *
@@ -26,7 +28,9 @@
  * fires, so the model hears them.
  *
  * CLEANUP CONTRACT: `_unhookResync` (the Livewire commit hook, bound fields only) is
- * released in destroy().
+ * released in destroy(), and so is `_modelEvents`, which fires `blur` on the field for
+ * `wire:model.blur` when the reader leaves the component after using only the steppers: the
+ * field then never had focus, so its own `blur` never came (utils/model-events.js).
  *
  * @param {Object}  config
  * @param {number}  config.value  starting value
@@ -46,11 +50,14 @@ export default function wirekitNumberInput(config = {}) {
         step: config.step ?? 1,
         bound: config.bound === true,
         _unhookResync: null,
+        _modelEvents: null,
 
         init() {
             if (!this.bound) {
                 return;
             }
+
+            this._modelEvents = watchModelEvents(this.$root, () => this._input());
 
             // The caller's model writes the field while Alpine starts the elements below
             // this one, which is after this runs, so the first read waits a tick.
@@ -70,6 +77,9 @@ export default function wirekitNumberInput(config = {}) {
                 this._unhookResync();
                 this._unhookResync = null;
             }
+
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
         },
 
         /**
@@ -109,7 +119,14 @@ export default function wirekitNumberInput(config = {}) {
 
             el.value = String(this.value);
             el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Through the model events once they are armed, so that leaving the component
+            // afterwards does not fire `change` a second time.
+            if (this._modelEvents) {
+                this._modelEvents.commit();
+            } else {
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         },
 
         /** Clamp a bound field on leaving it, and tell the model only if that changed it. */

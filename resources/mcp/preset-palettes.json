@@ -6,10 +6,10 @@
     "minimal": {
         "light": {
             "--radius-wk": "0px",
-            "--shadow-wk-sm": "none",
-            "--shadow-wk-md": "none",
-            "--shadow-wk-lg": "none",
-            "--shadow-wk-none": "none",
+            "--shadow-wk-sm": "0 0 0 0 transparent",
+            "--shadow-wk-md": "0 0 0 0 transparent",
+            "--shadow-wk-lg": "0 0 0 0 transparent",
+            "--shadow-wk-none": "0 0 0 0 transparent",
             "--font-wk-heading-weight": "500",
             "--font-wk-letter-spacing": "0.01em",
             "--border-wk-width": "0px",
@@ -99,7 +99,7 @@
             "--shadow-wk-sm": "2px 2px 0 0 currentColor",
             "--shadow-wk-md": "3px 3px 0 0 currentColor",
             "--shadow-wk-lg": "5px 5px 0 0 currentColor",
-            "--shadow-wk-none": "none",
+            "--shadow-wk-none": "0 0 0 0 transparent",
             "--transition-wk-duration": "0ms",
             "--border-wk-width": "2px",
             "--color-wk-border": "var(--color-neutral-900)",
@@ -131,7 +131,7 @@
     "retro-terminal": {
         "light": {
             "--radius-wk": "0px",
-            "--shadow-wk-sm": "none",
+            "--shadow-wk-sm": "0 0 0 0 transparent",
             "--shadow-wk-md": "0 0 8px rgba(0, 255, 65, 0.15)",
             "--shadow-wk-lg": "0 0 16px rgba(0, 255, 65, 0.2)",
             "--font-wk-sans": "'VT323', 'Courier New', monospace",
@@ -225,7 +225,7 @@
             "--color-wk-accent-fg": "var(--color-neutral-900)",
             "--color-wk-accent": "var(--color-blue-400)",
             "--color-wk-accent-hover": "var(--color-blue-300)",
-            "--color-wk-accent-content": "var(--color-blue-400)",
+            "--color-wk-accent-content": "var(--color-blue-300)",
             "--color-wk-ring": "var(--color-blue-400)",
             "--shadow-wk-sm": "0 1px 4px rgba(0, 0, 0, 0.30), 0 0 1px rgba(0, 0, 0, 0.20)",
             "--shadow-wk-md": "0 4px 16px rgba(0, 0, 0, 0.40), 0 1px 4px rgba(0, 0, 0, 0.25)",

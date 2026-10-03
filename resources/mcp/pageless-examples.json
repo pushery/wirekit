@@ -32,11 +32,11 @@
         },
         {
             "title": "Tier 1 vs Tier 2",
-            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::card class=\"wk-glass\">\n    <x-wirekit::card.header>Tier 1 — Frosted</x-wirekit::card.header>\n    <x-wirekit::card.body><code>wk-glass</code> — all browsers.</x-wirekit::card.body>\n</x-wirekit::card>\n\n<x-wirekit::card class=\"wk-glass-refract\">\n    <x-wirekit::card.header>Tier 2 — Refraction</x-wirekit::card.header>\n    <x-wirekit::card.body><code>wk-glass-refract</code> — the backdrop bends behind the glass.</x-wirekit::card.body>\n</x-wirekit::card>"
+            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::card class=\"wk-glass\">\n    <x-wirekit::card.header>Tier 1 — Glass</x-wirekit::card.header>\n    <x-wirekit::card.body><code>wk-glass</code> — all browsers.</x-wirekit::card.body>\n</x-wirekit::card>\n\n<x-wirekit::card class=\"wk-glass-refract\">\n    <x-wirekit::card.header>Tier 2 — Refraction</x-wirekit::card.header>\n    <x-wirekit::card.body><code>wk-glass-refract</code> — the backdrop bends behind the glass.</x-wirekit::card.body>\n</x-wirekit::card>"
         },
         {
             "title": "Glass badge row",
-            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::badge class=\"wk-glass\">Frosted</x-wirekit::badge>\n<x-wirekit::badge class=\"wk-glass-refract\">Refraction</x-wirekit::badge>\n<x-wirekit::badge intent=\"success\" class=\"wk-glass\">Success</x-wirekit::badge>"
+            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::badge class=\"wk-glass\">Glass</x-wirekit::badge>\n<x-wirekit::badge class=\"wk-glass-refract\">Refraction</x-wirekit::badge>\n<x-wirekit::badge intent=\"success\" class=\"wk-glass\">Success</x-wirekit::badge>"
         }
     ],
     "kanban-column": [
