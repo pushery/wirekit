@@ -514,21 +514,8 @@ export default function wirekitOptimistic(config = {}) {
         },
 
         /**
-         * Flip and fire, in one call.
+         * Read the value through the binding — the ONLY place that reads it.
          *
-         * This exists because a CSP directive holds exactly ONE expression:
-         * `@click="apply(true); $wire.save()"` is two statements and Alpine's
-         * CSP parser refuses the whole attribute — which does not fail loudly,
-         * it leaves the element with an empty scope so every directive on it
-         * silently does nothing. So the sequencing lives here, where it is
-         * ordinary JavaScript.
-         *
-         * The order matters and is not interchangeable: the flip happens
-         * BEFORE the fire, because the interceptor runs synchronously inside
-         * $wire[action]() and reads the state this call just wrote.
-         */
-        /** Read the value through the binding — the ONLY place that reads it. */
-        /**
          * The bound value — one property, or a TUPLE of them read as one value.
          *
          * `bind` accepts an array because a range is one value, not
@@ -627,6 +614,20 @@ export default function wirekitOptimistic(config = {}) {
             return this.run(next);
         },
 
+        /**
+         * Flip and fire, in one call.
+         *
+         * This exists because a CSP directive holds exactly ONE expression:
+         * `@click="apply(true); $wire.save()"` is two statements and Alpine's
+         * CSP parser refuses the whole attribute — which does not fail loudly,
+         * it leaves the element with an empty scope so every directive on it
+         * silently does nothing. So the sequencing lives here, where it is
+         * ordinary JavaScript.
+         *
+         * The order matters and is not interchangeable: the flip happens
+         * BEFORE the fire, because the interceptor runs synchronously inside
+         * $wire[action]() and reads the state this call just wrote.
+         */
         run(next) {
             if (this._bindMissing) {
                 return false;

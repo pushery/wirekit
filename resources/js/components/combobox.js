@@ -36,10 +36,17 @@
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
+import { optionPressState } from '../utils/option-press.js';
 import { foldForSearch } from '../utils/search-fold.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { serverSearchState } from '../utils/server-search.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { watchModelEvents } from '../utils/model-events.js';
+import { watchCurrent } from '../utils/watch-current.js';
+import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+
+/** The attribute that carries the options outside server mode; see init(). */
+const OPTIONS_ATTRIBUTE = 'data-wk-options';
 
 export default function wirekitCombobox(config = {}) {
     return withOpenAlias({
@@ -51,6 +58,14 @@ export default function wirekitCombobox(config = {}) {
 
         // Cross-close channel — see utils/overlay-coordination.js.
         _coordination: null,
+        // `change` and `blur` on the root, which `wire:model` binds through `x-modelable`, so
+        // `wire:model.live.blur` and `.live.change` send when the reader chooses and when they
+        // leave (utils/model-events.js). Disposed in destroy().
+        _modelEvents: null,
+        // The observers that follow the server's value and options; see init(). Disconnected in
+        // destroy().
+        _stopServerValue: null,
+        _stopOptionsSync: null,
 
         // Set by hoverOption() so the scroll that follows a highlight change is
         // skipped for that one move. See _revealHighlight().
@@ -58,6 +73,9 @@ export default function wirekitCombobox(config = {}) {
 
         // markMediaBroken() and showsInitials(), for an avatar whose photo fails to load.
         ...optionMediaState(),
+        // notePress() and keepFocusOnPress(): a press on the list with a mouse or a pen leaves
+        // the focus in the text field.
+        ...optionPressState(),
 
         // `search-change`, the options that follow the server, and the label the choice keeps
         // after a new search replaced its list. Inert without `server`.
@@ -166,6 +184,32 @@ export default function wirekitCombobox(config = {}) {
         },
 
         init() {
+            // The value and, outside server mode, the options reach this component on attributes
+            // of the root rather than in `x-data`, so that attribute renders the same on every
+            // update. A morph that changed it would have Alpine reset the component to the new
+            // expression and initialize it again, dropping the open list and the reader's typing.
+            // They are read here, before the value looks for its label, and followed below. A
+            // value or options passed in `config`, as by a factory built outside Blade, come
+            // first. `$root` is checked rather than assumed: a test builds this factory with a
+            // stub that has no `getAttribute`.
+            const readAttribute = (name) => (typeof this.$root?.getAttribute === 'function' ? jsonValue(this.$root.getAttribute(name)) : undefined);
+
+            if (config.value === undefined) {
+                const value = readAttribute(WK_SERVER_VALUE_ATTRIBUTE);
+
+                if (value !== undefined) {
+                    this.selected = value;
+                }
+            }
+
+            if (! Array.isArray(config.options) && ! this._server) {
+                const options = readAttribute(OPTIONS_ATTRIBUTE);
+
+                if (Array.isArray(options)) {
+                    this.allOptions = options;
+                }
+            }
+
             // In server mode the options come from their own attribute, so they are read before
             // the initial value looks for its label among them.
             this._startServerSearch((options) => {
@@ -193,7 +237,7 @@ export default function wirekitCombobox(config = {}) {
             //
             // selectOption() keeps its own call rather than leaning on this: that path runs
             // synchronously inside the click, and a watcher flushes a microtask later.
-            this.$watch('selected', () => this._syncQuery());
+            watchCurrent(this, 'selected', () => this._syncQuery());
 
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:combobox-open',
@@ -201,7 +245,7 @@ export default function wirekitCombobox(config = {}) {
             });
 
             // Announce on every transition into the open state so siblings close.
-            this.$watch('isOpen', (val) => {
+            watchCurrent(this, 'isOpen', (val) => {
                 if (! val) {
                     // A hidden panel has nothing to follow, and its followers would go on
                     // recomputing against a field the reader has moved away from.
@@ -236,9 +280,51 @@ export default function wirekitCombobox(config = {}) {
             // $nextTick because the row for the new index may not exist yet:
             // Home and End open the list and jump in the same keystroke, so the
             // option is rendered by the same flush that moved the highlight.
-            this.$watch('highlight', () => {
+            watchCurrent(this, 'highlight', () => {
                 this.$nextTick(() => this._revealHighlight());
             });
+
+            // The root carries the binding. The value travels as the event's detail: an event
+            // without one would have `x-model` read the root's `value`, which a <div> has not.
+            const root = this.$root;
+            this._modelEvents = watchModelEvents(root, () => root, { detail: () => this.selected });
+
+            // A value the server changed reaches the choice, and the `selected` watcher above
+            // writes its label. A value equal to the choice on screen, such as the reader's own
+            // pick coming back from the server, needs nothing done.
+            this._stopServerValue = observeServerValue(root, (raw) => {
+                const value = jsonValue(raw);
+
+                if (value === undefined || value === this.selected) {
+                    return;
+                }
+
+                this.selected = value;
+            });
+
+            // New options from the server replace the list, and the keyboard starts at the first
+            // enabled row again, as it does after a server search. What the reader typed stays;
+            // a label this component put into the field follows the new list, which may have
+            // renamed the choice or no longer hold it.
+            if (! this._server) {
+                this._stopOptionsSync = observeServerValue(root, (raw) => {
+                    const options = jsonValue(raw);
+
+                    if (! Array.isArray(options)) {
+                        return;
+                    }
+
+                    const seeded = this.query === this._seededQuery;
+
+                    this.allOptions = options;
+                    this.highlight = -1;
+                    this.highlightFirst();
+
+                    if (seeded) {
+                        this._syncQuery();
+                    }
+                }, OPTIONS_ATTRIBUTE);
+            }
         },
 
         // Panel ids, handed in by the Blade so `_place()` can find the panels
@@ -433,6 +519,12 @@ export default function wirekitCombobox(config = {}) {
         },
 
         destroy() {
+            this._stopServerValue?.();
+            this._stopServerValue = null;
+            this._stopOptionsSync?.();
+            this._stopOptionsSync = null;
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
             this._coordination?.stop();
             this._coordination = null;
             this._unplace();
@@ -541,6 +633,7 @@ export default function wirekitCombobox(config = {}) {
             this.selected = opt.value;
             this.isOpen = false;
             this._syncQuery();
+            this._modelEvents?.commit();
         },
 
         /**
@@ -638,6 +731,45 @@ export default function wirekitCombobox(config = {}) {
             if (option && ! option.disabled) {
                 this.selectOption(option);
             }
+        },
+
+        /**
+         * Enter in the field. On an open list it chooses the active option; on a closed one it
+         * opens the list at the current choice and chooses nothing, the way the select-only
+         * trigger and the multi-select answer it. Choosing on a closed list picked an option the
+         * reader never saw: the first one in an untouched field, and the suggestion the reader
+         * had just dismissed with Escape.
+         */
+        enterKey() {
+            if (! this.isOpen) {
+                this._highlightChoice();
+                this.isOpen = true;
+
+                return;
+            }
+
+            this.activateHighlighted();
+        },
+
+        /**
+         * Enter on the optimistic path: the value to choose, or `undefined` while it only opens.
+         * A choice closes the list, as selectOption() does on the other path; the optimistic
+         * layer writes the value and never touches the list.
+         */
+        enterValue() {
+            if (! this.isOpen) {
+                this.enterKey();
+
+                return undefined;
+            }
+
+            const value = this.highlightedValue();
+
+            if (value !== undefined) {
+                this.isOpen = false;
+            }
+
+            return value;
         },
 
         /**
@@ -884,6 +1016,7 @@ export default function wirekitCombobox(config = {}) {
                 hidden.dispatchEvent(new Event('input', { bubbles: true }));
             }
 
+            this._modelEvents?.commit();
             this._keepFocusThroughClear();
         },
 

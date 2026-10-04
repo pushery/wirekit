@@ -17,6 +17,7 @@ $shape
 $shape,
 $size
 $size,
+$src
 $src;
 $url
 &&
@@ -68,6 +69,7 @@ $url
 ($size)
 ($url
 (FlagPackage::manifest()
+(Support\UrlProp).
 (is_string($src)
 (silent
 (string)
@@ -101,6 +103,7 @@ $url
 A
 Case
 Dev-only
+Echoed
 Empty
 FlagPackage::reportMissingOnce();
 FlagPackage::reportUnknownOnce($code);
@@ -127,6 +130,7 @@ WireKit::validateProp('flag',
 ['xs',
 [24,
 [32,
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('flag',
 ])
 ]),
@@ -162,6 +166,7 @@ attributes
 be
 before
 beside
+bound,
 box
 box.
 build
@@ -203,6 +208,7 @@ early.
 element,
 else
 elseif
+escaped
 every
 flag
 flag's
@@ -258,6 +264,7 @@ null,
 null;
 of
 on
+once
 one
 only
 optimistic-ui:
@@ -304,6 +311,7 @@ stretched
 strtolower(trim((string)
 stylesheet
 such
+tag
 taken
 text
 that
@@ -331,6 +339,7 @@ width="{{
 with
 without
 would.
+written
 your
 {
 {{

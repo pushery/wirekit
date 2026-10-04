@@ -1,4 +1,6 @@
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { watchModelEvents } from '../utils/model-events.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 /**
  * Pricing table — which billing interval the whole table is priced at.
@@ -14,8 +16,12 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * with an empty scope), and a factory is where the other components in this
  * library keep this exact pattern.
  *
- * Lifecycle resources held on `this`: the server-value observer. Disconnected in
- * destroy() — it outlives the scope otherwise and fires into a dead one.
+ * Lifecycle resources held on `this`, released in destroy():
+ *   - _stopServerSync — the server-value observer. It outlives the scope otherwise and fires
+ *     into a dead one.
+ *   - _modelEvents — `change` and `blur` on the hidden input for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change` with
+ *     every interval chosen, as before, and `blur` when the reader leaves the toggle.
  *
  * @param {Object} config
  * @param {string} config.interval  the interval selected at render time
@@ -25,6 +31,7 @@ export default function wirekitPricingTable(config = {}) {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
         _stopServerSync: null,
+        _modelEvents: null,
 
         interval: config.interval != null ? String(config.interval) : '',
 
@@ -63,7 +70,7 @@ export default function wirekitPricingTable(config = {}) {
             // nothing, so the event is dispatched by hand — without it a
             // `wire:model` on the hidden input would never observe a change,
             // which is the only reason the input exists.
-            this.$watch('interval', (value) => {
+            watchCurrent(this, 'interval', (value) => {
                 const input = this.$refs.hiddenInput;
 
                 if (! input || input.value === value) {
@@ -72,7 +79,14 @@ export default function wirekitPricingTable(config = {}) {
 
                 input.value = value;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // Through the model events once they are armed, so that leaving the toggle
+                // afterwards does not fire `change` a second time.
+                if (this._modelEvents) {
+                    this._modelEvents.commit();
+                } else {
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             });
 
             // Inward: the server's answer has to reach the toggle. Alpine reads
@@ -89,10 +103,14 @@ export default function wirekitPricingTable(config = {}) {
 
                 this.interval = value;
             });
+
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.hiddenInput);
         },
 
         destroy() {
             this._stopServerSync?.();
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
         },
     };
 }

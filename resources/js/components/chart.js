@@ -1,28 +1,9 @@
+import { keepRaw } from '../utils/keep-raw.js';
 import { resolveThemeColors, palette, withOpacity, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
 import { followChartServerData } from '../utils/chart-server-data.js';
 
-/**
- * WireKit Chart.js Alpine Component.
- *
- * Initializes a Chart.js instance with automatic WireKit theming via CSS
- * variables. A MutationObserver on <html> watches for .dark class toggles
- * and re-applies theme colors (grid, ticks, legend, datasets) instantly.
- *
- * @param {Object} config - Chart.js configuration object (type, data, options).
- *   Passed from the Blade component via Alpine x-data. Alpine hands a factory its
- *   argument as given and makes only the returned object reactive, so this is the
- *   plain object; `Alpine.raw()` before Chart.js keeps it plain for a caller who
- *   passes a reactive one.
- *
- * Lifecycle:
- * - init(): Creates chart + observer inside $nextTick (after DOM ready)
- * - destroy(): Cleans up chart, observer, and Livewire event listener
- *
- * Cleanup is automatic on Livewire SPA navigation (livewire:navigating)
- * and Alpine component teardown (destroy() lifecycle hook).
- */
 /**
  * Global registry of every Chart.js instance created by `wirekitChartJs`.
  * Maintained on `window` so the proactive-sweep sees stale instances from
@@ -96,6 +77,26 @@ function sweepStaleCharts() {
     }
 }
 
+/**
+ * WireKit Chart.js Alpine Component.
+ *
+ * Initializes a Chart.js instance with automatic WireKit theming via CSS
+ * variables. A MutationObserver on <html> watches for .dark class toggles
+ * and re-applies theme colors (grid, ticks, legend, datasets) instantly.
+ *
+ * @param {Object} config - Chart.js configuration object (type, data, options).
+ *   Passed from the Blade component via Alpine x-data. Alpine hands a factory its
+ *   argument as given and makes only the returned object reactive, so this is the
+ *   plain object; `Alpine.raw()` before Chart.js keeps it plain for a caller who
+ *   passes a reactive one.
+ *
+ * Lifecycle:
+ * - init(): Creates chart + observer inside $nextTick (after DOM ready)
+ * - destroy(): Cleans up chart, observer, and Livewire event listener
+ *
+ * Cleanup is automatic on Livewire SPA navigation (livewire:navigating)
+ * and Alpine component teardown (destroy() lifecycle hook).
+ */
 export default function wirekitChartJs(config) {
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
@@ -405,9 +406,9 @@ Chart.register(...registerables);</pre>
                     rawConfig.options.animations = false;
                 }
 
-                // The registry holds the chart itself: read back through `this.chart` it would be
-                // Alpine's Proxy of it, which Chart.js does not know as the chart.
-                const chart = new Chart(ctx, rawConfig);
+                // Kept out of Alpine's reactivity, so `this.chart` is the chart itself wherever it is
+                // read; `_rawChart()` stays the way every call reaches it.
+                const chart = keepRaw(new Chart(ctx, rawConfig));
                 this.chart = chart;
                 getRegistry().add(chart);
 

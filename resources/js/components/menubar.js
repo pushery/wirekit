@@ -23,7 +23,8 @@
  * first, and ArrowLeft opened the last.
  *
  * Lifecycle resources held on `this`:
- *   - _navCleanup / _onPointerDown (document listeners) — removed in destroy()
+ *   - _navCleanup (document listener) and _stopOutsideRelease (the outside-release
+ *     listeners) — removed in destroy()
  *   - _coordination (cross-close channel) — stopped in destroy()
  *   - _stopAutoUpdate (Floating UI autoUpdate) — called and nulled on every close path
  *   - _typeAheadTimer (setTimeout) — cleared by _resetTypeAhead(), which runs from
@@ -33,6 +34,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
+import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
@@ -67,7 +69,8 @@ export default function wirekitMenubar() {
         _typeAheadTimer: null,
 
         _navCleanup: null,
-        _onPointerDown: null,
+        // Removes the outside-release listeners (utils/outside-release.js).
+        _stopOutsideRelease: null,
         // Floating UI autoUpdate teardown handle for the ONE open menu panel. Set in
         // _positionActiveMenu (stopping the previous menu's first), cleared whenever
         // activeMenu returns to null. Prevents leaked scroll/resize listeners when
@@ -87,19 +90,16 @@ export default function wirekitMenubar() {
             // DOM descendants of `this.$el` — a Blade `x-on:click.outside` on
             // the menubar root would treat a click INSIDE an open panel as
             // "outside" and close the menu before the item's own click handler
-            // ran. This document-level handler instead closes only when the
-            // pointer lands outside BOTH the menubar bar AND the active
-            // teleported panel (looked up via the teleport-safe $refs).
-            this._onPointerDown = (event) => {
-                if (!this.activeMenu) return;
-                const target = event.target;
-                if (!(target instanceof Node)) return;
-                if (this.$root.contains(target)) return;
-                const panel = this.$refs[`panel-${this.activeMenu}`];
-                if (panel && panel.contains(target)) return;
-                this.closeAll();
-            };
-            document.addEventListener('pointerdown', this._onPointerDown, { capture: true });
+            // ran. The document-level listener closes only when the press
+            // began and ended outside BOTH the menubar bar AND the active
+            // teleported panel (looked up via the teleport-safe $refs), and
+            // only on the release (utils/outside-release.js).
+            this._stopOutsideRelease = closeOnOutsideRelease(document, {
+                contains: (node) => this.$root.contains(node)
+                    || Boolean(this.$refs[`panel-${this.activeMenu}`]?.contains(node)),
+                isOpen: () => Boolean(this.activeMenu),
+                close: () => this.closeAll(),
+            });
 
             // Another menubar opening a menu closes this one's.
             this._coordination = coordinateOverlay({
@@ -116,9 +116,8 @@ export default function wirekitMenubar() {
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
-            if (this._onPointerDown) {
-                document.removeEventListener('pointerdown', this._onPointerDown, { capture: true });
-            }
+            this._stopOutsideRelease?.();
+            this._stopOutsideRelease = null;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
         },
@@ -258,6 +257,11 @@ export default function wirekitMenubar() {
                     placement: 'bottom-start',
                     offset: 4,
                     autoReposition: true,
+                    // A framework update patches the teleported panel against its template, whose
+                    // `style` carries none of what this call writes: the placement is gone while the
+                    // panel stays open, with its box unchanged, so `autoReposition`, which watches
+                    // boxes, sees nothing. This watches the attribute that is actually removed.
+                    repairErasure: true,
                 });
 
                 // The bar can close, or move to another menu, while this one is placed: its

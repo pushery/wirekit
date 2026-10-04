@@ -63,6 +63,34 @@ function parseDay(value) {
 import { position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
+import { jsonValue, observeServerValue } from '../utils/server-value.js';
+
+/** The attributes that carry what the server decides; see init(). */
+const EVENTS_ATTRIBUTE = 'data-wk-events';
+const MARKERS_ATTRIBUTE = 'data-wk-day-markers';
+const VIEW_ATTRIBUTE = 'data-wk-view';
+const DATE_ATTRIBUTE = 'data-wk-date';
+
+/** The events as the component keeps them: copies, so the list it was handed is never changed. */
+function intakeEvents(list) {
+    return list.map((e) => ({ ...e }));
+}
+
+/**
+ * Day-level markers (holidays / working days / notes), a SEPARATE dimension from timed events.
+ * `date` is parsed date-only at LOCAL midnight (slice to 10 chars + 'T00:00:00') so a
+ * YYYY-MM-DD string never drifts a day across a timezone boundary. `type` is clamped to the
+ * three known kinds; `blocked` is a hard boolean. WireKit owns the visual/semantic state only:
+ * the host enforces any booking logic behind a `blocked` day.
+ */
+function intakeMarkers(list) {
+    return list.map((m) => ({
+        label: m.label || '',
+        type: ['holiday', 'working', 'note'].includes(m.type) ? m.type : 'holiday',
+        blocked: !!m.blocked,
+        _date: new Date(String(m.date).slice(0, 10) + 'T00:00:00'),
+    }));
+}
 
 export default function wirekitEventCalendar(config = {}) {
     // The APPLICATION's locale, not the browser's — the component receives it
@@ -102,19 +130,12 @@ export default function wirekitEventCalendar(config = {}) {
         // property no scope declares on the outermost scope around the component.
         _visibility: null,
 
-        events: Array.isArray(config.events) ? config.events.map((e) => ({ ...e })) : [],
-        // Day-level markers (holidays / working days / notes) — a SEPARATE dimension
-        // from timed events. `date` is parsed date-only at LOCAL midnight (slice to
-        // 10 chars + 'T00:00:00') so a YYYY-MM-DD string never drifts a day across a
-        // timezone boundary. `type` is clamped to the three known kinds; `blocked`
-        // is a hard boolean. WireKit owns the visual/semantic state only — the host
-        // enforces any booking logic behind a `blocked` day.
-        dayMarkers: Array.isArray(config.dayMarkers) ? config.dayMarkers.map((m) => ({
-            label: m.label || '',
-            type: ['holiday', 'working', 'note'].includes(m.type) ? m.type : 'holiday',
-            blocked: !!m.blocked,
-            _date: new Date(String(m.date).slice(0, 10) + 'T00:00:00'),
-        })) : [],
+        events: Array.isArray(config.events) ? intakeEvents(config.events) : [],
+        // Day-level markers; see intakeMarkers().
+        dayMarkers: Array.isArray(config.dayMarkers) ? intakeMarkers(config.dayMarkers) : [],
+        // The observers that follow the server's events, markers, view and date; see init().
+        // Disconnected in destroy().
+        _stopServerSync: null,
         view: config.view || 'month',
         weekStartsOn: Number.isInteger(config.weekStartsOn) ? config.weekStartsOn : 1,
         focusedDate: config.date ? parseDay(config.date) : new Date(),
@@ -151,6 +172,72 @@ export default function wirekitEventCalendar(config = {}) {
         _withNamesText: config.withNamesText || 'with :names',
 
         init() {
+            // The events, the day markers, the view and the date reach this component on
+            // attributes of the root rather than in `x-data`, so that attribute renders the same
+            // on every update. A morph that changed it would have Alpine reset the component to
+            // the new expression and initialize it again: a reader on another week was sent back
+            // to the one the calendar opened on whenever the server changed an event. Read here,
+            // followed below; values passed in `config`, as by a factory built outside Blade,
+            // come first. `$root` is checked rather than assumed: a test builds this factory with
+            // a stub that has no `getAttribute`.
+            const root = this.$root;
+            const attribute = (name) => (typeof root?.getAttribute === 'function' ? root.getAttribute(name) : null);
+
+            if (config.events === undefined) {
+                const events = jsonValue(attribute(EVENTS_ATTRIBUTE));
+
+                if (Array.isArray(events)) {
+                    this.events = intakeEvents(events);
+                }
+            }
+
+            if (config.dayMarkers === undefined) {
+                const markers = jsonValue(attribute(MARKERS_ATTRIBUTE));
+
+                if (Array.isArray(markers)) {
+                    this.dayMarkers = intakeMarkers(markers);
+                }
+            }
+
+            if (config.view === undefined && attribute(VIEW_ATTRIBUTE)) {
+                this.view = attribute(VIEW_ATTRIBUTE);
+            }
+
+            if (config.date === undefined && attribute(DATE_ATTRIBUTE)) {
+                this.focusedDate = parseDay(attribute(DATE_ATTRIBUTE));
+            }
+
+            // What the server changes reaches the calendar, and what the reader did meanwhile
+            // stays: the week they moved to, the day they opened, the categories they hid. A view
+            // equal to the one on screen, such as the reader's own switch coming back from the
+            // server, needs nothing done.
+            this._stopServerSync = [
+                observeServerValue(root, (raw) => {
+                    const events = jsonValue(raw);
+
+                    if (Array.isArray(events)) {
+                        this.events = intakeEvents(events);
+                    }
+                }, EVENTS_ATTRIBUTE),
+                observeServerValue(root, (raw) => {
+                    const markers = jsonValue(raw);
+
+                    if (Array.isArray(markers)) {
+                        this.dayMarkers = intakeMarkers(markers);
+                    }
+                }, MARKERS_ATTRIBUTE),
+                observeServerValue(root, (view) => {
+                    if (view && view !== this.view) {
+                        this.view = view;
+                    }
+                }, VIEW_ATTRIBUTE),
+                observeServerValue(root, (date) => {
+                    if (date) {
+                        this.focusedDate = parseDay(date);
+                    }
+                }, DATE_ATTRIBUTE),
+            ];
+
             this._startClock();
 
             /*
@@ -186,6 +273,9 @@ export default function wirekitEventCalendar(config = {}) {
             }
         },
         destroy() {
+            this._stopServerSync?.forEach((stop) => stop());
+            this._stopServerSync = null;
+
             this._visibility?.stop();
             this._visibility = null;
 
@@ -727,7 +817,42 @@ export default function wirekitEventCalendar(config = {}) {
                 ? [target]
                 : Array.from(target.querySelectorAll('.truncate'));
             // +1 tolerates sub-pixel rounding so an exactly-fitting line never tips.
-            return els.some((el) => el.scrollWidth > el.clientWidth + 1);
+            if (els.some((el) => el.scrollWidth > el.clientWidth + 1)) {
+                return true;
+            }
+
+            // A time-grid block takes its height from the event's length, not from its text. Once a
+            // reader enlarges line height or letter spacing (WCAG 1.4.12), its last line, the time,
+            // runs past the bottom edge, and a time with a descender ("p.m.", "μ.μ.") loses it.
+            return this._clipsItsLastLine(target);
+        },
+
+        _clipsItsLastLine(target) {
+            const last = target.lastElementChild;
+
+            if (!last || typeof target.getBoundingClientRect !== 'function') {
+                return false;
+            }
+
+            // The clip edge is the bottom of the padding box. `scrollHeight` would report an
+            // overflow at the default spacing too, since it counts the bottom padding, above
+            // which the last line ends with room to spare.
+            const clipEdge = target.getBoundingClientRect().top + target.clientTop + target.clientHeight;
+
+            if (!(last.getBoundingClientRect().bottom > clipEdge + 1)) {
+                return false;
+            }
+
+            // A line that runs past a box that does not clip it is still on screen.
+            const overflowY = typeof getComputedStyle === 'function' ? getComputedStyle(target).overflowY : 'hidden';
+
+            return overflowY === 'hidden' || overflowY === 'clip';
+        },
+
+        // What a time-grid block shows, as one line for the shared tip: the title, then the time
+        // under it, joined the way eventLabel() joins them.
+        blockTip(b) {
+            return `${b.event.title}, ${b.timeLabel}`;
         },
         async tipShow(e) {
             const target = e.target && typeof e.target.closest === 'function'

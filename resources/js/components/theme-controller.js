@@ -38,6 +38,9 @@ export default function wirekitThemeController(config = {}) {
         fixedReason: '',
         // What a screen reader hears while the page fixes the mode and names no reason.
         defaultFixedReason: config.fixedReason || 'This page sets the mode.',
+        // The menu trigger's name is built from these two; see triggerName.
+        controlName: typeof config.name === 'string' ? config.name : '',
+        optionLabels: config.optionLabels || {},
         _media: null,
         _onSystemChange: null,
         _onPeerChange: null,
@@ -134,6 +137,19 @@ export default function wirekitThemeController(config = {}) {
         /** The mode the control shows as on: the page's while it fixes one, the reader's otherwise. */
         get mode() {
             return this.fixed ?? this.theme;
+        },
+
+        /**
+         * The menu trigger's accessible name: what the control is for, then the mode it shows.
+         *
+         * The mode is the only text that trigger shows, so it is what a speech user says, and the
+         * name has to contain it (WCAG 2.5.3). A name of the control alone also kept the mode from
+         * a screen reader, since a name replaces the content it would otherwise be read from.
+         */
+        get triggerName() {
+            const shown = this.optionLabels[this.mode] ?? this.mode;
+
+            return this.controlName !== '' ? `${this.controlName}, ${shown}` : shown;
         },
 
         /** Why the control changes nothing, while the page fixes the mode; empty otherwise. */

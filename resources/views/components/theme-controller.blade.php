@@ -123,7 +123,7 @@
 @endphp
 
 <div
-    x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }}, fixedReason: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::This page sets the mode.')) }} })"
+    x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }}, fixedReason: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::This page sets the mode.')) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($label) }}, optionLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from($optionLabels) }} })"
     data-wk-theme-controller
     data-variant="{{ $variant }}"
     {{ $attributes->class([$classes]) }}
@@ -191,9 +191,11 @@
                  sat here doing nothing while an Alpine :class binding quietly did
                  the work. One mechanism, in the place that can actually see the
                  checkbox. --}}
-            {{-- The track is painted as the toggle's is: a fill in the border color and an edge in
-                 the strong border color, which carries the 3:1 a control's boundary needs (WCAG
-                 1.4.11); the muted fill it had stood at 1.09:1 against a light page. The edge is an
+            {{-- The track is painted as the toggle's is: filled in the strong border color, which
+                 carries the 3:1 a control's boundary needs against the page (WCAG 1.4.11), and the
+                 3:1 the knob needs against the track it sits on, since the knob is what shows the
+                 state. In the plain border color the knob stood at 1.3:1, and the muted fill before
+                 that left the track at 1.09:1 against a light page. The edge is an
                  inset ring rather than a border because the knob is a child of the track here, and a
                  border would shrink the box it is placed in, so it would sit against the bottom and
                  the end. The inset ring takes no room and leaves the outer focus ring alone.
@@ -203,7 +205,7 @@
                  box beside the hidden input rather than on the label, as checkbox and radio do. --}}
             <span
                 aria-hidden="true"
-                class="wk-theme-switch-track wk-choice-frame wk-touch-target relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-border)] inset-ring-[length:var(--border-wk-width)] inset-ring-[var(--color-wk-border-strong)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-checked:inset-ring-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
+                class="wk-theme-switch-track wk-choice-frame wk-touch-target relative h-6 w-11 shrink-0 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-border-strong)] inset-ring-[length:var(--border-wk-width)] inset-ring-[var(--color-wk-border-strong)] transition-colors duration-[var(--transition-wk-duration)] peer-checked:bg-[var(--color-wk-accent)] peer-checked:inset-ring-[var(--color-wk-accent)] peer-focus-visible:ring-[length:var(--ring-wk-width)] peer-focus-visible:ring-[var(--color-wk-ring)] peer-aria-disabled:opacity-[var(--opacity-wk-disabled)]"
             >
                 <span class="wk-theme-switch-knob absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
             </span>
@@ -271,14 +273,18 @@
                      server-rendered document, which is what a screen reader meets first and
                      what any static analysis sees.
 
-                     Naming it after the CONTROL rather than the current mode is deliberate:
-                     the mode text inside is a VALUE, the way a `<select>` shows its current
-                     option, and the thing a reader needs on arrival is what the control is
-                     for. --}}
-                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle :aria-label="$label" x-bind:aria-describedby="fixed ? {{ $fixedReasonRef }} : null">
+                     Once Alpine runs, the name is the CONTROL's followed by the mode it shows
+                     (`triggerName`). The control comes first because that is what a reader
+                     needs on arrival, and the mode is a VALUE, the way a `<select>` shows its
+                     current option. But a select has a visible label beside it and announces
+                     its value; this button shows the mode and nothing else, so the mode is
+                     what a speech user says, and a name without it matches nothing (WCAG
+                     2.5.3). The names still come from the locale file, through the factory's
+                     config. --}}
+                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle :aria-label="$label" x-bind:aria-label="triggerName" x-bind:aria-describedby="fixed ? {{ $fixedReasonRef }} : null">
                     @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
                         <span x-show="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }}" x-cloak class="inline-flex items-center gap-[var(--gap-wk-sm)]">
-                            <x-wirekit::icon :name="$modeIcon" class="h-4 w-4" />
+                            <x-wirekit::icon :name="$modeIcon" size="sm" />
                             <span @class(['sr-only' => $hideLabel])>{{ $optionLabels[$modeValue] ?? $modeValue }}</span>
                         </span>
                     @endforeach

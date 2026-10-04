@@ -1,3 +1,4 @@
+!
 "Hoverable"
 "false",
 $as
@@ -14,6 +15,7 @@ $focusableTrigger
 $offset
 $scope);
 $slot
+$slot)
 $surface
 $surface,
 $text
@@ -124,7 +126,6 @@ CALLER's
 CAPTURE
 CallerRef::onRoot()
 Declared
-Default
 Deliberately
 Describing
 Dev-only
@@ -146,8 +147,6 @@ KEY,
 Left
 Livewire
 MORPH
-Make
-NON-interactive
 NOT
 No
 Normalized
@@ -161,7 +160,6 @@ SHAPE
 SIBLING.
 STATIC
 SWAPS:
-Set
 So
 Stable
 Switch
@@ -179,6 +177,7 @@ WAS
 WCAG
 WRAPPER,
 What
+Whether
 WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
 WireKit::validateProp('tooltip',
@@ -191,6 +190,7 @@ Without
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\SlotControl::reachable((string)
 ])
 ])),
 `$as`
@@ -230,6 +230,7 @@ Without
 `mouseenter`
 `mouseenter`/`mouseleave`
 `mouseleave`
+`null`,
 `offset`
 `open`
 `open`,
@@ -242,6 +243,7 @@ Without
 `swapElements`
 `tagName()`
 `this.$refs.tooltip`
+`true`
 `window.open`,
 `wire:id`,
 `wire:key`,
@@ -265,6 +267,7 @@ against
 agree
 all.
 allowlist,
+alone
 alone.
 already
 also
@@ -282,6 +285,7 @@ appear
 appears
 applies
 are
+are.
 area's
 aria-describedby
 aria-describedby="{{
@@ -302,7 +306,6 @@ attribute
 attributes
 auto-derived
 auto-invokes
-avoid
 back.
 background
 background,
@@ -332,12 +335,10 @@ bound
 box
 brand
 bubble's
-bubbles
 bug
 but
 button
 button,
-button/link)
 by
 call
 caller
@@ -358,6 +359,7 @@ check
 checks
 child
 children
+class="rounded-[var(--radius-wk-sm)]
 class="{{
 classes
 classic
@@ -374,7 +376,6 @@ color
 colors
 colors,
 come
-common
 compete
 compiles
 component
@@ -396,7 +397,6 @@ costs
 could
 counterpart,
 counterpart:
-covers
 crossed
 cut
 data-wk-prose-skip
@@ -406,6 +406,7 @@ data-wk-tooltip-surface="elevated"
 dead.
 debug
 default
+default,
 delayHide:
 delayShow:
 deliberately
@@ -424,7 +425,6 @@ do
 document
 documented
 does
-double
 drawer
 duration-100"
 duration-75"
@@ -456,7 +456,6 @@ expandos.
 expression
 factory,
 fade="…">`,
-false
 false);
 false,
 feature
@@ -472,6 +471,9 @@ flips
 flow.
 focus
 focus,
+focus-visible:outline-hidden
+focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]"
 focus-within
 focusable
 focused,
@@ -541,7 +543,6 @@ inserts
 inside
 instead,
 interaction
-interactive
 interpolated
 into
 invalid
@@ -560,10 +561,9 @@ itself,
 just
 keep
 keeps
+kept
 key
 keyboard
-keyboard,
-keyboard-focusable
 knows
 lands
 later
@@ -615,6 +615,7 @@ must
 n/a
 name
 name,
+name.
 named
 names
 names.
@@ -635,6 +636,7 @@ nor
 not
 nothing
 nothing.
+null
 null,
 object,
 of
@@ -642,6 +644,7 @@ off
 offset:
 omission.
 on
+on,
 on.
 on:
 once
@@ -660,6 +663,7 @@ operation
 opposite
 optimistic-ui:
 or
+order
 other
 other.
 otherwise
@@ -721,6 +725,7 @@ rather
 re-renders.
 re-thrown
 reachable
+reaches
 read
 reader
 reading
@@ -764,6 +769,7 @@ scope
 scope,
 screen
 scroll
+second
 see
 sees
 sees.
@@ -785,15 +791,14 @@ site
 sits
 sizes
 slot
-slot's
 slot.
+slot:
 small
 so
 somebody
 something
 space
 span
-span).
 spelling,
 stack
 stacking-context
@@ -819,7 +824,6 @@ surfaces
 survive
 sweep
 tab
-tab-stop
 tabbed
 tabindex="0"
 tag
@@ -842,6 +846,7 @@ theme.
 then
 there
 therefore
+they
 things,
 this
 tick
@@ -866,7 +871,6 @@ travel
 trigger
 trigger's
 trigger,
-true
 true);
 true,
 truthy
@@ -919,6 +923,7 @@ window,
 wire:key="wk-tooltip-panel"
 with
 without
+word)
 working
 works
 works.

@@ -17,6 +17,10 @@
     // including their CSS.
     'as' => 'a',
     'active' => false,
+    // What the active entry is to a screen reader: `page` for the page itself, the default,
+    // `location` for an entry that leads the section the page lies in, `true` for neither.
+    // The highlight is the same for all three.
+    'current' => 'page',
     // The module's icon. A bare name string ("chart-bar") resolves through the WireKit
     // icon system; a <x-slot:icon> or inline markup renders verbatim. Consistent with
     // sidebar.item / dropdown.item / command-palette.item.
@@ -47,6 +51,12 @@
     // digits have no room in a 3.5rem rail, but an unread signal must not simply vanish
     // where it matters most. The count stays in the accessible name in BOTH states.
     'badge' => null,
+    // What the counter counts, as a sentence: "3 vouchers wait for review". A dot says only that
+    // something waits, and digits beside a visible name say how many but never of what. With it
+    // the module carries a tooltip with the sentence in every mode, under the name where the name
+    // is a tooltip as well, and the sentence becomes the link's description for a screen reader,
+    // so the bare count leaves the name. Ignored without a `badge`.
+    'badgeLabel' => null,
     // Where the tooltip opens. `right` is correct for a rail on the inline-start edge;
     // a right-hand rail wants `left`.
     'placement' => 'right',
@@ -66,8 +76,11 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('app-rail.item', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     $active = BooleanProp::from($active, false);
+    $ariaCurrent = \Pushery\WireKit\WireKit::validateProp('app-rail.item', 'current', (string) $current, ['page', 'location', 'true']);
     $truncate = BooleanProp::from($truncate, false);
 
     // `@aware` hands back the value the PARENT was called with, before that component's
@@ -91,10 +104,21 @@
 
     $labelText = $label !== '' ? $label : \Pushery\WireKit\Support\SlotContent::text($slot);
 
-    // A tooltip is rendered ONLY where the label is not drawn. Beside a visible caption
+    // The counter's sentence, only beside a counter: without one it describes nothing.
+    $badgeSentence = filled($badge) && filled($badgeLabel) ? (string) $badgeLabel : null;
+    $badgeSentenceId = $badgeSentence !== null ? \Pushery\WireKit\Support\DomId::unique(null, 'wk-rail-badge-') : null;
+
+    // The link's description: a caller's own first, then the counter's sentence. Taken out of the
+    // bag so the attribute is written once, by the partial.
+    $linkDescribedBy = trim(implode(' ', array_filter([(string) $attributes->get('aria-describedby', ''), (string) $badgeSentenceId])));
+    $attributes = $attributes->except('aria-describedby');
+
+    // A NAME tooltip is rendered ONLY where the label is not drawn. Beside a visible caption
     // it is not merely redundant: it gives the link a second source of the same name,
-    // which a screen-reader user pays for twice.
-    $needsTooltip = $labels === 'tooltip' && $labelText !== '';
+    // which a screen-reader user pays for twice. The counter's sentence is another matter: no
+    // mode draws it, so it has a tooltip wherever it is given.
+    $nameTooltip = $labels === 'tooltip' && $labelText !== '';
+    $needsTooltip = $nameTooltip || $badgeSentence !== null;
 
     $classes = WireKit::resolveClasses('app-rail.item', 'base', implode(' ', [
         // `relative` is the containing block for both the counter dot and the edge
@@ -302,17 +326,37 @@
      partial: the copy that drifts is always the second one.
 
      `w-full` makes the wrapper fill the rail's column; without it the module's hover
-     target is narrower than the row it appears to occupy. The `block` beside it does not
-     change the display: Tailwind emits `.inline-block` after `.block`, so the tooltip's
-     own `inline-block` wins that tie. `focusable-trigger="false"` because the slot is already an
-     <a> — the default would put a second tab stop in front of every module. --}}
-@if($needsTooltip)
+     target is narrower than the row it appears to occupy. No display class sits beside it:
+     the tooltip keeps its own `inline-block`, and a second one in this attribute would be
+     decided by the stylesheet's order, not by the attribute. `focusable-trigger="false"`
+     because the slot is already an <a> — the default would put a second tab stop in front of
+     every module. --}}
+@if($badgeSentence !== null)
+    {{-- The counter's sentence, in a tooltip that never goes quiet: no mode draws it. Where the
+         name is a tooltip too, the name is the first line while the names are hidden, and goes
+         once they show (`expanded` is the rail's live state, as in the branch below).
+
+         `describes` is off in all three branches. The tooltip's text is the link's name, which a
+         description would read a second time, or the sentence, which is the link's description
+         already through the element after the link. That element sits outside the link, because
+         text inside it would join the link's name. --}}
+    <x-wirekit::tooltip :placement="$placement" focusable-trigger="false" :describes="false" class="w-full">
+        <x-slot:content>
+            @if($nameTooltip)
+                <span class="block" x-show="! expanded">{{ $labelText }}</span>
+            @endif
+            <span class="block">{{ $badgeSentence }}</span>
+        </x-slot:content>
+        @include('wirekit::components.partials.app-rail-link')
+        <span id="{{ $badgeSentenceId }}" hidden>{{ $badgeSentence }}</span>
+    </x-wirekit::tooltip>
+@elseif($needsTooltip)
     {{-- The tooltip must go quiet the moment the label becomes visible, so `disabled` is BOUND
          to live state rather than decided at render: the tooltip reads the attribute at trigger
          time. Every rail can show its names at runtime, an expandable one on its toggle and any
          rail in a drawer it has to itself, and `expanded` is in scope because the rail's Alpine
          component wraps this subtree. --}}
-    <x-wirekit::tooltip :text="$labelText" :placement="$placement" focusable-trigger="false" class="block w-full" x-bind:data-wk-tooltip-disabled="expanded">@include('wirekit::components.partials.app-rail-link')</x-wirekit::tooltip>
+    <x-wirekit::tooltip :text="$labelText" :placement="$placement" focusable-trigger="false" :describes="false" class="w-full" x-bind:data-wk-tooltip-disabled="expanded">@include('wirekit::components.partials.app-rail-link')</x-wirekit::tooltip>
 @else
     @include('wirekit::components.partials.app-rail-link')
 @endif

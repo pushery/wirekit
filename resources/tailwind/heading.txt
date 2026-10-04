@@ -107,7 +107,6 @@ $trackingClasses,
 5xl
 6
 :
-</{{
 <{{
 =
 ===
@@ -154,8 +153,11 @@ WireKit::validateProp('heading',
 `as`
 `e()`
 `level="2
+`pre-line`
+`pre-wrap`
 `prop="false"`
 `text`,
+`white-space`
 a
 accepted
 action
@@ -173,6 +175,8 @@ anything
 anywhere
 apart:
 arbitrary
+are
+around
 arrived
 as
 as,
@@ -186,9 +190,12 @@ because
 become
 below.
 block,
+both
 break
+breaks
 browser
 call
+caller
 can
 cannot
 canonical
@@ -203,6 +210,7 @@ compiles
 component's
 concatenated
 container
+content,
 copy
 could
 counts
@@ -216,8 +224,10 @@ drift
 each
 early.
 element
+element's
 element,
 else;
+empty
 escapes
 event
 exist.
@@ -227,6 +237,7 @@ external
 false);
 false,
 feature
+first
 flags
 flex
 flips
@@ -240,6 +251,8 @@ hero
 implode('
 imports
 in
+indent
+indented
 injection
 inside
 instead.
@@ -248,10 +261,12 @@ interactive
 into
 is
 it
+keeps
 kit
 later
 lets
 level
+line
 link
 list
 literal
@@ -295,6 +310,7 @@ out
 outlier).
 overflow-wrap
 own
+part
 point
 presentational
 prod).
@@ -315,6 +331,7 @@ row.
 rules,
 run
 same
+saw
 scale
 scale.
 set
@@ -322,7 +339,9 @@ ship
 shown
 silently.
 site
+sits
 size
+slot
 so
 somebody
 space
@@ -335,12 +354,14 @@ systems.
 tag
 tag,
 tagName()
+tags.
 template,
 tend
 text
 than
 that
 the
+them
 there
 they
 this
@@ -356,6 +377,7 @@ unbound
 unbroken
 unknown
 use
+user's
 uses
 utilities,
 value
@@ -366,6 +388,7 @@ what
 when
 where
 which
+who
 whose
 width,
 with
@@ -379,7 +402,9 @@ wrap:
 |
 };
 }}
+}}</{{
 }}>
+}}>{{
 —
 …>`,
 →

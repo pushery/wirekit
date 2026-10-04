@@ -69,15 +69,16 @@
     };
 
     // Fill color changes with semantic intent — always via design tokens.
-    // Mapping mirrors badge's intent palette: info shares the accent fill (info
-    // has no surface token, and --color-wk-info is the tone the charts and the flash tint read),
-    // neutral uses the muted text token for a low-emphasis gray bar.
+    // Mapping mirrors badge's intent palette: info fills with --color-wk-info-tone, which
+    // aliases the accent until an application gives info a hue of its own, and neutral uses the
+    // muted text token for a low-emphasis gray bar.
     $fillColor = match ($variantValue) {
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',
         'danger' => 'bg-[var(--color-wk-danger)]',
         'neutral' => 'bg-[var(--color-wk-text-muted)]',
-        default => 'bg-[var(--color-wk-accent)]', // primary + accent + info
+        'info' => 'bg-[var(--color-wk-info-tone)]',
+        default => 'bg-[var(--color-wk-accent)]', // primary + accent
     };
 
     // Optional fill motion (determinate only — the indeterminate bar already
@@ -115,7 +116,7 @@
     // applied to the role="progressbar" element (the ARIA contract lives
     // there, not on the outer wrapper). Without this, axe-core flags the
     // progressbar as missing an accessible name.
-    $ariaLabelAttr = $attributes->get('aria-label');
+    $ariaLabelAttr = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $ariaLabelledbyAttr = $attributes->get('aria-labelledby');
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp

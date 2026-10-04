@@ -109,8 +109,13 @@
         'grid place-items-center',
         'cursor-grab active:cursor-grabbing',
         'focus-visible:outline-hidden',
+        // The handle sits on the photo, and a one-color ring vanishes wherever the photo has its
+        // color. The offset puts a band of the page's own color between the handle and the ring,
+        // so on any picture one of the two bands stands out.
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
+        'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         'border border-[var(--color-wk-border)]',
     ]), $scope);
 

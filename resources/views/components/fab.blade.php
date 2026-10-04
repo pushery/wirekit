@@ -92,7 +92,7 @@
              control has to be able to read its size, and `wk-fab-clearance` does exactly that.
              With a literal here the speed dial's trigger would stay 56px on every viewport
              while the standalone button steps down on a phone. --}}
-        class="flex h-[var(--size-wk-fab)] w-[var(--size-wk-fab)] cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] shadow-[var(--shadow-wk-lg)] transition-transform duration-[var(--transition-wk-duration)] hover:brightness-110 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2"
+        class="flex h-[var(--size-wk-fab)] w-[var(--size-wk-fab)] cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] shadow-[var(--shadow-wk-lg)] transition-transform duration-[var(--transition-wk-duration)] hover:brightness-110 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
     >
         {{-- The plus turns into a close mark. Both icons stay in the DOM so the
              rotate can cross between them, which means the inactive one must be

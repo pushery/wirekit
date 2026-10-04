@@ -35,7 +35,8 @@
         'warning' => 'var(--color-wk-warning)',
         'danger' => 'var(--color-wk-danger)',
         'neutral' => 'var(--color-wk-text-muted)',
-        default => 'var(--color-wk-accent)', // primary + accent + info
+        'info' => 'var(--color-wk-info-tone)',
+        default => 'var(--color-wk-accent)', // primary + accent
     };
 
     $classes = WireKit::resolveClasses('stage-card', 'base', implode(' ', [
@@ -43,7 +44,7 @@
         'rounded-[var(--radius-wk-lg)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
-        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
+        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 

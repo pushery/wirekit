@@ -37,6 +37,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('card', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // `$as` ends up interpolated into the opening tag below (through `$tag`), and Blade's
     // escaping does not make that safe: `e()` escapes neither a space nor an `=`, so
@@ -144,6 +146,18 @@
         },
     }, $scope);
 
+    // A flat card's background is its variant's, so the base block's background color comes
+    // out. Beside it the stylesheet's order decided, and the flat card only came out right
+    // because `--color-wk-bg-subtle` sorts after `--color-wk-bg-elevated` — the same ordering
+    // nobody controls that the comment above describes for the border. Read from the RESOLVED
+    // base block, so a personalized base loses its background color on a flat card too.
+    if ($variant === 'flat') {
+        $baseClasses = \Pushery\WireKit\Support\UtilityClasses::without(
+            $baseClasses,
+            \Pushery\WireKit\Support\UtilityClasses::BACKGROUND_COLOR,
+        );
+    }
+
     // The interactive treatment is keyed on whether the card DOES something when it is
     // clicked, not on whether it happens to render an `<a>`. Keyed on `$href` alone,
     // `as="button"` would get the card frame and no affordance at all, so a card that
@@ -201,10 +215,20 @@
         default => '',
     };
 
-    $interactiveClasses = trim(
-        ($isInteractive ? 'hover:shadow-[var(--shadow-wk-lg)] cursor-pointer ' : '')
-        .$cardLayoutClass
-    );
+    // The kit's focus ring on a card that acts, standing off the card like a button's, rather than
+    // the browser's, which follows neither the ring tokens nor a preset. A match arm for the drift
+    // auditor, as with the overflow arm above, which already draws the ring inside the box when
+    // the card scrolls.
+    $focusRingClass = match (true) {
+        $isInteractive && $overflow !== 'auto' => 'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
+        default => '',
+    };
+
+    $interactiveClasses = implode(' ', array_filter([
+        $isInteractive ? 'hover:shadow-[var(--shadow-wk-lg)] cursor-pointer' : '',
+        $cardLayoutClass,
+        $focusRingClass,
+    ]));
 
     // Render as <a> when href given, otherwise use $as tag (default: div)
     $tag = $href ? 'a' : $as;

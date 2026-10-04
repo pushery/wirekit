@@ -11,6 +11,10 @@ import { prefersReducedMotion } from '../utils/motion.js';
 const TEXT_ENTRY = 'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable]:not([contenteditable="false"])';
 const FOCUSABLE = `${TEXT_ENTRY}, button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])`;
 
+/** Whether an element already has a name: its own ARIA, or a `<label>` that labels it. */
+const hasOwnName = (el) => ['aria-label', 'aria-labelledby'].some((attr) => (el.getAttribute(attr) ?? '').trim() !== '')
+    || (el.labels?.length ?? 0) > 0;
+
 /**
  * WireKit Inline Edit Alpine Component.
  *
@@ -24,7 +28,8 @@ const FOCUSABLE = `${TEXT_ENTRY}, button:not([disabled]), a[href], [tabindex]:no
  * Resources held: `_previous` (a value snapshot, no listener), `_exclusiveHandler`
  * (window listener for the exclusive-open protocol), `_saveTimeout` (the
  * no-answer fallback), `_focusFrame` (a pending animation frame that places focus
- * once the editor is revealed), `_pointerDownAt` (drag-threshold bookkeeping).
+ * once the editor is revealed), `_pointerDownAt` (drag-threshold bookkeeping),
+ * `_fieldLabel` (the press and click listeners on a field's label, outside the root).
  * Every one of them is released in destroy(); every callback that touches one
  * null-guards first, because a Livewire morph can tear the host down while a
  * save is still in flight.
@@ -34,6 +39,8 @@ const FOCUSABLE = `${TEXT_ENTRY}, button:not([disabled]), a[href], [tabindex]:no
  * @param {string} config.value           Initial value
  * @param {boolean} config.exclusive      Close other open editors when this opens
  * @param {number} config.saveTimeout     ms to wait for a save answer before giving up
+ * @param {string} config.fieldLabel      id of a field's label that names this control
+ * @param {boolean} config.fieldLabelFocuses  whether a click on it focuses the slot's control
  */
 export default function wirekitInlineEdit(config = {}) {
     return {
@@ -52,6 +59,9 @@ export default function wirekitInlineEdit(config = {}) {
         _saveTimeout: null,
         _focusFrame: null,
         _pointerDownAt: null,
+        _fieldLabel: null,
+        _onFieldLabelDown: null,
+        _onFieldLabelClick: null,
 
         /**
          * Snapshot a value so cancel has something to restore.
@@ -151,6 +161,24 @@ export default function wirekitInlineEdit(config = {}) {
                 event.returnValue = '';
             };
             window.addEventListener('beforeunload', this._beforeUnload);
+
+            // A field's label sits outside this component, where its `x-on` cannot reach, so the
+            // press on it, and on the slot path the click, are wired here: the two handlers this
+            // component's own label carries.
+            const fieldLabel = config.fieldLabel && typeof document !== 'undefined' && typeof document.getElementById === 'function'
+                ? document.getElementById(config.fieldLabel)
+                : null;
+
+            if (fieldLabel) {
+                this._fieldLabel = fieldLabel;
+                this._onFieldLabelDown = (event) => this.keepFocusOnLabel(event);
+                fieldLabel.addEventListener('mousedown', this._onFieldLabelDown);
+
+                if (config.fieldLabelFocuses === true) {
+                    this._onFieldLabelClick = () => this.focusFromLabel();
+                    fieldLabel.addEventListener('click', this._onFieldLabelClick);
+                }
+            }
         },
 
         destroy() {
@@ -171,6 +199,15 @@ export default function wirekitInlineEdit(config = {}) {
             }
             this._focusFrame = null;
             this._pointerDownAt = null;
+            if (this._fieldLabel) {
+                this._fieldLabel.removeEventListener('mousedown', this._onFieldLabelDown);
+                if (this._onFieldLabelClick) {
+                    this._fieldLabel.removeEventListener('click', this._onFieldLabelClick);
+                }
+                this._fieldLabel = null;
+            }
+            this._onFieldLabelDown = null;
+            this._onFieldLabelClick = null;
         },
 
         // ── Opening ─────────────────────────────────────────────────────────
@@ -254,11 +291,49 @@ export default function wirekitInlineEdit(config = {}) {
                 target.setAttribute('aria-describedby', config.describedBy);
             }
 
+            // The visible label names the control, as its `for` does on the built-in path.
+            // A control that names itself keeps its name, the way a caller's `aria-label`
+            // wins over the label there: `aria-labelledby` would outrank any name it has.
+            if (config.labelledBy && !hasOwnName(target)) {
+                target.setAttribute('aria-labelledby', config.labelledBy);
+            }
+
             target.focus();
             // Select rather than place a caret: the common intent is to
             // replace a short value, and a caret at position 0 makes the
             // user clear it by hand first.
             target.select?.();
+        },
+
+        /**
+         * A press on the label of an open editor keeps the focus where it is.
+         *
+         * WebKit moves focus to the body when a label is pressed, before the click that would
+         * put it back, and `onBlur()` then finds the focus outside the component and closes the
+         * editor with the draft discarded. Chromium keeps the focus on the field its label
+         * names. The click still runs and focuses the field, as a click on a label does.
+         */
+        keepFocusOnLabel(event) {
+            if (this.editing) {
+                event.preventDefault();
+            }
+        },
+
+        /**
+         * A click on the label of an `editor` slot, which has no `for` to do this.
+         *
+         * Focus moves only while the editor is open: in read mode the control is hidden,
+         * and a label does nothing for a hidden control. The text is not selected, which
+         * is what a click on a label does to a field.
+         */
+        focusFromLabel() {
+            if (!this.editing) return;
+
+            const control = this._control();
+
+            if (control) {
+                this._focusTarget(control).focus();
+            }
         },
 
         /**

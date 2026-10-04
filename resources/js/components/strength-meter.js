@@ -24,6 +24,7 @@
  */
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { clampStrength, strengthBarColor } from '../utils/strength.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 export default function wirekitStrengthMeter(config = {}) {
     const max = Math.max(1, Math.round(Number(config.max) || 4));
@@ -58,7 +59,7 @@ export default function wirekitStrengthMeter(config = {}) {
                 }
             }
 
-            this.$watch('steps', () => {
+            watchCurrent(this, 'steps', () => {
                 if (this._settled) {
                     this.spoken = this.announcement;
                 }

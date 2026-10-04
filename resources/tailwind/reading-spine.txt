@@ -75,7 +75,7 @@ $val
 '6rem',
 '<css-selector-string>']
 '@focusin',
-'@focusout']);
+'@focusout',
 '@mouseleave',
 'absolute
 'always';
@@ -130,6 +130,7 @@ $val
 'true'
 'wk-reading-spine',
 'wk-scrollbar
+'x-on:keydown.escape.window.capture']);
 'xl'
 (!
 ($boundary
@@ -268,7 +269,7 @@ $val
 @endif
 @endphp
 @focusin="expandOnFocus()"
-@focusout="collapseOnFocus()"
+@focusout="collapseOnFocus($event)"
 @if
 @mouseenter="expandOnHover()"
 @mouseleave="collapseOnHover()"
@@ -1297,6 +1298,7 @@ x-data
 x-data="wirekitReadingSpine({{
 x-for="item
 x-init
+x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-show="items.length
 x-show="matchesFilter(item)"
 x-text="item.label"

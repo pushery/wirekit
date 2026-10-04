@@ -1,3 +1,6 @@
+import { watchModelEvents } from '../utils/model-events.js';
+import { watchCurrent } from '../utils/watch-current.js';
+
 /**
  * Phone field — a country and a number that together bind one E.164 value.
  *
@@ -19,6 +22,11 @@
  *   - It never decides whether a number is reachable. That needs per-region length data this
  *     package does not carry.
  *
+ * Lifecycle resources held on `this`, released in destroy():
+ *   - _modelEvents — `change` and `blur` on the bound input for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that input alone (utils/model-events.js). The field is
+ *     one text field to them: `change` when the reader leaves it after an edit, then `blur`.
+ *
  * @param {Object} config
  * @param {string} config.country   ISO 3166-1 alpha-2 code the field starts on
  * @param {Object} config.regions   code -> { dial: number, trunk: string|null } for every offered region
@@ -32,6 +40,8 @@ export default function wirekitPhone(config = {}) {
         national: '',
 
         _regions: config.regions && typeof config.regions === 'object' ? config.regions : {},
+
+        _modelEvents: null,
 
         init() {
             // An incoming E.164 value is split back into a country and a national part, so a
@@ -54,12 +64,19 @@ export default function wirekitPhone(config = {}) {
                 }
             }
 
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.bound);
+
             // Armed LAST, and the `else` above exists for it. The two assignments in that branch
             // are the round-trip split rather than a reader's choice: a watcher armed before them
             // fires on page load, emitting an input event and moving focus on a page nobody has
             // touched. A `return` in that branch would skip this line on exactly the values that
             // need it most -- an editable saved record.
-            this.$watch('country', () => this.afterCountryChange());
+            watchCurrent(this, 'country', () => this.afterCountryChange());
+        },
+
+        destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
         },
 
         /**

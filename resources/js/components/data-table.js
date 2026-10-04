@@ -21,9 +21,11 @@
  * and the visible keys, so an application can keep the choice with the reader's account and
  * hand it back through `hidden` on the next visit.
  *
- * Lifecycle resources held on `this`: `_unhookServerState`, the Livewire commit hook, and
- * `_expectingTimer`, the bound on waiting for a round trip to start; both are released in
- * destroy(). No observers or rAF loops.
+ * Lifecycle resources held on `this`: `_unhookServerState`, the Livewire commit hook,
+ * `_expectingTimer`, the bound on waiting for a round trip to start, and `_modelEvents`, which
+ * fires `change` and `blur` on the selection bridge for `wire:model.change` and
+ * `wire:model.blur` (utils/model-events.js), carrying the list as `input` does; all three are
+ * released in destroy(). No observers or rAF loops.
  *
  * @param {Object} config
  * @param {Array}  config.rows    - row objects, used when there is no state carrier
@@ -57,6 +59,7 @@ import { pluralize } from '../utils/plural.js';
 import { safeHref } from '../utils/safe-href.js';
 import { sortCollator } from '../utils/sort-collator.js';
 import { foldForSearch } from '../utils/search-fold.js';
+import { watchModelEvents } from '../utils/model-events.js';
 
 export default function wirekitDataTable(config = {}) {
     return {
@@ -111,9 +114,15 @@ export default function wirekitDataTable(config = {}) {
         // A sort or search was just sent out; the next commit of the table's component carries it.
         _expectingServer: false,
         _expectingTimer: null,
+        _modelEvents: null,
 
         init() {
             this._readServerState();
+
+            // The selection travels as a list, like the `input` it already fires.
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.selModel, {
+                detail: () => [...this.selected],
+            });
 
             if (typeof window !== 'undefined' && window.Livewire?.hook) {
                 this._unhookServerState = window.Livewire.hook('commit', ({ component, succeed, fail }) => {
@@ -146,6 +155,8 @@ export default function wirekitDataTable(config = {}) {
         },
 
         destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
             if (this._unhookServerState) {
                 this._unhookServerState();
                 this._unhookServerState = null;
@@ -674,6 +685,9 @@ export default function wirekitDataTable(config = {}) {
                 this.$refs.selModel.value = JSON.stringify(this.selected);
                 this.$refs.selModel.dispatchEvent(new CustomEvent('input', { detail: [...this.selected], bubbles: true }));
             }
+
+            // A row checked or cleared is committed at once, as a checkbox commits.
+            this._modelEvents?.commit();
         },
     };
 }

@@ -42,10 +42,9 @@
     // pointing the other way.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
-    // Validate against the canonical intent set. 'primary' and 'info'
-    // are visual synonyms on alert (both tint with --color-wk-accent: info has
-    // no surface token, and --color-wk-info is the tone the charts and the flash tint read);
-    // 'neutral' is a quiet gray treatment for non-severity-bearing notices.
+    // Validate against the canonical intent set. 'primary' tints with the accent and 'info' with
+    // --color-wk-info-tone, which aliases the accent until an application gives info a hue of
+    // its own; 'neutral' is a quiet gray treatment for non-severity-bearing notices.
     $variantValue = match ($effectiveIntent) {
         'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $effectiveIntent,
         default => WireKit::validateProp('alert', $intentPropName, $effectiveIntent, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
@@ -55,7 +54,7 @@
     $baseClasses = WireKit::resolveClasses('alert', 'base', implode(' ', [
         'relative flex items-start gap-3',
         'px-[var(--padding-wk-x-md)]',
-        'py-[var(--padding-wk-y-md)]',
+        'py-[var(--padding-wk-x-md)]',
         'rounded-[var(--radius-wk-md)]',
         'border-[length:var(--border-wk-width)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -81,10 +80,15 @@
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_10%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-danger)]',
         ],
-        'primary', 'info' => [
+        'primary' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-accent-text)]',
+        ],
+        'info' => [
+            'border' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_35%,var(--color-wk-border))]',
+            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_10%,var(--color-wk-bg-elevated))]',
+            'icon' => 'text-[color:var(--color-wk-info-text)]',
         ],
         'neutral' => [
             'border' => 'border-[var(--color-wk-border)]',
@@ -138,8 +142,9 @@
     @endif
     {{-- role goes through merge(), not ahead of the bag: HTML keeps the FIRST
          occurrence of an attribute, so emitting it before the bag silently beat
-         a caller-supplied role while leaving both in the markup. --}}
-    {{ $attributes->merge(['role' => $role])->class([$baseClasses, $variantColors['border'], $variantColors['bg']]) }}
+         a caller-supplied role while leaving both in the markup. `data-intent`
+         names the intent for a rule of the application's own. --}}
+    {{ $attributes->merge(['role' => $role, 'data-intent' => $variantValue])->class([$baseClasses, $variantColors['border'], $variantColors['bg']]) }}
 >
     {{-- Visually hidden variant prefix for screen readers ("Warning: ...") --}}
     <span class="sr-only">{{ $variantLabel }}:</span>

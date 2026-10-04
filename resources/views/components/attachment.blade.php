@@ -35,6 +35,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('attachment', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
@@ -129,6 +131,13 @@
     // outside it. A link with no actions keeps the whole-card-clickable <a>.
     $splitLink = $isLink && $hasActions;
     $tag = ($isLink && ! $hasActions) ? 'a' : 'div';
+    // An attachment that is a link as a whole draws the kit's focus ring, standing off it like a
+    // button's, rather than the browser's, which follows neither the ring tokens nor a preset. The
+    // split link below draws its own inside the card.
+    $rootRingClass = match ($tag) {
+        'a' => 'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
+        default => '',
+    };
     // Auto-inject rel="noopener noreferrer" when target="_blank". This component
     // takes an href and echoes the caller's bag onto the element that carries it,
     // so the caller's target passed straight through to a bare anchor. The house
@@ -185,7 +194,7 @@
         @endif
     @endunless
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$rootClasses]) }}
+    {{ $attributes->except('rel')->class([$rootClasses, $rootRingClass]) }}
 >
     {{-- Link over the media+name only when there are also actions, so the action
          controls can live outside the anchor. Without actions the whole card is
@@ -214,7 +223,9 @@
             <span data-wk-attachment-meta class="block truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
                 {{ implode(' · ', $descriptionParts) }}
                 @if($stateText)
-                    @if($descriptionParts) · @endif<span data-wk-attachment-state>{{ $stateText }}</span>
+                    {{-- Hidden from assistive technology: the status region at the end of the
+                         card says it, and browse mode would otherwise read it twice. --}}
+                    @if($descriptionParts) · @endif<span data-wk-attachment-state aria-hidden="true">{{ $stateText }}</span>
                 @endif
             </span>
         @endif
@@ -247,4 +258,11 @@
     @if($opensNewTab && ! $hintsNewTabInLabel)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
+
+    {{-- The upload state as a status message (WCAG 4.1.3). The application sets `state`, and a
+         Livewire update changes it in the card without moving the focus, so the change has to
+         reach a screen reader on its own. A live region announces a change of its CONTENT, not
+         its arrival with text already inside, so this one is rendered in every state, empty
+         while idle, and an update only swaps its text. --}}
+    <span role="status" class="sr-only" data-wk-attachment-status>{{ $stateText }}</span>
 </{{ $tag }}>

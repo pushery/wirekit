@@ -145,9 +145,12 @@
     // horizontal stacks them (the panel sits below the tablist).
     $rootClasses = $isVertical ? 'flex gap-[var(--padding-wk-x-lg)] items-start' : '';
 
-    // Panel container — vertical takes the remaining inline space; horizontal pads the top.
+    // Panel container — vertical takes the remaining inline space; horizontal pads the top. The
+    // distance below the tab bar is `--wk-tabs-panel-gap` when a page or a theme sets it, so the
+    // first card under the bar can sit as far from it as two cards sit from each other, and the
+    // panel block stays WireKit's. Unset, it is `--padding-wk-y-md`, resolved where the panel is.
     $panelClasses = WireKit::resolveClasses('tabs', 'panel',
-        $isVertical ? 'flex-1 min-w-0' : 'pt-[var(--padding-wk-y-md)]',
+        $isVertical ? 'flex-1 min-w-0' : 'pt-[var(--wk-tabs-panel-gap,var(--padding-wk-y-md))]',
         $scope);
 
     // Dev-mode warning: tabs are client-only Alpine state — wire:model
@@ -235,7 +238,7 @@
                 class="wk-tab {{ $tabClasses }}"
             >
                 @if($tab['icon'])
-                    <x-wirekit::icon :name="$tab['icon']" class="h-4 w-4 shrink-0" />
+                    <x-wirekit::icon :name="$tab['icon']" size="sm" class="shrink-0" />
                 @endif
                 <span>{{ $tab['label'] }}</span>
                 @if($tab['badge'] !== null && $tab['badge'] !== '')
@@ -261,6 +264,7 @@
                 id="{{ $uid }}-panel-{{ $key }}"
                 aria-labelledby="{{ $uid }}-tab-{{ $key }}"
                 @if((string) $key === (string) $seedTab) tabindex="0" @else hidden="until-found" @endif
+                class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 :tabindex="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? '0' : null"
                 x-wk-findable="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
                 x-on:beforematch="active = {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
@@ -271,6 +275,7 @@
                 id="{{ $uid }}-panel-{{ $key }}"
                 aria-labelledby="{{ $uid }}-tab-{{ $key }}"
                 tabindex="0"
+                class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 x-show="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
                 x-cloak
             >

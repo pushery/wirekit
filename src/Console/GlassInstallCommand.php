@@ -54,11 +54,10 @@ class GlassInstallCommand extends Command
         /*
          * An EDITED published file is not overwritten without `--force`.
          *
-         * `liquid-glass.md` tells the developer, in as many words, that they can edit the
-         * published CSS directly to adjust blur, saturation, opacity and border. So the file
-         * this command overwrites is one the documentation invites them to change, on a
-         * command they would plausibly re-run after upgrading the package, and a silent copy
-         * would take the customization with no output difference from a first install.
+         * A developer may have edited the published CSS to adjust the look, before the
+         * `--glass-wk-*` tokens let that live in their own stylesheet. This command is
+         * plausibly re-run after upgrading the package, and a silent copy would take the
+         * customization with no output difference from a first install.
          *
          * "Edited" is decided by CONTENT, not by mtime: a `vendor:publish`, a deploy step or
          * a checkout all rewrite the timestamp of a file nobody touched, and a warning that
@@ -86,7 +85,7 @@ class GlassInstallCommand extends Command
             }
 
             $this->newLine();
-            $this->line('These may carry your own adjustments — the docs describe editing them directly.');
+            $this->line('These may carry your own adjustments. The --glass-wk-* tokens hold those in your own stylesheet instead.');
             $this->line('Re-run with --force to replace them, or move your changes into your own stylesheet first.');
 
             /*
@@ -128,7 +127,8 @@ class GlassInstallCommand extends Command
         $this->line('  metadata tag after it lands in the body where a crawler will not read it.');
         $this->newLine();
         $this->info('Usage in templates:');
-        $this->line('  <div class="wk-glass">Frosted glass (all browsers)</div>');
+        $this->line('  <div class="wk-glass">Liquid glass (all browsers)</div>');
+        $this->line('  <div class="wk-glass wk-glass-frosted">A milkier level for text (also wk-glass-clear, wk-glass-opaque)</div>');
         $this->line('  <div class="wk-glass-refract">Refraction glass (bends in Chromium, lightly frosted in Safari)</div>');
 
         return self::SUCCESS;

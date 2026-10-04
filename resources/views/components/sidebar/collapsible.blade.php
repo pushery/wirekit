@@ -50,7 +50,7 @@
     // aria-labelledby gets no aria-label from us, so the two never compete for one name.
     $groupLabel = $attributes->has('aria-labelledby')
         ? null
-        : ($attributes->get('aria-label') ?: ((string) $label !== '' ? $label : null));
+        : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: ((string) $label !== '' ? $label : null));
 
     // The role is coupled to the NAME instead of being emitted unconditionally. A
     // role="group" nothing can name announces a boundary and then cannot say what the

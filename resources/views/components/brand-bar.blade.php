@@ -110,7 +110,7 @@
     $as = \Pushery\WireKit\WireKit::tagName('brand-bar', (string) $as);
 @endphp
 
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$rootClass]) }}>
+<{{ $as }} data-wk-prose-skip @if($sticky) data-wk-scroll-inset="top" @endif {{ $attributes->class([$rootClass]) }}>
     @if($isContainerWrapped)<div class="{{ $innerWrapperClass }}">@endif
     @isset($brand){{ $brand }}@endisset
     @isset($tagline)<span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $tagline }}</span>@endisset

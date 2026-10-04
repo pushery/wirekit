@@ -109,8 +109,10 @@ $wrapperClasses
 ($relAttr
 (12rem)
 (Support\CallerListeners).
+(Support\UrlProp).
 (WCAG
 (WireKit
+(a
 (and
 (aria-haspopup="menu"
 (bool)
@@ -190,6 +192,7 @@ AND
 Alert-Dialog,
 Alpine
 Alpine's
+An
 Arrow
 As"
 Back
@@ -207,6 +210,7 @@ Declared
 Decorative;
 Dev-only
 Drawer,
+Echoed
 End
 Escape
 FOCUSED
@@ -233,6 +237,7 @@ Nested
 Normalized
 OPENER;
 OUTER
+OUTLINE
 Optional
 Parent
 Positions
@@ -254,6 +259,7 @@ Trigger
 UI
 UI.
 UNBOUND
+URL
 When
 WireKit::resolveClasses('context-menu',
 WireKit::resolveClasses('context-menu.item',
@@ -268,6 +274,7 @@ Wrapped
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('context-menu',
 \Pushery\WireKit\WireKit::warnUnknownProps('context-menu.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('context-menu.separator',
@@ -317,6 +324,7 @@ _getItems().
 `x-teleport`
 a
 about
+above
 above.
 accessible
 across
@@ -375,6 +383,7 @@ behavior.
 behind
 belongs
 below
+beneath
 between
 binding
 binding,
@@ -386,6 +395,8 @@ border-[var(--color-wk-border)]',
 both
 both.
 bound
+bound,
+box,
 breaks
 broken
 browser's
@@ -396,21 +407,25 @@ button,
 by
 by.
 call
+caller
 caller's
 can
 cancels
 cannot
 cap
+card)
 carried
 carries
 carry
 cases
+cases.
 cast
 chevron
 chevron-right
 child
+children.
 class="block
-class="focus-visible:outline-hidden
+class="focus-visible:outline-[length:var(--ring-wk-width)]
 class="ms-auto
 class="shrink-0
 class="sr-only">{{
@@ -437,6 +452,7 @@ contain
 container
 container.
 contains
+content
 content)
 content;
 context
@@ -452,10 +468,13 @@ control
 control,
 conventions.
 coordinates
+corners
 correctly
 could
 counted
+covers
 cursor
+cuts
 d="M7.5
 dark's
 data-wk-prose-skip
@@ -468,6 +487,7 @@ declared-looking
 default
 default.
 defaults
+defeat
 destination
 developer
 developer's
@@ -509,6 +529,7 @@ else.
 embedding
 emitted
 equals
+escaped
 escapes
 event
 events
@@ -525,6 +546,7 @@ feel
 fell
 fill="none"
 filled($label)
+fills
 fire
 fires
 fires.
@@ -540,13 +562,14 @@ floor
 flow
 flyout
 focus
-focus-visible:ring-[length:var(--ring-wk-width)]
-focus-visible:ring-[var(--color-wk-ring)]"
+focus-visible:-outline-offset-[var(--ring-wk-width)]
+focus-visible:outline-[color:var(--color-wk-ring)]"
 focused.
 focuses
 for
 for,
 form
+forms:
 four
 from
 full
@@ -598,9 +621,11 @@ imports
 in
 in,
 including
+indication
 indicator.
 inert
 inherits
+inset
 inside
 instance:
 instance;
@@ -608,6 +633,7 @@ instead
 instead.
 interactive
 into
+inward.
 is
 is,
 isn't
@@ -715,10 +741,12 @@ nothing:
 null);
 null,
 of
+off
 offset:
 on
 on,
 on.
+once
 one
 one.
 only
@@ -737,6 +765,7 @@ otherwise
 our
 out
 outer
+outline
 outside
 overflow:hidden,
 overflowing.
@@ -750,6 +779,7 @@ owns,
 padding
 page
 page.
+painted
 panel
 panel's
 panel,
@@ -758,6 +788,7 @@ panels:
 parent
 parent's
 pass
+passed,
 passes
 passive:
 passthrough
@@ -833,6 +864,7 @@ role=\"menu\",
 roll
 root
 root,
+rounded,
 roving
 row
 row.
@@ -861,12 +893,15 @@ server
 serves
 set
 shape
+shapes
 sharpest
 should
 shown
+shows
 shrink-0"
 shrink-to-fit
 sibling
+sides
 silently
 silently.
 single-icon
@@ -882,6 +917,7 @@ state.
 state;
 states
 stay
+stays
 still
 stop
 stop,
@@ -907,6 +943,8 @@ tab)')
 tabindex,
 tabindex="-1"
 tabindex="0"
+table
+tag
 taken
 takes
 teleport
@@ -985,6 +1023,7 @@ ways
 well-formed.
 were
 what
+whatever
 when
 where
 which
@@ -994,6 +1033,7 @@ whitespace-nowrap:
 who
 whose
 why.
+width
 window,
 with
 without
@@ -1001,8 +1041,11 @@ working
 would
 wrap
 wrapper
+wrapper's
 wrapper)
 wrapper.
+wraps
+written
 x-bind:aria-expanded="subOpen
 x-bind:class="subOpen
 x-cloak

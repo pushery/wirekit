@@ -17,6 +17,7 @@ $attributes->merge($avatarStyle
 $author
 $author;
 $authorAvatar
+$authorInitials
 $authorName
 $authorName)
 $authorName])
@@ -161,6 +162,7 @@ $total
 'xs'
 'xs',
 ($author['avatar']
+($author['initials']
 ($author['name']
 ($fromInitials
 ($shape)
@@ -169,6 +171,7 @@ $total
 ($status
 ($status)
 (RTL-safe)
+(Support\UrlProp).
 (WireKit::validateProp('avatar',
 (`--space-wk-sm`),
 (default)
@@ -178,6 +181,7 @@ $total
 (e.g.
 (for
 (int)
+(is_array($author)
 (no
 (silent
 (string)
@@ -210,6 +214,7 @@ $total
 4zm0
 :
 :alt="$authorName"
+:initials="$authorInitials"
 :name',
 :src="$authorAvatar"
 </div>
@@ -269,6 +274,7 @@ Counter
 Declared
 Dev-only
 Each
+Echoed
 English,
 Fixed
 Fully
@@ -307,6 +313,7 @@ Through
 Tighter
 Two
 UNBOUND
+URL
 When
 WireKit
 WireKit::resolveClasses('avatar',
@@ -324,7 +331,9 @@ With
 ['xs',
 [])->class([$baseClasses,
 [],
+\Pushery\WireKit\Support\Initials::from($authorName);
 \Pushery\WireKit\Support\ListProp::from($author);
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('message-group',
@@ -420,6 +429,7 @@ both
 bottom-0
 bottom-right
 bottom-right)
+bound,
 box
 box-shadow
 box-shadow.
@@ -497,6 +507,7 @@ disc.
 does
 dot
 double-ring
+drawn.
 each
 early.
 edge
@@ -509,6 +520,7 @@ emitted
 empty
 ending
 error
+escaped
 every
 exact
 exactly
@@ -566,6 +578,7 @@ has
 has:
 hash
 hash.
+have
 header
 headers.
 hears
@@ -715,11 +728,13 @@ per
 per-app
 person
 person,
+picture,
 place
 places
 premise
 presence
 presentational
+printed
 prints
 prod).
 produced
@@ -799,6 +814,7 @@ shorthand,
 show
 shown
 shown.
+shows
 shrink-0',
 sighted
 silence
@@ -884,6 +900,7 @@ type
 typed
 unbroken
 undefined
+under
 understands
 unknown
 unlabeled
@@ -906,6 +923,7 @@ visual
 visually
 warning,
 was
+way,
 well
 were
 what

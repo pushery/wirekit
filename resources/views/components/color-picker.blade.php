@@ -84,7 +84,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -121,7 +121,7 @@
     // `{{ $attributes }}` and renders as a stray HTML attribute. Blade accepts both
     // spellings, so both are dropped. BEFORE the unknown-prop warning below, as in every
     // sibling control: the key is understood here, and warning about it would be noise.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -151,7 +151,7 @@
     // A caller's `aria-label` names the control a reader operates: the native field a phone
     // gets, a trigger in the slot, or the default trigger, which otherwise takes a name built
     // from `name`. Read once here, so no element below reads the bag for it.
-    $callerLabel = $attributes->get('aria-label');
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $triggerLabel = filled($callerLabel)
         ? $callerLabel
         : ($name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker'));
@@ -198,6 +198,20 @@
     };
 
     $popoverValue = (bool) $popover;
+
+    // Inside a labeled field the field's label names the picker by `for` (Support\FieldControl):
+    // the color input, or the trigger in popover mode, and a click on it opens either as a click
+    // on the swatch does. The hidden name built from `name` is left out then. A trigger with text
+    // of its own keeps that text in its name, after the field's label.
+    $fieldLabelId = ! filled($callerLabel)
+        && ($popoverValue || ! $slot->hasActualContent())
+        && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+            ? $wkField->takeLabel($pickerId)
+            : null;
+
+    // The phone's native field and the trigger never share the live DOM (one `x-if` each), so
+    // inside a labeled field the phone's field takes the id the field's label points at.
+    $nativeId = $fieldLabelId !== null ? $pickerId : $pickerId.'-native';
     $formatValue = match ($format) {
         'hex', 'rgb', 'hsl', 'oklch' => $format,
         default => WireKit::validateProp('color-picker', 'format', $format, ['hex', 'rgb', 'hsl', 'oklch']),
@@ -314,7 +328,7 @@
             />
             @if($slot->hasActualContent())
                 <span class="sr-only">{{ $slot }}</span>
-            @else
+            @elseif($fieldLabelId === null)
                 {{-- The ONLY accessible name the native `<input type="color">` gets — there is no
                      visible label beside it. It goes through the catalog for the same reason the
                      popover branch below does: both keys already ship in every locale, so a
@@ -381,7 +395,7 @@
             // The field's own error region, so the layer stays quiet when that
             // paragraph is already speaking — one announcement per deviation, not
             // two saying different things about the same refusal.
-            'errorRegion' => '#'.$pickerId.'-error',
+            'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($pickerId.'-error'),
             'debug' => (bool) config('app.debug'),
             // Two colors settled in quick succession would otherwise resolve by
             // whichever answer arrives last — network timing, which is both wrong
@@ -431,11 +445,11 @@
                  popover path uses (change commits to recents). Native sheets pick
                  opaque sRGB hex — alpha keeps its current value. --}}
             <template x-if="useNative">
-                <label for="{{ $pickerId }}-native" class="{{ $swatchClasses }}">
+                <label for="{{ $nativeId }}" class="{{ $swatchClasses }}">
                     <input
                         type="color"
                         @if($required) aria-required="true" @endif
-                        id="{{ $pickerId }}-native"
+                        id="{{ $nativeId }}"
                         @if(filled($callerLabel)) aria-label="{{ $callerLabel }}" @endif
                         :value="hex"
                         @input="onInput($event.target.value)"
@@ -448,7 +462,9 @@
                     {{-- Same name, same catalog call as the native branch above and the popover
                          trigger below. This arm is the one a phone reaches, so an untranslated
                          literal here is invisible to every desktop check. --}}
-                    <span class="sr-only">{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}</span>
+                    @if($fieldLabelId === null)
+                        <span class="sr-only">{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}</span>
+                    @endif
                 </label>
             </template>
         @endif
@@ -468,7 +484,7 @@
                 @click="togglePanel()"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
-                @if(filled($callerLabel)) aria-label="{{ $callerLabel }}" @endif
+                @if(filled($callerLabel)) aria-label="{{ $callerLabel }}" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }} {{ $pickerId }}" @endif
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
@@ -484,7 +500,7 @@
                 @click="togglePanel()"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
-                aria-label="{{ $triggerLabel }}"
+                @if($fieldLabelId === null) aria-label="{{ $triggerLabel }}" @endif
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif

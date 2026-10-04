@@ -37,6 +37,9 @@
     // an app that runs its OWN error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'min' => config('wirekit.components.range-slider.min', 0),
     'max' => config('wirekit.components.range-slider.max', 100),
     'step' => config('wirekit.components.range-slider.step', 1),
@@ -61,7 +64,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -73,7 +76,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
@@ -235,8 +238,22 @@
     //
     // The group name comes from the visible $label (wired via
     // aria-labelledby) or, failing that, a caller-supplied aria-label.
-    $callerAriaLabel = $attributes->get('aria-label');
-    $groupLabel = $label ?? $callerAriaLabel;
+    $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
+
+    // Inside a labeled field the field's label names the group by reference, as this
+    // component's own label does, and its text goes into the names of both thumbs
+    // (Support\FieldControl). It gets no `for`: a thumb is not an element a label can name.
+    $fieldLabelId = $label === null
+        && ! filled($callerAriaLabel)
+        && ! $attributes->has('aria-labelledby')
+        && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+            ? $wkField->takeLabel(null)
+            : null;
+    $groupLabel = $label ?? $callerAriaLabel ?? ($fieldLabelId !== null ? $wkField->labelText() : null);
+
+    // The visible label a click on which focuses the first thumb, as a click on a label does
+    // for a field. Neither this component's own label nor a field's can do it with `for`.
+    $clickLabelId = $label ? $id.'-label' : $fieldLabelId;
     // The two thumbs name themselves by gluing a direction word onto the caller's label.
     // Concatenating an English word onto a translated label produces a half-translated
     // name in every locale AND fixes the word ORDER to English — so the direction goes
@@ -261,6 +278,11 @@
     // below carries it once rather than both handles reading it out.
     $callerDescribedBy = $attributes->get('aria-describedby');
     $thumbDescribedBy = trim(($hint !== null && $error === null ? $id.'-hint' : '').' '.((string) ($callerDescribedBy ?? '')));
+    $thumbDescribedBy = $thumbDescribedBy !== '' ? $thumbDescribedBy : null;
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $thumbDescribedBy = trim(($thumbDescribedBy ?? '').' '.($helpId ?? ''));
     $thumbDescribedBy = $thumbDescribedBy !== '' ? $thumbDescribedBy : null;
 
     // aria-describedby has been routed to the thumbs — drop it from the
@@ -292,7 +314,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
         'action' => $optimistic,
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -310,7 +332,7 @@
 <div
     @unless($attributes->has('role')) role="group" @endunless
     @if($required) aria-required="true" @endif
-    @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $id }}-label" @endunless @endif
+    @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $id }}-label" @endunless @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @endif
     {{-- On the GROUP rather than on either thumb: the message is about the range, and a
          thumb-level describedby would read it out on both ends of it. --}}
     @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
@@ -323,13 +345,13 @@
     {{ $attributes->class([$wrapperClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : '']) }}
 >
     @if($label)
-        <x-wirekit::label id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- The `wirekitRangeSlider` factory, registered by the WireKit bundle.
          Handles dual-thumb drag, keyboard stepping, and percent calculation. --}}
     <div
-        x-data="wirekitRangeSlider({ min: {{ $min }}, max: {{ $max }}, step: {{ $step }}, minValue: {{ $initialMin }}, maxValue: {{ $initialMax }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $rangeValueTextMap) }} })"
+        x-data="wirekitRangeSlider({ min: {{ $min }}, max: {{ $max }}, step: {{ $step }}, minValue: {{ $initialMin }}, maxValue: {{ $initialMax }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $rangeValueTextMap) }}, labelId: {{ \Pushery\WireKit\Support\AlpinePayload::from($clickLabelId) }} })"
         x-effect="remeasureOnValueChange()"
         class="relative"
         @if($resolvedShowValues)
@@ -392,7 +414,20 @@
              the drift suite's reverse-diff scanner can't mis-trace
              the class name from this comment block.
              --}}
-        <div class="relative h-2 rounded-full bg-[var(--color-wk-bg-muted)]" style="overflow: visible;" x-ref="track">
+        {{-- A click on the track brings the nearer handle to that point: the way to set a value
+             with one pointer and no drag (WCAG 2.5.7). `wk-range-track` gives the 8px track a
+             target of the minimum size a handle gets. The press is read as well, because the
+             click that ends a handle's drag can land on the track too, and that one must not
+             count. --}}
+        <div
+            class="wk-range-track relative h-2 rounded-full bg-[var(--color-wk-bg-muted)]"
+            style="overflow: visible;"
+            x-ref="track"
+            @unless($disabled)
+                @pointerdown="pressTrack($event)"
+                @click="clickTrack($event)"
+            @endunless
+        >
             {{-- Snap-to-step tick marks (decorative) — only for discrete
                  sliders with a readable number of steps. --}}
             @foreach($tickPercents as $tickPercent)

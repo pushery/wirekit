@@ -10,6 +10,8 @@ import { hsvToRgb, rgbToHsv, rgbToHex, parseColor, formatColor } from '../utils/
 import { position } from '../utils/floating.js';
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { watchModelEvents } from '../utils/model-events.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
@@ -35,6 +37,10 @@ export default function wirekitColorPicker(config = {}) {
         // fixed panel anchored to the swatch on scroll/resize without leaking
         // listeners (every teardown path must call stop()).
         _stopAutoUpdate: null,
+        // `change` and `blur` on the hidden field for `wire:model.change` and `wire:model.blur`,
+        // which listen on that field alone (utils/model-events.js): `change` with every pick, as
+        // before, and `blur` when the reader leaves the picker and its panel. Released in destroy().
+        _modelEvents: null,
         // Focus trap over the teleported panel — created when the panel opens,
         // released in EVERY close path (close / _closeFromTrap / destroy). The
         // panel carries role="dialog", so a trap plus a focus return to the
@@ -123,7 +129,7 @@ export default function wirekitColorPicker(config = {}) {
             // the same reason it needs the focus handling below: in the document it
             // sits LAST, so a reader who activated the swatch would otherwise tab
             // through the whole rest of the page to reach the sliders.
-            this.$watch('isOpen', (isOpen) => {
+            watchCurrent(this, 'isOpen', (isOpen) => {
                 if (isOpen) {
                     this.$nextTick(() => this._openPanel());
                 } else {
@@ -131,9 +137,13 @@ export default function wirekitColorPicker(config = {}) {
                     this._stopAutoUpdate = null;
                 }
             });
+
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.input);
         },
 
         destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
             this._endDrag();
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
@@ -290,6 +300,11 @@ export default function wirekitColorPicker(config = {}) {
                     crossAxisShift: true,
                     // Follow the swatch on scroll/resize; torn down on close/destroy.
                     autoReposition: true,
+                    // A framework update patches the teleported panel against its template, whose
+                    // `style` carries none of what this call writes: the placement is gone while the
+                    // panel stays open, with its box unchanged, so `autoReposition`, which watches
+                    // boxes, sees nothing. This watches the attribute that is actually removed.
+                    repairErasure: true,
                 });
 
                 // The placement can wait frames for the panel to get a box, and the picker can
@@ -546,8 +561,22 @@ export default function wirekitColorPicker(config = {}) {
             if (this.$refs.input) {
                 this.$refs.input.value = '';
                 this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
-                this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
+                this._fieldChanged();
             }
+        },
+
+        /**
+         * Fire `change` on the hidden field, through the model events once they are armed, so
+         * that leaving the picker afterwards does not fire it a second time.
+         */
+        _fieldChanged() {
+            if (this._modelEvents) {
+                this._modelEvents.commit();
+
+                return;
+            }
+
+            this.$refs.input?.dispatchEvent(new Event('change', { bubbles: true }));
         },
 
         // ── Sync + recents ────────────────────────────────────────────
@@ -558,7 +587,7 @@ export default function wirekitColorPicker(config = {}) {
             if (this.$refs.input) {
                 this.$refs.input.value = this.formattedValue;
                 this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
-                this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
+                this._fieldChanged();
             }
             if (commitRecent) {
                 this._commitRecent();

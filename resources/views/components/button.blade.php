@@ -153,6 +153,8 @@
     // unknown prop (e.g. `variant="ghost"` when the prop is `surface`).
     // Dev-only — silent in prod. See WireKit::warnUnknownProps() docs.
     WireKit::warnUnknownProps('button', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // Base classes: layout, typography, transitions, focus ring, disabled state
     // All values reference design tokens — no hardcoded colors, sizes, or durations
@@ -477,6 +479,17 @@
             'xl' => 'h-[calc(var(--size-wk-lg)*1.1)]',
             default => 'h-[var(--size-wk-md)]',
         });
+
+    // A link surface flows like the text around it: no padding and no fixed height, which its
+    // own classes say (`p-0 h-auto`). Beside the size's padding and height the stylesheet's order
+    // decided instead: the auto height won by sorting after the fixed one, while the inline
+    // padding sets the more specific property and kept a padding on both sides of a link meant
+    // to sit flush with its sentence.
+    // So the size's padding and height are left out here, and its text size and radius stay.
+    if ($surface === 'link') {
+        $sizeClasses = \Pushery\WireKit\Support\UtilityClasses::without($sizeClasses, \Pushery\WireKit\Support\UtilityClasses::PADDING);
+        $heightClasses = \Pushery\WireKit\Support\UtilityClasses::without($heightClasses, '/^(?:min-h|h|w|p[xytrblse]?)-/');
+    }
 
     // Render as <a> when href is provided, otherwise <button>
     $tag = $href ? 'a' : 'button';

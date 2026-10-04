@@ -116,13 +116,21 @@
             );
         }
 
+        // Tenant lists are data. A target that could run script leaves the row without an href,
+        // so it navigates nowhere instead of running on the click. Handed over as it is: the
+        // rule takes a string, a Stringable and a backed enum.
+        $rowUrl = \Pushery\WireKit\Support\SafeUrl::href($item['url']);
+
         $rows[] = [
             'key' => $key,
             'label' => (string) $item['label'],
-            // Tenant lists are data. A target that could run script leaves the row without
-            // an href, so it navigates nowhere instead of running on the click. Handed over as
-            // it is: the rule takes a string, a Stringable and a backed enum.
-            'url' => \Pushery\WireKit\Support\SafeUrl::href($item['url']),
+            'url' => $rowUrl,
+            // Whether Livewire may turn the click into a navigation. Livewire leaves to the browser
+            // only another origin, another protocol, a download and a target other than `_self`, so
+            // an address that is only a fragment would be a navigation to the same page, which
+            // fetches it again and swaps the body and leaves the reader at the top without the
+            // focus. A fragment stays with the browser, and with `onItemClick`.
+            'navigates' => $rowUrl !== '' && ! str_starts_with($rowUrl, '#'),
             'icon' => $item['icon'] ?? null,
             'image' => $item['image'] ?? null,
             'status' => $status,
@@ -228,7 +236,7 @@
             @if($currentRow && $currentRow['image'])
                 <img data-wk-prose-skip src="{{ $currentRow['image'] }}" alt="" class="h-4 w-4 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
             @elseif($currentRow && $currentRow['icon'])
-                <x-wirekit::icon :name="$currentRow['icon']" class="h-4 w-4 shrink-0" />
+                <x-wirekit::icon :name="$currentRow['icon']" size="sm" class="shrink-0" />
             @endif
 
             {{-- The id is how the LIST reaches this text. The panel is teleported to the
@@ -251,7 +259,7 @@
             {{-- The pop-up-button marker: a stacked pair of chevrons says "this shows the
                  current choice and there are others", where a single downward one would say
                  "this opens a list of actions". Decorative — the button is already named. --}}
-            <x-wirekit::icon name="chevron-up-down" class="h-4 w-4 shrink-0 text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
+            <x-wirekit::icon name="chevron-up-down" size="sm" class="shrink-0 text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
         </x-wirekit::button>
     </x-slot:trigger>
 
@@ -276,7 +284,7 @@
         {{-- Header. First focusable element in the panel, so the popover's focus trap lands
              here on open and a reader can type immediately. --}}
         <div class="flex items-center gap-[var(--gap-wk-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]">
-            <x-wirekit::icon name="search" class="h-4 w-4 shrink-0 text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
+            <x-wirekit::icon name="search" size="sm" class="shrink-0 text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
 
             <input
                 {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
@@ -318,6 +326,10 @@
         <div
             x-ref="list"
             role="listbox"
+            {{-- Out of the tab order: the search field keeps the focus and names the active row
+                 through `aria-activedescendant`. In Chromium a list that scrolls and holds nothing
+                 focusable is a tab stop of its own. --}}
+            tabindex="-1"
             id="{{ $id }}-listbox"
             aria-label="{{ $labelText }}"
             class="wk-scrollbar overflow-y-auto py-[var(--padding-wk-y-sm)]"
@@ -328,7 +340,13 @@
                  margin gives the observer its pixel and the reader none. --}}
             <div x-ref="topSentinel" aria-hidden="true" class="h-px -mb-px"></div>
             @foreach($grouped as $groupName => $groupRows)
-                @php $groupId = $id.'-group-'.\Illuminate\Support\Str::slug((string) $groupName ?: 'ungrouped'); @endphp
+                @php
+                    // One id per group, or a group's aria-labelledby names another group's
+                    // heading. A name in Chinese, Japanese, Korean, Hebrew or Thai slugs to
+                    // nothing, so such a group is counted, and two equal slugs are deduplicated.
+                    $groupSlug = \Illuminate\Support\Str::slug((string) $groupName ?: 'ungrouped');
+                    $groupId = \Pushery\WireKit\Support\DomId::unique($groupSlug !== '' ? $id.'-group-'.$groupSlug : null, $id.'-group-');
+                @endphp
 
                 @if($groupName !== '')
                     <div role="group" aria-labelledby="{{ $groupId }}">
@@ -352,7 +370,7 @@
                              before the click handler. So the row this component refuses to
                              navigate to is not bound at all, and the preventDefault below
                              stays for the anchor's own default. --}}
-                        @unless($isCurrent || $row['url'] === '') @if($prefetch) wire:navigate.hover @else wire:navigate @endif @endunless
+                        @unless($isCurrent || ! $row['navigates']) @if($prefetch) wire:navigate.hover @else wire:navigate @endif @endunless
                         data-key="{{ $row['key'] }}"
                         data-search="{{ $row['search'] }}"
                         {{-- Present ONLY on the current row, never as `false` elsewhere. A
@@ -376,7 +394,7 @@
                         @elseif($row['icon'])
                             @if($row['status'])
                                 <x-wirekit::indicator position="bottom-end" class="shrink-0">
-                                    <x-wirekit::icon :name="$row['icon']" class="h-5 w-5" />
+                                    <x-wirekit::icon :name="$row['icon']" />
                                     {{-- A status here is a state, not a count, so the badge slot
                                          holds a dot rather than a number. The dot is decorative on
                                          purpose: the same word is in the row's text below it, which
@@ -386,7 +404,7 @@
                                     </x-slot:badge>
                                 </x-wirekit::indicator>
                             @else
-                                <x-wirekit::icon :name="$row['icon']" class="h-5 w-5 shrink-0" />
+                                <x-wirekit::icon :name="$row['icon']" class="shrink-0" />
                             @endif
                         @endif
 
@@ -401,8 +419,8 @@
                         @endif
 
                         @if($isCurrent)
-                            <x-wirekit::icon name="check" @class([
-                                'h-4 w-4 shrink-0 text-[color:var(--color-wk-accent-text)]',
+                            <x-wirekit::icon name="check" size="sm" @class([
+                                'shrink-0 text-[color:var(--color-wk-accent-text)]',
                                 'ms-auto' => ! $row['meta'],
                             ]) aria-hidden="true" />
                         @endif
@@ -457,10 +475,15 @@
                      without an href, so it navigates nowhere. --}}
                 @php $createUrl = \Pushery\WireKit\Support\SafeUrl::href($create['url'] ?? ''); @endphp
                 <a data-wk-prose-skip
-                    @if($createUrl !== '') href="{{ $createUrl }}" wire:navigate @endif
-                    class="{{ $itemClasses }} text-[color:var(--color-wk-accent-content)]"
+                    {{-- A fragment stays with the browser here as well, as in the rows. --}}
+                    @if($createUrl !== '') href="{{ $createUrl }}" @unless(str_starts_with($createUrl, '#')) wire:navigate @endunless @endif
+                    {{-- The row's text color comes out of the item classes first: two text colors on
+                         one element are decided by the stylesheet's order, and that put the row's
+                         over the accent. Read from the resolved classes, so a personalized item
+                         block loses its text color here too. --}}
+                    class="{{ \Pushery\WireKit\Support\UtilityClasses::without($itemClasses, \Pushery\WireKit\Support\UtilityClasses::TEXT_COLOR) }} text-[color:var(--color-wk-accent-content)]"
                 >
-                    <x-wirekit::icon :name="$create['icon'] ?? 'plus'" class="h-5 w-5 shrink-0" aria-hidden="true" />
+                    <x-wirekit::icon :name="$create['icon'] ?? 'plus'" class="shrink-0" aria-hidden="true" />
                     {{ $create['label'] }}
                 </a>
             </div>

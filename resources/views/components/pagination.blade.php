@@ -299,8 +299,11 @@
                 $selectAttributes['wire:change'] = e($firstPageAction);
             }
         } else {
+            // The form sends the choice through its own Apply button, never on `change`: a
+            // select that loads a new page as its value changes does it at every arrow key on
+            // Windows and Linux, where the arrows change a closed select's value, and moves the
+            // focus to the top of a new document without the reader having asked (WCAG 3.2.2).
             $perPageUsesForm = true;
-            $selectAttributes['x-on:change'] = e('$el.form.requestSubmit()');
 
             // The form goes where the page links go and keeps what they keep: the query the
             // paginator was given (`withQueryString()`, `appends()`), without its own page number,

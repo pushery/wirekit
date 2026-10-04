@@ -135,9 +135,9 @@
             'border-[color-mix(in_srgb,var(--color-wk-danger)_25%,transparent)]',
         ]),
         'info' => implode(' ', [
-            'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))]',
-            'text-[color:var(--color-wk-accent-content)]',
-            'border-[color-mix(in_srgb,var(--color-wk-accent)_20%,transparent)]',
+            'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]',
+            'text-[color:var(--color-wk-info-text)]',
+            'border-[color-mix(in_srgb,var(--color-wk-info-tone)_20%,transparent)]',
         ]),
         'neutral' => implode(' ', [
             'bg-[var(--color-wk-bg-muted)]',
@@ -147,13 +147,14 @@
         default => WireKit::validateProp('badge', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
     };
 
-    // SOLID: filled intent background + on-color foreground. `info` shares the
-    // accent fill: a solid chip needs an on-color token, info has no surface token,
-    // and --color-wk-info is the tone the charts and the flash tint read; `neutral`
-    // becomes a dark filled chip (text-bg pair). Literal class strings (not
-    // interpolated) so the Tailwind text scanner / drift audit see them.
+    // SOLID: filled intent background + on-color foreground. `info` fills with
+    // --color-wk-info-tone and writes in --color-wk-info-fg, which alias the accent pair until an
+    // application gives info a hue of its own; `neutral` becomes a dark filled chip (text-bg
+    // pair). Literal class strings (not interpolated) so the Tailwind text scanner / drift audit
+    // see them.
     $solidClasses = match ($intent) {
-        'primary', 'accent', 'info' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] border-[var(--color-wk-accent)]',
+        'primary', 'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] border-[var(--color-wk-accent)]',
+        'info' => 'bg-[var(--color-wk-info-tone)] text-[color:var(--color-wk-info-fg)] border-[var(--color-wk-info-tone)]',
         'success' => 'bg-[var(--color-wk-success)] text-[color:var(--color-wk-success-fg)] border-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)] text-[color:var(--color-wk-warning-fg)] border-[var(--color-wk-warning)]',
         'danger' => 'bg-[var(--color-wk-danger)] text-[color:var(--color-wk-danger-fg)] border-[var(--color-wk-danger)]',
@@ -164,8 +165,8 @@
     // OUTLINE: transparent background + intent ring + intent text. Border color
     // is the intent base; text uses the soft-tone text token (AA on the page bg).
     $outlineClasses = match ($intent) {
-        'primary', 'info' => 'bg-transparent text-[color:var(--color-wk-accent-content)] border-[color:var(--color-wk-accent)]',
-        'accent' => 'bg-transparent text-[color:var(--color-wk-accent-content)] border-[color:var(--color-wk-accent)]',
+        'primary', 'accent' => 'bg-transparent text-[color:var(--color-wk-accent-content)] border-[color:var(--color-wk-accent)]',
+        'info' => 'bg-transparent text-[color:var(--color-wk-info-text)] border-[color:var(--color-wk-info-tone)]',
         'success' => 'bg-transparent text-[color:var(--color-wk-success-text)] border-[color:var(--color-wk-success)]',
         'warning' => 'bg-transparent text-[color:var(--color-wk-warning-text)] border-[color:var(--color-wk-warning)]',
         'danger' => 'bg-transparent text-[color:var(--color-wk-danger-text)] border-[color:var(--color-wk-danger)]',
@@ -215,13 +216,15 @@
             'warning' => 'bg-[var(--color-wk-warning-fg)]',
             'danger' => 'bg-[var(--color-wk-danger-fg)]',
             'neutral' => 'bg-[var(--color-wk-bg)]',
+            'info' => 'bg-[var(--color-wk-info-fg)]',
             default => 'bg-[var(--color-wk-accent-fg)]',
         }
         : match ($intent) {
             // For 'accent' (the filled-background variant), the dot reads on a
             // colored field — use accent-fg so it contrasts with the bg.
             'accent' => 'bg-[var(--color-wk-accent-fg)]',
-            'primary', 'info' => 'bg-[var(--color-wk-accent)]',
+            'primary' => 'bg-[var(--color-wk-accent)]',
+            'info' => 'bg-[var(--color-wk-info-tone)]',
             'success' => 'bg-[var(--color-wk-success)]',
             'warning' => 'bg-[var(--color-wk-warning)]',
             'danger' => 'bg-[var(--color-wk-danger)]',

@@ -15,8 +15,9 @@
  *   - _map (the library map instance) — destroyed (remove()) in destroy().
  *   - _resizeObserver — disconnected in destroy().
  *   - while no engine is present: a `wirekit:map-engine` listener on window, and the
- *     missing-engine hint's `load` listener or timer. All released in destroy(), and
- *     the moment an engine boots the map.
+ *     timers and `load` listener of utils/await-peer.js, which looks for an engine and
+ *     holds back the missing-engine hint. All released in destroy(), and the moment an
+ *     engine boots the map.
  *
  * @param {Object} config
  * @param {Array}  config.center   - [lat, lng]
@@ -27,7 +28,9 @@
  * @param {string} config.attribution - tile attribution HTML (Leaflet provider; shown
  *   in Leaflet's attribution control). Required by some tile sources (e.g. OSM).
  */
+import { keepRaw } from '../utils/keep-raw.js';
 import { prefersReducedMotion } from '../utils/motion.js';
+import { awaitPeer } from '../utils/await-peer.js';
 
 /**
  * Map engines the host handed over, keyed by provider name.
@@ -43,13 +46,6 @@ const engines = {};
 
 /** Dispatched on `window` by registerMapEngine(), so a map that mounted first can boot. */
 const ENGINE_EVENT = 'wirekit:map-engine';
-
-/**
- * How long after the page has loaded a map waits for its engine before the missing-engine
- * hint speaks. Long enough for a lazily imported engine on an ordinary connection; a map
- * whose engine arrives even later still boots — the hint is then merely early.
- */
-const MISSING_ENGINE_GRACE_MS = 3000;
 
 /**
  * Hand a map engine to every `<x-wirekit::map>` on the page — including maps that mounted
@@ -136,11 +132,10 @@ export default function wirekitMap(config = {}) {
         // reach the rendered pins (not just the reactive `markers` array / the list).
         _markers: {},
         // While no engine is present: the `wirekit:map-engine` listener that boots this map
-        // when one is registered, and the missing-engine hint's `load` listener or timer.
-        // All three are released by _stopAwaitingEngine().
+        // the moment one is registered, and the stop function utils/await-peer.js returns.
+        // Both are released by _stopAwaitingEngine().
         _onEngine: null,
-        _hintOnLoad: null,
-        _hintTimer: null,
+        _stopAwaitingPeer: null,
 
         init() {
             /*
@@ -246,14 +241,21 @@ export default function wirekitMap(config = {}) {
         },
 
         /**
-         * No engine yet: boot the moment one is registered, and only later call it missing.
+         * No engine yet: boot the moment one is registered or lands on `window`, and only later
+         * call it missing.
          *
          * A bundled app registers MapLibre from its own entry, and that entry can run after
-         * Alpine has mounted this map — a route-level entry, a dynamic import(). Saying
-         * "missing" on the spot would print an error on a page that is about to work, and a
-         * developer who gates a browser suite on a clean console would get a red run from a
-         * correct setup. So the hint waits for the page to finish loading and a grace period
-         * after that, and never comes if an engine arrives first.
+         * Alpine has mounted this map — a route-level entry, a dynamic import(). A page reached
+         * through `wire:navigate` can do the same with a global: Livewire starts Alpine on the
+         * new body once the new head's `src` scripts have loaded, and an inline module or a
+         * script in the body runs after that. Saying "missing" on the spot would print an error
+         * on a page that is about to work, and a developer who gates a browser suite on a clean
+         * console would get a red run from a correct setup.
+         *
+         * So the map asks the way the chart adapters ask (utils/await-peer.js): it looks again
+         * and again, the hint waits for the page to finish loading and a grace period after
+         * that, and an engine that lands even later still boots the map. A registration does
+         * not wait for the next look: its event boots the map at once.
          */
         _awaitEngine() {
             if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
@@ -270,50 +272,29 @@ export default function wirekitMap(config = {}) {
                 window.addEventListener(ENGINE_EVENT, this._onEngine);
             }
 
-            this._scheduleMissingHint();
-        },
-
-        _scheduleMissingHint() {
-            if (this._hintTimer || this._hintOnLoad) return;
-
-            // No document to wait for — the factory is also built in a bare Node harness.
-            if (typeof document === 'undefined' || typeof setTimeout !== 'function') {
-                this._warnMissing();
-
-                return;
+            if (!this._stopAwaitingPeer) {
+                this._stopAwaitingPeer = awaitPeer({
+                    isReady: () => this._detectProvider() !== null,
+                    onReady: () => {
+                        this._stopAwaitingPeer = null;
+                        if (!this.available && !this.dataDeferred) this._boot();
+                    },
+                    onMissing: () => this._warnMissing(),
+                });
             }
-
-            const arm = () => {
-                this._hintOnLoad = null;
-                this._hintTimer = setTimeout(() => {
-                    this._hintTimer = null;
-                    if (!this.available && !this.dataDeferred) this._warnMissing();
-                }, MISSING_ENGINE_GRACE_MS);
-            };
-
-            if (document.readyState === 'complete') {
-                arm();
-
-                return;
-            }
-
-            this._hintOnLoad = arm;
-            window.addEventListener('load', arm, { once: true });
         },
 
         /** Release everything _awaitEngine() set up. Safe to call when it set up nothing. */
         _stopAwaitingEngine() {
-            if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
-                if (this._onEngine) window.removeEventListener(ENGINE_EVENT, this._onEngine);
-                if (this._hintOnLoad) window.removeEventListener('load', this._hintOnLoad);
+            if (this._onEngine && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+                window.removeEventListener(ENGINE_EVENT, this._onEngine);
             }
 
             this._onEngine = null;
-            this._hintOnLoad = null;
 
-            if (this._hintTimer) {
-                clearTimeout(this._hintTimer);
-                this._hintTimer = null;
+            if (this._stopAwaitingPeer) {
+                this._stopAwaitingPeer();
+                this._stopAwaitingPeer = null;
             }
         },
 
@@ -372,14 +353,7 @@ export default function wirekitMap(config = {}) {
             // via DOM/img tiles and tolerates the proxy, but we mark both for
             // parity. `__v_skip` is the flag Vue's markRaw() sets and reactive()
             // honors — the same fix the editor needed for its ProseMirror instance.
-            if (map && typeof map === 'object') {
-                try {
-                    Object.defineProperty(map, '__v_skip', { value: true });
-                } catch {
-                    // frozen/sealed instance — proceed un-flagged
-                }
-            }
-            this._map = map;
+            this._map = keepRaw(map);
             // Zoom controls. Leaflet's L.map() ships a zoom control by default, but
             // MapLibre ships NO UI — add the standard NavigationControl (zoom in/out
             // + compass) so both engines have on-canvas zoom buttons (MapLibre
@@ -445,17 +419,16 @@ export default function wirekitMap(config = {}) {
         // Resolve an intent to its computed theme color. Map pins are drawn by the
         // peer library OUTSIDE WireKit's CSS, so we can't hand them a `var(--…)`
         // reference — we read the token's COMPUTED value off the component root, which
-        // honors the active theme + any per-instance scope. `info` has no surface
-        // token (--color-wk-info is the tone the charts and the flash tint read), so it aliases
-        // to accent, like the rest of the intent system. Returns '' when there's no DOM (node) — callers treat an
-        // empty color as "library default pin".
+        // honors the active theme + any per-instance scope. `info` reads
+        // --color-wk-info-tone, like the rest of the intent system. Returns '' when there's no
+        // DOM (node) — callers treat an empty color as "library default pin".
         _intentColor(intent) {
             const tokens = {
                 accent: '--color-wk-accent',
                 success: '--color-wk-success',
                 warning: '--color-wk-warning',
                 danger: '--color-wk-danger',
-                info: '--color-wk-accent',
+                info: '--color-wk-info-tone',
             };
             const name = tokens[intent] || tokens.accent;
             if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function' || !this.$el) {
@@ -594,7 +567,7 @@ export default function wirekitMap(config = {}) {
                         });
                     }
                 }
-                this._markers[m.id] = marker;
+                this._markers[m.id] = keepRaw(marker);
             } else if (this._resolved === 'leaflet') {
                 const marker = engine.marker([m.lat, m.lng], color ? { icon: this._leafletIcon(color) } : undefined);
                 if (typeof marker.addTo === 'function') {
@@ -609,7 +582,7 @@ export default function wirekitMap(config = {}) {
                 if (typeof marker.on === 'function') {
                     marker.on('click', () => this.selectMarker(m.id));
                 }
-                this._markers[m.id] = marker;
+                this._markers[m.id] = keepRaw(marker);
             }
         },
 

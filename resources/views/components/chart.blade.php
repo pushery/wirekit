@@ -30,7 +30,7 @@
     // this package. It was the one literal left: a reader on a Spanish site heard the
     // English word, and the only way out was publishing the view — which then drifts
     // on every update.
-    $chartAriaLabel = $attributes->get('aria-label', __('wirekit::Chart'));
+    $chartAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label', __('wirekit::Chart'));
 
     // A fallback name is a placeholder, not a description: "Chart" tells a reader that
     // something graphical is here and nothing about the data in it. The documentation
@@ -226,8 +226,9 @@
      the chart root alone, attributes included, so new labels and series from a Livewire update
      never reached a drawn chart. This element is updated like any other, and the factory
      follows its attribute and updates the chart in place, with no rebuild and no entrance
-     animation. A `template` renders nothing. --}}
-<template data-wk-chart-data="{{ \Pushery\WireKit\Support\AlpinePayload::json($chartData) }}"></template>
+     animation. The chart's name travels with its data, because a name that summarizes the data
+     changes with it and the root that carries it is ignored as well. A `template` renders nothing. --}}
+<template data-wk-chart-data="{{ \Pushery\WireKit\Support\AlpinePayload::json($chartData + ['ariaLabel' => $chartAriaLabel]) }}"></template>
 @if ($needsReplayWrapper)
     </{{ $wrapperTag }}>
 @endif

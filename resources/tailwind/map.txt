@@ -136,6 +136,7 @@ $zoom
 '.$iconOnlyBelow.'.
 '.$iconOnlySquareToken.';']);
 '.$message);
+'/^(?:min-h|h|w|p[xytrblse]?)-/');
 '0'
 '24rem',
 '2xl'
@@ -158,6 +159,7 @@ $zoom
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-bg-subtle)]
 'bg-[var(--color-wk-danger)]',
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-warning)]',
@@ -231,6 +233,7 @@ $zoom
 'leaflet']);
 'lg'
 'lg',
+'link')
 'list'
 'listLabel'
 'lng',
@@ -344,9 +347,9 @@ $zoom
 ($relAttr
 ($size)
 ($stackBelow
+($surface
 ($wrapLabel
 (($iconOnly
-(--color-wk-info
 (100%
 (14%
 (4.05
@@ -356,11 +359,13 @@ $zoom
 (PHP
 (Plain
 (SVG
+(Support\UrlProp).
 (Tailwind's
 (WCAG
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (`@container/wk-table`)
 (`loading`
+(`p-0
 (a
 (a11y).
 (array)
@@ -377,7 +382,6 @@ $zoom
 (e.g.
 (function_exists('logger'))
 (height:
-(info
 (inset
 (int)
 (intent
@@ -389,7 +393,6 @@ $zoom
 (m.body
 (matches
 (near-black
-(no
 (only
 (or
 (peer
@@ -420,13 +423,12 @@ $zoom
 --------
 -----------
 --color-wk-bg:
---color-wk-info
---color-wk-info-fg
---color-wk-info-hover):
---color-wk-info-text
+--color-wk-info-tone,
 --color-wk-warning-bg
 --}}
 --}}`
+-fg
+-hover,
 -mb-[length:var(--border-wk-width)]
 -me-[length:var(--border-wk-width)]
 -ms-1
@@ -580,6 +582,7 @@ BOTH
 Backgrounds:
 Base
 Below
+Beside
 Blade
 BooleanProp::from($disableOnLoading,
 BooleanProp::from($disabled,
@@ -609,6 +612,7 @@ Dev-only
 EITHER
 EVERY
 Each
+Echoed
 Emitting
 Every
 Examples
@@ -628,7 +632,6 @@ IN
 IS
 Icon
 Icon-only
-Info
 It
 Its
 JS
@@ -696,9 +699,9 @@ See
 Selected-row
 Set
 Setting
+Several
 Shared:
 Show
-Six
 Size
 So
 Soft
@@ -762,6 +765,7 @@ Without
 ['ring',
 ['sm',
 ['xs',
+[--color-wk-ring:var(--color-wk-accent-fg)]
 [--wk-touch-min:0px]'
 [0,
 [],
@@ -784,6 +788,10 @@ Without
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\ListProp::renumbered($center);
 \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
+\Pushery\WireKit\Support\UrlProp::text($href);
+\Pushery\WireKit\Support\UtilityClasses::PADDING);
+\Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
+\Pushery\WireKit\Support\UtilityClasses::without($sizeClasses,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -804,7 +812,7 @@ __('wirekit::Locations');
 __('wirekit::Map
 __('wirekit::Map'),
 __('wirekit::No
-_intentColor
+_intentColor.
 `$listLabel`
 `$loading`;
 `$size`
@@ -850,8 +858,10 @@ _intentColor
 `aria-label`
 `bg-[var(--color-wk-danger)]`
 `border-b-[3px]`
+`border-b-[var(--color-wk-accent)]`
 `border-box`
 `border-e-[3px]`
+`border-e-[var(--color-wk-accent)]`
 `break-word`
 `class="whitespace-normal"`
 `clientHeight
@@ -947,7 +957,7 @@ absent
 absolute
 absolutely,
 accent
-accent-content.
+accent,
 accept
 accessibility
 accessible
@@ -970,7 +980,6 @@ again
 against
 against,
 alias
-aliases
 aligned
 all
 all,
@@ -1043,6 +1052,7 @@ attributes
 attribution
 attribution:
 audit.)
+auto
 auto-derived
 auto-inject).
 automated
@@ -1086,6 +1096,7 @@ between
 beyond
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
@@ -1094,6 +1105,7 @@ bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-bg-muted)]"
 bg-[var(--color-wk-danger)]
+bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
 bg-transparent
@@ -1110,12 +1122,15 @@ border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]
 border-[var(--color-wk-border)]
 border-[var(--color-wk-danger)]
+border-[var(--color-wk-info-tone)]
 border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
+border-b-[var(--color-wk-accent)]
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
+border-e-[var(--color-wk-accent)]
 border-t-[length:var(--border-wk-width)]
 border-transparent
 border.
@@ -1123,6 +1138,7 @@ border:
 both
 both,
 bottom
+bound,
 boundaries
 box
 bracket
@@ -1183,7 +1199,6 @@ changes
 changes,
 channel
 channel,
-charts
 check
 check:
 checking
@@ -1446,6 +1461,7 @@ enough
 entry
 error
 error,
+escaped
 etc.)
 etc.),
 ever
@@ -1511,7 +1527,6 @@ fixed-height
 fixed.
 fixes
 flags
-flash
 flashes
 flex
 flex-1
@@ -1530,6 +1545,7 @@ floating
 floor
 floor's
 flow
+flows
 flush
 focus
 focus-visible:outline-hidden
@@ -1587,6 +1603,7 @@ guarantee,
 h-2.5
 h-4
 h-auto
+h-auto`).
 h-full
 h-full/w-full
 had
@@ -1610,6 +1627,7 @@ height
 height,
 height.
 here
+here,
 here.
 hidden
 hidden),
@@ -1638,6 +1656,7 @@ horizontal
 hover
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
@@ -1647,6 +1666,7 @@ hover:bg-[var(--color-wk-accent-hover)]
 hover:bg-[var(--color-wk-bg-muted)]
 hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
+hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
 hover:text-[color:var(--color-wk-text)]
@@ -1655,6 +1675,7 @@ how
 href
 href="#">
 href="{{
+hue
 hyphen,
 icon
 icon-only
@@ -1686,9 +1707,7 @@ indicator,
 inert
 inert.
 info
-info-specific
 info:
-info→accent.
 inheritance
 inline
 inline-flex
@@ -1738,6 +1757,7 @@ justify-center
 justify-start
 keep
 keeps
+kept
 keyboard
 keys
 kills
@@ -1897,6 +1917,7 @@ mode:
 model
 modes
 moment
+more
 most
 mount
 mounted
@@ -2103,8 +2124,6 @@ prevent
 preventDefaults
 preview
 preview.
-primary
-primary)
 primary:
 prod).
 prod.
@@ -2156,8 +2175,6 @@ reachable),
 reaches
 reacts
 read
-read),
-read,
 readable.
 reader
 reader's
@@ -2293,6 +2310,7 @@ selected
 selecting
 selector
 sent.
+sentence.
 separately
 separator.
 server
@@ -2327,6 +2345,7 @@ side
 side)
 sidebar
 sidebar.
+sides
 sideways.
 sighted
 signal
@@ -2341,6 +2360,7 @@ sits
 six
 six.
 size
+size's
 size,
 size.
 size;
@@ -2375,10 +2395,12 @@ sole
 some
 somebody
 something
+sorting
 source
 source-detection
 sources
 space
+specific
 specificity
 spelled
 spelling
@@ -2409,6 +2431,7 @@ states
 static
 stay
 stay,
+stay.
 stayed
 stays
 step
@@ -2442,6 +2465,7 @@ style="min-height:
 styleUrl:
 styled,
 stylesheet
+stylesheet's
 styling
 stylistic
 sub-component,
@@ -2465,6 +2489,7 @@ symptom
 syntax.
 tab
 tab)')
+tab,
 tabindex
 tabindex="0"></div>
 tabindex="{{
@@ -2496,6 +2521,8 @@ text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
+text-[color:var(--color-wk-info-fg)]
+text-[color:var(--color-wk-info-text)]
 text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -2559,7 +2586,6 @@ token,
 tokens
 tokens.
 tokens:
-tone
 too
 too,
 took
@@ -2582,6 +2608,7 @@ treatment
 tree
 trim($relAttr.'
 trim(strip_tags((string)
+trio
 trip
 true))
 true);
@@ -2734,6 +2761,7 @@ withholds
 without
 wk-scrollbar
 wk-touch-text-floor'
+won
 word
 word,
 work,

@@ -466,7 +466,7 @@ prod).
 prop's
 props
 px-[var(--padding-wk-x-md)]
-py-[var(--padding-wk-y-md)]
+py-[var(--padding-wk-x-md)]
 qualified:
 rather
 reach

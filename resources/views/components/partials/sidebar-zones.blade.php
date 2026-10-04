@@ -69,12 +69,22 @@
          dropping `header` and `footer` — which also gives up the sticky head and
          foot, an unrelated capability. `scroll-shadows="false"` keeps the zones,
          the scroller and its scrollbar, and leaves the edge alone. --}}
+    {{-- The scroller clips on BOTH axes: `overflow-y: auto` turns the inline axis into one that
+         clips as well. The rows fill it edge to edge, so a row's focus ring, drawn outside the
+         row, would lie wholly outside what the scroller shows on the left and the right. The inline
+         padding is as wide as the farthest a focus ring reaches, its width plus its offset (a
+         button's ring stands off it), and the negative margin gives the same width back, so
+         every row keeps its place and size and its ring shows on all four sides, a button the
+         developer put in the slot included. The column around it has more inset than that to
+         spare.
+         `scroll-padding` does the same along the list: a row the focus scrolls into view
+         stops that far short of the edge instead of flush with it. --}}
     @if($scrollShadows)
     <div class="relative flex flex-col min-h-0 flex-1" x-data="wirekitStickyPanelShadows()">
         <div
             x-ref="scroller"
             data-wk-sidebar-scroller
-            class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] wk-scrollbar"
+            class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] wk-scrollbar"
         >
             {{-- `-mb-px` cancels the sentinel's OWN height. It has to stay one pixel tall
                  for the observer to report it reliably — a zero-height target is not
@@ -100,7 +110,7 @@
          has something to attach to without reaching for a class name. --}}
     <div
         data-wk-sidebar-scroller
-        class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] wk-scrollbar"
+        class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] wk-scrollbar"
     >
         <div class="flex flex-col gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
     </div>

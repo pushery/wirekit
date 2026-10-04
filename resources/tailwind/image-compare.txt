@@ -80,6 +80,8 @@ $wrapperClasses
 'focus-visible:outline-hidden',
 'focus-visible:ring-[length:var(--ring-wk-width)]',
 'focus-visible:ring-[var(--color-wk-ring)]',
+'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
+'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
 'grid
 'h-full';
 'handle',
@@ -315,6 +317,7 @@ an
 anchors,
 and
 anticipate
+any
 applies
 arbitrary
 aria-atomic="true">
@@ -343,6 +346,8 @@ avoid
 axes,
 back.
 bag
+band
+bands
 be
 because
 before/after
@@ -388,6 +393,8 @@ clip
 clip-path
 clipped
 collapses
+color
+color.
 come
 comparison
 compiles
@@ -572,10 +579,12 @@ null,
 null;
 object-cover
 of
+offset
 on
 on.
 once
 one
+one-color
 one.
 one:
 only
@@ -589,17 +598,22 @@ other
 otherwise
 our
 out
+out.
 outer
 outward.
 over
 overflow-hidden
 own
 owns,
+page's
 parse
 paths
 pattern
 percentage
+photo
+photo,
 pick
+picture
 place-items-center',
 plain
 plain-HTML
@@ -618,6 +632,7 @@ props
 props.
 provides
 purpose:
+puts
 py-1
 qualified:
 rather
@@ -635,6 +650,8 @@ revealed
 revealed'))
 right-2'
 right-2'"
+ring
+ring,
 role.
 role="presentation"
 role="slider"
@@ -671,6 +688,7 @@ space
 space.
 spelling,
 src="{{
+stands
 starts
 state
 statically
@@ -740,6 +758,7 @@ value)"></span>
 value.
 value:
 value="{{
+vanishes
 vertical
 vertical.
 via
@@ -756,6 +775,7 @@ what
 whatever
 when
 where
+wherever
 which
 while
 whitelist

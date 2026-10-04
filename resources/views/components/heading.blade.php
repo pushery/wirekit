@@ -100,6 +100,7 @@
     ]), $scope);
 @endphp
 
-<{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
-    {{ $slot }}
-</{{ $tag }}>
+{{-- The slot sits against both tags. A line break and an indent around it are part of the
+     element's content, and a caller who keeps a user's own line breaks with `white-space`
+     set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one. --}}
+<{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</{{ $tag }}>

@@ -7,6 +7,83 @@
 import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as offsetMiddleware } from '@floating-ui/dom';
 
 /**
+ * Is focus already inside `container`?
+ *
+ * Every overlay that places focus after awaiting `position()` needs this answer first. The panel
+ * is visible and operable from the frame Alpine reveals it, and positioning resolves later, so a
+ * reader who moves into the panel in between, with the keyboard, a screen reader or a script,
+ * would otherwise have focus taken back to wherever the component meant to put it.
+ *
+ * Guarded rather than assumed: a unit harness does not have to provide `document`, and a panel
+ * that is gone by the time a promise resolves is no reason to throw.
+ *
+ * @param {Element|null|undefined} container
+ * @returns {boolean}
+ */
+export function focusIsWithin(container) {
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+
+    if (! container || ! active || typeof container.contains !== 'function') {
+        return false;
+    }
+
+    return container.contains(active);
+}
+
+/**
+ * Lift a panel above the dialog its trigger stands in.
+ *
+ * Every panel teleports into the one overlay root, where it stacks against the modals and drawers
+ * that live there too by z-index alone: a dropdown at `--z-wk-dropdown` and a tooltip at
+ * `--z-wk-tooltip` sit below a dialog at `--z-wk-modal`. For a panel of the page that is right. For
+ * one opened from inside the dialog it is not: the dialog's own layer would cover it, and a click on
+ * a dropdown entry would land on that layer, which closes the dialog.
+ *
+ * So the panel is lifted just above the highest positioned ancestor of its trigger that stands at
+ * dialog level or above, a tooltip one step higher than the rest, so that inside a dialog the two
+ * keep the order they have on the page. A panel of the page finds no such ancestor and keeps its
+ * own layer; a panel opened from a panel that was lifted is lifted above that one in turn.
+ *
+ * @param {HTMLElement} reference
+ * @param {HTMLElement} floating
+ */
+export function liftAboveTriggerDialog(reference, floating) {
+    if (! reference || ! floating || typeof getComputedStyle !== 'function') {
+        return;
+    }
+
+    // The panel's own layer, from its classes: a previous lift is cleared before it is read.
+    floating.style.zIndex = '';
+
+    const tokens = getComputedStyle(document.documentElement);
+    const dialogLevel = parseInt(tokens.getPropertyValue('--z-wk-modal'), 10);
+    const tooltipLevel = parseInt(tokens.getPropertyValue('--z-wk-tooltip'), 10);
+    const own = parseInt(getComputedStyle(floating).zIndex, 10);
+
+    if (! Number.isFinite(dialogLevel)) {
+        return;
+    }
+
+    let layer = null;
+
+    for (let el = reference.parentElement; el && el !== document.body; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        const z = parseInt(style.zIndex, 10);
+
+        if (style.position !== 'static' && Number.isFinite(z) && z >= dialogLevel && (layer === null || z > layer)) {
+            layer = z;
+        }
+    }
+
+    if (layer === null) {
+        return;
+    }
+
+    const step = Number.isFinite(own) && Number.isFinite(tooltipLevel) && own >= tooltipLevel ? 2 : 1;
+    floating.style.zIndex = String(layer + step);
+}
+
+/**
  * Position a floating element relative to a reference element.
  *
  * @param {HTMLElement} reference - The trigger/anchor element
@@ -85,83 +162,6 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   `top`.
  * @returns {Promise<{x: number, y: number, placement: string, stop?: () => void}>}
  */
-/**
- * Is focus already inside `container`?
- *
- * Every overlay that places focus after awaiting `position()` needs this answer first. The panel
- * is visible and operable from the frame Alpine reveals it, and positioning resolves later, so a
- * reader who moves into the panel in between, with the keyboard, a screen reader or a script,
- * would otherwise have focus taken back to wherever the component meant to put it.
- *
- * Guarded rather than assumed: a unit harness does not have to provide `document`, and a panel
- * that is gone by the time a promise resolves is no reason to throw.
- *
- * @param {Element|null|undefined} container
- * @returns {boolean}
- */
-export function focusIsWithin(container) {
-    const active = typeof document !== 'undefined' ? document.activeElement : null;
-
-    if (! container || ! active || typeof container.contains !== 'function') {
-        return false;
-    }
-
-    return container.contains(active);
-}
-
-/**
- * Lift a panel above the dialog its trigger stands in.
- *
- * Every panel teleports into the one overlay root, where it stacks against the modals and drawers
- * that live there too by z-index alone: a dropdown at `--z-wk-dropdown` and a tooltip at
- * `--z-wk-tooltip` sit below a dialog at `--z-wk-modal`. For a panel of the page that is right. For
- * one opened from inside the dialog it is not: the dialog's own layer would cover it, and a click on
- * a dropdown entry would land on that layer, which closes the dialog.
- *
- * So the panel is lifted just above the highest positioned ancestor of its trigger that stands at
- * dialog level or above, a tooltip one step higher than the rest, so that inside a dialog the two
- * keep the order they have on the page. A panel of the page finds no such ancestor and keeps its
- * own layer; a panel opened from a panel that was lifted is lifted above that one in turn.
- *
- * @param {HTMLElement} reference
- * @param {HTMLElement} floating
- */
-export function liftAboveTriggerDialog(reference, floating) {
-    if (! reference || ! floating || typeof getComputedStyle !== 'function') {
-        return;
-    }
-
-    // The panel's own layer, from its classes: a previous lift is cleared before it is read.
-    floating.style.zIndex = '';
-
-    const tokens = getComputedStyle(document.documentElement);
-    const dialogLevel = parseInt(tokens.getPropertyValue('--z-wk-modal'), 10);
-    const tooltipLevel = parseInt(tokens.getPropertyValue('--z-wk-tooltip'), 10);
-    const own = parseInt(getComputedStyle(floating).zIndex, 10);
-
-    if (! Number.isFinite(dialogLevel)) {
-        return;
-    }
-
-    let layer = null;
-
-    for (let el = reference.parentElement; el && el !== document.body; el = el.parentElement) {
-        const style = getComputedStyle(el);
-        const z = parseInt(style.zIndex, 10);
-
-        if (style.position !== 'static' && Number.isFinite(z) && z >= dialogLevel && (layer === null || z > layer)) {
-            layer = z;
-        }
-    }
-
-    if (layer === null) {
-        return;
-    }
-
-    const step = Number.isFinite(own) && Number.isFinite(tooltipLevel) && own >= tooltipLevel ? 2 : 1;
-    floating.style.zIndex = String(layer + step);
-}
-
 export async function position(reference, floating, {
     placement = 'bottom-start',
     offset = 8,

@@ -130,8 +130,8 @@ failure
 flags
 focus
 focus-visible:outline-hidden
-focus-visible:ring-2
 focus-visible:ring-[color:var(--color-wk-ring)]',
+focus-visible:ring-[length:var(--ring-wk-width)]
 for
 for.
 from

@@ -142,7 +142,7 @@ $value]))
 'bg-[color-mix(in_oklch,var(--color-wk-success)_15%,transparent)]
 'bg-[color-mix(in_oklch,var(--color-wk-warning)_15%,transparent)]
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
-'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))]
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]
 'bg-[var(--color-wk-accent)]
 'bg-[var(--color-wk-bg-muted)]
 'bg-[var(--color-wk-bg-muted)]'
@@ -171,6 +171,7 @@ $value]))
 'ease-[var(--transition-wk-easing)]',
 'emptyText'
 'false'
+'focus-visible:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
 'font-semibold',
 'h-4
@@ -481,7 +482,6 @@ NO
 Named
 Necessary
 Neither
-No
 Nobody
 Normalized
 Nothing
@@ -685,6 +685,7 @@ __('wirekit::Select
 `strong`
 `subKey`,
 `tabindex`
+`table`
 `table`'s:
 `table`.
 `table`:
@@ -869,13 +870,14 @@ border-collapse
 both
 both.
 bound
+bounds
 box
+boxes
 branch
 branch.
 branches
 bridge
 browser
-browser's
 browser's.
 browser,
 build
@@ -926,6 +928,7 @@ cellText(row,
 cellType
 cellType:
 cells
+cells'
 cells.
 centering
 change
@@ -1271,6 +1274,7 @@ get
 gets
 getter
 gives
+gives:
 glyphs
 go
 goes
@@ -1303,6 +1307,7 @@ heading,
 hear
 hear.
 hears
+height,
 helped:
 helping
 here
@@ -1340,7 +1345,6 @@ in.
 in:
 index
 index)
-indicator
 indistinguishable
 inert
 inherit`
@@ -1399,6 +1403,7 @@ keys
 keys.
 keystroke
 keystroke,
+kit's
 knob
 know.
 known
@@ -1423,6 +1428,7 @@ leading
 leaves
 left
 legally
+let
 library,
 lie
 like
@@ -1433,8 +1439,8 @@ lines
 lines:
 link
 link"
+link's
 link.blade.php
-link:
 links
 list
 list,
@@ -1613,9 +1619,11 @@ outcomes,
 outside
 over
 over,
+overflow
 overflow-hidden"
 overflow-x-auto
 overflow-y-auto
+overflow-y-hidden
 overflows,
 overlays.
 overview
@@ -1666,6 +1674,7 @@ pill's
 pill,
 pills
 pixel
+pixels
 place
 placeholder="{{
 plain
@@ -1800,6 +1809,7 @@ rounded-[var(--radius-wk-lg)]
 rounded-[var(--radius-wk-md)]
 rounded-[var(--radius-wk-md)]">
 rounded-[var(--radius-wk-sm)]
+rounded-[var(--radius-wk-sm)]',
 row
 row"
 row'))
@@ -1831,6 +1841,7 @@ scroll
 scrollbar
 scrolled
 scroller
+scroller's
 scroller,
 scrolling
 scrolls
@@ -1938,7 +1949,6 @@ status
 status"
 stay
 stays
-stays.
 stays:
 sticky
 still
@@ -1992,6 +2002,7 @@ text,
 text-[color:var(--color-wk-accent-content)]',
 text-[color:var(--color-wk-accent-fg)]',
 text-[color:var(--color-wk-danger-text)]',
+text-[color:var(--color-wk-info-text)]',
 text-[color:var(--color-wk-success-text)]',
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text)]"
@@ -2102,6 +2113,7 @@ value="[]"
 values
 varies
 version,
+vertically
 very
 view's
 view.
@@ -2139,6 +2151,7 @@ well-formed,
 well:
 what
 whatever
+wheel
 when
 whenever
 where

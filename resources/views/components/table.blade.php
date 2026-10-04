@@ -250,7 +250,14 @@
      measures against. NAMED on purpose: an anonymous container would also become the
      measuring context for every `@`-variant a caller nests inside the table, and
      retarget it without anybody asking. --}}
-<div class="@container/wk-table relative w-full min-w-0" x-data="wirekitStickyPanelShadows()" @if($callerRef !== '') data-wk-ref-scope @endif {{ $outerAttributes }}>
+{{-- The scroller's focus ring is drawn by THIS frame, on an `::after` laid over the table while
+     the scroller has the keyboard focus. A ring the scroller drew itself, as an inset shadow,
+     would be painted beneath its own cells: a header cell with a background would cover its top
+     edge, a striped or footer row its bottom, a frozen first column its left, and a sticky head
+     (`z-10`) its top while the rows scroll. An outline set inward is covered by the sticky head
+     the same way. The overlay sits above the sticky head at the height the frozen header cell
+     already takes over it, and exists only while the scroller has the focus. --}}
+<div class="@container/wk-table relative w-full min-w-0 has-[>[data-wk-table-scroller]:focus-visible]:after:pointer-events-none has-[>[data-wk-table-scroller]:focus-visible]:after:absolute has-[>[data-wk-table-scroller]:focus-visible]:after:inset-0 has-[>[data-wk-table-scroller]:focus-visible]:after:z-20 has-[>[data-wk-table-scroller]:focus-visible]:after:rounded-[inherit] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[length:var(--ring-wk-width)] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-inset has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[var(--color-wk-ring)]" x-data="wirekitStickyPanelShadows()" @if($callerRef !== '') data-wk-ref-scope @endif {{ $outerAttributes }}>
 <div
     x-ref="scroller"
     {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in
@@ -260,16 +267,24 @@
          something had already scrolled. Which is after the moment it exists for. --}}
     {{-- The scroller is a tab stop, so it needs a focus state a keyboard user can SEE —
          it is the only handle for panning to columns that are off screen, and without a
-         ring the caret lands on it with nothing to show for it. The ring is drawn INSIDE
-         the box, matching the sortable header button: an outset ring on an element that
-         is itself a min-width-zero flex child adds width outside the border box, which is
-         the one thing this wrapper spends its own comment above avoiding. --}}
+         ring the caret lands on it with nothing to show for it. The frame above draws that
+         ring, INSIDE the box: an outset ring on an element that is itself a min-width-zero
+         flex child adds width outside the border box, which is the one thing this wrapper
+         spends its own comment above avoiding. `data-wk-table-scroller` is what the frame
+         asks about. --}}
     {{-- Positioned, so the scroller is the containing block for anything a cell places
          absolutely. A visually hidden label is `position: absolute`, and against the wrapper
          outside the scroller it was neither clipped nor scrolled: it widened the wrapper and
          every ancestor on a phone. The shadows are siblings of the scroller and keep the
          wrapper as theirs, so they still hold still while the table moves. --}}
-    class="relative flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
+    {{-- The block axis scrolls only under a sticky header, the one case with a bounded height.
+         Otherwise it is hidden rather than left alone: `overflow-x: auto` turns a `visible`
+         block axis into `auto`, and the line boxes of the cells can leave a few pixels of
+         overflow under a collapsed-border table. With any overflow on that axis the scroller
+         can scroll vertically, and a swipe or a wheel that starts on a row moves it by those
+         pixels instead of moving the page. --}}
+    data-wk-table-scroller
+    class="relative flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-hidden {{ $stickyHeader ? 'overflow-y-auto' : 'overflow-y-hidden' }}"
     @if($stickyHeaderStyle) style="{{ $stickyHeaderStyle }}" @endif
     {{-- Reachability is unconditional; the landmark is opt-in. `filled()` rather than `??`,
          because `role="region"` with an empty name is not exposed as a landmark at all — an

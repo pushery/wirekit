@@ -63,6 +63,7 @@ $stickyClasses])
 @endif
 @endphp
 @if($container)
+@if($sticky)
 @php
 @props([
 @props.
@@ -169,6 +170,7 @@ container
 content
 correct.
 could
+data-wk-scroll-inset="top"
 debug
 decoration,
 default

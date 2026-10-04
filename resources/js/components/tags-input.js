@@ -19,6 +19,12 @@
  * order is not the same in every language — the same reason the wizard's step
  * announcement is shaped this way.
  *
+ * Lifecycle resources held on `this`, released in destroy():
+ *   - _modelEvents — `change` and `blur` on the root, which `wire:model` binds through
+ *     `x-modelable`, so `wire:model.live.blur` and `.live.change` send when a tag is added or
+ *     removed and when the reader leaves (utils/model-events.js). The tags travel as the
+ *     event's detail.
+ *
  * @param {Object} config
  * @param {string} config.name - Input name for form submission
  * @param {number|null} config.maxTags - Maximum number of tags allowed
@@ -26,6 +32,8 @@
  * @param {Object} [config.announcements] - Translated templates: `added`, `removed`,
  *   `duplicate` (all take `:name`) and `limit` (takes `:count`).
  */
+import { watchModelEvents } from '../utils/model-events.js';
+
 export default function wirekitTagsInput(config = {}) {
     const announcements = config.announcements && typeof config.announcements === 'object'
         ? config.announcements
@@ -65,6 +73,18 @@ export default function wirekitTagsInput(config = {}) {
         // Blade-side @js() encoding produces an iterable proxy). Empty
         // array if no seed provided.
         tags: Array.isArray(config.tags) ? Array.from(config.tags).map(String) : [],
+
+        _modelEvents: null,
+
+        init() {
+            const root = this.$root;
+            this._modelEvents = watchModelEvents(root, () => root, { detail: () => [...this.tags] });
+        },
+
+        destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
+        },
         _maxTags: config.maxTags || null,
 
         /**
@@ -190,6 +210,9 @@ export default function wirekitTagsInput(config = {}) {
          * component behaves exactly as before, down to the byte.
          */
         _commit() {
+            // Every change the reader makes passes here, so it is also the field's `change`.
+            this._modelEvents?.commit();
+
             if (typeof this.run === 'function') {
                 this.run([...this.tags]);
             }

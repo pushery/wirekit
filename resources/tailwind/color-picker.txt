@@ -1,3 +1,4 @@
+!
 !==
 "No
 "clear"
@@ -27,7 +28,6 @@ $attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->except(['aria-describedby',
 $attributes->get('aria-describedby',
-$attributes->get('aria-label');
 $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes]
@@ -42,6 +42,7 @@ $errorMessage
 $errorMessage)
 $event.target.value"
 $fieldClasses
+$fieldLabelId
 $format,
 $formatValue
 $formatValue,
@@ -51,6 +52,7 @@ $inputClasses
 $jsConfig
 $name
 $name)])
+$nativeId
 $nativeOnMobile
 $nativeOnMobile,
 $nativeWrapperClasses
@@ -61,6 +63,7 @@ $outerAttributes
 $pickerId
 $pickerId.'-error'
 $pickerId.'-hint'
+$pickerId.'-native';
 $popover
 $popover;
 $popoverValue
@@ -79,6 +82,7 @@ $required
 $scope);
 $showValue
 $slot
+$slot->hasActualContent())
 $swatchClasses
 $swatchSize
 $swatchSize,
@@ -93,10 +97,11 @@ $withClear
 $withClear,
 $withEyedropper
 $withRecents
+$wkField
+$wkField->takeLabel($pickerId)
 $wrapperClasses
 $wrapperClasses])
 &&
-'#'.$pickerId.'-error',
 '#000000',
 ''"></span>
 '')
@@ -111,9 +116,10 @@ $wrapperClasses])
 'a
 'absolute
 'action'
-'announce-errors']);
+'announce-errors',
 'announceError'
 'args'
+'aria-label');
 'aria-label'])->whereDoesntStartWith(['wire:model',
 'background-image:
 'border-0
@@ -198,6 +204,9 @@ $wrapperClasses])
 'withRecents'
 'wk-color-');
 'wk-color-'.$name
+'wk-field']);
+'wkField'
+'wkField',
 'wrapper',
 'x-model'])->class(['relative',
 'x-model'])->whereDoesntStartWith('x-modelable')
@@ -205,6 +214,7 @@ $wrapperClasses])
 ($format)
 ($hint
 ($name
+($popoverValue
 ($presetColor
 ($required)
 ($size)
@@ -217,6 +227,7 @@ $wrapperClasses])
 (HTML
 (SV
 (Support\CallerListeners).
+(Support\FieldControl):
 (`>Color
 (`pickColor`,
 (angled
@@ -237,6 +248,7 @@ $wrapperClasses])
 (non-popover)
 (not
 (on
+(one
 (overflow-clipped,
 (pointer:
 (popover
@@ -404,6 +416,8 @@ $wrapperClasses])
 @click="pickColor({{
 @click="togglePanel()"
 @else
+@elseif($fieldLabelId
+@elseif($fieldLabelId)
 @elseif($hint)
 @endforeach
 @endif
@@ -416,6 +430,7 @@ $wrapperClasses])
 @if($callerRef
 @if($controlDescribedBy)
 @if($disabled)
+@if($fieldLabelId
 @if($hasError
 @if($hasError)
 @if($name)
@@ -525,6 +540,7 @@ Hue
 IS
 Illuminate\Support\Str;
 Inline-level
+Inside
 It
 JS
 KEEPS
@@ -622,9 +638,12 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Use
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::saturation
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CssColor::value($preset)
+\Pushery\WireKit\Support\CssIdentifier::idSelector($pickerId.'-error'),
 \Pushery\WireKit\Support\DomId::unique($id
+\Pushery\WireKit\Support\FieldControl
 \Pushery\WireKit\Support\ListProp::from($presets);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
@@ -688,6 +707,7 @@ __('wirekit::Use
 `error`
 `eyedropper`)
 `failure:
+`for`
 `formattedValue`
 `h`/`s`/`v`/`a`
 `hint`
@@ -722,6 +742,7 @@ __('wirekit::Use
 `wire:show`
 `wk-color-brand-2`
 `wk-color-brand`,
+`x-if`
 `x-model`
 `x-ref`
 `x-show`,
@@ -783,6 +804,7 @@ aria-haspopup="dialog"
 aria-hidden="true"><path
 aria-invalid="true"
 aria-label="{{
+aria-labelledby="{{
 aria-live
 aria-live="assertive"
 aria-live="polite"
@@ -804,6 +826,7 @@ assistive
 association
 asterisk.
 at
+at.
 attribute
 attribute.
 attribute:
@@ -1084,6 +1107,7 @@ drops
 duplicate.
 during
 each
+each),
 echo.
 editable
 either
@@ -1285,6 +1309,7 @@ inset-0"
 insets
 inside
 inspects
+instanceof
 instead
 interactive
 into
@@ -1317,6 +1342,8 @@ keypresses
 keys
 label
 label's
+label.
+labeled
 land
 landed
 lands
@@ -1372,6 +1399,7 @@ mistake:
 mobile
 mode
 mode)
+mode,
 model
 model,
 moment
@@ -1414,6 +1442,7 @@ nothing.
 nowhere
 nudge.
 null
+null)
 null),
 null);
 null)?->first($name)
@@ -1494,6 +1523,7 @@ pattern
 pencil
 per
 phone
+phone's
 pick
 picked
 picker
@@ -1519,6 +1549,7 @@ pointercancel,
 pointerdown,
 pointers
 pointing
+points
 popover
 popover's
 popover-only.
@@ -1682,6 +1713,7 @@ shadow-[var(--shadow-wk-sm)]"
 shape
 shapes
 shapes,
+share
 shared
 sheet
 sheet,
@@ -1807,6 +1839,7 @@ themeable).
 themeable.
 themed
 then
+then.
 there
 there:
 these
@@ -2017,7 +2050,6 @@ zone
 }}-error"
 }}-hex-error"
 }}-hint"
-}}-native"
 }}.replace(':color',
 }}.replace(':saturation',
 }};"

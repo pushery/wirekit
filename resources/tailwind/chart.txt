@@ -10,12 +10,12 @@
 $adapterScripts
 $alpineComponent
 $attributes->except(['aria-label',
-$attributes->get('aria-label',
 $attributes->get('style',
 $attributes->has('aria-label'))
 $callerReplayable
 $callerStyle
 $chartAriaLabel
+$chartAriaLabel])
 $chartAttributes
 $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart',
 $chartAttributes->except(['data-replayable']);
@@ -53,6 +53,7 @@ $wrapperTag
 '100%'`
 '380px'
 'WireKit:
+'aria-label',
 'base',
 'block'
 'block';
@@ -152,6 +153,7 @@ $wrapperTag
 =
 =&gt;
 ===
+=>
 >
 ?
 ??
@@ -243,10 +245,12 @@ Wire-streaming
 Without
 Wrapper
 Wrapping
+['ariaLabel'
 []
 [];
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
-\Pushery\WireKit\Support\AlpinePayload::json($chartData)
+\Pushery\WireKit\Support\AlpinePayload::json($chartData
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\WireKit::cspNonce()
 \RuntimeException(
@@ -414,6 +418,7 @@ carrying
 catalog
 center;
 change
+changes
 chart
 chart's
 chart,
@@ -477,6 +482,7 @@ cryptic
 custom
 dashed
 data
+data,
 data-*
 data-navigate-once="true"@if
 data-replayable="true"
@@ -620,6 +626,7 @@ hyphen),
 identifier
 if
 iframe-srcdoc,
+ignored
 imperative
 implementation
 in
@@ -960,6 +967,7 @@ tooltip
 top).
 translates.
 transparent);
+travels
 tree
 trim($defaultStyle.'
 trips
@@ -1015,6 +1023,7 @@ was
 way
 way.
 we
+well.
 what
 when
 where

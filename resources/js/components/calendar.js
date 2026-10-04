@@ -4,8 +4,15 @@
  * Standalone month grid with day cells for date selection.
  * Supports single date selection, keyboard navigation, and month/year changes.
  *
+ * Lifecycle resources held on `this`, released in destroy():
+ *   - _modelEvents — `change` and `blur` on the hidden field for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that field alone (utils/model-events.js): `change` with
+ *     every date chosen, and `blur` when the reader leaves the grid.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/
  */
+import { watchModelEvents } from '../utils/model-events.js';
+
 export default function wirekitCalendar(config = {}) {
     const today = new Date();
 
@@ -90,6 +97,17 @@ export default function wirekitCalendar(config = {}) {
     // why it survived. The question being asked is "was a value supplied?", so
     // the test is on the value's presence and not on the digit it produced.
     return {
+        _modelEvents: null,
+
+        init() {
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.hiddenInput);
+        },
+
+        destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
+        },
+
         viewYear: initial ? initial.getFullYear() : today.getFullYear(),
         viewMonth: initial ? initial.getMonth() : today.getMonth(),
         selected: startValue,
@@ -449,6 +467,9 @@ export default function wirekitCalendar(config = {}) {
                     this.$refs[ref]?.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             }
+
+            // A chosen date is committed at once, as a native date field commits a pick.
+            this._modelEvents?.commit();
         },
 
         /**

@@ -55,7 +55,7 @@
     // Centered container with muted colors and generous vertical padding
     $classes = WireKit::resolveClasses('empty-state', 'base', implode(' ', [
         'flex flex-col items-center justify-center text-center',
-        'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-xl)]',
+        'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-x-xl)]',
         'font-[family-name:var(--font-wk-sans)]',
         $variantClasses,
     ]), $scope);

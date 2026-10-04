@@ -232,6 +232,7 @@ $total
 ($status)
 (RTL-safe)
 (Support\CallerListeners).
+(Support\UrlProp).
 (WireKit::validateProp('avatar',
 (WireKit::validateProp('profile',
 (`sidebar/item.blade.php`).
@@ -360,6 +361,7 @@ Default
 Dev-only
 EMPTY
 EXPANDED
+Echoed
 Empty
 English,
 Enter
@@ -441,6 +443,7 @@ Without
 [])->class([$baseClasses,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\ListProp::from($avatar);
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('profile',
@@ -602,6 +605,7 @@ bottom
 bottom-0
 bottom-right
 bottom-right)
+bound,
 box
 box,
 box-shadow
@@ -763,6 +767,7 @@ ends
 entries
 entry
 error,
+escaped
 event
 event.
 every

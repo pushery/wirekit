@@ -16,6 +16,9 @@
     'label' => null,
     'hideLabel' => false,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     // Takes the MESSAGE, not a boolean — the house shape. Laravel's validation bag is read
     // as well, under the field's name.
     'error' => null,
@@ -217,6 +220,10 @@
     // The group takes the component's own id; the number box takes it and the caller's after it.
     $ownDescribedBy = $hasError ? $id.'-error' : ($hint ? $id.'-hint' : '');
     $describedBy = trim($ownDescribedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // A caller's `x-ref` belongs to the caller's component. The field sits in a root of ours,
     // which would take it, and it already carries our own `x-ref`, which a parser keeps over a
@@ -224,11 +231,18 @@
     // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+
+    // The country control's own name. It carried the field's label, so a screen reader heard
+    // "Phone number" twice and only the role and the value told the two controls apart, and
+    // without a label it had no name at all.
+    $countryName = filled($label)
+        ? __('wirekit:::label, country', ['label' => $label])
+        : __('wirekit::Country');
 @endphp
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPhone({{ $config }})">
     @if($label)
-        <x-wirekit::label :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- TWO controls, ONE value, and that is why this is a group rather than a field with an
@@ -259,7 +273,7 @@
             :options="$countryOptions"
             :value="$start"
             :size="$size"
-            :aria-label="$label"
+            :aria-label="$countryName"
             :disabled="$disabled || $readonly"
             panel-width="auto"
             {{-- No clear button. A phone number cannot be assembled without a country -- the
@@ -268,6 +282,11 @@
                  such affordance, and gaining one on the way to flags would have been a
                  regression nothing here would have caught. --}}
             :clearable="false"
+            {{-- The country is part of this control, not the control a surrounding field
+                 labels: that is the number below, which carries the field's `name` as its id.
+                 A combobox inside a field takes the field's label (Support\FieldControl), so
+                 the field is cut off here, and its label keeps pointing at the number. --}}
+            :wk-field="null"
             x-model="country"
             :class="$selectClasses"
         />

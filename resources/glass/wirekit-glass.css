@@ -1,119 +1,220 @@
 /* WireKit Liquid Glass Extension
  *
  * No version in this banner, deliberately, and the paired .js says the same thing in the
- * same words. Both files are PUBLISHED into the developer's own application by
- * `wirekit:glass install` and never rebuilt there, so a number here freezes at whatever it
- * said the day it was written — this one read v1.0.0 through a rewrite of the whole
- * detection strategy. The package's version is the one that moves.
+ * same words. Both files are published into the developer's own application by
+ * `wirekit:glass install` and never rebuilt there, so a number here would freeze at whatever
+ * it said the day it was written. The package's version is the one that moves.
  *
- * Tier 1: backdrop-filter, in every supported browser
- * Tier 2: SVG feDisplacementMap refraction. Chromium paints the displacement. WebKit, the
- *         engine of Safari and of every browser on iPhone and iPad, accepts the filter and
- *         paints nothing from it, so there Tier 2 shows as clear glass under a light frost.
+ * Tier 1: backdrop-filter glass in four levels, in every supported browser
+ * Tier 2: SVG feDisplacementMap refraction on `.wk-glass-refract`. Chromium paints the
+ *         displacement. WebKit, the engine of Safari and of every browser on iPhone and iPad,
+ *         accepts the filter and paints nothing from it, so there Tier 2 shows as clear glass
+ *         without the bending.
  * Requires: <x-wirekit::glass /> at the start of the layout body.
  *           Not the document's metadata section: the component emits an <svg>, which
  *           terminates it and reparents every tag after it.
  */
 
-/* ── Tier 1 — Frosted Glass ──────────────────────────────── */
-.wk-glass {
-    backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
-    -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
-    background: rgba(255, 255, 255, 0.72);
-    border: 0.5px solid rgba(255, 255, 255, 0.45);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04),
-                inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
+/* ── Levels ─────────────────────────────────────────────────
+ *
+ * `.wk-glass` is liquid glass at the regular level: a light blur, a thin fill, and an edge that
+ * catches the light. A level class sets another one, on the glass element itself or on any
+ * ancestor:
+ *
+ *   .wk-glass-clear     the most transparent level, for controls over photos, video or strong color
+ *   .wk-glass-regular   the default, written out
+ *   .wk-glass-frosted   a milky surface for panels full of text
+ *   .wk-glass-opaque    no transparency; the theme's elevated surface with a glass edge removed
+ *
+ * The colors of a level are custom properties, set below for light and dark. An application
+ * overrides them in its own stylesheet, on `:root` or on any element, without editing this file:
+ *
+ *   --glass-wk-fill        the tint laid over the blurred backdrop
+ *   --glass-wk-rim         the border
+ *   --glass-wk-highlight   the bright inner edge, top-right and bottom-left
+ *   --glass-wk-sheen       the softer light just inside it
+ *   --glass-wk-edge        the dark hairline that gives the pane its thickness
+ *   --glass-wk-shadow      the shadow the pane casts
+ *
+ * The blur of a level is written out per level instead of read from a property: a
+ * `backdrop-filter` built from `var()` is dropped entirely by some Safari releases, and a fill
+ * without its blur is not glass. With levels nested in each other, the nearest one decides the
+ * colors and the one declared later in this file decides the blur, so a level written on the glass
+ * element itself is the reliable form there.
+ *
+ * Every rule that sets these properties uses `:where()`, so a rule in an application stylesheet
+ * wins over it whatever the order of the two files.
+ */
+:where(:root) {
+    --glass-wk-fill: rgb(255 255 255 / 0.2);
+    --glass-wk-rim: rgb(255 255 255 / 0.4);
+    --glass-wk-highlight: rgb(255 255 255 / 0.85);
+    --glass-wk-sheen: rgb(255 255 255 / 0.45);
+    --glass-wk-edge: rgb(0 0 0 / 0.35);
+    --glass-wk-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.28);
 }
 
-.dark .wk-glass {
-    background: rgba(30, 30, 32, 0.78);
-    border-color: rgba(255, 255, 255, 0.10);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.20),
-                inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+:where(.dark) {
+    --glass-wk-fill: rgb(28 28 30 / 0.4);
+    --glass-wk-rim: rgb(255 255 255 / 0.14);
+    --glass-wk-highlight: rgb(255 255 255 / 0.45);
+    --glass-wk-sheen: rgb(255 255 255 / 0.18);
+    --glass-wk-edge: rgb(0 0 0 / 0.6);
+    --glass-wk-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.55);
 }
 
-/* ── Tier 1 — the frosted surface every browser gets ────────
-   The Tier 2 block further down is gated on the detector class, so this is the
-   surface a page shows before the detector has run, and wherever it does not. */
+:where(.wk-glass-clear) {
+    --glass-wk-fill: rgb(255 255 255 / 0.05);
+    --glass-wk-rim: rgb(255 255 255 / 0.2);
+    --glass-wk-highlight: rgb(255 255 255 / 0.9);
+    --glass-wk-sheen: rgb(255 255 255 / 0.55);
+    --glass-wk-edge: rgb(0 0 0 / 0.5);
+    --glass-wk-shadow: 0 4px 8px rgb(0 0 0 / 0.2);
+}
+
+:where(.wk-glass-regular) {
+    --glass-wk-fill: rgb(255 255 255 / 0.2);
+    --glass-wk-rim: rgb(255 255 255 / 0.4);
+    --glass-wk-highlight: rgb(255 255 255 / 0.85);
+    --glass-wk-sheen: rgb(255 255 255 / 0.45);
+    --glass-wk-edge: rgb(0 0 0 / 0.35);
+    --glass-wk-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.28);
+}
+
+:where(.wk-glass-frosted) {
+    --glass-wk-fill: rgb(255 255 255 / 0.72);
+    --glass-wk-rim: rgb(255 255 255 / 0.45);
+    --glass-wk-highlight: rgb(255 255 255 / 0.7);
+    --glass-wk-sheen: rgb(255 255 255 / 0.3);
+    --glass-wk-edge: rgb(0 0 0 / 0.1);
+    --glass-wk-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.18);
+}
+
+/* The theme's own surface and border, so this level follows every preset and both modes. */
+:where(.wk-glass-opaque) {
+    --glass-wk-fill: var(--color-wk-bg-elevated, rgb(255 255 255));
+    --glass-wk-rim: var(--color-wk-border, rgb(0 0 0 / 0.1));
+    --glass-wk-highlight: transparent;
+    --glass-wk-sheen: transparent;
+    --glass-wk-edge: transparent;
+    --glass-wk-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+/* Dark values per level. Three forms, because `.dark` can sit on an ancestor of the level, on
+   the same element, or inside the level's scope. */
+:where(.dark .wk-glass-clear, .dark.wk-glass-clear, .wk-glass-clear .dark) {
+    --glass-wk-fill: rgb(20 20 22 / 0.16);
+    --glass-wk-rim: rgb(255 255 255 / 0.12);
+    --glass-wk-highlight: rgb(255 255 255 / 0.5);
+    --glass-wk-sheen: rgb(255 255 255 / 0.2);
+    --glass-wk-edge: rgb(0 0 0 / 0.6);
+    --glass-wk-shadow: 0 6px 16px rgb(0 0 0 / 0.45);
+}
+
+:where(.dark .wk-glass-regular, .dark.wk-glass-regular, .wk-glass-regular .dark) {
+    --glass-wk-fill: rgb(28 28 30 / 0.4);
+    --glass-wk-rim: rgb(255 255 255 / 0.14);
+    --glass-wk-highlight: rgb(255 255 255 / 0.45);
+    --glass-wk-sheen: rgb(255 255 255 / 0.18);
+    --glass-wk-edge: rgb(0 0 0 / 0.6);
+    --glass-wk-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.55);
+}
+
+:where(.dark .wk-glass-frosted, .dark.wk-glass-frosted, .wk-glass-frosted .dark) {
+    --glass-wk-fill: rgb(30 30 32 / 0.78);
+    --glass-wk-rim: rgb(255 255 255 / 0.1);
+    --glass-wk-highlight: rgb(255 255 255 / 0.18);
+    --glass-wk-sheen: rgb(255 255 255 / 0.06);
+    --glass-wk-edge: rgb(0 0 0 / 0.5);
+    --glass-wk-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.5);
+}
+
+/* ── Tier 1 — the glass every browser gets ──────────────────
+ *
+ * The Tier 2 block further down is gated on the detector class, so this is also the surface a
+ * refracting element shows before the detector has run, and wherever it does not run.
+ *
+ * The edge is what reads as glass, more than the blur: two bright inner lines on opposite
+ * corners, a softer light just inside them, a dark hairline around the pane and the shadow it
+ * casts. A level changes how much of the backdrop shows; the edge stays.
+ */
+.wk-glass,
 .wk-glass-refract {
-    backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
+    -webkit-backdrop-filter: blur(6px) saturate(1.6) brightness(1.04);
+    backdrop-filter: blur(6px) saturate(1.6) brightness(1.04);
+    background: var(--glass-wk-fill);
+    border: 1px solid var(--glass-wk-rim);
+    box-shadow:
+        inset 2px -2px 1px -1px var(--glass-wk-highlight),
+        inset -2px 2px 1px -1px var(--glass-wk-highlight),
+        inset 6px -6px 1px -6px var(--glass-wk-sheen),
+        inset -6px 6px 1px -6px var(--glass-wk-sheen),
+        inset 0 0 2px var(--glass-wk-edge),
+        var(--glass-wk-shadow);
+}
+
+/* The blur per level. The ancestor form has the base rule's specificity and comes later; the form
+   on the element itself is one class stronger, so it beats a level set on an ancestor. */
+:where(.wk-glass-clear) :is(.wk-glass, .wk-glass-refract),
+:is(.wk-glass, .wk-glass-refract).wk-glass-clear {
+    -webkit-backdrop-filter: blur(2px) saturate(1.4);
+    backdrop-filter: blur(2px) saturate(1.4);
+}
+
+:where(.wk-glass-regular) :is(.wk-glass, .wk-glass-refract),
+:is(.wk-glass, .wk-glass-refract).wk-glass-regular {
+    -webkit-backdrop-filter: blur(6px) saturate(1.6) brightness(1.04);
+    backdrop-filter: blur(6px) saturate(1.6) brightness(1.04);
+}
+
+:where(.wk-glass-frosted) :is(.wk-glass, .wk-glass-refract),
+:is(.wk-glass, .wk-glass-refract).wk-glass-frosted {
     -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
-    background: rgba(255, 255, 255, 0.72);
-    border: 0.5px solid rgba(255, 255, 255, 0.45);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04),
-                inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
 }
 
-.dark .wk-glass-refract {
-    background: rgba(30, 30, 32, 0.78);
-    border-color: rgba(255, 255, 255, 0.10);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.20),
-                inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+:where(.wk-glass-opaque) :is(.wk-glass, .wk-glass-refract),
+:is(.wk-glass, .wk-glass-refract).wk-glass-opaque {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
-/* ── Tier 2 — SVG Displacement (Progressive Enhancement) ───
+/* ── Tier 2 — SVG displacement (progressive enhancement) ────
  *
- * The displacement is applied to a PSEUDO-ELEMENT that carries the backdrop,
- * not to the element, and that shape is the whole fix.
+ * The displacement is applied to a pseudo-element that carries the backdrop, not to the element.
  *
- * What it replaces: `backdrop-filter: blur(…) url(#wk-glass-refract)` behind an
- * `@supports (backdrop-filter: url(#x))` gate. Chromium parses `url()` there,
- * reports it supported so the gate opens, keeps it in computed style — and
- * paints nothing from it. Measured twice, independently, at 0 differing pixels
- * against the same declaration with the `url()` removed. `@supports` answers
- * "can I parse this", never "will this paint", so nothing about that
- * construction could have failed loudly.
+ * It does not ride on `backdrop-filter: blur(…) url(#wk-glass-refract)` behind an
+ * `@supports (backdrop-filter: url(#x))` gate: Chromium parses `url()` there, reports it supported
+ * and keeps it in the computed style, and paints nothing from it. `@supports` answers whether a
+ * value parses, never whether it paints.
  *
- * Why a pseudo-element rather than `filter:` on the element itself: `filter`
- * displaces everything the element renders, including its own text. The
- * pseudo-element holds only the frosted backdrop, so the distortion lands on
- * the background and the text stays legible.
+ * A pseudo-element rather than `filter:` on the element itself, because `filter` displaces
+ * everything the element renders, its own text included. The pseudo-element holds only the
+ * backdrop, so the distortion lands behind the text and the text stays legible.
  *
- * No `@supports` gate, deliberately: it cannot tell painting from parsing. The
- * block is gated on the detector class instead, which says only that the filter
- * parses. Chromium then paints the displacement; WebKit paints nothing from it,
- * and the layer shows as clear glass under a light frost, without the bending.
+ * Refraction can only bend structure that still reaches the eye, so the layer is clear glass: a
+ * thin blur and a thin wash. The frosted level erases a fine backdrop before any displacement can
+ * move it, which is why the pseudo-element carries its own values and does not follow a level.
  *
- * TIER 2 IS A DIFFERENT MATERIAL FROM TIER 1, NOT TIER 1 PLUS AN EFFECT. That
- * distinction is the whole reason this took four attempts, and it is the one
- * thing to keep if any value below is ever retuned.
- *
- * Refraction can only bend structure that still reaches the eye. Tier 1's
- * `blur(20px)` over a 72% white wash exists to DESTROY structure — that is what
- * frosting is — so a displacement layered on top of it has nothing left to
- * displace. Measured directly: an 8 px dot grid behind Tier 1 values is a flat
- * wash with or without the filter, at any `scale`. Three fixes before this one
- * were each structurally correct and each invisible for exactly that reason.
- *
- * So Tier 2 reads as CLEAR glass: a thin blur and a thin wash, where the
- * backdrop survives and visibly bends. Raising either value back toward Tier 1
- * returns the effect to zero without producing an error anywhere.
- *
- * `overflow: hidden` plus a pseudo-element that OVERSHOOTS by 40 px is the other
- * half. The displacement moves the pseudo-element's own edge too, so an
- * `inset: 0` pseudo-element hands the panel a rippled silhouette — the element
- * reads as warped rather than as glass in front of something warped. Overshooting
- * pushes that rippled edge outside the panel, and the clip restores a straight
- * one. THE PRICE: `overflow: hidden` clips descendants, so a Tier 2 panel cannot
- * host an overflowing popover. Tier 1 is unaffected and remains the default.
+ * `overflow: hidden` and a pseudo-element that overshoots by 40px belong together. The
+ * displacement moves the pseudo-element's own edge too, so an `inset: 0` layer gives the panel a
+ * rippled silhouette; overshooting moves that edge outside the panel, and the clip restores a
+ * straight one. The cost: a refracting panel clips its descendants, so it cannot host an
+ * overflowing popover. `.wk-glass` has no such limit.
  */
 /*
- * Gated on the detector class. This block strips the element's own frosted backdrop because
- * the pseudo-element below carries a thinner one instead, and without the gate it would strip
- * it on every page: before the script has run, when it is blocked, and in a browser where the
- * filter does not parse. Those pages keep Tier 1.
+ * Gated on the detector class. This block strips the element's own backdrop because the
+ * pseudo-element below carries a thinner one, and without the gate it would strip it on every
+ * page: before the script has run, when it is blocked, and in a browser where the filter does not
+ * parse. Those pages keep Tier 1.
  *
  * The class says the filter parses, never that it paints, because a script cannot see what a
- * backdrop filter composites. Measured from pixels in both engines the lanes run: Chromium
- * paints the displacement, and WebKit paints nothing from it, so there this block leaves the
- * thin Tier 2 layer without the bending, a clear pane under a light frost.
- */
-/*
- * One reset for both modes. `.wk-glass-tier2 .wk-glass-refract` is (0,2,0), the same as the dark
- * Tier 1 surface `.dark .wk-glass-refract` above, and it comes later, so source order carries it
- * over the dark fill as well as the light one. A separate dark reset would need the detector
- * class too: without it, it strips the dark Tier 1 surface on every page the class is missing
- * from, before the script has run, when it is blocked, or where the filter does not parse.
+ * backdrop filter composites. Chromium paints the displacement; WebKit paints nothing from it, so
+ * there this block leaves the thin layer without the bending, a clear pane under a light frost.
+ *
+ * One reset for both modes, and it comes after every level rule above, so source order carries it
+ * over all of them: no rule above sets the background of a refracting element by mode, only the
+ * properties it reads.
  */
 .wk-glass-tier2 .wk-glass-refract {
     position: relative;
@@ -129,9 +230,9 @@
 .wk-glass-tier2 .wk-glass-refract::before {
     content: '';
     position: absolute;
-    /* Overshoot, not `inset: 0` — see the note above on the rippled silhouette.
-       No `border-radius: inherit`: the corner is cut by the clip, and inheriting
-       it here would only re-introduce a curve for the displacement to chew on. */
+    /* Overshoot, not `inset: 0`, for the rippled silhouette described above. No
+       `border-radius: inherit`: the clip cuts the corner, and inheriting it here would only
+       re-introduce a curve for the displacement to chew on. */
     inset: -40px;
     z-index: -1;
     background: rgba(255, 255, 255, 0.22);
@@ -150,71 +251,103 @@
     background: rgba(30, 30, 32, 0.32);
 }
 
-/* ── Reduced transparency and forced colors ──────────────────
+/* An opaque refracting element shows no backdrop at all, so it takes its fill back from the reset
+   above and drops the displacement layer. */
+.wk-glass-tier2 .wk-glass-refract:is(.wk-glass-opaque, .wk-glass-opaque *) {
+    background: var(--glass-wk-fill);
+}
+
+.wk-glass-tier2 .wk-glass-refract:is(.wk-glass-opaque, .wk-glass-opaque *)::before {
+    display: none;
+}
+
+/* ── Reader settings ─────────────────────────────────────────
  *
- * Every surface above is DEFINED by being see-through: a translucent background over a blur
- * of whatever sits behind it. Two reader settings say, in different words, that this is not
- * wanted — and the extension respected neither, so a reader who had asked their system for
- * opaque interfaces got the one surface in the package that ignores them.
+ * Every level above is defined by being see-through, and three reader settings say, in different
+ * words, that this is not wanted.
  *
- * `prefers-reduced-transparency: reduce` is the direct request. macOS "Reduce transparency"
- * and Windows "Transparency effects: off" both set it, and both are switched on for the same
- * reasons: text over a moving, low-contrast backdrop is hard to read, and for some readers
- * the shifting background is a vestibular trigger.
+ * Reduced transparency is the direct request. macOS "Reduce transparency" and Windows
+ * "Transparency effects: off" both set it, for text over a moving, low-contrast backdrop is hard
+ * to read, and for some readers the shifting background is a vestibular trigger. Safari does not
+ * report the setting to a page, so on Apple devices the more-contrast query below and the opaque
+ * level are the ways to reach the same result.
  *
- * `forced-colors: active` is the stronger case. In High Contrast mode the system replaces
- * colors outright, and a `backdrop-filter` survives that replacement — so the blur keeps
- * painting under text the OS has just recolored for contrast, which is precisely the
- * combination the mode exists to prevent. `Canvas` and `CanvasText` are the system keywords
- * for the surface and its text, so the panel becomes what every other panel in that mode is.
+ * More contrast is Apple's "Increase Contrast", which Safari does report: an opaque surface with a
+ * stronger border, as the system draws its own glass under that setting.
  *
- * The blur is REMOVED rather than reduced, and the background made fully opaque. A weaker
- * blur is still a blur; the setting is not a preference for less of it.
+ * Forced colors is the strongest case. In High Contrast mode the system replaces colors outright,
+ * and a backdrop filter survives that replacement, so the blur keeps painting under text the OS
+ * has just recolored for contrast. `Canvas` and `CanvasText` are the system keywords for the
+ * surface and its text, so the panel becomes what every other panel in that mode is.
+ *
+ * The blur is removed rather than reduced: a weaker blur is still a blur. Each block names the
+ * element twice in its selectors, so it outweighs a level written on the element itself, and
+ * names the refracting element under the detector class, so the Tier 2 reset does not keep it
+ * transparent.
  */
 @media (prefers-reduced-transparency: reduce) {
-    .wk-glass,
-    .wk-glass-refract {
-        backdrop-filter: none;
+    .wk-glass.wk-glass,
+    .wk-glass-refract.wk-glass-refract,
+    .wk-glass-tier2 .wk-glass-refract.wk-glass-refract {
         -webkit-backdrop-filter: none;
-        background: rgb(255, 255, 255);
+        backdrop-filter: none;
+        background: var(--color-wk-bg-elevated, rgb(255 255 255));
+        border-color: var(--color-wk-border, rgb(0 0 0 / 0.1));
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
     }
 
-    .dark .wk-glass,
-    .dark .wk-glass-refract {
-        background: rgb(24, 24, 27);
+    .wk-glass-tier2 .wk-glass-refract::before {
+        display: none;
+    }
+}
+
+@media (prefers-contrast: more) {
+    .wk-glass.wk-glass,
+    .wk-glass-refract.wk-glass-refract,
+    .wk-glass-tier2 .wk-glass-refract.wk-glass-refract {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: var(--color-wk-bg-elevated, rgb(255 255 255));
+        border: 1px solid var(--color-wk-border-strong, currentColor);
+        box-shadow: none;
+    }
+
+    .wk-glass-tier2 .wk-glass-refract::before {
+        display: none;
     }
 }
 
 @media (forced-colors: active) {
-    .wk-glass,
-    .wk-glass-refract {
+    .wk-glass.wk-glass,
+    .wk-glass-refract.wk-glass-refract,
+    .wk-glass-tier2 .wk-glass-refract.wk-glass-refract {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
         background: Canvas;
         color: CanvasText;
         border-color: CanvasText;
-        /* A shadow is not recolored by forced-colors, so it survives as a stray smudge
-           around a panel the OS has otherwise flattened. */
+        /* A shadow is not recolored by forced colors, so it survives as a stray smudge around a
+           panel the OS has otherwise flattened. */
         box-shadow: none;
+    }
+
+    .wk-glass-tier2 .wk-glass-refract::before {
+        display: none;
     }
 }
 
 /* ── Paper ──────────────────────────────────────────────────
-   `backdrop-filter` does not paint in paged media at all, so a glass panel prints as
-   whatever is underneath it — and what is underneath it is the two near-white values
-   this file uses to build the material: a 72%-alpha white fill and a 45%-alpha white
-   border. Browsers drop background graphics when printing unless the reader turns
-   them on, so BOTH of those vanish and the panel has no boundary left.
+   A backdrop filter does not paint in paged media at all, so a glass panel prints as whatever is
+   underneath it, and what is underneath it is a translucent white fill and border. Browsers drop
+   background graphics when printing unless the reader turns them on, so both vanish and the panel
+   has no boundary left: content the surface was grouping prints as loose text.
 
-   The failure is not that the glass looks flat on paper. It is that content the
-   surface was grouping prints as loose text with nothing around it, and a reader who
-   has the sheet in front of them cannot tell that it was ever one thing.
-
-   `currentColor` rather than a literal: the border then prints in whatever the text
-   prints in, which is the one color a print stylesheet can rely on. */
+   `currentColor` rather than a literal: the border then prints in whatever the text prints in,
+   which is the one color a print stylesheet can rely on. */
 @media print {
-    .wk-glass,
-    .wk-glass-refract {
+    .wk-glass.wk-glass,
+    .wk-glass-refract.wk-glass-refract,
+    .wk-glass-tier2 .wk-glass-refract.wk-glass-refract {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
         background: transparent;
@@ -222,9 +355,8 @@
         box-shadow: none;
     }
 
-    /* The Tier 2 displacement layer is a second translucent sheet over the first. It
-       has nothing to displace on paper and would print as a gray rectangle over the
-       text it was refracting. */
+    /* The Tier 2 displacement layer is a second translucent sheet over the first. It has nothing to
+       displace on paper and would print as a gray rectangle over the text it was refracting. */
     .wk-glass-tier2 .wk-glass-refract::before {
         display: none;
     }

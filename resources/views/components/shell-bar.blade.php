@@ -176,6 +176,7 @@
 
 <div
     data-wk-shell-bar
+    @if($sticky) data-wk-scroll-inset="top" @endif
     @if($bleed) data-wk-bleed @endif
     {{-- Marks WHICH edge the zone must pull back. A head bleeds upward, a foot downward, and
          the stylesheet cannot tell them apart from position alone: in a collapsible column the
@@ -265,6 +266,17 @@
         tabindex="{{ $slot->hasActualContent() ? '0' : '-1' }}"
         @class([
             'wk-shell-bar-strip flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',
+            // `overflow-x: auto` clips the block axis too, and a link fills the strip's height, so its
+            // focus ring would lie outside the strip above and below it, and at the far edge of the first
+            // and the last link. Padding as wide as the farthest a ring reaches (its width plus its
+            // offset, which a button's ring has), given back by the negative margin, keeps every
+            // control where it was and shows its whole ring; the scroll padding stops a control the
+            // focus scrolls into view that far short of the edge.
+            '-m-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]' => $paddingClasses !== '',
+            // The bar's own inline padding is what absorbs the margin at the strip's two ends. A bar
+            // without padding has none, so there the strip keeps the room above and below only and
+            // ends where the bar ends, rather than reaching past both of its edges.
+            '-my-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]' => $paddingClasses === '',
             // The strip is a tab stop now, so it must show that it has focus. Behind the
             // same gate as the `tabindex` above: a ring on something nothing can focus is
             // dead CSS, and keeping the two together means one condition to read.

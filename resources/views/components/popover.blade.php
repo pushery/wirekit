@@ -18,6 +18,7 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\UtilityClasses;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -51,11 +52,17 @@
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
-    // Applied AFTER the resolved classes rather than by removing the padding utility from
-    // the list above: a personalization may have replaced that list wholesale, and a
-    // caller asking for an unpadded panel means it whatever the theme did.
+    // An unpadded panel takes every padding utility out of the RESOLVED list. Adding `p-0`
+    // beside them did nothing: two padding utilities on one element are decided by the
+    // stylesheet's order, and that put `p-[var(--padding-wk-x-md)]` over `p-0`. Filtering the
+    // resolved list rather than the default one keeps the promise when a personalization
+    // replaced the list wholesale, because a caller asking for an unpadded panel means it
+    // whatever the theme did. A padding under a variant stays: it is the theme's.
     $padded = BooleanProp::from($padded, true);
-    $paddingClasses = $padded ? '' : 'p-0';
+
+    if (! $padded) {
+        $panelClasses = UtilityClasses::without($panelClasses, UtilityClasses::PADDING);
+    }
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -99,19 +106,25 @@
         x-transition:leave="transition ease-in duration-[var(--transition-wk-duration)]"
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
-        {{-- The outside-click close sits on the panel, not on the wrapper: the panel is
-             teleported out of the wrapper, so a click anywhere in it would count as outside
-             the wrapper. A click on the trigger also counts as outside the panel; the
-             trigger's own toggle has closed the popover by then, and this finds it closed. --}}
-        x-on:click.outside="close()"
+        {{-- No `x-on:click.outside` here. The factory closes on the release of a press that
+             began and ended outside (utils/outside-release.js). A click is dispatched to the
+             common ancestor of where the press began and ended, so a press beside the panel
+             that a reader slides back into it would still read as a click outside. --}}
         role="dialog"
+        {{-- Focusable, not tabbable. A panel of plain text has nothing else to hold the focus,
+             so the trap focuses the panel itself, and it needs a negative tabindex for that.
+             Written here rather than left to the trap, which would set it at runtime: a
+             Livewire update patches the panel against this template and removes an attribute
+             the template does not carry, and the focused panel would drop the focus to the
+             page. --}}
+        tabindex="-1"
         {{-- The panel traps focus and closes on Escape, which IS the modal contract — but
              without this attribute assistive technology is told the page behind stays
              reachable, so a screen reader keeps offering content its own virtual cursor can
              no longer get back out of. The two halves have to agree. --}}
         aria-modal="true"
         aria-label="{{ $label ?? __('wirekit::Popover') }}"
-        class="{{ $panelClasses }} {{ $paddingClasses }}"
+        class="{{ $panelClasses }}"
         x-cloak
     >
         {{ $slot }}

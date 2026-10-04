@@ -12,9 +12,8 @@
 "list,
 $after
 $attributes->class([$classes])
-$attributes->class([WireKit::resolveClasses('icon',
+$attributes->class([$iconClasses]);
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -24,6 +23,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $classes
 $cleaned
@@ -33,6 +33,7 @@ $dotColor
 $e)
 $e;
 $effectiveIntent
+$iconClasses
 $intent
 $intentLabel
 $intentLabel])
@@ -56,7 +57,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -72,11 +73,16 @@ $variant;
 '
 ''
 '')
+''));
 '',
 ',
 '.
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -84,6 +90,7 @@ $variant;
 'Run:
 '[WireKit]
 'after'
+'aria-label');
 'base',
 'before'
 'danger'
@@ -134,6 +141,7 @@ $variant;
 ($size
 ($svgHtml
 ('xs').
+(UtilityClasses::has($callerClass,
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -173,10 +181,12 @@ $variant;
 1.5rem);
 1.5rem);">
 10;
+16px
 1;
 1px
 1px;
 2.
+20px,
 2rem,
 2rem;
 3."
@@ -233,6 +243,7 @@ AT
 Adding
 Ahead
 An
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -292,6 +303,7 @@ PROP,
 Padding
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Reapply
 Render
@@ -318,6 +330,7 @@ Timeline
 UA
 UNBOUND
 Uses
+UtilityClasses::without($iconClasses,
 Vertical
 VoiceOver
 WCAG
@@ -327,6 +340,7 @@ We
 WebKit
 When
 WireKit
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('timeline',
 WireKit::resolveClasses('timeline.item',
 WireKit::validateProp('icon',
@@ -334,7 +348,9 @@ With
 [
 ['data-wk-icon-missing'
 ['status'
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('timeline',
 \Pushery\WireKit\WireKit::warnUnknownProps('timeline.item',
@@ -346,6 +362,7 @@ __('wirekit::Status:
 __('wirekit::Success'),
 __('wirekit::Warning'),
 __toString
+`:class`
 `:has()`
 `:nth-last-child(2)`.
 `<div>`
@@ -354,6 +371,7 @@ __toString
 `<span>`,
 `<time
 `<time>`
+`@class`
 `Svg
 `after="true"`
 `aria-hidden="true"`
@@ -361,10 +379,14 @@ __toString
 `aria-label`
 `aria-labelledby`
 `class="h-12
+`class`
 `data-wk-timeline-item-content`
 `date-separator`).
 `datetime`
 `default`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -400,6 +422,7 @@ align-items:
 all
 all,
 allowed
+alone,
 already
 an
 anchored
@@ -410,6 +433,7 @@ any
 anything
 app(IconResolver::class)->resolve($name);
 applied
+applies
 are
 area.
 area:
@@ -421,6 +445,7 @@ aria-hidden="false".
 aria-hidden="true"
 aria-label
 aria-labelledby
+array,
 array_keys($sizeMap));
 arrives
 as
@@ -428,8 +453,10 @@ as,
 at
 attempted
 attribute
+attribute's
 attribute,
 auto-derived
+axis.
 axis:
 axis;
 back
@@ -441,6 +468,7 @@ be
 beat
 because
 becomes
+before
 below
 below,
 below.
@@ -460,6 +488,7 @@ border-left:
 border-radius:
 both
 bottom,
+bound
 branch
 branch's
 break
@@ -570,6 +599,7 @@ derive.
 dev
 developer
 developer's
+did
 difference
 different
 direct
@@ -578,6 +608,7 @@ display:
 dist/wirekit.css
 documentation
 does
+does.
 dot
 dot.
 dot/icon
@@ -669,12 +700,14 @@ guarantees
 h-5
 h/w
 hand-written
+happened
 hard
 harder
 has
 have
 have)
 heard
+height
 height:
 helper
 here
@@ -750,6 +783,7 @@ later
 layout
 layouts
 leave
+left
 like
 line
 linear-gradient(to
@@ -764,6 +798,7 @@ logger()->warning(
 long
 looks
 lost
+lost,
 loudly,
 m-0
 machine
@@ -811,6 +846,7 @@ none;
 nor
 normal
 not
+not:
 nothing
 nothing.
 now"
@@ -837,6 +873,7 @@ opening
 opposite
 optimistic-ui:
 or
+order
 ordered
 other
 otherwise
@@ -925,6 +962,7 @@ requires
 resolved
 resolves
 respect
+responsive
 rest
 result
 return
@@ -966,6 +1004,7 @@ site
 size
 size,
 size="xs"
+sized
 sizes
 skip
 slot,
@@ -973,12 +1012,14 @@ so
 sole
 solid
 somebody
+sorts
 source
 source-baked
 space).
 spacing
 span
 spoken
+state
 static
 stay
 stays
@@ -1002,6 +1043,7 @@ style="width:
 style="z-index:
 styles
 stylesheet
+stylesheet's
 succeeded
 success
 svg($resolved,
@@ -1041,6 +1083,7 @@ timeline
 title
 title,
 to
+toCssClasses()
 toHtml().
 tokens
 top
@@ -1054,6 +1097,7 @@ true);
 truthy
 try
 two
+under
 unknown
 unknown-alias
 unknown.
@@ -1104,7 +1148,9 @@ while
 whitespace
 who
 whose
+width
 width:
+win.
 wins
 with
 without

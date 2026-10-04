@@ -17,6 +17,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('fab.action', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -44,7 +46,7 @@
         'shadow-[var(--shadow-wk-md)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',
-        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
     ]), $scope);
 
     // Auto-inject rel="noopener noreferrer" when target="_blank" on an <a>.
@@ -98,7 +100,7 @@
     {{ $attributes->except('rel')->class([$classes.' wk-fab-action-labeled']) }}
 >
     @if($icon)
-        <x-wirekit::icon :name="$icon" class="h-5 w-5" />
+        <x-wirekit::icon :name="$icon" />
     @else
         {{ $slot }}
     @endif

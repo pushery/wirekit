@@ -36,6 +36,7 @@ $slot
 'end',
 'fade'
 'fade',
+'focus-visible:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
 'horizontal'
 'label'
@@ -98,6 +99,7 @@ CONTENT
 CSS
 Declared
 Dev-only
+Drawn
 Edge
 Falsy
 Fully
@@ -149,6 +151,7 @@ and
 apart
 are
 area
+area,
 areas
 aria-label="{{
 around
@@ -192,6 +195,7 @@ content
 content"
 continue
 contract.
+cover
 data-fade
 data-fade-axis="{{
 data-fade="{{
@@ -226,6 +230,9 @@ false),
 first
 fits
 flags
+focus,
+focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]',
 focusable
 for
 for,
@@ -236,6 +243,7 @@ has
 having
 here
 hint
+holds
 horizontal
 horizontal,
 identical.
@@ -250,6 +258,7 @@ into
 invalid
 is
 it
+it.
 its
 itself
 just
@@ -257,6 +266,7 @@ keeps
 keyboard
 keyboard-focused
 keyboard-reachable
+kit's
 landmark
 landmark,
 later
@@ -278,6 +288,7 @@ mechanism.
 missing
 more
 more.
+moves
 n/a
 name
 named
@@ -289,6 +300,7 @@ nobody
 not
 not.
 notes"),
+nothing
 null
 null,
 of
@@ -303,6 +315,7 @@ or
 orientation.
 otherwise
 outcomes.
+outside
 overflow
 overflow-x-hidden',
 overflow-y-hidden',
@@ -332,6 +345,7 @@ renders
 reports
 resolves
 right
+ring
 role
 role:
 role="region"
@@ -343,12 +357,16 @@ scroll
 scroll"
 scrollbar
 scrolling
+scrolls
 server.
 set
+shows
 so
 still
+stop
 style
 switch
+tab
 tabindex="0"
 talks
 tell
@@ -365,6 +383,7 @@ they
 this
 three
 to
+tokens.
 top,
 true)
 unconditional,

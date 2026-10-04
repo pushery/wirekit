@@ -3,8 +3,8 @@
 !==
 $actions
 $animateAttr
-$attributes->class([$baseClasses,
 $attributes->getAttributes());
+$attributes->merge(['data-intent'
 $baseClasses
 $bordered
 $defaultIcon
@@ -29,6 +29,7 @@ $variantColors['border'],
 $variantColors['icon']])
 $variantColors['stripe']
 $variantValue
+$variantValue])->class([$baseClasses,
 &&
 ',
 '<path
@@ -37,11 +38,13 @@ $variantValue
 'bg'
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_15%,var(--color-wk-bg-elevated))]',
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_15%,var(--color-wk-bg-elevated))]',
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_15%,var(--color-wk-bg-elevated))]',
 'bg-[color-mix(in_srgb,var(--color-wk-success)_15%,var(--color-wk-bg-elevated))]',
 'bg-[color-mix(in_srgb,var(--color-wk-warning)_15%,var(--color-wk-bg-elevated))]',
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-bg-subtle)]',
 'bg-[var(--color-wk-danger)]',
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-warning)]',
@@ -49,6 +52,7 @@ $variantValue
 'border-0',
 'border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
 'border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
+'border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
 'border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
 'border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
 'border-[length:var(--border-wk-width)]'
@@ -70,7 +74,7 @@ $variantValue
 'primary'
 'primary',
 'px-[var(--padding-wk-x-lg)]',
-'py-[var(--padding-wk-y-lg)]',
+'py-[var(--padding-wk-x-lg)]',
 'relative
 'rounded-[var(--radius-wk-lg)]',
 'scope'
@@ -79,6 +83,7 @@ $variantValue
 'success',
 'text-[color:var(--color-wk-accent-text)]',
 'text-[color:var(--color-wk-danger)]',
+'text-[color:var(--color-wk-info-text)]',
 'text-[color:var(--color-wk-success)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-muted)]',
@@ -92,7 +97,6 @@ $variantValue
 ($effectiveIntent)
 ($variantValue)
 (15%
-(both
 (default
 (default,
 (named
@@ -102,8 +106,7 @@ $variantValue
 (silent
 (the
 +
---color-wk-accent:
---color-wk-info
+--color-wk-info-tone,
 --}}
 //
 />',
@@ -274,6 +277,7 @@ against
 alert-style
 alias
 alias.
+aliases
 already
 also
 an
@@ -282,6 +286,7 @@ animation
 animation.
 announces
 anyone
+application
 are
 aria-hidden,
 aria-hidden="true">
@@ -326,7 +331,6 @@ carried
 carries
 cast
 changed.
-charts
 chrome,
 class="absolute
 class="flex-1
@@ -390,7 +394,6 @@ fill="currentColor"
 filled($title))
 first
 flags
-flash
 flex
 flex-wrap
 flips
@@ -404,12 +407,14 @@ generic
 genuinely
 given
 given).
+gives
 h-5"
 has
 have
 heading
 heading,
 heading;
+hue
 icon
 icon.
 iconSlot
@@ -487,6 +492,7 @@ otherwise
 over
 overflowing
 own
+own.
 page
 page;
 pass
@@ -500,7 +506,6 @@ points
 present
 presentational
 primary
-primary,
 prod).
 prop
 prop's
@@ -509,7 +514,6 @@ put
 rather
 re-renders
 read
-read).
 reader
 reads
 region
@@ -554,9 +558,7 @@ stripe:
 stronger
 success
 supports
-surface
 surface;
-synonyms
 tag
 take:
 takes
@@ -578,8 +580,6 @@ title
 title+body+action
 to
 toggle
-token,
-tone
 tooltip,
 top-0
 trades
@@ -588,7 +588,9 @@ true,
 truthy
 two
 unknown
+until
 use
+uses
 v1.5.0-identical).
 variant
 variant-derived

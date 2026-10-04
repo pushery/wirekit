@@ -1,4 +1,5 @@
 !
+!==
 "Export
 "menu":
 $attributes
@@ -25,6 +26,7 @@ $key
 $key)
 $label
 $name
+$name),
 $offset
 $opensNewTab
 $panelClasses
@@ -36,11 +38,13 @@ $size,
 $sizeClasses
 $sizeClasses,
 $slot
+$slug
 $subTriggerId
 $tag
 $targetAttr
 $triggerClasses
 &&
+''
 ''"
 '');
 '',
@@ -117,6 +121,7 @@ $triggerClasses
 'trigger',
 'true'
 'w-5
+'wk-menubar-menu-');
 'wk-menubar-submenu-');
 'wkMenubarPanel')))
 ("Menu
@@ -125,10 +130,12 @@ $triggerClasses
 (ArrowRight
 (File,
 (Support\CallerListeners).
+(Support\UrlProp).
 (WAI-ARIA
 (WireKit
 (WireKit::validateProp('kbd',
 (a
+(activeMenu
 (avoids
 (discovered
 (int)
@@ -210,6 +217,7 @@ CSS
 CallerRef::onRoot()
 Carries
 Child
+Chinese,
 Context-Menu,
 DOM
 Declared
@@ -217,16 +225,20 @@ Decorative;
 Dev-only
 Drawer,
 Dropdown
+Echoed
 Edit,
 Escape
 Floating
 Follows
 Fully
 Gap
+Hebrew
 It
 Its
 JS
+Japanese,
 Keydown
+Korean,
 Label:
 Livewire
 Menu
@@ -249,16 +261,19 @@ ROVING
 Renders
 SR
 See
+Such
 TABINDEX
 TOP-LEVEL
 TRIGGER
 Tab
+Thai,
 That
 The
 Tooltip.
 Trailing
 UI
 UNBOUND
+URL
 View
 WAI-ARIA
 When
@@ -281,6 +296,7 @@ Wrapped
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('kbd',
 \Pushery\WireKit\WireKit::warnUnknownProps('menubar',
 \Pushery\WireKit\WireKit::warnUnknownProps('menubar.item',
@@ -319,6 +335,7 @@ active
 additive.
 after
 against
+all.
 already
 also
 always
@@ -362,6 +379,7 @@ block,
 border-[var(--color-wk-border)]',
 both
 both.
+bound,
 bubble
 button
 buttons
@@ -412,9 +430,11 @@ continuing
 copy
 could
 counted
+counter
 cross-menubar
 cursor
 d="M7.5
+data
 data-wk-menubar-panel="{{
 data-wk-menubar-trigger="{{
 data-wk-prose-skip
@@ -433,6 +453,7 @@ docs
 document
 document-level
 does
+does:
 done.
 dropdown
 dropdown/item.blade.php
@@ -447,6 +468,8 @@ element
 element,
 else
 else.
+empty
+escaped
 escapes
 establishes
 event
@@ -528,6 +551,7 @@ instance:
 instead
 instead,
 interactive
+into
 is
 is,
 it
@@ -597,6 +621,7 @@ namespace
 naming
 native
 navigation
+navigation-menu
 nearest
 needed,
 never
@@ -608,6 +633,7 @@ noreferrer"
 noreferrer')
 not
 nothing
+nothing,
 null);
 null,
 of
@@ -622,6 +648,7 @@ one,
 one.
 only
 open
+open-state
 open.
 opened
 opens
@@ -629,6 +656,7 @@ opposite
 optimistic-ui:
 optional
 or
+order
 other
 otherwise
 our
@@ -690,6 +718,7 @@ reader;
 reading
 reads
 ref
+ref.
 registered.
 regular
 rel
@@ -699,6 +728,7 @@ relative
 render
 rendered
 renders
+request,
 reset
 resets.
 resolves
@@ -706,6 +736,7 @@ resolving
 restarted
 restating
 result
+returns
 reuse
 rich
 right
@@ -738,6 +769,7 @@ sequence
 server
 set
 several
+shared
 sharpest
 shortcut
 shown
@@ -747,9 +779,11 @@ since
 site
 sits
 size="sm">{{
+slugs
 so
 so.
 spelling,
+stable
 state
 state.
 states
@@ -770,15 +804,18 @@ submenu's
 submenu.
 submenus
 subtree
+such
 surface
 survives
 svg(\Pushery\WireKit\WireKit::icon($icon),
+symbols,
 system)
 tab
 tab)')
 tabbing
 tabindex="-1"
 table
+tag
 target="_blank".
 teleport
 teleport,
@@ -794,6 +831,7 @@ than
 that
 the
 them
+then
 there
 therefore
 they
@@ -852,6 +890,7 @@ wirekitMenubar()'s
 with
 working
 would
+written
 x-bind:aria-expanded="subOpen
 x-bind:class="subOpen
 x-bind:tabindex="tabindexFor({{

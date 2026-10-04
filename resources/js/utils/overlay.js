@@ -5,7 +5,9 @@
  * Both Modal and Drawer share identical logic for these concerns.
  */
 import { createFocusTrap } from './focus-trap.js';
+import { createDiscardGuard } from './discard-guard.js';
 import { isComposing } from './ime.js';
+import { watchCurrent } from './watch-current.js';
 
 /**
  * Global scroll lock reference counter.
@@ -380,6 +382,11 @@ export function releasePageInert(keep = []) {
  *   overlay rendered in the overlay root, makes the page behind it inert. False for an overlay that
  *   lives inside a page region, such as a preview, where the page around it has to keep scrolling
  *   and working. An overlay that took no lock releases none.
+ * @param {string|null} [options.discardQuestion=null] - Asked with `confirm()` before the READER
+ *   closes the overlay by Escape, a click beside it or its close button while its panel holds
+ *   changes (utils/discard-guard.js). An answer of no leaves it open. Never asked for a close the
+ *   page makes, nor for a Cancel control, which calls `dismissOverlay()` because the reader chose
+ *   to discard. Null asks nothing.
  * @returns {Object} Alpine component data object with overlay methods
  */
 export function createOverlay({
@@ -392,7 +399,10 @@ export function createOverlay({
     focusReturnTo = undefined,
     dismissedEvent = null,
     lockScroll: locksScroll = true,
+    discardQuestion = null,
 }) {
+    // What the reader has put into the panel since their first touch of it, for the question above.
+    const discardGuard = createDiscardGuard();
     // Whether this instance holds one of the counted scroll locks right now. Every close path
     // releases through it, so an overlay built with `lockScroll: false`, which took no lock,
     // never releases one another overlay holds.
@@ -529,6 +539,9 @@ export function createOverlay({
         _showHandler: null,
         _closeHandler: null,
         _navCleanup: null,
+        _leaveCleanup: null,
+        // Stops following the bound property; set when the overlay is bound with `wire:model`.
+        _unwatchModel: null,
 
         /**
          * Initialize overlay event listeners and wire:model sync.
@@ -566,15 +579,35 @@ export function createOverlay({
                     || this.$el.getAttribute('wire:model.live');
 
                 if (wireModelAttr) {
-                    // Watch the Livewire property for changes
-                    this.$watch('isOpen', (value) => {
-                        this.$wire.set(wireModelAttr, value);
+                    // The overlay's own opening and closing reach the property. Only a value the
+                    // property does not hold yet is sent, so a close the server asked for below
+                    // does not send the server its own answer back.
+                    watchCurrent(this, 'isOpen', (value) => {
+                        if (this.$wire.get(wireModelAttr) !== value) {
+                            this.$wire.set(wireModelAttr, value);
+                        }
                     });
 
-                    // React to external Livewire property changes
+                    // The property as the page starts with it.
                     const initialValue = this.$wire.get(wireModelAttr);
                     if (initialValue) {
                         this.$nextTick(() => this.show());
+                    }
+
+                    // And every change the server makes afterwards: true opens, false closes,
+                    // without the dismissal event, because the page asked for it. Read once at
+                    // the start, the property opened nothing and closed nothing after the first
+                    // render, so `$this->showModal = false` left the modal standing.
+                    if (typeof this.$wire.$watch === 'function') {
+                        const unwatch = this.$wire.$watch(wireModelAttr, (value) => {
+                            if (value && !this.isOpen) {
+                                this.show();
+                            } else if (!value && this.isOpen) {
+                                this.close();
+                            }
+                        });
+
+                        this._unwatchModel = typeof unwatch === 'function' ? unwatch : null;
                     }
                 }
             }
@@ -582,6 +615,15 @@ export function createOverlay({
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+
+            // And when the page itself is left. A plain link or form sends no
+            // `livewire:navigating`, and while the scroll lock holds the body still, the page
+            // reads a scroll position of 0. Browsers record the position for the history entry
+            // after `pagehide`, so closing here gives the position back in time, and Back returns
+            // the reader to where they were rather than to the top. A new tab, a download and a
+            // navigation the reader cancels fire no `pagehide`, so they leave the overlay open.
+            this._leaveCleanup = () => this._forceClose();
+            window.addEventListener('pagehide', this._leaveCleanup);
         },
 
         /**
@@ -589,8 +631,14 @@ export function createOverlay({
          * Called automatically when the component's DOM element is removed.
          */
         destroyOverlay() {
+            this._unwatchModel?.();
+            this._unwatchModel = null;
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
+            }
+            if (this._leaveCleanup) {
+                window.removeEventListener('pagehide', this._leaveCleanup);
+                this._leaveCleanup = null;
             }
             window.removeEventListener(showEvent, this._showHandler);
             window.removeEventListener(closeEvent, this._closeHandler);
@@ -701,8 +749,10 @@ export function createOverlay({
                         // yet (it arms once its panel is shown), and the
                         // press then belongs to that overlay's window
                         // listener, not to this trap.
+                        // And it asks first when the panel holds changes, before the trap lets go,
+                        // since a trap that has let go cannot be kept.
                         escapeDeactivates: (dismissible || escapeAlwaysCloses)
-                            ? () => isTopmostOverlay(stackToken)
+                            ? (event) => isTopmostOverlay(stackToken) && this._mayDiscard(event)
                             : false,
                         // onDeactivate fires when ESC is pressed — close without
                         // calling deactivate() again (it's already deactivating)
@@ -724,6 +774,10 @@ export function createOverlay({
                         // whenever the opener has been removed meanwhile.
                         setReturnFocus: resolveReturnFocus,
                     });
+                    // The guard takes the state of the fields at the reader's first press or key in
+                    // the panel, and none can come before the panel is shown, so it is armed here,
+                    // once, instead of on every frame of the wait above.
+                    discardGuard.arm(panelEl);
                     this._trap.activate();
                     takePageInert(panelEl);
                 };
@@ -743,6 +797,7 @@ export function createOverlay({
             dismissing = true;
             this.isOpen = false;
             this._trap = null;
+            discardGuard.disarm();
             releasePageInertHold();
             releaseScrollLock();
             popOverlay(stackToken);
@@ -757,6 +812,7 @@ export function createOverlay({
         close() {
             if (!this.isOpen) return;
             this.isOpen = false;
+            discardGuard.disarm();
 
             // Before the trap lets go: the element it returns focus to is on the page behind.
             releasePageInertHold();
@@ -779,6 +835,7 @@ export function createOverlay({
         _forceClose() {
             if (!this.isOpen) return;
             this.isOpen = false;
+            discardGuard.disarm();
             releasePageInertHold();
 
             if (this._trap) {
@@ -812,8 +869,30 @@ export function createOverlay({
          */
         dismissByReader(via = 'close-button') {
             if (!this.isOpen) return;
+            if (!this._mayDiscard()) return;
             this.dismissOverlay();
             this._announceDismissal(via);
+        },
+
+        /**
+         * Whether the reader may close the overlay now: yes when it asks nothing or its panel holds
+         * no changes, and otherwise what they answer to the question. An Escape answered here is
+         * marked as handled, so the window's listener for it leaves the press alone and the
+         * question is asked once.
+         *
+         * @param {KeyboardEvent} [event]
+         * @returns {boolean}
+         */
+        _mayDiscard(event) {
+            if (!discardQuestion || !discardGuard.holdsChanges(this.$refs.panel)) {
+                return true;
+            }
+
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+
+            return window.confirm(discardQuestion);
         },
 
         /**

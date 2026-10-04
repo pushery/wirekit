@@ -7,12 +7,13 @@
     'offset' => config('wirekit.components.tooltip.offset', 6),
     'delayShow' => config('wirekit.components.tooltip.delay-show', 300),
     'delayHide' => config('wirekit.components.tooltip.delay-hide', 100),
-    // Make the trigger keyboard-focusable so the tooltip is reachable by keyboard,
-    // not just hover (WCAG 2.1.1). Default true covers the common case of a tooltip
-    // on a NON-interactive slot (an icon, a text span). Set false when the slot is
-    // already interactive (a button/link) to avoid a double tab-stop — the slot's own
-    // focus then bubbles to the trigger and still shows the tooltip.
-    'focusableTrigger' => true,
+    // Whether the trigger is a tab stop of its own, so a tooltip on something that is not a
+    // control (an icon, a word) is reachable by keyboard and not by hover alone (WCAG 2.1.1).
+    // `null`, the default, reads the slot: a slot that already holds a control is the stop a
+    // reader lands on, and its focus reaches the trigger and shows the tooltip, so the trigger
+    // stays out of the tab order rather than becoming a second stop with no name. `true` and
+    // `false` from the caller are kept as they are.
+    'focusableTrigger' => null,
     // `false` when the tooltip text is ALSO the trigger's accessible name, as on an icon-only
     // control named by its tooltip. Describing a control with its own name makes a screen
     // reader say it twice ("Fast mode, button, Fast mode"), so the pairing is left out.
@@ -66,7 +67,9 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $focusableTrigger = BooleanProp::from($focusableTrigger, true);
+    $focusableTrigger = $focusableTrigger === null
+        ? ! \Pushery\WireKit\Support\SlotControl::reachable((string) $slot)
+        : BooleanProp::from($focusableTrigger, true);
     $disabled = BooleanProp::from($disabled, false);
     $surface = WireKit::validateProp('tooltip', 'surface', (string) $surface, ['inverted', 'elevated']);
 
@@ -173,7 +176,7 @@
          reader actually arrives, and leaves it here when there is none so the wrapper case
          is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
          markup — this template never sees the element it needs to annotate. --}}
-    <{{ $as }} data-wk-prose-skip x-ref="trigger" @if($describes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @endif>
+    <{{ $as }} data-wk-prose-skip x-ref="trigger" @if($describes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
         {{ $slot }}
     </{{ $as }}>
 

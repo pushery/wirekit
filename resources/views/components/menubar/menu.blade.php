@@ -14,7 +14,14 @@
     use Pushery\WireKit\WireKit;
 
     // Menu trigger button + dropdown panel container.
-    $name = \Illuminate\Support\Str::slug($label);
+    //
+    // $name is the open-state key the menubar compares (activeMenu === $name), the trigger's
+    // data attribute and the panel's ref. A label in Chinese, Japanese, Korean, Hebrew or Thai,
+    // or one made of symbols, slugs to nothing, and every such menu then shared one empty name,
+    // so one click opened them all. Such a name is counted instead, as navigation-menu does:
+    // the counter is per request, so stable markup order returns the same name on a re-render.
+    $slug = \Illuminate\Support\Str::slug($label);
+    $name = $slug !== '' ? $slug : \Pushery\WireKit\Support\DomId::unique(null, 'wk-menubar-menu-');
 
     $triggerClasses = WireKit::resolveClasses('menubar.menu', 'trigger', implode(' ', [
         'px-[var(--padding-wk-x-sm)]',

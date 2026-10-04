@@ -90,7 +90,8 @@
         'danger' => 'var(--reading-progress-fill, var(--color-wk-danger))',
         'neutral' => 'var(--reading-progress-fill, var(--color-wk-text-muted))',
         'auto' => 'var(--reading-progress-fill, currentColor)',
-        default => 'var(--reading-progress-fill, var(--color-wk-accent))', // primary, info
+        'info' => 'var(--reading-progress-fill, var(--color-wk-info-tone))',
+        default => 'var(--reading-progress-fill, var(--color-wk-accent))', // primary
     };
 
     // Position: top (default) or bottom — the edge itself is resolved further down,

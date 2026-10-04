@@ -151,25 +151,30 @@
     // computed where it is declared, so a token holding `oklch(… var(--wk-banner-hue))` would be
     // resolved on :root, where no hue exists, and inherit as invalid. Only the constants are
     // tokens. The fallback chain ends at 264 (indigo) so a strip never paints transparent.
+    // A filled surface sets the focus ring to its own foreground for everything on it, the way
+    // `.wk-rail` does for its column: the page ring is the color the accent fill has in the default
+    // preset, so a control on that fill would draw its ring in the fill's own color. The offset is
+    // transparent there, so a ring that stands off its control shows the fill between them rather
+    // than a band of the page's offset color.
     $intentClasses = match (true) {
-        $hueMode && $surfaceValue === 'solid' => 'bg-[oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))] text-[color:var(--color-wk-banner-hue-fg)]',
+        $hueMode && $surfaceValue === 'solid' => 'bg-[oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))] text-[color:var(--color-wk-banner-hue-fg)] [--color-wk-ring:var(--color-wk-banner-hue-fg)] [--color-wk-ring-offset:transparent]',
         $hueMode => 'bg-[color-mix(in_srgb,oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
         // `solid` is the badge's treatment, pair for pair: the intent's color as the fill and
         // its own contrast-paired foreground. `promo` was always a solid accent fill, so both
         // surfaces render it the same way and nothing about an existing promo bar changes.
         $surfaceValue === 'solid' => match ($intentValue) {
-            'info' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
-            'success' => 'bg-[var(--color-wk-success)] text-[color:var(--color-wk-success-fg)]',
-            'warning' => 'bg-[var(--color-wk-warning)] text-[color:var(--color-wk-warning-fg)]',
-            'danger' => 'bg-[var(--color-wk-danger)] text-[color:var(--color-wk-danger-fg)]',
-            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+            'info' => 'bg-[var(--color-wk-info-tone)] text-[color:var(--color-wk-info-fg)] [--color-wk-ring:var(--color-wk-info-fg)] [--color-wk-ring-offset:transparent]',
+            'success' => 'bg-[var(--color-wk-success)] text-[color:var(--color-wk-success-fg)] [--color-wk-ring:var(--color-wk-success-fg)] [--color-wk-ring-offset:transparent]',
+            'warning' => 'bg-[var(--color-wk-warning)] text-[color:var(--color-wk-warning-fg)] [--color-wk-ring:var(--color-wk-warning-fg)] [--color-wk-ring-offset:transparent]',
+            'danger' => 'bg-[var(--color-wk-danger)] text-[color:var(--color-wk-danger-fg)] [--color-wk-ring:var(--color-wk-danger-fg)] [--color-wk-ring-offset:transparent]',
+            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent]',
         },
         default => match ($intentValue) {
-            'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
+            'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
             'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg-elevated))] text-[color:var(--color-wk-text)]',
-            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+            default => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent]',
         },
     };
 
@@ -177,7 +182,7 @@
         // The strip is browser chrome, so it takes chrome's stacking level: above sticky page
         // content, below every dialog. A strip that stayed clickable over a modal backdrop
         // would break the modality the backdrop exists to enforce.
-        $strip => 'sticky top-0 z-[var(--z-wk-chrome)] h-[var(--wk-strip-height)] py-0 font-[number:var(--font-wk-heading-weight)]',
+        $strip => 'sticky top-0 z-[var(--z-wk-chrome)] h-[var(--wk-strip-height)] font-[number:var(--font-wk-heading-weight)]',
         $isSticky && $positionValue === 'bottom' => 'sticky bottom-0 z-30',
         // An ordinary sticky bar sits below a strip; only the strip itself owns the edge.
         $isSticky => 'sticky top-[var(--wk-strip-inset,0px)] z-30',
@@ -190,9 +195,10 @@
     $classes = WireKit::resolveClasses('announcement-banner', 'base', implode(' ', array_filter([
         'wk-announcement-banner',
         'flex w-full items-center justify-center gap-[var(--gap-wk-sm)]',
-        // A strip's height is a token and its padding would only fight it, so it is left out
-        // there (`py-0` in the sticky classes) and the text is centered on the fixed line instead.
-        'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-sm)]',
+        // A strip's height is a token and a vertical padding would only fight it, so a strip
+        // gets none and its text is centered on the fixed line instead. Left out rather than
+        // zeroed: a zero padding beside this one lost to it in the stylesheet's order.
+        $strip ? 'px-[var(--padding-wk-x-lg)]' : 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-x-lg)]',
         'text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)]',
         $intentClasses,
         $stickyClasses,
@@ -206,6 +212,7 @@
      x-cloak keeps a previously-dismissed bar from flashing on every page load
      before Alpine reads localStorage. --}}
 <div
+    @if($isSticky && ! $strip) data-wk-scroll-inset="{{ $positionValue }}" @endif
     @if($isDismissible)
         x-data="wirekitDismissible({@if($persistsDismissal) persistKey: {{ \Pushery\WireKit\Support\AlpinePayload::string('wk-banner:'.$dismissKey) }} @endif })"
         x-show="shown"
@@ -240,7 +247,7 @@
                  where there is not: a control always needs a name, even when the banner
                  deliberately is not a landmark. --}}
             aria-label="{{ __('wirekit::Dismiss') }} {{ filled($label) ? $label : __('wirekit::Announcement') }}"
-            class="ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]"
+            class="ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]"
         >
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

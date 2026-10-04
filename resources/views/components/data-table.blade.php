@@ -298,8 +298,8 @@
 
     // The link cell wears the link component's own default look, resolved through the link
     // component's personalization key, so a developer who restyled links restyles these too.
-    // No focus ring of its own, like the link: the browser's focus indicator stays. The cell is
-    // cloned per row by Alpine, so the component itself cannot render here.
+    // The focus ring is the link's too, the kit's rather than the browser's. The cell is cloned per
+    // row by Alpine, so the component itself cannot render here.
     // DataTableLinkCellTest renders a default link and checks every one of its classes is on the
     // cell's anchor, which is what keeps this list and link.blade.php from drifting apart.
     $linkClass = WireKit::resolveClasses('link', 'base', implode(' ', [
@@ -312,12 +312,13 @@
         'hover:opacity-[var(--opacity-wk-hover)]',
         'text-[color:var(--color-wk-accent-text)]',
         'underline underline-offset-2',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]',
     ]), $scope);
 
     $badgeClasses = [
         'primary' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-accent-content)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
-        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))] text-[color:var(--color-wk-accent-content)]',
+        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))] text-[color:var(--color-wk-info-text)]',
         'success' => 'bg-[color-mix(in_oklch,var(--color-wk-success)_15%,transparent)] text-[color:var(--color-wk-success-text)]',
         'warning' => 'bg-[color-mix(in_oklch,var(--color-wk-warning)_15%,transparent)] text-[color:var(--color-wk-warning-text)]',
         'danger' => 'bg-[color-mix(in_oklch,var(--color-wk-danger)_15%,transparent)] text-[color:var(--color-wk-danger-text)]',
@@ -489,8 +490,11 @@
     {{-- Positioned for the same reason as the scroller in `table`: the caption, the actions heading
          and the status region are visually hidden, so `position: absolute`, and they must resolve
          against the scroller rather than the wrapper outside it. The shadows below are siblings
-         and keep the wrapper as theirs. --}}
-    <div x-ref="scroller" @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif x-bind:aria-busy="ariaBusy()" tabindex="0" class="relative w-full min-w-0 overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+         and keep the wrapper as theirs. Its block axis is hidden for the reason `table` gives:
+         nothing bounds this scroller's height, and a few pixels of overflow from the cells'
+         line boxes would let it scroll vertically and take a swipe or a wheel that starts on a
+         row away from the page. --}}
+    <div x-ref="scroller" @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif x-bind:aria-busy="ariaBusy()" tabindex="0" class="relative w-full min-w-0 overflow-x-auto overflow-y-hidden wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- The sentinels need the table's inline edges, and this scroller also holds the empty
              state and the status region below the table, so the flex row is a wrapper around
              the table alone rather than the scroller itself. `w-fit min-w-full` sizes it the

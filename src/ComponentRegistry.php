@@ -51,6 +51,7 @@ class ComponentRegistry
             'textarea' => ['category' => 'Form', 'description' => 'Multi-line text input with resize control'],
             'time-picker' => ['category' => 'Form', 'description' => 'Time selection input'],
             'toggle' => ['category' => 'Form', 'description' => 'Toggle switch with label and hint'],
+            'unsaved-hint' => ['category' => 'Display', 'description' => 'Says beside the save button that a form holds values its server does not have yet; x-wk-unsaved frames each unsaved field and can ask before leaving'],
             'toggle-button' => ['category' => 'Display', 'description' => 'Single two-state button that stays pressed (aria-pressed) — the bold/italic/mute shape'],
             'tool-call' => ['category' => 'Display', 'description' => 'One tool invocation an assistant made — name, status, arguments as JSON, and the result behind a disclosure'],
 

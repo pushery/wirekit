@@ -19,6 +19,7 @@ import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { isRendered } from '../utils/rendered.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { outOfReachBeside } from '../utils/teleport.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 // Long-press tuning. 500ms is the platform-conventional touch-hold threshold
 // (matches iOS/Android long-press); a 10px movement budget distinguishes a
@@ -74,7 +75,7 @@ export default function wirekitContextMenu() {
             // Release the placement observer whenever the menu closes, whichever way it closed.
             // Three separate places set `open` to false, so hooking one of them would leave an
             // observer alive on the other two — and a context menu opens and closes all day.
-            this.$watch('isOpen', (isOpen) => {
+            watchCurrent(this, 'isOpen', (isOpen) => {
                 if (isOpen) {
                     return;
                 }

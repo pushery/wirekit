@@ -6,6 +6,11 @@
     'position' => config('wirekit.components.drawer.position', 'right'),
     'size' => config('wirekit.components.drawer.size', 'md'),
     'dismissible' => config('wirekit.components.drawer.dismissible', true),
+    // Whether the reader is asked before closing the drawer by Escape, a click beside it or its
+    // close button while its fields hold changes, as a modal asks. A close the page makes and a
+    // Cancel control never ask. `discardQuestion` replaces the question.
+    'confirmDiscard' => config('wirekit.components.drawer.confirm-discard', true),
+    'discardQuestion' => null,
     // Whether opening locks the page's scroll. False for an overlay that lives inside a page
     // region, such as a preview, where the page around it has to keep scrolling.
     'lockScroll' => true,
@@ -45,7 +50,13 @@
     // kept closing the drawer, which is the whole of what the prop suppresses. Same shape,
     // same fix as the modal beside it.
     $dismissible = BooleanProp::from($dismissible, true);
+    $confirmDiscard = BooleanProp::from($confirmDiscard, true);
     $lockScroll = BooleanProp::from($lockScroll, true);
+
+    // Only a drawer the reader can close asks before it closes.
+    $discardQuestionText = $dismissible && $confirmDiscard
+        ? (filled($discardQuestion) ? (string) $discardQuestion : __('wirekit::Discard your changes?'))
+        : null;
 
     // `size` and `position` are resolved by a `match` with a `default` arm below, and a
     // default arm is silent by construction: `size="xl"` rendered `md` and
@@ -83,7 +94,7 @@
     // dialog — WCAG 4.1.2. It is pulled out here and applied to the panel below, where
     // `label` already goes; the two are the same intent spelled two ways, so `label` wins
     // when both are given rather than emitting a conflicting pair.
-    $callerLabel = $attributes->get('aria-label');
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
     $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-drawer '.WireKit::resolveClasses('drawer', 'backdrop', implode(' ', [
@@ -184,7 +195,7 @@
      the listener of a drawer another overlay covers. Only registered when the
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
-    x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
+    x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText) : 'null' }} })"
     @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
     {{ $attributes }}
 >
@@ -228,7 +239,10 @@
                 @endif
                 @if($describedby) aria-describedby="{{ $describedby }}" @endif
                 class="{{ $panelClasses }} {{ $positionClasses }} {{ $sizeClass }}"
-                x-on:click.stop
+                {{-- A click in the panel is not stopped. The backdrop is a sibling of the panel,
+                     not an ancestor, so the click cannot close the drawer, and it has to reach
+                     the document: a listener the page delegates there hears it there, and so
+                     does the `click.outside` of a menu inside the panel. --}}
                 wire:ignore.self
                 {{-- The theme marker for the panel itself, the surface that paints the drawer's
                      background. A theme reaching only the body inside it dresses a layer the panel

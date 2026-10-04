@@ -50,6 +50,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('image', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $src = \Pushery\WireKit\Support\UrlProp::text($src);
 
     // A content image with no name is the failure this component cannot see for itself, so
     // it says so where a developer will read it. Debug only, and a log line rather than an

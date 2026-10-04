@@ -403,8 +403,8 @@ return [
         'dropdown.checkbox-item' => [],
         'dropdown.radio-item' => [],
         'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100],
-        'modal' => ['size' => 'md', 'dismissible' => true],
-        'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true],
+        'modal' => ['size' => 'md', 'dismissible' => true, 'confirm-discard' => true],
+        'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true, 'confirm-discard' => true],
         // `placeholder` is null rather than a literal so the component keeps resolving
         // its own translated default; the hotkey is app-wide by nature.
         'command-palette' => ['hotkey' => 'cmd+k', 'placeholder' => null],

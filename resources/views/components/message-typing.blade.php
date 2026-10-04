@@ -40,6 +40,9 @@
     $columnAlign = $sideValue === 'right' ? 'items-end' : 'items-start';
 
     $hasAuthor = $author !== null && $author !== '';
+    // The row knows only the name, so it draws what `message` draws for a sender without a
+    // picture: the initials, in the color that name gets everywhere.
+    $authorInitials = $hasAuthor ? \Pushery\WireKit\Support\Initials::from((string) $author) : null;
 
     $classes = WireKit::resolveClasses('message-typing', 'base', implode(' ', [
         'flex gap-[var(--space-wk-sm,0.5rem)]',
@@ -58,12 +61,11 @@
     @if($announce) role="status" aria-live="polite" @endif
     {{ $attributes->class([$classes]) }}
 >
-    {{-- Avatar — only when we know who is typing. The initials placeholder aligns
-         the indicator with the typist's own messages above it (same avatar the
-         message component renders). --}}
+    {{-- Avatar — only when we know who is typing. It keeps the indicator in the
+         avatar column of the typist's own messages above it. --}}
     @if($hasAuthor)
         <div class="shrink-0">
-            <x-wirekit::avatar :alt="$author" size="sm" />
+            <x-wirekit::avatar :alt="$author" :initials="$authorInitials" from-initials size="sm" />
         </div>
     @endif
 

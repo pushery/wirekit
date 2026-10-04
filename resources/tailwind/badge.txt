@@ -14,10 +14,9 @@
 $as
 $as);
 $attributes
+$attributes->class([$iconClasses]);
 $attributes->class(['relative
-$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -29,6 +28,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $cleaned
 $cleaned);
@@ -47,6 +47,7 @@ $dotColorClass
 $e)
 $e;
 $focusableTrigger
+$iconClasses
 $intent,
 $intentClasses
 $intentClasses,
@@ -75,11 +76,12 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
 $slot
+$slot)
 $softClasses
 $softClasses,
 $solidClasses
@@ -100,12 +102,17 @@ $wrap
 '
 ''
 '')
+''));
 '',
 '';
 ',
 '.
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -114,11 +121,12 @@ $wrap
 '[WireKit]
 'accent'
 'accent',
+'aria-label');
 'as'
 'base',
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
-'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]',
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]',
 'bg-[var(--color-wk-accent)]
@@ -129,6 +137,9 @@ $wrap
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
+'bg-[var(--color-wk-info-fg)]',
+'bg-[var(--color-wk-info-tone)]
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-success-fg)]',
@@ -139,9 +150,9 @@ $wrap
 'bg-[var(--color-wk-warning)]',
 'bg-[var(--color-wk-warning-fg)]',
 'bg-transparent
-'border-[color-mix(in_srgb,var(--color-wk-accent)_20%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-accent)_25%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-danger)_25%,transparent)]',
+'border-[color-mix(in_srgb,var(--color-wk-info-tone)_20%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-success)_25%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-warning)_25%,transparent)]',
 'border-[length:var(--border-wk-badge-width,var(--border-wk-width))]';
@@ -238,6 +249,7 @@ $wrap
 'text-[color:var(--color-wk-accent-content)]',
 'text-[color:var(--color-wk-accent-fg)]',
 'text-[color:var(--color-wk-danger-text)]',
+'text-[color:var(--color-wk-info-text)]',
 'text-[color:var(--color-wk-success-text)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-tooltip-text)]',
@@ -287,6 +299,7 @@ $wrap
 (CTA
 (SOFT
 (Support\CallerListeners).
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -329,7 +342,8 @@ $wrap
 -
 --border-wk-badge-width
 --border-wk-width
---color-wk-info
+--color-wk-info-fg,
+--color-wk-info-tone
 --shadow-wk-badge
 --}}
 -text
@@ -343,8 +357,10 @@ $wrap
 1.4.13
 1.4.13.
 100),
+16px
 1px
 2.1.1).
+20px,
 2rem,
 30%,
 300),
@@ -416,6 +432,7 @@ An
 Aurora
 BOTH
 Base
+Beside
 Blade
 Blade's
 Blade-heroicons'
@@ -435,7 +452,6 @@ Catching
 Check
 DO
 Declared
-Default
 Deliberately
 Depth
 Describing
@@ -481,9 +497,7 @@ Livewire
 Logger
 MORPH
 MOST
-Make
 Multi-line
-NON-interactive
 NOT
 No
 Normalize
@@ -505,6 +519,7 @@ PERFECTLY
 Pick
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Reapply
 Render
@@ -552,6 +567,7 @@ Trigger
 UI
 UNBOUND
 Uses
+UtilityClasses::without($iconClasses,
 Validate
 WAS
 WCAG
@@ -561,9 +577,11 @@ WRAPPER,
 We
 What
 When
+Whether
 WireKit
 WireKit's
 WireKit::resolveClasses('badge',
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
 WireKit::validateProp('badge',
@@ -583,11 +601,14 @@ Without
 ['style'
 ['x-on:mouseenter',
 [])->class([$baseClasses,
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 ])
 ])),
@@ -598,6 +619,7 @@ __('wirekit::Remove');
 __toString
 `$as`
 `$refs`
+`:class`
 `<button>`
 `<div>`
 `<p>`
@@ -606,6 +628,7 @@ __toString
 `<template>`
 `<x-wirekit::scroll-area
 `=`,
+`@class`
 `Illegal
 `Svg
 `_x_dataStack`,
@@ -618,6 +641,7 @@ __toString
 `as="span"`
 `card`
 `class="h-12
+`class`
 `clearTimeout`
 `cloneNode(true)`,
 `delayHide`
@@ -632,6 +656,9 @@ __toString
 `false`
 `fixed`
 `focusable-trigger`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -646,6 +673,7 @@ __toString
 `mouseleave`
 `neutral`
 `none`).
+`null`,
 `offset`
 `open`
 `open`,
@@ -664,6 +692,7 @@ __toString
 `swapElements`
 `tagName()`
 `this.$refs.tooltip`
+`true`
 `variant="outlined"`;
 `window.open`,
 `wire:id`,
@@ -704,6 +733,8 @@ all,
 all.
 allowed
 allowlist,
+alone
+alone,
 alone.
 already
 also
@@ -730,6 +761,7 @@ applied
 applies
 applying
 are
+are.
 area's
 aria-describedby
 aria-describedby)
@@ -747,6 +779,7 @@ aria-labelledby
 armed,
 arms
 around
+array,
 array_filter([
 array_keys($sizeMap));
 arrive
@@ -762,13 +795,14 @@ association
 at
 attempted
 attribute
+attribute's
 attribute,
 attribute.
 attributes
 audit
 auto-derived
 auto-invokes
-avoid
+axis.
 back-compat
 back.
 background
@@ -822,11 +856,13 @@ border,
 border-[color:var(--color-wk-accent)]',
 border-[color:var(--color-wk-border)]',
 border-[color:var(--color-wk-danger)]',
+border-[color:var(--color-wk-info-tone)]',
 border-[color:var(--color-wk-success)]',
 border-[color:var(--color-wk-warning)]',
 border-[var(--color-wk-accent)]',
 border-[var(--color-wk-border)]'
 border-[var(--color-wk-danger)]',
+border-[var(--color-wk-info-tone)]',
 border-[var(--color-wk-success)]',
 border-[var(--color-wk-text)]',
 border-[var(--color-wk-warning)]',
@@ -840,14 +876,12 @@ brand
 break
 browser's
 bubble's
-bubbles
 bug
 build
 but
 button
 button's
 button,
-button/link)
 buttons).
 buttons,
 by
@@ -875,7 +909,6 @@ catch
 catch.
 caught
 cell
-charts
 check
 checks
 chevrons,
@@ -888,6 +921,7 @@ chosen
 chrome
 class
 class="inline-block
+class="rounded-[var(--radius-wk-sm)]
 class="shrink-0"
 class="{{
 classes
@@ -913,7 +947,6 @@ colors
 colors,
 come
 comes
-common
 compete
 compile
 compiles
@@ -953,7 +986,6 @@ could
 counterpart,
 counterpart:
 covered
-covers
 crossed
 currentColor
 currentColor;
@@ -976,6 +1008,7 @@ decorative,
 decorative.
 decoratively
 default
+default,
 default.
 default:
 default;
@@ -998,6 +1031,7 @@ developer
 developer's
 dialect
 dialog
+did
 different
 dim
 direct
@@ -1014,6 +1048,7 @@ docs
 document
 documented
 does
+does.
 dot
 double
 down
@@ -1087,7 +1122,6 @@ fallback
 fallback,
 fallback.
 falling
-false
 false)
 false),
 false);
@@ -1098,9 +1132,9 @@ field
 field,
 files
 fill
-fill:
 filled
 filled-background
+fills
 filter_var($wrap,
 finds
 fine).
@@ -1114,7 +1148,6 @@ fixed
 fixed-height
 fixed`
 flags
-flash
 flatten
 flattened
 flattens
@@ -1122,6 +1155,9 @@ flips
 flow.
 focus
 focus,
+focus-visible:outline-hidden
+focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]"
 focus-within
 focusable
 focused,
@@ -1156,6 +1192,7 @@ gate
 gate,
 get
 gets
+gives
 global
 glyph
 glyph.
@@ -1181,6 +1218,7 @@ handlers
 handles
 hands
 hangs
+happened
 hard
 harder
 has
@@ -1213,6 +1251,7 @@ hover.
 hover:opacity-100',
 how
 however
+hue
 icon
 icon's
 icon,
@@ -1287,10 +1326,10 @@ just
 justify-center',
 keep
 keeps
+kept
 key
 keyboard
 keyboard,
-keyboard-focusable
 kill
 knows
 label
@@ -1337,6 +1376,7 @@ long
 look.
 looks
 lost
+lost,
 loudly
 loudly,
 make
@@ -1416,6 +1456,7 @@ none
 none,
 nor
 not
+not:
 nothing
 nothing.
 now.
@@ -1431,6 +1472,7 @@ offers
 offset:
 omission.
 on
+on,
 on-color
 on-fill
 on.
@@ -1455,6 +1497,7 @@ operation
 opposite
 optimistic-ui:
 or
+order
 other
 other.
 otherwise
@@ -1472,6 +1515,7 @@ oversized
 own
 own,
 own.
+own;
 owns,
 package
 padding
@@ -1571,7 +1615,6 @@ reach
 reachable
 reaches
 read
-read;
 reader
 reading
 reads
@@ -1613,6 +1656,7 @@ reset
 resolved
 resolves
 respect
+responsive
 rest
 rests
 result
@@ -1664,7 +1708,6 @@ shadow.
 shape
 shape,
 shared
-shares
 shipped
 should
 show
@@ -1683,25 +1726,25 @@ sits
 size
 size,
 size="xs"
+sized
 sizes
 slot
-slot's
 slot.
+slot:
 small
 so
 soft
 soft).
 soft-chip
 soft-tone
-solid
 somebody
 something
+sorts
 source
 source-baked
 space
 space).
 span
-span).
 spelled
 spelling,
 spells
@@ -1752,7 +1795,6 @@ swapped
 sweep
 switches
 tab
-tab-stop
 tabbed
 tabindex="0"
 table
@@ -1775,6 +1817,8 @@ text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-bg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
+text-[color:var(--color-wk-info-fg)]
+text-[color:var(--color-wk-info-text)]
 text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -1798,6 +1842,7 @@ then
 there
 there).
 therefore
+they
 things,
 third
 this
@@ -1814,7 +1859,6 @@ time.
 timer
 timer,
 timer;
-tint
 tinted
 tip
 tip.
@@ -1822,10 +1866,10 @@ title
 to
 to,
 to.
+toCssClasses()
 toHtml().
 token
 token,
-tone
 too,
 tooltip
 tooltip,
@@ -1851,7 +1895,6 @@ tree:
 trigger
 trigger's
 trigger,
-true
 true)
 true);
 true,
@@ -1941,6 +1984,7 @@ whose
 widening
 width
 width)
+win.
 window
 window,
 wins
@@ -1948,6 +1992,7 @@ wire:key="wk-tooltip-panel"
 with
 within
 without
+word)
 word:
 working
 works
@@ -1959,6 +2004,7 @@ wrapped
 wrapper
 wrapper)
 wrapping
+writes
 writing
 wrong
 wrong.

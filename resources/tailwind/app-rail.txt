@@ -2,6 +2,7 @@
 !==
 !window.matchMedia('(min-width:
 "#"
+"3
 "Benachrichtigungen"
 "Free
 "Hoverable"
@@ -21,6 +22,7 @@ $active
 $active)
 $active,
 $activeClasses
+$ariaCurrent
 $as
 $as);
 $as,
@@ -28,10 +30,12 @@ $attributes
 $attributes->class([
 $attributes->class([$classes,
 $attributes->class(['relative
+$attributes->except('aria-describedby');
 $attributes->except('rel')->class([$classes,
 $attributes->except('rel')->class(['wk-rail-item',
 $attributes->except(['labels',
 $attributes->except(['labels']);
+$attributes->get('aria-describedby',
 $attributes->get('data-current');
 $attributes->get('rel',
 $attributes->get('target',
@@ -40,6 +44,11 @@ $attributes->has('aria-labelledby'))
 $attributes->merge()
 $badge
 $badge,
+$badgeLabel
+$badgeSentence
+$badgeSentence,
+$badgeSentenceId
+$badgeSentenceId])));
 $bag
 $brand
 $buttonCursor
@@ -49,6 +58,7 @@ $classes,
 $computedRel
 $computedRel)
 $content
+$current,
 $dataCurrent
 $defaultExpanded
 $defaultExpanded);
@@ -92,8 +102,11 @@ $labels
 $labels,
 $linkAttributes
 $linkAttributes,
+$linkDescribedBy
+$linkDescribedBy,
 $name
 $nameClasses
+$nameTooltip
 $navLabelAttrs
 $needsTooltip
 $offset
@@ -123,6 +136,7 @@ $separated
 $separatorClasses
 $separatorClasses])
 $slot
+$slot)
 $surface
 $surface,
 $tag
@@ -141,6 +155,8 @@ $variant,
 '
 '#',
 ''
+'')
+''),
 '');
 '',
 '';
@@ -164,6 +180,7 @@ $variant,
 'as'
 'as',
 'badge'
+'badgeLabel'
 'base',
 'below'
 'below',
@@ -181,6 +198,8 @@ $variant,
 'cookie'
 'cookie'.
 'cookie']);
+'current'
+'current',
 'cursor-pointer'
 'cursor-pointer',
 'data-[wk-ready]:duration-[var(--transition-wk-duration)]'
@@ -286,6 +305,7 @@ $variant,
 'leading-tight',
 'local'
 'local',
+'location',
 'm-[var(--space-wk-sm,0.5rem)]',
 'max-lg:hidden',
 'max-w-[var(--size-wk-tooltip-max)]',
@@ -300,6 +320,7 @@ $variant,
 'null'
 'offset'
 'page')
+'page',
 'panel'
 'panel',
 'panel']);
@@ -348,6 +369,7 @@ $variant,
 'top'),
 'transition-colors
 'true'
+'true']);
 'truncate'
 'variant'
 'variant',
@@ -357,6 +379,7 @@ $variant,
 'w-[calc(var(--size-wk-rail-labeled)_+_var(--wk-rail-gutter,0px))]',
 'w-max',
 'wk-rail',
+'wk-rail-badge-')
 'wk-rail-group-');
 'wk-rail-item-button'
 'wk-tooltip-');
@@ -383,10 +406,12 @@ $variant,
 (2rem)
 (Js::from
 (Support\CallerListeners).
+(Support\UrlProp).
 (The
 (WCAG
 (`.wk-scroll-fade…:focus-within
 (`data-wk-tooltip-surface`
+(`expanded`
 (`labels="below"`)
 (a
 (an
@@ -445,6 +470,7 @@ $variant,
 :data-labels="expanded
 :data-wk-names="(wide
 :data-wk-ready="ready
+:describes="false"
 :focusable-trigger="false">
 :placement="$placement"
 :text="$labelText"
@@ -485,6 +511,7 @@ $variant,
 @aware(['labels'
 @class([
 @else
+@elseif($needsTooltip)
 @endif
 @endif>
 @endif>{{
@@ -493,6 +520,7 @@ $variant,
 @endphp
 @if(!
 @if($active)
+@if($badgeSentence
 @if($computedRel)
 @if($describes)
 @if($disabled)
@@ -500,7 +528,8 @@ $variant,
 @if($focusableTrigger)
 @if($href
 @if($icon)
-@if($needsTooltip)
+@if($linkDescribedBy
+@if($nameTooltip)
 @if($opensNewTab)
 @if($persist
 @if($railTag
@@ -600,6 +629,7 @@ EITHER
 ENTIRELY
 EVERY
 Each
+Echoed
 Emitting
 Enter
 Escape
@@ -630,6 +660,7 @@ INSIDE
 IS
 IT
 ITS
+Ignored
 Immediately
 In
 Initial
@@ -654,11 +685,10 @@ Livewire
 Livewire's
 MORPH
 Maintainer's
-Make
 Makes
+NAME
 NEVER
 NON-active
-NON-interactive
 NOT
 No
 Normalize
@@ -742,6 +772,7 @@ TWO
 Tab
 Tailwind
 Tailwind's
+Taken
 Teleporting
 That
 The
@@ -757,6 +788,7 @@ UI
 UNBOUND
 UNDER
 UNNONCED
+URL
 Under
 Ungated,
 Unscoped,
@@ -799,6 +831,7 @@ Written
 ['flush',
 ['inverted',
 ['local',
+['page',
 ['pill',
 ['tooltip',
 ['x-on:mouseenter',
@@ -818,6 +851,8 @@ Written
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
 \Pushery\WireKit\Support\SlotContent::text($slot);
+\Pushery\WireKit\Support\SlotControl::reachable((string)
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::cspNonce();
 \Pushery\WireKit\WireKit::validateProp('app-rail.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('app-rail',
@@ -852,8 +887,6 @@ __('wirekit::Modules'),
 `--wk-rail-brand-inset`
 `--wk-rail-gutter`
 `--wk-rail-inset-start`.
-`.block`,
-`.inline-block`
 `:active`
 `:active`;
 `:aria-expanded`.
@@ -895,7 +928,8 @@ __('wirekit::Modules'),
 `as="div
 `as="span"`
 `as`
-`block`
+`badge-label`
+`badge`.
 `break-words`
 `button`
 `button`.
@@ -907,12 +941,14 @@ __('wirekit::Modules'),
 `data-labels`
 `data-wk-names`
 `data-wk-names`;
+`data-wk-rail-badge`
 `data-wk-ready`,
 `dataset`
 `delayHide`
 `delayHide`.
 `delayShow`
 `describes="false"`
+`describes`
 `disabled`
 `display:
 `div`
@@ -947,7 +983,7 @@ __('wirekit::Modules'),
 `href="#"`
 `href`
 `id`
-`inline-block`
+`inline-block`,
 `inline`
 `inverted`
 `isolation:
@@ -961,6 +997,7 @@ __('wirekit::Modules'),
 `left`.
 `lg`.
 `local`
+`location`
 `mask-image`,
 `max-w-full`,
 `max-width`,
@@ -970,10 +1007,12 @@ __('wirekit::Modules'),
 `mouseenter`/`mouseleave`
 `mouseleave`
 `name`
+`null`,
 `offset`
 `open`
 `open`,
 `overflow:
+`page`
 `panel`
 `parentNode`
 `persist`
@@ -1101,6 +1140,7 @@ announced.
 announcements;
 announces
 announcing
+another
 answer
 answer.
 answered
@@ -1131,15 +1171,17 @@ apply,
 arbitrate.
 arcs
 are
+are.
 area's
 argued
 argument
 aria-current
-aria-current="page"
+aria-current="{{
 aria-describedby
 aria-describedby="{{
 aria-expanded="{{
 aria-hidden:
+aria-hidden="true"
 aria-hidden="true">
 aria-label
 aria-label="{{
@@ -1152,6 +1194,7 @@ arrangement
 array
 array.
 array_filter([
+array_filter([(string)
 arrival
 arrive
 arrives
@@ -1182,7 +1225,6 @@ auto`,
 automatic
 automatically
 avatar
-avoid
 avoids
 away
 axis
@@ -1226,6 +1268,7 @@ belonging
 belongs
 belongs.
 below
+below).
 below,
 below;
 beside
@@ -1257,6 +1300,7 @@ both,
 bottom
 bottom.
 bound
+bound,
 bound:
 bounded
 box
@@ -1267,6 +1311,7 @@ branch
 branch:
 branches
 branches,
+branches.
 brand
 break
 breakpoint
@@ -1277,7 +1322,6 @@ broken:
 browser
 browser,
 bubble's
-bubbles
 budget
 budget.
 bug
@@ -1289,7 +1333,6 @@ but
 button
 button,
 button.
-button/link)
 buys
 by
 by,
@@ -1355,15 +1398,19 @@ chrome.
 circle
 claim
 class
-class="block
+class="block"
+class="block">{{
 class="h-4
 class="min-w-0
 class="pointer-events-none
+class="rounded-[var(--radius-wk-sm)]
 class="shrink-0"
 class="shrink-0">
 class="shrink-0">{{
 class="sr-only
 class="sr-only">{{
+class="w-full"
+class="w-full">
 class="wk-scrollbar
 class="wk-shell-foot
 class="{{
@@ -1413,7 +1460,6 @@ command-palette.item.
 comment
 comment,
 comment:
-common
 compares
 compete
 compile
@@ -1476,12 +1522,14 @@ could
 count
 counted
 counter
+counter's
 counter.
+counter:
 counterpart,
 counterpart:
 counting
 counts
-covers
+counts,
 cramped
 creates.
 cross
@@ -1497,6 +1545,7 @@ data-variant="{{
 data-wk-names
 data-wk-prose-skip
 data-wk-rail
+data-wk-rail-badge
 data-wk-rail-brand-desc
 data-wk-rail-brand-mark
 data-wk-rail-brand-mark-wide
@@ -1528,6 +1577,7 @@ declare
 declared
 decorative
 default
+default,
 default.
 defaults
 defeat
@@ -1548,7 +1598,9 @@ derived
 descendant
 descendants
 described
+describes
 description
+description:
 design,
 destination
 destination,
@@ -1573,7 +1625,7 @@ disappearing,
 disclosure
 dismiss
 dismissible
-display:
+display
 dist/wirekit.css
 dist/wirekit.css.
 dist/wirekit.css;
@@ -1594,7 +1646,6 @@ does
 does:
 dominate.
 dot
-double
 drawer
 drawer,
 drawer.
@@ -1654,7 +1705,6 @@ else
 else,
 else.
 emission
-emits
 emits,
 emitted
 emitting
@@ -1681,6 +1731,7 @@ environment,
 equal
 error
 escape
+escaped
 escapes
 escaping
 escaping,
@@ -1707,6 +1758,7 @@ expand,
 expandable
 expandable:
 expanded
+expanded">{{
 expanded,
 expanded.
 expanded:
@@ -1746,8 +1798,11 @@ few
 file
 fill
 fill,
+fill.
 fill="none"
 filled
+filled($badge)
+filled($badgeLabel)
 fills
 finds
 finish
@@ -1781,6 +1836,9 @@ flow
 flow.
 focus
 focus,
+focus-visible:outline-hidden
+focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]"
 focus-within
 focusable
 focusable-trigger="false"
@@ -1836,6 +1894,7 @@ gets
 getting
 give
 given
+given.
 gives
 global
 glyph
@@ -1915,10 +1974,13 @@ here.
 here:
 here;
 hidden
+hidden,
+hidden>{{
 hidden`
 hide
 hides
 high
+highlight
 hint
 history
 hit,
@@ -2033,17 +2095,18 @@ itself
 itself,
 itself.
 itself;
+join
+joined
 joining
 just
 justify-center',
 keep
 keeps
+kept
 key
 key,
 key.
 keyboard
-keyboard,
-keyboard-focusable
 keys
 kind
 kit's
@@ -2079,6 +2142,7 @@ layout:
 lays
 leading-aligned
 leading-aligned,
+leads
 learned
 least
 least.
@@ -2092,6 +2156,7 @@ legible
 legitimately
 let
 lets
+lies
 like
 line
 line,
@@ -2157,6 +2222,7 @@ masked
 mass
 match
 matching
+matter:
 matters
 may
 mean
@@ -2241,6 +2307,7 @@ needs
 negative
 neighbors.
 neither
+neither.
 never
 new
 next
@@ -2387,6 +2454,7 @@ parser
 part
 partial
 partial,
+partial.
 partial:
 particular
 pass
@@ -2494,6 +2562,7 @@ quarters
 question
 quiet
 quiet,
+quiet:
 quieter
 quo.
 quoted
@@ -2526,7 +2595,9 @@ read
 read,
 reader
 reader's
+reader,
 reader.
+reader:
 reading
 readings
 reads
@@ -2605,6 +2676,7 @@ rests
 restyle
 result
 return;
+review".
 rewrites
 ride
 rides
@@ -2690,7 +2762,10 @@ selects
 self
 self.dataset;
 self.previousElementSibling;
+sentence
+sentence,
 sentence.
+sentence:
 separator
 sequence
 server
@@ -2759,9 +2834,9 @@ size:
 sized
 sizes
 slot
-slot's
 slot,
 slot.
+slot:
 sm
 small
 snap
@@ -2776,7 +2851,6 @@ source.
 space
 spacing
 span
-span).
 spans
 specificity
 specificity,
@@ -2883,7 +2957,6 @@ syntax.
 system;
 tab
 tab)')
-tab-stop
 tab.
 tabbed
 tabindex/role/label
@@ -2948,16 +3021,17 @@ this.
 those
 those,
 three
+three.
 through
 through,
 thrown
 tick
 tidier
 tidiness.
-tie.
 tier
 tighter
 time
+time,
 time.
 timer
 timer,
@@ -3016,6 +3090,7 @@ trigger
 trigger's
 trigger,
 trim($relAttr.'
+trim(implode('
 true
 true);
 true,
@@ -3106,6 +3181,7 @@ very
 via
 view
 view's
+view.
 viewBox="0
 viewport.
 visibility
@@ -3118,14 +3194,15 @@ visit,
 visual
 visually
 visually,
+vouchers
 w-2
 w-4
 w-[var(--size-wk-sm,2rem)]',
 w-full
-w-full"
 w-max
 wait
 wait.
+waits,
 waits.
 walk
 wants
@@ -3139,11 +3216,13 @@ way,
 way.
 ways
 well
+well,
 well-formed
 well-formed.
 went
 were
 what
+what.
 whatever
 when
 whenever
@@ -3185,6 +3264,7 @@ with.
 withholding
 without
 word
+word)
 wordmark
 words
 words-are-settled
@@ -3227,6 +3307,7 @@ x-on:pointerleave="pointerleave($event)"
 x-on:pointerup="pointerup($event)"
 x-ref="tooltip"
 x-ref="trigger"
+x-show="!
 x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-teleport>`,

@@ -28,7 +28,6 @@ $attributes->class([$classes])
 $attributes->class([$wrapperClasses])
 $attributes->class(['w-full
 $attributes->except(['aria-label',
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('id')
 $attributes->get('id').'-label'
@@ -121,11 +120,13 @@ $wrapperClasses
 'accent',
 'animation'
 'animation',
+'aria-label');
 'aria-labelledby']);
 'base',
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-danger)]',
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-warning)]',
@@ -143,6 +144,7 @@ $wrapperClasses
 'h-1',
 'h-2',
 'h-3',
+'info'
 'info',
 'inline-flex
 'intent'
@@ -238,7 +240,6 @@ $wrapperClasses
 (determinate
 (e.g.
 (float)
-(info
 (int)
 (invisible
 (its
@@ -273,7 +274,7 @@ $wrapperClasses
 *
 +
 -
---color-wk-info
+--color-wk-info-tone,
 --}}
 -1;">{{
 -rotate-90"
@@ -500,6 +501,7 @@ Y
 \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($valueExpression)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle',
@@ -571,6 +573,7 @@ alert).
 alias
 alias).
 alias.
+aliases
 alone
 alone).
 alone.
@@ -677,7 +680,6 @@ chain.
 change
 changes
 changes.
-charts
 circle
 circle)
 circular
@@ -823,10 +825,10 @@ fill
 fill).
 fill,
 fill="none"
+fills
 filter_var($over,
 fit
 flags
-flash
 flex
 flex-col
 flex-wrap
@@ -889,6 +891,7 @@ hint:
 hit
 hook
 house
+hue
 id
 id)
 id,
@@ -1068,6 +1071,7 @@ overflowing.
 overhead
 override
 own
+own,
 owns
 package,
 pairing,
@@ -1133,7 +1137,6 @@ re-resolve
 reach
 reached,
 read
-read),
 readable
 reader
 readout
@@ -1205,7 +1208,6 @@ sets
 settled
 shape
 share
-shares
 shimmer
 shortest
 should
@@ -1309,16 +1311,13 @@ tick
 tick.
 tier
 time,
-tint
 title.
 to
 token
-token,
 token.
 tokens
 tokens-only
 tokens.
-tone
 too,
 too.
 top
@@ -1347,6 +1346,7 @@ unit
 unknown
 unlimited
 unresolvable
+until
 untouched
 untouched.
 up

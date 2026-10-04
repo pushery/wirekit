@@ -43,6 +43,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('app-rail.brand', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // `@aware` — unlike `@props` — leaves its key in the attribute bag, so a key also written
     // on this tag would render as a stray HTML attribute.

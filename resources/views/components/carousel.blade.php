@@ -163,22 +163,10 @@
          now sit in a row BELOW this stage (horizontal), so centering the arrows on
          the root would drop them below the slide midline. --}}
     <div class="relative {{ $isVertical ? 'h-full' : '' }}">
-    {{-- The scroll region. tabindex + role + label are the house rule for any
-         scrollable container: without them the slides are reachable by mouse and
-         by nothing else. Arrow keys then scroll it natively — no key handler of
-         our own to get wrong. --}}
-    <div
-        x-ref="viewport"
-        tabindex="0"
-        role="group"
-        aria-label="{{ __('wirekit:::label slides', ['label' => $label]) }}"
-        data-wk-carousel-viewport
-        data-wk-carousel-per-view="{{ $perViewValue }}"
-        class="{{ $viewportClasses }}"
-    >
-        {{ $slot }}
-    </div>
-
+    {{-- Previous comes before the slides and Next after them, the order they stand in on
+         screen, left to right or top to bottom; the arrows are placed absolutely, so the
+         order here is the Tab order and nothing else. With both after the slides, Tab
+         went to the slides and then back to the arrow on their left. --}}
     <button
         type="button"
         x-on:click="prev()"
@@ -196,6 +184,22 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $prevPath }}" />
         </svg>
     </button>
+
+    {{-- The scroll region. tabindex + role + label are the house rule for any
+         scrollable container: without them the slides are reachable by mouse and
+         by nothing else. Arrow keys then scroll it natively — no key handler of
+         our own to get wrong. --}}
+    <div
+        x-ref="viewport"
+        tabindex="0"
+        role="group"
+        aria-label="{{ __('wirekit:::label slides', ['label' => $label]) }}"
+        data-wk-carousel-viewport
+        data-wk-carousel-per-view="{{ $perViewValue }}"
+        class="{{ $viewportClasses }}"
+    >
+        {{ $slot }}
+    </div>
 
     <button
         type="button"

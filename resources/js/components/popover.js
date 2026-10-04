@@ -12,6 +12,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  */
 import { position } from '../utils/floating.js';
 import { createFocusTrap } from '../utils/focus-trap.js';
+import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
@@ -38,6 +39,8 @@ export default function wirekitPopover(config = {}) {
         // close path (close / _closeFromTrap / _forceClose) so the scroll+resize
         // listeners never outlive the panel (every teardown path must call stop()).
         _stopAutoUpdate: null,
+        // Removes the outside-release listeners (utils/outside-release.js).
+        _stopOutsideRelease: null,
 
         init() {
             // Cleanup on Livewire SPA navigation
@@ -49,6 +52,21 @@ export default function wirekitPopover(config = {}) {
                 channel: 'wirekit:popover-open',
                 onOther: () => this._forceClose(),
             });
+
+            // A press outside closes the popover on its release, not on the press (WCAG 2.5.2),
+            // and only when it ends outside too. The trigger counts as inside: its own click
+            // toggles. The panel is teleported out of the root, so it is named separately.
+            //
+            // On the press the trap has let the focus go where the reader pressed (see
+            // `allowOutsideClick` in show()). A release outside closes with the focus left
+            // there; a press that ends inside the panel, or that the browser cancels, takes
+            // the trap back, and focus returns into the panel.
+            this._stopOutsideRelease = closeOnOutsideRelease(document, {
+                contains: (node) => this.$root.contains(node) || Boolean(this.$refs.panel?.contains(node)),
+                isOpen: () => this.isOpen,
+                close: () => this.close(),
+                keep: () => this._trap?.unpause(),
+            });
         },
 
         destroy() {
@@ -58,6 +76,8 @@ export default function wirekitPopover(config = {}) {
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
+            this._stopOutsideRelease?.();
+            this._stopOutsideRelease = null;
             this._forceClose();
         },
 
@@ -98,6 +118,11 @@ export default function wirekitPopover(config = {}) {
                     crossAxisShift: true,
                     // Follow the trigger on scroll/resize; torn down in every close path.
                     autoReposition: true,
+                    // A framework update patches the teleported panel against its template, whose
+                    // `style` carries none of what this call writes: the placement is gone while the
+                    // panel stays open, with its box unchanged, so `autoReposition`, which watches
+                    // boxes, sees nothing. This watches the attribute that is actually removed.
+                    repairErasure: true,
                 });
 
                 // The placement can wait frames for the panel to get a box, and the popover
@@ -119,24 +144,28 @@ export default function wirekitPopover(config = {}) {
                 this._trap = createFocusTrap(panel, {
                     escapeDeactivates: true,
                     onDeactivate: () => this._closeFromTrap(),
-                    // A press outside the panel releases the trap on the press, not on the
-                    // click. focus-trap resolves this hook on `mousedown` and `touchstart` in
-                    // the capture phase, ahead of its own `focusin` handler. A trap still armed
-                    // at that point pulls focus back into the panel, and the close that
-                    // follows then finds focus inside the panel, the state Escape leaves, and
-                    // hands it to the trigger. Released here with `returnFocus: false`, the
-                    // trap leaves focus on the control the reader pressed.
+                    // A press outside the panel pauses the trap on the press. focus-trap
+                    // resolves this hook on `mousedown` and `touchstart` in the capture phase,
+                    // ahead of its own `focusin` handler. A trap still listening at that point
+                    // pulls focus back into the panel, and the close on the release would then
+                    // find focus inside the panel, the state Escape leaves, and hand it to the
+                    // trigger. Paused, the trap lets the focus land on the control the reader
+                    // pressed, and the panel stays open until the press ends (see init()).
                     //
-                    // The trigger is the exception. Its click runs `toggle()`, and a trap
-                    // released on its press has closed the popover by then, so the toggle
-                    // would open it again. The trap stays armed through that press, and the
-                    // toggle closes the popover and returns focus to the trigger.
+                    // The trap asks the same question on `click`; paused, it no longer listens
+                    // by then, and a click is no press, so it passes.
+                    //
+                    // The trigger is the exception. Its click runs `toggle()`, which closes the
+                    // popover and returns focus to the trigger, so the trap stays armed through
+                    // that press.
                     allowOutsideClick: (event) => {
                         if (this.$refs.trigger?.contains(event?.target)) {
                             return true;
                         }
 
-                        this._trap?.deactivate({ returnFocus: false });
+                        if (event?.type === 'mousedown' || event?.type === 'touchstart') {
+                            this._trap?.pause();
+                        }
 
                         return true;
                     },
@@ -159,9 +188,9 @@ export default function wirekitPopover(config = {}) {
         },
 
         /**
-         * Close triggered by the trap deactivating, which now happens two ways: Escape (the
-         * library's own `escapeDeactivates`) and a press outside the panel (the
-         * `allowOutsideClick` hook lets go there so focus can land where the reader pressed).
+         * Close triggered by the trap deactivating, which is Escape (the library's own
+         * `escapeDeactivates`). A press outside pauses the trap instead, and its release closes
+         * through close() (see init()).
          *
          * Deliberately does NOT call deactivate() again — this runs from inside it.
          */
@@ -191,12 +220,10 @@ export default function wirekitPopover(config = {}) {
             // `fromTrigger`, because `activeElement` cannot answer for it: an engine that
             // does not focus a button on click leaves <body> focused by then.
             //
-            // While the trap is armed, a click on any other control never gets here with
-            // the popover open. The trap releases itself on that press (see
-            // `allowOutsideClick` in show()) and closes the popover through
-            // `_closeFromTrap()`, so the panel's outside-click binding finds it closed and
-            // returns above, and focus stays on what was clicked. Every other close moves
-            // focus only when it was inside the panel.
+            // A press on any other control pauses the trap on the press (see
+            // `allowOutsideClick` in show()), so by its release, which closes through here,
+            // focus is on the control the reader pressed and stays there. Every other close
+            // moves focus only when it was inside the panel.
             const panel = this.$refs.panel;
             const returnFocus = options.fromTrigger === true
                 || Boolean(panel && panel.contains(document.activeElement));

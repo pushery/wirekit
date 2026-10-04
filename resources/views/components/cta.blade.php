@@ -72,7 +72,9 @@
     $variantClasses = match (WireKit::validateProp('cta', 'variant', $variant, ['default', 'dark', 'accent'])) {
         'default' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
         'dark' => 'dark bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
-        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        // The accent fill sets the focus ring to its foreground for what sits on it, as a filled
+        // banner does: the page ring is the accent's own color in the default preset.
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)] [--color-wk-ring-offset:transparent]',
     };
 
     // Heading level (1-6). An invalid value is reported through the strictness gate, with a

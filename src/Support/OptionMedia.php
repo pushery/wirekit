@@ -36,6 +36,10 @@ use Stringable;
  *   normalizer that reads nothing from disk.
  * - `selectedLabel` — shorter text for the field or the pill than the list shows. It is searched
  *   as well, so reopening a field that shows it still finds the option it names.
+ * - `lang` — the language the option's words are in, a BCP 47 tag such as `de`, the key
+ *   `select` takes for the same thing. A language picker lists endonyms ("Deutsch",
+ *   "Français"), words in a language the page is not in, and without it a screen reader says
+ *   them in the page's voice (WCAG 3.1.2).
  */
 final class OptionMedia
 {
@@ -112,6 +116,20 @@ final class OptionMedia
         $selectedLabel = self::text($component, $value, $option, 'selectedLabel', 'selectedLabel');
         if ($selectedLabel !== null) {
             $fields['selectedLabel'] = $selectedLabel;
+        }
+
+        $lang = self::text($component, $value, $option, 'lang', 'lang');
+        if ($lang !== null) {
+            if (preg_match('/^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/', $lang) !== 1) {
+                throw new InvalidArgumentException(sprintf(
+                    'wirekit::%s: option "%s" has the `lang` "%s", which is not a language tag. Pass a BCP 47 tag such as `de` or `pt-BR`.',
+                    $component,
+                    $value,
+                    $lang,
+                ));
+            }
+
+            $fields['lang'] = $lang;
         }
 
         return $fields;

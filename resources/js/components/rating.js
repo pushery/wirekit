@@ -1,3 +1,4 @@
+import { watchModelEvents } from '../utils/model-events.js';
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 /**
@@ -31,6 +32,12 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * clicking the star that is already chosen, and stepping down past the first
  * one.
  *
+ * Lifecycle resources held on `this`, released in destroy():
+ *   - _stopServerSync — the observer of the server's value attribute.
+ *   - _modelEvents — `change` and `blur` on the hidden input for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change` with
+ *     every score chosen, as a radio button fires it, and `blur` when the reader leaves the row.
+ *
  * @param {Object} config
  * @param {number} config.value      the initial rating
  * @param {number} config.max        the highest selectable rating
@@ -41,6 +48,7 @@ export default function wirekitRating(config = {}) {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
         _stopServerSync: null,
+        _modelEvents: null,
 
         rating: Number(config.value) || 0,
         hovered: 0,
@@ -92,10 +100,19 @@ export default function wirekitRating(config = {}) {
 
                 this.rating = next;
             });
+
+            this._modelEvents = watchModelEvents(this.$root, () => this._hiddenInput());
         },
 
         destroy() {
             this._stopServerSync?.();
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
+        },
+
+        /** The hidden input `wire:model` is bound to, or null where there is none to find. */
+        _hiddenInput() {
+            return typeof this.$root?.querySelector === 'function' ? this.$root.querySelector('input[type=hidden]') : null;
         },
 
         /**
@@ -192,14 +209,25 @@ export default function wirekitRating(config = {}) {
             this.$nextTick(() => element.focus());
         },
 
-        /** Fire `input` on the hidden field so plain-HTML forms see the change. */
+        /**
+         * Write the score into the hidden field and fire `input` there, for `wire:model`.
+         *
+         * The field is bound with `:value`, and Alpine writes a binding a microtask later. Fired
+         * right after the assignment, the event found the field still holding the previous score,
+         * which is what `wire:model` reads, so the server always received the star before the one
+         * chosen. So the value is written here as well, before the event.
+         */
         _notify() {
             const root = this.$el.closest('[x-data]');
             const hidden = root ? root.querySelector('input[type=hidden]') : null;
 
             if (hidden) {
+                hidden.value = String(this.rating);
                 hidden.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            // A chosen score is committed at once, as a radio button commits its choice.
+            this._modelEvents?.commit();
         },
     };
 }

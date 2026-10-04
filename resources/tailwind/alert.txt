@@ -20,7 +20,7 @@ $intent
 $intentPropName
 $intentPropName,
 $role
-$role])->class([$baseClasses,
+$role,
 $scope);
 $slot
 $title
@@ -31,6 +31,7 @@ $variantColors['border'],
 $variantColors['icon']])
 $variantLabel
 $variantValue
+$variantValue])->class([$baseClasses,
 &&
 ',
 '<path
@@ -41,6 +42,7 @@ $variantValue
 'bg'
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]',
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_10%,var(--color-wk-bg-elevated))]',
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_10%,var(--color-wk-bg-elevated))]',
 'bg-[color-mix(in_srgb,var(--color-wk-success)_10%,var(--color-wk-bg-elevated))]',
 'bg-[color-mix(in_srgb,var(--color-wk-warning)_10%,var(--color-wk-bg-elevated))]',
 'bg-[var(--color-wk-bg-elevated)]',
@@ -48,12 +50,14 @@ $variantValue
 'border'
 'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,var(--color-wk-border))]',
 'border-[color-mix(in_srgb,var(--color-wk-danger)_35%,var(--color-wk-border))]',
+'border-[color-mix(in_srgb,var(--color-wk-info-tone)_35%,var(--color-wk-border))]',
 'border-[color-mix(in_srgb,var(--color-wk-success)_35%,var(--color-wk-border))]',
 'border-[color-mix(in_srgb,var(--color-wk-warning)_35%,var(--color-wk-border))]',
 'border-[length:var(--border-wk-width)]',
 'border-[var(--color-wk-border)]',
 'danger'
 'danger']),
+'data-intent'
 'dismissible'
 'false'
 'font-[family-name:var(--font-wk-sans)]',
@@ -67,7 +71,7 @@ $variantValue
 'primary'
 'primary',
 'px-[var(--padding-wk-x-md)]',
-'py-[var(--padding-wk-y-md)]',
+'py-[var(--padding-wk-x-md)]',
 'relative
 'rounded-[var(--radius-wk-md)]',
 'scope'
@@ -76,6 +80,7 @@ $variantValue
 'success',
 'text-[color:var(--color-wk-accent-text)]',
 'text-[color:var(--color-wk-danger)]',
+'text-[color:var(--color-wk-info-text)]',
 'text-[color:var(--color-wk-success)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-muted)]',
@@ -92,7 +97,6 @@ $variantValue
 (`fill="currentColor"`),
 (assertive
 (avoids
-(both
 (default,
 (inert
 (only
@@ -102,8 +106,7 @@ $variantValue
 (shown:
 (silent
 +
---color-wk-accent:
---color-wk-info
+--color-wk-info-tone,
 --}}
 -m-1
 ...")
@@ -253,12 +256,14 @@ __('wirekit::Information'),
 __('wirekit::Notice'),
 __('wirekit::Success'),
 __('wirekit::Warning'),
+`data-intent`
 `intent`
 `prop="false"`
 `variant="rainbow"`
 `variant`
 a
 about,
+accent
 action
 actions
 affordance
@@ -268,6 +273,7 @@ alert
 alerts
 alias
 alias;
+aliases
 an
 and
 animateIn
@@ -276,6 +282,7 @@ animation.
 announcement),
 app
 application
+application's
 are
 aria-hidden="true">
 aria-label="{{
@@ -311,7 +318,6 @@ can
 canonical
 cast
 change
-charts
 class="flex-1
 class="font-[number:var(--font-wk-heading-weight)]
 class="mt-2
@@ -370,7 +376,6 @@ fill="currentColor"
 fill="none"
 fix
 flags
-flash
 flex
 flips
 focus-visible:outline-hidden
@@ -383,6 +388,7 @@ full
 gap-2">{{
 gap-3',
 given
+gives
 goes
 gray
 h-4"
@@ -392,6 +398,7 @@ heroicons-style
 hidden
 hides
 hover:text-[color:var(--color-wk-text)]
+hue
 icon
 icon.
 iconSlot
@@ -412,6 +419,7 @@ it,
 it.
 items-center
 items-start
+its
 keeps
 label
 land
@@ -434,6 +442,7 @@ mt-0.5',
 n/a
 name
 named
+names
 neutral
 never
 no
@@ -461,6 +470,8 @@ otherwise
 out
 over
 own
+own.
+own;
 p-1
 page
 passthrough
@@ -482,7 +493,6 @@ prop's
 props
 quiet
 reaches
-read);
 reader
 readers
 reads
@@ -494,6 +504,7 @@ restore
 reveal
 role
 rounded-[var(--radius-wk-sm)]
+rule
 same
 saying
 screen
@@ -522,8 +533,6 @@ stroke-width="2"
 stroke="currentColor"
 subtle
 success
-surface
-synonyms
 text-[color:var(--color-wk-text-muted)]
 that
 the
@@ -534,13 +543,12 @@ this
 through
 tint
 tinted
+tints
 title
 to
 toggle
 toggles
-token,
 tokens
-tone
 treatment
 true),
 true);
@@ -549,6 +557,7 @@ truthy
 type="button"
 typed
 unknown
+until
 use
 used
 user
@@ -559,12 +568,12 @@ via
 viewBox
 viewBox="0
 visible
-visual
 warning
 was
 way.
 what
 when
+which
 while
 who
 whole

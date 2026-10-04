@@ -11,7 +11,6 @@ $asideInset
 $attributes
 $attributes->class([$classes])
 $attributes->except('aria-label')->class([$classes])
-$attributes->get('aria-label',
 $attributes->getAttributes());
 $classes
 $component",
@@ -49,6 +48,7 @@ $viewport
 '-translate-x-full
 '.$asideInset])
 '.$contentPanelClasses)
+'aria-label',
 'base',
 'bg-[var(--color-wk-bg)]'
 'bg-[var(--color-wk-bg)]',
@@ -368,6 +368,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Navigation'))
 \Pushery\WireKit\Support\AlpinePayload::string($sidebarAuthoredLabel)
 \Pushery\WireKit\Support\AlpinePayload::string($sidebarAuthoredRole)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SlotAttributes::of($rail)->merge(['role'

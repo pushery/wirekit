@@ -18,9 +18,11 @@
  * grid; Enter / Space activates. Navigation works in a read-only matrix too —
  * only activation is gated on `editable`.
  *
- * Lifecycle resources held on `this`: NONE. No observers, timers, rAF loops, or
- * document-scoped listeners — only reactive state + Alpine-managed @keydown
- * bindings, so no destroy() hook is required.
+ * Lifecycle resources held on `this`, released in destroy():
+ *   - _modelEvents — `change` and `blur` on the JSON bridge for `wire:model.change` and
+ *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change`
+ *     with every cell changed, and `blur` when the reader leaves the matrix. It holds the
+ *     document-scoped focus listeners this component otherwise has none of.
  *
  * @param {Object} config
  * @param {Object} config.cells - initial value map { "rowKey:colKey": value }
@@ -34,9 +36,21 @@
  * @param {string} [config.locale] - the application's locale, for Intl.PluralRules.
  */
 import { pluralize } from '../utils/plural.js';
+import { watchModelEvents } from '../utils/model-events.js';
 
 export default function wirekitStatusMatrix(config = {}) {
     return {
+        _modelEvents: null,
+
+        init() {
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.model);
+        },
+
+        destroy() {
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
+        },
+
         /**
          * The cell grid, serialized for the hidden input a form
          * (or wire:model) submits. `JSON` is unreachable from a directive under
@@ -236,6 +250,9 @@ export default function wirekitStatusMatrix(config = {}) {
                 this.$refs.model.value = JSON.stringify(this.cells);
                 this.$refs.model.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            // Every emission is a cell changed, committed at once.
+            this._modelEvents?.commit();
         },
     };
 }
