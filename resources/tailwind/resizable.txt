@@ -50,6 +50,7 @@ $style])->class([$classes])
 'rounded-[var(--radius-wk-lg)]',
 'scope'
 'vertical'
+(WCAG
 (e.g.
 (int)
 (resources/js/components/
@@ -65,6 +66,7 @@ $style])->class([$classes])
 0,
 10,
 1`
+2.5.7):
 50%"
 50,
 90,
@@ -109,9 +111,11 @@ Pushery\WireKit\WireKit;
 Renders
 Resizable
 Safari
+Spans
 Splitter
 That
 The
+Two
 WAI-ARIA
 WHICH
 We
@@ -141,6 +145,7 @@ __('wirekit::Resize
 `resize:
 `resize`
 `role="separator"`
+`select-none`
 `setPointerCapture`
 `tabindex="0"`,
 `wirekitResizableHandle`
@@ -160,13 +165,16 @@ announced
 another
 answer
 anticipate
+are
 aria-controls,
 aria-hidden
+aria-hidden="true"
 aria-hidden="true"></span>
 aria-label="{{
 aria-valuenow
 arrow-key
 as
+assistive
 at
 attach
 attaches
@@ -190,6 +198,7 @@ branching.
 browser's
 browser-native
 but
+buttons,
 by
 caller
 can
@@ -202,6 +211,11 @@ changes).
 child
 children
 clamp
+class="select-none"
+click
+click,
+click.
+clicks
 client-only
 comment
 compatibility
@@ -209,6 +223,9 @@ component
 component's
 container
 container,
+content.
+control
+controls
 copied
 corner
 could
@@ -223,6 +240,8 @@ data-wk-resizable-grip
 data-wk-resizable-grip>
 data-wk-resizable-handle
 data-wk-resizable-panel
+data-wk-resizable-step="-1"
+data-wk-resizable-step="1"
 debug
 declaration
 decorative
@@ -235,18 +254,23 @@ direction-aware
 dist/wirekit.css
 dist/wirekit.css.
 divider
+divider.
 does
 doesn't
+double
 drag
 drives
+each
 early.
 edge
 element
 element,
 emitted
+enough
 events
 every
 exposes
+few
 first
 flags
 flex
@@ -255,6 +279,7 @@ flex-row
 flip
 floats
 floor.
+focusable
 for
 from
 gesture:
@@ -271,6 +296,7 @@ heading
 heading,
 heading;
 hears
+hidden
 horizontal/vertical`
 horizontal`
 identically.
@@ -281,6 +307,7 @@ in
 init
 inline
 inner
+inside
 instead.
 integers
 interactive
@@ -305,6 +332,7 @@ lets
 life.
 line
 list
+little
 live
 lives
 locate
@@ -319,6 +347,7 @@ max(0,
 may
 mid-drag,
 min(100,
+model,
 mouse.
 movable
 moves
@@ -329,7 +358,9 @@ names
 native
 needs
 neither
+nested
 new
+next
 no
 non-last
 none
@@ -354,6 +385,7 @@ orientation.
 orientations
 other
 others
+otherwise
 own
 owns
 owns,
@@ -369,6 +401,7 @@ pass
 per-direction
 percentages
 pill
+pixels,
 plugin
 plus
 point
@@ -387,7 +420,9 @@ proportionally
 props
 put
 qualified:
+quick
 range
+rather
 reach
 reachable
 read
@@ -397,6 +432,7 @@ removed
 reports
 resizable.js)
 resizable.js);
+resize
 resizes
 resources/js/components/
 rest
@@ -415,6 +451,7 @@ scoped
 second
 section):
 selected
+selection
 selection,
 selectors
 sending
@@ -431,14 +468,19 @@ so
 space
 split
 sprintf(
+start
 state
+step
+still
 style
 supplied
 tabs
 takes
 target
+technology:
 template
 text
+than
 that
 the
 them
@@ -475,6 +517,7 @@ visual
 visually.
 w-full',
 was
+way
 whatever
 when
 whenever
@@ -488,6 +531,8 @@ wrapped
 wrapper
 writing
 x-data="wirekitResizableHandle"
+x-on:click="stepFromControl(-1)"></span>
+x-on:click="stepFromControl(1)"></span>
 x-on:keydown="onKeyDown($event)"
 x-on:lostpointercapture="onPointerUp($event)"
 x-on:pointercancel="onPointerUp($event)"

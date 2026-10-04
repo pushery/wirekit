@@ -25,6 +25,8 @@
     // Dev-only — flags unknown props in debug (silent in prod). Fully qualified, like every other
     // component's call, so it does not depend on the imports above.
     \Pushery\WireKit\WireKit::warnUnknownProps('flag', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $src = \Pushery\WireKit\Support\UrlProp::text($src);
 
     $shape = WireKit::validateProp('flag', 'shape', (string) $shape, ['rect', 'square', 'circle']);
     $size = WireKit::validateProp('flag', 'size', (string) $size, ['xs', 'sm', 'md', 'lg', 'xl']);

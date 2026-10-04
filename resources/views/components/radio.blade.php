@@ -19,6 +19,9 @@
     'announceError' => null,
     'label' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'value' => null,
     'size' => config('wirekit.components.radio.size', 'md'),
@@ -66,6 +69,12 @@
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    // `lang` names the language of the label's words, a language picker's "Deutsch" or "Français",
+    // so it goes on the <label>, which holds the text and the field alike. On the field alone the
+    // text kept the page's language and a screen reader said it in the page's voice (WCAG 3.1.2).
+    $labelLang = $attributes->get('lang');
+    $attributes = $attributes->except('lang');
 
     // Size scale (aligned with toggle/checkbox): the circle + its inner accent dot
     // scale together. The dot lives INSIDE the circle and is flex-centered by the
@@ -143,6 +152,11 @@
         $attributes->get('aria-describedby'),
         $groupError,
     );
+    // The field's help, after its own messages: what the field is for (partials/field-help).
+    // Only with a label to stand beside, which is also where its hidden copy is rendered.
+    $helpLabel = (string) ($label ?? '');
+    $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
+    $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
     // The hit-area reserve, on the BOX rather than the label: the label is the box PLUS
@@ -158,8 +172,13 @@
         $sizing['box'],
         'rounded-full',
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border-strong)]',
-        'peer-hover:border-[var(--color-wk-border-strong-hover)]',
+        // One border color for the state, chosen here rather than appended afterwards: an error
+        // class added after the block lost to the resting one, because both are single classes
+        // and the stylesheet sorts `-error` before `-strong`, so an invalid box stayed gray. The
+        // hover border belongs to the resting state only, for the same reason the fields' does.
+        $isInvalid
+            ? 'border-[var(--color-wk-border-error)]'
+            : 'border-[var(--color-wk-border-strong)] peer-hover:border-[var(--color-wk-border-strong-hover)]',
         'bg-[var(--color-wk-bg-input)]',
         'peer-checked:border-[var(--color-wk-accent)]',
         // A selected radio keeps its accent ring under the pointer. The hover border above is a
@@ -178,13 +197,15 @@
         'cursor-pointer',
     ]), $scope);
 
-    if ($isInvalid) {
-        $boxClasses .= ' border-[var(--color-wk-border-error)]';
-    }
 @endphp
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0">
-    <label for="{{ $id }}" class="{{ $labelClasses }}">
+    {{-- With help, the label shares a row with its button, which may not sit inside the
+         label: it would become part of the control's name. --}}
+    @if($helpId)
+    <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+    @endif
+    <label for="{{ $id }}" @if($labelLang !== null && $labelLang !== '') lang="{{ $labelLang }}" @endif class="{{ $labelClasses }}">
         {{-- Native radio input — visually hidden but accessible + Livewire wire:model compatible --}}
         <input
             type="radio"
@@ -224,6 +245,10 @@
             <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
+    @if($helpId)
+        @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => true, 'helpField' => (string) ($nameAttr ?? $id)])
+    </div>
+    @endif
 
     {{-- Error message or hint text --}}
     @if($hasError && $errorMessage)

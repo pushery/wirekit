@@ -76,6 +76,7 @@ $wrapperClasses
 'WireKit',
 'animate'
 'animate']);
+'aria-label')
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
 'border-[length:var(--border-wk-width)]',
@@ -260,7 +261,7 @@ $wrapperClasses
 @if($emitSchema)
 @if($findable)
 @if($json
-@if(($attributes->get('aria-label')
+@if((\Pushery\WireKit\Support\AttributeText::get($attributes,
 @json
 @php
 @props([
@@ -1180,10 +1181,10 @@ publishes
 purpose.
 push
 pushed
+py-[var(--padding-wk-x-lg)]'
+py-[var(--padding-wk-x-md)]';
 py-[var(--padding-wk-y-lg)]
-py-[var(--padding-wk-y-lg)]'
 py-[var(--padding-wk-y-md)]
-py-[var(--padding-wk-y-md)]';
 qualified:
 query
 question

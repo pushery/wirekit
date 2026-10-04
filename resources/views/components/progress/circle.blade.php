@@ -104,7 +104,7 @@
     // carries the role. The ARIA contract lives on the `svg`, not on the `div`
     // around it, and an `aria-label` left on the wrapper names nothing.
     // Same extraction, same reason, as the linear progress one directory up.
-    $ariaLabelAttr = $attributes->get('aria-label');
+    $ariaLabelAttr = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $ariaLabelledbyAttr = $attributes->get('aria-labelledby');
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp

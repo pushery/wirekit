@@ -148,7 +148,7 @@
          `role="group"` is added ONLY when a name is actually present. Naming it
          unconditionally would push an empty group into the accessibility tree of
          every plain accordion, which is noise rather than structure. --}}
-    @if(($attributes->get('aria-label') ?? $attributes->get('aria-labelledby')) !== null)
+    @if((\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $attributes->get('aria-labelledby')) !== null)
         role="group"
     @endif
     {{ $attributes->class([$classes]) }}

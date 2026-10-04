@@ -28,8 +28,10 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
+import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 /**
  * What counts as focusable inside a flyout panel. Same selector app-shell's
@@ -42,10 +44,13 @@ export default function wirekitNavigationMenu() {
     return {
         activeItem: null,
         _hideTimer: null,
+        // Whether the pointer has MOVED over the open panel since it opened (see leavePanel()).
+        _pointerMovedInPanel: false,
         _navCleanup: null,
         _onScroll: null,
         _onResize: null,
-        _onPointerDown: null,
+        // Removes the outside-release listeners (utils/outside-release.js).
+        _stopOutsideRelease: null,
 
         // Cross-close channel — see utils/overlay-coordination.js. Two navigation
         // menus on one page could each hold a panel open, and they overlap.
@@ -61,7 +66,7 @@ export default function wirekitNavigationMenu() {
             // FOUR separate places clear `activeItem` — the SPA cleanup, the delayed close, the
             // immediate close and a switch to another item — so hooking one of them would leave
             // an observer alive on the other three.
-            this.$watch('activeItem', (name) => {
+            watchCurrent(this, 'activeItem', (name) => {
                 if (name) {
                     return;
                 }
@@ -102,20 +107,17 @@ export default function wirekitNavigationMenu() {
             // Outside tap/click closes the flyout. Essential on touch devices,
             // which never fire the `mouseleave` that closes it on desktop —
             // without this a mobile user who opens a panel can't dismiss it by
-            // tapping away.
-            this._onPointerDown = (event) => {
-                if (!this.activeItem) return;
-                const target = event.target;
-                if (!(target instanceof Node)) return;
-                if (this.$root.contains(target)) return;
+            // tapping away. It closes on the release of a press that began and
+            // ended outside, never on the press (utils/outside-release.js).
+            this._stopOutsideRelease = closeOnOutsideRelease(document, {
                 // The flyout panel is teleported to the overlay root, so a tap inside it
-                // is NOT inside the nav root — without this guard the panel would
-                // close before an in-panel link/button click registered.
-                const panel = this.$refs[`panel-${this.activeItem}`];
-                if (panel && panel.contains(target)) return;
-                this.closeAll();
-            };
-            document.addEventListener('pointerdown', this._onPointerDown, { capture: true });
+                // is NOT inside the nav root — without the panel here it would close
+                // before an in-panel link/button click registered.
+                contains: (node) => this.$root.contains(node)
+                    || Boolean(this.$refs[`panel-${this.activeItem}`]?.contains(node)),
+                isOpen: () => Boolean(this.activeItem),
+                close: () => this.closeAll(),
+            });
 
             // Another navigation menu opening a panel closes this one's.
             this._coordination = coordinateOverlay({
@@ -142,9 +144,8 @@ export default function wirekitNavigationMenu() {
             if (this._onResize) {
                 window.removeEventListener('resize', this._onResize);
             }
-            if (this._onPointerDown) {
-                document.removeEventListener('pointerdown', this._onPointerDown, { capture: true });
-            }
+            this._stopOutsideRelease?.();
+            this._stopOutsideRelease = null;
 
             // The close delay outlives the component otherwise. Every listener
             // above is released here; this timer was the one resource that kept
@@ -159,6 +160,7 @@ export default function wirekitNavigationMenu() {
          */
         async open(name) {
             clearTimeout(this._hideTimer);
+            this._pointerMovedInPanel = false;
             this.activeItem = name;
             this._anchorAt = anchorSnapshot(this._getTrigger(name));
             this._coordination?.announce();
@@ -234,10 +236,35 @@ export default function wirekitNavigationMenu() {
         },
 
         /**
+         * The pointer moved over the open panel. Bound to the panel's `pointermove`.
+         */
+        notePanelPointerMove() {
+            this._pointerMovedInPanel = true;
+        },
+
+        /**
+         * The pointer left the panel: close after the delay, but only when it moved in it first.
+         *
+         * A panel opened from the keyboard renders one frame unplaced, at the end of the overlay
+         * root, before its position is set. Blink re-reads the hover after that layout: a pointer
+         * resting where the frame landed "enters" the panel and "leaves" it when the panel moves
+         * under its trigger, without moving at all. Those boundary events come with no
+         * `pointermove`, and a panel that closed on them shut itself on a reader who opened it
+         * with Enter and never touched the mouse.
+         */
+        leavePanel() {
+            if (! this._pointerMovedInPanel) return;
+
+            this._pointerMovedInPanel = false;
+            this.scheduleClose();
+        },
+
+        /**
          * Close all panels immediately.
          */
         closeAll() {
             clearTimeout(this._hideTimer);
+            this._pointerMovedInPanel = false;
             this.activeItem = null;
         },
 

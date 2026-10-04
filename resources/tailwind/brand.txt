@@ -76,6 +76,7 @@ $wkMobileStyle
 'eager'),
 'eager',
 'flex
+'focus-visible:outline-hidden
 'gap-[var(--gap-wk-sm)]',
 'h-[var(--size-wk-lg)]',
 'h-[var(--size-wk-md)]',
@@ -141,6 +142,7 @@ $wkMobileStyle
 (0,2,0)
 (1.5,
 (640px)
+(Support\UrlProp).
 (`alt=""`
 (`merge()`
 (`sm:inline-flex`
@@ -234,6 +236,7 @@ Defaults
 Dev-only
 EXPLICITLY,
 Eager
+Echoed
 Emitting
 Empty
 Every
@@ -298,6 +301,7 @@ Without
 ['xs',
 [null,
 \Illuminate\View\ComponentSlot)
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('brand',
 ])
 ]),
@@ -429,6 +433,7 @@ block,
 boolean
 both
 both.
+bound,
 branches
 branches'
 brand
@@ -440,6 +445,7 @@ breakpoint.
 breakpoint:
 breakpoint;
 browser
+browser's,
 build
 built
 bump,
@@ -542,6 +548,7 @@ elsewhere
 empty
 ends
 enum
+escaped
 every
 everything
 exactly
@@ -563,6 +570,9 @@ fixed
 flags
 flips
 floor
+focus
+focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]
 fold;
 follows
 footer
@@ -636,6 +646,7 @@ items-center">
 its
 jumps.
 keeps
+kit's
 known
 later
 later,
@@ -708,12 +719,14 @@ narrow
 navigation
 navigation,
 needs
+neither
 never
 new
 no
 no-op.
 non-class
 noopener
+nor
 noreferrer"
 noreferrer')
 not
@@ -729,6 +742,7 @@ of
 off
 often
 on
+once
 once.
 one
 one,
@@ -766,6 +780,7 @@ preg_match('/^\d+(?:\.\d+)?(?:rem|em|px)$/',
 presence
 presentation
 presentation,
+preset.
 prod).
 product
 profile
@@ -807,8 +822,10 @@ resorting
 responsive
 responsive-logo
 rest
+ring
 root
 root,
+rounded-[var(--radius-wk-sm)]',
 routinely
 row
 row:
@@ -885,6 +902,7 @@ swap:
 swaps
 tab
 tab)')
+tag
 tags:
 take
 taken

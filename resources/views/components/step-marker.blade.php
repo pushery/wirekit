@@ -35,12 +35,13 @@
     // class that never reaches the stylesheet, and the failure is an unstyled
     // chip rather than an error.
     //
-    // `info` borrows the accent fill and `neutral` inverts the text/background
+    // `info` fills with --color-wk-info-tone and `neutral` inverts the text/background
     // pair — both mirror badge's solid map exactly, so the two components cannot
     // drift into meaning different things by the same name. Every pair here is
     // an intent base against its own `-fg`, which is what carries the contrast.
     $intentClasses = match ($intent) {
-        'primary', 'accent', 'info' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        'primary', 'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        'info' => 'bg-[var(--color-wk-info-tone)] text-[color:var(--color-wk-info-fg)]',
         'success' => 'bg-[var(--color-wk-success)] text-[color:var(--color-wk-success-fg)]',
         'warning' => 'bg-[var(--color-wk-warning)] text-[color:var(--color-wk-warning-fg)]',
         'danger' => 'bg-[var(--color-wk-danger)] text-[color:var(--color-wk-danger-fg)]',

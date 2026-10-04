@@ -201,8 +201,8 @@ $wrapperClasses
 'app-1',
 'as'
 'base',
-'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))]
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
+'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg))]
 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 'bg-[var(--color-wk-bg-muted)]
@@ -858,8 +858,8 @@ block,
 body
 border
 border)
-border-[color-mix(in_srgb,var(--color-wk-accent)_20%,transparent)]',
 border-[color-mix(in_srgb,var(--color-wk-danger)_25%,transparent)]',
+border-[color-mix(in_srgb,var(--color-wk-info-tone)_20%,transparent)]',
 border-[color-mix(in_srgb,var(--color-wk-success)_25%,transparent)]',
 border-[color-mix(in_srgb,var(--color-wk-warning)_25%,transparent)]',
 border-[length:var(--border-wk-width)]

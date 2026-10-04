@@ -78,6 +78,17 @@
         default => 'border-b border-[var(--color-wk-border)]',
     };
 
+    // A transparent bar takes the background color out of the resolved base block instead of
+    // setting `bg-transparent` beside it: two background colors on one element are decided by
+    // the stylesheet's order, and this pair only came out right because `bg-transparent` sorts
+    // after `bg-[var(…)]`. A personalized base block loses its background color here too.
+    if ($variant === 'transparent') {
+        $navClasses = \Pushery\WireKit\Support\UtilityClasses::without(
+            $navClasses,
+            \Pushery\WireKit\Support\UtilityClasses::BACKGROUND_COLOR,
+        );
+    }
+
     // The CHROME layer, not the shared sticky one. A popover opened in page content is a
     // teleported panel at --z-wk-dropdown (50), and at --z-wk-sticky (40) this bar would be
     // painted over — arithmetic, not a quirk. A panel anchored INSIDE
@@ -219,6 +230,7 @@
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
     aria-label="{{ __('wirekit::Main navigation') }}"
     @endunless
+    @if($sticky) data-wk-scroll-inset="top" @endif
     {{ $attributes->class([$navClasses, $variantClasses, $stickyClasses]) }}
 >
     <div class="{{ $containerClasses }}">

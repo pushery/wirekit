@@ -31,6 +31,7 @@ $activeClasses
 $active])
 $always
 $always])
+$ariaCurrent
 $ariaLabel
 $as
 $as);
@@ -46,7 +47,6 @@ $attributes->except(['mode',
 $attributes->except(['rel',
 $attributes->except(['role',
 $attributes->get(
-$attributes->get('aria-label',
 $attributes->get('data-current');
 $attributes->get('rel',
 $attributes->get('target',
@@ -71,6 +71,7 @@ $computedRel
 $content
 $contentEdgeBorder
 $contentEdgeBorder,
+$current,
 $data.collapsed"
 $dataCurrent
 $defaultCollapsed
@@ -142,6 +143,7 @@ $selectionMode
 $side
 $side,
 $slot
+$slot)
 $slot))"
 $submenu
 $surface
@@ -194,6 +196,8 @@ $zoneInset
 'active'
 'active',
 'always'
+'aria-label')
+'aria-label',
 'aria-label'])
 'aria-label'])->class([$groupClasses])
 'as'
@@ -220,6 +224,8 @@ $zoneInset
 'cookie'
 'cookie'.
 'cookie']);
+'current'
+'current',
 'cursor-pointer',
 'data-[active]:ring-[length:var(--ring-wk-width)]',
 'data-[active]:ring-[var(--color-wk-ring)]',
@@ -283,6 +289,7 @@ $zoneInset
 'label',
 'local'
 'local',
+'location',
 'max-lg:hidden'
 'max-w-[var(--size-wk-tooltip-max)]',
 'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
@@ -310,6 +317,7 @@ $zoneInset
 'p-2',
 'p-[var(--padding-wk-y-sm)]',
 'page')
+'page',
 'panel',
 'persist'
 'persistDriver'
@@ -374,6 +382,7 @@ $zoneInset
 'trigger-heading',
 'true'
 'true'"
+'true']);
 'uppercase
 'value'
 'variant'
@@ -408,7 +417,6 @@ $zoneInset
 (!panel)
 ("Fast
 ("cube")
-($attributes->get('aria-label')
 ($attributes->get('id')
 ($attributes->has('aria-label')
 ($collapsed
@@ -427,7 +435,9 @@ $zoneInset
 (0.625rem
 (=
 (Support\CallerListeners).
+(Support\UrlProp).
 (WCAG
+(\Pushery\WireKit\Support\AttributeText::get($attributes,
 (`--color-wk-rail-hover-fg`
 (`.wk-scroll-fade…:focus-within
 (`.wk-shell-foot`
@@ -484,6 +494,7 @@ $zoneInset
 --}}
 -mb-px"></div>
 -mt-px"></div>
+-mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 .'`collapsible`
 .'`mode="selection"`
 .'a
@@ -775,6 +786,7 @@ Drop
 EMISSION
 EQUAL
 EVERY
+Echoed
 Emitted
 English
 Enter
@@ -843,7 +855,6 @@ MERGED
 MODE
 MORPH
 Maintainer's
-Make
 Marked
 Marker
 Matched
@@ -857,7 +868,6 @@ NEITHER
 NO
 NON-active
 NON-collapsible
-NON-interactive
 NOR
 NOT
 NOTHING
@@ -992,6 +1002,7 @@ UI
 UNBOUND
 UNNONCED
 UNSCOPED
+URL
 Ungated,
 Uniform
 Unscoped,
@@ -1050,6 +1061,7 @@ ZONE
 ['inverted',
 ['local',
 ['navigation',
+['page',
 ['seedKey'
 ['start',
 ['x-on:mouseenter',
@@ -1065,12 +1077,16 @@ ZONE
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
+\Pushery\WireKit\Support\SlotControl::reachable((string)
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::cspNonce();
+\Pushery\WireKit\WireKit::validateProp('sidebar.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('sidebar',
 \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.collapse-toggle',
 \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.collapsible',
@@ -1123,8 +1139,6 @@ __()
 `->merge()`
 `-active-fg`).
 `-mb-px`
-`.block`,
-`.inline-block`
 `1lh`
 `:active="request()->is('posts*')"`.
 `:active`
@@ -1183,7 +1197,6 @@ __()
 `badge`
 `bg-[var(--color-wk-bg-muted)]`
 `bleed`.
-`block`
 `border-e`
 `break-words`
 `card`
@@ -1241,7 +1254,7 @@ __()
 `icon="cube"`
 `id`
 `initListbox()`
-`inline-block`
+`inline-block`,
 `inverted`
 `isOpen`
 `isolation:
@@ -1249,6 +1262,7 @@ __()
 `keydownEscape()`
 `label`
 `local`
+`location`
 `margin-top`
 `markActive()`:
 `mask-image`,
@@ -1264,13 +1278,16 @@ __()
 `nav-persist-seed`
 `navigation`
 `none`
+`null`,
 `offset`
 `open
 `open`
 `open`,
 `overflow-y-auto`
+`overflow-y:
 `overflow:
 `p-[var(--padding-wk-y-sm)]`
+`page`
 `parentNode`
 `partials/sidebar-collapse-glyph`,
 `persist-driver`,
@@ -1288,6 +1305,7 @@ __()
 `role="region"`
 `role`
 `script-src
+`scroll-padding`
 `scroll-shadows="false"`
 `scrollIntoView`
 `selected`
@@ -1320,6 +1338,7 @@ __()
 `toggle="start"`
 `toggle`
 `toggle`:
+`true`
 `typeof
 `undefined`
 `value`
@@ -1471,9 +1490,11 @@ apply,
 applying
 arbitrary
 are
+are.
 area's
 aria-controls="{{
 aria-current="page"
+aria-current="{{
 aria-describedby
 aria-describedby="{{
 aria-expanded
@@ -1522,6 +1543,7 @@ at.
 attach
 attribute
 attribute,
+attribute.
 attribute:
 attribute;
 attributes
@@ -1532,12 +1554,15 @@ auto-derived
 auto-injection
 auto-invokes
 auto-rendered
+auto`
 automatic
-avoid
 avoid.
 avoids
 away
+axes:
+axis
 back
+back,
 back.
 background
 background,
@@ -1638,7 +1663,6 @@ browser
 browser,
 bubble
 bubble's
-bubbles
 budget.
 bug
 build,
@@ -1652,7 +1676,6 @@ button
 button's
 button,
 button.
-button/link)
 button:first-child`
 button?
 buttons.
@@ -1744,7 +1767,6 @@ clamp
 class
 class,
 class.
-class="block
 class="break-words">{{
 class="flex
 class="h-5
@@ -1754,10 +1776,12 @@ class="min-w-0
 class="mt-auto
 class="origin-center
 class="relative
+class="rounded-[var(--radius-wk-sm)]
 class="shrink-0
 class="shrink-0"
 class="sr-only">{{
 class="w-3.5
+class="w-full"
 class="wk-rail-hide">{{
 class="wk-scroll-shadow-bottom"></div>
 class="wk-scroll-shadow-top"></div>
@@ -1774,6 +1798,7 @@ climbs
 clipped
 clipping
 clipping,
+clips
 clone
 clone,
 close.
@@ -1910,7 +1935,6 @@ counts
 counts,
 coupled
 cover
-covers
 crossed
 cue
 cure
@@ -2025,7 +2049,7 @@ disclosure
 disclosures,
 dismiss
 dismissible
-display:
+display
 dist/wirekit.css
 dist/wirekit.css.
 distance
@@ -2194,6 +2218,8 @@ false
 false)
 false);
 false,
+far
+farthest
 fault
 fault,
 feature
@@ -2240,7 +2266,9 @@ flush
 flyout
 focus
 focus,
+focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]"
 focus-visible:ring-[var(--color-wk-ring)]',
 focus-visible:ring-[var(--color-wk-ring)]'])->merge($navLabelAttrs)
 focus-within
@@ -2473,6 +2501,7 @@ important
 imports
 improvements
 in
+in,
 in.
 in_array($mode,
 in_array($toggle,
@@ -2572,13 +2601,12 @@ justify-center',
 keep
 keeping
 keeps
+kept
 key
 key)
 key.
 keyboard
 keyboard's
-keyboard,
-keyboard-focusable
 keyed
 keys
 keys,
@@ -2618,6 +2646,7 @@ layout-shift
 layout.
 lays
 leading
+leads
 least
 least.
 leave
@@ -2633,6 +2662,8 @@ let
 lets
 letting
 level.
+lie
+lies
 lifted
 light
 like
@@ -2648,6 +2679,7 @@ links,
 list
 list,
 list.
+list:
 listbox
 listener
 listens
@@ -2811,6 +2843,7 @@ neighbor
 neighboring
 neither
 neither,
+neither.
 nested
 neutral,
 never
@@ -2876,6 +2909,7 @@ off,
 off-canvas
 off-center,
 off.
+offset
 offset:
 offsets
 omission
@@ -3110,6 +3144,7 @@ pushing;
 put
 put.
 puts
+px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 px-[var(--padding-wk-x-sm)]
 py-[var(--padding-wk-y-sm)]
 py-[var(--padding-wk-y-sm)]',
@@ -3153,6 +3188,7 @@ reachable,
 reached
 reached,
 reaches
+reaches,
 reaching
 react
 read
@@ -3162,6 +3198,7 @@ reader
 reader's
 reader,
 reader.
+reader:
 readers
 readers.
 reading
@@ -3270,6 +3307,8 @@ right,
 right-to-left
 right.
 right;
+ring
+ring,
 role
 role.
 role:
@@ -3344,6 +3383,7 @@ screen.
 script
 script's
 scroll
+scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 scroll.
 scrollbar
 scrollbar,
@@ -3354,6 +3394,7 @@ scroller,
 scroller-from-foot,
 scroller.
 scrolling
+scrolls
 search.
 second
 second-to-last
@@ -3495,8 +3536,8 @@ sized
 sizes
 sliver
 slot
-slot's
 slot.
+slot:
 slot;
 slots
 small
@@ -3518,7 +3559,7 @@ spaced
 spaces
 spacing
 span
-span).
+spare.
 specificity
 spell
 spelled
@@ -3639,7 +3680,6 @@ system
 system,
 tab
 tab)')
-tab-stop
 tabbed
 tabindex/role/label
 tabindex="0"
@@ -3717,12 +3757,12 @@ this,
 those
 thought
 three
+three.
 through
 throw
 thrown
 throws
 tick
-tie.
 time
 time.
 timer
@@ -3927,7 +3967,6 @@ visual
 visually
 w-5"
 w-full
-w-full"
 w-full',
 w-max
 waiting
@@ -3946,6 +3985,7 @@ we
 web
 well
 well-formed
+well.
 were
 what
 whatever
@@ -3958,6 +3998,7 @@ which
 while
 who
 whole
+wholly
 whose
 why
 wide
@@ -3991,6 +4032,7 @@ wk-rail-hide">{{
 wk-scrollbar"
 wk-submenu-indicator
 word
+word)
 work
 work.
 work:

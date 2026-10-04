@@ -22,6 +22,9 @@
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     // Keep the message line's height whether or not there is a message.
     //
     // Wasted space in a stacked form, and the difference between a working
@@ -37,6 +40,18 @@
     'size' => config('wirekit.components.select.size', 'md'),
     'placeholder' => null,
     'options' => [],
+    // What the field says when there is nothing to choose: `options` is empty and no option
+    // arrives through the slot. A selection filled from records shows only its placeholder
+    // before the first record exists, and the reader learns neither what is missing nor where
+    // to create it. Set, the select is disabled while it is empty, and the sentence below it is
+    // its description. Unset, an empty select renders as it always has.
+    'emptyText' => null,
+    // Where the missing record is created. Renders a link after `empty-text`; leave it null for
+    // a reader who may not create one.
+    'emptyHref' => null,
+    // The link's text. Name what it creates ("Add a supplier"); without it the link reads
+    // "Create one".
+    'emptyAction' => null,
     // The pre-selected option. It has to be a declared prop: `<select>` has no
     // `value` content attribute, so an undeclared one fell into the attribute bag
     // and rendered onto the element, where HTML ignores it. `value="pro"` then
@@ -46,7 +61,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -62,7 +77,14 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field']);
+
+    // In a row that lines its fields up (`row align-fields`), the field takes the row's three
+    // tracks itself, label, control and message, as `field` does: a button beside it then
+    // stands level with the control whatever is above or below it. Not inside a `field`,
+    // which takes the tracks for the control it wraps.
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
+        && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
 
     // Compared as strings, deliberately. Option keys arrive from PHP arrays, where
     // `['1' => 'One']` is an INT key, while a `value` written on a tag is always a
@@ -113,13 +135,33 @@
     // stringly-false spellings without collapsing a real success message.
     $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
     $successMessage = is_string($success) ? $success : null;
-    // One description list for the control: the component's own id first, then a caller's
+
+    // The empty state needs the caller's sentence or the `empty` slot, and a select with
+    // nothing to choose: no entry in `options` and no option written into the slot. It takes
+    // the hint's place, because a hint says how to choose and there is nothing to choose yet.
+    // An error still shows beside it.
+    $optionList = \Pushery\WireKit\Support\ListProp::from($options);
+    $showEmpty = $optionList === [] && ! $slot->hasActualContent() && (filled($emptyText) || isset($empty));
+    $showHint = $hint && ! $showEmpty;
+
+    // One description list for the control: the component's own ids first, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
-    $describedBy = trim(
-        ($hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')))
-        .' '.((string) $attributes->get('aria-describedby', ''))
-    );
+    $describedBy = implode(' ', array_filter([
+        $showEmpty ? $id.'-empty' : '',
+        $hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($showHint ? $id.'-hint' : '')),
+        trim((string) $attributes->get('aria-describedby', '')),
+    ], static fn (string $part): bool => $part !== ''));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
+
+    // Disabled while there is nothing to choose. `merge` keeps a caller's own `disabled`
+    // rather than writing the attribute twice.
+    if ($showEmpty) {
+        $attributes = $attributes->merge(['disabled' => true]);
+    }
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     $selectClasses = WireKit::resolveClasses('select', 'base', implode(' ', [
@@ -138,22 +180,24 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:border-[var(--color-wk-border-strong-hover)]',
         'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
-        'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
         'cursor-pointer',
     ]), $scope);
 
-    // Border color switches between error, success, and normal state — all via tokens
+    // Border and focus-ring color switch between error, success, and normal state — all via
+    // tokens. Each state names its own ring color: a second one in the base list would be
+    // decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = match (true) {
         (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
         $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
-        default => 'border-[var(--color-wk-border-strong)]',
+        // Hover belongs to the resting state only, so an error or a success border keeps its
+        // color under the pointer.
+        default => 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:ring-[var(--color-wk-ring)]',
     };
 
     // Size classes: height, padding, font size, radius — all from sizing tokens
@@ -202,17 +246,20 @@
             'pending' => __('wirekit::Saving'),
             'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+    @elseif($inAlignedRow)
+        {{-- An empty label track, held so that the control stays on the middle one. --}}
+        <span data-wk-field-part="label" aria-hidden="true"></span>
     @endif
 
     <div class="relative">
@@ -257,7 +304,7 @@
                 wcag312 tag but only validates a lang attribute that is PRESENT; with none
                 there are no nodes to judge, and the scan reports zero violations.
             --}}
-            @foreach(\Pushery\WireKit\Support\ListProp::from($options) as $optionValue => $optionLabel)
+            @foreach($optionList as $optionValue => $optionLabel)
                 @if(is_array($optionLabel) && ! array_key_exists('label', $optionLabel))
                     <optgroup label="{{ $optionValue }}">
                         @foreach($optionLabel as $subValue => $subLabel)
@@ -289,6 +336,23 @@
         </div>
     </div>
 
+    {{-- Nothing to choose: what is missing, and where it is created. It sits outside the
+         select, which is disabled, so the link stays in the tab order, and the select names it
+         in aria-describedby, so a screen reader on the field hears why it is empty. The
+         `empty` slot replaces the sentence and the link, for a control of the caller's own. --}}
+    @if($showEmpty)
+        <div data-wk-prose-skip data-wk-select-empty id="{{ $id }}-empty" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+            @isset($empty)
+                {{ $empty }}
+            @else
+                {{ $emptyText }}
+                @if(filled($emptyHref))
+                    <x-wirekit::link :href="$emptyHref">{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
+                @endif
+            @endisset
+        </div>
+    @endif
+
     @if($optimisticConfig)
         {{-- Rendered unconditionally and starting empty: a live region that
              arrives together with its text is a new node, and nothing is
@@ -301,14 +365,19 @@
          and pushes every sibling in a horizontal row. It is `select-none` for the same
          reason it is `aria-hidden` — it holds space, not text, and a drag-select across the
          form should not carry its no-break space into the clipboard. --}}
-    @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
+    @if($inAlignedRow && ! ($reserveMessage || ($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $showHint || $showEmpty))
+        {{-- Nothing below the control, and the track still ends here, or the row's next field
+             would be pulled up into it. --}}
+        <span data-wk-field-part="message" aria-hidden="true"></span>
+    @endif
+    @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $showHint || $showEmpty))
         <p data-wk-prose-skip aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif
     @if($hasError && $errorMessage)
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hasSuccess && $successMessage)
         <p data-wk-prose-skip id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
-    @elseif($hint)
+    @elseif($showHint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

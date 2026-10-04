@@ -40,6 +40,9 @@
     // the DOM, so the name survives. Mirrors input / select / textarea / combobox.
     'hideLabel' => false,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'size' => config('wirekit.components.password-input.size', 'md'),
     'toggle' => config('wirekit.components.password-input.toggle', true),
@@ -133,20 +136,22 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:border-[var(--color-wk-border-strong-hover)]',
         'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
-        'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
         $toggle ? 'pr-[var(--size-wk-md)]' : '',
     ]), $scope);
 
+    // Each state names its own focus-ring color and the base list names none: two ring colors on
+    // one element are decided by the stylesheet's order, which put the resting ring over the error one.
     $stateClasses = $hasError
         ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
-        : 'border-[var(--color-wk-border-strong)]';
+        // Hover belongs to the resting state only, so an error border keeps its color under
+        // the pointer.
+        : 'border-[var(--color-wk-border-strong)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:ring-[var(--color-wk-ring)]';
 
     $sizeClasses = match ($size) {
         'sm' => implode(' ', [
@@ -178,6 +183,10 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // The four rungs of the meter, resolved server-side so they are translatable
     // and visible to every `__()` extractor — a literal inside the x-data would be
@@ -226,7 +235,7 @@
             // typed would be a disclosure.
             'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 @endphp
 
@@ -252,7 +261,7 @@
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     <div class="relative">

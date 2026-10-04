@@ -13,6 +13,16 @@
 let activeDrag = null;
 
 /**
+ * The card picked up with a click in reorder mode, if any.
+ *
+ * Module state for the reason the drag is: on a connected board the click that places the card
+ * lands in another list, whose instance has to find the card the first list picked up.
+ *
+ * @type {{ item: Element, list: Element, index: number } | null}
+ */
+let activePick = null;
+
+/**
  * Reorder a list — by pointer, and by keyboard, because one of those is not
  * optional.
  *
@@ -66,12 +76,21 @@ let activeDrag = null;
  * `wirekit:sortable:moved` with both lists' new order; a move within one list still
  * reports `wirekit:sortable:reordered`.
  *
+ * A THIRD WAY, FOR A POINTER THAT CANNOT DRAG. WCAG 2.2 SC 2.5.7 asks that whatever a drag
+ * does, a single pointer can do without one, and someone who points with a head pointer or an
+ * eye tracker can click but not drag. In reorder mode, which the column's Reorder button turns
+ * on, a click picks a card up and the next click places it: on another card, which it takes the
+ * place of, or on a list's empty space, which puts it last. Clicking it again puts it down where
+ * it is. A card's own links and handlers do not run while the mode is on, and the mode follows
+ * across a connected board. The move reports once, as a drag and the keyboard do.
+ *
  * @param {Object} config
  * @param {string} config.itemSelector  which children are sortable
  * @param {string} [config.roleDescription]  what one item is called, translated
  * @param {Object} [config.messages]  { grabbed, grabbedAcross, moved, movedToColumn,
- *                                    dropped, canceled } — already translated, with
- *                                    `:position`, `:total` and `:column` placeholders
+ *                                    dropped, canceled, pickedUp, reorderOn, reorderOff } —
+ *                                    already translated, with `:position`, `:total` and
+ *                                    `:column` placeholders
  */
 export default function wirekitSortable(config = {}) {
     return {
@@ -100,7 +119,21 @@ export default function wirekitSortable(config = {}) {
             movedToColumn: config.messages?.movedToColumn || 'Moved to :column. Position :position of :total.',
             dropped: config.messages?.dropped || 'Dropped at position :position of :total.',
             canceled: config.messages?.canceled || 'Reorder canceled. Back at position :position of :total.',
+            pickedUp: config.messages?.pickedUp || 'Picked up. Position :position of :total. Click where it goes, or click it again to put it down.',
+            reorderOn: config.messages?.reorderOn || 'Reorder mode. Click a card to pick it up, then click where it goes.',
+            reorderOff: config.messages?.reorderOff || 'Reorder mode off.',
         },
+
+        /**
+         * Whether clicks reorder: on while the column's Reorder button is pressed, and on a
+         * connected board in every column at once.
+         */
+        reordering: false,
+
+        /** The column this list belongs to, which carries the Reorder button's events. */
+        _columnEl: null,
+        _onReorderToggle: null,
+        _onReorderBroadcast: null,
 
         /** What one item is called, translated by the call site. */
         _roleDescription: config.roleDescription || 'Sortable item',
@@ -156,11 +189,33 @@ export default function wirekitSortable(config = {}) {
             // board around it connects, and a listener nobody triggers costs nothing.
             this._receiver = (event) => this._receive(event.detail);
             this.$root.addEventListener?.('wirekit:sortable:receive', this._receiver);
+
+            // The Reorder button sits in the column's header, outside this list, and says it was
+            // pressed with an event that bubbles through the column. On a connected board the
+            // list that heard it tells the others, so the whole board is in the mode or none of it.
+            this._columnEl = this.$root.closest?.('[data-sortable-column]') ?? null;
+            this._onReorderToggle = () => this._setReorder(! this.reordering, true);
+            this._columnEl?.addEventListener?.('wirekit:sortable:reorder-toggle', this._onReorderToggle);
+            this._onReorderBroadcast = (event) => {
+                if (event.detail?.from !== this.$root) {
+                    this._setReorder(Boolean(event.detail?.on), false);
+                }
+            };
+            this._board()?.addEventListener?.('wirekit:sortable:reorder', this._onReorderBroadcast);
         },
 
         destroy() {
             this._observer?.disconnect();
             this.$root.removeEventListener?.('wirekit:sortable:receive', this._receiver);
+            this._columnEl?.removeEventListener?.('wirekit:sortable:reorder-toggle', this._onReorderToggle);
+            this._board()?.removeEventListener?.('wirekit:sortable:reorder', this._onReorderBroadcast);
+            this._columnEl = null;
+
+            // A card this list picked up is not left lifted on a page that goes on without it.
+            if (activePick && activePick.list === this.$root) {
+                activePick.item.removeAttribute('data-sortable-lifted');
+                activePick = null;
+            }
 
             // Only the one this factory made: a region the call site rendered is
             // the call site's to remove, and taking it away here would delete
@@ -597,6 +652,136 @@ export default function wirekitSortable(config = {}) {
             }
         },
 
+        // ─── Reorder mode: a click picks up, a click places ───────────────
+
+        /**
+         * Turn the mode on or off, and say so to the column's button and, when `broadcast`, to
+         * the other lists of the board and to a screen reader. Leaving the mode puts a card that
+         * is still picked up back down where it was.
+         */
+        _setReorder(on, broadcast) {
+            if (on === this.reordering) {
+                return;
+            }
+
+            // The list a card was picked up from puts it down: on a board every list hears the
+            // mode end, and only that one may answer for the card.
+            if (! on && activePick && activePick.list === this.$root) {
+                this._cancelPick();
+            }
+
+            this.reordering = on;
+
+            for (const button of this._columnEl?.querySelectorAll?.('[data-wk-sortable-reorder]') ?? []) {
+                button.dispatchEvent(new CustomEvent('wirekit:sortable:reorder-state', { detail: { on } }));
+            }
+
+            if (broadcast) {
+                this._board()?.dispatchEvent?.(new CustomEvent('wirekit:sortable:reorder', { detail: { on, from: this.$root } }));
+                this._say(on ? this._messages.reorderOn : this._messages.reorderOff);
+            }
+        },
+
+        /**
+         * A click in this list while the mode is on: it belongs to the reorder, not to the card,
+         * so a link in a card does not navigate and the card's own handler does not run. Bound
+         * in the capture phase, before anything inside the card hears it.
+         */
+        reorderClick(event) {
+            if (! this.reordering) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const item = this._itemFrom(event.target);
+            const pick = activePick && activePick.item.isConnected ? activePick : null;
+            const board = this._board();
+            const reachable = pick && (pick.list === this.$root || (board && board.contains(pick.list)));
+
+            if (! reachable) {
+                // Nothing picked up, or a card on another board: this click picks up anew.
+                if (pick) {
+                    this._cancelPick();
+                }
+
+                if (item) {
+                    this._pick(item);
+                }
+
+                return;
+            }
+
+            if (item === pick.item) {
+                this._endPick(item, pick);
+
+                return;
+            }
+
+            if (pick.list === this.$root) {
+                // Within this list the card takes the clicked card's place, or goes last.
+                const items = this._items();
+
+                this._moveTo(pick.item, item ? items.indexOf(item) : items.length - 1);
+            } else {
+                // From another list of the board: before the clicked card, or after the last one,
+                // before this list's own live region.
+                this.$root.insertBefore(pick.item, item ?? (this._announcer?.parentNode === this.$root ? this._announcer : null));
+            }
+
+            this._endPick(pick.item, pick);
+        },
+
+        _pick(item) {
+            const items = this._items();
+
+            activePick = { item, list: this.$root, index: items.indexOf(item) };
+            item.setAttribute('data-sortable-lifted', 'true');
+            this._say(this._messages.pickedUp, activePick.index + 1, items.length);
+            item.focus();
+        },
+
+        /** Put a picked-up card down where it now is, and report the move once. */
+        _endPick(item, pick) {
+            item.removeAttribute('data-sortable-lifted');
+            activePick = null;
+
+            const items = this._items();
+            const to = items.indexOf(item);
+
+            if (pick.list !== this.$root) {
+                this._say(this._messages.movedToColumn, to + 1, items.length, this._columnName());
+                this._announceMove(item, { list: pick.list, index: pick.index }, to);
+            } else {
+                this._say(this._messages.dropped, to + 1, items.length);
+
+                if (to !== pick.index) {
+                    this._announceOrder(item.getAttribute('data-sortable-id'), pick.index, to);
+                }
+            }
+
+            // Re-inserted nodes can lose the focus, see the keyboard path.
+            item.focus();
+        },
+
+        /** Put a picked-up card down without moving it. A pick moves nothing until it is placed. */
+        _cancelPick() {
+            const pick = activePick;
+
+            activePick = null;
+
+            if (! pick || ! pick.item.isConnected) {
+                return;
+            }
+
+            pick.item.removeAttribute('data-sortable-lifted');
+
+            const items = this._itemsOf(pick.list);
+
+            this._say(this._messages.canceled, items.indexOf(pick.item) + 1, items.length);
+        },
+
         // ─── Keyboard ─────────────────────────────────────────────────────
 
         keydown(event) {
@@ -607,6 +792,22 @@ export default function wirekitSortable(config = {}) {
             }
 
             const key = event.key;
+
+            // A card picked up with a click answers the keys that end a move: Escape puts it
+            // down where it was, Space and Enter where it is.
+            if (activePick && activePick.item === item && (key === 'Escape' || key === ' ' || key === 'Enter')) {
+                event.preventDefault();
+
+                if (key === 'Escape') {
+                    this._cancelPick();
+                } else {
+                    this._endPick(item, activePick);
+                }
+
+                item.focus();
+
+                return;
+            }
 
             if (key === ' ' || key === 'Enter') {
                 event.preventDefault();

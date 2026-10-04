@@ -31,6 +31,8 @@ import { withOpenAlias } from '../utils/open-alias.js';
  *   is open, with the counted lock modal and drawer share. Set to false when the palette is
  *   embedded inside a scoped container (e.g. docs preview card) where a global body-scroll lock
  *   would be disruptive.
+ * @param {boolean} [config.remote=false] - The palette has a `loading` slot, so its host reports
+ *   its requests: the empty state then waits for the host's answer to the newest input.
  */
 export default function wirekitCommandPalette(config = {}) {
     const lockScroll = config.lockScroll !== false;
@@ -73,15 +75,31 @@ export default function wirekitCommandPalette(config = {}) {
         // so the host reports it — see the `wirekit:command-palette-state` listener in init().
         remoteState: 'idle',
 
+        // Whether the host reports its requests: the palette has a `loading` slot, or the host
+        // has said 'loading' once. Only then can an input the host has not answered yet be told
+        // from a search that found nothing. A host that reports only failures never says
+        // 'loading', and its empty state keeps showing as it always did.
+        _remote: config.remote === true,
+
+        // Inputs typed, the newest one sent to the host, and the newest one a report came after.
+        // The query goes out 300 ms after the last keystroke, so between a keystroke and the
+        // host's answer the list still holds what an older input asked for.
+        _inputSeq: 0,
+        _emittedSeq: 0,
+        _answeredSeq: 0,
+
         // Whether the list holds at least one option. Read from the DOM, because the host owns
         // the result set and the palette only ever sees what was rendered into its list.
         _hasOptions: true,
 
         _activeIndex: -1,
+        // The timer that reports text taken over while the palette opened; see _takeQuery().
+        _takeTimer: null,
         _trap: null,
         _observer: null,
         _lastSignature: '',
         _navCleanup: null,
+        _leaveCleanup: null,
         _hotkeyHandler: null,
         _showHandler: null,
         // Whether this palette holds one of the page's scroll locks. The lock is the counted
@@ -95,6 +113,13 @@ export default function wirekitCommandPalette(config = {}) {
         // in the panel, and only for a palette rendered in the overlay root that holds the page
         // still; given back before the trap returns focus to the page.
         _holdsPageInert: false,
+        // While the page waits for the focus to arrive in the panel before it goes inert: the
+        // listener and the panel it sits on. See _holdPageInertOnceFocused().
+        _onPanelFocus: null,
+        _panelFocusTarget: null,
+        // The keys typed between an open and the moment the palette's field has the focus, taken
+        // on `document` in the capture phase. See _startTypeAhead().
+        _typeAhead: null,
         // The visual viewport listener while the palette is open; see _fitListToVisibleViewport().
         _onVisibleViewport: null,
 
@@ -119,10 +144,22 @@ export default function wirekitCommandPalette(config = {}) {
                 document.addEventListener('keydown', this._hotkeyHandler);
             }
 
-            // Listen for programmatic open events — store reference for cleanup
+            // Listen for programmatic open events — store reference for cleanup. `detail.query`
+            // opens the palette with that text in its field. Sent again while the palette is
+            // open and its field does not have the focus yet, it hands over what was typed in the
+            // meantime: a field that opened the palette keeps the focus until the trap moves it
+            // here, and every key typed in that moment lands there.
             this._showHandler = (event) => {
-                if (addressed(event)) {
-                    this.show();
+                if (! addressed(event)) {
+                    return;
+                }
+
+                const query = typeof event?.detail?.query === 'string' ? event.detail.query : null;
+
+                if (! this.isOpen) {
+                    this.show(query ?? '');
+                } else if (query !== null) {
+                    this._takeQuery(query);
                 }
             };
             window.addEventListener('wirekit-command-palette-show', this._showHandler);
@@ -171,9 +208,16 @@ export default function wirekitCommandPalette(config = {}) {
             // SPA cleanup
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+
+            // And when the page itself is left, by an entry's address or any other way: the
+            // scroll lock holds the page at 0 until it is released, and the browser records the
+            // position for Back after `pagehide`. See the same listener in `utils/overlay.js`.
+            this._leaveCleanup = () => this._forceClose();
+            window.addEventListener('pagehide', this._leaveCleanup);
         },
 
         destroy() {
+            clearTimeout(this._takeTimer);
             this._unwatchList();
             if (this._hotkeyHandler) {
                 document.removeEventListener('keydown', this._hotkeyHandler);
@@ -196,6 +240,10 @@ export default function wirekitCommandPalette(config = {}) {
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
+            if (this._leaveCleanup) {
+                window.removeEventListener('pagehide', this._leaveCleanup);
+                this._leaveCleanup = null;
+            }
             this._forceClose();
         },
 
@@ -205,8 +253,10 @@ export default function wirekitCommandPalette(config = {}) {
 
         /**
          * Show command palette and activate focus trap.
+         *
+         * @param {string} [query] the text the field opens with; empty by default
          */
-        show() {
+        show(query = '') {
             if (this.isOpen) return;
 
             // Read before the panel shows, in the same tick as `isOpen`, so the first frame
@@ -215,13 +265,16 @@ export default function wirekitCommandPalette(config = {}) {
             this._syncOptions();
 
             this.isOpen = true;
-            this.query = '';
+            this.query = typeof query === 'string' ? query : '';
             this._activeIndex = -1;
+            this._startTypeAhead();
 
             // A state left over from the last open describes a request nobody is waiting for.
             // Reset BEFORE the query goes out below: a host that answers it synchronously with
             // 'loading' must not have its report overwritten by this line.
             this.remoteState = 'idle';
+            // The list an open shows is the answer to the empty query, so nothing is pending.
+            this._answeredSeq = this._inputSeq;
 
             // Clearing `query` is a plain assignment, and an assignment fires no
             // `input` event — so the only dispatcher, the input's own handler,
@@ -261,13 +314,14 @@ export default function wirekitCommandPalette(config = {}) {
                         escapeDeactivates: true,
                         onDeactivate: () => this._closeFromTrap(),
                         allowOutsideClick: true,
-                        initialFocus: () => this.$refs.input,
+                        // The field is focused here rather than by the trap, which selects the
+                        // text of an input it focuses: a palette opened with text, or handed what
+                        // was typed while it opened, would lose all of it to the reader's next
+                        // key. `false` tells the trap that the focus is placed.
+                        initialFocus: () => this._focusField(),
                     });
                     this._trap.activate();
-
-                    if (lockScroll && ! this._holdsPageInert && inOverlayRoot(panel)) {
-                        this._holdsPageInert = holdPageInert();
-                    }
+                    this._holdPageInertOnceFocused(panel);
                 }
 
                 // The list only exists once the panel has rendered.
@@ -283,6 +337,7 @@ export default function wirekitCommandPalette(config = {}) {
             if (!this.isOpen) return;
             this.isOpen = false;
             this._trap = null;
+            this._stopTypeAhead();
             this._releasePageInert();
             this._releaseScroll();
             this._unwatchVisibleViewport();
@@ -293,10 +348,104 @@ export default function wirekitCommandPalette(config = {}) {
          * returns focus there: an inert element cannot take focus.
          */
         _releasePageInert() {
+            this._stopWaitingForPanelFocus();
+
             if (! this._holdsPageInert) return;
 
             this._holdsPageInert = false;
             releasePageInert();
+        },
+
+        /**
+         * Take the keys typed after the palette opened and before its field has the focus.
+         *
+         * The field takes the focus once the panel is shown, a task or more after the open. A
+         * reader who presses the hotkey and types at once typed into nothing for that moment:
+         * from the page itself the keys were lost, and from a field of the page they landed in
+         * that field. Printable keys go to the query instead, Backspace takes the last character,
+         * and the query goes out as text handed over does (`_takeQuery`). Keys with Ctrl, Cmd or
+         * Alt, an input method's composition, and every other key keep their meaning. A field
+         * that opens the palette, `command-palette.trigger`, hands its text over itself and is
+         * left alone.
+         */
+        _startTypeAhead() {
+            if (this._typeAhead || typeof document === 'undefined') {
+                return;
+            }
+
+            this._typeAhead = (event) => {
+                const input = this.$refs.input;
+
+                if (! this.isOpen || (input && document.activeElement === input)) {
+                    this._stopTypeAhead();
+
+                    return;
+                }
+
+                if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) {
+                    return;
+                }
+
+                if (document.activeElement?.closest?.('[data-wk-command-palette-trigger]')) {
+                    return;
+                }
+
+                if (event.key === 'Backspace') {
+                    event.preventDefault();
+                    this._takeQuery(this.query.slice(0, -1));
+                } else if (typeof event.key === 'string' && [...event.key].length === 1) {
+                    event.preventDefault();
+                    this._takeQuery(this.query + event.key);
+                }
+            };
+
+            document.addEventListener('keydown', this._typeAhead, true);
+        },
+
+        _stopTypeAhead() {
+            if (this._typeAhead && typeof document !== 'undefined') {
+                document.removeEventListener('keydown', this._typeAhead, true);
+            }
+
+            this._typeAhead = null;
+        },
+
+        /**
+         * Make the page behind inert once the focus is inside the panel, and not before.
+         *
+         * The trap moves the focus a task after it activates, and the panel may not take it
+         * until it is shown. Made inert earlier, the field that opened the palette still had the
+         * focus and dropped every key typed into it: on a slow device the rest of a typed word
+         * was lost on its way. Until the focus arrives, those keys still reach that field, which
+         * hands them over (`_takeQuery`).
+         *
+         * @param {HTMLElement} panel
+         */
+        _holdPageInertOnceFocused(panel) {
+            if (! lockScroll || this._holdsPageInert || ! inOverlayRoot(panel)) return;
+
+            if (panel.contains(document.activeElement)) {
+                this._holdsPageInert = holdPageInert();
+
+                return;
+            }
+
+            this._stopWaitingForPanelFocus();
+            this._onPanelFocus = () => {
+                this._stopWaitingForPanelFocus();
+
+                if (this.isOpen && this._trap && ! this._holdsPageInert) {
+                    this._holdsPageInert = holdPageInert();
+                }
+            };
+            this._panelFocusTarget = panel;
+            panel.addEventListener('focusin', this._onPanelFocus);
+        },
+
+        _stopWaitingForPanelFocus() {
+            this._panelFocusTarget?.removeEventListener('focusin', this._onPanelFocus);
+            this._panelFocusTarget = null;
+            this._onPanelFocus = null;
         },
 
         /**
@@ -320,6 +469,7 @@ export default function wirekitCommandPalette(config = {}) {
         close() {
             if (!this.isOpen) return;
             this.isOpen = false;
+            this._stopTypeAhead();
             this._releasePageInert();
 
             if (this._trap) {
@@ -336,6 +486,7 @@ export default function wirekitCommandPalette(config = {}) {
          */
         _forceClose() {
             this.isOpen = false;
+            this._stopTypeAhead();
             this._releasePageInert();
 
             if (this._trap) {
@@ -663,7 +814,85 @@ export default function wirekitCommandPalette(config = {}) {
          * a word it thought meant done.
          */
         _setRemoteState(state) {
+            if (state === 'loading') {
+                this._remote = true;
+            }
+
+            // A report answers the newest input the host has been sent. One that arrives while a
+            // newer keystroke still waits for its 300 ms answers the older input, not that one.
+            this._answeredSeq = this._emittedSeq;
             this.remoteState = state === 'loading' || state === 'error' ? state : 'idle';
+        },
+
+        /** The reader typed: what the list shows answers an older input until the host reports. */
+        markQueryChanged() {
+            this._inputSeq += 1;
+            // Typing in the field reports through the field's own debounce, so text handed over
+            // a moment earlier is not reported on its own, half-typed.
+            clearTimeout(this._takeTimer);
+        },
+
+        /**
+         * Take over text typed outside the palette while it opened.
+         *
+         * Only while the palette's own field does not have the focus: once it has, the reader
+         * types here, and a late copy from the field that opened the palette must not write over
+         * it. The text is taken as typing is: the query changes, the list waits for the host's
+         * answer, and the query goes out 300 ms after the last change, by a timer of its own
+         * rather than through a synthetic `input` event, which a `wire:model` on the page could
+         * read as the reader's typing.
+         *
+         * @param {string} query
+         */
+        _takeQuery(query) {
+            const input = this.$refs.input;
+
+            if (! input || document.activeElement === input || this.query === query) {
+                return;
+            }
+
+            this.query = query;
+            this.markQueryChanged();
+
+            clearTimeout(this._takeTimer);
+            // A palette closed in the meantime has nobody waiting for the answer.
+            this._takeTimer = setTimeout(() => {
+                if (this.isOpen) {
+                    this.emitQuery();
+                }
+            }, 300);
+        },
+
+        /**
+         * Focus the field with the cursor after its text, where the next key belongs.
+         *
+         * @returns {false|undefined} false once the field has the focus; undefined without a
+         *   field, so the trap falls back to the first control it can focus
+         */
+        _focusField() {
+            const input = this.$refs.input;
+
+            if (! input || typeof input.focus !== 'function') {
+                return undefined;
+            }
+
+            input.focus();
+            this._caretToEnd();
+
+            if (document.activeElement === input) {
+                this._stopTypeAhead();
+            }
+
+            return false;
+        },
+
+        /** Put the cursor after the text in the field, where the next key belongs. */
+        _caretToEnd() {
+            const input = this.$refs.input;
+
+            if (input && typeof input.setSelectionRange === 'function' && typeof input.value === 'string') {
+                input.setSelectionRange(input.value.length, input.value.length);
+            }
         },
 
         /**
@@ -680,9 +909,15 @@ export default function wirekitCommandPalette(config = {}) {
         },
 
         // Empty means the list holds no option AND no request is pending or failed. While one
-        // is, "nothing matched" is not yet known, or not true.
+        // is, "nothing matched" is not yet known, or not true. For a host that reports its
+        // requests, an input it has not answered yet is pending too: the list still shows what
+        // an older input asked for.
         get showsEmpty() {
-            return this.remoteState === 'idle' && !this._hasOptions;
+            return this.remoteState === 'idle' && !this._hasOptions && !this._awaitingAnswer;
+        },
+
+        get _awaitingAnswer() {
+            return this._remote && this._answeredSeq !== this._inputSeq;
         },
 
         /**
@@ -697,6 +932,7 @@ export default function wirekitCommandPalette(config = {}) {
          * <template> itself.
          */
         emitQuery() {
+            this._emittedSeq = this._inputSeq;
             this.$root.dispatchEvent(new CustomEvent('wirekit-command-palette-query', {
                 detail: { query: this.query },
                 bubbles: true,

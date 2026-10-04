@@ -5,6 +5,12 @@
     'name' => null,
     'size' => config('wirekit.components.modal.size', 'md'),
     'dismissible' => config('wirekit.components.modal.dismissible', true),
+    // Whether the reader is asked before closing the dialog by Escape, a click beside it or its
+    // close button while its fields hold changes. On by default: a click beside a filled form
+    // threw away what had been typed into it. A close the page makes and a Cancel control never
+    // ask. `discardQuestion` replaces the question, which is in the reader's language otherwise.
+    'confirmDiscard' => config('wirekit.components.modal.confirm-discard', true),
+    'discardQuestion' => null,
     // Whether opening locks the page's scroll. False for an overlay that lives inside a page
     // region, such as a preview, where the page around it has to keep scrolling.
     'lockScroll' => true,
@@ -34,7 +40,13 @@
     // Normalized against the prop's own default so a cast never turns dismissal off on
     // a modal that never asked for it.
     $dismissible = BooleanProp::from($dismissible, true);
+    $confirmDiscard = BooleanProp::from($confirmDiscard, true);
     $lockScroll = BooleanProp::from($lockScroll, true);
+
+    // Only a dialog the reader can close asks before it closes.
+    $discardQuestionText = $dismissible && $confirmDiscard
+        ? (filled($discardQuestion) ? (string) $discardQuestion : __('wirekit::Discard your changes?'))
+        : null;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -67,7 +79,7 @@
     // A caller attribute wins over the prop because it is the more specific
     // instruction; both win over the header because if someone named the dialog
     // explicitly, that is the name they meant.
-    $callerAriaLabel = $attributes->get('aria-label');
+    $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $resolvedAriaLabel = $callerAriaLabel ?? $ariaLabel;
 
     // Is there a header to point at? The header's own id is bound by Alpine at
@@ -173,7 +185,7 @@
      the listener of a modal another overlay covers. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
-    x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
+    x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText) : 'null' }} })"
     @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
     {{ $attributes }}
 >
@@ -208,11 +220,14 @@
 
             {{-- Dialog container — centers the panel.
                  Click handler here (not on backdrop) because this div is layered
-                 on top and intercepts pointer events. Panel has x-on:click.stop
-                 so clicks inside the dialog don't bubble up to close it. --}}
+                 on top and intercepts pointer events. `.self` closes only on a click
+                 on the container itself, beside the panel, so a click inside the
+                 dialog is not stopped: it reaches the document, where a listener the
+                 page delegates and the `click.outside` of a menu inside the panel
+                 hear it. --}}
             <div
                 class="{{ $containerClasses }}"
-                @if($dismissible) x-on:click="handleBackdropClick()" @endif
+                @if($dismissible) x-on:click.self="handleBackdropClick()" @endif
             >
                 {{-- Dialog panel — the actual modal content --}}
                 {{-- Dialog panel — leave transition intentionally omitted
@@ -244,7 +259,6 @@
                         @if($ariaKey !== 'aria-label') {{ $ariaKey }}="{{ $ariaValue }}" @endif
                     @endforeach
                     class="{{ $panelClasses }} {{ $sizeClass }}"
-                    x-on:click.stop
                     wire:ignore.self
                     {{-- The theme marker for the panel itself, the surface that paints the modal's
                          background. A theme reaching only the body inside it dresses a layer the panel

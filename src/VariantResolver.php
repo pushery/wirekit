@@ -111,16 +111,14 @@ class VariantResolver
                 'hover:bg-[var(--color-wk-danger-hover)]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
-            // 'info' is a visual synonym of 'primary' — both tint with the
-            // accent color. Info has no surface tokens (no --color-wk-info-fg or
-            // --color-wk-info-hover): --color-wk-info is the tone the charts and the flash tint read, and
-            // --color-wk-info-text aliases accent-content. Reusing the accent
-            // token chain keeps the button theme-aware.
+            // 'info' fills with its own chain: --color-wk-info-tone, -fg and -hover alias the
+            // accent trio, so an info button looks like a primary one until an application gives
+            // info a hue of its own.
             'info' => implode(' ', [
-                'bg-[var(--color-wk-accent)]',
-                'text-[color:var(--color-wk-accent-fg)]',
+                'bg-[var(--color-wk-info-tone)]',
+                'text-[color:var(--color-wk-info-fg)]',
                 'border-transparent',
-                'hover:bg-[var(--color-wk-accent-hover)]',
+                'hover:bg-[var(--color-wk-info-hover)]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             default => '',
@@ -129,9 +127,10 @@ class VariantResolver
 
     private static function outline(string $intent): string
     {
-        // info aliases the accent token chain — see filled() above.
+        // info reads its own chain — see filled() above.
         $borderColor = match ($intent) {
-            'primary', 'info' => '--color-wk-accent',
+            'primary' => '--color-wk-accent',
+            'info' => '--color-wk-info-tone',
             'neutral' => '--color-wk-border',
             'success' => '--color-wk-success',
             'warning' => '--color-wk-warning',
@@ -140,7 +139,8 @@ class VariantResolver
         };
 
         $textColor = match ($intent) {
-            'primary', 'info' => '--color-wk-accent-content',
+            'primary' => '--color-wk-accent-content',
+            'info' => '--color-wk-info-text',
             'neutral' => '--color-wk-text',
             'success' => '--color-wk-success-text',
             'warning' => '--color-wk-warning-text',
@@ -167,9 +167,10 @@ class VariantResolver
         // do NOT exist in dist/wirekit.css — only --color-wk-warning-bg
         // exists. Use color-mix(in_srgb, var(--color-wk-X) 12%, var(--color-wk-bg))
         // for every intent, mirroring the badge component's soft-tint formula.
-        // info aliases the accent chain.
+        // info tints with its own tone.
         $tintToken = match ($intent) {
-            'primary', 'info' => '--color-wk-accent',
+            'primary' => '--color-wk-accent',
+            'info' => '--color-wk-info-tone',
             'success' => '--color-wk-success',
             'warning' => '--color-wk-warning',
             'danger' => '--color-wk-danger',
@@ -178,7 +179,8 @@ class VariantResolver
         };
 
         $textColor = match ($intent) {
-            'primary', 'info' => '--color-wk-accent-content',
+            'primary' => '--color-wk-accent-content',
+            'info' => '--color-wk-info-text',
             'neutral' => '--color-wk-text',
             'success' => '--color-wk-success-text',
             'warning' => '--color-wk-warning-text',
@@ -219,9 +221,10 @@ class VariantResolver
 
     private static function ghost(string $intent): string
     {
-        // info aliases the accent chain — see filled().
+        // info reads its own text token — see filled().
         $textColor = match ($intent) {
-            'primary', 'info' => '--color-wk-accent-content',
+            'primary' => '--color-wk-accent-content',
+            'info' => '--color-wk-info-text',
             'neutral' => '--color-wk-text',
             'success' => '--color-wk-success-text',
             'warning' => '--color-wk-warning-text',
@@ -259,6 +262,7 @@ class VariantResolver
         // outline() / soft() / ghost() above.
         $textColor = match ($intent) {
             'primary' => '--color-wk-accent-content',
+            'info' => '--color-wk-info-text',
             'danger' => '--color-wk-danger-text',
             default => '--color-wk-accent-content',
         };

@@ -36,6 +36,10 @@
     $author = \Pushery\WireKit\Support\ListProp::from($author);
     $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;
     $authorAvatar = is_array($author) ? ($author['avatar'] ?? null) : null;
+    // The initials `message` shows without a picture, read the same way, so the avatar the
+    // run is printed under is the one its messages would have drawn.
+    $authorInitials = (is_array($author) ? ($author['initials'] ?? null) : null)
+        ?? \Pushery\WireKit\Support\Initials::from($authorName);
 
     $alignClass = $sideValue === 'right' ? 'flex-row-reverse' : 'flex-row';
     $textAlign = $sideValue === 'right' ? 'items-end' : 'items-start';
@@ -68,6 +72,8 @@
             <x-wirekit::avatar
                 :src="$authorAvatar"
                 :alt="$authorName"
+                :initials="$authorInitials"
+                from-initials
                 size="sm"
             />
         </div>

@@ -7,9 +7,10 @@
  * `@tiptap/starter-kit`) and exposes a `window.wirekitEditor(config)` factory
  * that returns an `Editor` instance (see the docs page). The legacy factory name
  * `window.tiptapEditor` is still accepted as a deprecated alias — the resolution
- * order lives in `_resolveFactory()`. When no factory is present we gracefully
- * fall back to a plain <textarea> + a console error, so a form is never silently
- * broken.
+ * order lives in `_resolveFactory()`. A factory that is not on the page yet is
+ * awaited the way the chart adapters await their library; when none has arrived
+ * by the end of the grace period we fall back to a plain <textarea> + a console
+ * error, so a form is never silently broken.
  *
  * Responsibilities: mount the engine on the content element, mirror the document
  * into a hidden <input> (debounced) so `wire:model` + native form submit keep
@@ -20,6 +21,9 @@
  * Editor as opaque and only calls the shared ProseMirror-editor interface, so it
  * never hard-couples to one vendor.
  */
+import { awaitPeer } from '../utils/await-peer.js';
+import { keepRaw } from '../utils/keep-raw.js';
+import { watchModelEvents } from '../utils/model-events.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
 import { pluralize } from '../utils/plural.js';
 
@@ -50,7 +54,21 @@ export default function wirekitEditor(config = {}) {
         // The fallback textarea's input listener, when there is no engine. Released in
         // destroy().
         _fallbackInput: null,
+        // Set by the first keystroke in the fallback textarea. A factory that arrives after it
+        // finds the reader typing into the plain field, and leaves the field to them.
+        _fallbackTyped: false,
+        // Stops the wait for a factory that was not on the page at start. Released in destroy().
+        _stopAwaitingFactory: null,
         _syncTimer: null,
+        // `change` and `blur` on the hidden field for `wire:model.change` and `wire:model.blur`,
+        // which listen on that field alone (utils/model-events.js). Armed only once the engine
+        // has mounted: the fallback textarea is the field itself, visible, and fires its own.
+        // Released in destroy().
+        _modelEvents: null,
+        // The visible label and its two listeners. Released in destroy().
+        _label: null,
+        _onLabelPress: null,
+        _onLabelClick: null,
         _format: config.format === 'json' ? 'json' : 'html',
         _editable: config.editable !== false,
         // Character count (soft limit). charCount drives the visible counter; the
@@ -74,22 +92,144 @@ export default function wirekitEditor(config = {}) {
             // already-mounted editor. Without this, a second factory call mounts a
             // duplicate ProseMirror view on the same node — the content renders twice and
             // every toolbar command throws "Applying a mismatched transaction". Bail if a
-            // live editor already exists (destroy() nulls it, so a real remount still works).
-            if (this.editor) { return; }
+            // live editor already exists (destroy() nulls it, so a real remount still works),
+            // and while a wait for the factory is running, which would mount a second time.
+            if (this.editor || this._stopAwaitingFactory) { return; }
+
+            this._wireLabel();
 
             // Resolve the engine factory: canonical window.wirekitEditor first, then the
-            // deprecated window.tiptapEditor alias (with a one-time hint). Null → fallback.
-            const factory = this._resolveFactory();
-            if (!factory) {
-                this._activateFallback();
+            // deprecated window.tiptapEditor alias (with a one-time hint).
+            if (this._resolveFactory()) {
+                this._takeOver(false);
 
                 return;
             }
 
+            // No factory yet. An application may load its editor only on the pages that have
+            // one, and after a `wire:navigate` visit that script runs after Alpine has started
+            // this component. So the editor keeps asking, the way the charts and the map wait
+            // for their library: the server-rendered seed stays on screen until the grace
+            // period ends, then the plain textarea takes over, and a factory that arrives even
+            // later still replaces it unless the reader has started using it.
+            this._stopAwaitingFactory = awaitPeer({
+                isReady: () => this._resolveFactory() !== null,
+                onReady: () => {
+                    this._stopAwaitingFactory = null;
+                    this._takeOver(true);
+                },
+                onMissing: () => this._activateFallback(),
+            });
+        },
+
+        /**
+         * Wire the visible label to the surface it names.
+         *
+         * The label sits outside this component and names the surface by reference: the surface
+         * is built here, in the browser, and is not an element a `for` can reach. So a click on
+         * the label is wired here to focus it, as a label does for a field. A press on it keeps
+         * the focus where it is when the reader is already writing: the blur that would follow
+         * commits and leaves, and the click would only put the focus back.
+         */
+        _wireLabel() {
+            if (!config.ariaLabelledby || typeof document === 'undefined') {
+                return;
+            }
+
+            const label = document.getElementById(config.ariaLabelledby);
+
+            if (!label || typeof label.addEventListener !== 'function') {
+                return;
+            }
+
+            this._label = label;
+            this._onLabelPress = (event) => {
+                const surface = this._surface();
+
+                if (surface && surface.contains(document.activeElement)) {
+                    event.preventDefault();
+                }
+            };
+            this._onLabelClick = () => this._focusSurface();
+            label.addEventListener('mousedown', this._onLabelPress);
+            label.addEventListener('click', this._onLabelClick);
+        },
+
+        /** What a reader types into: the engine's surface, or the plain field without one. */
+        _surface() {
+            if (this.editor) {
+                return this.$refs.content?.querySelector?.('[contenteditable="true"]') ?? null;
+            }
+
+            const field = this.$refs.input;
+
+            return field && !field.hidden ? field : null;
+        },
+
+        /** Focus the surface, if there is one a reader can type into: a read-only editor has none. */
+        _focusSurface() {
+            const surface = this._surface();
+
+            if (!surface) {
+                return;
+            }
+
+            if (this.editor && this.editor.commands && typeof this.editor.commands.focus === 'function') {
+                this.editor.commands.focus();
+
+                return;
+            }
+
+            surface.focus?.();
+        },
+
+        /**
+         * Mount the engine once its factory is on the page.
+         *
+         * The plain textarea stays when the reader has typed into it or is in it: their text and
+         * their caret are in that field, and the editor would take both away. Otherwise the
+         * fallback is undone and the engine mounts with what the form field holds, which is the
+         * server's value unless a bound `x-model` set another while the factory was on its way.
+         *
+         * @param {boolean} late  the factory arrived after this component started
+         */
+        _takeOver(late) {
+            const factory = this._resolveFactory();
+
+            if (!factory || this.editor) {
+                return;
+            }
+
+            if (this._fallbackInput) {
+                const field = this.$refs.input;
+                const focused = typeof document !== 'undefined' && field != null && document.activeElement === field;
+
+                if (this._fallbackTyped || focused) {
+                    return;
+                }
+
+                this._deactivateFallback();
+            }
+
+            const content = late && this.$refs.input && typeof this.$refs.input.value === 'string'
+                ? this._parseContent(this.$refs.input.value)
+                : this._initialContent();
+
+            this._mount(factory, content, late);
+        },
+
+        /**
+         * Mount the engine on the content element with the given document.
+         *
+         * @param {Function} factory  window.wirekitEditor, or its deprecated alias
+         * @param {string|Object} content  HTML, or the parsed JSON of a JSON editor
+         * @param {boolean} late  the factory arrived after this component started
+         */
+        _mount(factory, content, late) {
             // Second defensive layer for the Livewire-morph path: Livewire can
             // re-render the markup and KEEP the content node (with its already-
             // mounted ProseMirror view) while Alpine constructs a FRESH component
-            // object — so `this.editor` is undefined here and the guard above
+            // object — so `this.editor` is undefined here and the guard in init()
             // misses it. Mounting again would put TWO ProseMirror views on one
             // node: the content renders twice and every toolbar command throws
             // "Applying a mismatched transaction" (it dispatches against a stale
@@ -109,7 +249,7 @@ export default function wirekitEditor(config = {}) {
 
             const created = factory({
                 element: host,
-                content: this._initialContent(),
+                content,
                 editable: this._editable,
                 extensions: config.extensions || [],
                 // `placeholder` is passed on to the factory: the Blade puts it in the Alpine
@@ -167,15 +307,14 @@ export default function wirekitEditor(config = {}) {
             // editor factory returns. The toolbar's reactivity never
             // depended on the editor being reactive — it's driven by the _version
             // counter (see the on* hooks above). try/catch: a frozen/sealed factory
-            // return can't take the flag — fall through rather than break mount.
-            if (created && typeof created === 'object') {
-                try {
-                    Object.defineProperty(created, '__v_skip', { value: true });
-                } catch {
-                    // frozen/sealed object — proceed un-flagged (factory's concern)
-                }
-            }
-            this.editor = created;
+            // return can't take the flag and is stored as it is.
+            this.editor = keepRaw(created);
+
+            // Leaving writes a pending sync out first: the field follows the document 200 ms
+            // late, and a press outside comes before the editor's own blur.
+            this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.input, {
+                beforeLeave: () => this._flushSync(),
+            });
 
             // Autofocus the Tiptap surface when requested, so the `autofocus` prop
             // reaches it and not only the textarea fallback. Done AFTER the assignment
@@ -184,12 +323,26 @@ export default function wirekitEditor(config = {}) {
             // factory-independent: it doesn't rely on the editor factory
             // forwarding a Tiptap `autofocus` option. Guarded for factories that return
             // a minimal stub without the command API.
-            if (config.autofocus && this.editor && this.editor.commands && typeof this.editor.commands.focus === 'function') {
+            // A late mount takes the focus only from nobody: by then the reader may be in another
+            // field, and a focus that moves on its own takes their place in it.
+            const focusIsFree = !late || typeof document === 'undefined'
+                || document.activeElement == null || document.activeElement === document.body;
+
+            if (config.autofocus && focusIsFree && this.editor && this.editor.commands && typeof this.editor.commands.focus === 'function') {
                 this.editor.commands.focus('end');
             }
         },
 
         destroy() {
+            this._stopAwaitingFactory?.();
+            this._stopAwaitingFactory = null;
+            if (this._label) {
+                this._label.removeEventListener('mousedown', this._onLabelPress);
+                this._label.removeEventListener('click', this._onLabelClick);
+                this._label = null;
+            }
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
             clearTimeout(this._syncTimer);
             this._syncTimer = null;
             clearTimeout(this._announceTimer);
@@ -301,9 +454,15 @@ export default function wirekitEditor(config = {}) {
                 return;
             }
             this.$refs.input.value = this._serialize();
-            // input → Livewire wire:model; change → legacy listeners.
+            // input → Livewire wire:model; change → `wire:model.change` and legacy listeners,
+            // through the model events so leaving the editor does not fire it a second time.
             this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
-            this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
+
+            if (this._modelEvents) {
+                this._modelEvents.commit();
+            } else {
+                this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         },
 
         // ── Two-way x-model ──────────────────────────────────────────
@@ -654,16 +813,40 @@ export default function wirekitEditor(config = {}) {
                 // document. `x-modelable` removed the model's own input listener, so
                 // without this a bound value would never move off its first value.
                 if (typeof this.$refs.input.addEventListener === 'function' && !this._fallbackInput) {
-                    this._fallbackInput = () => { this._docVersion++; };
+                    this._fallbackInput = () => { this._fallbackTyped = true; this._docVersion++; };
                     this.$refs.input.addEventListener('input', this._fallbackInput);
                 }
             }
-            if (this.$refs.content) {
+            // The surface steps aside only for a field that takes its place. A read-only editor
+            // renders no form field, and its host holds the document the server rendered, which
+            // is then all the reader has.
+            if (this.$refs.content && this.$refs.input) {
                 this.$refs.content.setAttribute('hidden', '');
             }
             if (this.$refs.toolbar) {
                 this.$refs.toolbar.setAttribute('hidden', '');
             }
+        },
+
+        /**
+         * Undo the fallback for a factory that arrived late: the form field is hidden again and
+         * goes back to following the engine, and the editing surface and the toolbar return.
+         */
+        _deactivateFallback() {
+            const field = this.$refs.input;
+
+            if (field) {
+                if (this._fallbackInput) {
+                    field.removeEventListener?.('input', this._fallbackInput);
+                }
+
+                field.setAttribute?.('hidden', '');
+                field.setAttribute?.('aria-hidden', 'true');
+            }
+
+            this._fallbackInput = null;
+            this.$refs.content?.removeAttribute?.('hidden');
+            this.$refs.toolbar?.removeAttribute?.('hidden');
         },
     };
 }

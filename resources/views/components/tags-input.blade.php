@@ -35,6 +35,9 @@
     'announceError' => null,
     'label' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'value' => [],
     // Both resolve through config, because the docs page has told developers to override
@@ -51,7 +54,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -71,7 +74,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 @endphp
 
 
@@ -100,6 +103,13 @@
     // `-input` after it, as before.
     $callerId = filled($attributes->get('id'));
     $fieldId = $callerId ? $id : $id.'-input';
+
+    // Inside a labeled field the field's label names the text field by `for` and the group by
+    // reference, where the placeholder would name the field (Support\FieldControl). Not when
+    // this component is named by its own label or an aria-label, which win as anywhere else.
+    $fieldLabelId = ! filled($label) && \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') === null && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel($fieldId)
+        : null;
 
     // Consumed above and re-emitted where they belong -- the text field and the
     // hidden inputs. A `name` left on the wrapper <div> names no form control.
@@ -177,6 +187,10 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     /*
      * What the live region says, as TEMPLATES rather than sentences built in JavaScript.
@@ -213,7 +227,7 @@
             'pending' => __('wirekit::Saving'),
             'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
 
     // A caller's `x-ref` belongs to the caller's component. The caller's attributes land on our
@@ -226,7 +240,7 @@
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     <div
@@ -283,7 +297,7 @@
                  lands on the remove button of the fourth chip is told which control it
                  is inside. Only when a label exists: `role="group"` with no accessible
                  name adds a level to walk through and says nothing at the top of it. --}}
-            @if($label) role="group" aria-label="{{ $label }}" @endif
+            @if($label) role="group" aria-label="{{ $label }}" @elseif($fieldLabelId) role="group" aria-labelledby="{{ $fieldLabelId }}" @endif
             @if($required) aria-required="true" @endif
             {{-- Inside the layer's scope, which the component's own wrapper is
                  not: the layer nests within it, so `isPending` does not resolve
@@ -348,7 +362,7 @@
                      an aria-label would win over that label, so the fallback
                      steps aside and the placeholder names the field only when
                      nothing else does. --}}
-                @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @elseif(! $label && ! $callerId) aria-label="{{ $placeholder }}" @endif
+                @if(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @elseif(! $label && ! $callerId && ! $fieldLabelId) aria-label="{{ $placeholder }}" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($disabled) disabled @endif

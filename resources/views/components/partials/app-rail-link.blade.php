@@ -4,9 +4,9 @@
      server could accept or refuse. --}}
 {{-- The rail module's link, factored out because the item renders it EITHER inside a
      tooltip or bare, and the two branches must not become two copies of the same anchor.
-     Every variable it reads ($linkAttributes, $icon, $iconClasses, $labelClasses,
-     $labelText, $truncate, $badge, $opensNewTab) is resolved in the including view — @include shares
-     the including scope, so nothing has to be passed.
+     Every variable it reads ($linkAttributes, $linkDescribedBy, $icon, $iconClasses, $labelClasses,
+     $labelText, $truncate, $badge, $badgeSentence, $opensNewTab) is resolved in the including view —
+     @include shares the including scope, so nothing has to be passed.
 
      `$linkAttributes` in particular is resolved there so both branches take the same
      `except('rel')` and the same class merge from one expression. --}}
@@ -30,8 +30,10 @@
     data-wk-rail-item
     @if($railTag === 'button') type="button" @endif
     @if($railTag === 'a') href="{{ $href }}" @endif
-    @if($active) aria-current="page" @endif
+    @if($active) aria-current="{{ $ariaCurrent }}" @endif
     @if($railTag === 'a' && $computedRel) rel="{{ $computedRel }}" @endif
+    {{-- A caller's description and the counter's sentence, joined in the including view. --}}
+    @if($linkDescribedBy !== '') aria-describedby="{{ $linkDescribedBy }}" @endif
     {{ $linkAttributes }}
 >
     @if($icon)
@@ -50,8 +52,11 @@
              sharing the flex row pushes it visibly off-center, which is what the browser
              test measures. In the wide rail it rejoins the row as a pill. The digits move
              to sr-only rather than being removed, so the count stays part of the link's
-             accessible name in both states. --}}
-        <span class="pointer-events-none absolute end-[calc(var(--padding-wk-x-sm)/2)] top-[calc(var(--padding-wk-y-sm)/2)] h-2 w-2 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-rail-badge)]
+             accessible name in both states. With a `badge-label` the sentence carries the
+             count as the link's description instead, and the bare digits leave the name.
+             `data-wk-rail-badge` is what the stylesheet reads to give a counter on a filled
+             item, the current module or one under the pointer, the role for a fill. --}}
+        <span data-wk-rail-badge @if($badgeSentence !== null) aria-hidden="true" @endif class="pointer-events-none absolute end-[calc(var(--padding-wk-x-sm)/2)] top-[calc(var(--padding-wk-y-sm)/2)] h-2 w-2 rounded-[var(--radius-wk-full)] bg-[var(--color-wk-rail-badge)]
             group-data-[labels=inline]/wk-rail:pointer-events-auto
             group-data-[labels=inline]/wk-rail:static
             group-data-[labels=inline]/wk-rail:ms-auto

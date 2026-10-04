@@ -42,6 +42,7 @@ $wrapperClasses])
 'success'
 'text-[color:var(--color-wk-accent)]',
 'text-[color:var(--color-wk-danger)]',
+'text-[color:var(--color-wk-info-tone)]',
 'text-[color:var(--color-wk-success)]',
 'text-[color:var(--color-wk-text-muted)]',
 'text-[color:var(--color-wk-warning)]',
@@ -61,7 +62,7 @@ $wrapperClasses])
 (silent
 (then
 +
---color-wk-info
+--color-wk-info-tone,
 --}}
 /
 //
@@ -165,7 +166,6 @@ brand
 button
 by
 cannot
-charts
 class
 class="animate-spin
 class="opacity-25"
@@ -209,7 +209,6 @@ fallback
 fill="currentColor"
 fill="none"
 flags
-flash
 for
 from
 front
@@ -278,7 +277,7 @@ optimistic-ui:
 override
 override.
 own
-palette:
+palette.
 placed
 polite
 presentational
@@ -289,7 +288,6 @@ qualified:
 r="10"
 raw
 reach
-read.
 readable
 real
 reduced-motion
@@ -313,7 +311,6 @@ scanner
 sees
 selects,
 semantic
-shares
 shown
 sits
 size
@@ -334,8 +331,8 @@ structural
 stylesheet
 stylesheet's
 success/warning/danger
-surface
 surrounding
+takes
 text
 that
 the
@@ -344,13 +341,10 @@ themeable
 there
 this
 though
-tint
 to
 token
-token,
 token.
 tokens)
-tone
 true))
 unknown
 up

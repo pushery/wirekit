@@ -55,6 +55,7 @@
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
         'neutral' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
         'soft' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-accent-text)]',
+        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-info-text)]',
         'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-success-text)]',
         'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-warning-text)]',
         'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-danger-text)]',
@@ -64,13 +65,12 @@
     // (button / badge / progress) uses `primary` and `info` — feature
     // didn't accept either, so `<x-wirekit::feature tone="primary">`
     // crashed even though the rest of the kit accepts that spelling.
-    // We alias `primary → accent` (the same color role) and `info →
-    // soft` (the same tinted-accent treatment) so the canonical
-    // vocabulary works on feature too. See the prop-naming-conventions
-    // docs page for the full vocabulary contract.
+    // We alias `primary → accent` (the same color role) so the canonical
+    // vocabulary works on feature too; `info` has a tinted tone of its own,
+    // drawn from --color-wk-info-tone like `soft` from the accent. See the
+    // prop-naming-conventions docs page for the full vocabulary contract.
     $toneAliases = [
         'primary' => 'accent',
-        'info'    => 'soft',
     ];
     $tone = $toneAliases[$tone] ?? $tone;
 

@@ -114,16 +114,16 @@
 
     // Event intent → block classes (tinted surface + intent left-stripe). Defined
     // here (PHP literals) so Tailwind compiles them AND the drift inventory traces
-    // them; the block binds `:class="eventClasses[ev.intent || 'accent']"`. Info has
-    // no surface token (--color-wk-info is the tone the charts and the flash tint read), so info maps onto accent.
+    // them; the block binds `:class="eventClasses[ev.intent || 'accent']"`. Info tints with
+    // --color-wk-info-tone, which aliases the accent until an application gives info a hue of its own.
     // Stripe color = the status intent's *-text token, not its base color: a
     // base-color stripe sits on a 16% tint of the same hue, so its edge nearly
     // vanishes. The *-text tokens are the AA-on-tint pairings, so the stripe
-    // separates on every status intent, in both themes. `accent` and `info` take the
-    // accent base itself, whose near-black default already stands off its tint.
+    // separates on every status intent, in both themes. `accent` takes the accent base itself,
+    // whose near-black default already stands off its tint, and `info` its own tone.
     $eventClasses = [
         'accent' => 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-accent)]',
-        'info' => 'bg-[color-mix(in_oklch,var(--color-wk-accent)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-accent)]',
+        'info' => 'bg-[color-mix(in_oklch,var(--color-wk-info-tone)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-text)] border-l-2 border-[var(--color-wk-info-tone)]',
         'success' => 'bg-[color-mix(in_oklch,var(--color-wk-success)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-success-text)] border-l-2 border-[var(--color-wk-success-text)]',
         'warning' => 'bg-[color-mix(in_oklch,var(--color-wk-warning)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-warning-text)] border-l-2 border-[var(--color-wk-warning-text)]',
         'danger' => 'bg-[color-mix(in_oklch,var(--color-wk-danger)_16%,var(--color-wk-bg))] text-[color:var(--color-wk-danger-text)] border-l-2 border-[var(--color-wk-danger-text)]',
@@ -133,10 +133,10 @@
     // Solid intent fills for the small agenda status-dot. The $eventClasses
     // BLOCK style above carries a `border-l-2` left stripe — applied to an 8px
     // circle it ate half the dot (it read as "cut off"). The dot needs a plain
-    // solid fill of the intent color instead. info → accent (info has no surface token).
+    // solid fill of the intent color instead, info's being --color-wk-info-tone.
     $eventDot = [
         'accent' => 'bg-[var(--color-wk-accent)]',
-        'info' => 'bg-[var(--color-wk-accent)]',
+        'info' => 'bg-[var(--color-wk-info-tone)]',
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',
         'danger' => 'bg-[var(--color-wk-danger)]',
@@ -214,7 +214,16 @@
          JavaScript, which cannot reach the catalog at all. Left to the factory's own
          fallback the two halves disagree in every language but English — one band
          reading "Ganztägig" over a list announced as "All day". --}}
-    x-data="wirekitEventCalendar({ events: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventsArr) }}, dayMarkers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, view: {{ \Pushery\WireKit\Support\AlpinePayload::string($view) }}, @if($date) date: {{ \Pushery\WireKit\Support\AlpinePayload::string($date) }}, @endif weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Showing :count of :total events')) }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
+    {{-- The events, the day markers, the view and the date travel on attributes of their own,
+         so `x-data` renders the same on every update: a morph that changed it would have Alpine
+         reset the component to the new expression and initialize it again, sending a reader on
+         another week back to the one it opened on. The factory reads them once and follows
+         Livewire's later renders of them. --}}
+    data-wk-events="{{ \Pushery\WireKit\Support\AlpinePayload::json($eventsArr) }}"
+    data-wk-day-markers="{{ \Pushery\WireKit\Support\AlpinePayload::json($markersArr) }}"
+    data-wk-view="{{ $view }}"
+    @if($date) data-wk-date="{{ $date }}" @endif
+    x-data="wirekitEventCalendar({ weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Showing :count of :total events')) }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
     @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ $ariaLabel }}"
     {{-- Delegated truncated-title tooltip: every [data-wk-tip] pill/chip/row shares
@@ -327,8 +336,11 @@
                             </template>
                             {{-- "+N more" is actionable: it jumps to the week view focused on
                                  that day so the hidden events become visible (showMore). A plain
-                                 span gave no affordance — the overflow count read as dead text. --}}
-                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" data-wk-show-more :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($dayDetail ? __('wirekit:::count more events on :date') : __('wirekit:::count more events on :date, open week view')) }}.replace(':count', day.overflow).replace(':date', longDate(day.date))" class="block w-full text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> {{ __('wirekit::more') }}</button>
+                                 span gave no affordance — the overflow count read as dead text.
+                                 It is the minimum target tall (WCAG 2.5.8): one line of small
+                                 text is 18px, and 2px under an event pill that is too small and
+                                 too close for the spacing exception. --}}
+                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" data-wk-show-more :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($dayDetail ? __('wirekit:::count more events on :date') : __('wirekit:::count more events on :date, open week view')) }}.replace(':count', day.overflow).replace(':date', longDate(day.date))" class="flex w-full items-center min-h-[var(--size-wk-target-min)] text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> {{ __('wirekit::more') }}</button>
                         </div>
                     </div>
                 </template>
@@ -454,11 +466,16 @@
                              inset that matches the +2px top, while back-to-back events keep a
                              gap instead of merging edge to edge. The horizontal gutter is
                              2px/-4px (left/right fit). The clipped line is the time (no
-                             descenders), so overflow-hidden costs nothing visible. The event
+                             descenders), so overflow-hidden costs nothing visible at the
+                             default spacing. When a reader enlarges line height or letter
+                             spacing (WCAG 1.4.12) the time runs past the bottom edge: a time
+                             with a descender ("p.m.", "μ.μ.") loses it. The shared tip then
+                             opens for the block and carries the time with the title
+                             (blockTip()). The event
                              background ($eventClasses) is an OPAQUE color-mix over
                              var(--color-wk-bg), so the hour gridlines do not show THROUGH
                              the block. --}}
-                        <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="b.event.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="'top:calc('+b.top+'% + 2px); height:calc('+b.height+'% - 5px); left:calc('+b.left+'% + 2px); width:calc('+b.width+'% - 4px)'" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                        <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="blockTip(b)" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="'top:calc('+b.top+'% + 2px); height:calc('+b.height+'% - 5px); left:calc('+b.left+'% + 2px); width:calc('+b.width+'% - 4px)'" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span class="block font-[number:var(--font-wk-heading-weight)] leading-[var(--leading-wk-tight)] truncate" x-text="b.event.title"></span>
                             {{-- Secondary line: a smaller (2xs) tight time so the title
                                  leads and the two lines sit close in the compact block. --}}

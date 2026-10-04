@@ -127,7 +127,7 @@
     <div class="{{ $componentClasses }}" style="max-height: {{ $resolvedMaxHeight }};">
         @if(isset($header))
             {{-- Non-scrolling header, pinned to the top of the panel. --}}
-            <div class="shrink-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+            <div class="shrink-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                 {{ $header }}
             </div>
         @endif
@@ -155,7 +155,7 @@
                          behaves like the default. --}}
                     tabindex="0"
                     @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
-                    class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
+                    class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
                 >
                     <div x-ref="topSentinel" aria-hidden="true" class="h-px"></div>
                     {{ $slot }}
@@ -169,7 +169,7 @@
             <div
                 tabindex="0"
                 @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
-                class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
+                class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
             >
                 {{ $slot }}
             </div>
@@ -177,7 +177,7 @@
 
         @if(isset($footer))
             {{-- Non-scrolling footer, pinned to the bottom of the panel. --}}
-            <div class="shrink-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+            <div class="shrink-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                 {{ $footer }}
             </div>
         @endif

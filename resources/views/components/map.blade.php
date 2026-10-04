@@ -88,9 +88,8 @@
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',
         'danger' => 'bg-[var(--color-wk-danger)]',
-        // info has no surface token (--color-wk-info is the tone the charts and the flash tint read), so
-        // the dot aliases to accent — matching the map pin's _intentColor info→accent.
-        'info' => 'bg-[var(--color-wk-accent)]',
+        // info takes --color-wk-info-tone, matching the map pin's _intentColor.
+        'info' => 'bg-[var(--color-wk-info-tone)]',
         'neutral' => 'bg-[var(--color-wk-text-muted)]',
     ];
 

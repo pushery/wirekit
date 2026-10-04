@@ -66,6 +66,10 @@
     $classes = 'wk-scrollbar '.($fadeValue ? 'wk-scroll-fade ' : '').WireKit::resolveClasses('scroll-area', 'base', implode(' ', array_filter([
         $overflowClass,
         'font-[family-name:var(--font-wk-sans)]',
+        // A tab stop shows that it has the focus, in the kit's ring and its tokens. Drawn
+        // outside the area, where nothing the area holds can cover it and nothing it scrolls
+        // moves it.
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ])), $scope);
 
     // Inline style for max-height — common pattern for scroll containers

@@ -331,6 +331,8 @@ Without
 ['max-w-[var(--size-wk-container-md,48rem)]
 ['sm',
 ['w-full',
+[--color-wk-ring-offset:transparent]',
+[--color-wk-ring:var(--color-wk-accent-fg)]
 [1,
 \Pushery\WireKit\WireKit::warnUnknownProps('hero',
 ])
@@ -367,6 +369,7 @@ a
 above
 above.
 accent
+accent's
 across
 action
 actions,
@@ -414,6 +417,7 @@ backgrounds.
 balanced
 band
 band:
+banner
 bare
 be
 because
@@ -469,6 +473,7 @@ clicks
 code-block
 code-block's
 collapses
+color
 colored
 colored,
 column
@@ -528,6 +533,7 @@ docs.wirekit.app
 docs/extending/spine-contract.md
 document
 does
+does:
 doesn't
 drift-audit
 drives
@@ -563,6 +569,8 @@ favored).
 feature
 figures
 files
+fill
+filled
 fills
 fine
 fixed
@@ -579,10 +587,12 @@ flipped
 flips
 floor;
 flow
+focus
 font-[number:var(--font-wk-heading-weight)]
 footer.blade.php
 footgun
 for
+foreground
 from
 from-transparent
 full
@@ -645,6 +655,7 @@ isn't
 isset($asideWidthMap[$asideWidth]))
 isset($layoutMap[$layout])
 it
+it,
 it.
 items-center
 its
@@ -786,6 +797,7 @@ pre
 prescribe
 presentational
 preserved
+preset.
 preview
 previous
 prod).
@@ -828,6 +840,7 @@ responsive
 result
 reveal
 revert
+ring
 row
 rows
 rows).
@@ -857,6 +870,7 @@ silently
 silently.
 single
 site
+sits
 sits,
 size
 size;
@@ -900,7 +914,7 @@ tag
 tags
 take
 text
-text-[color:var(--color-wk-accent-fg)]',
+text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-text)]',
 text-center.
 than

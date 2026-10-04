@@ -26,13 +26,12 @@ $animationValue
 $ariaLabelAttr
 $ariaLabelledbyAttr
 $attributes
+$attributes->class([$iconClasses]);
 $attributes->class([$wrapperClasses])
 $attributes->class(['w-full
-$attributes->class([WireKit::resolveClasses('icon',
-$attributes->except('rel')->class([$rootClasses])
+$attributes->except('rel')->class([$rootClasses,
 $attributes->except(['aria-label',
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('id')
 $attributes->get('id').'-label'
@@ -50,6 +49,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $circumference
 $circumference;
@@ -85,6 +85,7 @@ $hintsNewTabInLabel)
 $href
 $i
 $i++;
+$iconClasses
 $intent
 $isImage
 $isIndeterminate
@@ -124,6 +125,8 @@ $resolved
 $resolved);
 $resolvedAriaHidden
 $rootClasses
+$rootRingClass
+$rootRingClass])
 $scope);
 $shouldSetHidden
 $showValue
@@ -132,7 +135,7 @@ $shown
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $sizeText
@@ -167,6 +170,7 @@ $wrapperClasses
 '
 ''
 '')
+''));
 '');
 '',
 '';
@@ -179,6 +183,10 @@ $wrapperClasses
 '/')
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -196,12 +204,14 @@ $wrapperClasses
 'animate'
 'animation'
 'animation',
+'aria-label');
 'aria-labelledby']);
 'base',
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-bg-elevated)]',
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-danger)]',
+'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-warning)]',
@@ -219,6 +229,7 @@ $wrapperClasses
 'false'
 'file-text'"
 'flex
+'focus-visible:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
 'h-1',
 'h-12
@@ -233,6 +244,7 @@ $wrapperClasses
 'icon'
 'idle',
 'img';
+'info'
 'info',
 'inline-flex
 'intent'
@@ -321,6 +333,7 @@ $wrapperClasses
 ($size)
 ($stateValue)
 ($svgHtml
+($tag)
 ($variantValue)
 ('xs').
 (+
@@ -334,6 +347,8 @@ $wrapperClasses
 (NOT
 (PDF,
 (PHP-side
+(Support\UrlProp).
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -354,7 +369,6 @@ $wrapperClasses
 (every
 (float)
 (function_exists('svg')
-(info
 (int)
 (invisible
 (links
@@ -385,7 +399,7 @@ $wrapperClasses
 */
 +
 -
---color-wk-info
+--color-wk-info-tone,
 --}}
 -rotate-90"
 .
@@ -426,9 +440,11 @@ $wrapperClasses
 1024;
 15.9155
 15.9155;
+16px
 2
 2.
 2.4
+20px,
 2rem,
 3.
 36
@@ -436,6 +452,7 @@ $wrapperClasses
 3rem.
 4.
 4.1.1
+4.1.3).
 4.7
 40px
 5
@@ -534,6 +551,7 @@ Auto-inject
 B';
 BAR
 BELOW
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -541,6 +559,7 @@ BooleanProp::from($animate,
 BooleanProp::from($showValue,
 Both
 Bound
+CONTENT,
 CSS
 Catching
 Center
@@ -567,6 +586,7 @@ Drop
 ENT_QUOTES).'"',
 EVERY
 Each
+Echoed
 Extract
 Fallback:
 File
@@ -577,6 +597,7 @@ Given
 Graceful
 HTML
 HTTP
+Hidden
 Htmlable,
 Icon
 IconResolver,
@@ -590,6 +611,7 @@ KB
 KB,
 Lifecycle:
 Link
+Livewire
 LocalizedNumber::format($shown,
 Logger
 MANDATORY
@@ -637,6 +659,7 @@ Purely
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\LocalizedNumber;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 RANGE
 Raw
@@ -669,8 +692,10 @@ Throwing
 Track
 Two
 UNBOUND
+URL
 Upload
 Uploaded")
+UtilityClasses::without($iconClasses,
 Validate
 Validated
 Value
@@ -682,6 +707,7 @@ We
 When
 WireKit
 WireKit::resolveClasses('attachment',
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('progress',
 WireKit::validateProp('attachment',
 WireKit::validateProp('icon',
@@ -697,12 +723,15 @@ Without
 ['none',
 ['primary',
 [0,
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($valueExpression)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('attachment',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle',
@@ -721,8 +750,10 @@ __toString
 `+
 `--font-scale-wk`
 `.0`,
+`:class`
 `<div>`
 `<span>`
+`@class`
 `DomId::unique`
 `Str::random(6)`
 `Svg
@@ -731,7 +762,11 @@ __toString
 `aria-labelledby`
 `aria-valuenow`
 `class="h-12
+`class`
 `div`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `id`
@@ -746,6 +781,7 @@ __toString
 `role="group"`
 `role="img"`.
 `state="uploading"`
+`state`,
 `svg`,
 `value-expression="percent"`
 `value-expression`
@@ -790,9 +826,11 @@ alert).
 alias
 alias).
 alias.
+aliases
 all
 all,
 allowed
+alone,
 already
 also
 alt=""
@@ -809,6 +847,7 @@ animation
 announce.
 announcement
 announcement,
+announces
 announces,
 another
 any
@@ -817,7 +856,9 @@ anything,
 apart
 app(IconResolver::class)->resolve($name);
 appear.
+application
 applied
+applies
 arc
 are
 aria-hidden
@@ -827,6 +868,7 @@ aria-hidden="..."
 aria-hidden="false".
 aria-hidden="true"
 aria-hidden="true">
+aria-hidden="true">{{
 aria-label
 aria-label,
 aria-label="{{
@@ -841,16 +883,20 @@ aria-valuenow
 aria-valuenow="{{
 arithmetic
 around
+array,
 array_keys($sizeMap));
 array_values(array_filter([$label,
+arrival
 arrives
 as
 as,
 assistive
 at
 attached
+attachment
 attempted
 attribute
+attribute's
 attribute,
 attributes
 author
@@ -858,6 +904,7 @@ auto-derived
 available,
 axe
 axe-core
+axis.
 axis:
 axis;
 back
@@ -899,17 +946,21 @@ border
 border-[var(--color-wk-border)]',
 both
 bound
+bound,
 boundary
 branch
 branch's
 break
 breaking
+browse
 browser
+browser's,
 bug
 bug.
 build
 but
 button
+button's,
 buttons).
 buttons,
 by
@@ -942,7 +993,6 @@ chain.
 change
 changes
 changes.
-charts
 check
 checks
 chevrons,
@@ -964,6 +1014,7 @@ class="mb-1
 class="min-w-0
 class="mt-[var(--space-wk-xs)]"
 class="relative
+class="sr-only"
 class="sr-only">{{
 class="text-[color:var(--color-wk-text)]">{{
 class="text-[color:var(--color-wk-text-muted)]
@@ -1030,7 +1081,8 @@ data-wk-attachment-link
 data-wk-attachment-media
 data-wk-attachment-meta
 data-wk-attachment-name
-data-wk-attachment-state>{{
+data-wk-attachment-state
+data-wk-attachment-status>{{
 data-wk-prose-skip
 debug
 decided
@@ -1063,6 +1115,7 @@ developer
 developer's
 developer's.
 developers
+did
 dimensions
 direct
 directory
@@ -1071,6 +1124,7 @@ display
 dist/wirekit.css)
 div
 does
+does.
 done
 down
 download
@@ -1108,10 +1162,12 @@ emitted,
 empty
 empty)
 empty-state
+end
 enough
 entry
 enum;
 error.
+escaped
 evaluated
 even
 every
@@ -1149,6 +1205,7 @@ fill
 fill,
 fill="none"
 filled($accessibleName);
+fills
 finds
 fire
 first
@@ -1157,17 +1214,22 @@ fix
 fix.
 flag
 flags
-flash
 flex
 flex-1
 flex-1">
 flex-col
 flight"
 flips
+focus
+focus,
 focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]">
+focus-visible:ring-offset-[length:var(--ring-wk-offset)]
+focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
 focus:outline-hidden
 followable.
+follows
 font
 font-[family-name:var(--font-wk-sans)]'])
 font-[number:var(--font-wk-heading-weight)]
@@ -1223,6 +1285,7 @@ half
 half-wired
 hand-roll
 hand-written
+happened
 hard
 harder
 has
@@ -1242,6 +1305,7 @@ house
 how
 href
 href="{{
+hue
 human
 icon
 icon's
@@ -1257,6 +1321,7 @@ id="{{
 identically
 identifier
 idle
+idle,
 if
 image
 implements
@@ -1280,6 +1345,7 @@ inner
 inset-0
 inset-y-0
 inside
+inside,
 installed
 installed.'
 instead
@@ -1313,6 +1379,7 @@ keeps
 kept
 keyframes
 kill
+kit's
 knowing.
 known
 label
@@ -1349,6 +1416,7 @@ loads.
 log
 logger()->warning(
 lost
+lost,
 loudly,
 low-emphasis
 made
@@ -1390,11 +1458,13 @@ missing,
 missing:
 modal
 modals,
+mode
 mode,
 moment
 more
 motion
 motion.
+moving
 multiply
 must
 muted
@@ -1431,6 +1501,7 @@ noreferrer')
 normal
 not
 not.
+not:
 nothing
 nothing.
 now
@@ -1573,7 +1644,6 @@ re-resolve
 reach
 reaches
 read
-read),
 readable
 reader
 reader.
@@ -1617,6 +1687,7 @@ resolved
 resolves
 resolving.)
 respect
+responsive
 rest
 result
 retunes
@@ -1626,6 +1697,7 @@ richer
 rides
 right.
 ring
+ring,
 role
 role,
 role.
@@ -1634,6 +1706,7 @@ role="group"
 role="img"
 role="img".
 role="progressbar"
+role="status"
 role=progressbar
 root
 root;
@@ -1652,6 +1725,7 @@ rules
 rung
 same
 say
+says
 scale
 scale:
 scales
@@ -1675,7 +1749,6 @@ shape
 shape.
 shapes.
 share
-shares
 shimmer
 short
 shortest
@@ -1698,6 +1771,7 @@ size
 size,
 size="md"
 size="sm"
+sized
 sizes
 slot,
 sm
@@ -1707,16 +1781,20 @@ smooth
 so
 soften
 somebody
+sorts
 source
 source-baked
 space).
 span
+split
 sr-only
 src="{{
 stable
+standing
 state
 state,
 static
+status
 stay
 stays
 still
@@ -1750,11 +1828,11 @@ sub-component
 subtype.
 success
 superseded
-surface
 surrounding
 svg($resolved,
 svg()
 svg(),
+swaps
 sweep
 sweep).
 synonym.
@@ -1777,6 +1855,7 @@ target="_blank".
 teaches
 tech).
 technology
+technology:
 test
 text
 text)
@@ -1786,6 +1865,7 @@ text-[color:var(--color-wk-text-muted)]">
 text-[length:var(--text-wk-sm)]
 text-[length:var(--text-wk-sm)]">
 text-[length:var(--text-wk-xs)]
+text.
 than
 that
 the
@@ -1814,12 +1894,11 @@ tile:
 time,
 tint
 to
+toCssClasses()
 toHtml().
 token
-token,
 tokens
 tokens.
-tone
 too,
 took
 touches
@@ -1856,6 +1935,7 @@ unresolvable
 until
 up
 up.
+update
 updates.
 upload
 uploading
@@ -1879,6 +1959,7 @@ values
 values.
 var(--transition-wk-duration)
 var(--transition-wk-easing)"
+variant
 variants
 via
 view's
@@ -1921,6 +2002,7 @@ whole-card-clickable
 whose
 width
 will
+win.
 wins
 wire:poll
 with
@@ -1932,6 +2014,7 @@ would
 wrapper
 wrapper).
 wrapper,
+written
 x-bind:aria-valuenow="ariaValueNow()"
 x-bind:class="fillClasses()"
 x-bind:style="fillStyle()"

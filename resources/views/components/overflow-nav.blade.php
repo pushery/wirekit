@@ -150,6 +150,14 @@
         'm-0 p-0 list-none',
     ]), $scope);
 
+    // An entry in the rows, around its link and its action. It carries no class of its own, and an
+    // entry with an action sets the two in a line. A caller's block frames them as one, as a tab
+    // does, and reaches the current entry through its `data-wk-overflow-current` attribute.
+    $itemClasses = [
+        'plain' => WireKit::resolveClasses('overflow-nav', 'item', '', $scope),
+        'action' => WireKit::resolveClasses('overflow-nav', 'item', 'inline-flex items-center', $scope),
+    ];
+
     $linkClasses = WireKit::resolveClasses('overflow-nav', 'link', implode(' ', [
         'inline-flex items-center whitespace-nowrap',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
@@ -158,7 +166,11 @@
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
         'aria-[current=page]:bg-[var(--color-wk-bg-muted)] aria-[current=page]:text-[color:var(--color-wk-text)]',
-        'aria-[current=page]:font-[number:var(--font-wk-heading-weight)]',
+        // The weight of a chosen entry, which a theme may set to the body weight: the fill marks
+        // the current link as well, and where forced colors drop the fill, the stylesheet frames
+        // it through the `wk-overflow-nav-link` marker, set in front of this block so a
+        // personalized block keeps it.
+        'aria-[current=page]:font-[number:var(--font-wk-selected-weight)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
@@ -190,9 +202,9 @@
 >
     <ul data-wk-prose-skip role="list" x-ref="row" class="{{ $rowClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($entries as $entry)
-            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif @if($entry['action']) class="inline-flex items-center" @endif x-show="shownHere({{ $entry['index'] }})">
+            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif @if(filled($itemClasses[$entry['action'] ? 'action' : 'plain'])) class="{{ $itemClasses[$entry['action'] ? 'action' : 'plain'] }}" @endif x-show="shownHere({{ $entry['index'] }})">
                 @php($rowAfter = $afterFor($entry, 'row'))
-                <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class([$linkClasses]) }}>@if($entry['icon'] !== null || filled($rowAfter))<span class="{{ $partsInRow }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" class="shrink-0" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@if(filled($rowAfter))<span class="inline-flex shrink-0 items-center">{{ $rowAfter }}</span>@endif</span>@else{{ $entry['label'] }}@endif</a>
+                <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class(['wk-overflow-nav-link', $linkClasses]) }}>@if($entry['icon'] !== null || filled($rowAfter))<span class="{{ $partsInRow }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" class="shrink-0" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@if(filled($rowAfter))<span class="inline-flex shrink-0 items-center">{{ $rowAfter }}</span>@endif</span>@else{{ $entry['label'] }}@endif</a>
                 @if($entry['action'])
                     @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
                 @endif

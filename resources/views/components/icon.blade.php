@@ -8,6 +8,7 @@
 
 @php
     use Pushery\WireKit\Icons\IconResolver;
+    use Pushery\WireKit\Support\UtilityClasses;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -74,7 +75,7 @@
     // If the caller explicitly sets aria-hidden (true OR false), we respect
     // their choice and never override.
     $callerAriaHidden = $attributes->get('aria-hidden');
-    $callerAriaLabel = $attributes->get('aria-label');
+    $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $callerAriaLabelledBy = $attributes->get('aria-labelledby');
     $callerRole = $attributes->get('role');
 
@@ -82,7 +83,25 @@
     $shouldSetHidden = $callerAriaHidden === null && ! $isInformative;
 
     // The size classes are the icon's one class block, so a personalization of `icon` reaches them.
-    $mergedAttributes = $attributes->class([WireKit::resolveClasses('icon', 'base', $sizeClasses)]);
+    $iconClasses = WireKit::resolveClasses('icon', 'base', $sizeClasses);
+
+    // A height or width utility in the caller's `class` replaces the icon's own on that axis.
+    // Beside it, the stylesheet's order decided and the attribute's did not: `h-4` sorts before
+    // the default `h-5` and lost, so an icon sized 16px by class rendered at 20px, while `h-7`
+    // sorts after it and happened to win. A utility under a responsive or state variant is left
+    // alone, because it applies at a width or in a state of its own.
+    // A bound `:class` arrives as an array, which toCssClasses() reads like `@class` does.
+    $callerClass = \Illuminate\Support\Arr::toCssClasses($attributes->get('class', ''));
+
+    if (UtilityClasses::has($callerClass, '/^(?:h|size)-/')) {
+        $iconClasses = UtilityClasses::without($iconClasses, '/^(?:h|size)-/');
+    }
+
+    if (UtilityClasses::has($callerClass, '/^(?:w|size)-/')) {
+        $iconClasses = UtilityClasses::without($iconClasses, '/^(?:w|size)-/');
+    }
+
+    $mergedAttributes = $attributes->class([$iconClasses]);
     if ($shouldSetHidden) {
         $mergedAttributes = $mergedAttributes->merge(['aria-hidden' => 'true']);
     }

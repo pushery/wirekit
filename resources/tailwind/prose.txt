@@ -27,6 +27,7 @@ $x)`
 '')
 '',
 ',
+'[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:rounded-[var(--radius-wk-sm)]
 '[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--color-wk-accent-text)]
 '[&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-l-4
 '[&_code:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[family-name:var(--font-wk-mono)]
@@ -213,6 +214,9 @@ Without
 Wrapping
 Written
 [
+[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:outline-hidden
+[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:ring-[length:var(--ring-wk-width)]
+[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:ring-[var(--color-wk-ring)]',
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:underline
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:underline-offset-2',
 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)]
@@ -372,6 +376,7 @@ breakpoint
 breaks
 breathe.
 broken"
+browser's,
 bubble
 bubble;
 built
@@ -471,7 +476,9 @@ fighting
 file:
 flags
 floated
+focus
 focusable,
+follows
 font-size
 for
 force
@@ -526,6 +533,7 @@ itself
 itself.
 just
 keyboard
+kit's
 know
 knows.
 laid
@@ -581,11 +589,13 @@ names
 narrow
 nearer
 needs
+neither
 nested
 net
 news
 no
 no-space
+nor
 normal
 not
 nothing
@@ -636,6 +646,7 @@ pre
 pre-v2.10.0
 precedence
 presentational
+preset.
 previews
 prime
 prod).
@@ -667,6 +678,7 @@ rhythm,
 rhythm:
 right
 right-edge
+ring
 role="region"
 roomier
 root

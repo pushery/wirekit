@@ -43,6 +43,7 @@ $warn)
 'danger';
 'false'
 'font-[family-name:var(--font-wk-sans)]',
+'info'
 'info',
 'intent'
 'intent',
@@ -67,6 +68,7 @@ $warn)
 'valueText'
 'var(--color-wk-accent)',
 'var(--color-wk-danger)',
+'var(--color-wk-info-tone)',
 'var(--color-wk-success)',
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
@@ -87,7 +89,6 @@ $warn)
 ($effectiveIntent)
 ($size)
 ($warn
-(--color-wk-info
 (float)
 (no
 (see
@@ -95,6 +96,7 @@ $warn)
 (the
 *
 +
+--color-wk-info-tone;
 --wk-radial-fill:
 --}}
 /
@@ -227,7 +229,6 @@ back
 bare
 baseline
 be
-because
 below.
 block,
 both
@@ -248,7 +249,6 @@ cast
 center.
 change
 changes
-charts
 class
 class="relative
 color
@@ -295,7 +295,6 @@ empty
 every
 exact
 fallback
-falls
 false);
 false,
 far
@@ -305,7 +304,6 @@ filter_var($animate,
 first
 first.
 flags
-flash
 flips
 follow
 for
@@ -419,7 +417,6 @@ re-mount
 re-watched
 reach
 read
-read);
 reader
 reads
 registered
@@ -460,7 +457,6 @@ string,
 string.
 style
 such
-surface
 sweep
 takes
 tech
@@ -477,10 +473,8 @@ thing
 thing.
 this
 threshold
-tint
 to
 token
-tone
 translatable
 trust:
 truthy

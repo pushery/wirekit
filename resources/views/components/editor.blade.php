@@ -41,6 +41,9 @@
     'editable' => true,
     'label' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'size' => config('wirekit.components.editor.size', 'md'),         // sm | md | lg
     // Cap the editable area's height (any CSS length, e.g. '20rem' / '50vh'). The
@@ -54,7 +57,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -86,7 +89,7 @@
     // lands on. `<x-wirekit::editor aria-label="…">` put the name on a roleless element,
     // so the control the user actually operates kept no accessible name at all — WCAG
     // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
-    $callerLabel = $attributes->get('aria-label');
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
@@ -98,7 +101,14 @@
     // It has to happen BEFORE `$rest` is derived below: the wrapper echoes `$rest`,
     // not `$attributes`, so a strip applied afterwards would leave the key in the
     // very bag that reaches the element.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+
+    // Inside a labeled field the field's label names the editor, by reference as this
+    // component's own label does (Support\FieldControl): it gets no `for`, the surface takes its
+    // id as `ariaLabelledby`, and the factory wires a click on it to focus the surface.
+    $fieldLabelId = ! $label && ! filled($callerLabel) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel(null)
+        : null;
 
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
@@ -149,6 +159,10 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Route wire:model to the <textarea x-ref="input"> (the element the editor writes to
     // and fires its input event on), NOT the wrapper div — otherwise Livewire binds to a
@@ -209,7 +223,7 @@
         //
         // So the label is wired by REFERENCE instead, and aria-label stays the
         // fallback for the unlabeled case.
-        'ariaLabelledby' => $label ? $id.'-label' : null,
+        'ariaLabelledby' => $label ? $id.'-label' : $fieldLabelId,
         // `__()` on both halves of the same name. editor.js spreads this onto the
         // contenteditable as its aria-label, so an untranslated literal here would
         // announce the editor in English on the Tiptap path while the textarea path
@@ -222,7 +236,7 @@
         // engine builds inside the host, without one the host is hidden. On the host,
         // `aria-label="Release notes"` would leave a textbox announced as "Rich text
         // editor" on a page whose visible label says "Release notes".
-        'ariaLabel' => $label ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
+        'ariaLabel' => $label || $fieldLabelId !== null ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
         // The same holds one attribute over: `aria-required` goes to the textbox, because a
@@ -262,7 +276,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$errorId,
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
@@ -277,7 +291,11 @@
 
 <div {{ $outerAttributes }} class="w-full space-y-1.5" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :for="$id" :id="$id.'-label'" :required="$required">{{ $label }}</x-wirekit::label>
+        {{-- No `for`: the element it could name is the content host, a div no label can name,
+             and the surface a reader types into is built in the browser. The label names that
+             surface by reference (`ariaLabelledby` below), and the factory wires a click on it
+             to focus the surface, as a label does for a field. --}}
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $id" :id="$id.'-label'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
 @if($optimisticConfig)
@@ -353,7 +371,7 @@
                 {{-- The caller's own name first. This is the control a reader without the
                      editor engine actually types into, so a name that stops at the
                      wrapper never reaches them. --}}
-                aria-label="{{ $label ?? $callerLabel ?? ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor')) }}"
+                aria-label="{{ $label ?? $callerLabel ?? ($fieldLabelId !== null ? $wkField->labelText() : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))) }}"
                 {{-- The invalid state and its description, SERVER-SIDE. Both were passed
                      only into the Tiptap x-data payload, which editor.js applies to the
                      contenteditable at mount — so the document the server sent carried no

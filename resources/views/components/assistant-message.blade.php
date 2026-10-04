@@ -117,7 +117,7 @@
 
     // Full literal class strings per intent so the drift auditor harvests them.
     $intentSurface = match ($intentValue) {
-        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
+        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
         'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
         'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
         'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',

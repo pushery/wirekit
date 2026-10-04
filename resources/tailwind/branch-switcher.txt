@@ -7,9 +7,8 @@
 $active
 $active,
 $attributes
-$attributes->class([WireKit::resolveClasses('icon',
+$attributes->class([$iconClasses]);
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
@@ -21,6 +20,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $cleaned
 $cleaned);
@@ -30,6 +30,7 @@ $current));
 $e)
 $e;
 $groupLabel
+$iconClasses
 $isInformative
 $isInformative;
 $label
@@ -54,7 +55,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $svgHtml
@@ -67,12 +68,17 @@ $validated
 '
 ''
 '')
+''));
 '',
 ',
 '.
 '.WireKit::resolveClasses('branch-switcher',
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 ':current',
 ':total']),
@@ -83,6 +89,7 @@ $validated
 '[WireKit]
 'announcement'
 'aria-disabled:cursor-not-allowed
+'aria-label');
 'base',
 'button',
 'count'
@@ -129,6 +136,7 @@ $validated
 ($svgHtml
 ('xs').
 (Tailwind
+(UtilityClasses::has($callerClass,
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -163,6 +171,8 @@ $validated
 1,
 1-based
 1-based,
+16px
+20px,
 2rem,
 3",
 3rem.
@@ -208,6 +218,7 @@ Adding
 AlpinePayload::from([
 An
 At
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -251,6 +262,7 @@ PERFECTLY
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\AlpinePayload;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Reapply
 Render
@@ -271,17 +283,21 @@ TAG
 The
 This
 Throwing
+UtilityClasses::without($iconClasses,
 We
 Whether
 Which
 WireKit
 WireKit::resolveClasses('branch-switcher',
+WireKit::resolveClasses('icon',
 WireKit::validateProp('icon',
 With
 [
 ['current'
 ['data-wk-icon-missing'
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('branch-switcher',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -295,14 +311,20 @@ __('wirekit::Previous
 __('wirekit::Response
 __('wirekit::Showing
 __toString
+`:class`
 `<span>`
+`@class`
 `Svg
 `aria-hidden="true"`
 `aria-label`
 `aria-labelledby`
 `class="h-12
+`class`
 `cursor-pointer`
 `disabled`:
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `icon`
 `inbox`
@@ -329,6 +351,7 @@ alias
 all
 all,
 allowed
+alone,
 already
 an
 anchored
@@ -341,6 +364,7 @@ answer.
 answers
 any
 app(IconResolver::class)->resolve($name);
+applies
 are
 are.
 aria-disabled:hover:bg-transparent',
@@ -355,7 +379,9 @@ aria-label="{{
 aria-labelledby
 aria-live
 aria-live="polite"
+array,
 array_keys($sizeMap));
+arrives
 arrow
 arrows
 as
@@ -364,8 +390,10 @@ assistive
 at
 attempted
 attribute
+attribute's
 attribute,
 auto-derived
+axis.
 back
 bag
 baked
@@ -373,6 +401,7 @@ bakes
 be
 because
 becomes
+before
 belongs
 below
 below,
@@ -387,6 +416,7 @@ blade-ui-kit/blade-icons
 blade-ui-kit/blade-icons.
 block,
 bootstrapped
+bound
 branch's
 break
 browser's
@@ -472,11 +502,13 @@ deliberate.
 dev
 developer
 developer's
+did
 direct
 disabled
 disabled:hover:bg-transparent',
 disabled:opacity-[var(--opacity-wk-disabled)]
 does
+does.
 down
 down.
 draws
@@ -557,11 +589,13 @@ hand
 hand-written
 handed
 hands
+happened
 hard
 harder
 has
 have
 have)
+height
 helper
 here
 here,
@@ -623,8 +657,10 @@ last
 later
 layout
 leave
+left
 legitimately
 lets
+like
 line
 list
 literal
@@ -635,6 +671,7 @@ logger()->warning(
 longer
 loses
 lost
+lost,
 loudly,
 makes
 many
@@ -675,6 +712,7 @@ non-null
 none,
 nor
 not
+not:
 nothing
 nothing,
 nothing.
@@ -699,6 +737,7 @@ open
 opening
 optimistic-ui:
 or
+order
 order.
 ordinary
 other
@@ -752,6 +791,7 @@ reach
 reaches
 reader
 reader's
+reads
 real
 reapply
 reason
@@ -781,6 +821,7 @@ resolves
 respect
 response
 response')
+responsive
 rest
 result
 return
@@ -824,9 +865,11 @@ site
 size
 size,
 size="sm"
+sized
 smallest
 so
 somebody
+sorts
 source
 source-baked
 space).
@@ -834,6 +877,7 @@ span
 speaks
 speaks,
 stale
+state
 static
 stay
 step,
@@ -846,6 +890,7 @@ strictness
 string
 strip
 style="display:inline-block;"></span>
+stylesheet's
 substituted
 svg($resolved,
 svg()
@@ -886,6 +931,7 @@ throwing
 throws
 tile
 to
+toCssClasses()
 toHtml().
 together
 touch
@@ -902,6 +948,7 @@ turn's
 two
 type="button"
 unavailable
+under
 unknown
 unknown-alias
 unknown.
@@ -950,6 +997,8 @@ whitespace
 who
 whole
 whose
+width
+win.
 wins
 with
 would

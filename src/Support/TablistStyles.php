@@ -54,13 +54,19 @@ final class TablistStyles
     /**
      * Classes every tab carries regardless of state.
      *
+     * The focus ring is drawn INSIDE the tab. A horizontal bar scrolls, so it clips on both
+     * axes, and its tabs fill its height and start at its edge: a ring drawn outside a tab would
+     * lose its top and bottom on every tab, and its start side on the first, which would leave
+     * the first tab of a bar a single vertical line to show the focus with. Room in the bar would part the
+     * underline from the rule it sits on, so the ring goes inside instead, in every variant.
+     *
      * `shrink-0 whitespace-nowrap` keep each tab at its natural label width inside the
      * scrollable bar — without them a narrow viewport squishes the tabs and wraps or
      * clips the labels instead of letting the bar scroll.
      */
     public static function tab(string $variant, bool $vertical): string
     {
-        $base = 'inline-flex items-center gap-2 shrink-0 whitespace-nowrap font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
+        $base = 'inline-flex items-center gap-2 shrink-0 whitespace-nowrap font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
 
         $variantClasses = match (true) {
             // Vertical — left-align the content; the underline indicator moves to the
@@ -77,13 +83,25 @@ final class TablistStyles
         return $base.' '.$variantClasses;
     }
 
-    /** Classes for the selected tab. */
+    /**
+     * Classes for the selected tab.
+     *
+     * The bordered variant fills its selected tab with the accent, and a tab draws its focus ring
+     * inside itself, on that fill. The ring takes the color of the text on the accent there,
+     * which the theme keeps legible against it, so the selected tab, the one `Tab` reaches, shows
+     * its focus in every preset and in dark mode.
+     */
     public static function tabActive(string $variant): string
     {
         return match ($variant) {
             'pills' => 'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-sm)]',
-            'bordered' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
-            default => 'border-[var(--color-wk-accent)] text-[color:var(--color-wk-text)]',
+            'bordered' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] [--color-wk-ring:var(--color-wk-accent-fg)]',
+            // The underline variant colors its 3px edge, the bottom one or, vertical, the
+            // inline-end one. Every tab carries `border-transparent` from tab(), and a second
+            // all-sides `border-color` here lost to it on stylesheet order, so the selected tab
+            // showed no underline at all. The side colors are longhands, which Tailwind sorts
+            // after the `border-color` shorthand, so they win wherever the classes are built.
+            default => 'border-b-[var(--color-wk-accent)] border-e-[var(--color-wk-accent)] text-[color:var(--color-wk-text)]',
         };
     }
 

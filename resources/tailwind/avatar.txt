@@ -138,6 +138,7 @@ $total
 ($status
 ($status)
 (RTL-safe)
+(Support\UrlProp).
 (WireKit::validateProp('avatar',
 (default)
 (default).
@@ -223,6 +224,7 @@ Combine
 Counter
 Declared
 Dev-only
+Echoed
 English,
 Fixed
 Fully
@@ -254,6 +256,7 @@ The
 Through
 Two
 UNBOUND
+URL
 When
 WireKit
 WireKit::resolveClasses('avatar',
@@ -266,6 +269,7 @@ With
 ['style'
 ['xs',
 [])->class([$baseClasses,
+\Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group',
 ])
@@ -341,6 +345,7 @@ both
 bottom-0
 bottom-right
 bottom-right)
+bound,
 box
 box-shadow
 box-shadow.
@@ -408,6 +413,7 @@ elevated
 else
 emitted
 empty
+escaped
 every
 exact
 existed
@@ -537,6 +543,7 @@ object-cover"
 of
 on
 on.
+once
 one
 one.
 only
@@ -658,6 +665,7 @@ style
 surface
 surface-color
 surrounds
+tag
 technology
 text
 text-[color:var(--color-wk-text-muted)]"
@@ -719,6 +727,7 @@ widths
 with
 without
 would
+written
 you
 {
 {$gap}px

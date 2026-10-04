@@ -11,7 +11,6 @@
 $adapterScripts
 $alpineComponent
 $attributes->except(['aria-label',
-$attributes->get('aria-label',
 $attributes->get('style',
 $attributes->getAttributes());
 $attributes->has('aria-label'))
@@ -21,6 +20,7 @@ $callerReplayable
 $callerStyle
 $chartAriaAttributes
 $chartAriaLabel
+$chartAriaLabel])
 $chartAttributes
 $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart',
 $chartAttributes->except(['data-replayable']);
@@ -67,6 +67,7 @@ $wrapperTag
 '380px',
 'WireKit:
 'annotations'
+'aria-label',
 'aria-labelledby'])->getAttributes(),
 'aria-labelledby']);
 'base',
@@ -321,13 +322,15 @@ WireKit::resolveClasses(
 Without
 Wrapper
 Wrapping
+['ariaLabel'
 []
 [],
 [];
 \Illuminate\View\ComponentAttributeBag(
 \Pushery\WireKit\Components\Chart::datasetsFrom($datasets);
 \Pushery\WireKit\Support\AlpinePayload::from($chartConfig)
-\Pushery\WireKit\Support\AlpinePayload::json($chartData)
+\Pushery\WireKit\Support\AlpinePayload::json($chartData
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\WireKit::cspNonce()
 \Pushery\WireKit\WireKit::warnUnknownProps('chart-mixed',
@@ -510,6 +513,7 @@ carry
 carrying
 cast
 change
+changes
 chart
 chart's
 chart,
@@ -573,6 +577,7 @@ cryptic
 custom
 dashboard
 data
+data,
 data-*
 data-navigate-once="true"@if
 data-replayable="true"
@@ -737,6 +742,7 @@ identifier
 if
 iframe-srcdoc
 iframe-srcdoc,
+ignored
 imperative
 implementation
 imports
@@ -1107,6 +1113,7 @@ to
 to.
 tooltip
 top).
+travels
 tree
 trim($defaultStyle.'
 trips
@@ -1160,6 +1167,7 @@ was
 way
 way.
 we
+well.
 what
 when
 where

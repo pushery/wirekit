@@ -28,12 +28,11 @@ $as
 $as);
 $attributes
 $attributes->class([$classes])
+$attributes->class([$iconClasses]);
 $attributes->class(['inline-flex
 $attributes->class(['relative
-$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel');
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('rel',
 $attributes->get('role');
@@ -51,6 +50,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $classes
 $cleaned
@@ -85,6 +85,7 @@ $hasWireAction;
 $heightClasses
 $heightClasses,
 $href
+$iconClasses
 $iconLeft
 $iconOnly
 $iconOnlyBelow
@@ -146,12 +147,13 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeClasses)`
 $sizeClasses,
 $sizeMap
 $sizeMap[$validated];
 $slot
+$slot)
 $slot))
 $stackBelow
 $stackBelow,
@@ -183,6 +185,7 @@ $wrapLabel
 '
 ''
 '')
+''));
 '');
 '',
 '';
@@ -195,6 +198,11 @@ $wrapLabel
 '.($position
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:min-h|h|w|p[xytrblse]?)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '2xl']);
 '2xl'],
@@ -208,6 +216,7 @@ $wrapLabel
 'action'
 'action',
 'aria-busy'
+'aria-label');
 'arrowSize'
 'arrowSurface'
 'as'
@@ -288,6 +297,7 @@ $wrapLabel
 'leading-[var(--font-wk-line-height)]',
 'lg'
 'lg',
+'link')
 'loading'
 'loadingTarget'
 'max-2xl:sr-only',
@@ -410,6 +420,7 @@ $wrapLabel
 ($size
 ($size)
 ($stackBelow
+($surface
 ($svgHtml
 ($wrapLabel
 ('xs').
@@ -417,7 +428,9 @@ $wrapLabel
 (4.05
 (SVG
 (Support\CallerListeners).
+(Support\UrlProp).
 (Tailwind's
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -426,6 +439,7 @@ $wrapLabel
 (`@container/wk-table`)
 (`data-wk-tooltip-surface`
 (`loading`
+(`p-0
 (a
 (an
 (array
@@ -440,13 +454,11 @@ $wrapLabel
 (e.g.
 (function_exists('logger'))
 (function_exists('svg')
-(info
 (int)
 (is_string($key)
 (it
 (its
 (logical
-(no
 (not
 (only
 (or
@@ -478,13 +490,12 @@ $wrapLabel
 --------
 -----------
 --color-wk-bg:
---color-wk-info
---color-wk-info-fg
---color-wk-info-hover):
---color-wk-info-text
+--color-wk-info-tone,
 --color-wk-warning-bg
 --}}
 --}}`
+-fg
+-hover,
 -mb-[length:var(--border-wk-width)]
 -me-[length:var(--border-wk-width)]
 -ms-1
@@ -514,12 +525,14 @@ $wrapLabel
 12h4z"></path>
 16
 16"
+16px
 1;
 1px
 2.1.1).
 2.4.3
 2.4.3,
 2.5.8
+20px,
 22.5rem,
 24
 24"
@@ -652,6 +665,7 @@ BOTH
 Backgrounds:
 Base
 Below
+Beside
 Blade
 Blade's
 Blade-heroicons'
@@ -689,6 +703,7 @@ Drop
 ENT_QUOTES).'"',
 EVERY
 Each
+Echoed
 Emitting
 Escape
 Every
@@ -717,7 +732,6 @@ Icon-only
 IconResolver,
 If
 In
-Info
 It
 Its
 JS
@@ -738,14 +752,12 @@ Loud
 MAINTENANCE
 MORPH
 MOST
-Make
 Marker
 Mixing
 NAME
 NAMES
 NO
 NODE
-NON-interactive
 NOT
 NOTE:
 Neither
@@ -777,6 +789,7 @@ Photo
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\AlpinePayload;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 REPLACES
 RTL-safe
@@ -801,12 +814,11 @@ SWAPS:
 Same
 Scope
 See
-Set
 Setting
+Several
 Shared:
 Show
 Silent
-Six
 Size
 So
 Soft
@@ -842,9 +854,11 @@ Trigger
 Two
 UI
 UNBOUND
+URL
 USER
 Upstream
 Uses
+UtilityClasses::without($iconClasses,
 VIEWPORT.
 Validate
 VariantResolver
@@ -866,6 +880,7 @@ WireKit's
 WireKit::resolveClasses($reorderComponent,
 WireKit::resolveClasses('button',
 WireKit::resolveClasses('button.group',
+WireKit::resolveClasses('icon',
 WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
 WireKit::validateProp('button',
@@ -888,14 +903,22 @@ Without
 ['sm',
 ['x-on:mouseenter',
 ['xs',
+[--color-wk-ring:var(--color-wk-accent-fg)]
 [--wk-touch-min:0px]'
 [overflow-wrap:anywhere]'
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\SlotControl::reachable((string)
+\Pushery\WireKit\Support\UrlProp::text($href);
+\Pushery\WireKit\Support\UtilityClasses::PADDING);
+\Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
+\Pushery\WireKit\Support\UtilityClasses::without($sizeClasses,
 \Pushery\WireKit\VariantResolver::INTENTS);
 \Pushery\WireKit\VariantResolver::INTENTS,
 \Pushery\WireKit\VariantResolver::SURFACES);
@@ -928,6 +951,7 @@ __toString
 `2xl`.
 `3xs`
 `7xl`;
+`:class`
 `:disabled`
 `<body>`
 `<body>`.
@@ -944,6 +968,7 @@ __toString
 `=`,
 `@`-variant
 `@`-variants
+`@class`
 `@source
 `@source`
 `@source`;
@@ -972,12 +997,15 @@ __toString
 `as="span"`
 `bg-[var(--color-wk-danger)]`
 `border-b-[3px]`
+`border-b-[var(--color-wk-accent)]`
 `border-box`
 `border-e-[3px]`
+`border-e-[var(--color-wk-accent)]`
 `break-word`
 `card`
 `class="h-12
 `class="whitespace-normal"`
+`class`
 `clearTimeout`
 `clipboard-button`
 `clipboard-button`,
@@ -1009,6 +1037,9 @@ __toString
 `forceLoading`
 `foreground
 `gap-1`
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `hidden`
 `hidden`,
@@ -1037,6 +1068,7 @@ __toString
 `mouseenter`
 `mouseenter`/`mouseleave`
 `mouseleave`
+`null`,
 `offset`
 `open`
 `open`,
@@ -1111,7 +1143,7 @@ absent
 absent,
 absolutely,
 accent
-accent-content.
+accent,
 accept
 accessibility
 accessible
@@ -1136,7 +1168,6 @@ again.
 against
 agree
 alias
-aliases
 aligned
 all
 all,
@@ -1147,6 +1178,7 @@ allowed
 allowlist,
 allows
 alone
+alone,
 alone.
 along
 alongside
@@ -1208,6 +1240,7 @@ aria-labelledby.';
 armed,
 arms
 around
+array,
 array:
 array_filter([
 array_keys($sizeMap));
@@ -1235,17 +1268,18 @@ attribute's
 attribute,
 attribute.
 attributes
+auto
 auto-derived
 auto-inject).
 auto-invokes
 automated
 automatically
 avatar.group
-avoid
 avoid.
 axe
 axe-core
 axis
+axis.
 axis:
 back
 back.
@@ -1283,6 +1317,7 @@ beside
 between
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
+bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
 bg-[var(--color-wk-accent)]
@@ -1290,6 +1325,7 @@ bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
 bg-[var(--color-wk-danger)]
+bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
 bg-transparent
@@ -1315,12 +1351,15 @@ border-[var(--color-wk-accent)]
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border)]'
 border-[var(--color-wk-danger)]
+border-[var(--color-wk-info-tone)]
 border-[var(--color-wk-success)]
 border-[var(--color-wk-warning)]
 border-b-[3px]
 border-b-[length:var(--border-wk-width)]
+border-b-[var(--color-wk-accent)]
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
+border-e-[var(--color-wk-accent)]
 border-transparent
 border.
 border:
@@ -1329,6 +1368,7 @@ both,
 both.
 bottom
 bound
+bound,
 boundaries
 box
 bracket
@@ -1347,7 +1387,6 @@ brighter,
 browser
 browser's
 bubble's
-bubbles
 bug
 build
 built
@@ -1357,7 +1396,6 @@ button
 button's
 button,
 button.
-button/link)
 button:
 buttons
 buttons).
@@ -1404,7 +1442,6 @@ changes
 changes,
 channel
 channel,
-charts
 check
 check:
 checking
@@ -1426,6 +1463,7 @@ class="animate-spin
 class="h-4
 class="opacity-25"
 class="opacity-75"
+class="rounded-[var(--radius-wk-sm)]
 class="shrink-0">{{
 class="sr-only">{{
 class="{{
@@ -1609,6 +1647,7 @@ developer
 developer's
 developer-side
 developers
+did
 difference
 different
 direct
@@ -1636,9 +1675,9 @@ document
 documented
 does
 does),
+does.
 does;
 dotted-read
-double
 down
 down",
 down');
@@ -1708,6 +1747,7 @@ enum
 error
 error,
 escape
+escaped
 escapes
 escaping
 etc.)
@@ -1748,7 +1788,6 @@ fallback
 fallback,
 fallback.
 falls
-false
 false)
 false),
 false);
@@ -1792,7 +1831,6 @@ fixed.
 fixed`
 fixes
 flags
-flash
 flashes
 flex
 flex-col
@@ -1808,11 +1846,15 @@ floor
 floor's
 flow
 flow.
+flows
+flush
 focus
 focus,
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
+focus-visible:ring-[var(--color-wk-ring)]"
+focus-visible:ring-inset
 focus-within
 focus:
 focusable
@@ -1881,6 +1923,7 @@ guess
 h-4
 h-5
 h-auto
+h-auto`).
 h/w
 had
 half
@@ -1899,6 +1942,7 @@ handles
 hands
 hang
 hangs
+happened
 happens
 hard
 hard-disabled
@@ -1949,6 +1993,7 @@ hover,
 hover.
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
@@ -1957,6 +2002,7 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
 hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
+hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
 hover:text-[color:var(--color-wk-text)]
@@ -1966,6 +2012,7 @@ how
 however
 href
 href="{{
+hue
 hyphen,
 icon
 icon's
@@ -2004,7 +2051,7 @@ including
 indicator,
 inert
 inert.
-info-specific
+info
 info:
 informative
 informative.
@@ -2072,11 +2119,10 @@ justify-center',
 justify-start
 keep
 keeps
+kept
 key
 key:
 keyboard
-keyboard,
-keyboard-focusable
 keyboard.
 kill
 kit
@@ -2151,6 +2197,7 @@ looks
 looks.
 lose
 lost
+lost,
 loud
 loud,
 loudly,
@@ -2224,6 +2271,7 @@ mode,
 model
 modes
 moment
+more
 morph
 most
 move
@@ -2309,6 +2357,7 @@ often
 omission.
 omission:
 on
+on,
 on.
 on:
 once
@@ -2469,8 +2518,6 @@ preset
 press
 pressed
 prevent
-primary
-primary)
 primary:
 problem
 prod).
@@ -2522,7 +2569,6 @@ reachable
 reaches
 reacts
 read
-read,
 reader
 reading
 reads
@@ -2667,6 +2713,7 @@ select
 selected
 semantic
 sensible
+sentence.
 separately
 server
 server's
@@ -2702,6 +2749,7 @@ shrinks
 sibling
 siblings
 sidebar
+sides
 sideways.
 sighted
 silent
@@ -2715,6 +2763,7 @@ sits
 six
 six.
 size
+size's
 size,
 size.
 size;
@@ -2725,8 +2774,8 @@ sizes,
 sizing
 slightly
 slot
-slot's
 slot.
+slot:
 slots.
 slots:
 slow
@@ -2743,13 +2792,15 @@ soft-wrapping.
 some
 somebody
 something
+sorting
+sorts
 source
 source-baked
 source-detection
 space
 space).
 span
-span).
+specific
 specificity
 spelled
 spelling
@@ -2780,6 +2831,7 @@ states
 static
 stay
 stay,
+stay.
 stayed
 stays
 step
@@ -2838,7 +2890,7 @@ symptom
 syntax.
 tab
 tab)')
-tab-stop
+tab,
 tabbed
 tabindex="0"
 table
@@ -2875,6 +2927,8 @@ text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
+text-[color:var(--color-wk-info-fg)]
+text-[color:var(--color-wk-info-text)]
 text-[color:var(--color-wk-success-fg)]
 text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
@@ -2933,6 +2987,7 @@ title="{{
 to
 to,
 to.
+toCssClasses()
 toHtml().
 today
 today's
@@ -2943,7 +2998,6 @@ token
 token,
 tokens
 tokens.
-tone
 too
 too,
 too.
@@ -2977,7 +3031,7 @@ trigger's
 trigger,
 trim($relAttr.'
 trim(strip_tags((string)
-true
+trio
 true))
 true);
 true,
@@ -3137,6 +3191,7 @@ width,
 width.
 width:
 win,
+win.
 window
 window,
 wins
@@ -3164,7 +3219,9 @@ with.
 withholds
 without
 wk-touch-text-floor'
+won
 word
+word)
 word,
 work,
 working

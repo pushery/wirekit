@@ -43,11 +43,14 @@
     // (some languages put the object before the verb). Overridable per call site.
     'removeLabel' => __('wirekit::Remove :name'),
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -73,7 +76,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 @endphp
 
 
@@ -135,6 +138,9 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own messages: what the field is for (partials/field-help).
+    $helpId = filled($help) ? $uploadId.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // The HTML spec's two values. `camera` and `camcorder` were an Android-era spelling
     // and are not in it; accepting them silently would put an attribute on the element that
@@ -157,6 +163,16 @@
     // <label> still names the input exactly as before.
     $labelText = $label ?? __('wirekit::Drop files here or click to browse');
     $labelIsVisible = $variantValue !== 'compact' || $label !== null;
+
+    // Inside a labeled field the field's label names the file input by `for`, beside the
+    // drop zone's own label (Support\FieldControl), and comes first in its name. A `label` here
+    // is the drop zone's sentence rather than a name of the field, so it does not keep the
+    // field's label off. The visible sentence stays, as the drop zone's instruction; the hidden
+    // one a compact control names itself with is left out.
+    $fieldLabelId = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') === null
+        && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+            ? $wkField->takeLabel($uploadId)
+            : null;
 
     // Dropzone sizing per size token.
     $dropzonePadding = match ($size) {
@@ -315,6 +331,12 @@
          there IS an error — so before this, a removal was silent by construction. --}}
     <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="fileAnnouncement"></div>
 
+    {{-- With help, the drop zone takes a question mark in its top end corner. It sits beside
+         the label rather than in it, so it stays out of the field's name and a press on it
+         does not open the file dialog. --}}
+    @if($helpId)
+    <div class="relative">
+    @endif
     <label
         for="{{ $uploadId }}"
         :class="dragging
@@ -332,8 +354,11 @@
         </svg>
         {{-- `sr-only` rather than omitted when compact carries no caller label:
              the <label> must still name the input, and a control whose only
-             content is an aria-hidden icon has no accessible name at all. --}}
-        <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}">{{ $labelText }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+             content is an aria-hidden icon has no accessible name at all. Left
+             out only when a field's label names the input already. --}}
+        @if($labelIsVisible || $fieldLabelId === null)
+            <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}">{{ $labelText }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+        @endif
 
         {{-- Hidden native input — click on label triggers it, drag-drop replaces files. --}}
         <input
@@ -350,7 +375,7 @@
             @if($captureValue) capture="{{ $captureValue }}" @endif
             @if($disabled) disabled @endif
             @if($hasError) aria-invalid="true" @endif
-            @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @endif
+            @if(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @endif
             {{-- The binding belongs on the control, not the wrapper — same shape
                  as segmented-control's hidden input. `whereStartsWith` keeps the
                  modifiers (`wire:model.live`, `.blur`) attached to it. --}}
@@ -360,6 +385,12 @@
             class="sr-only"
         />
     </label>
+    @if($helpId)
+        <span class="absolute top-[var(--padding-wk-y-md)] end-[var(--padding-wk-x-xs)]">
+            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) ($label ?? ''), 'helpId' => $helpId, 'helpField' => (string) ($name ?? $uploadId)])
+        </span>
+    </div>
+    @endif
 
     {{-- Selected files list — rendered only when files exist.
          Each item shows filename (truncated), size, and a remove button on hover.

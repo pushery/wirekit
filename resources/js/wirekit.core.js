@@ -3,7 +3,8 @@
  *
  * Contains the chart and image-compare Alpine components, the `x-wk-indeterminate`
  * and `x-wk-findable` directives the zero-JS form and disclosure primitives need,
- * and the memory for a field Livewire emptied after a successful action. For
+ * the memory for a field Livewire emptied after a successful action, and the scroll
+ * inset that keeps a focused element clear of a bar pinned to an edge. For
  * projects that only use the core form components, charts and the before/after
  * slider.
  *
@@ -24,6 +25,7 @@ import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { installScrollInset } from './utils/scroll-inset.js';
 import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -51,6 +53,9 @@ function registerCoreComponents() {
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
+    // See utils/scroll-inset.js.
+    installScrollInset();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);

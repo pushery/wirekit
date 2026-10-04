@@ -113,7 +113,7 @@
 
     $hasIcon = $swapsIcons || filled($icon);
     $hasVisibleLabel = $labelsChange || $slot->hasActualContent();
-    $callerNamed = filled($attributes->get('aria-label')) || filled($attributes->get('aria-labelledby'));
+    $callerNamed = filled(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) || filled($attributes->get('aria-labelledby'));
 
     // A label that changes with the state IS the name, so a constant aria-label beside it would
     // name the control with words that are not on it (WCAG 2.5.3 Label in Name).

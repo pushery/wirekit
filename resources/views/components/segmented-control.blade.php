@@ -15,6 +15,9 @@
     // an app that runs its OWN error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     // Livewire method to call optimistically. The segment moves immediately and
     // is put back if the call fails. Absent -> this component renders exactly as
     // it did before, down to the byte.
@@ -72,6 +75,10 @@
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
     $describedBy = trim(($error ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
     $name = $attributes->get('name', $id);
 
     // Container wrapping the pill-style segments
@@ -165,6 +172,17 @@
     // key below and the loop over them take an array. The keys are the values and stay.
     $options = \Pushery\WireKit\Support\ListProp::from($options);
 
+    // An option is a label, or the shape `select` takes for one with more to say:
+    // `'de' => ['label' => 'Deutsch', 'lang' => 'de']`. `lang` is the language the label is in,
+    // which a segment written in another language than the page needs, so a screen reader says
+    // it in that language's voice (WCAG 3.1.2). A flat option renders as it always did.
+    $segments = [];
+    foreach ($options as $optValue => $optLabel) {
+        $segments[$optValue] = is_array($optLabel)
+            ? ['label' => $optLabel['label'] ?? $optValue, 'lang' => isset($optLabel['lang']) ? (string) $optLabel['lang'] : null]
+            : ['label' => $optLabel, 'lang' => null];
+    }
+
     // Determine the default selected value
     $selected = $value ?? array_key_first($options);
 @endphp
@@ -186,7 +204,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
         'action' => $optimistic,
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -205,7 +223,7 @@
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0">
     @if($label)
-        <x-wirekit::label>{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name">{{ $label }}</x-wirekit::label>
     @endif
 
     <div
@@ -306,7 +324,7 @@
                 >
         @endif
 
-        @foreach($options as $optValue => $optLabel)
+        @foreach($segments as $optValue => $segment)
             {{-- Static aria-checked + tabindex mirror the initial state so
                  axe-core's pre-Alpine-init scan sees a complete radiogroup;
                  Alpine overrides reactively once it boots. --}}
@@ -363,12 +381,13 @@
                 {{-- `wk-segmented-control-segment` is the marker the stylesheet's forced-colors
                      rule selects to frame the selected segment. It sits outside the resolved
                      class lists, so a personalized block cannot take it away. --}}
+                @if($segment['lang'] !== null) lang="{{ $segment['lang'] }}" @endif
                 class="wk-segmented-control-segment {{ $segmentClasses }} {{ $sizeClasses }}"
                 :class="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }}
                     ? {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentSelectedClasses) }}
                     : {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses) }}"
             >
-                {{ $optLabel }}
+                {{ $segment['label'] }}
             </button>
         @endforeach
 

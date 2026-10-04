@@ -86,13 +86,16 @@
       hover:bg-[var(--color-wk-danger-hover)]
       shadow-[var(--shadow-wk-sm)]
 
-    info: aliases primary — uses the accent token chain, no info-specific
-    classes. Info has no surface tokens (no --color-wk-info-fg or
-    --color-wk-info-hover): --color-wk-info is the tone the charts and the flash tint read,
-    and --color-wk-info-text is an alias of accent-content.
+    info: its own chain, --color-wk-info-tone, -fg and -hover, which alias the
+    accent trio until an application gives info a hue of its own.
+      bg-[var(--color-wk-info-tone)]
+      text-[color:var(--color-wk-info-fg)]
+      border-transparent
+      hover:bg-[var(--color-wk-info-hover)]
+      shadow-[var(--shadow-wk-sm)]
 
     ────────────────────────────────────────────────────────────────────────
-    outline() — five intents (info aliases primary)
+    outline() — six intents
     ────────────────────────────────────────────────────────────────────────
 
     Shared:
@@ -102,11 +105,13 @@
 
     Per-intent text + border combinations:
       text-[color:var(--color-wk-accent-content)]
+      text-[color:var(--color-wk-info-text)]
       text-[color:var(--color-wk-text)]
       text-[color:var(--color-wk-success-text)]
       text-[color:var(--color-wk-warning-text)]
       text-[color:var(--color-wk-danger-text)]
       border-[var(--color-wk-accent)]
+      border-[var(--color-wk-info-tone)]
       border-[var(--color-wk-border)]
       border-[var(--color-wk-success)]
       border-[var(--color-wk-warning)]
@@ -125,6 +130,7 @@
 
     Backgrounds:
       bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
+      bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
       bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
       bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
       bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
@@ -133,6 +139,7 @@
     Hovers — the same expression at a higher share, so no new token is needed and
     both modes follow the theme through --color-wk-bg:
       hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-info-tone)_18%,var(--color-wk-bg))]
       hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
       hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
       hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
@@ -159,10 +166,11 @@
     (text color classes shared with outline() above)
 
     ────────────────────────────────────────────────────────────────────────
-    link() — accent + danger only
+    link() — accent, info and danger
     ────────────────────────────────────────────────────────────────────────
 
       text-[color:var(--color-wk-accent-content)]
+      text-[color:var(--color-wk-info-text)]
       text-[color:var(--color-wk-danger-text)]
       border-transparent
       underline-offset-4
@@ -178,11 +186,12 @@
     bar's appearance is decided, and it keeps its class literals in PHP, where
     the `@source` glob never looks.
 
-    Six of these classes appear in no Blade view, and they are not decoration:
-    `border-b-[3px]` / `border-e-[3px]` are the active-tab indicator, and the
-    negative margins pull it onto the container edge. Without them the bar
-    renders, the tabs work, ARIA is correct, and the selected tab is simply not
-    marked. Nothing throws.
+    Several of these classes appear in no Blade view, and they are not decoration:
+    `border-b-[3px]` / `border-e-[3px]` are the active-tab indicator, their
+    `border-b-[var(--color-wk-accent)]` / `border-e-[var(--color-wk-accent)]`
+    color it on the selected tab, and the negative margins pull it onto the
+    container edge. Without them the bar renders, the tabs work, ARIA is
+    correct, and the selected tab is simply not marked. Nothing throws.
 
     All of what TablistStyles can emit is listed, not only these six. The other
     classes are generated today because some other view happens to
@@ -191,16 +200,18 @@
 
     -mb-[length:var(--border-wk-width)]
     -me-[length:var(--border-wk-width)]
+    [--color-wk-ring:var(--color-wk-accent-fg)]
     bg-[var(--color-wk-accent)]
     bg-[var(--color-wk-bg-elevated)]
     bg-[var(--color-wk-bg-muted)]
     border-[length:var(--border-wk-width)]
-    border-[var(--color-wk-accent)]
     border-[var(--color-wk-border)]
     border-b-[3px]
     border-b-[length:var(--border-wk-width)]
+    border-b-[var(--color-wk-accent)]
     border-e-[3px]
     border-e-[length:var(--border-wk-width)]
+    border-e-[var(--color-wk-accent)]
     border-transparent
     cursor-pointer
     disabled:cursor-not-allowed
@@ -211,6 +222,7 @@
     focus-visible:outline-hidden
     focus-visible:ring-[length:var(--ring-wk-width)]
     focus-visible:ring-[var(--color-wk-ring)]
+    focus-visible:ring-inset
     font-[number:var(--font-wk-body-weight)]
     gap-1
     gap-2

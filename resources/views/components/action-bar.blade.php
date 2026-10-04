@@ -53,14 +53,16 @@
         //
         // No browser test can catch this: `env(safe-area-inset-*)` is 0 in headless
         // Playwright, which is why it survived every green mobile run.
-        ? 'fixed bottom-[calc(var(--padding-wk-y-lg)_+_env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-[var(--z-wk-sticky)]'
+        ? 'fixed bottom-[calc(var(--padding-wk-y-lg)_+_env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-[var(--z-wk-sticky)] flex'
         : 'inline-flex';
 
+    // The display is chosen above, once per mode. `flex` in this list beside `inline-flex`
+    // left the choice to the stylesheet's order, which only happened to pick `inline-flex`.
     $classes = WireKit::resolveClasses('action-bar', 'base', implode(' ', [
         $positioningClasses,
-        'flex items-center gap-[var(--gap-wk-md)]',
+        'items-center gap-[var(--gap-wk-md)]',
         'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-sm)]',
+        'py-[var(--padding-wk-x-lg)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
@@ -88,6 +90,7 @@
 <div
     @unless($attributes->has('role')) role="group" @endunless
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Bulk actions') }}" @endunless
+    @if($isFloating) data-wk-scroll-inset="bottom" @endif
     {{ $attributes->merge(!$visible ? ['style' => 'display: none;'] : [])->class([$classes]) }}
 >
     {{-- Why the announcement is translated, and when it fires.

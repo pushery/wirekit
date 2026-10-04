@@ -2,8 +2,9 @@
  * WireKit Toast Alpine Component.
  *
  * Manages a reactive queue of toast notifications dispatched via
- * `$dispatch('wirekit-toast', { ... })`. Supports auto-dismiss,
- * pause-on-hover, and swipe-to-dismiss.
+ * `$dispatch('wirekit-toast', { ... })`. A toast closes through its dismiss
+ * button or when its duration runs out, and its countdown pauses while the
+ * pointer rests on it or the focus is inside it.
  */
 export default function wirekitToast(config = {}) {
     // The element focus came FROM when the reader first tabbed into the region,
@@ -139,14 +140,6 @@ export default function wirekitToast(config = {}) {
         },
 
         /**
-         * Add a new toast to the queue.
-         * @param {Object} detail - Toast payload
-         * @param {string} [detail.title] - Bold heading
-         * @param {string} [detail.message] - Body text
-         * @param {string} [detail.variant='info'] - info|success|warning|danger
-         * @param {number} [detail.duration] - Override auto-dismiss ms (0 = persistent)
-         */
-        /**
          * Write a toast's text into the persistent live region.
          *
          * The regions live OUTSIDE the x-for and start empty, because a live region
@@ -172,6 +165,14 @@ export default function wirekitToast(config = {}) {
             });
         },
 
+        /**
+         * Add a new toast to the queue.
+         * @param {Object} detail - Toast payload
+         * @param {string} [detail.title] - Bold heading
+         * @param {string} [detail.message] - Body text
+         * @param {string} [detail.variant='info'] - info|success|warning|danger
+         * @param {number} [detail.duration] - Override auto-dismiss ms (0 = persistent)
+         */
         add(detail) {
             const id = this._nextId++;
             const duration = detail.duration !== undefined ? detail.duration : this._duration;

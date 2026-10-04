@@ -88,6 +88,7 @@ $trailing
 @endphp
 @endunless
 @if($ariaLabel)
+@if($sticky)
 @if(isset($filters))
 @if(isset($leading))
 @if(isset($trailing))
@@ -232,6 +233,7 @@ costs
 could
 could:
 cramming
+data-wk-scroll-inset="top"
 date-separator.
 debug
 decides

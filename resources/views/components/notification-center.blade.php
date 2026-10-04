@@ -90,7 +90,12 @@
     {{-- State-mutating demo (open/close, mark-read, realtime): opt into the docs
          replay affordance so a "used-up" preview can be reset (mirrors alert/badge). --}}
     data-replayable="true"
-    x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
+    {{-- The notifications travel on an attribute of their own, so `x-data` renders the same
+         on every update: a morph that changed it would have Alpine reset the component to the
+         new expression and initialize it again, closing an open panel each time one arrived.
+         The factory reads them once and follows Livewire's later renders of them. --}}
+    data-wk-items="{{ \Pushery\WireKit\Support\AlpinePayload::json($itemsArr) }}"
+    x-data="wirekitNotificationCenter({ latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree).
          Escape is heard on the bell here, in the panel below, and on the window for a
          press from anywhere else. The bell and the panel mark the press they close on,

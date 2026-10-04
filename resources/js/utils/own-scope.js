@@ -1,4 +1,14 @@
 /**
+ * The key every component passed through here carries beside its own.
+ *
+ * Alpine copies a component's string keys when it reconciles it with a re-evaluated `x-data`, and
+ * no symbol, so the live object keeps the instance key of the object it was created from and never
+ * receives the new object's. This key is the same for every component, so the live object carries
+ * it whichever object created it.
+ */
+const OWN_SCOPE = Symbol('wirekit.ownScopeComponent');
+
+/**
  * Methods that act on their own component, whichever scope calls them.
  *
  * Alpine runs a method with `this` set to the MERGED scope of the element whose expression called
@@ -31,6 +41,11 @@
  *
  * Until `init()` has run, and for a caller that is not Alpine, `this` stays what the caller set.
  *
+ * A Livewire update that changes a component's `x-data` expression keeps the live object: Alpine
+ * evaluates the new expression, copies the new object's properties onto the live one and runs the
+ * new `init()` against it. The methods it copied then run against the live object too, the one the
+ * markup reads, rather than against the new object, which nothing renders.
+ *
  * @template {object} T
  * @param {T} component
  * @returns {T}
@@ -41,6 +56,13 @@ export function withOwnScope(component) {
     let host = null;
 
     Object.defineProperty(component, self, {
+        configurable: true,
+        enumerable: false,
+        writable: false,
+        value: component,
+    });
+
+    Object.defineProperty(component, OWN_SCOPE, {
         configurable: true,
         enumerable: false,
         writable: false,
@@ -84,13 +106,24 @@ export function withOwnScope(component) {
         enumerable: initDescriptor ? initDescriptor.enumerable : false,
         writable: true,
         value: function ownScopeInit(...args) {
-            host = scopeOf(this, self, component);
+            host = scopeOf(this, self, component, ownScopeInit);
 
             return typeof init === 'function' ? init.apply(host, args) : undefined;
         },
     });
 
     return component;
+}
+
+/**
+ * The live object a reconciled component belongs to: the closest scope carrying the shared key,
+ * provided its `init()` is the one running, which Alpine copied onto it with the rest of the new
+ * object. Any other component in the scope has an `init()` of its own and is not taken.
+ */
+function reconciledOwner(scope, init) {
+    const owner = scope ? scope[OWN_SCOPE] : undefined;
+
+    return owner && owner.init === init ? owner : undefined;
 }
 
 /**
@@ -105,8 +138,8 @@ export function withOwnScope(component) {
  * properties Alpine defines as non-configurable, and a proxy may not report those differently from
  * its target.
  */
-function scopeOf(scope, self, component) {
-    const own = (scope && scope[self]) || component;
+function scopeOf(scope, self, component, init) {
+    const own = (scope && scope[self]) || reconciledOwner(scope, init) || component;
     const around = scope || own;
 
     return new Proxy(Object.create(null), {

@@ -6,7 +6,8 @@
  * so a page that filtered a table and a chart showed the new period in the table and the old
  * one in the chart. The component now renders its data half on a `<template>` right after the
  * root, outside the ignored element; the morph updates that attribute like any other, and this
- * reports the new payload to the factory, which updates the chart in place.
+ * reports the new payload to the factory, which updates the chart in place. The chart's name,
+ * which describes that data, travels with it and is set on the root here.
  *
  * An attribute and an observer rather than a Livewire hook, for the reason the indeterminate
  * directive gives: the attribute is written by the server on every render and by nobody else, so
@@ -51,6 +52,13 @@ export function followChartServerData(root, onData) {
         }
 
         if (payload && typeof payload === 'object') {
+            // The name follows the data. It sits on the ignored root, where the morph leaves it,
+            // and a name that summarizes the data would go on describing the data the chart
+            // loaded with.
+            if (typeof payload.ariaLabel === 'string' && root.getAttribute('aria-label') !== payload.ariaLabel) {
+                root.setAttribute('aria-label', payload.ariaLabel);
+            }
+
             onData(payload);
         }
     });

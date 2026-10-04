@@ -53,6 +53,7 @@ $formattedDelta
 $formattedUnitPrice
 $headingClasses
 $isGridPair
+$isStacked
 $isSummary
 $isVertical
 $itemClasses
@@ -148,6 +149,7 @@ $wrapperStyle])->class([$itemClasses])
 'md'
 'md'),
 'md',
+'min-width:
 'minorUnits'
 'neutral');
 'neutral';
@@ -167,6 +169,7 @@ $wrapperStyle])->class([$itemClasses])
 'sm'
 'sm',
 'stacked'
+'stacked';
 'subtle'
 'subtle',
 'subtotal'
@@ -244,6 +247,7 @@ $wrapperStyle])->class([$itemClasses])
 0.0)
 0.00
 0.25rem)
+0.25rem);',
 0.75rem);
 0.75rem.
 0.75rem`,
@@ -252,13 +256,11 @@ $wrapperStyle])->class([$itemClasses])
 100
 1;
 1fr
-1fr);
 1fr)`
 1fr)`,
 1fr;
 1rem
 1rem);',
-1rem);';
 1rem,
 2
 2,
@@ -517,6 +519,7 @@ __('wirekit::Total')
 `detail`
 `display:
 `dist/wirekit.css`
+`dl[data-layout="grid"]`:
 `font-variant-numeric`
 `generic`,
 `grid`
@@ -539,6 +542,7 @@ __('wirekit::Total')
 `separator`
 `shippingNote`.
 `shipping`
+`stacked`
 `summary`
 `summary`;
 `tabular-nums`
@@ -553,6 +557,7 @@ accessible
 across
 action
 addition
+address,
 adds
 adjustable.
 affects
@@ -584,9 +589,7 @@ anyone
 anything
 anywhere
 anywhere;
-anywhere;'
 anywhere;',
-anywhere;';
 apart
 app()->getLocale();
 application
@@ -628,6 +631,7 @@ behind
 being
 belongs
 below
+below,
 below.
 beside
 between
@@ -648,6 +652,7 @@ both
 bottom
 box
 box,
+breakpoint,
 bridge.
 broken
 build
@@ -661,6 +666,7 @@ caller
 caller,
 calling
 can
+cannot
 cannot.
 canonical
 card",
@@ -678,6 +684,7 @@ cell.
 center
 centered
 cents.
+change
 channels
 checkout",
 choice
@@ -725,9 +732,10 @@ content
 content)
 content,
 content.
-contents;'
+contents;',
 contents`
 context
+contract's
 contributes
 could
 covers
@@ -774,6 +782,7 @@ directly
 display,
 displayed
 dist/wirekit.css
+dist/wirekit.css,
 divider
 do
 docs
@@ -786,6 +795,7 @@ each
 early.
 early;
 edge
+edge,
 edge.
 element
 element,
@@ -1096,6 +1106,7 @@ pairs
 pairs.
 panel,
 panel.
+paragraph
 paragraph,
 parent
 parent's
@@ -1108,6 +1119,7 @@ path).
 per
 per-item
 per-row
+phone.
 phrase
 piece
 pin
@@ -1167,7 +1179,6 @@ rendered
 rendering
 renders
 renders,
-repeat(2,
 repository
 require
 required
@@ -1199,6 +1210,7 @@ scan
 scan.
 scanning
 screen
+screen.
 scrollWidth
 seating,
 seats
@@ -1207,6 +1219,7 @@ see
 sees
 selling
 semantic
+sentence,
 separate
 separates
 separator
@@ -1214,6 +1227,7 @@ separators,
 separators:
 server-side
 set
+sets
 shadow
 shape
 shape:
@@ -1230,6 +1244,7 @@ show
 shown
 shunt
 siblings
+side-by-side
 side-by-side.
 sighted
 sign
@@ -1263,8 +1278,10 @@ spoken.
 stacked
 stacked,
 stand
+start
 state
 static
+stayed
 stays
 step,
 still
@@ -1278,6 +1295,7 @@ string
 string,
 strings.
 struck
+style
 style="text-decoration:
 style="{{
 styles
@@ -1325,6 +1343,7 @@ them
 them.
 there
 thing
+third.
 this
 through
 through.
@@ -1346,6 +1365,7 @@ trusted:
 truthy
 twice.
 two
+two,
 two:
 unchanged.
 under
@@ -1368,6 +1388,7 @@ validate
 value
 value,
 value.
+value:
 var(--color-wk-text-muted);
 var(--gap-wk-lg,
 var(--gap-wk-md,
@@ -1419,6 +1440,7 @@ would
 wrap
 wrapper
 wrapper's
+wrapping
 wraps
 write
 writes

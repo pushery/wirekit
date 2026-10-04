@@ -53,6 +53,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp). Read
+    // here rather than in the block above, which runs before `@props` defines `$href`.
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -123,7 +127,7 @@
 >
     @if($icon)
         <span class="relative inline-flex" aria-hidden="true">
-            <x-wirekit::icon :name="$icon" class="h-6 w-6" />
+            <x-wirekit::icon :name="$icon" size="lg" />
             @if($badge !== null && $badge !== '')
                 {{-- aria-hidden via the wrapper: the number is already in the
                      link's accessible name, and announcing it twice is worse

@@ -97,9 +97,11 @@ $tagline
 =>
 ?
 ??=
+@endif
 @endphp
 @if($isContainerWrapped)</div>@endif
 @if($isContainerWrapped)<div
+@if($sticky)
 @isset($actions)<div
 @isset($brand){{
 @isset($tagline)<span
@@ -228,6 +230,7 @@ content
 content-edge
 could
 data-wk-prose-skip
+data-wk-scroll-inset="top"
 debug
 default
 directly.

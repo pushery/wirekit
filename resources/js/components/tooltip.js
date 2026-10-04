@@ -42,8 +42,12 @@ export default function wirekitTooltip(config = {}) {
         // Stored cleanup handler for destroy()
         _navCleanup: null,
 
+        // Puts the description back on the control after an update; disconnected in destroy().
+        _describedByObserver: null,
+
         init() {
             this._moveDescriptionToTheFocusableTrigger();
+            this._keepTheDescriptionAcrossUpdates();
 
             // Cleanup on SPA navigation
             this._navCleanup = () => this._forceClose();
@@ -97,7 +101,35 @@ export default function wirekitTooltip(config = {}) {
             root.removeAttribute('aria-describedby');
         },
 
+        /**
+         * Keep the description on the control a reader lands on when the page updates.
+         *
+         * A Livewire update patches the trigger against its template, which carries
+         * `aria-describedby` on the wrapper and none on the caller's control. That undoes the move
+         * above while the tooltip stays open and focused, so the control a reader is on describes
+         * nothing any more. The observer watches that one attribute inside the trigger, and the
+         * replaced control too, and makes the move again. The move changes nothing the second time,
+         * so its own writes end the round.
+         */
+        _keepTheDescriptionAcrossUpdates() {
+            const root = this.$refs?.trigger;
+            if (!root || typeof MutationObserver !== 'function' || !root.getAttribute?.('data-wk-tooltip-describedby')) {
+                return;
+            }
+
+            this._describedByObserver = new MutationObserver(() => this._moveDescriptionToTheFocusableTrigger());
+            this._describedByObserver.observe(root, {
+                attributes: true,
+                attributeFilter: ['aria-describedby'],
+                childList: true,
+                subtree: true,
+            });
+        },
+
         destroy() {
+            this._describedByObserver?.disconnect();
+            this._describedByObserver = null;
+
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -241,9 +273,6 @@ export default function wirekitTooltip(config = {}) {
         },
 
         /**
-         * Show tooltip and position via Floating UI.
-         */
-        /**
          * Is this tooltip switched off right now?
          *
          * Read off the ROOT ATTRIBUTE rather than held as state, and that is the
@@ -264,6 +293,9 @@ export default function wirekitTooltip(config = {}) {
             return this.$root?.getAttribute('data-wk-tooltip-disabled') === 'true';
         },
 
+        /**
+         * Show tooltip and position via Floating UI.
+         */
         async show() {
             if (this.isOpen) return;
 

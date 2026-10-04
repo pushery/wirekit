@@ -1,5 +1,3 @@
-import { foldForSearch } from './search-fold.js';
-
 /**
  * What `combobox` and `multi-select` share about an option's extra keys: which text the search
  * reads, which text the field or a pill shows, and when an avatar falls back to initials.
@@ -8,6 +6,7 @@ import { foldForSearch } from './search-fold.js';
  * file carries only the keys it uses. Every function here treats a missing key as the option it
  * was before those keys existed, which is what keeps a plain list behaving exactly as it did.
  */
+import { foldForSearch } from './search-fold.js';
 
 /**
  * Whether an option matches a lower-cased query.

@@ -69,17 +69,27 @@
     // swapped, and the alignment has to swap with them.
     $isGridPair = $isSummary || $layout === 'detail';
 
-    $wrapperStyle = $isGridPair
-        ? 'display: contents;'
-        : 'display: flex; align-items: flex-start; justify-content: space-between; gap: var(--gap-wk-lg, 1rem);';
+    // `stacked` sets the label above its value, both from the same start edge, which is what makes
+    // it the layout for a long value: a sentence, an address, a contract's name. In the side-by-side
+    // row of `horizontal` below, such a value would wrap into a paragraph against the far edge,
+    // beside a label wrapping in its third.
+    $isStacked = $layout === 'stacked';
+
+    $wrapperStyle = match (true) {
+        $isGridPair => 'display: contents;',
+        $isStacked => 'display: flex; flex-direction: column; gap: var(--gap-wk-xs, 0.25rem);',
+        default => 'display: flex; align-items: flex-start; justify-content: space-between; gap: var(--gap-wk-lg, 1rem);',
+    };
 
     // The column is named explicitly rather than left to auto-placement. A row
     // whose <dt> is omitted (no `label`) would otherwise put its <dd> into the
     // FIRST track and shunt every following row one cell out of alignment —
     // silent, and visible only once a real list happens to contain one.
-    $labelStyle = $isGridPair
-        ? 'grid-column: 1; min-width: 0; overflow-wrap: anywhere;'
-        : 'width: 33%; flex-shrink: 1; min-width: 0; overflow-wrap: anywhere;';
+    $labelStyle = match (true) {
+        $isGridPair => 'grid-column: 1; min-width: 0; overflow-wrap: anywhere;',
+        $isStacked => 'min-width: 0; overflow-wrap: anywhere;',
+        default => 'width: 33%; flex-shrink: 1; min-width: 0; overflow-wrap: anywhere;',
+    };
 
     // `font-variant-numeric` is set inline for the same reason the rest of the
     // layout is: the `tabular-nums` utility only exists if the developer's
@@ -89,6 +99,7 @@
         $isSummary => 'grid-column: 2; min-width: 0; text-align: right; overflow-wrap: anywhere; '
             .'font-variant-numeric: tabular-nums;',
         $layout === 'detail' => 'grid-column: 2; min-width: 0; overflow-wrap: anywhere;',
+        $isStacked => 'min-width: 0; overflow-wrap: anywhere;',
         default => 'flex: 1; min-width: 0; text-align: right; overflow-wrap: anywhere;',
     };
 @endphp

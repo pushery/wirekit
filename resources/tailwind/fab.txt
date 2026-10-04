@@ -13,11 +13,10 @@ $accessibleLabel
 $ariaLabel
 $attributes
 $attributes->class([$classes])
-$attributes->class([WireKit::resolveClasses('icon',
+$attributes->class([$iconClasses]);
 $attributes->except('rel')->class([$classes.'
 $attributes->except('rel')->class([$classes])
 $attributes->get('aria-hidden');
-$attributes->get('aria-label');
 $attributes->get('aria-labelledby');
 $attributes->get('rel',
 $attributes->get('role');
@@ -28,6 +27,7 @@ $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
+$callerClass
 $callerRole
 $classes
 $cleaned
@@ -45,6 +45,7 @@ $hintsNewTabInLabel
 $hintsNewTabInLabel)
 $href
 $icon
+$iconClasses
 $isInformative
 $isInformative;
 $label
@@ -79,7 +80,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
-$sizeClasses)]);
+$sizeClasses);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -100,6 +101,7 @@ $validated
 '
 ''
 '')
+''));
 '');
 '',
 '';
@@ -111,6 +113,10 @@ $validated
 '.__('wirekit::(opens
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
+'/^(?:h|size)-/'))
+'/^(?:h|size)-/');
+'/^(?:w|size)-/'))
+'/^(?:w|size)-/');
 '2xl'
 '<')
 '<svg
@@ -120,6 +126,7 @@ $validated
 '[WireKit]
 '_blank');
 'a'
+'aria-label');
 'base',
 'bg-[var(--color-wk-accent)]
 'bg-[var(--color-wk-bg-elevated)]
@@ -208,6 +215,8 @@ $validated
 ('xs').
 (44px)
 (Support\CallerListeners).
+(Support\UrlProp).
+(UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -255,6 +264,7 @@ $validated
 18
 2.5.3
 2.5.3,
+20px,
 24
 24"
 2rem,
@@ -340,6 +350,7 @@ Auto-inject
 BEFORE
 BOTH
 Back
+Beside
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
@@ -364,6 +375,7 @@ Drop
 END
 ENT_QUOTES).'"',
 EVERY
+Echoed
 Escape
 FAB
 FAB.
@@ -411,6 +423,7 @@ Pass
 Positioning
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 REPLACES
 REQUIRED
@@ -447,6 +460,8 @@ The
 This
 Throwing
 UNBOUND
+URL
+UtilityClasses::without($iconClasses,
 Visible
 WCAG
 WHERE
@@ -456,6 +471,7 @@ Where
 Whether
 Which
 WireKit
+WireKit::resolveClasses('icon',
 WireKit::validateProp('fab',
 WireKit::validateProp('fab.action',
 WireKit::validateProp('fab.button',
@@ -470,9 +486,12 @@ Words
 ['data-wk-icon-missing'
 ['end',
 ['x-on:keydown.escape',
+\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('fab',
 \Pushery\WireKit\WireKit::warnUnknownProps('fab.action',
 \Pushery\WireKit\WireKit::warnUnknownProps('fab.button',
@@ -489,7 +508,9 @@ __toString
 `.prevent`
 `.wk-fab`
 `0px`
+`:class`
 `<span>`
+`@class`
 `Svg
 `aria-haspopup="menu"`
 `aria-hidden="true"`
@@ -500,6 +521,7 @@ __toString
 `block-end`
 `block-start`
 `class="h-12
+`class`
 `default
 `env(safe-area-inset-right)`
 `escapeMenu()`
@@ -507,6 +529,9 @@ __toString
 `fab/button`,
 `fab`
 `fixed
+`h-4`
+`h-5`
+`h-7`
 `heroicon-m-inbox`
 `hideLabel="false"`
 `hideLabel`
@@ -570,6 +595,7 @@ all,
 all:
 allowed
 allowlist
+alone,
 along;
 already
 also
@@ -613,7 +639,9 @@ aria-labelledby
 arm
 around
 array
+array,
 array_keys($sizeMap));
+arrives
 arrow
 arrows,
 artisan
@@ -626,12 +654,14 @@ assuming
 at
 attempted
 attribute
+attribute's
 attribute,
 auto-derived
 available
 away
 axes
 axis
+axis.
 back
 back.
 bag
@@ -670,6 +700,7 @@ border-[var(--color-wk-border)]',
 both
 bottom-corner
 bound
+bound,
 box
 branch
 branch's
@@ -716,7 +747,6 @@ claim
 claiming
 class
 class="flex
-class="h-5
 class="h-6
 class="inline-grid
 class="relative
@@ -877,6 +907,7 @@ entirely
 entirely.
 entry
 env(safe-area-inset-bottom)
+escaped
 evaluated
 evaluated,
 event
@@ -934,8 +965,9 @@ floor
 focus
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
-focus-visible:ring-offset-2"
-focus-visible:ring-offset-2',
+focus-visible:ring-offset-[length:var(--ring-wk-offset)]
+focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
 focus.
 focus:outline-hidden
 focusable
@@ -989,12 +1021,14 @@ handler
 hands
 hanging
 happen.
+happened
 happens
 hard
 harder
 has
 have
 have)
+height
 helper
 here
 here,
@@ -1137,6 +1171,7 @@ long
 lose
 loses
 lost
+lost,
 loud
 loudly,
 macOS
@@ -1242,6 +1277,7 @@ offset
 omit
 on
 on.
+once
 once.
 one
 one,
@@ -1387,6 +1423,7 @@ resolution
 resolved
 resolves
 respect
+responsive
 rest
 result
 return
@@ -1468,6 +1505,7 @@ sits
 size
 size,
 size.
+sized
 slot
 slot's
 smallest
@@ -1476,6 +1514,7 @@ some
 somebody
 someone
 something
+sorts
 source
 source-baked
 space).
@@ -1523,6 +1562,7 @@ stroke-linejoin="round"
 stroke-width="2"
 stroke="currentColor"
 style="display:inline-block;"></span>
+stylesheet's
 subtree
 such
 suppresses
@@ -1539,6 +1579,7 @@ tab)')
 tab)'))
 table
 tabnabbing
+tag
 tag's
 tag.
 takes
@@ -1591,6 +1632,7 @@ throws
 tile
 time
 to
+toCssClasses()
 toHtml().
 token
 token.
@@ -1646,6 +1688,7 @@ validation
 value
 value,
 value.
+variant
 via
 view
 view's
@@ -1658,7 +1701,6 @@ w-12',
 w-3',
 w-4',
 w-5
-w-5"
 w-5',
 w-5';
 w-6"
@@ -1692,7 +1734,9 @@ whole
 whose
 why
 why.
+width
 will
+win.
 wins
 wins;
 wirekit:csp-audit`

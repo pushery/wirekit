@@ -167,6 +167,11 @@ export default function wirekitDropdown(config = {}) {
                     fitViewport: true,
                     // Follow the trigger while open; teardown handle stored for close().
                     autoReposition: true,
+                    // A framework update patches the teleported panel against its template, whose
+                    // `style` carries none of what this call writes: the placement is gone while the
+                    // panel stays open, with its box unchanged, so `autoReposition`, which watches
+                    // boxes, sees nothing. This watches the attribute that is actually removed.
+                    repairErasure: true,
                 });
 
                 // The placement can wait frames for the panel to get a box, and the dropdown

@@ -16,7 +16,7 @@
     // Footer section — action area with top border and muted background
     $classes = WireKit::resolveClasses('card.footer', 'base', implode(' ', [
         'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-md)]',
+        'py-[var(--padding-wk-x-lg)]',
         'border-t-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border-subtle)]',
         'bg-[var(--color-wk-bg-subtle)]',

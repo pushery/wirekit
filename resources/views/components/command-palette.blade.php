@@ -53,7 +53,7 @@
     // lands on. `<x-wirekit::command-palette aria-label="…">` put the name on a roleless element,
     // so the control the user actually operates kept no accessible name at all — WCAG
     // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
-    $callerLabel = $attributes->get('aria-label');
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
 
@@ -144,7 +144,7 @@
 @endphp
 
 <div
-    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }}, namedOnly: {{ $namedOnly ? 'true' : 'false' }} })"
+    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }}, namedOnly: {{ $namedOnly ? 'true' : 'false' }}, remote: {{ isset($loading) ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
     {{-- Overlay markup. Wrapped in `<template x-teleport="#wk-overlay-root">` by default so
@@ -158,9 +158,10 @@
          clicks on the "whitespace" around the panel land on the container, not
          on the underlying backdrop. Without this the user can click outside
          the panel and nothing happens. Same fix pattern as
-         <x-wirekit::alert-dialog> when `dismissible` is on. The panel itself
-         uses `x-on:click.stop` so clicks inside the palette do NOT propagate
-         to the container and accidentally close the palette. --}}
+         <x-wirekit::alert-dialog> when `dismissible` is on. It listens with
+         `.self`, so only a click on the container itself closes the palette;
+         a click inside the panel is not stopped and reaches the document,
+         where a listener the page delegates hears it. --}}
     @if($teleport)
     <template x-teleport="#wk-overlay-root">
     @endif
@@ -184,7 +185,7 @@
                  backdrop and intercepts clicks. --}}
             <div
                 class="wk-scrollbar fixed inset-0 z-[var(--z-wk-modal)] flex items-start justify-center pt-[var(--wk-command-palette-offset-top,20vh)] px-[var(--padding-wk-x-lg)] overflow-y-auto"
-                x-on:click="close()"
+                x-on:click.self="close()"
             >
                 <div
                     x-ref="panel"
@@ -199,7 +200,6 @@
                     aria-modal="true"
                     aria-label="{{ filled($label) ? $label : __('wirekit::Command palette') }}"
                     class="{{ $panelClasses }}"
-                    x-on:click.stop
                     @keydown="handleKeydown"
                 >
                     {{-- Search input --}}
@@ -246,6 +246,7 @@
 
                                    <x-wirekit::command-palette
                                        wire:wirekit-command-palette-query="search($event.detail.query)" /> --}}
+                            x-on:input="markQueryChanged()"
                             x-on:input.debounce.300ms="emitQuery()"
                         />
                     </div>
@@ -264,6 +265,10 @@
                         x-ref="list"
                         id="{{ $listId }}"
                         role="listbox"
+                        {{-- Out of the tab order: the search field keeps the focus and names the
+                             active command through `aria-activedescendant`. In Chromium a list that
+                             scrolls and holds nothing focusable is a tab stop of its own. --}}
+                        tabindex="-1"
                         aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}"
                         {{-- Busy while a remote source is answering: the options still showing
                              are the previous answer, and a reader should not take them as the

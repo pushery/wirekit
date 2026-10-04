@@ -7,7 +7,6 @@ $attributes
 $attributes->class([$classes])
 $attributes->class(['cursor-pointer',
 $attributes->except(['aria-label']);
-$attributes->get('aria-label');
 $attributes->getAttributes());
 $backdropClasses
 $callerLabel
@@ -17,7 +16,10 @@ $classes])
 $close
 $closeClasses
 $component
+$confirmDiscard
 $describedby
+$discardQuestion
+$discardQuestionText
 $dismissible
 $enterEnd
 $enterStart
@@ -50,6 +52,7 @@ $titleId
 '-translate-y-full',
 '.WireKit::resolveClasses('drawer',
 '.WireKit::resolveClasses('drawer.body',
+'aria-label');
 'backdrop',
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
@@ -64,8 +67,10 @@ $titleId
 'bottom'],
 'close'
 'close',
+'confirmDiscard'
 'cursor-pointer',
 'describedby'
+'discardQuestion'
 'dismissible'
 'drawer',
 'false'
@@ -98,13 +103,14 @@ $titleId
 'md';
 'modal'])
 'name'
+'null'
 'overflow-y-auto',
 'p-[var(--padding-wk-x-lg)]',
 'panel',
 'position'
 'position',
 'px-[var(--padding-wk-x-lg)]',
-'py-[var(--padding-wk-y-md)]',
+'py-[var(--padding-wk-x-lg)]',
 'relative
 'right'
 'right'),
@@ -156,6 +162,7 @@ $titleId
 (bool)
 (content
 (even
+(filled($discardQuestion)
 (left)
 (no
 (or
@@ -244,12 +251,14 @@ Backdrop.
 Blade
 Body
 BooleanProp::from($close,
+BooleanProp::from($confirmDiscard,
 BooleanProp::from($dismissible,
 BooleanProp::from($lockScroll,
 Both
 But
 By
 CallerRef::onRoot()
+Cancel
 Clamp
 Clamping
 Close
@@ -265,6 +274,7 @@ ESC
 ESC.
 Enter
 Escape
+Escape,
 FIRST
 False
 Footer
@@ -335,7 +345,9 @@ Wrapping,
 ['left',
 ['sm',
 ['x-on:keydown.escape.window']);
+\Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -347,6 +359,7 @@ Wrapping,
 ])
 ]),
 __('wirekit::Close')
+__('wirekit::Discard
 `100vh
 `:close="false"`
 `<button>`
@@ -357,11 +370,13 @@ __('wirekit::Close')
 `aria-label`
 `aria-labelledby`
 `assertDontSee()`
+`click.outside`
 `close=true`
 `config()`
 `cursor-pointer`
 `cursor:
 `default`
+`discardQuestion`
 `dismissByReader('escape')`
 `dismissible="false"`
 `drawer.header`.
@@ -418,6 +433,7 @@ already
 already-rendered
 also
 an
+ancestor,
 and
 announcement
 announces
@@ -446,8 +462,10 @@ around
 as
 as,
 as.
+ask.
 asked
 asks
+asks.
 assertion.
 assigned
 assistive
@@ -524,7 +542,9 @@ cast
 catch
 catches
 changes
+changes,
 changes.
+changes?'))
 changing
 chooses
 chrome,
@@ -552,6 +572,7 @@ component's
 component,
 composed
 condition
+config('wirekit.components.drawer.confirm-discard',
 config('wirekit.components.drawer.dismissible',
 config('wirekit.components.drawer.position',
 config('wirekit.components.drawer.size',
@@ -602,11 +623,13 @@ did
 did),
 direction
 disabled.
+discardQuestion:
 dismiss
 dismissible
 dismissible:
 docs
 document
+document:
 does
 down
 drawer
@@ -656,6 +679,7 @@ fallback
 falls
 far
 feature
+fields
 file
 fill="none"
 find.
@@ -714,10 +738,12 @@ header's.
 header:
 heading
 headless
+hears
 height
 here
 hidden
 hit
+hold
 holding
 holds
 house
@@ -801,6 +827,7 @@ longer
 looking.
 made
 make
+makes
 marker
 marks
 markup,
@@ -854,6 +881,7 @@ now-clamped,
 null
 null);
 null,
+null;
 objection
 of
 off
@@ -905,6 +933,7 @@ pair.
 panel
 panel's
 panel,
+panel.
 parent
 partial
 partial.
@@ -936,6 +965,7 @@ props
 pull
 pulled
 qualified:
+question.
 races
 random,
 rather
@@ -965,6 +995,7 @@ rendered
 renders
 renders.
 reordering
+replaces
 replacing
 repo
 request
@@ -1027,6 +1058,7 @@ show
 shown
 shown,
 shrink-0',
+sibling
 siblings.
 side
 side,
@@ -1070,6 +1102,7 @@ steer
 sticky-panel.
 still
 stop
+stopped.
 string,
 strip
 strip).
@@ -1107,6 +1140,7 @@ them
 theme
 then
 there
+there,
 these
 they
 thing
@@ -1212,7 +1246,6 @@ x-cloak
 x-cloak>
 x-data
 x-data="wirekitDrawer({
-x-on:click.stop
 x-on:click="close()"
 x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
@@ -1228,6 +1261,7 @@ x-transition:enter-start="opacity-0"
 x-transition:enter-start="{{
 x-transition:enter="transition
 you
+your
 {
 {{
 {{--

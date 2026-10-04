@@ -7,7 +7,6 @@ $attributes
 $attributes->class([$classes])
 $attributes->class([$panelClasses])
 $attributes->except('aria-label');
-$attributes->get('aria-label');
 $attributes->getAttributes());
 $callerAriaLabel
 $classes
@@ -31,6 +30,7 @@ $titleId
 '4',
 '5',
 '6']);
+'aria-label');
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
 'border-[length:var(--border-wk-width)]',
@@ -193,6 +193,7 @@ WireKit::validateProp('tour.step',
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Next'))
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Step
 \Pushery\WireKit\Support\AlpinePayload::string($name)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(

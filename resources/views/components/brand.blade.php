@@ -74,6 +74,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('brand', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // `aspect-ratio` when the caller declared one, and a square floor either way. Both are
     // inline rather than utility classes: the ratio is caller data, and a Tailwind class
@@ -141,6 +143,9 @@
         'gap-[var(--gap-wk-sm)]',
         'text-[color:var(--color-wk-text)]',
         'no-underline',
+        // The kit's focus ring rather than the browser's, which follows neither the ring tokens
+        // nor a preset.
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]',
     ]), $scope);
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // Rendered EXPLICITLY, bag echoed with except('rel'): $attributes->merge()

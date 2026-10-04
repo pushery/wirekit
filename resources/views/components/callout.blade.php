@@ -43,9 +43,9 @@
     // The error names the prop the CALLER wrote, not the canonical one.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
-    // Validate against the canonical intent set. 'primary' and 'info'
-    // are visual synonyms on callout (both use --color-wk-accent: info has no
-    // surface token, and --color-wk-info is the tone the charts and the flash tint read).
+    // Validate against the canonical intent set. 'primary' uses the accent and 'info'
+    // --color-wk-info-tone, which aliases the accent until an application gives info a hue of
+    // its own.
     $variantValue = match ($effectiveIntent) {
         'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $effectiveIntent,
         default => WireKit::validateProp('callout', $intentPropName, $effectiveIntent, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
@@ -58,7 +58,7 @@
     $baseClasses = WireKit::resolveClasses('callout', 'base', implode(' ', [
         'relative flex items-start gap-3',
         'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-lg)]',
+        'py-[var(--padding-wk-x-lg)]',
         'rounded-[var(--radius-wk-lg)]',
         $bordered ? 'border-[length:var(--border-wk-width)]' : 'border-0',
         'font-[family-name:var(--font-wk-sans)]',
@@ -93,7 +93,13 @@
             'icon' => 'text-[color:var(--color-wk-text-muted)]',
             'stripe' => 'bg-[var(--color-wk-text-muted)]',
         ],
-        default => [ // primary, info
+        'info' => [
+            'border' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
+            'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-info-tone)_15%,var(--color-wk-bg-elevated))]',
+            'icon' => 'text-[color:var(--color-wk-info-text)]',
+            'stripe' => 'bg-[var(--color-wk-info-tone)]',
+        ],
+        default => [ // primary
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_15%,var(--color-wk-bg-elevated))]',
             'icon' => 'text-[color:var(--color-wk-accent-text)]',
@@ -132,7 +138,7 @@
      So: no landmark, no live region. The heading and the text are read in document order,
      the icon is aria-hidden, and the intent is carried by the words rather than by a role
      a screen reader would have to interrupt for. --}}
-<div {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+<div {{ $attributes->merge(['data-intent' => $variantValue])->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     @if($stripe)
         {{-- Opt-in accent stripe: a one-sided colored bar, OFF by default. The
              plain callout is the alert-style 4-sided tinted border; the bar is

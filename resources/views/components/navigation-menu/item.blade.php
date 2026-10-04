@@ -11,6 +11,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu.item', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     use Pushery\WireKit\WireKit;
 
@@ -179,7 +181,10 @@
                 x-ref="panel-{{ $name }}"
                 x-show="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}"
                 x-on:mouseenter="cancelClose()"
-                x-on:mouseleave="scheduleClose()"
+                {{-- Leaving closes only after the pointer moved in the panel: a panel opened from
+                     the keyboard can be entered and left by a pointer that never moved (leavePanel()). --}}
+                x-on:pointermove.passive="notePanelPointerMove()"
+                x-on:mouseleave="leavePanel()"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 translate-y-1"
                 x-transition:enter-end="opacity-100 translate-y-0"

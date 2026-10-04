@@ -5,7 +5,7 @@
 
      Expects from the pager: $perPageChoices (value => label, ascending), $perPageCurrent (the
      paginator's own size), $perPageLabelId, $perPageSelectAttributes (the bag for the select, which
-     carries the forwarded `wire:model` or the change handler), and, for the form, $perPageUsesForm,
+     carries the forwarded `wire:model`, or only its name and label outside Livewire), and, for the form, $perPageUsesForm,
      $perPageAction and $perPageQuery (name/value pairs of every other parameter to keep).
 
      The visible words name the select through `aria-labelledby` rather than a label element with
@@ -14,13 +14,15 @@
 <div data-wk-pagination-per-page class="flex items-center gap-[var(--gap-wk-sm)]">
     <span id="{{ $perPageLabelId }}" class="text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Per page') }}</span>
     @if($perPageUsesForm)
-        <form method="get" action="{{ $perPageAction }}" x-data>
+        <form method="get" action="{{ $perPageAction }}" class="flex items-center gap-[var(--gap-wk-sm)]">
             @foreach($perPageQuery as [$queryName, $queryValue])
                 <input type="hidden" name="{{ $queryName }}" value="{{ $queryValue }}">
             @endforeach
             <x-wirekit::select size="sm" :options="$perPageChoices" :value="$perPageCurrent" :attributes="$perPageSelectAttributes" />
-            {{-- Without script the change sends nothing, so the form keeps a way to send it. --}}
-            <noscript><x-wirekit::button type="submit" size="sm" intent="neutral">{{ __('wirekit::Apply') }}</x-wirekit::button></noscript>
+            {{-- The one way the choice leaves the page: the select sends nothing on its own, since
+                 a new document on every change of value is a change of context the reader did not
+                 ask for. The visible words name what it applies, "Apply, Per page". --}}
+            <x-wirekit::button type="submit" size="sm" intent="neutral" aria-describedby="{{ $perPageLabelId }}">{{ __('wirekit::Apply') }}</x-wirekit::button>
         </form>
     @else
         <x-wirekit::select size="sm" :options="$perPageChoices" :value="$perPageCurrent" :attributes="$perPageSelectAttributes" />

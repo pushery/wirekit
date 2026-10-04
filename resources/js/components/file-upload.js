@@ -222,10 +222,34 @@ export default function wirekitFileUpload(config = {}) {
          * The raw File objects are kept as well as the display rows, because
          * removeFile() has to rebuild a FileList and only the originals can go
          * back into one.
+         *
+         * An empty list empties the bound property. Livewire uploads what a `change` brings and
+         * returns early on a `change` that brings nothing, so without this the earlier upload
+         * stays on the property and the next save takes a file the reader removed. An empty
+         * list arrives here when removeFile() takes out the last file, whose `change` lands in
+         * this method, and with any other `change` that reports no file.
          */
         handleFiles(fileList) {
             this._rawFiles = Array.from(fileList);
             this.files = this._rawFiles.map((f) => ({ name: f.name, size: f.size }));
+
+            if (this._rawFiles.length === 0) {
+                this._emptyTheModel();
+            }
+        },
+
+        /**
+         * Set the bound property to empty: `null` for one file, an empty array for several, the
+         * two values Livewire's own reset reads as empty. Live, as the upload that filled it
+         * was, so the property is empty on the server when the list is. Outside a Livewire
+         * component, or unbound, there is nothing to empty.
+         */
+        _emptyTheModel() {
+            if (this.model === null || ! this.$wire || typeof this.$wire.set !== 'function') {
+                return;
+            }
+
+            this.$wire.set(this.model, this.$refs?.input?.multiple === true ? [] : null);
         },
 
         /**

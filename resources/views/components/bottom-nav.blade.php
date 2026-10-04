@@ -57,6 +57,7 @@
 <nav
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
     data-wk-bottom-nav
+    data-wk-scroll-inset="bottom"
     @if($isInteractive) x-data="{ active: null }" @endif
     {{ $attributes->class([$classes]) }}
 >

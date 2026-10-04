@@ -66,10 +66,10 @@ final class ThemePresetRegistry
        preset's page teaches, token for token, so the command and a pasted
        block give the same theme. */
     --radius-wk: 0px;
-    --shadow-wk-sm: none;
-    --shadow-wk-md: none;
-    --shadow-wk-lg: none;
-    --shadow-wk-none: none;
+    --shadow-wk-sm: 0 0 0 0 transparent;
+    --shadow-wk-md: 0 0 0 0 transparent;
+    --shadow-wk-lg: 0 0 0 0 transparent;
+    --shadow-wk-none: 0 0 0 0 transparent;
     --font-wk-heading-weight: 500;
     --font-wk-letter-spacing: 0.01em;
 
@@ -178,7 +178,7 @@ CSS,
     --shadow-wk-sm: 2px 2px 0 0 currentColor;
     --shadow-wk-md: 3px 3px 0 0 currentColor;
     --shadow-wk-lg: 5px 5px 0 0 currentColor;
-    --shadow-wk-none: none;
+    --shadow-wk-none: 0 0 0 0 transparent;
 
     /* Motion — 0ms, an instant reaction. Easing is irrelevant at 0ms. */
     --transition-wk-duration: 0ms;

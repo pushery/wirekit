@@ -1,4 +1,5 @@
 import { withOpenAlias } from '../utils/open-alias.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 /**
  * Data table — the column-visibility menu's disclosure and its anchoring.
@@ -42,7 +43,7 @@ export default function wirekitDataTableColumnMenu() {
         init() {
             // Anchor AFTER the menu has been rendered: it is x-show'd, so at the
             // moment `open` flips it still has no box to measure.
-            this.$watch('isOpen', (isOpen) => {
+            watchCurrent(this, 'isOpen', (isOpen) => {
                 if (isOpen) {
                     this.$nextTick(() => {
                         this.place();

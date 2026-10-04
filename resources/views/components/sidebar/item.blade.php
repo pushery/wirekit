@@ -3,6 +3,10 @@
 @props([
     'href' => '#',
     'active' => false,
+    // What the active entry is to a screen reader: `page` for the page itself, the default,
+    // `location` for an entry that leads the section the page lies in, `true` for neither.
+    // The highlight is the same for all three.
+    'current' => 'page',
     'icon' => null,
     'submenu' => false,
     // A trailing counter/dot (an unread badge) — a count or short string renders a
@@ -35,6 +39,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.item', $attributes->getAttributes());
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -111,6 +117,7 @@
         : [];
 
     $active = BooleanProp::from($active, false);
+    $ariaCurrent = \Pushery\WireKit\WireKit::validateProp('sidebar.item', 'current', (string) $current, ['page', 'location', 'true']);
     $submenu = BooleanProp::from($submenu, false);
 
     // A caller may mark the item current with `data-current` in the attribute bag
@@ -252,15 +259,15 @@
      `focusable-trigger="false"` because the row is already focusable and already named;
      a second tab stop in front of every navigation entry would be the cure being worse.
 
-     `w-full` keeps the wrapper from narrowing the row it wraps. The `block` beside it
-     does not change the display: Tailwind emits `.inline-block` after `.block`, so the
-     tooltip's own `inline-block` wins that tie. --}}
+     `w-full` keeps the wrapper from narrowing the row it wraps. No display class sits beside
+     it: the tooltip keeps its own `inline-block`, and a second one in this attribute would be
+     decided by the stylesheet's order, not by the attribute. --}}
 @if($collapsible)
     <x-wirekit::tooltip
         :text="trim(strip_tags((string) $slot))"
         placement="right"
         focusable-trigger="false"
-        class="block w-full"
+        class="w-full"
         {{-- `$data`, not a bare `collapsed`. The rail state lives on the sidebar, and `@aware`
              answers with the nearest ancestor that was called with `collapsible`: that is the
              sidebar unless something between them was called with the name too, such as an

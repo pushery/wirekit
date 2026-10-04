@@ -27,7 +27,10 @@
         // stacked and grid list in every application from 1rem to 0.75rem. `--gap-wk-lg` IS
         // 1rem, so nothing moves and the gap becomes adjustable.
         'stacked' => 'display: flex; flex-direction: column; gap: var(--gap-wk-lg, 1rem);',
-        'grid' => 'display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap-wk-lg, 1rem);',
+        // The columns of `grid` are in dist/wirekit.css, under `dl[data-layout="grid"]`: two, and
+        // one on a narrow screen. An inline style cannot change at a breakpoint, and with the
+        // columns written here the list stayed at two on a phone.
+        'grid' => 'display: grid; gap: var(--gap-wk-lg, 1rem);',
         // `summary` is the totals shape: an invoice subtotal block, a cart
         // summary, an order overview. The LABEL takes whatever width is left
         // over; the VALUE is as wide as its own content and sits flush right,

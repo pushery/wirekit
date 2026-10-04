@@ -82,6 +82,9 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'cursor-pointer select-none',
+        // The kit's focus ring, standing off the pill like a button's, rather than the browser's,
+        // which follows neither the ring tokens nor a preset.
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
     ]), $scope);
 
     $stateClasses = $active

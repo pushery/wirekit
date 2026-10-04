@@ -123,6 +123,7 @@ export default function wirekitLightbox(config = {}) {
         _pendingTrigger: null,
         _returnTo: null,
         _triggerNoter: null,
+        _leaveHandler: null,
 
         init() {
             host = this;
@@ -149,6 +150,16 @@ export default function wirekitLightbox(config = {}) {
                 setTimeout(() => { this._pendingTrigger = null; }, 0);
             };
             this.$el?.addEventListener?.('click', this._triggerNoter, true);
+
+            // Close when the page is left, by a link in a caption or any other way: the scroll
+            // lock holds the page at 0 until it is released, and the browser records the position
+            // for Back after `pagehide`. See the same listener in `utils/overlay.js`.
+            this._leaveHandler = () => {
+                if (this.isOpen) {
+                    this.close();
+                }
+            };
+            window.addEventListener('pagehide', this._leaveHandler);
         },
 
         /**
@@ -337,6 +348,10 @@ export default function wirekitLightbox(config = {}) {
             if (this._triggerNoter) {
                 this.$el?.removeEventListener?.('click', this._triggerNoter, true);
                 this._triggerNoter = null;
+            }
+            if (this._leaveHandler) {
+                window.removeEventListener('pagehide', this._leaveHandler);
+                this._leaveHandler = null;
             }
             this._returnTo = null;
             this._releasePageInert();

@@ -136,6 +136,7 @@ Set
 Static
 TOKEN
 Tailwind
+The
 Validate
 WCAG
 WireKit::resolveAnimateIn($animateIn,
@@ -146,6 +147,8 @@ WireKit::validateProp('cta',
 ['default',
 ['md',
 ['sm',
+[--color-wk-ring-offset:transparent]',
+[--color-wk-ring:var(--color-wk-accent-fg)]
 [1,
 \Pushery\WireKit\WireKit::warnUnknownProps('cta',
 ])
@@ -165,6 +168,8 @@ WireKit::validateProp('cta',
 `w-full`
 `wk-cta`
 a
+accent
+accent's
 action
 action,
 against
@@ -204,6 +209,7 @@ class="flex
 class="max-w-[var(--size-wk-container-md)]
 class="text-[length:var(--text-wk-2xl,1.5rem)]
 class="text-[length:var(--text-wk-lg)]
+color
 component
 component's
 content
@@ -223,6 +229,7 @@ docs/extending/spine-contract.md
 document
 does
 does.
+does:
 drops
 early.
 element,
@@ -231,14 +238,18 @@ enum.
 establishes
 every
 fallback
+fill
+filled
 first-allowed
 flags
 flex-row
 flex-wrap
 flipped
+focus
 font-[number:var(--font-wk-heading-weight)]
 footer.blade.php
 for
+foreground
 from
 full
 full-width
@@ -268,6 +279,7 @@ invalid
 invisible
 is
 it
+it,
 it.
 its
 joins
@@ -320,6 +332,7 @@ own
 page
 page-edge
 presentational
+preset.
 preview
 prod).
 produce
@@ -340,6 +353,7 @@ resolves
 result
 reveal
 reveal).
+ring
 rule
 run
 screens.
@@ -349,6 +363,7 @@ section.
 sets
 shape
 shown
+sits
 sits,
 skipped
 sm
@@ -371,7 +386,7 @@ surrounding
 sweep
 tag
 tags
-text-[color:var(--color-wk-accent-fg)]',
+text-[color:var(--color-wk-accent-fg)]
 text-[color:var(--color-wk-text)]',
 than
 that

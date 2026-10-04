@@ -104,6 +104,7 @@
 <div
     @unless($attributes->has('role')) role="group" @endunless
     @if($ariaLabel) aria-label="{{ $ariaLabel }}" @endif
+    @if($sticky) data-wk-scroll-inset="top" @endif
     {{ $attributes->class([$baseClasses]) }}
 >
     {{-- Leading slot (search, primary controls).

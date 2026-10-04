@@ -26,6 +26,10 @@
     'family' => 'sans',
     // Figures of one width, so a column of amounts, dates or counts lines up digit for digit.
     'tabular' => false,
+    // A reading width for running text, such as a page's introduction under its title: `default`
+    // keeps to `--measure-wk` (about 65 characters) and `wide` to `--measure-wk-wide` (about 78),
+    // as on `prose`. null runs as wide as the container, which is right in a table cell or a card.
+    'measure' => null,
     'as' => 'p',
     'scope' => null,
 ])
@@ -145,6 +149,13 @@
         'normal', null => 'leading-[var(--font-wk-line-height,1.5)]',
     };
 
+    // Literal arms, as for the other props here: an assembled class has no rule behind it.
+    $measureClasses = match ($measure === null ? null : WireKit::validateProp('text', 'measure', (string) $measure, ['default', 'wide', 'none'])) {
+        'default' => 'max-w-[var(--measure-wk)]',
+        'wide' => 'max-w-[var(--measure-wk-wide)]',
+        'none', null => '',
+    };
+
     $classes = WireKit::resolveClasses('text', 'base', implode(' ', array_filter([
         $familyClasses,
         $tabular ? 'tabular-nums' : '',
@@ -156,6 +167,7 @@
         $truncateClasses,
         $lineClampClasses,
         $breakClasses,
+        $measureClasses,
         $wrap ? '' : 'whitespace-nowrap',
     ])), $scope);
 
@@ -164,6 +176,7 @@
     $as = \Pushery\WireKit\WireKit::tagName('text', (string) $as);
 @endphp
 
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
-    {{ $slot }}
-</{{ $as }}>
+{{-- The slot sits against both tags. A line break and an indent around it are part of the
+     element's content, and a caller who keeps a user's own line breaks with `white-space`
+     set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one. --}}
+<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</{{ $as }}>

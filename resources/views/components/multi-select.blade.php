@@ -32,6 +32,9 @@
     'announceError' => null,
     'label' => null,
     'hint' => null,
+    // Explained in a tooltip from a question mark beside the label, and read as the
+    // field's description (partials/field-help).
+    'help' => null,
     'error' => null,
     'options' => [],
     'value' => [],          // option keys to pre-select on load (array or comma-separated string)
@@ -63,7 +66,7 @@
     'ariaLabel' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -121,7 +124,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 
     // When a parent <x-wirekit::field label="..."> wraps this component, the
     // field-emitted <label for="$id"> doesn't reach the internal combobox
@@ -129,12 +132,20 @@
     // an unlabeled form element. We synthesize an aria-label fallback —
     // explicit `ariaLabel` prop wins, then the field's `label` prop (passed
     // down via attributes scan), then the `name`/`placeholder` as last resort.
-    $resolvedAriaLabel = $ariaLabel ?? $attributes->get('aria-label') ?? $label ?? $placeholder ?? $name;
+    $resolvedAriaLabel = $ariaLabel ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $label ?? $placeholder ?? $name;
 
     // On the text field the last two fallbacks step aside for a caller's `id`: the id is there
     // so a label of the caller's can reach the field, and an aria-label would win over that
     // label. The list and the result group keep the full chain; they are not the field.
-    $fieldAriaLabel = $ariaLabel ?? $attributes->get('aria-label') ?? $label ?? ($callerId ? null : ($placeholder ?? $name));
+    // Inside a labeled field the field's label names the text field by `for`, and the list and
+    // the result group by reference, where the fallbacks above would name them after the
+    // placeholder (Support\FieldControl). Not when this component is named by its own label or
+    // an aria-label, which win as they do anywhere else.
+    $fieldLabelId = $ariaLabel === null && \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') === null && ! filled($label) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel($fieldId)
+        : null;
+
+    $fieldAriaLabel = $ariaLabel ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $label ?? ($callerId || $fieldLabelId !== null ? null : ($placeholder ?? $name));
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -195,32 +206,26 @@
 
     // Dropdown option classes
     /*
-     * The two appearance branches of an option row, resolved HERE rather than
+     * The appearance of the row the arrow keys are on, resolved HERE rather than
      * written into the runtime binding below.
      *
      * A class string that only ever exists inside `:class="…"` is out of reach of
      * WireKit::scope(): resolveClasses runs at render time and can be overridden per
      * scope, an Alpine expression cannot. Same shape as segmented-control's selected /
      * unselected segments, for the same reason.
+     *
+     * The dropdown has no branch for a chosen option, because it has no chosen row: a
+     * choice leaves the list and shows as a pill in the field, with its own remove
+     * button. The list layout keeps every option and says which are chosen with a
+     * checkbox.
      */
     $optionHighlightedClasses = WireKit::resolveClasses('multi-select', 'option-highlighted', implode(' ', [
         'bg-[var(--color-wk-bg-muted)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
-    // A selected option is marked twice: by the selected weight and by the check at the end
-    // of its row. The check is ink, so it holds in grayscale and in forced colors, and it is
-    // what keeps the choice visible when a theme sets `--font-wk-selected-weight` to the body
-    // weight. Without it the weight would be the only mark on the row, and the highlight
-    // tint is the hover tint.
-    $optionSelectedClasses = WireKit::resolveClasses('multi-select', 'option-selected', implode(' ', [
-        'font-[number:var(--font-wk-selected-weight)]',
-    ]), $scope);
-
-    $optionCheckClasses = WireKit::resolveClasses('multi-select', 'option-check', 'h-4 w-4 shrink-0', $scope);
-
-    // Every row lays its parts out in a line, so the check sits at the end whatever the label
-    // holds, and a row with a medium or a description keeps the same layout.
+    // Every row lays its parts out in a line, so a row with a medium or a description keeps the
+    // same layout as one with a label alone.
     $optionClasses = implode(' ', [
         'flex items-center gap-[var(--gap-wk-sm)]',
         'p-[var(--padding-wk-y-sm)]',
@@ -294,6 +299,10 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+    // The field's help, after its own message: what the field is for. Only beside a label,
+    // which is where its hidden copy is rendered.
+    $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Encode options for Alpine — convert to array of {value, label} objects.
     //
@@ -348,6 +357,10 @@
         $optionUses = ['media' => true, 'descriptions' => true];
     }
     $richRows = $optionUses['media'] || $optionUses['descriptions'];
+    // An option in another language than the page names it on its row, its pill and its entry
+    // in the list of chosen values (WCAG 3.1.2). The bindings are only written when some option
+    // has a `lang`, or the server sends the rows, so every other list renders as it did.
+    $optionsCarryLang = $server || collect($encodedOptions)->contains(static fn (array $option): bool => isset($option['lang']));
 
     // Normalize the `value` prop to an array of string option keys for
     // pre-selection. Accepts an array (['php', 'js']) or a comma-separated
@@ -401,7 +414,7 @@
         // is the only thing a listener hears, and it BEATS the specific message the server
         // sent — the whole point of the arbitration is that a specific message wins, and it
         // cannot run against a region nobody pointed at.
-        'errorRegion' => '#'.$id.'-error',
+        'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
         'action' => $optimistic,
         'args' => (array) \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -424,7 +437,7 @@
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- `x-modelable` is what makes `wire:model` work here, and without it the control
@@ -447,10 +460,15 @@
         {{ $attributes->except('aria-describedby')->class(['relative']) }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         x-modelable="selected"
-        {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
-        x-data="wirekitMultiSelect({ options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, fieldId: {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
+        {{-- The value and the options travel on attributes of their own, so `x-data` renders the
+             same on every update: a morph that changed it would have Alpine reset the component
+             to the new expression and initialize it again, emptying the selection. The factory
+             reads both once and follows Livewire's later renders of them. In server mode the
+             options are the search results on `data-wk-server-options`. --}}
+        x-data="wirekitMultiSelect({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, fieldId: {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
         @if($listLayout) data-wk-multi-select-layout="list" @endif
-        @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
+        data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json($selectedValues) }}"
+        @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @else data-wk-options="{{ \Pushery\WireKit\Support\AlpinePayload::json($encodedOptions) }}" @endif
         @click.away="dropdownOpen = false"
         @keydown.escape="escapeDropdown($event)"
     >
@@ -495,14 +513,14 @@
             <div
                 id="{{ $id }}-results"
                 role="group"
-                aria-label="{{ $resolvedAriaLabel }}"
+                @if($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @else aria-label="{{ $resolvedAriaLabel }}" @endif
                 @if($server) x-bind:aria-busy="searchAriaBusy()" @endif
                 class="mt-[var(--space-wk-xs)] [overflow-wrap:anywhere]"
             >
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none" style="list-style: none; margin: 0; padding: 0;">
                     <template x-for="(opt, idx) in listOptions" :key="opt.value">
                         <li data-wk-prose-skip>
-                            <label class="{{ $listRowClasses }}">
+                            <label class="{{ $listRowClasses }}"@if($optionsCarryLang) :lang="opt.lang"@endif>
                                 <input
                                     type="checkbox"
                                     class="peer sr-only"
@@ -544,12 +562,15 @@
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none flex flex-col gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;">
                     <template x-for="(val, i) in selected" :key="'chosen-'+val">
                         <li data-wk-prose-skip class="{{ $listChosenClasses }}">
-                            <span class="min-w-0" x-text="pillLabel(val)"></span>
+                            <span class="min-w-0" x-text="pillLabel(val)"@if($optionsCarryLang) :lang="getLang(val)"@endif></span>
+                            {{-- runListRemoval() under the optimistic layer, for the same reason as
+                                 the pills' runRemoval(): the removal is a server mutation like a pick,
+                                 and focus still moves to the button that takes this one's place. --}}
                             <button
                                 type="button"
                                 data-wk-multi-select-remove
                                 @if($disabled) disabled @endif
-                                @click="{{ $optimisticConfig ? 'run(nextWith(val))' : 'removeFromList(val)' }}"
+                                @click="{{ $optimisticConfig ? 'runListRemoval(val)' : 'removeFromList(val)' }}"
                                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
                                 class="wk-touch-target relative p-1 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                             >
@@ -563,10 +584,13 @@
         {{-- Input container with pills. `wk-field-frame` is outside `resolveClasses()` on purpose:
              on a coarse pointer the frame takes the 44px touch floor and the text input inside gives
              its own up, and a developer who restyles the base classes must not lose that. --}}
+        {{-- A press on a pill's remove button is left out by name rather than stopped at the
+             button: it must not open the list, and it still has to reach the document, where
+             a listener the page delegates and the `click.outside` of another open popup hear it. --}}
         <div
             x-ref="field"
             class="{{ $containerClasses }} {{ $stateClasses }} wk-field-frame"
-            @click="focusAndOpen()"
+            @click="$event.target.closest('[data-wk-pill-remove]') || focusAndOpen()"
         >
             {{-- Selected value pills --}}
             <template x-for="(val, i) in selected" :key="'pill-'+val">
@@ -582,13 +606,15 @@
                             ])
                         </template>
                     @endif
-                    <span x-text="pillLabel(val)"></span>
+                    <span x-text="pillLabel(val)"@if($optionsCarryLang) :lang="getLang(val)"@endif></span>
                     <button
                         type="button"
-                        {{-- run(nextWith(val)), not deselect(val): removing a pill is
-                             the same server mutation as picking one, so it takes
-                             the same path and is undone the same way. --}}
-                        @click.stop="{{ $optimisticConfig ? 'run(nextWith(val))' : 'deselect(val)' }}"
+                        {{-- runRemoval(), not deselect(), under the optimistic layer: removing
+                             a pill is the same server mutation as picking one, so it goes through
+                             run(nextWith(val)) and is undone the same way. Both put focus on the
+                             pill that takes this one's place. --}}
+                        data-wk-pill-remove
+                        @click="{{ $optimisticConfig ? 'runRemoval(val)' : 'deselect(val)' }}"
                         @if($disabled) disabled @endif
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
                         class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
@@ -607,11 +633,16 @@
                 x-ref="filterInput"
                 @if($disabled) disabled @endif
                 x-model="filter"
-                @focus="dropdownOpen = true"
+                {{-- Opens the list, except for the focus the component places after the last
+                     value was removed. --}}
+                @focus="onFilterFocus()"
                 {{-- A fresh filter is a fresh list, so the old index means
                      nothing and the highlight restarts at the top. --}}
                 @input="openAndReset()"
                 @keydown.backspace="onBackspace($event)"
+                {{-- Tab leaves the field, and an open list leaves with it. The key keeps its
+                     meaning: the focus moves on by itself. --}}
+                @keydown.tab="dropdownOpen = false"
                 {{-- The combobox keyboard model. Focus never leaves this input —
                      the options are `role="option"` with no tab stop — so these
                      keys plus `aria-activedescendant` below are the ONLY way a
@@ -688,8 +719,17 @@
             x-ref="panel"
             id="{{ $id }}-listbox"
             role="listbox"
-            aria-label="{{ $resolvedAriaLabel }}"
+            {{-- Out of the tab order: the input keeps the focus and names the active option through
+                 `aria-activedescendant`. In Chromium a list that scrolls and holds nothing focusable
+                 is a tab stop of its own. --}}
+            tabindex="-1"
+            @if($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @else aria-label="{{ $resolvedAriaLabel }}" @endif
             aria-multiselectable="true"
+            {{-- A press on the list with a mouse or a pen leaves the focus in the filter input: a
+                 row cannot take it, so it would fall to the page, and the next Tab would start
+                 from there. A finger is left alone (utils/option-press.js). --}}
+            @pointerdown="notePress($event)"
+            @mousedown="keepFocusOnPress($event)"
             {{-- The results on screen answer an older search while a newer one is out. --}}
             @if($server) x-bind:aria-busy="searchAriaBusy()" @endif
             {{-- `[overflow-wrap:anywhere]` lets an option name with no space or hyphen break inside the
@@ -706,19 +746,17 @@
                          `aria-activedescendant` on the input above. Both read
                          `optionId()`, so they cannot drift apart. --}}
                     :id="optionId(idx)"
-                    :aria-selected="selected.includes(opt.value) ? 'true' : 'false'"
+                    {{-- Every row is an option not chosen yet: a choice leaves the list and
+                         shows as a pill in the field. --}}
+                    aria-selected="false"
+                    @if($optionsCarryLang) :lang="opt.lang" @endif
                     {{-- `data-active` on the row the arrow keys are on, for the forced-colors
                          mark the stylesheet draws through `wk-listbox-option`. --}}
                     :data-active="idx === highlight ? '' : null"
                     class="wk-listbox-option {{ $optionClasses }}"
-                    {{-- One binding, because an attribute can only be bound
-                         once, and the two conditions are independent: a row can
-                         be highlighted, selected, both or neither. The strings
-                         come from the resolver above, so a scope can restyle
-                         them the way it restyles every other class here. --}}
-                    :class="(idx === highlight ? {{ \Pushery\WireKit\Support\AlpinePayload::string($optionHighlightedClasses) }} : '')
-                        + ' '
-                        + (selected.includes(opt.value) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($optionSelectedClasses) }} : '')"
+                    {{-- The string comes from the resolver above, so a scope can
+                         restyle it the way it restyles every other class here. --}}
+                    :class="idx === highlight ? {{ \Pushery\WireKit\Support\AlpinePayload::string($optionHighlightedClasses) }} : ''"
                     {{-- Pointing at a row makes it the active one, so a pointer
                          and the arrow keys leave the highlight in the same
                          place instead of each keeping their own idea of it. --}}
@@ -748,10 +786,6 @@
                     @else
                         <span class="min-w-0 flex-1" x-text="opt.label"></span>
                     @endif
-                    {{-- The check of a selected option. `invisible` rather than removed, so the
-                         column is there on every row and a label keeps its width when it is
-                         picked. `aria-hidden`: the option already says `aria-selected`. --}}
-                    <svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="selected.includes(opt.value) ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                 </div>
             </template>
 

@@ -1,7 +1,8 @@
 {{-- optimistic-ui: candidate — the quantity field is the only asynchronous surface here, and
      `number-input` already carries `optimistic`/`optimisticArgs`. Deliberately NOT opted in yet:
      the optimistic contract has to be satisfied first, and a rollback that moves focus or
-     announces twice is worse than no optimism at all. --}}
+     announces twice is worse than no optimism at all. With `stepper="buttons"` nothing is shown
+     ahead of the application either: the quantity there is the one it answered with. --}}
 @props([
     // The product name. Also the thing the remove control has to say, which is why it is a prop
     // rather than a slot: ten controls that all announce "Remove" cannot be told apart by anyone
@@ -50,6 +51,19 @@
     // price-marking law wants it; `unitMeasure` is the reference, "kg" or "1 pair".
     'unitPrice' => null,
     'unitMeasure' => null,
+    // `compact` sets the line in two rows for a narrow column, a till's for one: the name on one
+    // line beside the line total, and under them the variant and the unit price on the left, the
+    // quantity and the line's actions on the right. `default` is the row a shop's cart shows.
+    'layout' => 'default',
+    // `buttons` shows − and + with the quantity between them, and each press dispatches an event
+    // for the application to act on: `wirekit:cart-decrement` or `wirekit:cart-increment`, with
+    // the line's key. Every press counts, and the quantity shown is the one the application
+    // answers with. `field` is the number field a `wire:model` binds.
+    'stepper' => 'field',
+    // The size of the line total, on the scale of `price`: `xs` to `xl`. A screen read across a
+    // counter looks for what a line costs first, and at the default size the total stands no
+    // larger than the name. Without it the total takes the size `price` is configured with.
+    'totalSize' => null,
     'scope' => null,
 ])
 
@@ -66,6 +80,28 @@
     $removable = BooleanProp::from($removable, true);
     $minorUnits = BooleanProp::from($minorUnits, false);
     $readonly = BooleanProp::from($readonly, false);
+    $layoutValue = WireKit::validateProp('cart-item', 'layout', $layout, ['default', 'compact']);
+    $stepperValue = WireKit::validateProp('cart-item', 'stepper', $stepper, ['field', 'buttons']);
+    $totalSizeValue = $totalSize === null
+        ? config('wirekit.components.price.size', 'md')
+        : WireKit::validateProp('cart-item', 'totalSize', $totalSize, ['xs', 'sm', 'md', 'lg', 'xl']);
+
+    // The column a thumbnail takes: a picture from `image`, or the `media` slot, which wins. The
+    // slot is for what is not a URL, the painted placeholder of an article without a photo, so
+    // that the names of a list with and without pictures start in one column. There is no
+    // automatic placeholder, as on `product-card`: a line that has no picture and no slot has no
+    // column.
+    $hasMedia = isset($media) && $media->hasActualContent();
+
+    // The bounds of the press buttons. A − at `min` would ask for a quantity the line refuses, so
+    // it is disabled there, as the number field's is. A caller whose − on the last piece takes the
+    // line out passes `:min="0"`.
+    $atMin = $min !== null && (float) $quantity <= (float) $min;
+    $atMax = $max !== null && (float) $quantity >= (float) $max;
+
+    // One live region per row: the line total, except where a press moves the quantity itself,
+    // which is then the region (partials/cart-item-quantity).
+    $totalLive = $readonly || $stepperValue !== 'buttons';
 
     // The quantity as a reader sees it: in the locale's own digits and separators, "0,532 kg"
     // for a weighed article in German, with a no-break space so the unit never wraps away.
@@ -104,6 +140,15 @@
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
+    // The compact line: two rows in one column beside an optional thumbnail, at a tighter rhythm,
+    // because a till lists more lines than a shop's cart and its column is narrower.
+    $compactClasses = WireKit::resolveClasses('cart-item', 'compact', implode(' ', [
+        'flex items-start gap-[var(--gap-wk-sm)]',
+        'py-[var(--padding-wk-y-sm)]',
+        'font-[family-name:var(--font-wk-sans)]',
+        'text-[color:var(--color-wk-text)]',
+    ]), $scope);
+
     $nameClasses = WireKit::resolveClasses('cart-item', 'name', implode(' ', [
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[length:var(--text-wk-md)]',
@@ -115,14 +160,99 @@
     ]), $scope);
 @endphp
 
+@if($layoutValue === 'compact')
+{{-- Two rows for a narrow column: the name beside what the line costs, then what it is and how
+     many on one row. The name stays on one line and ends in an ellipsis; its full text is still
+     the element's text, so a screen reader reads all of it, and `title` shows it to a pointer. --}}
+<li data-wk-prose-skip
+    data-wk-cart-item
+    data-wk-cart-item-layout="compact"
+    id="{{ $itemKey }}"
+    {{ $rowAttributes->class([$compactClasses]) }}
+>
+    @if($hasMedia || $image)
+        {{-- The height of a control, so the thumbnail follows the size scale with the stepper. --}}
+        <div data-wk-cart-item-media class="shrink-0 w-[var(--size-wk-md)]">
+            @if($hasMedia)
+                {{ $media }}
+            @else
+                <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded="md" />
+            @endif
+        </div>
+    @endif
+
+    <div class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
+        <div class="flex min-w-0 items-baseline justify-between gap-[var(--gap-wk-sm)]">
+            @if($name)
+                <span class="{{ $nameClasses }} min-w-0 truncate" title="{{ $name }}">{{ $name }}</span>
+            @endif
+
+            @if($lineTotal !== null)
+                <span data-wk-cart-item-total @if($totalLive) aria-live="polite" @endif class="shrink-0 text-end">
+                    <x-wirekit::price
+                        :amount="$lineTotal"
+                        :size="$totalSizeValue"
+                        :currency="$currency"
+                        :minor-units="$minorUnits"
+                    />
+                </span>
+            @endif
+        </div>
+
+        {{-- `flex-wrap` for the column that is narrower still: the controls then take a row of
+             their own under what the line is, rather than pushing it to a sliver. --}}
+        <div class="flex flex-wrap items-center justify-between gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]">
+            <div class="flex min-w-0 flex-1 flex-col {{ $metaClasses }}">
+                @if($slot->hasActualContent())
+                    <span class="truncate">{{ $slot }}</span>
+                @endif
+
+                @if($price !== null)
+                    <span data-wk-cart-item-unit-price>
+                        <x-wirekit::price
+                            :amount="$price"
+                            :base="$onSale ? $compareAt : null"
+                            :unit-price="$unitPrice"
+                            :unit-measure="$unitMeasure"
+                            :currency="$currency"
+                            :minor-units="$minorUnits"
+                            size="sm"
+                        />
+                    </span>
+                @endif
+            </div>
+
+            <div class="flex shrink-0 items-center gap-[var(--gap-wk-xs)]">
+                @include('wirekit::components.partials.cart-item-quantity')
+
+                @if(isset($actions) && $actions->hasActualContent())
+                    <div data-wk-cart-item-actions class="flex shrink-0 items-center gap-[var(--gap-wk-xs)]">{{ $actions }}</div>
+                @endif
+
+                {{-- The slot is named here, where the partial is included, so the catalog reads it
+                     as this component's. The partial shares the scope either way. --}}
+                @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null])
+            </div>
+        </div>
+
+        @if(isset($details) && $details->hasActualContent())
+            <div data-wk-cart-item-details class="{{ $metaClasses }}">{{ $details }}</div>
+        @endif
+    </div>
+</li>
+@else
 <li data-wk-prose-skip
     data-wk-cart-item
     id="{{ $itemKey }}"
     {{ $rowAttributes->class([$classes]) }}
 >
-    @if($image)
-        <div class="shrink-0 w-16">
-            <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded="md" />
+    @if($hasMedia || $image)
+        <div data-wk-cart-item-media class="shrink-0 w-16">
+            @if($hasMedia)
+                {{ $media }}
+            @else
+                <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded="md" />
+            @endif
         </div>
     @endif
 
@@ -174,87 +304,29 @@
          Below that width it takes a row of its own; above it there is room, nothing wraps,
          and a wrap only happens where the content already did not fit. --}}
     <div class="flex shrink-0 flex-wrap items-center gap-[var(--gap-wk-md)] @max-lg/wk-cart-list:w-full @max-lg/wk-cart-list:justify-between">
-        {{-- No width of our own, and the utility that would set one is deliberately not named:
-             Tailwind scans Blade comments too, so writing it would emit the class into the
-             compiled CSS with nothing rendering it.
-
-             A fixed box would be a guess, and the stepper's own row is wider at `size="lg"`
-             than a box sized for the default, so it would be clipped in every cart line,
-             silently, because the overflow sits inside a clipping ancestor rather than on the
-             page. The component already knows its size; imposing a second one can only ever
-             disagree. --}}
-        @if($readonly)
-            {{-- The quantity as text. The stepper's own label is what named it before, so the
-                 same word names it here, for a reader that does not see the column it sits in. --}}
-            <span data-wk-cart-item-quantity class="shrink-0 tabular-nums text-[length:var(--text-wk-md)]">
-                <span class="sr-only">{{ __('wirekit::Quantity') }} </span>{{ $quantityText }}
-            </span>
-        @else
-            <div class="shrink-0">
-                <x-wirekit::number-input
-                    :label="__('wirekit::Quantity')"
-                    hide-label
-                    :value="$quantity"
-                    :min="$min"
-                    :max="$max"
-                    :step="$step"
-                    :size="$size"
-                    :suffix="$unit"
-                    {{-- Written against `$attributes` itself: inside a component tag, Blade only reads an
-                         echo of `$attributes` as the caller's bag, and any other variable leaves the whole
-                         tag uncompiled. --}}
-                    {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
-                />
-            </div>
-        @endif
+        @include('wirekit::components.partials.cart-item-quantity')
 
         {{-- The line total. `aria-live="polite"` sits HERE and on nothing else in the row: a
              quantity change moves this number and the cart's grand total, and announcing both
-             speaks twice for one click. The line is the one the person just acted on. --}}
+             speaks twice for one click. The line is the one the person just acted on. With
+             `stepper="buttons"` the quantity is the region instead (see the partial). --}}
         @if($lineTotal !== null)
-            <span data-wk-cart-item-total aria-live="polite" class="min-w-[6ch] text-end">
+            <span data-wk-cart-item-total @if($totalLive) aria-live="polite" @endif class="min-w-[6ch] text-end">
                 <x-wirekit::price
                     :amount="$lineTotal"
+                    :size="$totalSizeValue"
                     :currency="$currency"
                     :minor-units="$minorUnits"
                 />
             </span>
         @endif
 
-        @if(isset($remove) && $remove->hasActualContent())
-            {{ $remove }}
-        @elseif($removable && ! $readonly)
-            {{-- `x-data` on the trigger itself, because Alpine never installs a handler on an
-                 element with no scope and the failure is silent — the button looks fine and does
-                 nothing. The accessible name carries the product, so ten of these in one cart are
-                 ten different controls to anyone using voice control. --}}
-            <span x-data>
-                {{-- The glyph goes in `iconLeft` and the label in the default slot, where
-                     `icon-only` hides it visually and keeps it as the accessible name. `button`
-                     declares `iconOnly` and not `icon`, so an `icon` attribute would render as a
-                     plain attribute with no glyph at all, and the alias for this gesture is
-                     `close`, not a heroicon spelling. That is also why there is no `aria-label`
-                     here: two names on one control is one too many, and the slot is the one the
-                     component supports. --}}
-                <x-wirekit::button
-                    intent="neutral"
-                    surface="ghost"
-                    :size="$size === 'lg' ? 'md' : 'sm'"
-                    icon-only
-                    {{-- `AlpinePayload::from()`, not `Js::from()`. Under the CSP build the
-                         latter emits `JSON.parse(…)` for anything non-scalar and `\u` escapes for
-                         anything non-ASCII — the evaluator cannot resolve the call, and the
-                         tokenizer drops the backslash. Either way the directive would never
-                         evaluate and this button would silently do nothing, in the build a
-                         CSP-strict application ships. --}}
-                    x-on:click="$dispatch('wirekit:cart-remove', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
-                >
-                    <x-slot:iconLeft>
-                        <x-wirekit::icon name="close" size="sm" aria-hidden="true" />
-                    </x-slot:iconLeft>
-                    {{ $name ? __('wirekit::Remove :name', ['name' => $name]) : __('wirekit::Remove') }}
-                </x-wirekit::button>
-            </span>
+        @if(isset($actions) && $actions->hasActualContent())
+            <div data-wk-cart-item-actions class="flex shrink-0 items-center gap-[var(--gap-wk-xs)]">{{ $actions }}</div>
         @endif
+
+        {{-- Named here for the catalog, as in the compact layout above. --}}
+        @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null])
     </div>
 </li>
+@endif

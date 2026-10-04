@@ -19,8 +19,15 @@
  */
 import { position } from '../utils/floating.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
+import { optionPressState } from '../utils/option-press.js';
 import { foldForSearch } from '../utils/search-fold.js';
 import { serverSearchState } from '../utils/server-search.js';
+import { watchModelEvents } from '../utils/model-events.js';
+import { watchCurrent } from '../utils/watch-current.js';
+import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+
+/** The attribute that carries the options outside server mode; see init(). */
+const OPTIONS_ATTRIBUTE = 'data-wk-options';
 
 export default function wirekitMultiSelect(config = {}) {
     return {
@@ -49,6 +56,9 @@ export default function wirekitMultiSelect(config = {}) {
 
         // markMediaBroken() and showsInitials(), for an avatar whose photo fails to load.
         ...optionMediaState(),
+        // notePress() and keepFocusOnPress(): a press on the list with a mouse or a pen leaves
+        // the focus in the filter input.
+        ...optionPressState(),
         // `search-change`, the options that follow the server, and the labels a chosen value
         // keeps after a new search replaced its list. Inert without `server`.
         ...serverSearchState(config),
@@ -66,12 +76,49 @@ export default function wirekitMultiSelect(config = {}) {
         // still open). Keeps the fixed panel following its field on scroll/resize
         // without leaking listeners (every teardown path must call stop()).
         _stopAutoUpdate: null,
+        // `change` and `blur` on the root, which `wire:model` binds through `x-modelable`, so
+        // `wire:model.live.blur` and `.live.change` send when the reader chooses and when they
+        // leave (utils/model-events.js). Disposed in destroy().
+        _modelEvents: null,
+        // The observers that follow the server's value and options; see init(). Disconnected in
+        // destroy().
+        _stopServerValue: null,
+        _stopOptionsSync: null,
+        // Up while the component itself puts the focus on the filter input after the last value
+        // was removed, so that this one focus does not open the list; see `_focusFieldQuietly()`.
+        _quietFocus: false,
 
         init() {
+            // The value and, outside server mode, the options reach this component on attributes
+            // of the root rather than in `x-data`, so that attribute renders the same on every
+            // update. A morph that changed it would have Alpine reset the component to the new
+            // expression and initialize it again, which emptied the selection, and `wire:model.live`
+            // then sent the empty list to the server. They are read here and followed below. A
+            // value or options passed in `config`, as by a factory built outside Blade, come
+            // first. `$root` is checked rather than assumed: a test builds this factory with a
+            // stub that has no `getAttribute`.
+            const readAttribute = (name) => (typeof this.$root?.getAttribute === 'function' ? jsonValue(this.$root.getAttribute(name)) : undefined);
+
+            if (config.value === undefined) {
+                const value = readAttribute(WK_SERVER_VALUE_ATTRIBUTE);
+
+                if (Array.isArray(value)) {
+                    this.selected = value.map(String);
+                }
+            }
+
+            if (! Array.isArray(config.options) && ! this._server) {
+                const options = readAttribute(OPTIONS_ATTRIBUTE);
+
+                if (Array.isArray(options)) {
+                    this._options = options;
+                }
+            }
+
             // Position the panel each time it opens. It is `fixed` (to escape a
             // clipping card) and therefore needs an explicit anchor + width; see
             // _place(). $nextTick so the panel is in the DOM before measuring.
-            this.$watch('dropdownOpen', (open) => {
+            watchCurrent(this, 'dropdownOpen', (open) => {
                 if (open) {
                     this.$nextTick(() => this._place());
                 } else {
@@ -87,7 +134,7 @@ export default function wirekitMultiSelect(config = {}) {
             // scroll. $nextTick because Home and End can open the list and jump
             // in one keystroke, so the row for the new index is rendered by the
             // same flush that moved the index.
-            this.$watch('highlight', () => {
+            watchCurrent(this, 'highlight', () => {
                 this.$nextTick(() => this._revealHighlight());
             });
 
@@ -98,11 +145,54 @@ export default function wirekitMultiSelect(config = {}) {
                 this._options = options;
                 this.highlight = 0;
             });
+
+            // The root carries the binding, and the selection travels as the event's detail.
+            const root = this.$root;
+            this._modelEvents = watchModelEvents(root, () => root, { detail: () => [...this.selected] });
+
+            // A selection the server changed reaches the pills. One that holds the same values as
+            // the pills on screen, such as the reader's own picks coming back, needs nothing done.
+            this._stopServerValue = observeServerValue(root, (raw) => {
+                const value = jsonValue(raw);
+
+                if (! Array.isArray(value)) {
+                    return;
+                }
+
+                const next = value.map(String);
+
+                if (next.length === this.selected.length && next.every((v) => this.selected.includes(v))) {
+                    return;
+                }
+
+                this.selected = next;
+            });
+
+            // New options from the server replace the list, and the keyboard starts at the top
+            // again, as it does after a server search.
+            if (! this._server) {
+                this._stopOptionsSync = observeServerValue(root, (raw) => {
+                    const options = jsonValue(raw);
+
+                    if (! Array.isArray(options)) {
+                        return;
+                    }
+
+                    this._options = options;
+                    this.highlight = 0;
+                }, OPTIONS_ATTRIBUTE);
+            }
         },
 
         // Alpine teardown (Livewire morph / SPA nav): stop autoUpdate if the panel
         // was still open, since the $watch only fires on an open→closed CHANGE.
         destroy() {
+            this._stopServerValue?.();
+            this._stopServerValue = null;
+            this._stopOptionsSync?.();
+            this._stopOptionsSync = null;
+            this._modelEvents?.dispose();
+            this._modelEvents = null;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
             this._stopServerSearch();
@@ -140,9 +230,6 @@ export default function wirekitMultiSelect(config = {}) {
         },
 
         /**
-         * Get the label for a value.
-         */
-        /**
          * The options the list layout shows. A server search shows every result it was given and a
          * list in the browser every option the text matches, chosen ones included in both: there
          * a checkbox says whether an option is chosen, where the dropdown drops it from the rows.
@@ -174,6 +261,8 @@ export default function wirekitMultiSelect(config = {}) {
             } else {
                 this.selected.push(value);
             }
+
+            this._modelEvents?.commit();
         },
 
         /**
@@ -188,13 +277,43 @@ export default function wirekitMultiSelect(config = {}) {
                 return;
             }
 
+            this.selected.splice(idx, 1);
+            this._modelEvents?.commit();
+            this._focusAfterListRemoval(idx);
+        },
+
+        /**
+         * The same remove button under the optimistic layer nested here. The removal travels as
+         * `run(nextWith(value))`, like a pick, and focus moves where `removeFromList()` puts it,
+         * but only when the layer took the change: a refused run removed nothing, and the
+         * pressed button still holds focus.
+         *
+         * @param {string|number} value - The value whose remove button was pressed.
+         */
+        runListRemoval(value) {
+            const idx = this.selected.indexOf(value);
+
+            if (typeof this.run !== 'function' || idx < 0) {
+                return;
+            }
+
+            if (this.run(this.nextWith(value))) {
+                this._focusAfterListRemoval(idx);
+            }
+        },
+
+        /**
+         * Put focus on the list layout's remove button that took the removed one's place, or on
+         * the search field once the selection is empty.
+         *
+         * @param {number} idx - The position the removed value held.
+         */
+        _focusAfterListRemoval(idx) {
             // Resolved now, while the pressed button is still in the document. `$root` is found
             // by walking up from the element whose handler called in, which is this button, and
             // the removal takes it out of the list before the tick below runs: read there, the
             // walk reached nothing and the focus fell to the search field.
             const root = this.$root;
-
-            this.selected.splice(idx, 1);
 
             const place = () => {
                 const buttons = [...(root?.querySelectorAll?.('[data-wk-multi-select-remove]') ?? [])];
@@ -220,8 +339,20 @@ export default function wirekitMultiSelect(config = {}) {
             return template.replace('__COUNT__', String(count));
         },
 
+        /**
+         * Get the label for a value.
+         */
         getLabel(value) {
             return this._knownOption(value, this._options)?.label || value;
+        },
+
+        /**
+         * The language a chosen value's words are in, from its option's `lang`, or null for the
+         * page's own. A pill and the list of chosen values name it, as the option's row does
+         * (WCAG 3.1.2).
+         */
+        getLang(value) {
+            return this._knownOption(value, this._options)?.lang ?? null;
         },
 
         /**
@@ -300,6 +431,19 @@ export default function wirekitMultiSelect(config = {}) {
                 : null;
 
             return byId ?? this.$refs?.filterInput ?? null;
+        },
+
+        /**
+         * The filter input took the focus. A reader who tabs or clicks into the field is asking
+         * for the options, so the list opens. A focus this component placed after a removal is
+         * not (`_focusFieldQuietly()`), and the list then opens with the next key that asks.
+         */
+        onFilterFocus() {
+            if (this._quietFocus) {
+                return;
+            }
+
+            this.dropdownOpen = true;
         },
 
         /** Typing narrows the list, so the old index means nothing — start over. */
@@ -559,6 +703,7 @@ export default function wirekitMultiSelect(config = {}) {
             } else {
                 this.selected.push(value);
             }
+            this._modelEvents?.commit();
             this._afterToggle();
             this.$refs.filterInput?.focus();
         },
@@ -569,8 +714,8 @@ export default function wirekitMultiSelect(config = {}) {
          * The removal takes the focused element away with it, and nothing else
          * puts focus back. The button that calls this sits INSIDE the pill, the
          * pills are keyed by VALUE, so Alpine drops exactly the node holding
-         * focus — and the `@click.stop` on that button is there to keep the
-         * field's own `focusAndOpen()` from firing, so no other handler runs
+         * focus — and the field leaves a press on that button out of its own
+         * `focusAndOpen()` (`data-wk-pill-remove`), so no other handler runs
          * either. A destroyed active element leaves focus on `<body>`, which
          * starts the next Tab at the top of the document (WCAG 2.4.3). Same
          * shape and same treatment as tags-input's chip removal.
@@ -581,7 +726,30 @@ export default function wirekitMultiSelect(config = {}) {
             if (idx < 0) return;
 
             this.selected.splice(idx, 1);
+            this._modelEvents?.commit();
             this._focusAfterRemoval(idx);
+        },
+
+        /**
+         * Remove a pill through the optimistic layer nested here, and put focus
+         * where `deselect()` puts it.
+         *
+         * The change travels as `run(nextWith(value))`, a new array and the same
+         * server mutation as a pick, so it is undone the same way. Focus moves
+         * here, at the reader's press, and never in the layer's after-hook,
+         * which runs again when the server refuses. It moves only when the layer
+         * took the change: a refused run removed nothing, and the pressed button
+         * still holds focus. `run` belongs to the layer, the nearest scope that
+         * has it, as in tags-input's `_commit()`.
+         *
+         * @param {string|number} value - The value whose pill was pressed.
+         */
+        runRemoval(value) {
+            const idx = this.selected.indexOf(value);
+
+            if (typeof this.run !== 'function' || idx < 0) return;
+
+            if (this.run(this.nextWith(value))) this._focusAfterRemoval(idx);
         },
 
         /**
@@ -593,35 +761,72 @@ export default function wirekitMultiSelect(config = {}) {
          * new last one takes focus; an empty set leaves only the filter input,
          * which is where `toggle()` and `onBackspace()` both end up anyway.
          *
-         * NOT the filter input in every case, even though that is this
-         * component's usual resting place: the input's own `@focus` opens the
-         * dropdown, so sending every removal there pops the option list open on
-         * a gesture that was about taking a value away.
+         * The filter input takes it quietly (`_focusFieldQuietly()`): its own
+         * focus handler opens the dropdown, and that would pop the option list
+         * open on a gesture that was about taking a value away. For the same
+         * reason it is not the target while a pill is left.
          *
          * After a tick, because the pills are re-rendered from the array — a
          * query before the template has caught up finds the buttons as they
-         * were. The field element survives the removal (only the pill inside it
-         * is dropped), so it is resolved in the tick rather than cached; it goes
+         * were. The field element is resolved BEFORE the tick and the query runs
+         * in it: the field survives the removal (only the pill inside it is
+         * dropped), while the button the reader pressed does not. It goes
          * through `_fieldElement()` so a nested optimistic `x-data` cannot hide
          * the ref. Outside Alpine there is no tick and no DOM, so the guards make
          * this a no-op there rather than the throw a bare `this.$nextTick` would
          * be.
          */
         _focusAfterRemoval(index) {
+            // Both resolved now, while the pressed button is still in the document. Alpine
+            // resolves `$refs` and `$root` from the element whose expression called this, which
+            // is that button, and by the tick it has gone with its pill: a walk up from a
+            // detached node finds nothing, and focus stayed on `<body>`. The field and the
+            // filter input outlive the removal, so holding them is safe.
+            const field = this._fieldElement();
+            const filterInput = this.$refs?.filterInput;
             const place = () => {
-                const field = this._fieldElement();
                 const buttons = field && typeof field.querySelectorAll === 'function'
                     ? [...field.querySelectorAll('button')]
                     : [];
-                const target = buttons[index] ?? buttons[buttons.length - 1] ?? this.$refs?.filterInput;
+                const button = buttons[index] ?? buttons[buttons.length - 1];
 
-                if (target && typeof target.focus === 'function') target.focus();
+                if (button) {
+                    if (typeof button.focus === 'function') button.focus();
+
+                    return;
+                }
+
+                this._focusFieldQuietly(filterInput);
             };
 
             if (typeof this.$nextTick === 'function') {
                 this.$nextTick(place);
             } else {
                 place();
+            }
+        },
+
+        /**
+         * Put focus on the filter input without opening the list.
+         *
+         * The input's own focus handler opens the list, which is right for a reader who tabs or
+         * clicks into the field and wrong after a removal: that press took a value away and asked
+         * for no options. `focus()` dispatches its event before it returns, so the flag is up for
+         * exactly that one event and never swallows a focus the reader brings later.
+         *
+         * @param {HTMLElement|null|undefined} input - The filter input.
+         */
+        _focusFieldQuietly(input) {
+            if (! input || typeof input.focus !== 'function') {
+                return;
+            }
+
+            this._quietFocus = true;
+
+            try {
+                input.focus();
+            } finally {
+                this._quietFocus = false;
             }
         },
 
@@ -634,15 +839,6 @@ export default function wirekitMultiSelect(config = {}) {
             }
         },
 
-        /**
-         * Anchor the panel to the field.
-         *
-         * An `absolute` panel inside the field wrapper would be cut off at the edge
-         * of any clipping ancestor, a card for instance, because clipping is not a
-         * z-index question. Positioning it `fixed` against the field escapes that,
-         * and `matchReferenceWidth` gives it the field's width. `fitViewport` caps the height to the room actually available so a
-         * long list scrolls instead of running past the fold.
-         */
         /**
          * The field and the panel, resolved so that a nested `x-data` cannot hide them.
          *
@@ -680,6 +876,15 @@ export default function wirekitMultiSelect(config = {}) {
             return this.$refs?.field ?? this.$root?.querySelector?.('[x-ref="field"]') ?? null;
         },
 
+        /**
+         * Anchor the panel to the field.
+         *
+         * An `absolute` panel inside the field wrapper would be cut off at the edge
+         * of any clipping ancestor, a card for instance, because clipping is not a
+         * z-index question. Positioning it `fixed` against the field escapes that,
+         * and `matchReferenceWidth` gives it the field's width. `fitViewport` caps the height to the room actually available so a
+         * long list scrolls instead of running past the fold.
+         */
         async _place() {
             const field = this._fieldElement();
             const panel = this._panelElement();
@@ -698,6 +903,11 @@ export default function wirekitMultiSelect(config = {}) {
                 // Follow the field on scroll/resize; this is the panel the v2.19.0
                 // fixed-positioning switch made most visibly pin on scroll.
                 autoReposition: true,
+                // A framework update patches the teleported panel against its template, whose
+                // `style` carries none of what this call writes: the placement is gone while the
+                // panel stays open, with its box unchanged, so `autoReposition`, which watches
+                // boxes, sees nothing. This watches the attribute that is actually removed.
+                repairErasure: true,
             });
 
             // The placement can wait frames for the panel to get a box, and the list can

@@ -248,6 +248,7 @@ PARENT's
 PLAYING,
 PROP
 Pausing
+Previous
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 ROOT
@@ -262,6 +263,7 @@ Slide
 So
 Static
 TEMPLATE
+Tab
 Tailwind
 That
 The
@@ -276,6 +278,7 @@ WITH
 What
 WireKit::resolveClasses('carousel',
 WireKit::validateProp('carousel',
+With
 [
 ['1',
 ['horizontal',
@@ -330,6 +333,7 @@ a
 about
 above.
 absolutely
+absolutely,
 accent
 accessibility
 accessible
@@ -337,6 +341,7 @@ action
 actually
 added
 affordance,
+after
 against
 all,
 all.
@@ -384,6 +389,7 @@ autoplay
 autoplay:
 away,
 away.
+back
 back.
 bag
 baseline
@@ -392,6 +398,7 @@ basis.
 be
 beats
 because
+before
 before,
 being
 belongs
@@ -411,6 +418,7 @@ border-[var(--color-wk-border)]',
 border-[var(--color-wk-border-strong)]'"
 both
 bottom
+bottom;
 bound.
 bridge
 browser
@@ -471,6 +479,7 @@ color,
 color:
 colored
 column,
+comes
 compiles
 compliant
 component
@@ -677,6 +686,8 @@ last
 later
 leads
 leaves
+left
+left.
 less
 let
 library,
@@ -791,6 +802,7 @@ picker
 picker)
 pitch
 place
+placed
 placed.
 plain
 play()
@@ -848,6 +860,7 @@ resolved
 responsive
 rest
 result
+right
 right-0),
 right-[var(--padding-wk-x-sm)]
 right-edge
@@ -873,6 +886,7 @@ same
 say
 says
 screen
+screen,
 screen-reader
 scroll
 scrollable
@@ -915,6 +929,7 @@ slide')
 slide's
 slides
 slides',
+slides,
 slides.
 slides:
 slot
@@ -936,6 +951,7 @@ stacks
 stage
 stage,
 stage:
+stand
 standard's
 starts
 state
@@ -976,6 +992,7 @@ text-[color:var(--color-wk-text)]
 than
 that
 the
+their
 them
 them,
 them.
@@ -1039,6 +1056,7 @@ was
 watches
 way
 well
+went
 what
 where
 whether

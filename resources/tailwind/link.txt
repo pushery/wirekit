@@ -61,6 +61,7 @@ $variantClasses,
 'ease-[var(--transition-wk-easing)]',
 'external'
 'false'
+'focus-visible:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
 'hover'
 'hover',
@@ -102,6 +103,7 @@ $variantClasses,
 'xs'
 ($relAttr
 ($size
+(Support\UrlProp).
 (WireKit::validateProp('link',
 (even
 (external
@@ -159,6 +161,7 @@ DEFAULT
 Declared
 Deliberately
 Dev-only
+Echoed
 Enter.
 Font
 Fully
@@ -188,6 +191,7 @@ Tailwind
 The
 To
 UNBOUND
+URL
 Unconditional,
 Where
 Whether
@@ -200,6 +204,7 @@ Without
 ['rel',
 ['rel'])->class([$classes])
 ['xs',
+\Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::tagName('link',
 \Pushery\WireKit\WireKit::warnUnknownProps('link',
 ])
@@ -234,6 +239,7 @@ Without
 `xs`,
 a
 about
+above
 action
 additive
 affordance.
@@ -272,12 +278,15 @@ because
 before
 behavior
 belongs
+below.
 between
 block,
 body
 both
+bound,
 branch.
 browser's
+browser's,
 build
 button
 button,
@@ -336,6 +345,7 @@ emits
 emitted
 empty
 entry
+escaped
 escaping
 ever
 every
@@ -355,7 +365,11 @@ first,
 fit.
 flags
 flips
+focus
+focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]
 followed
+follows
 footer
 for
 for.
@@ -400,9 +414,12 @@ it.
 its
 jumped.
 keeps
+kit's
 ladder
 later
 leaves
+line
+lines
 link
 link,
 link-styled
@@ -426,12 +443,14 @@ naming
 narrowed
 navigation
 near-miss
+neither
 never
 new
 new-tab
 no
 non-anchor
 noopener
+nor
 noreferrer"
 noreferrer')
 not
@@ -443,9 +462,12 @@ null,
 null`
 occurrence
 of
+off
+offset:
 often
 on
 on.
+once
 one
 one.
 only
@@ -471,6 +493,7 @@ paths
 pointer`).
 preferences
 preflight
+preset.
 primitive.
 prod).
 prop
@@ -505,6 +528,8 @@ reported
 repository
 resize
 right
+ring
+rounded-[var(--radius-wk-sm)]',
 row
 rung
 rung,
@@ -530,6 +555,7 @@ so
 so:
 something
 space
+standing
 stands
 state,
 states
@@ -557,6 +583,7 @@ target
 target="_blank"
 target="_blank".
 text
+text,
 text.
 than
 that
@@ -572,6 +599,7 @@ time,
 times
 to
 today.
+tokens
 trailing
 treats
 trim($relAttr.'
@@ -612,6 +640,7 @@ wire:click
 with
 worth.
 would
+written
 wrong
 xmlns="http://www.w3.org/2000/svg"
 {

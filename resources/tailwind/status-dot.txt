@@ -1,3 +1,4 @@
+!
 !==
 "Hoverable"
 "false",
@@ -43,6 +44,7 @@ $size,
 $sizeClass
 $sizeClass,
 $slot
+$slot)
 $surface
 $surface,
 $text
@@ -224,7 +226,6 @@ CALLER's
 CAPTURE
 CallerRef::onRoot()
 Declared
-Default
 Deliberately
 Describing
 Dev-only
@@ -247,8 +248,6 @@ KEY,
 Left
 Livewire
 MORPH
-Make
-NON-interactive
 NOT
 No
 Normalized
@@ -306,6 +305,7 @@ Without
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable((string)
 ])
 ])),
 ]),
@@ -351,6 +351,7 @@ Without
 `mouseenter`
 `mouseenter`/`mouseleave`
 `mouseleave`
+`null`,
 `offset`
 `open`
 `open`,
@@ -365,6 +366,7 @@ Without
 `tagName()`
 `this.$refs.tooltip`
 `tooltip="false"`
+`true`
 `warning`
 `window.open`,
 `wire:id`,
@@ -394,6 +396,7 @@ aligned
 all
 all.
 allowlist,
+alone
 alone.
 already
 also
@@ -411,6 +414,7 @@ appear
 appears
 applies
 are
+are.
 area's
 aria-describedby
 aria-describedby="{{
@@ -435,7 +439,6 @@ attribute
 attributes
 auto-derived
 auto-invokes
-avoid
 away.
 back.
 background
@@ -469,12 +472,10 @@ boundary
 box
 brand
 bubble's
-bubbles
 bug
 but
 button
 button,
-button/link)
 button:
 by
 call
@@ -497,6 +498,7 @@ check
 checks
 child
 children
+class="rounded-[var(--radius-wk-sm)]
 class="{{
 classes
 classic
@@ -513,7 +515,6 @@ color
 colors
 colors,
 come
-common
 companions
 compete
 compiles
@@ -539,7 +540,6 @@ costs
 could
 counterpart,
 counterpart:
-covers
 crossed
 cut
 data-intent="{{
@@ -554,6 +554,7 @@ debug,
 decorative
 decorative.
 default
+default,
 default.
 default:
 delayHide:
@@ -579,7 +580,6 @@ does
 dot
 dot's
 dot.
-double
 drawer
 duration-100"
 duration-75"
@@ -636,6 +636,9 @@ flips
 flow.
 focus
 focus,
+focus-visible:outline-hidden
+focus-visible:ring-[length:var(--ring-wk-width)]
+focus-visible:ring-[var(--color-wk-ring)]"
 focus-within
 focus.
 focusable
@@ -719,7 +722,6 @@ instead,
 intent
 intents
 interaction
-interactive
 interpolated
 into
 invalid
@@ -738,10 +740,9 @@ itself,
 just
 keep
 keeps
+kept
 key
 keyboard
-keyboard,
-keyboard-focusable
 knows
 label
 labeled
@@ -823,6 +824,7 @@ nor
 not
 nothing
 nothing.
+null
 null,
 number
 object
@@ -832,6 +834,7 @@ off
 offset:
 omission.
 on
+on,
 on.
 on:
 once
@@ -851,6 +854,7 @@ operation
 opposite
 optimistic-ui:
 or
+order
 other
 other.
 otherwise
@@ -969,6 +973,7 @@ scope
 scope,
 screen
 scroll
+second
 see
 sees
 sees.
@@ -995,8 +1000,8 @@ site
 sits
 sizes
 slot
-slot's
 slot.
+slot:
 small
 so
 somebody
@@ -1004,7 +1009,6 @@ something
 somewhere
 space
 span
-span).
 spelling,
 split
 stack
@@ -1033,7 +1037,6 @@ surfaces
 survive
 sweep
 tab
-tab-stop
 tabbed
 tabindex="0"
 tag
@@ -1061,6 +1064,7 @@ then
 there
 there,
 therefore
+they
 things,
 this
 tick
@@ -1089,7 +1093,6 @@ trigger
 trigger's
 trigger,
 trim((string)
-true
 true);
 true,
 true]);
@@ -1147,6 +1150,7 @@ window,
 wire:key="wk-tooltip-panel"
 with
 without
+word)
 words:
 working
 works
