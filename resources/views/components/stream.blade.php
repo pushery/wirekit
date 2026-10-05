@@ -141,7 +141,12 @@
      reaches Alpine as a real object — see the @js-in-attribute traps. In simulate mode
      the demo is "used up" once it finishes, so it emits data-replayable="true" to opt
      into the docs preview frame's "↻ Replay" affordance (inert in a developer app). --}}
-<div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class([$wrapperClasses]) }}>
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+@endphp
+<div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class([$wrapperClasses]) }} @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
     {{-- Single live region: announces that a response is GENERATING (once), then the
          RESULT (once) when it settles. The visible output below is deliberately NOT a
          live region, so a screen reader is not re-read on every token. --}}

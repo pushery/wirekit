@@ -80,6 +80,10 @@
     // the toggle's root, which would keep it, so the name moves to `x-wk-ref` on the list and
     // the outermost element marks the boundary (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
     $attributes = $attributes->except('x-ref')->merge(array_filter([
         'x-wk-ref' => $callerRef !== '' ? $callerRef : null,
         'data-wk-ref-scope' => $callerRef !== '' && $intervalMap === null ? true : null,
@@ -137,6 +141,7 @@
         name="{{ $name }}"
         value="{{ $serverInterval }}"
         {{ $attributes->whereStartsWith('wire:model') }}
+        @if($formOwner) form="{{ $formOwner }}" @endif
     >
     <div
         role="group"

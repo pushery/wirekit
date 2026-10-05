@@ -96,7 +96,9 @@
 
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'tags-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
 
     // A caller's `id` goes on the text field, the element a `<label for>` elsewhere on the
     // page and a link to `#id` reach. Without one the field takes the component's id with
@@ -115,8 +117,8 @@
     // hidden inputs. A `name` left on the wrapper <div> names no form control.
     $attributes = $attributes->except(['id', 'name']);
 
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // Normalize the initial value into an array of strings. Accepts a real
     // array (e.g. `:value="['Laravel', 'Livewire']"`) or a comma-separated
@@ -191,6 +193,10 @@
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
+    // A required tags input that a submit found empty says so under the field
+    // (partials/required-message), unless the server's own message already stands there.
+    $requiredMessageId = $required && ! $hasError ? $id.'-required' : null;
+    $describedBy = trim($describedBy.' '.($requiredMessageId ?? ''));
 
     /*
      * What the live region says, as TEMPLATES rather than sentences built in JavaScript.
@@ -204,12 +210,16 @@
      * Assembled from placeholders here because a sentence concatenated in JavaScript
      * cannot be translated and word order is not the same in every language — the shape
      * `wizard` uses for its step announcement, for the same reason.
+     *
+     * The limit is known here, so it chooses the form of the full-set sentence ("Maximum of
+     * 1 tag reached"), and `:count` stays in it for the factory to fill.
      */
+    $tagLimit = is_numeric($maxTags) ? (int) $maxTags : null;
     $tagAnnouncements = \Pushery\WireKit\Support\AlpinePayload::from([
         'added' => __('wirekit::Added :name'),
         'removed' => __('wirekit::Removed :name'),
         'duplicate' => __('wirekit::Already in the list: :name'),
-        'limit' => __('wirekit::Maximum of :count tags reached'),
+        'limit' => trans_choice('wirekit::Maximum of :count tags reached', $tagLimit ?? 2, ['count' => ':count']),
     ]);
 
     // `bind` rather than `value`: `tags` already exists on the component this
@@ -236,6 +246,19 @@
     // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `aria-labelledby` names the control and wins over the component's own name, as
+    // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // What acts only on the field the reader types into goes to the text field: on the wrapper
+    // `autofocus` focuses nothing, the on-screen keyboard reads none of the rest, and `maxlength`
+    // limits nothing (Support\FieldAttributes). On the text field `maxlength` is the length of a
+    // tag as it is typed.
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus', 'maxlength']);
 @endphp
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
@@ -256,7 +279,7 @@
              `wire:model`, `data-*` -- arrives here. `aria-describedby` and `aria-label` are
              the exceptions: both belong to the text input, which takes them itself, and
              `aria-label` on this roleless element would be a prohibited attribute. --}}
-        {{ $attributes->except(['aria-describedby', 'aria-label']) }}
+        {{ $attributes->except(['aria-describedby', 'aria-label', 'aria-labelledby', 'autocomplete']) }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
         {{-- The set's own live region, OUTSIDE the optimistic wrapper below.
@@ -287,8 +310,13 @@
             {{-- A disabled field is left out of the form data, as a native one is. --}}
             {{-- The name ends in `[]` once, whether the caller wrote `skills` or `skills[]`, the way a
                  native multiple select is written. Twice, PHP reads a list of one-item lists. --}}
-            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" :value="tag" @if($disabled) disabled @endif />
+            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" :value="tag" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
         </template>
+        {{-- The browser validates no hidden field, and an empty list has none at all, so a required
+             tags input stops an empty submit through a stand-in of its own. --}}
+        @if($required)
+            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+        @endif
 
         {{-- `wk-field-frame`: on a coarse pointer the frame takes the 44px touch floor and the text
              input inside gives its own up. Outside `resolveClasses()`, so restyling keeps it. --}}
@@ -297,7 +325,7 @@
                  lands on the remove button of the fourth chip is told which control it
                  is inside. Only when a label exists: `role="group"` with no accessible
                  name adds a level to walk through and says nothing at the top of it. --}}
-            @if($label) role="group" aria-label="{{ $label }}" @elseif($fieldLabelId) role="group" aria-labelledby="{{ $fieldLabelId }}" @endif
+            @if($callerLabelledBy) role="group" aria-labelledby="{{ $callerLabelledBy }}" @elseif($label) role="group" aria-label="{{ $label }}" @elseif($fieldLabelId) role="group" aria-labelledby="{{ $fieldLabelId }}" @endif
             @if($required) aria-required="true" @endif
             {{-- Inside the layer's scope, which the component's own wrapper is
                  not: the layer nests within it, so `isPending` does not resolve
@@ -350,7 +378,10 @@
                 type="text"
                 id="{{ $fieldId }}"
                 x-ref="input"
+                {{-- The browser's own suggestions would open over the field where a tag is typed. --}}
+                autocomplete="off"
                 placeholder="{{ $placeholder }}"
+                {{ $fieldAttributes }}
                 {{-- When no visible <label> is rendered (no `label` prop), the
                      type-a-tag input would have no accessible name — a
                      placeholder is not a name (WCAG 2.1 AA / axe `label`).
@@ -362,8 +393,12 @@
                      an aria-label would win over that label, so the fallback
                      steps aside and the placeholder names the field only when
                      nothing else does. --}}
-                @if(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @elseif(! $label && ! $callerId && ! $fieldLabelId) aria-label="{{ $placeholder }}" @endif
-                @if($hasError) aria-invalid="true" @endif
+                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @elseif(! $label && ! $callerId && ! $fieldLabelId) aria-label="{{ $placeholder }}" @endif
+                @if($hasError)
+                    aria-invalid="true"
+                @elseif($requiredMessageId)
+                    x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
+                @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($disabled) disabled @endif
                 {{-- A full set is announced as unavailable rather than silently ignoring
@@ -392,6 +427,11 @@
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
         </div>
 @endif
+        {{-- Inside the component's root, where its state is: the error and the hint below stand
+             outside it. --}}
+        @if($requiredMessageId)
+            @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
+        @endif
     </div>
 
     @if($hasError && $errorMessage)

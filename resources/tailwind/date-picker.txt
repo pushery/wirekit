@@ -11,6 +11,7 @@ $announceErrors
 $as
 $as);
 $attributes
+$attributes,
 $attributes->class(['relative
 $attributes->except('type')->except('aria-describedby')->class(['wk-field',
 $attributes->except('x-ref');
@@ -24,9 +25,12 @@ $attributes->has('aria-labelledby');
 $attributes->whereStartsWith('wire:model')->first()));
 $attributes]
 $callerAriaLabel
+$callerLabel
+$callerLabel,
 $callerRef
 $component`.
 $content
+$content))
 $date
 $date->format('Y-m-d')
 $date;
@@ -38,6 +42,7 @@ $delayHide
 $delayShow
 $describedBy
 $describes
+$describes;
 $directive
 $disabled
 $disabled)
@@ -50,7 +55,6 @@ $error
 $errorId
 $errorMessage
 $errorMessage;
-$errors->first($name)
 $event.target.value"
 $fallbackLabel
 $fallbackLabel));
@@ -85,11 +89,14 @@ $max
 $min
 $name
 $name)
+$name));
 $needsSrOnlyFallback
 $offset
 $optimistic,
 $optimisticConfig
 $outerAttributes
+$ownName
+$ownName);
 $placeholder
 $property
 $property)
@@ -110,6 +117,12 @@ $scope);
 $showsError
 $slot
 $slot)
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $startPairs
 $startPairs[$directive]
 $startPairs['aria-labelledby']
@@ -117,12 +130,18 @@ $startValue
 $surface
 $surface,
 $text
+$text);
+$tipText
 $toDay
 $toDay($max);
 $toDay($min);
 $toDay($value);
 $tooltipClasses
 $tooltipId
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $value
 $value)
 $value,
@@ -133,6 +152,7 @@ $wkField
 $wkField->labelText()
 $wkField->takeLabel($dateId)
 &&
+''
 '')
 '')));
 ''));
@@ -146,6 +166,7 @@ $wkField->takeLabel($dateId)
 '.($helpId
 '.($showsError
 '.((string)
+'.end']
 '/'))
 'action'
 'announce-errors',
@@ -161,6 +182,7 @@ $wkField->takeLabel($dateId)
 'border-[length:var(--border-wk-width)]',
 'border-[var(--color-wk-border-error)]'
 'border-[var(--color-wk-border-strong)]',
+'date',
 'debug'
 'delayHide'
 'delayShow'
@@ -258,8 +280,8 @@ $wkField->takeLabel($dateId)
 ("Help
 ($attributes->has('aria-labelledby'))
 ($attributes->whereStartsWith('wire:model')->getAttributes()
+($callerLabelledBy
 ($date)
-($errors
 ($fieldLabelId
 ($hasError
 ($hint
@@ -267,12 +289,16 @@ $wkField->takeLabel($dateId)
 ($name
 ($optimistic
 ($size)
+($triggerIsButton)
 ($value
 ($value[0]
 ($value[1]
 (4.1.2)
 (@aware
+(DomId::distinct
 (Support\CallerListeners).
+(Support\CallerName).
+(Support\DateModel).
 (Support\FieldControl).
 (Support\UnboundModel).
 (WCAG
@@ -290,6 +316,7 @@ $wkField->takeLabel($dateId)
 (e)
 (e.g.
 (filled($callerAriaLabel)
+(filled($id))
 (humanized)
 (int)
 (is_array($value))
@@ -334,6 +361,7 @@ $wkField->takeLabel($dateId)
 12a9
 16px
 18
+1;
 2),
 2,
 2.
@@ -406,7 +434,6 @@ $wkField->takeLabel($dateId)
 @if($announceError)
 @if($callerRef
 @if($describedBy
-@if($describes)
 @if($disabled)
 @if($focusableTrigger)
 @if($formatHint)
@@ -424,6 +451,9 @@ $wkField->takeLabel($dateId)
 @if($required)
 @if($showsError)
 @if($surface
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if($value)
 @if(filled($helpId
 @if(isset($content))
@@ -444,6 +474,7 @@ Alpine
 Alpine's
 An
 And
+Around
 BINDING,
 BOTH
 BROWSER's
@@ -473,6 +504,9 @@ Deliberately
 Describing
 Dev-only
 Done
+ENT_HTML5));
+ENT_QUOTES
+Each
 Eloquent
 English
 Enter
@@ -589,8 +623,11 @@ WireKit::warnUnknownProps('tooltip',
 With
 Without
 [
+[$callerLabelledBy,
 [$outerAttributes,
 [$startValue,
+['']);
+['.start',
 ['helpText'
 ['inverted',
 ['label'
@@ -600,6 +637,7 @@ Without
 [];
 \DateTimeInterface
 \Illuminate\Support\Enumerable)
+\Illuminate\Support\HtmlString('');
 \Illuminate\View\ComponentAttributeBag($endPairs);
 \Illuminate\View\ComponentAttributeBag($startPairs);
 \Pushery\WireKit\Support\AlpinePayload::from($endValue)
@@ -614,12 +652,19 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
+\Pushery\WireKit\Support\DateModel::warn('date-picker',
+\Pushery\WireKit\Support\DomId::distinct($name
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\FieldControl
+\Pushery\WireKit\Support\FieldError::first($errors
+\Pushery\WireKit\Support\FieldError::has($errors
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UnboundModel::drop('date-picker',
 \Pushery\WireKit\WireKit::warnUnknownProps('date-picker',
@@ -638,6 +683,7 @@ __('wirekit::Saving'),
 `$hasError`
 `$refs`
 `--space-wk-xs`
+`-2`,
 `03.04.2026`
 `04/03/2026`
 `<button>`
@@ -691,6 +737,7 @@ __('wirekit::Saving'),
 `focusable-trigger`
 `for`
 `hidden`
+`id`
 `input`
 `inverted`
 `isolation:
@@ -765,7 +812,9 @@ accessibility
 accessible
 across
 action
+activating
 actually
+add
 additive
 after
 again
@@ -794,6 +843,7 @@ announced
 announced.
 announces
 announcing
+another.
 answer
 anticipate
 any
@@ -816,6 +866,7 @@ aria-atomic="true"
 aria-describedby
 aria-describedby,
 aria-describedby="{{
+aria-disabled="true"
 aria-hidden="true"
 aria-hidden="true">
 aria-hidden="true">*</span>@endif
@@ -841,6 +892,7 @@ arriving
 as
 as,
 as="span"
+aside,
 assertion
 assistive
 association
@@ -911,6 +963,7 @@ but
 button
 button).
 button,
+button:
 by
 byte
 byte.
@@ -1099,6 +1152,7 @@ drawer
 draws
 dropped
 dropped:
+drops,
 duplicate.
 duplicated:
 duration-100"
@@ -1156,6 +1210,7 @@ existing
 exists
 expandos.
 explains
+explains,
 explanation
 explicit
 exposed
@@ -1221,6 +1276,7 @@ follows
 for
 for.
 for="{{
+forced
 foreach
 form
 form:
@@ -1233,6 +1289,7 @@ fragment
 frame
 fresh
 from
+full
 function-valued
 function;
 further
@@ -1304,6 +1361,7 @@ hover:text-[color:var(--color-wk-text-muted)]
 how
 however
 iOS-zoom
+icon
 icon,
 icon-only
 id
@@ -1347,9 +1405,11 @@ inverted
 invocation,
 invocation`
 is
+is.
 is_array($value)
 is_string($property)
 isolate`
+isset($content)
 it
 it,
 it.
@@ -1473,6 +1533,7 @@ moves
 moving
 ms-0.5"
 much
+multi-select.
 must
 n/a
 name
@@ -1493,6 +1554,7 @@ needs
 negative
 neither
 neither.
+nest
 network
 never
 new
@@ -1506,6 +1568,7 @@ node's
 node,
 non-native
 none
+none,
 none;
 nor
 normally,
@@ -1521,14 +1584,15 @@ null
 null)
 null))
 null);
-null)?->has($name));
 null,
 null;
 null])
+object
 object,
 of
 off
 offset:
+often
 omission.
 on
 on,
@@ -1538,6 +1602,7 @@ once
 once,
 once:
 one
+one's
 one,
 one.
 one:
@@ -1580,6 +1645,7 @@ overlay
 overwhelmingly
 own
 own,
+own.
 owns
 owns,
 padding
@@ -1628,6 +1694,7 @@ placement.
 placement:
 plain
 plus
+point
 pointer
 pointer-events
 pointing
@@ -1642,6 +1709,9 @@ post
 pre-compiler
 precede
 precedence:
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 present
 press
 previous
@@ -1723,6 +1793,8 @@ rests
 rewritten
 right
 role
+role:
+role="button"
 role="tooltip"
 roll
 rollback
@@ -1749,6 +1821,7 @@ same
 save.
 say
 saying
+says
 says,
 scalar
 scans
@@ -1760,6 +1833,7 @@ second
 see
 sees
 sees.
+sends
 sent
 sentence
 separator
@@ -1818,6 +1892,7 @@ stable
 stack
 stacked
 stacking-context
+stand
 stands
 start
 start',
@@ -1828,6 +1903,7 @@ state.
 static
 stay
 stays
+steps
 still
 stop
 stop,
@@ -1866,6 +1942,7 @@ tag
 tag,
 tags
 tags,
+tags-input
 take
 takes
 tall
@@ -1898,6 +1975,7 @@ that
 that:
 the
 their
+theirs
 them
 theme
 theme's
@@ -1929,6 +2007,7 @@ to,
 to.
 together
 together.
+toggletip
 token
 too,
 too.
@@ -1953,6 +2032,8 @@ trigger,
 trim(
 trim($describedBy.'
 trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip
 true
 true)
@@ -1961,6 +2042,7 @@ true,
 truthy
 truthy.
 twice
+twice.
 two
 two.
 type="button"
@@ -1973,6 +2055,7 @@ typing
 typo.
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged
@@ -2010,6 +2093,7 @@ values,
 vanished
 variable
 verbatim
+verbatim).
 via
 view
 view's
@@ -2024,6 +2108,7 @@ walk
 want
 wants.
 warning
+warns
 was
 way
 way.
@@ -2063,6 +2148,8 @@ without
 wk-field:
 word)
 wording
+words
+words;
 working
 works
 works.
@@ -2093,7 +2180,9 @@ x-on:change="s
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -2124,6 +2213,7 @@ zoom,
 {name}[start]
 {{
 {{--
+|
 ||
 }
 }"

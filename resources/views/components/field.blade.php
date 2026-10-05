@@ -77,8 +77,8 @@
     $labelId = $fieldControl?->labelId();
 
     // Error detection: explicit prop OR Laravel validation bag (keyed by `name`)
-    $hasError = $error || ($name && ($errors ?? null)?->has($name));
-    $errorMessage = $error ?? ($name ? ($errors ?? null)?->first($name) : null);
+    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?? ($name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
 
     // Stable IDs on the hint/error paragraphs, so a caller can point an
     // `aria-describedby` at them. They are an OFFER, not a wiring: a Blade slot is

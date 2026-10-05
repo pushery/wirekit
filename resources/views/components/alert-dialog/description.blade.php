@@ -22,9 +22,12 @@
     ]), $scope);
 @endphp
 
-<p data-wk-prose-skip
+{{-- A div, not a p: the slot may hold paragraphs or a list of what the action does, and a parser
+     closes a p before the first of them, which would leave the rest outside the element the
+     dialog's aria-describedby names. --}}
+<div data-wk-prose-skip
     x-bind:id="$wkAncestorData('[data-wk-desc-id]', 'wkDescId')"
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}
-</p>
+</div>

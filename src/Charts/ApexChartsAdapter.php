@@ -64,11 +64,16 @@ final class ApexChartsAdapter implements ChartAdapter
 
         // Standard cartesian / radar / scatter / bubble shape:
         // series = [{ name, data }, ...]
+        //
+        // A series without a label is named in the application's language, counted from 1. Left
+        // unnamed, ApexCharts would write its own English "series-1" into the legend.
         $series = [];
-        foreach ($datasets as $index => $dataset) {
+        $position = 0;
+        foreach ($datasets as $dataset) {
+            $position++;
             $series[] = array_merge(
                 [
-                    'name' => $dataset['label'] ?? "Series {$index}",
+                    'name' => $dataset['label'] ?? __('wirekit::Series :number', ['number' => $position]),
                     'data' => $dataset['data'] ?? [],
                 ],
                 // Pass through extra keys (color, type per-series for mixed, etc.)

@@ -44,7 +44,9 @@
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-md)]',
-        'overflow-hidden',
+        // Scrolls once the position helper caps its height to a short viewport; a submenu is
+        // fixed, so this clips nothing beside the panel.
+        'overflow-y-auto overscroll-contain',
     ]), $scope);
 @endphp
 

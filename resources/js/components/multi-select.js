@@ -17,11 +17,15 @@
  * @param {boolean} [config.server] - the options are the server's results for the typed text; see
  *   utils/server-search.js, which also takes `searchMinLength`, `searchDebounce` and `searchTexts`
  */
+import { controlIsDisabled } from '../utils/fieldset-disabled.js';
 import { position } from '../utils/floating.js';
+import { onFormReset } from '../utils/form-reset.js';
+import { requiredCheckState } from '../utils/required-check.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
 import { optionPressState } from '../utils/option-press.js';
 import { foldForSearch } from '../utils/search-fold.js';
 import { serverSearchState } from '../utils/server-search.js';
+import { sameValue } from '../utils/same-value.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { watchCurrent } from '../utils/watch-current.js';
 import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
@@ -31,12 +35,22 @@ const OPTIONS_ATTRIBUTE = 'data-wk-options';
 
 export default function wirekitMultiSelect(config = {}) {
     return {
+        /**
+         * Whether the field takes no input now: disabled by its own attribute, by a fieldset around
+         * it, or by a state Livewire set after the page loaded. Read from the field each time,
+         * because its own `disabled` stays false inside a disabled fieldset
+         * (utils/fieldset-disabled.js), and the options and the frame are no native controls a
+         * fieldset could disable.
+         */
+        get locked() {
+            return controlIsDisabled(this.$refs?.filterInput);
+        },
+
         /** Focus the filter and open the list — one act, so one method. */
         focusAndOpen() {
             // A click on the frame of a disabled field opens nothing. The field itself takes
-            // neither focus nor keys then, so this is the one way in; the state is read from
-            // the field, which also covers a state Livewire set after the page loaded.
-            if (this.$refs.filterInput?.disabled) {
+            // neither focus nor keys then, so this is the one way in.
+            if (this.locked) {
                 return;
             }
 
@@ -84,6 +98,14 @@ export default function wirekitMultiSelect(config = {}) {
         // destroy().
         _stopServerValue: null,
         _stopOptionsSync: null,
+        // Puts the starting selection back when the form is reset (utils/form-reset.js), released
+        // in destroy(); the selection it returns to is the one the page started with, or the one
+        // the server sent last, as a native field returns to the value the server rendered.
+        _stopFormReset: null,
+        _resetValue: Array.isArray(config.value) ? [...config.value] : [],
+        // `requiredMessage` and `onRequiredInvalid()`: a required multi-select stops an empty
+        // submit (utils/required-check.js).
+        ...requiredCheckState(),
         // Up while the component itself puts the focus on the filter input after the last value
         // was removed, so that this one focus does not open the list; see `_focusFieldQuietly()`.
         _quietFocus: false,
@@ -106,6 +128,8 @@ export default function wirekitMultiSelect(config = {}) {
                     this.selected = value.map(String);
                 }
             }
+
+            this._resetValue = [...this.selected];
 
             if (! Array.isArray(config.options) && ! this._server) {
                 const options = readAttribute(OPTIONS_ATTRIBUTE);
@@ -161,7 +185,9 @@ export default function wirekitMultiSelect(config = {}) {
 
                 const next = value.map(String);
 
-                if (next.length === this.selected.length && next.every((v) => this.selected.includes(v))) {
+                this._resetValue = [...next];
+
+                if (next.length === this.selected.length && next.every((v) => this.isChosen(v))) {
                     return;
                 }
 
@@ -182,6 +208,10 @@ export default function wirekitMultiSelect(config = {}) {
                     this.highlight = 0;
                 }, OPTIONS_ATTRIBUTE);
             }
+
+            // One hidden field per chosen value: an empty selection has none, which the helper
+            // covers with the form it found while there was one.
+            this._stopFormReset = onFormReset(root, () => (typeof root?.querySelector === 'function' ? root.querySelector('input[type="hidden"]') : null), () => this._restore());
         },
 
         // Alpine teardown (Livewire morph / SPA nav): stop autoUpdate if the panel
@@ -191,11 +221,33 @@ export default function wirekitMultiSelect(config = {}) {
             this._stopServerValue = null;
             this._stopOptionsSync?.();
             this._stopOptionsSync = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
             this._modelEvents?.dispose();
             this._modelEvents = null;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
             this._stopServerSearch();
+        },
+        /**
+         * Back to the starting selection after a form reset, which also emptied the filter field.
+         * The hidden fields follow the selection.
+         */
+        _restore() {
+            this.selected = [...this._resetValue];
+            this.filter = '';
+            this.highlight = 0;
+            this.requiredMessage = '';
+        },
+
+        /** What the required check reads: empty exactly while nothing is chosen. */
+        get requiredValue() {
+            return this.selected.length > 0 ? String(this.selected.length) : '';
+        },
+
+        /** The field a reader types into, focused without opening the list. */
+        _focusRequiredControl() {
+            this._focusFieldQuietly(this._searchSource());
         },
         _options: config.options || [],
         // The stem every option id is built from. Handed in by the Blade rather
@@ -218,13 +270,13 @@ export default function wirekitMultiSelect(config = {}) {
             // The server's results are already the answer to the text; filtering them again
             // here would drop a typo-tolerant match the server found on purpose.
             if (this._server) {
-                return this._options.filter((opt) => ! this.selected.includes(opt.value));
+                return this._options.filter((opt) => ! this.isChosen(opt.value));
             }
 
             const term = foldForSearch(this.filter);
             return this._options.filter(
                 (opt) =>
-                    !this.selected.includes(opt.value) &&
+                    ! this.isChosen(opt.value) &&
                     optionMatches(opt, term)
             );
         },
@@ -254,7 +306,7 @@ export default function wirekitMultiSelect(config = {}) {
          * they are, so a reader checks several results of one search in a row.
          */
         toggleFromList(value) {
-            const idx = this.selected.indexOf(value);
+            const idx = this._indexOf(value);
 
             if (idx >= 0) {
                 this.selected.splice(idx, 1);
@@ -271,7 +323,7 @@ export default function wirekitMultiSelect(config = {}) {
          * to the page with the button that was pressed.
          */
         removeFromList(value) {
-            const idx = this.selected.indexOf(value);
+            const idx = this._indexOf(value);
 
             if (idx < 0) {
                 return;
@@ -291,7 +343,7 @@ export default function wirekitMultiSelect(config = {}) {
          * @param {string|number} value - The value whose remove button was pressed.
          */
         runListRemoval(value) {
-            const idx = this.selected.indexOf(value);
+            const idx = this._indexOf(value);
 
             if (typeof this.run !== 'function' || idx < 0) {
                 return;
@@ -337,6 +389,19 @@ export default function wirekitMultiSelect(config = {}) {
             const template = String(count === 1 ? config.selectedOne ?? '' : config.selectedMany ?? '');
 
             return template.replace('__COUNT__', String(count));
+        },
+
+        /**
+         * Where a value stands in the choice, or -1. A chosen value may be a number, as an array
+         * of ids bound with `wire:model` arrives, while an option carries its value as text.
+         */
+        _indexOf(value) {
+            return this.selected.findIndex((v) => sameValue(v, value));
+        },
+
+        /** Whether a value is chosen, a number and its text naming the same option. */
+        isChosen(value) {
+            return this._indexOf(value) !== -1;
         },
 
         /**
@@ -656,10 +721,10 @@ export default function wirekitMultiSelect(config = {}) {
          * snapshot points at the old one, the write installs the new one.
          */
         nextWith(value) {
-            const idx = this.selected.indexOf(value);
+            const idx = this._indexOf(value);
 
             if (idx >= 0) {
-                return this.selected.filter((v) => v !== value);
+                return this.selected.filter((v) => ! sameValue(v, value));
             }
 
             return this.selected.concat([value]);
@@ -697,7 +762,7 @@ export default function wirekitMultiSelect(config = {}) {
          * of safety that lasts until the next edit.
          */
         toggleValue(value) {
-            const idx = this.selected.indexOf(value);
+            const idx = this._indexOf(value);
             if (idx >= 0) {
                 this.selected.splice(idx, 1);
             } else {
@@ -721,7 +786,7 @@ export default function wirekitMultiSelect(config = {}) {
          * shape and same treatment as tags-input's chip removal.
          */
         deselect(value) {
-            const idx = this.selected.indexOf(value);
+            const idx = this._indexOf(value);
 
             if (idx < 0) return;
 
@@ -745,7 +810,7 @@ export default function wirekitMultiSelect(config = {}) {
          * @param {string|number} value - The value whose pill was pressed.
          */
         runRemoval(value) {
-            const idx = this.selected.indexOf(value);
+            const idx = this._indexOf(value);
 
             if (typeof this.run !== 'function' || idx < 0) return;
 

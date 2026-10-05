@@ -39,10 +39,14 @@ $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
 $attributes->merge(['style'
+$attributes]
 $baseClasses
 $buttonBag
 $buttonBag->class([$baseClasses,
 $buttonBag->merge(['style'
+$callerLabel
+$callerLabel)
+$callerLabel,
 $circleBase
 $classes
 $complete
@@ -456,6 +460,7 @@ $wrapMode
 (4.05
 (BooleanProp::from($wrap,
 (SVG
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind's
 (WCAG
@@ -653,6 +658,7 @@ $wrapMode
 @endphp
 @endunless
 @foreach($steps
+@if($callerLabelledBy
 @if($computedRel)
 @if($count
 @if($declarativeLoading)
@@ -919,6 +925,7 @@ WireKit::warnUnknownProps()
 With
 Without
 [
+[$callerLabelledBy,
 ['current'
 ['label'
 ['none',
@@ -940,6 +947,8 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::from($incompleteTemplate)
 \Pushery\WireKit\Support\AlpinePayload::from($missingIndexWarning)
 \Pushery\WireKit\Support\AlpinePayload::from($stepNames)
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\SafeUrl::href($step['href']
 \Pushery\WireKit\Support\UrlProp::text($href);
@@ -1027,6 +1036,7 @@ __('wirekit::This
 `aria-disabled`
 `aria-hidden`:
 `aria-label`
+`aria-labelledby`
 `array_key_last()`
 `as`
 `badge`'s
@@ -1337,6 +1347,7 @@ below
 below).
 below,
 below.
+below;
 beside
 bespoke
 between
@@ -2232,6 +2243,7 @@ measures.
 mechanism
 media
 meet
+meets,
 merely
 merge
 message:
@@ -2523,6 +2535,7 @@ prod.
 produces
 produces;
 progress
+prohibits
 project
 promise.
 promoting
@@ -2644,6 +2657,7 @@ right.
 ring
 ring).
 ring,
+role,
 role="group"
 role="link"
 role="list"
@@ -3208,6 +3222,7 @@ wrap
 wrap,
 wrapped
 wrapper
+wrapper,
 wrapper.
 wrapping
 wrapping,

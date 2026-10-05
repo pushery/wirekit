@@ -1,6 +1,8 @@
 $attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
+$attributes]
+$callerLabel,
 $delayHide
 $delayShow
 $offset
@@ -18,6 +20,7 @@ $wrapperClasses
 'fixed
 'font-[family-name:var(--font-wk-sans)]',
 'offset'
+'overflow-y-auto
 'p-[var(--padding-wk-x-md)]',
 'panel',
 'placement'
@@ -30,6 +33,7 @@ $wrapperClasses
 'w-72',
 'wrapper',
 (Support\CallerListeners).
+(Support\CallerName).
 (an
 (and
 (aria-haspopup,
@@ -104,6 +108,7 @@ NOT
 OUTSIDE
 Only
 Pushery\WireKit\WireKit;
+Scrolls
 Surfaced
 Tab
 Teleported
@@ -120,9 +125,12 @@ WINDOW,
 WireKit::resolveClasses('hover-card',
 Without
 [
+[$callerLabelledBy,
 ['@keydown.escape.window.capture']);
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('hover-card',
 ])
@@ -138,6 +146,8 @@ __('wirekit::Hover
 `<span>`)
 `@keydown.escape`,
 `@mouseenter`
+`aria-label`
+`aria-labelledby`
 `body`
 `escapeAnywhere()`
 `position:
@@ -163,7 +173,6 @@ anticipate
 are
 aria-allowed-attr
 aria-expanded)
-aria-label="{{
 armed;
 arms
 around
@@ -184,6 +193,7 @@ because
 behavior.
 belongs
 below
+below;
 bindings
 bio,
 block,
@@ -199,8 +209,9 @@ buttons
 calculations
 caller's
 cancels
+caps
 card
-card')
+card'))
 card's
 card.
 cards
@@ -268,6 +279,8 @@ goes
 handler.
 hands
 has
+height
+helper
 hid
 hide
 hide-delay
@@ -323,12 +336,15 @@ marked
 marked:
 may
 mechanism
+meets,
 modal
 moves
 moving
 must
 n/a
+name
 named.
+names
 names.
 never
 next
@@ -357,6 +373,7 @@ our
 out
 out.
 overlay
+overscroll-contain',
 own
 owns,
 page
@@ -381,6 +398,7 @@ precedes
 press
 pressed
 prod).
+prohibits
 promise
 promises.
 props
@@ -402,6 +420,7 @@ rest
 returns
 reveals
 rich
+role,
 role="dialog"
 roll
 root
@@ -418,6 +437,7 @@ screen,
 see
 sequential
 server
+short
 show
 shown
 shows
@@ -467,6 +487,7 @@ via
 view
 view's
 viewport-relative
+viewport.
 visibility
 what
 whatever

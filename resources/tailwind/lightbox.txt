@@ -3,7 +3,9 @@
 $attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
+$attributes]
 $backdrop
+$callerLabel,
 $count
 $el.complete
 $el.naturalWidth
@@ -78,6 +80,7 @@ $wrapperClasses
 ($item['alt']
 ($item['src']
 ($type
+(Support\CallerName).
 (\Pushery\WireKit\Support\ListProp::records($items)
 (a
 (any
@@ -179,6 +182,7 @@ $wrapperClasses
 @props.
 A
 AA
+ARIA
 Allowed:
 Alpine
 Alpine's
@@ -244,6 +248,7 @@ WireKit::resolveClasses('lightbox',
 With
 Wraps
 [
+[$callerLabelledBy,
 ['image',
 ['src'
 ['src','alt','caption','type','poster'].
@@ -254,6 +259,8 @@ Wraps
 \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate)
 \Pushery\WireKit\Support\AlpinePayload::from($slides)
 \Pushery\WireKit\Support\AlpinePayload::from((bool)
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
@@ -272,6 +279,8 @@ __('wirekit::Slide
 `alt`
 `aria-disabled`
 `aria-disabled`,
+`aria-label`
+`aria-labelledby`
 `contents`
 `data:`
 `data:text/html`
@@ -350,6 +359,7 @@ behind
 belongs
 below
 below.
+below;
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-overlay)]
 binding,
@@ -467,6 +477,7 @@ duration-200"
 duration-[var(--transition-wk-duration)]"
 each
 ease-out
+element
 element;
 else
 elsewhere
@@ -631,6 +642,7 @@ mean
 media
 media,
 media.
+meets,
 merely
 middle
 min-w-[10rem]'
@@ -644,6 +656,7 @@ name
 name,
 name:
 nameless
+names
 native
 navigable
 never
@@ -707,6 +720,7 @@ prev/next
 prev/next/close
 preview,
 prod).
+prohibits
 prop's
 props
 protocol-relative,
@@ -737,6 +751,7 @@ resolves
 returning
 returns
 right-[var(--space-wk-md)]
+role,
 role="dialog"
 roll
 root
@@ -877,7 +892,7 @@ view
 view's
 viewBox="0
 viewer
-viewer')
+viewer'))
 viewport:
 visible
 visibly
@@ -904,6 +919,7 @@ wk-overlay-layer-modal
 word
 would
 wrapper
+wrapper,
 wraps
 wrong,
 x-cloak

@@ -84,6 +84,14 @@ export default function wirekitSlider(config = {}) {
             // The return value is an unhook function, and dropping it is what kept
             // this handler alive past its component.
             this._unhookResync = window.Livewire.hook('commit', ({ succeed }) => succeed(this._resync));
+
+            // `x-model` writes the bound value onto the field after this runs, and a range field
+            // turns a value it cannot hold, such as the empty one a `null` property gives, into the
+            // middle of its scale. Read the field once that has happened, so the announced value,
+            // the bubble and the thumb agree before the first round trip.
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(() => this.syncFromInput());
+            }
         },
 
         destroy() {

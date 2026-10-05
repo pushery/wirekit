@@ -99,7 +99,12 @@
 {{-- `wk-collapsible` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-`
      class token and its descendants, and the chevron and the collapsing panel sit under this root.
      It stays outside `resolveClasses()`, so a scoped base class list cannot drop it. --}}
-<div x-data="wirekitCollapsible({ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} })" {{ $attributes->class(['wk-collapsible', $rootClasses]) }}>
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+@endphp
+<div x-data="wirekitCollapsible({ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} })" {{ $attributes->class(['wk-collapsible', $rootClasses]) }} @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
     {{-- Trigger — a real <button> so it is keyboard-operable (Enter/Space) by default.
          aria-expanded announces state; aria-controls links it to the region below. --}}
     <button

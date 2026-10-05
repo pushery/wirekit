@@ -105,6 +105,9 @@
         ->filter(fn ($value, string $key): bool => str_starts_with($key, 'aria-'))
         ->all();
     $attributes = $attributes->except(array_keys($ariaAttributes));
+    // Written through a bag of their own: a bag holds each value as the caller's markup, escaped
+    // once, and writes it as it holds it, where `{{ }}` would escape it a second time.
+    $dialogAriaAttributes = new \Illuminate\View\ComponentAttributeBag(array_diff_key($ariaAttributes, ['aria-label' => true]));
 
     // Backdrop classes — semi-transparent overlay behind the dialog
     $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-modal '.WireKit::resolveClasses('modal', 'backdrop', implode(' ', [
@@ -255,9 +258,7 @@
                     {{-- aria-* the caller passed, moved here from the roleless wrapper.
                          aria-label is excluded: it is resolved above so an explicit name
                          and the header can never both be emitted. --}}
-                    @foreach($ariaAttributes as $ariaKey => $ariaValue)
-                        @if($ariaKey !== 'aria-label') {{ $ariaKey }}="{{ $ariaValue }}" @endif
-                    @endforeach
+                    {{ $dialogAriaAttributes }}
                     class="{{ $panelClasses }} {{ $sizeClass }}"
                     wire:ignore.self
                     {{-- The theme marker for the panel itself, the surface that paints the modal's

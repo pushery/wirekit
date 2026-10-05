@@ -102,7 +102,8 @@
     </div>
 
     @if($description)
-        <p data-wk-prose-skip data-wk-pricing-description class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</p>
+        {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
+        <div data-wk-prose-skip data-wk-pricing-description class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</div>
     @endif
 
     <div data-wk-pricing-price class="mt-[var(--space-wk-md)] flex items-baseline gap-[var(--space-wk-xs)]">

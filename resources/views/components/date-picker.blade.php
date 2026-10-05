@@ -122,6 +122,10 @@
     // etc.), and ships localized to the user's OS locale automatically.
     $isRange = filter_var($range, FILTER_VALIDATE_BOOLEAN);
 
+    // Livewire sends a date object as a full timestamp, which the native field drops, so a binding
+    // to one warns in debug mode (Support\DateModel). Each end of a range binds a path of its own.
+    \Pushery\WireKit\Support\DateModel::warn('date-picker', 'date', $attributes, $isRange ? ['.start', '.end'] : ['']);
+
     // A date object, which is what an Eloquent `date` cast hands over, is written as the day a
     // native date field reads, `YYYY-MM-DD`: cast to a string it would be `Y-m-d H:i:s`, and
     // encoded as JSON an ISO timestamp, and the field reads either as no value at all. The same
@@ -151,7 +155,9 @@
     // The same on every render, or Livewire's morph REPLACES the input on each round trip and
     // a reader typing a date into a `wire:model.live` field loses focus after the first key.
     // Seeded from the bound property when there is no name, counted when there is neither.
-    $dateId = $id ?? ($name ? 'wk-date-' . $name : WireKit::stableId('wk-date', $attributes->whereStartsWith('wire:model')->first()));
+    // A second picker with the same name or property on the page gets `-2`, so its label and
+    // its hint do not point at the first one's field (DomId::distinct keeps the first verbatim).
+    $dateId = $id ?? \Pushery\WireKit\Support\DomId::distinct($name ? 'wk-date-' . $name : WireKit::stableId('wk-date', $attributes->whereStartsWith('wire:model')->first()));
     $errorId = $dateId . '-error';
     $hintId = $dateId . '-hint';
     $formatHintId = $dateId.'-format-hint';
@@ -161,8 +167,8 @@
     // makes a date-picker with no `name` report itself invalid the moment ANY
     // unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
-    $hasError = $error || ($name && ($errors ?? null)?->has($name));
-    $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
+    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?? ($hasError && $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -241,6 +247,12 @@
         : null;
 
     if ($fieldLabelId !== null) {
+        $needsSrOnlyFallback = false;
+    }
+    // A caller's `id` is there so a label of theirs can reach the field, and the fallback name would
+    // stand over that label or add its own words to it, so it steps aside, as it does on
+    // tags-input and multi-select.
+    if (filled($id)) {
         $needsSrOnlyFallback = false;
     }
     $fallbackLabel = $name ? Str::headline((string) $name) : __('wirekit::Date');

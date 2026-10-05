@@ -13,6 +13,7 @@
 "New"
 "PHP
 "Queued"
+"Remove";
 "Running…"
 "default"
 "false"
@@ -47,8 +48,11 @@ $attributes->get('id').'-panel'
 $attributes->get('role');
 $attributes->getAttributes());
 $attributes->merge($depthStyle
+$attributes]
 $attrs
 $attrs->merge(['style'
+$badgeText
+$badgeText])
 $baseClasses
 $borderWidthClass
 $borderWidthClass,
@@ -57,6 +61,9 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel)
+$callerLabel,
 $callerRole
 $change->id])"`),
 $classes
@@ -64,6 +71,7 @@ $cleaned
 $cleaned);
 $codeClasses
 $content
+$content))
 $contentClasses
 $copy
 $copy)
@@ -72,6 +80,7 @@ $delayShow
 $depthStyle
 $depthStyle]
 $describes
+$describes;
 $disabled
 $dismissBtnClasses
 $dismissLabel
@@ -94,7 +103,7 @@ $isInformative
 $isInformative;
 $isRunning
 $isSettled
-$label
+$label)
 $language
 $m):
 $m[1]);
@@ -110,6 +119,8 @@ $open;
 $openBool
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $pillRadius
 $pillRadius,
 $placeholderAttributes
@@ -134,6 +145,13 @@ $sizeMap
 $sizeMap[$validated];
 $slot
 $slot)
+$slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -155,6 +173,8 @@ $svgHtml
 $svgHtml,
 $tag
 $text
+$text);
+$tipText
 $toolName
 $toolName,
 $toolName])">{{
@@ -163,6 +183,10 @@ $tooltipId
 $trigger
 $trigger)
 $triggerClasses
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $uid
 $validated
 $wrap
@@ -188,6 +212,7 @@ $wrapperClasses
 '<svg'.$cleaned.'>';
 'Rendering
 'Run:
+'UTF-8')));
 '[WireKit]
 'accent'
 'accent',
@@ -418,6 +443,8 @@ $wrapperClasses
 ($active
 ($argumentsText
 ($callerAriaHidden
+($callerLabelledBy
+($dismissLabel
 ($intent)
 ($isInformative
 ($resolvedAriaHidden
@@ -428,6 +455,7 @@ $wrapperClasses
 ($style
 ($surface)
 ($svgHtml
+($triggerIsButton)
 ('xs').
 (0.75rem):
 (AA
@@ -437,6 +465,7 @@ $wrapperClasses
 (Enter/Space)
 (SOFT
 (Support\CallerListeners).
+(Support\CallerName).
 (UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -535,6 +564,7 @@ $wrapperClasses
 16px
 180°
 19.5V6.257c0-1.108.806-2.057
+1;
 1px
 2.1.1
 2.1.1),
@@ -574,6 +604,7 @@ $wrapperClasses
 :id',
 :intent="$statusIntent"
 :label="__('wirekit::Arguments
+:name',
 :name="$leadingIcon"
 :name="$trailingIcon"
 :open="$open"
@@ -628,7 +659,6 @@ $wrapperClasses
 >{{
 ?
 ??
-??=
 @class([$codeClasses])
 @class([$preClasses])><code
 @else
@@ -638,8 +668,8 @@ $wrapperClasses
 @endunless
 @if
 @if($argumentsText
+@if($callerLabelledBy
 @if($copy)
-@if($describes)
 @if($disabled)
 @if($dismissible)
 @if($dot)
@@ -654,11 +684,14 @@ $wrapperClasses
 @if($surface
 @if($tooltip)
 @if($trailingIcon)
-@if(filled($label))
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(isset($content))
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 @unless($openBool)
 @unless($wrap)
 A
@@ -677,6 +710,7 @@ Alpine's
 Also
 An
 Animation
+Around
 Aurora
 BOTH
 Base
@@ -726,6 +760,9 @@ Done
 Dot
 Driven
 Drop
+ENT_HTML5));
+ENT_HTML5,
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 English
@@ -916,10 +953,12 @@ With
 Without
 Written
 [
+[$callerLabelledBy,
 ['data-wk-icon-missing'
 ['id'
 ['inverted',
 ['label'
+['name'
 ['outlined'
 ['pending',
 ['primary',
@@ -933,6 +972,7 @@ Written
 [])->class([$baseClasses,
 [overflow-wrap:anywhere]'
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Code
@@ -941,9 +981,12 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\WireKit::stableId(
 \Pushery\WireKit\WireKit::warnUnknownProps('code',
@@ -965,6 +1008,7 @@ __('wirekit::Error')
 __('wirekit::Failed
 __('wirekit::Failed'),
 __('wirekit::Queued'),
+__('wirekit::Remove
 __('wirekit::Remove');
 __('wirekit::Result')">
 __('wirekit::Running…'),
@@ -1120,6 +1164,7 @@ accessible
 acknowledge
 across
 action
+activating
 active
 actual
 actually
@@ -1166,6 +1211,7 @@ announcements:
 announces
 announcing
 anonymous
+another.
 answer
 anticipate
 any
@@ -1195,6 +1241,7 @@ aria-controls="{{
 aria-describedby
 aria-describedby)
 aria-describedby="{{
+aria-disabled="true"
 aria-expanded
 aria-hidden
 aria-hidden,
@@ -1347,6 +1394,8 @@ but
 button
 button's
 button,
+button:
+buttons
 buttons).
 buttons,
 by
@@ -1395,6 +1444,7 @@ chevrons,
 child
 children
 chip
+chips
 choice
 chose
 chosen
@@ -1498,6 +1548,7 @@ contract:
 contrast
 contrasts
 control
+control,
 controls
 coordination
 copied
@@ -1608,6 +1659,7 @@ docs
 document
 documented
 does
+does,
 does.
 done
 done.
@@ -1693,6 +1745,7 @@ exists
 exists.
 expanding
 expandos.
+explains,
 explanation
 explicit
 explicitly
@@ -1722,6 +1775,7 @@ false)
 false),
 false);
 false,
+false;
 family
 faster
 feature
@@ -1734,9 +1788,11 @@ fill
 fill,
 fill="none"
 filled
+filled($label))
 filled-background
 filling
 fills
+filter
 filter_var($wrap,
 find
 findable
@@ -1788,6 +1844,7 @@ for
 for,
 for.
 forbidden
+forced
 forces
 forcing
 foreground
@@ -1903,6 +1960,7 @@ hover:opacity-100',
 hover:text-[color:var(--color-wk-text)]
 how
 however
+html_entity_decode(strip_tags((string)
 hue
 hypothetical
 icon
@@ -1993,6 +2051,7 @@ is_string($name)
 is_string($trigger)
 isn't
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it,
@@ -2131,6 +2190,7 @@ means
 meant
 mechanism
 medium
+meets,
 menus
 merge
 message
@@ -2164,6 +2224,7 @@ ms-1
 much
 much.
 multi-line
+multi-select
 must
 muted
 my
@@ -2183,6 +2244,7 @@ needed
 needs
 neighbors.
 neither
+nest
 nested
 neutralize
 never
@@ -2218,6 +2280,7 @@ off
 off-screen.
 offers
 offset:
+often
 omission.
 on
 on,
@@ -2366,9 +2429,13 @@ post-process
 practice:
 pre-checking
 precompiler
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 prescribes
 present
@@ -2382,6 +2449,7 @@ printed
 problem
 prod).
 produces
+prohibits
 promise
 promise,
 prop
@@ -2470,6 +2538,7 @@ relative
 remains
 removed
 removes
+removes,
 removing
 render
 render,
@@ -2513,6 +2582,9 @@ ring,
 role
 role,
 role.
+role:
+role="button"
+role="group"
 role="img"
 role="img".
 role="region"
@@ -2829,6 +2901,7 @@ toCssClasses()
 toHtml().
 toggle
 toggles
+toggletip
 token
 token,
 too,
@@ -2836,6 +2909,7 @@ took,
 tool
 toolbar
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -2870,6 +2944,8 @@ trigger→content
 trim($arguments),
 trim($name)
 trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip
 trip:
 true"
@@ -2885,6 +2961,7 @@ try
 turn
 twenty
 twice
+twice.
 two
 two+
 two.
@@ -2893,6 +2970,7 @@ typed
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -3004,6 +3082,7 @@ word
 word)
 word.
 word:
+words;
 working
 works
 works).
@@ -3016,6 +3095,7 @@ wrap:
 wrapped
 wrapper
 wrapper)
+wrapper,
 wrapping
 wraps
 writes
@@ -3038,7 +3118,9 @@ x-on:click="dismiss()"
 x-on:click="isOpen
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

@@ -93,6 +93,7 @@ $wrap
 '';
 ',
 '-1'
+'-mx-[var(--wk-page-header-bleed,0px)]
 '1'
 '2'
 '2',
@@ -263,6 +264,7 @@ $wrap
 'truncate'
 'variant'
 'variant';
+'w-[calc(100%_+_2*var(--wk-page-header-bleed,0px))]',
 'w-full',
 'warning'
 'warning',
@@ -432,7 +434,6 @@ The
 They
 This
 Three
-Two
 UNBOUND
 URL
 What
@@ -475,6 +476,7 @@ Written
 `--gap-wk-*`
 `--measure-wk-wide`
 `--measure-wk`
+`--wk-page-header-bleed`
 `--wk-page-header-rest-gap`
 `--wk-page-header-top`
 `--wk-strip-inset`
@@ -638,6 +640,7 @@ behind
 belongs
 below
 below),
+below,
 below.
 beside
 block
@@ -650,6 +653,7 @@ border.
 both
 bottom
 box
+box;
 break
 break,
 breaking
@@ -925,6 +929,7 @@ implode('
 imports
 in
 in,
+in.
 in_array($stackBelow,
 includes
 indent
@@ -972,6 +977,7 @@ layout
 layout,
 leading
 least
+leave
 leaves
 left
 lets
@@ -1106,6 +1112,8 @@ out.
 out:
 outlier).
 outside
+over
+over,
 overflow-wrap
 overlay
 own
@@ -1145,6 +1153,7 @@ pure
 push
 put
 puts
+px-[var(--wk-page-header-bleed,0px)]',
 qualified:
 ran
 range
@@ -1231,9 +1240,11 @@ shorthand:
 should
 show
 shown
+shows
 shrink,
 sibling
 sidebar
+sides,
 silent
 silently
 silently,
@@ -1276,6 +1287,7 @@ starts
 state
 state,
 status
+staying
 stays
 stick;
 sticks
@@ -1407,6 +1419,7 @@ wants
 wants.
 warning
 was
+was,
 way
 way.
 weight
@@ -1423,12 +1436,15 @@ why:
 wide
 wide,
 wide.
+widen
 widens
 width
 width,
+widths
 window's.
 window.
 window:
+winner
 wins
 with
 without

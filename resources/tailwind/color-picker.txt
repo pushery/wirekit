@@ -1,5 +1,7 @@
 !
+!$event.defaultPrevented
 !==
+"Clear
 "No
 "clear"
 "duplicate"
@@ -22,6 +24,7 @@
 $announceError
 $announceErrors
 $attributes
+$attributes->except('form');
 $attributes->except('type')->except('aria-describedby')->class([$inputClasses])
 $attributes->except('type')->whereStartsWith(['wire:model',
 $attributes->except('x-ref');
@@ -32,17 +35,25 @@ $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes]
 $callerLabel
+$callerLabel),
+$callerLabelledBy
 $callerRef
 $checker
+$clearColorLabel
 $controlDescribedBy
 $controlDescribedBy).'
+$copyColorLabel
 $disabled
 $error
 $errorMessage
 $errorMessage)
+$event.target
 $event.target.value"
 $fieldClasses
 $fieldLabelId
+$fieldLabelText
+$fieldLabelText,
+$formOwner
 $format,
 $formatValue
 $formatValue,
@@ -51,7 +62,10 @@ $hint
 $inputClasses
 $jsConfig
 $name
+$name)
+$name));
 $name)])
+$name)]),
 $nativeId
 $nativeOnMobile
 $nativeOnMobile,
@@ -64,6 +78,8 @@ $pickerId
 $pickerId.'-error'
 $pickerId.'-hint'
 $pickerId.'-native';
+$pickerName
+$pickerName])
 $popover
 $popover;
 $popoverValue
@@ -78,6 +94,8 @@ $presetList
 $preset])
 $readoutExpr
 $recentsKey,
+$refs.wkNativeColor.defaultValue
+$refs.wkNativeColor.form
 $required
 $scope);
 $showValue
@@ -103,6 +121,7 @@ $wrapperClasses
 $wrapperClasses])
 &&
 '#000000',
+''
 ''"></span>
 '')
 '')))
@@ -120,7 +139,9 @@ $wrapperClasses])
 'announceError'
 'args'
 'aria-label');
-'aria-label'])->whereDoesntStartWith(['wire:model',
+'aria-label',
+'aria-labelledby');
+'aria-labelledby'])->whereDoesntStartWith(['wire:model',
 'background-image:
 'border-0
 'border-[length:var(--border-wk-width)]',
@@ -210,7 +231,6 @@ $wrapperClasses])
 'wrapper',
 'x-model'])->class(['relative',
 'x-model'])->whereDoesntStartWith('x-modelable')
-($errors
 ($format)
 ($hint
 ($name
@@ -228,6 +248,8 @@ $wrapperClasses])
 (SV
 (Support\CallerListeners).
 (Support\FieldControl):
+(Support\FormOwner).
+(WCAG
 (`>Color
 (`pickColor`,
 (angled
@@ -235,6 +257,7 @@ $wrapperClasses])
 (bool)
 (change
 (default).
+(filled($callerLabel)
 (h/s/v/a
 (height
 (is_array($presetList)
@@ -260,6 +283,7 @@ $wrapperClasses])
 (structural,
 (the
 (top→bottom)
+(true)
 (useNative,
 (which
 );
@@ -285,6 +309,7 @@ $wrapperClasses])
 0,
 0-1.9.693-2.166
 0;';
+0L2.697
 0c.055.194.084.4.084.612v0a.75.75
 0c.646.049
 0–360
@@ -298,17 +323,22 @@ $wrapperClasses])
 1.077
 1.1.128
 1.288.11
+1.5.217
 1.638m7.332
 1.8
 1.907
 1.907-2.185a48.208
 1.927-.184"
 1.927.184
+1.948
+1.948-3.374L13.949
 100%);"
 12"/></svg>
 12.75
 12px
 13.5
+15.75h.007v.008H12v-.008Z"
+16.126ZM12
 16px
 17%,
 18
@@ -321,6 +351,7 @@ $wrapperClasses])
 2.25H6.75A2.25
 2.25h-3c-1.03
 2.5.3,
+2.813-1.874
 21v-3l9-9"/><path
 22
 24
@@ -330,6 +361,11 @@ $wrapperClasses])
 3
 3-3l.4.4Z"/></svg>
 3.3.1
+3.3.1):
+3.374
+3.374h14.71c1.73
+3.376c-.866
+3.378c-.866-1.5-3.032-1.5-3.898
 3.4-3.4a2.1
 3.888A2.25
 33%,
@@ -353,6 +389,7 @@ $wrapperClasses])
 8px;
 9-13.5"
 9l.4.4a2.1
+9v3.75m-9.303
 :
 :aria-expanded="isOpen
 :aria-invalid="invalidInput
@@ -367,7 +404,9 @@ $wrapperClasses])
 :class="invalidInput
 :color'))
 :color',
+:example'),
 :key="recent">
+:label',
 :saturation%,
 :style="alphaMarkerStyle"></div>
 :style="alphaTrackStyle"></div>
@@ -387,6 +426,7 @@ $wrapperClasses])
 <body>,
 <button
 <div
+<div>
 <input
 <label
 <p
@@ -394,6 +434,7 @@ $wrapperClasses])
 <svg
 <template
 <x-wirekit::clipboard-button>);
+<x-wirekit::clipboard-button>,
 =
 ===
 =>
@@ -419,6 +460,7 @@ $wrapperClasses])
 @elseif($fieldLabelId
 @elseif($fieldLabelId)
 @elseif($hint)
+@elseif(filled($callerLabel))
 @endforeach
 @endif
 @endif>
@@ -427,10 +469,12 @@ $wrapperClasses])
 @foreach($presetColors
 @if(!
 @if($announceError)
+@if($callerLabelledBy)
 @if($callerRef
 @if($controlDescribedBy)
 @if($disabled)
 @if($fieldLabelId
+@if($formOwner)
 @if($hasError
 @if($hasError)
 @if($name)
@@ -446,7 +490,6 @@ $wrapperClasses])
 @if($withClear)
 @if($withEyedropper)
 @if($withRecents)
-@if(filled($callerLabel))
 @input="current
 @input="onInput($event.target.value)"
 @isset($trigger)
@@ -521,6 +564,7 @@ End
 English
 Escape
 Every
+Example:
 Explicit
 Extra
 FOUR
@@ -559,6 +603,7 @@ OR
 OS
 OUTSIDE
 Off
+On
 One
 Opt-in;
 Outside
@@ -622,11 +667,13 @@ Your
 ['@input',
 ['color'
 ['hex',
+['label'
 ['name'
 []
 [])
 [],
 [];
+\Pushery\WireKit\Support\AlpinePayload::from($copyColorLabel)
 \Pushery\WireKit\Support\AlpinePayload::from($jsConfig)
 \Pushery\WireKit\Support\AlpinePayload::from($preset)
 \Pushery\WireKit\Support\AlpinePayload::from($value)
@@ -644,6 +691,9 @@ Your
 \Pushery\WireKit\Support\CssIdentifier::idSelector($pickerId.'-error'),
 \Pushery\WireKit\Support\DomId::unique($id
 \Pushery\WireKit\Support\FieldControl
+\Pushery\WireKit\Support\FieldError::first($errors
+\Pushery\WireKit\Support\FieldError::has($errors
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::from($presets);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
@@ -658,6 +708,7 @@ __('wirekit:::name
 __('wirekit::Clear
 __('wirekit::Color
 __('wirekit::Copied
+__('wirekit::Copy
 __('wirekit::Could
 __('wirekit::Hue')
 __('wirekit::No
@@ -672,6 +723,7 @@ __('wirekit::Use
 `$controlDescribedBy`
 `(pointer:
 `:error="$errors->first('brand_color')"`
+`:value`
 `;`,
 `<input
 `<label
@@ -689,6 +741,8 @@ __('wirekit::Use
 `any()`,
 `args`
 `aria-label`
+`aria-label`,
+`aria-labelledby`
 `aria-required`
 `aria-valuenow`
 `aria-valuetext`
@@ -708,9 +762,11 @@ __('wirekit::Use
 `eyedropper`)
 `failure:
 `for`
+`form`
 `formattedValue`
 `h`/`s`/`v`/`a`
 `hint`
+`id`
 `input`
 `isPending`
 `items-start`
@@ -767,8 +823,10 @@ add
 adds
 after
 against
+alert
 all
 all.
+alone.
 alpha
 already
 already-closed
@@ -779,6 +837,7 @@ ancestor
 anchor,
 anchors
 and
+and,
 announce-error
 announceErrors)
 announced
@@ -801,6 +860,7 @@ aria-describedby
 aria-describedby="{{
 aria-haspopup/aria-expanded
 aria-haspopup="dialog"
+aria-hidden="true"
 aria-hidden="true"><path
 aria-invalid="true"
 aria-label="{{
@@ -845,6 +905,7 @@ background-size:
 bag
 bag,
 bag.
+bare
 barrel
 base
 base;
@@ -872,6 +933,7 @@ bind
 bind,
 bindings
 binds
+black.
 block
 block,
 blurry.
@@ -914,7 +976,9 @@ byte-identical.
 call
 call,
 call.
+called
 caller's
+caller's,
 caller's.
 calls
 can
@@ -925,6 +989,7 @@ capability
 capped
 carried
 carries
+carries:
 carry
 carrying
 case
@@ -935,6 +1000,7 @@ chain
 chain.
 change
 changed
+changes
 channel.
 check.
 checked
@@ -954,6 +1020,7 @@ class="flex
 class="h-4
 class="h-[var(--size-wk-target-min)]
 class="inline-flex
+class="mt-1
 class="pointer-events-none
 class="relative
 class="shrink-0
@@ -985,8 +1052,9 @@ colliding,
 color
 color"
 color":
-color')
+color";
 color'),
+color');
 color',
 color)
 color,
@@ -1030,6 +1098,7 @@ control:
 controls
 convention
 copy
+copy:
 costs
 could
 counts
@@ -1038,10 +1107,12 @@ covers
 crisp
 crowding
 current
+current">
 current:
 cursor-crosshair
 cursor-pointer
 custom
+d="M12
 d="M15.666
 d="M3
 d="M6
@@ -1049,6 +1120,7 @@ d="m15
 d="m2
 d="m4.5
 data,
+data-wk-color-picker-copy-failed><path
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-ref-scope
@@ -1062,6 +1134,7 @@ declaration
 decorative
 deduper,
 default
+default,
 default:
 delete
 deliberately.
@@ -1093,6 +1166,7 @@ documented
 does
 does.
 does:
+does;
 don't
 drag
 drag's
@@ -1125,6 +1199,7 @@ emptied
 empties
 empty
 empty).
+empty.
 empty:
 enclosing
 end
@@ -1137,6 +1212,7 @@ escape
 escapes
 escaping
 event
+event.
 events
 every
 everything
@@ -1149,9 +1225,11 @@ exposed
 extends
 extension.
 extra
+eye
 eyedropper
 factory
 failed
+failed'))
 failing.
 failure
 fallback
@@ -1169,10 +1247,15 @@ field
 field's
 field,
 field.
+field:
 file
 file.
 fill="none"
 filled($callerLabel)
+filled($callerLabelledBy)
+filled($id))
+filled($id)))
+filled($name)
 fills
 finds
 fire
@@ -1207,6 +1290,7 @@ for>`
 foreach
 form
 form's
+form="{{
 format
 format'))
 format.
@@ -1243,6 +1327,7 @@ go
 go:
 goes
 got
+green,
 grid
 guard
 guarded
@@ -1321,6 +1406,7 @@ invisible.
 is
 is)
 is_scalar($preset)
+is_string($callerLabelledBy)
 is_string($preset)
 it
 it,
@@ -1433,6 +1519,7 @@ no-op
 node,
 noise.
 non-window
+none
 none`
 not
 not.
@@ -1445,8 +1532,6 @@ null
 null)
 null),
 null);
-null)?->first($name)
-null)?->has($name));
 null,
 null;
 null])
@@ -1454,6 +1539,7 @@ number
 numeric
 of
 off
+offer
 offers
 oklch
 oklch()',
@@ -1467,6 +1553,7 @@ once
 once:
 one
 one's
+one,
 one.
 one:
 only
@@ -1494,8 +1581,10 @@ outside
 outside.
 over
 overflow-hidden
+overflow-y-auto
 overhang
 overrode
+overscroll-contain
 overwritten
 own
 own.
@@ -1532,6 +1621,7 @@ picker'));
 picker's
 picker.
 picker<`),
+pickers
 picking
 picks
 piece
@@ -1598,6 +1688,7 @@ reaches
 reaches,
 reaching
 read
+read,
 readable
 reader
 reading
@@ -1633,12 +1724,14 @@ rendered,
 renders
 renders,
 repeater
+replace
 replaces
 represent
 request
 request's
 required
 requirement.
+reset
 resolve
 resolveClasses()
 resolves
@@ -1646,6 +1739,7 @@ response
 response.
 restore
 restores
+returns
 reverse,
 rgb
 rgb(),
@@ -1688,6 +1782,7 @@ save.
 saved
 saved,
 saved:
+say
 saying
 says
 says,
@@ -1711,6 +1806,7 @@ shadow)
 shadow-[var(--shadow-wk-lg)]"
 shadow-[var(--shadow-wk-sm)]"
 shape
+shape,
 shapes
 shapes,
 share
@@ -1725,6 +1821,7 @@ shows
 shows.
 sibling
 side
+sight.
 silence.
 silently.
 silhouette
@@ -1742,7 +1839,9 @@ so
 someone
 somewhere
 space-y-3
+spacing.
 speaking
+speaks
 spectrum
 spellcheck="false"
 spelling
@@ -1751,6 +1850,7 @@ spellings,
 spells
 spoken
 spreads
+stack
 stacking
 started
 starting
@@ -1784,6 +1884,7 @@ style="{{
 styled
 stylesheet
 stylesheet's
+submits,
 subtree.
 success-colored
 succession
@@ -1814,15 +1915,18 @@ teleported
 teleporting
 teleports
 tell
+telling
 tempting
 test
 text
+text-[color:var(--color-wk-danger-text)]"
 text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-success)]"
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-text-muted)]">{{
 text-[length:var(--text-wk-sm)]
+text-[length:var(--text-wk-xs)]
 text.
 than
 that
@@ -1830,6 +1934,7 @@ that.
 that:
 the
 their
+theirs
 them
 them),
 them,
@@ -1854,6 +1959,7 @@ timing,
 tints
 tip).
 to
+to;
 together
 toggle
 toggle,
@@ -1880,6 +1986,7 @@ trigger,
 trigger-slot
 trigger.
 trigger:
+trim($wkField->labelText())
 trim(((string)
 trim((string)
 trip
@@ -1930,8 +2037,7 @@ validation
 validation.
 value
 value')
-value'))
-value'),
+value');
 value,
 value.
 value="{{
@@ -1954,6 +2060,7 @@ w-full
 warning
 was
 way
+way,
 way.
 ways
 well
@@ -1987,6 +2094,7 @@ withClear
 withdrew.
 without
 word
+wording.
 works
 worth
 would
@@ -2008,7 +2116,9 @@ x-data="{
 x-for="recent
 x-if
 x-if="!useNative">@endif
+x-if="hexError">
 x-if="useNative">
+x-on:reset.window="current
 x-ref
 x-ref="alpha"
 x-ref="hue"
@@ -2016,10 +2126,12 @@ x-ref="input"
 x-ref="panel"
 x-ref="plane"
 x-ref="trigger"
+x-ref="wkNativeColor"
 x-show)
 x-show="!cleared"@endif></span>
-x-show="!copied"
 x-show="copied"
+x-show="copyFailed"
+x-show="copyIdle"
 x-show="hasEyeDropper"
 x-show="isOpen"
 x-show="recents.length"
@@ -2027,8 +2139,10 @@ x-teleport="#wk-overlay-root">
 x-text="announcement"></div>
 x-text="cleared
 x-text="copied
+x-text="copyFailed
 x-text="current"
 x-text="format"
+x-text="hexError"></p>
 x-text="hexError"></span>
 x-text="{{
 x-transition.opacity

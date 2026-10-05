@@ -32,6 +32,9 @@ final class FieldControl
 
     private ?string $labelId = null;
 
+    /** The id a control that keeps its own name reported, see follow(). */
+    private ?string $followed = null;
+
     private function __construct(
         private readonly ?string $target,
         private readonly bool $offers,
@@ -71,6 +74,21 @@ final class FieldControl
         return $this->labelId = DomId::unique(($this->target ?? 'field').'-label', 'field-label-');
     }
 
+    /**
+     * A control that does not take the label reports the id it got, and the label points there.
+     *
+     * A plain field takes its id from its `name`, which is the field's target, but a second one
+     * with the same name on the page gets `-2` from DomId: pointed at the name, the second field's
+     * label named the first one's control. The first control to report wins, and a caller who
+     * pointed `for` somewhere keeps that wiring, as with takeLabel().
+     */
+    public function follow(string $controlId): void
+    {
+        if ($this->offers && ! $this->taken && $this->followed === null && $controlId !== '') {
+            $this->followed = $controlId;
+        }
+    }
+
     /** The visible label's text, for a control that names its parts with it. */
     public function labelText(): string
     {
@@ -81,12 +99,13 @@ final class FieldControl
      * What the field's label points its `for` at.
      *
      * The control that took the label, or nothing when that control has no element a label can
-     * name and is named by reference instead. Before any control took it, the target the field
-     * was given: its `for`, or its `name`, which is the id a plain input carries.
+     * name and is named by reference instead. Before any control took it, the id a plain control
+     * reported through follow(), else the target the field was given: its `for`, or its `name`,
+     * which is the id a plain input carries.
      */
     public function forId(): ?string
     {
-        return $this->taken ? $this->controlId : $this->target;
+        return $this->taken ? $this->controlId : ($this->followed ?? $this->target);
     }
 
     /** The label's id, once a control took the label; the label carries no id before that. */

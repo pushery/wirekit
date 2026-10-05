@@ -144,10 +144,18 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `aria-labelledby` names the widget where a reader meets it, not the wrapper,
+    // where it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
 @endphp
 
 <figure
-    {{ $attributes->merge(['style' => $figureStyle])->class([$wrapperClasses]) }}
+    {{ $attributes->except('aria-labelledby')->merge(['style' => $figureStyle])->class([$wrapperClasses]) }}
     @if($decorative) role="presentation" @endif
     x-data="wirekitImageCompare({
         value: {{ $clampedValue }},
@@ -173,6 +181,7 @@
         type="hidden"
         x-ref="hiddenInput"
         @if($name !== null) name="{{ $name }}" @endif
+        @if($formOwner) form="{{ $formOwner }}" @endif
         value="{{ $clampedValue }}"
         :value="value"
     />
@@ -254,7 +263,7 @@
         class="{{ $handleClasses }}"
         :style="handleStyle()"
         role="slider"
-        aria-label="{{ $ariaLabel }}"
+        @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $ariaLabel }}" @endif
         aria-valuenow="{{ (int) $clampedValue }}"
         :aria-valuenow="value"
         aria-valuemin="0"

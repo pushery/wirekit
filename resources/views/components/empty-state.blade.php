@@ -89,9 +89,10 @@
     @endif
 
     @if($description)
-        <p data-wk-prose-skip class="mb-4 max-w-md text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+        {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
+        <div data-wk-prose-skip class="mb-4 max-w-md text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $description }}
-        </p>
+        </div>
     @endif
 
     {{-- Default slot holds the call-to-action (e.g. button) --}}

@@ -39,6 +39,12 @@
     'placeholder' => null,
     'maxLength' => null,
     'editable' => true,
+    // Takes the editor out of use: the document stays in its field, dimmed and announced as
+    // unavailable (`aria-disabled` on the surface), nothing in it can be changed, and nothing
+    // is submitted. Built on the non-editable rendering (`editable` false): no toolbar, no form
+    // field, the engine mounted with `editable: false`. Declared rather than left to the
+    // attribute bag, where it lands on the wrapper div and nothing reads it.
+    'disabled' => false,
     'label' => null,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
@@ -65,7 +71,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $editable = BooleanProp::from($editable, true);
+    $disabled = BooleanProp::from($disabled, false);
+    $editable = BooleanProp::from($editable, true) && ! $disabled;
     $autofocus = BooleanProp::from($autofocus, false);
     $required = BooleanProp::from($required, false);
 
@@ -90,7 +97,11 @@
     // so the control the user actually operates kept no accessible name at all — WCAG
     // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
-    $attributes = $attributes->except(['aria-label']);
+    // A caller's `aria-labelledby` names the control and wins over the component's own name, as
+    // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -139,8 +150,8 @@
     );
 
     // Error detection: explicit prop OR Laravel validation bag.
-    $hasError = $error || ($name && ($errors ?? null)?->has($name));
-    $errorMessage = $error ?? ($name ? ($errors ?? null)?->first($name) : null);
+    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?? ($name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
 
     // First-paint content (format=html only), rebuilt rather than echoed. The browser parses
     // this copy in the live document before the engine mounts, so the engine's schema never
@@ -163,6 +174,10 @@
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
+    // A required editor that a submit found empty says so under it (partials/required-message),
+    // unless the server's own message already stands there. A read-only editor sends nothing.
+    $requiredMessageId = $required && $editable && ! $hasError ? $id.'-required' : null;
+    $describedBy = trim($describedBy.' '.($requiredMessageId ?? ''));
 
     // Route wire:model to the <textarea x-ref="input"> (the element the editor writes to
     // and fires its input event on), NOT the wrapper div — otherwise Livewire binds to a
@@ -173,6 +188,16 @@
     // outermost element marks the boundary (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // What acts only on the field the reader types into goes to the editing surface and to the form
+    // field below: on the wrapper the on-screen keyboard reads none of it (Support\FieldAttributes).
+    // `maxlength`, the HTML spelling, sets the same soft limit as `maxLength`, which it never reached.
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, \Pushery\WireKit\Support\FieldAttributes::KEYBOARD);
+    $maxLength ??= $attributes->get('maxlength');
+    $attributes = $attributes->except('maxlength');
 
     $wireModel = $attributes->whereStartsWith('wire:model');
     $rest = $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model');
@@ -223,7 +248,7 @@
         //
         // So the label is wired by REFERENCE instead, and aria-label stays the
         // fallback for the unlabeled case.
-        'ariaLabelledby' => $label ? $id.'-label' : $fieldLabelId,
+        'ariaLabelledby' => $callerLabelledBy ?? ($label ? $id.'-label' : $fieldLabelId),
         // `__()` on both halves of the same name. editor.js spreads this onto the
         // contenteditable as its aria-label, so an untranslated literal here would
         // announce the editor in English on the Tiptap path while the textarea path
@@ -236,13 +261,16 @@
         // engine builds inside the host, without one the host is hidden. On the host,
         // `aria-label="Release notes"` would leave a textbox announced as "Rich text
         // editor" on a page whose visible label says "Release notes".
-        'ariaLabel' => $label || $fieldLabelId !== null ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
+        'ariaLabel' => $callerLabelledBy !== null || $label || $fieldLabelId !== null ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
         // The same holds one attribute over: `aria-required` goes to the textbox, because a
         // generic element may not carry it, and on the host the textbox would never be
         // announced as required.
         'ariaRequired' => (bool) $required,
+        // The message of an empty required editor stands under the frame, outside this
+        // component's scope, so the factory finds it by id and writes it.
+        'requiredMessageId' => $requiredMessageId,
         // Plumbed to the Tiptap path too (not just the textarea fallback's
         // data-autofocus) — editor.js focuses the editor in onCreate when set.
         'autofocus' => (bool) $autofocus,
@@ -253,18 +281,28 @@
         'overPhrases' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count character over the limit|[2,*] :count characters over the limit'),
         'locale' => str_replace('_', '-', app()->getLocale()),
     ];
+    // Only when set, so the payload of every editor in use stays as it was.
+    if ($disabled) {
+        $jsConfig['ariaDisabled'] = true;
+    }
+    // The same for what the caller wrote for the field: the factory writes it onto the surface the
+    // engine builds, where the on-screen keyboard reads it.
+    if ($fieldAttributes->getAttributes() !== []) {
+        $jsConfig['fieldAttributes'] = $fieldAttributes->getAttributes();
+    }
 
-    $wrapperClasses = WireKit::resolveClasses('editor', 'wrapper', implode(' ', [
+    $wrapperClasses = WireKit::resolveClasses('editor', 'wrapper', implode(' ', array_filter([
         'overflow-hidden',
         'rounded-[var(--radius-wk-md)]',
         'border-[length:var(--border-wk-width)]',
         $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]',
         'bg-[var(--color-wk-bg-input)]',
         'shadow-[var(--shadow-wk-sm)]',
+        $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'focus-within:ring-[length:var(--ring-wk-width)]',
         $hasError ? 'focus-within:ring-[var(--color-wk-danger)]' : 'focus-within:ring-[var(--color-wk-ring)]',
-    ]), $scope);
+    ])), $scope);
     // `value` rather than `bind`: this layer is the OUTERMOST x-data here, so an
     // undeclared property is in no scope at all — the binding would name nothing
     // and init() would disarm, leaving a component that advertises support and
@@ -347,12 +385,15 @@
              format="json" there's no server renderer, so the seed is empty. --}}
         <div
             x-ref="content"
+            {{-- The engine builds the textbox inside this host and takes its attributes once, at
+                 mount, so the invalid state of an empty required editor is written onto it here. --}}
+            @if($requiredMessageId) x-effect="_syncRequiredInvalid()" @endif
             id="{{ $id }}"
             {{-- No name and no `aria-required` here. This host is never the textbox: with an
                  engine the textbox is the surface the engine builds inside it, and that surface
                  takes both from `ariaLabel` and `ariaRequired` in the config above; without one
                  the host is hidden and the form field below is the control. --}}
-            class="flex flex-col cursor-text [contain:inline-size] {{ $minHeight }} overflow-y-auto wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]"
+            class="flex flex-col {{ $disabled ? 'cursor-not-allowed' : 'cursor-text' }} [contain:inline-size] {{ $minHeight }} overflow-y-auto wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]"
             @if($maxHeight) style="max-height: {{ $maxHeight }};" @endif
         ><div data-wk-editor-seed class="wk-editor-content">{!! $initialHtml !!}</div></div>
 
@@ -371,7 +412,7 @@
                 {{-- The caller's own name first. This is the control a reader without the
                      editor engine actually types into, so a name that stops at the
                      wrapper never reaches them. --}}
-                aria-label="{{ $label ?? $callerLabel ?? ($fieldLabelId !== null ? $wkField->labelText() : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))) }}"
+                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $label ?? $callerLabel ?? ($fieldLabelId !== null ? $wkField->labelText() : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))) }}" @endif
                 {{-- The invalid state and its description, SERVER-SIDE. Both were passed
                      only into the Tiptap x-data payload, which editor.js applies to the
                      contenteditable at mount — so the document the server sent carried no
@@ -381,12 +422,18 @@
 
                      The binding stays and takes over after init; this is the static half,
                      the same shape the icon-only guard asks of every bound name. --}}
-                @if($hasError) aria-invalid="true" @endif
+                @if($hasError)
+                    aria-invalid="true"
+                @elseif($requiredMessageId)
+                    x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
+                @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 {{-- `aria-required`, never the native attribute: while the engine runs this
                      field is hidden, and a hidden required control stops the form submitting. --}}
                 @if($required) aria-required="true" @endif
                 @if($autofocus) data-autofocus @endif
+                @if($formOwner) form="{{ $formOwner }}" @endif
+                {{ $fieldAttributes }}
                 {{-- Mirror the maxHeight cap on the fallback textarea so the absent-Tiptap
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}
                 @if($maxHeight) style="max-height: {{ $maxHeight }}; overflow-y: auto;" @endif
@@ -394,6 +441,11 @@
                 {{-- wire:model binds to the textarea the editor writes to. --}}
                 {{ $wireModel }}
             >{{ is_string($value) ? $value : ($value !== null ? \Pushery\WireKit\Support\AlpinePayload::json($value) : '') }}</textarea>
+            {{-- The form field is hidden while the engine runs, and a hidden required field would
+                 stop the form without a word, so a required editor checks through a stand-in. --}}
+            @if($required)
+                @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+            @endif
         @endif
 
         @if(($maxLength && $editable) || isset($bottomBar))
@@ -413,6 +465,10 @@
             </div>
         @endif
     </div>
+
+    @if($requiredMessageId)
+        @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId, 'requiredMessageBound' => false])
+    @endif
 
     {{-- Error / hint --}}
     @if($hasError && $errorMessage)

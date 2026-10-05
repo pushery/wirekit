@@ -37,6 +37,9 @@
     // convention + the event-calendar default. Configurable via config/wirekit.php.
     'weekStartsOn' => config('wirekit.components.calendar.week-starts-on', 1),
     'scope' => null,
+    // A required calendar stops an empty submit, as a native required field does; see the
+    // stand-in below. Declared, so it no longer lands on the root, where it did nothing.
+    'required' => false,
 ])
 
 @php
@@ -53,6 +56,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $selectableHeader = BooleanProp::from($selectableHeader, false);
     $range = BooleanProp::from($range, false);
+    $required = BooleanProp::from($required, false);
 
     // A date object, which is what an Eloquent `date` cast hands over, is written as the day it
     // names: cast to a string it would carry a time of day the factory cannot read. A range may
@@ -81,7 +85,19 @@
 
     // Calendar — standalone month grid for date selection.
     // Uses role="grid" with keyboard navigation: arrows, PageUp/Down, Home/End.
-    $name = $attributes->get('name', 'date');
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', 'date');
+    // The ids this calendar derives from its name. Two calendars on one page with the same name,
+    // or with none (the name falls back to `date`), wrote the same ones, so the second grid was
+    // named by the first one's month heading and the second header's labels named the first
+    // one's selects. DomId::distinct keeps the first verbatim and gives a repeat `-2`.
+    $idBase = \Pushery\WireKit\Support\DomId::distinct($name.'-calendar');
+    $monthSelectId = $selectableHeader ? \Pushery\WireKit\Support\DomId::distinct($name.'-month') : null;
+    $yearSelectId = $selectableHeader ? \Pushery\WireKit\Support\DomId::distinct($name.'-year') : null;
+    // The message of an empty required calendar, named by its grids. The id follows the
+    // month labels', which the factory builds from the same base.
+    $requiredMessageId = $required ? $idBase.'-required' : null;
 
     $classes = WireKit::resolveClasses('calendar', 'base', implode(' ', [
         // wk-calendar: on phones (<640px) the dist/wirekit.css rule flips this to
@@ -143,7 +159,10 @@
         'appearance-none',
         'rounded-[var(--radius-wk-sm)]',
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border)]',
+        // The control border, as on the select component: the decorative border stood at
+        // 1.30:1 against the page, under the 3:1 WCAG 1.4.11 asks of a control's boundary.
+        'border-[var(--color-wk-border-strong)]',
+        'hover:border-[var(--color-wk-border-strong-hover)]',
         'bg-[var(--color-wk-bg-input)]',
         'pl-[var(--padding-wk-x-sm)] pr-7 py-1',
         'text-[length:var(--text-wk-sm)]',
@@ -153,11 +172,20 @@
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]);
 
-    // Base order is Sunday-first; rotate so the configured start day leads
-    // (Monday by default, per the house convention).
-    $weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    // The column headers before Alpine starts, and without JavaScript for good: in the
+    // application's language and in the two forms the factory asks Intl for (`weekday: 'short'`
+    // for the cell, `'long'` for `abbr`), so its own headers replace them with the same words.
+    // The configured start day leads (Monday by default, per the house convention); 1 January
+    // 2023 was a Sunday, the anchor the factory counts from as well.
     $wkStart = ((int) $weekStartsOn) % 7;
-    $weekdays = array_merge(array_slice($weekdays, $wkStart), array_slice($weekdays, 0, $wkStart));
+    $weekdays = [];
+    for ($i = 0; $i < 7; $i++) {
+        $weekday = \Carbon\CarbonImmutable::create(2023, 1, 1 + (($wkStart + $i) % 7));
+        $weekdays[] = [
+            'short' => \Pushery\WireKit\Support\LocalizedDate::bySkeleton($weekday, 'EEE', 'D'),
+            'long' => \Pushery\WireKit\Support\LocalizedDate::bySkeleton($weekday, 'EEEE', 'l'),
+        ];
+    }
 
     // Built here rather than assembled inside the attribute, for two reasons —
     // and the second one is not cosmetic.
@@ -179,6 +207,7 @@
     // it on `/`.
     $valueLiteral = $value ? \Pushery\WireKit\Support\AlpinePayload::from((string) $value) : 'null';
     $nameLiteral = \Pushery\WireKit\Support\AlpinePayload::from($name);
+    $idBaseLiteral = \Pushery\WireKit\Support\AlpinePayload::from($idBase);
 
     // The APPLICATION's locale reaches the factory, not the browser's. The month
     // heading is mirrored into an aria-live region and every day cell is named
@@ -222,11 +251,27 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `aria-labelledby` names the widget where a reader meets it, not the wrapper,
+    // where it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // A caller's `aria-label` goes to the same element: on the wrapper, which has no role, ARIA
+    // prohibits a name, and a reader never hears it.
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
+    $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
 @endphp
 
 <div
-    x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }}, range: {{ $range ? 'true' : 'false' }}, locale: {{ $calendarLocale }}, todayLabel: {{ $todayLiteral }} })"
-    {{ $attributes->whereDoesntStartWith('wire:model')->class([$classes]) }}
+    x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, idBase: {{ $idBaseLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }}, range: {{ $range ? 'true' : 'false' }}, locale: {{ $calendarLocale }}, todayLabel: {{ $todayLiteral }} })"
+    {{-- `name` belongs to the hidden fields below, which render it; on this div it is not a valid
+         attribute, and a `[name="…"]` lookup would find the calendar before its field. --}}
+    {{ $attributes->except('name')->whereDoesntStartWith('wire:model')->class([$classes]) }}
+    {{-- Named by the caller, the calendar is a group of its months, each of which keeps its own name. --}}
+    @if(($callerLabelledBy || $callerLabel) && ! $attributes->has('role')) role="group" @endif
 >
     {{-- Hidden input for form submission --}}
     {{-- Static value as well as the bound one: the field is empty until Alpine boots, and a form submitted in that window sends nothing while the visible control already shows the value. Both come from the same PHP expression that feeds the factory, so they cannot drift. --}}
@@ -237,11 +282,16 @@
          Livewire 4 adds `.self` to it, so a binding on the root heard only events dispatched on the
          root itself and dropped the `input` this field sends: the property never changed. Alpine's
          own `x-model` has no `.self` and stays on the root. --}}
-    <input type="hidden" @unless($range) name="{{ $name }}" @endunless x-ref="hiddenInput" value="{{ $value }}" :value="rangeValue" {{ $attributes->whereStartsWith('wire:model') }} />
+    <input type="hidden" @unless($range) name="{{ $name }}" @endunless x-ref="hiddenInput" value="{{ $value }}" :value="rangeValue" {{ $attributes->whereStartsWith('wire:model') }} @if($formOwner) form="{{ $formOwner }}" @endif />
     @if($range)
         {{-- The two ends as named fields, matching date-picker's `name[start]` / `name[end]`. --}}
-        <input type="hidden" name="{{ $name }}[start]" x-ref="hiddenStart" value="{{ $rangeStart }}" :value="rangeStartValue" />
-        <input type="hidden" name="{{ $name }}[end]" x-ref="hiddenEnd" value="{{ $rangeEnd }}" :value="rangeEndValue" />
+        <input type="hidden" name="{{ $name }}[start]" x-ref="hiddenStart" value="{{ $rangeStart }}" :value="rangeStartValue" @if($formOwner) form="{{ $formOwner }}" @endif />
+        <input type="hidden" name="{{ $name }}[end]" x-ref="hiddenEnd" value="{{ $rangeEnd }}" :value="rangeEndValue" @if($formOwner) form="{{ $formOwner }}" @endif />
+    @endif
+    {{-- The browser validates no hidden field, so a required calendar stops an empty submit
+         through a stand-in of its own. --}}
+    @if($required)
+        @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => false])
     @endif
 
     @if($optimisticConfig)
@@ -267,9 +317,9 @@
                  both take the 16px text and the 44px target, which a phone column does not hold
                  beside the two arrows. --}}
             <div class="flex flex-wrap items-center justify-center gap-[var(--padding-wk-x-sm)]">
-                <label class="sr-only" for="{{ $name }}-month">{{ __('wirekit::Month') }}</label>
+                <label class="sr-only" for="{{ $monthSelectId }}">{{ __('wirekit::Month') }}</label>
                 <div class="relative">
-                    <select id="{{ $name }}-month" x-model.number="viewMonth" aria-label="{{ __('wirekit::Month') }}" class="wk-field {{ $headerSelectClasses }}">
+                    <select id="{{ $monthSelectId }}" x-model.number="viewMonth" aria-label="{{ __('wirekit::Month') }}" class="wk-field {{ $headerSelectClasses }}">
                         {{-- Same shape as the year `<select>` beside it, and for the same
                              reason the month heading is built in JavaScript: a list written
                              out here can only be written in one language, while the label
@@ -286,9 +336,9 @@
                         </svg>
                     </div>
                 </div>
-                <label class="sr-only" for="{{ $name }}-year">{{ __('wirekit::Year') }}</label>
+                <label class="sr-only" for="{{ $yearSelectId }}">{{ __('wirekit::Year') }}</label>
                 <div class="relative">
-                    <select id="{{ $name }}-year" x-model.number="viewYear" aria-label="{{ __('wirekit::Year') }}" class="wk-field {{ $headerSelectClasses }}">
+                    <select id="{{ $yearSelectId }}" x-model.number="viewYear" aria-label="{{ __('wirekit::Year') }}" class="wk-field {{ $headerSelectClasses }}">
                         <template x-for="y in yearRange" :key="y">
                             <option :value="y" x-text="y"></option>
                         </template>
@@ -328,18 +378,19 @@
                          tables to a screen reader, which is exactly the case where
                          knowing which month you are in matters most. --}}
                     <div :id="monthLabelId(month.offset)" class="text-center mb-[var(--padding-wk-y-sm)] font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-sm)]" x-text="month.label"></div>
-                    <table data-wk-prose-skip role="grid" class="w-full" :aria-labelledby="monthLabelId(month.offset)">
+                    <table data-wk-prose-skip role="grid" class="w-full" :aria-labelledby="monthLabelId(month.offset)"
+                        @if($required) aria-required="true" aria-describedby="{{ $requiredMessageId }}" x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null" @endif>
                         <thead>
                             <tr>
                                 @foreach($weekdays as $day)
-                                    {{-- Static abbreviation as well as the bound one, the same way the
-                                         hidden input above carries both: the seed keeps the header row
-                                         readable before Alpine boots, and `weekdayHeaders` replaces it
-                                         with the reader's own language a frame later. `abbr` is the
-                                         spelling the WAI-ARIA date-picker example uses to give a column
-                                         its full name — two letters is what fits in the cell, not what a
-                                         screen reader should have to work from. --}}
-                                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
+                                    {{-- Static names as well as the bound ones, the same way the hidden
+                                         input above carries both: the seed keeps the header row readable
+                                         before Alpine boots, in the page's language, and `weekdayHeaders`
+                                         writes the same words once it runs. `abbr` is the spelling the
+                                         WAI-ARIA date-picker example uses to give a column its full name —
+                                         the short form is what fits in the cell, not what a screen reader
+                                         should have to work from. --}}
+                                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day['long'] }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day['short'] }}</th>
                                 @endforeach
                             </tr>
                         </thead>
@@ -382,13 +433,14 @@
         </div>
     @else
     {{-- Calendar grid --}}
-    <table data-wk-prose-skip role="grid" class="w-full" :aria-labelledby="monthLabelId(0)" @keydown="handleKeydown($event)">
+    <table data-wk-prose-skip role="grid" class="w-full" :aria-labelledby="monthLabelId(0)" @keydown="handleKeydown($event)"
+        @if($required) aria-required="true" aria-describedby="{{ $requiredMessageId }}" x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null" @endif>
         <thead>
             <tr>
                 @foreach($weekdays as $day)
                     {{-- See the multi-month header above for why the abbreviation is
                          written twice and what `abbr` is doing here. --}}
-                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
+                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day['long'] }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day['short'] }}</th>
                 @endforeach
             </tr>
         </thead>
@@ -442,5 +494,9 @@
              nothing is announced at all. --}}
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
         </div>
+    @endif
+
+    @if($requiredMessageId)
+        @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
     @endif
 </div>

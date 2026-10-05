@@ -14,6 +14,7 @@
 "default"
 "finish"
 "heroicon-m-inbox"
+"out
 "work
 $accessibleName
 $actions
@@ -179,6 +180,7 @@ $wrapperClasses
 '.$stateText
 '.$units[$i];
 '.__('wirekit::(opens
+'.__('wirekit::B');
 '.implode(',
 '/')
 '/<svg\b([^>]*)>/i',
@@ -190,11 +192,8 @@ $wrapperClasses
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
-'GB',
-'MB',
 'Rendering
 'Run:
-'TB'];
 '[WireKit]
 '_blank');
 'a'
@@ -354,6 +353,7 @@ $wrapperClasses
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
 (`--text-wk-2xs`
+(`Ko`,
 (a
 (anything
 (array
@@ -432,7 +432,9 @@ $wrapperClasses
 10.0
 100
 100"
+100",
 100)
+100);
 100,
 1023.7
 1024
@@ -548,7 +550,6 @@ An
 Animate
 Auto-generate
 Auto-inject
-B';
 BAR
 BELOW
 Beside
@@ -591,6 +592,7 @@ Extract
 Fallback:
 File
 Fill
+French
 Fully
 GAIN
 Given
@@ -716,13 +718,13 @@ WireKit::warnUnknownProps('progress',
 With
 Without
 [
-['KB',
 ['data-wk-icon-missing'
 ['idle',
 ['name'
 ['none',
 ['primary',
 [0,
+[__('wirekit::KB'),
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate)
@@ -731,6 +733,7 @@ Without
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\NumericProp::positive($max,
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('attachment',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
@@ -739,8 +742,11 @@ Without
 ]),
 ];
 __('wirekit::(opens
+__('wirekit::GB'),
 __('wirekit::Loading')
+__('wirekit::MB'),
 __('wirekit::Progress')
+__('wirekit::TB')];
 __('wirekit::Upload
 __('wirekit::Uploaded'),
 __('wirekit::Uploading
@@ -755,6 +761,7 @@ __toString
 `<span>`
 `@class`
 `DomId::unique`
+`Mo`).
 `Str::random(6)`
 `Svg
 `aria-hidden="true"`
@@ -877,7 +884,9 @@ aria-labelledby,
 aria-labelledby="{{
 aria-prohibited-attr
 aria-value*
+aria-valuemax
 aria-valuemax="{{
+aria-valuemin.
 aria-valuemin="0"
 aria-valuenow
 aria-valuenow="{{
@@ -987,6 +996,7 @@ carrying
 case
 case,
 cast
+catalog:
 catch
 caught
 chain.
@@ -1034,6 +1044,7 @@ color
 color-axis
 color-only:
 coloring,
+come
 comment
 comments.)
 comparison,
@@ -1301,6 +1312,7 @@ hidden
 hint
 historical
 hit
+holds
 house
 how
 href
@@ -1396,6 +1408,7 @@ leave
 left
 legacy
 length
+less
 lg
 light
 like
@@ -1517,6 +1530,7 @@ numeric
 object-cover"
 obvious
 occurrence
+octets
 of
 off
 old
@@ -1589,6 +1603,7 @@ poll
 polls
 population
 position
+positive
 post-process
 pre-2.4
 pre-checking
@@ -1633,6 +1648,7 @@ r="{{
 radial
 radial-progress
 radial-progress.
+radial-progress:
 radius
 ramp
 rather
@@ -1835,6 +1851,7 @@ svg(),
 swaps
 sweep
 sweep).
+symbols
 synonym.
 tab
 tab)')
@@ -1927,6 +1944,7 @@ type
 unchanged,
 unconditional
 under
+unit
 unknown
 unknown-alias
 unknown.
@@ -2022,6 +2040,7 @@ x-data="wirekitProgress({
 x-text="valueText()"></span>
 yet
 yet.
+zero
 {
 {!!
 {{

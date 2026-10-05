@@ -77,6 +77,9 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('announcement-banner', $attributes->getAttributes());
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
@@ -222,7 +225,7 @@
              a dismissible demo stays gone with no way to bring it back. --}}
         data-replayable="true"
     @endif
-    @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
+    @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
     data-wk-announcement-banner
     @if($strip) data-wk-viewport-strip @endif
     data-position="{{ $positionValue }}"
@@ -246,7 +249,7 @@
             {{-- Composed from the caller's name where there is one, and from the generic word
                  where there is not: a control always needs a name, even when the banner
                  deliberately is not a landmark. --}}
-            aria-label="{{ __('wirekit::Dismiss') }} {{ filled($label) ? $label : __('wirekit::Announcement') }}"
+            aria-label="{{ __('wirekit::Dismiss') }} {{ $callerLabel ?? (filled($label) ? $label : __('wirekit::Announcement')) }}"
             class="ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]"
         >
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">

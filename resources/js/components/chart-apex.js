@@ -18,6 +18,25 @@ const kitAxisFormatters = new WeakSet();
 const kitTitleFormatters = new WeakSet();
 
 /**
+ * The names of the rows the tooltip adds for a candlestick, a boxplot and a bubble, which no series
+ * carries. The chart view hands them over in the application's language as `tooltip.wkRowNames`;
+ * these are the English ones for a chart built without it. Q1 and Q3 are the quartile symbols every
+ * shipped language writes the same way, so they are not looked up.
+ */
+const ROW_NAMES = Object.freeze({
+    open: 'Open price',
+    high: 'High',
+    low: 'Low',
+    close: 'Close price',
+    max: 'Max',
+    q3: 'Q3',
+    median: 'Median',
+    q1: 'Q1',
+    min: 'Min',
+    size: 'Size',
+});
+
+/**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
  * NATIVE CSS classes (`.apexcharts-tooltip-title`,
  * `.apexcharts-tooltip-series-group`, `.apexcharts-tooltip-marker`,
@@ -44,6 +63,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     // reads in the language of the page around it rather than of the reader's browser. A tag the
     // runtime rejects falls back to the browser's own preference instead of breaking the hover.
     const appLocale = (cfg.tooltip && cfg.tooltip.wkLocale) || undefined;
+    const rowNames = Object.assign({}, ROW_NAMES, (cfg.tooltip && cfg.tooltip.wkRowNames) || {});
     const dateOptions = { month: 'short', day: '2-digit', year: 'numeric' };
     // A date is written as the chart's date axis writes one: in `tooltip.x.format` when the options
     // give one, otherwise as a date in the application's locale, and in UTC unless
@@ -228,50 +248,50 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
             });
             if (o !== undefined && c !== undefined) {
                 return kind === 'boxPlot'
-                    ? [{ label: 'Max', value: c }, { label: 'Q3', value: l }, { label: 'Median', value: m }, { label: 'Q1', value: h }, { label: 'Min', value: o }]
-                    : [{ label: 'Open', value: o }, { label: 'High', value: h }, { label: 'Low', value: l }, { label: 'Close', value: c }];
+                    ? [{ label: rowNames.max, value: c }, { label: rowNames.q3, value: l }, { label: rowNames.median, value: m }, { label: rowNames.q1, value: h }, { label: rowNames.min, value: o }]
+                    : [{ label: rowNames.open, value: o }, { label: rowNames.high, value: h }, { label: rowNames.low, value: l }, { label: rowNames.close, value: c }];
             }
         }
 
         if (Array.isArray(rawPoint) && rawPoint.length === 5) {
             // Boxplot tuple [min, Q1, median, Q3, max]
             const [min, q1, med, q3, max] = rawPoint;
-            rows.push({ label: 'Max', value: max });
-            rows.push({ label: 'Q3', value: q3 });
-            rows.push({ label: 'Median', value: med });
-            rows.push({ label: 'Q1', value: q1 });
-            rows.push({ label: 'Min', value: min });
+            rows.push({ label: rowNames.max, value: max });
+            rows.push({ label: rowNames.q3, value: q3 });
+            rows.push({ label: rowNames.median, value: med });
+            rows.push({ label: rowNames.q1, value: q1 });
+            rows.push({ label: rowNames.min, value: min });
         } else if (Array.isArray(rawPoint) && rawPoint.length === 4) {
             // Candlestick tuple [open, high, low, close]
             const [o, h, l, c] = rawPoint;
-            rows.push({ label: 'Open', value: o });
-            rows.push({ label: 'High', value: h });
-            rows.push({ label: 'Low', value: l });
-            rows.push({ label: 'Close', value: c });
+            rows.push({ label: rowNames.open, value: o });
+            rows.push({ label: rowNames.high, value: h });
+            rows.push({ label: rowNames.low, value: l });
+            rows.push({ label: rowNames.close, value: c });
         } else if (rawPoint && typeof rawPoint === 'object' && !Array.isArray(rawPoint)) {
             // Object form — scatter/bubble {x,y,z?}, range-bar {x,y:[a,b]},
             // candlestick {x,y:[O,H,L,C]}, boxplot {x,y:[5-tuple]}.
             const y = rawPoint.y;
             if (Array.isArray(y) && y.length === 5) {
                 const [min, q1, med, q3, max] = y;
-                rows.push({ label: 'Max', value: max });
-                rows.push({ label: 'Q3', value: q3 });
-                rows.push({ label: 'Median', value: med });
-                rows.push({ label: 'Q1', value: q1 });
-                rows.push({ label: 'Min', value: min });
+                rows.push({ label: rowNames.max, value: max });
+                rows.push({ label: rowNames.q3, value: q3 });
+                rows.push({ label: rowNames.median, value: med });
+                rows.push({ label: rowNames.q1, value: q1 });
+                rows.push({ label: rowNames.min, value: min });
             } else if (Array.isArray(y) && y.length === 4) {
                 const [o, h, l, c] = y;
-                rows.push({ label: 'Open', value: o });
-                rows.push({ label: 'High', value: h });
-                rows.push({ label: 'Low', value: l });
-                rows.push({ label: 'Close', value: c });
+                rows.push({ label: rowNames.open, value: o });
+                rows.push({ label: rowNames.high, value: h });
+                rows.push({ label: rowNames.low, value: l });
+                rows.push({ label: rowNames.close, value: c });
             } else if (Array.isArray(y) && y.length === 2) {
                 rows.push({ label: sName, value: writeRange(sIdx, y), named: true });
             } else if (y !== undefined) {
                 rows.push({ label: sName, value: y, named: true });
             }
             if ('z' in rawPoint) {
-                rows.push({ label: 'Size', value: rawPoint.z, size: true });
+                rows.push({ label: rowNames.size, value: rawPoint.z, size: true });
             }
         } else if (Array.isArray(rawPoint) && rawPoint.length === 2 && (apexType === 'rangeBar' || apexType === 'rangeArea')) {
             rows.push({ label: sName, value: writeRange(sIdx, Array.isArray(rawPoint[1]) ? rawPoint[1] : rawPoint), named: true });
@@ -1484,7 +1504,13 @@ window.ApexCharts = ApexCharts;</pre>
                 } catch { /* defensive: the chart may be mid-teardown */ }
             });
 
-            this._navCleanup = () => this.destroy();
+            // Not for a chart inside `@persist`: Livewire carries that element to the next page as
+            // it is, and a chart destroyed here would stand there empty.
+            this._navCleanup = () => {
+                if (! this.$el?.closest?.('[x-persist]')) {
+                    this.destroy();
+                }
+            };
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
             // Wire-streaming setup — read data-wire-stream-*

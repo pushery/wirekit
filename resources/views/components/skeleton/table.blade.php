@@ -15,6 +15,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('skeleton.table', $attributes->getAttributes());
 
+    // Counts of rows and columns, whatever the attribute or the data carried: a text would throw
+    // below, and as the bound of the column loop it compares as text and never ends.
+    $rows = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($rows, 5));
+    $cols = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($cols, 4));
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 

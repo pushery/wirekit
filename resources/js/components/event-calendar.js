@@ -47,8 +47,14 @@ function parseDay(value) {
  * @param {boolean} [config.dayDetail] - a built-in list of the pressed day's events under the
  *   month grid; implies `selectableDays`, because the list needs a day to show
  * @param {boolean} [config.filterable] - one toggle per event `category`, above the views
- * @param {string} [config.filterStatusText] - the announced count after a toggle, translated;
- *   `:count` and `:total` are replaced
+ * @param {Object} [config.filterStatusTexts] - the announced count after a toggle, translated:
+ *   sample count -> sentence (`PluralPhrases`). The total chooses the form, since the noun
+ *   follows it; `:count` and `:total` are replaced
+ * @param {string} [config.filterStatusText] - the same sentence in one form, for a factory
+ *   mounted by hand
+ * @param {Object} [config.moreNames] - the name of a day's "+N more" button, translated: sample
+ *   count -> sentence with `:count` and `:date`
+ * @param {Object} [config.moreWords] - the word after its number, translated: sample count -> word
  * @param {string} [config.withNamesText] - what joins an event's attendees onto its accessible
  *   name, translated; `:names` is replaced by the list, joined in the calendar's locale
  * @param {string} config.view   - 'month' | 'week' | 'agenda'
@@ -61,6 +67,7 @@ function parseDay(value) {
  *   component prints. Supplied by the component from the application locale.
  */
 import { position } from '../utils/floating.js';
+import { pluralize, pluralTemplate } from '../utils/plural.js';
 import { isComposing } from '../utils/ime.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { jsonValue, observeServerValue } from '../utils/server-value.js';
@@ -168,7 +175,9 @@ export default function wirekitEventCalendar(config = {}) {
         // Empty until the first toggle: a status that spoke on load would announce a count
         // nobody asked for.
         filterStatus: '',
-        _filterStatusText: config.filterStatusText || 'Showing :count of :total events',
+        _filterStatusTexts: config.filterStatusTexts || { 2: config.filterStatusText || 'Showing :count of :total events' },
+        _moreNames: config.moreNames || { 2: ':count more events on :date' },
+        _moreWords: config.moreWords || { 2: 'more' },
         _withNamesText: config.withNamesText || 'with :names',
 
         init() {
@@ -344,9 +353,11 @@ export default function wirekitEventCalendar(config = {}) {
             this.hiddenCategories = this.isCategoryShown(category)
                 ? [...this.hiddenCategories, category]
                 : this.hiddenCategories.filter((c) => c !== category);
-            this.filterStatus = this._filterStatusText
+            // The total chooses the form: "Showing 1 of 1 event". The count shown is a second number.
+            const total = this.events.length;
+            this.filterStatus = pluralTemplate(this._filterStatusTexts, total, locale)
                 .replace(':count', String(this.visibleEvents.length))
-                .replace(':total', String(this.events.length));
+                .replace(':total', String(total));
         },
         _eventsOnDay(day) {
             return this.visibleEvents
@@ -680,6 +691,14 @@ export default function wirekitEventCalendar(config = {}) {
         // language after everything else had moved to the application's.
         longDate(date) {
             return fullDateFormat.format(date);
+        },
+        // The name of a day's "+N more" button and the word after its number, each in the form
+        // the number takes: "1 more event on …", and in Italian "1 altro" beside "3 altri".
+        moreName(day) {
+            return pluralize(this._moreNames, day.overflow, locale).replace(':date', this.longDate(day.date));
+        },
+        moreWord(day) {
+            return pluralize(this._moreWords, day.overflow, locale);
         },
         // The start time a MONTH pill shows to the right of its title.
         //

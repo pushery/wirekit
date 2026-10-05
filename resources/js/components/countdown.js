@@ -36,12 +36,16 @@
  * @param {boolean} config.separators    group digits in the leading unit
  * @param {string}  config.locale        locale for that grouping
  * @param {boolean} config.animate       re-key each value so it can transition
+ * @param {string}  config.animateStyle  'box' or 'text' for the segments variant, 'none' when off
  * @param {string}  config.expiredText   what to say once the deadline has passed
  * @param {Object}  config.unitPhrases   unit -> [singular, plural] with a :count placeholder
  */
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { pluralize } from '../utils/plural.js';
 import { watchCurrent } from '../utils/watch-current.js';
+
+// How long after it appears a countdown plays its change animation, in ms.
+const CHANGE_ANIMATION_MS = 4300;
 
 export default function wirekitCountdown(config = {}) {
     return {
@@ -56,6 +60,17 @@ export default function wirekitCountdown(config = {}) {
         separators: Boolean(config.separators),
         locale: config.locale || 'en',
         animate: Boolean(config.animate),
+        animateStyle: config.animateStyle || 'none',
+
+        /*
+         * The change animation plays for the first seconds after the countdown appears and
+         * then stops; the value keeps ticking. A box that pulsed every second for as long as
+         * the page stayed open was blinking content with no control to stop it (WCAG 2.2.2
+         * allows five seconds). `calm` turns at CHANGE_ANIMATION_MS: the last pulse starts
+         * before then and its 700 ms end inside the five seconds.
+         */
+        calm: ! config.animate,
+        _calmTimer: null,
         expiredText: config.expiredText || '',
 
         unitSuffix: { years: 'y', days: 'd', hours: 'h', minutes: 'm', seconds: 's' },
@@ -78,6 +93,13 @@ export default function wirekitCountdown(config = {}) {
         init() {
             this.now = Date.now();
             this._startTicking();
+
+            if (! this.calm) {
+                this._calmTimer = setTimeout(() => {
+                    this.calm = true;
+                    this._calmTimer = null;
+                }, CHANGE_ANIMATION_MS);
+            }
 
             /*
              * A backgrounded tab throttles this timer but does not stop it, so a clock
@@ -142,6 +164,11 @@ export default function wirekitCountdown(config = {}) {
 
         destroy() {
             this._stopTicking();
+
+            if (this._calmTimer) {
+                clearTimeout(this._calmTimer);
+                this._calmTimer = null;
+            }
             this._visibility?.stop();
             this._visibility = null;
 
@@ -293,12 +320,25 @@ export default function wirekitCountdown(config = {}) {
         },
 
         /**
-         * A per-value key, so a changed value re-mounts its node and the enter
-         * transition fires. Stable per-unit when animation is off, so nothing
-         * re-mounts.
+         * A per-value key, so a changed value re-mounts its node and its change
+         * animation plays. Stable per-unit when animation is off or has gone calm,
+         * so nothing re-mounts.
          */
         segKey(seg) {
-            return this.animate ? `${seg.unit}-${seg.value}` : seg.unit;
+            return this.animate && ! this.calm ? `${seg.unit}-${seg.value}` : seg.unit;
+        },
+
+        /**
+         * The class that plays the change animation on a segment box, and the one on its
+         * number. Bound rather than written into the markup, so the node that re-mounts
+         * when the keys turn stable carries neither and plays nothing.
+         */
+        get boxChangeClass() {
+            return ! this.calm && this.animateStyle === 'box' ? 'wk-countdown-pulse' : '';
+        },
+
+        get textChangeClass() {
+            return ! this.calm && this.animateStyle === 'text' ? 'wk-countdown-text-flash' : '';
         },
 
         /**

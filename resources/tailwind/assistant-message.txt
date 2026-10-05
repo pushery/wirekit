@@ -18,6 +18,7 @@
 "Most
 "New"
 "Popover",
+"Remove";
 "Resend
 "Theme
 "Thought
@@ -69,10 +70,13 @@ $attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
 $attributes->merge($depthStyle
 $attributes->merge(['rel'
+$attributes]
 $attrs
 $attrs->merge(['style'
 $avatarStyle
 $avatarStyle]
+$badgeText
+$badgeText])
 $baseClasses
 $borderWidthClass
 $borderWidthClass,
@@ -81,6 +85,9 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel)
+$callerLabel,
 $callerRole
 $category)`
 $chipClasses
@@ -100,6 +107,7 @@ $cleaned);
 $computedRel
 $container
 $content
+$content))
 $contentClasses
 $delayHide
 $delayShow
@@ -110,6 +118,7 @@ $densityClasses)),
 $depthStyle
 $depthStyle]
 $describes
+$describes;
 $disabled
 $dismissBtnClasses
 $dismissLabel
@@ -162,6 +171,8 @@ $openBool
 $opensNewTab
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $padded
 $padded)
 $palette
@@ -210,6 +221,13 @@ $sizeMap
 $sizeMap[$validated];
 $slot
 $slot)
+$slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -240,12 +258,18 @@ $svgHtml,
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $total
 $trigger
 $trigger)
 $triggerClasses
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $uid
 $underline,
 $underlineClasses
@@ -282,6 +306,7 @@ $x)`
 '<svg'.$cleaned.'>';
 'Rendering
 'Run:
+'UTF-8')));
 '[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:rounded-[var(--radius-wk-sm)]
 '[&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-[color:var(--color-wk-accent-text)]
 '[&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-l-4
@@ -510,6 +535,7 @@ $x)`
 'outline'],
 'outline'];
 'overflow-hidden',
+'overflow-y-auto
 'p',
 'p-[var(--padding-wk-x-md)]',
 'padded'
@@ -664,7 +690,9 @@ $x)`
 ("Generating
 ($active
 ($callerAriaHidden
+($callerLabelledBy
 ($density)
+($dismissLabel
 ($fromInitials
 ($intent)
 ($intentValue)
@@ -682,6 +710,7 @@ $x)`
 ($style
 ($surface)
 ($svgHtml
+($triggerIsButton)
 ('xs').
 (0.75rem):
 (AA
@@ -693,6 +722,7 @@ $x)`
 (RTL-safe)
 (SOFT
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind
 (UtilityClasses::has($callerClass,
@@ -840,6 +870,7 @@ $x)`
 18
 18.75V10.5m-10.5
 180°
+1;
 1px
 2,
 2.1.1).
@@ -887,6 +918,7 @@ $x)`
 :href="$citation['href']"
 :label',
 :label="$citation['label']"
+:name',
 :name="$leadingIcon"
 :name="$trailingIcon"
 :not(:where(
@@ -956,7 +988,6 @@ $x)`
 ?
 ?:
 ??
-??=
 @class([
 @else
 @elseif($initials)
@@ -971,13 +1002,13 @@ $x)`
 @if
 @if($alt)
 @if($as
+@if($callerLabelledBy
 @if($citationList
 @if($citation['href'])
 @if($citation['snippet'])
 @if($computedRel)
 @if($container)
 @if($densityAttr)
-@if($describes)
 @if($disabled)
 @if($dismissible)
 @if($dot)
@@ -999,6 +1030,9 @@ $x)`
 @if($surface
 @if($tooltip)
 @if($trailingIcon)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($label))
 @if(isset($content))
 @if(isset($footer)
@@ -1010,6 +1044,7 @@ $x)`
 @props.
 @tailwindcss/typography
 @unless($attributes->has('aria-label')
+@unless($attributes->has('role'))
 @unless($openBool)
 A
 A).
@@ -1035,6 +1070,7 @@ AlpinePayload
 Also
 An
 Animation
+Around
 Assistant
 Aurora
 Auto-detect
@@ -1104,6 +1140,9 @@ Done
 Dot
 Driven
 Drop
+ENT_HTML5));
+ENT_HTML5,
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 Each
@@ -1258,6 +1297,7 @@ SVG:
 SWAPS:
 Same
 Scrolling
+Scrolls
 Seconds
 See
 Set
@@ -1369,6 +1409,7 @@ Without
 Wrapping
 Written
 [
+[$callerLabelledBy,
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:outline-hidden
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:ring-[length:var(--ring-wk-width)]
 [&_a:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:focus-visible:ring-[var(--color-wk-ring)]',
@@ -1428,6 +1469,7 @@ Written
 ['default',
 ['dot',
 ['inverted',
+['name'
 ['neutral',
 ['number'
 ['outlined'
@@ -1447,16 +1489,20 @@ Written
 [],
 [data-wk-prose-skip]
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
 \Pushery\WireKit\Support\AlpinePayload::from((object)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CitationList::from($citations);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UrlProp::text($src);
@@ -1483,8 +1529,9 @@ __('wirekit::Away'),
 __('wirekit::Busy'),
 __('wirekit::Offline'),
 __('wirekit::Online'),
-__('wirekit::Popover')
+__('wirekit::Popover'))
 __('wirekit::Reasoning'),
+__('wirekit::Remove
 __('wirekit::Remove');
 __('wirekit::Source
 __('wirekit::Sources')
@@ -1707,6 +1754,7 @@ accessible
 across
 act
 action
+activating
 active
 actual
 actually
@@ -1767,6 +1815,7 @@ announces
 announcing
 anonymous
 another
+another.
 answer
 answer.
 anticipate
@@ -1797,6 +1846,7 @@ aria-controls="{{
 aria-describedby
 aria-describedby)
 aria-describedby="{{
+aria-disabled="true"
 aria-expanded
 aria-expanded)
 aria-hidden
@@ -2008,6 +2058,8 @@ button
 button's
 button,
 button.
+button:
+buttons
 buttons).
 buttons,
 by
@@ -2360,6 +2412,7 @@ document
 documentation
 documented
 does
+does,
 does.
 doesn't
 done
@@ -2457,6 +2510,7 @@ exists.
 expanding
 expandos.
 experience
+explains,
 explanation
 explicitly
 expose
@@ -2483,6 +2537,7 @@ false)
 false),
 false);
 false,
+false;
 family
 far
 faster
@@ -2734,6 +2789,7 @@ hover:text-[color:var(--color-wk-text)]',
 how
 however
 href="{{
+html_entity_decode(strip_tags((string)
 hue
 hurts
 icon
@@ -2831,11 +2887,13 @@ inventory
 inverted
 invocation`
 is
+is.
 is_numeric($reasoningSeconds)
 is_string($trigger)
 isn't
 isolate`
 isset($actions))
+isset($content)
 isset($footer)
 isset($sizeMap[$size])
 it
@@ -3006,6 +3064,7 @@ meant
 measure
 mechanism
 medium
+meets,
 menus
 merge
 message
@@ -3054,6 +3113,7 @@ ms-auto
 much
 much.
 multi-line
+multi-select
 must
 muted
 n/a
@@ -3078,6 +3138,7 @@ needs
 needs:
 negative
 neither
+nest
 nested
 net
 neutral
@@ -3205,6 +3266,7 @@ override
 override.
 overrides
 overrides.
+overscroll-contain',
 oversized
 own
 own);
@@ -3311,9 +3373,13 @@ pre-v2.10.0
 precedence
 preferences
 preflight
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 premise
 presence
@@ -3334,6 +3400,7 @@ problem
 prod).
 produced
 produced:
+prohibits
 prominent
 promise
 prop
@@ -3439,6 +3506,7 @@ rem
 remove
 removed
 removes
+removes,
 removing
 rename
 render
@@ -3493,8 +3561,10 @@ role
 role's
 role,
 role.
+role:
 role;
 role="article"
+role="button"
 role="dialog"
 role="group"
 role="img"
@@ -3605,6 +3675,7 @@ shimmers
 ship.
 shipped
 ships
+short
 should
 show
 shown
@@ -3903,6 +3974,7 @@ today
 today.
 toggle
 toggles
+toggletip
 token
 token,
 token-driven.
@@ -3916,6 +3988,7 @@ too.
 took
 took,
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -3956,7 +4029,9 @@ trigger,
 trigger→content
 trim($relAttr.'
 trim((string)
+trim(html_entity_decode(strip_tags((string)
 trim(implode('
+trim(strip_tags((string)
 trip:
 true
 true"
@@ -3988,6 +4063,7 @@ ul,
 unaffected
 unaffected,
 unaffected.
+unavailable,
 unbound
 unbreakable
 unbroken
@@ -4138,8 +4214,10 @@ within
 without
 word
 word)
+word.
 word:
 wording.
+words;
 working
 works
 works).
@@ -4152,6 +4230,7 @@ wrap
 wrapped
 wrapper
 wrapper)
+wrapper,
 wrappers
 wrapping
 wraps
@@ -4178,7 +4257,9 @@ x-on:click="isOpen
 x-on:click="toggle()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -4225,6 +4306,7 @@ zoom,
 {$total}px
 {{
 {{--
+|
 ||
 }
 })"

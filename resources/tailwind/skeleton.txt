@@ -15,6 +15,7 @@ $c)
 $c++)
 $colWidths
 $colWidths[($r
+$cols
 $cols;
 $i
 $i++)
@@ -24,6 +25,7 @@ $lines
 $lines;
 $r
 $r++)
+$rows
 $rows;
 $scope);
 $shimmer
@@ -99,6 +101,7 @@ $wrapperClasses
 (default)
 (filter_var($shimmer,
 (gradient
+(int)
 (kept
 (name
 (opacity
@@ -140,9 +143,12 @@ $wrapperClasses
 200px;'])->class([$wrapperClasses,
 25%;
 28).'px';
+3));
 3,
 33%;
+4));
 4,
+5));
 5,
 60px',
 60px;'])->class([$wrapperClasses,
@@ -179,6 +185,7 @@ $wrapperClasses
 @unless($attributes->has('aria-label')
 @unless($attributes->has('aria-live'))
 @unless($attributes->has('role'))
+A
 Animation
 Animation:
 Avatar
@@ -189,6 +196,7 @@ BooleanProp::from($shimmer,
 CSS
 Card
 Card:
+Counts
 DELIBERATE
 Declared
 Dev-only
@@ -235,6 +243,9 @@ WireKit::validateProp('skeleton',
 ['100%',
 ['pulse',
 ['shimmer',
+\Pushery\WireKit\Support\NumericProp::from($cols,
+\Pushery\WireKit\Support\NumericProp::from($lines,
+\Pushery\WireKit\Support\NumericProp::from($rows,
 \Pushery\WireKit\WireKit::warnUnknownProps('skeleton',
 \Pushery\WireKit\WireKit::warnUnknownProps('skeleton.avatar',
 \Pushery\WireKit\WireKit::warnUnknownProps('skeleton.card',
@@ -306,6 +317,7 @@ behind
 behind.
 belongs
 below
+below,
 beside
 bg
 bg-[var(--color-wk-bg-skeleton)]
@@ -315,6 +327,7 @@ block,
 body
 bool
 border-radius:
+bound
 browser
 busy
 but
@@ -323,6 +336,7 @@ call
 caller
 came
 card
+carried:
 carries
 cast
 center;
@@ -336,7 +350,9 @@ class="{{
 color
 column
 column;
+columns,
 comes.
+compares
 compiles
 component's
 composite
@@ -346,10 +362,12 @@ content
 content')
 corners.
 could
+count
 count($colWidths)]
 count;
 custom
 custom:
+data
 debug
 decided,
 declaration
@@ -370,11 +388,13 @@ does
 doesn't
 done,
 drawing,
+draws
 each
 early.
 element
 element,
 element;
+ends.
 environments
 every
 existed.
@@ -456,6 +476,7 @@ like
 line
 line".
 lines
+lines,
 lines.
 list
 literals
@@ -466,12 +487,14 @@ lives.
 loading
 look
 looks
+loop
 loses
 make,
 maps
 marked
 match
 matched
+max(0,
 max(80,
 max-width:
 may
@@ -510,6 +533,7 @@ opacity:
 opposite
 optimistic-ui:
 optimization
+or
 order
 ordinary
 otherwise
@@ -636,6 +660,7 @@ there
 these
 this
 through
+throw
 title
 to
 token
@@ -680,6 +705,7 @@ way,
 way.
 were
 what
+whatever
 when
 where
 which

@@ -22,6 +22,9 @@
  * never hard-couples to one vendor.
  */
 import { awaitPeer } from '../utils/await-peer.js';
+import { watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
+import { onFormReset } from '../utils/form-reset.js';
+import { requiredCheckState } from '../utils/required-check.js';
 import { keepRaw } from '../utils/keep-raw.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
@@ -65,6 +68,16 @@ export default function wirekitEditor(config = {}) {
         // has mounted: the fallback textarea is the field itself, visible, and fires its own.
         // Released in destroy().
         _modelEvents: null,
+        // Brings the surface back to the form field when the form is reset (utils/form-reset.js).
+        // Released in destroy().
+        _stopFormReset: null,
+        // Follows the fieldsets around the editor, whose `disabled` locks the surface as it
+        // locks the field the document is submitted in (utils/fieldset-disabled.js). Released
+        // in destroy().
+        _stopFieldsetWatch: null,
+        // `requiredMessage` and `onRequiredInvalid()`: a required editor stops an empty submit
+        // (utils/required-check.js).
+        ...requiredCheckState(),
         // The visible label and its two listeners. Released in destroy().
         _label: null,
         _onLabelPress: null,
@@ -83,6 +96,9 @@ export default function wirekitEditor(config = {}) {
         _overPhrases: config.overPhrases || {},
         _locale: config.locale || 'en',
         _announceTimer: null,
+        // The id of the message an empty required editor shows under its frame; see
+        // _syncRequiredInvalid().
+        _requiredMessageId: typeof config.requiredMessageId === 'string' ? config.requiredMessageId : null,
         _maxLength: config.maxLength != null && Number.isFinite(Number(config.maxLength))
             ? Number(config.maxLength)
             : null,
@@ -97,6 +113,7 @@ export default function wirekitEditor(config = {}) {
             if (this.editor || this._stopAwaitingFactory) { return; }
 
             this._wireLabel();
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.input, () => this._restore());
 
             // Resolve the engine factory: canonical window.wirekitEditor first, then the
             // deprecated window.tiptapEditor alias (with a one-time hint).
@@ -258,6 +275,11 @@ export default function wirekitEditor(config = {}) {
                 placeholder: config.placeholder ?? null,
                 editorProps: {
                     attributes: {
+                        // What the developer wrote for the field the reader types into
+                        // (`inputmode`, `enterkeyhint`, `autocapitalize`, `spellcheck`): the
+                        // on-screen keyboard reads it on this surface, never on the wrapper.
+                        // First, so none of it can replace a key below.
+                        ...(config.fieldAttributes || {}),
                         // The editable surface is a multiline textbox (WAI-ARIA textbox pattern).
                         // wk-editor-content is REAL shipped CSS (typography + flex-fill +
                         // outline:none + wrap rules in dist/wirekit.css) — never put Tailwind
@@ -273,6 +295,7 @@ export default function wirekitEditor(config = {}) {
                         ...(config.ariaDescribedby ? { 'aria-describedby': config.ariaDescribedby } : {}),
                         ...(config.ariaInvalid ? { 'aria-invalid': 'true' } : {}),
                         ...(config.ariaRequired ? { 'aria-required': 'true' } : {}),
+                        ...(config.ariaDisabled ? { 'aria-disabled': 'true' } : {}),
                     },
                 },
                 // Nothing is written to the field on load. The engine's serialization of the
@@ -316,6 +339,10 @@ export default function wirekitEditor(config = {}) {
                 beforeLeave: () => this._flushSync(),
             });
 
+            // Once the engine exists, since the lock is its own: the fallback textarea is a
+            // native control, which a disabled fieldset locks by itself.
+            this._stopFieldsetWatch ??= watchFieldsetDisabled(this.$root, (locked) => this._lockByFieldset(locked));
+
             // Autofocus the Tiptap surface when requested, so the `autofocus` prop
             // reaches it and not only the textarea fallback. Done AFTER the assignment
             // — not in onCreate, which can fire mid-construction while this.editor is
@@ -343,6 +370,10 @@ export default function wirekitEditor(config = {}) {
             }
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+            this._stopFieldsetWatch?.();
+            this._stopFieldsetWatch = null;
             clearTimeout(this._syncTimer);
             this._syncTimer = null;
             clearTimeout(this._announceTimer);
@@ -353,6 +384,37 @@ export default function wirekitEditor(config = {}) {
             if (this.editor) {
                 this.editor.destroy();
                 this.editor = null;
+            }
+        },
+
+        /**
+         * Lock or free the surface for a disabled fieldset around the editor.
+         *
+         * An editor the `editable` or `disabled` prop already locks is left as it is. The update
+         * the engine emits by default is suppressed: a lock is not an edit, and that update
+         * writes the field, which `wire:model` would take as the reader's.
+         *
+         * @param {boolean} locked
+         */
+        _lockByFieldset(locked) {
+            const editor = this.editor;
+
+            // Also when the engine already stands where the fieldset puts it, as on the first report
+            // for an editor no fieldset locks: setting it again would update the view for nothing.
+            if (! this._editable || ! editor || typeof editor.setEditable !== 'function' || editor.isEditable === ! locked) {
+                return;
+            }
+
+            editor.setEditable(! locked, false);
+
+            const surface = editor.view?.dom;
+
+            if (surface && typeof surface.setAttribute === 'function') {
+                if (locked) {
+                    surface.setAttribute('aria-disabled', 'true');
+                } else {
+                    surface.removeAttribute('aria-disabled');
+                }
             }
         },
 
@@ -552,6 +614,89 @@ export default function wirekitEditor(config = {}) {
             this._docVersion++;
             this._writeOut();
             this._updateCount();
+        },
+
+        /**
+         * After a form reset, the surface shows the document the form field holds again.
+         *
+         * The field is a native textarea, and the reset has put it back to the document the page
+         * started with; the surface kept the reader's text. Not an undo step, as in
+         * _applyContent(), and silent: the engine reports the new document as an edit, which
+         * schedules a write-out with its events, and a reset changes a native field without one.
+         * Without an engine the textarea is the editor, and the count follows it.
+         */
+        _restore() {
+            const field = this.$refs?.input;
+
+            if (this.editor && field && typeof field.value === 'string') {
+                const content = this._parseContent(field.value);
+
+                if (typeof this.editor.chain === 'function') {
+                    this.editor.chain().setMeta('addToHistory', false).setContent(content).run();
+                } else if (typeof this.editor.commands?.setContent === 'function') {
+                    this.editor.commands.setContent(content);
+                } else {
+                    return;
+                }
+
+                clearTimeout(this._syncTimer);
+                this._syncTimer = null;
+                this._docVersion++;
+            }
+
+            this._updateCount();
+            this.requiredMessage = '';
+        },
+
+        /**
+         * What the required check reads: empty exactly while the document holds no text. Read
+         * through `_docVersion`, which every edit and every keystroke in the plain field moves.
+         */
+        get requiredValue() {
+            this._docVersion;
+
+            if (this.editor) {
+                return this.editor.isEmpty === true ? '' : '1';
+            }
+
+            const field = this.$refs?.input;
+
+            return field && typeof field.value === 'string' && field.value.trim() !== '' ? '1' : '';
+        },
+
+        /** The surface a reader types into, which is where an empty required editor sends the focus. */
+        _focusRequiredControl() {
+            this._focusSurface();
+        },
+
+        /**
+         * The state of an empty required editor, written where no binding reaches: the message under
+         * the frame, outside this component's scope, and the invalid state on the textbox the engine
+         * built, which takes its attributes only at mount. The plain field, when it is the editor,
+         * carries a binding of its own. Run by an effect, so it follows the message and the document.
+         */
+        _syncRequiredInvalid() {
+            const invalid = this.requiredMessage !== '' && this.requiredValue === '';
+            const message = this._requiredMessageId && typeof document !== 'undefined'
+                ? document.getElementById(this._requiredMessageId)
+                : null;
+
+            if (message) {
+                message.textContent = invalid ? this.requiredMessage : '';
+                message.hidden = ! invalid;
+            }
+
+            const surface = this.editor ? this._surface() : null;
+
+            if (! surface) {
+                return;
+            }
+
+            if (invalid) {
+                surface.setAttribute('aria-invalid', 'true');
+            } else {
+                surface.removeAttribute('aria-invalid');
+            }
         },
 
         /**

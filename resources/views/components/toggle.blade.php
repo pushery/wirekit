@@ -85,6 +85,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('toggle', $attributes->getAttributes());
 
+    // A checkbox takes a number from its model for its value rather than its state, so a box
+    // bound to one shows unchecked whatever it holds: a binding to one warns in debug mode
+    // (Support\CheckboxModel).
+    \Pushery\WireKit\Support\CheckboxModel::warn('toggle', $attributes);
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
@@ -92,14 +97,19 @@
 
     // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'toggle-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
 
     // Accessible name fallback: if the caller provided neither a visible `label`
     // prop nor an `aria-label` attribute, generate a humanized label from the
     // `name` attribute so axe-core and screen readers still announce the switch
     // correctly. Visible labels still win when present (they'll use `<label
     // for="...">` instead of aria-label).
-    $hasAccessibleName = $label !== null || $attributes->has('aria-label') || $attributes->has('aria-labelledby');
+    // A caller's `id` is there so a label of theirs can reach the field, and the fallback name would
+    // stand over that label or add its own words to it, so it steps aside, as it does on
+    // tags-input and multi-select.
+    $hasAccessibleName = $label !== null || $attributes->has('aria-label') || $attributes->has('aria-labelledby') || filled($attributes->get('id'));
     $fallbackAriaLabel = $hasAccessibleName ? null : ucfirst(str_replace(['-', '_'], ' ', (string) $name));
 
     // The field.set around this toggle, when there is one. A bag entry under a key the group
@@ -108,8 +118,8 @@
     $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($name) ?? false);
 
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($name));
-    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($name));
+    $hasError = $error || (! $groupOwnsBagEntry && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name));
     // Whether this toggle answers for the group's message. A group error can be true of SOME of
     // its controls; announced on one that cannot resolve it, the reader hears "invalid" and a
     // sentence that switching it will not satisfy. `covers()` is not gated on this, so a

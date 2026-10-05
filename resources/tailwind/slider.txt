@@ -32,18 +32,21 @@ $attributes]
 $bindValueText
 $callerBindsValueText
 $callerBindsValueText;
+$callerLabel
+$callerLabel,
 $callerRef
 $content
+$content))
 $currentValue
 $currentValue)
 $delayHide
 $delayShow
 $describedBy
 $describes
+$describes;
 $disabled
 $disabled)
 $error
-$errors->first($name)`,
 $event.target.value"
 $explicitValueTextMap
 $fallbackLabel
@@ -100,6 +103,7 @@ $min)
 $min;
 $name
 $name)
+$name)`,
 $needsSrOnlyFallback
 $normalizedMarks
 $normalizedMarks[]
@@ -107,6 +111,8 @@ $offset
 $optimistic,
 $optimisticConfig
 $outerAttributes
+$ownName
+$ownName);
 $pairs
 $pct
 $pct,
@@ -123,6 +129,12 @@ $sliderId.'-help'
 $sliderId.'-hint'
 $slot
 $slot)
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $spec)
 $spec,
 $spec['description']
@@ -131,11 +143,17 @@ $step),
 $surface
 $surface,
 $text
+$text);
+$tipText
 $tooltip
 $tooltipClasses
 $tooltipId
 $trackHeight
 $trackHeight,
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $v),
 $v,
 $value
@@ -334,7 +352,7 @@ $wrapperClasses
 ("Help
 ("Single
 ("−2"),
-($errors
+($callerLabelledBy
 ($explicitValueTextMap
 ($fieldLabelId
 ($hasLabeledMarks
@@ -351,6 +369,7 @@ $wrapperClasses
 ($size)
 ($spec['description']
 ($spec['label']
+($triggerIsButton)
 ($v)
 ($v,
 ($valuePosition)
@@ -360,7 +379,9 @@ $wrapperClasses
 (4.1.2)
 (@aware
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\FieldControl).
+(Support\NumericModel).
 (The
 (WCAG
 ([$min,
@@ -382,6 +403,7 @@ $wrapperClasses
 (class
 (e.g.
 (extends
+(filled($id))
 (flex/grid
 (float)
 (humanized).
@@ -425,6 +447,7 @@ $wrapperClasses
 />
 0
 0%
+0));
 0),
 0.5rem
 0;
@@ -432,6 +455,7 @@ $wrapperClasses
 0–100
 0–100.
 1
+1));
 1),
 1-18
 1.025
@@ -535,7 +559,6 @@ $wrapperClasses
 @if($bindValueText)
 @if($callerRef
 @if($describedBy
-@if($describes)
 @if($disabled)
 @if($error)
 @if($focusableTrigger)
@@ -552,6 +575,9 @@ $wrapperClasses
 @if($showValue)
 @if($surface
 @if($tooltip)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($helpId
 @if(isset($content))
 @include('wirekit::components.partials.field-help',
@@ -573,6 +599,7 @@ Alpine's
 An
 And
 Anything
+Around
 Assigning
 BE
 BEATS
@@ -621,6 +648,8 @@ DomId
 Done
 EACH,
 ELEMENT
+ENT_HTML5));
+ENT_QUOTES
 EVER
 Enter
 Escape
@@ -629,6 +658,7 @@ Explained
 Extra
 Falls
 Fast
+FieldError::first($errors,
 Floating
 Found
 Fully
@@ -684,6 +714,7 @@ Normalize
 Normalized
 Nothing
 Null
+Numbers,
 ONE
 ONLY
 ORIGINAL
@@ -777,6 +808,7 @@ Without
 Wrapper
 Written
 [
+[$callerLabelledBy,
 [$mValue,
 [$outerAttributes,
 [$v,
@@ -796,6 +828,7 @@ Written
 []
 [],
 [];
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Support\AlpinePayload::from((object)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
@@ -803,15 +836,27 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($helpName
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($sliderId.'-error'),
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\FieldControl
+\Pushery\WireKit\Support\FieldError::first($errors
 \Pushery\WireKit\Support\ListProp::from($valueTextMap);
 \Pushery\WireKit\Support\ListProp::records($marks);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
+\Pushery\WireKit\Support\NumericModel::number($attributes);
+\Pushery\WireKit\Support\NumericProp::from($max,
+\Pushery\WireKit\Support\NumericProp::from($min,
+\Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.max',
+\Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.min',
+\Pushery\WireKit\Support\NumericProp::orNull($value);
+\Pushery\WireKit\Support\NumericProp::positive($step,
+\Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.slider.step',
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\WireKit::validateProp('slider',
 \Pushery\WireKit\WireKit::warnUnknownProps('slider',
@@ -838,6 +883,7 @@ __('wirekit::Slider');
 `'Neutral'`
 `(string)`
 `-2`,
+`.number`
 `16rem`.
 `:error`
 `:value="current"`.
@@ -901,10 +947,13 @@ __('wirekit::Slider');
 `fade`
 `false`
 `fixed`
+`float`
 `focusable-trigger`
 `for`,
 `hidden`
+`id`
 `input`:
+`int`
 `inverted`
 `invisible`
 `isolation:
@@ -986,7 +1035,9 @@ accessibility
 accessible
 across
 action
+activating
 actually
+add
 adds
 affordance
 after
@@ -1026,6 +1077,7 @@ announcement.
 announces
 announces.
 announcing
+another.
 answer
 answered,
 answers
@@ -1050,6 +1102,7 @@ aria-describedby
 aria-describedby,
 aria-describedby.
 aria-describedby="{{
+aria-disabled="true"
 aria-hidden="true"
 aria-hidden="true">
 aria-hidden="true">*</span>@endif</label>
@@ -1062,6 +1115,7 @@ aria-required
 aria-required,
 aria-required="true"
 aria-valuetext
+arithmetic
 armed,
 arms
 around
@@ -1084,6 +1138,7 @@ arrow-key
 as
 as,
 as="span"
+aside,
 asking
 assertion
 assistive
@@ -1169,6 +1224,7 @@ build
 but
 button
 button,
+button:
 by
 byte-identical
 call
@@ -1188,6 +1244,7 @@ capability
 card
 card's
 card,
+carried:
 carries
 carry
 case
@@ -1260,6 +1317,7 @@ column
 column,
 columns
 come
+comes
 comment
 commit
 committed
@@ -1287,6 +1345,7 @@ config('wirekit.components.tooltip.delay-show',
 config('wirekit.components.tooltip.offset',
 config('wirekit.components.tooltip.placement',
 config.
+configured
 console
 constrained
 constraint
@@ -1308,6 +1367,7 @@ context
 contiguous
 control
 control's
+control,
 control.
 control:
 controls
@@ -1334,6 +1394,7 @@ current:
 cursor-help"
 cut
 d="M9.879
+data
 data-*)
 data-wk-field-help>
 data-wk-label-row
@@ -1398,6 +1459,7 @@ docs
 document
 documented
 does
+does.
 doing.
 double-announce
 doubles
@@ -1473,6 +1535,7 @@ exists
 exit
 expandos.
 explains
+explains,
 explanation
 explicit
 exposed
@@ -1556,6 +1619,7 @@ font,
 for
 for.
 for="{{
+forced
 foreach
 form
 form,
@@ -1662,6 +1726,7 @@ hover:text-[color:var(--color-wk-text-muted)]
 how
 however
 i.e.
+icon
 icon,
 icon-only
 id
@@ -1714,6 +1779,7 @@ invocation`
 inward/left),
 inward/right),
 is
+is.
 is:
 is_array($m))
 is_array($spec)
@@ -1721,6 +1787,7 @@ is_array($valueTextMap)
 is_numeric($m));
 is_numeric($step))
 isolate`
+isset($content)
 it
 it,
 it.
@@ -1863,6 +1930,7 @@ min-w-[24px]
 min:
 min="{{
 minimum
+minimum.
 mints
 minus
 mirror
@@ -1889,6 +1957,7 @@ moving
 ms-0.5"
 mt-1"
 much
+multi-select.
 must
 mutated
 mutates
@@ -1915,11 +1984,13 @@ negative
 neighboring
 neither
 neither.
+nest
 nested
 nests
 network
 never
 new
+newer
 next
 no
 no-op
@@ -1931,6 +2002,7 @@ node,
 noise.
 non-focusable
 none
+none,
 none.
 none;
 nor
@@ -1946,7 +2018,6 @@ nothing.
 null
 null)
 null))
-null)?->first($name)
 null,
 null;
 null]
@@ -1969,6 +2040,7 @@ off
 off.
 offered
 offset:
+often
 old
 omission.
 on
@@ -2092,6 +2164,9 @@ positions
 positions-only
 precedence
 precedence:
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 present
 press
 preview
@@ -2192,6 +2267,8 @@ returns
 reverse,
 right
 right-aligns
+role:
+role="button"
 role="tooltip"
 roll
 rollback
@@ -2226,6 +2303,7 @@ save.
 saw
 say
 say.
+says
 says,
 scale
 scans
@@ -2242,9 +2320,11 @@ sees.
 selector
 semantic
 semantic-text
+sends
 sent
 separate
 server
+server's
 server-side
 set
 sets
@@ -2326,6 +2406,7 @@ sr-only
 stack
 stacking-context
 stale
+stand
 standing
 stands
 start
@@ -2337,6 +2418,7 @@ state.
 stay
 stays
 stays.)
+step
 step,
 step.
 step="{{
@@ -2394,6 +2476,7 @@ tabular-nums
 tag
 tag,
 tags
+tags-input
 take
 takes
 tall
@@ -2423,6 +2506,7 @@ that
 that:
 the
 their
+theirs
 them
 theme
 theme's
@@ -2438,6 +2522,7 @@ third
 this
 three.
 through
+throw
 throws
 thumb
 thumb's
@@ -2464,6 +2549,7 @@ to,
 to.
 together
 together,
+toggletip
 token
 token.
 too
@@ -2502,6 +2588,8 @@ trigger,
 trim($describedBy.'
 trim(($error
 trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip
 trivially
 true
@@ -2516,6 +2604,7 @@ truthy.
 trying
 twice
 twice,
+twice.
 two
 two-and-a-half
 two.
@@ -2526,6 +2615,7 @@ type="range">`,
 typed
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -2566,6 +2656,7 @@ value).
 value,
 value.
 value/min/max.
+value:
 value;
 value="{{
 values
@@ -2640,6 +2731,7 @@ word
 word)
 word,
 words
+words;
 work,
 working
 works
@@ -2673,7 +2765,9 @@ x-on:change="run($event.target.value)"
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:keydown="mark()"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
@@ -2706,6 +2800,7 @@ zoom,
 {
 {{
 {{--
+|
 ||
 }
 })"

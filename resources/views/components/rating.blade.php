@@ -64,6 +64,12 @@
     // the call site knows.
     'clearable' => false,
     'readonly' => false,
+    // Takes the rating out of use and keeps it on the page, the way `segmented-control` does:
+    // the group stays one tab stop and is announced as unavailable (`aria-disabled`), no click or
+    // key changes the score, and the hidden field is left out of what a form submits. Declared
+    // rather than left to the attribute bag, where it lands on the wrapper div and nothing reads
+    // it. A readonly rating has no control to disable, so `readonly` wins.
+    'disabled' => false,
     'size' => config('wirekit.components.rating.size', 'md'),
     'scope' => null,
 ])
@@ -89,12 +95,21 @@
     $readonly = BooleanProp::from($readonly, false);
     $clearable = BooleanProp::from($clearable, false);
     $required = BooleanProp::from($required, false);
+    $disabled = BooleanProp::from($disabled, false) && ! $readonly;
+
+    // A whole number of stars, at least one. A max that holds no positive number takes the
+    // configured default: a text would compare as text in the star loop below, which then
+    // never ends.
+    $max = max(1, (int) \Pushery\WireKit\Support\NumericProp::positive(
+        $max,
+        \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max', 5), 5),
+    ));
 
     // The seed stays byte-identical when the feature is off. It is an attribute
     // a Livewire morph rewrites, and Alpine re-initializes on the change — so a
     // key added unconditionally is a key added to every render of every rating
     // in the fleet, for a feature almost none of them asked for.
-    $ratingSeed = '{ max: '.$max.($clearable ? ', clearable: true' : '').' }';
+    $ratingSeed = '{ max: '.$max.($clearable ? ', clearable: true' : '').($disabled ? ', disabled: true' : '').' }';
 
     use Pushery\WireKit\WireKit;
     use Pushery\WireKit\Support\LocalizedNumber;
@@ -104,6 +119,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('rating', $attributes->getAttributes());
 
+    // The hidden input gives the score as text, and Livewire takes the server's echo of an `int`
+    // or `float` property for a change and writes it over a newer score: a binding to one gets
+    // `.number` and sends a number (Support\NumericModel).
+    $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
+
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
@@ -111,15 +131,17 @@
 
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'rating-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     /*
      * The Laravel validation bag, which this control never consulted. Every other form
-     * control resolves `error` from `$error ?? $errors->first($name)`, so after a failed
+     * control resolves `error` from `$error ?? FieldError::first($errors, $name)`, so after a failed
      * `$this->validate()` each of them showed its message and this one showed nothing — in
      * the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
      */
-    $error ??= ($errors ?? null)?->first($name);
+    $error ??= \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
     // Strip the caller's `id` AND `name` from the bag: the deduped $id is rendered
     // explicitly as id="{{ $id }}", so leaving it in the bag would emit a second,
     // conflicting id attribute. `name` belongs on the hidden input below, which renders
@@ -132,11 +154,19 @@
     // so a caller's description was dropped or pushed the component's own out.
     // A readonly rating describes nothing of its own, so a caller's list goes on its image alone.
     $callerDescribedBy = trim((string) $attributes->get('aria-describedby', ''));
+    // A caller's `aria-labelledby` names the control and wins over the component's own name, as
+    // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
     $describedBy = trim(($error ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.$callerDescribedBy);
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
+    // A required rating that a submit found empty says so under the stars (partials/required-message),
+    // unless the server's own message for the field already stands there.
+    $requiredMessageId = $required && ! $readonly && ! $error ? $id.'-required' : null;
+    $describedBy = trim($describedBy.' '.($requiredMessageId ?? ''));
 
     $wrapperClasses = WireKit::resolveClasses('rating', 'base', implode(' ', [
         'inline-flex flex-col gap-1',
@@ -217,7 +247,7 @@
     // `after: '_notify'` is what keeps a plain HTML form honest — the hidden
     // input is synced there, and without the call a rollback would leave the
     // form submitting the score that was just taken back.
-    $optimisticConfig = ($optimistic === null || $readonly) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+    $optimisticConfig = ($optimistic === null || $readonly || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'rating',
         'after' => '_notify',
         // The field's own error region. Without it the layer's generic "Could not save"
@@ -244,10 +274,18 @@
     // (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `autofocus` goes to the star that holds the tab stop: on the wrapper it focuses nothing
+    // (Support\FieldAttributes).
+    $fieldAutofocus = \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
+    $attributes = $attributes->except('autofocus');
 @endphp
 
 <div
-    {{ $attributes->except(['aria-label', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
+    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
     @if($callerRef !== '') data-wk-ref-scope x-wk-ref="{{ $callerRef }}" @endif
     {{-- The server's own channel — see segmented-control for why this is a
          plain attribute rather than the hidden input this component binds. --}}
@@ -313,7 +351,13 @@
              submitted in that window silently sent nothing. The static
              attribute makes the field agree with what is on screen from the
              first paint; `:value` takes over the moment Alpine runs. --}}
-        <input type="hidden" id="{{ $id }}" name="{{ $name }}" value="{{ $clamped }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} />
+        {{-- A disabled field is left out of the form data, as a native one is. --}}
+        <input type="hidden" id="{{ $id }}" name="{{ $name }}" value="{{ $clamped }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
+        {{-- The browser validates no hidden field, so a required rating stops an empty submit
+             through a stand-in of its own. --}}
+        @if($required)
+            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+        @endif
     @endunless
 
     {{-- Two different things wear the same stars.
@@ -334,29 +378,39 @@
                  right above these stars, so naming the image with it would say it
                  twice AND lose the number — "Average rating, image" tells the
                  reader nothing about what was rated. Read together it comes out
-                 as "Average rating — 4.2 out of 5 stars".
+                 as "Average rating — 4.2 out of 5 stars". The maximum chooses
+                 the form of the noun it precedes.
 
                  An explicit aria-label still wins: the caller knows their page. --}}
-            aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? __('wirekit:::value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
+            @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? trans_choice('wirekit:::value out of :max stars', $max, ['value' => $announcedValue, 'max' => $max]) }}" @endif
             @if($callerDescribedBy !== '') aria-describedby="{{ $callerDescribedBy }}" @endif
         @else
             role="radiogroup"
             @if($required) aria-required="true" @endif
+            {{-- On the group AND on each star, as `segmented-control` does: the group says
+                 it is unavailable, and so does the star a reader lands on. --}}
+            @if($disabled) aria-disabled="true" @endif
             {{-- `aria-labelledby` points at the visible label, so the name a reader hears is
                  the text on the screen rather than a second copy of it. An explicit
                  `aria-label` from the caller still wins: they know their page, and
                  `aria-labelledby` would otherwise silently outrank what they wrote. --}}
-            @if($label && ! \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'))
+            @if($callerLabelledBy)
+                aria-labelledby="{{ $callerLabelledBy }}"
+            @elseif($label && ! \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'))
                 aria-labelledby="{{ $id }}-label"
             @else
                 aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $label ?? __('wirekit::Rating') }}"
             @endif
             {{-- On the GROUP, not on each star: the message is about the rating, and
                  repeating it on five buttons would read it out five times. --}}
-            @if($error) aria-invalid="true" @endif
+            @if($error)
+                aria-invalid="true"
+            @elseif($requiredMessageId)
+                x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
+            @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         @endif
-        class="inline-flex gap-0.5"
+        @class(['inline-flex gap-0.5', 'opacity-[var(--opacity-wk-disabled)]' => $disabled])
     >
         @for($i = 1; $i <= $max; $i++)
             @if($readonly)
@@ -438,7 +492,13 @@
                          pluralization is exactly what blocks an optimistic
                          update from being announced correctly. --}}
                     aria-label="{{ trans_choice('wirekit:::count star|:count stars', $i) }}"
-                    @if($optimisticConfig)
+                    {{-- `aria-disabled`, not the native attribute: a natively disabled star
+                         leaves the tab order, and a group whose every star has left it
+                         disappears from keyboard navigation. With no handler bound, a click
+                         or a key does nothing, and the star a reader lands on says why. --}}
+                    @if($disabled)
+                        aria-disabled="true"
+                    @elseif($optimisticConfig)
                         {{-- run() writes through the binding, announces, and
                              fires the Livewire method; select() would write the
                              value directly and skip the snapshot.
@@ -456,17 +516,19 @@
                     @else
                         @click="select({{ $i }})"
                     @endif
-                    @mouseenter="hovered = {{ $i }}"
-                    @mouseleave="hovered = 0"
-                    {{-- Radiogroup keyboard model (APG): both axes move the
-                         selection, Home/End jump to the ends. ArrowUp aliases
-                         ArrowRight (more), ArrowDown aliases ArrowLeft (less). --}}
-                    @keydown.arrow-right.prevent="stepUp()"
-                    @keydown.arrow-up.prevent="stepUp()"
-                    @keydown.arrow-left.prevent="stepDown()"
-                    @keydown.arrow-down.prevent="stepDown()"
-                    @keydown.home.prevent="selectFirst()"
-                    @keydown.end.prevent="selectLast()"
+                    @unless($disabled)
+                        @mouseenter="hovered = {{ $i }}"
+                        @mouseleave="hovered = 0"
+                        {{-- Radiogroup keyboard model (APG): both axes move the
+                             selection, Home/End jump to the ends. ArrowUp aliases
+                             ArrowRight (more), ArrowDown aliases ArrowLeft (less). --}}
+                        @keydown.arrow-right.prevent="stepUp()"
+                        @keydown.arrow-up.prevent="stepUp()"
+                        @keydown.arrow-left.prevent="stepDown()"
+                        @keydown.arrow-down.prevent="stepDown()"
+                        @keydown.home.prevent="selectFirst()"
+                        @keydown.end.prevent="selectLast()"
+                    @endunless
                     {{-- The roving tab stop, written TWICE on purpose — the same shape the
                          hidden input above uses for its value, and for the same reason.
                          `:tabindex` is an Alpine binding, so until Alpine runs there is no
@@ -480,8 +542,9 @@
                          only in the readonly rendering, which has no radiogroup), so the two
                          expressions compare the same way. --}}
                     tabindex="{{ ($clamped === $i) || ($clamped === 0 && $i === 1) ? '0' : '-1' }}"
+                    @if($fieldAutofocus && (($clamped === $i) || ($clamped === 0 && $i === 1))) autofocus @endif
                     :tabindex="rating === {{ $i }} || (rating === 0 && {{ $i }} === 1) ? '0' : '-1'"
-                    class="{{ $starTargetClass }} transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
+                    class="{{ $starTargetClass }} transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] {{ $disabled ? 'cursor-not-allowed' : 'cursor-pointer' }}"
                 >
                     <svg
                         aria-hidden="true"
@@ -507,6 +570,10 @@
              nothing is announced at all. --}}
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
         </div>
+    @endif
+
+    @if($requiredMessageId)
+        @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
     @endif
 
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so

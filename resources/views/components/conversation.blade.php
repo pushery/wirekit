@@ -39,7 +39,10 @@
         [
             'threshold' => $threshold !== null ? (int) $threshold : null,
             'jumpLabel' => __('wirekit::Jump to latest'),
-            'jumpLabelCount' => __('wirekit::Jump to latest, :count new'),
+            // Every form of the name with the count, chosen in the browser where the count lives,
+            // with the application's plural rule: "1 nuevo", "3 nuevos".
+            'jumpLabelCounts' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::Jump to latest, :count new'),
+            'locale' => str_replace('_', '-', app()->getLocale()),
         ],
         static fn ($v): bool => $v !== null,
     ));
@@ -73,6 +76,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 <div
@@ -85,7 +91,7 @@
         aria-live="polite"
         aria-relevant="additions text"
         tabindex="0"
-        aria-label="{{ $label }}"
+        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }}
         class="{{ $viewportClasses }}"
         style="max-height: {{ $maxHeight }};"
     >
@@ -116,7 +122,7 @@
         x-cloak
         x-transition.opacity
         @click="scrollToBottom()"
-        ::aria-label="unread > 0 ? jumpLabelCount.replace(':count', unread) : jumpLabel"
+        ::aria-label="jumpName()"
         class="absolute bottom-[var(--space-wk-sm)] left-1/2 -translate-x-1/2"
     >
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">

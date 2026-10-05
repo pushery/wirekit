@@ -51,6 +51,7 @@ $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
+$attributes]
 $attrs
 $attrs->merge(['style'
 $badge
@@ -63,6 +64,7 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel,
 $callerRole
 $classes
 $cleaned
@@ -415,6 +417,7 @@ $wrapperClasses
 'opacity-[var(--opacity-wk-disabled)]
 'orientation'
 'outline'];
+'overflow-y-auto
 'p-[var(--padding-wk-x-md)]',
 'padded'
 'panel',
@@ -526,6 +529,7 @@ $wrapperClasses
 (($iconOnly
 (4.05
 (SVG
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind's
 (UtilityClasses::has($callerClass,
@@ -984,6 +988,7 @@ SVG
 SVG:
 Same
 Scope
+Scrolls
 See
 Server"
 Setting
@@ -1078,6 +1083,7 @@ With
 Without
 Written
 [
+[$callerLabelledBy,
 ['data-wk-icon-missing'
 ['label'
 ['outlined'
@@ -1105,6 +1111,8 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($row['key'])
 \Pushery\WireKit\Support\AttributeText::get($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique($groupSlug
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
@@ -1138,7 +1146,7 @@ __('wirekit::Healthy'),
 __('wirekit::Inactive'),
 __('wirekit::Needs
 __('wirekit::No
-__('wirekit::Popover')
+__('wirekit::Popover'))
 __('wirekit::Scope');
 __('wirekit::Search
 __('wirekit::Switch
@@ -1490,6 +1498,7 @@ backed
 background)
 background,
 badge
+badge,
 bag
 bag,
 baked
@@ -1518,6 +1527,7 @@ below
 below).
 below,
 below.
+below;
 beneath
 beside
 between
@@ -1545,6 +1555,7 @@ blade-ui-kit/blade-icons
 blade-ui-kit/blade-icons.
 block
 block,
+blockified
 blocks
 blurs
 body
@@ -1576,6 +1587,7 @@ bound
 bound,
 boundaries
 box
+box,
 box.
 bracket
 branch
@@ -1729,6 +1741,7 @@ color-mix(in
 color:
 colors
 colors,
+column
 column.
 combinations:
 combining
@@ -1776,7 +1789,9 @@ construction.
 contain
 contain;"
 container
+container's
 container-relative
+container.
 containing
 contains
 content
@@ -2026,6 +2041,7 @@ false);
 false,
 false:
 false;
+far
 fast
 feature
 feedback
@@ -2162,6 +2178,7 @@ go
 goes
 goes.
 gone
+grid
 group
 group's
 group,
@@ -2318,7 +2335,7 @@ injected
 inline
 inline-block',
 inline-flex
-inline-flex',
+inline-level
 inner
 input
 inserting
@@ -2522,6 +2539,7 @@ measures.
 mechanism
 media
 meet
+meets,
 merely
 merge
 merges
@@ -2711,6 +2729,7 @@ overflow-y-hidden
 overlay
 override.
 overscroll-behavior:
+overscroll-contain',
 oversight.
 oversights:
 own
@@ -2838,6 +2857,7 @@ problem
 prod).
 prod.
 produces;
+prohibits
 project
 promise
 promise.
@@ -3238,6 +3258,7 @@ str_contains($targetAttr,
 str_starts_with($key,
 str_starts_with($rowUrl,
 straight
+stretched
 stricter
 strictly
 strictness
@@ -3304,6 +3325,7 @@ tall,
 taller
 target
 target's
+target.
 target;
 target="_blank".
 targets,
@@ -3508,6 +3530,7 @@ view,
 viewBox="0
 viewport
 viewport,
+viewport.
 virtual
 visible
 visible.
@@ -3536,6 +3559,7 @@ w-[var(--size-wk-lg)]',
 w-[var(--size-wk-md)]',
 w-[var(--size-wk-md-compact)]',
 w-[var(--size-wk-sm)]',
+w-fit',
 w-full
 w-max',
 wait

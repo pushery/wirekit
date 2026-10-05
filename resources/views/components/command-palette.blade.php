@@ -54,7 +54,10 @@
     // so the control the user actually operates kept no accessible name at all — WCAG
     // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
-    $attributes = $attributes->except(['aria-label']);
+    // A caller's `aria-labelledby` names the same two elements; the reference outranks a name.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
@@ -222,7 +225,7 @@
                             {{-- The palette's own input is the control the caller means; without a
                                  name it is announced as an unlabeled combobox. The placeholder is
                                  NOT a name — it disappears the moment the user types. --}}
-                            aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}"
+                            @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}" @endif
                             aria-expanded="true"
                             aria-controls="{{ $listId }}"
                             :aria-activedescendant="activeDescendant"
@@ -269,7 +272,7 @@
                              active command through `aria-activedescendant`. In Chromium a list that
                              scrolls and holds nothing focusable is a tab stop of its own. --}}
                         tabindex="-1"
-                        aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}"
+                        @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}" @endif
                         {{-- Busy while a remote source is answering: the options still showing
                              are the previous answer, and a reader should not take them as the
                              new one. Absent otherwise, which is what `false` means. --}}

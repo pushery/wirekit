@@ -96,9 +96,10 @@
         @endisset
 
         @isset($description)
-            <p data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 mb-[var(--space-wk-lg,1.5rem)]">
+            {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
+            <div data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 mb-[var(--space-wk-lg,1.5rem)]">
                 {{ $description }}
-            </p>
+            </div>
         @endisset
 
         @isset($actions)

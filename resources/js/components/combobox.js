@@ -35,11 +35,14 @@
  *                                      `searchMinLength`, `searchDebounce` and `searchTexts`
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
+import { onFormReset } from '../utils/form-reset.js';
+import { requiredCheckState } from '../utils/required-check.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
 import { optionPressState } from '../utils/option-press.js';
 import { foldForSearch } from '../utils/search-fold.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { serverSearchState } from '../utils/server-search.js';
+import { sameValue } from '../utils/same-value.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { watchCurrent } from '../utils/watch-current.js';
@@ -66,6 +69,14 @@ export default function wirekitCombobox(config = {}) {
         // destroy().
         _stopServerValue: null,
         _stopOptionsSync: null,
+        // Puts the starting choice back when the form is reset (utils/form-reset.js), released in
+        // destroy(). The choice it returns to is the one the page started with, or the one the
+        // server sent last, as a native field returns to the value the server rendered.
+        _stopFormReset: null,
+        _resetValue: config.value ?? null,
+        // `requiredMessage` and `onRequiredInvalid()`: a required combobox stops a submit without a
+        // choice (utils/required-check.js).
+        ...requiredCheckState(),
 
         // Set by hoverOption() so the scroll that follows a highlight change is
         // skipped for that one move. See _revealHighlight().
@@ -202,6 +213,8 @@ export default function wirekitCombobox(config = {}) {
                 }
             }
 
+            this._resetValue = this.selected;
+
             if (! Array.isArray(config.options) && ! this._server) {
                 const options = readAttribute(OPTIONS_ATTRIBUTE);
 
@@ -295,7 +308,13 @@ export default function wirekitCombobox(config = {}) {
             this._stopServerValue = observeServerValue(root, (raw) => {
                 const value = jsonValue(raw);
 
-                if (value === undefined || value === this.selected) {
+                if (value === undefined) {
+                    return;
+                }
+
+                this._resetValue = value;
+
+                if (sameValue(value, this.selected)) {
                     return;
                 }
 
@@ -325,6 +344,19 @@ export default function wirekitCombobox(config = {}) {
                     }
                 }, OPTIONS_ATTRIBUTE);
             }
+
+            // The search field joins the form the hidden field joins, and it is there without a
+            // name as well. A select-only trigger is a `div`, which joins no form, so the hidden
+            // field answers there.
+            this._stopFormReset = onFormReset(root, () => {
+                const field = this._searchSource();
+
+                if (field && typeof field === 'object' && 'form' in field) {
+                    return field;
+                }
+
+                return typeof root?.querySelector === 'function' ? root.querySelector('input[type=hidden]') : null;
+            }, () => this._restore());
         },
 
         // Panel ids, handed in by the Blade so `_place()` can find the panels
@@ -523,6 +555,8 @@ export default function wirekitCombobox(config = {}) {
             this._stopServerValue = null;
             this._stopOptionsSync?.();
             this._stopOptionsSync = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
             this._modelEvents?.dispose();
             this._modelEvents = null;
             this._coordination?.stop();
@@ -808,6 +842,14 @@ export default function wirekitCombobox(config = {}) {
         },
 
         /**
+         * Whether this option is the choice. The choice may arrive as a number, as a value bound to
+         * an `int` property does, while the option carries its value as text.
+         */
+        isChosen(value) {
+            return sameValue(this.selected, value);
+        },
+
+        /**
          * Choose the option with this value, the way a click on it does. The select-only
          * trigger's keyboard hands its choice here, or to the optimistic layer's `runIf()`.
          */
@@ -816,7 +858,7 @@ export default function wirekitCombobox(config = {}) {
                 return;
             }
 
-            const option = this.allOptions.find((o) => o.value === value);
+            const option = this.allOptions.find((o) => sameValue(o.value, value));
 
             if (option) {
                 this.selectOption(option);
@@ -910,7 +952,7 @@ export default function wirekitCombobox(config = {}) {
 
         /** Mark the current choice, or the first enabled option when there is none to mark. */
         _highlightChoice() {
-            const index = this.filtered.findIndex((o) => o.value === this.selected && ! o.disabled);
+            const index = this.filtered.findIndex((o) => sameValue(o.value, this.selected) && ! o.disabled);
 
             if (index >= 0) {
                 this.highlight = index;
@@ -993,6 +1035,42 @@ export default function wirekitCombobox(config = {}) {
 
             this._typeAheadTimer = null;
             this._typeAheadBuffer = '';
+        },
+
+        /**
+         * Back to the starting choice after a form reset.
+         *
+         * The reset put the search field back to its own default, which is empty, behind
+         * `x-model`; the binding writes the field only when `query` changes, so the label of the
+         * choice is written into it here.
+         */
+        _restore() {
+            this.isOpen = false;
+            this.selected = this._resetValue;
+            this._syncQuery();
+
+            const input = this._searchSource();
+
+            if (input && typeof input === 'object' && 'value' in input) {
+                input.value = this.query;
+            }
+
+            this.requiredMessage = '';
+        },
+
+        /** What the required check reads: empty exactly while nothing is chosen, whatever is typed. */
+        get requiredValue() {
+            return this.selected === null || this.selected === undefined || this.selected === '' ? '' : String(this.selected);
+        },
+
+        /** The field, or the select-only trigger, with the list kept shut, as a clear leaves it. */
+        _focusRequiredControl() {
+            const field = this._searchSource();
+
+            if (field && typeof field.focus === 'function') {
+                field.focus();
+                this.isOpen = false;
+            }
         },
 
         clearSelection() {

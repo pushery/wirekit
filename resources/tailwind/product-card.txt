@@ -28,6 +28,7 @@
 "New"
 "New",
 "Previous
+"Remove";
 "Save",
 "Saving…")
 "Send
@@ -69,7 +70,9 @@ $attributes->class([$classes])
 $attributes->class([$figureClasses])
 $attributes->class([$iconClasses]);
 $attributes->class(['relative
+$attributes->except('autofocus');
 $attributes->except('class')->class([$classes])
+$attributes->except('form');
 $attributes->except('rel');
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
@@ -80,7 +83,6 @@ $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
 $attributes->get('class',
 $attributes->get('name'),
-$attributes->get('name',
 $attributes->get('rel',
 $attributes->get('role');
 $attributes->get('target',
@@ -92,9 +94,12 @@ $attributes->has('aria-labelledby'))
 $attributes->merge
 $attributes->merge($depthStyle
 $attributes->whereStartsWith('wire:model')
+$attributes]
 $availability
 $availability,
 $badge
+$badgeText
+$badgeText])
 $base
 $base;
 $baseClasses
@@ -109,6 +114,9 @@ $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
 $callerDescribedBy
+$callerLabel
+$callerLabel,
+$callerLabelledBy
 $callerRef
 $callerRole
 $caption
@@ -120,6 +128,7 @@ $clearable
 $compareAt
 $computedRel
 $content
+$content))
 $currency,
 $declarativeBusyOnly
 $declarativeBusyOnly);
@@ -135,10 +144,13 @@ $depthStyle
 $depthStyle]
 $describedBy
 $describes
+$describes;
 $description
 $disableOnLoading
 $disableOnLoading;
 $disabled
+$disabled)
+$disabled])
 $dismissBtnClasses
 $dismissLabel
 $dismissible
@@ -151,10 +163,10 @@ $e)
 $e;
 $emitAriaBusy
 $error
-$errors->first($name)`,
 $fetchpriority
 $fetchpriority,
 $fetchpriorityValue
+$fieldAutofocus
 $figureClasses
 $finalRel
 $fit,
@@ -163,6 +175,8 @@ $fitClass,
 $fitValue
 $focusableTrigger
 $forceLoading
+$formOwner
+$formOwner,
 $formattedAmount
 $formattedBase
 $formattedDelta
@@ -210,6 +224,7 @@ $id);
 $id.'-error'
 $id.'-help'
 $id.'-hint'
+$id.'-required'
 $imgClasses
 $intent,
 $intentClasses
@@ -242,7 +257,9 @@ $locale));
 $locale);
 $m):
 $m[1]);
+$max
 $max));
+$max,
 $max;
 $max])
 $media
@@ -258,6 +275,8 @@ $money($displayAmount);
 $money($displayBase)
 $money($displayUnitPrice)
 $name
+$name);
+$name)`,
 $name,
 $name];
 $numericValue
@@ -271,6 +290,8 @@ $optimisticConfig
 $orientation
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $pillRadius
 $pillRadius,
 $placeholderAttributes
@@ -283,10 +304,16 @@ $ratingSeed
 $ratingValue
 $ratio
 $readonly
-$readonly)
+$readonly;
 $relAttr
 $relAttr;
 $required
+$requiredDisabled
+$requiredFormOwner
+$requiredMessageBound
+$requiredMessageClass
+$requiredMessageId
+$requiredMessageId])
 $resolved
 $resolved);
 $resolvedAriaHidden
@@ -317,6 +344,12 @@ $slot
 $slot)
 $slot))
 $slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -340,11 +373,17 @@ $svgHtml,
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $touchClasses
 $touchClasses,
 $touchTextFloor
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $type
 $unitMeasure
 $unitMeasure)
@@ -369,6 +408,7 @@ $wrapperClasses
 '')).'
 ''));
 '').'
+'').($disabled
 '');
 '',
 '';
@@ -385,6 +425,8 @@ $wrapperClasses
 '.$max.($clearable
 '.$message);
 '.($helpId
+'.($requiredMessageClass
+'.($requiredMessageId
 '.\Pushery\WireKit\Support\LogValue::quote((string)
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
@@ -411,6 +453,7 @@ $wrapperClasses
 'Rendering
 'Run:
 'USD'),
+'UTF-8')));
 'WireKit
 '[WireKit]
 '_blank');
@@ -431,6 +474,8 @@ $wrapperClasses
 'aria-label')
 'aria-label'))
 'aria-label');
+'aria-labelledby');
+'aria-labelledby',
 'as'
 'auto'.
 'availability'
@@ -495,6 +540,8 @@ $wrapperClasses
 'cover'
 'cover',
 'currency'
+'cursor-not-allowed'
+'cursor-pointer'
 'cursor-pointer',
 'danger'
 'danger',
@@ -646,6 +693,7 @@ $wrapperClasses
 'minorUnits'
 'mode'
 'name'
+'name',
 'name']);
 'neutral'
 'neutral'),
@@ -658,6 +706,7 @@ $wrapperClasses
 'offset'
 'opacity-70
 'opacity-[var(--opacity-wk-disabled)]
+'opacity-[var(--opacity-wk-disabled)]'
 'optimistic'
 'optimisticArgs'
 'orientation'
@@ -691,6 +740,7 @@ $wrapperClasses
 'readonly'
 'reject',
 'required'
+'requiredDisabled'
 'reverted'
 'reviewCount'
 'rounded'
@@ -808,12 +858,13 @@ $wrapperClasses
 ($attributes->getAttributes()
 ($base
 ($callerAriaHidden
+($callerLabelledBy
 ($clamped
 ($declarativeLoading
 ($delta
 ($deltaIntent)
+($dismissLabel
 ($displayUnitPrice
-($errors
 ($fit)
 ($forceLoading)
 ($hint
@@ -838,10 +889,12 @@ $wrapperClasses
 ($surface
 ($surface)
 ($svgHtml
+($triggerIsButton)
 ($unitPrice
 ($value):
 ($wrapLabel
 ('xs').
+(($clamped
 (($iconOnly
 (--radius-wk-md).
 (1
@@ -862,7 +915,12 @@ $wrapperClasses
 (Price
 (SOFT
 (SVG
+(Support\AttributeText).
 (Support\CallerListeners).
+(Support\CallerName).
+(Support\FieldAttributes).
+(Support\FormOwner).
+(Support\NumericModel).
 (Support\UrlProp).
 (Tailwind's
 (UVP
@@ -874,6 +932,7 @@ $wrapperClasses
 (\Throwable
 (`.wk-scroll-fade…:focus-within
 (`@container/wk-table`)
+(`aria-disabled`),
 (`data-wk-tooltip-surface`
 (`loading`
 (`media`,
@@ -926,6 +985,8 @@ $wrapperClasses
 (only
 (or
 (partials/field-help).
+(partials/required-check),
+(partials/required-message),
 (paths,
 (preserving
 (provides
@@ -933,6 +994,7 @@ $wrapperClasses
 (regex
 (renders
 (resources/js/utils/caller-ref.js).
+(resources/js/utils/required-check.js):
 (same
 (see
 (segmented
@@ -953,6 +1015,7 @@ $wrapperClasses
 (when
 (which
 (wire:click
+));
 );
 *
 *-bg
@@ -1004,6 +1067,7 @@ $wrapperClasses
 0Zm-9
 1
 1)
+1)))
 1-18
 1.025
 1.172
@@ -1154,9 +1218,11 @@ $wrapperClasses
 :help-id="$helpId"
 :help="$help"
 :label',
+:locale="$locale"
 :max
 :minor-units.
 :minor-units="$minorUnits"
+:name',
 :name="$leadingIcon"
 :name="$trailingIcon"
 :required="$required">{{
@@ -1238,12 +1304,14 @@ $wrapperClasses
 ===
 =>
 >
+></p>
 >=
 ?
 ?:
 ??
 ??=
 @aware(['announceErrors'
+@class(['inline-flex
 @click="run(clearTarget({{
 @click="select({{
 @disabled($tag
@@ -1252,7 +1320,10 @@ $wrapperClasses
 @elseif($hint)
 @elseif($iconOnlyBelow
 @elseif($image)
+@elseif($label
 @elseif($loading)
+@elseif($optimisticConfig)
+@elseif($requiredMessageId)
 @endfor
 @endif
 @endif>
@@ -1263,12 +1334,12 @@ $wrapperClasses
 @if
 @if($announceError)
 @if($callerDescribedBy
+@if($callerLabelledBy)
 @if($callerRef
 @if($caption)
 @if($computedRel)
 @if($declarativeLoading)
 @if($describedBy
-@if($describes)
 @if($description)
 @if($disabled)
 @if($dismissible)
@@ -1276,7 +1347,9 @@ $wrapperClasses
 @if($emitAriaBusy)
 @if($error)
 @if($fetchpriorityValue
+@if($fieldAutofocus
 @if($focusableTrigger)
+@if($formOwner)
 @if($formattedBase
 @if($formattedDelta
 @if($formattedUnitPrice
@@ -1286,7 +1359,6 @@ $wrapperClasses
 @if($iconOnly)
 @if($isOut)
 @if($isPartial)
-@if($label
 @if($label)
 @if($leadingIcon)
 @if($linkDisabled)
@@ -1301,15 +1373,22 @@ $wrapperClasses
 @if($ratio)
 @if($readonly)
 @if($required)
+@if($requiredDisabled
+@if($requiredMessageBound
+@if($requiredMessageId)
 @if($reviewCount
 @if($stackBelow)
 @if($surface
 @if($tag
 @if($tooltip)
 @if($trailingIcon)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($height))
 @if(filled($help))
 @if(filled($helpId
+@if(filled($requiredFormOwner
 @if(filled($sizes))
 @if(filled($srcset))
 @if(filled($width))
@@ -1318,6 +1397,8 @@ $wrapperClasses
 @if(isset($media))
 @if(isset($suffix))
 @include('wirekit::components.partials.field-help',
+@include('wirekit::components.partials.required-check',
+@include('wirekit::components.partials.required-message',
 @isset($badge)
 @isset($iconLeft)
 @isset($iconRight)
@@ -1332,6 +1413,7 @@ $wrapperClasses
 @php
 @props([
 @props.
+@unless($disabled)
 @unless($readonly)
 A
 A11y
@@ -1355,6 +1437,7 @@ Alpine's
 Also
 An
 And
+Around
 ArrowDown
 ArrowLeft
 ArrowRight
@@ -1442,6 +1525,8 @@ Driven
 Drop
 EMPTY
 ENT_HTML5)),
+ENT_HTML5));
+ENT_HTML5,
 ENT_QUOTES
 ENT_QUOTES).'"',
 EQUALITY,
@@ -1464,6 +1549,7 @@ FOUR
 Fallback
 Fast
 Fetch
+FieldError::first($errors,
 Filled
 Floating
 For
@@ -1656,6 +1742,7 @@ Shared:
 Shirt
 Short
 Show
+Shown
 Silent
 Silent:
 Single-line
@@ -1715,6 +1802,7 @@ URL:
 USER
 Undeclared,
 Unit
+Unset,
 Upstream
 Uses
 UtilityClasses::without($iconClasses,
@@ -1767,6 +1855,7 @@ Without
 Wrapping
 Written
 [
+[$callerLabelledBy,
 ['1',
 ['auto',
 ['block
@@ -1777,8 +1866,11 @@ Written
 ['in-stock',
 ['inverted',
 ['label'
+['name'
 ['outlined'
 ['primary',
+['requiredFormOwner'
+['requiredMessageId'
 ['sm',
 ['soft',
 ['style'
@@ -1794,6 +1886,7 @@ Written
 [overflow-wrap:anywhere]'
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\Facades\Log::warning(
+\Illuminate\Support\HtmlString('');
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
@@ -1802,11 +1895,20 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
+\Pushery\WireKit\Support\FieldError::first($errors
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
+\Pushery\WireKit\Support\NumericModel::number($attributes);
+\Pushery\WireKit\Support\NumericProp::positive(
+\Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max',
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UrlProp::text($src);
@@ -1833,7 +1935,6 @@ Written
 ],
 ];
 __('wirekit::(opens
-__('wirekit:::value
 __('wirekit::Add
 __('wirekit::Could
 __('wirekit::Help
@@ -1842,6 +1943,7 @@ __('wirekit::Low
 __('wirekit::Out
 __('wirekit::Previous
 __('wirekit::Rating')
+__('wirekit::Remove
 __('wirekit::Remove');
 __('wirekit::Sale')
 __('wirekit::Saving'),
@@ -1863,6 +1965,7 @@ __toString
 `-12.5%`.
 `-`
 `.attr`
+`.number`
 `.wk-button-group[data-stack-below="…"]`
 `.wk-button`
 `2xl`
@@ -1926,13 +2029,17 @@ __toString
 `aria-describedby`
 `aria-describedby`:
 `aria-disabled="true"`
+`aria-disabled`,
 `aria-hidden="true"`
 `aria-label`
 `aria-labelledby`
+`aria-required`.
 `as="div
 `as="span"`
+`autofocus`
 `badge`
 `badge`),
+`basis-full`
 `bg-[var(--color-wk-danger)]`
 `block`,
 `border-b-[3px]`
@@ -1976,12 +2083,15 @@ __toString
 `fixed`
 `flex-nowrap`
 `flex`
+`float`
 `focusable-trigger`
 `font-medium`
 `for`,
 `forceLoading=true`
 `forceLoading`
 `foreground
+`form`
+`form`,
 `gap-1`
 `generic`,
 `h-4`
@@ -2005,6 +2115,8 @@ __toString
 `inline-block`:
 `inline-flex`
 `input`:
+`int`
+`invalid`
 `inverted`
 `isolation:
 `keydownEscape()`
@@ -2048,6 +2160,8 @@ __toString
 `rating`,
 `rating`;
 `ratio`
+`readonly`
+`requiredValue`,
 `required`
 `resources/views/**/*.blade.php`
 `role="deletion"`
@@ -2055,6 +2169,7 @@ __toString
 `role="img"`.
 `role="link"`
 `run()`.
+`segmented-control`
 `sm`
 `soft`
 `span`:
@@ -2141,6 +2256,7 @@ action,
 action.
 actions.
 activated
+activating
 active
 active-tab
 acts
@@ -2215,6 +2331,7 @@ announces,
 announces.
 announcing
 anonymous
+another.
 answer
 anticipate
 any
@@ -2232,6 +2349,7 @@ appearance
 appears
 appended
 application
+application's
 applied
 applies
 applying
@@ -2314,6 +2432,7 @@ attribute
 attribute's
 attribute,
 attribute.
+attribute:
 attributes
 attributes,
 audit
@@ -2321,6 +2440,8 @@ auto
 auto-derived
 auto-inject).
 auto-invokes
+autocomplete="off"
+autofocus
 automated
 automatic
 automatically
@@ -2572,7 +2693,9 @@ child
 child)
 children
 chip
+chips
 choice
+chooses
 choosing
 chose
 chosen
@@ -2596,7 +2719,6 @@ class="animate-spin
 class="cursor-default">
 class="flex
 class="inline-block
-class="inline-flex
 class="line-clamp-2
 class="mt-[var(--space-wk-xs)]
 class="mt-auto">
@@ -2745,6 +2867,7 @@ contrast
 contrasts
 contributes
 control
+control's
 control,
 control.
 control:
@@ -2776,12 +2899,12 @@ crossed
 cue
 currency
 currency's
+currency.
 current
 currentColor
 currentColor;
 cursor-help"
 cursor-pointer
-cursor-pointer"
 custom
 custom.
 customarily
@@ -2799,6 +2922,7 @@ danger-text
 danger:
 dark
 dark:
+data,
 data-availability="{{
 data-orientation
 data-orientation="{{
@@ -2811,6 +2935,7 @@ data-wk-product-card
 data-wk-product-card-badge>{{
 data-wk-product-card-badges
 data-wk-product-card-cta
+data-wk-product-card-description
 data-wk-product-card-link
 data-wk-product-card-price
 data-wk-product-card-rating
@@ -2819,6 +2944,8 @@ data-wk-product-card-sale>
 data-wk-product-card-stock
 data-wk-prose-skip
 data-wk-ref-scope
+data-wk-required-check
+data-wk-required-message
 data-wk-server-value="{{
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
@@ -2884,6 +3011,7 @@ descendant
 descendants
 describe
 describe,
+described
 describes
 description
 description.
@@ -2915,12 +3043,15 @@ disable,
 disabled
 disabled,
 disabled.
+disabled:
 disabled:cursor-not-allowed
 disabled:opacity-[var(--opacity-wk-disabled)]
+disabled;
 disables
 disabling.
 disagree
 disappearing,
+disappears
 discount
 discount,
 discoverable.
@@ -2936,6 +3067,7 @@ dist/wirekit.css
 distinguish:
 div
 div,
+div:
 do
 do:
 docblock
@@ -2947,7 +3079,9 @@ documented
 documents
 does
 does),
+does,
 does.
+does:
 does;
 doing.
 dot
@@ -2987,11 +3121,13 @@ early
 early.
 ease-in
 ease-out
+echo
 edge
 edge.
 edges,
 edges.
 editing
+editor's
 effect
 effect:
 either
@@ -3017,6 +3153,7 @@ emitted
 empty
 empty,
 empty-state
+empty.
 empty:
 enabled
 end
@@ -3081,6 +3218,7 @@ exposed
 exposes
 exposing
 expression
+expression,
 expressions
 expressions.
 extension:
@@ -3125,6 +3263,7 @@ field
 field's
 field),
 field,
+field.
 field:
 fields
 figure
@@ -3141,6 +3280,7 @@ fill-none'"
 fill="currentColor"
 fill="none"
 filled
+filled($callerLabelledBy)
 filled($help)
 filled($helpName
 filled($iconOnlyBelow)
@@ -3218,6 +3358,7 @@ focus:outline-hidden
 focusable
 focused
 focused,
+focuses
 folded
 follow
 followable.
@@ -3227,10 +3368,12 @@ font-[number:var(--font-wk-body-weight)]
 font-[number:var(--font-wk-heading-weight)]
 font.
 for
+for,
 for.
 for:
 for="…">
 forbidden
+forced
 forces
 forcing
 foreach
@@ -3241,17 +3384,20 @@ forgot"
 forgotten
 form
 form,
+form="{{
 formatted
 formatter
 formatting
 formatting.
 forms.
+found
 found,
 found.`
 four
 fractional
 fragment
 frame
+frame:
 framework
 fresh
 from
@@ -3271,7 +3417,7 @@ further
 future
 g
 gap
-gap-0.5"
+gap-0.5',
 gap-1
 gap-1',
 gap-2
@@ -3343,6 +3489,8 @@ hand
 hand,
 hand-mount
 hand-written
+handed
+handled
 handler
 handler.
 handlers
@@ -3406,6 +3554,7 @@ historically
 hit
 hit,
 hoists
+hold
 holding
 holds
 honest
@@ -3441,6 +3590,7 @@ how
 however
 href
 href="{{
+html_entity_decode(strip_tags((string)
 hue
 hydration
 hyphen,
@@ -3574,9 +3724,11 @@ is"
 is,
 is.
 is:
+is_string($callerLabelledBy)
 isn't
 isolate`
 isset($badge))
+isset($content)
 isset($sizeMap[$size])
 it
 it"
@@ -3634,6 +3786,7 @@ ladder
 land
 landed
 lands
+language.
 larger
 last
 last.
@@ -3689,6 +3842,7 @@ link.
 linked
 links
 list
+list,
 listed,
 listener
 listens
@@ -3709,6 +3863,7 @@ loading="{{
 loadingTarget
 loads,
 loads.
+locale
 locale's
 locale,
 locale:
@@ -3724,6 +3879,7 @@ look.
 looked
 looks
 looks.
+loop
 loose
 lose
 lost
@@ -3765,7 +3921,9 @@ masked
 match
 matches
 matching
+max
 max(0,
+max(1,
 max-2xl:[--wk-touch-min:0px]',
 max-[22.5rem]:[--wk-touch-min:0px]',
 max-lg:[--wk-touch-min:0px]',
@@ -3800,6 +3958,7 @@ menus
 merely
 merge
 message
+message.
 message:
 method
 method;
@@ -3855,6 +4014,7 @@ ms-1
 mt-[var(--gap-wk-sm)]">
 much
 multi-line
+multi-select
 multiply
 must
 mutating
@@ -3876,12 +4036,14 @@ names.
 naming
 narrow
 native
+natively
 natively,
 natural
 navigable
 navigable,
 navigates.
 navigation
+navigation.
 nearest
 need
 needed
@@ -3900,6 +4062,7 @@ neutral
 neutral:
 never
 new
+newer
 newline
 next
 nine
@@ -3915,6 +4078,7 @@ non-Livewire
 non-null
 non-optimistic
 none
+none"
 none,
 none;
 noopener
@@ -3932,6 +4096,7 @@ nothing.
 nothing:
 nothing;
 notice:
+noun
 now
 now.
 nowhere
@@ -3941,7 +4106,6 @@ null"
 null)
 null))
 null);
-null)?->first($name);
 null,
 null;
 null])
@@ -3977,6 +4141,7 @@ on.
 on:
 once
 once,
+once;
 one
 one,
 one-step-smaller
@@ -4060,6 +4225,7 @@ p-0
 p-1
 p-[var(--padding-wk-x-md)]">
 p-[var(--padding-wk-x-sm)]
+p.
 package
 padding
 padding,
@@ -4088,6 +4254,7 @@ panel.
 paragraph
 paragraph's
 paragraph,
+paragraphs
 parent
 parent's
 parser
@@ -4178,6 +4345,7 @@ position;
 positioned
 positioning
 positions
+positive
 post-process
 pre-Alpine-init
 pre-checking
@@ -4185,15 +4353,20 @@ pre-fix
 pre-hydration
 pre-morph
 precedence:
+precedes.
 precisely
 precision
 preference.
 prefers
 prefix
 prefix,
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 preg_split('/\s+/',
 present
@@ -4364,6 +4537,7 @@ remove
 remove.
 removed
 removes
+removes,
 removing
 render
 render,
@@ -4394,6 +4568,8 @@ requested
 require
 required
 required:
+requiredValue
+requirement
 requires
 reserve
 reserved
@@ -4429,6 +4605,8 @@ ring
 ring,
 role
 role,
+role:
+role="button"
 role="group"
 role="img"
 role="img".
@@ -4499,12 +4677,14 @@ scope.
 scoped
 scoping
 score
+score,
 score.
 score:
 screen
 screen,
 screen-reader-operable;
 screen-reader-skipping
+script
 scroll
 seam
 second
@@ -4524,8 +4704,11 @@ selection,
 self-contained
 selling
 semantic
+send
+sends
 sensible
 sent
+sent.
 sentence
 sentence.
 separate
@@ -4697,8 +4880,11 @@ stacks
 stacks:
 stadium
 stand
+stand-in
 stands
+stands,
 star
+star,
 star:
 stars
 stars"
@@ -4709,6 +4895,7 @@ stars.
 start-[var(--padding-wk-x-sm)]
 start-anchored
 starting
+starts
 star|:count
 state
 state.
@@ -4767,6 +4954,7 @@ strut's
 style
 style="aspect-ratio:
 style="clip-path:
+style="display:
 style="display:inline-block;"></span>
 style="text-decoration:
 styled,
@@ -4781,6 +4969,8 @@ submission
 submit
 submit.
 submits
+submits,
+submits.
 submitted
 submitting
 submitting,
@@ -4828,6 +5018,7 @@ tab,
 tabbed
 tabbing
 tabindex
+tabindex="-1"
 tabindex="0"
 tabindex="{{
 table
@@ -4855,6 +5046,7 @@ target="_blank".
 teaches
 tech
 technology
+technology,
 teleport:
 teleported
 tell
@@ -4919,6 +5111,7 @@ there
 there).
 there,
 there.
+there:
 therefore
 these
 they
@@ -4967,6 +5160,7 @@ today's
 together
 toggle,
 toggles
+toggletip
 token
 token,
 token.
@@ -4995,6 +5189,7 @@ trade
 trade,
 trailing
 trans_choice('wirekit:::count
+trans_choice('wirekit:::value
 trans_choice('wirekit::{1}
 transformed
 transition-colors
@@ -5021,6 +5216,7 @@ trim
 trim($describedBy.'
 trim($relAttr.'
 trim('flex
+trim('text-[length:var(--text-wk-sm)]
 trim(($error
 trim((string)
 trim(html_entity_decode(strip_tags((string)
@@ -5048,6 +5244,7 @@ two+
 two.
 type="button"
 type="hidden"
+type="text"
 type="{{
 typed
 typed:
@@ -5055,6 +5252,8 @@ typography,
 unable
 unaffected
 unaffected.
+unavailable
+unavailable,
 unbound
 uncaught
 unchanged).
@@ -5113,9 +5312,11 @@ validate
 validateProp
 validateProp's
 validated
+validates
 validation
 validator
 validator.
+validity
 value
 value,
 value-bearing
@@ -5285,6 +5486,7 @@ word,
 word.
 word:
 words
+words;
 work,
 working
 works
@@ -5296,6 +5498,7 @@ worse,
 worth
 worth.
 would
+would.
 wrap
 wrap,
 wrapped
@@ -5318,6 +5521,8 @@ wrote,
 wrote.
 x
 x-bind:aria-busy="isPending"
+x-bind:aria-invalid="requiredMessage
+x-bind:value="requiredValue"
 x-cloak
 x-data
 x-data="wirekitDismissible({
@@ -5328,7 +5533,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -5338,10 +5546,12 @@ x-ref="tooltip"
 x-ref="trigger"
 x-show)
 x-show="isOpen"
+x-show="requiredMessage
 x-show="shown"
 x-teleport="#wk-overlay-root">
 x-teleport>`,
 x-text="announcement"></div>
+x-text="requiredMessage"
 x-transition:enter-end="opacity-100"
 x-transition:enter-start="opacity-0"
 x-transition:enter="transition
@@ -5390,6 +5600,7 @@ zoom,
 }}-hint"
 }}-label"
 }}</bdi>
+}}</div>
 }}</p>
 }}</span>
 }}</x-wirekit::badge>

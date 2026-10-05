@@ -52,6 +52,11 @@
     // actually be promised.
     'width' => 'full',
     'loading' => false,
+    // Takes the field out of use: the value stays readable, dimmed, and neither the pencil nor
+    // the value opens the editor; the pencil is disabled and the control inside is disabled,
+    // so a surrounding form submits nothing of it. Declared rather than left to the attribute
+    // bag, where it lands on the wrapper div and nothing reads it.
+    'disabled' => false,
     // NOTE: `loadingTarget`, not `target` — the same distinction the button
     // draws, so a page using both does not have to remember two spellings.
     'loadingTarget' => null,
@@ -99,6 +104,7 @@
     $actions = BooleanProp::from($actions, true);
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
     $loading = BooleanProp::from($loading, false);
+    $disabled = BooleanProp::from($disabled, false);
     $required = BooleanProp::from($required, false);
 
     // A validation failure returns as re-rendered HTML with a filled bag, NOT as
@@ -110,8 +116,8 @@
     // the bag's FIRST message — so an inline-edit with no `name` did not merely
     // turn red when an unrelated field failed, it displayed that other field's
     // message as its own.
-    $hasError = (bool) $error || ($name && (bool) ($errors ?? null)?->has($name));
-    $errorMessage = $error ?: ($name ? ($errors ?? null)?->first($name) : null);
+    $hasError = (bool) $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?: ($name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -125,9 +131,20 @@
     // NOT folded into `label`: that renders a VISIBLE label, and a caller reaching for
     // `aria-label` is asking for the opposite.
     $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
-    $attributes = $attributes->except(['aria-label']);
+    // A caller's `aria-labelledby` goes to the control the same way; on the wrapper it named
+    // nothing, and the control was left without a name.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
     $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+    // What acts only on the field the reader types into goes to the built-in control: on the
+    // wrapper the on-screen keyboard reads none of it and `maxlength` limits nothing
+    // (Support\FieldAttributes). A control in the `editor` slot takes them from its own tag.
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'maxlength']);
+    // `autofocus` goes to the edit button, the element the keyboard reaches while the value is shown.
+    $fieldAutofocus = \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
+    $attributes = $attributes->except('autofocus');
 
     $trigger = in_array($trigger, ['always', 'hover', 'focus-only'], true) ? $trigger : 'always';
     $control = in_array($control, ['text', 'textarea', 'number', 'select'], true) ? $control : 'text';
@@ -308,7 +325,7 @@
         'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
-        'cursor-pointer',
+        $disabled ? 'cursor-not-allowed' : 'cursor-pointer',
         $triggerVisibility,
     ]), $scope);
 
@@ -336,6 +353,7 @@
         control: {{ \Pushery\WireKit\Support\AlpinePayload::from($control) }},
         commitOn: {{ \Pushery\WireKit\Support\AlpinePayload::from($commitOn) }},
         loading: {{ \Pushery\WireKit\Support\AlpinePayload::from($loading) }},
+        disabled: {{ \Pushery\WireKit\Support\AlpinePayload::from($disabled) }},
         describedBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($describedBy) }},
         hasSlotEditor: {{ \Pushery\WireKit\Support\AlpinePayload::from(isset($editor)) }},
         labelledBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($labelId ?? (isset($editor) ? $fieldLabelId : null)) }},
@@ -381,7 +399,7 @@
     {{-- Read mode --}}
     <div
         x-show="!editing"
-        class="flex items-center gap-[var(--gap-wk-sm)] {{ $width === 'full' ? 'w-full' : '' }}"
+        class="flex items-center gap-[var(--gap-wk-sm)] {{ $width === 'full' ? 'w-full' : '' }}@if($disabled) opacity-[var(--opacity-wk-disabled)]@endif"
     >
         {{-- role="presentation" and NOT a button. Making the value itself the
              button would name it "Jane Doe" for a screen reader, which says
@@ -391,8 +409,8 @@
             role="presentation"
             {{-- A minimum width because an empty value is 0px wide: without it
                  the one state that most needs a click target has none. --}}
-            class="{{ $mirrorBox }} {{ $width === 'full' ? 'w-full' : 'min-w-[6rem]' }} @if($openOnValueClick) cursor-text @endif"
-            @if($openOnValueClick)
+            class="{{ $mirrorBox }} {{ $width === 'full' ? 'w-full' : 'min-w-[6rem]' }} @if($openOnValueClick && ! $disabled) cursor-text @endif"
+            @if($openOnValueClick && ! $disabled)
                 x-on:pointerdown="onValuePointerDown($event)"
                 x-on:click="onValueClick($event)"
             @endif
@@ -413,7 +431,11 @@
         <button
             type="button"
             x-ref="trigger"
-            x-on:click="open()"
+            {{-- The native attribute here, unlike the confirm and cancel buttons: nothing is
+                 under way that a reader could lose their place in, and a disabled field leaves
+                 the tab order as a disabled native field does. --}}
+            @if($disabled) disabled @else x-on:click="open()" @endif
+            @if($fieldAutofocus && ! $disabled) autofocus @endif
             class="{{ $triggerClasses }}"
             aria-label="{{ $triggerLabel }}"
         >
@@ -478,6 +500,7 @@
             :id="$controlId"
             :required="$required"
             :aria-label="$callerAriaLabel"
+            :aria-labelledby="$callerLabelledBy"
             :control="$control"
             :size="$size"
             :described-by="$describedBy"
@@ -487,6 +510,8 @@
             :action-classes="$actionClasses"
             :rows="$rows"
             :editor="$editor ?? null"
+            :disabled="$disabled"
+            :field-attributes="$fieldAttributes"
         />
     </div>
 

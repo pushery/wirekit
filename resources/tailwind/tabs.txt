@@ -6,6 +6,7 @@
 "Hoverable"
 "Most
 "New"
+"Remove";
 "Tab
 "default"
 "disabled"
@@ -41,7 +42,10 @@ $attributes->get('role');
 $attributes->getAttributes());
 $attributes->merge($depthStyle
 $attributes;
+$attributes]
 $badge
+$badgeText
+$badgeText])
 $baseClasses
 $borderWidthClass
 $borderWidthClass,
@@ -50,10 +54,13 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerRole
 $cleaned
 $cleaned);
 $content
+$content))
 $current"`,
 $default
 $delayHide
@@ -61,6 +68,7 @@ $delayShow
 $depthStyle
 $depthStyle]
 $describes
+$describes;
 $disabled
 $dismissBtnClasses
 $dismissLabel
@@ -94,6 +102,7 @@ $key
 $key)
 $key):
 $label
+$label)
 $listClasses
 $m):
 $m[1]);
@@ -110,6 +119,8 @@ $orientation,
 $orientationValue
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $p
 $panelClasses
 $pillRadius
@@ -136,8 +147,13 @@ $sizeMap
 $sizeMap[$validated];
 $slot
 $slot)
+$slot),
 $slot;
 $slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -172,8 +188,14 @@ $tabs[$item['key']]
 $tabs[$key]
 $tabs[key]
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $uid
 $unselected
 $unselected,
@@ -213,6 +235,7 @@ ${$key}
 'Profile',
 'Rendering
 'Run:
+'UTF-8')));
 '[WireKit]
 '[wirekit]
 'accent'
@@ -430,6 +453,8 @@ ${$key}
 ("Fast
 ($attributes->getAttributes()
 ($callerAriaHidden
+($callerLabelledBy
+($dismissLabel
 ($intent)
 ($isInformative
 ($item):
@@ -444,6 +469,7 @@ ${$key}
 ($surface)
 ($svgHtml
 ($t)
+($triggerIsButton)
 ($value,
 ('xs').
 (($at
@@ -456,6 +482,7 @@ ${$key}
 (Livewire
 (SOFT
 (Support\CallerListeners).
+(Support\CallerName).
 (Tailwind's
 (UtilityClasses::has($callerClass,
 (WCAG
@@ -555,6 +582,7 @@ ${$key}
 100),
 12%,
 16px
+1;
 1px
 2.1.1
 2.1.1).
@@ -576,6 +604,7 @@ ${$key}
 :class="active
 :intent="$badgeIntent">{{
 :intent="$tab['badgeIntent']">{{
+:name',
 :name="$icon"
 :name="$leadingIcon"
 :name="$tab['icon']"
@@ -625,7 +654,6 @@ ${$key}
 @if
 @if($active
 @if($badge
-@if($describes)
 @if($disabled)
 @if($dismissible)
 @if($dot)
@@ -641,6 +669,9 @@ ${$key}
 @if($tabs
 @if($tooltip)
 @if($trailingIcon)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if((string)
 @if(isset($content))
 @keydown.arrow-down.prevent="focusTab('next')"
@@ -670,6 +701,7 @@ Alpine's
 Also
 An
 And
+Around
 Array-of-objects:
 Arrow-key
 ArrowLeft/ArrowRight
@@ -733,6 +765,9 @@ Dot
 Driven
 Drop
 Dynamic
+ENT_HTML5));
+ENT_HTML5,
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 Each
@@ -973,10 +1008,12 @@ With
 Without
 Written
 [
+[$callerLabelledBy,
 ['data-wk-icon-missing'
 ['horizontal',
 ['inverted',
 ['label'
+['name'
 ['outlined'
 ['primary',
 ['profile'
@@ -993,6 +1030,7 @@ Written
 [],
 [];
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($key)
 \Pushery\WireKit\Support\AlpinePayload::from($wireModelWarning)
@@ -1003,10 +1041,13 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\ListProp::records($items);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\TablistStyles::list($variant,
 \Pushery\WireKit\Support\TablistStyles::tab($variant,
@@ -1021,6 +1062,7 @@ Written
 ]);
 ],
 ];
+__('wirekit::Remove
 __('wirekit::Remove');
 __('wirekit::Tabs'),
 __toString
@@ -1214,6 +1256,7 @@ action,
 action.
 activate.
 activates
+activating
 active
 active,
 active-tab
@@ -1258,6 +1301,7 @@ announced
 announcing
 anonymous
 another
+another.
 answer
 anticipate
 any
@@ -1477,6 +1521,7 @@ but
 button
 button's
 button,
+button:
 buttons
 buttons).
 buttons,
@@ -1531,6 +1576,7 @@ chevrons,
 child
 children
 chip
+chips
 choice
 choice.
 choosing
@@ -1630,6 +1676,7 @@ contract:
 contrast
 contrasts
 control
+control,
 control.
 controls
 copies
@@ -1751,6 +1798,7 @@ docs,
 document
 documented
 does
+does,
 does.
 doesn't
 don't
@@ -1835,6 +1883,7 @@ exists,
 exists.
 exotic
 expandos.
+explains,
 explanation
 explicit
 explicitly
@@ -1882,6 +1931,7 @@ filled
 filled()
 filled-background
 fills
+filter
 filter_var($wrap,
 filtered
 find
@@ -1930,6 +1980,7 @@ font
 font-[number:var(--font-wk-body-weight)]
 for
 forbidden
+forced
 forces
 forcing
 foreach
@@ -2059,6 +2110,7 @@ hover:text-[color:var(--color-wk-text)]
 hover:underline
 how
 however
+html_entity_decode(strip_tags((string)
 https://docs.wirekit.app/components/tabs
 hue
 human
@@ -2150,6 +2202,7 @@ is_array($items)
 is_string($key)
 isn't
 isolate`
+isset($content)
 isset($item['key']))
 isset($item['key']));
 isset($sizeMap[$size])
@@ -2283,6 +2336,7 @@ meant
 mechanism
 medium
 meet
+meets,
 menus
 merge
 message
@@ -2321,6 +2375,7 @@ moving
 ms-1
 much
 multi-line
+multi-select
 multiple
 multiplied
 must
@@ -2341,6 +2396,7 @@ needed
 needs
 negative
 neither
+nest
 nested
 neutral
 neutral:
@@ -2548,10 +2604,14 @@ post-process
 pre-checking
 precisely
 prefix
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_match('/^(?:wire:|x-on:|@|on)(?:click|mousedown|mouseup|keydown|keyup|keypress)\b/i',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 present
 presentational
@@ -2563,6 +2623,7 @@ pricing-card
 primary:
 problem
 prod).
+prohibits
 prop
 prop's
 property
@@ -2648,6 +2709,7 @@ remaining
 remove
 removed
 removes
+removes,
 removing
 render
 render,
@@ -2698,6 +2760,7 @@ ring,
 role
 role,
 role:
+role="button"
 role="img"
 role="img".
 role="tab"
@@ -2732,6 +2795,7 @@ safelist,
 same
 satisfied
 say
+says
 scanner
 scans
 scope
@@ -3041,6 +3105,7 @@ toCssClasses()
 toHtml().
 today
 together.
+toggletip
 token
 token,
 tokens
@@ -3049,6 +3114,7 @@ told
 tone,
 too,
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -3078,6 +3144,9 @@ trigger
 trigger's
 trigger,
 triggers
+trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trio
 trip
 trip.
@@ -3101,6 +3170,7 @@ typography,
 unaffected
 unaffected.
 unasked
+unavailable,
 unavailable.
 unbound
 uncaught
@@ -3230,7 +3300,9 @@ within
 without
 wondering
 word)
+word.
 word:
+words;
 work
 work,
 working
@@ -3243,6 +3315,7 @@ wrap
 wrapped
 wrapper
 wrapper)
+wrapper,
 wrapping
 writes
 writing
@@ -3265,8 +3338,10 @@ x-on:keydown.arrow-left.prevent="moveFocus('prev')"
 x-on:keydown.arrow-right.prevent="moveFocus('next')"
 x-on:keydown.arrow-up.prevent="moveFocus('prev')"
 x-on:keydown.end.prevent="moveFocus('last')"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.home.prevent="moveFocus('first')"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

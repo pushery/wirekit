@@ -1,3 +1,4 @@
+import { onFormReset } from '../utils/form-reset.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { watchCurrent } from '../utils/watch-current.js';
 
@@ -26,6 +27,8 @@ import { watchCurrent } from '../utils/watch-current.js';
  *   - _modelEvents — `change` and `blur` on the bound input for `wire:model.change` and
  *     `wire:model.blur`, which listen on that input alone (utils/model-events.js). The field is
  *     one text field to them: `change` when the reader leaves it after an edit, then `blur`.
+ *   - _stopFormReset — the listener that puts the starting country and number back when the
+ *     form is reset (utils/form-reset.js).
  *
  * @param {Object} config
  * @param {string} config.country   ISO 3166-1 alpha-2 code the field starts on
@@ -42,6 +45,10 @@ export default function wirekitPhone(config = {}) {
         _regions: config.regions && typeof config.regions === 'object' ? config.regions : {},
 
         _modelEvents: null,
+        _stopFormReset: null,
+        // The country and number a form reset returns to: the ones the field started on.
+        _resetCountry: '',
+        _resetNational: '',
 
         init() {
             // An incoming E.164 value is split back into a country and a national part, so a
@@ -64,7 +71,11 @@ export default function wirekitPhone(config = {}) {
                 }
             }
 
+            this._resetCountry = this.country;
+            this._resetNational = this.national;
+
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.bound);
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.bound, () => this._restore());
 
             // Armed LAST, and the `else` above exists for it. The two assignments in that branch
             // are the round-trip split rather than a reader's choice: a watcher armed before them
@@ -77,6 +88,27 @@ export default function wirekitPhone(config = {}) {
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /**
+         * Back to the starting country and number after a form reset.
+         *
+         * The number box is a native field, which the reset empties to its own default, and its
+         * `x-model` then reads that empty value into `national`, which leaves the hidden field
+         * empty. The number is written into the box as well, so whichever of the two runs last
+         * reads the same one.
+         */
+        _restore() {
+            this.country = this._resetCountry;
+            this.national = this._resetNational;
+
+            const number = this.$refs?.number;
+
+            if (number && typeof number === 'object' && 'value' in number) {
+                number.value = this.national;
+            }
         },
 
         /**

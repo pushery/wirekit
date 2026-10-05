@@ -455,7 +455,13 @@ Chart.register(...registerables);</pre>
             });
 
             // Cleanup on Livewire navigation (SPA mode)
-            this._navCleanup = () => this.destroy();
+            // Not for a chart inside `@persist`: Livewire carries that element to the next page as
+            // it is, and a chart destroyed here would stand there empty.
+            this._navCleanup = () => {
+                if (! this.$el?.closest?.('[x-persist]')) {
+                    this.destroy();
+                }
+            };
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
             // Wire-streaming setup — read data-wire-stream-*

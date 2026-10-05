@@ -74,6 +74,12 @@
 
     // Inline style for max-height — common pattern for scroll containers
     $inlineStyle = $maxHeight ? "max-height: {$maxHeight};" : '';
+
+    // A caller's `aria-labelledby` or `aria-label` names the area as `label` does, and makes it the
+    // same landmark; left in the bag, it named a `div` with no role, which ARIA prohibits
+    // (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    $named = $callerLabelledBy !== null || $callerLabel !== null || filled($label);
 @endphp
 
 {{-- Scroll container — focusable for keyboard scrolling (a11y: WCAG 2.1.1).
@@ -86,7 +92,7 @@
      at all — a focusable region nobody can identify is the worst of the three outcomes. --}}
 <div
     tabindex="0"
-    @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
+    @if($named) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
     @if($fadeValue) data-fade-axis="{{ $fadeAxis }}" @endif
     @if($fadeIsAuto) x-data="wirekitScrollFade" @elseif($fadeValue) data-fade="{{ $fadeValue }}" @endif
     {{ $attributes->except('tabindex')->merge($inlineStyle ? ['style' => $inlineStyle] : [])->class([$classes]) }}

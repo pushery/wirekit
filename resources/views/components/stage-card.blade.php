@@ -74,13 +74,13 @@
                 </span>
             @endif
             @if($count !== null)
-                {{-- aria-label spells out "N items" (not a bare number) so the
-                     count is announced with its unit. --}}
-                <span
-                    aria-label="{{ __('wirekit:::count items', ['count' => $count]) }}"
-                    class="inline-flex items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums"
-                >
-                    {{ $count }}
+                {{-- The count is shown as a number and read with its unit, in the form its
+                     number takes: "1 item", "3 items". The unit travels as hidden text beside
+                     the number, because ARIA gives an element without a role no name, and a
+                     screen reader reads such a span's content rather than an aria-label on it. --}}
+                <span class="inline-flex items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums">
+                    <span aria-hidden="true">{{ $count }}</span>
+                    <span class="sr-only">{{ trans_choice('wirekit:::count items', (int) $count, ['count' => $count]) }}</span>
                 </span>
             @endif
         </div>

@@ -51,7 +51,9 @@ export default function wirekitTooltip(config = {}) {
 
             // Cleanup on SPA navigation
             this._navCleanup = () => this._forceClose();
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
         },
 
         /**
@@ -195,6 +197,19 @@ export default function wirekitTooltip(config = {}) {
                 // An engine without the pseudo-class shows the tooltip on every focus, as before.
                 return true;
             }
+        },
+
+        /**
+         * Enter or Space on a trigger this component made a tab stop of its own, which is a
+         * button: the tooltip shows at once, as activating a toggletip shows it. Focus shows it
+         * already; this brings it back after Escape closed it while the focus stayed. The default
+         * is prevented, so Space does not scroll the page.
+         */
+        activate(event) {
+            event?.preventDefault?.();
+            clearTimeout(this._showTimer);
+            clearTimeout(this._hideTimer);
+            this.show();
         },
 
         /**

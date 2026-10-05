@@ -113,11 +113,17 @@
 
 {{-- `aria-busy` while the call is in flight, so assistive technology knows the block is still
      changing. The settled state is said by the status region in the header row. --}}
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+@endphp
 <div
     data-wk-tool-call
     data-status="{{ $status }}"
     @if($isRunning) aria-busy="true" @endif
     {{ $attributes->except('aria-busy')->class([$rootClasses]) }}
+    @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     <div class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">
         <x-wirekit::code data-wk-tool-call-name>{{ $toolName }}</x-wirekit::code>

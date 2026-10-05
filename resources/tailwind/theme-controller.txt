@@ -68,6 +68,7 @@ $attributes->has('aria-labelledby'))
 $attributes->merge
 $attributes->merge($widthStyle
 $attributes->merge(['rel'
+$attributes]
 $baseClasses
 $block
 $buttonBag
@@ -78,6 +79,8 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel,
+$callerLabel]
 $callerRole
 $checked
 $checked;
@@ -147,6 +150,7 @@ $isInformative;
 $itemClasses
 $key
 $label
+$label)
 $linkDisabled
 $linkDisabled)
 $linkDisabledClasses
@@ -552,6 +556,7 @@ $wrapLabel
 ($active
 ($attributes->getAttributes()
 ($callerAriaHidden
+($callerLabel
 ($declarativeLoading
 ($effect)
 ($forceLoading)
@@ -580,6 +585,7 @@ $wrapLabel
 (4.05
 (SVG
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind's
 (UtilityClasses::has($callerClass,
@@ -626,6 +632,7 @@ $wrapLabel
 (initialized
 (int)
 (is_string($key)
+(isset($trigger))
 (it
 (its
 (kept
@@ -808,6 +815,7 @@ $wrapLabel
 :aria-disabled="fixed
 :aria-hidden="{{
 :aria-label="$label"
+:aria-labelledby="$callerLabelledBy">{!!
 :aria-pressed="isDark
 :checked.
 :checked="isDark"
@@ -815,8 +823,8 @@ $wrapLabel
 :class="{{
 :data-active="{{
 :icon="$modeIcon"
+:label="$callerLabelledBy
 :label="$label">
-:label="$label">{!!
 :name="$modeIcon"
 :not([aria-disabled="true"]).
 </button>
@@ -1356,6 +1364,7 @@ Wrap
 Wrapping
 Written
 [
+[$callerLabelledBy,
 ['button',
 ['class'
 ['data-wk-icon-missing'
@@ -1373,6 +1382,7 @@ Written
 []);
 [],
 [checked]
+[null,
 [overflow-wrap:anywhere]'
 [role=menuitemcheckbox]:not([aria-disabled=true])')
 [role=menuitemradio]:not([aria-disabled=true]),
@@ -1395,6 +1405,7 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -1589,6 +1600,7 @@ _getItems()
 `inbox`
 `inline-flex`
 `label`
+`label`,
 `lightbox`
 `loading-target="submit"`
 `loading=true`
@@ -1948,6 +1960,7 @@ below
 below).
 below,
 below.
+below;
 beside
 better
 between
@@ -3396,6 +3409,7 @@ null)
 null);
 null,
 null;
+null];
 object
 occurrence
 of
@@ -3629,6 +3643,7 @@ produce,
 produces;
 production
 programmatic
+prohibits
 project
 promise
 promise.

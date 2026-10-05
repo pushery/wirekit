@@ -83,7 +83,9 @@ export default function wirekitHoverCard(config = {}) {
 
         init() {
             this._navCleanup = () => this._forceClose();
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // Opening this one closes every other hover card on the page.
             this._coordination = coordinateOverlay({
@@ -380,6 +382,11 @@ export default function wirekitHoverCard(config = {}) {
             this.isOpen = true;
             this._coordination?.announce();
 
+            // For a caller that loads the card's content when it opens. The announcement above
+            // is the cards' own channel, which names no card; this one rises from the card that
+            // opened, under a name of its own, so the channel's listeners never hear it.
+            this.$root?.dispatchEvent(new CustomEvent('wirekit:hover-card-opened', { bubbles: true }));
+
             await this.$nextTick();
 
             const trigger = this.$refs.trigger;
@@ -392,6 +399,9 @@ export default function wirekitHoverCard(config = {}) {
                 this._stopRepair = null;
 
                 const placement = await position(reference, panel, {
+                    // Capped to the room on a short viewport and scrolled inside, so a phone held
+                    // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                    fitViewport: true,
                     placement: this._placement,
                     offset: this._offset,
 

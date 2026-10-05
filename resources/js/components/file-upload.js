@@ -1,3 +1,4 @@
+import { controlIsDisabled } from '../utils/fieldset-disabled.js';
 import { formatDecimal } from '../utils/locale-number.js';
 
 /**
@@ -38,6 +39,7 @@ import { formatDecimal } from '../utils/locale-number.js';
  * @param {string|null} [config.model]  the Livewire property the input is bound to, read
  *   from its `wire:model` attribute; null when it is bound to nothing
  * @param {string} [config.locale]  the application's locale, BCP-47, for the file sizes
+ * @param {string[]} [config.sizeUnits]  the five unit symbols from B to TB, from the catalog
  */
 export default function wirekitFileUpload(config = {}) {
     // The control's root element, resolved ONCE while something is still attached to
@@ -77,6 +79,9 @@ export default function wirekitFileUpload(config = {}) {
 
         // The application's locale, so a size reads "1,5 MB" on a German page as the server writes it.
         _locale: config.locale || null,
+        // The unit symbols, from B to TB, translated by the view: French counts in octets (`Ko`,
+        // `Mo`). A factory built without them writes the English symbols.
+        _sizeUnits: Array.isArray(config.sizeUnits) && config.sizeUnits.length === 5 ? config.sizeUnits : ['B', 'KB', 'MB', 'GB', 'TB'],
 
         /**
          * The sentence spoken after a removal, as a TEMPLATE handed in from the Blade.
@@ -196,12 +201,13 @@ export default function wirekitFileUpload(config = {}) {
          * it would ship unnoticed if it ever became reachable.
          */
         formatBytes(bytes) {
+            const sizes = this._sizeUnits;
+
             if (! bytes || bytes < 0) {
-                return '0 B';
+                return `0 ${sizes[0]}`;
             }
 
             const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
             const i = Math.min(sizes.length - 1, Math.max(0, Math.floor(Math.log(bytes) / Math.log(k))));
 
             // In the application's locale, as the server writes the same sizes elsewhere.
@@ -211,9 +217,11 @@ export default function wirekitFileUpload(config = {}) {
         /**
          * Light the zone up while a file is dragged over it, unless the field is disabled:
          * a zone that lights up promises to take the file, and handleDrop() will not.
+         * Disabled includes a fieldset around the field, which the field's own `disabled` does
+         * not report (utils/fieldset-disabled.js).
          */
         dragOver() {
-            this.dragging = ! this.$refs.input?.disabled;
+            this.dragging = ! controlIsDisabled(this.$refs.input);
         },
 
         /**
@@ -264,8 +272,8 @@ export default function wirekitFileUpload(config = {}) {
             // A disabled field takes no file by drop either. Its own picker is closed by
             // the browser; a drop reaches it only through here, so the state is read from
             // the field at the moment of the drop, which also covers a state Livewire set
-            // after the page loaded.
-            if (this.$refs.input?.disabled) {
+            // after the page loaded and a disabled fieldset around the field.
+            if (controlIsDisabled(this.$refs.input)) {
                 return;
             }
 

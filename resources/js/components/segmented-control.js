@@ -1,3 +1,4 @@
+import { onFormReset } from '../utils/form-reset.js';
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { safeObserver } from '../utils/safe-observer.js';
 import { watchModelEvents } from '../utils/model-events.js';
@@ -33,6 +34,8 @@ import { watchModelEvents } from '../utils/model-events.js';
  *   - _modelEvents — `change` and `blur` on the hidden input for `wire:model.change` and
  *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change` with
  *     every segment chosen, as a radio button fires it, and `blur` when the reader leaves the group.
+ *   - _stopFormReset — the listener that puts the starting segment back when the form is reset
+ *     (utils/form-reset.js).
  *
  * @param {Object} config
  * @param {string} config.selected  the option value selected at render time
@@ -42,6 +45,11 @@ export default function wirekitSegmentedControl(config = {}) {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
         _stopServerSync: null,
+        _stopFormReset: null,
+
+        // The segment a form reset returns to: the one the page started with, or the one the server
+        // sent last, as a native field returns to the value the server rendered.
+        _resetValue: config.selected != null ? String(config.selected) : '',
 
         // Mirrors the component's `disabled` prop. See select().
         disabled: config.disabled === true,
@@ -86,6 +94,8 @@ export default function wirekitSegmentedControl(config = {}) {
                     this.selected = String(seed);
                 }
             }
+
+            this._resetValue = this.selected;
 
             // The hidden input is what a form (or wire:model) actually submits.
             // It starts empty in the markup, so the initial selection has to be
@@ -137,6 +147,8 @@ export default function wirekitSegmentedControl(config = {}) {
             // choice the reader just made: every morph rewrites the attribute,
             // including the ones that carry the same value back.
             this._stopServerSync = observeServerValue(this.$root, (value) => {
+                this._resetValue = value;
+
                 if (value === this.selected) {
                     return;
                 }
@@ -147,6 +159,7 @@ export default function wirekitSegmentedControl(config = {}) {
             });
 
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.hiddenInput);
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.hiddenInput, () => this._restore());
         },
 
         destroy() {
@@ -155,6 +168,9 @@ export default function wirekitSegmentedControl(config = {}) {
 
             this._modelEvents?.dispose();
             this._modelEvents = null;
+
+            this._stopFormReset?.();
+            this._stopFormReset = null;
 
             this._trackResizeObserver?.disconnect();
             this._trackResizeObserver = null;
@@ -351,6 +367,16 @@ export default function wirekitSegmentedControl(config = {}) {
             } else if (box.right + inset > trackBox.right) {
                 track.scrollLeft += box.right + inset - trackBox.right;
             }
+        },
+
+        /**
+         * Back to the starting segment after a form reset. Silently, as the reset changes a native
+         * field without an event.
+         */
+        _restore() {
+            this.selected = this._resetValue;
+            this._writeHiddenInput();
+            this._scheduleReveal();
         },
 
         /** Writes the value and returns the input, or null when there is none. */

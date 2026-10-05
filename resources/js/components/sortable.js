@@ -122,6 +122,8 @@ export default function wirekitSortable(config = {}) {
             pickedUp: config.messages?.pickedUp || 'Picked up. Position :position of :total. Click where it goes, or click it again to put it down.',
             reorderOn: config.messages?.reorderOn || 'Reorder mode. Click a card to pick it up, then click where it goes.',
             reorderOff: config.messages?.reorderOff || 'Reorder mode off.',
+            returned: config.messages?.returned || 'Could not save. Back at position :position of :total.',
+            returnedToColumn: config.messages?.returnedToColumn || 'Could not save. Back in :column, position :position of :total.',
         },
 
         /**
@@ -159,6 +161,15 @@ export default function wirekitSortable(config = {}) {
 
         /** The `receive` listener, kept so `destroy()` can take it off again. */
         _receiver: null,
+
+        /**
+         * The place the last move announced and handed to the application, held until the render
+         * of the request that saves it has been checked: `{ id, column, index }`.
+         */
+        _placed: null,
+        _expectingSave: false,
+        _expectingSaveTimer: null,
+        _unhookSave: null,
 
         // The pointer drag is not here: it lives in the module-level `activeDrag`, because a
         // drag can end in a list that never started it.
@@ -210,6 +221,10 @@ export default function wirekitSortable(config = {}) {
             this._columnEl?.removeEventListener?.('wirekit:sortable:reorder-toggle', this._onReorderToggle);
             this._board()?.removeEventListener?.('wirekit:sortable:reorder', this._onReorderBroadcast);
             this._columnEl = null;
+            this._unhookSave?.();
+            this._unhookSave = null;
+            clearTimeout(this._expectingSaveTimer);
+            this._expectingSaveTimer = null;
 
             // A card this list picked up is not left lifted on a page that goes on without it.
             if (activePick && activePick.list === this.$root) {
@@ -435,6 +450,7 @@ export default function wirekitSortable(config = {}) {
          * `wire:wirekit:sortable:reordered="reorder($event.detail.order)"`.
          */
         _announceOrder(id, from, to) {
+            this._expectSave(id, to);
             this.$root.dispatchEvent(new CustomEvent('wirekit:sortable:reordered', {
                 detail: { order: this._order(), id, from, to },
                 bubbles: true,
@@ -449,6 +465,7 @@ export default function wirekitSortable(config = {}) {
          * above the board hears it: `wire:wirekit:sortable:moved="moveCard($event.detail)"`.
          */
         _announceMove(item, origin, to) {
+            this._expectSave(item.getAttribute('data-sortable-id'), to);
             this.$root.dispatchEvent(new CustomEvent('wirekit:sortable:moved', {
                 detail: {
                     id: item.getAttribute('data-sortable-id'),
@@ -461,6 +478,85 @@ export default function wirekitSortable(config = {}) {
                 },
                 bubbles: true,
             }));
+        },
+
+        /**
+         * Wait for the request that saves the move just reported, and look where the card is
+         * once its response has rendered.
+         *
+         * The application saves the move in a Livewire method. A server that refuses it renders
+         * the old order, and the morph puts the card back by its key, after the drop has been
+         * announced: so the list says where the card is. Only the next commit of the component
+         * around the list counts, the one the listener starts at once; an application that saves
+         * another way starts none, and the expectation lapses after a second. A card without a
+         * `data-sortable-id` cannot be found again and is not followed.
+         *
+         * @param {string|null} id
+         * @param {number} index  the place the move announced for the card, 0-based
+         */
+        _expectSave(id, index) {
+            if (! id || typeof window === 'undefined' || ! window.Livewire?.hook) {
+                return;
+            }
+
+            this._placed = { id, column: this._column(), index };
+            this._expectingSave = true;
+            clearTimeout(this._expectingSaveTimer);
+            this._expectingSaveTimer = setTimeout(() => {
+                this._expectingSave = false;
+                this._expectingSaveTimer = null;
+            }, 1000);
+
+            this._unhookSave ??= window.Livewire.hook('commit', ({ component, succeed }) => {
+                if (! this._expectingSave || component?.el?.contains?.(this.$root) !== true) {
+                    return;
+                }
+
+                this._expectingSave = false;
+                clearTimeout(this._expectingSaveTimer);
+                this._expectingSaveTimer = null;
+
+                const placed = this._placed;
+
+                succeed(() => queueMicrotask(() => this._checkPlace(placed)));
+            });
+        },
+
+        /**
+         * Say where the card is when the server's render put it somewhere other than where its
+         * move was announced. Nothing when it stayed, or when a later move replaced this one.
+         *
+         * @param {{ id: string, column: string, index: number } | null} placed
+         */
+        _checkPlace(placed) {
+            if (! placed || this._placed !== placed) {
+                return;
+            }
+
+            this._placed = null;
+
+            for (const list of this._lists()) {
+                const items = this._itemsOf(list);
+                const index = items.findIndex((el) => el.getAttribute('data-sortable-id') === placed.id);
+
+                if (index === -1) {
+                    continue;
+                }
+
+                const column = this._column(list);
+
+                if (column === placed.column && index === placed.index) {
+                    return;
+                }
+
+                if (column === placed.column) {
+                    this._say(this._messages.returned, index + 1, items.length);
+                } else {
+                    this._say(this._messages.returnedToColumn, index + 1, items.length, this._columnName(list));
+                }
+
+                return;
+            }
         },
 
         /**

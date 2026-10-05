@@ -1,5 +1,7 @@
 !
 !==
+"1
+"3
 "4
 "Copy
 "Save",
@@ -29,10 +31,12 @@ $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
+$attributes]
 $baseClasses
 $buttonBag
 $buttonBag->class([$baseClasses,
 $buttonBag->merge(['style'
+$callerLabel,
 $classes
 $computedRel
 $declarativeBusyOnly
@@ -67,6 +71,7 @@ $isDisabled)
 $isDisabled;
 $key
 $label
+$label)
 $linkDisabled
 $linkDisabled)
 $linkDisabledClasses
@@ -115,6 +120,7 @@ $wrapLabel
 '',
 '';
 ',
+'-',
 '--wk-button-square:
 '.$iconOnlyBelow.'.
 '.$iconOnlySquareToken.';']);
@@ -178,7 +184,7 @@ $wrapLabel
 'intent'
 'intent',
 'jumpLabel'
-'jumpLabelCount'
+'jumpLabelCounts'
 'label'
 'leading-[var(--font-wk-line-height)]',
 'lg'
@@ -186,6 +192,7 @@ $wrapLabel
 'link')
 'loading'
 'loadingTarget'
+'locale'
 'max-2xl:sr-only',
 'max-2xl:w-[var(--wk-button-square)]',
 'max-[22.5rem]:sr-only',
@@ -286,6 +293,7 @@ $wrapLabel
 (4.05
 (SVG
 (Safari
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind's
 (WCAG
@@ -391,7 +399,7 @@ $wrapLabel
 7m0
 8
 :
-::aria-label="unread
+::aria-label="jumpName()"
 :count
 <
 </div>
@@ -614,6 +622,7 @@ WireKit::warnUnknownProps('button',
 WireKit::warnUnknownProps()
 Without
 [
+[$callerLabelledBy,
 ['outlined'
 ['sm',
 ['xs',
@@ -623,7 +632,10 @@ Without
 [scrollbar-gutter:stable]',
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::from((object)
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\PluralPhrases::from('wirekit::Jump
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
 \Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
@@ -682,6 +694,7 @@ __('wirekit::Jump
 `aria-busy`,
 `aria-disabled="true"`
 `aria-label`
+`aria-labelledby`
 `bg-[var(--color-wk-danger)]`
 `border-b-[3px]`
 `border-b-[var(--color-wk-accent)]`
@@ -819,11 +832,13 @@ answer
 any
 anywhere
 anywhere,
+app()->getLocale()),
 appear
 appearance
 appears
 appears/disappears
 application
+application's
 applied
 arbitrary
 are
@@ -894,6 +909,7 @@ below
 below).
 below,
 below.
+below;
 beside
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
@@ -1002,6 +1018,7 @@ checking
 child
 child)
 children
+chosen
 clamp,
 clamped
 clamping
@@ -1091,6 +1108,7 @@ cosmetic.
 costs
 could
 count
+count,
 coverage
 covers
 crowding
@@ -1478,8 +1496,6 @@ joining
 joins
 json_encode:
 jump-to-latest
-jumpLabel"
-jumpLabelCount.replace(':count',
 jumps
 just
 justify-center
@@ -1537,6 +1553,7 @@ literally
 literals
 live
 lives
+lives,
 load.
 loading
 loading-spinner
@@ -1585,6 +1602,7 @@ measures.
 mechanism
 media
 meet
+meets,
 merely
 merge
 message
@@ -1661,6 +1679,8 @@ notice:
 now
 nowhere
 nowhere,
+nuevo",
+nuevos".
 null
 null)
 null);
@@ -1774,6 +1794,7 @@ place:
 plain
 plugin
 plugin,
+plural
 plus
 point:
 pointer-events-none"
@@ -1794,6 +1815,7 @@ primary:
 prod).
 prod.
 produces;
+prohibits
 project
 promise.
 promoting
@@ -1892,6 +1914,7 @@ ring
 ring's
 ring,
 role
+role,
 role="group"
 role="link"
 role="log"
@@ -1909,6 +1932,7 @@ row
 row's
 ru00e9cent`,
 rule
+rule:
 run
 run.
 runs
@@ -2062,6 +2086,7 @@ still
 stops
 str_contains($relAttr,
 str_contains($targetAttr,
+str_replace('_',
 str_starts_with($key,
 straight
 stream
@@ -2230,7 +2255,6 @@ underline-offset-4
 underscores,
 unknown
 unlayered
-unread)
 unrelated
 untargeted
 until
@@ -2357,6 +2381,7 @@ worth
 would
 wrap
 wrap,
+wrapper,
 wrapping
 wraps
 writes

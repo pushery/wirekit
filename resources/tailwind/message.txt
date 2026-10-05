@@ -16,6 +16,7 @@
 "New"
 "Read
 "Read".
+"Remove";
 "background-color:
 "box-shadow:
 "default"
@@ -45,6 +46,7 @@ $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
 $attributes->merge($depthStyle
+$attributes]
 $author
 $author;
 $authorAvatar
@@ -54,6 +56,8 @@ $authorName)
 $authorRole
 $avatarStyle
 $avatarStyle]
+$badgeText
+$badgeText])
 $baseClasses
 $borderWidthClass
 $borderWidthClass,
@@ -63,6 +67,8 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerRole
 $carbonTimestamp
 $carbonTimestamp->format($timeFormat)
@@ -74,11 +80,13 @@ $chipSize,
 $cleaned
 $cleaned);
 $content
+$content))
 $delayHide
 $delayShow
 $depthStyle
 $depthStyle]
 $describes
+$describes;
 $disabled
 $dismissBtnClasses
 $dismissLabel
@@ -116,6 +124,8 @@ $name];
 $offset
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $palette
 $pillRadius
 $pillRadius,
@@ -147,6 +157,13 @@ $sizeMap
 $sizeMap[$validated];
 $slot
 $slot)
+$slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -188,13 +205,19 @@ $surfaceAliases[$surface]
 $svgHtml
 $svgHtml,
 $text
+$text);
 $textAlign
 $timeFormat
 $timestamp
 $timezone,
+$tipText
 $tooltipClasses
 $tooltipId
 $total
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $validated
 $wrap
 &&
@@ -221,6 +244,7 @@ $wrap
 'H:i')
 'Rendering
 'Run:
+'UTF-8')));
 '[WireKit]
 'absolute
 'accent'
@@ -505,7 +529,9 @@ $wrap
 ($author['name']
 ($author['role']
 ($callerAriaHidden
+($callerLabelledBy
 ($carbonTimestamp
+($dismissLabel
 ($fromInitials
 ($intent)
 ($intentValue)
@@ -523,6 +549,7 @@ $wrap
 ($statusValue)
 ($surface)
 ($svgHtml
+($triggerIsButton)
 ('xs').
 (AA
 (Alpine
@@ -532,6 +559,7 @@ $wrap
 (RTL-safe)
 (SOFT
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\Moment),
 (Support\UrlProp).
 (UtilityClasses::has($callerClass,
@@ -638,6 +666,7 @@ $wrap
 16.8
 16px
 18
+1;
 1px
 2,
 2.1.1).
@@ -668,6 +697,7 @@ $wrap
 :
 :alt="$authorName"
 :initials="$authorInitials"
+:name',
 :name="$leadingIcon"
 :name="$statusIcon"
 :name="$trailingIcon"
@@ -712,7 +742,6 @@ $wrap
 ></span>
 ?
 ??
-??=
 @class([
 @else
 @elseif($initials)
@@ -726,7 +755,6 @@ $wrap
 @if($authorAvatar
 @if($authorRole)
 @if($carbonTimestamp)
-@if($describes)
 @if($disabled)
 @if($dismissible)
 @if($dot)
@@ -745,6 +773,9 @@ $wrap
 @if($surface
 @if($tooltip)
 @if($trailingIcon)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($label))
 @if(isset($actions))
 @if(isset($attachments))
@@ -776,6 +807,7 @@ Alpine
 Alpine's
 Also
 An
+Around
 Attachments
 Aurora
 Avatar
@@ -826,6 +858,9 @@ Dot
 Double-check
 Driven
 Drop
+ENT_HTML5));
+ENT_HTML5,
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 Each
@@ -1010,6 +1045,7 @@ WireKit::warnUnknownProps('tooltip',
 With
 Without
 [
+[$callerLabelledBy,
 ['circle',
 ['data-wk-icon-missing'
 ['delivered',
@@ -1017,6 +1053,7 @@ Without
 ['hover',
 ['inverted',
 ['left',
+['name'
 ['neutral',
 ['outlined'
 ['primary',
@@ -1031,15 +1068,19 @@ Without
 [])->class([$baseClasses,
 [],
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\Initials::from($authorName);
 \Pushery\WireKit\Support\ListProp::from($author);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($src);
 \Pushery\WireKit\WireKit::warnUnknownProps('avatar',
@@ -1059,6 +1100,7 @@ __('wirekit::Failed
 __('wirekit::Offline'),
 __('wirekit::Online'),
 __('wirekit::Read'),
+__('wirekit::Remove
 __('wirekit::Remove');
 __('wirekit::Sending'),
 __('wirekit::Sent'),
@@ -1193,6 +1235,7 @@ act;
 action
 actions
 actions-reveal="always"
+activating
 actual
 actually
 add
@@ -1233,6 +1276,7 @@ announce
 announced
 announcing
 anonymous
+another.
 answer
 anticipate
 any
@@ -1254,6 +1298,7 @@ area's
 aria-describedby
 aria-describedby)
 aria-describedby="{{
+aria-disabled="true"
 aria-hidden
 aria-hidden,
 aria-hidden.
@@ -1405,6 +1450,8 @@ but
 button
 button's
 button,
+button:
+buttons
 buttons).
 buttons,
 by
@@ -1446,6 +1493,7 @@ chevrons,
 child
 children
 chip
+chips
 choice
 chose
 chosen
@@ -1536,6 +1584,7 @@ contract:
 contrast
 contrasts
 control
+control,
 controls
 convention
 conveyed
@@ -1638,6 +1687,7 @@ docs
 document
 documented
 does
+does,
 does.
 dot
 double
@@ -1709,6 +1759,7 @@ existing
 exists
 exists.
 expandos.
+explains,
 explanation
 explicit
 explicitly
@@ -1734,6 +1785,7 @@ false)
 false),
 false);
 false,
+false;
 family
 feature
 field
@@ -1745,6 +1797,7 @@ fill="none"
 filled
 filled-background
 fills
+filter
 filter_var($wrap,
 finds
 fine).
@@ -1782,6 +1835,7 @@ font
 for
 for.
 forbidden
+forced
 forces
 forcing
 foreground
@@ -1915,6 +1969,7 @@ hover/focus
 hover:opacity-100',
 how
 however
+html_entity_decode(strip_tags((string)
 hue
 icon
 icon's
@@ -1990,10 +2045,12 @@ invalid
 inverted
 invocation`
 is
+is.
 is_array($author)
 isn't
 isoFormat('LT')
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it,
@@ -2143,6 +2200,7 @@ ms-1
 mt-[var(--space-wk-xs,0.25rem)]">
 much
 multi-line
+multi-select
 must
 muted
 n/a
@@ -2159,9 +2217,11 @@ needed
 needs
 negative
 neither
+nest
 nested
 neutral
 never
+new
 next
 no
 no-op
@@ -2193,6 +2253,7 @@ of
 off
 offers
 offset:
+often
 old
 omission.
 on
@@ -2317,9 +2378,13 @@ position
 positioning
 post-process
 pre-checking
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 premise
 presence
@@ -2416,6 +2481,7 @@ reliably
 rem
 removed
 removes
+removes,
 removing
 render
 render,
@@ -2454,7 +2520,9 @@ ring,
 ring-[var(--color-wk-bg-elevated)]',
 role
 role,
+role:
 role="article"
+role="button"
 role="group"
 role="img"
 role="img",
@@ -2471,6 +2539,7 @@ rounded
 rounded-[var(--radius-wk-lg)]
 rounded-full
 rounds
+row
 row.
 rule
 run
@@ -2749,11 +2818,13 @@ to,
 to.
 toCssClasses()
 toHtml().
+toggletip
 token
 token,
 told
 too,
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -2780,7 +2851,10 @@ tree:
 trigger
 trigger's
 trigger,
+trim((string)
+trim(html_entity_decode(strip_tags((string)
 trim(implode('
+trim(strip_tags((string)
 true
 true)
 true);
@@ -2790,6 +2864,7 @@ truthy
 truthy.
 try
 twice
+twice.
 two
 two+
 two.
@@ -2801,6 +2876,7 @@ typically
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -2908,8 +2984,10 @@ with
 within
 without
 word)
+word.
 word:
 wording
+words;
 working
 works
 works).
@@ -2931,7 +3009,9 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

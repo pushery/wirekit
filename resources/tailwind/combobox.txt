@@ -1,5 +1,6 @@
 !
 !==
+"Clear
 "Could
 "Germany
 "Hoverable"
@@ -35,8 +36,13 @@ $boxClasses
 $callerAriaLabel
 $callerAriaLabel;
 $callerDescribedBy
+$callerLabel
+$callerLabel,
 $callerRef
 $classes
+$clearLabelText
+$clearLabelText])
+$clearSelectionLabel
 $clearable
 $clearable)
 $comboId
@@ -44,12 +50,15 @@ $comboId"
 $comboId);
 $comboId.'-help'
 $comboId.'-hint';
+$comboId.'-required'
 $component
 $content
+$content))
 $delayHide
 $delayShow
 $describedBy
 $describes
+$describes;
 $descriptionClasses
 $descriptionClasses,
 $descriptionText.'
@@ -57,6 +66,7 @@ $descriptionText]
 $descriptions
 $disabled
 $disabled)
+$disabled])
 $emptyRowClasses
 $entry
 $entry;
@@ -65,12 +75,13 @@ $error
 $errorId
 $errorMessage
 $errorMessage;
-$errors->first($name)
 $fieldLabelId
 $fieldMediaBox,
 $fieldMediaIcon,
 $fieldMediaPadding
 $focusableTrigger
+$formOwner
+$formOwner,
 $groupIsAList
 $groupIsAList);
 $hasError
@@ -106,6 +117,7 @@ $key);
 $key,
 $key;
 $label
+$label));
 $label);
 $label,
 $listClasses
@@ -117,6 +129,8 @@ $mediaInitials
 $mediaInitials,
 $mediaPerRow
 $name
+$name)
+$name));
 $normalizeOption
 $normalizeOption($key,
 $normalizeOption($subKey,
@@ -151,6 +165,8 @@ $optionsAreAList);
 $optionsCarryLang
 $outerAttributes
 $ownDescribedBy
+$ownName
+$ownName);
 $panelWidth
 $panelWidth)
 $panelWidth);
@@ -160,8 +176,15 @@ $placeholder
 $placement
 $placement,
 $required
+$requiredDisabled
+$requiredFormOwner
+$requiredMessageBound
+$requiredMessageClass
+$requiredMessageId
+$requiredMessageId])
 $resolvedAriaLabel
 $resolvedAriaLabel)
+$resolvedAriaLabel);
 $richRows
 $rowMediaBox,
 $rowMediaIcon,
@@ -185,15 +208,27 @@ $showsHint
 $slot
 $slot)
 $slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $subKey
 $subOpt)
 $subOpt,
 $surface
 $surface,
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $triggerClasses
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $truncated
 $truncated]);
 $value
@@ -229,6 +264,8 @@ $wkField->takeLabel($searchable
 '.$searchDebounce
 '.$searchMinLength.',
 '.($helpId
+'.($requiredMessageClass
+'.($requiredMessageId
 '.((string)
 '.WireKit::resolveClasses('combobox',
 '.\Pushery\WireKit\Support\AlpinePayload::from([
@@ -254,7 +291,6 @@ $wkField->takeLabel($searchable
 'announceError'
 'args'
 'aria-describedby',
-'aria-describedby'])->whereDoesntStartWith(['wire:model',
 'aria-label');
 'ariaLabel'
 'as'
@@ -300,6 +336,7 @@ $wkField->takeLabel($searchable
 'enterKey()'
 'error'
 'errorRegion'
+'failed'
 'false'
 'fixed
 'fixed'
@@ -382,6 +419,8 @@ $wkField->takeLabel($searchable
 'reject',
 'required'
 'required',
+'required'])->whereDoesntStartWith(['wire:model',
+'requiredDisabled'
 'reverted'
 'rotate-180'
 'rounded-[var(--radius-wk-md)]',
@@ -457,7 +496,8 @@ $wkField->takeLabel($searchable
 ("Fast
 ("Help
 ($callerDescribedBy
-($errors
+($callerLabelledBy
+($clearLabelText
 ($hasError
 ($isGroup)
 ($key,
@@ -474,10 +514,13 @@ $wkField->takeLabel($searchable
 ($server)
 ($showsHint
 ($size)
+($triggerIsButton)
 (+"
 (@aware
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\FieldControl).
+(Support\FormOwner).
 (WCAG
 (`.wk-scroll-fade…:focus-within
 (`data-wk-tooltip-surface`
@@ -509,8 +552,11 @@ $wkField->takeLabel($searchable
 (opt._idx
 (optional):
 (partials/field-help).
+(partials/required-check),
+(partials/required-message),
 (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw)$/',
 (resources/js/utils/caller-ref.js).
+(resources/js/utils/required-check.js):
 (see
 (silent
 (sizes),
@@ -577,6 +623,7 @@ $wkField->takeLabel($searchable
 12a9
 13l4
 18
+1;
 2
 2),
 2.1.1).
@@ -618,11 +665,11 @@ $wkField->takeLabel($searchable
 :aria-expanded="isOpen"
 :aria-label="grp.label
 :aria-labelledby="{{
-:aria-selected="selected
+:aria-selected="isChosen(opt.value)"
 :class="$hideLabel
+:class="isChosen(opt.value)
 :class="isOpen
 :class="opt.disabled
-:class="selected
 :count
 :data-active="idx
 :data-active="opt._idx
@@ -678,6 +725,7 @@ $wkField->takeLabel($searchable
 =>
 >
 ></li>
+></p>
 >@if($richRows)@include('wirekit::components.partials.listbox-option-content',
 ?
 ?:
@@ -690,6 +738,7 @@ $wkField->takeLabel($searchable
 @click="{{
 @else
 @elseif($fieldLabelId)
+@elseif($requiredMessageId)
 @elseif($resolvedAriaLabel)
 @elseif($showsHint)
 @elseif(filled($resolvedAriaLabel))
@@ -705,10 +754,10 @@ $wkField->takeLabel($searchable
 @if($attributes->get('required'))
 @if($callerRef
 @if($describedBy)
-@if($describes)
 @if($descriptions)
 @if($disabled)
 @if($focusableTrigger)
+@if($formOwner)
 @if($hasError)
 @if($hasGroups)
 @if($helpButton
@@ -722,18 +771,28 @@ $wkField->takeLabel($searchable
 @if($optionUses['media'])
 @if($optionsCarryLang)
 @if($panelWidthStyle
+@if($required)
+@if($requiredDisabled
+@if($requiredMessageBound
+@if($requiredMessageId)
 @if($richRows)
 @if($searchable)
 @if($server)
 @if($serverOptions
 @if($showsError)
 @if($surface
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($help))
 @if(filled($helpId
+@if(filled($requiredFormOwner
 @if(isset($content))
 @include
 @include('wirekit::components.partials.field-help',
 @include('wirekit::components.partials.listbox-option-media',
+@include('wirekit::components.partials.required-check',
+@include('wirekit::components.partials.required-message',
 @input="openAndReset()"
 @keydown.arrow-down.prevent="openAndMove(1)"
 @keydown.arrow-up.prevent="moveHighlight(-1)"
@@ -771,6 +830,7 @@ Alpine's
 Always
 An
 Any
+Around
 BEATS
 BOTH
 Beside
@@ -789,6 +849,7 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Both
 CALLER's
 CAPTURE
+CHOICE
 CSS
 CallerRef::onRoot()
 Carries
@@ -811,6 +872,7 @@ Done
 Drawn,
 E.164
 ENT_HTML5)),
+ENT_HTML5));
 ENT_QUOTES
 Each
 Empty
@@ -929,6 +991,7 @@ Search
 Server
 Set
 Shorter
+Shown
 Single
 Sizing.
 So
@@ -951,6 +1014,7 @@ This
 Those
 Tooltip
 Trigger
+Try
 Two
 Type
 Type");
@@ -983,6 +1047,7 @@ WireKit::warnUnknownProps('tooltip',
 With
 Without
 [
+[$callerLabelledBy,
 [$normalized,
 [$outerAttributes,
 [$rowMediaBox,
@@ -993,6 +1058,8 @@ Without
 ['key'
 ['label'
 ['media'
+['requiredFormOwner'
+['requiredMessageId'
 ['size-5',
 ['size-6',
 ['size-7',
@@ -1001,6 +1068,7 @@ Without
 ['x-on:mouseenter',
 [],
 [];
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options'))
@@ -1018,19 +1086,26 @@ Without
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\FieldControl
+\Pushery\WireKit\Support\FieldControl)
+\Pushery\WireKit\Support\FieldError::first($errors
+\Pushery\WireKit\Support\FieldError::has($errors
 \Pushery\WireKit\Support\FlagPackage::attach($normalized);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\IconSprite::attach($normalized,
 \Pushery\WireKit\Support\ListProp::records($options);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OptionMedia::fields('combobox',
 \Pushery\WireKit\Support\OptionMedia::uses($normalized);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\WireKit::warnUnknownProps('combobox',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
@@ -1048,6 +1123,7 @@ __('wirekit::Help')
 __('wirekit::More
 __('wirekit::No
 __('wirekit::Saving'),
+__('wirekit::Search
 __('wirekit::Searching…'),
 __('wirekit::Select…'),
 __('wirekit::Type
@@ -1096,8 +1172,11 @@ _place()
 `aria-hidden`.
 `aria-invalid`
 `aria-label`
+`aria-label`,
 `aria-labelledby`
 `aria-labelledby`.
+`aria-required`
+`aria-required`.
 `aria-selected`
 `ariaLabel`
 `as="div
@@ -1105,6 +1184,7 @@ _place()
 `auto`
 `auto`,
 `avatar`
+`basis-full`
 `break-word`
 `card`
 `class`
@@ -1146,6 +1226,8 @@ _place()
 `for={comboId}`;
 `for`
 `for`.
+`form`
+`form`,
 `grid`
 `group`
 `help`,
@@ -1155,6 +1237,7 @@ _place()
 `hint="Start
 `hint`
 `image`,
+`invalid`
 `inverted`
 `isolation:
 `keydownEscape()`
@@ -1186,6 +1269,7 @@ _place()
 `prop="false"`
 `query`
 `relative`
+`requiredValue`,
 `required`
 `role="combobox"`,
 `run()`.
@@ -1249,6 +1333,7 @@ able
 about
 about.
 above
+above),
 above.
 above:
 absence
@@ -1259,6 +1344,7 @@ accessibility
 accessible
 across
 action
+activating
 activation.
 active
 actual
@@ -1269,6 +1355,7 @@ after
 again
 again,
 again.
+again.'),
 against
 against,
 agree
@@ -1302,6 +1389,7 @@ announces
 announcing
 anonymous
 another
+another.
 answer
 answers
 anticipate
@@ -1420,6 +1508,7 @@ behind
 being
 belongs
 below
+below).
 below,
 below.
 below;
@@ -1453,6 +1542,7 @@ brand
 break
 break;
 browser
+browser's
 browser,
 browser-default
 bubble's
@@ -1466,6 +1556,8 @@ but
 button
 button,
 button.
+button:
+buttons
 by
 byte-identically
 byte-identically.
@@ -1473,6 +1565,7 @@ byte.
 call
 call,
 call.
+called
 caller
 caller's
 caller-passed
@@ -1503,6 +1596,7 @@ character.
 characters',
 character|[2,*]
 check
+checked
 checks
 chevron
 chevron.
@@ -1622,6 +1716,7 @@ config,
 config.
 console
 construction.
+consumed
 consuming
 container
 containers.
@@ -1635,8 +1730,10 @@ context.
 continues
 contract
 control
+control's
 control),
 control).
+control,
 control.
 control:
 controls
@@ -1678,6 +1775,8 @@ data-wk-optimistic-announcer
 data-wk-options="{{
 data-wk-prose-skip
 data-wk-ref-scope
+data-wk-required-check
+data-wk-required-message
 data-wk-server-options="{{
 data-wk-server-value="{{
 data-wk-tooltip-describedby="{{
@@ -1711,6 +1810,7 @@ derives
 descendant
 descendants
 descendants,
+described
 described-by
 describes
 description
@@ -1730,6 +1830,7 @@ directly
 disabled
 disabled:cursor-not-allowed
 disabled:opacity-[var(--opacity-wk-disabled)]"
+disabled;
 disables
 disagrees
 disappearing,
@@ -1770,6 +1871,7 @@ ease-in
 ease-out
 edge
 edge.
+editor's
 effect:
 effective
 eight
@@ -1787,6 +1889,7 @@ else
 else;
 elsewhere)
 embeds
+empties,
 empty
 empty($o['group']))
 empty($opt['group']))
@@ -1827,10 +1930,12 @@ explanation
 explicit
 exposed
 expression
+expression,
 extra
 factory
 factory,
 fade="…">`,
+failed.
 fails
 fails.
 failure
@@ -1869,6 +1974,7 @@ filled($help)
 filled($helpName
 filled($label)
 filled($resolvedAriaLabel)
+filled($resolvedAriaLabel))
 filter
 filtered
 filtered"
@@ -1923,9 +2029,12 @@ forced
 forced-colors
 foreach
 form
+form="{{
 formatting.
+found
 four
 fragment
+frame:
 free:
 freezes
 fresh
@@ -1974,6 +2083,7 @@ hand,
 hand-mount
 hand-written
 handed
+handled
 handler
 handler.
 handlers
@@ -1991,6 +2101,7 @@ header
 heading
 headings,
 hear
+hears
 hears,
 height
 help
@@ -2001,6 +2112,7 @@ here,
 here.
 here:
 hidden
+hidden,
 hidden:
 hidden>{{
 hidden`
@@ -2109,11 +2221,13 @@ is,
 is.
 is_array($opt)
 isolate`
+isset($content)
 isset($option['lang']));
 it
 it,
 it.
 it:
+it;
 item,
 items-center
 items-center">
@@ -2122,6 +2236,8 @@ itself
 itself,
 itself.
 jacket']`
+joined,
+joins
 just
 justify-center
 keep
@@ -2152,6 +2268,7 @@ land
 landed
 lands
 language
+language.
 last
 last.
 later
@@ -2244,6 +2361,7 @@ medium,
 meets
 menus
 message
+message.
 message:
 messages.
 method
@@ -2289,6 +2407,7 @@ name.
 name:
 name="{{
 named
+named:
 names
 names,
 names.
@@ -2306,6 +2425,7 @@ needs
 negative
 neither
 neither.
+nest
 nested
 nests
 network
@@ -2325,6 +2445,7 @@ node,
 nodes.
 non-input
 none
+none"
 none,
 none;
 none;"
@@ -2344,7 +2465,6 @@ null)
 null))
 null),
 null);
-null)?->has($name));
 null,
 null;
 null])
@@ -2359,8 +2479,10 @@ of
 of.
 off
 off.
+offer
 offering
 offset:
+often
 older
 omission.
 omit
@@ -2378,6 +2500,7 @@ one,
 one.
 one:
 only
+only:
 onmouseover=alert(1)"`
 onto
 opacity-[var(--opacity-wk-disabled)]
@@ -2394,8 +2517,6 @@ opt._idx
 opt._idx"
 opt._idx",
 opt._idx)"
-opt.value
-opt.value"
 optimistic
 optimistic-ui:
 optimistically.
@@ -2516,6 +2637,9 @@ positioning
 positively,
 precedence
 precedence:
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_split('/\s+/',
 present
 presentational
@@ -2610,7 +2734,11 @@ reported,
 reports
 repository
 request
+required
 required,
+required:
+requiredValue
+requirement
 requires
 reset
 resolution.
@@ -2636,6 +2764,8 @@ returned
 rich
 right
 right-to-left
+role:
+role="button"
 role="combobox"
 role="group"
 role="listbox"
@@ -2670,6 +2800,7 @@ rule
 rules
 run
 run(null),
+run.
 run:
 runIf,
 runIf:
@@ -2678,6 +2809,7 @@ safe.
 safe:
 same
 sat
+satisfied
 satisfies
 save"
 save.
@@ -2695,6 +2827,7 @@ scope.
 scopes
 screen
 screen.
+script
 scroll
 scrolled
 scrolling.
@@ -2725,7 +2858,8 @@ select.
 selected
 selected.
 selection
-selection')
+selection".
+selection');
 selection's
 send
 sends
@@ -2813,7 +2947,11 @@ stack
 stacking
 stacking-context
 stamped
+stand-in
+stand-in,
 stands
+stands,
+stands.
 start
 start-[var(--padding-wk-x-md)]
 starting
@@ -2892,6 +3030,7 @@ taller
 target
 tech
 technology
+technology,
 teleport,
 teleport:
 teleported
@@ -2900,6 +3039,7 @@ tell
 template
 text
 text,
+text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
@@ -2967,6 +3107,7 @@ together,
 together.
 toggled
 toggles
+toggletip
 token
 tokens
 too
@@ -3002,11 +3143,14 @@ trigger's
 trigger,
 trigger.
 trigger;
+trim($wkField->labelText());
 trim('flex
+trim('text-[length:var(--text-wk-sm)]
 trim(($describedBy
 trim(((string)
 trim((string)
 trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip
 true
 true"
@@ -3024,6 +3168,7 @@ truthy.
 turns
 twice
 twice,
+twice.
 two
 two.
 type
@@ -3040,6 +3185,7 @@ typing.
 unaffected
 unaffected.
 unaffected:
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -3055,6 +3201,7 @@ unguarded
 unique
 unkeyed
 unknown
+unless
 unlike
 unreachable
 unreachable,
@@ -3076,6 +3223,7 @@ uses,
 using
 usually
 valid
+validated
 validated.
 validates
 validation
@@ -3162,6 +3310,7 @@ word)
 word),
 word.
 wording
+words;
 work.
 working
 works
@@ -3182,10 +3331,12 @@ wrong.
 wrote.
 x-bind:aria-busy="isPending"
 x-bind:aria-busy="searchAriaBusy()"
+x-bind:aria-invalid="requiredMessage
 x-bind:class="fieldMedia.length
 x-bind:href="{{
 x-bind:id="{{
 x-bind:src="{{
+x-bind:value="requiredValue"
 x-cloak
 x-data="wirekitCombobox({
 x-data="wirekitOptimistic({{
@@ -3207,7 +3358,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:error="markMediaBroken({{
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -3220,6 +3374,7 @@ x-ref="tooltip"
 x-ref="trigger"
 x-show="isOpen
 x-show="isOpen"
+x-show="requiredMessage
 x-show="searchNote()
 x-show="selected"
 x-show="selectedText
@@ -3231,6 +3386,7 @@ x-text="isOpen
 x-text="opt.description"></span>
 x-text="opt.label"></span>
 x-text="opt.label"></span>@endif<svg
+x-text="requiredMessage"
 x-text="searchAnnouncement(filtered.length,
 x-text="searchEmptyText(typedQuery())"
 x-text="searchNote()"

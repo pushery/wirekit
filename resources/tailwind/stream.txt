@@ -9,9 +9,13 @@ $announce
 $attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
+$attributes]
 $autoStart
 $autoStart,
 $body,
+$callerLabel
+$callerLabel)
+$callerLabel,
 $config
 $doneSignal,
 $error
@@ -79,6 +83,7 @@ $wrapperClasses
 (LLM
 (SSR)
 (Stop
+(Support\CallerName).
 (a
 (and
 (bool)
@@ -116,9 +121,12 @@ $wrapperClasses
 ??
 @else
 @endif
+@endif>
 @endisset
 @endphp
+@endunless
 @if($announce
+@if($callerLabelledBy
 @if($simulate)
 @if($slot->hasActualContent())
 @isset($error)
@@ -127,9 +135,11 @@ $wrapperClasses
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 ADDITIVE
 APIs
+ARIA
 Alpine
 BOTH,
 Blade
@@ -211,10 +221,13 @@ Without
 Wraps
 Writing
 [
+[$callerLabelledBy,
 ['sse',
 ['status',
 \Pushery\WireKit\Support\AlpinePayload::from($config)
 \Pushery\WireKit\Support\AlpinePayload::from(...)
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('stream',
 ])
@@ -225,6 +238,8 @@ __('wirekit::Response
 __('wirekit::Stream
 __()
 `:message`
+`aria-label`
+`aria-labelledby`
 `error`
 `event-name="message"`
 `initial-text`
@@ -291,6 +306,7 @@ before
 belong
 belongs
 below
+below;
 between
 bg-[var(--color-wk-text-muted)]"
 block
@@ -496,6 +512,7 @@ matters.
 may
 mean
 meaning
+meets,
 message
 method)
 ml-px
@@ -511,6 +528,7 @@ name
 name-selection
 name.
 named
+names
 needs
 never
 new
@@ -521,6 +539,7 @@ not
 nothing,
 nothing.
 null
+null)
 null);
 null,
 object
@@ -573,6 +592,7 @@ preview
 primitive
 prod).
 progress;
+prohibits
 prompt,
 prop
 prop's
@@ -621,7 +641,9 @@ result
 resume
 reveals
 right
+role,
 role="alert"
+role="group"
 role="status"
 room
 room.
@@ -769,6 +791,7 @@ wirekit-stream-*
 with
 would
 wrapper
+wrapper,
 wrong
 wrong,
 x-cloak
@@ -786,9 +809,9 @@ yourself
 yourself,
 {{
 {{--
+||
 }}
 }})"
 }}</div>
-}}>
 —
 →

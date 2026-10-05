@@ -28,21 +28,40 @@
  * @returns {string}
  */
 export function pluralize(phrases, count, locale) {
+    return pluralTemplate(phrases, count, locale).replace(':count', String(count));
+}
+
+/**
+ * The form `pluralize()` would choose, with its placeholders still in it.
+ *
+ * For a sentence whose form follows one number while it prints another:
+ * "Showing 1 of 1 event" takes its noun from the total, and the count shown in
+ * front of it is a second number. The caller fills both.
+ *
+ * Without a usable form it answers `:count`, so `pluralize()` still prints the
+ * bare number rather than nothing.
+ *
+ * @param {Object} phrases  sample count (as a key) -> template
+ * @param {number} count    the number that chooses the form
+ * @param {string} locale   BCP-47 tag; the application's locale, not the browser's
+ * @returns {string}
+ */
+export function pluralTemplate(phrases, count, locale) {
     if (! phrases || typeof phrases !== 'object') {
-        return String(count);
+        return ':count';
     }
 
     // Exact first. Laravel lets a translation name a specific value — `{0} no
     // reactions` — and that is a statement about the number itself, not about
     // its plural category, so no rule may override it.
     if (Object.prototype.hasOwnProperty.call(phrases, String(count))) {
-        return phrases[String(count)].replace(':count', String(count));
+        return phrases[String(count)];
     }
 
     const keys = Object.keys(phrases);
 
     if (keys.length === 0) {
-        return String(count);
+        return ':count';
     }
 
     let rules;
@@ -68,12 +87,12 @@ export function pluralize(phrases, count, locale) {
         }
 
         if (rules.select(sample) === wanted) {
-            return phrases[key].replace(':count', String(count));
+            return phrases[key];
         }
     }
 
     // No sample matched the category — send the last form rather than nothing.
     // A slightly wrong plural is a bad announcement; an empty one is silence,
     // and silence is the failure this whole layer exists to avoid.
-    return phrases[keys[keys.length - 1]].replace(':count', String(count));
+    return phrases[keys[keys.length - 1]];
 }

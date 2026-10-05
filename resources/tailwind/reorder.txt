@@ -42,6 +42,7 @@ $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
+$attributes]
 $baseClasses
 $buttonBag
 $buttonBag->class([$baseClasses,
@@ -51,12 +52,15 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerRole
 $classes
 $cleaned
 $cleaned);
 $computedRel
 $content
+$content))
 $count
 $count);
 $count,
@@ -67,6 +71,7 @@ $declarativeLoading)
 $delayHide
 $delayShow
 $describes
+$describes;
 $disableOnLoading
 $disableOnLoading;
 $disabled
@@ -129,6 +134,8 @@ $name];
 $offset
 $opensNewTab
 $orientation
+$ownName
+$ownName);
 $placeholderAttributes
 $placeholderAttributes['role']
 $position
@@ -155,6 +162,12 @@ $sizeMap[$validated];
 $slot
 $slot)
 $slot))
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $stackBelow
 $stackBelow,
 $surface
@@ -169,11 +182,17 @@ $svgHtml,
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $touchClasses
 $touchClasses,
 $touchTextFloor
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $type
 $upCall
 $upText
@@ -405,6 +424,7 @@ $wrapLabel
 ("Fast
 ($attributes->getAttributes()
 ($callerAriaHidden
+($callerLabelledBy
 ($declarativeLoading
 ($forceLoading)
 ($iconOnly
@@ -422,12 +442,14 @@ $wrapLabel
 ($stackBelow
 ($surface
 ($svgHtml
+($triggerIsButton)
 ($wrapLabel
 ('xs').
 (($iconOnly
 (4.05
 (SVG
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind's
 (UtilityClasses::has($callerClass,
@@ -617,7 +639,6 @@ $wrapLabel
 @if
 @if($computedRel)
 @if($declarativeLoading)
-@if($describes)
 @if($disabled)
 @if($emitAriaBusy)
 @if($focusableTrigger)
@@ -631,6 +652,9 @@ $wrapLabel
 @if($stackBelow)
 @if($surface
 @if($tag
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(isset($content))
 @include
 @include('wirekit::components.partials.reorder-controls',
@@ -658,6 +682,7 @@ AlpinePayload::string((string)
 An
 And
 Anything
+Around
 Auto-inject
 BELOW
 BLADE
@@ -700,6 +725,8 @@ Describing
 Dev-only
 Done
 Drop
+ENT_HTML5));
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 Each
@@ -895,6 +922,7 @@ WireKit::warnUnknownProps()
 With
 Without
 [
+[$callerLabelledBy,
 ['data-wk-icon-missing'
 ['inverted',
 ['item'
@@ -907,13 +935,17 @@ Without
 [--wk-touch-min:0px]'
 [overflow-wrap:anywhere]'
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
@@ -1154,6 +1186,7 @@ action,
 action.
 actions.
 activated
+activating
 active
 active-tab
 active:cursor-grabbing
@@ -1202,6 +1235,7 @@ announces
 announcing
 anonymous
 another
+another.
 answer
 answers
 anticipate
@@ -1772,6 +1806,7 @@ exists
 exists,
 exists.
 expandos.
+explains,
 explicit
 explicitly
 expression
@@ -1869,6 +1904,7 @@ for
 for.
 for:
 forbidden
+forced
 forcing
 foreach
 form
@@ -2098,6 +2134,7 @@ is.
 is_string($action)
 isn't
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it,
@@ -2309,6 +2346,7 @@ negative
 neighbor.
 neither
 neither:
+nest
 nested
 neutral
 neutral:
@@ -2506,8 +2544,11 @@ precisely
 preference.
 prefers
 prefix
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
 preg_replace_callback(
@@ -2652,6 +2693,8 @@ ring
 ring,
 role
 role,
+role:
+role="button"
 role="group"
 role="img"
 role="img".
@@ -2994,6 +3037,7 @@ today's
 together
 toggle,
 toggles
+toggletip
 token
 token,
 tokens
@@ -3003,6 +3047,7 @@ too,
 too.
 took
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -3030,6 +3075,8 @@ trigger
 trigger's
 trigger,
 trim($relAttr.'
+trim((string)
+trim(html_entity_decode(strip_tags((string)
 trim(strip_tags((string)
 trio
 true))
@@ -3052,6 +3099,7 @@ typed:
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -3223,6 +3271,7 @@ won
 word
 word)
 word,
+words;
 work,
 working
 works
@@ -3251,7 +3300,9 @@ x-on:click="remember('down',
 x-on:click="remember('up',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

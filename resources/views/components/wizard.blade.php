@@ -71,6 +71,11 @@
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+@endphp
 <div
     x-data="wirekitWizard({
         current: {{ $current }},
@@ -83,6 +88,7 @@
          `x-init` on the tag lands on this root and runs, instead of standing in the tag a second
          time beside ours, where the parser would drop it. --}}
     {{ $attributes->class([$classes]) }}
+    @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     @if($indicator && $stepNames !== [])
         {{-- The existing indicator, USED rather than reimplemented. It stays presentational:

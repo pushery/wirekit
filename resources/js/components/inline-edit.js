@@ -1,3 +1,4 @@
+import { disabledByFieldset } from '../utils/fieldset-disabled.js';
 import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
@@ -38,6 +39,7 @@ const hasOwnName = (el) => ['aria-label', 'aria-labelledby'].some((attr) => (el.
  * @param {string} config.name            Field name, carried in the event detail
  * @param {string} config.value           Initial value
  * @param {boolean} config.exclusive      Close other open editors when this opens
+ * @param {boolean} config.disabled       The field is out of use: nothing opens the editor
  * @param {number} config.saveTimeout     ms to wait for a save answer before giving up
  * @param {string} config.fieldLabel      id of a field's label that names this control
  * @param {boolean} config.fieldLabelFocuses  whether a click on it focuses the slot's control
@@ -213,7 +215,10 @@ export default function wirekitInlineEdit(config = {}) {
         // ── Opening ─────────────────────────────────────────────────────────
 
         open() {
-            if (this.editing || this.saving) return;
+            // A disabled fieldset around the field locks it as the `disabled` prop does. It
+            // disables the trigger, the field and both buttons, but not the value, which is no
+            // native control: a click there opened an editor whose field and buttons took no input.
+            if (this.editing || this.saving || config.disabled === true || disabledByFieldset(this.$root)) return;
             this._previous = this._snapshot(this.draft);
             this.editing = true;
 

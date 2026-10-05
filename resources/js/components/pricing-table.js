@@ -1,3 +1,4 @@
+import { onFormReset } from '../utils/form-reset.js';
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { watchCurrent } from '../utils/watch-current.js';
@@ -22,6 +23,8 @@ import { watchCurrent } from '../utils/watch-current.js';
  *   - _modelEvents — `change` and `blur` on the hidden input for `wire:model.change` and
  *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change` with
  *     every interval chosen, as before, and `blur` when the reader leaves the toggle.
+ *   - _stopFormReset — the listener that puts the starting interval back when the form is reset
+ *     (utils/form-reset.js).
  *
  * @param {Object} config
  * @param {string} config.interval  the interval selected at render time
@@ -32,8 +35,12 @@ export default function wirekitPricingTable(config = {}) {
         // property no scope declares on the outermost scope around the component.
         _stopServerSync: null,
         _modelEvents: null,
+        _stopFormReset: null,
 
         interval: config.interval != null ? String(config.interval) : '',
+        // The interval a form reset returns to: the one the page started with, or the one the
+        // server sent last, as a native field returns to the value the server rendered.
+        _resetValue: config.interval != null ? String(config.interval) : '',
 
         init() {
             // Seed from the server attribute when the caller passed none.
@@ -66,6 +73,8 @@ export default function wirekitPricingTable(config = {}) {
                 );
             }
 
+            this._resetValue = this.interval;
+
             // Outward: the form has to see the choice. Assigning `.value` fires
             // nothing, so the event is dispatched by hand — without it a
             // `wire:model` on the hidden input would never observe a change,
@@ -97,6 +106,8 @@ export default function wirekitPricingTable(config = {}) {
             // choice the reader just made — every morph rewrites the attribute,
             // including the ones carrying the same value back.
             this._stopServerSync = observeServerValue(this.$root, (value) => {
+                this._resetValue = value;
+
                 if (value === this.interval) {
                     return;
                 }
@@ -105,12 +116,30 @@ export default function wirekitPricingTable(config = {}) {
             });
 
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.hiddenInput);
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.hiddenInput, () => this._restore());
         },
 
         destroy() {
             this._stopServerSync?.();
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /**
+         * Back to the starting interval after a form reset. The hidden input is written first, so
+         * the `interval` watcher finds it current and announces nothing: a reset changes a native
+         * field without an event.
+         */
+        _restore() {
+            const input = this.$refs?.hiddenInput;
+
+            if (input) {
+                input.value = this._resetValue;
+            }
+
+            this.interval = this._resetValue;
         },
     };
 }

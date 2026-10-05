@@ -20,6 +20,10 @@
     'compareAt' => null,
     'currency' => config('wirekit.currency', 'USD'),
     'minorUnits' => false,
+    // The locale the row writes its numbers in: every amount, handed to each `price` with the
+    // currency, and the quantity. Unset, they follow the application's locale, as a `price` of
+    // its own would.
+    'locale' => null,
     // What the line costs at this quantity. The APPLICATION computes it. A cart that multiplies
     // here would own state, and cart state belongs to Livewire rather than to this library —
     // every second application has to take an assumption like that back out.
@@ -46,6 +50,10 @@
     // built-in remove control goes. A `remove` slot still renders: writing one is the caller's
     // decision.
     'readonly' => false,
+    // A read-only line without its quantity, visibly and for a screen reader: an article whose
+    // quantity another device shows, such as the weight a scale displays, where a "1" would read
+    // as one piece or one kilogram. An editable line ignores it: its field is its quantity.
+    'hideQuantity' => false,
     // The unit price a measured article has to show beside its price, the Grundpreis of the
     // German PAngV: "10,00 € / 1 pair". Handed to `price`, which formats it and puts it where
     // price-marking law wants it; `unitMeasure` is the reference, "kg" or "1 pair".
@@ -80,6 +88,8 @@
     $removable = BooleanProp::from($removable, true);
     $minorUnits = BooleanProp::from($minorUnits, false);
     $readonly = BooleanProp::from($readonly, false);
+    // A line whose quantity can be changed ignores it: its field is its quantity.
+    $hideQuantity = BooleanProp::from($hideQuantity, false) && $readonly;
     $layoutValue = WireKit::validateProp('cart-item', 'layout', $layout, ['default', 'compact']);
     $stepperValue = WireKit::validateProp('cart-item', 'stepper', $stepper, ['field', 'buttons']);
     $totalSizeValue = $totalSize === null
@@ -105,7 +115,7 @@
 
     // The quantity as a reader sees it: in the locale's own digits and separators, "0,532 kg"
     // for a weighed article in German, with a no-break space so the unit never wraps away.
-    $quantityText = LocalizedNumber::format((float) $quantity, maxPrecision: 3)
+    $quantityText = LocalizedNumber::format((float) $quantity, maxPrecision: 3, locale: $locale)
         .(filled($unit) ? "\u{00A0}".$unit : '');
 
     // A stable identity for the row, so the remove dispatch says WHICH line and a Livewire
@@ -194,6 +204,7 @@
                         :size="$totalSizeValue"
                         :currency="$currency"
                         :minor-units="$minorUnits"
+                        :locale="$locale"
                     />
                 </span>
             @endif
@@ -216,6 +227,7 @@
                             :unit-measure="$unitMeasure"
                             :currency="$currency"
                             :minor-units="$minorUnits"
+                            :locale="$locale"
                             size="sm"
                         />
                     </span>
@@ -277,6 +289,7 @@
                     :unit-measure="$unitMeasure"
                     :currency="$currency"
                     :minor-units="$minorUnits"
+                    :locale="$locale"
                     size="sm"
                 />
             </span>
@@ -317,6 +330,7 @@
                     :size="$totalSizeValue"
                     :currency="$currency"
                     :minor-units="$minorUnits"
+                    :locale="$locale"
                 />
             </span>
         @endif

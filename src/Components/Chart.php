@@ -255,6 +255,20 @@ final class Chart extends Component
             // A locale the developer set on the tooltip stays theirs.
             $mergedOptions['tooltip']['wkLocale'] ??= str_replace('_', '-', app()->getLocale());
 
+            // The rows the renderer adds for a candlestick, a boxplot and a bubble carry names no
+            // series does, so they are written here, in the application's language. The quartile
+            // symbols Q1 and Q3 read the same in every shipped language and stay in the renderer.
+            $mergedOptions['tooltip']['wkRowNames'] ??= [
+                'open' => __('wirekit::Open price'),
+                'high' => __('wirekit::High'),
+                'low' => __('wirekit::Low'),
+                'close' => __('wirekit::Close price'),
+                'max' => __('wirekit::Max'),
+                'median' => __('wirekit::Median'),
+                'min' => __('wirekit::Min'),
+                'size' => __('wirekit::Size'),
+            ];
+
             // Normalize valueDecimals to an int in [0, 100] or null. is_numeric
             // accepts "2" / 2 / "0"; anything else (null, "", "x") → null = unset.
             // The 0–100 clamp is mandatory: the JS side feeds this to

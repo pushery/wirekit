@@ -94,6 +94,7 @@ $triggerClasses
 'offset'
 'opacity-[var(--opacity-wk-disabled)]
 'overflow-hidden',
+'overflow-y-auto
 'p-[var(--padding-wk-x-sm)]',
 'p-[var(--padding-wk-y-xs)]',
 'panel',
@@ -260,6 +261,7 @@ Pushery\WireKit\WireKit;
 ROVING
 Renders
 SR
+Scrolls
 See
 Such
 TABINDEX
@@ -372,6 +374,7 @@ be
 because
 before
 belongs
+beside
 between
 binding
 block
@@ -387,6 +390,7 @@ by
 call
 caller's
 came
+caps
 carried
 carry
 cast
@@ -405,6 +409,7 @@ classes
 click
 clicking
 client-only
+clips
 close
 closeAll()
 closeSub()"
@@ -486,6 +491,7 @@ fired
 five
 five-menu
 fixed
+fixed,
 fixed`
 flags
 flat
@@ -520,7 +526,9 @@ hands
 has
 have.
 hears
+height
 held
+helper
 here
 here,
 here:
@@ -663,6 +671,7 @@ our
 out
 overlay
 overrides
+overscroll-contain',
 own
 owns,
 page
@@ -771,6 +780,7 @@ set
 several
 shared
 sharpest
+short
 shortcut
 shown
 sibling
@@ -868,6 +878,7 @@ view's
 viewBox="0
 viewport
 viewport,
+viewport;
 visible
 visual
 visually

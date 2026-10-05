@@ -56,11 +56,16 @@
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-md)]',
-        'overflow-hidden',
+        // Scrolls once the position helper caps its height to a window it does not fit; the
+        // panel is fixed, so this clips nothing beside it.
+        'overflow-y-auto overscroll-contain',
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 <div
@@ -102,6 +107,9 @@
             '/<(?:a\b[^>]*\shref|button|input|select|textarea)\b|tabindex="0"/i',
             $contextMenuTrigger
         );
+        // A stop of the wrapper's own is a group, and it says what the key does there: without that a
+        // reader lands on an element with no role, and only the docs tell them a menu is waiting.
+        $contextMenuHintId = $contextMenuTriggerIsFocusable ? null : \Pushery\WireKit\Support\DomId::unique(null, 'wk-context-menu-hint-');
     @endphp
 
     {{-- The wrapper's focus indication is an OUTLINE set one ring width inward. It wraps whatever
@@ -110,9 +118,14 @@
          content with a background of its own (a card) covers an inset ring, which is painted
          beneath the wrapper's children. An outline is painted above them and stays inside the
          box, so it shows on all four sides in both cases. --}}
+    @if($contextMenuHintId)
+        <span id="{{ $contextMenuHintId }}" hidden>{{ __('wirekit::Shift+F10 opens options') }}</span>
+    @endif
     <div
         @unless($contextMenuTriggerIsFocusable)
             tabindex="0"
+            role="group"
+            aria-describedby="{{ $contextMenuHintId }}"
             class="focus-visible:outline-[length:var(--ring-wk-width)] focus-visible:-outline-offset-[var(--ring-wk-width)] focus-visible:outline-[color:var(--color-wk-ring)]"
         @endunless
         x-on:contextmenu="openAt($event)"
@@ -169,7 +182,7 @@
             {{-- Same reasoning as menubar.menu, which has carried this all along: the panel
                  teleports to the overlay root, so the trigger is no longer adjacent and the
                  name is the only thing identifying what opened. --}}
-            aria-label="{{ filled($label) ? $label : __('wirekit::Context menu') }}"
+            {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, filled($label) ? $label : __('wirekit::Context menu')) }}
             class="{{ $panelClasses }}"
             x-cloak
         >

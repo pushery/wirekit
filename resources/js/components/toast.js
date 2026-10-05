@@ -62,7 +62,6 @@ export default function wirekitToast(config = {}) {
         _eventName: null,
         _scope: null,
         _handler: null,
-        _livewireHandler: null,
 
         /** @type {Array<{id: number, title: string, message: string, variant: string, _timer: number|null}>} */
         toasts: [],
@@ -123,12 +122,6 @@ export default function wirekitToast(config = {}) {
                 this.add(event.detail);
             };
             window.addEventListener(this._eventName, this._handler);
-
-            // Livewire hook: bridge session flash toasts on navigate
-            this._livewireHandler = () => {
-                // Livewire injects flash data as a custom event after navigation
-                // This hook will be consumed by the Blade component if needed
-            };
         },
 
         destroy() {

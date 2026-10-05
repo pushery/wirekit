@@ -9,6 +9,9 @@ $action
 $attributes->class([$classes])
 $attributes->class([$classes])->merge(['style'
 $attributes->getAttributes());
+$attributes]
+$callerLabel
+$callerLabel,
 $classes
 $dismissKey
 $dismissible
@@ -26,6 +29,7 @@ $intentValue
 $isDismissible
 $isSticky
 $label
+$label)
 $persist
 $persistValue
 $persistValue));
@@ -117,11 +121,13 @@ $surfaceValue
 ($intentValue)
 ($strip)
 (--padding-wk-x-lg),
+(Support\CallerName).
 (`--theme-hue`)
 (`--wk-banner-hue`)
 (accent),
 (and
 (below)
+(filled($label)
 (float)
 (indigo)
 (is_numeric($hue)
@@ -176,10 +182,10 @@ $surfaceValue
 @endif
 @endisset
 @endphp
+@if($callerLabelledBy
 @if($isDismissible)
 @if($isSticky
 @if($strip)
-@if(filled($label))
 @isset($action)
 @php
 @props([
@@ -188,6 +194,7 @@ A
 AA
 ABOVE
 AND
+ARIA
 Accessible
 Alpine
 An
@@ -248,6 +255,7 @@ Whether
 WireKit::resolveClasses('announcement-banner',
 WireKit::validateProp('announcement-banner',
 Without
+[$callerLabelledBy,
 ['a
 ['promo',
 ['soft',
@@ -260,10 +268,12 @@ Without
 [--color-wk-ring:var(--color-wk-success-fg)]
 [--color-wk-ring:var(--color-wk-warning-fg)]
 \Pushery\WireKit\Support\AlpinePayload::string('wk-banner:'.$dismissKey)
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('announcement-banner',
 ])
 ])),
-__('wirekit::Announcement')
+__('wirekit::Announcement'))
 __('wirekit::Dismiss')
 `--theme-hue`
 `--wk-banner-hue-c`,
@@ -274,6 +284,8 @@ __('wirekit::Dismiss')
 `250`
 `300`
 `app-shell
+`aria-label`
+`aria-labelledby`
 `badge`
 `dismissible="false"`
 `dismissible`
@@ -471,6 +483,7 @@ edge
 edge.
 either
 either,
+element
 else
 else,
 elseif
@@ -502,7 +515,7 @@ fill's
 fill,
 fill="none"
 filled
-filled($label)
+filled($label))
 fills
 filter_var($persist,
 filter_var($sticky,
@@ -629,6 +642,7 @@ mean
 meaning.
 means
 measure
+meets,
 mid-sentence.
 modal
 modality
@@ -710,6 +724,7 @@ preset,
 preview
 previously-dismissed
 prod).
+prohibits
 promo
 prop's
 property
@@ -740,6 +755,7 @@ resolved
 returning
 ring
 role
+role,
 role="alert":
 role="region"
 rounded-[var(--radius-wk-sm)]
@@ -921,6 +937,7 @@ without
 word
 worse
 would
+wrapper,
 writing
 written
 x-cloak

@@ -76,6 +76,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('checkbox', $attributes->getAttributes());
 
+    // A checkbox takes a number from its model for its value rather than its state, so a box
+    // bound to one shows unchecked whatever it holds: a binding to one warns in debug mode
+    // (Support\CheckboxModel).
+    \Pushery\WireKit\Support\CheckboxModel::warn('checkbox', $attributes);
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
@@ -154,7 +159,9 @@
     // the clean id — so <label for> always targets the right checkbox even when a
     // group or two forms share a name. Shared with every other control via
     // Support\DomId; the form key `name` stays duplicated as required.
-    $rawName = $attributes->get('name');
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $rawName = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name');
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $rawName, 'checkbox-');
     $name = $rawName ?? $id;
 
@@ -166,8 +173,8 @@
     // group answers for is the group's message, not this checkbox's; rendered here as well, it
     // would repeat under every control of the group.
     $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($name) ?? false);
-    $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($name));
-    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($name));
+    $hasError = $error || (! $groupOwnsBagEntry && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name));
 
     // Whether this control answers for the group's message.
     //

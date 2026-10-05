@@ -23,6 +23,8 @@
  *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change`
  *     with every cell changed, and `blur` when the reader leaves the matrix. It holds the
  *     document-scoped focus listeners this component otherwise has none of.
+ *   - _stopFormReset — the listener that puts the starting cells back when the form is reset
+ *     (utils/form-reset.js).
  *
  * @param {Object} config
  * @param {Object} config.cells - initial value map { "rowKey:colKey": value }
@@ -36,19 +38,37 @@
  * @param {string} [config.locale] - the application's locale, for Intl.PluralRules.
  */
 import { pluralize } from '../utils/plural.js';
+import { onFormReset } from '../utils/form-reset.js';
 import { watchModelEvents } from '../utils/model-events.js';
 
 export default function wirekitStatusMatrix(config = {}) {
     return {
         _modelEvents: null,
+        _stopFormReset: null,
 
         init() {
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.model);
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.model, () => this._restore());
         },
 
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /**
+         * Back to the cells the page started with after a form reset, which leaves nothing
+         * unsaved. The hidden field takes them as well; silent, as a reset changes a native
+         * field without an event.
+         */
+        _restore() {
+            this.cells = { ...this._baseline };
+
+            if (this.$refs?.model) {
+                this.$refs.model.value = this.cellsJson();
+            }
         },
 
         /**

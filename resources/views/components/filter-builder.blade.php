@@ -57,7 +57,12 @@
     // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
     // would mean destroy-and-rebuild, and the Alpine-only state — the open popover and
     // what it holds — would go with it on the next round trip.
-    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('filter-builder', $name ?? $attributes->get('name')));
+    // A second builder with the same name on the page gets `-2`, so its popover's
+    // `aria-labelledby` names its own title and not the first one's (DomId::distinct keeps
+    // the first verbatim).
+    $id = $attributes->has('id')
+        ? $attributes->get('id')
+        : \Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('filter-builder', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
     // Plain lists for the directive payload, whatever the caller passed and whatever keys it had.
@@ -160,10 +165,24 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `aria-labelledby` names the widget where a reader meets it, not the wrapper,
+    // where it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // A caller's `aria-label` goes to the same element: on the wrapper, which has no role, ARIA
+    // prohibits a name, and a reader never hears it.
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
+    $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
 @endphp
 
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
+    {{-- Named by the caller, the builder is a group of its search, its filters and its controls. --}}
+    @if(($callerLabelledBy || $callerLabel) && ! $attributes->has('role')) role="group" @endif
     id="{{ $id }}"
     x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueArr) }}, announcements: {{ $filterAnnouncements }}, words: {{ $filterWords }} })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
@@ -193,6 +212,7 @@
         {{ $attributes->whereStartsWith('wire:model') }}
         value="{{ \Pushery\WireKit\Support\AlpinePayload::json(array_values((array) $valueArr)) }}"
         :value="filtersJson()"
+        @if($formOwner) form="{{ $formOwner }}" @endif
     />
 
     <div class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">
@@ -277,7 +297,7 @@
                 x-on:keydown.escape="escapePanel($event)"
                 role="dialog"
                 aria-labelledby="{{ $popoverTitleId }}"
-                class="fixed z-[var(--z-wk-dropdown)] w-[18rem] max-w-[calc(100vw-2rem)] p-[var(--padding-wk-x-md)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] space-y-[var(--space-wk-sm)]"
+                class="fixed z-[var(--z-wk-dropdown)] w-[18rem] max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain p-[var(--padding-wk-x-md)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] space-y-[var(--space-wk-sm)]"
             >
                 <p data-wk-prose-skip id="{{ $popoverTitleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]"
                    x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from($addLabel) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit filter')) }}"></p>

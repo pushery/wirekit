@@ -90,12 +90,17 @@
     // spellings on a tag, so both are dropped here.
     $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 
+    // A range field gives its value as text, and Livewire takes the server's echo of an `int` or
+    // `float` property for a change and writes it over a newer value: a binding to one gets
+    // `.number` and sends a number (Support\NumericModel).
+    $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
+
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     /*
      * The Laravel validation bag, which this control never consulted. Every other form
-     * control resolves `error` from `$error ?? $errors->first($name)`, so after a failed
+     * control resolves `error` from `$error ?? FieldError::first($errors, $name)`, so after a failed
      * `$this->validate()` each of them showed its message and this one showed nothing — in
      * the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
@@ -105,7 +110,7 @@
      * render `aria-invalid="true"` because some other field failed validation, and announce
      * an error message about that field. The sibling controls write it the same way.
      */
-    $error ??= $name ? ($errors ?? null)?->first($name) : null;
+    $error ??= $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null;
     // Whether a message line renders below the control: the error, or the hint when there is none.
     $hasMessage = (bool) $error || (bool) $hint;
 
@@ -168,6 +173,13 @@
     // which is where its hidden copy is rendered (partials/field-help).
     $helpId = filled($help) && filled($label) ? $sliderId.'-help' : null;
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
+    // Numbers, whatever the attribute or the data carried: a text would throw in the
+    // arithmetic below. A bound or a step that holds no number takes its configured default,
+    // and a value with none starts at the minimum.
+    $min = \Pushery\WireKit\Support\NumericProp::from($min, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.min', 0), 0));
+    $max = \Pushery\WireKit\Support\NumericProp::from($max, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.max', 100), 100));
+    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.slider.step', 1), 1));
+    $value = \Pushery\WireKit\Support\NumericProp::orNull($value);
     $currentValue = $value ?? $min;
 
     // Normalize marks to [['value'=>, 'label'=>, 'pct'=>], ...]. A LIST (`[0, 25, 50]`)
@@ -435,6 +447,12 @@
         : null;
 
     if ($fieldLabelId !== null) {
+        $needsSrOnlyFallback = false;
+    }
+    // A caller's `id` is there so a label of theirs can reach the field, and the fallback name would
+    // stand over that label or add its own words to it, so it steps aside, as it does on
+    // tags-input and multi-select.
+    if (filled($id)) {
         $needsSrOnlyFallback = false;
     }
 

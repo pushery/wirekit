@@ -42,6 +42,7 @@ $attributes->get('target',
 $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge()
+$attributes]
 $badge
 $badge,
 $badgeLabel
@@ -53,11 +54,14 @@ $bag
 $brand
 $buttonCursor
 $buttonReset
+$callerLabel
+$callerLabel,
 $classes
 $classes,
 $computedRel
 $computedRel)
 $content
+$content))
 $current,
 $dataCurrent
 $defaultExpanded
@@ -65,6 +69,7 @@ $defaultExpanded);
 $delayHide
 $delayShow
 $describes
+$describes;
 $description
 $descriptionClasses
 $disabled
@@ -112,6 +117,8 @@ $needsTooltip
 $offset
 $opensNewTab
 $opensNewTab)
+$ownName
+$ownName);
 $persist
 $persist,
 $persistDriver
@@ -137,16 +144,28 @@ $separatorClasses
 $separatorClasses])
 $slot
 $slot)
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $surface
 $surface,
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $toggleClasses
 $tone
 $tone,
 $tooltipClasses
 $tooltipId
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $truncate
 $truncate,
 $variant
@@ -396,16 +415,19 @@ $variant,
 ("Fast
 ("chart-bar")
 ($attributes->has('aria-label')
+($callerLabelledBy
 ($dataCurrent
 ($expandable
 ($expanded
 ($labels)
 ($linkAttributes,
 ($relAttr
+($triggerIsButton)
 ()
 (2rem)
 (Js::from
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (The
 (WCAG
@@ -444,6 +466,7 @@ $variant,
 100),
 11.25
 12l7.5
+1;
 2.1.1).
 2.5px
 200px
@@ -522,7 +545,6 @@ $variant,
 @if($active)
 @if($badgeSentence
 @if($computedRel)
-@if($describes)
 @if($disabled)
 @if($expandable)
 @if($focusableTrigger)
@@ -538,6 +560,9 @@ $variant,
 @if($seedNonce)nonce="{{
 @if($surface
 @if($tone
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if($truncate)
 @if(filled($badge))
 @if(filled($description))
@@ -571,6 +596,7 @@ AlpinePayload,
 An
 And
 And,
+Around
 As
 Attributes
 Auto-inject
@@ -627,6 +653,8 @@ Done
 Drawn
 EITHER
 ENTIRELY
+ENT_HTML5));
+ENT_QUOTES
 EVERY
 Each
 Echoed
@@ -824,6 +852,7 @@ Without
 Wraps
 Written
 [
+[$callerLabelledBy,
 ['a',
 ['aria-label'
 ['class'
@@ -838,6 +867,7 @@ Written
 []
 []),
 [{{
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Support\AlpinePayload::from($persist)
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand
@@ -847,10 +877,13 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($restingWidth)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
 \Pushery\WireKit\Support\SlotContent::text($slot);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::cspNonce();
@@ -1079,6 +1112,7 @@ action's
 action;
 activate
 activates
+activating
 active
 actually
 add,
@@ -1141,6 +1175,7 @@ announcements;
 announces
 announcing
 another
+another.
 answer
 answer.
 answered
@@ -1179,6 +1214,7 @@ aria-current
 aria-current="{{
 aria-describedby
 aria-describedby="{{
+aria-disabled="true"
 aria-expanded="{{
 aria-hidden:
 aria-hidden="true"
@@ -1333,6 +1369,7 @@ but
 button
 button,
 button.
+button:
 buys
 by
 by,
@@ -1643,6 +1680,7 @@ documented
 documents
 documents,
 does
+does.
 does:
 dominate.
 dot
@@ -1768,6 +1806,7 @@ expands
 expected,
 expensive
 explaining
+explains,
 explicit
 explicitly
 explicitly:
@@ -1790,6 +1829,7 @@ falls
 false
 false);
 false,
+false;
 false])
 fault
 feature
@@ -2076,6 +2116,7 @@ is,
 is.
 is:
 isolate`
+isset($content)
 isset($footer),
 it
 it,
@@ -2308,6 +2349,7 @@ negative
 neighbors.
 neither
 neither.
+nest
 never
 new
 next
@@ -2322,6 +2364,7 @@ non-expandable
 nonce
 nonced
 none
+none,
 none:
 none`
 noopener
@@ -2361,6 +2404,7 @@ off-canvas
 off-center,
 off.
 offset:
+often
 omission.
 on
 on,
@@ -2522,6 +2566,9 @@ positioning
 practice,
 preference
 preflight
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preprocessor
 present
 presentation:
@@ -2685,6 +2732,8 @@ right-hand
 right.
 role
 role.
+role:
+role="button"
 role="group"
 role="tooltip"
 roles
@@ -3051,6 +3100,7 @@ together,
 toggle
 toggle,
 toggle.
+toggletip
 token
 token"
 token,
@@ -3090,7 +3140,10 @@ trigger
 trigger's
 trigger,
 trim($relAttr.'
+trim((string)
+trim(html_entity_decode(strip_tags((string)
 trim(implode('
+trim(strip_tags((string)
 true
 true);
 true,
@@ -3117,6 +3170,7 @@ unaffected
 unaffected,
 unaffected.
 unambiguous
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -3268,6 +3322,7 @@ word)
 wordmark
 words
 words-are-settled
+words;
 work
 working
 working,
@@ -3299,7 +3354,9 @@ x-data="wirekitTooltip({
 x-on:click="toggle()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -3329,6 +3386,7 @@ zoom,
 {
 {{
 {{--
+|
 ||
 }
 }"

@@ -83,7 +83,9 @@ export default function wirekitMenubar() {
 
         init() {
             this._navCleanup = () => { this.activeMenu = null; };
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // Outside-click close. The dropdown panels are teleported to
             // <body> (to escape transformed ancestors), so they are no longer
@@ -254,6 +256,9 @@ export default function wirekitMenubar() {
             if (trigger && panel) {
                 this._stopAutoUpdate?.();
                 const { stop } = await position(trigger, panel, {
+                    // Capped to the room on a short viewport and scrolled inside, so a phone held
+                    // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                    fitViewport: true,
                     placement: 'bottom-start',
                     offset: 4,
                     autoReposition: true,

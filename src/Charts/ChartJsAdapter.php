@@ -43,7 +43,15 @@ final class ChartJsAdapter implements ChartAdapter
         $isAreaTopLevel = $type === 'area';
         $normalizedDatasets = [];
 
-        foreach ($datasets as $index => $dataset) {
+        // A dataset without a label is named for the reader where a name tells it apart, in the
+        // application's language and counted from 1. The one dataset of a pie, a doughnut or a
+        // polar-area chart is described by its slices instead, which the legend lists and the
+        // tooltip titles, so it stays unnamed: Chart.js then shows the value alone.
+        $nameUnlabeled = count($datasets) > 1 || ! in_array($this->mapType($type), ['pie', 'doughnut', 'polarArea'], true);
+        $position = 0;
+
+        foreach ($datasets as $dataset) {
+            $position++;
             $passthrough = array_diff_key($dataset, array_flip(['label', 'data']));
 
             if (isset($passthrough['type'])) {
@@ -66,11 +74,11 @@ final class ChartJsAdapter implements ChartAdapter
                 $passthrough['fill'] = true;
             }
 
+            $label = $dataset['label'] ?? ($nameUnlabeled ? __('wirekit::Series :number', ['number' => $position]) : null);
+
             $normalizedDatasets[] = array_merge(
-                [
-                    'label' => $dataset['label'] ?? "Dataset {$index}",
-                    'data' => $dataset['data'] ?? [],
-                ],
+                $label === null ? [] : ['label' => $label],
+                ['data' => $dataset['data'] ?? []],
                 $passthrough,
             );
         }

@@ -73,7 +73,9 @@ export default function wirekitDropdown(config = {}) {
 
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => { this.isOpen = false; };
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // Sibling dropdowns close when this one opens. Two panels standing
             // open at once overlap, which is what a reader sees rather than a

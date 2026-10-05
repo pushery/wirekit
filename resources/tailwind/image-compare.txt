@@ -12,11 +12,13 @@ $attrKey;
 $attrValue)
 $attrValue;
 $attributes
+$attributes->except('aria-labelledby')->merge(['style'
+$attributes->except('form');
 $attributes->getAttributes());
-$attributes->merge(['style'
 $before
 $beforeAlt;
 $beforeLabel
+$callerLabelledBy
 $clampedValue
 $decorative
 $dividerClasses
@@ -25,6 +27,7 @@ $effectiveBeforeAlt
 $event.detail)"
 $figureStyle
 $figureStyle])->class([$wrapperClasses])
+$formOwner
 $handleClasses
 $heightClass
 $heightClass,
@@ -62,6 +65,7 @@ $wrapperClasses
 'after',
 'afterAlt'
 'afterLabel'
+'aria-labelledby');
 'ariaLabel'
 'base',
 'before',
@@ -117,6 +121,7 @@ $wrapperClasses
 ($isVertical
 ($wireModelValue
 (Support\CallerListeners).
+(Support\FormOwner).
 (alphanumerics,
 (and
 (bottom
@@ -182,11 +187,14 @@ $wrapperClasses
 >{{
 ?
 @click="onTrackClick($event)"
+@else
 @endif
 @endphp
 @if($afterLabel
 @if($beforeLabel
+@if($callerLabelledBy)
 @if($decorative)
+@if($formOwner)
 @if($labels)
 @if($name
 @keydown.down.prevent="orientation
@@ -276,8 +284,10 @@ WireKit::resolveClasses('image-compare',
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::percent%
 \Pushery\WireKit\Support\AlpinePayload::string($isVertical
 \Pushery\WireKit\Support\AlpinePayload::string($wireModelSafe)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('image-compare',
 ])
 ]),
@@ -287,7 +297,9 @@ __('wirekit::Image
 `.prevent`
 `<div
 `after-label`
+`aria-labelledby`
 `before-label`
+`form`
 `h-full`
 `input`
 `labels`
@@ -323,6 +335,7 @@ arbitrary
 aria-atomic="true">
 aria-hidden="true"
 aria-label="{{
+aria-labelledby="{{
 aria-live="polite"
 aria-orientation="{{
 aria-valuemax="100"
@@ -461,6 +474,7 @@ figure
 figure.
 fill
 fill="none"
+filled($callerLabelledBy)
 fires
 first
 flags
@@ -471,6 +485,7 @@ for
 forced-empty
 foreach
 form
+form="{{
 from
 fully
 get
@@ -521,11 +536,14 @@ into
 intrinsic
 inversion
 is
+is_string($callerLabelledBy)
 isolate',
 it
+it,
 it.
 it:
 its
+joins
 keep
 keeps
 key
@@ -554,6 +572,7 @@ max(0,
 may
 mean
 means
+meets
 min(100,
 mode
 mode),
@@ -563,6 +582,7 @@ n/a
 name
 name,
 name="{{
+names
 needed.
 needs
 never
@@ -639,6 +659,7 @@ rather
 ratio
 ratio,
 reach
+reader
 reads
 reason
 registered.
@@ -711,6 +732,7 @@ style="aspect-ratio:
 styling
 submission
 submits
+submits,
 submitted
 successful
 suffix
@@ -727,6 +749,7 @@ the
 themable
 then
 there
+there:
 they
 this
 thumb.
@@ -753,6 +776,7 @@ until
 up/down
 updates.
 use
+valid
 value
 value)"></span>
 value.
@@ -779,6 +803,7 @@ wherever
 which
 while
 whitelist
+widget
 width
 width)
 window
@@ -791,6 +816,7 @@ without
 works
 would
 wrapper
+wrapper,
 writing
 written
 wrong

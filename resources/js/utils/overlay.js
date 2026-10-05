@@ -374,10 +374,11 @@ export function releasePageInert(keep = []) {
  *   aren't trapped (backdrop click stays gated by `dismissible` for the
  *   "don't approve destructive action by stray click" safety case).
  * @param {string|null} [options.dismissedEvent=null] - Window event sent when the READER
- *   dismisses the overlay: a click on the backdrop, Escape, or the built-in close button. Its
- *   detail is `{ name, via }`. Never for a close the page asked for (the close event, a
- *   `wire:model` set to false, a composed close control) nor for the forced close of a
- *   navigation, so a page that closed its own overlay never hears about it a second time.
+ *   dismisses the overlay: a click on the backdrop, Escape, the built-in close button, or a Cancel
+ *   control composed with `dismiss`. Its detail is `{ name, via }`. Never for a close the page
+ *   asked for (the close event, a `wire:model` set to false, a composed close control without
+ *   `dismiss`) nor for the forced close of a navigation, so a page that closed its own overlay
+ *   never hears about it a second time.
  * @param {boolean} [options.lockScroll=true] - Whether opening locks the page's scroll and, for an
  *   overlay rendered in the overlay root, makes the page behind it inert. False for an overlay that
  *   lives inside a page region, such as a preview, where the page around it has to keep scrolling
@@ -614,7 +615,9 @@ export function createOverlay({
 
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => this._forceClose();
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // And when the page itself is left. A plain link or form sends no
             // `livewire:navigating`, and while the scroll lock holds the body still, the page
@@ -927,6 +930,19 @@ export function createOverlay({
             if (!this.isOpen) return;
             dismissing = true;
             this.close();
+        },
+
+        /**
+         * A Cancel control the page composed with `dismiss`: the reader leaves without acting, as
+         * with `dismissOverlay()`, and the page hears about it, as with the overlay's own controls.
+         * Pressing Cancel is the answer to the discard question, so nothing is asked. Announced
+         * with `via: 'cancel'`, so a page can tell it from the close button in the header; only
+         * when it closed something, like every other announced path.
+         */
+        cancelByReader() {
+            if (!this.isOpen) return;
+            this.dismissOverlay();
+            this._announceDismissal('cancel');
         },
     };
 }

@@ -96,7 +96,8 @@ final class FieldGroup
             return false;
         }
 
-        $control = rtrim((string) preg_replace('/\[([^\]]*)\]/', '.$1', $controlName), '.');
+        // The bag key the control's errors arrive under, the same one the control itself reads.
+        $control = (string) FieldError::key($controlName);
 
         if (str_contains($this->key, '*')) {
             return Str::is($this->key, $control);

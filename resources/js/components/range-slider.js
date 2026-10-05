@@ -24,7 +24,13 @@
  *     and `blur` when the reader leaves the slider. Disposed in destroy().
  *   - _label, _onLabelClick — a click listener on the visible label, which sits outside the
  *     root, released in destroy().
+ *   - _stopFormReset — the listener that puts both starting values back when the form is
+ *     reset (utils/form-reset.js), released in destroy().
+ *   - _stopFieldsetWatch — follows the fieldsets around the slider, whose `disabled` locks it as
+ *     it locks a native control (utils/fieldset-disabled.js), released in destroy().
  */
+import { controlIsDisabled, watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
+import { onFormReset } from '../utils/form-reset.js';
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { watchModelEvents } from '../utils/model-events.js';
 
@@ -48,7 +54,35 @@ function decimalPlaces(...numbers) {
     }));
 }
 
+/**
+ * The two start values, held where the handles can stand: inside the track, in order, and one
+ * step apart, the distance `_setMin()` and `_setMax()` keep. A value from data below the minimum,
+ * above the maximum or past the other handle would otherwise place a thumb off the track and be
+ * sent with the form as it came. The view holds the values it renders the same way.
+ */
+function startValues(config) {
+    const min = config.min ?? 0;
+    const max = config.max ?? 100;
+    const step = config.step ?? 1;
+    const clamp = (value) => Math.min(max, Math.max(min, value));
+    let low = clamp(config.minValue ?? min);
+    let high = clamp(config.maxValue ?? max);
+
+    if (low > high) {
+        [low, high] = [high, low];
+    }
+
+    if (high - low < step - 1e-9) {
+        high = Math.min(max, low + step);
+        low = Math.max(min, high - step);
+    }
+
+    return [low, high];
+}
+
 export default function wirekitRangeSlider(config = {}) {
+    const start = startValues(config);
+
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
@@ -56,11 +90,17 @@ export default function wirekitRangeSlider(config = {}) {
         _measureFrame: null,
         _resizes: null,
         _modelEvents: null,
+        _stopFormReset: null,
         _label: null,
         _onLabelClick: null,
+        // A disabled fieldset around the slider, which locks it the way it locks a native
+        // control: the thumbs leave the tab order, say so and take no gesture. The `disabled`
+        // prop does the same on the server; this is the state a page sets around the slider.
+        fieldsetDisabled: false,
+        _stopFieldsetWatch: null,
 
-        minVal: config.minValue ?? config.min ?? 0,
-        maxVal: config.maxValue ?? config.max ?? 100,
+        minVal: start[0],
+        maxVal: start[1],
         _min: config.min ?? 0,
         _max: config.max ?? 100,
         _step: config.step ?? 1,
@@ -213,6 +253,20 @@ export default function wirekitRangeSlider(config = {}) {
             this._setMin(this.minVal + (direction * this._step));
         },
 
+        /** `aria-disabled` on a thumb that a fieldset locks; null removes the attribute. */
+        get fieldsetAriaDisabled() {
+            return this.fieldsetDisabled ? 'true' : null;
+        },
+
+        /**
+         * Whether the slider takes no input now. Read from the hidden field at the moment of the
+         * gesture as well, which covers a fieldset disabled a moment ago, before the watch
+         * reported it.
+         */
+        _locked() {
+            return this.fieldsetDisabled || controlIsDisabled(this.$refs?.minInput);
+        },
+
         /**
          * Step the maximum value by direction — the mirror of `stepMin`.
          */
@@ -255,6 +309,8 @@ export default function wirekitRangeSlider(config = {}) {
          * drag, which commits at pointerup. A click on the track is one as well.
          */
         _setMin(value) {
+            if (this._locked()) return;
+
             this._markGesture();
             this.minVal = this._toPlaces(Math.max(this._min, Math.min(value, this.maxVal - this._step)));
             this._dispatchInputEvent();
@@ -263,6 +319,8 @@ export default function wirekitRangeSlider(config = {}) {
 
         /** The one place `maxVal` is written by a keyboard gesture or a click on the track. */
         _setMax(value) {
+            if (this._locked()) return;
+
             this._markGesture();
             this.maxVal = this._toPlaces(Math.min(this._max, Math.max(value, this.minVal + this._step)));
             this._dispatchInputEvent();
@@ -329,6 +387,9 @@ export default function wirekitRangeSlider(config = {}) {
 
             this._trackPressed = false;
 
+            // Before the focus below: a locked slider is not focused by a click either.
+            if (this._locked()) return;
+
             const track = this.$refs.track;
             if (!track) return;
 
@@ -352,6 +413,10 @@ export default function wirekitRangeSlider(config = {}) {
          */
         startDrag(handle, event) {
             event.preventDefault();
+
+            // A locked slider takes no gesture. The press is still canceled, so it does not focus
+            // the thumb either, as a disabled control is not focused by a press.
+            if (this._locked()) return;
 
             // Canceling pointerdown also cancels the FOCUS it would have given
             // this element — moving focus to the pressed control is part of that
@@ -440,6 +505,14 @@ export default function wirekitRangeSlider(config = {}) {
             // Before the returns below too: the label is not about measuring.
             this._wireLabel();
 
+            // And the reset, which is not about measuring either.
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.minInput, () => this._restore());
+
+            // Nor is a fieldset around the slider, which can lock it at any time.
+            this._stopFieldsetWatch = watchFieldsetDisabled(this.$root, (disabled) => {
+                this.fieldsetDisabled = disabled;
+            });
+
             if (typeof ResizeObserver !== 'function') {
                 return;
             }
@@ -459,6 +532,12 @@ export default function wirekitRangeSlider(config = {}) {
                 this.remeasure();
             });
             watched.forEach((el) => this._resizes.observe(el));
+        },
+
+        /** Both ends back where the page started them after a form reset; the hidden inputs follow their bindings. */
+        _restore() {
+            this.minVal = start[0];
+            this.maxVal = start[1];
         },
 
         /**
@@ -502,6 +581,10 @@ export default function wirekitRangeSlider(config = {}) {
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+            this._stopFieldsetWatch?.();
+            this._stopFieldsetWatch = null;
             this._label?.removeEventListener('click', this._onLabelClick);
             this._label = null;
             this._onLabelClick = null;
@@ -518,7 +601,9 @@ export default function wirekitRangeSlider(config = {}) {
          * Handle drag movement — calculate value from pointer position.
          */
         _onDrag(event) {
-            if (!this._dragging) return;
+            // A fieldset locked mid-drag stops the handle where it is: a locked slider takes no
+            // input, a drag under way included.
+            if (!this._dragging || this._locked()) return;
 
             const track = this.$refs.track;
             if (!track) return;

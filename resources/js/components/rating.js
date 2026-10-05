@@ -1,3 +1,5 @@
+import { onFormReset } from '../utils/form-reset.js';
+import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
@@ -37,11 +39,14 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  *   - _modelEvents — `change` and `blur` on the hidden input for `wire:model.change` and
  *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change` with
  *     every score chosen, as a radio button fires it, and `blur` when the reader leaves the row.
+ *   - _stopFormReset — the listener that puts the starting score back when the form is reset
+ *     (utils/form-reset.js).
  *
  * @param {Object} config
  * @param {number} config.value      the initial rating
  * @param {number} config.max        the highest selectable rating
  * @param {boolean} config.clearable whether picking the current score again returns to 0
+ * @param {boolean} config.disabled  whether the rating is out of use: no pick and no step changes it
  */
 export default function wirekitRating(config = {}) {
     return {
@@ -49,11 +54,23 @@ export default function wirekitRating(config = {}) {
         // property no scope declares on the outermost scope around the component.
         _stopServerSync: null,
         _modelEvents: null,
+        _stopFormReset: null,
+
+        // `requiredMessage` and `onRequiredInvalid()`: a required rating stops an empty submit
+        // (utils/required-check.js).
+        ...requiredCheckState(),
+
+        // The score a form reset returns to: the one the page started with, or the one the server
+        // sent last, as a native field returns to the value the server rendered.
+        _resetValue: Number(config.value) || 0,
 
         rating: Number(config.value) || 0,
         hovered: 0,
         _max: Number(config.max) || 5,
         clearable: Boolean(config.clearable),
+        // Mirrors the component's `disabled` prop. The view binds no handler then; the methods
+        // refuse as well, so a call that reaches them another way changes nothing either.
+        disabled: config.disabled === true,
 
         init() {
             // Seed from the server attribute when the caller passed none.
@@ -82,6 +99,8 @@ export default function wirekitRating(config = {}) {
                 }
             }
 
+            this._resetValue = this.rating;
+
             // A value the server changed has to reach the stars. Alpine read the
             // seed once and will not read it again, and this component binds its
             // hidden input with `:value` — so Alpine writes its own stale number
@@ -93,8 +112,15 @@ export default function wirekitRating(config = {}) {
 
                 // Guarded twice: a non-number would blank the row, and a server
                 // value equal to the rating on screen (the reader's own pick coming
-                // back from the server) needs nothing done.
-                if (Number.isNaN(next) || next === this.rating) {
+                // back from the server) needs nothing done beyond becoming what a
+                // reset returns to.
+                if (Number.isNaN(next)) {
+                    return;
+                }
+
+                this._resetValue = next;
+
+                if (next === this.rating) {
                     return;
                 }
 
@@ -102,12 +128,37 @@ export default function wirekitRating(config = {}) {
             });
 
             this._modelEvents = watchModelEvents(this.$root, () => this._hiddenInput());
+            this._stopFormReset = onFormReset(this.$root, () => this._hiddenInput(), () => this._restore());
         },
 
         destroy() {
             this._stopServerSync?.();
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /** Back to the starting score after a form reset; the hidden input follows its binding. */
+        _restore() {
+            this.hovered = 0;
+            this.rating = this._resetValue;
+            this.requiredMessage = '';
+        },
+
+        /** What the required check reads: empty exactly while no score is chosen. */
+        get requiredValue() {
+            return this.rating > 0 ? String(this.rating) : '';
+        },
+
+        /** The star a reader tabs to, which is where an empty required rating sends the focus. */
+        _focusRequiredControl() {
+            const root = this.$root;
+            const star = typeof root?.querySelector === 'function'
+                ? (root.querySelector('[role="radio"][tabindex="0"]') ?? root.querySelector('[role="radio"]'))
+                : null;
+
+            star?.focus();
         },
 
         /** The hidden input `wire:model` is bound to, or null where there is none to find. */
@@ -123,6 +174,10 @@ export default function wirekitRating(config = {}) {
          * dispatch a plain form silently submits the value the page loaded with.
          */
         select(value) {
+            if (this.disabled) {
+                return;
+            }
+
             this.rating = this.clearTarget(value);
             this._notify();
         },
@@ -149,7 +204,7 @@ export default function wirekitRating(config = {}) {
 
         /** Raise by one and follow with focus, unless already at the top. */
         stepUp() {
-            if (this.rating >= this._max) {
+            if (this.disabled || this.rating >= this._max) {
                 return;
             }
 
@@ -172,7 +227,7 @@ export default function wirekitRating(config = {}) {
          * they were on, which is the only outcome that does not strand them.
          */
         stepDown() {
-            if (this.rating <= (this.clearable ? 0 : 1)) {
+            if (this.disabled || this.rating <= (this.clearable ? 0 : 1)) {
                 return;
             }
 
@@ -183,12 +238,20 @@ export default function wirekitRating(config = {}) {
 
         /** Home / End — jump to either end of the scale. */
         selectFirst() {
+            if (this.disabled) {
+                return;
+            }
+
             this.rating = 1;
             this._notify();
             this._focus(this.$el.parentElement && this.$el.parentElement.firstElementChild);
         },
 
         selectLast() {
+            if (this.disabled) {
+                return;
+            }
+
             this.rating = this._max;
             this._notify();
             this._focus(this.$el.parentElement && this.$el.parentElement.lastElementChild);

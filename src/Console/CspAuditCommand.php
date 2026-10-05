@@ -113,7 +113,8 @@ class CspAuditCommand extends Command
      * `evaluateLater()`, so under the CSP build it meets the same parser. Its `.collapse`
      * modifier is covered by the modifier part of the name pattern. The kit's other
      * directives evaluate nothing and stay off: `x-wk-indeterminate`, `x-wk-flash`, `x-wk-ime`,
-     * `x-wk-unsaved`, which reads only its modifiers, and `x-wk-ref`, whose value is a ref name.
+     * `x-wk-unsaved`, which reads its modifiers and takes its value as a scope name, read as
+     * written, and `x-wk-ref`, whose value is a ref name.
      */
     private const EXPRESSION_ATTRIBUTES = [
         'x-data', 'x-show', 'x-if', 'x-text', 'x-html', 'x-model', 'x-modelable',

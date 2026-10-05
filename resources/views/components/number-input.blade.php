@@ -87,6 +87,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('number-input', $attributes->getAttributes());
 
+    // A number field gives its value as text, and Livewire takes the server's echo of an `int` or
+    // `float` property for a change and writes it over a newer value: a binding to one gets
+    // `.number` and sends a number (Support\NumericModel).
+    $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:input', 'x-on:blur', 'x-on:change']);
@@ -98,7 +103,11 @@
 
     // Auto-generate ID from name attribute
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'number-input-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // An empty `name` renders none: the field is not meant to be submitted, as inline-edit's own
+    // control is not. HTML does not allow an empty name, and a form skips a field without one.
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element. `id` was stripped from the start; `name` was not, and a caller that
@@ -113,8 +122,8 @@
     $attributes = $attributes->except('x-ref');
 
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // Base input classes — same foundation as standard input
     $inputClasses = WireKit::resolveClasses('number-input', 'base', implode(' ', [
@@ -229,6 +238,10 @@
 
     // Build aria-describedby from hint + error
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // What leaving the field did to a typed value, read again whenever the field is focused.
+    // The region is always present and empty until something was changed, so the reference
+    // always resolves.
+    $describedBy = trim($id.'-adjusted '.$describedBy);
     // A caller's aria-describedby joins this list, because the control is what it describes
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
@@ -265,8 +278,12 @@
     // A parameterized key rather than concatenation, because the word order is
     // not the same in every language the catalog ships: German and Dutch put the
     // field first. Without a label there is nothing to scope to, and the bare
-    // wording stands.
+    // wording stands. A field named by the caller's `aria-label` instead of `label` is
+    // named all the same, and its buttons take that name.
     $stepperField = is_string($label) ? trim($label) : '';
+    if ($stepperField === '') {
+        $stepperField = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'));
+    }
     $decreaseLabel = $stepperField !== ''
         ? __('wirekit::Decrease :field', ['field' => $stepperField])
         : __('wirekit::Decrease');
@@ -303,7 +320,7 @@
 <div {{ $outerAttributes }}
     class="space-y-1.5 min-w-0"
     @if($callerRef !== '') data-wk-ref-scope @endif
-    x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }} })"
+    x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }} })"
 >
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value: a nested Alpine
@@ -322,7 +339,16 @@
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
+    {{-- The field row and, once leaving the field changed a typed value, the sentence saying so
+         (WCAG 3.3.1, 3.3.3). One element in the stack either way: the stack spaces every child
+         but the last, so a line that appeared as a child of its own, or a template standing in
+         for it, would move the spacing of every number field, changed or not. --}}
+    <div>
     <div class="flex items-center">
+        {{-- What leaving the field did, for a screen reader: present from the first render and
+             empty, because a live region that arrives with its text announces nothing. It is
+             out of flow, so the row keeps its layout. --}}
+        <span id="{{ $id }}-adjusted" class="sr-only" role="status" x-text="adjustment"></span>
         {{-- Prefix — inline before the stepper group --}}
         @if($prefix)
             <span class="shrink-0 pr-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $prefix }}</span>
@@ -357,13 +383,14 @@
         <input
             type="number"
             id="{{ $id }}"
-            name="{{ $name }}"
+            @if($name !== '') name="{{ $name }}" @endif
             @if($boundModel)
-                x-on:input="syncFromInput()"
+                x-on:input="onTyped($event)"
                 x-on:blur="clampInput()"
             @else
                 x-model.number="value"
-                x-on:blur="value = clamp(value)"
+                x-on:input="onTyped($event)"
+                x-on:blur="leaveField($event.target.value)"
             @endif
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
@@ -402,6 +429,12 @@
         @if($suffix)
             <span class="shrink-0 pl-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $suffix }}</span>
         @endif
+    </div>
+    {{-- The same sentence for the eye, there only while it says something. Hidden from
+         assistive technology, which hears it from the region in the row. --}}
+    <template x-if="adjustment">
+        <p data-wk-prose-skip data-wk-number-adjusted aria-hidden="true" class="mt-1.5 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" x-text="adjustment"></p>
+    </template>
     </div>
 
     @if($hasError && $errorMessage)

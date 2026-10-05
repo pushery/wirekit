@@ -55,6 +55,7 @@ $attributes->merge(['aria-label'
 $attributes->merge(array_filter([
 $attributes->whereDoesntStartWith(['wire:model',
 $attributes->whereStartsWith(['wire:model',
+$attributes]
 $baseClasses
 $buttonBag
 $buttonBag->class([$baseClasses,
@@ -64,6 +65,8 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerNamed
 $callerNamed)
 $callerNamed;
@@ -74,6 +77,7 @@ $cleaned
 $cleaned);
 $computedRel
 $content
+$content))
 $declarativeBusyOnly
 $declarativeBusyOnly);
 $declarativeLoading
@@ -81,6 +85,7 @@ $declarativeLoading)
 $delayHide
 $delayShow
 $describes
+$describes;
 $disableOnLoading
 $disableOnLoading;
 $disabled
@@ -169,6 +174,8 @@ $optimisticConfig
 $orientation
 $outerAttributes
 $outerAttributes;
+$ownName
+$ownName);
 $placeholderAttributes
 $placeholderAttributes['role']
 $pressed
@@ -203,6 +210,12 @@ $slot)
 $slot))
 $slot,
 $slot->hasActualContent();
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $stackBelow
 $stackBelow,
 $stateAttribute
@@ -223,6 +236,8 @@ $swapsIcons,
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $tooltipIsName
@@ -232,6 +247,10 @@ $tooltip]);
 $touchClasses
 $touchClasses,
 $touchTextFloor
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $type
 $validated
 $variantClasses
@@ -529,6 +548,7 @@ $wrapLabel
 ("Fast
 ($attributes->getAttributes()
 ($callerAriaHidden
+($callerLabelledBy
 ($declarativeLoading
 ($effect)
 ($forceLoading)
@@ -555,6 +575,7 @@ $wrapLabel
 ($surface
 ($svgHtml
 ($tooltipIsName)
+($triggerIsButton)
 ($wrapLabel
 ('xs').
 (($iconOnly
@@ -562,6 +583,7 @@ $wrapLabel
 (Alpine),
 (SVG
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind's
 (UtilityClasses::has($callerClass,
@@ -666,6 +688,7 @@ $wrapLabel
 12a8
 12h4z"></path>
 16px
+1;
 1px
 2.1.1).
 2.4.3
@@ -767,7 +790,6 @@ $wrapLabel
 @if
 @if($computedRel)
 @if($declarativeLoading)
-@if($describes)
 @if($disabled)
 @if($emitAriaBusy)
 @if($focusableTrigger)
@@ -787,6 +809,9 @@ $wrapLabel
 @if($surface
 @if($swapsIcons)
 @if($tag
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(...)
 @if(filled($tooltip))
 @if(isset($content))
@@ -814,6 +839,7 @@ Alpine
 Alpine's
 An
 And
+Around
 Auto-inject
 BELOW
 BLADE
@@ -867,6 +893,8 @@ Describing
 Dev-only
 Done
 Drop
+ENT_HTML5));
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 Echoed
@@ -1082,6 +1110,7 @@ With
 Without
 Wrap
 [
+[$callerLabelledBy,
 [$outerAttributes,
 ['accent',
 ['data-wk-icon-missing'
@@ -1099,6 +1128,7 @@ Wrap
 [];
 [overflow-wrap:anywhere]'
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Illuminate\View\ComponentAttributeBag([])
 \Illuminate\View\ComponentAttributeBag([]);
 \InvalidArgumentException('wirekit::button:
@@ -1108,11 +1138,14 @@ Wrap
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::shows($outerAttributes);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
@@ -1386,6 +1419,7 @@ action,
 action.
 actions.
 activated
+activating
 active
 active-tab
 acts
@@ -2071,6 +2105,7 @@ exists.
 exit
 exit:
 expandos.
+explains,
 explicit
 explicitly
 exposed
@@ -2188,6 +2223,7 @@ for
 for.
 for:
 forbidden
+forced
 forcing
 foreach
 form
@@ -2434,6 +2470,7 @@ is,
 is.
 isn't
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it,
@@ -2651,6 +2688,7 @@ negative
 neighbor.
 neither
 neither:
+nest
 nested
 network
 neutral
@@ -2877,7 +2915,10 @@ precisely
 preference.
 prefers
 prefix
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
 preg_replace_callback(
@@ -3040,6 +3081,8 @@ ring
 ring,
 role
 role,
+role:
+role="button"
 role="group"
 role="img"
 role="img".
@@ -3428,6 +3471,7 @@ toggle-button
 toggle-button:
 toggle.
 toggles
+toggletip
 token
 token,
 tokens
@@ -3468,6 +3512,7 @@ trigger's
 trigger,
 trim($relAttr.'
 trim((string)
+trim(html_entity_decode(strip_tags((string)
 trim(strip_tags((string)
 trio
 true
@@ -3497,6 +3542,7 @@ typed:
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -3673,6 +3719,7 @@ word
 word)
 word,
 words
+words;
 work
 work,
 working
@@ -3702,7 +3749,9 @@ x-data="wirekitOptimistic({{
 x-data="wirekitTooltip({
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

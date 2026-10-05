@@ -22,6 +22,17 @@
      @param string       $actionClasses
      @param string|int   $rows        textarea height: 'auto' (content-sized) or a row count
      @param mixed|null   $editor      developer-supplied control, or null
+     @param bool         $disabled    forwarded to the built-in control, so a disabled field submits
+                                     nothing; a control in the `editor` slot is the caller's to disable
+     @param ComponentAttributeBag|null $fieldAttributes  what the caller wrote for the field the
+                                     reader types into (`inputmode`, `maxlength` and the like),
+                                     forwarded to a built-in text, textarea or number control; a
+                                     select takes none of them
+
+     The built-in control takes `name=""` and so renders no name. It is the editing buffer, not
+     the value: the component reports a confirmed value through its events, and the control
+     left to its default would be named after its id, a field a surrounding form submits
+     under a name the page never chose.
 
      Why the control is wrapped in `flex-1 min-w-0` rather than carrying it:
      `w-full` on the control alone reads as "fills the row" and does not, so
@@ -65,7 +76,10 @@
          numeric value still works as a minimum, so a developer who wants a fixed
          height passes `rows="3"` and gets a fixed three-row box. --}}
     <x-wirekit::textarea
+        :attributes="$fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([])"
         :required="$required ?? false"
+        :disabled="$disabled ?? false"
+        name=""
         :id="$id"
         :size="$size"
         :rows="$rows"
@@ -75,6 +89,7 @@
         x-on:keydown="onKeydown($event)"
         x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"
+        :aria-labelledby="$ariaLabelledby ?? null"
         :aria-describedby="$describedBy"
         :aria-invalid="$hasError ? 'true' : null"
         class="w-full"
@@ -88,6 +103,8 @@
          in a table of inline-edit cells, several of them at once. --}}
     <x-wirekit::select
         :required="$required ?? false"
+        :disabled="$disabled ?? false"
+        name=""
         :id="$id"
         :size="$size"
         x-ref="control"
@@ -95,6 +112,7 @@
         x-on:keydown="onKeydown($event)"
         x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"
+        :aria-labelledby="$ariaLabelledby ?? null"
         :aria-describedby="$describedBy"
         :aria-invalid="$hasError ? 'true' : null"
         class="w-full"
@@ -108,7 +126,10 @@
          deliberately does not claim them — taking ArrowUp here would stop the
          control doing the one thing it exists for. --}}
     <x-wirekit::number-input
+        :attributes="$fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([])"
         :required="$required ?? false"
+        :disabled="$disabled ?? false"
+        name=""
         :id="$id"
         :size="$size"
         x-ref="control"
@@ -117,13 +138,17 @@
         x-on:keydown="onKeydown($event)"
         x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"
+        :aria-labelledby="$ariaLabelledby ?? null"
         :aria-describedby="$describedBy"
         :aria-invalid="$hasError ? 'true' : null"
         class="w-full"
     />
 @else
     <x-wirekit::input
+        :attributes="$fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([])"
         :required="$required ?? false"
+        :disabled="$disabled ?? false"
+        name=""
         :id="$id"
         :size="$size"
         x-ref="control"
@@ -132,6 +157,7 @@
         x-on:keydown="onKeydown($event)"
         x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"
+        :aria-labelledby="$ariaLabelledby ?? null"
         :aria-describedby="$describedBy"
         :aria-invalid="$hasError ? 'true' : null"
         class="w-full"

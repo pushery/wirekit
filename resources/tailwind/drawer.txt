@@ -20,6 +20,8 @@ $confirmDiscard
 $describedby
 $discardQuestion
 $discardQuestionText
+$dismiss
+$dismiss])
 $dismissible
 $enterEnd
 $enterStart
@@ -27,6 +29,7 @@ $isHorizontal
 $label
 $lockScroll
 $name
+$overlayCloseHandler
 $overlayCloseSlot
 $overlayCloseSlot);
 $overlayCloseWrapsAControl
@@ -36,7 +39,7 @@ $position,
 $positionClasses
 $scope
 $scope);
-$scope])
+$scope,
 $size
 $size,
 $sizeClass
@@ -65,12 +68,17 @@ $titleId
 'bottom'
 'bottom']);
 'bottom'],
+'cancel'`,
+'cancel'`.
+'cancelByReader()'
 'close'
 'close',
+'close()';
 'confirmDiscard'
 'cursor-pointer',
 'describedby'
 'discardQuestion'
+'dismiss'
 'dismissible'
 'drawer',
 'false'
@@ -154,6 +162,7 @@ $titleId
 'z-[var(--z-wk-drawer)]',
 (!
 ($close)
+($dismiss
 ($position)
 (Support\CallerListeners).
 (`--size-wk-drawer-inset`)
@@ -252,6 +261,7 @@ Blade
 Body
 BooleanProp::from($close,
 BooleanProp::from($confirmDiscard,
+BooleanProp::from($dismiss,
 BooleanProp::from($dismissible,
 BooleanProp::from($lockScroll,
 Both
@@ -259,6 +269,7 @@ But
 By
 CallerRef::onRoot()
 Cancel
+Cancel:
 Clamp
 Clamping
 Close
@@ -377,7 +388,9 @@ __('wirekit::Discard
 `cursor:
 `default`
 `discardQuestion`
+`dismiss="false"`
 `dismissByReader('escape')`
+`dismiss`
 `dismissible="false"`
 `drawer.header`.
 `dvh`
@@ -402,6 +415,7 @@ __('wirekit::Discard
 `tabindex="0"`
 `vh`
 `vh`/`vw`.
+`via:
 `warnUnknownProps`
 `wirekit:drawer-dismissed`).
 `wk-drawer-panel`
@@ -435,9 +449,11 @@ also
 an
 ancestor,
 and
+announced.
 announcement
 announces
 another
+answer,
 anticipate
 any
 anything
@@ -547,6 +563,7 @@ changes.
 changes?'))
 changing
 chooses
+choosing
 chrome,
 claim
 class
@@ -560,6 +577,7 @@ clipped,
 clips
 close
 close-X
+close.
 closeable
 closed
 closes
@@ -625,6 +643,8 @@ direction
 disabled.
 discardQuestion:
 dismiss
+dismissal
+dismissal,
 dismissible
 dismissible:
 docs
@@ -677,12 +697,16 @@ fact
 fade-out
 fallback
 falls
+false)
+false);
+false,
 far
 feature
 fields
 file
 fill="none"
 find.
+finished
 first
 fit
 fix
@@ -877,6 +901,7 @@ non-scrolling
 none
 not
 nothing
+nothing.
 now-clamped,
 null
 null);
@@ -1175,11 +1200,13 @@ true);
 true,
 trusts
 truthy
+truthy,
 turning
 turns
 twice
 two
 type="button"
+unbound
 unconditional
 unconditionally
 unconditionally,
@@ -1187,6 +1214,7 @@ underline.
 unknown
 unless
 unresolvable
+unsaved
 up
 use
 user
@@ -1246,9 +1274,9 @@ x-cloak
 x-cloak>
 x-data
 x-data="wirekitDrawer({
-x-on:click="close()"
 x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
+x-on:click="{{
 x-on:keydown.escape.window="onWindowEscape($event)"
 x-ref="panel"
 x-show/x-teleport

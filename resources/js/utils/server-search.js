@@ -16,6 +16,8 @@
  *     pill showed the raw id.
  *   - a search the component sent is tracked until the Livewire request carrying it comes back,
  *     the same way `data-table` tracks its sort and search, so the panel can say it is waiting.
+ *   - a search the server refused or that was lost on the network says so while its text is in
+ *     the field, and can be sent again: the same text no longer counts as asked.
  *
  * Plain fields and methods only, so the object can be spread into a component: a spread reads
  * a getter once and copies the value, which would freeze it.
@@ -27,6 +29,8 @@
  * @param {Object}  [config.searchTexts]      the translated sentences, see searchNote()
  */
 import { observeServerValue } from './server-value.js';
+import { sameValue } from './same-value.js';
+import { afterRenderFrame } from './commit-end.js';
 
 export const WK_SERVER_OPTIONS_ATTRIBUTE = 'data-wk-server-options';
 
@@ -52,6 +56,7 @@ export function serverSearchState(config = {}) {
             tooShort: String(texts.tooShort ?? ''),
             truncated: String(texts.truncated ?? ''),
             empty: String(texts.empty ?? ''),
+            failed: String(texts.failed ?? ''),
         },
         _searchTimer: null,
         // The query the server's options answer: '' on the first render, then whatever was
@@ -62,6 +67,14 @@ export function serverSearchState(config = {}) {
         _truncated: false,
         // value -> option, for every option the component has been given.
         _known: {},
+        // The query the options on screen answer, and the one whose search failed, until a new
+        // search goes out. The text typed last, as it would be sent.
+        _answeredQuery: '',
+        _failedQuery: null,
+        _typedQuery: '',
+        // payload of a Livewire message -> the query it carries, for the searches this sent.
+        _searchPayloads: null,
+        _unhookSearchFailure: null,
         // Round trips carrying a search this component sent.
         _searchesOut: 0,
         _expectingSearch: false,
@@ -106,7 +119,8 @@ export function serverSearchState(config = {}) {
             this._stopFollowingOptions = observeServerValue(root, read, WK_SERVER_OPTIONS_ATTRIBUTE);
 
             if (typeof window !== 'undefined' && window.Livewire?.hook) {
-                this._unhookSearchCommit = window.Livewire.hook('commit', ({ component, succeed, fail }) => {
+                this._searchPayloads = new WeakMap();
+                this._unhookSearchCommit = window.Livewire.hook('commit', ({ component, commit, succeed, fail, respond }) => {
                     // The commit that carries a search this component just sent: the first one
                     // of the Livewire component it sits in. Any other commit is not ours to wait on.
                     if (! this._expectingSearch || component?.el?.contains?.(root) !== true) {
@@ -118,15 +132,81 @@ export function serverSearchState(config = {}) {
                     this._expectingSearchTimer = null;
                     this._searchesOut++;
 
-                    const back = () => queueMicrotask(() => {
-                        this._searchesOut = Math.max(0, this._searchesOut - 1);
+                    const carried = this._sentQuery;
+
+                    if (commit && typeof commit === 'object') {
+                        this._searchPayloads.set(commit, carried);
+                    }
+
+                    succeed(() => {
+                        this._answeredQuery = carried;
+
+                        if (this._failedQuery === carried) {
+                            this._failedQuery = null;
+                        }
                     });
+
+                    // Once per commit, whichever signal comes first.
+                    let ended = false;
+                    const back = () => {
+                        if (ended) {
+                            return;
+                        }
+
+                        ended = true;
+                        queueMicrotask(() => {
+                            this._searchesOut = Math.max(0, this._searchesOut - 1);
+                        });
+                    };
 
                     // An error or a canceled request ends the wait just as a response does.
                     succeed(back);
                     fail(back);
+
+                    // So does a request that never came back: Livewire hands a network failure
+                    // to neither of the two above, only to `respond`, which ends every commit. A
+                    // response still ends the wait at its render, through `succeed`, as before.
+                    respond?.(() => afterRenderFrame(back));
                 });
             }
+
+            // Which search failed: the legacy hook runs `fail` for a cancel as well, and nothing
+            // for a request lost on the network, while a message interceptor (Livewire 4.0 on)
+            // tells an error and a network failure apart from a cancel. A message superseded by
+            // a newer one only finishes, and is no failure either.
+            if (typeof window !== 'undefined' && typeof window.Livewire?.interceptMessage === 'function') {
+                this._unhookSearchFailure = window.Livewire.interceptMessage(({ message, onError, onFailure }) => {
+                    const failed = () => {
+                        const payload = message?.payload;
+
+                        if (payload && this._searchPayloads?.has(payload)) {
+                            this._searchFailed(this._searchPayloads.get(payload));
+                        }
+                    };
+
+                    onError?.(failed);
+                    onFailure?.(failed);
+                });
+            }
+        },
+
+        /**
+         * A search the server refused, or one lost on the network: say so while its text is in
+         * the field, and let the same text be sent again, since nothing answered it.
+         *
+         * @param {string} query  the query the failed search carried
+         */
+        _searchFailed(query) {
+            this._failedQuery = query;
+
+            if (this._sentQuery === query) {
+                this._sentQuery = this._answeredQuery;
+            }
+        },
+
+        /** Whether the search for this query failed and nothing has been sent since. */
+        _searchFailedFor(query) {
+            return this._failedQuery !== null && this._failedQuery === query;
         },
 
         _stopServerSearch() {
@@ -138,6 +218,8 @@ export function serverSearchState(config = {}) {
             this._stopFollowingOptions = null;
             this._unhookSearchCommit?.();
             this._unhookSearchCommit = null;
+            this._unhookSearchFailure?.();
+            this._unhookSearchFailure = null;
         },
 
         /** Remember the options by value, so a chosen one keeps its label after the list moves on. */
@@ -149,9 +231,12 @@ export function serverSearchState(config = {}) {
             }
         },
 
-        /** The option a value was given with, from the current list or an earlier one. */
+        /**
+         * The option a value was given with, from the current list or an earlier one. A number
+         * finds the option whose text it is, as a value bound to an `int` property arrives.
+         */
         _knownOption(value, current = []) {
-            return current.find((o) => o.value === value) ?? this._known[String(value)] ?? null;
+            return current.find((o) => sameValue(o.value, value)) ?? this._known[String(value)] ?? null;
         },
 
         /**
@@ -164,6 +249,7 @@ export function serverSearchState(config = {}) {
                 return;
             }
 
+            this._typedQuery = effectiveQuery(text, this._searchMin);
             clearTimeout(this._searchTimer);
             const send = () => {
                 this._searchTimer = null;
@@ -185,6 +271,7 @@ export function serverSearchState(config = {}) {
             }
 
             this._sentQuery = query;
+            this._failedQuery = null;
 
             // From the text field, not through `$dispatch`: that starts the event at the element
             // whose handler called in, and a pick is a click on a row of the panel, which is
@@ -225,6 +312,10 @@ export function serverSearchState(config = {}) {
                 return this._searchTexts.searching;
             }
 
+            if (this._searchFailedFor(this._typedQuery)) {
+                return this._searchTexts.failed;
+            }
+
             return this._truncated ? this._searchTexts.truncated : '';
         },
 
@@ -240,6 +331,10 @@ export function serverSearchState(config = {}) {
 
             if (this.searchBusy()) {
                 return this._searchTexts.searching;
+            }
+
+            if (this._searchFailedFor(effectiveQuery(text, this._searchMin))) {
+                return this._searchTexts.failed;
             }
 
             if (count === 0) {
@@ -262,6 +357,10 @@ export function serverSearchState(config = {}) {
 
             if (this.searchBusy()) {
                 return this._searchTexts.searching;
+            }
+
+            if (this._searchFailedFor(effectiveQuery(text, this._searchMin))) {
+                return this._searchTexts.failed;
             }
 
             const trimmed = String(text ?? '').trim();

@@ -14,6 +14,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('skeleton.text', $attributes->getAttributes());
 
+    // A count of lines, whatever the attribute or the data carried: a text would throw in the
+    // loop below, which draws the lines.
+    $lines = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($lines, 3));
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 

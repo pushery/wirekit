@@ -62,7 +62,15 @@ export default function wirekitPageProgress(config = {}) {
         _ceiling: Number(config.ceiling ?? 92),
 
         init() {
-            this._onNavigate = () => this.begin();
+            // A listener may cancel the visit, as `x-wk-unsaved.confirm` does when the reader
+            // stays, and then `livewire:navigated` never comes. Livewire reads `defaultPrevented`
+            // once every listener has run; so does this, a microtask later and before the next
+            // page is fetched, whichever listener was registered first.
+            this._onNavigate = (event) => queueMicrotask(() => {
+                if (! event?.defaultPrevented) {
+                    this.begin();
+                }
+            });
             this._onNavigated = () => this.end();
 
             document.addEventListener('livewire:navigate', this._onNavigate);
