@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Components;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
+use Pushery\WireKit\Support\PropText;
 
 /**
  * The class behind `sidebar.group`, registered under the same tag as the anonymous file.
@@ -25,7 +26,8 @@ use Illuminate\View\Component;
  * component's constructor does not take reaches its view through the attribute bag, and Blade
  * escapes a bound string on its way in there; `@props` reads it back escaped, and the view's
  * `{{ }}` escapes it a second time, so a label `A & B` would print as `A &amp;amp; B`. A
- * parameter receives the value as written.
+ * parameter receives the value as written, except one echoed into the tag, which Blade escaped
+ * before the call; the label is read through PropText where it is handed on.
  */
 final class SidebarGroup extends Component
 {
@@ -59,7 +61,7 @@ final class SidebarGroup extends Component
         return view($view, [
             'collapsible' => $this->collapsible,
             'forceOpen' => $this->forceOpen,
-            'label' => $this->label,
+            'label' => PropText::text($this->label),
             'open' => $this->open,
             'persist' => $this->persist,
             'scope' => $this->scope,

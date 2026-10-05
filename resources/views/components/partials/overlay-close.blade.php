@@ -27,6 +27,11 @@
      */
     $overlayCloseSlot = trim((string) $slot);
     $overlayCloseWrapsAControl = (bool) preg_match('/<(?:button|a)\b/i', $overlayCloseSlot);
+
+    // `dismiss` makes this a Cancel: the overlay closes as a dismissal, asks nothing about unsaved
+    // changes, because choosing Cancel is the answer, and announces it with `via: 'cancel'`. Without
+    // it the overlay closes the way a finished action closes it, and nothing is announced.
+    $overlayCloseHandler = ($dismiss ?? false) ? 'cancelByReader()' : 'close()';
 @endphp
 
 @if($overlayCloseWrapsAControl)
@@ -34,7 +39,7 @@
          around it would be invalid nesting — so this stays a plain wrapper whose click
          merely bubbles. --}}
     <div
-        x-on:click="close()"
+        x-on:click="{{ $overlayCloseHandler }}"
         {{ $attributes->class([$classes]) }}
     >
         {{ $slot }}
@@ -45,7 +50,7 @@
          the right role — none of which a `<div>` with a click listener has. --}}
     <button
         type="button"
-        x-on:click="close()"
+        x-on:click="{{ $overlayCloseHandler }}"
         {{-- `cursor-pointer` unconditionally, and only on THIS branch.
              Tailwind v4's preflight no longer sets `cursor: pointer` on a button (v3 did),
              and the resolved class list here is empty unless the developer scopes one — so a dismiss

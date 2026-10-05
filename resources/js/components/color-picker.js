@@ -8,6 +8,7 @@
  */
 import { hsvToRgb, rgbToHsv, rgbToHex, parseColor, formatColor } from '../utils/color.js';
 import { position } from '../utils/floating.js';
+import { onFormReset } from '../utils/form-reset.js';
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { watchModelEvents } from '../utils/model-events.js';
@@ -41,15 +42,20 @@ export default function wirekitColorPicker(config = {}) {
         // which listen on that field alone (utils/model-events.js): `change` with every pick, as
         // before, and `blur` when the reader leaves the picker and its panel. Released in destroy().
         _modelEvents: null,
+        // Puts the starting color back when the form is reset (utils/form-reset.js). Released in
+        // destroy().
+        _stopFormReset: null,
         // Focus trap over the teleported panel — created when the panel opens,
         // released in EVERY close path (close / _closeFromTrap / destroy). The
         // panel carries role="dialog", so a trap plus a focus return to the
         // trigger is the contract, not a nicety.
         _trap: null,
-        // Inline copy feedback: copy() flips this true for ~1.5s so the button
-        // can swap its icon to a checkmark and announce "Copied" — self-contained,
-        // unlike the wirekit-toast dispatch which needs an external toast listener.
+        // Inline copy feedback: copy() flips one of these true for ~1.5s, so the
+        // button swaps its icon to a checkmark and announces "Copied", or to a
+        // warning and announces "Copy failed" — self-contained, unlike the
+        // wirekit-toast dispatch which needs an external toast listener.
         copied: false,
+        copyFailed: false,
         _copyTimer: null,
         h: 0,
         s: 100,
@@ -76,7 +82,7 @@ export default function wirekitColorPicker(config = {}) {
         // The English fallback keeps a directly-constructed factory working.
         _noColorLabel: config.noColorLabel || 'No color',
         _copiedLabel: config.copiedLabel || 'Copied :value',
-        _hexErrorLabel: config.hexErrorLabel || 'Not a valid color value',
+        _hexErrorLabel: config.hexErrorLabel || 'Not a valid color value. Example: :example',
 
         /**
          * The text of the hex field's error region.
@@ -85,9 +91,13 @@ export default function wirekitColorPicker(config = {}) {
          * always referenced by `aria-describedby` — a description pointing at a `display:
          * none` element is ignored — so it is emptied rather than hidden, and the emptying is
          * a value rather than a `x-show`.
+         *
+         * The message gives an example the field reads: the last color it read, written in the
+         * format the toggle shows, so the reader sees what a right value looks like (WCAG 3.3.3).
+         * An unreadable value never reaches the color, so that is the value before the mistake.
          */
         get hexError() {
-            return this.invalidInput ? this._hexErrorLabel : '';
+            return this.invalidInput ? this._hexErrorLabel.replace(':example', this.formattedValue) : '';
         },
         _drag: null,
         _moveHandler: null,
@@ -96,17 +106,7 @@ export default function wirekitColorPicker(config = {}) {
         hasEyeDropper: typeof window !== 'undefined' && 'EyeDropper' in window,
 
         init() {
-            const parsed = parseColor(config.value || '#000000');
-            if (parsed) {
-                const hsv = rgbToHsv(parsed);
-                this.h = hsv.h;
-                this.s = hsv.s;
-                this.v = hsv.v;
-                this.a = parsed.a ?? 1;
-            }
-            // withClear + an empty initial value starts in the cleared ("no
-            // color") state instead of defaulting the HSV plane to red.
-            this.cleared = this.withClear && !config.value;
+            this._applyStart();
             this._loadRecents();
             // Decide native-vs-popover ONCE at mount. `(pointer: coarse)` is the
             // touch-primary discriminator (true on phones/tablets, false on
@@ -139,11 +139,59 @@ export default function wirekitColorPicker(config = {}) {
             });
 
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.input);
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.input, () => this._restore());
+        },
+
+        /** The state of the color the page started with: its HSV and alpha, and whether it is none. */
+        _applyStart() {
+            this.h = 0;
+            this.s = 100;
+            this.v = 100;
+            this.a = 1;
+
+            const parsed = parseColor(config.value || '#000000');
+            if (parsed) {
+                const hsv = rgbToHsv(parsed);
+                this.h = hsv.h;
+                this.s = hsv.s;
+                this.v = hsv.v;
+                this.a = parsed.a ?? 1;
+            }
+            // withClear + an empty initial value starts in the cleared ("no
+            // color") state instead of defaulting the HSV plane to red.
+            this.cleared = this.withClear && !config.value;
+        },
+
+        /**
+         * Back to the starting color after a form reset.
+         *
+         * The hidden field takes the developer's exact value again, not the HSV-rounded one, for
+         * the reason init() does not sync. The native sheet of a touch device is a native field,
+         * which the reset put back to its own default; it shows the color again. Silent, as the
+         * reset changes a native field without an event.
+         */
+        _restore() {
+            this._applyStart();
+            this.invalidInput = false;
+
+            if (this.$refs?.input) {
+                this.$refs.input.value = config.value == null ? '' : String(config.value);
+            }
+
+            const native = this.useNative && typeof this.$root?.querySelector === 'function'
+                ? this.$root.querySelector('input[type="color"]')
+                : null;
+
+            if (native) {
+                native.value = this.hex;
+            }
         },
 
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
             this._endDrag();
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
@@ -295,6 +343,9 @@ export default function wirekitColorPicker(config = {}) {
             if (this.$refs.trigger && this.$refs.panel) {
                 this._stopAutoUpdate?.();
                 const { stop } = await position(this.$refs.trigger, this.$refs.panel, {
+                    // Capped to the room on a short viewport and scrolled inside, so a phone held
+                    // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                    fitViewport: true,
                     placement: 'bottom-start',
                     offset: 8,
                     crossAxisShift: true,
@@ -342,6 +393,11 @@ export default function wirekitColorPicker(config = {}) {
             const { r, g, b } = hsvToRgb({ h: this.h, s: 100, v: 100 });
 
             return `rgb(${r}, ${g}, ${b})`;
+        },
+
+        /** Neither a copy nor a failed one is being shown: the button shows its own glyph. */
+        get copyIdle() {
+            return ! this.copied && ! this.copyFailed;
         },
 
         get formattedValue() {
@@ -524,21 +580,43 @@ export default function wirekitColorPicker(config = {}) {
         },
 
         async copy() {
+            // navigator.clipboard is absent outside a secure context, and writeText
+            // rejects when the permission is denied. Either way the button says so,
+            // as the clipboard button and the code block do, rather than doing
+            // nothing a reader can see or hear.
+            if (typeof navigator === 'undefined' || ! navigator.clipboard || ! navigator.clipboard.writeText) {
+                this._showCopyResult(false);
+
+                return;
+            }
+
             try {
                 await navigator.clipboard.writeText(this.formattedValue);
-                // Inline confirmation (button icon → checkmark + sr-only announce),
-                // self-contained so it works without any external listener. The
-                // wirekit-toast dispatch stays as a bonus for apps that show toasts.
-                this.copied = true;
-                clearTimeout(this._copyTimer);
-                this._copyTimer = setTimeout(() => { this.copied = false; }, 1500);
-                // Not `'Copied ' + value`: concatenation freezes the word order to English,
-                // and several locales put the value first. The template comes from the server
-                // with a `:value` placeholder the locale can move.
-                this.$dispatch('wirekit-toast', { message: this._copiedLabel.replace(':value', this.formattedValue), variant: 'success' });
             } catch {
-                // clipboard blocked — no-op
+                this._showCopyResult(false);
+
+                return;
             }
+
+            // Inline confirmation (button icon → checkmark + sr-only announce),
+            // self-contained so it works without any external listener. The
+            // wirekit-toast dispatch stays as a bonus for apps that show toasts.
+            this._showCopyResult(true);
+            // Not `'Copied ' + value`: concatenation freezes the word order to English,
+            // and several locales put the value first. The template comes from the server
+            // with a `:value` placeholder the locale can move.
+            this.$dispatch('wirekit-toast', { message: this._copiedLabel.replace(':value', this.formattedValue), variant: 'success' });
+        },
+
+        /** Show the result of a copy for 1.5s: the checkmark, or the warning when it failed. */
+        _showCopyResult(succeeded) {
+            this.copied = succeeded;
+            this.copyFailed = ! succeeded;
+            clearTimeout(this._copyTimer);
+            this._copyTimer = setTimeout(() => {
+                this.copied = false;
+                this.copyFailed = false;
+            }, 1500);
         },
 
         pickColor(value) {

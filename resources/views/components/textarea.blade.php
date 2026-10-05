@@ -115,7 +115,16 @@
 
     // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'textarea-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // Inside a field the label points at the id this control got: a second field with the same
+    // name on the page gets `-2`, and pointed at the name its label named the first control.
+    if ($wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $wkField->follow($id);
+    }
+    // An empty `name` renders none: the field is not meant to be submitted, as inline-edit's own
+    // control is not. HTML does not allow an empty name, and a form skips a field without one.
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element. `id` was stripped from the start; `name` was not, and a caller that
@@ -124,8 +133,8 @@
     $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // Success / valid state — only when there is no error (error wins).
     // Tri-state (null | true | string message): `!== false` alone let the unbound
@@ -269,7 +278,7 @@
 
     <textarea
         id="{{ $id }}"
-        name="{{ $name }}"
+        @if($name !== '') name="{{ $name }}" @endif
         rows="{{ $minRows }}"
         @if($hasError) aria-invalid="true" @endif
         @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif

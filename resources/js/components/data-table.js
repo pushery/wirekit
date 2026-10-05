@@ -59,7 +59,9 @@ import { pluralize } from '../utils/plural.js';
 import { safeHref } from '../utils/safe-href.js';
 import { sortCollator } from '../utils/sort-collator.js';
 import { foldForSearch } from '../utils/search-fold.js';
+import { onFormReset } from '../utils/form-reset.js';
 import { watchModelEvents } from '../utils/model-events.js';
+import { afterRenderFrame } from '../utils/commit-end.js';
 
 export default function wirekitDataTable(config = {}) {
     return {
@@ -115,6 +117,8 @@ export default function wirekitDataTable(config = {}) {
         _expectingServer: false,
         _expectingTimer: null,
         _modelEvents: null,
+        // Clears the selection when the form is reset (utils/form-reset.js). Released in destroy().
+        _stopFormReset: null,
 
         init() {
             this._readServerState();
@@ -124,8 +128,13 @@ export default function wirekitDataTable(config = {}) {
                 detail: () => [...this.selected],
             });
 
+            // The hidden field exists for a `name` or a `wire:model`; without one, the row
+            // checkboxes are the fields a reset puts back, so one of them answers for the form.
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.selModel
+                ?? (typeof this.$root?.querySelector === 'function' ? this.$root.querySelector('input[type="checkbox"]') : null), () => this._restore());
+
             if (typeof window !== 'undefined' && window.Livewire?.hook) {
-                this._unhookServerState = window.Livewire.hook('commit', ({ component, succeed, fail }) => {
+                this._unhookServerState = window.Livewire.hook('commit', ({ component, succeed, fail, respond }) => {
                     // The commit that carries a sort or search this table just sent: the first one
                     // of the Livewire component the table sits in. Any other commit only brings
                     // state, and must not make the table announce a wait it did not start.
@@ -138,17 +147,29 @@ export default function wirekitDataTable(config = {}) {
                         this._requestsOut++;
                     }
 
-                    succeed(() => queueMicrotask(() => {
-                        this._readServerState();
-
-                        if (carriesOurs) {
+                    // Once per commit, whichever signal comes first.
+                    let ended = false;
+                    const back = () => {
+                        if (carriesOurs && ! ended) {
+                            ended = true;
                             this._roundTripBack();
                         }
+                    };
+
+                    succeed(() => queueMicrotask(() => {
+                        this._readServerState();
+                        back();
                     }));
 
                     // An error or a canceled request ends the wait just as a response does.
                     if (carriesOurs) {
-                        fail(() => queueMicrotask(() => this._roundTripBack()));
+                        fail(() => queueMicrotask(back));
+
+                        // So does a request that never came back: Livewire hands a network
+                        // failure to neither of the two above, only to `respond`, which ends
+                        // every commit. A response still ends the wait at its render, after the
+                        // state is read, through `succeed`, as before.
+                        respond?.(() => afterRenderFrame(back));
                     }
                 });
             }
@@ -157,6 +178,8 @@ export default function wirekitDataTable(config = {}) {
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
             if (this._unhookServerState) {
                 this._unhookServerState();
                 this._unhookServerState = null;
@@ -418,6 +441,18 @@ export default function wirekitDataTable(config = {}) {
                 if (target && typeof target.focus === 'function') {
                     target.focus();
                 }
+            }
+        },
+        /**
+         * After a form reset, no row is selected, as the page started. The reset unchecked the
+         * row checkboxes and left the hidden field holding the list; both follow the empty
+         * selection. Silent, as a reset changes a native field without an event.
+         */
+        _restore() {
+            this.selected = [];
+
+            if (this.$refs?.selModel) {
+                this.$refs.selModel.value = '[]';
             }
         },
         // Sample counts -> translated templates, and the app locale. The selection count

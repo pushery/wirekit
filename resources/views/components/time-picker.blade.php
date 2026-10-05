@@ -55,6 +55,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('time-picker', $attributes->getAttributes());
 
+    // Livewire sends a date object as a full timestamp, which the native field drops, so a binding
+    // to one warns in debug mode (Support\DateModel).
+    \Pushery\WireKit\Support\DateModel::warn('time-picker', 'time', $attributes);
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
@@ -82,7 +86,9 @@
 
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'time-picker-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element. `id` was stripped from the start; `name` was not, and a caller that
@@ -100,8 +106,8 @@
     $min = $toTime($min);
     $max = $toTime($max);
 
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // Base input classes — matches standard input styling
     $inputClasses = WireKit::resolveClasses('time-picker', 'base', implode(' ', [

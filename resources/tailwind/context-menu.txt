@@ -12,10 +12,13 @@ $attributes->get('rel',
 $attributes->get('target',
 $attributes->get('type',
 $attributes->getAttributes());
+$attributes]
+$callerLabel,
 $classes
 $colorClasses
 $colorClasses,
 $computedRel
+$contextMenuHintId
 $contextMenuTrigger
 $contextMenuTriggerIsFocusable
 $danger
@@ -82,6 +85,7 @@ $wrapperClasses
 'offset'
 'opacity-[var(--opacity-wk-disabled)]
 'overflow-hidden',
+'overflow-y-auto
 'panel',
 'placement'
 'px-[var(--padding-wk-x-md)]',
@@ -102,6 +106,7 @@ $wrapperClasses
 'type'])->class([$classes,
 'w-5
 'whitespace-nowrap',
+'wk-context-menu-hint-');
 'wk-context-submenu-');
 'wrapper',
 'x-on:keydown.escape.window']);
@@ -109,6 +114,7 @@ $wrapperClasses
 ($relAttr
 (12rem)
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (WCAG
 (WireKit
@@ -175,6 +181,7 @@ $wrapperClasses
 @endphp
 @endunless
 @if($computedRel)
+@if($contextMenuHintId)
 @if($disabled)
 @if($href)
 @if($icon)
@@ -189,6 +196,7 @@ $wrapperClasses
 A
 ALSO
 AND
+ARIA
 Alert-Dialog,
 Alpine
 Alpine's
@@ -246,6 +254,7 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Renders
 Same
+Scrolls
 Set
 So
 TELEPORTS
@@ -268,10 +277,13 @@ WireKit::resolveClasses('context-menu.separator',
 Without
 Wrapped
 [
+[$callerLabelledBy,
 ['class'
 ['x-on:keydown',
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\UrlProp::text($href);
@@ -283,6 +295,7 @@ Wrapped
 ]),
 __('wirekit::(opens
 __('wirekit::Context
+__('wirekit::Shift+F10
 _getItems().
 `#wk-overlay-root`;
 `<a>`
@@ -356,12 +369,12 @@ apart
 are
 area
 aria-*
+aria-describedby="{{
 aria-disabled="true"
 aria-expanded)
 aria-haspopup="menu"
 aria-hidden="true">
 aria-label
-aria-label="{{
 aria-labelledby="{{
 as
 as,
@@ -383,7 +396,9 @@ behavior.
 behind
 belongs
 below
+below;
 beneath
+beside
 between
 binding
 binding,
@@ -413,6 +428,7 @@ can
 cancels
 cannot
 cap
+caps
 card)
 carried
 carries
@@ -436,6 +452,7 @@ click
 clicking
 client-only
 clipped
+clips
 close()"
 close().
 closeSub()"
@@ -552,8 +569,10 @@ fires
 fires.
 first
 fit
+fit;
 fix,
 fixed
+fixed,
 fixed-positioned
 flags
 flat
@@ -578,6 +597,7 @@ get
 give
 given,
 goes
+group,
 growing
 grows
 guard
@@ -597,8 +617,11 @@ hard-coded
 has
 have
 hears
+height
+helper
 here
 here.
+hidden>{{
 hidden`
 hint
 hold
@@ -694,8 +717,9 @@ max-w-[calc(100vw-1rem)]
 may
 mean
 meets
+meets,
 menu
-menu')
+menu'))
 menu's
 menu,
 menu.
@@ -721,6 +745,7 @@ must
 n/a
 name
 name,
+names
 naming
 neither:
 never
@@ -738,6 +763,7 @@ nothing
 nothing,
 nothing.
 nothing:
+null
 null);
 null,
 of
@@ -759,6 +785,7 @@ opening
 opens
 opposite
 optimistic-ui:
+options')
 or
 other
 otherwise
@@ -773,6 +800,7 @@ overflows
 overlay
 overly
 overrides
+overscroll-contain',
 own
 owns
 owns,
@@ -802,6 +830,7 @@ placement:
 platform
 pointer
 pointer-events-none'
+position
 position.
 positioned
 preg_match(
@@ -809,6 +838,7 @@ presentational
 preserves
 prod).
 production
+prohibits
 promise
 promised
 prop
@@ -857,6 +887,7 @@ right-clicked
 ring
 ring,
 role,
+role="group"
 role="menu"
 role="menuitem"
 role="separator"
@@ -876,6 +907,7 @@ runs
 safety,
 said
 same
+says
 scale-100"
 scale-95"
 scope
@@ -951,6 +983,7 @@ teleport
 teleport,
 teleported
 teleports
+tell
 tells
 text
 text.
@@ -961,6 +994,7 @@ their
 them
 then
 there
+there:
 these
 they
 thing
@@ -1016,6 +1050,7 @@ w-full',
 w-max
 w-max',
 w-max:
+waiting.
 warning:
 was
 way
@@ -1034,6 +1069,7 @@ who
 whose
 why.
 width
+window
 window,
 with
 without
@@ -1043,6 +1079,7 @@ wrap
 wrapper
 wrapper's
 wrapper)
+wrapper,
 wrapper.
 wraps
 written

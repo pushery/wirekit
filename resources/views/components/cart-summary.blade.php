@@ -20,6 +20,9 @@
     // Forwarded straight to `price`, which owns every formatting decision in this package.
     'currency' => config('wirekit.currency', 'USD'),
     'minorUnits' => false,
+    // The locale every amount is written in, handed to each `price` with the currency. Unset, an
+    // amount follows the application's locale, as a `price` of its own would.
+    'locale' => null,
     // Replaces the shipping AMOUNT with a phrase — "Calculated at checkout", "Free over €50".
     // Wins over `shipping` when both are given, because a shop that says both means the words.
     'shippingNote' => null,
@@ -89,7 +92,7 @@
         @if($subtotal !== null)
             <x-wirekit::data-list.item :label="__('wirekit::Subtotal')">
                 <span data-wk-cart-summary-subtotal>
-                    <x-wirekit::price :amount="$subtotal" :currency="$currency" :minor-units="$minorUnits" size="sm" />
+                    <x-wirekit::price :amount="$subtotal" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" size="sm" />
                 </span>
             </x-wirekit::data-list.item>
         @endif
@@ -100,7 +103,7 @@
                     {{-- The minus sign is rendered beside the formatted amount rather than folded
                          into it: `price` formats a value, and handing it a negative number would
                          make the sign a currency-formatting decision in every locale. --}}
-                    <span aria-hidden="true">&minus;</span><x-wirekit::price :amount="$discount" :currency="$currency" :minor-units="$minorUnits" size="sm" />
+                    <span aria-hidden="true">&minus;</span><x-wirekit::price :amount="$discount" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" size="sm" />
                 </span>
             </x-wirekit::data-list.item>
         @endif
@@ -113,7 +116,7 @@
                     @elseif((float) $shipping === 0.0)
                         {{ __('wirekit::Free') }}
                     @else
-                        <x-wirekit::price :amount="$shipping" :currency="$currency" :minor-units="$minorUnits" size="sm" />
+                        <x-wirekit::price :amount="$shipping" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" size="sm" />
                     @endif
                 </span>
             </x-wirekit::data-list.item>
@@ -122,7 +125,7 @@
         @if($tax !== null)
             <x-wirekit::data-list.item :label="__('wirekit::Tax')">
                 <span data-wk-cart-summary-tax>
-                    <x-wirekit::price :amount="$tax" :currency="$currency" :minor-units="$minorUnits" size="sm" />
+                    <x-wirekit::price :amount="$tax" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" size="sm" />
                 </span>
             </x-wirekit::data-list.item>
         @endif
@@ -144,7 +147,7 @@
                     <span class="{{ $totalLabelClasses }}">{{ __('wirekit::Total') }}</span>
                 </x-slot:label>
                 <span data-wk-cart-summary-total class="{{ $totalLabelClasses }}">
-                    <x-wirekit::price :amount="$total" :currency="$currency" :minor-units="$minorUnits" size="lg" />
+                    <x-wirekit::price :amount="$total" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" size="lg" />
                 </span>
             </x-wirekit::data-list.item>
         </x-wirekit::data-list>

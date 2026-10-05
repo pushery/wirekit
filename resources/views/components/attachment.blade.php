@@ -54,10 +54,11 @@
         if ($b === null || $b < 0) {
             return null;
         }
+        // The unit symbols come from the catalog: French counts in octets (`Ko`, `Mo`).
         if ($b < 1024) {
-            return $b.' B';
+            return $b.' '.__('wirekit::B');
         }
-        $units = ['KB', 'MB', 'GB', 'TB'];
+        $units = [__('wirekit::KB'), __('wirekit::MB'), __('wirekit::GB'), __('wirekit::TB')];
         $value = $b / 1024;
         $i = 0;
         // Each boundary is judged on the number as it will be shown: 1023.7 KB rounds to

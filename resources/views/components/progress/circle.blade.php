@@ -35,6 +35,11 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false);
 
+    // A max that holds no positive number means "out of 100", as on radial-progress: a text
+    // would throw in the arithmetic below, and zero or less would put aria-valuemax under
+    // aria-valuemin.
+    $max = \Pushery\WireKit\Support\NumericProp::positive($max, 100);
+
     // Determine if indeterminate (no value provided)
     $isIndeterminate = $value === null;
     $clamped = $isIndeterminate ? 0 : max(0, min((float) $value, (float) $max));

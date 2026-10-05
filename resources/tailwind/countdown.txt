@@ -50,6 +50,7 @@ $variant,
 $variantValue
 $warnSeconds
 $warnThreshold
+&&
 ',
 '-',
 '0'
@@ -67,7 +68,6 @@ $warnThreshold
 'expiredText'
 'false'
 'false',
-'flex
 'font-[family-name:var(--font-wk-sans)]',
 'hours'
 'hours',
@@ -79,6 +79,7 @@ $warnThreshold
 'minutes',
 'minutes'];
 'none'
+'none')
 'none',
 'none'.
 'none';
@@ -99,7 +100,6 @@ $warnThreshold
 'text-[color:var(--color-wk-danger-text)]'
 'text-[color:var(--color-wk-text)]')"
 'text-[color:var(--color-wk-warning-text)]'
-'text-[length:var(--text-wk-2xl)]
 'text-[length:var(--text-wk-md)]',
 'timezone'
 'units'
@@ -137,7 +137,6 @@ $warnThreshold
 (warning-tinted)
 +
 --}}
--translate-y-1"
 /
 //
 0
@@ -169,17 +168,13 @@ $warnThreshold
 ===
 =>
 >
-><span
 ?
 ?:
 ??
-@class(['wk-countdown-pulse'
-@class(['wk-countdown-text-flash'
 @else
 @endif
 @endphp
 @endunless
-@if($animateOn)
 @if($slot->hasActualContent())
 @if($variantValue
 @php
@@ -285,12 +280,13 @@ Wrapping
 [])
 [];
 \Pushery\WireKit\Support\AlpinePayload::from($activeUnits)
-\Pushery\WireKit\Support\AlpinePayload::from($animateOn)
+\Pushery\WireKit\Support\AlpinePayload::from($animateOn
 \Pushery\WireKit\Support\AlpinePayload::from($autoMode)
 \Pushery\WireKit\Support\AlpinePayload::from($countdownLocale)
 \Pushery\WireKit\Support\AlpinePayload::from($expiredLabel)
 \Pushery\WireKit\Support\AlpinePayload::from($targetMs)
 \Pushery\WireKit\Support\AlpinePayload::from($unitLabels)
+\Pushery\WireKit\Support\AlpinePayload::from($variantValue
 \Pushery\WireKit\Support\AlpinePayload::from($warnSeconds)
 \Pushery\WireKit\Support\AlpinePayload::from((bool)
 \Pushery\WireKit\Support\AlpinePayload::from((object)
@@ -352,9 +348,9 @@ all
 already
 an
 and
-animate
 animate:
-animates
+animateStyle:
+animation
 animation).
 animation.
 animation:
@@ -365,6 +361,7 @@ anywhere,
 app
 app()->getLocale());
 appear
+appears.
 are
 aria-hidden="true"
 aria-label="{{
@@ -402,6 +399,7 @@ boolean
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-border)]
 both
+bound,
 box
 box),
 box.
@@ -419,6 +417,7 @@ cached;
 call
 caller
 caller's
+calm
 can
 canonical
 capitalizing
@@ -435,15 +434,19 @@ change
 change-animation
 change;
 changed
+changes
 changing
 choose
 chooses
 class
 class,
+class="flex
 class="mt-[var(--space-wk-xs)]
 class="sr-only"
-class="tabular-nums"
+class="tabular-nums"><span
+class="text-[length:var(--text-wk-2xl)]
 class="{{
+classes
 classic
 client
 client-only
@@ -505,11 +508,9 @@ dropping
 drops
 duplicated
 duration
-duration-[var(--transition-wk-duration)]"
 duration:
 e.g.
 each
-ease-out
 either
 element.
 else
@@ -528,7 +529,6 @@ expiredText:
 expiry
 explicit
 factory
-fade
 failed
 false
 false,
@@ -536,6 +536,7 @@ false;
 falsey
 feature
 feeding
+few
 five
 fix,
 fixed
@@ -590,6 +591,7 @@ index)"></span>
 index)"></span><span
 inline
 instant
+instead
 intentionally
 intentions:
 interpolation
@@ -630,6 +632,7 @@ largest-to-smallest
 later
 leading
 leading-none
+leave
 line
 lines
 list
@@ -671,6 +674,7 @@ mode:
 moment
 more
 motion
+motion.
 must
 n/a
 name
@@ -701,7 +705,6 @@ of
 off
 off.
 on
-on),
 on.
 once
 one
@@ -739,8 +742,10 @@ phrase
 phrases
 picked
 picked.
+place
 placeholder
 plays
+plays),
 plural
 plural,
 pluralize
@@ -762,9 +767,10 @@ pulses
 puts
 px-[var(--padding-wk-x-sm)]
 px-[var(--space-wk-xs)]'
-py-[var(--padding-wk-y-sm)]'])
+py-[var(--padding-wk-y-sm)]"
 qualified:
 rather
+re-mounting
 re-mounts
 reach
 reachable
@@ -786,7 +792,6 @@ resolve
 resolves
 resync,
 right
-rise
 role="timer"
 room
 root
@@ -836,6 +841,7 @@ so
 source
 spells
 sr
+stable
 standalone
 state.
 state:
@@ -861,7 +867,7 @@ surface:
 surrounding
 surviving
 tab
-tabular-nums'])
+tabular-nums"
 tag.
 target
 target:
@@ -878,6 +884,7 @@ that.
 the
 then
 there
+they
 this
 thousands
 three
@@ -902,7 +909,6 @@ transform:
 transformation.
 transition
 translatable
-translate-y-0"
 translation,
 trap
 travel
@@ -917,6 +923,7 @@ true;
 truncates.
 truth.
 truthy
+turns
 two
 two.
 unbound-attribute
@@ -931,6 +938,7 @@ units.
 unix
 unknown
 unreadable.
+updates
 uppercase
 urgent
 use
@@ -953,7 +961,6 @@ were
 what
 whatever
 when
-whenever
 where
 wherever
 which
@@ -969,7 +976,10 @@ wk-countdown-text-flash
 words
 would
 written
+written,
 wrong
+x-bind:class="boxChangeClass"
+x-bind:class="textChangeClass"
 x-data
 x-data="wirekitCountdown({
 x-for="(seg,
@@ -982,9 +992,6 @@ x-text="segValue(seg,
 x-text="srText"></time>
 x-text="unitSuffix[seg.unit]"></span></span>
 x-text="{{
-x-transition:enter-end="opacity-100
-x-transition:enter-start="opacity-0
-x-transition:enter="transition
 year
 years
 years'),

@@ -12,6 +12,10 @@
     // A shortcut shown at the end of the field, such as "⌘K". Shown only: the palette binds its
     // own `hotkey`.
     'shortcut' => null,
+    // The palette's hotkey, written as the palette takes it (`cmd+k`, `ctrl+shift+p`, `/`), which
+    // the field states to assistive technology as `aria-keyshortcuts`. The default is the
+    // palette's own; a palette given another `hotkey` wants the same one here. Empty states none.
+    'hotkey' => config('wirekit.components.command-palette.hotkey', 'cmd+k'),
     'scope' => null,
 ])
 
@@ -28,6 +32,10 @@
     $config = \Pushery\WireKit\Support\AlpinePayload::from([
         'for' => filled($for) ? (string) $for : null,
     ]);
+    // The shortcut in the form ARIA takes, on the field rather than on the wrapper a caller's
+    // attributes reach: the `kbd` at the end is hidden from assistive technology, so this is the
+    // only place a screen reader learns the key that opens the palette.
+    $keyShortcuts = \Pushery\WireKit\Support\KeyShortcuts::aria(is_string($hotkey) ? $hotkey : null);
 @endphp
 
 {{-- A search field rather than a button styled as one, because the reader is meant to type into
@@ -44,6 +52,7 @@
         :placeholder="filled($placeholder) ? $placeholder : __('wirekit::Search…')"
         autocomplete="off"
         aria-haspopup="dialog"
+        :aria-keyshortcuts="$keyShortcuts"
         x-wk-ime
         x-ref="field"
         x-on:click="openPalette()"

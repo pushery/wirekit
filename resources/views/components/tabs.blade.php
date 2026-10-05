@@ -170,6 +170,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 {{-- Tabs root — holds shared Alpine state and ARIA wiring.
@@ -215,7 +218,7 @@
     {{-- Tablist — the row (or column, when vertical) of tab buttons.
          role="tablist" groups the tab buttons as a single keyboard navigation unit. Without
          tabs the row carries no role: a tablist that owns no tab reads out as an empty control. --}}
-    <div @if($tabs !== []) role="tablist" aria-label="{{ $label }}" aria-orientation="{{ $orientationValue }}" @endif class="{{ $tablistClasses }}">
+    <div @if($tabs !== []) role="tablist" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} aria-orientation="{{ $orientationValue }}" @endif class="{{ $tablistClasses }}">
         @foreach($tabs as $key => $tab)
             <button
                 type="button"

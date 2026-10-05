@@ -578,7 +578,7 @@
     "cta": [
         {
             "title": "Default CTA",
-            "code": "<x-wirekit::cta>\n    <x-slot:title>Ready to get started?</x-slot:title>\n    <x-slot:description>Join thousands of developers building with WireKit.</x-slot:description>\n    <x-slot:actions>\n        <x-wirekit::button>Sign Up Free</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::cta>"
+            "code": "<x-wirekit::cta>\n    <x-slot:title>Ready to get started?</x-slot:title>\n    <x-slot:description>Free, MIT-licensed, and installed with Composer.</x-slot:description>\n    <x-slot:actions>\n        <x-wirekit::button>Read the docs</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::cta>"
         },
         {
             "title": "Dark CTA section",
@@ -853,6 +853,14 @@
         {
             "title": "A form with stacked fields",
             "code": "<x-wirekit::form style=\"max-width: 24rem;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::input name=\"email\" label=\"Email\" placeholder=\"Your email address\" />\n        <x-wirekit::input name=\"password\" type=\"password\" label=\"Password\" />\n        <x-wirekit::button type=\"submit\">Sign in</x-wirekit::button>\n    </x-wirekit::stack>\n</x-wirekit::form>"
+        },
+        {
+            "title": "A rating that joins a form from outside it",
+            "code": "<x-wirekit::stack gap=\"md\" style=\"max-width: 24rem;\">\n    <x-wirekit::rating name=\"service\" label=\"How was the service?\" form=\"service-feedback\" />\n    <x-wirekit::form id=\"service-feedback\">\n        <x-wirekit::button type=\"submit\">Send feedback</x-wirekit::button>\n    </x-wirekit::form>\n</x-wirekit::stack>"
+        },
+        {
+            "title": "Change the score or the view, then undo both",
+            "code": "<x-wirekit::form style=\"max-width: 24rem;\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::rating name=\"score\" label=\"Score\" :value=\"3\" />\n        <x-wirekit::segmented-control name=\"view\" label=\"View\" :options=\"['grid' => 'Grid', 'list' => 'List']\" value=\"grid\" />\n        <x-wirekit::button type=\"reset\" intent=\"neutral\" surface=\"outline\">Undo changes</x-wirekit::button>\n    </x-wirekit::stack>\n</x-wirekit::form>"
         }
     ],
     "grid": [
@@ -900,7 +908,7 @@
     "hero": [
         {
             "title": "Default hero",
-            "code": "<x-wirekit::hero>\n    <x-slot:title>Build faster with WireKit.</x-slot:title>\n    <x-slot:lede>Free, open-source UI components for Laravel Livewire.</x-slot:lede>\n    <x-slot:actions>\n        <x-wirekit::button>Get Started</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::hero>"
+            "code": "<x-wirekit::hero>\n    <x-slot:title>Blade components for Livewire apps.</x-slot:title>\n    <x-slot:lede>Free and open source, from a button to a data table.</x-slot:lede>\n    <x-slot:actions>\n        <x-wirekit::button>Get Started</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::hero>"
         },
         {
             "title": "Hero with eyebrow badge",
@@ -908,7 +916,7 @@
         },
         {
             "title": "Dark hero section",
-            "code": "<x-wirekit::hero variant=\"dark\">\n    <x-slot:title>Ship faster, ship better.</x-slot:title>\n    <x-slot:lede>Blade components that follow your theme and work from the keyboard.</x-slot:lede>\n    <x-slot:actions>\n        <x-wirekit::button intent=\"neutral\" surface=\"filled\">Get Started</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::hero>"
+            "code": "<x-wirekit::hero variant=\"dark\">\n    <x-slot:title>Light or dark, one set of tokens.</x-slot:title>\n    <x-slot:lede>Blade components that follow your theme and work from the keyboard.</x-slot:lede>\n    <x-slot:actions>\n        <x-wirekit::button intent=\"neutral\" surface=\"filled\">Get Started</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::hero>"
         }
     ],
     "highlight": [
@@ -1394,7 +1402,7 @@
         },
         {
             "title": "Strength Meter Enabled",
-            "code": "<x-wirekit::password-input label=\"New Password\" name=\"new_password\" :strength-meter=\"true\" hint=\"Use at least 8 characters with a mix of letters, numbers, and symbols.\" />"
+            "code": "<x-wirekit::password-input label=\"New Password\" name=\"new_password\" autocomplete=\"new-password\" :strength-meter=\"true\" hint=\"Use at least 8 characters with a mix of letters, numbers, and symbols.\" />"
         }
     ],
     "phone": [

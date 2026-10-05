@@ -1,13 +1,17 @@
+!==
 "Change
 "PHP
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
+$attributes]
+$callerLabel
+$callerLabel,
 $change->id])"`),
 $codeClasses
 $copy
 $copy)
 $filename
-$label
+$label)
 $language
 $preClasses
 $scope);
@@ -39,6 +43,7 @@ $wrapperClasses
 'text-[length:var(--text-wk-sm)]',
 'wk-scrollbar
 'wrap'
+(Support\CallerName).
 (WCAG
 (`:label="__('Change
 (clips
@@ -118,17 +123,18 @@ $wrapperClasses
 @endif
 @endphp
 @endunless
+@if($callerLabelledBy
 @if($copy)
 @if($filename
 @if($filename)
 @if($language)
-@if(filled($label))
 @php
 @props([
 @props.
 @unless($wrap)
 A
 A).
+ARIA
 Alpine's
 An
 Blade
@@ -173,11 +179,14 @@ WCAG
 WireKit::resolveClasses('code-block',
 Without
 [
+[$callerLabelledBy,
 ['id'
 [overflow-wrap:anywhere]'
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Code
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('code-block',
 ])
 ]),
@@ -188,6 +197,8 @@ __('wirekit::Copy
 `app/Providers/AppServiceProvider.php`
 `app/Providers/Ap…`.
 `aria-label=""`
+`aria-label`
+`aria-labelledby`
 `direction:
 `filled()`
 `label=""`
@@ -248,6 +259,7 @@ back.
 be
 because
 becomes
+below;
 bg
 bg-white
 blank
@@ -271,6 +283,7 @@ call
 callbacks,
 called
 caller
+caller's
 can
 cannot
 cannot:
@@ -349,6 +362,7 @@ false,
 feature
 file
 fill="none"
+filled($label))
 filling
 fills
 find
@@ -441,6 +455,7 @@ makes
 markdown
 may
 mean
+meets,
 moment's
 more
 must
@@ -449,6 +464,7 @@ n/a
 name
 name.
 named
+names
 naming
 narrow
 neighbors.
@@ -507,6 +523,7 @@ prescribes
 press
 prod).
 produces
+prohibits
 promise
 promise,
 prop's
@@ -540,6 +557,7 @@ reports
 resources/js/components/code-block.js:
 ring
 role
+role,
 role.
 role="region"
 role="status"
@@ -674,6 +692,7 @@ worse
 worth
 would
 wrapper
+wrapper,
 x-data
 x-data="wirekitCodeBlock({
 x-if="!copied">

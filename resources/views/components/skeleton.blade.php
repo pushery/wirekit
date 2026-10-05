@@ -32,6 +32,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('skeleton', $attributes->getAttributes());
 
+    // A count of lines, whatever the attribute or the data carried: a text would throw in the
+    // loop below, which draws the lines.
+    $lines = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($lines, 3));
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.

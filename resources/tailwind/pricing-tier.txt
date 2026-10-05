@@ -9,6 +9,7 @@
 "Hoverable"
 "Most
 "New"
+"Remove";
 "default"
 "false").
 "false",
@@ -35,6 +36,9 @@ $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
 $attributes->merge($depthStyle
+$attributes]
+$badgeText
+$badgeText])
 $base
 $base;
 $baseClasses
@@ -45,11 +49,14 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerRole
 $classes
 $cleaned
 $cleaned);
 $content
+$content))
 $currency,
 $delayHide
 $delayShow
@@ -60,6 +67,7 @@ $deltaIntent
 $depthStyle
 $depthStyle]
 $describes
+$describes;
 $description
 $disabled
 $dismissBtnClasses
@@ -115,6 +123,8 @@ $name];
 $offset
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $period
 $period)
 $periods
@@ -141,6 +151,13 @@ $sizeMap
 $sizeMap[$validated];
 $slot
 $slot)
+$slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -154,8 +171,14 @@ $surfaceAliases[$surface]
 $svgHtml
 $svgHtml,
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $unitMeasure
 $unitMeasure)
 $unitPrice
@@ -186,6 +209,7 @@ $wrap
 'Rendering
 'Run:
 'USD'),
+'UTF-8')));
 '[WireKit]
 'accent'
 'accent',
@@ -391,8 +415,10 @@ $wrap
 ("Let's
 ($base
 ($callerAriaHidden
+($callerLabelledBy
 ($delta
 ($deltaIntent)
+($dismissLabel
 ($displayUnitPrice
 ($intent)
 ($isInformative
@@ -404,6 +430,7 @@ $wrap
 ($size)
 ($surface)
 ($svgHtml
+($triggerIsButton)
 ($unitPrice
 ($value):
 ('xs').
@@ -419,6 +446,7 @@ $wrap
 (Price
 (SOFT
 (Support\CallerListeners).
+(Support\CallerName).
 (UVP
 (UtilityClasses::has($callerClass,
 (WCAG
@@ -487,6 +515,7 @@ $wrap
 100
 100),
 16px
+1;
 1px
 1rem),
 2,
@@ -511,6 +540,7 @@ $wrap
 :currency="$currency"
 :locale="$locale"
 :minor-units="$minorUnits"
+:name',
 :name="$leadingIcon"
 :name="$trailingIcon"
 :periods="['monthly'
@@ -537,7 +567,6 @@ $wrap
 <del>
 <div
 <li
-<p
 <span
 <span>,
 <svg
@@ -556,7 +585,6 @@ $wrap
 >
 ?
 ??
-??=
 @else
 @elseif(is_array($prices)
 @endforeach
@@ -567,7 +595,6 @@ $wrap
 @endunless
 @foreach($prices
 @if
-@if($describes)
 @if($description)
 @if($disabled)
 @if($dismissible)
@@ -584,6 +611,9 @@ $wrap
 @if($surface
 @if($tooltip)
 @if($trailingIcon)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(isset($content))
 @if(isset($suffix))
 @isset($action)
@@ -606,6 +636,7 @@ Alpine
 Alpine's
 Also
 An
+Around
 Aurora
 BOTH
 Base
@@ -648,6 +679,9 @@ Done
 Dot
 Driven
 Drop
+ENT_HTML5));
+ENT_HTML5,
+ENT_QUOTES
 ENT_QUOTES).'"',
 EU
 EUR
@@ -820,8 +854,10 @@ WireKit::warnUnknownProps('tooltip',
 With
 Without
 [
+[$callerLabelledBy,
 ['data-wk-icon-missing'
 ['inverted',
+['name'
 ['outlined'
 ['primary',
 ['sm',
@@ -832,15 +868,19 @@ Without
 [])
 [])->class([$baseClasses,
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\ListProp::from($periods);
 \Pushery\WireKit\Support\ListProp::from($prices);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('price',
@@ -852,6 +892,7 @@ Without
 ];
 __('wirekit::Most
 __('wirekit::Previous
+__('wirekit::Remove
 __('wirekit::Remove');
 __toString
 `$as`
@@ -970,6 +1011,7 @@ accessibility
 accessible
 across
 action
+activating
 actual
 actually
 add
@@ -1008,6 +1050,7 @@ announce
 announced
 announcing
 anonymous
+another.
 answer
 anticipate
 any
@@ -1029,6 +1072,7 @@ area:
 aria-describedby
 aria-describedby)
 aria-describedby="{{
+aria-disabled="true"
 aria-hidden
 aria-hidden,
 aria-hidden.
@@ -1161,6 +1205,7 @@ but
 button
 button's
 button,
+button:
 buttons
 buttons).
 buttons,
@@ -1197,6 +1242,7 @@ chevrons,
 child
 children
 chip
+chips
 choice
 chose
 chosen
@@ -1276,6 +1322,7 @@ contract:
 contrast
 contrasts
 control
+control,
 copies
 correctly,
 costs
@@ -1362,11 +1409,13 @@ dispatches
 display,
 display:none),
 div
+div:
 do
 docs
 document
 documented
 does
+does,
 does.
 dot
 double
@@ -1428,6 +1477,7 @@ exist
 existing
 exists.
 expandos.
+explains,
 explanation
 explicitly
 exposes
@@ -1452,6 +1502,7 @@ false)
 false),
 false);
 false,
+false;
 family
 feature
 featured
@@ -1463,6 +1514,7 @@ fill
 filled
 filled-background
 fills
+filter
 filter_var($featured,
 filter_var($wrap,
 finds
@@ -1502,6 +1554,7 @@ font-[number:var(--font-wk-heading-weight)]
 font.
 for
 forbidden
+forced
 forces
 forcing
 foreground
@@ -1595,6 +1648,7 @@ historical
 historically
 hit,
 hoists
+hold
 holds
 host
 house
@@ -1604,6 +1658,7 @@ hover.
 hover:opacity-100',
 how
 however
+html_entity_decode(strip_tags((string)
 hue
 icon
 icon's
@@ -1671,10 +1726,12 @@ inverted
 invisible
 invocation`
 is
+is.
 is:
 is_array($periods)
 isn't
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it,
@@ -1739,6 +1796,7 @@ lines:
 link
 linked
 list
+list,
 listed.
 listener
 listens
@@ -1828,6 +1886,7 @@ ms-1
 mt-auto
 much
 multi-line
+multi-select
 must
 muted
 m²
@@ -1845,8 +1904,10 @@ native
 needed
 needs
 neither
+nest
 nested
 never
+new
 next
 no
 no-op
@@ -1879,6 +1940,7 @@ off
 offered
 offers
 offset:
+often
 old
 omission.
 on
@@ -1931,6 +1993,7 @@ own.
 own;
 owns
 owns,
+p.
 package
 padding
 padding,
@@ -1950,6 +2013,7 @@ panel.
 paragraph
 paragraph's
 paragraph,
+paragraphs
 parser
 passed
 passes
@@ -1999,9 +2063,13 @@ post-process
 pre-checking
 prefix
 prefix,
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 present
 presentational
@@ -2085,6 +2153,7 @@ reimplemented
 relative
 removed
 removes
+removes,
 removing
 render
 render,
@@ -2121,6 +2190,8 @@ ring,
 ring-[color:var(--color-wk-accent)]'
 role
 role,
+role:
+role="button"
 role="img"
 role="img".
 role="tooltip"
@@ -2370,12 +2441,14 @@ toCssClasses()
 toHtml().
 toggle
 toggle,
+toggletip
 token
 token,
 too
 too,
 too.
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -2399,6 +2472,9 @@ tree:
 trigger
 trigger's
 trigger,
+trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip
 true)
 true);
@@ -2407,6 +2483,7 @@ truthy
 truthy.
 try
 twice
+twice.
 two
 two+
 two.
@@ -2414,6 +2491,7 @@ type="button"
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -2514,7 +2592,9 @@ with
 within
 without
 word)
+word.
 word:
+words;
 working
 works
 works).
@@ -2539,7 +2619,9 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -2566,6 +2648,7 @@ zoom,
 {!!
 {{
 {{--
+|
 ||
 }
 })"
@@ -2579,7 +2662,7 @@ zoom,
 }})
 }},
 }}</bdi>
-}}</p>
+}}</div>
 }}</span>
 }}</x-wirekit::badge>
 }}>

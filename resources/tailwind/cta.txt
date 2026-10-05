@@ -92,11 +92,9 @@ $variantClasses])
 :
 </div>
 </h{{
-</p>
 </section>
 <div
 <h{{
-<p
 <section
 =
 =>
@@ -222,8 +220,10 @@ data-wk-prose-skip
 debug
 default
 default,
+description
 developer
 did-you-mean,
+div:
 docs.wirekit.app
 docs/extending/spine-contract.md
 document
@@ -263,6 +263,7 @@ happy.
 hero's
 hero).
 hero.blade.php
+hold
 identical
 if
 implode('
@@ -295,6 +296,7 @@ leads
 level
 light
 list
+list,
 list.
 live
 lives
@@ -325,12 +327,17 @@ one
 one.
 opacity-80
 optimistic-ui:
+or
+out
 outline
 outline:
 overshoots
 own
+p.
 page
 page-edge
+paragraphs
+parser
 presentational
 preset.
 preview
@@ -366,6 +373,7 @@ shown
 sits
 sits,
 skipped
+slot
 sm
 sm+
 sm:py-[var(--space-wk-section-lg)]',

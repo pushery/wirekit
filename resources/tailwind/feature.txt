@@ -214,10 +214,8 @@ $validated
 :size="$iconSizeProp"
 </div>
 </h{{
-</p>
 <div
 <h{{
-<p
 <span
 <svg
 <svg…>)
@@ -546,6 +544,7 @@ did
 did-you-mean,
 didn't
 direct
+div:
 docs
 document
 does
@@ -642,6 +641,7 @@ here,
 hero-row
 hidden
 historical
+hold
 house
 icon
 icon's
@@ -705,6 +705,7 @@ level
 like
 line
 list
+list,
 lists;
 literal
 live
@@ -781,6 +782,7 @@ or
 order
 other
 our
+out
 outline
 outline:
 over
@@ -788,10 +790,13 @@ override.
 own
 own,
 own.
+p.
 package
 page
 page.
 pages
+paragraphs
+parser
 path
 pattern
 per-set
@@ -888,6 +893,7 @@ size
 size,
 sized
 skipped
+slot
 sm
 so
 soft

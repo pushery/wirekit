@@ -45,7 +45,9 @@ export default function wirekitPopover(config = {}) {
         init() {
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => this._forceClose();
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // Opening this one closes every other popover on the page.
             this._coordination = coordinateOverlay({
@@ -109,6 +111,9 @@ export default function wirekitPopover(config = {}) {
             if (trigger && panel) {
                 this._stopAutoUpdate?.();
                 const { stop } = await position(trigger, panel, {
+                    // Capped to the room on a short viewport and scrolled inside, so a phone held
+                    // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                    fitViewport: true,
                     placement: this._placement,
                     offset: this._offset,
                     // Keep the panel inside the viewport on narrow screens for

@@ -30,6 +30,7 @@
  *   scroll callbacks can fire AFTER destroy() has torn the component down.
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
+import { pluralize } from '../utils/plural.js';
 import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 export default function wirekitConversation(config = {}) {
     return {
@@ -48,7 +49,17 @@ export default function wirekitConversation(config = {}) {
         // binding would carry the literal directive text, fail to evaluate, and
         // leave the button with no accessible name at all.
         jumpLabel: config.jumpLabel ?? 'Jump to latest',
-        jumpLabelCount: config.jumpLabelCount ?? 'Jump to latest, :count new',
+        // The name with the count, in the form the count takes ("1 nuevo", "3 nuevos"): sample
+        // count -> sentence, chosen with the application's plural rule. A factory mounted by
+        // hand may still pass the one sentence `jumpLabelCount`.
+        jumpLabelCounts: config.jumpLabelCounts ?? { 2: config.jumpLabelCount ?? 'Jump to latest, :count new' },
+        _locale: config.locale,
+
+        // The jump-to-latest control's accessible name: the count of unread messages when there
+        // are any, in the form the count takes.
+        jumpName() {
+            return this.unread > 0 ? pluralize(this.jumpLabelCounts, this.unread, this._locale) : this.jumpLabel;
+        },
 
         _mutationObserver: null,
         _resizeObserver: null,

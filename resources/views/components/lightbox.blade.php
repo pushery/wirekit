@@ -108,6 +108,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 <div
@@ -130,7 +133,7 @@
                 x-ref="stage"
                 role="dialog"
                 aria-modal="true"
-                aria-label="{{ __('wirekit::Media viewer') }}"
+                {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, __('wirekit::Media viewer')) }}
                 x-on:keydown.escape.prevent="close()"
                 x-on:keydown.arrow-right.prevent="next()"
                 x-on:keydown.arrow-left.prevent="prev()"

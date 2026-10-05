@@ -15,9 +15,18 @@
     'scope' => null,
 ])
 
+{{-- Whether the board around the column connects its columns: then one Reorder press puts every
+     column in the mode, and every button keeps the same name. --}}
+@aware(['crossColumn' => false])
+
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // `@aware` reads `crossColumn` from the board but, unlike `@props`, does not take the key out
+    // of the attribute bag. Written on the tag as well, it would survive into `{{ $attributes }}`
+    // and render as a stray HTML attribute. Blade accepts both spellings, so both are dropped.
+    $attributes = $attributes->except(['crossColumn', 'cross-column']);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -28,6 +37,15 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false);
+
+    // The Reorder button says which column it puts in reorder mode when that is the only column
+    // it affects, so a board of four sortable columns does not offer four buttons called
+    // "Reorder". On a connected board one press reaches every column, and the same action keeps
+    // the same name. The visible word stays first in the name (WCAG 2.5.3).
+    $reorderColumn = trim(strip_tags((string) $label));
+    $reorderLabel = $reorderColumn !== '' && ! BooleanProp::from($crossColumn, false)
+        ? __('wirekit::Reorder :title', ['title' => $reorderColumn])
+        : null;
 
     $intentValue = match ($intent) {
         'neutral', 'primary', 'success', 'warning', 'danger', 'info' => $intent,
@@ -120,7 +138,7 @@
         {{ $header }}
         @if($sortable)
             <div class="flex justify-end px-[var(--padding-wk-x-lg)] pb-[var(--padding-wk-y-xs)]">
-                <x-wirekit::button size="xs" intent="neutral" surface="ghost" data-wk-sortable-reorder aria-pressed="false" x-data="{ on: false }" x-on:click="$dispatch('wirekit:sortable:reorder-toggle')" x-on:wirekit:sortable:reorder-state="on = $event.detail.on" x-bind:aria-pressed="on ? 'true' : 'false'">{{ __('wirekit::Reorder') }}</x-wirekit::button>
+                <x-wirekit::button size="xs" intent="neutral" surface="ghost" data-wk-sortable-reorder aria-pressed="false" x-data="{ on: false }" x-on:click="$dispatch('wirekit:sortable:reorder-toggle')" x-on:wirekit:sortable:reorder-state="on = $event.detail.on" x-bind:aria-pressed="on ? 'true' : 'false'" :aria-label="$reorderLabel">{{ __('wirekit::Reorder') }}</x-wirekit::button>
             </div>
         @endif
     @else
@@ -141,7 +159,7 @@
             @if($sortable)
                 {{-- The negative block margin keeps the header as tall as a column's without the
                      button: it reaches into the header's own padding. --}}
-                <x-wirekit::button size="xs" intent="neutral" surface="ghost" class="-my-[var(--space-wk-xs,0.25rem)]" data-wk-sortable-reorder aria-pressed="false" x-data="{ on: false }" x-on:click="$dispatch('wirekit:sortable:reorder-toggle')" x-on:wirekit:sortable:reorder-state="on = $event.detail.on" x-bind:aria-pressed="on ? 'true' : 'false'">{{ __('wirekit::Reorder') }}</x-wirekit::button>
+                <x-wirekit::button size="xs" intent="neutral" surface="ghost" class="-my-[var(--space-wk-xs,0.25rem)]" data-wk-sortable-reorder aria-pressed="false" x-data="{ on: false }" x-on:click="$dispatch('wirekit:sortable:reorder-toggle')" x-on:wirekit:sortable:reorder-state="on = $event.detail.on" x-bind:aria-pressed="on ? 'true' : 'false'" :aria-label="$reorderLabel">{{ __('wirekit::Reorder') }}</x-wirekit::button>
             @endif
         </div>
     @endif
@@ -202,6 +220,8 @@
                     'pickedUp' => __('wirekit::Picked up. Position :position of :total. Click where it goes, or click it again to put it down.'),
                     'reorderOn' => __('wirekit::Reorder mode. Click a card to pick it up, then click where it goes.'),
                     'reorderOff' => __('wirekit::Reorder mode off.'),
+                    'returned' => __('wirekit::Could not save. Back at position :position of :total.'),
+                    'returnedToColumn' => __('wirekit::Could not save. Back in :column, position :position of :total.'),
                 ],
             ]) }})"
             x-on:dragstart="dragstart($event)"

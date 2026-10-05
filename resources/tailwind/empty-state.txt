@@ -197,12 +197,10 @@ $variantValue
 :name="$icon"
 </div>
 </h{{
-</p>
 <div
 <h1>,
 <h3>);
 <h{{
-<p
 <span
 <svg
 <svg…>)
@@ -484,6 +482,7 @@ defined('WIREKIT_BLADE_ICONS_WARNED'))
 degradation:
 degrades,
 deliberate.
+description
 dev
 developer
 developer's
@@ -491,6 +490,7 @@ did
 did-you-mean,
 direct
 directly
+div:
 document
 does
 does.
@@ -571,6 +571,7 @@ here
 here,
 hidden
 historical
+hold
 holds
 house
 icon
@@ -626,6 +627,7 @@ level=2
 like
 line
 list
+list,
 literal
 live
 loads.
@@ -649,6 +651,7 @@ missing,
 missing:
 modal
 modals,
+moves
 muted
 n/a
 name
@@ -691,18 +694,22 @@ order
 other
 others
 our
+out
 outline
 outlined
 over
 override.
 own
 own.
+p.
 package
 padding
 page
 page's
 page.
 pages
+paragraphs
+parser
 path
 pattern
 per

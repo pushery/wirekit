@@ -71,6 +71,10 @@
     // request to the server: `true` shows the number, "12 / 60" when the field has a maxlength; a
     // string is the sentence that shows it, with :count, :max and :remaining.
     'counter' => false,
+    // Tokens a button under the field puts into it, in the browser, without a request: at the
+    // caret the reader left there, or at the end. A list of tokens, or a map of each token to
+    // what it stands for, which a screen reader hears after it: `['{YYYY}' => 'the year']`.
+    'tokens' => null,
     'scope' => null,
     // HTML5 form-state props — surface in the schema so AI / IDE tools
     // know about them, while preserving the pre-existing attribute-bag
@@ -94,7 +98,21 @@
     $hideLabel = BooleanProp::from($hideLabel, false);
     $reserveMessage = BooleanProp::from($reserveMessage, false);
     $clearable = BooleanProp::from($clearable, false);
-    $clearText = filled($clearLabel) ? (string) $clearLabel : __('wirekit::Clear input');
+    // A clear or copy button says which field it acts on, the way a multi-select pill says
+    // which choice it removes: a form with several such fields would otherwise offer several
+    // buttons called "Clear input". The field's name is its label, the caller's `aria-label`,
+    // or the label of the field around it; a field with none of them keeps the bare wording.
+    $labelText = trim(strip_tags((string) $label));
+    if ($labelText === '') {
+        $labelText = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'));
+    }
+    if ($labelText === '' && $wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $labelText = trim($wkField->labelText());
+    }
+    $clearText = filled($clearLabel)
+        ? (string) $clearLabel
+        : ($labelText !== '' ? __('wirekit::Clear :label', ['label' => $labelText]) : __('wirekit::Clear input'));
+    $copyText = $labelText !== '' ? __('wirekit::Copy :label', ['label' => $labelText]) : __('wirekit::Copy to clipboard');
     $mono = BooleanProp::from($mono, false);
 
     // The field-value font: mono for codes/measurements, otherwise the sans stack.
@@ -109,6 +127,20 @@
     $required = BooleanProp::from($required, false);
     $disabled = BooleanProp::from($disabled, false);
     $readonly = BooleanProp::from($readonly, false);
+
+    // `tokens`, each token once, with what it stands for or null. A token that is empty inserts
+    // nothing, so it gets no button.
+    $insertTokens = [];
+    $tokensValue = \Pushery\WireKit\Support\ListProp::from($tokens);
+    if (is_array($tokensValue)) {
+        foreach ($tokensValue as $tokenKey => $tokenValue) {
+            [$tokenText, $tokenMeaning] = is_int($tokenKey) ? [(string) $tokenValue, null] : [(string) $tokenKey, filled($tokenValue) ? (string) $tokenValue : null];
+            if ($tokenText !== '') {
+                $insertTokens[$tokenText] = $tokenMeaning;
+            }
+        }
+    }
+    $insertName = $labelText !== '' ? __('wirekit::Insert into :field', ['field' => $labelText]) : __('wirekit::Insert');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -142,6 +174,19 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('input', $attributes->getAttributes());
 
+    // A number or range field gives its value as text, and Livewire takes the server's echo of
+    // an `int` or `float` property for a change and writes it over a newer value: a binding to
+    // one gets `.number` and sends a number (Support\NumericModel).
+    if (in_array(strtolower((string) $type), ['number', 'range'], true)) {
+        $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
+    }
+
+    // A date or time field drops the full timestamp Livewire sends for a date object, so a binding
+    // to one warns in debug mode (Support\DateModel).
+    if (isset(\Pushery\WireKit\Support\DateModel::FORMATS[strtolower((string) $type)])) {
+        \Pushery\WireKit\Support\DateModel::warn('input', strtolower((string) $type), $attributes);
+    }
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
@@ -149,7 +194,16 @@
 
     // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'input-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // Inside a field the label points at the id this control got: a second field with the same
+    // name on the page gets `-2`, and pointed at the name its label named the first control.
+    if ($wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $wkField->follow($id);
+    }
+    // An empty `name` renders none: the field is not meant to be submitted, as inline-edit's own
+    // control is not. HTML does not allow an empty name, and a form skips a field without one.
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element. `id` was stripped from the start; `name` was not, and a caller that
@@ -158,8 +212,8 @@
     $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // Success / valid state — only when there is NO error (error wins). A string
     // value renders a green confirmation message below the field; `true` shows the
@@ -406,7 +460,7 @@
 
             <input
                 id="{{ $id }}"
-                name="{{ $name }}"
+                @if($name !== '') name="{{ $name }}" @endif
                 type="{{ $type }}"
                 @if($required) required @endif
                 @if($disabled) disabled @endif
@@ -467,8 +521,8 @@
                         type="button"
                         @click="copy()"
                         @if($disabled) disabled @endif
-                        aria-label="{{ __('wirekit::Copy to clipboard') }}"
-                        :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
+                        aria-label="{{ $copyText }}"
+                        :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($copyText) }}"
                         class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                     >
                         <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -514,7 +568,7 @@
         {{-- No prefix/suffix: render plain input with full styling --}}
         <input
             id="{{ $id }}"
-            name="{{ $name }}"
+            @if($name !== '') name="{{ $name }}" @endif
             type="{{ $type }}"
             @if($required) required @endif
             @if($disabled) disabled @endif
@@ -546,13 +600,24 @@
          screen reader: the line holds space, not text, so there is nothing here to select
          either. Without it a drag-select across a form carries one stray no-break space per
          reserved field into whatever gets pasted. --}}
+    @if($insertTokens !== [])
+        {{-- The tokens and the message below them are one part, so an aligned row keeps its three
+             tracks: a fourth part would have no track of its own in the row's subgrid. --}}
+        <div class="space-y-1.5 min-w-0">
+            @include('wirekit::components.partials.insert-tokens', [
+                'insertFor' => $id,
+                'insertTokens' => $insertTokens,
+                'insertName' => $insertName,
+                'insertDisabled' => $disabled || $readonly,
+            ])
+    @endif
     @if($counter)
         {{-- With a count, the message and the count share one line, and in an aligned row one track:
              a fourth part would have no track of its own in the row's subgrid. --}}
         <div class="flex items-start gap-[var(--gap-wk-sm)]">
             <div class="min-w-0 flex-1">
     @endif
-    @if($inAlignedRow && ! $counter && ! ($reserveMessage || ($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
+    @if($inAlignedRow && ! $counter && $insertTokens === [] && ! ($reserveMessage || ($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
         {{-- Nothing below the control, and the track still ends here, or the row's next field
              would be pulled up into it. --}}
         <span data-wk-field-part="message" aria-hidden="true"></span>
@@ -575,6 +640,9 @@
                 'counterValue' => $attributes->get('value'),
                 'counterMax' => $attributes->get('maxlength'),
             ])
+        </div>
+    @endif
+    @if($insertTokens !== [])
         </div>
     @endif
 

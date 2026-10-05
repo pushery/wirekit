@@ -5,10 +5,13 @@
      two buttons that each tell the application about one press. --}}
 @if($readonly)
     {{-- The quantity as text. The stepper's own label is what named it before, so the
-         same word names it here, for a reader that does not see the column it sits in. --}}
-    <span data-wk-cart-item-quantity class="shrink-0 tabular-nums text-[length:var(--text-wk-md)]">
-        <span class="sr-only">{{ __('wirekit::Quantity') }} </span>{{ $quantityText }}
-    </span>
+         same word names it here, for a reader that does not see the column it sits in.
+         `hide-quantity` leaves it out altogether, the hidden word with it. --}}
+    @unless($hideQuantity)
+        <span data-wk-cart-item-quantity class="shrink-0 tabular-nums text-[length:var(--text-wk-md)]">
+            <span class="sr-only">{{ __('wirekit::Quantity') }} </span>{{ $quantityText }}
+        </span>
+    @endunless
 @elseif($stepperValue === 'buttons')
     {{-- One event per press, and nothing here holds a press back. The application decides what a
          press means, a − on the last piece can take the line out, and answers with the new
@@ -18,7 +21,7 @@
 
          The quantity is this row's live region in this form, and the line total is not: a press
          moves both, and the reader pressed for the quantity. --}}
-    <div data-wk-cart-item-stepper role="group" aria-label="{{ __('wirekit::Quantity') }}" class="inline-flex shrink-0 items-center gap-[var(--gap-wk-xs)]" x-data>
+    <div data-wk-cart-item-stepper role="group" aria-label="{{ $name ? __('wirekit::Quantity of :name', ['name' => $name]) : __('wirekit::Quantity') }}" class="inline-flex shrink-0 items-center gap-[var(--gap-wk-xs)]" x-data>
         <x-wirekit::button
             intent="neutral"
             surface="outline"
@@ -59,7 +62,7 @@
          disagree. --}}
     <div class="shrink-0">
         <x-wirekit::number-input
-            :label="__('wirekit::Quantity')"
+            :label="$name ? __('wirekit::Quantity of :name', ['name' => $name]) : __('wirekit::Quantity')"
             hide-label
             :value="$quantity"
             :min="$min"

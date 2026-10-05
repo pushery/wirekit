@@ -41,7 +41,10 @@ $attributes->getAttributes());
 $attributes->has('aria-current'))
 $attributes->merge($widthStyle
 $attributes->merge(['rel'
+$attributes]
 $block
+$callerLabel,
+$callerLabel]
 $checked
 $checked;
 $checkedBool
@@ -58,6 +61,7 @@ $href
 $isBound
 $itemClasses
 $label
+$label)
 $model
 $name
 $name.'-panel'
@@ -203,9 +207,11 @@ $widthStyle]
 'z-[var(--z-wk-dropdown)]',
 ("Menu
 ($active
+($callerLabel
 ($relAttr
 ($width)
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (WAI-ARIA
 (WCAG
@@ -224,6 +230,7 @@ $widthStyle]
 (icon-only
 (initialized
 (int)
+(isset($trigger))
 (it
 (mirrors
 (no
@@ -285,8 +292,9 @@ $widthStyle]
 :aria-checked="on
 :aria-checked="value
 :aria-checked="{{
+:aria-labelledby="$callerLabelledBy">{!!
 :class="{{
-:label="$label">{!!
+:label="$callerLabelledBy
 :not([aria-disabled="true"]).
 </button>
 </div>
@@ -323,6 +331,7 @@ $widthStyle]
 >
 ?
 ?:
+??
 ??=
 @class([$panelClasses])
 @click
@@ -568,12 +577,14 @@ With
 Without
 Wrapping
 [
+[$callerLabelledBy,
 ['class'
 ['style'
 ['x-on:keydown',
 [])->class([$classes])
 [],
 [checked]
+[null,
 [role=menuitemcheckbox]:not([aria-disabled=true])')
 [role=menuitemradio]:not([aria-disabled=true]),
 \Pushery\WireKit\Support\AlpinePayload::from($ariaLabelFallback)
@@ -583,6 +594,7 @@ Wrapping
 \Pushery\WireKit\Support\AlpinePayload::string($panelId)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
@@ -664,6 +676,7 @@ _getItems()
 `focus:outline-hidden`
 `focus`,
 `label`
+`label`,
 `lightbox`
 `locator.press()`
 `menubar/menu.blade.php`
@@ -860,6 +873,7 @@ belongs
 below
 below,
 below.
+below;
 beside
 better
 between
@@ -1390,6 +1404,7 @@ invisible
 invisible.
 invocation`.
 is
+is.
 it
 it,
 it.
@@ -1595,9 +1610,11 @@ now
 nowhere
 nowhere.
 null
+null"
 null);
 null,
 null;
+null];
 object
 of
 off
@@ -1721,6 +1738,7 @@ previous
 prod).
 production
 programmatic
+prohibits
 promise
 promise.
 prop
@@ -2302,6 +2320,7 @@ zero
 {{
 {{--
 ||
+}
 }"
 }">
 }"`

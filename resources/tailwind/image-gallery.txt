@@ -27,9 +27,11 @@ $attributes
 $attributes);
 $attributes->class([$classes]);
 $attributes->class([$figureClasses])
-$attributes->class([$wrapperClasses,
 $attributes->class([$wrapperClasses])
+$attributes->except('id')->class([$wrapperClasses,
+$attributes->except('id')->class([$wrapperClasses])
 $attributes->getAttributes());
+$attributes]
 $attrs
 $attrs->merge(['style'
 $backdrop
@@ -37,6 +39,9 @@ $baseTokens
 $baseTokens);
 $baseTokens[]
 $bp)
+$callerLabel
+$callerLabel,
+$callerLabelledBy
 $caption
 $classes
 $cols
@@ -63,9 +68,11 @@ $fitValue
 $full
 $full,
 $galleryId
+$galleryId;
 $gap,
 $gapClasses
 $gapClasses,
+$gridNamed
 $height
 $i
 $i)
@@ -109,6 +116,7 @@ $positionTemplate
 $ratio
 $responsiveTemplate
 $responsiveTemplate)
+$rootId
 $rounded
 $roundedClass
 $roundedClass])
@@ -296,8 +304,10 @@ $zoomOverlay($items[$i],
 'grid-cols-9',
 'grid-cols-[var(--wk-grid-template)]',
 'grid-template-columns:
+'group'
 'height'
 'high',
+'id');
 'image'">
 'image',
 'image'.
@@ -496,6 +506,7 @@ $zoomOverlay($items[$i],
 (CLS-safe)
 (CLS-safe).
 (Level
+(Support\CallerName).
 (Support\UnboundModel).
 (Support\UrlProp).
 (WireKit::validateProp('grid',
@@ -603,6 +614,8 @@ $zoomOverlay($items[$i],
 :alt="item.alt"
 :aria-disabled="hasNext
 :aria-disabled="hasPrev
+:aria-label="$callerLabelledBy
+:aria-labelledby="$callerLabelledBy"
 :caption="$item['caption']"
 :class="!
 :class="hasNext
@@ -611,13 +624,14 @@ $zoomOverlay($items[$i],
 :cols="$columns"
 :current
 :fit="$fit"
-:gap="$gap">
+:gap="$gap"
 :items="$lightboxItems"
 :key="idx">
 :n',
 :name="$galleryId"
 :poster="item.poster"
 :ratio="$ratio"
+:role="$gridNamed
 :slide-overlay="$slideOverlay"
 :src="$item['src']"
 :src="item.src"
@@ -692,6 +706,7 @@ AA
 ACL-protected
 ACTIVE
 AFTER
+ARIA
 Absent
 Accessible
 All
@@ -828,10 +843,12 @@ WireKit::resolveClasses('lightbox',
 WireKit::validateProp('grid',
 WireKit::validateProp('image',
 With
+Without
 Wrapper
 Wraps
 Written
 [
+[$callerLabelledBy,
 ['a
 ['auto',
 ['block
@@ -855,6 +872,9 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate)
 \Pushery\WireKit\Support\AlpinePayload::from($slides)
 \Pushery\WireKit\Support\AlpinePayload::from((bool)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
@@ -895,6 +915,8 @@ __('wirekit::View
 `alt`
 `aria-disabled`
 `aria-disabled`,
+`aria-label`
+`aria-labelledby`
 `as`
 `auto`
 `bp:[…]`.
@@ -916,6 +938,7 @@ __('wirekit::View
 `gap`,
 `grid-cols-1`
 `grid-template-columns`:
+`id`
 `index`.
 `javascript:`
 `lg:[[a]_1fr_[b]]`
@@ -1070,6 +1093,7 @@ being
 belongs
 below
 below.
+below;
 beside
 better
 bg-[var(--color-wk-bg-elevated)]
@@ -1311,6 +1335,7 @@ ease-out
 easy
 either
 either,
+element
 element,
 element;
 else
@@ -1425,6 +1450,7 @@ get
 gets
 given,
 goes
+gone.
 greedy
 grid
 grid,
@@ -1513,6 +1539,7 @@ is.
 is:
 is;
 is_callable($zoomOverlay)
+is_string($rootId)
 isset($img['caption'])
 isset($item['caption'])
 isset($item['poster'])
@@ -1647,6 +1674,7 @@ measures
 media
 media,
 media.
+meets,
 merely
 merge
 middle
@@ -1696,6 +1724,8 @@ nothing,
 nothing.
 now
 null
+null"
+null">
 null)
 null))
 null);
@@ -1767,6 +1797,7 @@ painful
 paint
 paints
 parent's
+parser
 part
 pass
 passes
@@ -1818,6 +1849,7 @@ prod).
 produce
 produced
 produces.
+prohibits
 promised.
 prop
 prop's
@@ -1895,6 +1927,7 @@ ride
 rides
 right
 right-[var(--space-wk-md)]
+role,
 role="dialog"
 roll
 root
@@ -2151,6 +2184,7 @@ travel
 treated
 trick,
 trigger
+trim($rootId)
 trim((string)
 trim(is_numeric($cols)
 true
@@ -2203,7 +2237,7 @@ view,
 view.
 viewBox="0
 viewer
-viewer')
+viewer'))
 viewport.
 viewport:
 visible
@@ -2254,6 +2288,7 @@ works
 workspace
 would
 wrapper
+wrapper,
 wraps
 writing
 written

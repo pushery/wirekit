@@ -8,6 +8,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use Pushery\WireKit\Support\FieldGroup;
+use Pushery\WireKit\Support\PropText;
 use Stringable;
 
 /**
@@ -38,6 +39,9 @@ final class FieldSet extends Component
      * its way in there; `@props` reads it back escaped and the view's `{{ }}` escapes it again,
      * so a legend `A & B` would print as `A &amp;amp; B`. A named `legend` slot still arrives as
      * the slot: it is handed to the view after this data.
+     *
+     * A value echoed into the tag arrives escaped as a parameter too, so the text values are read
+     * through PropText wherever they are handed on.
      */
     public function __construct(
         string|Stringable|null $name = null,
@@ -47,7 +51,7 @@ final class FieldSet extends Component
         private readonly Htmlable|string|int|float|null $legend = null,
         private readonly ?string $scope = null,
     ) {
-        $this->wkFieldSet = FieldGroup::open($name, $error, $hint);
+        $this->wkFieldSet = FieldGroup::open(PropText::text($name), PropText::text($error), PropText::text($hint));
     }
 
     public function render(): View
@@ -59,7 +63,7 @@ final class FieldSet extends Component
         // part of what `@aware` searches, and this setting belongs to the set alone.
         return view($view, [
             'announceError' => $this->announceError,
-            'legend' => $this->legend,
+            'legend' => PropText::text($this->legend),
             'scope' => $this->scope,
         ]);
     }

@@ -18,11 +18,13 @@
 "the
 "these
 $attributes
+$attributes->except('form');
 $attributes->except(['id',
-$attributes->get('id',
+$attributes->get('id')
 $attributes->get('name')));
 $attributes->get('name');
 $attributes->getAttributes());
+$attributes->has('id')
 $attributes->only('class')->class([$base])
 $attributes->whereStartsWith('wire:model')
 $attributes->whereStartsWith('wire:model')->isNotEmpty()))
@@ -36,6 +38,8 @@ $badgeClasses
 $base
 $bulkActions
 $bulkActionsLabel
+$callerLabel
+$callerLabelledBy
 $caption
 $captionId
 $checkboxClass
@@ -51,6 +55,7 @@ $empty
 $emptyText
 $field)
 $field);
+$formOwner
 $hiddenArr
 $hiddenArr])
 $iconBtn
@@ -126,6 +131,10 @@ $value]))
 '.debounce.'.((int)
 'accent'
 'accent']`
+'aria-label');
+'aria-label'])->whereDoesntStartWith('wire:model')
+'aria-labelledby');
+'aria-labelledby',
 'asc'"
 'asc',
 'asc';
@@ -150,7 +159,7 @@ $value]))
 'bulkActionsLabel'
 'caption'
 'center'
-'class'])->whereDoesntStartWith('wire:model')
+'class',
 'client';
 'code'
 'columnManager'
@@ -234,7 +243,9 @@ $value]))
 ($colsArr
 ($rowsArr
 (3:1),
+(DomId::distinct
 (PHP
+(Support\FormOwner).
 (WCAG
 (['key',
 (`['<',
@@ -370,13 +381,17 @@ $value]))
 @click="setDensity('compact')"
 @click="toggleSort(col.key)"
 @else
+@elseif($callerLabel)
+@elseif(filled($caption))
 @endif
 @endif>
 @endisset
 @endphp
 @endunless
+@if($callerLabelledBy)
 @if($caption)
 @if($columnManager)
+@if($formOwner)
 @if($loading)
 @if($searchable
 @if($searchable)
@@ -384,7 +399,6 @@ $value]))
 @if($selectable)
 @if($stickyColumn)
 @if(filled($bulkActionsLabel))
-@if(filled($caption))
 @if(filled($name))
 @input{{
 @isset($empty)
@@ -573,13 +587,15 @@ Wraps
 \Pushery\WireKit\Support\AlpinePayload::string($rowKey)
 \Pushery\WireKit\Support\AlpinePayload::string('
 \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('data-table',
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::only($rowsArr,
 \Pushery\WireKit\Support\ListProp::renumbered($columns);
 \Pushery\WireKit\Support\ListProp::renumbered($hidden);
 \Pushery\WireKit\Support\ListProp::renumbered($rows);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
-\Pushery\WireKit\WireKit::stableId('data-table',
 \Pushery\WireKit\WireKit::warnUnknownProps('data-table',
 ])
 ]),
@@ -598,6 +614,7 @@ __('wirekit::Select
 `'intents'
 `(array)`,
 `--size-wk-table-sticky-column-max`
+`-2`,
 `-end`
 `3
 `42`
@@ -623,6 +640,7 @@ __('wirekit::Select
 `aria-expanded`
 `aria-haspopup="menu"`
 `aria-haspopup="true"`
+`aria-label`
 `aria-labelledby`
 `aria-live`
 `aria-sort`
@@ -643,6 +661,7 @@ __('wirekit::Select
 `false`.
 `filled()`
 `flex-wrap`
+`form`
 `group-hover`
 `group`
 `hrefKey`
@@ -1143,6 +1162,7 @@ either
 element
 element,
 element.
+element:
 else,
 email,
 emit
@@ -1209,6 +1229,8 @@ fill)
 fill,
 fill="currentColor"><path
 fill="none"
+filled($callerLabel)
+filled($callerLabelledBy)
 filled($sortKey)
 fills
 filter
@@ -1248,6 +1270,7 @@ for
 forced
 foreach
 form
+form="{{
 four
 frames
 freeze
@@ -1373,6 +1396,8 @@ is
 is:
 isColumnVisible
 isPlainCell()
+is_string($callerLabel)
+is_string($callerLabelledBy)
 isset($avatarTints[(string)
 isset($rowActions))
 isset($toolbar))
@@ -1387,6 +1412,7 @@ its
 itself
 itself.
 job
+joins
 jumped.
 justify-between
 justify-center
@@ -1490,6 +1516,7 @@ means
 means.
 meanwhile
 measurement
+meets
 members
 menu
 menu's
@@ -1585,6 +1612,7 @@ on.
 once
 once.
 one
+one's
 one,
 one-pixel
 one.
@@ -1698,6 +1726,7 @@ prod).
 produces
 product
 profile
+prohibits
 prominence:
 prominenceClasses:
 promise.
@@ -1796,6 +1825,7 @@ right
 right,
 ring
 role
+role,
 role="group"
 role="region"
 role="status"
@@ -1965,6 +1995,7 @@ stylesheet
 stylesheet,
 subKey
 submission.
+submits,
 submitted
 success|warning|danger|neutral
 such
@@ -2105,6 +2136,7 @@ use
 user
 uses,
 utilities
+valid
 validates
 value
 value->intent
@@ -2112,6 +2144,7 @@ value.
 value="[]"
 values
 varies
+verbatim).
 version,
 vertically
 very
@@ -2167,6 +2200,7 @@ whose
 why
 wide
 widening
+widget
 width
 width,
 width.

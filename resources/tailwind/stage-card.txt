@@ -1,15 +1,17 @@
 !
 !==
+"1
 "100%"
+"3
 "4
 "42
 "Backlog").
 "In
 "Loading"
-"N
 "Progress"
 "Q3
 "border-color:
+"out
 "work
 $animation
 $animation,
@@ -33,6 +35,7 @@ $circumference;
 $clamped
 $classes
 $count
+$count,
 $count])
 $dashOffset
 $dimensions
@@ -192,7 +195,6 @@ $wrapperClasses
 (links
 (matches
 (no
-(not
 (only
 (overrides
 (preferred,
@@ -227,7 +229,9 @@ $wrapperClasses
 1.
 100
 100"
+100",
 100)
+100);
 100,
 100].
 15.9155
@@ -376,11 +380,11 @@ Without
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\NumericProp::positive($max,
 \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle',
 \Pushery\WireKit\WireKit::warnUnknownProps('stage-card',
 ])
 ]),
-__('wirekit:::count
 __('wirekit:::label
 __('wirekit::Loading')
 __('wirekit::Progress')
@@ -447,7 +451,6 @@ animates
 animation
 announce
 announce.
-announced
 announcement
 announces,
 another
@@ -459,13 +462,16 @@ applied
 arc
 are
 aria-hidden="true">
+aria-hidden="true">{{
 aria-label
 aria-label="{{
 aria-labelledby
 aria-labelledby,
 aria-labelledby="{{
 aria-value*
+aria-valuemax
 aria-valuemax="{{
+aria-valuemin.
 aria-valuemin="0"
 aria-valuenow="{{
 arithmetic
@@ -496,7 +502,6 @@ bar's
 bar)
 bar.
 bar:
-bare
 base
 baseline.
 be
@@ -505,6 +510,7 @@ becomes
 been
 being
 below
+below,
 beside
 bg
 bg-[var(--color-wk-bg-muted)]
@@ -551,6 +557,7 @@ class="flex
 class="inline-flex
 class="mb-1
 class="relative
+class="sr-only">{{
 class="text-[color:var(--color-wk-text)]">{{
 class="text-[color:var(--color-wk-text-muted)]
 class="text-[length:var(--text-wk-sm)]
@@ -579,6 +586,7 @@ config('wirekit.components.progress.circle-size',
 config('wirekit.components.progress.size',
 config('wirekit.components.progress.variant',
 consistently
+content
 contract
 control
 core
@@ -663,6 +671,7 @@ font-[number:var(--font-wk-heading-weight)]
 for
 forced-colors
 forced.
+form
 four
 from
 from,
@@ -693,7 +702,9 @@ header.
 height
 here
 here.
+hidden
 hit
+holds
 house
 hue
 id
@@ -725,10 +736,12 @@ is,
 is.
 it
 it,
+it.
 it:
 item
+item",
 items
-items"
+items".
 items',
 items-center
 its
@@ -748,6 +761,7 @@ leave
 left
 legacy
 length
+less
 lg
 light
 like
@@ -815,7 +829,7 @@ null)
 null,
 null;
 number
-number)
+number,
 number;
 numeric
 of
@@ -833,11 +847,11 @@ only
 opposite
 optimistic-ui:
 optional
+or
 order
 origin-center"
 other
 otherwise
-out
 out,
 outer
 outside
@@ -862,6 +876,7 @@ polish:
 poll
 polls
 population
+positive
 pre-2.4
 prefers-reduced-motion,
 prefix,
@@ -892,6 +907,7 @@ r="{{
 radial
 radial-progress
 radial-progress.
+radial-progress:
 radius
 ramp
 rather
@@ -930,6 +946,7 @@ richer
 right.
 ring
 roadmap
+role
 role.
 role="group"
 role="progressbar"
@@ -977,7 +994,7 @@ smooth
 so
 soften
 source
-spells
+span's
 srgb,
 stable
 stage
@@ -1007,6 +1024,7 @@ style="width:
 stylesheet's
 sub-component
 success
+such
 superseded
 surrounding
 sweep).
@@ -1040,6 +1058,7 @@ thing
 this
 this,
 through
+throw
 throw),
 tick.
 time,
@@ -1054,8 +1073,10 @@ too,
 track
 track,
 trailing
+trans_choice('wirekit:::count
 transition-[width]
 transitions
+travels
 travels).
 true)
 truncating
@@ -1065,7 +1086,8 @@ type
 unchanged,
 unconditional
 under
-unit.
+unit
+unit,
 unknown
 unresolvable
 until
@@ -1124,6 +1146,7 @@ x-bind:style="fillStyle()"
 x-data="wirekitProgress({
 x-text="valueText()"></span>
 yet
+zero
 {
 {$intentToken}
 {{

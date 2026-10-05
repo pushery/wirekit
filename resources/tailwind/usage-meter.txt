@@ -13,6 +13,7 @@
 "Usage").
 "X
 "orders",
+"out
 "seats")
 "work
 $action
@@ -32,8 +33,12 @@ $attributes->get('aria-labelledby');
 $attributes->get('id')
 $attributes->get('id').'-label'
 $attributes->getAttributes());
+$attributes]
 $barAriaLabel
+$barAriaLabel)
 $barLabelledby
+$callerLabel,
+$callerLabelledBy
 $circumference
 $circumference;
 $clamped
@@ -212,6 +217,7 @@ $wrapperClasses
 'xl'
 'year'
 (!
+($callerLabel
 ($clamped
 ($cols)
 ($effectiveIntent)
@@ -224,6 +230,7 @@ $wrapperClasses
 (0..max).
 (A
 (Component
+(Support\CallerName).
 (Z%)"
 (`--text-wk-2xs`
 (a
@@ -303,7 +310,9 @@ $wrapperClasses
 1.0):
 100
 100"
+100",
 100)
+100);
 100,
 100.
 15.9155
@@ -493,6 +502,7 @@ With
 Without
 Y
 [
+[$callerLabelledBy,
 ['1',
 ['none',
 ['primary',
@@ -502,8 +512,10 @@ Y
 \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate)
 \Pushery\WireKit\Support\AlpinePayload::from($valueExpression)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\NumericProp::positive($max,
 \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle',
 \Pushery\WireKit\WireKit::warnUnknownProps('usage-meter',
 \Pushery\WireKit\WireKit::warnUnknownProps('usage-meter.gate',
@@ -606,7 +618,9 @@ aria-labelledby)
 aria-labelledby,
 aria-labelledby="{{
 aria-value*
+aria-valuemax
 aria-valuemax="{{
+aria-valuemin.
 aria-valuemin="0"
 aria-valuenow="{{
 arithmetic
@@ -647,6 +661,7 @@ behavior
 being
 below
 below,
+below;
 beside
 binding
 block,
@@ -889,6 +904,7 @@ here.
 hint)
 hint:
 hit
+holds
 hook
 house
 hue
@@ -949,6 +965,7 @@ leave
 left
 legacy
 length
+less
 lg
 lg:grid-cols-3',
 light
@@ -985,6 +1002,7 @@ md
 mean
 meaningful
 means
+meets,
 meter
 method.
 metric
@@ -1032,6 +1050,7 @@ noun)
 now
 null
 null)
+null);
 null,
 null;
 number
@@ -1055,6 +1074,7 @@ opacity-[var(--opacity-wk-disabled)]">
 opposite
 optimistic-ui:
 optional
+or
 order
 origin-center"
 other
@@ -1096,6 +1116,7 @@ polish:
 poll
 polls
 population
+positive
 pre-2.4
 prefers-reduced-motion,
 prefix,
@@ -1109,6 +1130,7 @@ progress'
 progress:
 progressbar
 progressbar-name
+prohibits
 prop
 prop's
 proper
@@ -1126,6 +1148,7 @@ r="{{
 radial
 radial-progress
 radial-progress.
+radial-progress:
 radius
 ramp
 random
@@ -1178,6 +1201,7 @@ reuses
 richer
 right.
 ring
+role,
 role.
 role="group"
 role="progressbar"
@@ -1307,6 +1331,7 @@ this,
 threshold
 threshold/intent
 through
+throw
 tick
 tick.
 tier

@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.64.0 — MIT License
+ * WireKit CSS v2.65.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -2068,7 +2068,10 @@ input.wk-field::-webkit-datetime-edit-text {
        leave both ends of a wide trigger at their original height. Every rule in this block is
        behind `pointer: coarse`: a narrow viewport alone is still a fine pointer reporting the
        desktop size. */
-    button.wk-accordion-trigger {
+    button.wk-accordion-trigger,
+    /* The sort button of a table header cell is a full-width row of its own for the same reason:
+       it fills the cell and carries the cell's padding, one line of text plus that padding. */
+    button.wk-table-sort {
         /* `--wk-touch-min` is how a control that answers the finger another way steps out of the
            floor: an icon-only button sets it to 0 and carries the `wk-touch-target` patch. Nothing
            else sets it, so every other control takes the 44px as before. */
@@ -2300,7 +2303,8 @@ input.wk-field::-webkit-datetime-edit-text {
 :where([data-wk-touch]) div.wk-field[role="combobox"],
 :where([data-wk-touch]) button.wk-button,
 :where([data-wk-touch]) a.wk-button,
-:where([data-wk-touch]) button.wk-accordion-trigger {
+:where([data-wk-touch]) button.wk-accordion-trigger,
+:where([data-wk-touch]) button.wk-table-sort {
     min-height: var(--wk-touch-min, var(--size-wk-touch-target));
 }
 
@@ -6763,11 +6767,14 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /* WebKit (Chrome, Safari, Edge, Opera) */
+/* The track shows how far the range reaches, and with it where the value stands, so it is
+   drawn in the control border: 3:1 against the page (WCAG 1.4.11), where the decorative
+   border stood at 1.30:1. */
 .wk-slider::-webkit-slider-runnable-track {
     width: 100%;
     height: 0.5rem;
     border-radius: 9999px;
-    background: var(--color-wk-border);
+    background: var(--color-wk-border-strong);
 }
 
 .wk-slider::-webkit-slider-thumb {
@@ -6793,7 +6800,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     width: 100%;
     height: 0.5rem;
     border-radius: 9999px;
-    background: var(--color-wk-border);
+    background: var(--color-wk-border-strong);
     border: none;
 }
 
@@ -6956,6 +6963,16 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     min-width: 0;
     max-width: 100%;
     overflow-wrap: break-word;
+}
+/* Forced colors drop the wrapper's ring, which is a box-shadow, and the outline above is off,
+   so the focused surface showed only its caret. A transparent outline is painted in the system
+   color there, as `outline-hidden` paints one on every other field. It sits inside the surface:
+   the host scrolls, and an outline outside it can be clipped at the host's edge. */
+@media (forced-colors: active) {
+    .wk-editor-content:focus {
+        outline: 2px solid transparent;
+        outline-offset: -2px;
+    }
 }
 .wk-editor-content > * + * {
     margin-top: 0.75em;

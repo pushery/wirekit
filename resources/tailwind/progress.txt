@@ -5,6 +5,7 @@
 "42
 "Loading"
 "Progress"
+"out
 "work
 $animation
 $animation,
@@ -187,7 +188,9 @@ $wrapperClasses
 1.
 100
 100"
+100",
 100)
+100);
 100,
 15.9155
 15.9155;
@@ -313,6 +316,7 @@ Without
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\NumericProp::positive($max,
 \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle',
 ])
 ]),
@@ -395,7 +399,9 @@ aria-labelledby
 aria-labelledby,
 aria-labelledby="{{
 aria-value*
+aria-valuemax
 aria-valuemax="{{
+aria-valuemin.
 aria-valuemin="0"
 aria-valuenow="{{
 arithmetic
@@ -429,6 +435,7 @@ becomes
 been
 being
 below
+below,
 beside
 binding
 block,
@@ -595,6 +602,7 @@ height
 here
 here.
 hit
+holds
 house
 hue
 id
@@ -642,6 +650,7 @@ leave
 left
 legacy
 length
+less
 lg
 light
 like
@@ -719,6 +728,7 @@ one;
 only
 opposite
 optimistic-ui:
+or
 order
 origin-center"
 other
@@ -744,6 +754,7 @@ polish:
 poll
 polls
 population
+positive
 pre-2.4
 prefers-reduced-motion,
 prefix,
@@ -768,6 +779,7 @@ r="{{
 radial
 radial-progress
 radial-progress.
+radial-progress:
 radius
 ramp
 rather
@@ -900,6 +912,7 @@ thing
 this
 this,
 through
+throw
 tick.
 time,
 to
@@ -977,6 +990,7 @@ x-bind:style="fillStyle()"
 x-data="wirekitProgress({
 x-text="valueText()"></span>
 yet
+zero
 {
 {{
 {{--

@@ -87,6 +87,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 {{-- The step travels on `data-wk-server-value` and NOT in the `x-data` seed, which stays the same
@@ -105,7 +108,7 @@
          meter. --}}
     <div
         role="meter"
-        aria-label="{{ $label }}"
+        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }}
         aria-valuemin="0"
         aria-valuemax="{{ $max }}"
         aria-valuenow="{{ $steps }}"

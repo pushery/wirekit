@@ -1,3 +1,4 @@
+import { onFormReset } from '../utils/form-reset.js';
 import { watchCurrent } from '../utils/watch-current.js';
 
 /**
@@ -15,9 +16,11 @@ import { watchCurrent } from '../utils/watch-current.js';
  * @param {boolean} [config.wireLive=false]      - Whether wire:model has .live modifier
  */
 export default function wirekitImageCompare(config = {}) {
+    const start = Math.max(0, Math.min(100, Number(config.value ?? 50)));
+
     return {
         // Public state ───────────────────────────────────────────────
-        value: Math.max(0, Math.min(100, Number(config.value ?? 50))),
+        value: start,
         orientation: config.orientation === 'vertical' ? 'vertical' : 'horizontal',
 
         // Internal state ─────────────────────────────────────────────
@@ -33,8 +36,13 @@ export default function wirekitImageCompare(config = {}) {
         _upHandler: null,
         _wireModel: config.wireModel ?? null,
         _wireLive: config.wireLive === true,
+        // Puts the starting position back when the form is reset (utils/form-reset.js); the
+        // hidden input follows its binding. Released in destroy().
+        _stopFormReset: null,
 
         init() {
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.hiddenInput, () => this._restore());
+
             // If wire:model is present, entangle the Alpine value with the
             // Livewire property. Deferred mode (default) skips per-step network
             // round-trips; only the final value is pushed when drag ends.
@@ -46,6 +54,11 @@ export default function wirekitImageCompare(config = {}) {
                     this.$wire.set(this._wireModel, v, this._wireLive);
                 });
             }
+        },
+
+        /** The starting position again after a form reset. */
+        _restore() {
+            this.value = start;
         },
 
         // Step keyboard-driven value changes ──────────────────────────
@@ -184,6 +197,8 @@ export default function wirekitImageCompare(config = {}) {
          * a handler for a component that is gone.
          */
         destroy() {
+            this._stopFormReset?.();
+            this._stopFormReset = null;
             this._releaseDragListeners();
             this._dragging = false;
         },

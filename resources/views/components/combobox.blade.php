@@ -255,6 +255,7 @@
                 'tooShort' => trans_choice('wirekit::{1} Type at least :count character|[2,*] Type at least :count characters', $searchMinLength, ['count' => $searchMinLength]),
                 'truncated' => __('wirekit::More results. Keep typing to narrow them.'),
                 'empty' => __('wirekit::No results'),
+                'failed' => __('wirekit::Search failed. Try again.'),
             ]);
         $serverOptions = \Pushery\WireKit\Support\AlpinePayload::json(['options' => $normalized, 'truncated' => $truncated]);
     }
@@ -264,8 +265,8 @@
     // makes a combobox with no `name` report itself invalid the moment ANY
     // unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
-    $hasError = $error || ($name && ($errors ?? null)?->has($name));
-    $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
+    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?? ($hasError && $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -303,6 +304,13 @@
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $comboId.'-help' : null;
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? ''));
+    // `required` stays in the bag, read rather than consumed (see the label below). It is checked
+    // against the CHOICE through a stand-in, not on the search field, where typed text that is no
+    // option satisfied it; a combobox found empty says so under the field (partials/required-message),
+    // unless the server's own message already stands there.
+    $required = (bool) $attributes->get('required', false);
+    $requiredMessageId = $required && ! $hasError ? $comboId.'-required' : null;
+    $describedBy = trim(($describedBy ?? '').' '.($requiredMessageId ?? ''));
     $describedBy = $describedBy !== '' ? $describedBy : null;
 
     // Sizing.
@@ -452,6 +460,21 @@
      single child, so no visual change). A single stable root keeps the anonymous
      component's $attributes / $component scope intact. --}}
 @php
+    // The clear button says which field it empties, so a form with several comboboxes does not
+    // offer several buttons called "Clear selection". The field's name comes the way the field
+    // itself is named: its label, its `aria-label`, then the label of the field around it.
+    // Without any of them the bare wording stands.
+    $clearLabelText = trim(strip_tags((string) $label));
+    if ($clearLabelText === '' && filled($resolvedAriaLabel)) {
+        $clearLabelText = trim((string) $resolvedAriaLabel);
+    }
+    if ($clearLabelText === '' && $wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $clearLabelText = trim($wkField->labelText());
+    }
+    $clearSelectionLabel = $clearLabelText !== ''
+        ? __('wirekit::Clear :label', ['label' => $clearLabelText])
+        : __('wirekit::Clear selection');
+
     // The optimistic layer NESTS INSIDE this component, and the direction is not
     // interchangeable: a nested Alpine component's method reads and writes its
     // parent's properties through `this`, never the other way around. So it has
@@ -487,6 +510,9 @@
     // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `form` stays on the visible field, where Enter then submits the form it joined,
+    // and goes to the hidden field this component submits as well (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
 @endphp
 
 {{-- `wk-combobox` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-` class
@@ -552,7 +578,12 @@
              visible control already shows the value. Both come from the same PHP
              expression that feeds the factory, so they cannot drift. --}}
         {{-- A disabled field is left out of the form data, as a native one is. --}}
-        <input type="hidden" name="{{ $name }}" value="{{ $value }}" :value="submittedValue" @if($disabled) disabled @endif />
+        <input type="hidden" name="{{ $name }}" value="{{ $value }}" :value="submittedValue" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
+    @endif
+    {{-- The browser validates no hidden field, so a required combobox checks its choice through a
+         stand-in of its own. --}}
+    @if($required)
+        @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
     @endif
 
     @if($searchable)
@@ -588,7 +619,11 @@
              nothing is chosen, and the focus moves on by itself. --}}
         @keydown.tab="isOpen = false"
         @if($disabled) disabled @endif
-        @if($hasError) aria-invalid="true" @endif
+        @if($hasError)
+            aria-invalid="true"
+        @elseif($requiredMessageId)
+            x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
+        @endif
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
         {{-- Accessible name: a visible <label for> wins; otherwise aria-label
              from the ariaLabel prop / caller attribute lands on this input (the
@@ -600,7 +635,11 @@
              this element it would be a second model binding beside `x-model="query"`,
              pointed at the search text. --}}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-        {{ $attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label', 'class', 'style', 'aria-describedby'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
+        {{-- `required` is checked against the choice (the stand-in above), so the search field
+             carries it as `aria-required` only: as a native attribute, typed text that is no option
+             satisfied it. --}}
+        @if($required) aria-required="true" @endif
+        {{ $attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label', 'class', 'style', 'aria-describedby', 'required'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $inputClasses }}"
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     />
@@ -634,7 +673,11 @@
             @click="toggleSelectOnly()"
             @keydown="{{ $optimisticConfig ? 'runIf(selectOnlyKeydown($event))' : 'chooseValue(selectOnlyKeydown($event))' }}"
         @endif
-        @if($hasError) aria-invalid="true" @endif
+        @if($hasError)
+            aria-invalid="true"
+        @elseif($requiredMessageId)
+            x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
+        @endif
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
         {{-- `required` is an input attribute, and a `div` has no validity to carry it. --}}
         @if($attributes->get('required')) aria-required="true" @endif
@@ -679,7 +722,7 @@
                  the absence of a choice; null is a choice. --}}
             @click="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
             class="absolute end-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
-            aria-label="{{ __('wirekit::Clear selection') }}"
+            aria-label="{{ $clearSelectionLabel }}"
         >
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
@@ -803,7 +846,7 @@
                         <li data-wk-prose-skip
                             role="option"
                             :id="{{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + opt._idx"
-                            :aria-selected="selected === opt.value"
+                            :aria-selected="isChosen(opt.value)"
                             :aria-disabled="opt.disabled ? 'true' : null"
                             @if($optionsCarryLang) :lang="opt.lang" @endif
                             :class="opt.disabled
@@ -836,7 +879,7 @@
                             'mediaIcon' => $rowMediaIcon,
                             'mediaInitials' => $mediaInitials,
                             'descriptionClasses' => $descriptionText.' text-[color:var(--color-wk-text-muted)]',
-                        ])@else<span class="min-w-0 flex-1" x-text="opt.label"></span>@endif<svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="selected === opt.value ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></li>
+                        ])@else<span class="min-w-0 flex-1" x-text="opt.label"></span>@endif<svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="isChosen(opt.value) ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></li>
                     </template>
                 </ul>
             </li>
@@ -846,7 +889,7 @@
             <li data-wk-prose-skip
                 role="option"
                 :id="{{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + idx"
-                :aria-selected="selected === opt.value"
+                :aria-selected="isChosen(opt.value)"
                 :aria-disabled="opt.disabled ? 'true' : null"
                 @if($optionsCarryLang) :lang="opt.lang" @endif
                 :class="opt.disabled
@@ -875,7 +918,7 @@
                 'mediaIcon' => $rowMediaIcon,
                 'mediaInitials' => $mediaInitials,
                 'descriptionClasses' => $descriptionText.' text-[color:var(--color-wk-text-muted)]',
-            ])@else<span class="min-w-0 flex-1" x-text="opt.label"></span>@endif<svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="selected === opt.value ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></li>
+            ])@else<span class="min-w-0 flex-1" x-text="opt.label"></span>@endif<svg aria-hidden="true" class="{{ $optionCheckClasses }}" :class="isChosen(opt.value) ? '' : 'invisible'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></li>
         </template>
         @endif
         @if($server)
@@ -973,6 +1016,10 @@
              leaves it the floor. --}}
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
         </div>
+    @endif
+
+    @if($requiredMessageId)
+        @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId])
     @endif
 </div>
 

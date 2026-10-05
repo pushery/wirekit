@@ -50,6 +50,8 @@
         'p-[var(--padding-wk-x-md)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
+        // Scrolls once the position helper caps its height to a short viewport.
+        'overflow-y-auto overscroll-contain',
     ]), $scope);
 
     // An unpadded panel takes every padding utility out of the RESOLVED list. Adding `p-0`
@@ -66,6 +68,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 <div
@@ -123,7 +128,7 @@
              reachable, so a screen reader keeps offering content its own virtual cursor can
              no longer get back out of. The two halves have to agree. --}}
         aria-modal="true"
-        aria-label="{{ $label ?? __('wirekit::Popover') }}"
+        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label ?? __('wirekit::Popover')) }}
         class="{{ $panelClasses }}"
         x-cloak
     >

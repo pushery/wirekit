@@ -8,6 +8,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use Pushery\WireKit\Support\FieldControl;
+use Pushery\WireKit\Support\PropText;
 use Stringable;
 
 /**
@@ -35,6 +36,9 @@ final class Field extends Component
      * view's `{{ }}` would escape it again. A parameter is matched in camel case, so
      * `announce-error` arrives as `$announceError`. A named slot still arrives as the slot: it is
      * handed to the view after this data.
+     *
+     * A value echoed into the tag (`label="{{ $name }}"`) arrives escaped as a parameter too, so
+     * the text values are read through PropText wherever they are handed on.
      */
     public function __construct(
         private readonly Htmlable|Stringable|string|int|float|null $label = null,
@@ -49,7 +53,11 @@ final class Field extends Component
         // Last, so a call that passes the others by position keeps them where they were.
         private readonly Htmlable|Stringable|string|int|float|null $help = null,
     ) {
-        $this->wkField = FieldControl::open($for, $name, $label instanceof Stringable && ! $label instanceof Htmlable ? (string) $label : $label);
+        $this->wkField = FieldControl::open(
+            PropText::text($for),
+            PropText::text($name),
+            PropText::text($label instanceof Stringable && ! $label instanceof Htmlable ? (string) $label : $label),
+        );
     }
 
     public function render(): View
@@ -60,14 +68,14 @@ final class Field extends Component
         // Handed to the view as data rather than held in public properties: a public property is
         // part of what `@aware` searches, and these belong to the field alone.
         return view($view, [
-            'label' => $this->label,
-            'name' => $this->name,
-            'hint' => $this->hint,
-            'help' => $this->help,
-            'error' => $this->error,
+            'label' => PropText::text($this->label),
+            'name' => PropText::text($this->name),
+            'hint' => PropText::text($this->hint),
+            'help' => PropText::text($this->help),
+            'error' => PropText::text($this->error),
             'announceError' => $this->announceError,
             'required' => $this->required,
-            'for' => $this->for,
+            'for' => PropText::text($this->for),
             'orientation' => $this->orientation,
             'scope' => $this->scope,
         ]);

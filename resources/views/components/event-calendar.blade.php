@@ -200,6 +200,15 @@
     // Underscores to hyphens because Laravel spells a regional locale `pt_BR`
     // while Intl reads BCP-47. Same shape as <x-wirekit::calendar>.
     $eventCalendarLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', $locale ?? app()->getLocale()));
+    // The sentences whose number lives in the browser travel as their forms, one per sample
+    // count, and the factory chooses with the locale's plural rule: "+1 more" names "1 more
+    // event", and a filter over one event says "Showing 1 of 1 event". One literal key per
+    // call, so the catalog's drift guard sees both names of the "+N more" button.
+    $eventCalendarMoreWords = \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::more'));
+    $eventCalendarMoreNames = \Pushery\WireKit\Support\AlpinePayload::from($dayDetail
+        ? \Pushery\WireKit\Support\PluralPhrases::from('wirekit:::count more events on :date')
+        : \Pushery\WireKit\Support\PluralPhrases::from('wirekit:::count more events on :date, open week view'));
+    $eventCalendarFilterStatus = \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::Showing :count of :total events'));
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -223,7 +232,7 @@
     data-wk-day-markers="{{ \Pushery\WireKit\Support\AlpinePayload::json($markersArr) }}"
     data-wk-view="{{ $view }}"
     @if($date) data-wk-date="{{ $date }}" @endif
-    x-data="wirekitEventCalendar({ weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Showing :count of :total events')) }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
+    x-data="wirekitEventCalendar({ weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusTexts: {{ $eventCalendarFilterStatus }}, moreNames: {{ $eventCalendarMoreNames }}, moreWords: {{ $eventCalendarMoreWords }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
     @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ $ariaLabel }}"
     {{-- Delegated truncated-title tooltip: every [data-wk-tip] pill/chip/row shares
@@ -340,7 +349,7 @@
                                  It is the minimum target tall (WCAG 2.5.8): one line of small
                                  text is 18px, and 2px under an event pill that is too small and
                                  too close for the spacing exception. --}}
-                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" data-wk-show-more :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($dayDetail ? __('wirekit:::count more events on :date') : __('wirekit:::count more events on :date, open week view')) }}.replace(':count', day.overflow).replace(':date', longDate(day.date))" class="flex w-full items-center min-h-[var(--size-wk-target-min)] text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> {{ __('wirekit::more') }}</button>
+                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" data-wk-show-more :aria-label="moreName(day)" class="flex w-full items-center min-h-[var(--size-wk-target-min)] text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> <span x-text="moreWord(day)"></span></button>
                         </div>
                     </div>
                 </template>

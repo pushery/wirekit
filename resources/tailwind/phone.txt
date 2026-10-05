@@ -1,5 +1,6 @@
 !
 !==
+"Clear
 "Could
 "Germany
 "Hoverable"
@@ -19,6 +20,7 @@ $ariaLabel
 $as
 $as);
 $attributes
+$attributes);
 $attributes->class([$classes])
 $attributes->class(['relative
 $attributes->except('aria-controls')->except('aria-expanded')->except(['aria-label',
@@ -34,7 +36,6 @@ $attributes->get('aria-describedby');
 $attributes->get('aria-describedby',
 $attributes->get('class',
 $attributes->get('name'),
-$attributes->get('name',
 $attributes->get('required',
 $attributes->get('x-ref',
 $attributes->getAttributes());
@@ -49,8 +50,13 @@ $c):
 $callerAriaLabel
 $callerAriaLabel;
 $callerDescribedBy
+$callerLabel
+$callerLabel,
 $callerRef
 $classes
+$clearLabelText
+$clearLabelText])
+$clearSelectionLabel
 $clearable
 $clearable)
 $code
@@ -64,9 +70,11 @@ $comboId"
 $comboId);
 $comboId.'-help'
 $comboId.'-hint';
+$comboId.'-required'
 $component
 $config
 $content
+$content))
 $countries
 $countries),
 $countryName
@@ -78,6 +86,7 @@ $delayHide
 $delayShow
 $describedBy
 $describes
+$describes;
 $descriptionClasses
 $descriptionClasses,
 $descriptionText.'
@@ -85,6 +94,7 @@ $descriptionText]
 $descriptions
 $disabled
 $disabled)
+$disabled])
 $display)
 $display.'
 $display;
@@ -98,7 +108,6 @@ $errorId
 $errorMessage
 $errorMessage)
 $errorMessage;
-$errors->first($name)
 $fieldLabelId
 $fieldMediaBox,
 $fieldMediaIcon,
@@ -106,6 +115,8 @@ $fieldMediaPadding
 $fieldShape
 $fieldShape.'
 $focusableTrigger
+$formOwner
+$formOwner,
 $groupClasses
 $groupIsAList
 $groupIsAList);
@@ -147,6 +158,7 @@ $key);
 $key,
 $key;
 $label
+$label));
 $label);
 $label,
 $label])
@@ -161,6 +173,9 @@ $mediaInitials
 $mediaInitials,
 $mediaPerRow
 $name
+$name)
+$name));
+$name);
 $named
 $named[$code]
 $named[$code];
@@ -203,6 +218,8 @@ $ordered
 $ordered[$code]
 $outerAttributes
 $ownDescribedBy
+$ownName
+$ownName);
 $panelWidth
 $panelWidth)
 $panelWidth);
@@ -217,8 +234,15 @@ $regions
 $regions,
 $regions[$code]
 $required
+$requiredDisabled
+$requiredFormOwner
+$requiredMessageBound
+$requiredMessageClass
+$requiredMessageId
+$requiredMessageId])
 $resolvedAriaLabel
 $resolvedAriaLabel)
+$resolvedAriaLabel);
 $richRows
 $rowMediaBox,
 $rowMediaIcon,
@@ -243,6 +267,12 @@ $showsHint
 $slot
 $slot)
 $slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $start
 $start,
 $subKey
@@ -251,9 +281,15 @@ $subOpt,
 $surface
 $surface,
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $triggerClasses
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $truncated
 $truncated]);
 $trunk
@@ -292,6 +328,8 @@ $wkField->takeLabel($searchable
 '.$searchDebounce
 '.$searchMinLength.',
 '.($helpId
+'.($requiredMessageClass
+'.($requiredMessageId
 '.((string)
 '.WireKit::resolveClasses('combobox',
 '.\Pushery\WireKit\Support\AlpinePayload::from([
@@ -318,7 +356,6 @@ $wkField->takeLabel($searchable
 'announceError'
 'args'
 'aria-describedby',
-'aria-describedby'])->whereDoesntStartWith(['wire:model',
 'aria-label');
 'ariaLabel'
 'as'
@@ -369,6 +406,7 @@ $wkField->takeLabel($searchable
 'enterKey()'
 'error'
 'errorRegion'
+'failed'
 'false'
 'fixed
 'fixed'
@@ -425,6 +463,7 @@ $wkField->takeLabel($searchable
 'messages'
 'mode'
 'name'
+'name',
 'name']);
 'number',
 'offset'
@@ -465,6 +504,8 @@ $wkField->takeLabel($searchable
 'reject',
 'required'
 'required',
+'required'])->whereDoesntStartWith(['wire:model',
+'requiredDisabled'
 'reverted'
 'rotate-180'
 'rounded-[var(--radius-wk-md)]',
@@ -545,7 +586,8 @@ $wkField->takeLabel($searchable
 ($attributes->get('value')
 ($c):
 ($callerDescribedBy
-($errors
+($callerLabelledBy
+($clearLabelText
 ($hasError
 ($hint
 ($hoisted
@@ -567,13 +609,17 @@ $wkField->takeLabel($searchable
 ($server)
 ($showsHint
 ($size)
+($triggerIsButton)
 ($trunk
 (+"
 (+'.DialingCodes::for($code).')',
 (@aware
+(Support\AttributeText).
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\FieldControl),
 (Support\FieldControl).
+(Support\FormOwner).
 (WCAG
 (\Locale::getDisplayRegion('-'.$code,
 (`.wk-scroll-fade…:focus-within
@@ -608,8 +654,11 @@ $wkField->takeLabel($searchable
 (opt._idx
 (optional):
 (partials/field-help).
+(partials/required-check),
+(partials/required-message),
 (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw)$/',
 (resources/js/utils/caller-ref.js).
+(resources/js/utils/required-check.js):
 (see
 (silent
 (sizes),
@@ -684,6 +733,7 @@ $wkField->takeLabel($searchable
 12a9
 13l4
 18
+1;
 2
 2),
 2.1.1).
@@ -732,12 +782,12 @@ $wkField->takeLabel($searchable
 :aria-label="$countryName"
 :aria-label="grp.label
 :aria-labelledby="{{
-:aria-selected="selected
+:aria-selected="isChosen(opt.value)"
 :class="$hideLabel
 :class="$selectClasses"
+:class="isChosen(opt.value)
 :class="isOpen
 :class="opt.disabled
-:class="selected
 :clearable="false"
 :count
 :data-active="idx
@@ -806,6 +856,7 @@ $wkField->takeLabel($searchable
 =>
 >
 ></li>
+></p>
 >@if($richRows)@include('wirekit::components.partials.listbox-option-content',
 ?
 ?:
@@ -820,6 +871,7 @@ $wkField->takeLabel($searchable
 @else
 @elseif($fieldLabelId)
 @elseif($hint)
+@elseif($requiredMessageId)
 @elseif($resolvedAriaLabel)
 @elseif($showsHint)
 @elseif(filled($resolvedAriaLabel))
@@ -836,10 +888,10 @@ $wkField->takeLabel($searchable
 @if($callerRef
 @if($describedBy
 @if($describedBy)
-@if($describes)
 @if($descriptions)
 @if($disabled)
 @if($focusableTrigger)
+@if($formOwner)
 @if($hasError
 @if($hasError)
 @if($hasGroups)
@@ -857,18 +909,27 @@ $wkField->takeLabel($searchable
 @if($panelWidthStyle
 @if($placeholder)
 @if($required)
+@if($requiredDisabled
+@if($requiredMessageBound
+@if($requiredMessageId)
 @if($richRows)
 @if($searchable)
 @if($server)
 @if($serverOptions
 @if($showsError)
 @if($surface
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($help))
 @if(filled($helpId
+@if(filled($requiredFormOwner
 @if(isset($content))
 @include
 @include('wirekit::components.partials.field-help',
 @include('wirekit::components.partials.listbox-option-media',
+@include('wirekit::components.partials.required-check',
+@include('wirekit::components.partials.required-message',
 @input="openAndReset()"
 @keydown.arrow-down.prevent="openAndMove(1)"
 @keydown.arrow-up.prevent="moveHighlight(-1)"
@@ -887,6 +948,7 @@ $wkField->takeLabel($searchable
 @props.
 @readonly($readonly)
 @unless($attributes->has('autocomplete'))
+@unless($attributes->has('inputmode'))
 @unless($attributes->has('role'))
 A
 A's
@@ -911,6 +973,7 @@ AlpinePayload::from([
 Always
 An
 Any
+Around
 B
 B,
 BEATS
@@ -932,6 +995,7 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Both
 CALLER's
 CAPTURE
+CHOICE
 CSP
 CSS
 CallerRef::onRoot()
@@ -967,6 +1031,7 @@ Drawn,
 E.164
 E.164,
 ENT_HTML5)),
+ENT_HTML5));
 ENT_QUOTES
 Each
 Empty
@@ -1106,6 +1171,7 @@ Search
 Server
 Set
 Shorter
+Shown
 Single
 Sizing.
 So
@@ -1130,6 +1196,7 @@ This
 Those
 Tooltip
 Trigger
+Try
 Two
 Type
 Type");
@@ -1169,6 +1236,7 @@ Without
 Z,
 Zypern
 [
+[$callerLabelledBy,
 [$normalized,
 [$outerAttributes,
 [$rowMediaBox,
@@ -1180,6 +1248,8 @@ Zypern
 ['key'
 ['label'
 ['media'
+['requiredFormOwner'
+['requiredMessageId'
 ['size-5',
 ['size-6',
 ['size-7',
@@ -1190,6 +1260,7 @@ Zypern
 [],
 [];
 \Collator($locale);
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options'))
@@ -1207,13 +1278,19 @@ Zypern
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\FieldControl
+\Pushery\WireKit\Support\FieldControl)
+\Pushery\WireKit\Support\FieldError::first($errors
+\Pushery\WireKit\Support\FieldError::has($errors
 \Pushery\WireKit\Support\FlagPackage::attach($normalized);
 \Pushery\WireKit\Support\FloatingPlacement::ALL);
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\IconSprite::attach($normalized,
 \Pushery\WireKit\Support\ListProp::from($countries);
 \Pushery\WireKit\Support\ListProp::from($countryOrder);
@@ -1222,7 +1299,9 @@ Zypern
 \Pushery\WireKit\Support\OptionMedia::fields('combobox',
 \Pushery\WireKit\Support\OptionMedia::uses($normalized);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
+\Pushery\WireKit\Support\UnboundModel::drop('phone',
 \Pushery\WireKit\WireKit::warnUnknownProps('combobox',
 \Pushery\WireKit\WireKit::warnUnknownProps('label',
 \uXXXX,
@@ -1243,6 +1322,7 @@ __('wirekit::Help')
 __('wirekit::More
 __('wirekit::No
 __('wirekit::Saving'),
+__('wirekit::Search
 __('wirekit::Searching…'),
 __('wirekit::Select…'),
 __('wirekit::Type
@@ -1278,6 +1358,7 @@ _place()
 `MessageBag::has(null)`
 `OptionMedia`
 `ReferenceError`
+`UnboundModel`
 `['Europe'
 `['value'
 `[31
@@ -1298,8 +1379,11 @@ _place()
 `aria-hidden`.
 `aria-invalid`
 `aria-label`
+`aria-label`,
 `aria-labelledby`
 `aria-labelledby`.
+`aria-required`
+`aria-required`.
 `aria-selected`
 `ariaLabel`
 `as="div
@@ -1307,6 +1391,7 @@ _place()
 `auto`
 `auto`,
 `avatar`
+`basis-full`
 `border-width:
 `break-word`
 `card`
@@ -1351,6 +1436,8 @@ _place()
 `for={comboId}`;
 `for`
 `for`.
+`form`
+`form`,
 `grid`
 `group`
 `help`,
@@ -1361,6 +1448,7 @@ _place()
 `hint`
 `image`,
 `input`
+`invalid`
 `inverted`
 `isolation:
 `keydownEscape()`
@@ -1393,6 +1481,7 @@ _place()
 `prop="false"`
 `query`
 `relative`
+`requiredValue`,
 `required`
 `role="combobox"`,
 `run()`.
@@ -1427,6 +1516,7 @@ _place()
 `wire:model*`
 `wire:model`
 `wire:model`,
+`wire:model`.
 `wire:show`
 `wirekit:field-help`
 `wirekit:field-help`.
@@ -1437,6 +1527,7 @@ _place()
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`
 `x-data`,
+`x-model="national"`,
 `x-model="query"`
 `x-model="query"`,
 `x-model`
@@ -1458,6 +1549,7 @@ able
 about
 about.
 above
+above),
 above.
 above:
 absence
@@ -1470,6 +1562,7 @@ accessibility
 accessible
 across
 action
+activating
 activation.
 active
 actual
@@ -1482,6 +1575,7 @@ after,
 again
 again,
 again.
+again.'),
 against
 against,
 agree
@@ -1516,6 +1610,7 @@ announces
 announcing
 anonymous
 another
+another.
 answer
 answered
 answers
@@ -1647,6 +1742,7 @@ behind
 being
 belongs
 below
+below).
 below,
 below.
 below;
@@ -1686,6 +1782,7 @@ brand
 break
 break;
 browser
+browser's
 browser,
 browser-default
 bubble's
@@ -1702,6 +1799,8 @@ but
 button
 button,
 button.
+button:
+buttons
 buys
 by
 byte-identically
@@ -1712,6 +1811,7 @@ bytes.
 call
 call,
 call.
+called
 caller
 caller's
 caller-passed
@@ -1745,6 +1845,7 @@ character:
 characters',
 character|[2,*]
 check
+checked
 checks
 chevron
 chevron.
@@ -1875,6 +1976,7 @@ config.
 console
 constructed
 construction.
+consumed
 consuming
 container
 containers.
@@ -1941,6 +2043,8 @@ data-wk-optimistic-announcer
 data-wk-options="{{
 data-wk-prose-skip
 data-wk-ref-scope
+data-wk-required-check
+data-wk-required-message
 data-wk-server-options="{{
 data-wk-server-value="{{
 data-wk-tooltip-describedby="{{
@@ -1976,6 +2080,7 @@ derives
 descendant
 descendants
 descendants,
+described
 described-by
 describes
 description
@@ -1991,6 +2096,7 @@ did
 did.
 difference
 different
+digits
 digits.
 dimmed
 direction
@@ -1998,6 +2104,7 @@ directly
 disabled
 disabled:cursor-not-allowed
 disabled:opacity-[var(--opacity-wk-disabled)]"
+disabled;
 disables
 disagree:
 disagrees
@@ -2043,6 +2150,7 @@ ease-in
 ease-out
 edge
 edge.
+editor's
 effect:
 effective
 eight
@@ -2061,6 +2169,7 @@ else;
 elsewhere)
 embeds
 emoji
+empties,
 empty
 empty($o['group']))
 empty($opt['group']))
@@ -2077,12 +2186,14 @@ entirely,
 enum
 error
 escape
+escaped
 escapes
 escaping
 evaluated
 even
 event
 events
+ever
 every
 everywhere:
 exact
@@ -2103,11 +2214,13 @@ explanation
 explicit
 exposed
 expression
+expression,
 extra
 factory
 factory's
 factory,
 fade="…">`,
+failed.
 fails
 fails.
 failure
@@ -2149,6 +2262,7 @@ filled($help)
 filled($helpName
 filled($label)
 filled($resolvedAriaLabel)
+filled($resolvedAriaLabel))
 filter
 filtered
 filtered"
@@ -2162,6 +2276,7 @@ finish
 fire
 fires
 first
+first,
 first.
 fix
 fixed
@@ -2200,6 +2315,7 @@ follows
 font
 font-[number:var(--font-wk-heading-weight)]
 for
+for,
 for.
 for:
 for>
@@ -2208,9 +2324,12 @@ forced
 forced-colors
 foreach
 form
+form="{{
 formatting.
+found
 four
 fragment
+frame:
 free
 free:
 freezes
@@ -2236,12 +2355,14 @@ give
 given
 given.
 gives
+gives,
 global
 glossed
 glyph
 go
 goes
 goes.
+gone
 gone,
 got
 grayscale
@@ -2268,6 +2389,7 @@ hand-mount
 hand-written
 handed
 handful
+handled
 handler
 handler.
 handlers
@@ -2299,6 +2421,7 @@ here,
 here.
 here:
 hidden
+hidden,
 hidden:
 hidden>{{
 hidden`
@@ -2418,6 +2541,7 @@ is,
 is.
 is_array($opt)
 isolate`
+isset($content)
 isset($named[$c])
 isset($option['lang']));
 isset($ordered[$code]))
@@ -2426,6 +2550,7 @@ it
 it,
 it.
 it:
+it;
 item,
 items-center
 items-center">
@@ -2435,6 +2560,8 @@ itself
 itself,
 itself.
 jacket']`
+joined,
+joins
 json_encode:
 just
 justify-center
@@ -2467,6 +2594,7 @@ land
 landed
 lands
 language
+language.
 last
 last.
 later
@@ -2571,6 +2699,7 @@ medium,
 meets
 menus
 message
+message.
 message:
 messages.
 method
@@ -2618,6 +2747,7 @@ name.
 name:
 name="{{
 named
+named:
 names
 names,
 names.
@@ -2636,6 +2766,7 @@ needs
 negative
 neither
 neither.
+nest
 nested
 nests
 network
@@ -2656,6 +2787,7 @@ nodes.
 non-ASCII
 non-input
 none
+none"
 none,
 none;
 none;"
@@ -2676,9 +2808,6 @@ null)
 null))
 null),
 null);
-null)?->first($name);
-null)?->has($name));
-null)?->has($name);
 null,
 null;
 null])
@@ -2695,12 +2824,14 @@ of
 of.
 off
 off.
+offer
 offered
 offering
 offers
 offers,
 offers.
 offset:
+often
 older
 omission.
 omit
@@ -2713,6 +2844,7 @@ once
 once,
 once.
 once:
+once;
 one
 one's
 one,
@@ -2720,6 +2852,7 @@ one.
 one:
 only
 only,
+only:
 onmouseover=alert(1)"`
 onto
 opacity-[var(--opacity-wk-disabled)]
@@ -2736,8 +2869,6 @@ opt._idx
 opt._idx"
 opt._idx",
 opt._idx)"
-opt.value
-opt.value"
 optimistic
 optimistic-ui:
 optimistically.
@@ -2869,6 +3000,9 @@ positively,
 precedence
 precedence:
 prefix
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_split('/\s+/',
 present
 presentational
@@ -2960,6 +3094,7 @@ releases.
 remain
 remainder
 remove
+removed
 removes
 removing
 render
@@ -2981,6 +3116,9 @@ repository
 request
 required
 required,
+required:
+requiredValue
+requirement
 requires
 reset
 resolution.
@@ -3008,6 +3146,8 @@ rich
 right
 right-to-left
 role
+role:
+role="button"
 role="combobox"
 role="group"
 role="listbox"
@@ -3042,6 +3182,7 @@ rule
 rules
 run
 run(null),
+run.
 run:
 runIf,
 runIf:
@@ -3050,6 +3191,7 @@ safe.
 safe:
 same
 sat
+satisfied
 satisfies
 save"
 save.
@@ -3100,10 +3242,12 @@ select.
 selected
 selected.
 selection
-selection')
+selection".
+selection');
 selection's
 send
 sends
+sends.
 sent
 sent.
 sent:
@@ -3199,7 +3343,11 @@ stack
 stacking
 stacking-context
 stamped
+stand-in
+stand-in,
 stands
+stands,
+stands.
 start
 start-[var(--padding-wk-x-md)]
 starting
@@ -3286,6 +3434,7 @@ taller
 target
 tech
 technology
+technology,
 teleport,
 teleport:
 teleported
@@ -3295,6 +3444,7 @@ template
 test,
 text
 text,
+text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]
@@ -3364,6 +3514,7 @@ together,
 together.
 toggled
 toggles
+toggletip
 token
 tokenizer
 tokens
@@ -3405,11 +3556,14 @@ trigger.
 trigger;
 trim($describedBy.'
 trim($ownDescribedBy.'
+trim($wkField->labelText());
 trim('flex
+trim('text-[length:var(--text-wk-sm)]
 trim(($describedBy
 trim(((string)
 trim((string)
 trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip
 true
 true"
@@ -3428,6 +3582,7 @@ truthy.
 turns
 twice
 twice,
+twice.
 two
 two.
 type
@@ -3447,6 +3602,7 @@ unaffected
 unaffected.
 unaffected:
 unambiguous.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -3462,6 +3618,7 @@ unguarded
 unique
 unkeyed
 unknown
+unless
 unlike
 unreachable
 unreachable,
@@ -3485,6 +3642,7 @@ using
 usually
 utilities
 valid
+validated
 validated.
 validates
 validation
@@ -3578,7 +3736,9 @@ word
 word)
 word),
 word.
+word;
 wording
+words;
 work
 work.
 working
@@ -3601,11 +3761,13 @@ wrong.
 wrote.
 x-bind:aria-busy="isPending"
 x-bind:aria-busy="searchAriaBusy()"
+x-bind:aria-invalid="requiredMessage
 x-bind:class="fieldMedia.length
 x-bind:href="{{
 x-bind:id="{{
 x-bind:src="{{
 x-bind:value="e164"
+x-bind:value="requiredValue"
 x-cloak
 x-data="wirekitCombobox({
 x-data="wirekitOptimistic({{
@@ -3631,7 +3793,10 @@ x-on:error="markMediaBroken({{
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:input="onInput($refs.bound)"
+x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -3646,6 +3811,7 @@ x-ref="tooltip"
 x-ref="trigger"
 x-show="isOpen
 x-show="isOpen"
+x-show="requiredMessage
 x-show="searchNote()
 x-show="selected"
 x-show="selectedText
@@ -3657,6 +3823,7 @@ x-text="isOpen
 x-text="opt.description"></span>
 x-text="opt.label"></span>
 x-text="opt.label"></span>@endif<svg
+x-text="requiredMessage"
 x-text="searchAnnouncement(filtered.length,
 x-text="searchEmptyText(typedQuery())"
 x-text="searchNote()"

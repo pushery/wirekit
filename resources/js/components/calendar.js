@@ -8,9 +8,13 @@
  *   - _modelEvents — `change` and `blur` on the hidden field for `wire:model.change` and
  *     `wire:model.blur`, which listen on that field alone (utils/model-events.js): `change` with
  *     every date chosen, and `blur` when the reader leaves the grid.
+ *   - _stopFormReset — the listener that puts the starting date back when the form is reset
+ *     (utils/form-reset.js).
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/
  */
+import { onFormReset } from '../utils/form-reset.js';
+import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
 
 export default function wirekitCalendar(config = {}) {
@@ -98,14 +102,57 @@ export default function wirekitCalendar(config = {}) {
     // the test is on the value's presence and not on the digit it produced.
     return {
         _modelEvents: null,
+        // Puts the starting date back when the form is reset (utils/form-reset.js). Released in
+        // destroy().
+        _stopFormReset: null,
+        // `requiredMessage` and `onRequiredInvalid()`: a required calendar stops an empty submit
+        // (utils/required-check.js).
+        ...requiredCheckState(),
 
         init() {
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.hiddenInput);
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.hiddenInput, () => this._restore());
         },
 
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /**
+         * Back to the starting date, or range, after a form reset, with the grid on its month so
+         * the date it returns to is in view. The hidden fields take it as _notify() writes them,
+         * without the events: a reset changes a native field without one.
+         */
+        _restore() {
+            this.selected = startValue;
+            this.selectedEnd = endValue;
+            this.hoverDate = null;
+            this.viewYear = initial ? initial.getFullYear() : today.getFullYear();
+            this.viewMonth = initial ? initial.getMonth() : today.getMonth();
+            this.focusedDay = initial ? initial.getDate() : today.getDate();
+            this.focusOffset = 0;
+
+            this.$refs?.hiddenInput?.setAttribute('value', this.rangeValue);
+
+            if (this.range) {
+                this.$refs?.hiddenStart?.setAttribute('value', this.selected ?? '');
+                this.$refs?.hiddenEnd?.setAttribute('value', this.selectedEnd ?? '');
+            }
+
+            this.requiredMessage = '';
+        },
+
+        /** What the required check reads: empty exactly while no date is chosen. */
+        get requiredValue() {
+            return this.rangeValue;
+        },
+
+        /** The day the keyboard stands on, which is where an empty required calendar sends the focus. */
+        _focusRequiredControl() {
+            this._focusDay();
         },
 
         viewYear: initial ? initial.getFullYear() : today.getFullYear(),
@@ -123,7 +170,9 @@ export default function wirekitCalendar(config = {}) {
         // until the second click makes the reader guess what they are choosing.
         hoverDate: null,
         focusedDay: initial ? initial.getDate() : today.getDate(),
-        _name: config.name || 'date',
+        // The base of the ids this calendar names its grids by. The template hands it over unique
+        // on the page; a config without it derives the base from the name, as before.
+        _idBase: config.idBase || ((config.name || 'date') + '-calendar'),
         // Multi-month display: render N consecutive months side by side (1 = the
         // classic single grid). Clamped 1..4. focusOffset tracks which displayed
         // month currently holds keyboard focus (always 0 for single-month).
@@ -278,14 +327,14 @@ export default function wirekitCalendar(config = {}) {
         /**
          * The id of the heading that names one grid.
          *
-         * Composed here rather than in the template because the base is the
-         * component's `name`, which is developer-supplied: interpolated into an
+         * Composed here rather than in the template because the base comes from
+         * the component's `name`, which is developer-supplied: interpolated into an
          * Alpine expression it would be a quote away from ending the string it
          * sits in, the same hazard the value literal at the top of the template
          * is built to avoid.
          */
         monthLabelId(offset) {
-            return this._name + '-calendar-label-' + (offset || 0);
+            return this._idBase + '-label-' + (offset || 0);
         },
 
         /**

@@ -648,6 +648,9 @@ export default function wirekitFilterBuilder(config = {}) {
                     this._stopRepair = null;
 
                     const placement = await position(this.$refs.trigger, this.$refs.panel, {
+                        // Capped to the room on a short viewport and scrolled inside, so a phone held
+                        // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                        fitViewport: true,
                         placement: 'bottom-start',
                         offset: 6,
                         crossAxisShift: true,

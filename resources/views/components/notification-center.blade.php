@@ -51,7 +51,12 @@
     // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
     // would mean destroy-and-rebuild, and the Alpine-only state — the open panel, the
     // active filter — would go with it on the next round trip.
-    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('notification-center', $name ?? $attributes->get('name')));
+    // A second center with the same name on the page gets `-2`, so its panel's
+    // `aria-labelledby` names its own title and not the first one's (DomId::distinct keeps
+    // the first verbatim).
+    $id = $attributes->has('id')
+        ? $attributes->get('id')
+        : \Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('notification-center', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
     // A plain list for the payload, whatever the caller passed: an array, a Collection, a lazy
@@ -82,10 +87,22 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `aria-labelledby` names the widget where a reader meets it, not the wrapper,
+    // where it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // A caller's `aria-label` goes to the same element: on the wrapper, which has no role, ARIA
+    // prohibits a name, and a reader never hears it.
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
+    $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
 @endphp
 
 <div
-    {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
+    {{ $attributes->except(['id', 'name', 'class', 'aria-labelledby', 'aria-label'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
     {{-- State-mutating demo (open/close, mark-read, realtime): opt into the docs
          replay affordance so a "used-up" preview can be reset (mirrors alert/badge). --}}
@@ -95,7 +112,7 @@
          new expression and initialize it again, closing an open panel each time one arrived.
          The factory reads them once and follows Livewire's later renders of them. --}}
     data-wk-items="{{ \Pushery\WireKit\Support\AlpinePayload::json($itemsArr) }}"
-    x-data="wirekitNotificationCenter({ latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
+    x-data="wirekitNotificationCenter({ latestLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::unread. Latest:')) }}, bellNames: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit:::title, :count unread', null, ['title' => $titleResolved])) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale())) }}, otherGroupLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Other')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree).
          Escape is heard on the bell here, in the panel below, and on the window for a
          press from anywhere else. The bell and the panel mark the press they close on,
@@ -113,7 +130,7 @@
          boots, and a form submitted in that window sends nothing while the
          visible control already shows the value. Both come from the same PHP
          expression that feeds the factory, so they cannot drift. --}}
-        <input type="hidden" x-ref="model" @if(filled($name)) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ $serverUnread }}" :value="unreadCount" />
+        <input type="hidden" x-ref="model" @if(filled($name)) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ $serverUnread }}" :value="unreadCount" @if($formOwner) form="{{ $formOwner }}" @endif />
     @endif
 
     {{-- Screen-reader announcement for new notifications. Fed from the SAME
@@ -133,8 +150,9 @@
         :aria-expanded="isOpen"
         aria-haspopup="dialog"
         aria-label="{{ $titleResolved }}"
-        {{-- Only :count is unknown server-side, so only :count is substituted here. --}}
-        :aria-label="unreadCount > 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, :count unread', ['title' => $titleResolved])) }}.replace(':count', unreadCount) : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => $titleResolved])) }}"
+        {{-- Only the count is unknown server-side, so the title is in every form the factory
+             chooses from, in the form the count takes ("1 non lu", "3 non lus"). --}}
+        :aria-label="unreadCount > 0 ? bellName() : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => $titleResolved])) }}"
         class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
     >
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
@@ -180,8 +198,10 @@
         x-on:keydown.tab="tabWithinPanel($event)"
         x-on:keydown.escape="escapeFlyout($event)"
         role="dialog"
-        aria-labelledby="{{ $titleId }}"
-        class="fixed z-[var(--z-wk-dropdown)] w-[22rem] max-w-[calc(100vw-2rem)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] focus-visible:outline-hidden overflow-hidden"
+        {{-- The panel, and not the trigger: the trigger's name carries the unread count, which a
+             reference would replace. `title` names the trigger. --}}
+        @if($callerLabelledBy === null && $callerLabel !== null) aria-label="{{ $callerLabel }}" @else aria-labelledby="{{ $callerLabelledBy ?? $titleId }}" @endif
+        class="fixed z-[var(--z-wk-dropdown)] w-[22rem] max-w-[calc(100vw-2rem)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] focus-visible:outline-hidden overflow-y-auto overscroll-contain"
     >
         {{-- Header --}}
         <div class="flex items-center justify-between gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">

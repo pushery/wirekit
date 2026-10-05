@@ -15,22 +15,26 @@ $announceErrors
 $as
 $as);
 $attributes
+$attributes);
 $attributes->class(['relative
 $attributes->except('type')->except(['id',
 $attributes->except(['announceErrors',
 $attributes->get('aria-describedby'),
 $attributes->get('name'),
-$attributes->get('name',
 $attributes->get('required',
 $attributes->getAttributes());
 $attributes->has('aria-label')
-$attributes->has('aria-labelledby');
+$attributes->has('aria-labelledby')
 $attributes]
+$callerLabel
+$callerLabel,
 $content
+$content))
 $delayHide
 $delayShow
 $describedBy
 $describes
+$describes;
 $disabled
 $error
 $errorMessage
@@ -80,6 +84,8 @@ $optimistic
 $optimistic,
 $optimisticConfig
 $outerAttributes
+$ownName
+$ownName);
 $scope);
 $sizing
 $sizing['knob'],
@@ -87,14 +93,26 @@ $sizing['track'],
 $sizing['translate'],
 $slot
 $slot)
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $statePosition
 $statePosition,
 $surface
 $surface,
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $trackClasses
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $wkFieldSet
 $wkRequiredMarker
 $wrapperClasses
@@ -249,7 +267,7 @@ $wrapperClasses
 ("Fast
 ("Help
 ($attributes->get('checked')
-($errors
+($callerLabelledBy
 ($fieldGroup?->covers($name)
 ($fieldGroup?->isInvalid($errors
 ($groupError
@@ -257,9 +275,13 @@ $wrapperClasses
 ($label
 ($name)])
 ($size)
+($triggerIsButton)
 (.peer),
 (@aware
+(Support\AttributeText).
 (Support\CallerListeners).
+(Support\CallerName).
+(Support\CheckboxModel).
 (WCAG
 (WireKit::validateProp('toggle',
 (`.wk-scroll-fade…:focus-within
@@ -313,6 +335,7 @@ $wrapperClasses
 100),
 12a9
 18
+1;
 1ms
 1px;
 1x1,
@@ -382,7 +405,6 @@ $wrapperClasses
 @endunless
 @if($announceError)
 @if($describedBy
-@if($describes)
 @if($disabled)
 @if($fallbackAriaLabel)
 @if($focusableTrigger)
@@ -394,6 +416,9 @@ $wrapperClasses
 @if($label)
 @if($optimisticConfig)
 @if($surface
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($helpId
 @if(isset($content))
 @include('wirekit::components.partials.field-help',
@@ -412,6 +437,7 @@ Accessible
 Alpine
 Alpine's
 Arabic
+Around
 BOTH
 Beside
 Blade
@@ -438,6 +464,8 @@ DomId
 Done
 Drawn
 EMPTY.
+ENT_HTML5));
+ENT_QUOTES
 Each
 English
 Enter
@@ -554,6 +582,7 @@ Without
 Wrapper
 Written
 [
+[$callerLabelledBy,
 [$outerAttributes,
 ['accent',
 ['border-[var(--color-wk-accent)]',
@@ -572,19 +601,27 @@ Written
 ['track'
 ['x-on:mouseenter',
 [],
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Support\AlpinePayload::from([
 \Pushery\WireKit\Support\AlpinePayload::string($helpField
 \Pushery\WireKit\Support\AlpinePayload::string($helpName
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\CheckboxModel::warn('toggle',
 \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\FieldError::first($errors
+\Pushery\WireKit\Support\FieldError::has($errors
 \Pushery\WireKit\Support\FieldGroup
 \Pushery\WireKit\Support\FieldGroup::describedBy(
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 ])
 ])),
@@ -643,6 +680,7 @@ __('wirekit::Saving'),
 `hidden`
 `hideLabel="false"`
 `hideLabel`.
+`id`
 `inverted`
 `isolation:
 `keydownEscape()`
@@ -710,7 +748,9 @@ across
 action
 actionable,
 actions
+activating
 actually
+add
 adds
 affordance.
 after
@@ -744,6 +784,7 @@ announced
 announced.
 announcement
 announcing
+another.
 answer
 answered,
 answers
@@ -763,6 +804,7 @@ aria-describedby
 aria-describedby,
 aria-describedby.
 aria-describedby="{{
+aria-disabled="true"
 aria-hidden="true"
 aria-hidden="true">
 aria-hidden="true">*</span>@endif</span>
@@ -784,6 +826,7 @@ arriving
 as
 as,
 as="span"
+aside,
 asked
 asks
 assembled
@@ -828,6 +871,7 @@ beside
 beside,
 between
 bind
+binding
 binds
 block
 body
@@ -851,6 +895,7 @@ built
 but
 button
 button,
+button:
 by
 call
 call,
@@ -921,6 +966,7 @@ colors,
 column
 combobox
 come
+comes
 commonest
 compete
 compiles
@@ -1032,6 +1078,7 @@ do
 document
 documented
 does
+does.
 drawer
 dropped
 duration
@@ -1063,6 +1110,7 @@ enum
 error
 error,
 escape
+escaped
 escapes
 escaping
 evaluated
@@ -1077,6 +1125,7 @@ existing
 expander
 expandos.
 explains
+explains,
 explanation
 explicit
 exposed
@@ -1086,6 +1135,7 @@ factory,
 fade="…">`,
 fails
 failure:
+fallback
 fallback:
 falls
 false
@@ -1093,6 +1143,7 @@ false));
 false),
 false);
 false,
+false;
 feature
 field
 field's
@@ -1103,6 +1154,7 @@ field:
 fields
 fill
 fill="none"
+filled($attributes->get('id'));
 filled($help)
 filled($helpName
 filled($offLabel);
@@ -1137,8 +1189,10 @@ focusable
 focused,
 follows
 for
+for,
 for="...">`
 for="{{
+forced
 forced-colors
 form
 form,
@@ -1218,6 +1272,7 @@ hit,
 hit-area
 hoists
 holds
+holds:
 host
 hover
 hover,
@@ -1226,6 +1281,7 @@ hover:text-[color:var(--color-wk-text-muted)]
 how
 however
 humanized
+icon
 icon,
 icon-only
 id
@@ -1261,7 +1317,9 @@ inverted
 inverted.
 invocation`
 is
+is.
 isolate`
+isset($content)
 it
 it,
 it.
@@ -1356,6 +1414,7 @@ minus
 mirrors
 mismatch
 modal
+mode
 mode"),
 mode,
 model
@@ -1370,6 +1429,7 @@ moves.
 moving
 ms-0.5"
 much
+multi-select.
 must
 n/a
 name
@@ -1390,6 +1450,7 @@ needs
 negative
 neither
 neither,
+nest
 network
 neutral
 neutral,
@@ -1403,6 +1464,7 @@ nobody.
 node
 node's
 none
+none,
 none;
 nor
 not
@@ -1412,11 +1474,10 @@ nothing.
 null
 null)
 null))
-null)?->first($name));
-null)?->has($name));
 null,
 null;
 null])
+number
 object,
 of
 off
@@ -1424,6 +1485,7 @@ off"
 off-intent="danger"`.
 offset
 offset:
+often
 omission.
 on
 on,
@@ -1431,6 +1493,7 @@ on.
 on:
 once
 once,
+once;
 one
 one,
 one.
@@ -1516,6 +1579,9 @@ positioned,
 positioning
 positive
 precedence:
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 present
 preset
 press
@@ -1539,6 +1605,7 @@ raises
 rather
 re-renders.
 re-thrown
+reach
 reachable
 reaches
 read
@@ -1590,6 +1657,8 @@ responses
 rests
 rides
 right,
+role:
+role="button"
 role="switch"
 role="tooltip"
 roll
@@ -1637,6 +1706,7 @@ select-none{{
 selector.
 selectors
 selects,
+sent
 sentence
 separate
 server
@@ -1706,6 +1776,7 @@ state.
 state:
 stay
 stays
+steps
 still
 stood
 stop
@@ -1750,6 +1821,7 @@ table
 tag
 tag,
 tags
+tags-input
 take
 taken
 takes
@@ -1776,6 +1848,7 @@ that
 that:
 the
 their
+theirs
 them
 theme
 theme's
@@ -1806,6 +1879,7 @@ today's
 together
 toggle
 toggle,
+toggletip
 token,
 too,
 toolbar
@@ -1831,6 +1905,9 @@ trigger
 trigger's
 trigger,
 trim(($describedBy
+trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 true
 true)
 true);
@@ -1838,6 +1915,7 @@ true,
 truthy
 truthy.
 twice
+twice.
 two
 two.
 type="button"
@@ -1845,9 +1923,11 @@ type="checkbox"
 ucfirst(str_replace(['-',
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
+unchecked
 unconditionally
 under
 undone.'),
@@ -1885,6 +1965,7 @@ wants
 wants.
 warning
 warnings
+warns
 was
 way
 way.
@@ -1924,6 +2005,7 @@ word
 word)
 words
 words.
+words;
 working
 works
 works.
@@ -1946,7 +2028,9 @@ x-on:change="toggle()"
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -1970,7 +2054,9 @@ zoom,
 {
 {{
 {{--
+|
 ||
+}
 })"
 };
 }`

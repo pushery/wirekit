@@ -76,7 +76,9 @@ export default function wirekitNavigationMenu() {
             });
 
             this._navCleanup = () => { this.activeItem = null; };
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // Close an open flyout when the page scrolls. The panel is
             // `position: fixed` (positioned once on open via Floating UI), so a
@@ -201,6 +203,11 @@ export default function wirekitNavigationMenu() {
                     // screens — the default main-axis shift can't pull a panel
                     // back from the edge for a bottom placement's cross axis.
                     crossAxisShift: true,
+                    // Caps the panel to the window's height, and its scroller below takes the
+                    // rest. Without it a panel taller than a short window (a mega menu at 400%
+                    // zoom) stands past the bottom edge: it is fixed, and a scroll of the page
+                    // closes it, so the entries down there could not be reached at all.
+                    fitViewport: true,
                 });
 
                 if (placement && typeof placement.stop === 'function') {

@@ -356,7 +356,10 @@
         // number styling. All-caps sentinels are immune: ucfirst and
         // strtoupper both leave them unchanged, whichever case the
         // translation uses.
-        $summary = __('wirekit::Showing :first to :last of :total results', [
+        //
+        // The total chooses the form, since the noun follows it: a list of one
+        // reads "Showing 1 to 1 of 1 result".
+        $summary = trans_choice('wirekit::Showing :first to :last of :total results', $paginator->total(), [
             'first' => 'WKPAGEFIRST',
             'last' => 'WKPAGELAST',
             'total' => 'WKPAGETOTAL',

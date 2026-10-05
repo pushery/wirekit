@@ -6,6 +6,7 @@
 "Hoverable"
 "Most
 "New"
+"Remove";
 "default"
 "false").
 "false",
@@ -21,6 +22,9 @@ $attributes->get('aria-labelledby');
 $attributes->get('role');
 $attributes->getAttributes());
 $attributes->merge($depthStyle
+$attributes]
+$badgeText
+$badgeText])
 $baseClasses
 $borderWidthClass
 $borderWidthClass,
@@ -29,15 +33,19 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerRole
 $cleaned
 $cleaned);
 $content
+$content))
 $delayHide
 $delayShow
 $depthStyle
 $depthStyle]
 $describes
+$describes;
 $disabled
 $dismissBtnClasses
 $dismissLabel
@@ -64,6 +72,8 @@ $name];
 $offset
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $pillRadius
 $pillRadius,
 $placeholderAttributes
@@ -82,6 +92,13 @@ $sizeMap
 $sizeMap[$validated];
 $slot
 $slot)
+$slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -94,8 +111,14 @@ $surfaceAliases[$surface]
 $svgHtml
 $svgHtml,
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $validated
 $wrap
 &&
@@ -118,6 +141,7 @@ $wrap
 '<svg'.$cleaned.'>';
 'Rendering
 'Run:
+'UTF-8')));
 '[WireKit]
 'accent'
 'accent',
@@ -284,6 +308,8 @@ $wrap
 (!
 ("Fast
 ($callerAriaHidden
+($callerLabelledBy
+($dismissLabel
 ($intent)
 ($isInformative
 ($resolvedAriaHidden
@@ -292,6 +318,7 @@ $wrap
 ($size)
 ($surface)
 ($svgHtml
+($triggerIsButton)
 ('xs').
 (AA
 (Alpine
@@ -299,6 +326,7 @@ $wrap
 (CTA
 (SOFT
 (Support\CallerListeners).
+(Support\CallerName).
 (UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -358,6 +386,7 @@ $wrap
 1.4.13.
 100),
 16px
+1;
 1px
 2.1.1).
 20px,
@@ -369,6 +398,7 @@ $wrap
 500s
 6),
 :
+:name',
 :name="$leadingIcon"
 :name="$trailingIcon"
 :scope="$scope">
@@ -397,13 +427,11 @@ $wrap
 >
 ?
 ??
-??=
 @else
 @endif
 @endif>
 @endphp
 @if
-@if($describes)
 @if($disabled)
 @if($dismissible)
 @if($dot)
@@ -412,6 +440,9 @@ $wrap
 @if($surface
 @if($tooltip)
 @if($trailingIcon)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(isset($content))
 @php
 @props([
@@ -429,6 +460,7 @@ Alpine
 Alpine's
 Also
 An
+Around
 Aurora
 BOTH
 Base
@@ -461,6 +493,9 @@ Done
 Dot
 Driven
 Drop
+ENT_HTML5));
+ENT_HTML5,
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 English
@@ -592,8 +627,10 @@ WireKit::warnUnknownProps('tooltip',
 With
 Without
 [
+[$callerLabelledBy,
 ['data-wk-icon-missing'
 ['inverted',
+['name'
 ['outlined'
 ['primary',
 ['sm',
@@ -602,12 +639,16 @@ Without
 ['x-on:mouseenter',
 [])->class([$baseClasses,
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 ])
@@ -615,6 +656,7 @@ Without
 ]),
 ]);
 ];
+__('wirekit::Remove
 __('wirekit::Remove');
 __toString
 `$as`
@@ -719,6 +761,7 @@ accessibility
 accessible
 across
 action
+activating
 actual
 actually
 add
@@ -749,6 +792,7 @@ annotate.
 announced
 announcing
 anonymous
+another.
 answer
 anticipate
 any
@@ -766,6 +810,7 @@ area's
 aria-describedby
 aria-describedby)
 aria-describedby="{{
+aria-disabled="true"
 aria-hidden
 aria-hidden,
 aria-hidden.
@@ -882,6 +927,8 @@ but
 button
 button's
 button,
+button:
+buttons
 buttons).
 buttons,
 by
@@ -915,6 +962,7 @@ chevrons,
 child
 children
 chip
+chips
 choice
 chose
 chosen
@@ -979,6 +1027,7 @@ contract:
 contrast
 contrasts
 control
+control,
 copies
 correctly,
 costs
@@ -1048,6 +1097,7 @@ docs
 document
 documented
 does
+does,
 does.
 dot
 double
@@ -1106,6 +1156,7 @@ exhausting
 existing
 exists.
 expandos.
+explains,
 explanation
 explicitly
 exposing
@@ -1126,6 +1177,7 @@ false)
 false),
 false);
 false,
+false;
 family
 feature
 field
@@ -1135,6 +1187,7 @@ fill
 filled
 filled-background
 fills
+filter
 filter_var($wrap,
 finds
 fine).
@@ -1166,6 +1219,7 @@ follows
 font
 for
 forbidden
+forced
 forces
 forcing
 foreground
@@ -1251,6 +1305,7 @@ hover.
 hover:opacity-100',
 how
 however
+html_entity_decode(strip_tags((string)
 hue
 icon
 icon's
@@ -1309,8 +1364,10 @@ invalid
 inverted
 invocation`
 is
+is.
 isn't
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it,
@@ -1428,6 +1485,7 @@ moving
 ms-1
 much
 multi-line
+multi-select
 must
 n/a
 name
@@ -1442,8 +1500,10 @@ native
 needed
 needs
 neither
+nest
 nested
 never
+new
 next
 no
 no-op
@@ -1470,6 +1530,7 @@ of
 off
 offers
 offset:
+often
 omission.
 on
 on,
@@ -1571,9 +1632,13 @@ position
 positioning
 post-process
 pre-checking
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 present
 presentational
@@ -1636,6 +1701,7 @@ regularly
 relative
 removed
 removes
+removes,
 removing
 render
 render,
@@ -1666,6 +1732,8 @@ ring
 ring,
 role
 role,
+role:
+role="button"
 role="img"
 role="img".
 role="tooltip"
@@ -1675,6 +1743,7 @@ root,
 root;
 rounded
 rounded-full
+row
 row.
 rule
 run
@@ -1684,6 +1753,7 @@ safe.
 safe:
 same
 say
+says
 scanner
 scope
 scope,
@@ -1868,10 +1938,12 @@ to,
 to.
 toCssClasses()
 toHtml().
+toggletip
 token
 token,
 too,
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -1895,6 +1967,9 @@ tree:
 trigger
 trigger's
 trigger,
+trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 true)
 true);
 true,
@@ -1902,6 +1977,7 @@ truthy
 truthy.
 try
 twice
+twice.
 two
 two+
 two.
@@ -1909,6 +1985,7 @@ type="button"
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -1993,7 +2070,9 @@ with
 within
 without
 word)
+word.
 word:
+words;
 working
 works
 works).
@@ -2014,7 +2093,9 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -2040,6 +2121,7 @@ zoom,
 {!!
 {{
 {{--
+|
 ||
 }
 })"

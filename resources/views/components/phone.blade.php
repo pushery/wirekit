@@ -61,11 +61,13 @@
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
     $id = DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'phone-');
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     $attributes = $attributes->except(['id', 'name']);
 
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // The offered set. An unknown code in `countries` is dropped rather than rendered as an
     // empty row: a picker line with no dialing code behind it cannot do anything. A Collection
@@ -231,6 +233,15 @@
     // `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `form` stays on the visible field, where Enter then submits the form it joined,
+    // and goes to the hidden field this component submits as well (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+
+    // A caller's `x-model` would land on the number box beside the box's own `x-model="national"`,
+    // and the parser keeps the first, so the caller's binding would be gone without a word; on the
+    // box it could only ever bind the digits typed, not the number this component sends. It is
+    // removed with the warning `UnboundModel` gives, and the number binds with `wire:model`.
+    \Pushery\WireKit\Support\UnboundModel::drop('phone', $attributes);
 
     // The country control's own name. It carried the field's label, so a screen reader heard
     // "Phone number" twice and only the role and the value told the two controls apart, and
@@ -298,7 +309,7 @@
             x-model="national"
             x-on:input="onInput($refs.bound)"
             @unless($attributes->has('autocomplete')) autocomplete="tel" @endunless
-            inputmode="tel"
+            @unless($attributes->has('inputmode')) inputmode="tel" @endunless
             @if($placeholder) placeholder="{{ $placeholder }}" @endif
             @if($required) required aria-required="true" @endif
             @disabled($disabled)
@@ -326,7 +337,7 @@
              two cannot disagree: before Alpine binds, the field submits what it was loaded with;
              after, it submits what the reader built. --}}
         {{-- A disabled field is left out of the form data, as a native one is. --}}
-        <input type="hidden" x-ref="bound" name="{{ $name }}" value="{{ $value }}" x-bind:value="e164" @if($disabled) disabled @endif {{ $attributes->except('type')->whereStartsWith('wire:model') }} />
+        <input type="hidden" x-ref="bound" name="{{ $name }}" value="{{ $value }}" x-bind:value="e164" @if($disabled) disabled @endif {{ $attributes->except('type')->whereStartsWith('wire:model') }} @if($formOwner) form="{{ $formOwner }}" @endif />
     </div>
 
     @if($hasError && $errorMessage)

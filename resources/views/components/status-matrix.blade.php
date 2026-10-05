@@ -97,7 +97,11 @@
     // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
     // would mean destroy-and-rebuild, and the Alpine-only state — cells changed and not
     // yet saved, held against `_baseline` — would go with it on the next round trip.
-    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('status-matrix', $name ?? $attributes->get('name')));
+    // A second matrix with the same name on the page gets `-2`, so the two never share an id
+    // (DomId::distinct keeps the first verbatim).
+    $id = $attributes->has('id')
+        ? $attributes->get('id')
+        : \Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('status-matrix', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
     // Normalize axes to plain arrays of {key,label}.
@@ -219,10 +223,18 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `aria-labelledby` names the widget where a reader meets it, not the wrapper,
+    // where it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
 @endphp
 
 <div
-    {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
+    {{ $attributes->except(['id', 'name', 'class', 'aria-labelledby'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
     x-data="wirekitStatusMatrix({ cells: {{ \Pushery\WireKit\Support\AlpinePayload::from($flatCells) }}, cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }}, stateLabels: {{ $stateLabels }}, changePhrases: {{ $changePhrases }}, locale: {{ $pluralLocale }} })"
     {{ $attributes->only('class')->class([$base]) }}
@@ -233,14 +245,14 @@
              boots, and a form submitted in that window sends nothing while the
              visible control already shows the value. The serialization matches
              what the factory's own getter produces from the same data. --}}
-        <input type="hidden" x-ref="model" @if($name) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ \Pushery\WireKit\Support\AlpinePayload::json((object) $flatCells) }}" :value="cellsJson()" />
+        <input type="hidden" x-ref="model" @if($name) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ \Pushery\WireKit\Support\AlpinePayload::json((object) $flatCells) }}" :value="cellsJson()" @if($formOwner) form="{{ $formOwner }}" @endif />
     @endif
 
     {{-- Scroll region — keyboard-reachable per WCAG 2.1.1 (tabindex + focus ring, both
          unconditional). It becomes a LANDMARK only when the caller named the matrix; the inner
          table is the role=grid composite and keeps its name either way. --}}
     <div
-        @if(filled($ariaLabel)) role="region" aria-label="{{ $ariaLabel }}" @endif
+        @if($callerLabelledBy) role="region" aria-labelledby="{{ $callerLabelledBy }}" @elseif(filled($ariaLabel)) role="region" aria-label="{{ $ariaLabel }}" @endif
         tabindex="0"
         class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
@@ -261,7 +273,7 @@
                 @endisset
             </div>
         @else
-        <table data-wk-prose-skip @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" aria-label="{{ $ariaLabelResolved }}">
+        <table data-wk-prose-skip @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}"@else aria-label="{{ $ariaLabelResolved }}"@endif>
             <thead>
                 <tr>
                     {{-- Top-left corner: the row-axis label — left-aligned to match
@@ -340,7 +352,7 @@
                                             class="{{ $cellButton }}"
                                         >
                                             <span x-show="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span>
-                                            <span x-show="!toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span>
+                                            <span x-show="!toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span>
                                         </button>
                                         @break
 
@@ -395,7 +407,7 @@
                     @break
                 @case('toggle')
                     <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> {{ __('wirekit::On') }}</span>
-                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span> {{ __('wirekit::Off') }}</span>
+                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span> {{ __('wirekit::Off') }}</span>
                     @break
             @endswitch
             @if($isEditable && $cellType === 'tristate')

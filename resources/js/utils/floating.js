@@ -109,8 +109,12 @@ export function liftAboveTriggerDialog(reference, floating) {
  *   for the same reason as `crossAxisShift`: most of the overlay family calls
  *   this helper and their current geometry must not move.
  * @param {number} options.minHeight - Floor for `fitViewport`. Below this the
- *   panel stops shrinking and is allowed to overflow, because a 40px-tall menu
- *   that scrolls is worse than one that reaches past the fold.
+ *   panel stops shrinking and is allowed to overflow, because a menu too short to
+ *   show two entries is worse than one that reaches past the fold. Two rows, not
+ *   more: a higher floor would push a panel past the edge of a fixed layer on a
+ *   short viewport (a phone held sideways, a page zoomed to 400%) while it still
+ *   had room to scroll, and neither scrolling the page nor moving the focus
+ *   would bring the rest into view (WCAG 1.4.10).
  * @param {boolean} options.matchReferenceWidth - Set the panel's width from the
  *   reference element. A panel positioned `absolute` inside its field wrapper
  *   inherits the field's width through `w-full`; one positioned `fixed` (which
@@ -168,7 +172,7 @@ export async function position(reference, floating, {
     strategy = 'fixed',
     crossAxisShift = false,
     fitViewport = false,
-    minHeight = 120,
+    minHeight = 48,
     matchReferenceWidth = false,
     minReferenceWidth = false,
     autoReposition = false,

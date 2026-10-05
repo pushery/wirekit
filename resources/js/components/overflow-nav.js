@@ -2,7 +2,8 @@
  * wirekitOverflowNav — a wrapping row of links kept to a number of lines.
  *
  * The entries the rows have no room for wait in a menu at the end of the last row, behind a button
- * that shows their count. The entry marked current never goes into the menu.
+ * that shows their count. The entry marked current never goes into the menu, and neither does an
+ * entry the caller pinned.
  *
  * How many entries fit is a question about the width, and only the browser can answer it. The row
  * lays every entry out once, reads each width, and replays the wrapping of its flex row in
@@ -269,7 +270,7 @@ export default function wirekitOverflowNav(options = {}) {
                     - (Number.parseFloat(style.paddingRight) || 0),
                 lines: this._lines,
                 pinned: items
-                    .map((el, index) => (el.hasAttribute('data-wk-overflow-current') ? index : -1))
+                    .map((el, index) => (el.hasAttribute('data-wk-overflow-current') || el.hasAttribute('data-wk-overflow-pinned') ? index : -1))
                     .filter((index) => index >= 0),
             };
 

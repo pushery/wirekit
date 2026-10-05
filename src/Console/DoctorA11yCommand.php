@@ -316,7 +316,7 @@ class DoctorA11yCommand extends Command
             ['name' => 'focus ring on ring-offset', 'fg' => '--color-wk-ring', 'bg' => '--color-wk-ring-offset', 'threshold' => 'ui'],
             ['name' => 'border-error on bg', 'fg' => '--color-wk-border-error', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
             ['name' => 'border-success on bg', 'fg' => '--color-wk-border-success', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
-            // The frame of a field the server does not have yet (x-wk-unsaved): a state, so 3:1,
+            // The frame of a field that is not saved yet (x-wk-unsaved): a state, so 3:1,
             // against the field fill it sits on.
             ['name' => 'border-unsaved on bg-input', 'fg' => '--color-wk-border-unsaved', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui'],
             // border-strong is the COMMUNICATING form-control border introduced in

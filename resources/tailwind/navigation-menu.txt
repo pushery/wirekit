@@ -31,6 +31,7 @@ $opensNewTab
 $panelClasses
 $panelId
 $panelId:
+$panelScrollClasses
 $relAttr
 $relAttr;
 $scope);
@@ -46,6 +47,8 @@ $triggerClasses
 ''
 '');
 ',
+'-m-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
+'.WireKit::resolveClasses('navigation-menu.item',
 '_blank');
 'active'
 'base',
@@ -57,15 +60,18 @@ $triggerClasses
 'false'
 'false'"
 'fixed
+'flex
 'focus:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
 'hover:bg-[var(--color-wk-bg-subtle)]',
 'href'
 'inline-flex
 'max-w-[calc(100vw-1rem)]',
+'min-h-0
 'noopener')
 'p-[var(--padding-wk-x-lg)]',
 'panel',
+'panel-scroll',
 'px-[var(--padding-wk-x-md)]',
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-sm)]',
@@ -85,6 +91,7 @@ $triggerClasses
 'true'
 'wk-nav-item-');
 'wk-nav-panel-');
+'wk-scrollbar
 'x-on:focusout']);
 ($relAttr
 (4px).
@@ -275,6 +282,7 @@ accessible
 across
 actually
 after
+again.
 against
 agree
 already
@@ -325,6 +333,7 @@ before:right-0
 belongs
 below
 beside
+between
 bled
 block
 block,
@@ -332,6 +341,7 @@ border-[var(--color-wk-border)]',
 both
 bound
 bound,
+bridge
 browser
 bubble
 bubbles
@@ -344,6 +354,8 @@ caller's
 can
 cannot
 canonical
+capped
+caps
 carried
 carry
 cast
@@ -359,9 +371,11 @@ classes
 click
 clicking
 client-only
+clip
 close
 closes
 collisions.
+column,
 comes
 comment
 comments
@@ -373,14 +387,17 @@ component,
 container
 containing
 content
+content.
 copies
 could
 counter
 covers
 creates
+cross
 cross-menu
 crosses
 d="m19.5
+data-wk-nav-panel-scroll
 data-wk-nav-panel="{{
 data-wk-nav-trigger="{{
 data-wk-prose-skip
@@ -451,12 +468,15 @@ fixed
 fixed`
 flags
 flex
+flex-col',
 flips
 flyout
 flyout).
 focus
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
+focused
+focusing
 font-[number:var(--font-wk-heading-weight)]'
 for
 forbid
@@ -483,6 +503,8 @@ handlers
 hands
 hardcoded
 has
+height
+helper
 here
 here,
 here:
@@ -524,6 +546,7 @@ item:
 items-center
 items.
 its
+itself
 just
 keep
 keeps
@@ -538,6 +561,7 @@ lands
 later
 left
 link
+link's
 link.
 links
 list
@@ -550,6 +574,7 @@ location.
 longer
 made
 makes
+margin
 marker
 markup
 match
@@ -576,6 +601,7 @@ move
 move,
 moved
 movement
+moving
 must
 n/a
 name
@@ -594,6 +620,7 @@ navigation')
 navigation-menu
 navigation-menu/item.blade.php.
 necessary.
+negative
 neither
 never
 new
@@ -637,11 +664,16 @@ our
 out
 outside-tap
 over:
+overflow
+overflow-y-auto
 overflow.
 overlay
+overscroll-contain',
 own
 own.
 owns,
+p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
+padding
 panel
 panel's
 panel,
@@ -684,6 +716,7 @@ rather
 rationale
 re-render
 reach
+reached
 reader
 reads
 real
@@ -712,6 +745,7 @@ reveal
 reveals
 rich
 right
+ring
 role-less
 roll
 root
@@ -727,6 +761,11 @@ scope
 screen
 screens
 scroll-close
+scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]',
+scroll:
+scroller
+scroller's
+scrolls
 second
 security
 see.
@@ -734,6 +773,8 @@ separate
 server
 several.
 shape
+short
+shrinks
 sibling
 sidebar/item.blade.php
 silently
@@ -757,6 +798,8 @@ stay
 steady
 still
 stood
+stop
+stops,
 str_contains($relAttr,
 str_contains($targetAttr,
 string,
@@ -768,6 +811,7 @@ stylesheet
 styling
 subtree
 summon
+tab
 tab)')
 tag
 takes
@@ -788,6 +832,7 @@ they
 things
 this
 to
+to.
 token
 too,
 top-level
@@ -819,6 +864,7 @@ value;
 vanish
 view
 view's
+view,
 viewBox="0
 viewport
 viewport.
@@ -833,6 +879,7 @@ while
 who
 whole
 wide
+window.
 wire:key="wk-nav-panel-{{
 wirekitNavigationMenu()'s
 with
@@ -874,6 +921,7 @@ zone
 ||
 }}
 }}"
+}}">
 }})"
 }}</span>
 —

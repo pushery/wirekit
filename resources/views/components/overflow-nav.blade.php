@@ -7,8 +7,10 @@
     // `icon` (an icon name drawn before the label), `after` (markup after the label: a string
     // renders as text, an Htmlable as markup, and a Closure is called once for the rows and once
     // for the menu with `'row'` or `'menu'`, so markup that carries an id renders once in each
-    // place) and `action` (a button beside the link: `label`, which names it, `icon`, `close` by
-    // default, and `attributes`, such as the `wire:click` that closes the entry).
+    // place), `action` (a button beside the link: `label`, which names it, `icon`, `close` by
+    // default, and `attributes`, such as the `wire:click` that closes the entry), `pinned` (the
+    // entry stays in the rows at every width, as the current one does) and `divider` (a line
+    // after the entry in the rows, which sets it apart from the entries that follow).
     'items' => [],
     // How many rows the links may take before the rest go into the menu.
     'lines' => 2,
@@ -19,6 +21,12 @@
     // decided by the width; this only orders them there. Keys it does not name follow in the
     // order of `items`.
     'menuOrder' => null,
+    // The button's name, which counts the menu: `:count` stands for the number, and a singular
+    // and a plural are written `one|many`, the way a translation writes them (":count more open
+    // record|:count more open records"). A translation key works as well. Unset, "3 more links".
+    'moreLabel' => null,
+    // The menu's name. Unset, "More links".
+    'menuLabel' => null,
     'scope' => null,
 ])
 
@@ -44,6 +52,8 @@
             // is: the rule takes a string, a Stringable and a backed enum, as Blade's echo does.
             'href' => \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? '#'),
             'current' => (bool) ($item['current'] ?? false),
+            'pinned' => (bool) ($item['pinned'] ?? false),
+            'divider' => (bool) ($item['divider'] ?? false),
             // The developer's own attributes for the anchor, as written. An `href` among them is
             // left out: it would reach the link past the rule above, and would be the only target
             // of an entry whose own was refused.
@@ -151,8 +161,9 @@
     ]), $scope);
 
     // An entry in the rows, around its link and its action. It carries no class of its own, and an
-    // entry with an action sets the two in a line. A caller's block frames them as one, as a tab
-    // does, and reaches the current entry through its `data-wk-overflow-current` attribute.
+    // entry with an action or a divider sets its parts in a line. A caller's block frames them as
+    // one, as a tab does, and reaches the current entry through its `data-wk-overflow-current`
+    // attribute.
     $itemClasses = [
         'plain' => WireKit::resolveClasses('overflow-nav', 'item', '', $scope),
         'action' => WireKit::resolveClasses('overflow-nav', 'item', 'inline-flex items-center', $scope),
@@ -183,9 +194,16 @@
     ]), $scope);
 
     // Both plural forms travel to the browser, which counts the menu. The placeholder is swapped
-    // there for the number.
-    $moreOne = trans_choice('wirekit:::count more link|:count more links', 1, ['count' => '__COUNT__']);
-    $moreMany = trans_choice('wirekit:::count more link|:count more links', 2, ['count' => '__COUNT__']);
+    // there for the number. A caller's name is chosen from the same way as the kit's: a string
+    // that is no translation key is its own message.
+    // The kit's own key is written out where trans_choice() reads it, so a scan of the shipped
+    // keys finds it.
+    $moreForm = static fn (int $count): string => filled($moreLabel)
+        ? trans_choice((string) $moreLabel, $count, ['count' => '__COUNT__'])
+        : trans_choice('wirekit:::count more link|:count more links', $count, ['count' => '__COUNT__']);
+    $moreOne = $moreForm(1);
+    $moreMany = $moreForm(2);
+    $menuName = filled($menuLabel) ? (string) $menuLabel : __('wirekit::More links');
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -202,20 +220,31 @@
 >
     <ul data-wk-prose-skip role="list" x-ref="row" class="{{ $rowClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($entries as $entry)
-            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif @if(filled($itemClasses[$entry['action'] ? 'action' : 'plain'])) class="{{ $itemClasses[$entry['action'] ? 'action' : 'plain'] }}" @endif x-show="shownHere({{ $entry['index'] }})">
+            @php($itemClass = $itemClasses[$entry['action'] || $entry['divider'] ? 'action' : 'plain'])
+            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif @if($entry['pinned']) data-wk-overflow-pinned @endif @if(filled($itemClass)) class="{{ $itemClass }}" @endif x-show="shownHere({{ $entry['index'] }})">
                 @php($rowAfter = $afterFor($entry, 'row'))
                 <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class(['wk-overflow-nav-link', $linkClasses]) }}>@if($entry['icon'] !== null || filled($rowAfter))<span class="{{ $partsInRow }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" class="shrink-0" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@if(filled($rowAfter))<span class="inline-flex shrink-0 items-center">{{ $rowAfter }}</span>@endif</span>@else{{ $entry['label'] }}@endif</a>
                 @if($entry['action'])
                     @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
+                @endif
+                {{-- Inside the entry, so the width the row measures for the entry includes it and the
+                     line goes with the entry when the entry goes into the menu. A border rather than a
+                     fill, which forced colors would drop. --}}
+                @if($entry['divider'])
+                    <span data-wk-overflow-divider aria-hidden="true" class="ms-[var(--space-wk-xs)] self-stretch my-[var(--space-wk-xs)] border-s border-[color:var(--color-wk-border)]"></span>
                 @endif
             </li>
         @endforeach
         {{-- Hidden until the row has measured itself, so a page without script shows every link
              in as many rows as it takes, and no button that opens nothing. --}}
         <li data-wk-prose-skip x-ref="more" x-show="overflowing" style="display: none;">
-            <x-wirekit::popover placement="bottom-end" :label="__('wirekit::More links')">
+            <x-wirekit::popover placement="bottom-end" :label="$menuName">
                 <x-slot:trigger>
-                    <x-wirekit::button intent="neutral" surface="ghost" size="sm" x-bind:aria-label="moreName">
+                    {{-- As tall as an entry, so the row that holds it is as tall as the rows above it: the
+                         smallest button has the entries' text, padding and height. Under a coarse pointer
+                         every button takes a 44px floor; this one steps out of it and takes its 44 x 44 as
+                         a patch that paints nothing, as an icon button does. --}}
+                    <x-wirekit::button intent="neutral" surface="ghost" size="xs" class="wk-touch-target [--wk-touch-min:0px]" x-bind:aria-label="moreName">
                         <span data-wk-overflow-count x-text="moreText">+0</span>
                     </x-wirekit::button>
                 </x-slot:trigger>

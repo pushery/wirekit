@@ -77,6 +77,11 @@
     ]);
 @endphp
 
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+@endphp
 <div {{ $attributes->class([$wrapperClasses]) }} data-wk-code-block>
     @if($filename || $copy)
         {{-- x-data lifted to toolbar so the live-region span can read state (WCAG 2.2 SC 4.1.3).
@@ -170,7 +175,7 @@
     <pre data-wk-prose-skip @class([$preClasses])><code data-wk-prose-skip
         @class([$codeClasses])
         @unless($wrap) tabindex="0" @endunless
-        @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
+        @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
         @if($language) data-language="{{ $language }}" @endif
     >{{ $slot }}</code></pre>
 </div>

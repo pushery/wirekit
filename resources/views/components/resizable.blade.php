@@ -46,10 +46,16 @@
     $directionClass = $direction === 'vertical' ? 'flex-col' : 'flex-row';
 @endphp
 
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+@endphp
 <div
     data-wk-resizable
     data-wk-direction="{{ $direction === 'vertical' ? 'vertical' : 'horizontal' }}"
     {{ $attributes->class([$classes, $directionClass]) }}
+    @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     {{ $slot }}
 </div>

@@ -19,6 +19,7 @@
 "Save",
 "Saving…")
 "Send
+"Showing
 "Type
 "View
 "always
@@ -60,7 +61,6 @@ $attributes->except(['id',
 $attributes->get('aria-describedby',
 $attributes->get('class',
 $attributes->get('name'),
-$attributes->get('name',
 $attributes->get('rel',
 $attributes->get('required',
 $attributes->get('target',
@@ -82,10 +82,13 @@ $buttonBag->class([$baseClasses,
 $buttonBag->merge(['style'
 $buttonBase
 $buttonDisabled
+$callerLabel
+$callerLabel,
 $candidate;
 $classes
 $computedRel
 $content
+$content))
 $declarativeBusyOnly
 $declarativeBusyOnly);
 $declarativeLoading
@@ -94,6 +97,7 @@ $delayHide
 $delayShow
 $describedBy
 $describes
+$describes;
 $disableOnLoading
 $disableOnLoading;
 $disabled
@@ -104,6 +108,10 @@ $emphasize($paginator->lastItem()
 $emphasize($paginator->total()),
 $empty
 $emptyAction
+$emptyHref,
+$emptyNavigate
+$emptyNavigates
+$emptyNavigates)
 $emptyText
 $error
 $errorMessage
@@ -181,6 +189,7 @@ $loading
 $loadingTarget
 $message
 $name
+$name);
 $navClasses
 $navLabel
 $newTabHint
@@ -205,6 +214,8 @@ $optionValue
 $optionValue)
 $orientation
 $outerAttributes
+$ownName
+$ownName);
 $page):
 $pageAction
 $pageAction($paginator->currentPage()
@@ -226,6 +237,7 @@ $paginator->perPage();
 $paginator->previousCursor()?->encode()).',
 $paginator->previousPageUrl())
 $paginator->total()
+$paginator->total(),
 $paginator->url(1);
 $pagingName
 $pair)
@@ -294,6 +306,12 @@ $slot)
 $slot))
 $slot),
 $slot->hasActualContent()
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $stackBelow
 $stackBelow,
 $stateClasses
@@ -321,11 +339,17 @@ $surfaceAliases[$surface]
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $touchClasses
 $touchClasses,
 $touchTextFloor
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $type
 $u
 $u):
@@ -339,11 +363,13 @@ $variant
 $variant,
 $variantClasses
 $variantClasses,
+$wkField->follow($id);
 $wrapLabel
 &&
 &laquo;
 &raquo;
 '
+'#');
 '$wkScrollTo('.\Pushery\WireKit\Support\AlpinePayload::from((string)
 ''
 ''">{{
@@ -446,6 +472,7 @@ $wrapLabel
 'elevated']);
 'emptyAction'
 'emptyHref'
+'emptyNavigate'
 'emptyText'
 'end'
 'error'
@@ -561,6 +588,7 @@ $wrapLabel
 'mode'
 'muted'
 'muted']))
+'name',
 'name']);
 'nextLabel'
 'no-underline',
@@ -697,9 +725,9 @@ $wrapLabel
 ("Help
 ("to"
 ($attributes->getAttributes()
+($callerLabelledBy
 ($candidate):
 ($declarativeLoading
-($errors
 ($firstPageAction
 ($forceLoading)
 ($hasError
@@ -728,6 +756,7 @@ $wrapLabel
 ($stackBelow
 ($subLabel['label']
 ($surface
+($triggerIsButton)
 ($value
 ($wkField
 ($wrapLabel
@@ -739,7 +768,10 @@ $wrapLabel
 (AlpinePayload::from,
 (Named
 (SVG
+(Support\AttributeText).
 (Support\CallerListeners).
+(Support\CallerName).
+(Support\NumericModel).
 (Support\UrlProp).
 (Tailwind's
 (WCAG
@@ -883,6 +915,7 @@ $wrapLabel
 16px
 18
 18.75V10.5m-10.5
+1;
 1px
 2),
 2,
@@ -955,6 +988,7 @@ $wrapLabel
 :help-field="$name"
 :help-id="$helpId"
 :help="$help"
+:href="$emptyHref"
 :href="$emptyHref">{{
 :label',
 :last
@@ -1032,6 +1066,7 @@ $wrapLabel
 @elseif($loading)
 @elseif($showHint)
 @elseif($variant
+@elseif(filled($emptyHref))
 @endforeach
 @endif
 @endif>
@@ -1052,7 +1087,6 @@ $wrapLabel
 @if($computedRel)
 @if($declarativeLoading)
 @if($describedBy
-@if($describes)
 @if($disabled)
 @if($emitAriaBusy)
 @if($external)
@@ -1070,6 +1104,7 @@ $wrapLabel
 @if($link['url']
 @if($loading
 @if($loadingTarget)
+@if($name
 @if($nextAction)
 @if($offersPerPage)
 @if($opensNewTab)
@@ -1089,8 +1124,11 @@ $wrapLabel
 @if($summaryAlone)
 @if($surface
 @if($tag
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if($variant
-@if(filled($emptyHref))
+@if(filled($emptyHref)
 @if(filled($help))
 @if(filled($helpId
 @if(is_array($optionLabel)
@@ -1126,6 +1164,7 @@ Alpine's
 An
 And
 Apply
+Around
 Auto-detect
 Auto-inject
 BACKWARD
@@ -1144,6 +1183,7 @@ BooleanProp::from($announceNewTab,
 BooleanProp::from($describes,
 BooleanProp::from($disableOnLoading,
 BooleanProp::from($disabled,
+BooleanProp::from($emptyNavigate,
 BooleanProp::from($external,
 BooleanProp::from($focusableTrigger,
 BooleanProp::from($forceLoading,
@@ -1196,6 +1236,7 @@ Draw
 Dropdown
 ELEMENT,
 ENT_HTML5)),
+ENT_HTML5));
 ENT_QUOTES
 EVERY
 Each
@@ -1293,6 +1334,7 @@ NOTE:
 Name
 Neither
 Neutral
+Never
 Newlines
 No
 Nobody
@@ -1475,6 +1517,7 @@ X
 XSS
 Y"
 [
+[$callerLabelledBy,
 [$outerAttributes,
 [$queryName,
 ['Europe'
@@ -1504,6 +1547,7 @@ Y"
 \Illuminate\Pagination\Paginator::$defaultSimpleView;
 \Illuminate\Pagination\Paginator::defaultSimpleView($__wkSimpleView);
 \Illuminate\Pagination\Paginator::defaultSimpleView('wirekit::pagination.discarded');
+\Illuminate\Support\HtmlString('');
 \Illuminate\View\ComponentAttributeBag($selectAttributes);
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::from($pageName);
@@ -1511,18 +1555,26 @@ Y"
 \Pushery\WireKit\Support\AlpinePayload::string($helpField
 \Pushery\WireKit\Support\AlpinePayload::string($helpName
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\BooleanProp::from($alignFields,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique('wk-per-page-'.$pagingName,
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\FieldControl)
 \Pushery\WireKit\Support\FieldControl);
+\Pushery\WireKit\Support\FieldError::first($errors
+\Pushery\WireKit\Support\FieldError::has($errors
 \Pushery\WireKit\Support\ListProp::from($options);
 \Pushery\WireKit\Support\ListProp::from($perPageOptions);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
+\Pushery\WireKit\Support\NumericModel::number($attributes);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
@@ -1557,7 +1609,6 @@ __('wirekit::Pagination');
 __('wirekit::Per
 __('wirekit::Previous');
 __('wirekit::Saving'),
-__('wirekit::Showing
 `!==
 `$as`
 `$loading`;
@@ -1569,8 +1620,10 @@ __('wirekit::Showing
 `--font-wk-body-weight`
 `--text-wk-sm`
 `--wk-touch-min`
+`-2`,
 `->slice(1,
 `.attr`
+`.number`
 `.wk-button-group[data-stack-below="…"]`
 `.wk-button`
 `2xl`
@@ -1687,6 +1740,7 @@ __('wirekit::Showing
 `flex-nowrap`
 `flex-wrap`
 `flex`
+`float`
 `focusable-trigger`
 `font-medium`
 `for`
@@ -1709,6 +1763,7 @@ __('wirekit::Showing
 `iconOnly`,
 `id`
 `inline-flex`
+`int`
 `inverted`
 `isolation:
 `items-end`
@@ -1809,6 +1864,7 @@ __('wirekit::Showing
 `wire:loading`
 `wire:model`
 `wire:model`,
+`wire:navigate`,
 `wire:show`
 `wirekit::`
 `wirekit:field-help`
@@ -1860,6 +1916,7 @@ action.
 action="{{
 actions.
 activated
+activating
 active
 active-tab
 active}
@@ -2234,9 +2291,11 @@ child)
 children
 choice
 choice,
+choice:
 choose
 choose.
 choose:
+chooses
 chosen
 chosen.
 circle
@@ -2709,6 +2768,7 @@ feature
 feed
 feedback
 fell
+fetch
 fetched
 fetched.
 few
@@ -2801,6 +2861,7 @@ font-size
 footer
 footprint
 for
+for,
 for.
 for:
 force-override,
@@ -2864,6 +2925,7 @@ glyphs
 go
 goes
 got
+got:
 greater
 green
 grep
@@ -3040,6 +3102,7 @@ init
 initialized.
 inline
 inline-block'])
+inline-edit's
 inline-flex
 inner
 input
@@ -3083,6 +3146,7 @@ is_array($perPageOptions)
 is_array($subLabel)
 is_string($success)
 isolate`
+isset($content)
 isset($empty));
 isset($optionLabel['lang'])
 isset($subLabel['lang'])
@@ -3378,12 +3442,14 @@ neither
 neither,
 neither.
 neither:
+nest
 nested
 neutral
 neutral:
 never
 new
 new-tab
+newer
 newline
 next
 nextPage():
@@ -3401,6 +3467,8 @@ nodes
 non-Livewire
 non-anchor
 none
+none,
+none:
 none;
 none`
 noopener
@@ -3419,6 +3487,7 @@ nothing.
 nothing:
 nothing;
 notice:
+noun
 now
 nowhere
 nowhere,
@@ -3426,8 +3495,6 @@ null
 null)
 null))
 null);
-null)?->first($name);
-null)?->has($name);
 null,
 null;
 null])
@@ -3460,6 +3527,7 @@ on:
 once
 once,
 once.
+once;
 one
 one".
 one')
@@ -3645,6 +3713,7 @@ placement:
 plain
 plus
 point
+pointed
 pointer
 pointer-events
 pointer-events-none"
@@ -3676,6 +3745,9 @@ preferences
 prefers
 prefix
 preflight
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_split('/\s+/',
 prepared
 present
@@ -3801,6 +3873,7 @@ rel="{{
 relative
 reliably
 reliably.
+reloading
 remove
 remove.
 removes
@@ -3844,6 +3917,7 @@ resting
 restored
 rests
 result
+result".
 resulting
 results
 results',
@@ -3860,6 +3934,8 @@ right.
 ring
 ring,
 role
+role:
+role="button"
 role="group"
 role="link"
 role="navigation"
@@ -3923,10 +3999,13 @@ scoping
 screen
 screen,
 screen-reader
+screens
 script
 scroll
 scrollable
 scrolled
+scrolling
+scrolling.
 scrolls
 seam
 second
@@ -3945,6 +4024,7 @@ selected'
 selection
 selector,
 sends
+sent
 sentence
 sentence,
 sentence.
@@ -3954,6 +4034,7 @@ separately
 separately.
 separator
 server
+server's
 server-side
 set
 set.
@@ -4109,6 +4190,7 @@ str_contains($relAttr,
 str_contains($targetAttr,
 str_replace(
 str_starts_with($key,
+str_starts_with((string)
 straight
 strategy:
 stray
@@ -4144,6 +4226,7 @@ sub-component
 sub-component,
 submit
 submitted
+submitted,
 submitting,
 substituted
 subtle:
@@ -4302,6 +4385,7 @@ together.
 toggle,
 toggle:
 toggles
+toggletip
 token
 token,
 tokens
@@ -4332,6 +4416,7 @@ tracks
 trade
 trade,
 trailing
+trans_choice('wirekit::Showing
 transformed
 transition-colors
 transitions
@@ -4396,6 +4481,7 @@ ucfirst
 unable
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged,
@@ -4587,6 +4673,7 @@ wire:loading.attr
 wire:loading.attr="{{
 wire:loading.class="opacity-[var(--opacity-wk-disabled)]
 wire:loading>
+wire:navigate>{{
 wire:poll
 wire:submit
 wire:target
@@ -4606,6 +4693,7 @@ word,
 word.
 words
 words).
+words;
 work,
 worked.
 working
@@ -4643,7 +4731,9 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:click="{{
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

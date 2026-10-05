@@ -49,6 +49,11 @@
         default => WireKit::validateProp('progress', 'intent', $effectiveIntent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
     };
 
+    // A max that holds no positive number means "out of 100", as on radial-progress: a text
+    // would throw in the arithmetic below, and zero or less would put aria-valuemax under
+    // aria-valuemin.
+    $max = \Pushery\WireKit\Support\NumericProp::positive($max, 100);
+
     // Clamp the value to [0, max] and compute percentage for fill width
     $isIndeterminate = $value === null;
     $clamped = $isIndeterminate ? 0 : max(0, min((float) $value, (float) $max));

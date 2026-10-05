@@ -15,21 +15,28 @@
  * browser's own question on a reload, a closed tab or an address typed in, and `confirm()` with
  * the hint's question before a `wire:navigate` visit. A step through the history is not stopped.
  *
- * WHAT COUNTS AS SAVED is the moment the server has the value: any request of the component sends
- * every deferred change with it, not only the save. A field with `.live`, `.blur`, `.change` or
- * `.lazy` sends its value itself and is not tracked; nor are file fields, nor anything inside
- * `data-wk-unsaved-off`.
+ * WHAT COUNTS AS SAVED: every field keeps the value it counts as saved with, at first what the
+ * server rendered. A request of the component that comes back without a validation error saves
+ * every deferred field, since any request sends them, not only the save; one that comes back with
+ * a validation error saves nothing. A value the server writes into a field itself, loading,
+ * resetting or rewriting it, is saved at once. `x-wk-unsaved.until-saved` counts only a save: a
+ * `wire:submit` of the form around the field that comes back without a validation error, or a
+ * `wirekit:saved` the component dispatches, with `scope` naming the scope
+ * (`x-wk-unsaved.until-saved="name"`), `paths` naming bound properties, or neither for every field
+ * of the component. A field with `.live`, `.blur`, `.change` or `.lazy` sends its value itself and
+ * is not tracked; nor are file fields, nor anything inside `data-wk-unsaved-off`.
  *
  * WHY THE COMPONENT'S OWN STATE: `wire:model` sits on a native field as often as on a component's
  * root, whose value lives in Alpine and never shows in the DOM. Livewire keeps both sides for every
  * component, the values the server sent and the values the page holds, and `wire:dirty` compares
- * exactly those two. The question asked here is the same one, so the answer cannot differ from it.
- * At the moment a redirect runs after a save, the server's values have already been merged, so
- * the question asked before leaving is answered from the same state rather than from the last
- * paint.
+ * exactly those two, and the value a field counts as saved with moves only from there. A response
+ * is weighed the first time anything asks after Livewire merged it, its validation errors and its
+ * dispatches included, so the question asked before a redirect that a save starts already counts
+ * the save, although the redirect runs before the response is painted.
  *
- * Lifecycle: one Alpine effect per scope, released with the directive; one commit hook and two
- * page listeners per page, installed once and reading the scopes that are registered.
+ * Lifecycle: one Alpine effect per scope, released with the directive; one commit hook and four
+ * page listeners per page (leaving, a `wire:navigate` visit, a submit and `wirekit:saved`),
+ * installed once and reading the scopes that are registered.
  */
 
 export const WK_UNSAVED_ATTRIBUTE = 'data-wk-unsaved';
@@ -52,6 +59,24 @@ export const WK_UNSAVED_DEFAULT_QUESTION = 'You have unsaved changes. Leave this
  */
 const INSTALLED_FLAG = '__wirekitUnsavedChanges';
 const REGISTRY_KEY = '__wirekitUnsavedScopes';
+const SAVED_KEY = '__wirekitUnsavedSaved';
+const SETTLED_KEY = '__wirekitUnsavedSettled';
+const REQUESTS_KEY = '__wirekitUnsavedRequests';
+const SUBMITS_KEY = '__wirekitUnsavedSubmits';
+const ENTRIES_KEY = '__wirekitUnsavedEntries';
+const FIELDS_KEY = '__wirekitUnsavedFields';
+
+/** How long a submit waits for the request it starts before it is taken for something else. */
+const SUBMIT_WINDOW_MS = 2000;
+
+/** A value on `window`, made once, which a second copy of this module shares with the first. */
+function shared(key, make) {
+    if (! window[key]) {
+        window[key] = make();
+    }
+
+    return window[key];
+}
 
 /**
  * The model path a field binds when it is tracked, or null.
@@ -127,6 +152,184 @@ export function differsFromServer(component, path) {
     return JSON.stringify(valueAt(component.reactive, path)) !== JSON.stringify(valueAt(component.canonical, path));
 }
 
+/** Whether two JSON texts hold the same value, a number and its text counting as one. */
+function sameJson(a, b) {
+    if (a === b) {
+        return true;
+    }
+
+    try {
+        const left = JSON.parse(a);
+        const right = JSON.parse(b);
+        const scalar = (value) => ['string', 'number', 'boolean'].includes(typeof value);
+
+        return scalar(left) && scalar(right) && String(left) === String(right);
+    } catch {
+        return false;
+    }
+}
+
+/** The scope a field answers to: the nearest one around it. */
+function entryOf(el) {
+    const scope = typeof el.closest === 'function' ? el.closest(`[${WK_UNSAVED_SCOPE_ATTRIBUTE}]`) : null;
+
+    return scope ? shared(ENTRIES_KEY, () => new WeakMap()).get(scope) ?? null : null;
+}
+
+/** Whether a saved signal names this field: by its scope, by its path, or neither, which names all. */
+function names(signal, entry, path) {
+    const scope = typeof signal.scope === 'string' ? signal.scope : null;
+    const paths = Array.isArray(signal.paths) ? signal.paths : null;
+
+    if (scope !== null && (entry === null || scope !== entry.name)) {
+        return false;
+    }
+
+    return paths === null || paths.includes(path);
+}
+
+/** The `wirekit:saved` dispatches of a response, each as what it names. */
+function savedSignals(effects) {
+    const dispatches = effects && Array.isArray(effects.dispatches) ? effects.dispatches : [];
+
+    return dispatches
+        .filter((dispatch) => dispatch && dispatch.name === 'wirekit:saved')
+        .map((dispatch) => (dispatch.params && typeof dispatch.params === 'object' && ! Array.isArray(dispatch.params) ? dispatch.params : {}));
+}
+
+/**
+ * Weigh the response a component received since anything last asked, once. A field the server
+ * wrote is saved; so is a field a `wirekit:saved` of the response names; and, unless the response
+ * carries a validation error, every field of a scope without `.until-saved`, and the fields of a
+ * form whose `wire:submit` sent the request.
+ *
+ * @param {object} component
+ */
+function settle(component) {
+    const settled = shared(SETTLED_KEY, () => new WeakMap());
+    const snapshot = component.snapshot ?? null;
+
+    if (! settled.has(component)) {
+        settled.set(component, snapshot);
+
+        return;
+    }
+
+    if (settled.get(component) === snapshot) {
+        return;
+    }
+
+    settled.set(component, snapshot);
+
+    const requests = shared(REQUESTS_KEY, () => new WeakMap());
+    const request = requests.get(component) ?? { sent: new Map(), form: null };
+    const saved = shared(SAVED_KEY, () => new WeakMap()).get(component);
+
+    requests.delete(component);
+
+    if (! saved) {
+        return;
+    }
+
+    const errors = snapshot && snapshot.memo ? snapshot.memo.errors : null;
+    const failed = Boolean(errors) && typeof errors === 'object' && Object.keys(errors).length > 0;
+    const signals = savedSignals(component.effects);
+    const fields = shared(FIELDS_KEY, () => new WeakMap()).get(component) ?? new Map();
+
+    for (const path of Array.from(saved.keys())) {
+        // The field last compared under this path, and the scope it answers to; none outside a
+        // registered scope, which counts like a scope without `.until-saved`.
+        const el = fields.get(path) ?? null;
+        const entry = el ? entryOf(el) : null;
+        const server = JSON.stringify(valueAt(component.canonical, path));
+        const sent = request.sent.get(path);
+        const wrote = sent !== undefined && ! sameJson(sent, server);
+        const submitted = request.form !== null && el !== null && typeof request.form.contains === 'function' && request.form.contains(el);
+        const signaled = signals.some((signal) => names(signal, entry, path));
+
+        if (wrote || signaled || (! failed && (entry === null || ! entry.untilSaved || submitted))) {
+            saved.set(path, server);
+        }
+    }
+}
+
+/**
+ * The JSON of the value a field counts as saved with: what the server held when the field was
+ * first seen, until a response or a signal moves it.
+ *
+ * @param {object} component
+ * @param {string} path
+ */
+export function savedValueOf(component, path) {
+    settle(component);
+
+    const store = shared(SAVED_KEY, () => new WeakMap());
+    let saved = store.get(component);
+
+    if (! saved) {
+        saved = new Map();
+        store.set(component, saved);
+    }
+
+    if (! saved.has(path)) {
+        saved.set(path, JSON.stringify(valueAt(component.canonical, path)));
+    }
+
+    return saved.get(path);
+}
+
+/**
+ * Whether the page holds a value for this path other than the one it counts as saved. Reads the
+ * reactive side, so an Alpine effect that calls this runs again when the field changes. The field
+ * is remembered under its path, so a later response is weighed by the scope it answers to.
+ *
+ * @param {object} component
+ * @param {string} path
+ * @param {Element|null} el
+ */
+export function differsFromSaved(component, path, el = null) {
+    if (el) {
+        const store = shared(FIELDS_KEY, () => new WeakMap());
+
+        if (! store.has(component)) {
+            store.set(component, new Map());
+        }
+
+        store.get(component).set(path, el);
+    }
+
+    return JSON.stringify(valueAt(component.reactive, path)) !== savedValueOf(component, path);
+}
+
+/**
+ * Count the fields a saved signal names as saved with what their server holds: the signal's
+ * `scope` and `paths`. One dispatched on an element counts only inside the Livewire component
+ * around it, which is where a component's own dispatch and an Alpine `$dispatch` from a button
+ * start, or inside the element when no component is around it; one sent to `window` counts on
+ * the whole page.
+ *
+ * @param {unknown} detail
+ * @param {unknown} target
+ */
+export function markSaved(detail, target = null) {
+    const signal = detail && typeof detail === 'object' && ! Array.isArray(detail) ? detail : {};
+    const element = target && typeof target.closest === 'function' ? target : null;
+    const within = element ? element.closest('[wire\\:id]') ?? element : null;
+
+    for (const entry of registry()) {
+        for (const field of trackedFields(entry.el)) {
+            if (entryOf(field.el) !== entry || ! names(signal, entry, field.path) || (within !== null && ! within.contains(field.el))) {
+                continue;
+            }
+
+            savedValueOf(field.component, field.path);
+            shared(SAVED_KEY, () => new WeakMap()).get(field.component).set(field.path, JSON.stringify(valueAt(field.component.canonical, field.path)));
+        }
+
+        entry.rerun();
+    }
+}
+
 /**
  * Every tracked field in the scope, with the component that owns it.
  *
@@ -187,7 +390,7 @@ export function refreshScope(scope) {
     // Every field is compared and marked, no early exit: an effect that calls this reads each
     // field's value, and that read is what makes it run again when the field changes.
     for (const field of trackedFields(scope)) {
-        const differs = differsFromServer(field.component, field.path);
+        const differs = differsFromSaved(field.component, field.path, field.el);
 
         flag(field.el, WK_UNSAVED_ATTRIBUTE, differs);
         unsaved = unsaved || differs;
@@ -241,7 +444,7 @@ export function scopeHoldingUnsaved(scopes) {
             continue;
         }
 
-        if (trackedFields(entry.el).some((field) => differsFromServer(field.component, field.path))) {
+        if (trackedFields(entry.el).some((field) => differsFromSaved(field.component, field.path, field.el))) {
             return entry.el;
         }
     }
@@ -249,7 +452,7 @@ export function scopeHoldingUnsaved(scopes) {
     return null;
 }
 
-/** The commit hook and the two page listeners, once per page. */
+/** The commit hook and the four page listeners, once per page. */
 function install() {
     if (typeof window === 'undefined' || typeof document === 'undefined' || window[INSTALLED_FLAG]) {
         return;
@@ -280,9 +483,50 @@ function install() {
         }
     });
 
-    const hook = (livewire) => livewire.hook('commit', ({ succeed }) => {
+    // A `wire:submit` sends its form's fields with the method it calls: the form is remembered, in
+    // the capture phase before Livewire's own listener, so the request it starts saves the fields
+    // inside it.
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        const root = form && typeof form.closest === 'function' ? form.closest('[wire\\:id]') : null;
+
+        if (root) {
+            shared(SUBMITS_KEY, () => new Map()).set(root.getAttribute('wire:id'), { form, at: Date.now() });
+        }
+    }, true);
+
+    // A save the component dispatches is weighed with its response already. This is for a save
+    // the page makes known itself, and for the dispatch arriving after that.
+    window.addEventListener('wirekit:saved', (event) => {
+        markSaved(event.detail, event.target);
+    });
+
+    const hook = (livewire) => livewire.hook('commit', ({ component, commit, succeed }) => {
+        if (component) {
+            // The previous response first, so its request is not mixed with this one; then what
+            // each tracked field holds as this request leaves, and the form a submit sent it from.
+            settle(component);
+
+            const saved = shared(SAVED_KEY, () => new WeakMap()).get(component);
+            const sent = new Map();
+
+            for (const path of saved ? saved.keys() : []) {
+                sent.set(path, JSON.stringify(valueAt(component.reactive, path)));
+            }
+
+            const submits = shared(SUBMITS_KEY, () => new Map());
+            const submit = submits.get(component.id);
+            const calls = commit && Array.isArray(commit.calls) ? commit.calls : [];
+
+            submits.delete(component.id);
+            shared(REQUESTS_KEY, () => new WeakMap()).set(component, {
+                sent,
+                form: submit && calls.length > 0 && Date.now() - submit.at < SUBMIT_WINDOW_MS ? submit.form : null,
+            });
+        }
+
         // After the response has rendered, on a timer as Livewire's own `wire:dirty` refreshes:
-        // the values the server sent are now the saved ones, and the effect reads them again.
+        // the effect reads the fields again and weighs the response.
         succeed(() => setTimeout(() => registry().forEach((entry) => entry.rerun())));
     });
 
@@ -303,7 +547,7 @@ function install() {
  * @param {object} Alpine
  */
 export function registerUnsavedDirective(Alpine) {
-    Alpine.directive('wk-unsaved', (el, { modifiers }, { effect, cleanup }) => {
+    Alpine.directive('wk-unsaved', (el, { modifiers, expression }, { effect, cleanup }) => {
         install();
 
         el.setAttribute(WK_UNSAVED_SCOPE_ATTRIBUTE, '');
@@ -314,12 +558,17 @@ export function registerUnsavedDirective(Alpine) {
         const entry = {
             el,
             confirm: modifiers.includes('confirm'),
+            // Only a save counts: a `wire:submit` of the form around a field, or `wirekit:saved`.
+            untilSaved: modifiers.includes('until-saved'),
+            // The name a `wirekit:saved` gives as `scope`, read as written rather than evaluated.
+            name: typeof expression === 'string' && expression.trim() !== '' ? expression.trim() : null,
             rerun: () => {
                 state.runs++;
             },
         };
 
         registry().add(entry);
+        shared(ENTRIES_KEY, () => new WeakMap()).set(el, entry);
 
         // After Livewire has set up the component this scope sits in.
         Alpine.nextTick(() => {
@@ -331,6 +580,7 @@ export function registerUnsavedDirective(Alpine) {
 
         cleanup(() => {
             registry().delete(entry);
+            shared(ENTRIES_KEY, () => new WeakMap()).delete(el);
         });
     });
 }

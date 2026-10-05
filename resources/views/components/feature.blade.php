@@ -125,8 +125,9 @@
     @endif
 
     @if($slot->hasActualContent())
-        <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] leading-relaxed">
+        {{-- A div: the slot may hold paragraphs or a list, which a parser moves out of a p. --}}
+        <div data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] leading-relaxed">
             {{ $slot }}
-        </p>
+        </div>
     @endif
 </div>

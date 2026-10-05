@@ -15,6 +15,7 @@
  * whether a persist key is passed rather than by which copy of the code the
  * component happens to carry.
  */
+import { controlIsDisabled } from '../utils/fieldset-disabled.js';
 import { FOCUSABLE } from '../utils/first-control.js';
 
 // Node.DOCUMENT_POSITION_PRECEDING and _FOLLOWING, spelled out so the module reads the same
@@ -41,7 +42,7 @@ function focusTargetAround(root) {
     }
 
     const candidates = [...document.querySelectorAll(FOCUSABLE)].filter((el) => ! root.contains(el)
-        && ! el.disabled
+        && ! controlIsDisabled(el)
         && el.tabIndex >= 0
         && el.getClientRects().length > 0
         && ! el.closest('[inert]'));

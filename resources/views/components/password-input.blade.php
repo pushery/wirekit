@@ -91,6 +91,17 @@
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
+    // The show-password button says which field it reveals, the way the clear button of an input
+    // does, so a form with a password and its confirmation does not offer two buttons called
+    // "Show password". A field named by the caller's `aria-label` is named all the same, and a
+    // field with neither keeps the bare wording.
+    $toggleField = trim(strip_tags((string) $label));
+    if ($toggleField === '') {
+        $toggleField = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'));
+    }
+    $showPasswordLabel = $toggleField !== '' ? __('wirekit::Show :label', ['label' => $toggleField]) : __('wirekit::Show password');
+    $hidePasswordLabel = $toggleField !== '' ? __('wirekit::Hide :label', ['label' => $toggleField]) : __('wirekit::Hide password');
+
     // The show-password button belongs to the field, so it takes the field's state, as the
     // clear and copy buttons of an input do. Read after the strip above, so `disabled="false"`
     // leaves it working.
@@ -106,7 +117,9 @@
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'password-input-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element. `id` was stripped from the start; `name` was not, and a caller that
@@ -120,8 +133,16 @@
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
 
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    // With the meter on, the field binds `password` for the meter, and a caller's `x-model` written
+    // beside it would be a second one: the parser keeps the first, and the caller's binding is gone.
+    // It moves to the root, which hands `password` to it through `x-modelable`, so the caller's
+    // model, the meter and the field hold one value, and a form reset still reaches all three
+    // through the field's own binding.
+    $rootModel = $strengthMeter ? $attributes->whereStartsWith('x-model') : new \Illuminate\View\ComponentAttributeBag([]);
+    $attributes = $attributes->except(array_keys($rootModel->getAttributes()));
+
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // Base input classes — same as standard input
     $inputClasses = WireKit::resolveClasses('password-input', 'base', implode(' ', [
@@ -244,7 +265,7 @@
      method is not an expression Alpine's CSP parser accepts, and under a strict
      policy the element would get an EMPTY scope, leaving the show/hide button and
      the whole meter dead with no error to say why. --}}
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
@@ -319,10 +340,10 @@
                      state says what it has already done, and a reader who lands on
                      the button after someone else revealed the field learns that
                      from the state alone. --}}
-                aria-label="{{ __('wirekit::Show password') }}"
+                aria-label="{{ $showPasswordLabel }}"
                 aria-pressed="false"
                 :aria-pressed="showPassword ? 'true' : 'false'"
-                :aria-label="showPassword ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Hide password')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Show password')) }}"
+                :aria-label="showPassword ? {{ \Pushery\WireKit\Support\AlpinePayload::from($hidePasswordLabel) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($showPasswordLabel) }}"
             >
                 {{-- Eye icon (show) --}}
                 <svg x-show="!showPassword" aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">

@@ -57,8 +57,15 @@
 
     // The dismiss button's accessible name is the one string this component renders
     // on the developer's behalf, so it comes from the catalog rather than from a
-    // literal in @props. A caller-supplied label still wins untouched.
-    $dismissLabel ??= __('wirekit::Remove');
+    // literal in @props. A caller-supplied label still wins untouched. It names the
+    // badge it removes, the way a multi-select pill does, so a row of filter chips is
+    // not a row of buttons called "Remove"; a badge without text keeps the bare word.
+    if ($dismissLabel === null) {
+        $badgeText = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $slot), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        $dismissLabel = $badgeText !== ''
+            ? __('wirekit::Remove :name', ['name' => $badgeText])
+            : __('wirekit::Remove');
+    }
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.

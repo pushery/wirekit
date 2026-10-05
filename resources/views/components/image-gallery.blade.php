@@ -109,6 +109,11 @@
     // a Livewire morph, so an unrelated update discarded the open lightbox and the scroll
     // position. See DomId::unique()'s docblock — it exists for exactly this.
     $galleryId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-gallery-');
+    // Without the lightbox the gallery's own wrapper is its root, and a caller's `id` names it: written
+    // beside the gallery's own, the parser kept the first and the caller's was gone. With the lightbox
+    // the bag goes on to the lightbox's root, which carries the caller's `id` itself.
+    $rootId = \Pushery\WireKit\Support\AttributeText::get($attributes, 'id');
+    $rootId = is_string($rootId) && trim($rootId) !== '' ? $rootId : $galleryId;
     $count = count($items);
 
     $wrapperClasses = WireKit::resolveClasses('image-gallery', 'base', '', $scope);
@@ -122,6 +127,10 @@
     if ($lightbox && $count > 0) {
         \Pushery\WireKit\Support\UnboundModel::drop('image-gallery', $attributes);
     }
+    // A caller's `aria-labelledby` or `aria-label` names the grid of images, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    $gridNamed = $callerLabelledBy !== null || $callerLabel !== null;
 @endphp
 
 @if($count === 0)
@@ -129,7 +138,7 @@
          with nothing in it, which reads as a broken layout rather than as "no images yet". The
          `empty` slot replaces the sentence entirely — see data-table, where the reasoning for
          that shape was first written down. --}}
-    <div id="{{ $galleryId }}" {{ $attributes->class([$wrapperClasses, 'flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
+    <div id="{{ $rootId }}" {{ $attributes->except('id')->class([$wrapperClasses, 'flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
         @isset($empty)
             {{ $empty }}
         @else
@@ -143,7 +152,7 @@
          come from the shared <x-wirekit::lightbox> component — the gallery no
          longer carries its own overlay markup. --}}
     <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" :slide-overlay="$slideOverlay" {{ $attributes->class([$wrapperClasses]) }}>
-        <x-wirekit::grid :cols="$columns" :gap="$gap">
+        <x-wirekit::grid :cols="$columns" :gap="$gap" :role="$gridNamed ? 'group' : null" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null">
             @foreach($items as $i => $item)
                 {{-- Each thumbnail is a real button so the lightbox is
                      keyboard-operable; focus returns here on close. The relative
@@ -170,8 +179,8 @@
         </x-wirekit::grid>
     </x-wirekit::lightbox>
 @else
-    <div id="{{ $galleryId }}" {{ $attributes->class([$wrapperClasses]) }}>
-        <x-wirekit::grid :cols="$columns" :gap="$gap">
+    <div id="{{ $rootId }}" {{ $attributes->except('id')->class([$wrapperClasses]) }}>
+        <x-wirekit::grid :cols="$columns" :gap="$gap" :role="$gridNamed ? 'group' : null" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null">
             @foreach($items as $i => $item)
                 @if(is_callable($itemOverlay))
                     {{-- static grid also supports the per-item overlay. --}}

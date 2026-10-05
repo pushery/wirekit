@@ -2,6 +2,7 @@
 "3
 "this
 $attributes
+$attributes->except('form');
 $attributes->except('x-ref')->merge(array_filter([
 $attributes->get('x-ref',
 $attributes->getAttributes());
@@ -15,6 +16,7 @@ $columnClasses,
 $columns)
 $defaultInterval
 $defaultInterval;
+$formOwner
 $interval
 $intervalKey
 $intervalKey)
@@ -73,6 +75,7 @@ $withoutOuterAttributes]
 'x-wk-ref'
 ($intervalMap
 ((string)
+(Support\FormOwner).
 (never
 (resources/js/utils/caller-ref.js).
 (see
@@ -120,6 +123,7 @@ $withoutOuterAttributes]
 @endunless
 @foreach($intervalMap
 @if($callerRef
+@if($formOwner)
 @if($interval
 @if($intervalMap
 @php
@@ -180,6 +184,7 @@ With
 \Pushery\WireKit\Support\AlpinePayload::from((string)
 \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses)
 \Pushery\WireKit\Support\AlpinePayload::string($intervalUnselectedClasses)
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::from($intervals);
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('pricing-table',
@@ -192,6 +197,7 @@ __('wirekit::Pricing
 `aria-pressed`
 `data-wk-server-value`
 `default`
+`form`
 `interval`
 `intervals`,
 `list-none`
@@ -277,6 +283,7 @@ class="mb-[var(--space-wk-md)]
 class="wk-state-button
 client-only
 compares,
+component
 component's
 component.
 components
@@ -317,6 +324,7 @@ every
 exactly
 exists
 factory
+field
 fill
 finds
 first
@@ -327,6 +335,8 @@ focus-visible:ring-[var(--color-wk-ring)]"
 focus:outline-hidden
 for
 forced-colors
+form
+form="{{
 frames
 free
 from
@@ -336,6 +346,7 @@ gappy
 given.
 gives.
 go
+goes
 grid.
 group
 had
@@ -377,6 +388,7 @@ items"
 items,
 items-center
 its
+joins
 just
 keep
 keeps
@@ -552,6 +564,7 @@ strict
 strings
 stylesheet
 stylesheet's
+submits,
 surface
 surrounding
 survive
@@ -571,6 +584,7 @@ them
 them.
 then
 there
+there:
 there;
 they
 this
@@ -595,6 +609,7 @@ unknown
 update
 use
 used
+valid
 value
 value="{{
 view's

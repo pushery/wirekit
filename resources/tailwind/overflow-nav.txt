@@ -1,9 +1,11 @@
 !
 !!}
 !==
+"3
 "Close
 "Copy
 "Hoverable"
+"More
 "Popover",
 "Save",
 "Saving…")
@@ -48,6 +50,7 @@ $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
+$attributes]
 $b):
 $b['index']]);
 $baseClasses
@@ -59,12 +62,17 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerRole
 $classes
 $cleaned
 $cleaned);
 $computedRel
 $content
+$content))
+$count):
+$count,
 $declarativeBusyOnly
 $declarativeBusyOnly);
 $declarativeLoading
@@ -72,6 +80,7 @@ $declarativeLoading)
 $delayHide
 $delayShow
 $describes
+$describes;
 $disableOnLoading
 $disableOnLoading;
 $disabled
@@ -92,6 +101,7 @@ $entry['after']
 $entry['after'];
 $entry['attributes']->class([$menuLinkClasses,
 $entry['attributes']->class(['wk-overflow-nav-link',
+$entry['divider']
 $entry['href']
 $entry['index']
 $entry['label']
@@ -126,6 +136,7 @@ $isInformative;
 $item
 $item)
 $item;
+$itemClass
 $itemClasses
 $itemClasses[$entry['action']
 $item['action']
@@ -147,13 +158,19 @@ $m):
 $m[1]);
 $menuAfter
 $menuEntries
+$menuLabel
 $menuLinkClasses
+$menuName
 $menuOrder
 $mergedAttributes
 $mergedAttributes->getAttributes())->toHtml();
 $mergedAttributes->merge($placeholderAttributes)
 $mergedAttributes->merge(['aria-hidden'
 $message
+$moreForm
+$moreForm(1);
+$moreForm(2);
+$moreLabel,
 $moreMany
 $moreOne
 $name)
@@ -166,6 +183,8 @@ $opensNewTab
 $orientation
 $overflowAction
 $overflowAction['label']
+$ownName
+$ownName);
 $padded
 $padded)
 $panelClasses
@@ -197,6 +216,12 @@ $sizeMap[$validated];
 $slot
 $slot)
 $slot))
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $stackBelow
 $stackBelow,
 $surface
@@ -211,12 +236,18 @@ $svgHtml,
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $touchClasses
 $touchClasses,
 $touchTextFloor
 $trigger
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $type
 $validated
 $variantClasses
@@ -254,6 +285,7 @@ $wrapperClasses
 'Rendering
 'Run:
 '[WireKit]
+'__COUNT__'])
 '__COUNT__']);
 '_blank');
 'a
@@ -292,6 +324,7 @@ $wrapperClasses
 'disabled:pointer-events-none',
 'div',
 'div';
+'divider'
 'duration-[var(--transition-wk-duration)]',
 'ease-[var(--transition-wk-easing)]',
 'elevated'
@@ -385,6 +418,7 @@ $wrapperClasses
 'md-compact',
 'menu'))
 'menu-link',
+'menuLabel'
 'menuOrder'
 'min-h-[',
 'min-h-[calc(var(--size-wk-lg)*1.1)]
@@ -395,6 +429,7 @@ $wrapperClasses
 'min-h-[var(--size-wk-sm)]
 'min-w-0
 'min-w-72
+'moreLabel'
 'name'
 'nav'
 'noopener')
@@ -402,13 +437,14 @@ $wrapperClasses
 'opacity-[var(--opacity-wk-disabled)]
 'orientation'
 'outline'];
+'overflow-y-auto
 'p-[var(--padding-wk-x-md)]',
 'padded'
 'panel',
+'pinned'
 'placement'
 'plain'
-'plain']
-'plain']))
+'plain'])
 'primary'),
 'px-[calc(var(--padding-wk-x-lg)*1.25)]',
 'px-[var(--padding-wk-x-lg)]',
@@ -480,6 +516,7 @@ $wrapperClasses
 'xs'
 'z-[var(--z-wk-tooltip)]',
 (!
+(":count
 ("Fast
 ($action
 ($actionLabel
@@ -489,6 +526,7 @@ $wrapperClasses
 ($after
 ($attributes->getAttributes()
 ($callerAriaHidden
+($callerLabelledBy
 ($declarativeLoading
 ($entries
 ($entry['after'])($place)
@@ -500,8 +538,10 @@ $wrapperClasses
 ($isInformative
 ($item['attributes']
 ($item['current']
+($item['divider']
 ($item['key']
 ($item['label']
+($item['pinned']
 ($orientation
 ($relAttr
 ($resolvedAriaHidden
@@ -511,12 +551,14 @@ $wrapperClasses
 ($stackBelow
 ($surface
 ($svgHtml
+($triggerIsButton)
 ($wrapLabel
 ('xs').
 (($iconOnly
 (4.05
 (SVG
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (Tailwind's
 (UtilityClasses::has($callerClass,
@@ -553,6 +595,7 @@ $wrapperClasses
 (function_exists('svg')
 (hover
 (hover)
+(int
 (int)
 (int|string
 (is_array($menuOrder)
@@ -623,7 +666,6 @@ $wrapperClasses
 0;
 0;">
 1
-1,
 1.4.13
 1.4.13.
 100),
@@ -633,6 +675,7 @@ $wrapperClasses
 12h4z"></path>
 16px
 18
+1;
 1px
 2,
 2.1.1).
@@ -671,7 +714,7 @@ $wrapperClasses
 :attributes="$overflowAction['attributes']">
 :describes="false">
 :focusable-trigger="false"
-:label="__('wirekit::More
+:label="$menuName">
 :name="$entry['icon']"
 :name="$overflowAction['icon']"
 :text="$overflowAction['label']"
@@ -734,12 +777,13 @@ $wrapperClasses
 @if
 @if($computedRel)
 @if($declarativeLoading)
-@if($describes)
 @if($disabled)
 @if($emitAriaBusy)
 @if($entry['action'])
 @if($entry['current'])
+@if($entry['divider'])
 @if($entry['href']
+@if($entry['pinned'])
 @if($focusableTrigger)
 @if($href
 @if($iconOnly)
@@ -752,13 +796,17 @@ $wrapperClasses
 @if($stackBelow)
 @if($surface
 @if($tag
-@if(filled($itemClasses[$entry['action']
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
+@if(filled($itemClass))
 @if(isset($content))
 @include
 @include('wirekit::components.partials.overflow-nav-action',
 @isset($iconLeft)
 @isset($iconRight)
 @php
+@php($itemClass
 @php($menuAfter
 @php($rowAfter
 @props([
@@ -782,6 +830,8 @@ Alpine's
 An
 And
 Anything
+Around
+As
 Auto-inject
 BELOW
 BLADE
@@ -827,6 +877,8 @@ Describing
 Dev-only
 Done
 Drop
+ENT_HTML5));
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 Each
@@ -869,6 +921,7 @@ Icon-only
 IconResolver,
 If
 In
+Inside
 It
 Its
 JS
@@ -951,6 +1004,7 @@ SVG:
 SWAPS:
 Same
 Scope
+Scrolls
 See
 Setting
 Several
@@ -999,7 +1053,9 @@ UNBOUND
 URL
 URLs
 USER
+Under
 Unlike
+Unset,
 Upstream
 Uses
 UtilityClasses::PADDING);
@@ -1043,6 +1099,7 @@ With
 Without
 Written
 [
+[$callerLabelledBy,
 [$rank[$a['key']]
 [$rank[$b['key']]
 ['a
@@ -1056,6 +1113,7 @@ Written
 ['x-on:mouseenter',
 ['xs',
 [--color-wk-ring:var(--color-wk-accent-fg)]
+[--wk-touch-min:0px]"
 [--wk-touch-min:0px]'
 [])
 [])),
@@ -1066,6 +1124,7 @@ Written
 \Closure
 \Illuminate\Contracts\Support\Htmlable)
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Illuminate\View\ComponentAttributeBag((array)
 \Illuminate\View\ComponentAttributeBag(array_filter(
 \InvalidArgumentException('wirekit::button:
@@ -1075,12 +1134,15 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\ListProp::from($action);
 \Pushery\WireKit\Support\ListProp::from($menuOrder);
 \Pushery\WireKit\Support\ListProp::records($items))
 \Pushery\WireKit\Support\SafeUrl::href($item['href']
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
@@ -1101,7 +1163,8 @@ Written
 ]),
 ];
 __('wirekit::(opens
-__('wirekit::Popover')
+__('wirekit::More
+__('wirekit::Popover'))
 __toString
 `$as`
 `$loading`;
@@ -1120,6 +1183,7 @@ __toString
 `3xs`
 `7xl`;
 `:class`
+`:count`
 `:disabled`
 `<body>`
 `<body>`.
@@ -1195,6 +1259,7 @@ __toString
 `disabled`
 `disabled`,
 `div`
+`divider`
 `e()`
 `el.id`.
 `elevated`
@@ -1251,6 +1316,7 @@ __toString
 `mouseleave`
 `null`,
 `offset`
+`one|many`,
 `open`
 `open`,
 `outline`
@@ -1261,6 +1327,7 @@ __toString
 `p-0`.
 `p-[var(--padding-wk-x-md)]`
 `parentNode`
+`pinned`
 `pointer-events-none`
 `pointer:
 `position:
@@ -1341,6 +1408,7 @@ action,
 action.
 actions.
 activated
+activating
 active
 active-tab
 acts
@@ -1389,6 +1457,7 @@ announcement
 announces
 announcing
 anonymous
+another.
 answer
 anticipate
 anticipated.
@@ -1396,6 +1465,7 @@ any
 anything
 anywhere
 anywhere,
+apart
 app(IconResolver::class)->resolve($name);
 appear
 appearance
@@ -1543,6 +1613,7 @@ boolean
 bootstrapped
 border
 border,
+border-[color:var(--color-wk-border)]"></span>
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]
 border-[var(--color-wk-border)]
@@ -1558,6 +1629,7 @@ border-b-[var(--color-wk-accent)]
 border-e-[3px]
 border-e-[length:var(--border-wk-width)]
 border-e-[var(--color-wk-accent)]
+border-s
 border-transparent
 border.
 border:
@@ -1617,6 +1689,7 @@ candidate
 candidates
 cannot
 canonical
+caps
 card
 card's
 card,
@@ -1664,12 +1737,14 @@ class="flex
 class="inline-flex
 class="m-0
 class="min-w-0">{{
+class="ms-[var(--space-wk-xs)]
 class="opacity-25"
 class="opacity-75"
 class="rounded-[var(--radius-wk-sm)]
 class="shrink-0"
 class="shrink-0">{{
 class="sr-only">{{
+class="wk-touch-target
 class="{{
 classes
 classes.
@@ -1692,6 +1767,7 @@ close
 close-icons,
 closes
 cluster).
+coarse
 coarse-pointer
 coarse`,
 code
@@ -1802,8 +1878,10 @@ data-stack-below="{{
 data-wk-overflow-action
 data-wk-overflow-count
 data-wk-overflow-current
+data-wk-overflow-divider
 data-wk-overflow-index="{{
 data-wk-overflow-nav
+data-wk-overflow-pinned
 data-wk-popover
 data-wk-prose-skip
 data-wk-tooltip-describedby="{{
@@ -1882,6 +1960,7 @@ dist/wirekit.css
 distinguish:
 div
 div.
+divider
 do
 docblock
 docs,
@@ -1890,6 +1969,7 @@ docs/theming.md
 document
 documented
 does
+does)
 does),
 does,
 does.
@@ -1901,6 +1981,7 @@ drawn
 draws
 driven
 drop
+drop.
 dropdown
 dropdown.item
 dropdown/item.blade.php
@@ -1956,9 +2037,10 @@ enough
 ensures
 entirely,
 entries
+entries'
 entry
 entry's
-entry).
+entry),
 entry,
 enum
 enum,
@@ -1988,6 +2070,7 @@ exists
 exists,
 exists.
 expandos.
+explains,
 explicit
 explicitly
 expression
@@ -2030,6 +2113,8 @@ filled($iconOnlyBelow)
 filled($item['icon']
 filled($label);
 filled($menuAfter))<span
+filled($menuLabel)
+filled($moreLabel)
 filled($rowAfter))<span
 filled($stackBelow)
 filled()
@@ -2068,6 +2153,7 @@ flips
 floating
 floor
 floor's
+floor;
 flow
 flow.
 flows
@@ -2090,6 +2176,7 @@ focused
 focused,
 focuses
 follow
+follow).
 followable.
 follows
 font
@@ -2294,6 +2381,7 @@ in_array($stackBelow,
 in_array($surface,
 include
 included.
+includes
 including
 index
 indicator,
@@ -2351,6 +2439,7 @@ is.
 is:
 isn't
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it)
@@ -2377,9 +2466,12 @@ keeps
 kept
 key
 keyboard
+keys
 keys.
 kill
 kit
+kit's
+kit's:
 knowing
 knows
 label
@@ -2429,7 +2521,8 @@ link.
 link:
 linked
 links
-links')">
+links".
+links');
 links',
 links,
 links.
@@ -2517,14 +2610,18 @@ measures.
 mechanism
 media
 meet
+meets,
 menu
+menu's
 menu),
 menu,
 menu.
+menu:
 menus
 merely
 merge
 message
+message.
 mid-word
 middle
 middle,
@@ -2562,6 +2659,7 @@ much
 multiply
 must
 muted
+my-[var(--space-wk-xs)]
 n/a
 name
 name,
@@ -2589,6 +2687,7 @@ negative
 neighbor.
 neither
 neither:
+nest
 nested
 neutral
 neutral:
@@ -2636,6 +2735,7 @@ null)<x-wirekit::icon
 null,
 null;
 null])
+number,
 number.
 object
 object,
@@ -2713,6 +2813,7 @@ overflow-x-auto
 overflow-y-hidden
 overlay
 override.
+overscroll-contain',
 oversight.
 oversights:
 own
@@ -2789,7 +2890,7 @@ picked
 picks
 pill
 place
-place)
+place),
 place,
 place.
 place:
@@ -2821,7 +2922,10 @@ precisely
 preference.
 prefers
 prefix
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
 preg_replace_callback(
@@ -2837,6 +2941,7 @@ problem
 prod).
 prod.
 produces;
+prohibits
 project
 promise
 promise.
@@ -2900,7 +3005,9 @@ receive
 receiver,
 recent
 records
+records").
 records,
+record|:count
 red
 red:
 redone
@@ -2976,7 +3083,9 @@ ring
 ring,
 role
 role,
+role:
 role;
+role="button"
 role="dialog"
 role="group"
 role="img"
@@ -3025,6 +3134,7 @@ scale
 scale,
 scale-100"
 scale-95"
+scan
 scanner
 scans
 scope
@@ -3046,6 +3156,7 @@ sees
 sees.
 select
 selected
+self-stretch
 semantic
 sensible
 sentence.
@@ -3090,6 +3201,7 @@ silently
 silently.
 simply
 single
+singular
 sit
 site
 sits
@@ -3173,6 +3285,7 @@ stayed
 stays
 stays:
 step
+steps
 sticky
 still
 stop
@@ -3345,6 +3458,7 @@ today's
 together
 toggle,
 toggles
+toggletip
 token
 token,
 tokens
@@ -3354,6 +3468,7 @@ too
 too,
 took
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -3366,12 +3481,15 @@ towards
 trade
 trade,
 trans_choice('wirekit:::count
+trans_choice((string)
+trans_choice()
 transform
 transformed
 transition-colors
 transitions,
 transitively
 translated
+translation
 trap
 trap,
 trap.
@@ -3387,6 +3505,7 @@ trigger's
 trigger,
 trim($relAttr.'
 trim((string)
+trim(html_entity_decode(strip_tags((string)
 trim(strip_tags((string)
 trio
 true))
@@ -3410,6 +3529,7 @@ typed:
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -3586,6 +3706,7 @@ won
 word
 word)
 word,
+words;
 work,
 working
 working,
@@ -3598,6 +3719,7 @@ wrap
 wrap,
 wrapper
 wrapper)
+wrapper,
 wrapping
 wraps
 writes
@@ -3618,7 +3740,9 @@ x-init="initTriggerAria()"
 x-on:click="toggle()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

@@ -104,8 +104,10 @@
     // so an id drawn fresh per render made each round trip REPLACE the input — and Livewire
     // fires its upload events on the element it bound to, which by then had left the page, so
     // no form ever heard `livewire-upload-finish`. Seeded from the bound property when there is
-    // no name (`wk-upload-photos`), counted per render order when there is neither.
-    $uploadId = $id ?? ($name ? 'wk-upload-' . $name : WireKit::stableId('wk-upload', $boundModel));
+    // no name (`wk-upload-photos`), counted per render order when there is neither. A second
+    // upload with the same name or property on the page gets `-2`, so its label and its hint do
+    // not point at the first one's input (DomId::distinct keeps the first verbatim).
+    $uploadId = $id ?? \Pushery\WireKit\Support\DomId::distinct($name ? 'wk-upload-' . $name : WireKit::stableId('wk-upload', $boundModel));
     $errorId = $uploadId . '-error';
     $hintId = $uploadId . '-hint';
 
@@ -114,8 +116,8 @@
     // read makes a file-upload with no `name` report itself invalid the moment
     // ANY unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
-    $hasError = $error || ($name && ($errors ?? null)?->has($name));
-    $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
+    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
+    $errorMessage = $error ?? ($hasError && $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -296,6 +298,17 @@
     // (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `aria-labelledby` names the control and wins over the component's own name, as
+    // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `autofocus` goes to the file field, the element the keyboard reaches: on the
+    // wrapper it focuses nothing (Support\FieldAttributes).
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, ['autofocus']);
 @endphp
 
 {{-- Alpine: tracks drag-over state + an array of selected file metadata for preview.
@@ -306,7 +319,7 @@
          four statements and a `const`, which Alpine's CSP build does not parse —
          under a strict Content-Security-Policy dropping a file did nothing while
          clicking the label still worked. --}}
-    x-data="wirekitFileUpload({ locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_', '-', app()->getLocale())) }}, removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
+    x-data="wirekitFileUpload({ locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_', '-', app()->getLocale())) }}, removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, sizeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from([__('wirekit::B'), __('wirekit::KB'), __('wirekit::MB'), __('wirekit::GB'), __('wirekit::TB')]) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
     {{-- `wire:model` is peeled off here and re-attached to the file input below.
          Livewire decides what a model binding MEANS by reading the element's
          type: on a `<input type="file">` it takes the upload path, and on
@@ -318,7 +331,7 @@
          would hand back exactly the line the variant exists to give up, so it
          becomes an inline column that hugs its content — the file list, hint and
          error still stack beneath the control, just no wider than they need. --}}
-    {{ $attributes->except(['aria-label', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([
+    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([
         'w-full' => $variantValue !== 'compact',
         'inline-flex max-w-full flex-col items-start align-middle' => $variantValue === 'compact',
     ]) }}
@@ -374,8 +387,10 @@
             @if($accept) accept="{{ $accept }}" @endif
             @if($captureValue) capture="{{ $captureValue }}" @endif
             @if($disabled) disabled @endif
+            @if($formOwner) form="{{ $formOwner }}" @endif
+            {{ $fieldAttributes }}
             @if($hasError) aria-invalid="true" @endif
-            @if(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @endif
+            @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @endif
             {{-- The binding belongs on the control, not the wrapper — same shape
                  as segmented-control's hidden input. `whereStartsWith` keeps the
                  modifiers (`wire:model.live`, `.blur`) attached to it. --}}

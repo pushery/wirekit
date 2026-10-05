@@ -200,7 +200,11 @@
     // its size, when that is larger) up to twice its size, and the gap stays the token. Where
     // every box has reached that cap the row sits as `center` does, which is why the row below
     // centers in this mode too. Groups grow by their number of boxes, so every box has the same
-    // width, and a row too narrow for the next group still breaks at the group boundary.
+    // width, and a row too narrow for the next group still breaks at the group boundary. Each box
+    // also carries the width of its size, which the flex basis of 0 overrides in the row: it is
+    // what the row reports to a container that takes its width from its content (`w-fit`, a
+    // popover). Without it an input reported its default width of about twenty characters, and
+    // such a container grew to boxes of twice their size.
     $stretch = $justify === 'stretch';
 
     // The default emits NOTHING rather than the leading-edge utility, so a field that
@@ -296,13 +300,15 @@
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'otp-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
     // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
     $attributes = $attributes->except('id');
 
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // One box per size: width, height, the digit's text size and the corner. `md` carries the
     // same four classes that shipped, so a field that passes nothing looks exactly as before.
@@ -313,16 +319,16 @@
     // with the other three. `--size-wk-xl` is not that rung: it is 6rem, the progress circle.
     $sizeClasses = match (WireKit::validateProp('otp-input', 'size', $size, ['sm', 'md', 'lg', 'xl'])) {
         'sm' => $stretch
-            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-sm))] max-w-[calc(var(--size-wk-sm)*2)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]'
+            ? 'flex-1 basis-0 w-[var(--size-wk-sm)] aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-sm))] max-w-[calc(var(--size-wk-sm)*2)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]'
             : 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]',
         'md' => $stretch
-            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-md))] max-w-[calc(var(--size-wk-md)*2)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]'
+            ? 'flex-1 basis-0 w-[var(--size-wk-md)] aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-md))] max-w-[calc(var(--size-wk-md)*2)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]'
             : 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]',
         'lg' => $stretch
-            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-lg))] max-w-[calc(var(--size-wk-lg)*2)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]'
+            ? 'flex-1 basis-0 w-[var(--size-wk-lg)] aspect-square min-w-[max(var(--size-wk-touch-target),var(--size-wk-lg))] max-w-[calc(var(--size-wk-lg)*2)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]'
             : 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]',
         'xl' => $stretch
-            ? 'flex-1 basis-0 aspect-square min-w-[max(var(--size-wk-touch-target),calc(var(--size-wk-lg)*2_-_var(--size-wk-md)))] max-w-[calc((var(--size-wk-lg)*2_-_var(--size-wk-md))*2)] text-[length:var(--text-wk-2xl)] rounded-[var(--radius-wk-lg)]'
+            ? 'flex-1 basis-0 w-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] aspect-square min-w-[max(var(--size-wk-touch-target),calc(var(--size-wk-lg)*2_-_var(--size-wk-md)))] max-w-[calc((var(--size-wk-lg)*2_-_var(--size-wk-md))*2)] text-[length:var(--text-wk-2xl)] rounded-[var(--radius-wk-lg)]'
             : 'w-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] h-[calc(var(--size-wk-lg)*2_-_var(--size-wk-md))] text-[length:var(--text-wk-2xl)] rounded-[var(--radius-wk-lg)]',
     };
 
@@ -362,6 +368,11 @@
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
+    // A required code that a submit found empty says so under the boxes (partials/required-message),
+    // unless the server's own message already stands there. The group and the first box name it.
+    $requiredMessageId = $required && ! $hasError ? $id.'-required' : null;
+    $describedBy = trim($describedBy.' '.($requiredMessageId ?? ''));
+    $ownDescribedBy = trim($ownDescribedBy.' '.($requiredMessageId ?? ''));
 
     // The Livewire property the hidden field is bound to. The boxes read it back, so they
     // show what the property holds when something other than the boxes sets it, the
@@ -403,6 +414,14 @@
     // (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `aria-labelledby` names the control and wins over the component's own name, as
+    // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
 
     // Whatever a caller writes on the tag that has no place of its own lands on the wrapper:
     // `x-show`, a listener, `wire:keydown`, `style`, `title`. The wrapper took `class` alone and
@@ -418,8 +437,19 @@
     $groupListeners = $optimisticConfig
         ? $attributes->only(['x-on:wirekit:otp-complete', '@wirekit:otp-complete'])
         : new \Illuminate\View\ComponentAttributeBag([]);
+    // A caller's `autocomplete` belongs to the boxes the browser fills, where it replaces the default
+    // `one-time-code`; on the group it would be an attribute a `div` does not take.
+    $otpAutocomplete = \Pushery\WireKit\Support\AttributeText::get($attributes, 'autocomplete');
+    $otpAutocomplete = is_string($otpAutocomplete) && trim($otpAutocomplete) !== '' ? trim($otpAutocomplete) : 'one-time-code';
+    // A caller's `x-model` would land on this wrapper, around the boxes and the hidden field, and
+    // Alpine would hand it the value of whichever of them sent `input` last: one character of the
+    // code. It is removed with the warning `UnboundModel` gives, and the code binds with `wire:model`.
+    \Pushery\WireKit\Support\UnboundModel::drop('otp-input', $attributes);
+    // `enterkeyhint` belongs to the boxes as well: the on-screen keyboard reads it on the field it
+    // types into (Support\FieldAttributes). What else the keyboard reads there follows the alphabet.
+    [$boxAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, ['enterkeyhint']);
     $wrapperAttributes = $attributes
-        ->except(['name', 'dusk', 'aria-label', 'aria-describedby', ...array_keys($groupListeners->getAttributes())])
+        ->except(['name', 'dusk', 'aria-label', 'aria-labelledby', 'aria-describedby', 'autocomplete', ...array_keys($groupListeners->getAttributes())])
         ->whereDoesntStartWith(['wire:model', 'data-']);
 @endphp
 
@@ -442,7 +472,7 @@
          Native `disabled`, so a disabled code is omitted from the submitted form the
          way every other disabled control is — the value the reader could not enter
          must not be posted on their behalf. --}}
-    <input type="hidden" id="{{ $id }}" name="{{ $name }}" @disabled($disabled) {{ $attributes->whereStartsWith('wire:model') }} />
+    <input type="hidden" id="{{ $id }}" name="{{ $name }}" @disabled($disabled) {{ $attributes->whereStartsWith('wire:model') }} @if($formOwner) form="{{ $formOwner }}" @endif />
 
     {{-- The `wirekitOtpInput` factory, registered by the WireKit bundle.
          Handles auto-advance on digit input, backspace to previous,
@@ -473,7 +503,7 @@
         {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }} {{ $groupListeners }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         @if($required) aria-required="true" @endif
-        aria-label="{{ $label ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? __('wirekit::One-time code') }}"
+        @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $label ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? __('wirekit::One-time code') }}" @endif
         {{-- On the GROUP as well as on every box: a reader who lands on the group
              before reaching a digit has to hear that the code is not enterable. --}}
         @if($disabled) aria-disabled="true" @endif
@@ -505,12 +535,15 @@
                      underline the "misspelled" code. --}}
                 inputmode="{{ $alphabetIsNumeric ? 'numeric' : 'text' }}"
                 pattern="{{ $alphabetPattern }}"
+                {{ $boxAttributes }}
                 @unless($alphabetIsNumeric)
                     autocapitalize="characters"
                     spellcheck="false"
                 @endunless
-                maxlength="1"
-                autocomplete="one-time-code"
+                {{-- No `maxlength`: WebKit cuts a code inserted at once (the autofill of a
+                     message, a password manager) to its first character before any handler
+                     sees it. `onInput` keeps one key per box and spreads a whole code. --}}
+                autocomplete="{{ $otpAutocomplete }}"
                 {{-- `-digit-N`, and the segment is load-bearing. `DomId::unique`
                      dedupes a repeated name by appending `-2`, `-3`, … — so with a
                      bare `-N` the digit index and the dedupe counter shared one
@@ -532,7 +565,11 @@
                 aria-label="{{ $i === 0 && $label
                     ? __('wirekit:::label, digit :position of :total', ['label' => $label, 'position' => $i + 1, 'total' => $length])
                     : __('wirekit::Digit :position of :total', ['position' => $i + 1, 'total' => $length]) }}"
-                @if($hasError) aria-invalid="true" @endif
+                @if($hasError)
+                    aria-invalid="true"
+                @elseif($requiredMessageId)
+                    x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
+                @endif
                 {{-- Digit 0 only. `autofocus` is honored on the FIRST element in
                      the document carrying it and silently ignored on the rest, so
                      emitting it per box would look like six requests and behave
@@ -558,20 +595,28 @@
                 class="wk-field {{ $digitClasses }} {{ $stateClasses }}"
                 x-ref="digit{{ $i }}"
                 {{-- Selects the cell on focus, so a filled cell overwrites like an empty
-                     one. Without it, `maxlength="1"` plus a caret after the existing
-                     character means the browser refuses the keystroke, `onInput` never
-                     fires, and correcting a code costs a deletion per cell. The mouseup
+                     one, and the replacement shows before it happens. The mouseup
                      handler keeps that selection when a click caused the focus, which
                      WebKit would otherwise collapse to a caret once the click finishes. --}}
                 @focus="onFocus($event)"
                 @mouseup="onMouseUp($event)"
                 @input="onInput($event, {{ $i }})"
+                @compositionend="onCompositionEnd($event, {{ $i }})"
                 @keydown="onKeydown($event, {{ $i }})"
                 @paste="onPaste($event)"
             />
         @endforeach
         </div>
         @endforeach
+        {{-- Inside the group, where the factory's state is: the hidden field the code is sent through
+             sits before it, and the browser validates no hidden field, so a required code stops an
+             empty submit through a stand-in of its own. Its message takes a line of its own. --}}
+        @if($required)
+            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+        @endif
+        @if($requiredMessageId)
+            @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId, 'requiredMessageClass' => 'basis-full'])
+        @endif
     </div>
 
     @if($hasError && $errorMessage)

@@ -100,6 +100,15 @@
        2. Explicit form — nest <x-wirekit::dropdown.trigger> +
           <x-wirekit::dropdown.panel> children directly. Full control over
           sub-component props (width, scope, etc.). --}}
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the menu the quick form composes, below; on
+    // this wrapper, which has no role, ARIA prohibits a name (Support\CallerName). A panel of the
+    // caller's own is named by its own `label`, so the explicit form leaves the bag as it is.
+    [$callerLabelledBy, $callerLabel] = [null, null];
+    if (isset($trigger)) {
+        [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    }
+@endphp
 <div
     {{-- panelId travels through the Alpine SCOPE, not the DOM. The panel is
          teleported out of the document flow to escape a host stacking context, and Alpine keeps
@@ -149,7 +158,7 @@
             {{-- Already a panel. Wrapping it again is the defect. --}}
             {!! $slotHtml !!}
         @else
-            <x-wirekit::dropdown.panel :label="$label">{!! $slotHtml !!}</x-wirekit::dropdown.panel>
+            <x-wirekit::dropdown.panel :label="$callerLabelledBy === null ? ($callerLabel ?? $label) : null" :aria-labelledby="$callerLabelledBy">{!! $slotHtml !!}</x-wirekit::dropdown.panel>
         @endif
     @else
         {{-- Explicit form: developer nests <x-wirekit::dropdown.trigger>

@@ -190,7 +190,11 @@
     // state (sort order, hidden columns, open panels) goes with it on the next round trip.
     // Necessary and not sufficient: the `x-data` expression has to stay the same too, which is
     // why the rows no longer travel in it (see the state carrier below the root).
-    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('data-table', $name ?? $attributes->get('name')));
+    // A second table with the same name on the page gets `-2`, so its `aria-labelledby` names
+    // its own caption and not the first one's (DomId::distinct keeps the first verbatim).
+    $id = $attributes->has('id')
+        ? $attributes->get('id')
+        : \Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('data-table', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
     $captionId = $id.'-caption';
 
@@ -340,10 +344,22 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `aria-labelledby` names the widget where a reader meets it, not the wrapper,
+    // where it would name nothing a reader lands on.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // A caller's `aria-label` goes to the same element: on the wrapper, which has no role, ARIA
+    // prohibits a name, and a reader never hears it.
+    $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
+    $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
 @endphp
 
 <div
-    {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
+    {{ $attributes->except(['id', 'name', 'class', 'aria-labelledby', 'aria-label'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
     x-data="wirekitDataTable({ columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, loadingText: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading results')) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }} })"
     {{ $attributes->only('class')->class([$base]) }}
@@ -369,7 +385,7 @@
              boots, and a form submitted in that window sends nothing while the
              visible control already shows the value. The serialization matches
              what the factory's own getter produces from the same data. --}}
-        <input type="hidden" x-ref="selModel" @if(filled($name)) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="[]" :value="selectedJson()" />
+        <input type="hidden" x-ref="selModel" @if(filled($name)) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="[]" :value="selectedJson()" @if($formOwner) form="{{ $formOwner }}" @endif />
     @endif
 
     {{-- Toolbar: search + density toggle + column manager + caller actions. --}}
@@ -494,7 +510,7 @@
          nothing bounds this scroller's height, and a few pixels of overflow from the cells'
          line boxes would let it scroll vertically and take a swipe or a wheel that starts on a
          row away from the page. --}}
-    <div x-ref="scroller" @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif x-bind:aria-busy="ariaBusy()" tabindex="0" class="relative w-full min-w-0 overflow-x-auto overflow-y-hidden wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    <div x-ref="scroller" @if($callerLabelledBy) role="region" aria-labelledby="{{ $callerLabelledBy }}" @elseif($callerLabel) role="region" aria-label="{{ $callerLabel }}" @elseif(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif x-bind:aria-busy="ariaBusy()" tabindex="0" class="relative w-full min-w-0 overflow-x-auto overflow-y-hidden wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- The sentinels need the table's inline edges, and this scroller also holds the empty
              state and the status region below the table, so the flex row is a wrapper around
              the table alone rather than the scroller itself. `w-fit min-w-full` sizes it the
@@ -507,7 +523,7 @@
         {{-- `w-max` under `stickyColumn`, and it is the difference between the feature working and
              merely rendering: at `w-full` the table squeezes itself into the scroller, nothing
              ever overflows, and a frozen column freezes against an edge that never moves. --}}
-        <table data-wk-prose-skip class="shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($stickyColumn) data-wk-sticky-column @endif>
+        <table data-wk-prose-skip class="shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($stickyColumn) data-wk-sticky-column @endif @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($callerLabel) aria-label="{{ $callerLabel }}" @endif>
             @if($caption)
                 <caption id="{{ $captionId }}" class="sr-only">{{ $caption }}</caption>
             @endif

@@ -35,7 +35,7 @@
     //   true / "box"  → the whole box pulses (border + accent flash + scale pop)
     //   "text"        → only the changing number briefly flashes the accent color
     //   false / "none" → no motion
-    // The inline variant animates with a rise + fade whenever it is on.
+    // The inline variant changes its value without motion.
     'animate' => true,
     'scope' => null,
 ])
@@ -199,7 +199,10 @@
         activeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from($activeUnits) }},
         autoMode: {{ \Pushery\WireKit\Support\AlpinePayload::from($autoMode) }},
         separators: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $separators) }},
-        animate: {{ \Pushery\WireKit\Support\AlpinePayload::from($animateOn) }},
+        {{-- Only the segments variant has a change animation. The inline one keeps a stable key,
+             so its value updates in place instead of re-mounting on every tick. --}}
+        animate: {{ \Pushery\WireKit\Support\AlpinePayload::from($animateOn && $variantValue === 'segments') }},
+        animateStyle: {{ \Pushery\WireKit\Support\AlpinePayload::from($variantValue === 'segments' ? $animateStyle : 'none') }},
         expiredText: {{ \Pushery\WireKit\Support\AlpinePayload::from($expiredLabel) }},
         unitPhrases: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $unitPhrases) }},
         {{-- The APPLICATION's locale, not the browser's. A German page read on an
@@ -251,27 +254,23 @@
             <template x-for="(seg, index) in computed" :key="segKey(seg)">
                 @if($variantValue === 'segments')
                     {{-- The box re-mounts on each value change (segKey includes the
-                         value when animate is on), replaying the change animation.
+                         value while the change animation plays), replaying it.
                          Style 'box' → wk-countdown-pulse on the box (border +
                          accent-tint flash + scale pop). Style 'text' → the box
                          stays still and wk-countdown-text-flash flashes only the
-                         number's color. Both are gated for prefers-reduced-motion
+                         number's color. Both classes are bound, not written, so they
+                         leave once the factory turns calm a few seconds after the
+                         countdown appears. Both are gated for prefers-reduced-motion
                          in dist/wirekit.css. --}}
                     <span
-                        @class(['wk-countdown-pulse' => $animateStyle === 'box', 'flex min-w-[3.5rem] flex-col items-center rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]'])
+                        class="flex min-w-[3.5rem] flex-col items-center rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]"
+                        x-bind:class="boxChangeClass"
                     >
-                        <span @class(['wk-countdown-text-flash' => $animateStyle === 'text', 'text-[length:var(--text-wk-2xl)] font-[number:var(--font-wk-heading-weight)] leading-none tabular-nums']) x-text="segValue(seg, index)"></span>
+                        <span class="text-[length:var(--text-wk-2xl)] font-[number:var(--font-wk-heading-weight)] leading-none tabular-nums" x-bind:class="textChangeClass" x-text="segValue(seg, index)"></span>
                         <span class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from($unitLabels) }}[seg.unit]"></span>
                     </span>
                 @else
-                    <span
-                        @if($animateOn)
-                        x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
-                        x-transition:enter-start="opacity-0 -translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        @endif
-                        class="tabular-nums"
-                    ><span x-text="segValue(seg, index)"></span><span x-text="unitSuffix[seg.unit]"></span></span>
+                    <span class="tabular-nums"><span x-text="segValue(seg, index)"></span><span x-text="unitSuffix[seg.unit]"></span></span>
                 @endif
             </template>
         </span>

@@ -19,8 +19,15 @@ use Illuminate\View\ComponentAttributeBag;
  * with `APP_DEBUG` on, or in the console. It never throws, because the page renders the same
  * either way.
  *
- * @internal Called from the view composer the service provider registers, and from the views that
- *           render the caller's attributes on such a root in one of their modes only.
+ * A caller's `x-model` fares the same on a component that renders the caller's attributes beside a
+ * value it does not hand over: on a wrapper around the hidden fields it sends (`otp-input`,
+ * `range-slider`) it takes whichever of them sent `input` last, and on a field that binds a value
+ * of the component's own (the number box of `phone`) it is a second `x-model` the parser drops.
+ * Those views remove it here as well.
+ *
+ * @internal Called from the view composer the service provider registers, from the views that
+ *           render the caller's attributes on such a root in one of their modes only, and from
+ *           the views above.
  */
 final class UnboundModel
 {

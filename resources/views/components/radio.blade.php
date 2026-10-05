@@ -65,6 +65,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('radio', $attributes->getAttributes());
 
+    // A radio gives its value as text, and Livewire takes the server's echo of an `int` or `float`
+    // property for a change and writes it over a newer choice: a binding to one gets `.number`
+    // and sends a number (Support\NumericModel).
+    $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
@@ -132,8 +137,8 @@
     $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($nameAttr) ?? false);
 
     // Error detection: explicit prop OR Laravel validation bag (grouped by name)
-    $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($nameAttr ?? ''));
-    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($nameAttr ?? ''));
+    $hasError = $error || (! $groupOwnsBagEntry && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $nameAttr));
+    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : \Pushery\WireKit\Support\FieldError::first($errors ?? null, $nameAttr));
     // Whether this radio answers for the group's message. A group error can be true of SOME of
     // its controls; announced on one that cannot resolve it, the reader hears "invalid" and a
     // sentence that selecting it will not satisfy. `covers()` is not gated on this, so a

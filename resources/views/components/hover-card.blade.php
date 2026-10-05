@@ -39,10 +39,15 @@
         'p-[var(--padding-wk-x-md)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
+        // Scrolls once the position helper caps its height to a short viewport.
+        'overflow-y-auto overscroll-contain',
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 <span
@@ -148,7 +153,7 @@
                  on the component's page already promises. --}}
             @keydown.escape.prevent="closeAndFocusTrigger()"
             role="dialog"
-            aria-label="{{ __('wirekit::Hover card') }}"
+            {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, __('wirekit::Hover card')) }}
             class="{{ $panelClasses }}"
             x-cloak
         >

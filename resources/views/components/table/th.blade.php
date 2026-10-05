@@ -305,11 +305,13 @@
              matching the column alignment keeps the label exactly where the text-align
              put it; and the focus ring is inset because the table's scroll wrapper
              (`overflow-x-auto`, which computes `overflow-y: auto`) would clip an outset
-             ring on the header row. The direction indicator stays reactive via x-show. --}}
+             ring on the header row. The direction indicator stays reactive via x-show.
+             `wk-table-sort` gives it the 44px height floor of a button on a coarse pointer
+             and inside `data-wk-touch`, which a plain button with this padding never reaches. --}}
         <button
             type="button"
             @click="sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
-            class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
+            class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer wk-table-sort"
         >
             {{ $label }}
             <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
@@ -338,11 +340,13 @@
 
                  ring-inset because the box now reaches the cell's edges, and the
                  table's scroll wrapper (`overflow-x-auto`, which computes
-                 `overflow-y: auto`) would clip an outset ring on the header row. --}}
+                 `overflow-y: auto`) would clip an outset ring on the header row.
+
+                 `wk-table-sort` takes the touch height floor, as in the Alpine branch above. --}}
             <button
                 type="button"
                 wire:click="{{ $sortAction }}"
-                class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
+                class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer wk-table-sort"
             >
                 {{ $label }}
                 {!! $sortIndicator !!}

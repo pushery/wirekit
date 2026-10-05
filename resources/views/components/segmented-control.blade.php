@@ -60,10 +60,24 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('segmented-control', $attributes->getAttributes());
 
+    // The hidden input gives the segment as text, and Livewire takes the server's echo of an `int`
+    // or `float` property for a change and writes it over a newer choice: a binding to one gets
+    // `.number` and sends a number (Support\NumericModel).
+    $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
+    // A caller's `autofocus` goes to the selected option, which holds the tab stop: on the wrapper it focuses nothing
+    // (Support\FieldAttributes).
+    $fieldAutofocus = \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
+    $attributes = $attributes->except('autofocus');
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
@@ -79,7 +93,9 @@
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
 
     // Container wrapping the pill-style segments
     //
@@ -226,8 +242,10 @@
         <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name">{{ $label }}</x-wirekit::label>
     @endif
 
+    {{-- `name` belongs to the hidden field below, which renders it. On this div it is not a
+         valid attribute, and a `[name="…"]` lookup would find the group before the field. --}}
     <div
-        {{ $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model')->class([$containerClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '']) }}
+        {{ $attributes->except(['aria-describedby', 'name'])->whereDoesntStartWith('wire:model')->class([$containerClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '']) }}
         {{-- Selection, the hidden-input mirror and the whole keyboard model live
              in the factory (resources/js/components/segmented-control.js). The
              handlers cannot be inline: Alpine's CSP build parses neither the
@@ -299,7 +317,7 @@
              name a hidden field, and a caller's `id` already sits on the radio group
              through the bag: written here as well, it stood on two elements. --}}
         {{-- A disabled field is left out of the form data, as a native one is. --}}
-        <input type="hidden" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" @if($disabled) disabled @endif />
+        <input type="hidden" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
 
         @if($optimisticConfig)
             {{-- `display: contents` on both wrappers: the segments must keep
@@ -355,6 +373,7 @@
                      announced as unavailable. It sits on the selected item, which is where
                      it sits when the group is live. --}}
                 tabindex="{{ $selected === $optValue ? '0' : '-1' }}"
+                @if($fieldAutofocus && $selected === $optValue) autofocus @endif
                 @if(! $disabled)
                     :tabindex="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }} ? '0' : '-1'"
                     {{-- run(), not select(): the layer snapshots, writes `selected`

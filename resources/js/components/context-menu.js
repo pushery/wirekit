@@ -85,7 +85,9 @@ export default function wirekitContextMenu() {
             });
 
             this._navCleanup = () => this._forceClose();
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // Auto-close cooperation: when ANY context menu broadcasts that it's
             // about to open, every OTHER instance closes itself. This prevents the
@@ -205,6 +207,16 @@ export default function wirekitContextMenu() {
                 // erasure need not change its box at all. Both halves of what that option needs
                 // are absent; this one watches the attribute that is actually removed.
                 repairErasure: true,
+
+                // The menu hangs from a point, not from a box, so like a native context menu it
+                // may cover that point: it moves up into the window when the room below and above
+                // the cursor are both too short for it. Only a menu taller than the window is
+                // capped, and then it scrolls. Without these a menu opened in the middle of a
+                // short window (a phone held sideways, a page zoomed to 400%) runs past the bottom
+                // edge, where neither the focus nor a scroll of the page brings its last entries
+                // into view: the panel is fixed, and a scroll closes it.
+                crossAxisShift: true,
+                fitViewport: true,
             });
 
             if (placement && typeof placement.stop === 'function') {
@@ -324,13 +336,20 @@ export default function wirekitContextMenu() {
             const focusWasInside = panel ? panel.contains(document.activeElement) : false;
 
             if (focusWasInside) {
-                // The interactive descendant, not the wrapper: `$refs.trigger` is a plain
-                // div around whatever the caller passed, and focusing a div announces
-                // nothing. Where the trigger area holds no focusable element there is
-                // nothing to return to, and doing nothing is the honest outcome.
-                this.$refs.trigger?.querySelector(
-                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                )?.focus({ preventScroll: true });
+                // The trigger area's own tab stop. When the caller's content holds a control,
+                // that control is the stop and takes the focus back. When it holds none, the view
+                // gives the wrapper `tabindex="0"` so the keyboard path exists at all, and then
+                // the wrapper itself is the stop: a search among its descendants alone would find
+                // nothing, and the focus would fall to <body> with the hidden panel, restarting a
+                // keyboard reader at the top of the page (WCAG 2.4.3).
+                const trigger = this.$refs.trigger;
+                const stop = trigger?.matches?.('[tabindex]:not([tabindex="-1"])')
+                    ? trigger
+                    : trigger?.querySelector(
+                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                    );
+
+                stop?.focus({ preventScroll: true });
             }
 
             // BEFORE the hide, not after. The panel leaves through an `x-transition`, so

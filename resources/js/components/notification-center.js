@@ -24,9 +24,18 @@
  * @param {Object} config
  * @param {Array}  config.items - notifications [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
  * @param {string} config.groupBy - 'none' | 'time' | 'type'
+ * @param {Object} config.latestLabels - the summary's middle phrase in every form, translated by the
+ *   view: sample count -> phrase (`PluralPhrases`), chosen by the unread count
+ * @param {string} [config.latestLabel] - the same phrase in one form, for a factory mounted by hand
+ * @param {Object} config.bellNames - the bell's name while something is unread, every form, with
+ *   `:count` left for the count
+ * @param {string} config.locale - BCP-47 tag whose plural rule chooses the forms
+ * @param {string} config.otherGroupLabel - the heading over items without a `group` (or a `type`
+ *   when grouped by type), translated by the view
  * @param {string} config.realtimeEvent - optional window event name to listen for new items
  */
 import { focusIsWithin, position } from '../utils/floating.js';
+import { pluralize } from '../utils/plural.js';
 import { isComposing } from '../utils/ime.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
@@ -94,8 +103,15 @@ export default function wirekitNotificationCenter(config = {}) {
     return withOpenAlias({
         // The summary's middle phrase is translated server-side and travels in,
         // because the line is built here rather than in the template, where it
-        // could be interpolated.
-        _latestLabel: config.latestLabel || 'unread. Latest:',
+        // could be interpolated. It travels in every form, sample count -> phrase,
+        // since it agrees with the count before it ("1 non lu", "3 non lus").
+        _latestLabels: config.latestLabels || { 2: config.latestLabel || 'unread. Latest:' },
+        // The bell's name with the count, in every form, the title already in it.
+        _bellNames: config.bellNames || { 2: ':count unread' },
+        _locale: config.locale,
+        // The heading over the items that carry no group (or no type, grouped by type) is the
+        // one heading the kit writes itself, so it travels in translated like the phrase above.
+        _otherGroupLabel: config.otherGroupLabel || 'Other',
 
         /**
          * The summary line, and the key a group renders under.
@@ -113,7 +129,12 @@ export default function wirekitNotificationCenter(config = {}) {
 
             const latest = this.items.length > 0 && this.items[0].title ? this.items[0].title : '';
 
-            return this.unreadCount + ' ' + this._latestLabel + ' ' + latest;
+            return this.unreadCount + ' ' + pluralize(this._latestLabels, this.unreadCount, this._locale) + ' ' + latest;
+        },
+
+        // The bell's accessible name while something is unread.
+        bellName() {
+            return pluralize(this._bellNames, this.unreadCount, this._locale);
         },
 
         groupKey(group) {
@@ -241,7 +262,7 @@ export default function wirekitNotificationCenter(config = {}) {
             const key = this.groupBy === 'type' ? 'type' : 'group';
             const map = new Map();
             list.forEach((i) => {
-                const g = i[key] || 'Other';
+                const g = i[key] || this._otherGroupLabel;
                 if (!map.has(g)) map.set(g, []);
                 map.get(g).push(i);
             });
@@ -450,6 +471,9 @@ export default function wirekitNotificationCenter(config = {}) {
                 this._stopRepair = null;
 
                 const placement = await position(this.$refs.bell, this.$refs.panel, {
+                    // Capped to the room on a short viewport and scrolled inside, so a phone held
+                    // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                    fitViewport: true,
                     placement: 'bottom-start',
                     offset: 8,
                     crossAxisShift: true,

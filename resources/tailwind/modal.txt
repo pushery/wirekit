@@ -23,10 +23,7 @@ $_)
 $announceNewTab
 $ariaAttributes
 $ariaAttributes))
-$ariaKey
 $ariaLabel;
-$ariaValue
-$ariaValue)
 $as
 $as);
 $attributes
@@ -65,11 +62,14 @@ $declarativeLoading
 $declarativeLoading)
 $delegate
 $describedby
+$dialogAriaAttributes
 $disableOnLoading
 $disableOnLoading;
 $disabled
 $discardQuestion
 $discardQuestionText
+$dismiss
+$dismiss])
 $dismissible
 $emitAriaBusy
 $extLink
@@ -112,6 +112,7 @@ $named
 $newTabHint
 $opensNewTab
 $orientation
+$overlayCloseHandler
 $overlayCloseSlot
 $overlayCloseSlot);
 $overlayCloseWrapsAControl
@@ -121,7 +122,7 @@ $relAttr;
 $resolvedAriaLabel
 $scope
 $scope);
-$scope])
+$scope,
 $size
 $size,
 $sizeClass
@@ -184,7 +185,6 @@ $wrapLabel
 'announceNewTab'
 'aria-'))
 'aria-busy'
-'aria-label')
 'aria-label');
 'ariaLabel'
 'ariaLabel',
@@ -205,8 +205,12 @@ $wrapLabel
 'button';
 'calc(var(--size-wk-lg)*1.1)',
 'calc(var(--size-wk-sm)*0.875)',
+'cancel'`,
+'cancel'`.
+'cancelByReader()'
 'close'
 'close',
+'close()';
 'confirmDiscard'
 'container',
 'cursor-pointer',
@@ -219,6 +223,7 @@ $wrapLabel
 'disabled:opacity-[var(--opacity-wk-disabled)]',
 'disabled:pointer-events-none',
 'discardQuestion'
+'dismiss'
 'dismissible'
 'duration-[var(--transition-wk-duration)]',
 'ease-[var(--transition-wk-easing)]',
@@ -406,6 +411,7 @@ $wrapLabel
 ($attributes->getAttributes()
 ($close)
 ($declarativeLoading
+($dismiss
 ($forceLoading)
 ($iconOnly
 ($iconOnly)
@@ -600,13 +606,10 @@ $wrapLabel
 @elseif(!
 @elseif($iconOnlyBelow
 @elseif($loading)
-@endforeach
 @endif
 @endisset
 @endphp
-@foreach($ariaAttributes
 @if
-@if($ariaKey
 @if($as
 @if($computedRel)
 @if($declarativeLoading)
@@ -667,6 +670,7 @@ BooleanProp::from($close,
 BooleanProp::from($confirmDiscard,
 BooleanProp::from($disableOnLoading,
 BooleanProp::from($disabled,
+BooleanProp::from($dismiss,
 BooleanProp::from($dismissible,
 BooleanProp::from($external,
 BooleanProp::from($forceLoading,
@@ -685,6 +689,7 @@ CSS-pixel
 CSS.
 CallerRef::onRoot()
 Cancel
+Cancel:
 Capped
 Centered,
 Click
@@ -894,9 +899,11 @@ With
 Without
 Wrapped,
 Wrapping,
+Written
 X)
 [
 ['always',
+['aria-label'
 ['component'
 ['default',
 ['outlined'
@@ -908,6 +915,7 @@ X)
 [--color-wk-ring:var(--color-wk-accent-fg)]
 [--wk-touch-min:0px]'
 [overflow-wrap:anywhere]'
+\Illuminate\View\ComponentAttributeBag(array_diff_key($ariaAttributes,
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText)
 \Pushery\WireKit\Support\AlpinePayload::string($for)
@@ -1025,7 +1033,9 @@ __('wirekit::Discard
 `disabled`
 `disabled`,
 `discardQuestion`
+`dismiss="false"`
 `dismissByReader('escape')`
+`dismiss`
 `dismissible="false"`
 `dvh`
 `em`
@@ -1109,6 +1119,7 @@ __('wirekit::Discard
 `var()`
 `variant="ghost"`
 `variant="outlined"`)
+`via:
 `whitespace-normal`
 `whitespace-nowrap`
 `window.opener`;
@@ -1130,6 +1141,7 @@ __('wirekit::Discard
 `xs`
 `xs`,
 `xs`.
+`{{
 `{{--
 a
 about
@@ -1203,11 +1215,13 @@ anchors
 and
 announce
 announced
+announced.
 announcement
 announces
 anonymous
 another
 answer
+answer,
 answerable
 anticipate
 any
@@ -1463,6 +1477,7 @@ child
 child)
 children
 children,
+choosing
 clamp,
 clamped
 clamping
@@ -1497,6 +1512,7 @@ clips
 close
 close()
 close-X
+close.
 closeable
 closed
 closer
@@ -1690,6 +1706,7 @@ discardQuestion:
 discoverable,
 dismiss
 dismissal
+dismissal,
 dismissible
 dismissible:
 dist/wirekit.css
@@ -1774,6 +1791,7 @@ equal
 error
 error,
 error.
+escape
 escape-free.
 escaped
 escaping
@@ -1814,6 +1832,7 @@ fall
 fallback
 fallbacks,
 falls
+false)
 false);
 false,
 false:
@@ -1841,6 +1860,7 @@ filled($stackBelow)
 filled()
 finds
 finger
+finished
 finished,
 first
 first,
@@ -2361,6 +2381,7 @@ not.
 not:
 nothing
 nothing,
+nothing.
 nothing:
 nothing;
 notice:
@@ -2386,6 +2407,7 @@ omitted:
 on
 on.
 once
+once,
 once.
 one
 one,
@@ -3101,8 +3123,10 @@ true);
 true,
 true:
 true;
+true]));
 truth
 truthy
+truthy,
 turn
 turned
 turns
@@ -3130,6 +3154,7 @@ unlayered
 unless
 unreachable.
 unrelated
+unsaved
 untargeted
 until
 unvalidated
@@ -3302,11 +3327,11 @@ x-data="wirekitModal({
 x-data="wirekitModalTrigger({
 x-on:click.prevent.stop="openNamedOverlay()"
 x-on:click.self="handleBackdropClick()"
-x-on:click="close()"
 x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
 x-on:click="show()"
 x-on:click="show()">
+x-on:click="{{
 x-on:keydown.escape.window="onWindowEscape($event)"
 x-ref="panel"
 x-show/x-teleport
@@ -3342,8 +3367,8 @@ zero
 }}</span>
 }}</x-wirekit::button>
 }}</x-wirekit::link>
-}}="{{
 }}>
+}}`
 }}{!!
 —
 …

@@ -95,6 +95,30 @@
     // nothing in the markup looks wrong. A screen reader simply stops announcing the tip.
     $tooltipId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-');
 
+    // The stop this component makes of its trigger is a button: activating it shows the tooltip, as a
+    // toggletip does. A button takes its name from its words; around an icon alone it has none, so
+    // the tooltip's own text names it, and the description is left off so it is not read twice. A
+    // name of the caller's comes first (Support\CallerName). Around a disabled control, which a
+    // tooltip often explains, the button says it is unavailable, as the control is. A stop the
+    // caller forced around a control the keyboard already reaches gets no role: it would nest one
+    // control in another.
+    $triggerName = new \Illuminate\Support\HtmlString('');
+    $triggerDescribes = $describes;
+    $slotHtml = (string) $slot;
+    $triggerIsButton = $focusableTrigger && ! \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
+    $triggerExplainsDisabled = $triggerIsButton && preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i', $slotHtml) === 1;
+    if ($triggerIsButton) {
+        [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+        $slotText = trim(html_entity_decode(strip_tags((string) preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s', '', $slotHtml)), ENT_QUOTES | ENT_HTML5));
+        $slotNamesItself = $slotText !== '' || preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/', $slotHtml) === 1;
+        $tipText = isset($content) ? trim(strip_tags((string) $content)) : trim((string) $text);
+        $ownName = ! $slotNamesItself && $tipText !== '' ? $tipText : null;
+        $triggerName = \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $ownName);
+        if ($callerLabelledBy === null && $callerLabel === null && $ownName !== null) {
+            $triggerDescribes = false;
+        }
+    }
+
     // Tooltip panel classes — inverted colors, small rounded box
     // w-max ensures the tooltip sizes to its content (not the trigger width)
     // Uses `fixed` positioning so the tooltip escapes ancestor `overflow: hidden` containers.
@@ -176,7 +200,7 @@
          reader actually arrives, and leaves it here when there is none so the wrapper case
          is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
          markup — this template never sees the element it needs to annotate. --}}
-    <{{ $as }} data-wk-prose-skip x-ref="trigger" @if($describes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
+    <{{ $as }} data-wk-prose-skip x-ref="trigger" @if($triggerDescribes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @if($triggerIsButton) role="button" @if($triggerExplainsDisabled) aria-disabled="true" @endif {{ $triggerName }} x-on:keydown.enter="activate($event)" x-on:keydown.space="activate($event)" @endif class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
         {{ $slot }}
     </{{ $as }}>
 

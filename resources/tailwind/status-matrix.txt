@@ -7,6 +7,7 @@
 "Hoverable"
 "Most
 "New"
+"Remove";
 "Status
 "cold-warm"
 "default"
@@ -24,17 +25,22 @@ $as);
 $attributes
 $attributes->class([$iconClasses]);
 $attributes->class(['relative
+$attributes->except('form');
 $attributes->except(['id',
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
-$attributes->get('id',
+$attributes->get('id')
 $attributes->get('name')));
 $attributes->get('name');
 $attributes->get('role');
 $attributes->getAttributes());
+$attributes->has('id')
 $attributes->merge($depthStyle
 $attributes->only('class')->class([$base])
 $attributes->whereStartsWith('wire:model')
+$attributes]
+$badgeText
+$badgeText])
 $base
 $baseClasses
 $borderWidthClass
@@ -45,6 +51,9 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
+$callerLabelledBy
 $callerRole
 $cellAt
 $cellAt($rk,
@@ -64,6 +73,7 @@ $colList
 $col['key'];
 $col['label']
 $content
+$content))
 $cornerLabel
 $cv)
 $cv;
@@ -72,6 +82,7 @@ $delayShow
 $depthStyle
 $depthStyle]
 $describes
+$describes;
 $disabled
 $dismissBtnClasses
 $dismissLabel
@@ -89,6 +100,7 @@ $flatCells[$k.':'.$ck]
 $flatCells[$k]
 $flatCells[$r.':'.$c]
 $focusableTrigger
+$formOwner
 $headCell
 $heatFrom
 $heatMax
@@ -132,6 +144,8 @@ $name];
 $offset
 $outlineClasses
 $outlineClasses,
+$ownName
+$ownName);
 $pillRadius
 $pillRadius,
 $placeholderAttributes
@@ -161,6 +175,13 @@ $sizeMap
 $sizeMap[$validated];
 $slot
 $slot)
+$slot),
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $softClasses
 $softClasses,
 $solidClasses
@@ -176,11 +197,17 @@ $svgHtml
 $svgHtml,
 $tabindex
 $text
+$text);
+$tipText
 $toAxis
 $toAxis($columns);
 $toAxis($rows);
 $tooltipClasses
 $tooltipId
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $v
 $v)
 $v;
@@ -220,6 +247,7 @@ $wrap
 '<svg'.$cleaned.'>';
 'Rendering
 'Run:
+'UTF-8')));
 '[WireKit]
 'accent'
 'accent',
@@ -227,6 +255,8 @@ $wrap
 'allow'
 'allow'"
 'aria-label');
+'aria-labelledby');
+'aria-labelledby'])->whereDoesntStartWith('wire:model')
 'ariaLabel'
 'as'
 'at
@@ -273,7 +303,7 @@ $wrap
 'cellType',
 'cells'
 'check'
-'class'])->whereDoesntStartWith('wire:model')
+'class',
 'clock'
 'columns'
 'compliant',
@@ -445,7 +475,9 @@ $wrap
 (!
 ("Fast
 ($callerAriaHidden
+($callerLabelledBy
 ($cellsArr
+($dismissLabel
 ($heatMin,
 ($intent)
 ($isInformative
@@ -462,6 +494,7 @@ $wrap
 ($size)
 ($surface)
 ($svgHtml
+($triggerIsButton)
 ($v
 ($value)
 ('xs').
@@ -471,8 +504,11 @@ $wrap
 (Alpine
 (Blade
 (CTA
+(DomId::distinct
 (SOFT
 (Support\CallerListeners).
+(Support\CallerName).
+(Support\FormOwner).
 (UtilityClasses::has($callerClass,
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -570,6 +606,7 @@ $wrap
 16
 16"
 16px
+1;
 1px
 2.1.1
 2.1.1).
@@ -595,6 +632,7 @@ $wrap
 :class="isChanged({{
 :count
 :intent="$statusIntent($val)"
+:name',
 :name="$leadingIcon"
 :name="$trailingIcon"
 :scope="$scope">
@@ -645,7 +683,6 @@ $wrap
 >
 ?
 ??
-??=
 @break
 @case('heat')
 @case('toggle')
@@ -654,6 +691,7 @@ $wrap
 @click="toggleCell({{
 @default
 @else
+@elseif(filled($ariaLabel))
 @endforeach
 @endif
 @endif>
@@ -664,11 +702,12 @@ $wrap
 @foreach($colList
 @foreach($rowList
 @if
-@if($describes)
+@if($callerLabelledBy)
 @if($disabled)
 @if($dismissible)
 @if($dot)
 @if($focusableTrigger)
+@if($formOwner)
 @if($isCompositeGrid)
 @if($isEditable
 @if($isEditable)
@@ -679,8 +718,10 @@ $wrap
 @if($surface
 @if($tooltip)
 @if($trailingIcon)
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if($val
-@if(filled($ariaLabel))
 @if(isset($content))
 @isset($empty)
 @keydown.enter.prevent="activate({{
@@ -712,6 +753,7 @@ Alpine's
 Alpine-only
 Also
 An
+Around
 Aurora
 BCP-47
 BOTH
@@ -759,6 +801,9 @@ Done
 Dot
 Driven
 Drop
+ENT_HTML5));
+ENT_HTML5,
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 English
@@ -941,12 +986,14 @@ Zero
 [
 ["row:col"
 ["rowKey:colKey"
+[$callerLabelledBy,
 ['at-risk',
 ['data-wk-icon-missing'
 ['failing',
 ['inverted',
 ['key'
 ['met',
+['name'
 ['outlined'
 ['primary',
 ['sm',
@@ -963,6 +1010,7 @@ Zero
 [rowKey
 [{key,label}]
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from(
 \Pushery\WireKit\Support\AlpinePayload::from($flatCells)
@@ -979,15 +1027,19 @@ Zero
 \Pushery\WireKit\Support\AlpinePayload::string($row['label'].',
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('status-matrix',
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::from($cells);
 \Pushery\WireKit\Support\ListProp::from($it);
 \Pushery\WireKit\Support\ListProp::from($items);
 \Pushery\WireKit\Support\ListProp::from($v);
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1}
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
-\Pushery\WireKit\WireKit::stableId('status-matrix',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('status-matrix',
 ])
@@ -1004,6 +1056,7 @@ __('wirekit::Inherited'),
 __('wirekit::Nothing
 __('wirekit::Off')
 __('wirekit::On')
+__('wirekit::Remove
 __('wirekit::Remove');
 __('wirekit::Status
 __toString
@@ -1013,6 +1066,7 @@ __toString
 `$isEditable`:
 `$refs`
 `(s)`
+`-2`,
 `:class`
 `<button>`
 `<div>`
@@ -1066,6 +1120,7 @@ __toString
 `false`
 `fixed`
 `focusable-trigger`
+`form`
 `gridcell`
 `h-4`
 `h-5`
@@ -1151,6 +1206,7 @@ accompanies
 achromatic
 across
 action
+activating
 activation
 actual
 actually
@@ -1188,6 +1244,7 @@ announced
 announces
 announcing
 anonymous
+another.
 answer
 answer.
 answers
@@ -1226,6 +1283,7 @@ aria-label
 aria-label.
 aria-label="{{
 aria-labelledby
+aria-labelledby="{{
 aria-live="polite"
 armed,
 arms
@@ -1333,9 +1391,9 @@ border-[color:var(--color-wk-warning)]',
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]',
 border-[var(--color-wk-border)]
-border-[var(--color-wk-border)]"></span>
 border-[var(--color-wk-border)]'
 border-[var(--color-wk-border)]';
+border-[var(--color-wk-border-strong)]"></span>
 border-[var(--color-wk-danger)]',
 border-[var(--color-wk-info-tone)]',
 border-[var(--color-wk-success)]',
@@ -1367,6 +1425,8 @@ but
 button
 button's
 button,
+button:
+buttons
 buttons).
 buttons,
 by
@@ -1417,6 +1477,7 @@ chevrons,
 child
 children
 chip
+chips
 choice
 chose
 chosen
@@ -1510,6 +1571,7 @@ contrast
 contrast-guaranteed
 contrasts
 control
+control,
 copies
 corner
 corner:
@@ -1607,6 +1669,7 @@ docs
 document
 documented
 does
+does,
 does.
 dot
 double
@@ -1685,6 +1748,7 @@ existing
 exists
 exists.
 expandos.
+explains,
 explanation
 explicitly
 exposing
@@ -1710,6 +1774,7 @@ false)
 false),
 false);
 false,
+false;
 family
 feature
 field
@@ -1719,8 +1784,10 @@ fill
 fill="none"
 filled
 filled($ariaLabel)
+filled($callerLabelledBy)
 filled-background
 fills
+filter
 filter_var($editable,
 filter_var($wrap,
 finds
@@ -1764,12 +1831,14 @@ font-[family-name:var(--font-wk-sans)]',
 font-[number:var(--font-wk-heading-weight)]
 for
 forbidden
+forced
 forces
 forcing
 foreach
 foreground
 foreground.
 form
+form="{{
 found.`
 four
 fragment
@@ -1890,6 +1959,7 @@ hover:bg-[var(--color-wk-bg-muted)]'
 hover:opacity-100',
 how
 however
+html_entity_decode(strip_tags((string)
 hue
 hundred
 icon
@@ -1956,8 +2026,11 @@ invalid
 inverted
 invocation`
 is
+is.
+is_string($callerLabelledBy)
 isn't
 isolate`
+isset($content)
 isset($sizeMap[$size])
 it
 it's
@@ -1972,6 +2045,7 @@ itself
 itself,
 itself.
 job
+joins
 judgment
 just
 justify-center
@@ -2086,6 +2160,7 @@ mean
 meant
 mechanism
 medium
+meets
 menus
 merge
 message
@@ -2121,6 +2196,7 @@ moving
 ms-1
 much
 multi-line
+multi-select
 must
 muted
 n/a
@@ -2142,6 +2218,7 @@ navigation
 needed
 needs
 neither
+nest
 nested
 never
 new
@@ -2178,6 +2255,7 @@ of
 off
 offers
 offset:
+often
 oklch,
 omission.
 on
@@ -2298,9 +2376,13 @@ position
 positioning
 post-process
 pre-checking
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 present
 presentational
@@ -2403,6 +2485,7 @@ reinforcement;
 relative
 removed
 removes
+removes,
 removing
 render
 render,
@@ -2441,6 +2524,8 @@ ring-[var(--color-wk-warning)]'
 risk',
 role
 role,
+role:
+role="button"
 role="grid"
 role="grid",
 role="gridcell"
@@ -2628,6 +2713,7 @@ style="display:inline-block;"></span>
 stylesheet's
 stylesheet).
 submission
+submits,
 submitted
 subtle
 subtree
@@ -2720,6 +2806,7 @@ themes.
 then
 there
 there).
+there:
 therefore
 they
 things,
@@ -2750,12 +2837,14 @@ toCssClasses()
 toHtml().
 toggle
 toggle).
+toggletip
 token
 token,
 tokens
 too).
 too,
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -2783,6 +2872,9 @@ tree:
 trigger
 trigger's
 trigger,
+trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip.
 tristate
 tristateLabel({{
@@ -2795,6 +2887,7 @@ truthy
 truthy.
 try
 twice
+twice.
 two
 two+
 two.
@@ -2806,6 +2899,7 @@ types
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -2851,6 +2945,7 @@ var(--shadow-wk-badge,
 variable
 variant
 variant),
+verbatim).
 vertical
 via
 view
@@ -2907,6 +3002,7 @@ whole
 whose
 why
 widening
+widget
 width
 width)
 win
@@ -2923,7 +3019,9 @@ without
 wk-scrollbar
 word
 word)
+word.
 word:
+words;
 working
 works
 works).
@@ -2934,6 +3032,7 @@ wrap
 wrapped
 wrapper
 wrapper)
+wrapper,
 wrapping
 writes
 writing
@@ -2948,7 +3047,9 @@ x-data="wirekitTooltip({
 x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
@@ -3001,6 +3102,8 @@ zoom,
 }}">
 }}"></span>
 }}">{{
+}}"@else
+}}"@endif>
 }}%);"
 }})
 }})"

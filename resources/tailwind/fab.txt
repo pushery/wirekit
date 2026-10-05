@@ -23,11 +23,13 @@ $attributes->get('role');
 $attributes->get('target',
 $attributes->getAttributes());
 $attributes->merge()
+$attributes]
 $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel,
 $callerRole
 $classes
 $cleaned
@@ -49,6 +51,7 @@ $iconClasses
 $isInformative
 $isInformative;
 $label
+$label)
 $label,
 $label;
 $m):
@@ -215,6 +218,7 @@ $validated
 ('xs').
 (44px)
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (UtilityClasses::has($callerClass,
 (WCAG
@@ -336,6 +340,7 @@ ALSO
 AND
 APG
 API:
+ARIA
 AROUND
 AT
 ATs
@@ -480,6 +485,7 @@ With
 Without
 Words
 [
+[$callerLabelledBy,
 ['a
 ['block-end',
 ['class'
@@ -490,6 +496,8 @@ Words
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('fab',
@@ -680,6 +688,7 @@ belongs
 below
 below,
 below.
+below;
 beneath
 beside
 between
@@ -1192,6 +1201,7 @@ mean
 meaning
 means
 meant
+meets,
 menu
 menu,
 merge
@@ -1224,6 +1234,7 @@ named
 named,
 nameless
 nameless.
+names
 navigates
 navigation.
 needed,
@@ -1364,6 +1375,7 @@ pressed
 primitive
 problem
 prod).
+prohibits
 promised
 promises
 prop
@@ -1747,6 +1759,7 @@ words
 worse
 would
 wrapper
+wrapper,
 wrapping
 wraps
 writing

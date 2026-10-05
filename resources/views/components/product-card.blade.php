@@ -33,6 +33,9 @@
     'compareAt' => null,
     'currency' => config('wirekit.currency', 'USD'),
     'minorUnits' => false,
+    // The locale every amount is written in, handed to each `price` with the currency. Unset, an
+    // amount follows the application's locale, as a `price` of its own would.
+    'locale' => null,
     // Average rating out of 5, and how many people gave it.
     'rating' => null,
     'reviewCount' => null,
@@ -206,7 +209,8 @@
         </h{{ $levelValue }}>
 
         @if($description)
-            <p data-wk-prose-skip class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</p>
+            {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
+            <div data-wk-product-card-description data-wk-prose-skip class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</div>
         @endif
 
         @if($ratingValue !== null)
@@ -238,6 +242,7 @@
                     :base="$onSale ? $compareAt : null"
                     :currency="$currency"
                     :minor-units="$minorUnits"
+                    :locale="$locale"
                 />
             </span>
         @endif

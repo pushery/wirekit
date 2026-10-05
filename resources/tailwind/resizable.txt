@@ -1,3 +1,4 @@
+!==
 "Resizable"
 "splitter,
 $attributes->class([$classes,
@@ -6,6 +7,10 @@ $attributes->getAttributes());
 $attributes->merge(['style'
 $attributes->missing('aria-label')
 $attributes->missing('aria-labelledby');
+$attributes]
+$callerLabel
+$callerLabel)
+$callerLabel,
 $classes
 $defaultPct
 $defaultPct,
@@ -50,6 +55,7 @@ $style])->class([$classes])
 'rounded-[var(--radius-wk-lg)]',
 'scope'
 'vertical'
+(Support\CallerName).
 (WCAG
 (e.g.
 (int)
@@ -82,10 +88,13 @@ $style])->class([$classes])
 ??
 @endif
 @endphp
+@endunless
+@if($callerLabelledBy
 @if($needsName)
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 A
 APG's
 ARIA
@@ -124,7 +133,10 @@ WireKit::resolveClasses('resizable',
 WireKit::resolveClasses('resizable.handle',
 WireKit::resolveClasses('resizable.panel',
 [
+[$callerLabelledBy,
 [data-wk-resizable]
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('resizable',
 \Pushery\WireKit\WireKit::warnUnknownProps('resizable.handle',
 \Pushery\WireKit\WireKit::warnUnknownProps('resizable.panel',
@@ -188,6 +200,7 @@ be
 because
 behind.
 belief
+below;
 beside
 better
 between
@@ -201,6 +214,7 @@ but
 buttons,
 by
 caller
+caller's
 can
 capture,
 carries
@@ -345,6 +359,7 @@ matching
 max($minPct,
 max(0,
 may
+meets,
 mid-drag,
 min(100,
 model,
@@ -367,6 +382,8 @@ none
 not
 nothing
 nowhere.
+null
+null)
 null,
 of
 old
@@ -413,6 +430,7 @@ position.
 presentational
 previous
 prod).
+prohibits
 prop
 properties
 property
@@ -441,6 +459,7 @@ restore
 result
 role,
 role.
+role="group"
 roll
 rule
 rules
@@ -529,6 +548,7 @@ without
 would
 wrapped
 wrapper
+wrapper,
 writing
 x-data="wirekitResizableHandle"
 x-on:click="stepFromControl(-1)"></span>
@@ -543,6 +563,7 @@ you
 {
 {{
 {{--
+||
 }`,
 }}
 }}"

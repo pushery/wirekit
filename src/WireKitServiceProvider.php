@@ -52,6 +52,7 @@ use Pushery\WireKit\Support\DomId;
 use Pushery\WireKit\Support\FaqCollector;
 use Pushery\WireKit\Support\FlagPackage;
 use Pushery\WireKit\Support\LogThrottle;
+use Pushery\WireKit\Support\PropText;
 use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Support\TourStepCounter;
 use Pushery\WireKit\Support\UnboundModel;
@@ -367,8 +368,12 @@ class WireKitServiceProvider extends ServiceProvider
             }
 
             // The same composer removes a caller's `x-model` from a component whose own Alpine root
-            // takes the caller's attributes and holds no value to bind (Support\UnboundModel).
+            // takes the caller's attributes and holds no value to bind (Support\UnboundModel), and
+            // reads every prop the caller wrote on the tag as the text it stands for, so a value
+            // echoed into the tag is escaped once, as a bound one is (Support\PropText).
             $this->app->make('view')->composer($namespaces, static function (View $view): void {
+                PropText::normalize($view);
+
                 $attributes = $view->getData()['attributes'] ?? null;
 
                 if ($attributes instanceof ComponentAttributeBag) {

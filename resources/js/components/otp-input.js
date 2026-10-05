@@ -1,3 +1,5 @@
+import { onFormReset } from '../utils/form-reset.js';
+import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
 
 /**
@@ -43,6 +45,8 @@ import { watchModelEvents } from '../utils/model-events.js';
  *   - _modelEvents — `change` and `blur` on the hidden field for `wire:model.change` and
  *     `wire:model.blur`, which listen on that field alone (utils/model-events.js): `change` when
  *     the code becomes whole and when the reader leaves after an edit, then `blur`.
+ *   - _stopFormReset — the listener that brings the hidden field back to the boxes when the
+ *     form is reset (utils/form-reset.js).
  *
  * @param {Object}  config
  * @param {number}  config.length    number of boxes
@@ -66,6 +70,13 @@ export default function wirekitOtpInput(config = {}) {
         _model: typeof config.model === 'string' && config.model !== '' ? config.model : null,
         _unwatch: null,
         _modelEvents: null,
+        _stopFormReset: null,
+        // The code the boxes hold, kept as state so the required check can follow it; `_sync()`,
+        // `_follow()` and `_restore()` write it with the hidden field.
+        enteredCode: '',
+        // `requiredMessage` and `onRequiredInvalid()`: a required code stops an empty submit
+        // (utils/required-check.js).
+        ...requiredCheckState(),
 
         /**
          * Follow the bound property: its value when the field starts, and every change after.
@@ -79,6 +90,7 @@ export default function wirekitOtpInput(config = {}) {
             // First, because the returns below are about following the property, and a field bound
             // with `.change` or `.blur` needs these events whether it follows anything or not.
             this._modelEvents = watchModelEvents(this.$root, () => this._hiddenField());
+            this._stopFormReset = onFormReset(this.$root, () => this._hiddenField(), () => this._restore());
 
             if (this._model === null || ! this.$wire || typeof this.$wire.$watch !== 'function') {
                 return;
@@ -105,6 +117,55 @@ export default function wirekitOtpInput(config = {}) {
 
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /**
+         * After a form reset, the hidden field takes the code the boxes show again.
+         *
+         * The boxes are native fields, and the reset has put each back to its own default; the
+         * hidden field has no default apart from its value and kept the code. Silently, as the
+         * reset changes a native field without an event, and a code put back by a reset is not
+         * one the reader completed.
+         */
+        _restore() {
+            let combined = '';
+
+            for (let i = 0; i < this._length; i++) {
+                const ref = this.$refs['digit' + i];
+                combined += (ref && ref.value) || '';
+            }
+
+            const hidden = this._hiddenField();
+
+            if (hidden) {
+                hidden.value = combined;
+            }
+
+            this.enteredCode = combined;
+            this.requiredMessage = '';
+            this._wasComplete = Array.from(combined).length === this._length;
+        },
+
+        /** What the required check reads: empty exactly while no box holds a character. */
+        get requiredValue() {
+            return this.enteredCode;
+        },
+
+        /** The first empty box, or the first box, which is where an empty required code sends the focus. */
+        _focusRequiredControl() {
+            for (let i = 0; i < this._length; i++) {
+                const ref = this.$refs['digit' + i];
+
+                if (ref && ! ref.value) {
+                    ref.focus();
+
+                    return;
+                }
+            }
+
+            this.$refs.digit0?.focus();
         },
 
         /** The hidden field the code is bound through. It sits beside the boxes, outside this root. */
@@ -152,6 +213,7 @@ export default function wirekitOtpInput(config = {}) {
             }
 
             this._wasComplete = chars.length === this._length;
+            this.enteredCode = chars.join('');
 
             if (focusInRow && chars.length < this._length) {
                 const target = this.$refs['digit' + chars.length];
@@ -181,11 +243,9 @@ export default function wirekitOtpInput(config = {}) {
          * Select a cell's content when it takes focus, so a filled cell behaves like
          * an empty one.
          *
-         * Without this, correcting a code costs a deletion per cell: clicking a filled
-         * cell puts the caret after its character with nothing selected.
-         * `maxlength="1"` is already satisfied, so the browser refuses the keystroke,
-         * `onInput` never fires, and the advance below never runs. Typing does nothing
-         * at all, and the reader has to backspace every cell before retyping it.
+         * Clicking a filled cell would put the caret after its character with nothing
+         * selected, and a key typed there would land beside it. `onInput` keeps only the key
+         * in that case, and the selection makes the replacement visible before it happens.
          *
          * Selecting on FOCUS rather than on click covers both ways in: a pointer, and the
          * programmatic `next.focus()` that carries typing across the row. So a corrected
@@ -222,17 +282,48 @@ export default function wirekitOtpInput(config = {}) {
         },
 
         onInput(event, index) {
-            const raw = event.target.value;
+            // An input method is still composing: its text is not a character yet. The box
+            // reads it once the composition ends (`onCompositionEnd`).
+            if (event.isComposing) {
+                return;
+            }
 
-            // A rejected character clears the box rather than lingering. It is
-            // still a silent refusal, which is why the alphabet has to be right.
-            if (raw && ! this._accepts(raw)) {
-                event.target.value = '';
+            const raw = event.target.value;
+            const key = typeof event.data === 'string' && Array.from(event.data).length === 1 ? event.data : null;
+
+            // More than one character in one event, and not a single key, is a code that
+            // arrived at once: the autofill of a message, a password manager or an input
+            // assistant. It fills the boxes the way a paste does. The boxes carry no
+            // `maxlength`, because WebKit cuts such an insertion down to its first character
+            // before any handler sees it.
+            if (Array.from(raw).length > 1 && key === null) {
+                if (this._codeIn(raw) === '') {
+                    event.target.value = '';
+                    this._sync();
+
+                    return;
+                }
+
+                this._fill(raw);
 
                 return;
             }
 
-            const value = raw ? this._normalize(raw) : raw;
+            // A key pressed in a box that already held a character: the box takes the key.
+            const typed = Array.from(raw).length > 1 ? key : raw;
+
+            // A rejected character clears the box rather than lingering. It is
+            // still a silent refusal, which is why the alphabet has to be right.
+            // The hidden field follows, or it would still carry the character the
+            // box showed before.
+            if (typed && ! this._accepts(typed)) {
+                event.target.value = '';
+                this._sync();
+
+                return;
+            }
+
+            const value = typed ? this._normalize(typed) : typed;
             event.target.value = value;
 
             if (value && index < this._length - 1) {
@@ -297,16 +388,36 @@ export default function wirekitOtpInput(config = {}) {
             }
         },
 
+        /**
+         * A composition ended: what the input method wrote is now the box's text. Chromium and
+         * WebKit send no input event after `compositionend`, so the box reads it here, the way
+         * a key or a whole code is read.
+         */
+        onCompositionEnd(event, index) {
+            this.onInput({ target: event.target, data: event.data, isComposing: false }, index);
+        },
+
         onPaste(event) {
             event.preventDefault();
 
-            // Keep only what the alphabet accepts, so a code pasted with spaces
-            // or dashes still fills the boxes.
-            const text = event.clipboardData ? event.clipboardData.getData('text') : '';
-            const pasted = Array.from(text || '')
+            this._fill(event.clipboardData ? event.clipboardData.getData('text') : '');
+        },
+
+        /** What the alphabet accepts in a text, in order: a code pasted with spaces or dashes still reads. */
+        _codeIn(text) {
+            return Array.from(text || '')
                 .map((c) => this._normalize(c))
                 .filter((c) => this._alphabet.includes(c))
                 .join('');
+        },
+
+        /**
+         * Spread a whole code over the boxes, from the first, whatever box it arrived in, and
+         * land on the first box it did not fill, so a short code leaves the caret where typing
+         * continues.
+         */
+        _fill(text) {
+            const pasted = this._codeIn(text);
 
             for (let i = 0; i < this._length; i++) {
                 const ref = this.$refs['digit' + i];
@@ -361,6 +472,8 @@ export default function wirekitOtpInput(config = {}) {
                 hidden.value = combined;
                 hidden.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            this.enteredCode = combined;
 
             this._announceCompletion(combined);
         },

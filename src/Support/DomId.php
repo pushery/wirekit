@@ -59,6 +59,9 @@ final class DomId
     /** @var array<string, int> fallback prefix → ids handed out this request */
     private static array $counters = [];
 
+    /** @var array<string, int> whole id → times handed out this request, see distinct() */
+    private static array $wholeIds = [];
+
     /**
      * Return a page-unique id for a control.
      *
@@ -93,10 +96,33 @@ final class DomId
         return $seen === 0 ? $base : $base.'-'.($seen + 1);
     }
 
+    /**
+     * Return a whole derived id unchanged the first time this request, and `-2`, `-3`, … after.
+     *
+     * For a component that builds its id from a name or a bound property and writes it as it is,
+     * brackets included (`wk-date-settings[due]`). unique() cuts a bracketed value at its base,
+     * which would move the id of the FIRST instance as well; here only a repeat on the page
+     * changes, so the second instance's `label[for]` and `aria-describedby` stop resolving to
+     * the first one's elements. Kept apart from unique()'s registry, so a derived id never moves
+     * the id of another kind of control.
+     */
+    public static function distinct(string $id): string
+    {
+        if (! config('wirekit.a11y.dedupe_ids', true)) {
+            return $id;
+        }
+
+        $seen = self::$wholeIds[$id] ?? 0;
+        self::$wholeIds[$id] = $seen + 1;
+
+        return $seen === 0 ? $id : $id.'-'.($seen + 1);
+    }
+
     /** Reset the per-request registry (called after each request + by WireKit::flush()). */
     public static function reset(): void
     {
         self::$seen = [];
         self::$counters = [];
+        self::$wholeIds = [];
     }
 }

@@ -714,11 +714,21 @@ export default function wirekitOptimistic(config = {}) {
         _onFire({ onSuccess, onFailure, onError, onCancel, onFinish }) {
             this._inFlight += 1;
 
+            // Whether one of the four outcomes below reached this fire, and
+            // whether its finish was counted. Livewire can finish a fire with no
+            // outcome at all, and can finish a skipped one twice; see onFinish.
+            let decided = false;
+            let finished = false;
+            const decide = (callback) => (...args) => {
+                decided = true;
+                callback(...args);
+            };
+
             // Confirmation waits for the LAST fire of the burst. With `queue`,
             // an earlier response arriving first does not make the value the
             // server has — a second flip is still out, and clearing aria-busy
             // there would tell the user it landed while it had not.
-            onSuccess(() => { if (this._inFlight <= 1) this._settle('confirmed'); });
+            onSuccess(decide(() => { if (this._inFlight <= 1) this._settle('confirmed'); }));
 
             // A rejection voids the whole burst, whatever else is still out: the
             // server disagreed with the premise the later flips were built on.
@@ -727,7 +737,7 @@ export default function wirekitOptimistic(config = {}) {
             // whether the server refused it or the network dropped.
             const failureExit = this.failure === 'keep' ? 'rejected' : 'rolled-back';
 
-            onFailure(() => this._settle(failureExit));
+            onFailure(decide(() => this._settle(failureExit)));
 
             // `preventDefault()` is the whole point, and its absence put a Laravel
             // stack trace on a reader's phone. Livewire's default for a non-2xx is
@@ -741,39 +751,74 @@ export default function wirekitOptimistic(config = {}) {
             // The failure is not swallowed — it goes to the console, where a
             // developer looks and a reader does not. Handling something and hiding
             // it are different acts, and only the second would be a defect.
-            onError(({ response, body, preventDefault } = {}) => {
+            onError(decide(({ response, body, preventDefault } = {}) => {
                 preventDefault?.();
-
-                if (typeof console !== 'undefined' && console.error) {
-                    // `[wirekit] <component>:` — the house prefix, and here it is load-
-                    // bearing rather than cosmetic. Written `[wirekit:optimistic]`, the
-                    // bracket-plus-colon is a valid Tailwind arbitrary-variant candidate,
-                    // so the scanner reads this console string out of the shipped bundle
-                    // and compiles `[wirekit:optimistic]` into the developer's stylesheet.
-                    // The drift audit then reports a selector no source emits — which is
-                    // exactly what it is.
-                    console.error(
-                        '[wirekit] optimistic: the server refused this action; the value was rolled back.',
-                        { status: response?.status, body }
-                    );
-                }
-
+                this._reportRefusal({ status: response?.status, body });
                 this._settle(failureExit);
-            });
+            }));
 
             // Silent, and back to idle: an abort refused nothing. Only the last
             // one restores — an abort in the middle of a burst leaves the flips
             // that were not aborted standing.
-            onCancel(() => { if (this._inFlight <= 1) this._settle('idle'); });
+            onCancel(decide(() => { if (this._inFlight <= 1) this._settle('idle'); }));
 
-            onFinish(() => {
+            const finish = () => {
+                if (finished) {
+                    return;
+                }
+
+                finished = true;
                 this._inFlight = Math.max(0, this._inFlight - 1);
 
                 if (this._inFlight === 0) {
                     this._baseline = null;
                     this._releaseMorphGuard();
                 }
+            };
+
+            onFinish(() => {
+                if (decided) {
+                    finish();
+
+                    return;
+                }
+
+                // A fire that finishes with no outcome was refused. Livewire ends
+                // a method marked `#[Json]` that throws or fails validation this
+                // way: the response is a 200, the method's promise is rejected,
+                // and only this callback runs, so without a verdict here the
+                // control would stay optimistic and busy, with the value nothing
+                // agreed to. A skipped response also runs this first and its
+                // success right after, in the same task, so the verdict waits a
+                // microtask, and the baseline is kept until then.
+                queueMicrotask(() => {
+                    if (! decided) {
+                        decided = true;
+                        this._reportRefusal({ status: 200, outcome: 'none: a Json method that threw or failed validation' });
+                        this._settle(failureExit);
+                    }
+
+                    finish();
+                });
             });
+        },
+
+        /**
+         * Tell the developer that the server refused an action. Not swallowed: the
+         * console is where a developer looks and a reader does not, and handling a
+         * refusal is not the same act as hiding it.
+         */
+        _reportRefusal(detail) {
+            if (typeof console !== 'undefined' && console.error) {
+                // `[wirekit] <component>:` — the house prefix, and here it is load-
+                // bearing rather than cosmetic. Written `[wirekit:optimistic]`, the
+                // bracket-plus-colon is a valid Tailwind arbitrary-variant candidate,
+                // so the scanner reads this console string out of the shipped bundle
+                // and compiles `[wirekit:optimistic]` into the developer's stylesheet.
+                // The drift audit then reports a selector no source emits — which is
+                // exactly what it is.
+                console.error('[wirekit] optimistic: the server refused this action; the value was rolled back.', detail);
+            }
         },
 
         _settle(next) {

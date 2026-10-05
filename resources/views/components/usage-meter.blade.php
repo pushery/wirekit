@@ -84,6 +84,11 @@
     // <x-wirekit::progress> tag, which the component-tag compiler can't parse.
     $barLabelledby = $label ? $labelId : null;
     $barAriaLabel = $label ? null : __('wirekit::Usage');
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    $barLabelledby = $callerLabelledBy ?? ($callerLabel === null ? $barLabelledby : null);
+    $barAriaLabel = $callerLabelledBy === null ? ($callerLabel ?? $barAriaLabel) : null;
 
     $classes = WireKit::resolveClasses('usage-meter', 'base',
         'w-full font-[family-name:var(--font-wk-sans)]',

@@ -98,19 +98,40 @@
     WireKit::warnUnknownProps('range-slider', $attributes->getAttributes());
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'range-slider-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     /*
      * The Laravel validation bag, which this control never consulted. Every other form
-     * control resolves `error` from `$error ?? $errors->first($name)`, so after a failed
+     * control resolves `error` from `$error ?? FieldError::first($errors, $name)`, so after a failed
      * `$this->validate()` each of them showed its message and this one showed nothing — in
      * the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
      */
-    $error ??= ($errors ?? null)?->first($name);
+    $error ??= \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
-    // Compute defaults: minValue defaults to min, maxValue defaults to max
-    $initialMin = $minValue ?? $min;
-    $initialMax = $maxValue ?? $max;
+    // Numbers, whatever the attribute or the data carried: a text would throw in the
+    // arithmetic below. A bound or a step that holds no number takes its configured default,
+    // and a start value with none starts at its end of the range.
+    $min = \Pushery\WireKit\Support\NumericProp::from($min, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.range-slider.min', 0), 0));
+    $max = \Pushery\WireKit\Support\NumericProp::from($max, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.range-slider.max', 100), 100));
+    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.range-slider.step', 1), 1));
+    $minValue = \Pushery\WireKit\Support\NumericProp::orNull($minValue);
+    $maxValue = \Pushery\WireKit\Support\NumericProp::orNull($maxValue);
+
+    // The start values, held where the handles can stand: inside the track, in order, and one
+    // step apart, the distance the handles keep while they move. A value from data below the
+    // minimum, above the maximum or past the other handle would otherwise place a thumb off the
+    // track and be sent with the form as it came. The factory holds its start the same way.
+    $initialMin = max($min, min($max, $minValue ?? $min));
+    $initialMax = max($min, min($max, $maxValue ?? $max));
+    if ($initialMin > $initialMax) {
+        [$initialMin, $initialMax] = [$initialMax, $initialMin];
+    }
+    if ($initialMax - $initialMin < $step - 1e-9) {
+        $initialMax = min($max, $initialMin + $step);
+        $initialMin = max($min, $initialMax - $step);
+    }
 
     // Spoken-value map, string-keyed so the JS lookup matches (Alpine compares the
     // numeric value against object keys, which are always strings).
@@ -194,6 +215,13 @@
     // DOM.
     $attributes = $wireModel !== null ? $attributes->except($wireModel) : $attributes;
 
+    // Each end gives its value as text, and Livewire takes the server's echo of an `int` or `float`
+    // property for a change and writes it over a newer value: an end bound to one gets `.number`
+    // and sends a number (Support\NumericModel). An end in an array stays as written, since the
+    // server keeps an array's text as it came.
+    $wireModelMin = $wireModel !== null ? \Pushery\WireKit\Support\NumericModel::name($wireModel, $wireModelKey.'.min') : null;
+    $wireModelMax = $wireModel !== null ? \Pushery\WireKit\Support\NumericModel::name($wireModel, $wireModelKey.'.max') : null;
+
     // Thumb classes — shared for both handles
     $thumbClasses = implode(' ', [
         'absolute top-1/2 -translate-y-1/2 -translate-x-1/2',
@@ -210,8 +238,10 @@
         'shadow-[var(--shadow-wk-sm)]',
         // The thumb sits inside the wrapper that carries the disabled cursor, and a
         // `cursor-pointer` here would win on the one element the pointer is actually
-        // over — the handle would still invite a drag it can no longer start.
-        $disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+        // over — the handle would still invite a drag it can no longer start. A
+        // disabled fieldset locks the thumb at runtime through `aria-disabled`, so the
+        // cursor follows that attribute as well.
+        $disabled ? 'cursor-not-allowed' : 'cursor-pointer aria-disabled:cursor-not-allowed',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-shadow duration-[var(--transition-wk-duration)]',
     ]);
@@ -290,7 +320,19 @@
     // `name` is dropped for the same reason: the two hidden inputs render it
     // explicitly, each with its own bracketed key, and left in the bag it also lands
     // on the wrapper, where `name` is not a valid attribute on a grouping div.
+    // A caller's `form` goes to the field this component submits, and only there: on the
+    // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
+    $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+    $attributes = $attributes->except('form');
     $attributes = $attributes->except(['aria-describedby', 'name']);
+    // A caller's `autofocus` goes to the lower handle, the first tab stop: on the wrapper it focuses nothing
+    // (Support\FieldAttributes).
+    $fieldAutofocus = \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
+    $attributes = $attributes->except('autofocus');
+    // A caller's `x-model` would land on this wrapper, around the two hidden fields, and Alpine
+    // would hand it the value of whichever sent `input` last: the upper end, never the range. It is
+    // removed with the warning `UnboundModel` gives, and the range binds with `wire:model`.
+    \Pushery\WireKit\Support\UnboundModel::drop('range-slider', $attributes);
 @endphp
 
 @php
@@ -354,6 +396,12 @@
         x-data="wirekitRangeSlider({ min: {{ $min }}, max: {{ $max }}, step: {{ $step }}, minValue: {{ $initialMin }}, maxValue: {{ $initialMax }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $rangeValueTextMap) }}, labelId: {{ \Pushery\WireKit\Support\AlpinePayload::from($clickLabelId) }} })"
         x-effect="remeasureOnValueChange()"
         class="relative"
+        {{-- A disabled fieldset around the slider dims the track and thumbs, the dim the
+             `disabled` prop gives the wrapper. Bound here because the wrapper sits outside this
+             scope, and only while the prop leaves the slider enabled. --}}
+        @unless($disabled)
+            x-bind:class="fieldsetDisabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : ''"
+        @endunless
         @if($resolvedShowValues)
             style="padding-top: 2rem;"
         @endif
@@ -381,8 +429,9 @@
                  cannot change is not one the server should receive. --}}
             @disabled($disabled)
             :value="minVal"
-            @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.min" @endif
+            @if($wireModel) {{ $wireModelMin }}="{{ $wireModelKey }}.min" @endif
             x-ref="minInput"
+            @if($formOwner) form="{{ $formOwner }}" @endif
         />
         <input
             type="hidden"
@@ -391,8 +440,9 @@
             {{-- Same reason as the min input above. --}}
             @disabled($disabled)
             :value="maxVal"
-            @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.max" @endif
+            @if($wireModel) {{ $wireModelMax }}="{{ $wireModelKey }}.max" @endif
             x-ref="maxInput"
+            @if($formOwner) form="{{ $formOwner }}" @endif
         />
 
         {{-- Track + thumbs.
@@ -418,9 +468,11 @@
              with one pointer and no drag (WCAG 2.5.7). `wk-range-track` gives the 8px track a
              target of the minimum size a handle gets. The press is read as well, because the
              click that ends a handle's drag can land on the track too, and that one must not
-             count. --}}
+             count. The track is drawn in the control border token: how far it reaches is part
+             of what shows where the values stand, so it holds 3:1 against the page (WCAG
+             1.4.11), where the muted surface it had stood at 1.09:1. --}}
         <div
-            class="wk-range-track relative h-2 rounded-full bg-[var(--color-wk-bg-muted)]"
+            class="wk-range-track relative h-2 rounded-full bg-[var(--color-wk-border-strong)]"
             style="overflow: visible;"
             x-ref="track"
             @unless($disabled)
@@ -454,7 +506,14 @@
                      it is a slider that cannot be moved, and that is what a reader has
                      to hear when they arrive on it from the group. --}}
                 tabindex="{{ $disabled ? '-1' : '0' }}"
+                @if($fieldAutofocus && ! $disabled) autofocus @endif
                 @if($disabled) aria-disabled="true" @endif
+                {{-- The same shape when a disabled fieldset around the slider locks it, which
+                     the server cannot see: it disables native controls only. --}}
+                @unless($disabled)
+                    x-bind:tabindex="fieldsetDisabled ? '-1' : '0'"
+                    x-bind:aria-disabled="fieldsetAriaDisabled"
+                @endunless
                 role="slider"
                 aria-label="{{ $minThumbLabel }}"
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
@@ -551,6 +610,10 @@
                 {{-- The same disabled shape as the min thumb — see the note there. --}}
                 tabindex="{{ $disabled ? '-1' : '0' }}"
                 @if($disabled) aria-disabled="true" @endif
+                @unless($disabled)
+                    x-bind:tabindex="fieldsetDisabled ? '-1' : '0'"
+                    x-bind:aria-disabled="fieldsetAriaDisabled"
+                @endunless
                 role="slider"
                 aria-label="{{ $maxThumbLabel }}"
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
@@ -654,7 +717,10 @@
             <span>{{ $rangeValueTextMap[(string) $max] ?? $max }}</span>
         </div>
         <div class="sr-only" aria-live="polite">
-            <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Range: :from to :to')) }}.replace(':from', valueTextFor(minVal)).replace(':to', valueTextFor(maxVal))">Range: {{ $initialMin }} to {{ $initialMax }}</span>
+            {{-- The seed is the sentence the binding writes, from the same catalog entry and with
+                 the same text for a marked value, so a reader before Alpine starts, or without
+                 JavaScript, hears it in the page's language. --}}
+            <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Range: :from to :to')) }}.replace(':from', valueTextFor(minVal)).replace(':to', valueTextFor(maxVal))">{{ __('wirekit::Range: :from to :to', ['from' => $rangeValueTextMap[(string) $initialMin] ?? $initialMin, 'to' => $rangeValueTextMap[(string) $initialMax] ?? $initialMax]) }}</span>
         </div>
 
         @if($optimisticConfig)

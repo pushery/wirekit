@@ -24,7 +24,10 @@
         ? $position
         : WireKit::validateProp('indicator', 'position', $position, ['top-end', 'top-start', 'bottom-end', 'bottom-start']);
 
-    $classes = WireKit::resolveClasses('indicator', 'base', 'relative inline-flex', $scope);
+    // The width is the target's in every container. An inline-level box is blockified as the
+    // item of a flex column or a grid and stretched to the container's width, and the badge,
+    // placed against this box, then sat at the container's far edge instead of on the target.
+    $classes = WireKit::resolveClasses('indicator', 'base', 'relative inline-flex w-fit', $scope);
 
     // Per-instance nudge via the token custom property.
     $style = $offset !== null && $offset !== '' ? "--indicator-wk-offset: {$offset};" : null;

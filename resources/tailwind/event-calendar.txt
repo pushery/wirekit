@@ -1,9 +1,12 @@
 !==
+"+1
 "+N
+"1
 "12
 "8"
 "All
 "Ganztägig"
+"Showing
 "Week
 "cut
 "hide".
@@ -33,7 +36,10 @@ $dayNumberToday
 $detailLevel
 $event)
 $event))
+$eventCalendarFilterStatus
 $eventCalendarLocale
+$eventCalendarMoreNames
+$eventCalendarMoreWords
 $eventClasses
 $eventDot
 $events,
@@ -292,9 +298,9 @@ $weekStartsOn
 :aria-label="eventLabel(b.event)"
 :aria-label="eventLabel(ev)"
 :aria-label="longDate(day.date)"
+:aria-label="moreName(day)"
 :aria-label="rowLabel(ev)"
 :aria-label="selectedDayLabel"
-:aria-label="{{
 :aria-pressed="isCategoryShown(c)
 :aria-pressed="isSelectedDay(day.date)
 :class="day.inMonth
@@ -539,9 +545,10 @@ With
 \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked)
 \Pushery\WireKit\Support\AlpinePayload::from($markerChip)
 \Pushery\WireKit\Support\AlpinePayload::from($markerClasses)
+\Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::Showing
+\Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::more'));
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No
-\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Showing
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with
 \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_',
 \Pushery\WireKit\Support\AlpinePayload::json($eventsArr)
@@ -558,10 +565,10 @@ With
 \Pushery\WireKit\Support\ListProp::only($event['attendees'],
 \Pushery\WireKit\Support\ListProp::renumbered(
 \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
+\Pushery\WireKit\Support\PluralPhrases::from('wirekit:::count
 \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar',
 ])
 ];
-__('wirekit:::count
 __('wirekit::Agenda')
 __('wirekit::Calendar
 __('wirekit::Calendar'),
@@ -572,7 +579,6 @@ __('wirekit::No
 __('wirekit::Previous')
 __('wirekit::Today')
 __('wirekit::Week')
-__('wirekit::more')
 __('wirekit::unavailable')
 _layoutDay
 _measureAgendaTime()
@@ -767,6 +773,7 @@ but
 button
 button's
 button,
+button.
 buttons
 by
 c">
@@ -775,6 +782,7 @@ calendar
 calendar's
 calendar,
 calendars
+call,
 caller
 caller's
 came
@@ -787,6 +795,7 @@ carry,
 carry;
 case
 catalog
+catalog's
 catalog,
 categories
 categories"
@@ -811,6 +820,7 @@ child
 children,
 chip
 chips
+chooses
 chosen
 chrome
 circle
@@ -895,6 +905,7 @@ contrast
 costs
 could
 count
+count,
 count.
 create
 cursor-pointer
@@ -935,7 +946,6 @@ day.allDay"
 day.blocks"
 day.events"
 day.markers"
-day.overflow).replace(':date',
 day.visibleEvents"
 dayDetail:
 dead
@@ -1000,10 +1010,12 @@ ev.id
 ev.id">
 even
 event
+event",
+event".
 event's
 event.
 events
-events'))
+events'));
 events,
 events.
 events;
@@ -1031,7 +1043,7 @@ fill
 fill="none"
 fills
 filter
-filterStatusText:
+filterStatusTexts:
 filterable:
 filtered.
 filters
@@ -1103,6 +1115,7 @@ gridline
 gridlines
 gridlines,
 group
+guard
 guessed
 gutter
 gutter,
@@ -1254,9 +1267,9 @@ literals)
 live
 lives
 locale
+locale's
 locale,
 locale:
-longDate(day.date))"
 looked
 lookup
 loses
@@ -1301,6 +1314,8 @@ monthWeeks"
 more
 more"
 more:
+moreNames:
+moreWords:
 morph
 most
 move-and-select
@@ -1421,6 +1436,7 @@ pl
 pl-[var(--space-wk-sm)]
 place).
 plain
+plural
 plus
 pointer-events-none"></div>
 position,
@@ -1522,11 +1538,13 @@ row's
 row,
 rows
 rule
+rule:
 run
 runs
 runtime
 runtime,
 same
+sample
 saw
 say
 says
@@ -1541,6 +1559,7 @@ scrolls
 search,
 second
 secondary
+sees
 segmented-control
 selectable
 selectableDays:
@@ -1550,6 +1569,7 @@ selection,
 sending
 sense
 sentence
+sentences
 separates
 serve:
 set
@@ -1778,7 +1798,7 @@ vertical
 via
 view
 view')
-view'))
+view'));
 view's
 viewBox="0
 viewMove(),
@@ -1887,6 +1907,7 @@ x-text="filterStatus"></p>
 x-text="hourLabel(h)"></div>
 x-text="m.label"></span></span>
 x-text="m.label"></span><span
+x-text="moreWord(day)"></span></button>
 x-text="pillTime(ev)"></span>
 x-text="selectedDayLabel"></h{{
 x-text="tipText"
@@ -1913,7 +1934,6 @@ zero
 }}))"
 }})</span></div>
 }},
-}}.replace(':count',
 }}</button>
 }}</div>
 }}</p>

@@ -3,6 +3,8 @@
 $attributes
 $attributes->class([$wrapperClasses])
 $attributes->getAttributes());
+$attributes]
+$callerLabel,
 $label
 $offset
 $padded
@@ -21,6 +23,7 @@ $wrapperClasses
 'label'
 'min-w-72
 'offset'
+'overflow-y-auto
 'p-[var(--padding-wk-x-md)]',
 'padded'
 'panel',
@@ -33,6 +36,7 @@ $wrapperClasses
 'text-[length:var(--text-wk-md)]',
 'wrapper',
 (!
+(Support\CallerName).
 (`--z-wk-dropdown`),
 (`--z-wk-tooltip`)
 (aria-haspopup,
@@ -89,6 +93,7 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 RESOLVED
+Scrolls
 Teleported
 That
 The
@@ -106,12 +111,17 @@ Width:
 WireKit::resolveClasses('popover',
 Written
 [
+[$callerLabelledBy,
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\WireKit::warnUnknownProps('popover',
 ])
 ]),
-__('wirekit::Popover')
+__('wirekit::Popover'))
+`aria-label`
+`aria-labelledby`
 `contain:
 `false`
 `p-0`
@@ -140,7 +150,6 @@ applied
 are
 aria-allowed-attr
 aria-expanded)
-aria-label="{{
 aria-modal="true"
 as
 asking
@@ -157,6 +166,7 @@ because
 began
 behind
 belongs
+below;
 beside
 between
 block,
@@ -169,6 +179,7 @@ caller's
 caller,
 can
 can't
+caps
 carry,
 chrome
 class="{{
@@ -251,6 +262,8 @@ has
 have
 header
 header,
+height
+helper
 here
 here.
 high
@@ -295,10 +308,12 @@ max-w-[calc(100vw-1rem)]
 may
 means
 mechanism
+meets,
 min-w-72
 missing
 modal
 n/a
+name
 name.
 names
 needs
@@ -314,6 +329,7 @@ of.
 offering
 offset:
 on
+once
 one
 one.
 open
@@ -328,6 +344,7 @@ outside
 outside.
 over
 overlay
+overscroll-contain',
 own
 owns,
 padding
@@ -347,9 +364,11 @@ placing
 plain
 popover
 popover.
+position
 positioned
 press
 prod).
+prohibits
 promise
 props
 put
@@ -368,6 +387,7 @@ replaced
 requires
 resolved
 rich),
+role,
 role;
 role="dialog"
 roll
@@ -387,6 +407,7 @@ see
 server
 set
 share
+short
 sits
 sitting
 slides
@@ -448,6 +469,7 @@ value
 variant
 via
 view's
+viewport.
 virtual
 w-72
 w-max',
@@ -465,6 +487,7 @@ without
 word
 would
 wrapper
+wrapper,
 x-cloak
 x-data="wirekitPopover({
 x-init,

@@ -32,6 +32,8 @@
  *     Livewire also releases it when its component goes, but an island can go
  *     before its component does.
  */
+import { controlIsDisabled } from '../utils/fieldset-disabled.js';
+
 export default function wirekitInput() {
     return {
         copied: false,
@@ -150,12 +152,13 @@ export default function wirekitInput() {
          *
          * A disabled or read-only field is left as it is. The view disables the
          * button in both states, and the state is read from the field here as well,
-         * because Livewire can set it after the page loaded.
+         * because Livewire can set it after the page loaded. Disabled includes a
+         * disabled fieldset around the field (utils/fieldset-disabled.js).
          */
         clear() {
             const field = this._field();
 
-            if (! field || field.disabled || field.readOnly) {
+            if (! field || controlIsDisabled(field) || field.readOnly) {
                 return;
             }
 

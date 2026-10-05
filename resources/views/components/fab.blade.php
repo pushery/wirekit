@@ -47,6 +47,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
 
 {{-- Escape is bound on the whole component, not on the trigger: by the time the
@@ -85,7 +88,7 @@
              and buttons, each with its own tab stop. Announcing a model a reader then cannot
              use is the same defect the comment below warns about, one level up. --}}
         aria-haspopup="true"
-        aria-label="{{ $label }}"
+        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }}
         data-wk-fab-trigger
         {{-- The box reads --size-wk-fab rather than a literal, for the reason `fab.button`
              states beside its own copy of this line: a developer laying out around a fixed
@@ -148,7 +151,7 @@
              not statements, so an `if` here would never be evaluated on that bundle and the
              panel would stop closing. `php artisan wirekit:csp-audit` reports such a binding. --}}
         @focusout="closeIfFocusLeft($event)"
-        aria-label="{{ $label }}"
+        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }}
         data-wk-fab-actions
         class="wk-fab-actions flex flex-col-reverse items-center gap-[var(--gap-wk-sm)]"
     >

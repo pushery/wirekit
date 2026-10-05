@@ -52,6 +52,10 @@
     // The link's text. Name what it creates ("Add a supplier"); without it the link reads
     // "Create one".
     'emptyAction' => null,
+    // Whether the link moves to that screen with Livewire's `wire:navigate`, as the other links
+    // of an application that changes screens without reloading do. A link to a fragment of the
+    // same page never takes it, since Livewire would fetch the page instead of scrolling to it.
+    'emptyNavigate' => false,
     // The pre-selected option. It has to be a declared prop: `<select>` has no
     // `value` content attribute, so an undeclared one fell into the attribute bag
     // and rendered onto the element, where HTML ignores it. `value="pro"` then
@@ -71,6 +75,9 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false);
     $reserveMessage = BooleanProp::from($reserveMessage, false);
+    $emptyNavigate = BooleanProp::from($emptyNavigate, false);
+    // Never for a place on the same page, where Livewire would fetch the page instead of scrolling.
+    $emptyNavigates = $emptyNavigate && ! str_starts_with((string) $emptyHref, '#');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -110,6 +117,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('select', $attributes->getAttributes());
 
+    // A select gives its value as text, and Livewire takes the server's echo of an `int` or
+    // `float` property for a change and writes it over a newer choice: a binding to one gets
+    // `.number` and sends a number (Support\NumericModel).
+    $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
@@ -117,7 +129,16 @@
 
     // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'select-'); // page-unique DOM id; see Support\DomId
-    $name = $attributes->get('name', $id);
+    // Inside a field the label points at the id this control got: a second field with the same
+    // name on the page gets `-2`, and pointed at the name its label named the first control.
+    if ($wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $wkField->follow($id);
+    }
+    // An empty `name` renders none: the field is not meant to be submitted, as inline-edit's own
+    // control is not. HTML does not allow an empty name, and a form skips a field without one.
+    // The bag holds a bound name escaped once; read as the text it stands for, so the field is
+    // sent under the name the caller bound (Support\AttributeText).
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element. `id` was stripped from the start; `name` was not, and a caller that
@@ -126,8 +147,8 @@
     $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
+    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
     // Success / valid state — only when there is no error (error wins).
     // Tri-state (null | true | string message): `!== false` alone let the unbound
@@ -265,7 +286,7 @@
     <div class="relative">
         <select
             id="{{ $id }}"
-            name="{{ $name }}"
+            @if($name !== '') name="{{ $name }}" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($optimisticConfig)
                 x-ref="control"
@@ -346,7 +367,9 @@
                 {{ $empty }}
             @else
                 {{ $emptyText }}
-                @if(filled($emptyHref))
+                @if(filled($emptyHref) && $emptyNavigates)
+                    <x-wirekit::link :href="$emptyHref" wire:navigate>{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
+                @elseif(filled($emptyHref))
                     <x-wirekit::link :href="$emptyHref">{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
                 @endif
             @endisset

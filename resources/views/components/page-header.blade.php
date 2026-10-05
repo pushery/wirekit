@@ -125,13 +125,16 @@
      * asks for 16rem, and anything narrower than that plus the actions puts them on their
      * own line.
      */
-    $classes = WireKit::resolveClasses('page-header', 'base', implode(' ', [
+    $classes = WireKit::resolveClasses('page-header', 'base', implode(' ', array_filter([
         'wk-page-header',
         '@container/wk-page-header',
         'flex flex-wrap items-start justify-between',
         'gap-[var(--gap-wk-md)]',
-        'w-full',
-    ]), $scope);
+        // A sticky header takes its width from the block below, which can widen it over the
+        // padding of its box; two widths on one element would leave the winner to the order
+        // Tailwind writes them in.
+        $sticky ? null : 'w-full',
+    ])), $scope);
 
     /*
      * The sticky header, in its own block so a call site can retune the resting state without
@@ -144,13 +147,17 @@
      * `data-wk-stuck`, so fading it in moves nothing either; at least a pixel wide, so a preset
      * that sets `--border-wk-width` to 0 still separates the header from what scrolls under it.
      *
-     * Two knobs, read with a fallback and declared nowhere: `--wk-page-header-top` moves the line
-     * the header sticks to, for a box that scrolls with a padding of its own, and
-     * `--wk-page-header-rest-gap` the padding above and below.
+     * Three knobs, read with a fallback and declared nowhere: `--wk-page-header-top` moves the
+     * line the header sticks to, for a box that scrolls with a padding of its own,
+     * `--wk-page-header-rest-gap` the padding above and below, and `--wk-page-header-bleed`
+     * the padding of that box at the sides, which the header then reaches over, its content
+     * staying where it was, so nothing that scrolls under it shows beside it.
      */
     $stickyClasses = $sticky ? WireKit::resolveClasses('page-header', 'sticky', implode(' ', [
         'wk-page-header-sticky',
         'sticky top-[var(--wk-page-header-top,var(--wk-strip-inset,0px))]',
+        'w-[calc(100%_+_2*var(--wk-page-header-bleed,0px))]',
+        '-mx-[var(--wk-page-header-bleed,0px)] px-[var(--wk-page-header-bleed,0px)]',
         'z-[var(--z-wk-sticky)]',
         'bg-[var(--color-wk-bg)]',
         'py-[var(--wk-page-header-rest-gap,var(--padding-wk-y-md))]',

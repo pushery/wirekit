@@ -10,6 +10,7 @@
  * own default in place — and that default is then the body itself: the right first stop for a
  * document the reader is about to scroll.
  */
+import { controlIsDisabled } from './fieldset-disabled.js';
 
 /** What counts as something focus can land on — the selector alert-dialog uses, for the same reason. */
 export const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -29,7 +30,8 @@ export function firstControl(panelEl, wrapperAttribute) {
 
     const control = [...panelEl.querySelectorAll(FOCUSABLE)].find((el) =>
         ! el.hasAttribute(wrapperAttribute)
-        && ! el.disabled
+        // A control inside a disabled fieldset is disabled without saying so itself.
+        && ! controlIsDisabled(el)
         && el.getClientRects().length > 0,
     );
 

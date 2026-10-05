@@ -14,6 +14,7 @@ import { registerFlashDirective } from './utils/flash.js';
 import { registerScrollIntoViewDirective } from './utils/scroll-into-view.js';
 import { registerStuckDirective } from './utils/stuck.js';
 import { registerCounterDirective } from './utils/counter.js';
+import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
@@ -172,6 +173,8 @@ function registerComponents() {
     registerStuckDirective(Alpine);
     // A field's character count, counted in the browser. See utils/counter.js.
     registerCounterDirective(Alpine);
+    // The tokens a button puts into an input, without a request. See utils/insert-token.js.
+    registerInsertTokenDirective(Alpine);
     // A form that holds what its server does not have yet says so. See utils/unsaved.js.
     registerUnsavedDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.

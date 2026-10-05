@@ -32,6 +32,8 @@
  * @param {Object} [config.announcements] - Translated templates: `added`, `removed`,
  *   `duplicate` (all take `:name`) and `limit` (takes `:count`).
  */
+import { onFormReset } from '../utils/form-reset.js';
+import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
 
 export default function wirekitTagsInput(config = {}) {
@@ -75,15 +77,51 @@ export default function wirekitTagsInput(config = {}) {
         tags: Array.isArray(config.tags) ? Array.from(config.tags).map(String) : [],
 
         _modelEvents: null,
+        // Puts the starting tags back when the form is reset (utils/form-reset.js), released in
+        // destroy().
+        _stopFormReset: null,
+        _resetValue: Array.isArray(config.tags) ? Array.from(config.tags).map(String) : [],
+        // `requiredMessage` and `onRequiredInvalid()`: a required tags input stops an empty submit
+        // (utils/required-check.js).
+        ...requiredCheckState(),
 
         init() {
             const root = this.$root;
             this._modelEvents = watchModelEvents(root, () => root, { detail: () => [...this.tags] });
+
+            // One hidden field per tag: an empty list has none, which the helper covers with the
+            // form it found while there was one.
+            this._resetValue = [...this.tags];
+            this._stopFormReset = onFormReset(root, () => (typeof root?.querySelector === 'function' ? root.querySelector('input[type="hidden"]') : null), () => this._restore());
         },
 
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /** Back to the starting tags after a form reset; the hidden fields follow the list. */
+        _restore() {
+            this.tags = [...this._resetValue];
+            this.tagAnnouncement = '';
+            this.requiredMessage = '';
+        },
+
+        /** What the required check reads: empty exactly while there is no tag. */
+        get requiredValue() {
+            return this.tags.length > 0 ? String(this.tags.length) : '';
+        },
+
+        /** The text field a reader types a tag into. */
+        _focusRequiredControl() {
+            const root = this.$root;
+            const field = typeof root?.querySelector === 'function'
+                ? root.querySelector('input:not([type="hidden"]):not([data-wk-required-check])')
+                : null;
+
+            field?.focus();
         },
         _maxTags: config.maxTags || null,
 

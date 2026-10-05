@@ -43,10 +43,15 @@ final class PluralPhrases
      * translator substitutes, and what it substitutes is the placeholder, so the
      * template survives and the browser fills in the real number.
      *
+     * `$replace` fills the placeholders the server already knows, such as a
+     * title, in every form. `:count` stays the browser's to fill, whatever the
+     * array says.
+     *
      * @param  list<int>  $samples
+     * @param  array<string, string|int|float>  $replace
      * @return array<int, string> sample count -> template
      */
-    public static function from(string $key, ?array $samples = null): array
+    public static function from(string $key, ?array $samples = null, array $replace = []): array
     {
         $phrases = [];
         $seen = [];
@@ -82,7 +87,7 @@ final class PluralPhrases
             // " :count people reacted". Untrimmed that is a third
             // distinct form differing by one space, and an announcement that
             // begins with one.
-            $rendered = trim(trans_choice($key, $count, ['count' => ':count']));
+            $rendered = trim(trans_choice($key, $count, ['count' => ':count'] + $replace));
 
             // Deduplicate by rendered form. Six samples that all produce
             // ":count people reacted" would ship six identical strings into

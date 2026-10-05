@@ -65,6 +65,7 @@ $attributes->has('aria-busy');
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
+$attributes]
 $baseClasses
 $before
 $before);
@@ -77,6 +78,8 @@ $callerAriaHidden;
 $callerAriaLabel
 $callerAriaLabelledBy
 $callerClass
+$callerLabel
+$callerLabel,
 $callerRef
 $callerRole
 $cellPadding
@@ -89,6 +92,7 @@ $column)
 $compact
 $computedRel
 $content
+$content))
 $count
 $count);
 $count,
@@ -99,6 +103,7 @@ $declarativeLoading)
 $delayHide
 $delayShow
 $describes
+$describes;
 $details
 $details)
 $detailsBelow
@@ -199,6 +204,8 @@ $ownMarkup
 $ownMarkup)
 $ownMarkup,
 $ownMarkup;
+$ownName
+$ownName);
 $padOnButton
 $placeholderAttributes
 $placeholderAttributes['role']
@@ -237,6 +244,11 @@ $slot)
 $slot))
 $slot->hasActualContent()
 $slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $sortAction
 $sortIndicator
 $sortLayout
@@ -266,11 +278,17 @@ $tableLabel
 $tag
 $targetAttr
 $text
+$text);
+$tipText
 $tooltipClasses
 $tooltipId
 $touchClasses
 $touchClasses,
 $touchTextFloor
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $type
 $upCall
 $upText
@@ -687,6 +705,7 @@ $wrapWords
 ($alpineSort
 ($attributes->getAttributes()
 ($callerAriaHidden
+($callerLabelledBy
 ($column
 ($compact)
 ($declarativeLoading
@@ -724,6 +743,7 @@ $wrapWords
 ($striped)
 ($surface
 ($svgHtml
+($triggerIsButton)
 ($wrapLabel
 ('xs').
 (($iconOnly
@@ -737,6 +757,7 @@ $wrapWords
 (SVG
 (See
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UnboundModel).
 (Support\UrlProp).
 (Tailwind's
@@ -1049,7 +1070,6 @@ $wrapWords
 @if($column)
 @if($computedRel)
 @if($declarativeLoading)
-@if($describes)
 @if($detailsColspan
 @if($disabled)
 @if($emitAriaBusy)
@@ -1069,6 +1089,9 @@ $wrapWords
 @if($stickyHeaderStyle)
 @if($surface
 @if($tag
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if(filled($attributes->get('wire:key')))
 @if(filled($detailsFor))
 @if(filled($tableLabel))
@@ -1113,6 +1136,7 @@ And
 Any
 Anything
 Appended
+Around
 As
 Auto-inject
 BEFORE
@@ -1187,6 +1211,8 @@ Distinct
 Done
 Drop
 END
+ENT_HTML5));
+ENT_QUOTES
 ENT_QUOTES).'"',
 EVERY
 Each
@@ -1467,6 +1493,7 @@ Wrap
 Writing
 Written
 [
+[$callerLabelledBy,
 [$outerAttributes,
 ['col',
 ['data-wk-icon-missing'
@@ -1489,6 +1516,7 @@ Written
 [table[data-wk-sticky-header]_&]:top-0
 [table[data-wk-sticky-header]_&]:z-10',
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString('');
 \Illuminate\Support\HtmlString('<span
 \Illuminate\View\ComponentAttributeBag([]);
 \InvalidArgumentException('wirekit::button:
@@ -1499,9 +1527,12 @@ Written
 \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_',
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UnboundModel::drop('table',
 \Pushery\WireKit\Support\UrlProp::text($href);
@@ -1655,6 +1686,7 @@ __toString
 `data-wk-prose-skip`,
 `data-wk-reorder-position`
 `data-wk-table-scroller`
+`data-wk-touch`,
 `default`
 `delayHide`
 `delayHide`.
@@ -1811,6 +1843,7 @@ __toString
 `wire:sort`
 `wirekitTableReorder`
 `wk-field`
+`wk-table-sort`
 `wk-touch-target`
 `words`
 `wrap-label="false"`
@@ -1863,6 +1896,7 @@ action.
 actions.
 activated
 activates
+activating
 active
 active-tab
 active:cursor-grabbing
@@ -1924,6 +1958,7 @@ anonymous
 anonymous:
 another
 another's
+another.
 answer
 answered
 answered;
@@ -2297,6 +2332,7 @@ close
 close-icons,
 closes
 cluster).
+coarse
 coarse-pointer
 coarse`,
 code
@@ -2432,7 +2468,6 @@ crosses.
 current
 cursor
 cursor-pointer
-cursor-pointer"
 cursor-pointer,
 custom
 cut
@@ -2715,6 +2750,7 @@ exists
 exists,
 exists.
 expandos.
+explains,
 explicit
 explicitly
 expose
@@ -2811,6 +2847,7 @@ flips
 floating
 floor
 floor's
+floor,
 floor.
 flow
 flow.
@@ -3139,6 +3176,7 @@ is:
 is_string($action)
 isn't
 isolate`
+isset($content)
 isset($details)
 isset($sizeMap[$size])
 it
@@ -3431,6 +3469,7 @@ neighbor.
 neither
 neither.
 neither:
+nest
 nested
 nests
 net
@@ -3694,8 +3733,11 @@ precisely
 preference.
 prefers
 prefix
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/',
 preg_replace(
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/<table\b[^>]*>(?:(?!<table\b).)*?<\/table>/is',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
@@ -3777,6 +3819,7 @@ reach.
 reachable
 reached
 reaches
+reaches.
 reaching
 react
 reactive
@@ -3905,6 +3948,8 @@ ring,
 ring-inset
 role
 role,
+role:
+role="button"
 role="group"
 role="img"
 role="img".
@@ -4409,6 +4454,7 @@ today's
 together
 toggle,
 toggles
+toggletip
 token
 token,
 token-scope
@@ -4420,6 +4466,7 @@ too,
 too.
 took
 tooltip
+tooltip's
 tooltip,
 tooltip.
 tooltips
@@ -4457,6 +4504,7 @@ trim($detailsHiddenFromContainer.'
 trim($hideClasses.'
 trim($relAttr.'
 trim((string)
+trim(html_entity_decode(strip_tags((string)
 trim(strip_tags((string)
 trio
 trip,
@@ -4488,6 +4536,7 @@ typography
 typography,
 unaffected
 unaffected.
+unavailable,
 unbound
 uncaught
 unchanged.
@@ -4706,6 +4755,7 @@ withholds
 without
 wk-lines-balanced',
 wk-scrollbar
+wk-table-sort"
 wk-touch-text-floor'
 won
 word
@@ -4714,6 +4764,7 @@ word,
 word.
 words
 words,
+words;
 work,
 work:
 work;
@@ -4754,7 +4805,9 @@ x-on:click="remember('down',
 x-on:click="remember('up',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"

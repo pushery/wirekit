@@ -79,6 +79,11 @@
 {{-- The questions ARE the accordion — this component adds the one thing an
      accordion cannot know: that these rows are questions, and that search
      engines should be told so. --}}
+@php
+    // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
+    // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+@endphp
 <div data-wk-faq {{ $attributes->class([$classes]) }}>
     <x-wirekit::accordion
         :variant="$variant"
@@ -89,7 +94,8 @@
              which walks the ancestor components until it finds the name — and this component
              is one of them, so the value arrives whether the accordion repeats it or not —
              and normalizes it itself, so an unbound `animate="false"` is false there. --}}
-        :aria-label="$label"
+        :aria-label="$callerLabelledBy === null ? ($callerLabel ?? $label) : null"
+        :aria-labelledby="$callerLabelledBy"
     >
         {{ $slot }}
     </x-wirekit::accordion>

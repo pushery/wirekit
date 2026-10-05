@@ -1,3 +1,4 @@
+!==
 !isOpen"
 "Details"
 "trigger"
@@ -6,6 +7,10 @@ $attributes->class(['wk-collapsible',
 $attributes->get('id')
 $attributes->get('id').'-panel'
 $attributes->getAttributes());
+$attributes]
+$callerLabel
+$callerLabel)
+$callerLabel,
 $contentClasses
 $findable
 $open
@@ -47,6 +52,7 @@ $uid
 (0.75rem):
 (Alpine
 (Enter/Space)
+(Support\CallerName).
 (bool)
 (button[aria-expanded]
 (checkbox
@@ -88,14 +94,18 @@ $uid
 ?
 @else
 @endif
+@endif>
 @endphp
 @endunless
+@if($callerLabelledBy
 @if($findable)
 @php
 @props([
 @props.
+@unless($attributes->has('role'))
 @unless($openBool)
 A
+ARIA
 Alpine
 Alpine's
 Blade
@@ -142,7 +152,10 @@ WAI-ARIA
 WireKit
 WireKit::resolveClasses('collapsible',
 [
+[$callerLabelledBy,
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\WireKit::stableId(
@@ -152,6 +165,8 @@ WireKit::resolveClasses('collapsible',
 ]),
 `-2`
 `aria-controls`
+`aria-label`
+`aria-labelledby`
 `el.id`,
 `hidden="until-found"`
 `prop="false"`
@@ -201,6 +216,7 @@ base
 belongs
 below
 below.
+below;
 between
 bind
 block
@@ -369,6 +385,7 @@ match,
 matches
 may
 mean
+meets,
 min-w-0">{{
 morph
 morph.
@@ -377,8 +394,10 @@ moves
 much.
 must
 n/a
+name
 name,
 named
+names
 never
 no
 node
@@ -386,6 +405,7 @@ nominal
 not
 nothing
 null
+null)
 null,
 of
 off
@@ -403,6 +423,7 @@ opened.
 opens
 opposite
 optimistic-ui:
+or
 ordinary
 other
 otherwise
@@ -427,6 +448,7 @@ plugin,
 pointed
 pointing
 prod).
+prohibits
 prop's
 properties
 props
@@ -437,6 +459,7 @@ random
 reach
 read
 readable
+reader
 reads
 real
 reduced-motion
@@ -452,6 +475,8 @@ replaces
 replays
 resolve
 rich
+role,
+role="group"
 roll
 root
 root,
@@ -554,6 +579,7 @@ with
 without
 works
 would
+wrapper,
 x-cloak
 x-collapse
 x-collapse.
@@ -570,6 +596,5 @@ x-wk-findable.collapse="isOpen"
 }}"
 }}">
 }}</span>
-}}>
 ~0.9rem
 —

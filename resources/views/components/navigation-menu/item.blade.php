@@ -70,6 +70,19 @@
         'shadow-[var(--shadow-wk-lg)]',
         'p-[var(--padding-wk-x-lg)]',
         "before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2",
+        // A column, so the scroller inside shrinks to the height the position helper caps the
+        // panel to. The panel itself does not scroll: an overflow on it would clip the hover
+        // bridge above it, and the pointer would cross a gap between trigger and panel again.
+        'flex flex-col',
+    ]), $scope);
+
+    // The panel's content scrolls inside it once the panel is capped to a short window. Its links
+    // are tab stops, and focusing one scrolls it into view, so the region is reached without a
+    // stop of its own. The negative margin and the padding of one ring keep a focused link's ring
+    // whole at the scroller's edge without moving the content.
+    $panelScrollClasses = 'wk-scrollbar '.WireKit::resolveClasses('navigation-menu.item', 'panel-scroll', implode(' ', [
+        'min-h-0 overflow-y-auto overscroll-contain',
+        '-m-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]',
     ]), $scope);
 
     $hasPanel = !$href;
@@ -202,7 +215,9 @@
                 class="{{ $panelClasses }}"
                 x-cloak
             >
-                {{ $slot }}
+                <div data-wk-nav-panel-scroll class="{{ $panelScrollClasses }}">
+                    {{ $slot }}
+                </div>
             </div>
         </template>
     </div>

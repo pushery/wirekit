@@ -54,7 +54,10 @@ $attributes->getAttributes());
 $attributes->has('aria-labelledby')
 $attributes->has('aria-labelledby'))
 $attributes->merge(['rel'
+$attributes]
 $badge
+$callerLabel
+$callerLabel,
 $childClasses
 $classes
 $classes,
@@ -69,6 +72,7 @@ $collapsible;
 $collapsibleSelectionWarning
 $computedRel
 $content
+$content))
 $contentEdgeBorder
 $contentEdgeBorder,
 $current,
@@ -79,6 +83,7 @@ $defaultCollapsed);
 $delayHide
 $delayShow
 $describes
+$describes;
 $disabled
 $expandName
 $finalRel
@@ -118,6 +123,8 @@ $open
 $open])
 $opensNewTab
 $optionId
+$ownName
+$ownName);
 $panelId
 $persist
 $persist);
@@ -145,11 +152,19 @@ $side,
 $slot
 $slot)
 $slot))"
+$slot;
+$slotHtml
+$slotHtml)
+$slotHtml)),
+$slotNamesItself
+$slotText
 $submenu
 $surface
 $surface,
 $targetAttr
 $text
+$text);
+$tipText
 $toggle
 $tone
 $tone,
@@ -164,6 +179,10 @@ $tooltipPlacement
 $trailing
 $triggerClasses
 $triggerClasses;
+$triggerDescribes
+$triggerExplainsDisabled
+$triggerIsButton
+$triggerName
 $value
 $value)
 $variant
@@ -419,6 +438,7 @@ $zoneInset
 ("cube")
 ($attributes->get('id')
 ($attributes->has('aria-label')
+($callerLabelledBy
 ($collapsed
 ($collapsible
 ($dataCurrent
@@ -427,6 +447,7 @@ $zoneInset
 ($selectionMode
 ($side
 ($toggle
+($triggerIsButton)
 ('start'
 ((string)
 ()
@@ -435,6 +456,7 @@ $zoneInset
 (0.625rem
 (=
 (Support\CallerListeners).
+(Support\CallerName).
 (Support\UrlProp).
 (WCAG
 (\Pushery\WireKit\Support\AttributeText::get($attributes,
@@ -528,6 +550,7 @@ $zoneInset
 17px
 18
 18V6Z"
+1;
 1px
 2.1.1)
 2.1.1).
@@ -642,7 +665,6 @@ $zoneInset
 @if($collapsed)
 @if($collapsible)
 @if($computedRel)
-@if($describes)
 @if($disabled)
 @if($focusableTrigger)
 @if($footHostsToggle)
@@ -661,6 +683,9 @@ $zoneInset
 @if($submenu)
 @if($surface
 @if($toggle
+@if($triggerDescribes)
+@if($triggerExplainsDisabled)
+@if($triggerIsButton)
 @if($value
 @if((string)
 @if(filled($badge))
@@ -711,6 +736,7 @@ AlpinePayload::from($for)
 An
 Anything
 Applied
+Around
 ArrowDown
 Attributes
 Auto-inject
@@ -784,6 +810,8 @@ DomId::unique(WireKit::stableId(
 Done
 Drop
 EMISSION
+ENT_HTML5));
+ENT_QUOTES
 EQUAL
 EVERY
 Echoed
@@ -1051,6 +1079,7 @@ Wraps
 Written
 ZONE
 [
+[$callerLabelledBy,
 [$toneSurface]),
 ['aria-label'
 ['card',
@@ -1068,6 +1097,7 @@ ZONE
 []
 [];
 [transform-box:fill-box]
+\Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Support\AlpinePayload::from($collapsibleSelectionWarning)
 \Pushery\WireKit\Support\AlpinePayload::from($hrefInOptionWarning)
 \Pushery\WireKit\Support\AlpinePayload::from($persist)
@@ -1079,10 +1109,13 @@ ZONE
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
+\Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
+\Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
+\Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::cspNonce();
@@ -1388,6 +1421,7 @@ action
 action's
 action,
 action;
+activating
 active
 acts
 actually
@@ -1453,6 +1487,7 @@ announces
 announcing
 anonymously
 another
+another.
 answer
 answer,
 answer.
@@ -1497,6 +1532,7 @@ aria-current="page"
 aria-current="{{
 aria-describedby
 aria-describedby="{{
+aria-disabled="true"
 aria-expanded
 aria-expanded="{{
 aria-hidden
@@ -1676,6 +1712,7 @@ button
 button's
 button,
 button.
+button:
 button:first-child`
 button?
 buttons.
@@ -2191,6 +2228,7 @@ expandos.
 expands
 expectation
 expensive
+explains,
 explicit
 express
 expressible
@@ -2218,6 +2256,7 @@ false
 false)
 false);
 false,
+false;
 far
 farthest
 fault
@@ -2569,6 +2608,7 @@ isOpen"`
 is_string($for)
 is_string($tooltipPlacement)
 isolate`
+isset($content)
 isset($footer)
 isset($footer))
 isset($footer);
@@ -2844,6 +2884,7 @@ neighboring
 neither
 neither,
 neither.
+nest
 nested
 neutral,
 never
@@ -2866,6 +2907,7 @@ nonce
 nonce.
 nonced
 none
+none,
 none.
 noopener
 nor
@@ -2912,6 +2954,7 @@ off.
 offset
 offset:
 offsets
+often
 omission
 omission.
 omit
@@ -3103,6 +3146,9 @@ possible
 practice.
 precisely
 preference:
+preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
+preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 present
 presentational
 preserved),
@@ -3312,6 +3358,7 @@ ring,
 role
 role.
 role:
+role="button"
 role="group"
 role="listbox"
 role="option"
@@ -3787,6 +3834,7 @@ toggle,
 toggle.
 toggled.
 toggles
+toggletip
 token
 token.
 tokened
@@ -3840,6 +3888,9 @@ trigger's
 trigger,
 trigger.
 trim($relAttr.'
+trim((string)
+trim(html_entity_decode(strip_tags((string)
+trim(strip_tags((string)
 trip:
 true
 true)
@@ -3860,6 +3911,7 @@ tweens
 twenty.
 twice
 twice,
+twice.
 twice:
 twin.
 two
@@ -3872,6 +3924,7 @@ typography
 unaffected
 unaffected.
 unavailable
+unavailable,
 unbalanced.
 unbound
 uncaught
@@ -4033,6 +4086,7 @@ wk-scrollbar"
 wk-submenu-indicator
 word
 word)
+words;
 work
 work.
 work:
@@ -4082,9 +4136,11 @@ x-on:focusout="focusout()"
 x-on:keydown.down.prevent="moveActive(1)"
 x-on:keydown.end.prevent="moveToLast()"
 x-on:keydown.enter.prevent="selectActive()"
+x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.home.prevent="moveToFirst()"
 x-on:keydown.space.prevent="selectActive()"
+x-on:keydown.space="activate($event)"
 x-on:keydown.up.prevent="moveActive(-1)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
@@ -4124,6 +4180,7 @@ zoom,
 {
 {{
 {{--
+|
 ||
 }
 }"

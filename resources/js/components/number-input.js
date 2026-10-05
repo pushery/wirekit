@@ -1,3 +1,4 @@
+import { controlIsDisabled } from '../utils/fieldset-disabled.js';
 import { watchModelEvents } from '../utils/model-events.js';
 
 /**
@@ -38,6 +39,8 @@ import { watchModelEvents } from '../utils/model-events.js';
  * @param {?number} config.max    upper bound, or null for unbounded
  * @param {number}  config.step   grid spacing
  * @param {boolean} config.bound  the field carries a caller's model
+ * @param {Object}  [config.adjusted]  translated sentences for a value that leaving the field
+ *   changed, each taking `:value`: `highest`, `lowest` and `changed`
  */
 export default function wirekitNumberInput(config = {}) {
     return {
@@ -49,6 +52,9 @@ export default function wirekitNumberInput(config = {}) {
         max: config.max ?? null,
         step: config.step ?? 1,
         bound: config.bound === true,
+        // What leaving the field did to a value the reader typed, as a sentence, or ''.
+        adjustment: '',
+        _adjusted: config.adjusted && typeof config.adjusted === 'object' ? config.adjusted : {},
         _unhookResync: null,
         _modelEvents: null,
 
@@ -89,6 +95,21 @@ export default function wirekitNumberInput(config = {}) {
          */
         _input() {
             return this.$root?.querySelector?.('input[type="number"]') ?? null;
+        },
+
+        /**
+         * The reader typed: the sentence about the last correction no longer describes the
+         * field. Only a trusted event clears it, because writing a corrected value back to a
+         * bound field fires `input` too, and that one must not take the sentence away again.
+         */
+        onTyped(event) {
+            if (event?.isTrusted) {
+                this.adjustment = '';
+            }
+
+            if (this.bound) {
+                this.syncFromInput();
+            }
         },
 
         /** Mirror what the field holds. An empty or unreadable field keeps the last number. */
@@ -137,8 +158,51 @@ export default function wirekitNumberInput(config = {}) {
                 return;
             }
 
-            this.value = this.clamp(el.value);
+            const typed = el.value;
+
+            this.value = this.clamp(typed);
             this._writeThrough();
+            this.adjustment = this._adjustmentFor(typed, this.value);
+        },
+
+        /** Leave a field without a caller's model: the same normalizing, and the same sentence. */
+        leaveField(typed) {
+            this.value = this.clamp(typed);
+            this.adjustment = this._adjustmentFor(typed, this.value);
+        },
+
+        /**
+         * The sentence for a value that leaving the field changed, or '' when it kept what was
+         * typed.
+         *
+         * Leaving holds the value to `min`, `max` and the precision of the step, and an emptied
+         * field becomes `min` or 0. That corrected the reader's work without a word: 150 became
+         * 99 in a quantity field, and the form sent 99 (WCAG 3.3.1). The sentence names the new
+         * value and, when a bound set it, which bound, so the reader learns the rule as well
+         * (3.3.3). A number typed with trailing zeros, which the field reads as the same value,
+         * is not a change.
+         */
+        _adjustmentFor(typed, next) {
+            const text = String(typed ?? '').trim();
+            const raw = Number(text);
+            const readable = text !== '' && !Number.isNaN(raw);
+
+            if (readable && raw === next) {
+                return '';
+            }
+
+            const fill = (template, fallback) => (typeof template === 'string' && template !== '' ? template : fallback)
+                .replace(':value', String(next));
+
+            if (readable && this.max !== null && raw > this.max) {
+                return fill(this._adjusted.highest, 'Set to :value, the highest value allowed.');
+            }
+
+            if (!Number.isNaN(raw) && this.min !== null && raw < this.min) {
+                return fill(this._adjusted.lowest, 'Set to :value, the lowest value allowed.');
+            }
+
+            return fill(this._adjusted.changed, 'Set to :value.');
         },
 
         /**
@@ -173,12 +237,13 @@ export default function wirekitNumberInput(config = {}) {
          * Whether the field is out of use, disabled or read-only. Read from the field
          * itself rather than kept as a flag, because Livewire can set either state after
          * the page loaded: the buttons read it through their bindings, and each step
-         * checks it again when it runs.
+         * checks it again when it runs. Disabled includes a disabled fieldset around the
+         * field, which its own `disabled` does not report (utils/fieldset-disabled.js).
          */
         get locked() {
             const el = this._input();
 
-            return !!el && (el.disabled || el.readOnly);
+            return !!el && (controlIsDisabled(el) || el.readOnly);
         },
 
         /**
@@ -192,6 +257,8 @@ export default function wirekitNumberInput(config = {}) {
             if (this.locked) {
                 return;
             }
+
+            this.adjustment = '';
 
             const origin = this.min !== null ? this.min : 0;
             const ratio = (this.value - origin) / this.step;
@@ -208,6 +275,8 @@ export default function wirekitNumberInput(config = {}) {
             if (this.locked) {
                 return;
             }
+
+            this.adjustment = '';
 
             const origin = this.min !== null ? this.min : 0;
             const ratio = (this.value - origin) / this.step;

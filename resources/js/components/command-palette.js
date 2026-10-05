@@ -16,6 +16,7 @@ import {
     unlockScroll as unlockPageScroll,
 } from '../utils/overlay.js';
 import { isComposing } from '../utils/ime.js';
+import { typesText } from '../utils/typing-target.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
@@ -126,16 +127,43 @@ export default function wirekitCommandPalette(config = {}) {
         init() {
             // Parse hotkey (e.g. 'cmd+k') and register global listener
             if (hotkey !== '') {
-                const parts = hotkey.split('+');
+                const parts = hotkey.toLowerCase().split('+');
                 const key = parts[parts.length - 1];
                 const needsMeta = parts.includes('cmd') || parts.includes('meta');
                 const needsCtrl = parts.includes('ctrl');
+                const needsAlt = parts.includes('alt') || parts.includes('option');
+                const needsShift = parts.includes('shift');
+
+                // A key with no modifier but Shift is a character the reader may be typing.
+                // Wherever typed text goes, it stays a character (WCAG 2.1.4).
+                const printable = ! needsMeta && ! needsCtrl && ! needsAlt;
+
+                // Alt and Shift change the character a key types (Option+K types "˚" on a
+                // Mac), so with either a letter or a digit is also matched by its position.
+                const sameKey = (e) => {
+                    if (typeof e.key === 'string' && e.key.toLowerCase() === key) {
+                        return true;
+                    }
+
+                    if ((needsAlt || needsShift) && typeof e.code === 'string') {
+                        if (/^[a-z]$/.test(key)) return e.code === 'Key' + key.toUpperCase();
+                        if (/^[0-9]$/.test(key)) return e.code === 'Digit' + key;
+                    }
+
+                    return false;
+                };
 
                 this._hotkeyHandler = (e) => {
                     const metaMatch = needsMeta ? (e.metaKey || e.ctrlKey) : true;
                     const ctrlMatch = needsCtrl ? e.ctrlKey : true;
+                    const altMatch = needsAlt ? e.altKey : true;
+                    const shiftMatch = needsShift ? e.shiftKey : true;
 
-                    if (typeof e.key === 'string' && e.key.toLowerCase() === key && metaMatch && ctrlMatch) {
+                    if (sameKey(e) && metaMatch && ctrlMatch && altMatch && shiftMatch) {
+                        if (printable && typesText(e)) {
+                            return;
+                        }
+
                         e.preventDefault();
                         this.toggle();
                     }
@@ -207,7 +235,9 @@ export default function wirekitCommandPalette(config = {}) {
 
             // SPA cleanup
             this._navCleanup = () => this._forceClose();
-            document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+            // Not `once`: a component inside `@persist` is carried to the next page without a new
+            // `init()`, and still has to close on every page change after the first.
+            document.addEventListener('livewire:navigating', this._navCleanup);
 
             // And when the page itself is left, by an entry's address or any other way: the
             // scroll lock holds the page at 0 until it is released, and the browser records the
