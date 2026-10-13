@@ -200,8 +200,10 @@ let pageInertWatcher = null;
 // per element, because the same drawer can be held again before a release has run.
 const pageInertKeptElements = new Map();
 
-// What stays reachable behind a page-level modal overlay.
-const PAGE_INERT_KEEP = '#wk-overlay-root, [data-wk-toast-region]';
+// What stays reachable behind a page-level modal overlay: the overlays, the toasts, and the status
+// region a busy control speaks through (utils/busy-announcer.js), so a wait started in a dialog is
+// still heard.
+const PAGE_INERT_KEEP = '#wk-overlay-root, [data-wk-toast-region], [data-wk-busy-announcer]';
 
 // Elements that render nothing a reader can reach; an attribute on them would change nothing.
 const PAGE_INERT_SKIP = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'LINK', 'META', 'NOSCRIPT']);
@@ -383,11 +385,14 @@ export function releasePageInert(keep = []) {
  *   overlay rendered in the overlay root, makes the page behind it inert. False for an overlay that
  *   lives inside a page region, such as a preview, where the page around it has to keep scrolling
  *   and working. An overlay that took no lock releases none.
- * @param {string|null} [options.discardQuestion=null] - Asked with `confirm()` before the READER
- *   closes the overlay by Escape, a click beside it or its close button while its panel holds
- *   changes (utils/discard-guard.js). An answer of no leaves it open. Never asked for a close the
- *   page makes, nor for a Cancel control, which calls `dismissOverlay()` because the reader chose
- *   to discard. Null asks nothing.
+ * @param {string|null} [options.discardQuestion=null] - Asked before the READER closes the overlay
+ *   by Escape, a click beside it or its close button while its panel holds changes
+ *   (utils/discard-guard.js). The view renders the alert dialog it is asked in as a child of the
+ *   overlay's root, marked `data-wk-discard-question`. Stay leaves the overlay open; Discard calls
+ *   `_discardChanges()`, which closes it as the dismissal the reader started. A view without that
+ *   dialog, such as a copy published before it existed, asks with `confirm()`. Never asked for a
+ *   close the page makes, nor for a Cancel control, which calls `dismissOverlay()` because the
+ *   reader chose to discard. Null asks nothing.
  * @returns {Object} Alpine component data object with overlay methods
  */
 export function createOverlay({
@@ -404,6 +409,12 @@ export function createOverlay({
 }) {
     // What the reader has put into the panel since their first touch of it, for the question above.
     const discardGuard = createDiscardGuard();
+    // The element the overlay's component is written on, where its view renders the dialog the
+    // question is asked in. Taken in `initOverlay()`, which runs with the root as `$el`.
+    let rootEl = null;
+    // How the reader started the close the open question holds back: the close goes ahead with
+    // it, and is announced with it, once they answer Discard.
+    let askedVia = null;
     // Whether this instance holds one of the counted scroll locks right now. Every close path
     // releases through it, so an overlay built with `lockScroll: false`, which took no lock,
     // never releases one another overlay holds.
@@ -543,12 +554,24 @@ export function createOverlay({
         _leaveCleanup: null,
         // Stops following the bound property; set when the overlay is bound with `wire:model`.
         _unwatchModel: null,
+        // The question's Discard control, bound in `initOverlay()`. Only an overlay that asks has
+        // it: the control reaches it through the question's scope, where an alert dialog that held
+        // a key of the same name would answer first.
+        ...(discardQuestion ? { _discardChanges: null } : {}),
 
         /**
          * Initialize overlay event listeners and wire:model sync.
          * Called from the component's init() method.
          */
         initOverlay() {
+            rootEl = this.$el;
+
+            if (discardQuestion) {
+                // The question's Discard control calls this from the question's own scope, where
+                // `this` is the question, so it is bound to this overlay here.
+                this._discardChanges = () => this._discardAndDismiss();
+            }
+
             // Store named handler references so they can be removed on cleanup
             this._showHandler = (e) => {
                 if (e.detail?.name === name) {
@@ -813,16 +836,32 @@ export function createOverlay({
          * Close the overlay — deactivate focus trap and restore scroll.
          */
         close() {
+            this._closeOverlay(true);
+        },
+
+        /**
+         * Close without handing focus back: what an overlay's question does when its answer closes
+         * the overlay too. The overlay's own trap hands focus back right after, and handed back
+         * here first it would land in a panel on its way out.
+         */
+        _closeLeavingFocus() {
+            this._closeOverlay(false);
+        },
+
+        /** @param {boolean} returnFocus - Whether the trap hands focus back as it lets go. */
+        _closeOverlay(returnFocus) {
             if (!this.isOpen) return;
             this.isOpen = false;
             discardGuard.disarm();
+            // A question still open closes with the overlay it asks about.
+            this._withdrawQuestion();
 
             // Before the trap lets go: the element it returns focus to is on the page behind.
             releasePageInertHold();
 
             // Deactivate focus trap (returns focus to trigger automatically)
             if (this._trap) {
-                this._trap.deactivate();
+                this._trap.deactivate(returnFocus ? undefined : { returnFocus: false });
                 this._trap = null;
             }
 
@@ -839,6 +878,7 @@ export function createOverlay({
             if (!this.isOpen) return;
             this.isOpen = false;
             discardGuard.disarm();
+            this._withdrawQuestion();
             releasePageInertHold();
 
             if (this._trap) {
@@ -872,21 +912,23 @@ export function createOverlay({
          */
         dismissByReader(via = 'close-button') {
             if (!this.isOpen) return;
-            if (!this._mayDiscard()) return;
+            if (!this._mayDiscard(undefined, via)) return;
             this.dismissOverlay();
             this._announceDismissal(via);
         },
 
         /**
          * Whether the reader may close the overlay now: yes when it asks nothing or its panel holds
-         * no changes, and otherwise what they answer to the question. An Escape answered here is
-         * marked as handled, so the window's listener for it leaves the press alone and the
-         * question is asked once.
+         * no changes. Otherwise the close is held back and the question asked in the overlay's own
+         * dialog, whose Discard goes on with the close (`_discardAndDismiss`); without that dialog
+         * the browser asks, and its answer decides. An Escape held back here is marked as handled,
+         * so the window's listener for it leaves the press alone and the question is asked once.
          *
          * @param {KeyboardEvent} [event]
+         * @param {'escape'|'close-button'|'backdrop'} [via] - how the reader started the close
          * @returns {boolean}
          */
-        _mayDiscard(event) {
+        _mayDiscard(event, via = 'escape') {
             if (!discardQuestion || !discardGuard.holdsChanges(this.$refs.panel)) {
                 return true;
             }
@@ -895,7 +937,63 @@ export function createOverlay({
                 event.preventDefault();
             }
 
-            return window.confirm(discardQuestion);
+            const question = this._discardQuestion();
+
+            if (!question) {
+                return window.confirm(discardQuestion);
+            }
+
+            // Asked once: a second press while the question is open changes nothing.
+            if (!question.isOpen) {
+                askedVia = via;
+                question.show();
+            }
+
+            return false;
+        },
+
+        /**
+         * The dialog this overlay asks its question in, by its Alpine data: the alert dialog the
+         * view renders as a child of the overlay's root. A child, so the question of an overlay
+         * around this one is never taken for this one's. Null when the overlay asks nothing, when
+         * its view rendered no dialog, and before Alpine has started it.
+         *
+         * @returns {Object|null}
+         */
+        _discardQuestion() {
+            if (!discardQuestion || !rootEl || typeof rootEl.querySelector !== 'function') {
+                return null;
+            }
+
+            const el = rootEl.querySelector(':scope > [data-wk-discard-question]');
+
+            // The component's own data, as Alpine keeps it on the element; its methods are called
+            // with it as `this`.
+            return el?._x_dataStack?.[0] ?? null;
+        },
+
+        /**
+         * The reader answered Discard: the question closes and leaves focus to the close that
+         * follows, and the overlay closes as the dismissal the reader started, announced with how
+         * they started it. Nothing is asked again.
+         */
+        _discardAndDismiss() {
+            const via = askedVia ?? 'close-button';
+            askedVia = null;
+            this._withdrawQuestion();
+
+            if (!this.isOpen) return;
+            this.dismissOverlay();
+            this._announceDismissal(via);
+        },
+
+        /** Close the question if it is open, leaving focus where the close that follows puts it. */
+        _withdrawQuestion() {
+            const question = this._discardQuestion();
+
+            if (question?.isOpen) {
+                question._closeLeavingFocus();
+            }
         },
 
         /**

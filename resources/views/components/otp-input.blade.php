@@ -22,10 +22,7 @@
     // component exactly as it has always rendered.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -64,22 +61,21 @@
     // Where the row of boxes sits inside the control's own width.
     //
     // A one-time code almost always stands in a centered card — the heading, the sentence
-    // and the button are all centered — and the row of boxes was the one thing that could
-    // not be. The container carries `flex flex-wrap` and no `justify`, so it packs left;
-    // and when the row wraps, the second line sits under the start of the first rather
-    // than under its middle.
+    // and the button are all centered — and the row of boxes has to be able to follow. At
+    // `start` the container carries `flex flex-wrap` and no `justify`, so it packs to the
+    // start; and when the row wraps, the second line sits under the start of the first
+    // rather than under its middle.
     //
     // A prop rather than a note, because the call site cannot reach the row: a class written
-    // on the tag lands on the outer wrapper, so a centering utility there never touches it. The only other way is a rule over this component's
-    // internal markup — `justify-content` on a descendant `[role="group"]` — which breaks
-    // silently the day the markup moves.
+    // on the tag lands on the outer wrapper, so a centering utility there never touches it.
+    // The only other way is a rule over this component's internal markup — `justify-content`
+    // on a descendant `[role="group"]` — which breaks silently the day the markup moves.
     //
-    // `start` by default, so no existing field moves. The centered default the report
-    // suggests would be right for most call sites and wrong for backward compatibility,
-    // and the second consideration wins in a minor. `stretch` fills the control's width
-    // instead; see the alignment block below.
+    // `start` by default, where a flex row packs when nothing tells it otherwise; `center`
+    // and `end` move the row, and `stretch` fills the control's width instead; see the
+    // alignment block below.
     'justify' => config('wirekit.components.otp-input.justify', 'start'),
-    // The size of every box: `sm` 32px, `md` 40px (the one that shipped), `lg` 48px, `xl` 56px.
+    // The size of every box: `sm` 32px, `md` 40px (the default), `lg` 48px, `xl` 56px.
     //
     // A touch device already lifts the boxes to the touch target, through the
     // `pointer: coarse` floor in the stylesheet. What it cannot reach is a surface that is
@@ -107,14 +103,12 @@
     // hidden input that carries the combined value, plus `aria-disabled` on the
     // group so a reader who lands there before reaching a box hears it too.
     //
-    // It was DOCUMENTED — a props-table row and a `--opacity-wk-disabled` theming
-    // row — while undeclared here, so the flag landed in the attribute bag, and the
-    // bag never reaches the digit boxes: the only reads are `->only('class')` on the
-    // wrapper, `->whereStartsWith('wire:model')` on the hidden input and
-    // `->get('aria-label')`. Nothing was emitted anywhere. A one-time-code field
-    // written `disabled` stayed fully typeable, pasteable and submittable, announced
-    // as editable, and the `disabled:` variants below could never fire. Same defect,
-    // same shape, as the one range-slider carries a note about.
+    // Declared here because the attribute bag never reaches the digit boxes: the only
+    // reads are `->only('class')` on the wrapper, `->whereStartsWith('wire:model')` on
+    // the hidden input and `->get('aria-label')`. Undeclared, a one-time-code field
+    // written `disabled` would emit nothing anywhere and stay fully typeable, pasteable
+    // and submittable, announced as editable, and the `disabled:` variants below could
+    // never fire.
     'disabled' => false,
 ])
 
@@ -130,6 +124,11 @@
     $autofocus = BooleanProp::from($autofocus, false);
     $disabled = BooleanProp::from($disabled, false);
     $required = BooleanProp::from($required, false);
+
+    // The length stands in the x-data object as a bare number, so it is read as one first: text
+    // written there unquoted would run as an expression. One that holds no number takes the
+    // configured length, and the field always has at least one cell.
+    $length = max(1, (int) \Pushery\WireKit\Support\NumericProp::positive($length, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.otp-input.length', 6), 6)));
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -169,8 +168,8 @@
         // can only read a LITERAL list. This one depends on another prop: the sizes a code of
         // `length` can carry. A list built at render time comes back unresolved, which publishes
         // the prop as taking anything — and the machine-readable surface would then promise a
-        // developer that any value goes. `PropValidationParserTest` holds that to exactly one
-        // sanctioned occurrence; this call was briefly the second.
+        // developer that any value goes. So this check goes through `StrictnessGate::enforce()`,
+        // which publishes nothing.
         $group = (int) \Pushery\WireKit\Support\StrictnessGate::enforce(
             'otp-input',
             'group',
@@ -196,23 +195,24 @@
     }
 
     // `stretch`: the boxes share the control's width, so the row ends flush with a sentence and
-    // a button above and below it. Each box keeps its square, grows from the touch target (or
-    // its size, when that is larger) up to twice its size, and the gap stays the token. Where
-    // every box has reached that cap the row sits as `center` does, which is why the row below
-    // centers in this mode too. Groups grow by their number of boxes, so every box has the same
-    // width, and a row too narrow for the next group still breaks at the group boundary. Each box
-    // also carries the width of its size, which the flex basis of 0 overrides in the row: it is
-    // what the row reports to a container that takes its width from its content (`w-fit`, a
-    // popover). Without it an input reported its default width of about twenty characters, and
-    // such a container grew to boxes of twice their size.
+    // a button above and below it. Each box keeps its square and grows from the touch target (or
+    // its size, when that is larger) up to twice its size. Where every box has reached that cap,
+    // the width they leave goes into the gaps between them, so the first and the last box still
+    // stand at the control's edges: the row and each group space their boxes apart rather than
+    // center them. Groups grow by their number of boxes, so every box has the same width, and a
+    // row too narrow for the next group still breaks at the group boundary, each group then
+    // flush on its own line. Each box also carries the width of its size, which the flex basis
+    // of 0 overrides in the row: it is what the row reports to a container that takes its width
+    // from its content (`w-fit`, a popover). Without it an input would report its default width
+    // of about twenty characters, and such a container would grow to boxes of twice their size.
     $stretch = $justify === 'stretch';
 
-    // The default emits NOTHING rather than the leading-edge utility, so a field that
-    // does not ask for an alignment renders the markup it always did, byte for byte. The
-    // flex default already packs to the leading edge; naming it would change every
-    // rendered page to say what was already true.
+    // The default emits NOTHING rather than the leading-edge utility: the flex default
+    // already packs to the leading edge, and naming it would add a class that says what is
+    // already true.
     $justifyClass = match ($justify) {
-        'center', 'stretch' => 'justify-center',
+        'center' => 'justify-center',
+        'stretch' => 'justify-between',
         'end' => 'justify-end',
         default => '',
     };
@@ -231,21 +231,16 @@
     $hasUpper = preg_match('/\p{Lu}/u', $alphabet) === 1;
     $hasLower = preg_match('/\p{Ll}/u', $alphabet) === 1;
     // `!==` rather than `xor`: the latter binds looser than `=`, so
-    // `$x = $a xor $b` assigns $a and discards the comparison — it read correctly
-    // and was wrong for a mixed-case alphabet only, which is the case a test had
-    // to catch because the two common ones came out right by coincidence.
+    // `$x = $a xor $b` assigns $a and discards the comparison, which would be
+    // wrong for a mixed-case alphabet only while the two common ones come out
+    // right.
     $alphabetCaseFold = $hasUpper !== $hasLower;
 
     // The HTML `pattern` mirrors the alphabet as a character class. Characters
     // that carry meaning inside one are escaped; everything else is literal.
     //
-    // The full digit set keeps its range spelling so a call site that passes no
-    // alphabet gets byte-identical markup to before this prop existed. Enumerating
-    // it as [0123456789] would behave the same and still be a change to every
-    // rendered page — additive means the default output does not move.
-    // When the alphabet folds case, the pattern has to say so — this is the half
-    // that was missing, and it was invisible for the reason such things usually
-    // are: the promise was kept by the layer that is easiest to test.
+    // The full digit set keeps its range spelling, `[0-9]`. When the alphabet
+    // folds case, the pattern has to say so.
     //
     // `$alphabetCaseFold` reached Alpine and nothing else, so the browser's own
     // constraint validation still held a single-case class. With the script
@@ -280,7 +275,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -310,8 +305,8 @@
     $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
     $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
 
-    // One box per size: width, height, the digit's text size and the corner. `md` carries the
-    // same four classes that shipped, so a field that passes nothing looks exactly as before.
+    // One box per size: width, height, the digit's text size and the corner. `md` is the
+    // default.
     //
     // `xl` is one more step of the same ladder rather than a number of its own. The component
     // heights step by the same amount from `sm` to `lg`, so the rung above `lg` is `lg` plus that
@@ -453,7 +448,7 @@
         ->whereDoesntStartWith(['wire:model', 'data-']);
 @endphp
 
-<div {{ $outerAttributes }} {{ $wrapperAttributes->class([$wrapperClasses]) }}
+<div {{ $outerAttributes }} data-wk-sr-host {{ $wrapperAttributes->class([$wrapperClasses]) }}
     @if($callerRef !== '') data-wk-ref-scope @endif
     @if($optimisticConfig)
         x-data="wirekitOptimistic({{ $optimisticConfig }})"
@@ -465,7 +460,7 @@
     @if($label)
         {{-- `-digit-0`, not `-0`. See the digit id below for why the segment is
              there; this must move with it or every otp-input loses its label. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id . '-digit-0'" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id . '-digit-0'" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- Hidden input holds the combined OTP value for form submission / wire:model.
@@ -488,12 +483,10 @@
              past the edge. Wrapping is the only adjustment that keeps the boxes at
              their designed size; shrinking them would make the digits unreadable. --}}
         {{-- The gap between GROUPS is wider than the gap between boxes, and that is the
-             visible separator the report asked for — without a glyph, which a screen
-             reader would either read out or need hiding from. Ungrouped, the row keeps
-             the gap it always had. --}}
-        {{-- `trim()` so the default keeps the exact class string that shipped: with no
-             alignment asked for the expression contributes nothing, and a trailing space
-             would still be a diff on every rendered page. --}}
+             visible separator — without a glyph, which a screen reader would either read
+             out or need hiding from. Ungrouped, the row keeps the boxes' own gap. --}}
+        {{-- `trim()` so a field that asks for no alignment carries no trailing space in
+             its class list. --}}
         class="{{ trim('flex flex-wrap '.($group === null ? 'gap-2' : 'gap-4').' '.$justifyClass) }}"
         role="group"
         {{-- Test hooks written at the call site land here, on the element that IS the
@@ -522,7 +515,7 @@
              Grouped, it is a row that does not wrap: the groups wrap against each other
              in the row above, so a break can only happen at a group boundary. Eight
              digits with `group="4"` are one row where it fits and 4+4 where it does not. --}}
-        <div class="{{ $group === null ? 'contents' : ($stretch ? 'flex gap-2 justify-center' : 'flex gap-2') }}"@if($group !== null && $stretch) style="flex: {{ count($digitGroup) }} 1 0%"@endif>
+        <div class="{{ $group === null ? 'contents' : ($stretch ? 'flex gap-2 justify-between' : 'flex gap-2') }}"@if($group !== null && $stretch) style="flex: {{ count($digitGroup) }} 1 0%"@endif>
         @foreach($digitGroup as $i)
             <input
                 {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
@@ -600,9 +593,9 @@
                      WebKit would otherwise collapse to a caret once the click finishes. --}}
                 @focus="onFocus($event)"
                 @mouseup="onMouseUp($event)"
-                @input="onInput($event, {{ $i }})"
-                @compositionend="onCompositionEnd($event, {{ $i }})"
-                @keydown="onKeydown($event, {{ $i }})"
+                @input="onInput($event, {{ (int) $i }})"
+                @compositionend="onCompositionEnd($event, {{ (int) $i }})"
+                @keydown="onKeydown($event, {{ (int) $i }})"
                 @paste="onPaste($event)"
             />
         @endforeach

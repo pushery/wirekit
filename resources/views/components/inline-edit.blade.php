@@ -1,8 +1,8 @@
 {{-- optimistic-ui: candidate
      It already has a save seam with its own error and morph handling — the closest thing in the catalog to an optimistic component, and the one whose enablement needs the most care not to duplicate what it does. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
-    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk.
     'required' => false,
     'name' => null,
@@ -63,20 +63,18 @@
     'announceError' => null,
     // Textarea height, forwarded to the textarea's own `rows`. `auto` is its
     // content-sizing mode: the editor opens as tall as the text it replaces and grows
-    // while typing. A row count pins a fixed height instead — which is what shipped,
-    // and it meant a four-line value opened into a three-row box the reader had to
-    // scroll to see their own text in. Ignored for every control except `textarea`.
+    // while typing. A row count pins a fixed height instead, so a four-line value opens
+    // into a three-row box the reader has to scroll to see their own text in. Ignored for
+    // every control except `textarea`.
     'rows' => 'auto',
     // How long to wait for the developer's `wirekit:inline-edit-saved` /
     // `-failed` answer before giving up, in milliseconds. 0 disables the bound
     // and lets the editor stay busy indefinitely — only sensible when the
     // answer is genuinely guaranteed.
     'saveTimeout' => 10000,
-    // What the reader is told when that bound is reached. It exists because the
-    // alternative shipped: the timeout path wrote `config.unknownMessage ?? ''`
-    // and nothing ever supplied the value, so the component set the live region
-    // to the EMPTY STRING and abandoned the save in silence. A field that
-    // announced itself busy and then says nothing at all is the worst of the
+    // What the reader is told when that bound is reached. Without it the live
+    // region would fall back to the EMPTY STRING and abandon the save in silence.
+    // A field that announced itself busy and then says nothing at all is the worst of the
     // three possible outcomes — a screen-reader user is left with no way to know
     // whether the edit was kept, and sighted readers only see a spinner stop.
     'unknownMessage' => null,
@@ -102,7 +100,7 @@
     $openOnValueClick = BooleanProp::from($openOnValueClick, true);
     $exclusive = BooleanProp::from($exclusive, true);
     $actions = BooleanProp::from($actions, true);
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
     $loading = BooleanProp::from($loading, false);
     $disabled = BooleanProp::from($disabled, false);
     $required = BooleanProp::from($required, false);
@@ -113,9 +111,9 @@
     //
     // Both reads are guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()` and `first(null)` returns
-    // the bag's FIRST message — so an inline-edit with no `name` did not merely
-    // turn red when an unrelated field failed, it displayed that other field's
-    // message as its own.
+    // the bag's FIRST message — so without the guard an inline-edit with no `name`
+    // would not merely turn red when an unrelated field failed, it would display
+    // that other field's message as its own.
     $hasError = (bool) $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
     $errorMessage = $error ?: ($name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
 
@@ -126,13 +124,13 @@
     $showsError = $hasError && $errorMessage;
 
     // A caller-supplied `aria-label` names the CONTROL, and `{{ $attributes }}` lands on
-    // the roleless root wrapper — so `<x-wirekit::inline-edit aria-label="Notes" />`
-    // rendered a name on a div while the <input> kept none at all (WCAG 4.1.2). It is
+    // the roleless root wrapper — so `<x-wirekit::inline-edit aria-label="Notes" />` would
+    // otherwise render a name on a div while the <input> kept none at all (WCAG 4.1.2). It is
     // NOT folded into `label`: that renders a VISIBLE label, and a caller reaching for
     // `aria-label` is asking for the opposite.
     $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
-    // A caller's `aria-labelledby` goes to the control the same way; on the wrapper it named
-    // nothing, and the control was left without a name.
+    // A caller's `aria-labelledby` goes to the control the same way; on the wrapper it would
+    // name nothing, and leave the control without a name.
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
     $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
@@ -201,8 +199,7 @@
 
     // The id is NOT derived from `name`. Twenty rows bound to `title` would
     // otherwise emit twenty identical ids, and `label[for]` resolves to the
-    // first one — so every label in the list would point at row one. The form
-    // controls already had to be corrected for exactly this.
+    // first one — so every label in the list would point at row one.
     $id = $attributes->get('id') ?: DomId::unique('inline-edit', 'inline-edit-');
 
     // The label's `for` and the control's `id` have to be one string.
@@ -252,6 +249,8 @@
     // The field's help, after its own messages: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered (partials/field-help).
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // Markup a caller puts after the label and its help, in their row (partials/label-after).
+    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // ── Read mode shows the READABLE value ───────────────────────────────
@@ -271,15 +270,16 @@
     // ── A display value that is markup ───────────────────────────────────
     //
     // Rich text reaches read mode as an Htmlable, `str($html)->toHtmlString()`. Rendered
-    // into the span below, its paragraphs and lists sat inside an inline element, which is
-    // invalid markup, and they read in the page's reset typography while the open editor
-    // showed the same document with bullets and spacing, so the document changed its look
-    // the moment it was opened. Markup renders in a block, in the editor's typography.
+    // into the span below, its paragraphs and lists would sit inside an inline element, which
+    // is invalid markup, and read in the page's reset typography while the open editor shows
+    // the same document with bullets and spacing, so the document would change its look the
+    // moment it was opened. Markup renders in a block, in the editor's typography.
     $displayIsMarkup = $resolvedDisplay instanceof \Illuminate\Contracts\Support\Htmlable;
 
     if ($displayIsMarkup) {
         // An empty document is still markup: the editor serializes one as `<p></p>`, which
-        // is not an empty string, and read mode showed a blank box where `emptyText` belongs.
+        // is not an empty string, and read mode would show a blank box where `emptyText`
+        // belongs.
         // Empty means no text once the tags are gone, a no-break space counting as none, and
         // nothing embedded that stands on its own. Unreadable UTF-8 counts as a value rather
         // than hiding whatever it is behind `emptyText`.
@@ -337,7 +337,10 @@
     $resolvedUnknownMessage = $unknownMessage
         ?? __('wirekit::Still not confirmed. Your text is kept here — reload to see whether it was saved.');
 
-    $actionClasses = 'wk-touch-target inline-flex shrink-0 items-center justify-center rounded-[var(--radius-wk-sm)] '
+    // `wk-touch-row`, not the `wk-touch-target` patch: Confirm and Cancel sit side by side after
+    // the field, and a 44px patch around each would take the taps on the edge of its neighbor. On a
+    // touch screen each is 44px by its size instead.
+    $actionClasses = 'wk-touch-row inline-flex shrink-0 items-center justify-center rounded-[var(--radius-wk-sm)] '
         .'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer';
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
@@ -345,7 +348,7 @@
 @endphp
 
 <div
-    {{ $attributes->except('aria-describedby')->class([$rootClasses]) }}
+    data-wk-sr-host {{ $attributes->except('aria-describedby')->class([$rootClasses]) }}
     x-data="wirekitInlineEdit({
         name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }},
         value: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $value) }},
@@ -359,9 +362,9 @@
         labelledBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($labelId ?? (isset($editor) ? $fieldLabelId : null)) }},
         fieldLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldLabelPressed) }},
         fieldLabelFocuses: {{ \Pushery\WireKit\Support\AlpinePayload::from(isset($editor) && $fieldLabelId !== null) }},
-        {{-- The give-up bound and what it says. Both were read from `config` by the
-             JS and neither was ever passed, so the bound worked only by its
-             hard-coded fallback and the message resolved to the empty string. --}}
+        {{-- The give-up bound and what it says, both read from `config` by the JS.
+             Without them the bound would run on its hard-coded fallback and the
+             message would resolve to the empty string. --}}
         saveTimeout: {{ \Pushery\WireKit\Support\AlpinePayload::from((int) $saveTimeout) }},
         unknownMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from($resolvedUnknownMessage) }},
         {{-- A server-rendered error re-opens the editor after a morph replaced it. --}}
@@ -384,14 +387,20 @@
              drop the draft before the click could focus the field again. --}}
         {{-- With help, the label shares a row with its button, outside the label so it stays
              out of the field's name. --}}
-        @if($helpId)
-        <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+        @if($helpId || $hasLabelAfter)
+        <div data-wk-label-row class="{{ $hasLabelAfter ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
         @endif
-        <label @if($labelId) id="{{ $labelId }}" x-on:click="focusFromLabel()" @else for="{{ $controlId }}" @endif x-on:mousedown="keepFocusOnLabel($event)" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        {{-- Its own label rather than the label component: it captions a value that is read
+             before it is edited, in the smaller type and heading weight of a caption, and stays in
+             place when the editor opens. --}}
+        <label data-wk-field-label @if($labelId) id="{{ $labelId }}" x-on:click="focusFromLabel()" @else for="{{ $controlId }}" @endif x-on:mousedown="keepFocusOnLabel($event)" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
         </label>
-        @if($helpId)
-            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $id)])
+        @if($helpId || $hasLabelAfter)
+            @if($helpId)
+                @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $id)])
+            @endif
+            @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif
         </div>
         @endif
     @endif
@@ -473,8 +482,8 @@
          while a visibility state differs, so x-show survives a morph and x-if
          would tear the open editor down mid-edit. --}}
     {{-- `items-center` for a single-line control so the confirm/cancel buttons sit
-         on the field's midline, matching read mode — they were pinned to the top
-         edge, which reads as misalignment because nothing else in the row is.
+         on the field's midline, matching read mode — pinned to the top edge they
+         would read as misaligned, because nothing else in the row is.
 
          `items-start` stays for the MULTI-LINE controls, and there it is not a
          style choice: centering against a textarea that has grown to six rows
@@ -520,7 +529,7 @@
     @endif
 
     @if($showsError)
-        <p data-wk-prose-skip id="{{ $errorId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 
     {{-- The save outcome is ANNOUNCED, never inferred from a round trip ending.

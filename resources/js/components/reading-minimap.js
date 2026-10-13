@@ -354,28 +354,31 @@ export default (options = {}) => ({
      * legible next to the code that populates it.
      */
     stripeStyle(item) {
-        const top = `top: ${item.fraction * 100}%;`;
         const height = this.itemStyle === 'block' && item.heightFraction
             ? `${item.heightFraction * 100}%`
             : 'var(--reading-minimap-stripe-height)';
 
-        return `${top} height: ${height}; margin-bottom: var(--reading-minimap-stripe-gap);`;
+        return { top: `${item.fraction * 100}%`, height, marginBottom: 'var(--reading-minimap-stripe-gap)' };
     },
 
     viewportStyle() {
-        return `top: ${this.viewportTop}px; height: ${this.viewportHeight}px;`;
+        return { top: `${this.viewportTop}px`, height: `${this.viewportHeight}px` };
     },
 
     bookmarkStyle() {
-        return `top: ${this.bookmarkPct * 100}%;`;
+        return { top: `${this.bookmarkPct * 100}%` };
     },
 
     anchorStyle(anchor) {
         // The clamp is inline because it is a measured number, not a state a class could name.
         // It is only present when the side the strip sits on is narrower than its widest label.
-        const clamp = this.anchorRoom === null ? '' : ` max-width: ${this.anchorRoom}px;`;
+        const style = { top: `${anchor.fraction * 100}%` };
 
-        return `top: ${anchor.fraction * 100}%;${clamp}`;
+        if (this.anchorRoom !== null) {
+            style.maxWidth = `${this.anchorRoom}px`;
+        }
+
+        return style;
     },
 
     anchorHref(anchor) {
@@ -384,10 +387,10 @@ export default (options = {}) => ({
 
     tooltipStyle() {
         const placement = this.side === 'left'
-            ? 'left: 100%; margin-left: 0.5rem'
-            : 'right: 100%; margin-right: 0.5rem';
+            ? { left: '100%', marginLeft: '0.5rem' }
+            : { right: '100%', marginRight: '0.5rem' };
 
-        return `top: ${this.tooltipTop}px; transform: translateY(-50%); ${placement};`;
+        return { top: `${this.tooltipTop}px`, transform: 'translateY(-50%)', ...placement };
     },
 
     scrollToItem(item) {
@@ -1116,7 +1119,9 @@ export default (options = {}) => ({
         if (previewFrame?.contentDocument) {
             const doc = previewFrame.contentDocument;
             const max = doc.body.scrollHeight - previewFrame.clientHeight;
-            previewFrame.contentWindow?.scrollTo(0, max * cursorFraction);
+            // A jump, always: the preview follows the cursor, and the page's stylesheets in the
+            // frame may make `'auto'` glide behind it.
+            previewFrame.contentWindow?.scrollTo({ top: max * cursorFraction, behavior: 'instant' });
         }
         // Position the popover near the cursor, flipped to keep inside viewport.
         const previewSize = preview.offsetWidth || 200;

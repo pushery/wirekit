@@ -36,11 +36,10 @@ import { awaitPeer } from '../utils/await-peer.js';
  * Map engines the host handed over, keyed by provider name.
  *
  * MapLibre GL 6 is published as an ES module only, and an ES module sets no global:
- * `import * as maplibregl from 'maplibre-gl'` leaves `window.maplibregl` undefined,
- * which was the only place this adapter looked. A bundled app passes the module here
- * instead and needs no global at all. The window globals stay the fallback, so a page
- * that assigns `window.maplibregl` itself — or loads Leaflet's classic build, which
- * sets `window.L` — works exactly as before.
+ * `import * as maplibregl from 'maplibre-gl'` leaves `window.maplibregl` undefined. A
+ * bundled app passes the module here instead and needs no global at all. The window
+ * globals are the fallback, so a page that assigns `window.maplibregl` itself — or
+ * loads Leaflet's classic build, which sets `window.L` — needs no registration.
  */
 const engines = {};
 
@@ -189,9 +188,9 @@ export default function wirekitMap(config = {}) {
          *
          * `prefers-reduced-data` is ABOVE this library's support baseline, which is
          * exactly why it is safe to read: a browser that does not know the query returns
-         * `matches: false`, so the map behaves as it always has. Nothing depends on the
-         * feature — this is the progressive-enhancement shape the house rule requires,
-         * with the enhancement being a saving rather than a flourish.
+         * `matches: false`, so the map loads its tiles right away. Nothing depends on the
+         * feature: it is a progressive enhancement, and the enhancement is a saving rather
+         * than a flourish.
          *
          * `matchMedia` itself is guarded because the Alpine factories are constructed in
          * a bare Node harness where it does not exist.
@@ -352,7 +351,7 @@ export default function wirekitMap(config = {}) {
             // half-broken "tiles load, map stays empty" symptom. Leaflet renders
             // via DOM/img tiles and tolerates the proxy, but we mark both for
             // parity. `__v_skip` is the flag Vue's markRaw() sets and reactive()
-            // honors — the same fix the editor needed for its ProseMirror instance.
+            // honors — the same flag the editor sets on its ProseMirror instance.
             this._map = keepRaw(map);
             // Zoom controls. Leaflet's L.map() ships a zoom control by default, but
             // MapLibre ships NO UI — add the standard NavigationControl (zoom in/out
@@ -381,16 +380,15 @@ export default function wirekitMap(config = {}) {
             // right after mount; the load handler covers a style that
             // finishes after the last resize. All three are idempotent.
             //
-            // NOTE — this is NOT the fix for the "canvas stuck at 300px, paints
-            // blank" bug class. That was a CSS cascade collision: MapLibre adds
+            // The mount's HEIGHT is not this observer's job. MapLibre adds
             // `maplibregl-map` (position: relative in maplibre-gl.css) to the
             // mount, which can override the template's `absolute` (equal
-            // specificity, source order wins), collapsing the mount to height 0 —
-            // so MapLibre falls back to clientHeight || 300 and resize() re-reads
-            // 0 forever (observer fires, but there's no height to grow into). The
-            // real fix is h-full/w-full on the Blade mount (see map.blade.php),
-            // which resolves under either computed position. The observer here
-            // handles GENUINE size changes only.
+            // specificity, source order wins) and collapse the mount to height 0,
+            // so MapLibre would fall back to clientHeight || 300 and resize()
+            // would re-read 0 forever (the observer fires, but there is no height
+            // to grow into). `h-full w-full` on the Blade mount (see
+            // map.blade.php) holds under either computed position; the observer
+            // here handles GENUINE size changes only.
             const resize = () => {
                 if (!this._map) return;
                 if (typeof this._map.resize === 'function') this._map.resize();
@@ -522,9 +520,9 @@ export default function wirekitMap(config = {}) {
 
                     /*
                      * A `role="button"` is a PROMISE: focusable, and activated by Enter and
-                     * Space. The pin kept none of it — no tabindex, no key handler — so it
-                     * announced itself as a button to a reader who could then neither reach
-                     * nor press it. Inside a `role="application"` container that is worse
+                     * Space. Without a tabindex and a key handler the pin would announce itself
+                     * as a button to a reader who could then neither reach nor press it.
+                     * Inside a `role="application"` container that is worse
                      * than usual: the browser's own fallbacks are off there, and the only
                      * keyboard behavior is the one the component provides.
                      *
@@ -556,7 +554,7 @@ export default function wirekitMap(config = {}) {
                     // and the docs promise "hovering (or tapping) a pin opens a
                     // bubble", which is how Leaflet's bindTooltip already behaves. So
                     // wire mouseenter/leave to togglePopup for parity (MapLibre popups
-                    // were otherwise click-only, unlike Leaflet's hover tooltips).
+                    // would otherwise be click-only, unlike Leaflet's hover tooltips).
                     // isOpen() guards keep enter/leave idempotent.
                     if (node) {
                         node.addEventListener('mouseenter', () => {
@@ -599,7 +597,7 @@ export default function wirekitMap(config = {}) {
             const marker = this.markers.find((m) => m.id === id);
             if (!marker) return;
             // Persist the selection so the list highlights it (and a map-pin click
-            // mirrors into the sidebar, which it did not before). Both entry points (list
+            // mirrors into the sidebar). Both entry points (list
             // button @click + the pin click handler in _addMarker) route here.
             this.selectedId = id;
             this.panTo(marker);
@@ -611,9 +609,9 @@ export default function wirekitMap(config = {}) {
             // requested one — _detectProvider can fall back to whichever is present.
             // Respect reduced-motion: jump instead of animating. Read once, because BOTH
             // branches move the viewport — Leaflet's panTo animates by default and takes
-            // the same `animate` option its flyTo does, so leaving it off meant a click in
-            // the marker list (the component's keyboard path) slid the map for a reader who
-            // had asked for no motion.
+            // the same `animate` option its flyTo does, so leaving it off would let a click in
+            // the marker list (the component's keyboard path) slide the map for a reader who
+            // has asked for no motion.
             const reduce = typeof window !== 'undefined' && window.matchMedia
                 && prefersReducedMotion();
             if (this._resolved === 'leaflet' && typeof this._map.panTo === 'function') {
@@ -693,8 +691,8 @@ export default function wirekitMap(config = {}) {
             if (window.__wirekit_map_missing_warned__) return;
             window.__wirekit_map_missing_warned__ = true;
              
-            // The message names both ways in, because MapLibre GL 6 no longer sets the global on
-            // its own. It also says which bundle each way belongs to: registerMapEngine() is
+            // The message names both ways in, because MapLibre GL 6 sets no global on its own.
+            // It also says which bundle each way belongs to: registerMapEngine() is
             // exported by the ESM build only, so a page without a bundler has to assign the global.
             // Assigning the global works from every bundle, so it comes first.
             console.error(

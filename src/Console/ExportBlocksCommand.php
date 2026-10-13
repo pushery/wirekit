@@ -61,9 +61,9 @@ class ExportBlocksCommand extends Command
         // An absence is not an answer. It fails, by name, and the message says which of
         // the two states it is in — because "the package does not carry these" and "the
         // catalog is empty" want completely different reactions from whoever reads it.
-        // One directory now, not two: page layouts moved under `docs/blueprints/` when the
-        // two sections merged, so `docs/layouts/` no longer exists and looking for it would
-        // report a package as broken for carrying exactly what it should.
+        // One directory: page layouts live under `docs/blueprints/`, and there is no
+        // `docs/layouts/`, so looking for one would report a package as broken for carrying
+        // exactly what it should.
         $missing = array_values(array_filter(
             ['blueprints'],
             fn (string $kind): bool => ! is_dir($packageRoot.'/docs/'.$kind),
@@ -80,10 +80,8 @@ class ExportBlocksCommand extends Command
             $this->line('a published release does not carry them. It works in a checkout of the package');
             $this->line('repository and cannot work from a Composer install.');
 
-            // FAILURE, not the usage-error code Symfony also offers. Every wirekit:* command
-            // exits 1 on every error path — the house convention, and CliUniformityAuditTest
-            // enforces it by scanning this file's TEXT, so naming the other constant here
-            // would trip the guard on a comment.
+            // FAILURE, not the usage-error code Symfony also offers: every wirekit:* command
+            // exits 1 on every error path.
             return self::FAILURE;
         }
 
@@ -141,8 +139,8 @@ class ExportBlocksCommand extends Command
     /**
      * Resolve the running WireKit version. Delegates to VersionResolver so
      * the three export commands stay in lockstep — see VersionResolver for
-     * the priority order. `$packageRoot` is preserved for backward-compat
-     * with the existing call site but no longer consulted directly.
+     * the priority order. `$packageRoot` stays in the signature for its
+     * caller and is not consulted.
      */
     private function detectVersion(string $packageRoot): string
     {

@@ -8,8 +8,7 @@
     //
     // It exists because `active` alone CANNOT work here: `active` is resolved in
     // PHP at render time, so the swap would be frozen at whatever the server
-    // thought and never move again. That is not a hypothetical — it is the bug
-    // this component shipped with for exactly one afternoon.
+    // thought and never move again.
     'expression' => null,
     // Static state, for a swap the server already knows the answer to and that
     // never changes on the client.

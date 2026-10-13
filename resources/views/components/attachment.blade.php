@@ -141,9 +141,9 @@
     };
     // Auto-inject rel="noopener noreferrer" when target="_blank". This component
     // takes an href and echoes the caller's bag onto the element that carries it,
-    // so the caller's target passed straight through to a bare anchor. The house
-    // rule makes the injection unconditional for exactly that shape. Rendered
-    // explicitly with the bag echoed via except('rel'), because
+    // so a caller's target would otherwise reach a bare anchor; for that shape the
+    // injection is unconditional. Rendered explicitly with the bag echoed via
+    // except('rel'), because
     // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');
@@ -195,7 +195,7 @@
         @endif
     @endunless
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$rootClasses, $rootRingClass]) }}
+    {{ $attributes->except('rel')->class([$rootClasses, $rootRingClass]) }} data-wk-sr-host
 >
     {{-- Link over the media+name only when there are also actions, so the action
          controls can live outside the anchor. Without actions the whole card is
@@ -218,7 +218,11 @@
     </span>
 
     <span class="min-w-0 flex-1">
-        <span data-wk-attachment-name class="block truncate text-[length:var(--text-wk-sm)] font-medium">{{ $name }}</span>
+        {{-- The name is not cut: two files a version apart differ at their end, and a name is read
+             whole to tell them apart. `break-word` breaks it inside the card where it has to and
+             leaves the card's min-content width alone, so a row of attachments scrolls rather than
+             squeezing its cards. --}}
+        <span data-wk-attachment-name class="block [overflow-wrap:break-word] text-[length:var(--text-wk-sm)] font-medium">{{ $name }}</span>
 
         @if($descriptionParts || $stateText)
             <span data-wk-attachment-meta class="block truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">

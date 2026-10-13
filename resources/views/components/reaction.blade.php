@@ -14,10 +14,7 @@
     // exactly as it has always rendered: server markup, no Alpine.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'emoji' => null,
@@ -113,7 +110,7 @@
     {{-- The component owns `active`; the optimistic layer nests inside it and
          binds to that one boolean, so the count and the name follow a single
          rollback. The button sits inside the layer to reach its run(). --}}
-<span x-data="wirekitReaction({{ $reactionOptimistic }})" class="inline-flex">
+<span x-data="wirekitReaction({{ $reactionOptimistic }})" class="relative inline-flex">
 <span x-data="wirekitOptimistic({{ $reactionLayer }})" class="inline-flex items-center gap-x-1">
 @endif
 <button
@@ -133,7 +130,7 @@
          aria-label via merge so a caller's aria-label OVERRIDES the default —
          a hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins). --}}
-    {{ $attributes->except('type')->merge(['aria-label' => $ariaLabel])->class(['wk-state-button', $baseClasses, $stateClasses]) }}
+    {{ $attributes->except('type')->merge(['aria-label' => $ariaLabel])->class(['wk-state-button', 'wk-touch-row', $baseClasses, $stateClasses]) }} data-wk-sr-host
 >
     <span class="[font-variant-emoji:emoji]" aria-hidden="true">{{ $emoji }}</span>
     @if($reactionOptimistic)

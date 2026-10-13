@@ -12,11 +12,9 @@
     // against a box that never scrolls vertically and therefore never sticks. The height is
     // the CONDITION, not the decoration.
     //
-    // It was a fixed `24rem` until a reader with a five-row table reported the obvious
-    // consequence: a box that reserves 24rem, never scrolls, and is visibly worse than the
-    // plain table it replaced. The default stays `24rem` so nothing that renders today moves;
-    // a viewport-relative value like `70vh` is what a table of unknown length wants, because
-    // the limit then simply never applies to the short case.
+    // The default is `24rem`. A viewport-relative value like `70vh` is what a table of unknown
+    // length wants, because the limit then follows the screen and simply never applies to the
+    // short case.
     //
     // Any CSS length, taken exactly as written. The value reaches the element as an inline
     // max-height rather than as a utility class, so it is not confined to the lengths a build
@@ -51,10 +49,9 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $stickyHeader = BooleanProp::from($stickyHeader, false);
     // Same contract for the four whose default is spelled as a `config()` fallback rather
-    // than a literal — a spelling the coverage guard could not see until 2026-09-07, so
-    // these four went unnormalized while their literal-defaulted neighbor above did not.
-    // `responsive` is the sharp one: it defaults ON, so `responsive="false"` is a switch a
-    // developer reaches for deliberately, and the wrapper it was meant to remove stayed.
+    // than a literal. `responsive` is the sharp one: it defaults ON, so `responsive="false"`
+    // is a switch a developer reaches for deliberately, and without the cast the wrapper it
+    // is meant to remove would stay.
     $responsive = BooleanProp::from($responsive, true);
     $striped = BooleanProp::from($striped, false);
     $hoverable = BooleanProp::from($hoverable, false);
@@ -67,10 +64,9 @@
     // Tailwind can only generate a utility for a value it has SEEN, and it sees source text.
     // A caller-supplied length exists in the caller's own Blade, so their build would generate
     // it — but this package's build cannot, and a class this package emits with no rule behind
-    // it is a silently absent max-height. Worse, writing the utility with a variable inside its
-    // brackets makes the scanner read the expression itself as a class name; both the compiled
-    // stylesheet and the drift diff picked that up, twice, once from the attribute and once
-    // from a comment describing it.
+    // it is a silently absent max-height. Worse, a utility written with a variable inside its
+    // brackets makes the scanner read the expression itself as a class name, from the attribute
+    // and from any comment describing it, and compile it into the stylesheet.
     //
     // An inline height has none of that: it needs no scanner, no safelist entry, and it takes
     // any CSS length exactly as written — `calc(100vh - 4rem)` included, with no escaping.
@@ -84,8 +80,7 @@
     // wraps the cells instead of scrolling sideways past a column it does not need to hold. The
     // width classes are written out per breakpoint because Tailwind reads literal class names and
     // never an assembled one. An unknown value is reported through the strictness gate and, where
-    // the gate does not throw, freezes the column at every width, which is what the column did
-    // before this prop existed.
+    // the gate does not throw, freezes the column at every width, as `stickyColumn` alone does.
     $stickyColumnBelow = filled($stickyColumnBelow) ? (string) $stickyColumnBelow : null;
     if ($stickyColumnBelow !== null) {
         $stickyColumn = true;
@@ -114,8 +109,8 @@
         $stickyColumn ? $stickyColumnWidth : 'w-full',
         // As a flex item the table would shrink to fit the scroller and never
         // overflow, which removes the scrolling the sentinels are watching for.
-        // `flex-shrink` is inert outside a flex container, so the non-responsive
-        // branch renders exactly as before.
+        // `flex-shrink` is inert outside a flex container, so it changes nothing in
+        // the non-responsive branch.
         $responsive ? 'shrink-0' : '',
         'border-collapse',
         'text-left',
@@ -229,10 +224,9 @@
 {{-- Wrap in responsive container for horizontal scroll on narrow screens.
      WCAG 2.1.1 (Keyboard): an `overflow-x-auto` region that actually scrolls
      MUST be keyboard-reachable, otherwise a keyboard / switch user cannot pan
-     to the off-screen columns (the "you can't even reach the content on the
-     right" report). The focusable region + accessible name therefore apply to
-     EVERY responsive wrapper, not only the sticky-header variant — a wide data
-     table with no focusable cells was exactly the unreachable case. `min-w-0`
+     to the off-screen columns. The focusable region + accessible name therefore
+     apply to EVERY responsive wrapper, not only the sticky-header variant — a
+     wide data table with no focusable cells would otherwise be unreachable. `min-w-0`
      lets the wrapper shrink below the table's intrinsic width inside a flex
      parent so the scroll engages instead of the table forcing document
      overflow. --}}
@@ -261,10 +255,10 @@
 <div
     x-ref="scroller"
     {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in
-         the default block scroller they stacked ABOVE and BELOW the table instead of
-         sitting at its inline edges — an IntersectionObserver watching them therefore
-         answered a vertical question, and the trailing-edge hint only appeared once
-         something had already scrolled. Which is after the moment it exists for. --}}
+         a block scroller they would stack ABOVE and BELOW the table instead of sitting
+         at its inline edges — an IntersectionObserver watching them would answer a
+         vertical question, and the trailing-edge hint would appear only once something
+         had already scrolled, after the moment it exists for. --}}
     {{-- The scroller is a tab stop, so it needs a focus state a keyboard user can SEE —
          it is the only handle for panning to columns that are off screen, and without a
          ring the caret lands on it with nothing to show for it. The frame above draws that
@@ -274,8 +268,8 @@
          asks about. --}}
     {{-- Positioned, so the scroller is the containing block for anything a cell places
          absolutely. A visually hidden label is `position: absolute`, and against the wrapper
-         outside the scroller it was neither clipped nor scrolled: it widened the wrapper and
-         every ancestor on a phone. The shadows are siblings of the scroller and keep the
+         outside the scroller it would be neither clipped nor scrolled: it would widen the
+         wrapper and every ancestor on a phone. The shadows are siblings of the scroller and keep the
          wrapper as theirs, so they still hold still while the table moves. --}}
     {{-- The block axis scrolls only under a sticky header, the one case with a bounded height.
          Otherwise it is hidden rather than left alone: `overflow-x: auto` turns a `visible`
@@ -284,6 +278,8 @@
          can scroll vertically, and a swipe or a wheel that starts on a row moves it by those
          pixels instead of moving the page. --}}
     data-wk-table-scroller
+    {{-- Paper does not scroll: on paper the scroller grows to every row. --}}
+    data-wk-print-expand
     class="relative flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-hidden {{ $stickyHeader ? 'overflow-y-auto' : 'overflow-y-hidden' }}"
     @if($stickyHeaderStyle) style="{{ $stickyHeaderStyle }}" @endif
     {{-- Reachability is unconditional; the landmark is opt-in. `filled()` rather than `??`,
@@ -296,17 +292,12 @@
 
      The pixel is what the observer needs. A zero-AREA target sitting exactly on the
      scrollport edge is not dependably "intersecting", so at full scroll the trailing
-     hint had no determinate off-state and could stay lit over the end of the table —
-     the one moment the component promises it goes away. A zero inline size was
-     chosen originally to spare every non-overflowing table two pixels of width —
-     spelled out here in words rather than as the class, because Tailwind scans
-     Blade comments too and would compile a utility nothing renders, which the
-     reverse drift diff then reports as an untraceable selector. The sidebar zones
-     and the
-     scope-switcher list pay that same cost off with `-mb-px` / `-mt-px`, and the
-     arithmetic carries over: 1px of width plus -1px of margin is zero net
-     contribution on a `shrink-0` flex item. The observer gets its pixel and the
-     reader none.
+     hint would have no determinate off-state and could stay lit over the end of the
+     table — the one moment the component promises it goes away. The margin keeps a
+     table that does not overflow from paying for it in width, as the sidebar zones
+     and the scope-switcher list do with `-mb-px` / `-mt-px`: 1px of width plus -1px
+     of margin is zero net contribution on a `shrink-0` flex item. The observer gets
+     its pixel and the reader none.
 
      The margin is logical, not physical. It has to land on the side facing the table
      so the pixel sits INSIDE the scroll content instead of protruding past its edge,

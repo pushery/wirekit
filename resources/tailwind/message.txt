@@ -36,7 +36,6 @@ $as);
 $attachments
 $attributes
 $attributes->class([$baseClasses])
-$attributes->class([$groupClasses])
 $attributes->class([$iconClasses]);
 $attributes->class(['relative
 $attributes->get('aria-hidden');
@@ -46,6 +45,7 @@ $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
 $attributes->merge($depthStyle
+$attributes->merge(['data-size'
 $attributes]
 $author
 $author;
@@ -155,6 +155,7 @@ $sizeClasses,
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
+$size])->class([$groupClasses])
 $slot
 $slot)
 $slot),
@@ -238,6 +239,7 @@ $wrap
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -246,6 +248,7 @@ $wrap
 'Run:
 'UTF-8')));
 '[WireKit]
+'[overflow-wrap:break-word]',
 'absolute
 'accent'
 'accent',
@@ -276,6 +279,7 @@ $wrap
 'bg-[var(--color-wk-bg)]',
 'bg-[var(--color-wk-bg-elevated)]
 'bg-[var(--color-wk-bg-muted)]',
+'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
@@ -347,7 +351,6 @@ $wrap
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-heading-weight)]',
 'fromInitials'
-'g:i
 'group',
 'h-12
 'h-3
@@ -593,7 +596,6 @@ $wrap
 (house
 (hover
 (icon
-(identical
 (in_array($status,
 (inert
 (int)
@@ -624,6 +626,7 @@ $wrap
 (true)
 (visible
 (with
+(without
 );
 +
 -
@@ -638,6 +641,7 @@ $wrap
 --}}
 -text
 ...>
+.=
 .wk-avatar-group
 /
 //
@@ -677,11 +681,10 @@ $wrap
 24h
 2;
 2c-2.67
-2rem,
 3
 30%,
 300),
-3rem.
+3rem,
 4
 4%,
 4-1.79
@@ -787,7 +790,6 @@ $wrap
 @unless($attributes->has('aria-label')
 @unless($attributes->has('role'))
 A
-A'
 A11y
 AA-contrast
 ACCENT
@@ -795,13 +797,11 @@ ALSO
 AM"
 AM").
 AND
-API:
 ARIA
 AT
 Accept
 Accessible
 Actions
-Adding
 Alignment
 Alpine
 Alpine's
@@ -897,6 +897,7 @@ IconResolver,
 If
 Ignored
 In
+Inherited
 Inherits
 Inline
 It
@@ -939,6 +940,7 @@ On
 Only
 Operating
 Optional
+Outside
 Overlap
 PERFECTLY
 PM"
@@ -1010,7 +1012,9 @@ Two
 UI
 UNBOUND
 URL
+URL,
 Uses
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 VISIBLY
 Validate
@@ -1130,12 +1134,13 @@ __toString
 `aria-labelledby`
 `as="div
 `as="span"`
+`break-word`
 `card`
 `class="cirlce"`
-`class="h-12
 `class`
 `clearTimeout`
 `cloneNode(true)`,
+`data-size`
 `data-wk-message-*`
 `default
 `delayHide`
@@ -1153,7 +1158,9 @@ __toString
 `fixed`
 `focus-within`
 `focusable-trigger`
+`group-hover`
 `group`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -1167,6 +1174,7 @@ __toString
 `isolation:
 `keydownEscape()`
 `mask-image`,
+`max-w-full`:
 `min-h-*`
 `mouseenter`
 `mouseenter`/`mouseleave`
@@ -1189,6 +1197,7 @@ __toString
 `ring-offset-*`
 `role="img"`.
 `shape="cirlce"`
+`shrink`
 `size`
 `size`,
 `soft`
@@ -1209,6 +1218,7 @@ __toString
 `wire:id`,
 `wire:key`,
 `wirekit:badge-dismissed`
+`wk-tooltip-panel`
 `wrap="false"`
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
@@ -1239,6 +1249,7 @@ activating
 actual
 actually
 add
+address
 adds
 affects
 after
@@ -1249,8 +1260,8 @@ alert;
 alias
 alias,
 aliases
+aligned
 aligns
-all).
 all,
 all.
 allowed
@@ -1286,7 +1297,7 @@ apart
 app
 app(IconResolver::class)->resolve($name);
 appear
-appeared
+appear).
 appears
 application
 applied
@@ -1373,7 +1384,6 @@ becomes
 becoming
 been
 before
-before;
 behalf
 behalf,
 behind
@@ -1388,6 +1398,7 @@ beside
 between
 bg
 bg).
+bg-muted
 bg.
 bind
 binds
@@ -1435,9 +1446,11 @@ bound,
 box
 box-shadow
 box-shadow.
+box.
 branch's
 brand
 break
+breaks
 browse
 browser's
 bubble
@@ -1455,7 +1468,6 @@ buttons
 buttons).
 buttons,
 by
-byte-identical
 calibrated
 call
 called
@@ -1465,10 +1477,12 @@ caller-supplied
 callout
 calls.
 can
+can.
 cancel
 cancels
 cannot
 canonical
+capped,
 card
 card's
 card,
@@ -1506,12 +1520,12 @@ class="h-3
 class="inline-block
 class="rounded-[var(--radius-wk-sm)]
 class="shrink-0
-class="shrink-0"
 class="shrink-0">
 class="sr-only">{{
 class="text-[color:var(--color-wk-text-muted)]
 class="w-3/5
 class="w-full
+class="wk-tooltip-panel
 class="{{
 classes
 classes:
@@ -1541,6 +1555,8 @@ color:
 colored
 colors
 colors,
+column
+column;
 come
 comes
 common
@@ -1571,11 +1587,11 @@ config('wirekit.components.tooltip.delay-show',
 config('wirekit.components.tooltip.offset',
 config('wirekit.components.tooltip.placement',
 configured
-conflict
 consistent
 console
 console).
 construction.
+container
 containers.
 content
 content,
@@ -1610,6 +1626,7 @@ d="M7
 dark
 data-replayable="true"
 data-status="{{
+data-wk-badge-dismiss
 data-wk-check-double
 data-wk-message
 data-wk-message-author
@@ -1617,6 +1634,7 @@ data-wk-message-avatar
 data-wk-message-bubble
 data-wk-message-status
 data-wk-prose-skip
+data-wk-sr-host
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
@@ -1662,6 +1680,7 @@ descendant
 descendants
 description
 deterministic
+deterministic;
 dev
 developer
 developer's
@@ -1671,12 +1690,12 @@ did
 different
 dim
 dims
-direct
 disabled
 disappearing,
 disc.
 discoverable
 discoverable.
+discs
 dismiss
 dismissLabel.
 dismissible
@@ -1695,6 +1714,7 @@ double-check
 double-ring
 down
 drawer
+drawn
 draws
 drift
 drop
@@ -1714,6 +1734,7 @@ ease-in
 ease-out
 edge
 edge.
+effect.
 either
 element
 element,
@@ -1723,13 +1744,14 @@ elements,
 elevated
 else
 elseif
+email
 embedded
 emit
 emits
 emitted
 empty
 empty-state
-en
+en,
 enables
 ends
 enhancement,
@@ -1751,11 +1773,11 @@ event.
 event:
 events
 every
+everything
 exact
 exactly
 exhausting
 existed
-existing
 exists
 exists.
 expandos.
@@ -1814,6 +1836,7 @@ flags
 flatten
 flattened
 flattens
+flex
 flex-col
 flex-wrap
 flips
@@ -1829,19 +1852,18 @@ focus-within:opacity-100
 focus;
 focusable
 focused,
-followable.
 follows
 font
+footer
 for
 for.
-forbidden
 forced
+forced-colors
 forces
 forcing
 foreground
 foreground.
 format
-format),
 found.`
 four
 fragment
@@ -1873,6 +1895,7 @@ generic
 genuinely
 get
 gets
+give
 given,
 given.
 gives
@@ -1889,7 +1912,6 @@ gray
 grid
 group
 group's
-group-hover
 group-hover:opacity-100
 grows
 guarantees
@@ -1911,6 +1933,7 @@ h-[var(--size-wk-xs)]
 h-full
 h/w
 had
+had.
 half
 halves
 hand,
@@ -1924,7 +1947,6 @@ hangs
 happened
 happened:
 hard
-hardcoded
 harder
 has
 has:
@@ -1960,7 +1982,6 @@ holds
 holds:
 honors
 host
-house
 hover
 hover)
 hover,
@@ -1975,6 +1996,7 @@ icon
 icon's
 icon,
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -2006,6 +2028,7 @@ info
 information
 informative
 informative.
+inherited
 inherits
 init
 initialized.
@@ -2022,6 +2045,7 @@ input
 inserts
 inset
 inside
+inside;
 installed
 installed.
 installed.'
@@ -2095,6 +2119,7 @@ leaves
 leaving
 left
 legitimately
+less.
 let
 lets
 letters
@@ -2128,12 +2153,11 @@ look
 look.
 looking
 looks
-loses
+lose
 lost
 lost,
 loudly
 loudly,
-made
 make
 makes
 many
@@ -2153,6 +2177,7 @@ match
 matches
 matching
 max-w-[42ch]">
+max-w-full
 maximum
 may
 mean
@@ -2170,6 +2195,7 @@ message.
 message:
 messages
 messaging
+min-content
 min-height
 min-w-0
 mints
@@ -2179,6 +2205,7 @@ mismatch
 missing
 missing,
 missing:
+mixed
 modal
 modals,
 mode
@@ -2216,6 +2243,7 @@ native
 needed
 needs
 negative
+neighbors,
 neither
 nest
 nested
@@ -2254,7 +2282,6 @@ off
 offers
 offset:
 often
-old
 omission.
 on
 on,
@@ -2296,9 +2323,11 @@ outer
 outgoing
 outline
 output
+outside
 over
 overflow
 overhead.
+overlap
 overlay
 override.
 overrides
@@ -2336,6 +2365,7 @@ passed
 passes
 passes,
 passthrough
+past
 patch,
 patches
 path
@@ -2366,6 +2396,8 @@ placement.
 placement:
 places
 plain
+point
+point,
 pointer
 pointer-events
 pointer.
@@ -2401,6 +2433,7 @@ prints
 problem
 prod).
 produced
+project
 prominent
 prop
 prop's
@@ -2410,7 +2443,6 @@ provides
 proxy
 pure
 purpose,
-put
 puts
 px-2'
 px-2',
@@ -2467,7 +2499,6 @@ red:
 reduced
 redundant
 ref
-referenced
 refuses.
 regardless
 region
@@ -2506,6 +2537,7 @@ respect
 responsive
 rest
 rests
+restyles
 result
 return
 returns
@@ -2540,11 +2572,13 @@ rounded-[var(--radius-wk-lg)]
 rounded-full
 rounds
 row
+row,
 row.
 rule
 run
 rung
 rung.
+running
 runtime
 safe.
 safe:
@@ -2569,6 +2603,7 @@ see,
 see.
 sees
 sees.
+selects,
 semantic
 semantically.
 send'),
@@ -2601,8 +2636,10 @@ show
 shown
 shown.
 shows
+shrink
 shrink-0"
 shrink-0',
+shrink-0';
 sibling
 siblings
 side
@@ -2633,6 +2670,7 @@ slot.
 slot:
 slots.
 small
+smallest
 so
 soft
 soft).
@@ -2645,6 +2683,7 @@ source
 source-baked
 space
 space).
+space.
 span
 spelled
 spelling,
@@ -2674,7 +2713,6 @@ stay
 stays
 still
 stop
-stopped
 stops
 storage/logs/laravel.log.
 strategy:
@@ -2704,6 +2742,7 @@ support,
 support;
 supposed
 surface
+surface,
 surface-color
 surface.
 surfaces
@@ -2752,6 +2791,7 @@ text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]"
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[length:var(--text-wk-2xs)]',
 text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-md)]',
@@ -2777,6 +2817,7 @@ themes.
 then
 there
 there).
+there.
 therefore
 these
 they
@@ -2863,6 +2904,7 @@ truncate">
 truthy
 truthy.
 try
+turns
 twice
 twice.
 two
@@ -2928,8 +2970,8 @@ visual
 visually
 vocabulary
 w-1.5
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5
@@ -2945,7 +2987,6 @@ wants.
 warning
 warning,
 was
-was;
 way
 way,
 ways
@@ -2970,6 +3011,8 @@ whitespace-nowrap"
 who
 whole
 whose
+wide
+widen
 widening
 width
 width)

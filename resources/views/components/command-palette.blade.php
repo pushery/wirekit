@@ -19,7 +19,7 @@
     'lockScroll' => true,
     // Addresses this palette: `wirekit-command-palette-show`, `-close` and
     // `wirekit:command-palette-state` with a `name` in their detail reach only the palette of
-    // that name. Without one they reach every palette on the page, as they always have.
+    // that name. Without one they reach every palette on the page.
     'name' => null,
     // With a `name`, answer only the events that carry it: an event without a name, which
     // reaches every palette otherwise, passes this one by. For a palette that shares a page
@@ -42,17 +42,17 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('command-palette', $attributes->getAttributes());
 
-    // Page-unique, because two palettes on one page shared this one. The id was the literal
-    // string `wk-command-list`, so the second listbox duplicated the first one's id and the
-    // second input's `aria-controls` resolved to the FIRST palette's list — a combobox
-    // pointing at somebody else's options. Neither palette showed anything wrong; the
-    // browser simply takes the first match for a duplicate id and moves on.
+    // Page-unique, so two palettes on one page do not share it. With a fixed id the second
+    // listbox would duplicate the first one's and the second input's `aria-controls` would
+    // resolve to the FIRST palette's list — a combobox pointing at somebody else's options,
+    // with neither palette showing anything wrong: the browser simply takes the first match
+    // for a duplicate id and moves on.
     $listId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-command-list-');
 
     // A caller-supplied `aria-label` names the CONTROL, not the wrapper `{{ $attributes }}`
-    // lands on. `<x-wirekit::command-palette aria-label="…">` put the name on a roleless element,
-    // so the control the user actually operates kept no accessible name at all — WCAG
-    // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
+    // lands on. On the wrapper, `<x-wirekit::command-palette aria-label="…">` would put the name
+    // on a roleless element and leave the control the user actually operates without an
+    // accessible name — WCAG 4.1.2 — while looking correct in the markup.
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     // A caller's `aria-labelledby` names the same two elements; the reference outranks a name.
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
@@ -99,19 +99,11 @@
         'focus:outline-hidden',
     ]), $scope);
 
-    // The results list was the only region here without a seam: backdrop, panel
-    // and input all take a `scope` override, the top offset is even a documented
-    // variable, and the list carried a bare fixed max-height utility.
-    //
-    // Which is deliberately DESCRIBED rather than named. Tailwind scans this
-    // file as text and does not know a PHP comment from markup, so writing the
-    // old class here would re-emit it into the compiled stylesheet — and the
-    // reverse-diff would then report a selector no source produces, pointing at
-    // a component that no longer uses it.
+    // The results list takes a seam like the backdrop, the panel and the input.
     //
     // 288px is a fine default and a poor ceiling. A palette showing ranked search
     // results wants roughly half the viewport — on a 1080p screen that is ~540px,
-    // so the fixed height nearly halves what a reader can see without scrolling.
+    // and a fixed height would nearly halve what a reader can see without scrolling.
     //
     // Both doors are open, because they answer different questions. The variable
     // is for "taller, please" and needs no build step; the resolveClasses key is
@@ -144,6 +136,11 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // The palette is teleported, or fixed where it is not, so it takes no room where it is
+    // written. Its root generates no box, which a flex or grid container would otherwise count
+    // as an empty item with a gap of its own beside it.
+    $attributes = $attributes->class(['contents']);
 @endphp
 
 <div
@@ -160,7 +157,7 @@
          `x-on:click="close()"` because it actually intercepts pointer events —
          clicks on the "whitespace" around the panel land on the container, not
          on the underlying backdrop. Without this the user can click outside
-         the panel and nothing happens. Same fix pattern as
+         the panel and nothing happens. Same pattern as
          <x-wirekit::alert-dialog> when `dismissible` is on. It listens with
          `.self`, so only a click on the container itself closes the palette;
          a click inside the panel is not stopped and reaches the document,
@@ -280,14 +277,9 @@
                         {{-- Choosing an option closes the palette. On the list rather than on the
                              option, so the option's own handlers run first. --}}
                         x-on:click="closeAfterChoice"
-                        {{-- `wk-command-list` is a MARKER CLASS, and it is documented in
-                             `public-css-api.md` as a Stable styling hook. It never existed as
-                             one: the id happened to carry the same string, and the drift guard
-                             greps templates for the literal, so a documented class contract was
-                             satisfied by an unrelated `id=`. Making the id page-unique broke
-                             the coincidence and showed the promise had no backing.
-                             The promise is kept rather than withdrawn — a developer may already
-                             be scoping overrides to it. --}}
+                        {{-- `wk-command-list` is a MARKER CLASS, documented in the public CSS
+                             API as a Stable styling hook, so a developer can scope overrides to
+                             it. The list's id is page-unique and is not that hook. --}}
                         class="wk-command-list {{ $listClasses }}"
                     >
                         {{ $slot }}
@@ -297,11 +289,11 @@
                          `role="listbox"` owns its children, and they are options; a line of
                          prose among them is a non-option child of a role that requires them,
                          which is what axe reports as `aria-required-children`. Rendered in the
-                         default slot, `<x-wirekit::command-palette.empty>` was exactly that.
+                         default slot, `<x-wirekit::command-palette.empty>` would be exactly that.
 
-                         It also announced nothing there, being a roleless <div>: the input
+                         It would also announce nothing there, being a roleless <div>: the input
                          keeps `aria-expanded="true"` and reports no active descendant, so a
-                         search that matched nothing was indistinguishable from a list the
+                         search that matched nothing would be indistinguishable from a list the
                          reader had not touched. The sub-component carries `role="status"`
                          for that half; this slot is the other half.
 

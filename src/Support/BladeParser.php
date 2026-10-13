@@ -23,6 +23,10 @@ namespace Pushery\WireKit\Support;
  * (the array literal inside `@props(...)`). BladeParser scans the
  * whole Blade file with semantic awareness of Blade's own syntax
  * (`@directive`, `{{ }}`, `{{-- --}}`, `<x-…>`).
+ *
+ * Where a pattern below carries `(?<!@)`, that is Blade's escape: `@@php` and `@@if(…)` print
+ * the directive's name rather than running it, and Blade's compiler finds a `@php` block with
+ * the same lookbehind. An escaped echo, `@{{ … }}`, prints its braces the same way.
  */
 final class BladeParser
 {
@@ -114,6 +118,13 @@ final class BladeParser
         // the detected slot list.
         $contents = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $contents);
 
+        // Blade writes `@{{ … }}` and `@{!! … !!}` as text with their braces, which is how a page
+        // shows Blade code or hands a mustache to a script: what stands in them names no slot.
+        $contents = (string) preg_replace('/@\{\{.*?\}\}|@\{!!.*?!!\}/s', '', $contents);
+
+        // The PHP comments go too, for the same reason: see withoutPhpComments().
+        $contents = self::withoutPhpComments($contents);
+
         // Collected as flag-less maps: the KEY is the name, and the value is
         // never read. Storing `true` in them invited a mutation that flips it to
         // `false` and changes nothing — a mutant no honest test can kill, since
@@ -166,7 +177,7 @@ final class BladeParser
         // a `$name->method()` there is ordinary code and may well be the only reference a slot
         // has.
         $output = (string) preg_replace_callback(
-            '/@php\b.*?@endphp/s',
+            '/(?<!@)@php\b.*?@endphp/s',
             static fn (array $m): string => (string) preg_replace('/\{\{.*?\}\}|\{!!.*?!!\}/s', '', $m[0]),
             $contents,
         );
@@ -205,7 +216,15 @@ final class BladeParser
         $phpLocals = self::extractPhpLocalsFromSource($contents);
         $loopLocals = self::extractLoopVariablesFromSource($contents);
 
-        $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals, $loopLocals, $additionalExcludes));
+        // A name read through `@aware` is a value a parent owns, never a slot of this component:
+        // `input` reads the `wkField` that `field` builds for the control it labels, and calls a
+        // method on it. Read by PropsParser, which keeps a nested default and a comment whole.
+        $awareNames = array_map(
+            static fn (array $prop): string => $prop['name'],
+            PropsParser::parseAwareSource($contents),
+        );
+
+        $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals, $loopLocals, $awareNames, $additionalExcludes));
 
         // Build the merged slot set:
         //   - Every isset-checked name → OPTIONAL.
@@ -237,6 +256,88 @@ final class BladeParser
     }
 
     /**
+     * The template with the PHP comments taken out of the places PHP is written in it: the
+     * `@php` blocks and the heads of `@props` and `@aware`.
+     *
+     * A comment there explains the code, and it names variables while doing so. Read as code,
+     * "such as `$post->likers->pluck('name')`" in `reaction` is a reference to a slot `post`, and
+     * a required one. PHP's tokenizer reads each region, so a quote, a parenthesis or a `//`
+     * inside a string or a comment is taken for what it is, and the head of `@props` ends at its
+     * own closing parenthesis even when a comment in it says "the sidebar's". A comment's line
+     * breaks stay, so the template keeps its lines.
+     */
+    private static function withoutPhpComments(string $contents): string
+    {
+        // The blocks, found the way Blade's own compiler finds them.
+        $contents = (string) preg_replace_callback(
+            '/(?<!@)@php(.*?)@endphp/s',
+            static fn (array $block): string => '@php'.self::dropPhpComments($block[1]).'@endphp',
+            $contents,
+        );
+
+        if (! preg_match_all('/^[ \t]*@(?:props|aware)\s*\(/m', $contents, $heads, PREG_OFFSET_CAPTURE)) {
+            return $contents;
+        }
+
+        // From the last head to the first, so an edit never moves an offset still to be read.
+        foreach (array_reverse($heads[0]) as [$head, $offset]) {
+            $open = $offset + strlen($head) - 1;
+            $close = self::closingParenthesis($contents, $open);
+
+            if ($close !== null) {
+                $contents = substr($contents, 0, $open + 1)
+                    .self::dropPhpComments(substr($contents, $open + 1, $close - $open - 1))
+                    .substr($contents, $close);
+            }
+        }
+
+        return $contents;
+    }
+
+    /**
+     * The offset of the parenthesis that closes the one at `$open`, as PHP's tokenizer reads the
+     * code from there, or null when none does.
+     */
+    private static function closingParenthesis(string $contents, int $open): ?int
+    {
+        $depth = 0;
+        $position = $open;
+
+        // The first token is the opening tag the tokenizer needs; it is not part of the template.
+        foreach (array_slice(token_get_all('<?php '.substr($contents, $open)), 1) as $token) {
+            $text = is_array($token) ? $token[1] : $token;
+
+            if ($text === '(') {
+                $depth++;
+            } elseif ($text === ')' && --$depth === 0) {
+                return $position;
+            }
+
+            $position += strlen($text);
+        }
+
+        return null;
+    }
+
+    /** PHP code without its comments. A comment's line breaks stay. */
+    private static function dropPhpComments(string $code): string
+    {
+        $out = '';
+
+        foreach (array_slice(token_get_all('<?php '.$code), 1) as $token) {
+            if (is_array($token) && ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT)) {
+                $out .= str_repeat("\n", substr_count($token[1], "\n"));
+
+                continue;
+            }
+
+            $out .= is_array($token) ? $token[1] : $token;
+        }
+
+        return $out;
+    }
+
+    /**
      * The parenthesized head of each named Blade directive, read with balanced parentheses.
      *
      * @param  list<string>  $directives
@@ -247,7 +348,7 @@ final class BladeParser
         $heads = [];
         $names = implode('|', array_map(fn (string $d): string => preg_quote($d, '/'), $directives));
 
-        if (! preg_match_all('/@(?:'.$names.')\s*\(/', $contents, $starts, PREG_OFFSET_CAPTURE)) {
+        if (! preg_match_all('/(?<!@)@(?:'.$names.')\s*\(/', $contents, $starts, PREG_OFFSET_CAPTURE)) {
             return $heads;
         }
 
@@ -289,9 +390,9 @@ final class BladeParser
      * `McpCatalog` (what an AI assistant reads), so an assistant asking what `otp-input` accepts
      * would be told it takes a slot called `i`.
      *
-     * Four directives bind, and all four are matched rather than only the common two: a
-     * `@forelse` that went unhandled would reintroduce the bug for exactly the components
-     * that render an empty state.
+     * Four directives bind, and all four are matched rather than only the common two: an
+     * unhandled `@forelse` would leave its variable behind as a slot for exactly the
+     * components that render an empty state.
      *
      * @return list<string>
      */
@@ -323,14 +424,14 @@ final class BladeParser
 
         // `@for($i = 0; $i < $n; $i++)` — the initializer binds; the condition and the step
         // only read, so the first clause is the one to scan.
-        if (preg_match_all('/@for\s*\((.*?);/s', $contents, $inits)) {
+        if (preg_match_all('/(?<!@)@for\s*\((.*?);/s', $contents, $inits)) {
             foreach ($inits[1] as $init) {
                 self::collectAssignmentsFrom($init, $names);
             }
         }
 
         // `@while($row = next($rows))` — an assignment in the condition binds too.
-        if (preg_match_all('/@while\s*\((.*?)\)/s', $contents, $conds)) {
+        if (preg_match_all('/(?<!@)@while\s*\((.*?)\)/s', $contents, $conds)) {
             foreach ($conds[1] as $cond) {
                 self::collectAssignmentsFrom($cond, $names);
             }
@@ -356,13 +457,13 @@ final class BladeParser
         $locals = [];
 
         // @php blocks: `@php ... @endphp`.
-        if (preg_match_all('/@php\s*(.*?)@endphp/s', $contents, $blockMatches)) {
+        if (preg_match_all('/(?<!@)@php\s*(.*?)@endphp/s', $contents, $blockMatches)) {
             foreach ($blockMatches[1] as $body) {
                 self::collectAssignmentsFrom($body, $locals);
             }
         }
         // @php(expr) inline: single statement.
-        if (preg_match_all('/@php\s*\((.*?)\)/s', $contents, $inlineMatches)) {
+        if (preg_match_all('/(?<!@)@php\s*\((.*?)\)/s', $contents, $inlineMatches)) {
             foreach ($inlineMatches[1] as $body) {
                 self::collectAssignmentsFrom($body, $locals);
             }
@@ -517,7 +618,7 @@ final class BladeParser
         // scans for, and a `{{-- @if --}}` would otherwise open a block that never closes,
         // after which the whole rest of the file reads as conditional.
         $contents = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $contents);
-        $contents = (string) preg_replace('/@php\b.*?@endphp\b/s', '', $contents);
+        $contents = (string) preg_replace('/(?<!@)@php\b.*?@endphp\b/s', '', $contents);
 
         $needle = '/\s'.preg_quote($attribute, '/').'\s*=/';
 
@@ -556,13 +657,13 @@ final class BladeParser
         $withArgs = 'if|unless|isset|switch|forelse|foreach|for|while|auth|guest|env|production'
             .'|hasSection|sectionMissing|can|cannot|canany|error|once|empty';
 
-        $opens = preg_match_all('/@('.$withArgs.')\s*\(/', $line);
+        $opens = preg_match_all('/(?<!@)@('.$withArgs.')\s*\(/', $line);
 
         // These four are valid with no argument list at all.
-        $opens += preg_match_all('/@(auth|guest|once|production)\b(?!\s*\()/', $line);
+        $opens += preg_match_all('/(?<!@)@(auth|guest|once|production)\b(?!\s*\()/', $line);
 
         $closes = preg_match_all(
-            '/@(endif|endunless|endisset|endempty|endswitch|endforelse|endforeach|endfor'
+            '/(?<!@)@(endif|endunless|endisset|endempty|endswitch|endforelse|endforeach|endfor'
             .'|endwhile|endauth|endguest|endenv|endproduction|endcan|endcannot|endcanany'
             .'|enderror|endonce)\b/',
             $line
@@ -636,7 +737,7 @@ final class BladeParser
         );
 
         return (string) preg_replace_callback(
-            '/@php\b.*?@endphp\b/s',
+            '/(?<!@)@php\b.*?@endphp\b/s',
             static function (array $m) use ($blank): string {
                 $body = $m[0];
 
@@ -709,12 +810,11 @@ final class BladeParser
      * This is the ONE tag walk. Everything in this package that needs to know where a tag
      * starts, where its attributes end, or what names it carries goes through here — the
      * usage extractor below, `wirekit:csp-audit`, `wirekit:show --validate-against`. The
-     * reason is not tidiness: the same defect has now been found three times in three
-     * hand-written scanners, because each one re-learned Blade from scratch and stopped at
-     * a different depth. A walk that lives in one place gets hardened once.
+     * reason is not tidiness: a hand-written scanner re-learns Blade from scratch and stops
+     * at its own depth, so every copy carries its own version of the same defect. A walk
+     * that lives in one place gets hardened once.
      *
-     * Two things make Blade markup harder to walk than it looks, and both were found by
-     * pointing a scanner at real templates rather than at fixtures:
+     * Two things make Blade markup harder to walk than it looks:
      *
      *   1. `>` is ordinary inside a value. `x-show="count > 3"` has one and a Blade array
      *      prop has several, so any rule that ends a tag at a `>` loses the beat and reads
@@ -944,7 +1044,7 @@ final class BladeParser
         // `@php … @endphp` is a block of PHP, where `'<svg '.$attrs.'>'` is a string and not
         // an element. Three of this package's own views build icon markup exactly that way,
         // and each one started a tag that could never close.
-        if (preg_match('/\G@php\b(?!\s*\()/i', $contents, $blockMatch, 0, $cursor) === 1) {
+        if (preg_match('/\G(?<!@)@php\b(?!\s*\()/i', $contents, $blockMatch, 0, $cursor) === 1) {
             $end = stripos($contents, '@endphp', $cursor + strlen($blockMatch[0]));
 
             return $end === false ? $length : $end + strlen('@endphp');
@@ -955,12 +1055,12 @@ final class BladeParser
         // between attributes puts one inside a tag. The parentheses are matched rather than
         // searched for, because arguments nest and carry strings of their own. An `@` NOT
         // followed by `(` is left alone: that is how `@click="…"` stays an Alpine shorthand
-        // and `@example.com` stays prose.
-        if (preg_match('/\G@[a-zA-Z][a-zA-Z0-9_]*\s*(?=\()/', $contents, $directiveMatch, 0, $cursor) === 1) {
+        // and `@example.com` stays prose. An `@` right after another is Blade's escape, so
+        // `@@include(` stays text as well.
+        if (preg_match('/\G(?<!@)@[a-zA-Z][a-zA-Z0-9_]*\s*(?=\()/', $contents, $directiveMatch, 0, $cursor) === 1) {
             // Not `?? $length`. When the argument cannot be matched the honest move is to
-            // skip nothing and let the walk read on as it always did — swallowing the rest
-            // of the file on a construct we failed to understand is the failure this whole
-            // change exists to remove, and it would be invisible.
+            // skip nothing and let the walk read on: swallowing the rest of the file on a
+            // construct the parser failed to understand would be invisible.
             return self::pastMatchingParen($contents, $cursor + strlen($directiveMatch[0]));
         }
 
@@ -1113,11 +1213,12 @@ final class BladeParser
      * Deliberately narrow: the residual echo openers, and the parenthesized directive form that
      * substitution leaves behind when it cannot close it. A bare `@` is NOT matched, because it
      * is ordinary inside a string, and over-matching here quietly downgrades a real violation to
-     * "could not check" — the one direction in which being wrong leaves no trace.
+     * "could not check" — the one direction in which being wrong leaves no trace. An escaped
+     * `@{{`, `@{!!` or `@@if(` is not matched either: Blade writes each of them as text.
      */
     public static function hasServerSideConstruct(string $value): bool
     {
-        return preg_match('/\{\{|\{!!|@[a-zA-Z][a-zA-Z0-9_]*\s*\(/u', $value) === 1;
+        return preg_match('/(?<!@)\{\{|(?<!@)\{!!|(?<!@)@[a-zA-Z][a-zA-Z0-9_]*\s*\(/u', $value) === 1;
     }
 
     /**
@@ -1456,7 +1557,7 @@ final class BladeParser
         // and only their bodies are handed to the lexer. The delimiters are kept: removing them
         // would join the text on either side into one line and could fabricate a match.
         return preg_replace_callback(
-            '/(@php\b)(.*?)(@endphp)|(<\?php)(.*?)(\?>)/s',
+            '/(?<!@)(@php\b)(.*?)(@endphp)|(<\?php)(.*?)(\?>)/s',
             static function (array $m): string {
                 $isBladeIsland = $m[1] !== '';
 

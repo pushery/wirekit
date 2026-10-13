@@ -15,9 +15,9 @@
  * a directive expression PARSES under Alpine's CSP build but does not RUN there:
  * the evaluator resolves an identifier against the Alpine scope alone, with no
  * window fallback, so naming `console` throws while BUILDING the component. That
- * takes the whole element's scope down with it — so the warning did not merely
- * vanish under a strict Content-Security-Policy, it broke the component it was
- * warning about.
+ * takes the whole element's scope down with it: under a strict
+ * Content-Security-Policy an inline warning would not merely vanish, it would
+ * break the component it warns about.
  *
  * Every call site is gated on `config('app.debug')` in Blade, so this does not
  * reach a production page in the first place.

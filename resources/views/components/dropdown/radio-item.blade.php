@@ -63,19 +63,19 @@
         'text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
         'transition-colors duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
-        // `focus-visible` + a ring, per dropdown/item.blade.php. The background
-        // alone marks nothing: dark's --color-wk-bg-subtle equals its
-        // --color-wk-bg-elevated, which is the panel this row sits on, so a
-        // focused row moved 1.00:1 with the browser ring already suppressed.
+        // `focus-visible` + a ring, per dropdown/item.blade.php. The background is
+        // the hover's shade, one step from the panel this row sits on: enough to
+        // follow the pointer, too faint to mark focus on its own, and
+        // `focus:outline-hidden` takes the browser's own ring away.
         // The same shape as `dropdown.item`: the panel's inline padding makes room for it,
         // and a focused row that stayed square would be the reported defect on a sibling.
         'rounded-[var(--radius-wk-nav-item)]',
         'focus:outline-hidden',
-        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-inset',
         'focus-visible:ring-[var(--color-wk-ring)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'cursor-pointer',
     ]), $scope);
 
@@ -94,7 +94,7 @@
         aria-checked="false"
     @endif
     @if($disabled) aria-disabled="true" @endif
-    {{ $attributes->class([$classes, $disabledClasses]) }}
+    {{ $attributes->class(['wk-touch-row', $classes, $disabledClasses]) }}
 >
     {{-- Radio indicator — an ALWAYS-visible ring (so the whole group reads as a
          radio set, not just the selected row, and stays distinct from the

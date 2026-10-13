@@ -53,11 +53,18 @@
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'focus:outline-hidden',
-        'focus:bg-[var(--color-wk-bg-subtle)]',
+        // `focus-visible` and a ring, per dropdown/item.blade.php. The background is the hover's
+        // shade, one step from the panel, too faint to say where the keyboard is on its own, and
+        // `focus:outline-hidden` takes the browser's own ring away. `focus-visible` keeps a menu
+        // opened by the pointer from painting the entry it focuses.
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-inset',
+        'focus-visible:ring-[var(--color-wk-ring)]',
         'cursor-pointer',
     ]), $scope);
 
@@ -110,8 +117,8 @@
         x-on:mouseenter="scheduleOpen()"
         x-on:mouseleave="scheduleClose()"
         x-on:keydown="onTriggerKey"
-        x-bind:class="subOpen ? 'bg-[var(--color-wk-bg-subtle)]' : ''"
-        {{ $attributes->class([$itemClasses, $disabledClasses]) }}
+        x-bind:class="subOpen ? 'bg-[var(--color-wk-bg-hover)]' : ''"
+        {{ $attributes->class(['wk-touch-row', $itemClasses, $disabledClasses]) }}
     >
         <span class="flex items-center gap-x-[var(--gap-wk-sm)]">
             @if($icon)

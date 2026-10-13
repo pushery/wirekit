@@ -13,8 +13,8 @@ use Stringable;
  *
  * Both components render their options in the browser from a JSON payload, so what this class
  * returns is exactly what reaches that payload, and a key it leaves out is absent there. An
- * option that uses none of these keys therefore normalizes to the entry it always did, down to
- * the byte, and the templates keep their plain row for a list that uses none of them.
+ * option that uses none of these keys therefore normalizes to its value and label alone, and the
+ * templates keep their plain row for a list that uses none of them.
  *
  * The keys, and why each one is spelled the way it is:
  *

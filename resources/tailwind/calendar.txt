@@ -124,7 +124,7 @@ $yearSelectId
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-heading-weight)]
 'header',
-'hover:bg-[var(--color-wk-bg-subtle)]',
+'hover:bg-[var(--color-wk-bg-hover)]',
 'hover:border-[var(--color-wk-border-strong-hover)]',
 'l'),
 'long'
@@ -210,6 +210,7 @@ $yearSelectId
 //
 />
 0
+0)"
 01-1.08
 01.02-1.06z"
 011.06.02L10
@@ -549,7 +550,6 @@ __('wirekit::Year')
 a
 abbr="{{
 abbreviation
-able
 above
 above.
 absolute
@@ -632,9 +632,7 @@ be
 be,
 be.
 because
-been
 before
-before,
 belongs
 below
 below,
@@ -659,7 +657,6 @@ break
 browser
 browser's
 browser's.
-build
 builds
 built
 but
@@ -667,8 +664,6 @@ button
 button.
 buttons
 by
-byte-identical.
-byte.
 calendar
 calendar's
 calendar,
@@ -681,7 +676,6 @@ caller's
 caller,
 can
 cannot
-capability
 carries
 carry
 case
@@ -713,6 +707,7 @@ class="w-5
 class="w-full"
 class="wk-calendar-day
 class="wk-field
+class="wk-touch-target
 class="{{
 classes
 classes.
@@ -729,7 +724,6 @@ combined
 come
 comes
 comment
-commonest
 compact
 compiles
 component
@@ -753,7 +747,6 @@ control
 control's
 control.
 controls
-convention
 convention);
 cosmetic.
 counts
@@ -767,6 +760,7 @@ data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-required-check
 data-wk-required-message
+data-wk-sr-host
 date
 date,
 date-picker
@@ -794,7 +788,6 @@ described
 design:
 desktop.
 destroys
-did
 direction
 directive:
 disabled
@@ -804,6 +797,7 @@ dispatched
 display
 dist/wirekit.css
 div
+do
 document
 does
 does;
@@ -839,8 +833,6 @@ events
 every
 exactly
 example
-existed
-exposed
 expression
 expression,
 expression.
@@ -937,7 +929,6 @@ h-5"
 had
 half
 halves
-hand-mount
 handled
 handler
 hands
@@ -961,7 +952,7 @@ hold
 holds
 honest
 house
-hover:bg-[var(--color-wk-bg-subtle)]':
+hover:bg-[var(--color-wk-bg-hover)]':
 how
 hyphens
 id
@@ -1015,6 +1006,7 @@ knowing
 label
 labels
 labels',
+land
 lands
 language
 language,
@@ -1023,6 +1015,7 @@ laptop
 last
 later
 layer
+layer.
 layout
 leads
 leave
@@ -1040,7 +1033,6 @@ live
 lives
 locale
 locale:
-longer
 looking
 lookup
 makes
@@ -1073,6 +1065,7 @@ month
 month')
 month.
 month.offset
+month.offset)"
 month/year
 monthIndex)
 monthNames"
@@ -1129,6 +1122,7 @@ number
 object
 object,
 of
+off
 on
 on.
 once
@@ -1349,7 +1343,6 @@ submitting
 such
 support
 supported
-surface
 surrounding
 synced
 tab
@@ -1422,7 +1415,6 @@ under
 undo
 undone.'),
 unknown
-unreachable,
 untestable.
 until
 up
@@ -1512,6 +1504,7 @@ x-model.number="viewYear"
 x-on:click="day.isCurrentMonth
 x-on:click="nextMonth()"
 x-on:click="prevMonth()"
+x-on:focus="followFocus(day,
 x-on:invalid="onRequiredInvalid($event)"
 x-on:mouseenter="hoverDay(day.date)"
 x-ref="hiddenEnd"

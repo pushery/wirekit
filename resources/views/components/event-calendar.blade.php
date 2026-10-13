@@ -173,13 +173,13 @@
     // keys for both of its forms, the selectable button and the plain number, so a theme restyles
     // "today" once.
     $dayNumberToday = WireKit::resolveClasses('event-calendar', 'day-number-today', 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-text-inverse)] font-[number:var(--font-wk-heading-weight)]', $scope);
-    $dayNumberSelected = WireKit::resolveClasses('event-calendar', 'day-number-selected', 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-heading-weight)]', $scope);
+    $dayNumberSelected = WireKit::resolveClasses('event-calendar', 'day-number-selected', 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-heading-weight)]', $scope);
     $dayNumberInMonth = WireKit::resolveClasses('event-calendar', 'day-number', 'text-[color:var(--color-wk-text)]', $scope);
     $dayNumberOutside = WireKit::resolveClasses('event-calendar', 'day-number-outside', 'text-[color:var(--color-wk-text-subtle)]', $scope);
-    $categoryShown = WireKit::resolveClasses('event-calendar', 'category-shown', 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]', $scope);
+    $categoryShown = WireKit::resolveClasses('event-calendar', 'category-shown', 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)]', $scope);
     $categoryHidden = WireKit::resolveClasses('event-calendar', 'category-hidden', 'text-[color:var(--color-wk-text-muted)] line-through', $scope);
 
-    $navBtn = 'inline-flex items-center justify-center h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
+    $navBtn = 'inline-flex items-center justify-center h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
     $viewTab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors';
 
     // Heading level (1-6). An invalid value is reported through the strictness gate, with a
@@ -232,7 +232,7 @@
     data-wk-day-markers="{{ \Pushery\WireKit\Support\AlpinePayload::json($markersArr) }}"
     data-wk-view="{{ $view }}"
     @if($date) data-wk-date="{{ $date }}" @endif
-    x-data="wirekitEventCalendar({ weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusTexts: {{ $eventCalendarFilterStatus }}, moreNames: {{ $eventCalendarMoreNames }}, moreWords: {{ $eventCalendarMoreWords }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
+    x-data="wirekitEventCalendar({ weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusTexts: {{ $eventCalendarFilterStatus }}, moreNames: {{ $eventCalendarMoreNames }}, moreWords: {{ $eventCalendarMoreWords }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }}, tipDelayHide: {{ (int) config('wirekit.components.tooltip.delay-hide', 100) }} })"
     @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ $ariaLabel }}"
     {{-- Delegated truncated-title tooltip: every [data-wk-tip] pill/chip/row shares
@@ -245,15 +245,15 @@
     @focusout="tipHide($event)"
     @scroll.capture.passive="tipHide()"
     @keydown.escape.window.capture="tipEscape($event)"
-    {{ $attributes->only('class')->class([$base]) }}
+    data-wk-sr-host {{ $attributes->only('class')->class([$base]) }}
 >
     {{-- Header: navigation + title + view switcher --}}
     <div class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)]">
         <div class="flex items-center gap-[var(--space-wk-sm)]">
             <div class="inline-flex items-center gap-1">
-                <button type="button" @click="prev()" aria-label="{{ __('wirekit::Previous') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg></button>
-                <button type="button" @click="today()" class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Today') }}</button>
-                <button type="button" @click="next()" aria-label="{{ __('wirekit::Next') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
+                <button type="button" @click="prev()" aria-label="{{ __('wirekit::Previous') }}" class="wk-touch-row {{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg></button>
+                <button type="button" @click="today()" class="wk-touch-row px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Today') }}</button>
+                <button type="button" @click="next()" aria-label="{{ __('wirekit::Next') }}" class="wk-touch-row {{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
             </div>
             <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"></h{{ $levelValue }}>
         </div>
@@ -267,9 +267,9 @@
             @keydown.arrow-up.prevent="viewMove(-1)">
             {{-- The checked view is a tint, which forced colors does not paint, so
                  `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
-            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button {{ $viewTab }}">{{ __('wirekit::Month') }}</button>
-            <button type="button" role="radio" data-view="week" @click="setView('week')" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button {{ $viewTab }}">{{ __('wirekit::Week') }}</button>
-            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button {{ $viewTab }}">{{ __('wirekit::Agenda') }}</button>
+            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Month') }}</button>
+            <button type="button" role="radio" data-view="week" @click="setView('week')" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Week') }}</button>
+            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Agenda') }}</button>
         </div>
     </div>
 
@@ -283,7 +283,7 @@
                  below is a tint in the weight today also has. `wk-state-button` frames both
                  under forced colors, where the tints are not painted. --}}
             <template x-for="c in categories" :key="'cat-' + c">
-                <button type="button" @click="toggleCategory(c)" :aria-pressed="isCategoryShown(c) ? 'true' : 'false'" class="wk-state-button inline-flex items-center min-h-[var(--size-wk-target-min)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="isCategoryShown(c) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryShown) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden) }}" x-text="c"></button>
+                <button type="button" @click="toggleCategory(c)" :aria-pressed="isCategoryShown(c) ? 'true' : 'false'" class="wk-state-button wk-touch-row inline-flex items-center min-h-[var(--size-wk-target-min)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="isCategoryShown(c) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryShown) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden) }}" x-text="c"></button>
             </template>
         </div>
         {{-- Outside the group on purpose: the count must still be announced when the group
@@ -298,10 +298,13 @@
                 <div class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] text-center" x-text="wd"></div>
             </template>
         </div>
+        {{-- A week is a flex row of seven equal cells rather than a grid. A cell grows with its
+             markers, which wrap in a narrow column, and WebKit kept a grid row at the height it
+             had before its window narrowed, so the month view cut the markers of its last week. --}}
         <template x-for="(week, wi) in monthWeeks" :key="wi">
-            <div class="grid grid-cols-7">
+            <div class="flex">
                 <template x-for="day in week" :key="day.date.toISOString()">
-                    <div class="min-h-[5.5rem] p-1 border-b-[length:var(--border-wk-width)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)]" :class="day.inMonth ? 'bg-[var(--color-wk-bg)]' : 'bg-[var(--color-wk-bg-subtle)]'">
+                    <div class="flex-1 basis-0 min-w-0 min-h-[5.5rem] p-1 border-b-[length:var(--border-wk-width)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)]" :class="day.inMonth ? 'bg-[var(--color-wk-bg)]' : 'bg-[var(--color-wk-bg-subtle)]'">
                         <div class="flex justify-end">
                             @if($selectableDays)
                                 {{-- The day NUMBER is the button, not the cell: the cell also holds the event pills,
@@ -309,15 +312,19 @@
                                      markup nor operable. Named with the full date, because "8" alone does not say
                                      which month it belongs to. 24px rather than the plain number's 20px: it is a
                                      target now, and the first pill sits too close for the spacing exception. --}}
-                                <button type="button" @click="selectDay(day.date)" :aria-label="longDate(day.date)" @if($dayDetail) :aria-pressed="isSelectedDay(day.date) ? 'true' : 'false'" @endif :aria-current="day.isToday ? 'date' : false" class="wk-state-button inline-flex items-center justify-center h-[var(--size-wk-target-min)] min-w-[var(--size-wk-target-min)] px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] cursor-pointer hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (isSelectedDay(day.date) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }}))" x-text="day.label"></button>
+                                <button type="button" @click="selectDay(day.date)" :aria-label="longDate(day.date)" @if($dayDetail) :aria-pressed="isSelectedDay(day.date) ? 'true' : 'false'" @endif :aria-current="day.isToday ? 'date' : false" class="wk-state-button inline-flex items-center justify-center h-[var(--size-wk-target-min)] min-w-[var(--size-wk-target-min)] px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] cursor-pointer hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (isSelectedDay(day.date) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }}))" x-text="day.label"></button>
                             @else
                                 <span class="inline-flex items-center justify-center h-5 min-w-5 px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }})" x-text="day.label"></span>
                             @endif
                         </div>
                         {{-- Day-marker band: full-width label at the top of the cell, above
-                             the event pills. blocked → muted + hatch + sr-only "unavailable". --}}
+                             the event pills. blocked → muted + hatch + sr-only "unavailable".
+                             The label wraps rather than being cut, here, in the week's all-day
+                             band and in the agenda: it is no control, so a tip on a cut label
+                             reached a pointer only, and a cell has a minimum height, not a fixed
+                             one, so a second line costs height and loses nothing. --}}
                         <template x-for="(m, mi) in day.markers" :key="day.date.toISOString()+'-m'+mi">
-                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="mt-0.5 block w-full truncate rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
+                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" class="mt-0.5 block w-full [overflow-wrap:anywhere] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
                         </template>
                         <div class="mt-0.5 space-y-0.5">
                             <template x-for="ev in day.visibleEvents" :key="ev.id">
@@ -340,7 +347,7 @@
                                          cell back. Nothing is lost to a screen
                                          reader: the button's aria-label is `eventLabel(ev)`, which
                                          spells out title, full date AND time regardless. --}}
-                                    <span x-show="pillTime(ev)" x-cloak class="max-sm:hidden shrink-0 tabular-nums text-[length:var(--text-wk-2xs)]" x-text="pillTime(ev)"></span>
+                                    <span x-show="pillTime(ev, day.date)" x-cloak class="max-sm:hidden shrink-0 tabular-nums text-[length:var(--text-wk-2xs)]" x-text="pillTime(ev, day.date)"></span>
                                 </button>
                             </template>
                             {{-- "+N more" is actionable: it jumps to the week view focused on
@@ -367,7 +374,7 @@
             <h{{ $detailLevel }} data-wk-prose-skip class="mb-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" x-text="selectedDayLabel"></h{{ $detailLevel }}>
             <div class="flex flex-col gap-[var(--gap-wk-xs)]">
                 <template x-for="ev in selectedDayEvents" :key="'dd-' + ev.id">
-                    <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="w-full flex items-center gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-md)] text-start hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                    <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="wk-touch-row w-full flex items-center gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-md)] text-start hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                         <span class="shrink-0 w-2 h-2 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventDot) }}[ev.intent || 'accent']"></span>
                         <span class="shrink-0 text-end text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums" style="width: var(--wk-agenda-time, 5rem);" x-text="ev.timeLabel"></span>
                         <span class="min-w-0 flex-1 truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
@@ -375,14 +382,14 @@
                              name (`rowLabel`) already carries every name — the stack is the sighted half of
                              that, not a second announcement. `.wk-avatar-group` is the same overlap and ring
                              the avatar group component uses. --}}
-                        <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
+                        <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" data-size="xs" class="wk-avatar-group shrink-0">
                             <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
                                 <span class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
                                     <template x-if="a.avatar"><img data-wk-prose-skip :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
                                     <span x-show="!a.avatar" x-text="a.initials"></span>
                                 </span>
                             </template>
-                            <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
+                            <template x-if="attendeeOverflow(ev) > 0"><span class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span></template>
                         </span>
                     </button>
                 </template>
@@ -392,11 +399,14 @@
     @endif
 
     {{-- ── Week view (time grid) ───────────────────────────────────── --}}
-    <div data-wk-week-view x-show="view === 'week'" x-cloak @if(filled($weekLabel)) role="region" aria-label="{{ $weekLabel }}" @endif tabindex="0" class="max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    {{-- Paper does not scroll: on paper the week prints every hour of the day. --}}
+    <div data-wk-week-view data-wk-print-expand x-show="view === 'week'" x-cloak @if(filled($weekLabel)) role="region" aria-label="{{ $weekLabel }}" @endif tabindex="0" class="max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- Sticky top region: day-name headers + the all-day band. Both pin to
              the top of the scroll region so they stay visible while the hour grid
-             scrolls underneath. --}}
-        <div class="sticky top-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
+             scrolls underneath, and the region tells the scroller how much of its top
+             it covers, so an event that takes the focus on the way up rests below it
+             (WCAG 2.4.11). --}}
+        <div data-wk-scroll-inset="top" class="sticky top-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
             {{-- Day-name headers --}}
             <div class="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
                 <div></div>
@@ -420,7 +430,7 @@
                     <div class="min-h-[1.75rem] p-0.5 space-y-0.5 border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                         {{-- Day markers first (day-level context), then all-day events. --}}
                         <template x-for="(m, mi) in day.markers" :key="'m-'+day.date.toISOString()+mi">
-                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="block w-full truncate rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
+                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" class="block w-full [overflow-wrap:anywhere] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
                         </template>
                         <template x-for="ev in day.allDay" :key="ev.id">
                             <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" class="block w-full truncate text-left px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="ev.title"></button>
@@ -464,7 +474,7 @@
                         <div class="h-[2.5rem] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></div>
                     </template>
                     {{-- Current-time line --}}
-                    <div x-show="day.isToday" x-cloak aria-hidden="true" class="absolute left-0 right-0 h-px bg-[var(--color-wk-danger)] z-10" :style="'top: ' + nowLineTop + '%'"></div>
+                    <div x-show="day.isToday" x-cloak aria-hidden="true" class="absolute left-0 right-0 h-px bg-[var(--color-wk-danger)] z-10" :style="nowLineStyle()"></div>
                     {{-- Event blocks --}}
                     <template x-for="b in day.blocks" :key="b.event.id">
                         {{-- The min-h floor keeps a block tall enough for title+time even
@@ -484,7 +494,7 @@
                              background ($eventClasses) is an OPAQUE color-mix over
                              var(--color-wk-bg), so the hour gridlines do not show THROUGH
                              the block. --}}
-                        <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="blockTip(b)" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="'top:calc('+b.top+'% + 2px); height:calc('+b.height+'% - 5px); left:calc('+b.left+'% + 2px); width:calc('+b.width+'% - 4px)'" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                        <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="blockTip(b)" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="blockStyle(b)" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span class="block font-[number:var(--font-wk-heading-weight)] leading-[var(--leading-wk-tight)] truncate" x-text="b.event.title"></span>
                             {{-- Secondary line: a smaller (2xs) tight time so the title
                                  leads and the two lines sit close in the compact block. --}}
@@ -517,15 +527,15 @@
                      marker: the label leads and the type follows in parentheses.
                      The type is shown as text; blocked adds an sr-only "unavailable". --}}
                 <template x-for="(m, mi) in day.markers" :key="'am-'+day.date.toISOString()+mi">
-                    <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="mb-1 flex items-center gap-[var(--space-wk-sm)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)]">
-                        <span class="min-w-0 flex-1 truncate"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span></span>
+                    <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" class="mb-1 flex items-center gap-[var(--space-wk-sm)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)]">
+                        <span class="min-w-0 flex-1 [overflow-wrap:anywhere]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span></span>
                         <span class="shrink-0 text-[length:var(--text-wk-xs)]" :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="'(' + m.type + ')'"></span>
                         <span x-show="m.blocked" class="sr-only">{{ __('wirekit::unavailable') }}</span>
                     </div>
                 </template>
                 <div class="space-y-1">
                     <template x-for="ev in day.events" :key="ev.id">
-                        <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="w-full flex items-center gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-sm)] py-1 rounded-[var(--radius-wk-md)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                        <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="wk-touch-row w-full flex items-center gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-sm)] py-1 rounded-[var(--radius-wk-md)] text-left hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span class="shrink-0 w-2 h-2 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventDot) }}[ev.intent || 'accent']"></span>
                             {{-- Time column: right-aligned + tabular-nums so the colon and
                                  the AM/PM stack into vertical columns. Width is SHARED and
@@ -541,14 +551,14 @@
                                  name (`rowLabel`) already carries every name — the stack is the sighted half of
                                  that, not a second announcement. `.wk-avatar-group` is the same overlap and ring
                                  the avatar group component uses. --}}
-                            <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
+                            <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" data-size="xs" class="wk-avatar-group shrink-0">
                                 <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
                                     <span class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
                                         <template x-if="a.avatar"><img data-wk-prose-skip :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
                                         <span x-show="!a.avatar" x-text="a.initials"></span>
                                     </span>
                                 </template>
-                                <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
+                                <template x-if="attendeeOverflow(ev) > 0"><span class="inline-flex items-center justify-center shrink-0 w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span></template>
                             </span>
                         </button>
                     </template>
@@ -577,5 +587,5 @@
          the Blade component itself can't wrap client-side x-for nodes. aria-hidden:
          every target's aria-label already carries the full text, so a described-by
          bubble would double-announce. --}}
-    <div x-ref="tip" x-show="tipOpen" x-cloak aria-hidden="true" x-text="tipText" class="fixed w-max z-[var(--z-wk-tooltip)] max-w-[var(--size-wk-tooltip-max)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] rounded-[var(--radius-wk-sm)] shadow-[var(--shadow-wk-md)] pointer-events-none"></div>
+    <div x-ref="tip" x-show="tipOpen" x-cloak aria-hidden="true" x-text="tipText" class="wk-tooltip-panel fixed w-max z-[var(--z-wk-tooltip)] max-w-[var(--size-wk-tooltip-max)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] rounded-[var(--radius-wk-sm)] shadow-[var(--shadow-wk-md)]"></div>
 </div>

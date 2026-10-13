@@ -7,8 +7,8 @@
  * `role="menu"` positioned beside the parent via Floating UI.
  *
  * This factory is purely additive — a flat menu without a
- * `<x-wirekit::*.submenu>` never instantiates it, so existing menus are
- * unchanged. It is nested inside its parent menu's x-data, so its
+ * `<x-wirekit::*.submenu>` never instantiates it, so such a menu is
+ * untouched by it. It is nested inside its parent menu's x-data, so its
  * expressions can read the parent scope (e.g. `open` on dropdown /
  * context-menu) for the close-on-parent-close reset.
  *
@@ -23,13 +23,13 @@
  *     Space activates the focused row. These keys stopPropagation so the parent
  *     menu's handler does not also act on them.
  *
- * WHY THE LAST TWO ARE STATED AS PART OF THE MODEL RATHER THAN AS EXTRAS: a
- * submenu panel is a `role="menu"`, and the pattern asks type-ahead of every
- * one. They were missing here, and missing keys do not fall on the floor — the
- * panel is an ordinary descendant of the parent menu's own keydown handler, so
- * they bubbled into it. That handler filters submenu rows out of its list by
- * construction, so it searched the PARENT level and focused a parent row: one
- * letter and the reader was lifted out of the level they were reading.
+ * Why the last two are part of the model rather than extras: a submenu panel
+ * is a `role="menu"`, and the pattern asks type-ahead of every one. And a key
+ * this level does not handle does not fall on the floor: the panel is an
+ * ordinary descendant of the parent menu's own keydown handler, so the key
+ * would bubble into it, and that handler filters submenu rows out of its list
+ * by construction. It would search the PARENT level and focus a parent row:
+ * one letter, and the reader would be lifted out of the level they were reading.
  *
  * Lifecycle resources held on `this` (released in destroy()):
  *   - `_closeTimer` — the hover-out close setTimeout. Cleared on teardown so a
@@ -201,13 +201,13 @@ export default function wirekitSubmenu(config = {}) {
                  * The pointer leaving is a statement about the pointer, and the two devices
                  * are independent: a keyboard user opens the flyout with ArrowRight, starts
                  * arrowing through it, and the mouse is wherever it was left — often not on
-                 * the trigger, because it never had to be. The hover-out then fired and hid
-                 * the panel under their focus. `x-show` sets `display: none`, and focus on a
-                 * hidden element is dropped to `<body>`, so the next Tab restarted at the
-                 * top of the page.
+                 * the trigger, because it never had to be. Without this check the hover-out
+                 * would fire and hide the panel under their focus. `x-show` sets
+                 * `display: none`, and focus on a hidden element is dropped to `<body>`, so
+                 * the next Tab would restart at the top of the page.
                  *
-                 * Nothing reported it: the menu is in a valid state afterwards, the focus is
-                 * in a valid place, and only the reader knows they were somewhere else.
+                 * Nothing would report it: the menu is in a valid state afterwards, the focus
+                 * is in a valid place, and only the reader knows they were somewhere else.
                  */
                 if (this._focusIsInsideThePanel()) {
                     return;
@@ -306,7 +306,7 @@ export default function wirekitSubmenu(config = {}) {
                     break;
 
                 case ' ':
-                    // SPACE ACTIVATES THE FOCUSED ROW, and it needs its own case ahead of the
+                    // Space activates the focused row, and it needs its own case ahead of the
                     // type-ahead branch below — a space is a printable character one byte
                     // long, so without this it would be buffered as a search term and its
                     // preventDefault() would suppress the native activation a <button> row
@@ -316,8 +316,7 @@ export default function wirekitSubmenu(config = {}) {
                     // because the rows are not all buttons: `dropdown.item` renders an <a>
                     // whenever it is given an href, and Space on a focused link does not
                     // activate it — it scrolls the page, behind an open menu. One synthetic
-                    // click covers both tags. This is the parent level's own answer, applied
-                    // at the level that never received it.
+                    // click covers both tags, as it does at the parent level.
                     //
                     // Nothing focused means nothing to activate: break WITHOUT preventDefault
                     // so the key keeps whatever meaning it had.
@@ -332,10 +331,10 @@ export default function wirekitSubmenu(config = {}) {
                     // TYPE-AHEAD, and stopping it here is the point rather than a detail. An
                     // unhandled key does not stop at this panel: the panel is an ordinary
                     // descendant of the parent menu's keydown handler, and that handler
-                    // filters submenu rows out of its own list — so it searched the parent
-                    // level and focused a parent row, lifting the reader out of the submenu
-                    // for a keystroke they aimed inside it. When no parent label matched, its
-                    // preventDefault() swallowed the key regardless.
+                    // filters submenu rows out of its own list — so it would search the
+                    // parent level and focus a parent row, lifting the reader out of the
+                    // submenu for a keystroke they aimed inside it, and where no parent label
+                    // matched, its preventDefault() would swallow the key regardless.
                     //
                     // Single printable characters only. A modifier means the reader is
                     // reaching for a browser or OS shortcut, and swallowing those is how a
@@ -403,11 +402,11 @@ export default function wirekitSubmenu(config = {}) {
 
             // All three row roles, because a submenu panel holds the same rows its parent
             // does: `dropdown.radio-item` and `dropdown.checkbox-item` render
-            // `menuitemradio` and `menuitemcheckbox`. Asking for `menuitem` alone returned an
-            // EMPTY list for a submenu built from them — and an empty list makes the key
-            // handler return before it does anything, so every key, arrow keys included, fell
-            // through to the level above. The parent collector learned this already; this is
-            // the same lesson one level down.
+            // `menuitemradio` and `menuitemcheckbox`. Asking for `menuitem` alone would return
+            // an EMPTY list for a submenu built from them, and an empty list makes the key
+            // handler return before it does anything, so every key, arrow keys included,
+            // would fall through to the level above. The parent collector asks for the same
+            // three roles.
             return [...panel.querySelectorAll(
                 '[role="menuitem"]:not([aria-disabled="true"]),'
                 + '[role="menuitemradio"]:not([aria-disabled="true"]),'

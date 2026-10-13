@@ -97,6 +97,17 @@
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
+    // The drawer's name comes from `label`, from `aria-label` or from the title in its header, whose
+    // id the panel's aria-labelledby names; only `drawer.header` puts that id on an element. Without
+    // any of them the reference points at nothing, which per ARIA leaves the dialog with no name.
+    // Reported through strict validation, as a modal reports it: an exception in a test or a console
+    // run, a log line in a request.
+    if (! filled($label) && ! filled($callerLabel) && ! str_contains((string) $slot, 'data-wk-drawer-title')) {
+        WireKit::validateProp('drawer', 'label', '', [
+            'a non-empty label, or an <x-wirekit::drawer.header> to name the dialog',
+        ]);
+    }
+
     $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-drawer '.WireKit::resolveClasses('drawer', 'backdrop', implode(' ', [
         'fixed inset-0',
         'z-[var(--z-wk-drawer)]',
@@ -116,6 +127,10 @@
         'shadow-[var(--shadow-wk-lg)]',
         'overflow-y-auto',
         'flex flex-col',
+        // A typed token with no break point, an email address or a URL, breaks rather than being
+        // cut off at the panel's edge. Inherited by everything inside; `break-word` leaves every
+        // min-content width alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
     ]), $scope);
 
     // Position classes — inset positioning per side
@@ -179,6 +194,11 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // The drawer is teleported, so nothing of it shows where it is written. Its root generates no
+    // box, which a flex or grid container would otherwise count as an empty item with a gap of
+    // its own beside it.
+    $attributes = $attributes->class(['contents']);
 @endphp
 
 {{-- Drawer component — slides in from the edge of the screen.
@@ -254,4 +274,9 @@
             </div>
         </div>
     </template>
+
+    {{-- The dialog the question about discarded changes is asked in, when the drawer asks one. --}}
+    @if($discardQuestionText !== null)
+        @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope])
+    @endif
 </div>

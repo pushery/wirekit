@@ -77,6 +77,31 @@ export default function wirekitToast(config = {}) {
         /** Max visible toasts (oldest removed when exceeded) */
         _max: config.max ?? 5,
 
+        /** The edge of the viewport the region stands at, `top` or `bottom`. */
+        _edge: config.edge === 'bottom' ? 'bottom' : 'top',
+
+        /**
+         * The edge the stack moved to while the element with the keyboard focus stands where the
+         * stack would hide it, or null while it stands at its own edge (`_yieldTo()`).
+         */
+        yieldedTo: null,
+
+        _onPageFocus: null,
+
+        /**
+         * The edge the region covers while it shows a toast, for `data-wk-scroll-inset`: the page then
+         * scrolls an element that takes the focus out from under the stack (WCAG 2.4.11). An empty
+         * region covers nothing, so it takes no room from the page's `scroll-padding`.
+         */
+        get scrollInset() {
+            return this.toasts.length > 0 ? (this.yieldedTo ?? this._edge) : null;
+        },
+
+        /** The edge the stack moved to, for `data-wk-toast-yield`, while it shows a toast. */
+        get yieldEdge() {
+            return this.toasts.length > 0 ? this.yieldedTo : null;
+        },
+
         /** Default auto-dismiss duration in ms */
         _duration: config.duration ?? 5000,
 
@@ -122,10 +147,20 @@ export default function wirekitToast(config = {}) {
                 this.add(event.detail);
             };
             window.addEventListener(this._eventName, this._handler);
+
+            // An element that takes the focus at the very top or bottom of the page, where no
+            // scroll brings it out from under the stack, must not be hidden by it (WCAG 2.4.11).
+            this._onPageFocus = (event) => this._yieldTo(event.target);
+            if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+                document.addEventListener('focusin', this._onPageFocus);
+            }
         },
 
         destroy() {
             window.removeEventListener(this._eventName, this._handler);
+            if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
+                document.removeEventListener('focusin', this._onPageFocus);
+            }
             // Clear all pending timers
             this.toasts.forEach((t) => {
                 if (t._timer) clearTimeout(t._timer);
@@ -188,6 +223,10 @@ export default function wirekitToast(config = {}) {
 
             this.toasts.push(toast);
             this._announce(toast);
+
+            // A toast that arrives over the element that has the focus moves off it, as one would
+            // that the focus moved under.
+            this._yieldTo(typeof document !== 'undefined' ? document.activeElement : null);
 
             // Enforce max queue length — remove oldest.
             //
@@ -257,6 +296,46 @@ export default function wirekitToast(config = {}) {
         },
 
         /**
+         * Move the stack off an element that has the focus under it, and back once the focus is
+         * elsewhere.
+         *
+         * Read after the page has brought the element into view, which WebKit does in the frame
+         * after the focus. The region's band (`scrollInset`) brings most elements clear of the
+         * stack; only one the page cannot scroll any further, at its very top or bottom, still lies
+         * under it. The stack then stands at the other edge until an element takes the focus that
+         * the stack's own edge would leave visible, or until its last toast goes.
+         *
+         * @param {EventTarget|null} target
+         */
+        _yieldTo(target) {
+            const root = region(this);
+
+            if (! root || ! target || typeof target.getBoundingClientRect !== 'function' || root.contains(target)) {
+                return;
+            }
+
+            const frame = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => fn();
+
+            frame(() => frame(() => {
+                const stack = this.toasts.length > 0 ? stackBox(root) : null;
+
+                if (! stack) {
+                    this.yieldedTo = null;
+
+                    return;
+                }
+
+                const box = target.getBoundingClientRect();
+
+                if (within(box, stack)) {
+                    this.yieldedTo = (this.yieldedTo ?? this._edge) === 'top' ? 'bottom' : 'top';
+                } else if (this.yieldedTo !== null && ! within(box, mirrored(stack, window.innerHeight))) {
+                    this.yieldedTo = null;
+                }
+            }));
+        },
+
+        /**
          * Remove a toast by ID.
          *
          * The dismiss button lives inside the `x-for`, so removing a toast
@@ -269,8 +348,8 @@ export default function wirekitToast(config = {}) {
          *
          * Only the KEYBOARD path is touched. Focus is looked at first and left
          * alone unless it sits inside the toast being removed — so an auto-
-         * dismiss, a hover dismiss, and a programmatic `remove()` all behave
-         * exactly as before. (The timer path cannot fire on a focused toast
+         * dismiss, a hover dismiss, and a programmatic `remove()` leave the
+         * focus where it is. (The timer path cannot fire on a focused toast
          * anyway: `focusin` pauses it.)
          *
          * @param {number} id
@@ -403,4 +482,48 @@ export default function wirekitToast(config = {}) {
         },
 
     };
+}
+
+/**
+ * The box the visible cards of a region cover, or null while it shows none.
+ *
+ * @param {Element} root
+ * @returns {{left: number, top: number, right: number, bottom: number}|null}
+ */
+function stackBox(root) {
+    let box = null;
+
+    for (const card of root.querySelectorAll('[data-wk-toast-id]')) {
+        const r = card.getBoundingClientRect();
+
+        if (r.width === 0 || r.height === 0) {
+            continue;
+        }
+
+        box = box
+            ? { left: Math.min(box.left, r.left), top: Math.min(box.top, r.top), right: Math.max(box.right, r.right), bottom: Math.max(box.bottom, r.bottom) }
+            : { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    }
+
+    return box;
+}
+
+/**
+ * Whether a box lies entirely inside another one.
+ *
+ * @param {{left: number, top: number, right: number, bottom: number}} inner
+ * @param {{left: number, top: number, right: number, bottom: number}} outer
+ */
+function within(inner, outer) {
+    return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom;
+}
+
+/**
+ * The same box at the other edge of the viewport.
+ *
+ * @param {{left: number, top: number, right: number, bottom: number}} box
+ * @param {number} viewportHeight
+ */
+function mirrored(box, viewportHeight) {
+    return { left: box.left, right: box.right, top: viewportHeight - box.bottom, bottom: viewportHeight - box.top };
 }

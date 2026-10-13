@@ -7,6 +7,10 @@
     'accent' => false,
     'tracking' => 'normal',
     'break' => null,        // where an unbroken name may wrap: normal | anywhere | all. null → the default rules, no class
+    // Shrinks the heading from its size down to a floor so it takes the fewest lines the floor
+    // needs: true for the `--text-wk-fit-floor` token, a length such as `0.75em` for a floor of its
+    // own, null or false for none.
+    'fit' => null,
     'as' => null,
     'scope' => null,
 ])
@@ -24,6 +28,7 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $accent = BooleanProp::from($accent, false);
+    $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'heading');
 
     // Determine the HTML heading level (h1–h6).
     //
@@ -50,11 +55,11 @@
         default => 'xl',
     };
 
-    // extend the heading size scale.
-    //   - md accepted as an alias for base (rest of the kit uses md as
-    //     the canonical middle tier — heading was the outlier).
-    //   - 4xl and 5xl added so hero copy can use the standard hero
-    //     scale designers copy from external typography systems.
+    // The heading size scale:
+    //   - md is an alias of base, the name the rest of the kit gives its
+    //     middle tier.
+    //   - 4xl and 5xl are the hero scale designers copy from external
+    //     typography systems.
     $sizeClasses = match (WireKit::validateProp('heading', 'size', $resolvedSize, ['sm', 'md', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'])) {
         'sm' => 'text-[length:var(--text-wk-sm)]',
         'md', 'base' => 'text-[length:var(--text-wk-md)]',
@@ -98,9 +103,15 @@
         $breakClasses,
         $colorClasses,
     ]), $scope);
+
+    // The fitted text stands inside the heading, so the heading's size is the largest it takes.
+    $fitted = $fitFloor === false ? null : \Pushery\WireKit\Support\FitText::box(
+        $slot,
+        new \Illuminate\View\ComponentAttributeBag(array_filter(['style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null])),
+    );
 @endphp
 
 {{-- The slot sits against both tags. A line break and an indent around it are part of the
      element's content, and a caller who keeps a user's own line breaks with `white-space`
      set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one. --}}
-<{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</{{ $tag }}>
+<{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $fitted ?? $slot }}</{{ $tag }}>

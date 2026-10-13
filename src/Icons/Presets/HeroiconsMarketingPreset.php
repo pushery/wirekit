@@ -21,24 +21,21 @@ use Pushery\WireKit\Contracts\IconPreset;
  *
  *     'presets' => ['heroicons', 'heroicons-marketing'],
  *
- * Aliases here have zero overlap with the base preset — verified by an
- * anti-drift test in IconSystemTest.
+ * Aliases here have zero overlap with the base preset.
  *
  * @see https://heroicons.com
  */
 final class HeroiconsMarketingPreset implements IconPreset
 {
-    // `chart-bar` was here and moved to the BASE vocabulary, where it belongs: an
-    // extension ADDS words, it does not redefine them. While this preset owned the name it
-    // meant `chart-bar-square` on Heroicons and nothing at all on the other three families
-    // — so the one property a shared alias has to keep, that it means the same thing
-    // whichever preset you install, was the property it did not have.
+    // An extension ADDS words, it does not redefine them. A shared alias such as `chart-bar`
+    // belongs to the BASE vocabulary, where it means the same thing whichever preset you
+    // install; declared here it would mean `chart-bar-square` on Heroicons and nothing at all
+    // on the other three families.
     public function icons(): array
     {
         return [
             // Energy & motion
-            // `bolt` promoted to the base presets in v2.12.0 — removed here to
-            // keep the marketing extension non-overlapping with the base set.
+            // `bolt` is a base word, so it is not declared here.
             'cursor-arrow-rays' => 'heroicon-m-cursor-arrow-rays',
 
             // Time & metrics
@@ -46,7 +43,7 @@ final class HeroiconsMarketingPreset implements IconPreset
             // vocabulary rule doing its job. Lucide, phosphor and tabler all draw an
             // EKG trace for this word; heroicons has no waveform glyph at all — its
             // nearest neighbor is `arrow-path-rounded-square`, a two-arrow refresh
-            // cycle. Promoting it would have made one word mean "live signal" on three
+            // cycle. In the base presets one word would mean "live signal" on three
             // sets and "repeat" on the fourth, which is the silent iconography change
             // the rule exists to prevent. Heroicons-only, it means one thing.
             'pulse' => 'heroicon-m-arrow-path-rounded-square',
@@ -55,29 +52,18 @@ final class HeroiconsMarketingPreset implements IconPreset
             'cube-transparent' => 'heroicon-m-cube-transparent',
 
             // Branding & creative
-            // `paint-brush` promoted to the base presets and removed here, the same way
-            // `bolt`, `shield` and `users` went. Leaving it declared in both is not an
-            // option: `marketing preset has zero alias overlap with base preset` forbids
-            // it. The word does not leave the vocabulary — it moves into `base`, where
-            // the vocabulary baseline still carries it, so every documented configuration
-            // still resolves it and this is additive rather than breaking.
+            // `paint-brush` is a base word, so it is not declared here; the base presets
+            // resolve it in every documented configuration.
             // `cursor-arrow-rays` stays below: that is heroicons' spelling of its own
-            // glyph, and the concept went up as `click` instead.
+            // glyph, and the concept is the base word `click`.
 
             // Trust & security
-            // `shield` / `shield-check` promoted to the base presets in v2.12.0 —
-            // removed here to keep the marketing extension non-overlapping.
+            // `shield` and `shield-check` are base words, so they are not declared here.
 
             // Audience
-            // (`globe` moved to the base preset in v2.6.4. `live` moved there too and this
-            // line kept saying it stayed — there is no `live` entry in this file, and all four
-            // base presets define one.)
-            // `users` moved to the BASE preset in v2.24.0 and is removed here, so a
-            // stacked setup does not define it twice. Same glyph either way
-            // (`heroicon-m-users`), so nothing a caller renders changes — this is
-            // the same promotion `copy`, `globe`, `book` and `lightbulb` went
-            // through in v2.6.4, for the same reason: managing accounts is not a
-            // marketing concept, it is what every signed-in application has.
+            // `globe`, `live` and `users` are base words, so they are not declared here:
+            // managing accounts is not a marketing concept, it is what every signed-in
+            // application has.
 
             // Developer / product
 
@@ -85,8 +71,7 @@ final class HeroiconsMarketingPreset implements IconPreset
 
             // Marketing-copy semantic aliases. Names map to landing-page
             // bullet copy ("live status", "AI feature", "open source") rather
-            // than to the underlying icon name. Anti-collision verified by
-            // IconSystemTest — none of these shadow a base alias.
+            // than to the underlying icon name. None of these shadow a base alias.
             'a11y' => 'heroicon-m-finger-print',
             'sparkle' => 'heroicon-m-sparkles',
             'ai' => 'heroicon-m-cpu-chip',

@@ -72,6 +72,7 @@ $uid
 180°
 24
 24"
+44x44
 7.5-7.5-7.5"
 8.25-7.5
 :
@@ -167,14 +168,17 @@ WireKit::resolveClasses('collapsible',
 `aria-controls`
 `aria-label`
 `aria-labelledby`
+`data-wk-touch`
 `el.id`,
 `hidden="until-found"`
+`pointer:
 `prop="false"`
 `resolveClasses()`,
 `stableId()`
 `stack
 `wk-`
 `wk-collapsible`
+`wk-touch-target`,
 `x-cloak`
 `x-collapse`
 `x-collapse`,
@@ -184,6 +188,7 @@ WireKit::resolveClasses('collapsible',
 a
 about
 above.
+accordion's
 across
 after
 against
@@ -213,6 +218,7 @@ bag
 bag.
 bare
 base
+because
 belongs
 below
 below.
@@ -223,6 +229,7 @@ block
 block,
 both
 box
+box,
 box.
 breathed
 browser's
@@ -236,10 +243,12 @@ caller-supplied
 cannot
 card
 cards)
+carried
 carries
 case
 case).
 cast
+centers
 change
 chevron
 chrome
@@ -247,11 +256,13 @@ clamp
 class
 class="flex-1
 class="w-4
+class="wk-collapsible-trigger
 class="{{
 client-only
 clone
 closed
 closes
+coarse`
 collapsible
 collapsing
 compiles
@@ -284,6 +295,7 @@ each
 either.
 element
 elements
+ends
 engine
 event
 every
@@ -301,6 +313,8 @@ first,
 flags
 flashes
 flips
+floor
+floors
 focus
 follow
 font-[number:var(--font-wk-body-weight)]',
@@ -309,6 +323,7 @@ found
 frames.
 from
 full-catalog
+full-width
 gap
 gap-[var(--padding-wk-x-sm)]
 gap="sm"`
@@ -320,6 +335,7 @@ had
 hands
 has
 hash
+header.
 height
 height,
 heights
@@ -380,6 +396,7 @@ looking
 lookup
 makes
 marker
+marker,
 match
 match,
 matches
@@ -430,6 +447,7 @@ otherwise
 our
 outside
 over-spacing
+override
 own
 own.
 owns,
@@ -456,6 +474,7 @@ pt-[var(--padding-wk-y-lg)]
 put
 qualified:
 random
+rather
 reach
 read
 readable
@@ -467,6 +486,7 @@ region
 region).
 region.
 registers.
+remove
 renders
 renders,
 renders.
@@ -483,15 +503,19 @@ root,
 root.
 rotates
 round
+row
+row:
 rows,
 rules
 same
 scoped
+seam
 second
 seeded
 server
 server-rendered
 share
+short.
 shrink-0
 silently.
 since
@@ -507,6 +531,7 @@ standalone
 state
 state.
 state;
+stay
 stays
 still
 stops
@@ -516,15 +541,19 @@ stroke-linecap="round"
 stroke-linejoin="round"
 stroke-width="2"
 stroke="currentColor"
+stylesheet
 supports
 surface
+surface,
 survive
 switch
 takes
 taking
+target
 template
 text-[color:var(--color-wk-text)]',
 text-left',
+than
 that
 the
 their
@@ -537,6 +566,7 @@ through
 to
 token
 top
+touch
 transition
 transition-transform
 treat
@@ -577,6 +607,7 @@ while
 wire:model
 with
 without
+wk-collapsible-trigger
 works
 would
 wrapper,

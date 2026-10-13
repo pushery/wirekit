@@ -250,7 +250,6 @@ __DIR__.'/../../fonts/'.$preset->cssFile;
 `<link
 `<style>`
 `@wirekitStyles`
-`FontSystemTest`
 `VT323-Regular.woff2`),
 `composer
 `crossorigin`
@@ -266,7 +265,6 @@ __DIR__.'/../../fonts/'.$preset->cssFile;
 `}`
 a
 about
-above
 above,
 action
 activated
@@ -309,7 +307,6 @@ back
 baked
 bandwidth
 be
-beats
 because
 before
 being
@@ -378,7 +375,6 @@ decode
 deep:
 default
 default.
-delete
 deliberate
 developer
 developer's
@@ -389,7 +385,6 @@ differently-keyed
 direction
 directive
 directive,
-directly
 dirname($preset->publishedCssPath()).'/'.basename($m[1]);
 disagree.
 discard
@@ -426,7 +421,6 @@ exactly
 exception,
 exists
 exists,
-explaining
 explicitly
 face
 face,
@@ -439,7 +433,6 @@ fallback
 fallbacks
 falls
 false;
-families
 family
 fast
 faster.
@@ -480,12 +473,10 @@ four
 from
 from:
 function
-gains
 generated
 generator.
 gets
 given
-got
 gradual
 guessed
 hand,
@@ -544,7 +535,6 @@ leave
 left
 lets
 like
-line.
 list
 literal
 live
@@ -579,7 +569,6 @@ narrowed
 narrowing
 navigation,
 needs
-neither.
 never
 new
 no
@@ -589,7 +578,6 @@ nonce="{{
 nonced
 none
 not
-not,
 nothing
 nothing.
 nowhere.
@@ -633,7 +621,6 @@ page's
 page,
 painted
 paints
-paragraph
 parse
 parses
 pass
@@ -643,7 +630,6 @@ path,
 paying
 per
 php
-pins
 placing
 plain
 point.
@@ -710,9 +696,7 @@ rule.
 safe
 same
 same-origin
-sat
 say
-says
 screen,
 scripts,
 second
@@ -740,7 +724,6 @@ soften
 someone
 something
 specificity,
-split,
 src:
 stack
 stand-in
@@ -765,7 +748,6 @@ surface
 swap
 system
 tells
-test
 text
 than
 that
@@ -798,7 +780,6 @@ trips
 true
 trusting
 turn
-twenty-one
 two
 type="font/woff2"
 typography
@@ -843,7 +824,6 @@ whichever
 while
 whole
 whose
-why
 win,
 wirekit.fonts.display
 wirekit:publish-fonts

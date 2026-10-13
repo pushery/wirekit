@@ -32,7 +32,7 @@
         'rounded-[var(--radius-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
@@ -69,7 +69,7 @@
         aria-haspopup="menu"
         role="menuitem"
         data-wk-menubar-trigger="{{ $name }}"
-        class="{{ $triggerClasses }}"
+        class="wk-touch-row {{ $triggerClasses }}"
     >
         {{ $label }}
     </button>

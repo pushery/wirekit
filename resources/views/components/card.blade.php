@@ -14,7 +14,7 @@
     // links or runs an action.
     'chevron' => false,
     // Optional reveal animation when card scrolls into view. One of 11 base presets
-    // (or any -in / -out variant). Null = no animation (default, v1.5.0-identical).
+    // (or any -in / -out variant). Null = no animation (default).
     'animateIn' => null,
     // What the card does with a child that reaches past its box. The default clips,
     // which is what makes the rounded corners cut the content inside them — but it
@@ -75,6 +75,10 @@
 
     // Base classes: radius, overflow, transition for interactive cards
     $baseClasses = WireKit::resolveClasses('card', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-lg)]',
@@ -85,12 +89,11 @@
     ]), $scope);
 
     // accept `outline` AND `outlined` for the bordered-only treatment.
-    // Button uses `surface="outline"` (no trailing -d); card
-    // historically used `variant="outlined"` (with trailing -d). Same
-    // visual concept, different vocabulary — the alias here exists for
-    // muscle-memory parity across the two components. The canonical
-    // spelling stays `outlined` for card so existing developer code
-    // keeps working.
+    // Button uses `surface="outline"` (no trailing -d); card takes
+    // `variant="outlined"` (with trailing -d). Same visual concept,
+    // different vocabulary — the alias here gives the two components the
+    // same word. Card's own spelling stays `outlined`, so code written
+    // against it keeps working.
     // `surface` first: it is the name the kit's vocabulary is moving to, and a call site that
     // sets both is half migrated. Preferring the older name there would make that call site
     // look finished to whoever is doing the migration.

@@ -17,6 +17,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('hover-card', $attributes->getAttributes());
 
+    // The three stand in the x-data object as bare numbers, so each is read as a number first:
+    // text written there unquoted would run as an expression. One that holds no number takes the
+    // prop's default.
+    $offset = \Pushery\WireKit\Support\NumericProp::from($offset, 8);
+    $delayShow = \Pushery\WireKit\Support\NumericProp::from($delayShow, 300);
+    $delayHide = \Pushery\WireKit\Support\NumericProp::from($delayHide, 200);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@keydown.escape.window.capture']);

@@ -72,7 +72,9 @@
     };
 @endphp
 
+{{-- `data-wk-print-expand`: paper does not scroll, so on paper this box grows to all it holds. --}}
 <main
+    data-wk-print-expand
     @if($id !== null) id="{{ $id }}" tabindex="-1" @endif
     {{ $attributes->class([$classes, $paddingClasses]) }}
 >

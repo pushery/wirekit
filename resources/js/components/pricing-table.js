@@ -22,7 +22,7 @@ import { watchCurrent } from '../utils/watch-current.js';
  *     into a dead one.
  *   - _modelEvents — `change` and `blur` on the hidden input for `wire:model.change` and
  *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change` with
- *     every interval chosen, as before, and `blur` when the reader leaves the toggle.
+ *     every interval chosen, and `blur` when the reader leaves the toggle.
  *   - _stopFormReset — the listener that puts the starting interval back when the form is reset
  *     (utils/form-reset.js).
  *
@@ -59,7 +59,7 @@ export default function wirekitPricingTable(config = {}) {
             // server does not drive would start on no interval at all.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
-            // here, but `test-server-value-seed.mjs` constructs this factory with a
+            // here, but a unit harness can construct this factory with a
             // barren stub that answers `getAttribute` and nothing else, or nothing at
             // all, and a factory needing more than it uses turns that into a TypeError
             // at init.

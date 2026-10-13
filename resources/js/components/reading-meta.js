@@ -1,10 +1,10 @@
 /**
  * Reading meta — how long the article takes, and how much of it is left.
  *
- * The inline `x-data` did not parse under Alpine's CSP build (method shorthand,
- * arrow callbacks, spread, template-free but multi-statement bodies), so under a
- * strict Content-Security-Policy the estimate rendered as the static "~0" the
- * markup ships and never moved.
+ * A factory rather than an inline `x-data`, because the estimate needs what Alpine's
+ * CSP build does not parse inline (method shorthand, arrow callbacks, spread,
+ * multi-statement bodies): inline, under a strict Content-Security-Policy the
+ * estimate would stay the static "~0" the markup ships.
  *
  * Two pieces of the estimate are heuristics rather than arithmetic, and both are
  * deliberate:

@@ -13,17 +13,14 @@
      `display: contents` preserves the LAYOUT, not the selector structure. With
      `optimistic` set, the button is no longer a direct child of its container, so
      `.toolbar > button`, `:first-child`, `+` and `~` stop matching it. Without the
-     prop the component renders byte-identically, so only opting in pays. --}}
+     prop the button stays a direct child, so only opting in pays. --}}
 @props([
     // The Livewire method to call when the button should show its new pressed
     // state before the server has agreed to it. A refusal puts the old state
     // back — see the note above about the wrapper this adds.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // The two-state truth. In the controlled default, bind it to your own state —
@@ -302,6 +299,6 @@
 @if($optimisticConfig)
     {{-- Rendered unconditionally and starting empty: a live region that arrives
          together with its text is a new node, and nothing is announced at all. --}}
-    <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    <div class="sr-only" data-wk-optimistic-announcer data-wk-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
 </div>
 @endif

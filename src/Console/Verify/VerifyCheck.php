@@ -105,17 +105,16 @@ abstract class VerifyCheck
      * Anchored at the rule head rather than found with strpos(), because a
      * substring search matches those characters wherever they occur. `.dark`
      * occurs inside `html.dark` and inside `.dark-mode` — and, the case that
-     * made this check worse than merely noisy, inside the
-     * `@custom-variant dark (…)` line the integration guide tells every
-     * developer to write. That at-rule carries
-     * no braces of its own, so the old search anchored inside it and then
-     * walked forward to the NEXT rule's opening brace: on the documented
-     * setup — the `@custom-variant` line, then `:root`, then `.dark` — it
-     * handed back the `:root` body as the dark block, the two token sets
-     * came out identical by construction, and the asymmetry check could
-     * never fire for anyone who had followed the guide. The same search
-     * invented asymmetry for anyone whose theme class sits on `<html>`.
-     * Both directions, one cause: the selector was never anchored.
+     * matters most, inside the `@custom-variant dark (…)` line the integration
+     * guide tells every developer to write. That at-rule carries no braces of
+     * its own, so a substring search anchors inside it and walks forward to the
+     * NEXT rule's opening brace: on the documented setup — the
+     * `@custom-variant` line, then `:root`, then `.dark` — it would hand back
+     * the `:root` body as the dark block, the two token sets would come out
+     * identical by construction, and the asymmetry check could never fire for
+     * anyone who followed the guide. The same search would invent asymmetry
+     * for anyone whose theme class sits on `<html>`. Both directions, one
+     * cause: an unanchored selector.
      *
      * Every matching block is concatenated rather than only the first, so a
      * `:root` split across two blocks is measured whole. The joining `;`

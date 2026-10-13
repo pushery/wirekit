@@ -1,9 +1,11 @@
-import { resolveThemeColors, palette, resolveCssVarsDeep, themeModeOf } from '../utils/chart-theme-colors.js';
+import { resolveThemeColors, palette, seriesColors, paletteSchemeOf, resolveCssVarsDeep, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
 import { followChartServerData } from '../utils/chart-server-data.js';
 import { formatDecimal } from '../utils/locale-number.js';
 import { keepRaw } from '../utils/keep-raw.js';
+import { followPointLink, pointLink, takePointLinks } from '../utils/chart-point-links.js';
+import { takeTooltipExtras, tooltipExtraRows } from '../utils/chart-tooltip-extras.js';
 
 /**
  * The y-axis label formatters the kit sets itself, on an axis that has none of its own. They are the
@@ -37,6 +39,74 @@ const ROW_NAMES = Object.freeze({
 });
 
 /**
+ * The chart's own value format, from the wk* keys the PHP adapter threads onto `tooltip` when the
+ * developer sets `valueDecimals`, `valuePrefix` or `valueSuffix` on <x-wirekit-chart>: the decimals
+ * in the application's locale (`tooltip.wkLocale`), then the prefix and the suffix. Only genuine
+ * finite numbers are formatted. Composite values (a range "a – b", OHLC tuples already joined to
+ * strings) and non-numeric labels pass through untouched, and with none of the three set a number
+ * is written as it comes. `sets` says whether the chart sets any of them.
+ *
+ * The tooltip and a treemap's cell labels both write values through this, so a value reads the same
+ * in both places.
+ *
+ * @param {object} [tooltip] the chart's `tooltip` config
+ * @returns {{format: (v: *) => *, sets: boolean}}
+ */
+export function chartValueFormat(tooltip) {
+    const t = tooltip || {};
+    // Clamped to toFixed()'s legal 0–100 range. The PHP adapter already clamps, but
+    // Number.prototype.toFixed() throws a RangeError for any out-of-range argument, so no caller can
+    // crash a render with a stray decimals value.
+    const decimals = (typeof t.wkValueDecimals === 'number' && Number.isFinite(t.wkValueDecimals))
+        ? Math.min(100, Math.max(0, Math.trunc(t.wkValueDecimals)))
+        : null;
+    const prefix = t.wkValuePrefix || '';
+    const suffix = t.wkValueSuffix || '';
+    const locale = t.wkLocale || undefined;
+
+    return {
+        sets: decimals !== null || prefix !== '' || suffix !== '',
+        format: (v) => {
+            if (typeof v === 'number' && Number.isFinite(v)) {
+                const n = decimals !== null ? formatDecimal(v, locale, decimals, decimals) : String(v);
+
+                return `${prefix}${n}${suffix}`;
+            }
+
+            return v;
+        },
+    };
+}
+
+/**
+ * The label formatter of a treemap whose cells show their value under their name, which
+ * `dataLabels.wkShowValue` asks for. ApexCharts writes a cell's label from what
+ * `dataLabels.formatter` returns, and a list of two is two lines. With
+ * `plotOptions.treemap.dataLabels.format: 'truncate'` it writes the return as one string, so there
+ * the name and the value share a line. The value is written in the chart's own format, as the
+ * tooltip writes it, and a cell without a finite value keeps its name alone.
+ *
+ * @param {object} [tooltip] the chart's `tooltip` config, which carries the value format
+ * @param {boolean} [oneLine] whether the treemap truncates its labels to one line
+ * @returns {(text: string, op: {value?: *}) => (string|string[])}
+ */
+export function treemapValueLabel(tooltip, oneLine = false) {
+    const { format } = chartValueFormat(tooltip);
+
+    return (text, op) => {
+        const value = op ? op.value : undefined;
+
+        if (typeof value !== 'number' || ! Number.isFinite(value)) {
+            return text;
+        }
+
+        const written = String(format(value));
+
+        return oneLine ? `${text} · ${written}` : [text, written];
+    };
+}
+
+/**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
  * NATIVE CSS classes (`.apexcharts-tooltip-title`,
  * `.apexcharts-tooltip-series-group`, `.apexcharts-tooltip-marker`,
@@ -54,8 +124,12 @@ const ROW_NAMES = Object.freeze({
  * The PHP adapter ships a `WIREKIT_DEFAULT_TOOLTIP` sentinel under
  * `tooltip.custom`; the Alpine factory swaps it for THIS function
  * before passing the config to ApexCharts.
+ *
+ * `extras` are the further values the chart names for each point without a series of their own,
+ * written on the server (utils/chart-tooltip-extras.js); each with a value at the point adds a row
+ * under the series' values.
  */
-function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
+function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w, extras = null }) {
     const cfg = (w && w.config) || {};
     const g = (w && w.globals) || {};
     const apexType = cfg.chart && cfg.chart.type;
@@ -94,39 +168,15 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
 
-    // Numeric value formatting — driven by the wk* keys the PHP adapter
-    // threads onto `tooltip` when the developer sets valueDecimals /
-    // valuePrefix / valueSuffix on <x-wirekit-chart>. Only genuine finite
-    // numbers are formatted: decimals via toFixed(N), then prefix + suffix.
-    // Composite values (range "a – b", OHLC tuples already joined to strings)
-    // and non-numeric labels pass through untouched. When all three are unset
-    // this returns the value verbatim, preserving pre-feature output.
     const tcfg = cfg.tooltip || {};
-    // Clamp to toFixed()'s legal 0–100 range defensively. The PHP adapter
-    // already clamps, but Number.prototype.toFixed() throws a RangeError for
-    // any out-of-range argument, so guarding here too means no caller can ever
-    // crash the tooltip render with a stray decimals value.
-    const wkDecimals = (typeof tcfg.wkValueDecimals === 'number' && Number.isFinite(tcfg.wkValueDecimals))
-        ? Math.min(100, Math.max(0, Math.trunc(tcfg.wkValueDecimals)))
-        : null;
-    const wkPrefix = tcfg.wkValuePrefix || '';
-    const wkSuffix = tcfg.wkValueSuffix || '';
-    const fmtValue = (v) => {
-        if (typeof v === 'number' && Number.isFinite(v)) {
-            const n = (wkDecimals !== null)
-                ? formatDecimal(v, appLocale, wkDecimals, wkDecimals)
-                : String(v);
-            return `${wkPrefix}${n}${wkSuffix}`;
-        }
-        return v;
-    };
+    // The chart's own value format, which a treemap's cell labels share (see `chartValueFormat`).
+    const { format: fmtValue, sets: chartFormatsValues } = chartValueFormat(tcfg);
 
     // A value of a series is written with the chart's own `valueDecimals`, `valuePrefix` or
     // `valueSuffix` where it sets one. Otherwise a formatter of the page writes it, as it does in
     // ApexCharts' own tooltip: `tooltip.y.formatter` (the series' entry where `tooltip.y` is a
     // list), else the label formatter of the series' y-axis. The chart's options are JSON, so such a
     // formatter is one the page set for every chart. What it returns is written as text.
-    const chartFormatsValues = wkDecimals !== null || wkPrefix !== '' || wkSuffix !== '';
     const yaxes = Array.isArray(cfg.yaxis) ? cfg.yaxis : [cfg.yaxis];
     const pageValueFormatter = (sIdx) => {
         const y = tcfg.y;
@@ -184,7 +234,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     }
 
     // On a date axis the point's x is a date, which ApexCharts parsed into `seriesX` from a number
-    // or from a string such as `2024-12-02`. Written as handed over, the title was the raw
+    // or from a string such as `2024-12-02`. Written as handed over, the title would be the raw
     // timestamp, or the string without its format. ApexCharts titles with a date when the x it
     // drew is numeric; a timeline's x is its category, which stays the title.
     if (dateAxis && g.isXNumeric) {
@@ -378,7 +428,20 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         </div>`;
     }).join('');
 
-    return `${headerHtml}${bodyHtml}`;
+    // The point's further values, under the series' values. They belong to no series, so their
+    // marker keeps its place without a color, and the text lines up with the rows above. A pie's
+    // slices are its series, so the slice the tooltip shows is the point.
+    const extraIndex = typeof series[seriesIndex] === 'number' ? seriesIndex : dataPointIndex;
+    const extraHtml = tooltipExtraRows(extras, extraIndex).map(({ label, value }) => `<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">
+            <span class="apexcharts-tooltip-marker" style="visibility: hidden;"></span>
+            <div class="apexcharts-tooltip-text" style="font-family: inherit; font-size: 12px;">
+                <div class="apexcharts-tooltip-y-group">
+                    <span class="apexcharts-tooltip-text-y-label">${esc(`${label}: `)}</span><span class="apexcharts-tooltip-text-y-value">${esc(value)}</span>
+                </div>
+            </div>
+        </div>`).join('');
+
+    return `${headerHtml}${bodyHtml}${extraHtml}`;
 }
 
 // Named export of the otherwise-internal tooltip renderer, so its escaping
@@ -474,7 +537,8 @@ function escapeHtml(value) {
  *
  * ApexCharts writes the goals of a bar into its tooltip as markup, the color inside a `style`
  * attribute, and it does so behind `tooltip.custom` as well. A valid color holds none of the
- * characters escaping changes, and neither does a number, so a goal draws as before.
+ * characters escaping changes, and neither does a number, so escaping leaves the drawing of a goal
+ * as it is.
  *
  * @param {*} point
  * @returns {*}
@@ -570,8 +634,8 @@ function defaultApexTitle(value, opts) {
  * Give every legend entry under `root` the name it shows as its accessible name.
  *
  * ApexCharts builds the accessible name of a legend entry from the same string it writes into the
- * entry as markup, so with the name escaped for that markup the entry was named `R&amp;D` where it
- * shows `R&D`. The chart component hides its mount from assistive technology, but the factory can be
+ * entry as markup, so with the name escaped for that markup the entry would be named `R&amp;D` where
+ * it shows `R&D`. The chart component hides its mount from assistive technology, but the factory can be
  * mounted without that, and then the legend is what a screen reader reads. Once an entry is toggled,
  * ApexCharts builds the name from the text the entry shows; this does the same after every draw. An
  * accessible name that does not begin with the escaped text came from a formatter of the developer and
@@ -634,8 +698,8 @@ export function withoutHiddenKeyboardNavigation(config, hidden) {
  * its legend and into its own tooltip with `innerHTML`: the legend entry, the tooltip's title and the
  * name in front of each value. It writes the tooltip's parts even while `tooltip.custom` draws the
  * tooltip the reader sees, into elements the custom markup has replaced, and an image in such a string
- * still loads. So a label from the application's data, a product a user named
- * `<img src=x onerror=…>`, ran in the page when the chart was drawn or hovered.
+ * still loads. Unescaped, a label from the application's data — a product a user named
+ * `<img src=x onerror=…>` — would run in the page when the chart is drawn or hovered.
  *
  * A formatter on each of the three places returns the text escaped, and otherwise the text ApexCharts'
  * own default gives: a label of several lines stays a list of lines, and the title of a horizontal bar
@@ -705,6 +769,99 @@ export function textOnlyInApexMarkup(config) {
 }
 
 /**
+ * Keeps a radar's category labels inside its drawing.
+ *
+ * ApexCharts sizes a radar from its box and takes only part of the widest category label off the
+ * radius, while the label at a side corner is written outward from that corner. In a narrow box,
+ * the column of a phone, that label runs past the drawing and the drawing cuts it. After each draw
+ * the labels are measured against the drawing, and where one runs past it the radius shrinks by
+ * what is missing, through the radius ApexCharts takes as an option (`plotOptions.radar.size`). The
+ * radius is read off the outermost ring of the grid, which every version this adapter supports
+ * draws the same way. A radius the options or the page's global options already set is the
+ * developer's, and the chart keeps it.
+ *
+ * @param {Object} config - The ApexCharts options, completed in place.
+ */
+export function radarLabelsInside(config) {
+    if (!config.chart || config.chart.type !== 'radar') {
+        return;
+    }
+    const own = config.plotOptions && config.plotOptions.radar ? config.plotOptions.radar.size : undefined;
+    const pageWide = typeof window !== 'undefined' && window.Apex && window.Apex.plotOptions && window.Apex.plotOptions.radar
+        ? window.Apex.plotOptions.radar.size
+        : undefined;
+    if (own !== undefined || pageWide !== undefined) {
+        return;
+    }
+
+    const fit = (chart) => {
+        const svg = chart && chart.el ? chart.el.querySelector('svg.apexcharts-svg') : null;
+        if (!svg || typeof chart.updateOptions !== 'function') {
+            return;
+        }
+        const box = svg.getBoundingClientRect();
+        if (box.width === 0) {
+            return;
+        }
+        let past = 0;
+        for (const label of svg.querySelectorAll('.apexcharts-xaxis-label')) {
+            const r = label.getBoundingClientRect();
+            if (r.width > 0) {
+                past = Math.max(past, box.left - r.left, r.right - box.right);
+            }
+        }
+        if (past <= 1) {
+            return;
+        }
+        let radius = 0;
+        for (const ring of svg.querySelectorAll('.apexcharts-radar-series polygon')) {
+            for (const point of (ring.getAttribute('points') || '').trim().split(/\s+/)) {
+                const [x, y] = point.split(',').map(Number);
+                if (Number.isFinite(x) && Number.isFinite(y)) {
+                    radius = Math.max(radius, Math.hypot(x, y));
+                }
+            }
+        }
+        // A corner label moves by the change of radius times the cosine of its angle, and the side
+        // corners of the common shapes stand within 32 degrees of the horizontal.
+        const size = Math.floor(radius - past / 0.85 - 2);
+        if (radius === 0 || size < 16) {
+            return;
+        }
+        chart.updateOptions({ plotOptions: { radar: { size } } }, false, false);
+    };
+
+    config.chart = Object.assign({}, config.chart);
+    config.chart.events = Object.assign({}, config.chart.events);
+    for (const name of ['mounted', 'updated']) {
+        const given = config.chart.events[name];
+        config.chart.events[name] = (chart, options) => {
+            if (typeof given === 'function') {
+                given(chart, options);
+            }
+            fit(chart);
+        };
+    }
+}
+
+/**
+ * The chart types that draw a series as a line, as points or as an arc. In the categorical palette
+ * they take a series' edge, the color that stands at 3:1 on the page, as the line itself is the data.
+ */
+const APEX_EDGE_TYPES = ['line', 'area', 'rangeArea', 'scatter', 'bubble', 'radar', 'radialBar'];
+
+/**
+ * The chart types that fill a shape per series or per slice. In the categorical palette they take
+ * the pastel fill, outlined in the series' edge, and a label on the shape takes the label color.
+ */
+const APEX_OUTLINED_TYPES = ['bar', 'rangeBar', 'pie', 'donut', 'polarArea'];
+
+/**
+ * The chart types whose labels sit on a filled shape or cell rather than on the page.
+ */
+const APEX_LABEL_ON_FILL_TYPES = [...APEX_OUTLINED_TYPES, 'treemap', 'heatmap'];
+
+/**
  * WireKit ApexCharts Alpine Component.
  *
  * Initializes an ApexCharts instance with automatic WireKit theming via CSS
@@ -751,6 +908,18 @@ export default function wirekitApexChart(config) {
         // Stops following the data the component renders beside the chart; set once the
         // chart exists. See utils/chart-server-data.js.
         _stopFollowingServerData: null,
+
+        // Where the data points lead, one row per dataset, or null when none does. See
+        // utils/chart-point-links.js.
+        _links: null,
+
+        // The tooltip's further values, or null when the chart has none. See
+        // utils/chart-tooltip-extras.js.
+        _tooltipExtras: null,
+
+        // The palette the series are drawn in, `semantic` or `categorical`, as the server named it.
+        // Read once from the factory's argument, so a second build of the chart reads the same.
+        _scheme: paletteSchemeOf(config),
         _darkModeObserver: null,
         _darkModeDebounce: null,
 
@@ -960,6 +1129,14 @@ window.ApexCharts = ApexCharts;</pre>
                 // is; the call covers a caller who passes a reactive object.
                 const rawConfig = this._flattenApexConfig(Alpine.raw(config));
 
+                // Where the data points lead: out of the options before ApexCharts reads them, as it
+                // does not ignore a key it does not know.
+                this._links = takePointLinks(rawConfig);
+                this._tooltipExtras = takeTooltipExtras(rawConfig);
+
+                // The palette is the component's, read above, and not an option ApexCharts knows.
+                delete rawConfig.wkPalette;
+
                 // A theme swap re-themes from this config, so it has to hold the data the chart
                 // shows: a Livewire update and a streamed point write theirs into it too. New
                 // arrays are assigned rather than shared ones changed, because the copy above is
@@ -986,28 +1163,25 @@ window.ApexCharts = ApexCharts;</pre>
                 // Swap the PHP sentinel for the unified tooltip renderer.
                 // Developer-supplied `tooltip.custom` (a function) wins.
                 if (themed.tooltip && themed.tooltip.custom === 'WIREKIT_DEFAULT_TOOLTIP') {
-                    themed.tooltip.custom = renderUnifiedTooltip;
+                    // With the chart's further values, read when the tooltip draws, so a Livewire
+                    // update that brings new ones reaches the next tooltip.
+                    themed.tooltip.custom = (args) => renderUnifiedTooltip({ ...args, extras: this._tooltipExtras });
                 }
 
                 textOnlyInApexMarkup(themed);
+                radarLabelsInside(themed);
                 withoutHiddenKeyboardNavigation(themed, mount.closest('[aria-hidden="true"]') !== null);
+                this._linkApexPoints(themed, mount);
 
-                // Per-type tooltip auto-formatters. ApexCharts' native
-                // renderers don't always handle tuple-shaped y-values
-                // gracefully — range-bar shows a raw timestamp,
-                // boxplot collapses the 5-tuple into a single value.
-                // No PHP path exists to pass a JS formatter function
-                // via the developer's `:options`, so we auto-install
-                // sensible defaults here. Developer overrides win
-                // (we only install when no formatter / custom is
-                // already set).
+                // ApexCharts' own per-type tooltips do not handle tuple-shaped
+                // y-values well — a range bar would show a raw timestamp, a
+                // boxplot one value for its five — and no PHP path can carry a
+                // JS formatter through the developer's `:options`. No per-type
+                // formatter is needed for that here: every ApexCharts type goes
+                // through the unified `renderUnifiedTooltip` swap above, one
+                // tooltip layout matched to the scatter-bubble shape described
+                // at the top of this file.
                 const apexType = themed.chart?.type;
-
-                // Range-bar, boxplot and candlestick need no per-type
-                // formatter here: every ApexCharts type goes through the
-                // unified `renderUnifiedTooltip` swap above, one tooltip
-                // layout matched to the scatter-bubble shape described at
-                // the top of this file.
 
                 // Honor reduced-motion at chart-construction time: disable
                 // animations entirely when the OS preference is set, so the
@@ -1025,21 +1199,15 @@ window.ApexCharts = ApexCharts;</pre>
                 // ApexCharts still renders a STATIC active-marker dot on
                 // every line vertex on hover — the dot stays at the
                 // highest-Y vertex regardless of where the cursor is, which
-                // reads as a "ghost data point stuck in mid-air" (visible on
-                // /components/charts-apex/mixed as the red dot at the line's
-                // peak even when the cursor is hovering a different bar).
-                // An earlier overlay workaround (custom <circle> per line
-                // series, repositioned in a mouseMove handler that
-                // recomputed the nearest x-index from grid geometry) made
-                // things worse — the overlay anchored to a different
-                // x-index than the bar tooltip, producing two visibly
-                // disconnected red dots. Right fix: SUPPRESS the active-
-                // marker dot on every line-like series in a mixed chart.
-                // The shared tooltip already shows the line's y-value for
-                // the hovered x, so the marker is redundant; killing it
-                // removes the ghost and matches the bar-only mental model
-                // ("hover anywhere on the chart → tooltip shows all values
-                // at that x").
+                // reads as a "ghost data point stuck in mid-air". A marker of
+                // our own, repositioned on mouse move, would anchor to its own
+                // nearest x-index rather than the bar tooltip's and draw a
+                // second, disconnected dot. So the active-marker dot is
+                // SUPPRESSED on every line-like series in a mixed chart. The
+                // shared tooltip already shows the line's y-value for the
+                // hovered x, so the marker is redundant; removing it removes
+                // the ghost and matches the bar-only mental model ("hover
+                // anywhere on the chart → tooltip shows all values at that x").
                 const hasBar = (themed.series || []).some(
                     (s) => s && (s.type === 'bar' || s.type === 'column')
                 );
@@ -1073,9 +1241,6 @@ window.ApexCharts = ApexCharts;</pre>
                 // Tooltip POSITIONING for all five cell-shape types (radar,
                 // heatmap, treemap, range-bar, range-area) is handled by the
                 // native-DOM rAF pin loop further down — after this.chart.render().
-                // The previous event-based `themed.chart.events.dataPointMouseEnter`
-                // / `mouseMove` overrides for these types were SUPERSEDED in
-                // commit 9afe772 (the wobble fix) and are no longer registered.
                 if (apexType === 'heatmap' || apexType === 'treemap') {
                     themed.states = themed.states || {};
                     themed.states.hover = themed.states.hover || {};
@@ -1117,12 +1282,11 @@ window.ApexCharts = ApexCharts;</pre>
                 this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload));
 
                 // Radar tooltip — bypass ApexCharts' event system.
-                // Three previous iterations relying on themed.chart.events.
-                // dataPointMouseEnter ALL had no observable effect: ApexCharts'
-                // radar implementation uses cursor-proximity over the polygon
-                // fill to determine the "active vertex" without firing a
-                // standard data-point event we can hook. Native DOM events on
-                // the rendered SVG ARE reliable. Strategy:
+                // `themed.chart.events.dataPointMouseEnter` never fires for a
+                // radar: ApexCharts' radar implementation uses cursor-proximity
+                // over the polygon fill to determine the "active vertex"
+                // without firing a standard data-point event we can hook.
+                // Native DOM events on the rendered SVG ARE reliable. Strategy:
                 //   1. Track which marker `<path>` is currently under the
                 //      cursor via `pointermove` on the chart's baseEl.
                 //   2. Observe the tooltip element's inline style for changes
@@ -1148,8 +1312,8 @@ window.ApexCharts = ApexCharts;</pre>
                 //     during cursor movement, sometimes via `cssText`
                 //     replacement which strips `!important`.
                 //   - A MutationObserver that fires on each write and
-                //     overrides creates a visible 2-state wobble: my
-                //     position → ApexCharts' position → my position → …
+                //     overrides creates a visible 2-state wobble: our
+                //     position → ApexCharts' position → our position → …
                 //   - An rAF loop running at ~60 fps writes our position
                 //     every frame, racing ApexCharts' once-per-mousemove
                 //     writes, so the tooltip stays visually pinned with
@@ -1161,21 +1325,20 @@ window.ApexCharts = ApexCharts;</pre>
                 // so it's cheap when no one is hovering.
                 if (['heatmap', 'treemap', 'radar', 'rangeBar', 'rangeArea'].includes(apexType)) {
                     const cellChart = this.chart;
-                    // Verified against actual ApexCharts DOM via sample/
-                    // diagnostic tests — classes are `apexcharts-{type}-area`
-                    // with hyphens (rangebar / rangearea), NOT camelCase
-                    // (the chart-type config key IS camelCase: rangeBar,
-                    // rangeArea — different convention).
+                    // ApexCharts' classes are `apexcharts-{type}-area` with
+                    // hyphens (rangebar / rangearea), NOT camelCase (the
+                    // chart-type config key IS camelCase: rangeBar, rangeArea —
+                    // a different convention).
                     //
                     // The element pointer tracking records per type: the
                     // data point under the cursor. For the cell-shape types
                     // it is the cell, and their tooltip is `intersect: true`,
                     // so it is only active over one. For radar it is the
                     // marker, which resolveActiveElement() prefers over the
-                    // title lookup. Radar was missing from this map once, so
-                    // that preferred route never ran and the title carried
-                    // every hover: on two axes named alike it pinned the
-                    // tooltip to the LAST one.
+                    // title lookup. Without radar in this map that preferred
+                    // route would never run and the title would carry every
+                    // hover: on two axes named alike it would pin the tooltip
+                    // to the LAST one.
                     const pointerSelectorByType = {
                         heatmap: '.apexcharts-heatmap-rect',
                         treemap: '.apexcharts-treemap-rect',
@@ -1187,12 +1350,11 @@ window.ApexCharts = ApexCharts;</pre>
                     const waitForTooltip = (attempts) => {
                         // The chart is nulled by destroy(), and this chain is a
                         // queued frame the teardown cannot reach into. Without
-                        // this line the wait kept running on a torn-down
-                        // component and — if ApexCharts' DOM was still around —
-                        // went on to attach six listeners and assign
+                        // this line the wait would keep running on a torn-down
+                        // component and — if ApexCharts' DOM were still around —
+                        // attach six listeners and assign
                         // `_cellShapeTooltipCleanup` AFTER destroy() had already
-                        // looked at it, so the cleanup was never called by
-                        // anyone.
+                        // looked at it, so nobody would ever call the cleanup.
                         if (!this.chart) {
                             this._tooltipAnchorRaf = null;
                             return;
@@ -1415,25 +1577,18 @@ window.ApexCharts = ApexCharts;</pre>
                 // to the live state in a single quick animation. Net effect:
                 // hover = tooltip stays readable on a stable chart; mouseout
                 // = chart resyncs to current.
-                // No in-component `wirekit:replay` listener. Earlier
-                // attempts to destroy + re-mount the ApexCharts instance
-                // in place on `wirekit:replay` looked correct on paper
-                // (call `destroy()`, build a fresh config, `new
-                // ApexCharts(...)`) but read `Alpine.raw(config)` AFTER
-                // ApexCharts had mutated the config object in place
-                // during the first render — series values, axis ranges,
-                // and theme arrays were all overwritten with internal
-                // state, so the second mount rendered against corrupted
-                // numbers (visible as: bars shrunk to half-height,
-                // legend colors scrambled, axis labels wrong). The
-                // docs.wirekit.app replay button already reloads the preview
-                // iframe — same effect as a fresh page-load, identical
-                // behavior to every other replayable component — so
-                // the right fix is to NOT intercept the event here and
-                // let the iframe reload take over. `<x-wirekit-chart
-                // data-replayable="true">` continues to opt INTO the
-                // docs.wirekit.app's button surface; we just don't fight the
-                // standard reload behavior with broken in-place logic.
+                // No in-component `wirekit:replay` listener. Destroying and
+                // re-mounting the ApexCharts instance in place would read
+                // `Alpine.raw(config)` AFTER ApexCharts has mutated the config
+                // object during the first render — series values, axis ranges
+                // and theme arrays overwritten with internal state — so the
+                // second mount would render against corrupted numbers (bars at
+                // half height, legend colors scrambled, axis labels wrong). The
+                // docs.wirekit.app replay button reloads the preview iframe,
+                // the same effect as a fresh page load and the same behavior as
+                // every other replayable component, so the event is left to
+                // that reload. `<x-wirekit-chart data-replayable="true">` still
+                // opts INTO the button surface.
 
                 this._hoverPaused = false;
                 if (this._wireStreamHandler) {
@@ -1448,12 +1603,11 @@ window.ApexCharts = ApexCharts;</pre>
                         }
                     };
                     // Store mount ref + bound handlers on `this` so destroy()
-                    // can remove them. Without this, `mount` was a closure-
-                    // local in the wireStream branch and destroy() couldn't
-                    // reach it; the hover-pause listeners stayed attached
-                    // to the DOM node even after Alpine torn down the
-                    // component — a leak across every Livewire morph that
-                    // recreated the chart.
+                    // can remove them. A `mount` local to the wireStream
+                    // branch would be out of destroy()'s reach, and the
+                    // hover-pause listeners would stay attached to the DOM
+                    // node after Alpine tore the component down — a leak
+                    // across every Livewire morph that recreates the chart.
                     this._mount = mount;
                     mount.addEventListener('mouseenter', this._hoverEnterHandler);
                     mount.addEventListener('mouseleave', this._hoverLeaveHandler);
@@ -1482,11 +1636,11 @@ window.ApexCharts = ApexCharts;</pre>
             });
 
             // Cleanup on Livewire navigation (SPA mode).
-            // Reduced motion is a LIVE preference. It was read once at construction and
-            // never again, so a reader who turns motion down while the page is open kept
-            // every animation — and the OS preference is not even the common case: this
+            // Reduced motion is a LIVE preference. Read once at construction, it would
+            // leave a reader who turns motion down while the page is open with every
+            // animation — and the OS preference is not even the common case: this
             // library's own site-level toggle writes `data-reduce-motion` onto <html>,
-            // which a chart already on screen had no way to notice.
+            // which a chart already on screen would have no way to notice.
             this._motionCleanup = watchReducedMotion((reduced) => {
                 if (! this.chart) {
                     return;
@@ -1535,6 +1689,17 @@ window.ApexCharts = ApexCharts;</pre>
                 return;
             }
 
+            // New points bring their own addresses, and an update without any takes the old ones away,
+            // with the pointer a point that had one may still be showing. The tooltip's further values
+            // come and go the same way.
+            this._links = takePointLinks(payload);
+            this._tooltipExtras = takeTooltipExtras(payload);
+            this._markPointLinks(this.$refs?.mount);
+
+            if (! this._links && this.$refs?.mount) {
+                this.$refs.mount.style.cursor = '';
+            }
+
             // New data reaches ApexCharts' markup as the first data did (`textOnlyInApexMarkup()`).
             const next = { series: seriesAsText(payload.series) };
 
@@ -1576,32 +1741,28 @@ window.ApexCharts = ApexCharts;</pre>
             const eventName = root?.dataset?.wireStreamEvent;
             if (!eventName) return;
 
-            // `wireStreamMode` / `wireStreamCap` are read but no longer drive
-            // an in-line trim — every dispatch flows through `appendData`
-            // for smooth slide-in animation. The props remain part of the
+            // `wireStreamMode` / `wireStreamCap` are read but drive no
+            // in-line trim — every dispatch flows through `appendData`
+            // for smooth slide-in animation. The props are part of the
             // public Blade API for developer-side memory management
             // (e.g. periodic `chart.resetSeries()` triggered when the cap
-            // is exceeded — left to userland because the trim-via-
-            // updateSeries path produces a per-position-Y wobble that
-            // breaks the streaming visual contract).
+            // is exceeded — left to userland because a trim through
+            // updateSeries produces a per-position-Y wobble that breaks
+            // the streaming visual contract).
              
             const _mode = root.dataset.wireStreamMode || 'strict';
              
             const _cap = parseInt(root.dataset.wireStreamCap, 10) || 100;
 
-            // Per-microtask batching queue. Streaming-demo / developer code
-            // often dispatches ONE event per series per tick (3 events for
-            // a 3-series chart at 750 ms cadence). Without batching, each
-            // event triggered its own `updateSeries(next, true)` call —
-            // ApexCharts then ran 3 partial-overlap animations in rapid
-            // succession, which made the LAST series visually appear to
-            // "rebuild from scratch" each tick (the 3rd updateSeries
-            // canceled the in-progress animation from the 2nd, re-
-            // interpolating the same path the 2nd had just animated to).
-            // Symptom on /components/charts-apex/streaming's Multi-series
-            // preview: blue + red streamed smoothly, green rebuilt on
-            // every tick. Microtask-batching coalesces all dispatches
-            // within the same event-loop tick into a single updateSeries.
+            // Per-microtask batching queue. Streaming code often dispatches
+            // ONE event per series per tick (3 events for a 3-series chart
+            // at 750 ms cadence). Unbatched, each event would trigger its
+            // own update and ApexCharts would run 3 partial-overlap
+            // animations in rapid succession: each update cancels the one in
+            // progress, so the LAST series would appear to "rebuild from
+            // scratch" on every tick while the others stream smoothly.
+            // Microtask-batching coalesces all dispatches within the same
+            // event-loop tick into a single update.
             this._wireStreamQueue = [];
             this._wireStreamFlushScheduled = false;
 
@@ -1625,28 +1786,24 @@ window.ApexCharts = ApexCharts;</pre>
                 // already on the chart keep their existing Y-values and
                 // just shift LEFT.
                 //
-                // The previous strict-mode implementation called
-                // `chart.updateSeries(trimmed, true)` per tick, which
-                // ApexCharts interprets as "interpolate every existing
+                // `chart.updateSeries(trimmed, true)` per tick would not:
+                // ApexCharts interprets it as "interpolate every existing
                 // position's Y-value to the NEW series' Y-value at that
-                // position". Each X-position then morphs into the value
-                // shifted from its right neighbor — visually every line in
-                // the chart reverses direction on every data tick.
-                // `appendData` doesn't have this property: existing
-                // points stay anchored, only the new one animates in.
+                // position", so each X-position would morph into the value
+                // shifted from its right neighbor and every line in the
+                // chart would reverse direction on every data tick.
                 //
                 // Batching multi-series dispatches: every queued point
                 // for each series goes into a single appendData call so
-                // all series advance in lockstep, no partial-overlap
-                // animation cancellation across the three latency
-                // percentiles' separate dispatches per tick.
+                // all series advance in lockstep, with no partial-overlap
+                // animation cancellation between the series' separate
+                // dispatches per tick.
                 //
-                // Strict-mode cap: we no longer manually trim. Letting
-                // the series grow unbounded for a docs-preview session
-                // (~30 seconds of ticks → max ~60 points at 1 Hz) is
-                // cheap, and avoids the per-position-Y-interpolation
-                // wobble that any updateSeries-based trim re-introduces.
-                // Real developers managing a long-running stream can
+                // Strict-mode cap: no manual trim. Letting the series grow
+                // is cheap for a short session (~30 seconds of ticks → ~60
+                // points at 1 Hz), and any updateSeries-based trim brings
+                // back the per-position-Y-interpolation wobble. A
+                // developer managing a long-running stream can
                 // periodically call `chart.resetSeries()` or attach
                 // `xaxis.range` to bound the VISIBLE window without
                 // touching the underlying series state.
@@ -1713,11 +1870,11 @@ window.ApexCharts = ApexCharts;</pre>
                         || 'ui-sans-serif, system-ui, sans-serif';
 
                     /*
-                     * Same gate as chart.js, for the same reason and against the same
-                     * defect: the observer only asks whether the mutated attribute was
-                     * `class`, and html/body carry many classes that say nothing about
-                     * the theme. Every one of them re-themed the config, re-resolved
-                     * every var() reference in it and updated the chart.
+                     * Same gate as chart.js, for the same reason: the observer only asks
+                     * whether the mutated attribute was `class`, and html/body carry many
+                     * classes that say nothing about the theme. Without the gate every one
+                     * of them would re-theme the config, re-resolve every var() reference
+                     * in it and update the chart.
                      *
                      * Compared on the RESOLVED palette rather than on a `.dark` class,
                      * so a preset switch that changes colors without touching that class
@@ -1734,6 +1891,7 @@ window.ApexCharts = ApexCharts;</pre>
                     // The theme swap hands ApexCharts the options again; the labels stay text,
                     // and the keyboard navigation stays off where the chart is hidden.
                     textOnlyInApexMarkup(themed);
+                    radarLabelsInside(themed);
                     withoutHiddenKeyboardNavigation(themed, (this.$refs.mount || this.$el).closest('[aria-hidden="true"]') !== null);
 
                     // Smooth transition — collapsed to instant
@@ -1805,19 +1963,17 @@ window.ApexCharts = ApexCharts;</pre>
                 if (svg) {
                     // Every tab stop in the subtree, not just the SVG root.
                     // ApexCharts also gives each legend entry `tabindex="0"`,
-                    // which is the same defect one level down — the first cut
-                    // of this fix handled only the root and left the legends
-                    // reachable on pie, donut, radialBar and mixed charts.
+                    // the same defect one level down, which would leave the
+                    // legends reachable on pie, donut, radialBar and mixed
+                    // charts.
                     //
                     // Two kinds of focusable, and they need OPPOSITE treatment.
                     //
-                    // A uniform `tabindex="-1"` was the first version, chosen
-                    // because one rule with no branches cannot be half-right.
-                    // It was wrong, and the check that now watches the console
-                    // caught it: axe reports `nested-interactive` for a
-                    // negative tabindex inside an interactive control, because
-                    // assistive tech can still reach it. Silencing the tab stop
-                    // that way traded one serious finding for another.
+                    // A uniform `tabindex="-1"` would not do: axe reports
+                    // `nested-interactive` for a negative tabindex inside an
+                    // interactive control, because assistive tech can still
+                    // reach it, and silencing the tab stop that way would trade
+                    // one serious finding for another.
                     //
                     // An element focusable BECAUSE of the attribute loses it
                     // entirely — that is what ApexCharts stamps on its SVG and
@@ -1964,8 +2120,9 @@ window.ApexCharts = ApexCharts;</pre>
          * by wirekitChartJs so dataset palettes, fallbacks, and probe
          * behavior stay in lockstep across both adapters.
          */
-        _resolveThemeColors(style) { return resolveThemeColors(style, this.$refs?.mount ?? null); },
+        _resolveThemeColors(style) { return resolveThemeColors(style, this.$refs?.mount ?? null, { categorical: this._scheme === 'categorical' }); },
         _palette(colors)           { return palette(colors); },
+        _seriesColors(colors)      { return seriesColors(colors, this._scheme); },
 
         _setupDetachGuard(mount) {
             const check = () => {
@@ -1980,6 +2137,92 @@ window.ApexCharts = ApexCharts;</pre>
         },
 
         /**
+         * Follow a click on a data point to its address, and show a pointer over a point that has one.
+         *
+         * ApexCharts 5, 6 and 7 hand their `click` and `mouseMove` events the same point, in
+         * `seriesIndex` and `dataPointIndex`: the one the element under the pointer names, where it
+         * carries its indices (a treemap cell its `i` and `j`, a bar or a slice its `j`), and
+         * otherwise the one the tooltip has taken up, such as the point a shared tooltip of a line is
+         * showing. Read off the element, an index is an attribute and arrives as a string; taken from
+         * the tooltip, it arrives as a number; where there is neither, it is null. A pie, a donut, a
+         * radial bar and a polar area report series 0 and their slice as the point, so their
+         * addresses come from the grid's one row. Where ApexCharts names no point, nothing is followed.
+         * The handlers do nothing until a point has an address, so a Livewire update that brings the
+         * first one needs no rebuild, and a handler the page set for every chart through
+         * `window.Apex` still runs.
+         *
+         * @param {Object} options - The ApexCharts options, completed in place.
+         * @param {HTMLElement} mount - The element the chart is drawn into, which shows the pointer
+         *     and carries `data-wk-point-links` while the chart has addresses.
+         */
+        _linkApexPoints(options, mount) {
+            // An index as ApexCharts hands it, a number or a string of digits, or null for anything else.
+            const indexOf = (value) => {
+                const index = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+
+                return Number.isInteger(index) && index >= 0 ? index : null;
+            };
+            const linkOf = (context) => {
+                const series = this._rawConfig?.series;
+                const slices = Array.isArray(series) && series.every((value) => typeof value === 'number');
+
+                return pointLink(this._links, slices ? 0 : indexOf(context?.seriesIndex), indexOf(context?.dataPointIndex));
+            };
+
+            options.chart = Object.assign({}, options.chart);
+            options.chart.events = Object.assign({}, options.chart.events);
+
+            const listen = (name, own) => {
+                const given = typeof options.chart.events[name] === 'function'
+                    ? options.chart.events[name]
+                    : pageWideApexOption(['chart', 'events', name]);
+
+                options.chart.events[name] = (event, chartContext, context) => {
+                    if (given) {
+                        given(event, chartContext, context);
+                    }
+
+                    own(event, context);
+                };
+            };
+
+            listen('click', (event, context) => {
+                const url = this._links ? linkOf(context) : null;
+
+                if (url) {
+                    followPointLink(url, event);
+                }
+            });
+            listen('mouseMove', (event, context) => {
+                if (this._links) {
+                    mount.style.cursor = linkOf(context) ? 'pointer' : '';
+                }
+            });
+            listen('mouseLeave', () => {
+                mount.style.cursor = '';
+            });
+
+            this._markPointLinks(mount);
+        },
+
+        /**
+         * Mark the element the chart is drawn into while its points lead somewhere.
+         *
+         * The stylesheet gives every shape of an ApexCharts chart a hand. Under the mark the shapes
+         * take the cursor the point handlers set on this element instead, so a reader sees a hand
+         * over a point with an address and none over a point without one, as a link shows it.
+         *
+         * @param {HTMLElement|undefined} mount - The element the chart is drawn into.
+         */
+        _markPointLinks(mount) {
+            if (! mount || typeof mount.toggleAttribute !== 'function') {
+                return;
+            }
+
+            mount.toggleAttribute('data-wk-point-links', this._links !== null);
+        },
+
+        /**
          * Flatten the PHP-emitted chart config for ApexCharts.
          *
          * The shared PHP Chart component wraps `defaultOptions + user :options`
@@ -1988,10 +2231,10 @@ window.ApexCharts = ApexCharts;</pre>
          * ApexCharts expects flat top-level keys (`{chart, series, xaxis,
          * plotOptions, ...}`) and silently ignores anything nested under an
          * unknown `options` key. Without this flattening step, every
-         * `:options="..."` prop on every ApexCharts chart was dropped —
-         * visible as range-bar with `plotOptions.bar.horizontal: true` never
-         * flipping orientation, custom yaxis bounds being ignored, and
-         * date-axis label formatters never reaching the renderer.
+         * `:options="..."` prop on every ApexCharts chart would be dropped:
+         * a range bar with `plotOptions.bar.horizontal: true` would never
+         * flip orientation, custom y-axis bounds would be ignored, and
+         * date-axis label formatters would never reach the renderer.
          *
          * We deep-merge so a default `chart.toolbar.show: false` from
          * `ApexChartsAdapter::defaultOptions()` still composes with a
@@ -2049,9 +2292,9 @@ window.ApexCharts = ApexCharts;</pre>
                 // that can re-parent an object or reach a shared prototype. The
                 // chart config is assembled from JSON that may be influenced by
                 // app data, so a `__proto__` / `constructor` / `prototype` key
-                // must not flow through the merge. (This merge already writes only
-                // to fresh objects, so global pollution wasn't reachable — but
-                // skipping the keys also keeps the result's prototype intact.)
+                // must not flow through the merge. (The merge writes only to fresh
+                // objects, so it cannot pollute a global prototype; skipping the
+                // keys also keeps the result's own prototype intact.)
                 if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
                     continue;
                 }
@@ -2080,7 +2323,14 @@ window.ApexCharts = ApexCharts;</pre>
             // series objects with data property.` Per-slice colors for these
             // chart types live in the top-level `colors` array (set further
             // down), not on the series entries themselves; skip the wrapping.
-            const palette = this._palette(colors);
+            //
+            // A series' color comes from the chart's palette. A type that draws its series as a line,
+            // as points or as an arc takes the edge, which carries the data on the page; every other
+            // type takes the fill, and an outlined one draws its outline in the edge (`_themeStroke`).
+            // In the semantic palette fill and edge are the same color.
+            const apexChartType = rawConfig?.chart?.type;
+            const palette = this._seriesColors(colors)
+                .map(({ fill, edge }) => (APEX_EDGE_TYPES.includes(apexChartType) ? edge : fill));
             const isFlatSeries = (rawConfig.series || []).every((s) => typeof s === 'number');
             const themedSeries = isFlatSeries
                 ? rawConfig.series
@@ -2099,12 +2349,23 @@ window.ApexCharts = ApexCharts;</pre>
             // that's the whole point of a treemap. Skip the colors
             // override for these types so ApexCharts' native shading
             // kicks in. Developer-supplied `colors` still wins.
-            const apexChartType = rawConfig?.chart?.type;
             const colorScaleTypes = ['treemap', 'heatmap'];
             const resolvedColors = rawConfig.colors
                 || (colorScaleTypes.includes(apexChartType)
                     ? undefined
                     : palette.slice(0, Math.max(themedSeries.length, 1)));
+
+            // `dataLabels.wkShowValue` on a treemap: each cell that has room shows its value under its
+            // name, in the chart's own value format. A label formatter is JavaScript, which options
+            // written in PHP cannot carry, so the key asks the adapter for one. It turns the labels on,
+            // and a formatter set in JavaScript wins over it.
+            const rawLabels = rawConfig.dataLabels || {};
+            const valueLabels = (apexChartType === 'treemap' && rawLabels.wkShowValue === true && typeof rawLabels.formatter !== 'function')
+                ? {
+                    enabled: true,
+                    formatter: treemapValueLabel(rawConfig.tooltip, rawConfig?.plotOptions?.treemap?.dataLabels?.format === 'truncate'),
+                }
+                : {};
 
             return Object.assign({}, rawConfig, {
                 series: themedSeries.length > 0 ? themedSeries : rawConfig.series,
@@ -2128,7 +2389,7 @@ window.ApexCharts = ApexCharts;</pre>
                 }),
                 xaxis: this._themeAxis(rawConfig.xaxis, colors, fontFamily),
                 // The application's locale for a decimal tick, handed over on the tooltip by the
-                // PHP side; without it the tick keeps the English spelling it always had.
+                // PHP side; without it the tick keeps the English spelling.
                 yaxis: this._themeYaxis(rawConfig.yaxis, colors, fontFamily, rawConfig?.tooltip?.wkLocale),
                 tooltip: Object.assign({}, rawConfig.tooltip, {
                     theme: isDark ? 'dark' : 'light',
@@ -2147,22 +2408,52 @@ window.ApexCharts = ApexCharts;</pre>
                     labels: { colors: colors.textPrimary },
                     fontFamily,
                 }),
-                dataLabels: Object.assign({ enabled: false }, rawConfig.dataLabels, {
+                dataLabels: Object.assign({ enabled: false }, rawConfig.dataLabels, valueLabels, {
                     style: Object.assign(
-                        { fontFamily, colors: [colors.textPrimary] },
+                        { fontFamily, colors: [this._labelColor(apexChartType, colors)] },
                         (rawConfig.dataLabels && rawConfig.dataLabels.style) || {},
                     ),
                 }),
-                stroke: this._resolveStroke(rawConfig.stroke),
+                stroke: this._themeStroke(rawConfig.stroke, apexChartType, colors, Math.max(themedSeries.length, 1)),
+            });
+        },
+
+        /**
+         * The color of a data label. In the categorical palette a label on a filled shape takes
+         * `--color-wk-chart-label`, which reads on every fill in both modes; a label on the page,
+         * and every label in the semantic palette, takes the text color.
+         */
+        _labelColor(type, colors) {
+            return this._scheme === 'categorical' && colors.chartLabel && APEX_LABEL_ON_FILL_TYPES.includes(type)
+                ? colors.chartLabel
+                : colors.textPrimary;
+        },
+
+        /**
+         * The stroke, with the outline of a filled shape in the categorical palette.
+         *
+         * A pastel fill does not stand at 3:1 on a light page, so a bar, a slice and a polar segment
+         * are outlined in the series' edge, a pixel wide. Every key the developer set wins, colors
+         * included; the semantic palette keeps the stroke as `_resolveStroke` gives it.
+         */
+        _themeStroke(stroke, type, colors, count) {
+            const resolved = this._resolveStroke(stroke);
+
+            if (this._scheme !== 'categorical' || !APEX_OUTLINED_TYPES.includes(type)) {
+                return resolved;
+            }
+
+            const own = stroke !== null && typeof stroke === 'object' && !Array.isArray(stroke) ? stroke : {};
+
+            return Object.assign({}, resolved, { show: true, width: 1 }, own, {
+                colors: own.colors ?? this._seriesColors(colors).slice(0, count).map(({ edge }) => edge),
             });
         },
 
         /**
          * Stroke shape guard. ApexCharts expects `stroke` to be a plain
          * object (`{curve, width, colors, lineCap, dashArray}`) or absent.
-         * Some callers (including `ApexChartsAdapter::defaultStroke()` for
-         * non-line/area chart types prior to the empty-array suppression
-         * fix) pass an empty PHP array `[]` which JSON-encodes to `[]` and
+         * An empty PHP array `[]` from a caller JSON-encodes to `[]` and
          * reaches the renderer as a JS array. ApexCharts' internal stroke
          * reader treats the array as iterable and bails out of normal
          * stroke-config decoding, which cascades into broken fill-path
@@ -2215,6 +2506,10 @@ window.ApexCharts = ApexCharts;</pre>
                 if (typeof themed.labels.formatter !== 'function') {
                     themed.labels.formatter = (value) => {
                         if (value === null || value === undefined) return '';
+                        // A blank tick stays blank. A heatmap's rows sit on a scale of the
+                        // series names with one blank entry above the top row, and `Number()`
+                        // reads a blank string as 0.
+                        if (typeof value === 'string' && value.trim() === '') return '';
                         const n = Number(value);
                         if (! Number.isFinite(n)) return String(value);
                         // Integers (or values that round to an integer) render

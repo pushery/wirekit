@@ -7,14 +7,11 @@
      paged to rather than snapping back. --}}
 @props([
     // Livewire method to call optimistically. The date appears selected
-    // immediately and is put back if the call fails. Absent -> this component
-    // renders exactly as it did before, down to the byte.
+    // immediately and is put back if the call fails. Absent -> the component renders
+    // without an optimistic layer.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'value' => null,
@@ -31,14 +28,14 @@
     'range' => false,
     'months' => 1,
     // Replace the static month label with native month + year <select> jump
-    // controls for fast navigation. Opt-in; default keeps the label byte-identical.
+    // controls for fast navigation. Opt-in; off by default.
     'selectableHeader' => false,
-    // First day of the week: 0 (Sun) .. 1 (Mon, default) — matches the house
-    // convention + the event-calendar default. Configurable via config/wirekit.php.
+    // First day of the week: 0 (Sun) .. 1 (Mon, default) — matches the
+    // event-calendar default. Configurable via config/wirekit.php.
     'weekStartsOn' => config('wirekit.components.calendar.week-starts-on', 1),
     'scope' => null,
     // A required calendar stops an empty submit, as a native required field does; see the
-    // stand-in below. Declared, so it no longer lands on the root, where it did nothing.
+    // stand-in below. Declared, so it does not land on the root, where it would do nothing.
     'required' => false,
 ])
 
@@ -127,7 +124,7 @@
         'cursor-pointer',
         'rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
     ]);
@@ -269,7 +266,7 @@
     x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, idBase: {{ $idBaseLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }}, range: {{ $range ? 'true' : 'false' }}, locale: {{ $calendarLocale }}, todayLabel: {{ $todayLiteral }} })"
     {{-- `name` belongs to the hidden fields below, which render it; on this div it is not a valid
          attribute, and a `[name="…"]` lookup would find the calendar before its field. --}}
-    {{ $attributes->except('name')->whereDoesntStartWith('wire:model')->class([$classes]) }}
+    {{ $attributes->except('name')->whereDoesntStartWith('wire:model')->class([$classes]) }} data-wk-sr-host
     {{-- Named by the caller, the calendar is a group of its months, each of which keeps its own name. --}}
     @if(($callerLabelledBy || $callerLabel) && ! $attributes->has('role')) role="group" @endif
 >
@@ -303,7 +300,7 @@
 
     {{-- Month navigation header --}}
     <div class="{{ $headerClasses }}">
-        <button type="button" x-on:click="prevMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
+        <button type="button" x-on:click="prevMonth()" class="wk-touch-target {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
             </svg>
@@ -359,7 +356,7 @@
             <span @if($months <= 1) :id="monthLabelId(0)" @endif class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]" x-text="monthLabel" aria-live="polite"></span>
         @endif
 
-        <button type="button" x-on:click="nextMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('wirekit::Next month') }}">
+        <button type="button" x-on:click="nextMonth()" class="wk-touch-target {{ $navBtnClasses }}" aria-label="{{ __('wirekit::Next month') }}">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
@@ -408,6 +405,7 @@
                                                 :aria-label="day.label"
                                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay && month.offset === focusOffset ? '0' : '-1'"
+                                                x-on:focus="followFocus(day, month.offset)"
                                                 :disabled="!day.isCurrentMonth"
                                                 class="wk-calendar-day {{ $dayBtnClasses }}"
                                                 x-on:mouseenter="hoverDay(day.date)"
@@ -415,7 +413,7 @@
                                                 :class="{
                                                     'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]': day.isSelected,
                                                                     'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
-                                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange && !day.isProvisionalEnd,
+                                                    'cursor-pointer hover:bg-[var(--color-wk-bg-hover)]': day.isCurrentMonth && !day.isSelected && !day.isInRange && !day.isProvisionalEnd,
                                                     'text-[color:var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
                                                     'cursor-pointer': day.isCurrentMonth && day.isSelected,
                                                 }"
@@ -463,6 +461,7 @@
                                 :aria-label="day.label"
                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay ? '0' : '-1'"
+                                x-on:focus="followFocus(day, 0)"
                                 :disabled="!day.isCurrentMonth"
                                 class="wk-calendar-day {{ $dayBtnClasses }}"
                                 {{-- The in-between days get a TINT, not the accent, so the two ends
@@ -472,7 +471,7 @@
                                 :class="{
                                     'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]': day.isSelected,
                                     'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
-                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange && !day.isProvisionalEnd,
+                                    'cursor-pointer hover:bg-[var(--color-wk-bg-hover)]': day.isCurrentMonth && !day.isSelected && !day.isInRange && !day.isProvisionalEnd,
                                     'text-[color:var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
                                     'cursor-pointer': day.isCurrentMonth && day.isSelected,
                                 }"

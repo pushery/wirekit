@@ -129,7 +129,7 @@ final class ClassInventory
      *                                         custom event names) — no JS
      *                                         file in the codebase emits
      *                                         Tailwind arbitrary-value
-     *                                         classes today. If a future
+     *                                         classes. If a future
      *                                         factory does emit them,
      *                                         REMOVE the prefix here in the
      *                                         same commit + add a regression
@@ -510,12 +510,11 @@ final class ClassInventory
     private function harvestAttributeClasses(string $contents, string $file, array &$inventory): void
     {
         // Match the value up to the SAME quote it opened with — `(?:(?!\1)[\s\S])*`
-        // instead of `[^"\']*`. The old form stopped at EITHER quote, so a single
-        // quote inside a double-quoted attribute (Tailwind's `before:content-['']`
-        // empty-content utility) truncated the match, `\1` then failed to close, and
-        // the WHOLE class attribute was skipped — orphaning every unique class in it
-        // (e.g. the file-upload remove button's 44px `before:*` hit-target expander)
-        // as reverse-dead. `[\s\S]` keeps newlines matching, as the old class did.
+        // rather than `[^"\']*`, which stops at EITHER quote: a single quote inside a
+        // double-quoted attribute (Tailwind's `before:content-['']` empty-content
+        // utility) would truncate the match, `\1` would then fail to close, and the
+        // WHOLE class attribute would be skipped, orphaning every unique class in it
+        // as reverse-dead. `[\s\S]` keeps newlines matching.
         $pattern = '/(?<![:\w])class\s*=\s*(["\'])(?P<value>(?:(?!\1)[\s\S])*)\1/u';
 
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
@@ -1371,7 +1370,7 @@ final class ClassInventory
          * surfaces as reverse-dead in Tier 2 even though it has a static source.
          */
         /*
-         * CONTAINER-QUERY VARIANTS START WITH `@`, WHICH THE SHAPE CHECK BELOW REJECTS ON ITS
+         * Container-query variants start with `@`, which the shape check below rejects on its
          * FIRST CHARACTER — and it has to keep rejecting a bare `@`, because a Blade directive
          * is spelled that way too (`@if`, `@props`, `@class`). Admitting `@` outright would make
          * every directive look like a utility.
@@ -1423,16 +1422,16 @@ final class ClassInventory
         }
 
         /*
-         * A NAMED GROUP OR PEER MARKER — `group/wk-sidebar`, `peer/label`.
+         * A named group or peer marker — `group/wk-sidebar`, `peer/label`.
          *
          * Tailwind emits no rule for these and never has: the marker exists so a
          * `group-data-[…]/wk-sidebar:` variant elsewhere can address THIS ancestor rather
          * than the nearest one. It is consumed by the variant's selector, not compiled into
          * one of its own.
          *
-         * Two of them surfaced as forward drift the moment `$attributes->class([...])`
-         * started being read — reported as classes Tailwind had failed to generate, which is
-         * true and is not a defect. Filtered here rather than allowlisted by name, because
+         * Read as classes out of `$attributes->class([...])`, they would surface as forward
+         * drift — reported as classes Tailwind failed to generate, which is true and is not
+         * a defect. Filtered here rather than allowlisted by name, because
          * every future named group would otherwise need its own entry and would read as a
          * missing utility somebody had excused.
          */

@@ -146,7 +146,7 @@
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
-<div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class([$wrapperClasses]) }} @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
+<div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class([$wrapperClasses]) }} data-wk-sr-host @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
     {{-- Single live region: announces that a response is GENERATING (once), then the
          RESULT (once) when it settles. The visible output below is deliberately NOT a
          live region, so a screen reader is not re-read on every token. --}}
@@ -164,9 +164,8 @@
          twice on the page.
 
          A NAMED slot rather than the default one, deliberately. The default slot
-         here is documented and test-pinned as ADDITIVE — it is where Stop and
-         Retry controls go — so flipping its meaning would break every existing
-         call site. Named, a caller can use both at once.
+         here is documented as ADDITIVE, the place for Stop and Retry controls, so
+         this content takes a name of its own, and a caller can use both at once.
 
          The live regions above stay in both paths. They are the announcement
          contract, not decoration, and a headless output that dropped them would

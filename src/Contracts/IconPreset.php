@@ -10,7 +10,7 @@ interface IconPreset
      * Mapping of semantic alias names to Blade Icon identifiers.
      *
      * Base presets (heroicons, lucide, phosphor, tabler) MUST all contain
-     * the same standard alias set — parity enforced by IconSystemTest.
+     * the same standard alias set, so an alias resolves in every base preset.
      *
      * Stackable extension presets (e.g. heroicons-marketing) may define any
      * aliases. Multiple presets can be active simultaneously via the

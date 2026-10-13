@@ -137,7 +137,7 @@ $wrapperClasses
 @props.
 @unless($attributes->has('role'))
 A
-ADDITIVE
+ADDITIVE,
 APIs
 ARIA
 Alpine
@@ -176,7 +176,6 @@ Milliseconds
 NAMED
 NO
 NOT
-Named,
 Names
 No
 Normalized
@@ -315,7 +314,6 @@ body,
 body-less.
 body.
 both
-break
 break-words
 breathing
 browser's
@@ -359,15 +357,18 @@ concatenation
 config
 connection
 container
+content
 contract
 contract,
 control.
 controls
 controls).
+controls,
 copy
 cursor,
 custom
 data-replayable="true"
+data-wk-sr-host
 debug
 decoration,
 default
@@ -413,7 +414,6 @@ exactly
 example.
 exist
 existence
-existing
 exists
 explicit
 fail.
@@ -433,7 +433,6 @@ five
 flags
 flex
 flex-col',
-flipping
 flips
 fn
 font-[family-name:var(--font-wk-sans)]
@@ -447,7 +446,6 @@ gap:
 gated
 get
 gets
-go
 goes
 got
 grows
@@ -511,7 +509,6 @@ matter
 matters.
 may
 mean
-meaning
 meets,
 message
 method)
@@ -572,6 +569,7 @@ output.
 over
 overridable
 own
+own,
 page
 page.
 pane
@@ -583,6 +581,7 @@ paths.
 payload
 payload:
 per
+place
 placeholder
 plugin
 prefers-reduced-motion
@@ -672,7 +671,6 @@ silently.
 simulate
 single-event
 site
-site.
 situation
 slot
 slot,
@@ -706,11 +704,11 @@ suddenly
 surface
 syntax-highlighted
 tag)
+takes
 tech
 technology
 tell
 terminal
-test-pinned
 text
 text-[color:var(--color-wk-danger-text)]">
 text-[color:var(--color-wk-text)]"
@@ -779,7 +777,6 @@ went
 were
 what
 when
-where
 which
 while
 whitespace

@@ -24,7 +24,7 @@
         'border-[var(--color-wk-border-subtle)]',
         // Wrapping, because what does not fit a row packed to its end leaves on its START side,
         // and nothing scrolls to that side: three actions on a phone cut the first one off the
-        // panel, out of reach. Wrapped, they stack at the end; one line on a desktop, as before.
+        // panel, out of reach. Wrapped, they stack at the end; one line on a desktop.
         'flex flex-wrap items-center justify-end gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-md)]',
     ]), $scope);
 @endphp

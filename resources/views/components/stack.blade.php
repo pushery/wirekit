@@ -12,8 +12,8 @@
     //
     // Short form: WireKit defines two ladders with the same rung names and
     // different values from `md` up (`--gap-wk-md` 0.75rem against
-    // `--space-wk-md` 1rem), and only one of them was reachable here. Default
-    // `space` keeps every existing call site exactly where it is.
+    // `--space-wk-md` 1rem). The default, `space`, is the ladder `gap` reads when
+    // nothing names one.
     //
     // Both maps are written out rather than derived: Tailwind emits an
     // arbitrary utility only when it can see the class as a literal in a

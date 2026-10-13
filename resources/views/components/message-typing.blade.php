@@ -59,7 +59,7 @@
     data-wk-message-typing
     data-side="{{ $sideValue }}"
     @if($announce) role="status" aria-live="polite" @endif
-    {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class([$classes]) }}
 >
     {{-- Avatar — only when we know who is typing. It keeps the indicator in the
          avatar column of the typist's own messages above it. --}}
@@ -74,7 +74,7 @@
          not an anonymous set of dots floating at the thread edge. --}}
     <div class="flex flex-col {{ $columnAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
         @if($hasAuthor)
-            <span class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
+            <span title="{{ $author }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
                 {{ $author }}
             </span>
         @endif

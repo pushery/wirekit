@@ -14,6 +14,7 @@ $scope);
 $slot
 $timestamp
 ',
+'[overflow-wrap:break-word]',
 'actor'
 'base',
 'comment'
@@ -78,11 +79,13 @@ Decorative
 Dev-only
 Developer
 Fully
+Inherited
 Leading
 Optional
 Pushery\WireKit\WireKit;
 Renders
 The
+URL,
 Unknown
 What
 WireKit::resolveClasses('activity-row',
@@ -98,6 +101,7 @@ __('wirekit::Deployment'),
 __('wirekit::Merge'),
 __('wirekit::System'),
 __('wirekit::User'),
+`break-word`
 `config('wirekit.components.activity-row.kinds')`.
 `kindLabel`
 `release
@@ -107,7 +111,9 @@ action
 activity
 actor
 add
+address
 ago"),
+alone,
 an
 and
 announced
@@ -126,6 +132,9 @@ below,
 beside
 block,
 bold
+box.
+break
+breaks
 built-in
 by
 caller's
@@ -156,6 +165,7 @@ config('wirekit.components.activity-row.kinds',
 content
 conveyed
 could
+data-wk-sr-host
 debug
 default
 defaults,
@@ -170,10 +180,13 @@ dot.
 drives
 early.
 element,
+email
 entry
 equivalent
 error
 etc.
+every
+everything
 extend
 fall
 falls
@@ -191,6 +204,7 @@ gap-2">
 gap-3',
 gave
 h-2
+had.
 hears
 hold
 hours
@@ -199,6 +213,7 @@ imports
 in
 inline
 inline-block
+inside;
 instead
 intentionally
 interactive
@@ -210,6 +225,7 @@ items-center
 items-start
 its
 justify-between
+keeps
 key
 key.
 key:
@@ -221,7 +237,9 @@ kinds
 label
 language
 later
+layout
 leading
+leaves
 line.
 line:
 list
@@ -232,6 +250,7 @@ match
 may
 merge
 merged
+min-content
 min-w-0">
 muted
 muted.
@@ -256,11 +275,13 @@ own
 page
 perception
 place
+point,
 presentational
 prod).
 props
 qualified:
 quoted
+rather
 reach
 reader
 recolor
@@ -269,6 +290,8 @@ rendered
 result
 right-aligned
 rounded-full"
+row
+running
 screen
 search
 set
@@ -285,6 +308,7 @@ stands
 start
 style="background-color:
 system
+table
 tabular-nums">
 text
 text-[color:var(--color-wk-text)]">
@@ -292,13 +316,16 @@ text-[color:var(--color-wk-text-muted)]
 text-[length:var(--text-wk-xs)]
 textual
 textually
+than
 the
 there
 this
 timestamp
 to
+token
 token.
 translation
+typed
 under
 unknown
 unless
@@ -312,6 +339,7 @@ w-2
 where
 which
 whose
+width
 wins.
 with
 without

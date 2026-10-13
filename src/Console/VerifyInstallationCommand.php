@@ -76,9 +76,7 @@ class VerifyInstallationCommand extends Command
      * library exposes: 6 adds `_crossfilterFactory` and `_crossfilterGet`, 7 drops both
      * again, and the adapter references neither, which is why 7 costs it nothing.
      *
-     * Keep this in lockstep with the supported-versions sentence in
-     * `docs/components/chart.md`; `ApexTestedMajorsAreInLockstepTest` fails the build
-     * when the two disagree.
+     * These are the versions the chart's documentation names as supported.
      *
      * @var list<int>
      */

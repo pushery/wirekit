@@ -31,7 +31,7 @@
     // from here and then hands this same value to the store read as its fallback, so an empty
     // localStorage keeps it instead of collapsing to `false`.
     //
-    // Default `false`, so every existing call site renders byte for byte as before.
+    // Default `false`.
     'defaultExpanded' => null,
     // Storage key. Null keeps the choice for the session only.
     'persist' => null,
@@ -412,7 +412,7 @@
                         aria-label="{{ $expanded ? __('wirekit::Collapse rail') : __('wirekit::Expand rail') }}"
                         :aria-expanded="expanded ? 'true' : 'false'"
                         :aria-label="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse rail')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand rail')) }}"
-                        class="{{ $toggleClasses }}"
+                        class="wk-touch-target {{ $toggleClasses }}"
                     >
                         <svg class="h-4 w-4 transition-transform duration-[var(--transition-wk-duration)]" :class="expanded ? '' : 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-7.5-15L3.75 12l7.5 7.5" />

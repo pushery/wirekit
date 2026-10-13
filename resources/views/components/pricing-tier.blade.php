@@ -116,13 +116,14 @@
                  this reads it through the DOM, so switching costs no round trip and
                  no client-side money formatting.
 
-                 Only the first is visible before Alpine boots (the rest carry an
-                 inline display:none), so the page never flashes every price at once
-                 and no x-cloak rule is required. --}}
+                 Only the first is visible before Alpine boots (the rest carry
+                 `x-cloak`, which the kit's stylesheet hides until Alpine removes it),
+                 so the page never flashes every price at once, under a `style-src`
+                 policy that drops inline styles as well. --}}
             @foreach($prices as $intervalKey => $intervalAmount)
                 <span
                     x-show="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
-                    @unless($loop->first) style="display: none;" @endunless
+                    @unless($loop->first) x-cloak @endunless
                     class="flex items-baseline gap-[var(--space-wk-xs)]"
                     data-wk-pricing-interval="{{ $intervalKey }}"
                 >

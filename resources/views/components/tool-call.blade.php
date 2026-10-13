@@ -85,8 +85,8 @@
     // What the status region says once the call has settled: the tool AND its state, because a
     // reader who hears "Done" on its own cannot tell which of five calls it was. A block without a
     // name says the state alone rather than a sentence that starts with a colon. Nothing while the
-    // call is pending or running: `aria-busy` covers those, and announcing "Queued" and "Running…"
-    // as well would be three announcements for one call.
+    // call is pending or running: the block is marked busy (`aria-busy`), which announces nothing,
+    // and announcing "Queued" and "Running…" as well would be three announcements for one call.
     $isSettled = $status === 'done' || $isFailed;
 
     $announcement = match (true) {
@@ -122,11 +122,13 @@
     data-wk-tool-call
     data-status="{{ $status }}"
     @if($isRunning) aria-busy="true" @endif
-    {{ $attributes->except('aria-busy')->class([$rootClasses]) }}
+    data-wk-sr-host {{ $attributes->except('aria-busy')->class([$rootClasses]) }}
     @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     <div class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">
-        <x-wirekit::code data-wk-tool-call-name>{{ $toolName }}</x-wirekit::code>
+        {{-- `min-w-0`: a flex item is never narrower than its longest word, so a tool name with no
+             break point would run out of the row. Shrunk to the row, the code breaks it. --}}
+        <x-wirekit::code data-wk-tool-call-name class="min-w-0">{{ $toolName }}</x-wirekit::code>
 
         <x-wirekit::badge :intent="$statusIntent" size="sm" data-wk-tool-call-status>
             <x-wirekit::shimmer :active="$isRunning">{{ $statusLabel }}</x-wirekit::shimmer>

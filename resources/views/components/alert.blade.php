@@ -6,7 +6,7 @@
     'title' => null,
     'dismissible' => false,
     'icon' => true,
-    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    // Optional reveal animation. Null = no animation (default).
     'animateIn' => null,
     'scope' => null,
 ])
@@ -52,6 +52,10 @@
 
     // Base classes: flex layout with icon + content columns, tinted background via color-mix
     $baseClasses = WireKit::resolveClasses('alert', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'relative flex items-start gap-3',
         'px-[var(--padding-wk-x-md)]',
         'py-[var(--padding-wk-x-md)]',
@@ -177,7 +181,7 @@
             type="button"
             @click="dismiss()"
             aria-label="{{ __('wirekit::Dismiss') }}"
-            class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+            class="wk-touch-target shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

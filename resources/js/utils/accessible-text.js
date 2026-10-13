@@ -6,7 +6,7 @@
  * label from a heading — a table of contents, a spine, a minimap — is exactly the kind of
  * reader that should honor it.
  *
- * WHAT THIS FIXES. Every automatic anchor tool puts the permalink marker inside the
+ * What it is for. Every automatic anchor tool puts the permalink marker inside the
  * heading as a real text node:
  *
  *     <h2 id="basic-usage">
@@ -15,18 +15,17 @@
  *       </a>
  *     </h2>
  *
- * So every entry rendered as "#Basic Usage". It is invisible on screen (the span is
- * transparent until hover) and invisible to assistive technology (the `aria-hidden` does
- * its job), which is what made it easy to ship: nothing counts wrong, no test that measures
- * entry COUNTS notices, and the panel simply reads badly — it is only ever visible to a
- * person looking at the rendered panel.
+ * Read with `textContent`, every entry would say "#Basic Usage". That is invisible on screen
+ * (the span is transparent until hover) and invisible to assistive technology (the
+ * `aria-hidden` does its job), so nothing counts wrong and the panel simply reads badly —
+ * visible only to a person looking at the rendered panel.
  *
  * WHY A CLONE. Removing the nodes in place would mutate the page — the marker would
  * disappear from the heading itself. Cloning costs one shallow tree copy per heading, and
  * headings are counted in tens.
  *
- * WHAT THIS DELIBERATELY DOES NOT DO, because the omission looks like a gap and is not.
- * `aria-label` and `aria-labelledby` ON THE ELEMENT ITSELF override its content in the
+ * What this deliberately does not do, because the omission looks like a gap and is not.
+ * `aria-label` and `aria-labelledby` on the element itself override its content in the
  * accessible-name computation, and this function ignores them. Every caller renders VISIBLE
  * navigation — the table of contents, the spine, the minimap. Resolving an author's
  * `aria-label` first would make the entry read "Pricing for teams" beside a heading that

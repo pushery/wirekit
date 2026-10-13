@@ -100,7 +100,7 @@
 
     Shared:
       bg-[var(--color-wk-bg)]
-      hover:bg-[var(--color-wk-bg-subtle)]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
       shadow-[var(--shadow-wk-sm)]
 
     Per-intent text + border combinations:
@@ -134,7 +134,7 @@
       bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]
       bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]
       bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
-      bg-[var(--color-wk-bg-muted)]
+      bg-[var(--color-wk-bg-soft)]
 
     Hovers — the same expression at a higher share, so no new token is needed and
     both modes follow the theme through --color-wk-bg:
@@ -147,10 +147,10 @@
     Neutral has no tint token, and it is deliberately not the filled() pairing of
     muted → subtle: in light mode that hover gets slightly brighter, at the
     threshold of perception and pointing the way a reader parses as fading out.
-    Mixing toward the text color is right in both modes by construction.
-      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
-      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
-      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
+    Mixing toward the text color is right in both modes by construction. Its fill is
+    --color-wk-bg-soft, the text color mixed into the surface the button stands on, so it
+    stands apart from bg, bg-subtle and bg-muted alike.
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 
     (text color classes shared with outline() above)
 
@@ -160,7 +160,7 @@
 
       bg-transparent
       border-transparent
-      hover:bg-[var(--color-wk-bg-subtle)]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
       shadow-[var(--shadow-wk-none)]
 
     (text color classes shared with outline() above)

@@ -219,7 +219,7 @@
             "--color-wk-ring-offset": "#1C1C1E",
             "--color-wk-border": "var(--color-neutral-500)",
             "--color-wk-border-hover": "var(--color-neutral-400)",
-            "--color-wk-border-strong": "var(--color-neutral-500)",
+            "--color-wk-border-strong": "#8E8E93",
             "--color-wk-border-strong-hover": "var(--color-neutral-400)",
             "--color-wk-border-subtle": "var(--color-neutral-600)",
             "--color-wk-accent-fg": "var(--color-neutral-900)",

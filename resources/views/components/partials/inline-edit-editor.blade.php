@@ -170,9 +170,9 @@
          tab order mid-interaction, so a keyboard user loses their place exactly
          while waiting to find out whether the save worked. --}}
 
-    {{-- WHY THE BUTTONS WATCH FOR A DEPARTURE TOO:
+    {{-- Why the buttons watch for a departure too:
          the handler asks whether focus is still somewhere inside the component,
-         so tabbing from the control onto Confirm no longer counts as leaving —
+         so tabbing from the control onto Confirm does not count as leaving —
          which is the whole reason these buttons are reachable at all. But that
          alone would make them a place a draft can sit forever: tab past Cancel
          and nothing is left watching, so the editor would stay open behind the

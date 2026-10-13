@@ -29,18 +29,22 @@
     // The nonce, resolved the same way `fonts` and the asset directives resolve it.
     //
     // This component emits its own EXTERNAL assets (the chart emits only the ones a custom
-    // adapter names), and it was the only one with no nonce path at all. Under a `script-src 'strict-dynamic' 'nonce-…'` policy —
-    // which is the shape a nonce-based policy takes — a `<script src>` without the nonce is
-    // simply not executed, so the whole Tier-2 runtime went missing with nothing in the page
-    // to say why. The stylesheet is the same question one severity down: `style-src` with a
-    // nonce rejects an unnonced `<link rel="stylesheet">` and the surface renders unstyled.
+    // adapter names), so each carries the nonce. Under a
+    // `script-src 'strict-dynamic' 'nonce-…'` policy, the shape a nonce-based policy takes,
+    // a `<script src>` without the nonce is not executed, and the Tier-2 runtime would be
+    // missing with nothing in the page to say why. The stylesheet is the same question one
+    // severity down: `style-src` with a nonce rejects an unnonced `<link rel="stylesheet">`
+    // and the surface renders unstyled.
     $wkGlassNonce = \Pushery\WireKit\WireKit::cspNonce();
 @endphp
 <link rel="stylesheet"@if($wkGlassNonce) nonce="{{ $wkGlassNonce }}"@endif href="{{ asset('vendor/wirekit/glass/wirekit-glass.css') }}">
 <script @if($wkGlassNonce)nonce="{{ $wkGlassNonce }}"@endif src="{{ asset('vendor/wirekit/glass/wirekit-glass.js') }}" defer></script>
 
+{{-- The filter block takes no room: its size is the SVG's own attributes and its position a
+     class, never an inline style, which a `style-src` policy drops. --}}
 <svg xmlns="http://www.w3.org/2000/svg"
-     style="position:absolute;width:0;height:0;overflow:hidden"
+     width="0" height="0"
+     class="absolute overflow-hidden"
      aria-hidden="true">
     <defs>
         <filter id="wk-glass-refract"

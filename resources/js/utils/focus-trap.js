@@ -404,6 +404,13 @@ export function createFocusTrap(container, {
 
     listenForTeleportedPanels();
 
+    // Where focus stood in this trap when a trap opened above it paused it. When the trap above
+    // closes, focus-trap starts this one again at its initial focus node and only then lets the
+    // closing trap hand focus back to its opener, each on a timer of its own: focus stopped on the
+    // panel's first control on its way back, and a screen reader announced both. Resuming here
+    // makes the hand-back land on the element that already holds focus.
+    let resumeAt = null;
+
     const opts = {
         // Whether clicking outside deactivates the trap entirely
         clickOutsideDeactivates,
@@ -424,6 +431,14 @@ export function createFocusTrap(container, {
         // `adoptTeleportedTarget()`.
         onActivate: () => {
             liveTraps.add(entry);
+        },
+        // Called as a trap above takes over, while focus is still where the reader left it here.
+        onPause: () => {
+            const active = typeof document !== 'undefined' ? document.activeElement : null;
+
+            resumeAt = active && [container, ...entry.extras].some((root) => root?.contains?.(active))
+                ? active
+                : null;
         },
         // Tab and Shift+Tab as the library defines them, except in a panel the trap has taken in,
         // which handles the key itself (see `startsInAdoptedPanel()`).
@@ -471,11 +486,20 @@ export function createFocusTrap(container, {
         },
     };
 
-    // Optional initial focus override (e.g. command palette search input,
-    // alert-dialog's Cancel button).
-    if (initialFocus !== undefined) {
-        opts.initialFocus = initialFocus;
-    }
+    // Where focus starts: the caller's choice (e.g. command palette search input, alert-dialog's
+    // Cancel button), or focus-trap's own default where there is none. Once a trap above has paused
+    // this one, the element focus stood on comes first, while it is still on the page; focus-trap
+    // checks it can take focus and falls back to the same default otherwise.
+    opts.initialFocus = () => {
+        const resume = resumeAt;
+        resumeAt = null;
+
+        if (resume && resume.isConnected) {
+            return resume;
+        }
+
+        return typeof initialFocus === 'function' ? initialFocus() : initialFocus;
+    };
 
     // Optional return-focus override. `returnFocusOnDeactivate` above sends focus
     // back to whatever was focused before the trap opened — but that element may

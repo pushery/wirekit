@@ -85,7 +85,7 @@ export default function wirekitRating(config = {}) {
             // change travels.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
-            // here, but `test-server-value-seed.mjs` constructs this factory with a
+            // here, but a unit harness can construct this factory with a
             // barren stub that answers `getAttribute` and nothing else, or nothing at
             // all, and a factory needing more than it uses turns that into a TypeError
             // at init.

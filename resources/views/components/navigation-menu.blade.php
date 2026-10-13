@@ -15,7 +15,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:focusout']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:focusout', 'x-on:keydown.escape.window.capture']);
 
     // Navigation Menu — top-level nav with rich flyout panels (mega menu).
     // Uses disclosure pattern: hover or click to reveal content panels.
@@ -46,6 +46,9 @@
          separate listener in navigation-menu/item.blade.php. --}}
     x-on:keydown="handleBarKeydown($event)"
     x-on:focusout="handleBarFocusOut($event)"
+    {{-- Escape closes a flyout a pointer opened wherever the focus is (WCAG 1.4.13): neither the
+         bar's listener nor the panel's hears a key pressed on <body>. --}}
+    x-on:keydown.escape.window.capture="escapeAnywhere($event)"
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Main navigation') }}" @endunless
     {{ $attributes->class(['wk-navigation-menu', $classes]) }}
 >

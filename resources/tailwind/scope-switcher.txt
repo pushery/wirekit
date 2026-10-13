@@ -33,6 +33,7 @@
 #0a0a0a),
 #0a0a0a`
 $_)
+$announceBusy
 $as
 $as);
 $attributes
@@ -97,6 +98,7 @@ $emptyLabel
 $emptyText
 $finalRel
 $forceLoading
+$forceLoading;
 $groupId
 $groupName
 $groupRows)
@@ -117,6 +119,8 @@ $iconOnlyBelowClasses
 $iconOnlyBelowClasses,
 $iconOnlyBelowLabelClass
 $iconOnlyHeightClasses
+$iconOnlyShrinkClasses
+$iconOnlyShrinkClasses,
 $iconOnlySquareToken
 $iconRight
 $id
@@ -236,6 +240,7 @@ $tag
 $targetAttr
 $touchClasses
 $touchClasses,
+$touchFloor
 $touchTextFloor
 $trigger
 $type
@@ -254,6 +259,7 @@ $wrapperClasses
 '#'),
 ''
 '')
+'')),
 ''));
 ''),
 '');
@@ -275,6 +281,8 @@ $wrapperClasses
 '/^(?:min-h|h|w|p[xytrblse]?)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/')
+'/^shrink(?:-|$)/'))
 '20rem');
 '22rem');
 '2xl'
@@ -315,7 +323,7 @@ $wrapperClasses
 'cursor-pointer',
 'danger'
 'danger',
-'data-[active]:bg-[var(--color-wk-bg-muted)]',
+'data-[active]:bg-[var(--color-wk-bg-active)]',
 'disableOnLoading'
 'disabled'
 'disabled:opacity-[var(--opacity-wk-disabled)]',
@@ -357,7 +365,7 @@ $wrapperClasses
 'horizontal'
 'horizontal',
 'horizontal';
-'hover:bg-[var(--color-wk-bg-subtle)]',
+'hover:bg-[var(--color-wk-bg-hover)]',
 'href'
 'icon'
 'icon-only
@@ -441,7 +449,7 @@ $wrapperClasses
 'search'
 'searchPlaceholder'
 'shadow-[var(--shadow-wk-lg)]',
-'shrink-0
+'shrink-0'
 'size'
 'size',
 'sm'
@@ -454,6 +462,7 @@ $wrapperClasses
 'success'
 'surface'
 'surface',
+'text-[color:var(--color-wk-accent-text)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-muted)]'
 'text-[length:var(--text-wk-lg)]
@@ -464,6 +473,7 @@ $wrapperClasses
 'text-[length:var(--text-wk-sm)]',
 'top-end',
 'top-start',
+'touchFloor'
 'touchTextFloor'
 'tracking-[var(--font-wk-letter-spacing)]',
 'transition-colors',
@@ -491,6 +501,7 @@ $wrapperClasses
 'wk-button
 'wk-button',
 'wk-button-group',
+'wk-touch-row',
 'wk-touch-target
 'wrapLabel'
 'wrapper',
@@ -551,10 +562,8 @@ $wrapperClasses
 (avoids
 (button
 (button/link)
-(byte-identical);
 (class_exists(\Normalizer::class))
 (count($rows)
-(current
 (debug
 (declarative
 (default)
@@ -564,6 +573,7 @@ $wrapperClasses
 (function_exists('svg')
 (hover
 (hover)
+(implicit
 (int)
 (is_string($decomposed))
 (is_string($key)
@@ -590,6 +600,7 @@ $wrapperClasses
 (text
 (transparent
 (true
+(true)
 (utils/ime.js).
 (utils/outside-release.js).
 (which
@@ -604,6 +615,7 @@ $wrapperClasses
 -------
 --------
 -----------
+--color-wk-bg-soft,
 --color-wk-bg:
 --color-wk-info-tone,
 --color-wk-warning-bg
@@ -623,6 +635,7 @@ $wrapperClasses
 .'rendered
 .'roughly
 ...>
+.=
 .wk-button-group
 /
 /*
@@ -637,6 +650,7 @@ $wrapperClasses
 12%,
 12a8
 12h4z"></path>
+12rem
 16px
 18
 1px
@@ -652,7 +666,6 @@ $wrapperClasses
 28px,
 2rem
 2rem);"
-2rem,
 2xl
 300);
 32
@@ -661,7 +674,7 @@ $wrapperClasses
 360px
 390px
 393px
-3rem.
+3rem,
 4.1.2)
 4.78).
 44
@@ -749,6 +762,7 @@ $wrapperClasses
 @foreach($groupRows
 @foreach($grouped
 @if
+@if($announceBusy)
 @if($computedRel)
 @if($create)
 @if($createUrl
@@ -778,6 +792,7 @@ $wrapperClasses
 @props([
 @props.
 @source
+@unless($attributes->has('data-wk-busy-text'))
 @unless($isCurrent
 @unless(str_starts_with($createUrl,
 @var
@@ -787,7 +802,6 @@ ABOVE
 ALSO
 AND
 ANY
-API:
 ARIA
 AT
 Accessible
@@ -815,6 +829,7 @@ BooleanProp::from($forceLoading,
 BooleanProp::from($iconOnly,
 BooleanProp::from($loading,
 BooleanProp::from($padded,
+BooleanProp::from($touchFloor,
 BooleanProp::from($touchTextFloor,
 BooleanProp::from($wrapLabel,
 BooleanProp::from(config('wirekit.components.scope-switcher.prefetch_on_hover',
@@ -1044,6 +1059,7 @@ Unlike
 Upstream
 Uses
 UtilityClasses::PADDING);
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 UtilityClasses::without($panelClasses,
 VIEWPORT.
@@ -1092,7 +1108,7 @@ Written
 ['top-end',
 ['xs',
 [--color-wk-ring:var(--color-wk-accent-fg)]
-[--wk-touch-min:0px]'
+[--wk-touch-min:0px]',
 [])),
 [],
 [];
@@ -1121,6 +1137,7 @@ Written
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
 \Pushery\WireKit\Support\UtilityClasses::TEXT_COLOR)
+\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
 \Pushery\WireKit\Support\UtilityClasses::without($itemClasses,
 \Pushery\WireKit\Support\UtilityClasses::without($sizeClasses,
@@ -1144,6 +1161,7 @@ __('wirekit::(opens
 __('wirekit::Failing'),
 __('wirekit::Healthy'),
 __('wirekit::Inactive'),
+__('wirekit::Loading')
 __('wirekit::Needs
 __('wirekit::No
 __('wirekit::Popover'))
@@ -1169,7 +1187,7 @@ __toString
 `<button>`,
 `<span>`
 `<x-slot:iconLeft>`
-`<x-slot:iconRight>`
+`<x-slot:iconRight>`.
 `<x-wirekit::button
 `=`
 `@`-variant
@@ -1211,7 +1229,6 @@ __toString
 `border-e-[3px]`
 `border-e-[var(--color-wk-accent)]`
 `break-word`
-`class="h-12
 `class="whitespace-normal"`
 `class`
 `clipboard-button`
@@ -1231,8 +1248,10 @@ __toString
 `flex`
 `forceLoading=true`
 `forceLoading`
+`forceLoading`,
 `foreground
 `gap-1`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -1241,10 +1260,12 @@ __toString
 `hidden`,
 `href`
 `icon-only-below=""`
+`iconOnlyBelow`
 `iconOnlyBelow`,
 `iconOnly`
 `iconOnly`,
 `icon`
+`icon`.
 `inbox`
 `inline-flex`
 `isOpen`
@@ -1285,6 +1306,7 @@ __toString
 `role="dialog"`,
 `role="img"`.
 `role="link"`
+`shrink`
 `sm`
 `sr-only`
 `src/VariantResolver.php`,
@@ -1294,6 +1316,7 @@ __toString
 `table.th
 `target`
 `toggleBooleanStateDirective`
+`touchFloor`
 `transform`
 `true`
 `true`,
@@ -1306,6 +1329,7 @@ __toString
 `wire:loading.attr`
 `wire:loading`
 `wk-field`
+`wk-touch-row`,
 `wk-touch-target`
 `wrap-label="false"`
 `wrapLabel`
@@ -1358,7 +1382,7 @@ actually
 add
 address
 adds
-adopting
+adds:
 affordance
 after
 again
@@ -1367,6 +1391,7 @@ agree.
 alert-dialog
 alias
 aligned
+alike.
 all
 all,
 all.
@@ -1381,6 +1406,7 @@ alone,
 along
 alongside
 already
+already,
 also
 alt=""
 alternative,
@@ -1396,12 +1422,15 @@ anchor's
 anchor,
 anchored
 and
+announce
 announced
-announcement
+announced,
 announces
 anonymous
 another
 answer
+answer,
+answers
 anticipate
 anticipate:
 any
@@ -1410,6 +1439,8 @@ anything
 anyway;
 anywhere
 anywhere,
+apart
+apart:
 app()->getLocale()));
 app()->hasDebugModeEnabled())
 app(IconResolver::class)->resolve($name);
@@ -1421,9 +1452,11 @@ application
 applied
 applied.
 applies
+apply
 arbitrary
 are
 area
+area.
 aria-activedescendant.
 aria-allowed-attr
 aria-autocomplete="list"
@@ -1465,7 +1498,6 @@ assembled
 assistive
 assistive,
 at
-attached
 attempted
 attention'),
 attribute
@@ -1485,6 +1517,8 @@ automatically
 avatar
 avatar.group
 avoid.
+away
+away,
 axe
 axe-core
 axe-core's
@@ -1517,7 +1551,7 @@ become
 becomes
 before
 began
-behavior
+behavior;
 behind
 being
 bell
@@ -1532,6 +1566,7 @@ beneath
 beside
 between
 between,
+bg,
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
@@ -1541,10 +1576,13 @@ bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
+bg-[var(--color-wk-bg-soft)]
 bg-[var(--color-wk-danger)]
 bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
+bg-muted
+bg-subtle
 bg-transparent
 binds
 blade-heroicons
@@ -1611,6 +1649,7 @@ build
 built
 bundle
 busy
+busy.
 but
 button
 button's
@@ -1632,6 +1671,7 @@ caller,
 callout/alert).
 can
 can't
+can.
 candidate
 candidates
 cannot
@@ -1697,12 +1737,11 @@ class="opacity-25"
 class="opacity-75"
 class="px-[var(--padding-wk-x-md)]
 class="relative">
-class="shrink-0
-class="shrink-0"
 class="shrink-0">
 class="shrink-0">{{
 class="sr-only">{{
-class="truncate">{{
+class="text-[color:var(--color-wk-text-muted)]"
+class="truncate"
 class="wk-field
 class="wk-listbox-option
 class="wk-scroll-shadow-bottom"></div>
@@ -1779,7 +1818,6 @@ config('wirekit.components.scope-switcher.width',
 configuration
 configured
 configured.
-conflict
 connection
 console
 console).
@@ -1790,6 +1828,7 @@ contain
 contain;"
 container
 container's
+container,
 container-relative
 container.
 containing
@@ -1808,6 +1847,7 @@ contradiction,
 contrast
 control
 control,
+controls
 controls.
 convention:
 copy
@@ -1826,12 +1866,14 @@ counters.
 coverage
 covered
 covers
+crowded
 current
 currently
 cursor
 cursor-pointer
 cursor-pointer',
 custom
+cuts
 cx="12"
 cy="12"
 d="M4
@@ -1849,13 +1891,17 @@ data-position="{{
 data-search="{{
 data-stack-below="{{
 data-table
+data-wk-busy-spinner
+data-wk-busy-text="{{
 data-wk-indicator
 data-wk-indicator-badge>{{
 data-wk-popover
 data-wk-prose-skip
 data-wk-scope-switcher
+data-wk-sr-host
 data.
 debug
+decide
 decided
 decided,
 decision,
@@ -1875,7 +1921,6 @@ default,
 default.
 default:
 defect
-defect:
 define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
 definition,
@@ -1906,23 +1951,20 @@ did
 did.
 difference
 different
-direct
 direction;
 disable
 disable,
+disable.
 disabled
 disabled,
-disabled.
 disabled:cursor-not-allowed
 disabled:opacity-[var(--opacity-wk-disabled)]
 disabling.
 disagree
 dispatched
 dist/wirekit.css
-distinguish:
 div.
 do
-docblock
 docs,
 docs.
 docs/theming.md
@@ -1965,6 +2007,7 @@ edge.
 edges,
 edges.
 editing
+effect.
 either
 either.
 element
@@ -2014,7 +2057,6 @@ except('rel')
 exhausting
 exist
 exist,
-existed
 exists
 exists,
 exists.
@@ -2119,7 +2161,6 @@ focusable
 focused
 focuses
 follow
-followable.
 follows
 font
 font-[number:var(--font-wk-body-weight)]
@@ -2129,7 +2170,6 @@ footer.
 for
 for.
 for:
-forbidden
 forcing
 foreach
 form
@@ -2167,12 +2207,14 @@ geometry
 get
 gets
 ghost()
+give
 given,
 gives
 glob
 global
 glyph
 glyph"
+glyph,
 glyph.
 go
 goes
@@ -2185,6 +2227,7 @@ group,
 group.
 group;
 groups
+grown
 grows
 guarantee,
 guarantees
@@ -2195,7 +2238,6 @@ h-5
 h-auto
 h-auto`).
 h/w
-had
 half
 half,
 half.
@@ -2247,7 +2289,6 @@ hint
 historical
 hit
 hold
-holding
 holds
 honest
 honoring
@@ -2255,7 +2296,6 @@ honors
 hook
 horizontal
 host
-house
 hover
 hover-card
 hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
@@ -2265,9 +2305,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
-hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
@@ -2285,6 +2325,7 @@ icon
 icon's
 icon-only
 icon-only-below
+icon.
 icon;
 icons
 icons).
@@ -2395,7 +2436,6 @@ justify-center
 justify-start
 keep
 keeps
-kept
 key
 key.
 keyboard
@@ -2405,6 +2445,7 @@ keys
 keystroke
 kill
 kit
+kit's
 knowing
 knows
 label
@@ -2413,7 +2454,6 @@ label.
 labeled
 labels
 labels).
-ladder
 landed
 lands
 language
@@ -2558,6 +2598,7 @@ missing
 missing,
 missing-accessible-name
 missing:
+mixed
 mixed>>
 modal
 modal,
@@ -2590,6 +2631,7 @@ names
 names,
 naming
 narrow
+narrower
 narrower,
 native
 natively,
@@ -2607,6 +2649,7 @@ needs.
 needs:
 negative
 neighbor.
+neighbors,
 neither
 neither:
 nested
@@ -2667,6 +2710,7 @@ offsets
 often
 omission:
 on
+on,
 on.
 once
 one
@@ -2701,7 +2745,6 @@ order:
 ordinary
 org
 origin,
-original
 orphaned
 other
 other.
@@ -2750,6 +2793,7 @@ pads
 page
 page,
 page.
+page:
 pages
 pagination
 painted
@@ -2815,6 +2859,7 @@ platform-dependent
 plugin
 plural
 plus
+point:
 pointer
 pointer-events-none"
 pointer-events-none'
@@ -2832,7 +2877,6 @@ positioning
 positions
 post-process
 pre-checking
-pre-fix
 precisely
 preference.
 prefers
@@ -2858,7 +2902,6 @@ prod).
 prod.
 produces;
 prohibits
-project
 promise
 promise.
 promoting
@@ -2929,7 +2972,6 @@ reason.
 reason:
 reasoning
 rebuilds.
-records
 red
 redone
 reference
@@ -2966,7 +3008,6 @@ replace.
 replaced
 replacements,
 replaces
-report
 reported
 reports
 repository.
@@ -3043,7 +3084,6 @@ rule
 rule.
 run
 run.
-rung
 running
 runs
 runtime
@@ -3073,6 +3113,7 @@ screen
 screen,
 screen-reader
 screen-reader-skipping
+screen:
 script
 scroll
 scrollbar
@@ -3101,7 +3142,6 @@ set
 set,
 set.
 sets
-setting
 setup
 several
 severs
@@ -3119,7 +3159,6 @@ share.
 shared
 shares
 sharing
-shipped
 shipping
 shipping.
 ships
@@ -3128,13 +3167,13 @@ shorter,
 should
 show
 show/close
-showed
 showing,
 showing.
 shown
 shows
 shrink
 shrink-0
+shrink-0';
 shrink-wraps
 shrink.
 shrinks
@@ -3199,6 +3238,7 @@ source-baked
 source-detection
 space
 space).
+space.
 span
 spec
 specific
@@ -3228,6 +3268,7 @@ stacking
 stacks
 stacks:
 stale
+stand
 stands
 state
 state,
@@ -3240,7 +3281,6 @@ status-matrix
 stay
 stay,
 stay.
-stayed
 stays
 stays:
 steering
@@ -3250,7 +3290,6 @@ steps
 sticky
 still
 stop
-stopped
 stops
 storage/logs/laravel.log.
 str_contains($relAttr,
@@ -3344,7 +3383,6 @@ text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-content)]"
 text-[color:var(--color-wk-accent-fg)]
-text-[color:var(--color-wk-accent-text)]',
 text-[color:var(--color-wk-danger-fg)]
 text-[color:var(--color-wk-danger-text)]
 text-[color:var(--color-wk-info-fg)]
@@ -3354,7 +3392,6 @@ text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text)]',
 text-[color:var(--color-wk-text-muted)]
-text-[color:var(--color-wk-text-muted)]"
 text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
@@ -3364,6 +3401,7 @@ text-[length:var(--text-wk-xs)]
 text.
 text/bg/border
 than
+than.
 that
 that's
 that.
@@ -3387,7 +3425,7 @@ thing.
 things
 third
 this
-this:
+this,
 those
 though
 three
@@ -3399,15 +3437,15 @@ throwing
 throws
 throws.
 tile
-time,
 tint
+title.
+title="{{
 to
 to.
 toCssClasses()
 toHtml().
 toast
 today
-today's
 together
 toggle,
 toggles
@@ -3419,7 +3457,7 @@ told
 too
 too,
 too.
-took
+toolbar
 tooltip
 top
 touch
@@ -3491,10 +3529,10 @@ unvalidated
 up
 up.
 update
+upright
 upstream
 use
 use.
-used,
 useful
 user
 users
@@ -3506,6 +3544,7 @@ utilities
 utility
 utility,
 utility.
+utils/busy-announcer.js
 v4
 valid
 validateProp
@@ -3523,6 +3562,7 @@ variant
 variant's
 variants
 vertical
+very
 via
 view
 view's
@@ -3540,8 +3580,8 @@ visually-hidden
 vocabulary
 voice
 voice-control
-w-12"`
 w-12',
+w-12`
 w-2
 w-3',
 w-4
@@ -3563,6 +3603,7 @@ w-fit',
 w-full
 w-max',
 wait
+wait.
 wants
 warn
 warning
@@ -3570,6 +3611,7 @@ warning,
 warning:
 was
 waste
+watches
 watching
 way
 way",
@@ -3605,6 +3647,7 @@ why
 why.
 wide
 wide.
+wide;
 wider
 width
 width,
@@ -3638,8 +3681,8 @@ with
 with.
 withholds
 without
+wk-touch-row
 wk-touch-text-floor'
-won
 word
 word,
 word.
@@ -3700,6 +3743,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0
 x-transition:leave-start="opacity-100
 x-transition:leave="transition
+x-wk-announce-busy
 x-wk-ime
 xl
 xmlns="http://www.w3.org/2000/svg"

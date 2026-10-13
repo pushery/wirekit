@@ -20,7 +20,7 @@ use Pushery\WireKit\Support\SafeUrl;
  * )" />
  * ```
  *
- * WHAT THESE DO NOT DO: they cannot tell whether the page actually SHOWS what
+ * What these do not do: they cannot tell whether the page actually SHOWS what
  * the markup claims. Structured data that describes content the user cannot see
  * is a Google policy violation and gets the rich result withdrawn — so emit a
  * FAQPage only where the questions are really rendered, an AggregateRating only

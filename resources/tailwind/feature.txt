@@ -87,6 +87,7 @@ $validated
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2',
 '2xl'
 '3',
@@ -98,6 +99,7 @@ $validated
 'Rendering
 'Run:
 '[WireKit]
+'[overflow-wrap:break-word]',
 'accent'
 'accent');
 'accent',
@@ -169,7 +171,7 @@ $validated
 (array
 (button
 (custom
-(default,
+(default).
 (e.g.
 (function_exists('svg')
 (int)
@@ -178,7 +180,6 @@ $validated
 (preserving
 (provides
 (regex
-(replaces
 (same
 (shouldSetHidden=true),
 (silent
@@ -192,6 +193,7 @@ $validated
 --color-wk-info-tone
 --}}
 ...>
+.=
 /
 //
 />
@@ -199,12 +201,11 @@ $validated
 16px
 2,
 20px,
-2rem,
 3
 3,
 32×32
 3;
-3rem.
+3rem,
 4,
 5,
 500s
@@ -246,9 +247,7 @@ A
 A11y
 ALSO
 AND
-API:
 AT
-Adding
 An
 Beside
 Blade
@@ -271,12 +270,13 @@ Fully
 Graceful
 HTTP
 Heading
-Hero).
+Hero
 Htmlable,
 Icon
 IconResolver,
 If
 In
+Inherited
 It
 Lighthouse.
 Logger
@@ -292,6 +292,7 @@ OR
 OUTER
 Operating
 Optional
+Outside
 PERFECTLY
 Preferring
 Pushery\WireKit\Icons\IconResolver;
@@ -320,6 +321,8 @@ The
 This
 Throwing
 Tone
+URL,
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 WCAG
 We
@@ -357,8 +360,9 @@ __toString
 `aria-hidden="true"`
 `aria-label`
 `aria-labelledby`
-`class="h-12
+`break-word`
 `class`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -371,6 +375,7 @@ __toString
 `primary
 `primary`
 `role="img"`.
+`shrink`
 `soft`
 `tone`
 a
@@ -379,6 +384,7 @@ about
 above.
 absent,
 accent
+accent,
 accent.
 accent`
 accept
@@ -388,8 +394,8 @@ accessible
 action
 actual
 add
+address
 after
-against
 alert
 alert/badge/callout/message/reaction/toast-region.
 alias
@@ -453,8 +459,10 @@ block,
 bootstrapped
 both
 bound
+box.
 branch's
 break
+breaks
 bug
 build
 but
@@ -469,6 +477,7 @@ caller
 caller's
 callout
 can
+can.
 cannot
 canonical
 card
@@ -504,9 +513,9 @@ config('wirekit.components.feature.size',
 config('wirekit.components.feature.tone',
 config('wirekit.components.feature.{key}')
 configured
-conflict
 console
 console).
+container
 content
 context
 contract.
@@ -543,8 +552,8 @@ developer's
 did
 did-you-mean,
 didn't
-direct
 div:
+do.
 docs
 document
 does
@@ -557,12 +566,14 @@ dropdown
 dropdowns
 early
 early.
+effect.
 either
 either,
 element
 element,
 else
 elseif
+email
 embedded
 emit
 empty
@@ -570,6 +581,7 @@ empty-state
 entry
 even
 every
+everything
 exhausting
 exists.
 explicitly
@@ -590,15 +602,13 @@ first-allowed
 first:
 fix
 fix.
-fixed
 flags
+flex
 flex-col',
-followable.
 font-[number:var(--font-wk-heading-weight)]
 for
-forbidden
 forcing
-foreground
+foreground,
 found.`
 framework
 from
@@ -608,10 +618,11 @@ function).
 function_exists('svg'))
 gate
 gate,
-get
 gets
+give
 global
 glyph
+glyph,
 glyph.
 goes
 grid
@@ -624,11 +635,11 @@ h-[var(--size-wk-md)]
 h-[var(--size-wk-sm)]
 h/w
 h1,
+had.
 half
 hand-written
 happened
 hard
-hardcoded
 harder
 has
 hatch:
@@ -642,11 +653,11 @@ hero-row
 hidden
 historical
 hold
-house
 icon
 icon's
 icon);
 icon-only
+icon.
 icon;
 iconSizeProp].
 icons
@@ -668,6 +679,7 @@ informative
 informative.
 injected
 inside
+inside;
 installed
 installed.'
 intact
@@ -695,11 +707,11 @@ kit
 kit's
 know
 labels).
-ladder
 later
 layout
 leading-relaxed">
 leave
+leaves
 left
 level
 like
@@ -719,7 +731,6 @@ lost
 lost,
 loudly,
 make
-makes
 map
 map.
 marker
@@ -729,10 +740,12 @@ matching
 may
 mb-[var(--space-wk-xs,0.25rem)]">
 md
+meant
 merge
 message
 migrated.
 migration.
+min-content
 missing
 missing,
 missing:
@@ -746,6 +759,7 @@ name
 name.
 named
 needs
+neighbors,
 neither
 nested
 neutral
@@ -781,6 +795,7 @@ optimistic-ui:
 or
 order
 other
+otherwise
 our
 out
 outline
@@ -803,6 +818,7 @@ per-set
 personalization
 place
 placeholder
+point,
 post-process
 pre-checking
 preg_replace(
@@ -824,7 +840,6 @@ prop-naming-conventions
 props
 proven
 provides
-put
 qualified:
 rather
 raw
@@ -870,9 +885,11 @@ rounded-[var(--radius-wk-lg)]',
 rounded-[var(--radius-wk-md)]',
 rounded-[var(--radius-wk-sm)]',
 rounded-[var(--radius-wk-xl)]',
+row
+row,
 rule
 run
-rung
+running
 same
 screen-reader-skipping
 scrolls
@@ -884,13 +901,15 @@ sensible
 set
 set.
 sets
+short
 should
 shown
+shrink
+shrink-0';
 single
 site
 sits,
 size
-size,
 sized
 skipped
 slot
@@ -902,6 +921,7 @@ sorts
 source
 source-baked
 space).
+space.
 span
 spell:
 spelling.
@@ -909,7 +929,6 @@ state
 static
 stay
 still
-stopped
 storage/logs/laravel.log.
 strictness
 string
@@ -943,7 +962,6 @@ text-[color:var(--color-wk-text)]">
 text-[color:var(--color-wk-text)]',
 text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-warning-text)]',
-text-white
 than
 that
 the
@@ -967,6 +985,7 @@ to
 to,
 toCssClasses()
 toHtml().
+token
 tone
 tone="primary">`
 too;
@@ -977,6 +996,7 @@ true)
 true);
 try
 two
+typed
 unchanged.
 under
 unknown
@@ -989,8 +1009,6 @@ used.
 useful
 uses
 utility
-v1.2.x
-v1.5.0-identical).
 valid
 validateProp
 validateProp's
@@ -1002,8 +1020,8 @@ view's
 view.
 visible
 vocabulary
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5
@@ -1012,7 +1030,6 @@ w-5';
 w-6',
 w-8',
 warning
-was
 way
 ways
 we

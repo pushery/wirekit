@@ -112,7 +112,7 @@ return [
         // and the warning stays yellow for the life of the file — a developer who did
         // exactly what they were told sees no change, and learns to stop reading it.
         //
-        // 0 restores the old read-everything behavior.
+        // 0 removes the bound and reads the whole log.
         'scan_logs_window_hours' => EnvValue::get('WIREKIT_DOCTOR_SCAN_LOGS_WINDOW_HOURS', 24),
     ],
 
@@ -267,9 +267,8 @@ return [
          *     <html style="--font-scale-wk: 1.25">
          *
          * Like its two siblings, this key is a RECORD of the name the shipped stylesheet
-         * carries, not a switch that renames it — the same correction the motion key
-         * received in this release, applied from the start rather than after the fact.
-         * `FontScaleGuardTest` holds the two together.
+         * carries, not a switch that renames it: the stylesheet reads `--font-scale-wk`
+         * whatever the key says, so the two name the same property.
          */
         'font_scale_property' => '--font-scale-wk',
     ],
@@ -295,7 +294,10 @@ return [
         'fab' => ['position' => 'end'],
         'fab.button' => [],
         'button.group' => [],
-        'input' => ['size' => 'md'],
+        // `format-hint`: a date or date-and-time field says so when the browser writes dates in a
+        // different order than the page, with a worked example. `true` turns it on for every
+        // such field, and a field can still pass its own `format-hint`.
+        'input' => ['size' => 'md', 'format-hint' => false],
         'label' => [],
         'select' => ['size' => 'md'],
         'textarea' => ['size' => 'md', 'rows' => 3],
@@ -350,6 +352,10 @@ return [
         'empty-state' => ['variant' => 'default'],
         'progress' => ['variant' => 'primary', 'size' => 'md', 'circle-size' => 'md'],
         'usage-meter' => ['warn' => 0.8, 'danger' => 1.0],
+        // The colors a chart's series take: 'semantic' (the accent, the state colors and three
+        // further accents) or 'categorical' (eight pastels from the `--color-wk-chart-*` tokens,
+        // each a fill and an edge). A chart's own `palette` prop wins.
+        'chart' => ['palette' => 'semantic'],
         // The two string defaults are null on purpose. A literal here WINS over the
         // component's `__()` fallback — `config(key, default)` never reaches its second
         // argument once the key exists — so an English word in this file silently made
@@ -425,7 +431,8 @@ return [
         // No 'format' key: date-picker renders a native <input type="date">, whose
         // displayed format is the viewer's locale by specification and is not settable
         // by the page. The key shipped for a while and could never have had an effect.
-        'date-picker' => ['size' => 'md'],
+        // `format-hint`: the same as on 'input', for every date picker.
+        'date-picker' => ['size' => 'md', 'format-hint' => false],
         'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null, 'capture' => null],
         // `placement`: where the options panel opens, any placement `dropdown` takes. `panel-width`:
         // `trigger` matches the field, `auto` fits the widest option, or a CSS length such as 20rem.
@@ -475,6 +482,9 @@ return [
         // 'release' => 'var(--color-wk-warning)'.
         'activity-row' => ['kinds' => []],
         'price' => ['size' => 'md'],
+        'swatch' => ['size' => 'md', 'shape' => 'circle'],
+        // `labels`: 'hidden' (when null) keeps each name for assistive technology, 'below' shows it.
+        'swatch-group' => ['size' => 'md', 'shape' => 'circle', 'labels' => null],
         'ticker' => ['size' => 'md'],
 
         // Feature card icon-chip tone + size
@@ -523,10 +533,9 @@ return [
     |
     | Available built-in presets:
     |   'heroicons'           — base, blade-ui-kit/blade-heroicons (~316 icons, Mini style)
-    |   'heroicons-app'       — stackable extension, EMPTY since v2.37.0. Every word
-    |                           it carried moved into all four base presets, so it
-    |                           adds nothing now. The name still resolves so an
-    |                           existing config keeps booting.
+    |   'heroicons-app'       — stackable extension, EMPTY: all four base presets
+    |                           carry its words, so it adds nothing. The name
+    |                           resolves so a config that lists it keeps booting.
     |   'heroicons-marketing' — stackable extension with marketing/landing aliases
     |                           (sparkle, cursor-arrow-rays, cube-transparent, pulse, …)
     |   'lucide'              — mallardduck/blade-lucide-icons (~1,500 icons)
@@ -669,7 +678,7 @@ return [
         | they appear to close. Values that look measured and are not are worse
         | than a blank, because a blank cannot be pasted.
         |
-        | MEASURE THE FOUR VALUES. Do not estimate them. A guessed `size-adjust`
+        | Measure the four values. Do not estimate them. A guessed `size-adjust`
         | moves the layout in the OTHER direction and looks deliberate while doing
         | it, which is worse than leaving the whole thing alone. The method, and
         | the two things that are easy to get wrong about it, are on the Fonts

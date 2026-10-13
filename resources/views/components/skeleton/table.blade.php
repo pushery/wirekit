@@ -52,7 +52,7 @@
      floor. Nothing depends on it: without support the skeleton renders the ordinary way, which
      is what all of them did before the optimization existed. The intrinsic-size hint travels
      as a custom property so it stays tunable per variant. --}}
-    <div
+    <div data-wk-sr-host
     role="status"
     aria-live="polite"
     aria-label="{{ __('wirekit::Loading') }}"

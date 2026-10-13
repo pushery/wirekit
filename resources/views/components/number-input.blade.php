@@ -17,10 +17,7 @@
     // above for why that holds for the steppers too.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -64,7 +61,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -81,6 +78,15 @@
     // Same trap one level in: an UNBOUND `hideLabel="false"` reaches here as the
     // truthy string 'false' and would hide the label the call site asked to show.
     $hideLabel = BooleanProp::from($hideLabel, false);
+
+    // The bounds, the step and the start value stand in the x-data object as bare numbers, so each
+    // is read as a number first. A value from a request, such as `old('qty')`, is text, and text
+    // written there unquoted would run as an expression; one that holds no number takes the
+    // default, as on slider.
+    $min = \Pushery\WireKit\Support\NumericProp::orNull($min);
+    $max = \Pushery\WireKit\Support\NumericProp::orNull($max);
+    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.number-input.step', 1), 1));
+    $startValue = \Pushery\WireKit\Support\NumericProp::from($attributes->get('value'), $min ?? 0);
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -110,9 +116,7 @@
     $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
-    // same element. `id` was stripped from the start; `name` was not, and a caller that
-    // passed one got two name attributes on one control — invalid HTML the browser
-    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
 
     // A caller's `x-ref` belongs to the caller's component, and this one renders its own root
@@ -201,7 +205,7 @@
         'text-[color:var(--color-wk-text-muted)]',
         'border-[length:var(--border-wk-width)]',
         $buttonBorderColor,
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'hover:text-[color:var(--color-wk-text)]',
         'cursor-pointer',
         'transition-colors duration-[var(--transition-wk-duration)]',
@@ -316,11 +320,17 @@
      lives in resources/js/components/number-input.js. It cannot live here: an
      inline object literal cannot declare getters or methods under Alpine's CSP
      build, so under a strict policy both buttons rendered, looked enabled, and
-     did nothing. --}}
+     did nothing.
+
+     The root is positioned so that what is visually hidden, a hidden label and
+     the live regions, stays inside the field. Those parts are positioned
+     absolutely, and without a positioned ancestor they sit against the page:
+     outside any scroll container the field is placed in, and past its edge they
+     widen the page, which a phone then scrolls sideways. --}}
 <div {{ $outerAttributes }}
-    class="space-y-1.5 min-w-0"
+    class="relative space-y-1.5 min-w-0"
     @if($callerRef !== '') data-wk-ref-scope @endif
-    x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }} })"
+    x-data="wirekitNumberInput({ value: {{ $startValue }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }} })"
 >
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value: a nested Alpine
@@ -336,7 +346,7 @@
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- The field row and, once leaving the field changed a typed value, the sentence saying so
@@ -367,7 +377,7 @@
         <button
             type="button"
             tabindex="-1"
-            class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusStart }} {{ $sizeClasses }}"
+            class="wk-touch-row {{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusStart }} {{ $sizeClasses }}"
             aria-label="{{ $decreaseLabel }}"
             aria-controls="{{ $id }}"
             @if($fieldLocked) disabled aria-disabled="true" @endif
@@ -414,7 +424,7 @@
         <button
             type="button"
             tabindex="-1"
-            class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusEnd }} {{ $sizeClasses }}"
+            class="wk-touch-row {{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusEnd }} {{ $sizeClasses }}"
             aria-label="{{ $increaseLabel }}"
             aria-controls="{{ $id }}"
             @if($fieldLocked) disabled aria-disabled="true" @endif

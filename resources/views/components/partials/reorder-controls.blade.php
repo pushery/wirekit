@@ -63,14 +63,14 @@
 </span>
 
 <x-wirekit::tooltip :text="$upText" :focusable-trigger="false" :describes="false">
-    <x-wirekit::button :size="$arrowSize" intent="neutral" :surface="$arrowSurface" icon-only :disabled="$isFirst" :wire:click="$upCall" data-wk-reorder-arrow="up" x-on:click="remember('up', $el)">
+    <x-wirekit::button :size="$arrowSize" intent="neutral" :surface="$arrowSurface" icon-only class="wk-touch-row" :disabled="$isFirst" :wire:click="$upCall" data-wk-reorder-arrow="up" x-on:click="remember('up', $el)">
         <x-slot:iconLeft><x-wirekit::icon name="arrow-up" size="sm" aria-hidden="true" /></x-slot:iconLeft>
         {{ $upText }}
     </x-wirekit::button>
 </x-wirekit::tooltip>
 
 <x-wirekit::tooltip :text="$downText" :focusable-trigger="false" :describes="false">
-    <x-wirekit::button :size="$arrowSize" intent="neutral" :surface="$arrowSurface" icon-only :disabled="$isLast" :wire:click="$downCall" data-wk-reorder-arrow="down" x-on:click="remember('down', $el)">
+    <x-wirekit::button :size="$arrowSize" intent="neutral" :surface="$arrowSurface" icon-only class="wk-touch-row" :disabled="$isLast" :wire:click="$downCall" data-wk-reorder-arrow="down" x-on:click="remember('down', $el)">
         <x-slot:iconLeft><x-wirekit::icon name="arrow-down" size="sm" aria-hidden="true" /></x-slot:iconLeft>
         {{ $downText }}
     </x-wirekit::button>

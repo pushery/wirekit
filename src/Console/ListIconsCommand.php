@@ -311,7 +311,7 @@ class ListIconsCommand extends Command
      * result over a fraction of the surface, in a summary that reads as a statement about
      * all of it.
      *
-     * DERIVED FROM THE VIEWS, never a hand-kept list. A list here would be a second
+     * Derived from the views, never a hand-kept list. A list here would be a second
      * source of truth for a fact the templates already state, and the component that got
      * an icon prop after the list was written is exactly the one nobody would remember to
      * add — which is the same shape of blindness this method exists to remove.

@@ -66,6 +66,9 @@
 
 <div
     @unless($attributes->has('role')) role="separator" @endunless
+    {{-- A sticky separator tells the scroller it stands in how much of the top it covers, so a
+         message that takes the focus on the way up rests below it (WCAG 2.4.11). --}}
+    @if($variantValue === 'sticky') data-wk-scroll-inset="top" @endif
     {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
          attributes, and the bag renders after this line — so a caller's `aria-label` was
          parsed and then discarded. The full date is the better default and stays one. --}}

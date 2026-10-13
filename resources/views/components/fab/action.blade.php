@@ -45,7 +45,7 @@
         'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)]',
         'shadow-[var(--shadow-wk-md)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
     ]), $scope);
 

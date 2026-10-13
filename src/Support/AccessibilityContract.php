@@ -28,17 +28,13 @@ use Pushery\WireKit\ComponentRegistry;
  * component's markup changes, and its failure mode is the quiet one: it keeps
  * answering, and the answer is last year's.
  *
- * ## Why comments are stripped first, and it is not hypothetical
+ * ## Why comments are stripped first
  *
  * Key names appear in these factories in three shapes — as an object key
  * (`ArrowDown: 'next'`), inside a `case 'ArrowRight':`, and in PROSE explaining
  * why a key is deliberately NOT handled. `accordion.js` carries exactly that
  * third form. A scanner reading raw text reports keys the component ignores,
  * and an assistant then assumes a keyboard model that is not there.
- *
- * The same class cost this repository a red drift suite on 2026-09-05, one level
- * down: a comment naming two utility classes put them into the compiled
- * stylesheet with no source emitting them.
  */
 final class AccessibilityContract
 {

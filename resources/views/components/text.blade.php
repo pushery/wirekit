@@ -1,5 +1,7 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
+{{-- optimistic-ui: n/a — client-only
+     With `truncate="tooltip"` the text is the trigger of a tooltip, and a cut text in no
+     control takes a tab stop; both only show the tooltip, in the browser. Otherwise it
+     renders no interactive element. No action reaches the server whose result could be
      shown early. --}}
 @props([
     'size' => 'base',
@@ -7,6 +9,8 @@
     'intent' => null,       // canonical color axis: default | muted | subtle | accent | success | warning | danger. null → falls back to `variant`
     'weight' => 'normal',
     'align' => null,
+    // `true` cuts the text at the end of one line with an ellipsis. `'tooltip'` cuts it the same way
+    // and shows the whole text in a tooltip while, and only while, it is cut.
     'truncate' => false,
     'lineClamp' => null,
     'break' => null,        // where an unbroken token may wrap: normal | anywhere | all. null → the default rules, no class
@@ -19,7 +23,12 @@
     // ellipsis. For a short second line, a date or an amount, that must not double a row's height on
     // a phone and must not lose its end either.
     'wrap' => true,
-    // The typeface: `sans` (the body face, as before) or `mono`, which reads `--font-wk-mono` and
+    // Shrinks the text from its size down to a floor so it fits its line, or the fewest lines the
+    // floor needs while it may wrap: true for the `--text-wk-fit-floor` token, a length such as
+    // `0.75em` for a floor of its own, null or false for none. A text that `truncate` or `lineClamp`
+    // cuts keeps its size, and `fit` beside either is reported.
+    'fit' => null,
+    // The typeface: `sans` (the body face, the default) or `mono`, which reads `--font-wk-mono` and
     // drops the body face's letter spacing. A class from outside could not choose it reliably,
     // because the base classes already set a family and two families on one element are decided
     // by stylesheet order.
@@ -46,9 +55,29 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $truncate = BooleanProp::from($truncate, false);
+    // Three states: false, true (cut with an ellipsis) and 'tooltip' (cut, with the whole text in a
+    // tooltip while it is cut). 'tooltip' is read first and the other two go through BooleanProp,
+    // so an unbound `truncate="false"` still reads as off. The cast never goes back into
+    // `$truncate`: 'tooltip' is a truthy string, and the cast would keep the cut and drop the
+    // tooltip.
+    $truncateTooltip = $truncate === 'tooltip';
+    $truncateLine = $truncateTooltip || BooleanProp::from($truncate, false);
     $wrap = BooleanProp::from($wrap, true);
     $tabular = BooleanProp::from($tabular, false);
+    $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'text');
+
+    // A cut text keeps its size: the cut was asked for, and it keeps the text inside its box, where a
+    // fitted text on one line runs past it below its floor.
+    if ($fitFloor !== false && ($truncateLine || $lineClamp)) {
+        \Pushery\WireKit\Support\StrictnessGate::reject(
+            'text',
+            'fit',
+            $fit === true ? 'true' : (is_scalar($fit) ? (string) $fit : get_debug_type($fit)),
+            'no fit on a text that truncate or lineClamp cuts',
+            'false',
+        );
+        $fitFloor = false;
+    }
 
     // Literal arms, as for every class here: an assembled class has no rule behind it. The sans
     // tracking belongs to the sans face; a monospaced face spaces its own letters.
@@ -100,7 +129,7 @@
         null => '',
     };
 
-    $truncateClasses = $truncate ? 'truncate' : '';
+    $truncateClasses = $truncateLine ? 'truncate' : '';
 
     // Literal arms rather than `line-clamp-{$lineClamp}`, and this is the whole prop.
     // Tailwind scans source for complete class names and generates nothing for a name it
@@ -174,9 +203,102 @@
     // `as` is interpolated straight into the opening tag, and Blade's escaping does
     // not stop a space or an `=` — so an unvalidated value renders as an attribute.
     $as = \Pushery\WireKit\WireKit::tagName('text', (string) $as);
+
+    // The fitted text stands inside the element, so the element's size is the largest it takes, and
+    // `wrap` decides whether it keeps to one line or to the fewest lines its floor needs.
+    $fitted = $fitFloor === false ? null : \Pushery\WireKit\Support\FitText::box(
+        $slot,
+        new \Illuminate\View\ComponentAttributeBag(array_filter(['style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null])),
+        $wrap,
+    );
+
+    if ($truncateTooltip) {
+        // The element carries the tooltip's listeners and becomes an Alpine root of its own. A
+        // caller's listener for the same event goes in the other spelling, so both run
+        // (Support\CallerListeners), and a caller's `x-ref` still reaches the caller's scope
+        // (Support\CallerRef).
+        $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:mouseenter', 'x-on:mouseleave', 'x-on:focusin', 'x-on:focusout', 'x-on:pointerdown', 'x-on:pointerup', 'x-on:pointerleave', 'x-on:keydown.escape.window.capture']);
+        $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+        // A caller who gave the element a tab stop keeps it, and the tooltip shows on its focus.
+        $callerTabStop = $attributes->has('tabindex') || $attributes->has('x-bind:tabindex');
+
+        // The tooltip's timing and placement are the site's tooltip settings.
+        $tipPlacement = config('wirekit.components.tooltip.placement', 'top');
+        $tipOffset = config('wirekit.components.tooltip.offset', 6);
+        $tipDelayShow = config('wirekit.components.tooltip.delay-show', 300);
+        $tipDelayHide = config('wirekit.components.tooltip.delay-hide', 100);
+
+        // The panel of `tooltip` on its default surface, under that component's personalization,
+        // so the two read as one tooltip and their class lists stay equal. A code or a key has no
+        // space to wrap at, so it breaks inside the panel's width instead of running out of it.
+        $tipClasses = WireKit::resolveClasses('tooltip', 'panel', implode(' ', [
+            'fixed',
+            'w-max',
+            'z-[var(--z-wk-tooltip)]',
+            'max-w-[var(--size-wk-tooltip-max)]',
+            'px-[var(--padding-wk-x-sm)]',
+            'py-[var(--padding-wk-y-xs)]',
+            'bg-[var(--color-wk-tooltip-bg)]',
+            'text-[color:var(--color-wk-tooltip-text)]',
+            'text-[length:var(--text-wk-sm)]',
+            'font-[family-name:var(--font-wk-sans)]',
+            'rounded-[var(--radius-wk-sm)]',
+            'shadow-[var(--shadow-wk-md)]',
+        ])).' [overflow-wrap:anywhere]';
+    }
 @endphp
 
 {{-- The slot sits against both tags. A line break and an indent around it are part of the
      element's content, and a caller who keeps a user's own line breaks with `white-space`
      set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one. --}}
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</{{ $as }}>
+@if($truncateTooltip)
+{{-- `truncate="tooltip"`. The element is the tooltip's trigger as well as its text, so the
+     tooltip's listeners sit on it: a wrapper would change the element a layout places. The panel
+     takes its words from the element when it shows (resources/js/components/tooltip.js), and it
+     is hidden from assistive technology, which reads the whole text here already: once, with no
+     description that repeats it. The focus ring is for the tab stop a cut text takes when it
+     stands in no control. `data-wk-cut-tip` is the stylesheet's hook: on a touch screen the line
+     stands at least 24px tall while it is cut, since a tap on it shows the tooltip. --}}
+<{{ $as }} data-wk-prose-skip data-wk-cut-tip
+    x-data="wirekitTooltip({
+        placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($tipPlacement) }},
+        offset: {{ (int) $tipOffset }},
+        delayShow: {{ (int) $tipDelayShow }},
+        delayHide: {{ (int) $tipDelayHide }},
+        whenTruncated: true
+    })"
+    x-ref="trigger"
+    @unless($callerTabStop) x-bind:tabindex="tabStop" @endunless
+    x-on:mouseenter="mouseenter()"
+    x-on:mouseleave="mouseleave()"
+    x-on:focusin="focusin($event)"
+    x-on:focusout="focusout()"
+    x-on:pointerdown="pointerdown($event)"
+    x-on:pointerup="pointerup($event)"
+    x-on:pointerleave="pointerleave($event)"
+    x-on:keydown.escape.window.capture="keydownEscape($event)"
+    {{ $attributes->class([$classes, 'focus-visible:outline-hidden focus-visible:rounded-[var(--radius-wk-sm)] focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]']) }}
+>{{ $slot }}<template x-teleport="#wk-overlay-root">
+    <div
+        x-ref="tooltip"
+        x-on:mouseenter="mouseenter()"
+        x-on:mouseleave="mouseleave()"
+        x-show="isOpen"
+        x-transition:enter="transition ease-out duration-100"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-75"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        x-cloak
+        role="tooltip"
+        aria-hidden="true"
+        {{-- The tooltip's marker, outside the resolved classes as on the tooltip itself: under
+             forced colors the panel's fill is repainted, and the marker gives it an edge. --}}
+        class="wk-tooltip-panel {{ $tipClasses }}"
+    ></div>
+</template></{{ $as }}>
+@else
+<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $fitted ?? $slot }}</{{ $as }}>
+@endif

@@ -5,7 +5,7 @@
  * click-outside closing, and ARIA menu pattern.
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
-import { focusIsWithin, position } from '../utils/floating.js';
+import { focusIsWithin, placementReference, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
 import { withOpenAlias } from '../utils/open-alias.js';
@@ -35,9 +35,8 @@ export default function wirekitDropdown(config = {}) {
         _stopAutoUpdate: null,
 
         // Type-ahead state. The buffer is what the reader has typed so far; the timer is
-        // what forgets it. Both are torn down in close() and destroy() — a pending timeout
-        // that fires into a closed menu is the null-callback class this codebase has been
-        // bitten by before.
+        // what forgets it. Both are torn down in close() and destroy(), so no pending
+        // timeout fires into a closed menu.
         _typeAheadBuffer: '',
         _typeAheadTimer: null,
 
@@ -67,8 +66,8 @@ export default function wirekitDropdown(config = {}) {
             // Writing the id is safe because of the panel's `wire:key`: without
             // it the morph would key the panel by its id, and a mismatch would
             // swap it for a scopeless clone. With the key, both sides of the
-            // morph agree and the node is patched rather than replaced. Removing
-            // either half brings the other's defect back.
+            // morph agree and the node is patched rather than replaced. Each half
+            // needs the other.
             this.$nextTick(() => this._applyPanelId());
 
             // Cleanup on Livewire SPA navigation
@@ -159,7 +158,7 @@ export default function wirekitDropdown(config = {}) {
 
             if (trigger && panel) {
                 this._stopAutoUpdate?.();
-                const { stop } = await position(trigger, panel, {
+                const { stop } = await position(placementReference(trigger), panel, {
                     placement: this._placement,
                     offset: this._offset,
                     // Cap the panel to the viewport and let it scroll — without the
@@ -217,8 +216,7 @@ export default function wirekitDropdown(config = {}) {
 
             // Forget what was typed. A buffer that survives a close would make the next
             // opening search for a word the reader typed into a menu that is gone, and a
-            // pending timeout firing into a closed menu is the null-callback class this
-            // codebase already has a rule about.
+            // pending timeout would fire into a closed menu.
             this._resetTypeAhead();
 
             // Was the user's focus inside the menu when it closed? The answer decides
@@ -229,9 +227,9 @@ export default function wirekitDropdown(config = {}) {
             // restarts from the top of the page. A click on some other control also
             // closes the menu, and there focus belongs where the user just put it;
             // pulling it to the trigger would take it out of the input they clicked.
-            // The docblock above describes that theft from the other direction — and
-            // moving the focus call earlier, as this fix does, would have made it fire
-            // more reliably rather than less.
+            // The docblock above describes that theft from the other direction. The focus
+            // call below runs before the hide, so without this check it would happen on
+            // every such click.
             const focusWasInside = this.$refs.panel?.contains(document.activeElement) ?? false;
 
             // Return focus to the trigger button. Use preventScroll so the page
@@ -240,8 +238,8 @@ export default function wirekitDropdown(config = {}) {
             // alignment would otherwise cause a visible jump on long pages.
             // `$refs.trigger` FIRST, then the DOM marker — and the fallback is the one that
             // actually fires. The trigger element declares its own `x-data`, which makes it a
-            // scope root, and an `x-ref` registers into the closest scope; so that ref has
-            // always belonged to the trigger rather than to this component.
+            // scope root, and an `x-ref` registers into the closest scope; so that ref
+            // belongs to the trigger rather than to this component.
             //
             // `$root`, NOT `$el`. `close()` is reached from handlers on more than one element:
             // `click.outside` sits on the wrapper, where the two are the same — but `Tab`
@@ -318,15 +316,13 @@ export default function wirekitDropdown(config = {}) {
                     break;
 
                 case ' ':
-                    // SPACE ACTIVATES THE FOCUSED ROW, and it has to be its own case rather
+                    // Space activates the focused row, and it has to be its own case rather
                     // than something the branch below leaves alone. A space is a printable
-                    // character one byte long, so it fell into the type-ahead guard beneath —
-                    // which calls preventDefault() and so suppressed the native keyup click a
-                    // <button> row activates on. The menu answered Space with nothing at all:
-                    // no activation, no close, no movement. Enter worked the whole time, which
-                    // is why it read as "works" to everyone who tried it that way, while the
-                    // menu pattern and this component's own keyboard table both promise both
-                    // keys.
+                    // character one byte long, so it would fall into the type-ahead guard
+                    // beneath, which calls preventDefault() and so suppresses the native keyup
+                    // click a <button> row activates on: the menu would answer Space with
+                    // nothing at all — no activation, no close, no movement — while the menu
+                    // pattern and this component's own keyboard table both promise both keys.
                     //
                     // Activating EXPLICITLY rather than by removing the preventDefault, because
                     // the rows are not all buttons: `dropdown.item` renders an <a> whenever it
@@ -338,7 +334,7 @@ export default function wirekitDropdown(config = {}) {
                     // Nothing focused inside the menu means nothing to activate: break WITHOUT
                     // preventDefault so the key keeps whatever meaning it had. That is the case
                     // when focus is still on the trigger — this handler sits on the wrapper the
-                    // trigger lives in, and swallowing Space there stopped the trigger's own
+                    // trigger lives in, and swallowing Space there would stop the trigger's own
                     // native toggle from closing the menu again.
                     if (currentIndex < 0) {
                         break;
@@ -349,11 +345,8 @@ export default function wirekitDropdown(config = {}) {
                     break;
 
                 default:
-                    // TYPE-AHEAD. It was documented for a long time before it existed, and
-                    // the line was eventually removed from the docs rather than the behavior
-                    // added — which left the menu the one composite widget here a keyboard
-                    // reader could not jump around in. This is that behavior; the sentence
-                    // above survived its own fix and read as if the gap were still open.
+                    // TYPE-AHEAD: a keyboard reader jumps to a row by typing the start of its
+                    // label, as in the other composite widgets here.
                     //
                     // Single printable characters only. A modifier means the reader is
                     // reaching for a browser or OS shortcut, and swallowing those is how a
@@ -380,8 +373,8 @@ export default function wirekitDropdown(config = {}) {
          * The arithmetic lives in `typeAheadIndex` — pure, shared, and unit-tested — so this
          * is only the buffer and its timer.
          *
-         * Half a second to forget. The menu pattern does not name a figure, so this is the
-         * ticket's number rather than a specification's: long enough to finish a short word,
+         * Half a second to forget. The menu pattern does not name a figure, so this is a
+         * chosen number rather than a specification's: long enough to finish a short word,
          * short enough that a pause reads as the start of a fresh search rather than as a
          * continuation of the last one.
          *
@@ -453,9 +446,9 @@ export default function wirekitDropdown(config = {}) {
             // All THREE menu roles, and the two extra ones are not decoration: an
             // attribute-VALUE selector is an exact match, so `[role="menuitem"]` does not
             // match `menuitemradio` or `menuitemcheckbox` — the roles this component's own
-            // `dropdown.radio-item` and `dropdown.checkbox-item` render. A menu built from
-            // them returned an EMPTY list, so `_focusFirstItem()` focused nothing and the
-            // arrow keys had nothing to walk even once they were delivered.
+            // `dropdown.radio-item` and `dropdown.checkbox-item` render. Without them a menu
+            // built from those rows would give an EMPTY list, so `_focusFirstItem()` would
+            // focus nothing and the arrow keys would have nothing to walk.
             return Array.from(
                 panel.querySelectorAll(
                     '[role="menuitem"]:not([aria-disabled="true"]),'
@@ -465,7 +458,7 @@ export default function wirekitDropdown(config = {}) {
             )
                 .filter((el) => !el.closest('[data-wk-submenu-panel]'))
                 // Only the entries drawn: one hidden with `x-show` cannot take focus, and an
-                // arrow key landing on it left focus where it was.
+                // arrow key landing on it would leave focus where it was.
                 .filter(isRendered);
         },
     });

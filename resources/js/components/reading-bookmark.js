@@ -1,10 +1,11 @@
 /**
  * Reading bookmark — remembering where the reader stopped, and offering it back.
  *
- * The inline `x-data` did not parse under Alpine's CSP build, so under a strict
- * Content-Security-Policy nothing was ever saved and the resume prompt never
- * appeared. That failure is silent by design elsewhere in this component too —
- * see the try/catch discussion below — which made it a bad one to leave.
+ * The behavior lives in this factory rather than in an inline `x-data`, which
+ * would not parse under Alpine's CSP build: under a strict
+ * Content-Security-Policy nothing would ever be saved and the resume prompt
+ * would never appear, and silently, the way failure is silent by design
+ * elsewhere in this component too (see the try/catch discussion below).
  *
  * Two things here are subtler than they look:
  *

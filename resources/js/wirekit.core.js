@@ -1,10 +1,13 @@
 /**
  * WireKit Core Bundle (IIFE).
  *
- * Contains the chart and image-compare Alpine components, the `x-wk-indeterminate`
- * and `x-wk-findable` directives the zero-JS form and disclosure primitives need,
- * the memory for a field Livewire emptied after a successful action, and the scroll
- * inset that keeps a focused element clear of a bar pinned to an edge. For
+ * Contains the chart and image-compare Alpine components, the `x-wk-indeterminate`,
+ * `x-wk-findable` and `x-wk-focus-first` directives the zero-JS form and disclosure primitives need,
+ * the `x-wk-ref` directive that files the ref a caller writes on a component under the caller's
+ * own component, the `x-wk-fit-text` directive that keeps a fitted text's copies in step with
+ * words a script writes, the memory for a field Livewire emptied after a successful action, the
+ * scroll inset that keeps a focused element clear of a bar pinned to an edge, and the mark that
+ * keeps the focus ring on a radio the arrow keys reach in WebKit. For
  * projects that only use the core form components, charts and the before/after
  * slider.
  *
@@ -24,7 +27,10 @@ import wirekitImageCompare from './components/image-compare.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerFindableDirective } from './utils/findable.js';
+import { registerFitTextDirective } from './utils/fit-text.js';
+import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 import { installOverlayRoot } from './utils/overlay-root.js';
@@ -50,12 +56,18 @@ function registerCoreComponents() {
     registerCallerRefDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
+    // A fitted text whose words a script writes keeps its copies in step. See utils/fit-text.js.
+    registerFitTextDirective(Alpine);
+    // A menu a button opens takes the focus to its first entry. See utils/focus-first.js.
+    registerFocusFirstDirective(Alpine);
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
     // See utils/scroll-inset.js.
     installScrollInset();
+    // A radio the arrow keys reach keeps its focus ring in WebKit. See utils/arrow-focus.js.
+    installArrowFocus();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);

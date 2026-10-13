@@ -83,8 +83,9 @@ final class AlpineRegistrations
      * Three shapes, and only the first two are answerable from the source:
      *
      *   `wirekitDropdown({...})` and `wirekitDropdown` — a factory, name returned.
-     *   `{ open: false }` — an inline object, which needs no registration and is its own
-     *   finding under a CSP build. Reported by the caller, not here.
+     *   `{ open: false }` — an inline object, which needs no registration. The CSP build
+     *   evaluates one that holds data and cannot parse a method or a getter in it, so the
+     *   caller leaves it to the grammar verdict.
      *   anything else — returns null rather than guessing.
      */
     public static function requiredName(string $expression): ?string

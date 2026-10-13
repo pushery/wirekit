@@ -17,13 +17,13 @@
      around rather than markup that helps them. And the selection is not this
      component's to hold: the server just rendered it.
 
-     WHY THE FOCUS MODEL READS THE DOM. Livewire REPLACES this markup on every
+     Why the focus model reads the DOM. Livewire REPLACES this markup on every
      selection. An index captured at init would outlive the elements it points at, and
      the failure is silent — focus lands on the wrong tab, or nowhere. So the keyboard
      handlers resolve the tabs at keypress time, every time. Shared with the full
      component, which needs the same property for the same reason.
 
-     WHY ACTIVATION IS MANUAL. The APG allows selection to follow focus, and that is the
+     Why activation is manual. The APG allows selection to follow focus, and that is the
      nicer behavior when switching costs nothing. Here it costs a request: arrowing
      across five tabs would fire five round trips and render four pages nobody asked to
      see. Arrows move focus; Enter or Space commits — and that needs no handler, because
@@ -72,7 +72,7 @@
     // `:selected="$key === $current"`, which yields zero selected for every render where
     // `$current` is still null — the ordinary initial state of a Livewire component.
     //
-    // SEEDED HERE, ON THE SERVER, rather than from the Alpine factory. `init()` runs once
+    // Seeded here, on the server, rather than from the Alpine factory. `init()` runs once
     // per element instance while Livewire re-authors every tab's `tabindex` on each morph,
     // so a DOM seed would be overwritten by the next round trip without `init()` running
     // again — the silent staleness this pair's own docblocks were written against. Doing

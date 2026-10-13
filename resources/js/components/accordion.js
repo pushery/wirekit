@@ -17,6 +17,7 @@
  * @param {Object} config
  * @param {string} [config.mode]  'single' (default) or 'multiple'
  */
+import { focusClicked } from '../utils/focus-clicked.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
 
 /**
@@ -57,7 +58,13 @@ export default function wirekitAccordion(config = {}) {
         mode: config.mode === 'multiple' ? 'multiple' : 'single',
         opened: [],
 
-        toggle(id) {
+        /**
+         * Open or close a panel. `header` is the header a click toggled it from, which takes the
+         * focus where the engine did not, so the arrows go on from it (utils/focus-clicked.js).
+         */
+        toggle(id, header = null) {
+            focusClicked(header);
+
             if (this.mode === 'single') {
                 // Clicking the open panel closes it: a single-mode accordion
                 // that cannot be fully closed traps the reader in whichever

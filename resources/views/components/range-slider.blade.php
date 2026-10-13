@@ -16,20 +16,16 @@
     // empty, in the same form as a plain input that behaves correctly.
     'required' => false,
     // Livewire method to call optimistically. It receives the full range as
-    // [min, max]. Absent -> this component renders exactly as it did before,
-    // down to the byte.
+    // [min, max]. Absent -> the component renders without an optimistic layer.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'label' => null,
-    // `error` was undeclared while `label` was not, so `:error` on this control
-    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
-    // message the developer wrote, silently not shown, on a control that is part of forms.
+    // `error` is declared like `label`: undeclared, `:error` on this control would land in
+    // the attribute bag and render as a stray HTML attribute — a validation message the
+    // developer wrote, silently not shown, on a control that is part of forms.
     'error' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -56,10 +52,9 @@
     // Disable the whole control: `aria-disabled` on both thumbs, native `disabled`
     // on the two hidden inputs (so a submitted form carries no range), no pointer
     // or keyboard handlers, and the group dims via --opacity-wk-disabled.
-    // It was DOCUMENTED — a props-table row and an accessibility bullet — while
-    // undeclared here, so the flag landed in the attribute bag and rendered on the
-    // wrapper `<div>`, where `disabled` means nothing: the control looked untouched
-    // and stayed fully operable by pointer AND keyboard.
+    // Undeclared, the flag would land in the attribute bag and render on the wrapper
+    // `<div>`, where `disabled` means nothing: the control would look untouched and
+    // stay fully operable by pointer AND keyboard.
     'disabled' => false,
     'scope' => null,
 ])
@@ -79,7 +74,7 @@
     $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `disabled="false"` would mean the opposite of what the call site reads as.
@@ -387,7 +382,7 @@
     {{ $attributes->class([$wrapperClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : '']) }}
 >
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- The `wirekitRangeSlider` factory, registered by the WireKit bundle.
@@ -450,11 +445,11 @@
              The thumbs MUST live INSIDE the track div so their
              `top-1/2 -translate-y-1/2` resolves relative to the
              8px-tall track (centering the thumb vertically ON the
-             track line). Pre-fix the thumbs were siblings of the
-             track in the outer wrapper, so `top-1/2` resolved to the
-             middle of the full wrapper height (track + tooltip + edge
-             labels + sr-only region) and the thumbs visually dropped
-             BELOW the track line instead of sitting centered on it.
+             track line). As siblings of the track in the outer
+             wrapper, their `top-1/2` would resolve to the middle of
+             the full wrapper height (track + tooltip + edge labels +
+             sr-only region) and they would drop BELOW the track line
+             instead of sitting centered on it.
 
              The inline `style="overflow: visible;"` on the track is
              load-bearing: the thumbs extend above + below the 8px
@@ -486,9 +481,10 @@
                 <span aria-hidden="true" class="absolute top-1/2 -translate-y-1/2 h-2 w-px bg-[var(--color-wk-border)]" style="left: {{ $tickPercent }}%;"></span>
             @endforeach
 
-            {{-- Active range fill --}}
+            {{-- Active range fill. `wk-range-fill` is the marker the stylesheet's forced-colors
+                 rule selects, since this mode repaints the fill away. --}}
             <div
-                class="absolute h-full rounded-full bg-[var(--color-wk-accent)]"
+                class="wk-range-fill absolute h-full rounded-full bg-[var(--color-wk-accent)]"
                 :style="rangeFillStyle()"
             ></div>
 
@@ -693,7 +689,7 @@
                      Without the matching border the real thumb's 2px border
                      nudged its badge ~2px off the merged badge's row. --}}
                 <div
-                    class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 wk-range-thumb border-2 border-transparent pointer-events-none"
+                    class="wk-range-phantom absolute top-1/2 -translate-y-1/2 -translate-x-1/2 wk-range-thumb border-2 border-transparent pointer-events-none"
                     :style="mergedBadgeStyle()"
                 >
                     <span

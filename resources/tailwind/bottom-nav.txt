@@ -12,7 +12,7 @@ $active
 $attributes
 $attributes->class([$classes])
 $attributes->class([$iconClasses]);
-$attributes->except('rel')->class([$classes])
+$attributes->except('rel')->class(['wk-touch-row',
 $attributes->except(['interactive']);
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
@@ -31,6 +31,7 @@ $callerAriaLabelledBy
 $callerClass
 $callerRole
 $classes
+$classes])
 $cleaned
 $cleaned);
 $computedRel
@@ -99,6 +100,7 @@ $validated
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -202,6 +204,7 @@ $validated
 -end-1.5
 -top-1.5
 ...>
+.=
 /
 //
 />
@@ -210,9 +213,8 @@ $validated
 16px
 20px,
 27-inch
-2rem,
 3"
-3rem.
+3rem,
 500s
 :
 :name="$icon"
@@ -256,9 +258,7 @@ A
 A11y
 ALSO
 AND
-API:
 AT
-Adding
 Alpine
 AlpinePayload,
 An
@@ -321,6 +321,7 @@ Off
 Omitted
 Operating
 Optional
+Outside
 PERFECTLY
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
@@ -350,6 +351,7 @@ Throwing
 UNBOUND
 URL
 Unconditional,
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 Vertical
 We
@@ -393,9 +395,9 @@ __toString
 `aria-label=""`
 `aria-label`
 `aria-labelledby`
-`class="h-12
 `class`
 `fab.action`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -408,6 +410,7 @@ __toString
 `md`
 `prop="false"`
 `role="img"`.
+`shrink`
 `true
 `x-ref`
 `{{
@@ -440,6 +443,7 @@ also
 always
 an
 anchor.
+anchor;
 anchored
 and
 announced
@@ -528,6 +532,7 @@ caller
 caller's
 caller-supplied
 can
+can.
 cannot
 carries
 carry
@@ -569,9 +574,9 @@ computation
 computed
 condition
 configured
-conflict
 console
 console).
+container
 content
 context
 corner
@@ -612,7 +617,6 @@ developer
 developer's
 did
 different
-direct
 directives,
 dist/wirekit.css),
 dist/wirekit.css:
@@ -621,6 +625,7 @@ does
 does.
 dot
 down
+drawn
 draws
 drives
 dropdown
@@ -633,6 +638,7 @@ early.
 echoed
 echoes
 edit;
+effect.
 either
 element
 element,
@@ -681,10 +687,8 @@ flips
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-inset',
-followable.
 follows
 for
-forbidden
 forcing
 found.`
 four
@@ -697,11 +701,12 @@ gap-1',
 gate
 gate,
 gates
-get
 gets
+give
 gives
 global
 glyph
+glyph,
 glyph.
 go
 goes
@@ -736,6 +741,7 @@ icon
 icon's
 icon)
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -796,7 +802,6 @@ label
 label",
 labels
 labels).
-ladder
 landmark
 landmark,
 lands
@@ -826,7 +831,6 @@ look
 lost
 lost,
 loudly,
-makes
 mangled
 map.
 marker
@@ -835,6 +839,7 @@ match.
 matching
 may
 mean
+meant
 merge
 message
 min-w-4
@@ -860,6 +865,7 @@ nav's
 navigates.
 navigation
 needs
+neighbors,
 neither
 nested
 never
@@ -923,7 +929,6 @@ page.
 pages
 parent
 part
-passed
 passthrough
 path
 pattern
@@ -952,7 +957,6 @@ props
 protects
 provides
 punctuation.
-put
 puts
 px-1
 py-[var(--padding-wk-y-lg)]',
@@ -1005,9 +1009,9 @@ root,
 root;
 rounded-[var(--radius-wk-full)]
 router.
-rule
+row
+row,
 rule:
-rung
 runs
 safe-area
 same
@@ -1028,9 +1032,11 @@ server
 set
 sets
 shape
-shape.
+short
 should
 shown
+shrink
+shrink-0';
 sibling
 sibling's
 sidebar
@@ -1040,7 +1046,6 @@ single
 sit
 site
 size
-size,
 size="lg"
 sized
 small
@@ -1050,6 +1055,7 @@ sorts
 source
 source-baked
 space).
+space.
 span
 spellings
 spliced
@@ -1059,7 +1065,6 @@ state.
 static
 stay
 still
-stopped
 stops
 storage/logs/laravel.log.
 str_contains($relAttr,
@@ -1137,7 +1142,7 @@ try
 twice
 two
 umlaut
-unconditional
+unconditional.
 under
 unfinished
 unknown
@@ -1165,8 +1170,8 @@ variant
 via
 view's
 viewport
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5

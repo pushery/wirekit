@@ -42,7 +42,7 @@
     /*
      * Equal horizontal + vertical inset so the leading button doesn't
      * sit flush against the container edge. Without `px-*` the first
-     * action (typically a "Save" / "Filter" button) ended up touching
+     * action (typically a "Save" / "Filter" button) would touch
      * the toolbar's left border — visually broken on every sticky-
      * pinned variant where the left border is a strong scroll-track
      * edge. Sized off the same density token as `py-*` so the
@@ -59,9 +59,8 @@
     };
 
     $stickyClasses = $sticky
-        // No z fallback: it read 10 while the token is 40, so anywhere the token did not
-        // resolve this toolbar sat four layers below every other sticky surface. Same defect,
-        // same line, as date-separator.
+        // No z fallback: a literal beside the token would put this toolbar on another layer
+        // than every other sticky surface wherever the token did not resolve.
         // A page's bar, so it sticks BELOW a strip above the page (`--wk-strip-inset`), not under it.
         ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
         : '';
@@ -76,19 +75,17 @@
     ])), $scope);
 @endphp
 
-{{-- `role="group"`, NOT `role="toolbar"` — the same correction action-bar took, for
-     the same reason and after the same mistake.
+{{-- `role="group"`, NOT `role="toolbar"`, as on action-bar and for the same reason.
 
      The toolbar role is a composite-widget promise: Tab reaches the whole bar ONCE,
      Left/Right move between the controls inside it, Home/End jump to the ends. This
      component binds no keys at all. It is a layout wrapper whose children are
      whatever the caller passed, so Tab walks every one of them and the arrows do
-     nothing — a screen reader announced "toolbar" and told its user to press keys
-     that were never bound. Nothing reported it, and nothing could: axe has no rule
-     for a composite role shipped without its keyboard model, so every lane stayed
-     green over it.
+     nothing — under the toolbar role a screen reader would announce "toolbar" and
+     tell its user to press keys that are never bound, and no automated check would
+     say so: axe has no rule for a composite role shipped without its keyboard model.
 
-     Adding the model here was the other way out and it is the wrong one. A roving
+     Adding the model here would be the wrong way out. A roving
      tabindex has to own the tab sequence of every control in the bar, and this bar's
      contents are arbitrary: the leading slot is documented for a SEARCH FIELD, where
      Left/Right belong to the text and taking them is a regression on its own, and
@@ -111,8 +108,8 @@
          `flex-1 basis-0 min-w-[min(100%,14rem)]` is the responsive contract:
          the search cluster grows to fill spare space but NEVER shrinks below
          14rem (or the full container width on a phone narrower than that).
-         The old `min-w-0` let it collapse to zero — on a narrow viewport the
-         search field vanished instead of forcing the toolbar to wrap to a
+         A `min-w-0` would let it collapse to zero — on a narrow viewport the
+         search field would vanish instead of forcing the toolbar to wrap to a
          second row. With a real min-width, flex-wrap pushes the filters /
          actions to the next line once they no longer fit beside a usable
          search field. --}}
@@ -142,14 +139,14 @@
              a narrow viewport instead of cramming on one line — the
              named-slot path already wraps via the root. Without `flex-wrap`
              here, a search field + filter selects + an action button dumped
-             into the default slot were squeezed onto one line and the
-             leading field collapsed to nothing on mobile.
+             into the default slot would be squeezed onto one line and the
+             leading field would collapse to nothing on mobile.
 
              The justify is the toolbar's own. At full width this wrapper is
              the root's only child, so the root's justify has no free space to
              distribute and this one decides where the items sit: a fixed
-             `justify-between` put a single button at the start for every
-             `align`, and spread several across the row. --}}
+             `justify-between` would put a single button at the start for
+             every `align`, and spread several across the row. --}}
         <div class="flex flex-wrap items-center {{ $justifyClass }} gap-[var(--space-wk-sm,0.5rem)] w-full">
             {{ $slot }}
         </div>

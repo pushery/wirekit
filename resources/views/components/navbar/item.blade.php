@@ -38,7 +38,7 @@
         'rounded-[var(--radius-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
@@ -67,7 +67,7 @@
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes, $colorClasses]) }}
+    {{ $attributes->except('rel')->class(['wk-touch-row', $classes, $colorClasses]) }}
 >
     {{ $slot }}
     @if($opensNewTab)

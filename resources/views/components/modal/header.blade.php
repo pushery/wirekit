@@ -64,7 +64,7 @@
         'cursor-pointer',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',

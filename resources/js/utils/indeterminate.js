@@ -12,7 +12,7 @@
  * An `x-init` emitted only while the prop is true could also only ever turn the state ON:
  * going back to a determinate state would have nothing to undo it.
  *
- * WHY AN ATTRIBUTE PLUS AN OBSERVER, and not the two obvious alternatives:
+ * Why an attribute plus an observer, and not the two obvious alternatives:
  *
  *   - `x-effect` is what `data-table` uses, and it works there because the value it reads is
  *     reactive ALPINE state. Here the value comes from the server, and an effect over a
@@ -46,7 +46,7 @@ export function registerIndeterminateDirective(Alpine) {
     Alpine.directive('wk-indeterminate', (el, directive, { cleanup }) => {
         apply(el);
 
-        // Defensive per the house rule for observers: an element can be torn down between
+        // Defensive, as every observer here is: an element can be torn down between
         // init and the first callback, and an observer firing into a dead scope throws
         // where nobody is looking.
         if (typeof MutationObserver === 'undefined') {

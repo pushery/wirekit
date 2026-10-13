@@ -11,7 +11,7 @@
  * moved, no landmark changed, and the new panel simply exists. A flow that advances
  * silently has not advanced for the person who cannot see it.
  *
- * WHY THE RELEASE CONDITION IS READ FROM THE DOM RATHER THAN HELD HERE. A step's
+ * Why the release condition is read from the DOM rather than held here. A step's
  * completeness belongs to the form in it, which in a Livewire application lives on the
  * server and arrives as a re-render. Mirroring it into Alpine state would create a second
  * copy that is correct until the first morph. So `next()` asks the step element what it

@@ -27,10 +27,9 @@ namespace Pushery\WireKit\Support;
  * `wirekitSidebarDisclosure` factories — readable, testable, and parseable by
  * both Alpine builds.
  *
- * The class stays for now because removing a shipped class is a
- * backward-compatibility decision rather than a cleanup; `PersistedToggleTest`
- * keeps holding its behavior in the meantime, and a guard there refuses any new
- * caller in the view layer.
+ * The class stays because removing a shipped class breaks backward
+ * compatibility. No view of the kit calls it, and new code uses the factories
+ * above.
  */
 final class PersistedToggle
 {

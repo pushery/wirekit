@@ -5,7 +5,7 @@
     'mode' => config('wirekit.components.accordion.mode', 'single'),
     // Visual treatment of the container + items:
     //   - 'bordered'  → outer border + rounded card + row dividers + elevated bg
-    //                   (default; byte-identical to the pre-variant look).
+    //                   (default).
     //   - 'flush'     → no outer chrome, just hair-line row dividers — for an
     //                   FAQ that sits inline in page content.
     //   - 'separated' → each item is its own standalone card with a gap between
@@ -15,7 +15,7 @@
     // (larger padding + trigger text) for marketing / spacious layouts.
     'size' => config('wirekit.components.accordion.size', 'md'),
     // Closed panels stay findable by the browser's find in page, which opens the one a match
-    // lands in. Only where the engine supports it; elsewhere a closed panel is hidden as before.
+    // lands in. Only where the engine supports it; elsewhere a closed panel is hidden.
     // Read by every item through @aware.
     'findable' => config('wirekit.components.accordion.findable', true),
     // Whether a panel animates its height open and shut. Read by every item through @aware.
@@ -114,7 +114,10 @@
     // Prepended OUTSIDE the match so it survives every variant: `flush` and
     // `separated` carry no chrome of their own, and a marker living in one arm of
     // three is a marker two variants do not have.
-    $classes = WireKit::resolveClasses('accordion', 'base', 'wk-accordion '.$containerClasses, $scope);
+    // A typed token with no break point, an email address or a URL, breaks rather than being cut
+    // off at the edge. Inherited by every title and panel; `break-word` leaves every min-content
+    // width alone, so a table or a flex row in a panel keeps the layout it had.
+    $classes = WireKit::resolveClasses('accordion', 'base', 'wk-accordion [overflow-wrap:break-word] '.$containerClasses, $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);

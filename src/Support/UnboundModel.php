@@ -33,8 +33,8 @@ final class UnboundModel
 {
     /**
      * The components whose own Alpine root takes the caller's attributes in every mode and carries
-     * no `x-modelable`. `UnboundModelTest` derives the set from the rendered examples, so an entry
-     * whose attributes land on a field, and a root missing here, both fail there.
+     * no `x-modelable`, and only those: a component whose attributes land on a field does not
+     * belong here, and every root that qualifies does.
      *
      * @var list<string>
      */

@@ -20,8 +20,8 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
-    // House convention: a boolean prop is normalized, because Blade hands `divided="false"`
-    // through as the STRING "false", which is truthy — so `divided="false"` on the tag really removes the separators. `BooleanPropCoverageTest` holds it.
+    // A boolean prop is normalized, because Blade hands `divided="false"` through as the string
+    // "false", which is truthy; normalized, `divided="false"` on the tag removes the separators.
     $divided = BooleanProp::from($divided, true);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list auto-derived

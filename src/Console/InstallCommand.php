@@ -22,7 +22,7 @@ use Pushery\WireKit\WireKit;
 class InstallCommand extends Command
 {
     protected $signature = 'wirekit:install
-        {--preset=default : Theme preset — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino, aurora at v2.5.0; downstream packages may register additional presets via ThemePresetRegistry::register()).}
+        {--preset=default : Theme preset — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino, aurora; downstream packages may register additional presets via ThemePresetRegistry::register()).}
         {--font= : Inject sans font-family override (must be a sans-category key from FontRegistry)}
         {--font-serif= : Inject serif font-family override (must be a serif-category key from FontRegistry)}
         {--font-mono= : Inject mono font-family override (must be a mono-category key from FontRegistry)}
@@ -190,7 +190,7 @@ class InstallCommand extends Command
         // Without --ignore-failed-flags a failed verify ends the run as a failure. With it the
         // install is finished and recorded like any other, and the exit code stays with the
         // flags: that is the option's contract, and what lets an install run where verify cannot
-        // pass yet (no app.css, assets not built). What it no longer does is call that a
+        // pass yet (no app.css, assets not built). What it does not do is call that a
         // success.
         $verifyFailed = $this->call('wirekit:verify') !== self::SUCCESS;
         if ($verifyFailed && ! $this->option('ignore-failed-flags')) {
@@ -598,10 +598,9 @@ class InstallCommand extends Command
             return self::FAILURE;
         }
 
-        // Streaming, not slurped. The old read loaded the whole log and doubled it in an
-        // array to use one line: a log holding its five retained sessions needed 91.5 MB to
-        // read 44.7 MB and died at memory_limit=64M — the command that undoes a bad install
-        // was the one that ran out of memory.
+        // Streaming, not slurped: loading the whole log into an array to use one line would
+        // hold it twice in memory, and a log with its five retained sessions can be large
+        // enough that the command that undoes a bad install runs out of memory.
         $lastLine = InstallLog::lastSessionLine($logPath);
 
         if ($lastLine === null) {
@@ -820,7 +819,7 @@ class InstallCommand extends Command
      *   2. The command is running in an interactive TTY ($this->input->isInteractive()).
      *
      * In CI / --no-interaction / scripted contexts, this method is a no-op and
-     * the command runs with v1.5.0-identical defaults. Beginners running
+     * the command runs with its defaults. Beginners running
      * `php artisan wirekit:install` interactively get a guided choose-your-
      * preset / choose-your-fonts flow.
      *
@@ -863,8 +862,8 @@ class InstallCommand extends Command
         }
 
         // Skip in unit tests — Laravel's artisan() test runner considers itself
-        // interactive but doesn't forward real stdin. Without this guard, every
-        // existing test that doesn't explicitly mock the prompts would fail.
+        // interactive but doesn't forward real stdin. Without this guard, a test
+        // that does not mock the prompts would fail.
         // Honored even with --interactive — tests must pass flag values explicitly.
         if (app()->runningUnitTests()) {
             return;

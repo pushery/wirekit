@@ -1,20 +1,18 @@
 /**
  * Reading progress — how far down the article the reader is.
  *
- * This is the single largest thing the CSP conversion removed from the
- * templates, and the duplication is the reason: the component renders as either
- * a bar or a corner dot, and both carried the SAME ~150-line `x-data`, byte for
- * byte. Two copies of a scroll-metrics implementation is two places for a fix to
- * miss, and the block did not parse under Alpine's CSP build anyway — arrow
- * functions, template literals and method shorthand all appear in it.
+ * One factory for both shapes. The component renders as either a bar or a corner
+ * dot, and an inline `x-data` would carry the same scroll-metrics implementation
+ * twice — two places for a fix to miss — in a form Alpine's CSP build does not
+ * parse: arrow functions, template literals and method shorthand.
  *
- * The scroll math is the delicate part and is unchanged. Two things in it look
- * like they could be simplified and cannot:
+ * The scroll math is the delicate part. Two things in it look like they could be
+ * simplified and cannot:
  *
  *   The scroll root is PROBED rather than assumed. Reading scrollTop from one
  *   element and scrollHeight from another mixes scroll roots and caps the
- *   proportional math below 100% — the bug that stopped the bar saturating while
- *   the dot still looked close enough. document.scrollingElement always reports
+ *   proportional math below 100%, so the bar would never fill while the dot
+ *   still looked close enough. document.scrollingElement always reports
  *   html in standards mode regardless of which element actually scrolls, so the
  *   scrollHeight-vs-clientHeight probe is what decides.
  *
@@ -84,9 +82,9 @@ export default function wirekitReadingProgress(config = {}) {
          * Alpine's `bind:style` given a string rewrites the whole style
          * attribute on every reactive update. This element carries its
          * background-color, height, width, transform-origin and transition as
-         * static inline styles, so the string form cost all five the moment the
-         * user scrolled — the "bar visible at first paint, invisible after
-         * scrolling" report. The object form assigns property by property.
+         * static inline styles, so the string form would cost all five the moment
+         * the user scrolled, and the bar would vanish after the first scroll. The
+         * object form assigns property by property.
          */
         fillStyle() {
             return { transform: `scaleX(${this.progress / 100})` };

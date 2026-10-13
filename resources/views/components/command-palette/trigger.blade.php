@@ -42,8 +42,10 @@
      it: the text goes to the palette as it is typed, and a field edits it the way the reader's
      keyboard and input method expect. `aria-haspopup="dialog"` says what pressing it opens.
      Enter and the Down arrow open the palette; `x-wk-ime` keeps the Enter that confirms an
-     input method's conversion from opening it. --}}
-<div data-wk-command-palette-trigger x-data="wirekitCommandPaletteTrigger({{ $config }})" {{ $attributes->class([$classes]) }}>
+     input method's conversion from opening it. A click opens it from anywhere in the frame:
+     the handler sits on the wrapper, where a click on the field and one on the magnifier beside
+     it both arrive, once each. In a narrow header the magnifier is most of the frame. --}}
+<div data-wk-command-palette-trigger x-data="wirekitCommandPaletteTrigger({{ $config }})" x-on:click="openPalette()" {{ $attributes->class([$classes]) }}>
     <x-wirekit::input
         type="search"
         size="sm"
@@ -55,7 +57,6 @@
         :aria-keyshortcuts="$keyShortcuts"
         x-wk-ime
         x-ref="field"
-        x-on:click="openPalette()"
         x-on:keydown.enter.prevent="openPalette()"
         x-on:keydown.down.prevent="openPalette()"
         x-on:input="type($event)"

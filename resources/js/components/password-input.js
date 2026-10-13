@@ -125,5 +125,14 @@ export default function wirekitPasswordInput(config = {}) {
         barColor(index) {
             return strengthBarColor(index, this.strength, 4);
         },
+
+        /**
+         * The style of bar `index`, as an object: Alpine sets it property by property, where a
+         * string would be written with `setAttribute()`, which a `style-src` without
+         * `'unsafe-inline'` refuses.
+         */
+        barStyle(index) {
+            return { backgroundColor: this.barColor(index) };
+        },
     };
 }

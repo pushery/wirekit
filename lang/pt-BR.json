@@ -32,6 +32,7 @@
     "wirekit::Picked up. Position :position of :total. Click where it goes, or click it again to put it down.": "Item pego. Posição :position de :total. Clique onde ele deve ficar ou clique nele de novo para soltá-lo.",
     "wirekit::Previous slide": "Slide anterior",
     "wirekit::Reorder mode. Click a card to pick it up, then click where it goes.": "Modo de reordenação. Clique em um cartão para pegá-lo e depois onde ele deve ficar.",
+    "wirekit::Reset zoom": "Redefinir o zoom",
     "wirekit::Saving": "Salvando",
     "wirekit::Scope": "Escopo",
     "wirekit::Search :label…": "Buscar :label…",

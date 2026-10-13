@@ -53,13 +53,18 @@
         //
         // No browser test can catch this: `env(safe-area-inset-*)` is 0 in headless
         // Playwright, which is why it survived every green mobile run.
-        ? 'fixed bottom-[calc(var(--padding-wk-y-lg)_+_env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-[var(--z-wk-sticky)] flex'
-        : 'inline-flex';
+        ? 'fixed bottom-[calc(var(--padding-wk-y-lg)_+_env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-[var(--z-wk-sticky)]'
+        : '';
 
-    // The display is chosen above, once per mode. `flex` in this list beside `inline-flex`
-    // left the choice to the stylesheet's order, which only happened to pick `inline-flex`.
+    // One display class, chosen here once: `flex` beside `inline-flex` left the choice to the
+    // stylesheet's order. A bar that is not visible takes `hidden`, a class rather than an inline
+    // `display: none`, which a `style-src` policy drops: the bar would then stand on the page with
+    // nothing selected. A Livewire render that flips `visible` swaps the class.
+    $display = ! $visible ? 'hidden' : ($isFloating ? 'flex' : 'inline-flex');
+
     $classes = WireKit::resolveClasses('action-bar', 'base', implode(' ', [
         $positioningClasses,
+        $display,
         'items-center gap-[var(--gap-wk-md)]',
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-x-lg)]',
@@ -76,14 +81,14 @@
 
 {{-- The live region sits OUTSIDE the bar, and that is the whole point.
 
-     When `$visible` is false the bar carries `display: none`, and a display-none subtree is
-     not in the accessibility tree at all. A region inside the bar would therefore not CHANGE
+     When `$visible` is false the bar is not displayed, and an undisplayed subtree is not in the
+     accessibility tree at all. A region inside the bar would therefore not CHANGE
      on the flip — it would APPEAR, already populated, and a live region that appears with its
      text already in it announces nothing.
 
      Out here it is always in the tree, always empty until the bar is shown, and the flip is
      the text change a live region reacts to. --}}
-<div aria-live="polite" class="sr-only">
+<div aria-live="polite" class="sr-only" data-wk-announcer>
     @if($visible) {{ __('wirekit::Bulk actions available') }} @endif
 </div>
 
@@ -91,7 +96,7 @@
     @unless($attributes->has('role')) role="group" @endunless
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Bulk actions') }}" @endunless
     @if($isFloating) data-wk-scroll-inset="bottom" @endif
-    {{ $attributes->merge(!$visible ? ['style' => 'display: none;'] : [])->class([$classes]) }}
+    {{ $attributes->class([$classes]) }}
 >
     {{-- Why the announcement is translated, and when it fires.
          The text is translated for the same reason the label above it is: this is read

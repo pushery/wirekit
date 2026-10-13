@@ -249,7 +249,7 @@
      the first one, so the height, the width and the overflow clip would be gone. Merged, the
      caller's declarations follow ours. --}}
 <{{ $sparklineTag }} data-wk-prose-skip
-    {{ $sparklineAttributes->class([$rootClass])->merge(['style' => $displayStyle.'height: '.$resolvedHeight.'; '.($inline ? 'width: 4rem;' : 'width: 100%;')]) }}
+    data-wk-sr-host {{ $sparklineAttributes->class([$rootClass])->merge(['style' => $displayStyle.'height: '.$resolvedHeight.'; '.($inline ? 'width: 4rem;' : 'width: 100%;')]) }}
     data-trend="{{ $resolvedTrend }}"
 >
     <x-wirekit-chart

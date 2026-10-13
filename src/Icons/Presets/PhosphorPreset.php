@@ -55,21 +55,14 @@ final class PhosphorPreset implements IconPreset
             'moon' => 'phosphor-moon',
             'sun' => 'phosphor-sun',
 
-            // Six words the vocabulary was missing, added together because they were
-            // reported together — the eighth report of that shape, which is the finding
-            // behind the finding.
+            // `system` is the third theme state beside `sun` and `moon`, so a theme
+            // control can name all three of its positions. No icon family spells the
+            // concept the same way (computer-desktop / monitor / device-desktop), so the
+            // WORD is ours and the glyph is each set's own — which is what these aliases
+            // are for. Every target below exists in its set.
             //
-            // `system` is the third theme state. `sun` and `moon` were both here and
-            // "follows the system" was not, so a theme control could name two of its
-            // three positions. No icon family spells the concept the same way
-            // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
-            // glyph is each set's own — which is what these aliases are for.
-            //
-            // Every target below exists in its set, checked against the installed
-            // Heroicons package and the full recursive git tree of the other three.
-            //
-            // `article` was proposed with these and deliberately left out: it needs two
-            // substitutions and "editorial unit" is the most arguable of the seven.
+            // `article` is deliberately absent: two of the sets would need a substitute
+            // glyph for it, and "editorial unit" is an arguable concept to begin with.
             'system' => 'phosphor-monitor',
             'code' => 'phosphor-code',
             'key' => 'phosphor-key',
@@ -81,10 +74,9 @@ final class PhosphorPreset implements IconPreset
             'list-bullets' => 'phosphor-list-bullets',
             'list-checks' => 'phosphor-list-checks',
 
-            // The text-formatting marks a composer toolbar is built from — see
-            // `HeroiconsPreset` for why the group was closed and how the targets were
-            // verified. Phosphor spells the first four `text-*`, and its bold mark is
-            // `text-b`, the bold letterform rather than a heavier stroke weight.
+            // The text-formatting marks a composer toolbar is built from, explained in
+            // `HeroiconsPreset`. Phosphor spells the first four `text-*`, and its bold
+            // mark is `text-b`, the bold letterform rather than a heavier stroke weight.
             'bold' => 'phosphor-text-b',
             'italic' => 'phosphor-text-italic',
             'strikethrough' => 'phosphor-text-strikethrough',
@@ -98,11 +90,9 @@ final class PhosphorPreset implements IconPreset
             'chart-line' => 'phosphor-chart-line',
             'folders' => 'phosphor-folders',
 
-            // A seventh, and it came from the docs rather than from a report: five
-            // blueprint pages reached for `pulse` and two of them meant a telephone
-            // ("Voice call", "Call"). The vocabulary had no word for one, so the
-            // pages borrowed a name that does not resolve on the default config at
-            // all — which is how a missing word turns into a broken page.
+            // A telephone, for a call control ("Voice call", "Call"). Without a word for
+            // it a page borrows one such as `pulse`, which does not resolve on the
+            // default config at all, and the missing word turns into a broken page.
             'phone' => 'phosphor-phone',
             'book-open' => 'phosphor-book-open',
             'sign-out' => 'phosphor-sign-out',
@@ -110,14 +100,14 @@ final class PhosphorPreset implements IconPreset
             'map' => 'phosphor-map-trifold',
             'file-text' => 'phosphor-file-text',
 
-            // Common semantic aliases (v2.6.4) — shared keyset with every base
-            // preset so they resolve without stacking; `live` stays marketing.
+            // Common semantic aliases — shared keyset with every base preset so they
+            // resolve without stacking an extension.
             'copy' => 'phosphor-copy',
             'globe' => 'phosphor-globe',
             'book' => 'phosphor-book-open',
             'lightbulb' => 'phosphor-lightbulb',
 
-            // SaaS app aliases (v2.9.0) — shared keyset with every base preset.
+            // SaaS app aliases — shared keyset with every base preset.
             // Phosphor names: gear (settings) + squares-four (dashboard).
             'settings' => 'phosphor-gear',
             'gear' => 'phosphor-gear',
@@ -127,15 +117,9 @@ final class PhosphorPreset implements IconPreset
 
             // Infrastructure & system — mapped to Phosphor's icon names.
             // `hard-drives` (plural), because Phosphor has no `server` at all —
-            // stacked drives is its rack metaphor. The alias pointed at
-            // `phosphor-server` and rendered nothing: Blade Icons throws on an
-            // unknown name, so a page using it broke rather than degraded.
-            //
-            // It survived because this preset's targets were UNCHECKABLE: the
-            // Phosphor package sat in `suggest`, so no test could resolve a single
-            // one of its 57 aliases. Heroicons was in require-dev and had no such
-            // defect. That asymmetry is the actual cause, and it is fixed alongside
-            // this line — see IconPresetTargetTest.
+            // stacked drives is its rack metaphor. Blade Icons throws on an unknown
+            // name, so a target the set does not ship breaks the page rather than
+            // degrading it.
             'server' => 'phosphor-hard-drives',
             'database' => 'phosphor-database',
             'cloud' => 'phosphor-cloud',
@@ -146,27 +130,22 @@ final class PhosphorPreset implements IconPreset
             'bolt' => 'phosphor-lightning', // phosphor calls it `lightning`
             'refresh' => 'phosphor-arrows-clockwise', // phosphor's rotate glyph
             // Undo — the counter-clockwise arrow every set ships under a different name.
-            // Named for the CONCEPT, not for one family's spelling: the proposal reached us
-            // as `arrow-counter-clockwise`, which is Phosphor's word for it and would have
-            // made the vocabulary read differently depending on which set a project loads.
-            // Verified against the SVG files: lucide `undo`, tabler `arrow-back-up`,
-            // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
-            // undo glyphs, not four things that look roughly alike.
-            // FIVE NAMES WERE PROPOSED FOR THIS VOCABULARY AND ARE DELIBERATELY ABSENT.
-            // Written here rather than somewhere else, because the next person to see the
-            // gap will see it in this file:
-            //
-            //   `arrow-counter-clockwise` — literally the TARGET of the alias below. Adding
-            //     it would declare Phosphor's own spelling as a vocabulary word, which is
-            //     the `dots-three` mistake: name the CONCEPT, not one family's glyph name.
-            //   `users-three`             — Phosphor's spelling for `users`, which all four
-            //     presets already carry.
-            //   `warning-diamond`, `plugs-connected`, `user-switch` — Heroicons has no
-            //     genuine cognate: none of its files match plug|diamond|switch|toggle
-            //     (control: the same listing finds the ^o-arrow files). An alias that
-            //     resolves in three sets and substitutes something merely similar in the
-            //     fourth is worse than no alias — it looks like a contract until somebody
-            //     switches preset, and then it is a silent iconography change.
+            // Named for the CONCEPT, not for one family's spelling: Phosphor's word for it,
+            // `arrow-counter-clockwise`, would make the vocabulary read differently
+            // depending on which set a project loads. Lucide `undo`, tabler
+            // `arrow-back-up`, phosphor `arrow-counter-clockwise` and heroicons
+            // `arrow-uturn-left` are four real undo glyphs, not four things that look
+            // roughly alike.
+            // Deliberately absent from this vocabulary:
+            //   arrow-counter-clockwise — the TARGET of the alias below. As a word it would
+            //     make Phosphor's own spelling the contract, which is why `more` is not
+            //     `dots-three`: name the CONCEPT, not one family's glyph name.
+            //   users-three — Phosphor's spelling for `users`, which all four presets carry.
+            //   warning-diamond, plugs-connected, user-switch — Heroicons has no genuine
+            //     cognate for any of them. An alias that resolves in three sets and
+            //     substitutes something merely similar in the fourth is worse than no
+            //     alias: it looks like a contract until somebody switches preset, and then
+            //     the iconography changes silently.
             'undo' => 'phosphor-arrow-counter-clockwise',
             // Media controls.
             'play' => 'phosphor-play',
@@ -176,21 +155,18 @@ final class PhosphorPreset implements IconPreset
             'mute' => 'phosphor-speaker-slash',
             'microphone' => 'phosphor-microphone',
             // ── Admin navigation ────────────────────────────────────────────
-            // Five concepts every administrative interface has, and none of them
-            // was expressible. An application's main navigation could name two of its
-            // seven items through this vocabulary and reached for the icon
-            // package's OWN glyph names for the rest — `users`, `stack`,
-            // `scales`, `clock-counter-clockwise`.
+            // Five concepts every administrative interface has. Without a word for each,
+            // a navigation reaches for the icon package's OWN glyph names — `users`,
+            // `stack`, `scales`, `clock-counter-clockwise`.
             //
             // Those raw names work, and that is the problem: they resolve because
             // the full package happens to be installed, which is a dependency on
-            // the icon set rather than a contract with WireKit. When that application
-            // tried to ship only the icons it actually renders, four test files
-            // went red — the restriction removed the coincidence.
+            // the icon set rather than a contract with WireKit, and an application
+            // that ships only the icons it renders loses them.
             //
             // `users` is a separate word from `user` on purpose: managing accounts
-            // is a different menu item from your own profile, and the two sharing
-            // one glyph was forced rather than chosen.
+            // is a different menu item from your own profile, and the two need not
+            // share one glyph.
             'users' => 'phosphor-users',
             'history' => 'phosphor-clock-counter-clockwise',
             'legal' => 'phosphor-scales',
@@ -198,26 +174,25 @@ final class PhosphorPreset implements IconPreset
             'layers' => 'phosphor-stack',
 
             // `stack` is the concept `layers` already names, shipped as its own
-            // word because that is the word applications write — the navigation
-            // above reached for `stack` and got a synonym it does not use.
-            // Undeclared, the name did not fail cleanly either: Phosphor calls its
-            // own glyph `stack`, so the raw-name fallthrough answered it under that
-            // one family and threw under the rest, which reads as "the icon broke
-            // when we changed preset" rather than as a word nobody promised. Two
-            // spellings on one glyph is what this vocabulary already does for
+            // word because that is the word applications write. Undeclared, the
+            // name would not fail cleanly either: Phosphor calls its own glyph
+            // `stack`, so the raw-name fallthrough would answer it under that one
+            // family and throw under the rest, which reads as "the icon broke when
+            // we changed preset" rather than as a word nobody promised. Two
+            // spellings on one glyph is what this vocabulary also does for
             // settings/gear, book/book-open and billing/credit-card.
             'stack' => 'phosphor-stack',
 
-            // ─── The overflow affordance, and five words an adopting application
-            // reached for and did not find.
+            // ─── The overflow affordance, and the other words an application
+            // reaches for beside it.
             //
-            // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE
-            // PRESETS — checked file by file, not assumed. That is the whole
-            // admission test: a word enters this vocabulary only when every set
-            // we ship can answer it with a glyph that means the same thing. An
-            // alias that resolves in three sets and substitutes something else
-            // in the fourth is worse than no alias, because it looks like a
-            // contract right up until somebody changes preset.
+            // Every one of these is a true cognate in all four interchangeable
+            // presets. That is the whole admission test: a word enters this
+            // vocabulary only when every set we ship can answer it with a glyph
+            // that means the same thing. An alias that resolves in three sets and
+            // substitutes something else in the fourth is worse than no alias,
+            // because it looks like a contract right up until somebody changes
+            // preset.
             //
             // `more` rather than `overflow`, `ellipsis` or `dots-three`. The last
             // two are one family's own spelling, and enshrining a family spelling
@@ -233,7 +208,7 @@ final class PhosphorPreset implements IconPreset
             // The pop-up button's marker: a stacked pair of chevrons, one up and one down.
             // It says "this shows the current choice, and there are others" — the distinction
             // from a single downward chevron, which says "this opens a list of actions". A
-            // scope switcher in a breadcrumb is the first thing here to need it, and every
+            // scope switcher in a breadcrumb is one control that needs it, and every
             // set draws it: Heroicons and Lucide as chevrons, Phosphor and Tabler as carets.
             // Same shape, same meaning, so the word is honest in all four.
             'chevron-up-down' => 'phosphor-caret-up-down',
@@ -245,12 +220,10 @@ final class PhosphorPreset implements IconPreset
             'scan' => 'phosphor-scan',
 
             // Notification, labeling, mail and media — concepts every
-            // administrative interface has, and none of them had a word here.
-            // A page that needed one reached for the icon package's own glyph
-            // name, which resolves only while that optional package happens to
-            // be installed: a dependency on the icon set rather than a contract
-            // with this library. `bell` and `bell-slash` move here from the
-            // app extension — same glyph, so nothing rendered changes.
+            // administrative interface has. Without a word here a page reaches for
+            // the icon package's own glyph name, which resolves only while that
+            // optional package happens to be installed: a dependency on the icon
+            // set rather than a contract with this library.
             'bell' => 'phosphor-bell',
             'bell-slash' => 'phosphor-bell-slash',
             'tag' => 'phosphor-tag',
@@ -262,7 +235,7 @@ final class PhosphorPreset implements IconPreset
             'truck' => 'phosphor-truck',
             'package' => 'phosphor-package',
             'barcode' => 'phosphor-barcode',
-            // Phosphor is the one family that draws the thing itself.
+            // Phosphor draws the thing itself, as Tabler does.
             'cash-register' => 'phosphor-cash-register',
             'user-add' => 'phosphor-user-plus',
             'user-remove' => 'phosphor-user-minus',
@@ -277,23 +250,21 @@ final class PhosphorPreset implements IconPreset
             'reply' => 'phosphor-arrow-bend-up-left',
             'forward' => 'phosphor-arrow-bend-up-right',
             // ---------------------------------------------------------------
-            // Promoted from the heroicons extension presets on 2026-08-26.
+            // Words all four base presets carry.
             // ---------------------------------------------------------------
-            // These words lived only in `heroicons-app` / `heroicons-marketing`, which
-            // emit heroicon identifiers exclusively. A lucide, phosphor or tabler
-            // install therefore could not reach them at all — stacking the extensions
-            // resolved the alias onto a glyph that set does not ship, and blade-icons
-            // threw rather than degrading.
+            // They live here rather than in `heroicons-app` / `heroicons-marketing`,
+            // which emit heroicon identifiers exclusively: there a lucide, phosphor or
+            // tabler install would resolve the alias onto a glyph its set does not
+            // ship, and blade-icons throws rather than degrading.
             //
-            // Each one was checked against the real SVG trees in vendor/, per set, per
-            // name — not against a website and not by assuming a spelling. What is
+            // Each target is a glyph its set ships under exactly that name. What is
             // taken here is the CONCEPT; the target is each family's own picture of it,
             // which is why the right-hand sides differ.
             //
-            // Deliberately NOT taken, and the reasons are worth keeping:
+            // Deliberately NOT taken:
             //   a11y — no genuine cognate in all three.
-            //   cursor-arrow-rays — the SPELLING stays out, and the concept came in as
-            //     `click` below. A family's name for its own drawing is not a word the
+            //   cursor-arrow-rays — the SPELLING stays out; the concept is `click`
+            //     below. A family's name for its own drawing is not a word the
             //     vocabulary can share; the concept behind it is.
             //   ai, sparkle, cube-transparent — a spelling variant of a word that is
             //     already here, not a second concept. `sparkle` beside `sparkles`, or
@@ -311,11 +282,10 @@ final class PhosphorPreset implements IconPreset
             'arrow-up' => 'phosphor-arrow-up',
             'arrow-up-right' => 'phosphor-arrow-up-right',
             'chart-pie' => 'phosphor-chart-pie',
-            // Promoted out of the marketing extension under the CONCEPT name. The
-            // extension spells it `cursor-arrow-rays`, which is heroicons' name for its
-            // own picture rather than a word anybody would reach for; that spelling stays
-            // there as the older name and is not removed. All four sets draw a pointer
-            // with an action mark, checked against the svg files in vendor/ per set.
+            // The CONCEPT name for what the marketing extension spells
+            // `cursor-arrow-rays`, heroicons' name for its own picture rather than a word
+            // anybody would reach for; that spelling stays in the extension. All four
+            // sets draw a pointer with an action mark.
             'click' => 'phosphor-cursor-click',
             'code-bracket' => 'phosphor-code',
             'cog-6-tooth' => 'phosphor-gear',
@@ -330,25 +300,22 @@ final class PhosphorPreset implements IconPreset
             'attach' => 'phosphor-paperclip',
             'live' => 'phosphor-radio',
             /*
-             * `video` and `emoji` — added 2026-09-08 because three blueprints were reaching
-             * for them and settling for something else. A chat header labeled "Video call"
-             * rendered a bar chart; an "Emoji" button rendered a heart. The label and the
-             * glyph contradicted each other, which is worse than a plain icon: a sighted
-             * reader trusts the picture and a screen-reader user is told the other thing.
+             * `video` and `emoji` name what a video-call button and an emoji picker show.
+             * Without them such a control reaches for the nearest alias, and a "Video call"
+             * label over a bar chart contradicts its own picture. That is worse than a plain
+             * icon: a sighted reader trusts the picture and a screen-reader user is told the
+             * other thing.
              *
-             * Taken only because ALL FOUR interchangeable presets ship a genuine cognate,
-             * verified by reading the SVG files rather than a website: heroicons
-             * `video-camera` / `face-smile`, lucide `video` / `smile`, phosphor
+             * Taken only because ALL FOUR interchangeable presets ship a genuine cognate:
+             * heroicons `video-camera` / `face-smile`, lucide `video` / `smile`, phosphor
              * `video-camera` / `smiley`, tabler `video` / `mood-smile`.
              */
             'video' => 'phosphor-video-camera',
             'emoji' => 'phosphor-smiley',
             'lock-closed' => 'phosphor-lock',
             'open-source' => 'phosphor-git-branch',
-            // Promoted out of the marketing extension: every set ships a real brush.
-            // The paragraph above listed this word as having no cognate in all three,
-            // which the svg trees refute — tabler draws it as `brush`, and taking the
-            // concept rather than one family's spelling is exactly the rule here.
+            // Every set ships a real brush; tabler draws it as `brush`, and the word names
+            // the concept rather than one family's spelling.
             'paint-brush' => 'phosphor-paint-brush',
             'puzzle-piece' => 'phosphor-puzzle-piece',
             'security' => 'phosphor-shield',

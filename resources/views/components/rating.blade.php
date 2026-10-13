@@ -4,32 +4,29 @@
      because a nested Alpine component reads and writes its parent's properties
      and never the reverse.
 
-     Its labels were never in the way: the per-star label names the button's
+     Its labels are not in the way: the per-star label names the button's
      POSITION, so building it on the server is correct and does not block the
      announcement the way a value-bearing label does. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
-    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
-    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
-    // complain either, because `required` is in its HTML passthrough list — so it looked like
-    // a legitimate attribute all the way down. The result was a required field that submits
-    // empty, in the same form as a plain input that behaves correctly.
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk — and StrictnessGate would not
+    // complain, because `required` is in its HTML passthrough list. The result would be a
+    // required field that submits empty, in the same form as a plain input that behaves
+    // correctly.
     'required' => false,
     // The Livewire method this rating should call, when it should show the new
-    // score before the server has agreed to it. Null (the default) leaves this
-    // component byte-identical to what it has always rendered.
+    // score before the server has agreed to it. Null (the default) renders the plain
+    // rating.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'label' => null,
-    // `error` was undeclared while `label` was not, so `:error` on a rating
-    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
-    // message the developer wrote, silently not shown, on a control that IS part of forms.
+    // `error` is declared, as `label` is: undeclared, `:error` on a rating would land in the
+    // attribute bag and render as a stray HTML attribute — a validation message the developer
+    // wrote, silently not shown, on a control that IS part of forms.
     'error' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -49,7 +46,7 @@
     // no way back to "nothing chosen" — a native radio cannot be deselected
     // from the keyboard either. By that measure the default is correct, which
     // is why this is a prop and not a new default: lowering the floor for
-    // everybody would change a documented model for every existing call site.
+    // everybody would change a documented model for every caller.
     //
     // It is opt-in because the two places a rating is most often used are not
     // radiogroups in spirit. A filter facet and an optional form field both
@@ -87,7 +84,7 @@
     $attributes = $attributes->except(['announceErrors', 'announce-errors']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
@@ -105,10 +102,10 @@
         \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max', 5), 5),
     ));
 
-    // The seed stays byte-identical when the feature is off. It is an attribute
+    // The seed carries no key for the feature while it is off. It is an attribute
     // a Livewire morph rewrites, and Alpine re-initializes on the change — so a
-    // key added unconditionally is a key added to every render of every rating
-    // in the fleet, for a feature almost none of them asked for.
+    // key added unconditionally would be a key added to every render of every
+    // rating, for a feature almost none of them ask for.
     $ratingSeed = '{ max: '.$max.($clearable ? ', clearable: true' : '').($disabled ? ', disabled: true' : '').' }';
 
     use Pushery\WireKit\WireKit;
@@ -135,10 +132,10 @@
     // sent under the name the caller bound (Support\AttributeText).
     $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     /*
-     * The Laravel validation bag, which this control never consulted. Every other form
-     * control resolves `error` from `$error ?? FieldError::first($errors, $name)`, so after a failed
-     * `$this->validate()` each of them showed its message and this one showed nothing — in
-     * the same form, on the same submit. The explicit prop still wins; the bag is the
+     * The Laravel validation bag, read as every other form control reads it:
+     * `$error ?? FieldError::first($errors, $name)`. Without it, after a failed
+     * `$this->validate()` every other control would show its message and this one nothing —
+     * in the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
      */
     $error ??= \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
@@ -150,8 +147,8 @@
     $attributes = $attributes->except(['id', 'name']);
 
     // One description list for the control: the component's own id first, then a caller's
-    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
-    // so a caller's description was dropped or pushed the component's own out.
+    // aria-describedby. Written as separate attributes, the parser would keep only the first
+    // copy, so a caller's description would be dropped or push the component's own out.
     // A readonly rating describes nothing of its own, so a caller's list goes on its image alone.
     $callerDescribedBy = trim((string) $attributes->get('aria-describedby', ''));
     // A caller's `aria-labelledby` names the control and wins over the component's own name, as
@@ -162,6 +159,8 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // Markup a caller puts after the label and its help, in their row (partials/label-after).
+    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // A required rating that a submit found empty says so under the stars (partials/required-message),
     // unless the server's own message for the field already stands there.
@@ -229,9 +228,8 @@
     // What a readonly rating announces. The component renders a partial star via
     // clip-path, so rounding here would make the picture and the words disagree —
     // it draws 4.2 and would say "4". maxPrecision keeps that precision while
-    // dropping a trailing zero, so a clean 4 does not announce as "4.0"; the
-    // trim this replaces assumed "." was the decimal separator and would have
-    // mangled a localized "4,0".
+    // dropping a trailing zero, so a clean 4 does not announce as "4.0" — or as
+    // a localized "4,0".
     $announcedValue = $readonly ? LocalizedNumber::format((float) $numericValue, maxPrecision: 1) : $numericValue;
     $fullStars = (int) floor($numericValue);
     $fraction = $numericValue - $fullStars; // 0.0–0.99 for partial star
@@ -285,7 +283,7 @@
 @endphp
 
 <div
-    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
+    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }} data-wk-sr-host
     @if($callerRef !== '') data-wk-ref-scope x-wk-ref="{{ $callerRef }}" @endif
     {{-- The server's own channel — see segmented-control for why this is a
          plain attribute rather than the hidden input this component binds. --}}
@@ -306,23 +304,27 @@
                  element that does not exist — and a <label> with no control is
                  not a label at all, it is an orphan that assistive tech may drop
                  on the floor along with the text inside it. --}}
-            @if(filled($help))
+            @if(filled($help) || $hasLabelAfter)
                 {{-- The help still explains the rating; with no control to describe, the
-                     tooltip on the button is all of it. --}}
-                <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
-                    <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+                     tooltip on the button is all of it. A mark follows them, as it does
+                     after any field's label. --}}
+                <div data-wk-label-row class="{{ $hasLabelAfter ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
+                    <span data-wk-field-label class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+                    @if(filled($help))
                     @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => null, 'helpField' => (string) ($name)])
+                    @endif
+                    @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif
                 </div>
             @else
-                <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+                <span data-wk-field-label class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
             @endif
         @else
-            {{-- NO `for`, and that is the fix rather than an omission. The only element
-                 carrying `$id` is the hidden input below, and a hidden input is not a
-                 labelable element — the association resolved to nothing at all, so the
-                 visible text was an orphan while the group named itself separately.
-                 The control here is the GROUP, so the group is named BY this label. --}}
-            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
+            {{-- NO `for`, deliberately. The only element carrying `$id` is the hidden
+                 input below, and a hidden input is not a labelable element — a `for`
+                 would resolve to nothing at all, and the visible text would be an orphan
+                 while the group named itself separately. The control here is the GROUP,
+                 so the group is named BY this label. --}}
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
         @endif
     @endif
 
@@ -347,8 +349,8 @@
         {{-- The static `value` is not redundant next to `:value`. Alpine only
              writes the bound value once it has booted, so between render and
              hydration — and permanently, if Alpine never evaluates at all — the
-             field carried an EMPTY value while the stars showed a score. A form
-             submitted in that window silently sent nothing. The static
+             field would carry an EMPTY value while the stars show a score, and a
+             form submitted in that window would silently send nothing. The static
              attribute makes the field agree with what is on screen from the
              first paint; `:value` takes over the moment Alpine runs. --}}
         {{-- A disabled field is left out of the form data, as a native one is. --}}
@@ -440,8 +442,11 @@
                             <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--color-wk-text-subtle)] fill-none absolute inset-0" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5">
                                 <path d="{{ $shape['path'] }}"/>
                             </svg>
-                            {{-- Filled icon foreground, clipped to the fractional width --}}
-                            <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)] absolute inset-0" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5" style="clip-path: inset(0 {{ (1 - $fraction) * 100 }}% 0 0)">
+                            {{-- Filled icon foreground, clipped to the fractional width. The part left
+                                 unfilled rides in a custom property, and the classes cut it from the end
+                                 side, which is the left in a page written from right to left. Without the property, as
+                                 where a policy drops the style, the star is cut whole and stays empty. --}}
+                            <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)] absolute inset-0 [clip-path:inset(0_var(--wk-rating-cut,100%)_0_0)] rtl:[clip-path:inset(0_0_0_var(--wk-rating-cut,100%))]" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5" style="--wk-rating-cut: {{ (1 - $fraction) * 100 }}%">
                                 <path d="{{ $shape['path'] }}"/>
                             </svg>
                         </span>
@@ -464,6 +469,7 @@
                 <button
                     type="button"
                     role="radio"
+                    data-wk-rating-star
                     {{-- EQUALITY, not the fill threshold — and both attributes have
                          to agree on that.
 
@@ -471,9 +477,8 @@
                          single-select, so marking every star up to the score
                          announces "4 stars, selected, 3 stars, selected, …" and
                          leaves the reader unable to tell which score is chosen.
-                         That was corrected in the static markup and in the
-                         readonly path, and the reactive binding kept the old
-                         `>=` shape — so the defect simply reappeared the moment
+                         The reactive binding has to compare the way the static
+                         markup does, or the defect would return the moment
                          Alpine booted, on the one path a pre-hydration scan
                          cannot see.
 
@@ -509,8 +514,7 @@
                              means "set it" or "take it back" is the rating
                              factory's decision — the same one select() makes on
                              the non-optimistic path. A nested call parses under
-                             Alpine's CSP grammar; verified against Alpine's own
-                             parser, not assumed. --}}
+                             Alpine's CSP grammar. --}}
                         @click="run(clearTarget({{ $i }}))"
                         x-bind:aria-busy="isPending"
                     @else

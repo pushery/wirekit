@@ -29,9 +29,8 @@ class ShowComponentCommand extends Command
 
         // Accepts dotted sub-component
         // names — `wirekit:show card.body` / `wirekit:show timeline.item`.
-        // Pre-fix the dotted form returned "Unknown component" because
-        // ComponentRegistry tracks only top-level components. We now
-        // resolve sub-components by reading the nested Blade file
+        // ComponentRegistry tracks only top-level components, so a
+        // sub-component is resolved by reading the nested Blade file
         // directly and extracting props from it.
         if ($meta === null && str_contains($name, '.')) {
             return $this->handleSubComponent($name);
@@ -128,8 +127,8 @@ class ShowComponentCommand extends Command
 
         // Slots — named-slot quick forms (e.g. dropdown's <x-slot:trigger>) plus
         // the default slot. Uses the SAME source-of-truth extractor as
-        // wirekit:export-json + the .wirekit-schema.json writer, so `show` no
-        // longer omits the slot contract a developer needs to discover.
+        // wirekit:export-json + the .wirekit-schema.json writer, so `show` lists
+        // the slot contract a developer needs to discover.
         $slots = $this->extractSlots($name);
         if ($slots !== []) {
             $this->line('  <fg=yellow>Slots:</>');
@@ -230,46 +229,18 @@ class ShowComponentCommand extends Command
     }
 
     /**
-     * Extract the slot schema for a top-level component, reusing the SAME
-     * BladeParser source-of-truth as wirekit:export-json + the
-     * .wirekit-schema.json writer (so `show` can never drift from them).
-     * Resolves both the flat `{name}.blade.php` and the
-     * `{name}/index.blade.php` anonymous-component layouts.
+     * The slot schema of a component or a sub-component, asked of the registry by name.
+     *
+     * The same question with the same answer as wirekit:export-json, the MCP catalog and the
+     * .wirekit-schema.json writer, so `show` can never drift from them: the registry resolves the
+     * flat `{name}.blade.php`, the `{name}/index.blade.php` form and a sub-component's
+     * `{parent}/{child}.blade.php`, and leaves out the data a class hands its view.
      *
      * @return list<array{name: string, required: bool}>
      */
     private function extractSlots(string $name): array
     {
-        $base = __DIR__.'/../../resources/views/components';
-        $bladePath = "{$base}/{$name}.blade.php";
-        if (! is_file($bladePath)) {
-            $index = "{$base}/{$name}/index.blade.php";
-            if (! is_file($index)) {
-                return [];
-            }
-            $bladePath = $index;
-        }
-
-        return $this->slotsFromBlade($bladePath);
-    }
-
-    /**
-     * The slot schema of one Blade file.
-     *
-     * Split out of `extractSlots()` so the SUB-component path can reach it. That path already
-     * knows its own file — what it lacked was any way to ask this question, because
-     * `extractSlots()` resolves a top-level name and a sub-component has none: `card.body`
-     * resolves to neither `card.body.blade.php` nor `card.body/index.blade.php`, so it
-     * returned the empty list for all 87 of them. 68 have a slot contract.
-     *
-     * @return list<array{name: string, required: bool}>
-     */
-    private function slotsFromBlade(string $bladePath): array
-    {
-        return BladeParser::extractSlotsWithMetadataFromSource(
-            (string) file_get_contents($bladePath),
-            $bladePath,
-        );
+        return ComponentRegistry::slotsOf($name);
     }
 
     /**
@@ -531,7 +502,7 @@ class ShowComponentCommand extends Command
 
         // Parse props from the nested Blade file.
         $props = PropsParser::parseBlade($bladePath);
-        $slots = $this->slotsFromBlade($bladePath);
+        $slots = $this->extractSlots($name);
 
         /*
          * The same two flags the top-level path resolves, resolved the same way. Both were

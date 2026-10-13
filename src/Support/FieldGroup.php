@@ -137,4 +137,35 @@ final class FieldGroup
 
         return $ids === [] ? null : implode(' ', $ids);
     }
+
+    /**
+     * Whether a set's rendered default slot holds a `<legend>` of its own.
+     *
+     * The slot renders inside the set's spacing `<div>`, so a legend written there is a
+     * grandchild of the `<fieldset>` and not its caption. A set nested in the slot is different:
+     * its legend is the first child of its own `<fieldset>`, which is right. Only a legend outside
+     * every fieldset of the slot counts, read by tag depth in one pass from left to right.
+     *
+     * Comments go first. A legend inside one renders nothing, and Livewire's morph markers around
+     * a caller's `@if` are comments too.
+     */
+    public static function hasLooseLegend(string $html): bool
+    {
+        $html = preg_replace('/<!--.*?-->/s', '', $html) ?? $html;
+        $depth = 0;
+        $offset = 0;
+
+        while (preg_match('~<(/?)(fieldset|legend)\b~i', $html, $tag, PREG_OFFSET_CAPTURE, $offset) === 1) {
+            $offset = $tag[0][1] + strlen($tag[0][0]);
+            $closing = $tag[1][0] === '/';
+
+            if (strtolower($tag[2][0]) === 'fieldset') {
+                $depth = max(0, $depth + ($closing ? -1 : 1));
+            } elseif (! $closing && $depth === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

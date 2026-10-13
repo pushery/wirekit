@@ -130,8 +130,8 @@ final class FontAssetsCheck extends VerifyCheck
 
     /**
      * Configured font families whose PUBLISHED bytes differ from the bundled
-     * release — the stale-after-`composer update` state the presence-only check
-     * could not see. Mirrors checkAssetFreshness's md5 compare for the font tree.
+     * release — the stale-after-`composer update` state that presence alone does
+     * not show. Mirrors checkAssetFreshness's md5 compare for the font tree.
      *
      * @return list<string>
      */
@@ -160,7 +160,7 @@ final class FontAssetsCheck extends VerifyCheck
             // package ships: a stylesheet gets `wirekit.fonts.display` substituted
             // on the way out. Comparing against the raw source instead would call
             // every non-default `font-display` permanently stale, and the fix it
-            // printed would not change the answer.
+            // prints would not change the answer.
             if (is_dir($target) && ! DirectoryHash::matches($source, $target, FontCss::publishTransform())) {
                 $stale[] = $preset->key;
             }

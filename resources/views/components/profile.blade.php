@@ -9,17 +9,17 @@
     // Enter / Space keyboard handlers that synthesize a click event.
     // Used when a profile sits inside a dropdown trigger (or any other
     // parent that listens for click + needs a focusable child for
-    // keyboard-reachability). Default false preserves the pre-existing
-    // presentational div byte-for-byte.
+    // keyboard-reachability). Default false renders a presentational
+    // div.
     'interactive' => false,
     // The element this renders. `button` is the better answer wherever the profile is
     // the thing being clicked: the browser gives a real button Space activation, Enter
     // activation and the button role for free, where `interactive` synthesizes the first
     // two from Alpine handlers that do not exist until Alpine boots. Same trade
-    // `app-rail.item` took in v2.38.0, in the same direction.
-    // The default stays `div` so every existing call site keeps the DOM it has — a
-    // profile is often a passive summary inside something else that is already the
-    // control, and nesting a button inside one would be invalid.
+    // as `app-rail.item`, in the same direction.
+    // The default is `div`: a profile is often a passive summary inside something
+    // else that is already the control, and nesting a button inside one would be
+    // invalid.
     'as' => 'div',
     // Corner rounding, on the control branch — the branch that has a background
     // and a focus ring for a radius to describe.
@@ -171,16 +171,16 @@
         // navigation entries directly above it in a sidebar footer light up on hover. The
         // same two tokens they use, so the footer row belongs to the same list it sits at
         // the bottom of.
-        $control ? 'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)] ' : '',
+        $control ? 'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)] ' : '',
         $control ? 'cursor-pointer focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[var(--color-wk-ring-offset)] '.$radiusClasses : '',
     ]), $scope);
 
     // accept either a string URL
     // OR an array shape `['src' => ..., 'initials' => ...]` (matching
-    // `message.author` and the avatar-component convention). Pre-fix,
-    // passing an array crashed with `htmlspecialchars(): Argument #1
-    // must be of type string, array given` because the renderer did
-    // `<img src="{{ $avatar }}">` without a normalizer.
+    // `message.author` and the avatar-component convention). An array
+    // echoed straight into `<img src="{{ $avatar }}">` would crash with
+    // `htmlspecialchars(): Argument #1 must be of type string, array
+    // given`, so it is normalized first.
     // The array shape may arrive as a Collection or as a model; both are read as the record.
     $avatar = \Pushery\WireKit\Support\ListProp::from($avatar);
     $avatarSrc = is_array($avatar) ? ($avatar['src'] ?? null) : (is_string($avatar) ? $avatar : null);
@@ -223,7 +223,7 @@
     @endif
     {{-- The row's own tab stop is part of its keyboard model, so a caller's copy leaves the
          bag there; on a real button the component writes none and the caller's stays. --}}
-    {{ ($interactive && $tag !== 'button' ? $attributes->except('tabindex') : $attributes)->class([$classes]) }}
+    {{ ($interactive && $tag !== 'button' ? $attributes->except('tabindex') : $attributes)->class(['wk-touch-row' => $control && ! $avatarOnly, 'wk-touch-target' => $avatarOnly, $classes]) }}
 >
     @if($avatarSrc)
         <img data-wk-prose-skip src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-full object-cover" />
@@ -253,8 +253,9 @@
              wraps at 43px also wraps in a narrow-but-open column, and the row grows the
              same way. `min-w-0` is not decoration — a flex child defaults to `min-width:
              auto`, so `truncate` has nothing to shrink against and silently does nothing.
-             That pairing is the trap; the class on its own reads as done. --}}
-        <span class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] {{ $toneClasses }} font-[number:var(--font-wk-body-weight)] wk-rail-hide">{{ $name }}</span>
+             That pairing is the trap; the class on its own reads as done. A name the line cuts
+             is whole in its `title`, so a reader with a pointer can still read it. --}}
+        <span title="{{ $name }}" class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] {{ $toneClasses }} font-[number:var(--font-wk-body-weight)] wk-rail-hide">{{ $name }}</span>
     @endif
     {{ $slot }}
 </{{ $tag }}>

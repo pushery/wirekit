@@ -4,9 +4,29 @@
  * Supports hover (desktop), focus (keyboard), and long-press (touch).
  * Positioning via Floating UI with auto flip/shift.
  */
-import { position } from '../utils/floating.js';
+import { placementReference, position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+
+// What a reader can tab to.
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+// A control that holds a cut text as part of itself, so a focus on the control is a focus on the
+// text. One control each: a focusable container, such as a scroll region or a listbox that moves an
+// active descendant, belongs to every text inside it at once and is not one of these.
+const SURROUNDING_CONTROL = [
+    'a[href]', 'button', 'summary', 'label',
+    '[role="button"]', '[role="link"]', '[role="tab"]', '[role="option"]', '[role="treeitem"]', '[role="gridcell"]',
+    '[role="menuitem"]', '[role="menuitemcheckbox"]', '[role="menuitemradio"]',
+    '[role="checkbox"]', '[role="radio"]', '[role="switch"]',
+].join(', ');
+
+// A widget that keeps the keyboard focus to itself and moves it with the arrow keys. A tab stop of
+// a cut text's own inside one would be a stop the widget does not expect.
+const COMPOSITE_WIDGET = [
+    '[role="grid"]', '[role="treegrid"]', '[role="listbox"]', '[role="combobox"]', '[role="menu"]',
+    '[role="menubar"]', '[role="tablist"]', '[role="tree"]', '[role="radiogroup"]', '[role="toolbar"]',
+].join(', ');
 
 /**
  * @param {Object} config - Tooltip configuration from Blade
@@ -14,6 +34,7 @@ import { withOpenAlias } from '../utils/open-alias.js';
  * @param {number} config.offset - Distance between trigger and tooltip in px
  * @param {number} config.delayShow - Delay before showing on hover (ms)
  * @param {number} config.delayHide - Delay before hiding on mouseleave (ms)
+ * @param {boolean} [config.whenTruncated] - Repeat the text of the element it sits on, only while that text is cut off
  */
 export default function wirekitTooltip(config = {}) {
     return withOpenAlias({
@@ -45,9 +66,29 @@ export default function wirekitTooltip(config = {}) {
         // Puts the description back on the control after an update; disconnected in destroy().
         _describedByObserver: null,
 
+        // `text truncate="tooltip"`: the tooltip repeats the text of the element it sits on, which
+        // that element cuts off, and only while it does. See `_watchTheCut()`.
+        _whenTruncated: config.whenTruncated === true,
+
+        // That text's own tab stop, bound as `x-bind:tabindex="tabStop"`: '0' while the text is cut
+        // and stands in no control, null otherwise, which removes the attribute.
+        tabStop: null,
+        _standsAlone: false,
+
+        // The control the text stands in, its listeners, and the observers of the cut; all released
+        // in destroy().
+        _surroundingControl: null,
+        _surroundingFocusIn: null,
+        _surroundingFocusOut: null,
+        _cutObservers: [],
+
         init() {
             this._moveDescriptionToTheFocusableTrigger();
             this._keepTheDescriptionAcrossUpdates();
+
+            if (this._whenTruncated) {
+                this._watchTheCut();
+            }
 
             // Cleanup on SPA navigation
             this._navCleanup = () => this._forceClose();
@@ -86,9 +127,7 @@ export default function wirekitTooltip(config = {}) {
                 return;
             }
 
-            const focusable = root.querySelector(
-                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-            );
+            const focusable = root.querySelector(FOCUSABLE);
 
             if (!focusable) {
                 return;
@@ -128,9 +167,130 @@ export default function wirekitTooltip(config = {}) {
             });
         },
 
+        /**
+         * Keep a cut text reachable by keyboard, and its tooltip true to what is cut.
+         *
+         * A keyboard reaches the text through a control: one inside it, whose focus the element's
+         * own `focusin` hears, or one around it, a link or a button the text is part of. Focus on
+         * a control around it never travels down to the text, so that control gets listeners of
+         * its own. A text in no control at all takes a tab stop while it is cut, so its tooltip is
+         * not for the pointer alone (WCAG 2.1.1), and gives it back once the text fits. Not inside
+         * a widget that moves the focus with the arrow keys, and not where nothing may take focus.
+         *
+         * The cut is measured again when the element changes size (a narrower window, a container
+         * shown late), when its text changes (an update), and once the fonts are in.
+         */
+        _watchTheCut() {
+            const host = this.$root;
+            if (!host) {
+                return;
+            }
+
+            const around = host.parentElement?.closest?.(SURROUNDING_CONTROL) ?? null;
+            // A label hands its focus to the control it names, which need not be inside it.
+            const control = around?.tagName === 'LABEL' ? around.control : around;
+
+            if (control) {
+                this._surroundingControl = control;
+                this._surroundingFocusIn = (event) => this.focusin(event);
+                this._surroundingFocusOut = () => this.focusout();
+                control.addEventListener('focusin', this._surroundingFocusIn);
+                control.addEventListener('focusout', this._surroundingFocusOut);
+            }
+
+            // Decided once, so only by what lasts. A text hidden from assistive technology takes no
+            // stop, since a focusable element there is announced as nothing. An inert region does
+            // not count: it takes the focus from everything in it while it lasts, and the page
+            // behind an open modal is inert only until the modal closes, when a row an update
+            // added there would otherwise have no stop at all.
+            this._standsAlone = !around
+                && !host.hasAttribute('tabindex')
+                && !host.querySelector(FOCUSABLE)
+                && !host.closest(COMPOSITE_WIDGET)
+                && !host.closest('[aria-hidden="true"]');
+
+            const measure = () => this._measureTheCut();
+
+            if (typeof ResizeObserver === 'function') {
+                const size = new ResizeObserver(measure);
+                size.observe(host);
+                this._cutObservers.push(size);
+            }
+
+            if (typeof MutationObserver === 'function') {
+                const text = new MutationObserver(measure);
+                text.observe(host, { childList: true, characterData: true, subtree: true });
+                this._cutObservers.push(text);
+            }
+
+            document.fonts?.ready?.then(measure);
+            measure();
+        },
+
+        /**
+         * Act on the cut as it is now: the tab stop of a text that stands alone, and a tooltip on
+         * screen, which takes new text while the text is cut and closes once it fits. A text that
+         * holds the focus keeps its stop until the focus leaves, so a resize never drops it.
+         */
+        _measureTheCut() {
+            const cut = this._isTruncated();
+            const focused = this.$root?.matches?.(':focus') === true;
+            this.tabStop = this._standsAlone && (cut || focused) ? '0' : null;
+
+            if (!this.isOpen) {
+                return;
+            }
+
+            if (cut) {
+                this._writeTheCutText();
+            } else {
+                this.close();
+            }
+        },
+
+        /**
+         * Is the element's text cut off at its end right now?
+         *
+         * The element's own measure, in whole pixels and with no tolerance: a text cut by a pixel
+         * still has its tooltip, and a text that fits reports no more width than its box.
+         */
+        _isTruncated() {
+            const el = this.$root;
+
+            return Boolean(el) && el.scrollWidth > el.clientWidth;
+        },
+
+        /**
+         * Write the cut text, whole, into the panel. Read from the element when the tooltip shows
+         * and while it stays, so it repeats the text as it is now rather than as it was rendered;
+         * the spaces and line breaks of the markup collapse as they do on the line.
+         */
+        _writeTheCutText() {
+            const panel = this.$refs?.tooltip;
+            if (!panel) {
+                return;
+            }
+
+            const text = (this.$root?.textContent ?? '').replace(/\s+/g, ' ').trim();
+            if (panel.textContent !== text) {
+                panel.textContent = text;
+            }
+        },
+
         destroy() {
             this._describedByObserver?.disconnect();
             this._describedByObserver = null;
+
+            for (const observer of this._cutObservers) {
+                observer.disconnect();
+            }
+            this._cutObservers = [];
+
+            if (this._surroundingControl) {
+                this._surroundingControl.removeEventListener('focusin', this._surroundingFocusIn);
+                this._surroundingControl.removeEventListener('focusout', this._surroundingFocusOut);
+                this._surroundingControl = null;
+            }
 
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
@@ -194,7 +354,7 @@ export default function wirekitTooltip(config = {}) {
             try {
                 return target.matches(':focus-visible');
             } catch {
-                // An engine without the pseudo-class shows the tooltip on every focus, as before.
+                // An engine without the pseudo-class shows the tooltip on every focus.
                 return true;
             }
         },
@@ -218,6 +378,12 @@ export default function wirekitTooltip(config = {}) {
         focusout() {
             clearTimeout(this._showTimer);
             this.close();
+
+            // A cut text that kept its tab stop only because it held the focus gives it back once
+            // the focus has left, if the text fits by then.
+            if (this._whenTruncated) {
+                this._measureTheCut();
+            }
         },
 
         /**
@@ -319,6 +485,14 @@ export default function wirekitTooltip(config = {}) {
             // switch that only guards the doors it knows about is not a switch.
             if (this._disabled()) return;
 
+            if (this._whenTruncated) {
+                // A text that fits has nothing to repeat.
+                if (!this._isTruncated()) return;
+
+                // Its words go in before the panel shows, as its colors do below.
+                this._writeTheCutText();
+            }
+
             // Color the panel before it is shown, not after.
             //
             // `open = true` flips x-show, which sets display immediately. A copy
@@ -353,7 +527,7 @@ export default function wirekitTooltip(config = {}) {
                 this._stopRepair?.();
                 this._stopRepair = null;
 
-                const placement = await position(trigger, tooltip, {
+                const placement = await position(placementReference(trigger), tooltip, {
                     placement: this._placement,
                     offset: this._offset,
 
@@ -379,7 +553,10 @@ export default function wirekitTooltip(config = {}) {
                     // panel, since they sit in that `style` attribute too. The callback copies
                     // them again before the placement is put back, so a tooltip restyled on its
                     // wrapper keeps its colors across the update.
-                    repairErasure: (panel) => this._inheritThemeVars(panel),
+                    //
+                    // The panel of a cut text loses its words in that update too, since this
+                    // component writes them and the server does not, so they go back in as well.
+                    repairErasure: (panel) => this._restoreThePanel(panel),
                     // It also follows the trigger: the placement is viewport-relative (`fixed`),
                     // so a scroll while this is open would otherwise leave it where the trigger
                     // was. The same `stop()` ends both observers.
@@ -406,6 +583,18 @@ export default function wirekitTooltip(config = {}) {
                         placement.stop();
                     }
                 }
+            }
+        },
+
+        /**
+         * Put back what a framework update took off the panel while it was open: the colors
+         * copied onto it and, on a cut text, its words.
+         */
+        _restoreThePanel(panel) {
+            this._inheritThemeVars(panel);
+
+            if (this._whenTruncated) {
+                this._writeTheCutText();
             }
         },
 

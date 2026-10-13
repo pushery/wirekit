@@ -21,9 +21,9 @@
     // (no hover) and for surfaces where the actions should always be reachable.
     'actionsReveal' => config('wirekit.components.message.actions-reveal', 'hover'),
     // Carbon format string for the timestamp. Null (default) renders the
-    // locale-aware short time via isoFormat('LT') — "9:15 PM" for en (identical
-    // to the old hardcoded format), "21:15" for de and other 24h locales. Pass an
-    // explicit format (e.g. 'H:i') to override.
+    // locale-aware short time via isoFormat('LT') — "9:15 PM" for en, "21:15"
+    // for de and other 24h locales. Pass an explicit format (e.g. 'H:i') to
+    // override.
     'timeFormat' => null,
     // The zone the timestamp and the status time are written in for the reader, a name such as
     // "Europe/Berlin". Null → the zone of the value given.
@@ -96,8 +96,8 @@
     if ($carbonTimestamp !== null) {
         $carbonTimestamp = Moment::in($carbonTimestamp, $timezone, 'message');
         // Locale-aware short time by default (isoFormat('LT') honors the Carbon
-        // locale): "9:15 PM" for en — byte-identical to the old hardcoded
-        // 'g:i A' — but "21:15" for de and other 24h locales. An explicit
+        // locale): "9:15 PM" for en, "21:15" for de and other 24h
+        // locales. An explicit
         // timeFormat overrides with a raw Carbon format string.
         $formattedTime = $timeFormat !== null
             ? $carbonTimestamp->format($timeFormat)
@@ -127,9 +127,13 @@
     };
 
     $baseClasses = WireKit::resolveClasses('message', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         // `group` enables the actions reveal on hover/focus of the whole message
-        // (the old markup referenced group-hover with no group ancestor, so the
-        // actions never appeared at all).
+        // (without it, `group-hover` has no group ancestor and the actions never
+        // appear).
         'group',
         'flex gap-[var(--space-wk-sm,0.5rem)]',
         $alignClass,
@@ -193,11 +197,11 @@
         ? $statusText.' '.__('wirekit::at').' '.$statusTimeText
         : $statusText;
 
-    // STABLE across re-renders. With a $timestamp the hash is deterministic and always
-    // was; without one the old `uniqid()` made it fresh on every render — and a message
-    // list is typically inside a polled thread, so that is the common path rather than
-    // the rare one. `aria-labelledby` and the header's id then name different things
-    // every tick, both well-formed, and the article loses its accessible name. Two messages from
+    // STABLE across re-renders. With a $timestamp the hash is deterministic; without one a
+    // `uniqid()` would make it fresh on every render — and a message list is typically
+    // inside a polled thread, so that is the common path rather than the rare one.
+    // `aria-labelledby` and the header's id would then name different things every tick,
+    // both well-formed, and the article would lose its accessible name. Two messages from
     // the same sender at the same time are told apart by DomId: the first keeps the hash and the
     // second gets `-2`, so each article is named by its own header.
     $messageId = \Pushery\WireKit\Support\DomId::unique(
@@ -216,7 +220,7 @@
     @unless($attributes->has('role')) role="article" @endunless
     data-wk-message
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $messageId }}-header" @endunless
-    {{ $attributes->class([$baseClasses]) }}
+    data-wk-sr-host {{ $attributes->class([$baseClasses]) }}
 >
     {{-- Avatar --}}
     @if($authorAvatar || $authorName)
@@ -255,8 +259,10 @@
         </span>
 
         {{-- Body bubble — border color comes from $bubbleClasses (intent-tinted for
-             non-neutral, neutral border for plain chat bubbles). --}}
-        <div data-wk-message-bubble class="{{ $bubbleClasses }} rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
+             non-neutral, neutral border for plain chat bubbles). `max-w-full`: in a column aligned
+             to one side the bubble is as wide as its content, so a URL with no break point would
+             widen it past the column; capped, the inherited `break-word` breaks it. --}}
+        <div data-wk-message-bubble class="{{ $bubbleClasses }} max-w-full rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
             {{ $slot }}
         </div>
 

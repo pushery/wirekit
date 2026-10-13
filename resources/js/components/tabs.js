@@ -1,19 +1,19 @@
 /**
  * Tabs — which panel is showing, and roving focus across the tablist.
  *
- * The inline `x-data` did not parse under Alpine's CSP build: method shorthand,
- * an arrow-function `$watch` callback, and optional chaining in the label
- * lookup. Under a strict Content-Security-Policy the whole object failed to
- * build, so the element got an empty scope and the tablist stopped responding
- * to both clicks and arrow keys.
+ * A factory rather than an inline `x-data`, because the tabs need what Alpine's
+ * CSP build does not parse inline: method shorthand, an arrow-function `$watch`
+ * callback, and optional chaining in the label lookup. Inline, under a strict
+ * Content-Security-Policy the element would get an empty scope and the tablist
+ * would answer neither clicks nor arrow keys.
  *
- * One correctness note carried over from the inline version and worth keeping
- * visible: `focusTab` reads the tab buttons off `$root`, not `$el`. Every caller
- * is a keydown handler bound to a BUTTON, and Alpine binds `$el` to the element
- * the handler sits on — a tab, which contains no tabs. The inline version used
- * a bare `$el` that resolved to the x-data root by accident of where the
- * expression was evaluated; written as a factory method the distinction is real,
- * and `$root` is the one that holds regardless of which child dispatched.
+ * One correctness note worth keeping visible: `focusTab` reads the tab buttons
+ * off `$root`, not `$el`. Every caller is a keydown handler bound to a BUTTON,
+ * and Alpine binds `$el` to the element the handler sits on — a tab, which
+ * contains no tabs. In an inline expression a bare `$el` would resolve to the
+ * x-data root by accident of where the expression is evaluated; in a factory
+ * method the distinction is real, and `$root` is the one that holds regardless
+ * of which child dispatched.
  *
  * Lifecycle resources held on `this`:
  *   - _stopServerSync (the observer `observeServerValue()` returns) — called in
@@ -51,7 +51,7 @@ export default function wirekitTabs(config = {}) {
             // render makes every morph re-initialize this scope.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
-            // here, but `test-tabs.mjs` constructs this factory with a barren stub that
+            // here, but a unit harness can construct this factory with a barren stub that
             // passes `{ querySelectorAll }` and nothing else, and a factory that requires
             // more than it uses turns that into a TypeError at init.
             const seed = typeof this.$root?.getAttribute === 'function'
@@ -67,8 +67,8 @@ export default function wirekitTabs(config = {}) {
             // A namespaced, bubbling browser event on every change, so a Livewire
             // (or any) listener can observe the switch server-side without
             // rebuilding the tablist by hand. $watch fires on CHANGE only, and an
-            // unobserved CustomEvent is a no-op — so this stays zero-config and
-            // backward-compatible for every existing usage. Listen with
+            // unobserved CustomEvent is a no-op, so the event needs no setup and
+            // changes nothing where nobody listens. Listen with
             // @wirekit:tab-changed on any ancestor, or on window.
             watchCurrent(this, 'active', (value) => this.$dispatch('wirekit:tab-changed', {
                 tab: value,

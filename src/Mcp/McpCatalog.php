@@ -210,11 +210,9 @@ final class McpCatalog
         // null for almost every prop.
         //
         // Resolving the fallback literal is worth doing and would need a NEW
-        // field: `default_normalized`'s whitespace-collapse semantics are
-        // published in `docs/extending/component-registry.md` and pinned by
-        // `PropsParserTest`, so repurposing it breaks a documented contract.
-        // `McpPropFieldClaimsTest` now holds every such sentence to what the
-        // extractor really returns, in both directions.
+        // field: `default_normalized`'s whitespace-collapse semantics are a
+        // documented contract of the component registry, so repurposing the
+        // field would break it.
         $props = ComponentRegistry::extractProps($name);
 
         $class = ComponentRegistry::componentClass($name);

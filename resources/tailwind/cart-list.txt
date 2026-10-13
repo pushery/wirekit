@@ -49,12 +49,10 @@ CSS
 Declared
 Dev-only
 Fully
-House
 NOT
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Renders
-STRING
 Safari
 Tailwind
 The
@@ -68,7 +66,6 @@ WireKit::resolveClasses('cart-list',
 __('wirekit::Cart'),
 `:not(:last-child)`,
 `<ul>`
-`BooleanPropCoverageTest`
 `cart-item`
 `cart-item`;
 `divide-y`
@@ -113,7 +110,6 @@ compiles
 component
 component's
 container
-convention:
 could
 data-wk-cart-list
 data-wk-prose-skip
@@ -143,7 +139,6 @@ from
 gives
 hands
 has
-holds
 iPhone
 implode('
 imports
@@ -212,7 +207,6 @@ quantity
 query
 rather
 reach
-really
 redundant
 removed,
 removes
@@ -237,6 +231,7 @@ sidebar
 so
 spacing
 stay
+string
 styled
 stylesheet
 surface
@@ -260,7 +255,7 @@ to
 tokens
 true);
 true,
-truthy
+truthy;
 two
 unknown
 unmarked

@@ -39,14 +39,14 @@
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
 
     // The `label` names the trigger BUTTON — it is that button's accessible name and
-    // nothing else. So a section of four links reached assistive tech as a button
-    // followed by four links, with nothing binding them together. These two values are
-    // what binds them.
+    // nothing else. Without these two values a section of four links would reach
+    // assistive tech as a button followed by four links, with nothing binding them
+    // together.
     //
     // Read THROUGH the bag rather than written before it. A hardcoded attribute followed
     // by the bag's own emits the attribute twice and the FIRST one wins, so a developer's
-    // own name would be present in the markup and still never reach the reader — the
-    // shape sidebar.toggle was corrected to for exactly that reason. A caller supplying
+    // own name would be present in the markup and still never reach the reader, which is
+    // why sidebar.toggle reads it the same way. A caller supplying
     // aria-labelledby gets no aria-label from us, so the two never compete for one name.
     $groupLabel = $attributes->has('aria-labelledby')
         ? null
@@ -55,7 +55,7 @@
     // The role is coupled to the NAME instead of being emitted unconditionally. A
     // role="group" nothing can name announces a boundary and then cannot say what the
     // boundary is for — noise in the accessibility tree of every page that uses one.
-    // bento-grid and accordion already decided this, each held by its own red-proof.
+    // bento-grid and accordion couple it the same way.
     $groupRole = $attributes->get(
         'role',
         $groupLabel !== null || $attributes->has('aria-labelledby') ? 'group' : null
@@ -98,7 +98,7 @@
         'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
         'rounded-[var(--radius-wk-nav-item)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
@@ -176,7 +176,7 @@
              A caller's `aria-label` cannot serve here: it is read through the bag above
              and names the ROOT, not this button. --}}
         @if((string) $label === '') aria-label="{{ __('wirekit::Section') }}" @endif
-        class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
+        class="wk-touch-row {{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
     >
         @if($icon)
             {{-- Icon — decorative, hidden from AT. A bare name string resolves
@@ -200,9 +200,9 @@
                  collapse once and the numbers are never seen again without going to look.
                  Collapsing stops being a decision about space and becomes one that destroys
                  information.
-                 A slot rather than a `badge` prop, and the difference is not academic. The
-                 case that surfaced this wanted a SILENT DOT, not a sum: a total across three
-                 work queues would have asserted an urgency the number cannot know. A prop
+                 A slot rather than a `badge` prop, and the difference is not academic: a
+                 section often wants a SILENT DOT, not a sum — a total across three work
+                 queues would assert an urgency the number cannot know. A prop
                  that takes a count cannot express "something is there" without saying how
                  much.
                  Alpine's `isOpen` is in scope here, so the caller decides WHEN it shows —

@@ -23,15 +23,12 @@
     //
     // WireKit defines two, they share the rung names `xs`…`2xl`, and from `md`
     // up they are different numbers — `--gap-wk-md` is 0.75rem against
-    // `--space-wk-md`'s 1rem. This prop read only `--space-wk-*`, while the
-    // kit's own components read `--gap-wk-*` in dozens of places. So a
-    // repository that followed WireKit's example and wrote
-    // `gap-[var(--gap-wk-md)]` could never turn that container into a `row`
-    // without re-spacing it, and kept the raw utility instead.
+    // `--space-wk-md`'s 1rem. The kit's own components read `--gap-wk-*` in
+    // dozens of places, so a container written as `gap-[var(--gap-wk-md)]`
+    // becomes a `row` with `scale="gap"` and keeps its spacing.
     //
-    // Default `space`, which is what this prop has always meant. The rung names
-    // are unchanged too, so `gap="md"` still resolves exactly as before and
-    // only `scale="gap"` moves anything.
+    // Default `space`: `gap="md"` names `--space-wk-md`, and only `scale="gap"`
+    // reads the other ladder.
     //
     // The two maps below are written out rather than derived. Tailwind emits an
     // arbitrary utility only when it can see the class as a literal string in a
@@ -57,18 +54,14 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     // TRI-STATE, not a boolean: `false` (default) · `true` · `"responsive"`.
     //
-    // A row is `flex-row` with no wrapping, which is right for the two- or three-item rows it
-    // was designed for and wrong for the multi-item ones a phone gets: they overflow the
-    // viewport instead of breaking. The per-page cure has been to add `wrap` to each affected
-    // preview, which fixes the page and leaves every developer to rediscover it.
+    // A row is `flex-row` with no wrapping, which is right for a two- or three-item row and
+    // wrong for the multi-item ones a phone gets: they overflow the viewport instead of
+    // breaking.
     //
-    // An opt-in rather than a new default, and that is the whole decision. Flipping the
-    // default to wrap would reflow every existing multi-item row in every application that
-    // installed this package — a breaking change, and this line does not ship one. `responsive`
-    // is additive: a row that does not ask for it renders byte-identically.
+    // Wrapping is an opt-in rather than the default: wrapping by default would reflow every
+    // multi-item row an application already lays out.
     //
-    // `toolbar`, the sibling primitive this was to be decided alongside, already wraps
-    // unconditionally, so there is no inconsistency to resolve there. `stack` is `flex-col`,
+    // `toolbar` wraps unconditionally, so there is no inconsistency to resolve there. `stack` is `flex-col`,
     // where wrapping means additional COLUMNS rather than additional rows, and `badge`'s
     // `wrap` is about a label breaking inside one badge — neither is this concept.
     $wrapMode = is_string($wrap) && strtolower(trim($wrap)) === 'responsive'

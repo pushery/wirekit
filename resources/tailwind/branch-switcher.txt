@@ -79,6 +79,7 @@ $validated
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 ':current',
 ':total']),
@@ -103,7 +104,7 @@ $validated
 'h-5
 'h-6
 'h-8
-'hover:bg-[var(--color-wk-bg-muted)]',
+'hover:bg-[var(--color-wk-bg-active)]',
 'img';
 'inline-flex
 'label'
@@ -160,6 +161,7 @@ $validated
 -
 --}}
 ...>
+.=
 /
 //
 />
@@ -173,9 +175,8 @@ $validated
 1-based,
 16px
 20px,
-2rem,
 3",
-3rem.
+3rem,
 500s
 :
 :current
@@ -212,9 +213,7 @@ A
 A11y
 ALSO
 AND
-API:
 AT
-Adding
 AlpinePayload::from([
 An
 At
@@ -258,6 +257,7 @@ Off
 Only
 Operating
 Out
+Outside
 PERFECTLY
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\AlpinePayload;
@@ -283,6 +283,7 @@ TAG
 The
 This
 Throwing
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 We
 Whether
@@ -318,10 +319,10 @@ __toString
 `aria-hidden="true"`
 `aria-label`
 `aria-labelledby`
-`class="h-12
 `class`
 `cursor-pointer`
 `disabled`:
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -330,6 +331,7 @@ __toString
 `inbox`
 `resources/js`
 `role="img"`.
+`shrink`
 `wire:model`
 `wire:model`:
 `x-modelable`
@@ -346,7 +348,6 @@ actual
 add
 after
 afterwards.
-against
 alias
 all
 all,
@@ -433,6 +434,7 @@ called
 caller
 caller's
 can
+can.
 canGoNext()"
 canGoPrevious()"
 cannot
@@ -463,9 +465,9 @@ components
 composer
 condition
 configured
-conflict
 console
 console).
+container
 content
 context
 control.
@@ -482,6 +484,7 @@ data-wk-branch-count
 data-wk-branch-next
 data-wk-branch-previous
 data-wk-branch-switcher
+data-wk-sr-host
 debug
 decided
 decision
@@ -503,7 +506,6 @@ dev
 developer
 developer's
 did
-direct
 disabled
 disabled:hover:bg-transparent',
 disabled:opacity-[var(--opacity-wk-disabled)]
@@ -511,6 +513,7 @@ does
 does.
 down
 down.
+drawn
 draws
 drop
 dropdown
@@ -518,6 +521,7 @@ dropdowns
 drops
 early
 early.
+effect.
 either
 element
 element,
@@ -556,13 +560,12 @@ first
 fix
 fix.
 flags
+flex
 floor
 focus,
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
-followable.
 for
-forbidden
 forcing
 found.`
 framework
@@ -574,10 +577,11 @@ function_exists('svg'))
 gap-[var(--gap-wk-xs)]',
 gate
 gate,
-get
 gets
+give
 global
 glyph
+glyph,
 glyph.
 goes
 going
@@ -602,11 +606,11 @@ here,
 hidden
 historical
 hold
-house
 hover:text-[color:var(--color-wk-text)]',
 icon
 icon's
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -651,7 +655,6 @@ kill
 know
 label
 labels).
-ladder
 lands
 last
 later
@@ -673,7 +676,6 @@ loses
 lost
 lost,
 loudly,
-makes
 many
 map.
 marks
@@ -683,6 +685,7 @@ max(1,
 may
 mean.
 means
+meant
 merge
 message
 mid-move.
@@ -701,6 +704,7 @@ name="chevron-right"
 named
 navigates
 needs
+neighbors,
 neither
 nested
 never
@@ -741,6 +745,7 @@ order
 order.
 ordinary
 other
+otherwise
 our
 out
 over
@@ -779,7 +784,6 @@ prod).
 props
 provides
 purpose:
-put
 qualified:
 race,
 range
@@ -837,8 +841,8 @@ root
 root,
 root;
 rounded-[var(--radius-wk-full)]',
-rule
-rung
+row
+row,
 same
 say
 says
@@ -854,16 +858,18 @@ server,
 set
 sets
 settled.
+short
 should
 show
 showing,
 shown
 shows
+shrink
+shrink-0';
 silent
 single
 site
 size
-size,
 size="sm"
 sized
 smallest
@@ -873,6 +879,7 @@ sorts
 source
 source-baked
 space).
+space.
 span
 speaks
 speaks,
@@ -884,7 +891,6 @@ step,
 step.
 stepping
 still
-stopped
 storage/logs/laravel.log.
 strictness
 string
@@ -971,8 +977,8 @@ variants
 variants');
 via
 view's
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5
@@ -981,7 +987,6 @@ w-5';
 w-6',
 w-8',
 warning
-was
 way
 ways
 we
@@ -1008,8 +1013,8 @@ x-bind:aria-disabled="!
 x-bind:disabled="total
 x-data="wirekitBranchSwitcher({{
 x-modelable="current"
-x-on:click="next()"
-x-on:click="previous()"
+x-on:click="next($el)"
+x-on:click="previous($el)"
 x-on:keydown.arrow-left.prevent="previous()"
 x-on:keydown.arrow-right.prevent="next()"
 x-text="announced"

@@ -44,9 +44,9 @@ export default function wirekitAppRail(config = {}) {
          * when the column starts to narrow, so it narrows over nothing.
          *
          * So the names leave with the toggle and arrive only once the column has stopped
-         * moving. Wrapping is untouched — the house rule that a navigation entry never
-         * truncates stands, and this is precisely what lets it stand: the text is only ever
-         * laid out at a width it will keep.
+         * moving. Wrapping is untouched — a navigation entry never truncates, and this is
+         * precisely what lets that hold: the text is only ever laid out at a width it will
+         * keep.
          */
         wide: false,
 

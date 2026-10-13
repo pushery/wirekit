@@ -16,8 +16,8 @@
     // setting, or sandwiched between a hero and the article body). The
     // hover-state background keeps its internal padding on the opposite
     // edge so the rounded background still has breathing room around
-    // the rendered text. Default `false` keeps backward-compatible
-    // rendering with every link symmetrically padded.
+    // the rendered text. Default `false` pads every link
+    // symmetrically.
     'flush' => false,
     'scope' => null,
 ])
@@ -78,7 +78,7 @@
     // selects between top-sticky and bottom-sticky variants in the CSS.
 
     // Convert `offset` (CSS string like '4rem') to px for the plugin.
-    // Same parser as reading-spine for symmetry. Used for the IO rootMargin
+    // Same parser as reading-spine for symmetry. Used for the active-section line
     // and scrollTo offset math; the CSS positioning reads from --reading-toc-offset
     // directly via inline style below.
     $offsetPx = 0;
@@ -150,8 +150,8 @@
     data-position="{{ $position }}"
     {{-- The landmark's name is the one string this component writes on the
          developer's behalf, so it asks the catalog rather than freezing English
-         into the markup. `merge()` still keeps it a DEFAULT: a caller passing
-         `aria-label="…"` wins, exactly as before. The key ships in every locale
+         into the markup. `merge()` keeps it a DEFAULT: a caller passing
+         `aria-label="…"` wins. The key ships in every locale
          file. reading-minimap names its own landmark differently, because two
          navigation landmarks with one name cannot be told apart. --}}
     {{-- The offset goes into the bag's `style` rather than an attribute of its own beside it: a
@@ -174,17 +174,21 @@
         class="wk-reading-toc__list wk-scrollbar flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"
         style="list-style: none; margin: 0; display: flex; flex-direction: row; align-items: center;"
     >
-        <template x-for="item in items" :key="item.id">
+        <template x-for="item in items" :key="item.key">
             <li data-wk-prose-skip class="wk-reading-toc__item shrink-0">
+                {{-- The text is cut in a span of its own, so the link can center it when the touch
+                     floor makes the link taller: an ellipsis needs a block box, and the link is a
+                     flex box. The block padding moves with the cut, because overflow is clipped at
+                     the padding box, and that padding is the room the descenders of a one-line box
+                     at `line-height: 1` have below it. --}}
                 <a data-wk-prose-skip
                     :href="'#' + item.id"
                     :data-active="item.index === activeIndex ? 'true' : 'false'"
                     :data-level="item.level"
                     :aria-current="item.index === activeIndex ? 'location' : null"
-                    class="wk-reading-toc__link inline-block max-w-[var(--reading-toc-link-max-width)] truncate text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    x-text="item.text"
-                    @click="scrollTo(item.id, $event)"
-                ></a>
+                    class="wk-reading-toc__link wk-touch-row inline-flex items-center max-w-[var(--reading-toc-link-max-width)] text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    @click="scrollTo(item.key, $event)"
+                ><span class="min-w-0 truncate py-[var(--padding-wk-y-xs)]" x-text="item.text" :title="item.text"></span></a>
             </li>
         </template>
     </ol>

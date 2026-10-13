@@ -27,6 +27,11 @@
     'moreLabel' => null,
     // The menu's name. Unset, "More links".
     'menuLabel' => null,
+    // The widest an entry in the rows may be, a CSS length such as `16rem`, or a percentage of the
+    // row, which the gap between entries comes on top of. A longer label ends in an ellipsis, and the
+    // entry's icon, its markup after the label and its action stay in view. Unset, an entry is at
+    // most as wide as the row.
+    'entryMaxWidth' => null,
     'scope' => null,
 ])
 
@@ -111,9 +116,11 @@
 
     // An entry's parts in a line, inside its link: the icon, the label and what comes after it.
     // A wrapper of its own rather than a change to the `link` and `menu-link` blocks, so a
-    // personalized block keeps working, and only an entry that has parts gets one: a label alone
-    // renders as it always has.
-    $partsInRow = 'inline-flex items-center gap-[var(--gap-wk-xs)]';
+    // personalized block keeps working, and only an entry that has parts gets one. In the rows the
+    // wrapper may shrink, and the label truncates while the icon and the markup after it keep their
+    // width. In the rows a label alone sits in the same truncating span; the menu wraps a long label
+    // instead, and keeps it as it is.
+    $partsInRow = 'inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]';
     $partsInMenu = 'flex items-center gap-[var(--gap-wk-xs)]';
 
     // The action beside an entry is a button of its own, a sibling of the link rather than inside
@@ -151,6 +158,22 @@
         usort($menuEntries, static fn (array $a, array $b): int => [$rank[$a['key']] ?? PHP_INT_MAX, $a['index']] <=> [$rank[$b['key']] ?? PHP_INT_MAX, $b['index']]);
     }
 
+    // The widest an entry may be. The length is written into a style attribute, so its shape is
+    // stated positively, as `combobox` does for its panel width; a value that is not one is reported
+    // and left out, and the entry is then at most as wide as the row.
+    $entryMaxStyle = null;
+    if (filled($entryMaxWidth)) {
+        $entryMaxValue = trim((string) $entryMaxWidth);
+
+        if (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw|%)$/', $entryMaxValue) === 1 && (float) $entryMaxValue > 0) {
+            // The declaration closes with its own semicolon: a caller's `style` is appended after
+            // it, and without one the two would read as a single value.
+            $entryMaxStyle = '--wk-overflow-entry-max: '.$entryMaxValue.';';
+        } else {
+            WireKit::validateProp('overflow-nav', 'entryMaxWidth', $entryMaxValue, ['a CSS length such as 16rem', 'a percentage of the row such as 50%']);
+        }
+    }
+
     $named = filled($label);
     $tag = $named ? 'nav' : 'div';
 
@@ -160,7 +183,7 @@
         'm-0 p-0 list-none',
     ]), $scope);
 
-    // An entry in the rows, around its link and its action. It carries no class of its own, and an
+    // An entry in the rows, around its link and its action. Its block is empty by default, and an
     // entry with an action or a divider sets its parts in a line. A caller's block frames them as
     // one, as a tab does, and reaches the current entry through its `data-wk-overflow-current`
     // attribute.
@@ -169,14 +192,21 @@
         'action' => WireKit::resolveClasses('overflow-nav', 'item', 'inline-flex items-center', $scope),
     ];
 
+    // What holds an entry to the row, set on the entry beside its block rather than in it, so a block
+    // that replaces the default keeps it. The entry may shrink below its label, which a wrapping row
+    // does to an entry wider than a row of its own, and `entryMaxWidth` caps it. The fallback is
+    // `none` rather than a percentage, so a cap given as a length holds while the row sizes itself to
+    // its content as well.
+    $entryWidth = 'min-w-0 max-w-[var(--wk-overflow-entry-max,none)]';
+
     $linkClasses = WireKit::resolveClasses('overflow-nav', 'link', implode(' ', [
         'inline-flex items-center whitespace-nowrap',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
         'rounded-[var(--radius-wk-md)]',
         'text-[length:var(--text-wk-sm)] no-underline',
         'text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
-        'aria-[current=page]:bg-[var(--color-wk-bg-muted)] aria-[current=page]:text-[color:var(--color-wk-text)]',
+        'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
+        'aria-[current=page]:bg-[var(--color-wk-bg-active)] aria-[current=page]:text-[color:var(--color-wk-text)]',
         // The weight of a chosen entry, which a theme may set to the body weight: the fill marks
         // the current link as well, and where forced colors drop the fill, the stylesheet frames
         // it through the `wk-overflow-nav-link` marker, set in front of this block so a
@@ -186,10 +216,10 @@
     ]), $scope);
 
     $menuLinkClasses = WireKit::resolveClasses('overflow-nav', 'menu-link', implode(' ', [
-        'block px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
+        'flex items-center px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
         'rounded-[var(--radius-wk-md)]',
         'text-[length:var(--text-wk-sm)] no-underline text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
@@ -216,14 +246,16 @@
         moreOne: {{ \Pushery\WireKit\Support\AlpinePayload::string($moreOne) }},
         moreMany: {{ \Pushery\WireKit\Support\AlpinePayload::string($moreMany) }}
     })"
-    {{ $attributes->class(['min-w-0']) }}
+    {{ $attributes->class(['min-w-0'])->merge(['style' => $entryMaxStyle]) }}
 >
     <ul data-wk-prose-skip role="list" x-ref="row" class="{{ $rowClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($entries as $entry)
             @php($itemClass = $itemClasses[$entry['action'] || $entry['divider'] ? 'action' : 'plain'])
-            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif @if($entry['pinned']) data-wk-overflow-pinned @endif @if(filled($itemClass)) class="{{ $itemClass }}" @endif x-show="shownHere({{ $entry['index'] }})">
+            <li data-wk-prose-skip data-wk-overflow-index="{{ $entry['index'] }}" @if($entry['current']) data-wk-overflow-current @endif @if($entry['pinned']) data-wk-overflow-pinned @endif class="{{ trim($entryWidth.' '.$itemClass) }}" x-show="shownHere({{ (int) $entry['index'] }})">
                 @php($rowAfter = $afterFor($entry, 'row'))
-                <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class(['wk-overflow-nav-link', $linkClasses]) }}>@if($entry['icon'] !== null || filled($rowAfter))<span class="{{ $partsInRow }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" class="shrink-0" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@if(filled($rowAfter))<span class="inline-flex shrink-0 items-center">{{ $rowAfter }}</span>@endif</span>@else{{ $entry['label'] }}@endif</a>
+                {{-- The link may shrink inside its entry and is never wider than it, set beside its
+                     block as the marker is, so a long label ends in an ellipsis whatever the block says. --}}
+                <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif @if($entry['current']) aria-current="page" @endif {{ $entry['attributes']->class(['wk-overflow-nav-link', $linkClasses, 'wk-touch-row', 'min-w-0 max-w-full']) }}>@if($entry['icon'] !== null || filled($rowAfter))<span class="{{ $partsInRow }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" aria-hidden="true" />@endif<span class="min-w-0 truncate">{{ $entry['label'] }}</span>@if(filled($rowAfter))<span class="inline-flex shrink-0 items-center">{{ $rowAfter }}</span>@endif</span>@else<span class="min-w-0 truncate">{{ $entry['label'] }}</span>@endif</a>
                 @if($entry['action'])
                     @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
                 @endif
@@ -250,9 +282,9 @@
                 </x-slot:trigger>
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none flex flex-col gap-[var(--gap-wk-xs)]" style="list-style: none; margin: 0; padding: 0;">
                     @foreach($menuEntries as $entry)
-                        <li data-wk-prose-skip @if($entry['action']) class="flex items-center gap-[var(--gap-wk-xs)]" @endif x-show="menuHere({{ $entry['index'] }})" style="display: none;">
+                        <li data-wk-prose-skip @if($entry['action']) class="flex items-center gap-[var(--gap-wk-xs)]" @endif x-show="menuHere({{ (int) $entry['index'] }})" style="display: none;">
                             @php($menuAfter = $afterFor($entry, 'menu'))
-                            <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif {{ $entry['attributes']->class([$menuLinkClasses, 'min-w-0 flex-1' => $entry['action'] !== null]) }}>@if($entry['icon'] !== null || filled($menuAfter))<span class="{{ $partsInMenu }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" class="shrink-0" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@if(filled($menuAfter))<span class="inline-flex shrink-0 items-center">{{ $menuAfter }}</span>@endif</span>@else{{ $entry['label'] }}@endif</a>
+                            <a data-wk-prose-skip @if($entry['href'] !== '') href="{{ $entry['href'] }}" @endif {{ $entry['attributes']->class(['wk-touch-row', $menuLinkClasses, 'min-w-0 flex-1' => $entry['action'] !== null]) }}><span class="min-w-0 flex-1">@if($entry['icon'] !== null || filled($menuAfter))<span class="{{ $partsInMenu }}">@if($entry['icon'] !== null)<x-wirekit::icon :name="$entry['icon']" size="sm" aria-hidden="true" />@endif<span class="min-w-0">{{ $entry['label'] }}</span>@if(filled($menuAfter))<span class="inline-flex shrink-0 items-center">{{ $menuAfter }}</span>@endif</span>@else{{ $entry['label'] }}@endif</span></a>
                             @if($entry['action'])
                                 @include('wirekit::components.partials.overflow-nav-action', ['overflowAction' => $entry['action']])
                             @endif

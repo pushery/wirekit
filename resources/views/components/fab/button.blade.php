@@ -6,7 +6,7 @@
     // Null rather than the default string, so the component can tell "the caller
     // said nothing" from "the caller asked for this" — a distinction the name
     // resolution below needs and could not otherwise make. The default is applied
-    // there, so an existing icon-only call renders exactly as before.
+    // there.
     'label' => null,
     // Where it floats — the inline corner, following the writing direction.
     'position' => config('wirekit.components.fab.position', 'end'),
@@ -156,6 +156,9 @@
     data-wk-fab-button
     data-position="{{ $position }}"
     data-placement="{{ $placement }}"
+    {{-- Fixed at the bottom: the page keeps an element that takes the focus out from under it
+         (WCAG 2.4.11, resources/js/utils/scroll-inset.js). --}}
+    data-wk-scroll-inset="bottom"
     {{ $attributes->except('rel')->class([$classes]) }}
 >
     {{-- Icon — decorative ONLY when there is nothing to read. A slot wins; then a

@@ -5,13 +5,14 @@
 $attributes
 $attributes->class('relative')
 $attributes->class([$classes])
-$attributes->class([$itemClasses,
-$attributes->except('rel')->class([$classes,
+$attributes->class(['wk-touch-row',
+$attributes->except('rel')->class(['wk-touch-row',
 $attributes->get('rel',
 $attributes->get('target',
 $attributes->getAttributes());
 $attributes->merge
 $classes
+$classes,
 $colorClasses
 $colorClasses,
 $computedRel
@@ -22,6 +23,7 @@ $disabledClasses])
 $finalRel
 $href
 $itemClasses
+$itemClasses,
 $key
 $key)
 $label
@@ -54,8 +56,8 @@ $triggerClasses
 'a'
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
+'bg-[var(--color-wk-bg-hover)]'
 'bg-[var(--color-wk-bg-muted)]',
-'bg-[var(--color-wk-bg-subtle)]'
 'border-[length:var(--border-wk-width)]
 'border-[length:var(--border-wk-width)]',
 'border-[var(--color-wk-border)]',
@@ -72,13 +74,16 @@ $triggerClasses
 'false'"
 'fixed
 'flex
-'focus:bg-[var(--color-wk-bg-subtle)]',
+'focus-visible:bg-[var(--color-wk-bg-hover)]',
+'focus-visible:ring-[length:var(--ring-wk-width)]',
+'focus-visible:ring-[var(--color-wk-ring)]',
+'focus-visible:ring-inset',
 'focus:outline-hidden
 'focus:outline-hidden',
 'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
 'font-[family-name:var(--font-wk-sans)]',
 'font-normal',
-'hover:bg-[var(--color-wk-bg-subtle)]',
+'hover:bg-[var(--color-wk-bg-hover)]',
 'href'
 'icon'
 'inline-flex
@@ -318,6 +323,8 @@ _getActiveItems().
 `aria-labelledby`
 `contain`
 `data-wk-menubar-panel`
+`focus-visible`
+`focus:outline-hidden`
 `menubar/menu.blade.php`
 `overflow:
 `position:
@@ -364,8 +371,10 @@ at
 attribute
 auto-derived
 avoids
+away.
 back
 back.
+background
 badge.
 bag
 bar
@@ -383,6 +392,7 @@ border-[var(--color-wk-border)]',
 both
 both.
 bound,
+browser's
 bubble
 button
 buttons
@@ -404,6 +414,7 @@ class="shrink-0
 class="shrink-0"
 class="sr-only">{{
 class="w-4
+class="wk-touch-row
 class="{{
 classes
 click
@@ -462,6 +473,7 @@ does:
 done.
 dropdown
 dropdown/item.blade.php
+dropdown/item.blade.php.
 dropping.
 duration-100"
 duration-75"
@@ -474,6 +486,7 @@ element,
 else
 else.
 empty
+entry
 escaped
 escapes
 establishes
@@ -481,6 +494,7 @@ event
 every
 except('rel')
 explicit
+faint
 false);
 false,
 far
@@ -501,6 +515,7 @@ flyout
 focus
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
+focuses.
 follows
 for
 form
@@ -538,8 +553,9 @@ hint
 holds
 honors
 horizontal
-hover:bg-[var(--color-wk-bg-subtle)]'
-hover:bg-[var(--color-wk-bg-subtle)]';
+hover's
+hover:bg-[var(--color-wk-bg-hover)]'
+hover:bg-[var(--color-wk-bg-hover)]';
 href="{{
 icon
 id.
@@ -673,10 +689,13 @@ overlay
 overrides
 overscroll-contain',
 own
+own,
 owns,
 page
+painting
 panel
 panel's
+panel,
 panel.
 panels
 panels:
@@ -693,6 +712,7 @@ per-instance
 per-scope
 placement
 placement:
+pointer
 pointer-events-none'
 pointerdown
 position
@@ -749,6 +769,8 @@ returns
 reuse
 rich
 right
+ring
+ring,
 role="menu"
 role="menubar"
 role="menuitem"
@@ -765,6 +787,7 @@ rule
 run
 said
 same
+say
 scale-100"
 scale-95"
 scope
@@ -778,6 +801,7 @@ sequence
 server
 set
 several
+shade,
 shared
 sharpest
 short
@@ -798,6 +822,7 @@ state
 state.
 states
 stay
+step
 stop
 stop,
 stopPropagation's
@@ -826,6 +851,7 @@ tabbing
 tabindex="-1"
 table
 tag
+takes
 target="_blank".
 teleport
 teleport,
@@ -851,6 +877,7 @@ times;
 to
 together).
 token
+too
 too,
 top
 tracks

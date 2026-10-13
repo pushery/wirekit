@@ -4,9 +4,8 @@
 @props([
     'placement' => config('wirekit.components.dropdown.placement', 'bottom-start'),
     'offset' => config('wirekit.components.dropdown.offset', 8),
-    // Pin the panel id across renders. `alert-dialog`, `drawer` and `lightbox` all
-    // carry this escape hatch; the dropdown was the one overlay without it, which is
-    // why a Livewire round trip could not be made survivable from the call site.
+    // Pin the panel id across renders, as `alert-dialog`, `drawer` and `lightbox`
+    // allow too: it is what makes a Livewire round trip survivable from the call site.
     'name' => null,
     // Fills the row it sits in instead of shrinking to its trigger.
     //
@@ -42,7 +41,7 @@
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:keydown.escape.window', 'x-on:click.outside', 'x-on:click']);
 
-    // STABLE across re-renders, which the old `Str::random(12)` was not — and the
+    // STABLE across re-renders, which a random id per render would not be — and the
     // panel is the one place where that costs everything.
     //
     // The panel teleports out of the document flow, so it lives OUTSIDE the subtree Livewire
@@ -87,11 +86,9 @@
      filtered out via :not([aria-disabled="true"]).
 
      ESC is handled at WINDOW level (not on the wrapper) so it works regardless
-     of where focus currently sits. Background: Playwright's `locator.press()`
-     on the non-focusable panel `<div>` moves focus to `document.body` in some
-     headless environments, so the keydown never bubbles up to a wrapper-level
-     listener. Attaching to `window` avoids the race entirely and also gives
-     users the conventional "ESC closes menu from anywhere" UX.
+     of where focus currently sits: a keydown fired while focus has fallen back
+     to `document.body` never bubbles up to a wrapper-level listener. `window`
+     also gives users the conventional "ESC closes menu from anywhere" UX.
 
      Two composition forms supported (use ONE, not both):
        1. Named-slot quick form — provide <x-slot:trigger>...</x-slot:trigger>
@@ -120,11 +117,11 @@
     x-on:keydown.escape.window="isOpen && close()"
     x-on:click.outside="close()"
     {{-- The same exact-match trap as `_getItems()`: `[role=menuitem]` does not match a
-         `menuitemradio` or `menuitemcheckbox` row, so a radio menu did not match here
-         either. It still closed — but by ACCIDENT, because the panel is teleported outside
-         this wrapper and a click inside it therefore counts as `click.outside`. Resting a
-         documented behavior on a side effect of the teleport is one refactor away from a
-         silent regression, so all three roles are named. --}}
+         `menuitemradio` or `menuitemcheckbox` row. A radio menu would still close without the
+         other two, but only by ACCIDENT, because the panel is teleported outside this wrapper
+         and a click inside it therefore counts as `click.outside`. A documented behavior
+         resting on a side effect of the teleport is one refactor away from a silent
+         regression, so all three roles are named. --}}
     x-on:click="$event.target.closest('[role=menuitem]:not([aria-disabled=true]), [role=menuitemradio]:not([aria-disabled=true]), [role=menuitemcheckbox]:not([aria-disabled=true])') && close()"
     data-wk-panel-id="{{ $panelId }}"
     {{ $attributes->class([$classes]) }}
@@ -148,8 +145,8 @@
         @endphp
         @if($slotCarriesPanel && config('app.debug'))
             @php
-                // Gated on debug per the house rule: a developer warning never
-                // reaches a production page.
+                // Gated on debug: a developer warning never reaches a production
+                // page.
                 logger()->warning('[wirekit] dropdown: this call site uses <x-slot:trigger> AND an explicit <x-wirekit::dropdown.panel>. Pick one — the quick form composes the trigger and the panel for you, so the explicit panel is repeating work the component already does. It is passed through untouched, so nothing is wrapped twice; removing it renders the same markup with one shell less to reason about.');
             @endphp
         @endif

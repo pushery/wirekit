@@ -4,7 +4,7 @@
      may each carry an optimistic action; that belongs to the row, not to the container.
      Not "presentational": the panel owns the menu's keyboard model, and an element
      carrying a keydown handler is interactive. --}}
-{{-- WHY THE PANEL'S NAME IS A PROP, AND WHY THERE IS NO GENERIC FALLBACK.
+{{-- Why the panel's name is a prop, and why there is no generic fallback.
 
      A `role="menu"` without a name is announced as a bare "menu": a reader is told a menu
      opened and nothing about which one. Five of this catalog's six menu panels carry a name;
@@ -127,11 +127,11 @@
     x-on:keydown="handleKeydown"
     x-show="isOpen"
     {{-- The id is set from the factory (`_applyPanelId`), not bound here.
-         `x-bind:id="panelId"` read the value out of the Alpine scope, which is right
-         across the TELEPORT and wrong across a Livewire MORPH: on every morph the
-         binding was re-evaluated in a scope that no longer had `panelId`, and threw.
-         And a JavaScript error during a morph ends the pass — so whatever came after it
-         silently did not run, with nothing turning red. --}}
+         `x-bind:id="panelId"` would read the value out of the Alpine scope, which is
+         right across the TELEPORT and wrong across a Livewire MORPH: on every morph the
+         binding would be re-evaluated in a scope that no longer has `panelId`, and
+         throw. And a JavaScript error during a morph ends the pass, so whatever comes
+         after it silently does not run. --}}
     x-transition:enter="transition ease-out"
     x-transition:enter-start="opacity-0 scale-95"
     x-transition:enter-end="opacity-100 scale-100"

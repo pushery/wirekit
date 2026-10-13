@@ -29,8 +29,8 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
      *     (early return) or `if (this._x) {` (positive, wrapping the call)
      *
      * The look-back is small on purpose. A guard six lines up with a branch in
-     * between does not protect this call, and accepting it would reintroduce the
-     * file-wide blindness this replaced.
+     * between does not protect this call, and accepting one would make the check
+     * as blind as a question asked about the whole file.
      */
     private function hasUnguardedDisconnect(string $source): bool
     {
@@ -52,15 +52,14 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
             // ordinarily spelled without an underscore, and `if (this.observer)` is the same
             // guard.
             //
-            // It does NOT require the condition to name the same field as the call, and never
-            // did. Requiring that would be a stricter check than the one asked for, and it would
+            // It does NOT require the condition to name the same field as the call: that would
             // reject the shapes a real teardown takes — a local alias, a destructured handle.
             //
             // A comparison with `null` or `undefined` is the same guard written out, in either
-            // order and with `!=` as well as `!==`: `if (this.resizes !== null) {`. It was read as
-            // unguarded, so the warning asked for a guard that stood right above the call.
-            // Accepted only when the comparison is the whole condition or its first `&&` term; a
-            // comparison with anything else (`this.observer !== previous`) guards nothing.
+            // order and with `!=` as well as `!==`: `if (this.resizes !== null) {`. Read as
+            // unguarded, it would make the warning ask for a guard that stands right above the
+            // call. Accepted only when the comparison is the whole condition or its first `&&`
+            // term; a comparison with anything else (`this.observer !== previous`) guards nothing.
             $guarded = preg_match('/if\s*\(\s*!\s*this\.\w+/', $context) === 1
                 || preg_match('/if\s*\(\s*this\.\w+\s*\)/', $context) === 1
                 || preg_match('/if\s*\(\s*this\.\w+\s*!==?\s*(?:null|undefined)\s*(?:\)|&&)/', $context) === 1
@@ -90,9 +89,9 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
      * Quote state is tracked so a `//` inside a string literal stays put — `'https://…'` would
      * otherwise swallow the rest of its line, and with it any call that shares it. A REGEX literal
      * carrying a quote (`/['"]/`) is the shape this does not model; it would flip the state and
-     * blank too much or too little from there to the end of the file. Named rather than hidden:
-     * the cure is a real tokenizer, and the failure mode here is one file scanned wrongly, in a
-     * check whose own docblock calls itself a heuristic.
+     * blank too much or too little from there to the end of the file. Modeling it takes a real
+     * tokenizer, and the cost of the gap is one file scanned wrongly, in a check whose own
+     * docblock calls itself a heuristic.
      */
     private function stripJsComments(string $source): string
     {
@@ -171,8 +170,7 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
      *
      * Scans the developer's `resources/js/` tree (the canonical location for
      * custom Alpine plugins extending WireKit) and flags two anti-patterns
-     * that historically pollute developer browser-test console-error
-     * assertions:
+     * that surface as console errors in a developer's browser tests:
      *
      *  - **Observer instantiation WITHOUT a `destroy()` cleanup hook.** A
      *    `new IntersectionObserver(...)` / `new MutationObserver(...)` /
@@ -186,9 +184,7 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
      *    can execute AFTER Alpine teardown set `this._observer = null`
      *    (Livewire morph removing the host element pre-intersection is
      *    the canonical trigger). Without the guard, the callback throws
-     *    `TypeError: Cannot read properties of null` — the bug class
-     *    that WireKit's own `wirekitStatAnimate` / `wirekitAnimate`
-     *    plugins shipped in earlier versions and patched in v2.0.0.
+     *    `TypeError: Cannot read properties of null`.
      *
      * Heuristic — not a perfect AST analysis, but covers the canonical
      * shape WireKit's own plugins follow. Edge cases (callback bound via
@@ -205,10 +201,7 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
             // Developers without a `resources/js/` tree have nothing for
             // this check to walk — but the doctor's contract is "every
             // check emits at least one observable line", so emit an INFO
-            // here instead of returning silently. Tests asserting the
-            // check ran (e.g. DoctorAliasTest "still runs and produces
-            // structurally identical output") then see the marker
-            // regardless of worker-sandbox state.
+            // here instead of returning silently.
             $this->reportInfo('Alpine plugin cleanup hygiene: skipped — no resources/js/ directory (no developer-side Alpine plugins to scan)');
 
             return;
@@ -300,7 +293,7 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
                 //     spellings. That is the same check written the other way round,
                 //     and it usually does MORE (it nulls the reference afterwards).
                 //
-                //   • Teaching it the positive form file-wide would have been worse:
+                //   • Teaching it the positive form file-wide is worse still:
                 //     a component that guards correctly in destroy() and calls
                 //     disconnect() unguarded inside its observer callback would then
                 //     read as clean. That is the real anti-pattern, and it lives in
@@ -315,10 +308,10 @@ final class AlpinePluginCleanupHygieneCheck extends VerifyCheck
                 // discriminator as the destroy() finding above. The TypeError the guard
                 // prevents comes from a callback queued before destroy() nulls the
                 // reference; a module-level observer is built once, never nulled, and has
-                // no destroy() to race. Flagged anyway, it left two ways out, both worse
-                // than the check: decorating a never-null value with `?.`, or the per-file
-                // opt-out, which would also hide a per-instance observer added to the same
-                // file later.
+                // no destroy() to race. Flagged anyway, it would leave two ways out, both
+                // worse than the check: decorating a never-null value with `?.`, or the
+                // per-file opt-out, which would also hide a per-instance observer added to
+                // the same file later.
                 if ($hasObserver && $perInstance && $this->hasUnguardedDisconnect($source)) {
                     $issues[$relativePath][] = 'disconnect-without-null-guard';
                 }

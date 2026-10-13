@@ -11,13 +11,14 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
  *
- * WHY THERE IS NO OBSERVER IN HERE. The option list is re-read on demand rather than
+ * Why there is no observer in here. The option list is re-read on demand rather than
  * watched. A MutationObserver would need a matching disconnect, and the house rules for
  * these plugins exist because a missing one throws a null-callback error into every
  * developer's browser tests. Re-reading costs a `querySelectorAll` on a list that is a
  * navigation column — tens of rows, not thousands — and it survives a Livewire morph for
  * free, which an observer only does if somebody remembers to re-attach it.
  */
+import { pageScrollBehavior } from '../utils/motion.js';
 
 /**
  * @param {Object} config
@@ -158,7 +159,7 @@ export default function wirekitSidebarListbox(config = {}) {
             // browser will not scroll for us — without this the marker walks off the
             // bottom of a scrolling column and the reader follows nothing.
             if (typeof el.scrollIntoView === 'function') {
-                el.scrollIntoView({ block: 'nearest' });
+                el.scrollIntoView({ block: 'nearest', behavior: pageScrollBehavior() });
             }
         },
 

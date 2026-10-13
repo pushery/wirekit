@@ -27,6 +27,13 @@
  *   - _onReaderMove (window `wheel`, `touchstart`, `pointerdown`, `keydown`,
  *     capture) — removed in destroy(). It only clears `_held`.
  *   - _scrollRaf (a requestAnimationFrame id) — canceled in destroy().
+ *   - _headingChanges (a MutationObserver on the target) — disconnected in
+ *     destroy(), and null-guarded in its callback and in its frame callback.
+ *   - _refreshRaf (a requestAnimationFrame id) — canceled in destroy().
+ *   - _railObserver (a ResizeObserver on the rail's list and links) — disconnected
+ *     in destroy(), and null-guarded in its callback.
+ *   - _railDraw (one coalesced measurement a frame) — canceled in destroy().
+ *   - _railReadyFrame (a requestAnimationFrame id) — canceled in destroy().
  *   - _collapseTimer, _sectionEventTimer (timeouts) — cleared in destroy().
  *
  * Honors `prefers-reduced-motion: reduce` — the global reduced-motion rule in
@@ -37,19 +44,95 @@ import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
+import { assignHeadingIds } from '../utils/heading-ids.js';
 import { foldForSearch } from '../utils/search-fold.js';
 import { isComposing } from '../utils/ime.js';
+import { HEADING_CHANGES, changesOutside, sameHeadings, indexInFresh } from '../utils/heading-changes.js';
+import { frameCoalesce } from '../utils/frame-coalesce.js';
+import { isRendered } from '../utils/rendered.js';
+
+/**
+ * The rail's path through the links' text boxes, in the `d` syntax of an SVG path.
+ *
+ * Each box is `{ x, top, bottom }` relative to the `<nav>`; a missing one, a link the filter hid,
+ * is skipped. Each link contributes a straight segment from its top to its bottom at its own x,
+ * and every link after the first is joined to the one before by a cubic curve whose two control
+ * points sit at the middle of the gap between them: straight where both stand at the same depth,
+ * an S-bend inside the gap where the depth changes, so the rail never crosses a title.
+ *
+ * @param {Array<{x: number, top: number, bottom: number}|undefined>} boxes
+ * @returns {string}
+ */
+export function railPath(boxes) {
+    let d = '';
+    let previous = null;
+
+    for (const box of boxes) {
+        if (! box) {
+            continue;
+        }
+
+        if (previous) {
+            const middle = (previous.bottom + box.top) / 2;
+            d += ` C ${previous.x} ${middle} ${box.x} ${middle} ${box.x} ${box.top}`;
+        } else {
+            d += `M ${box.x} ${box.top}`;
+        }
+
+        d += ` L ${box.x} ${box.bottom}`;
+        previous = box;
+    }
+
+    return d;
+}
+
+/**
+ * Where a scroll box has to stand so an entry is in view, or `null` when it already is.
+ *
+ * `top` and `bottom` are the entry's edges in the box's content, `scrollTop` and `height` the box's
+ * position and visible height. The box moves no further than it has to, and an entry taller than
+ * the box shows its top. Half a pixel either way counts as in view, so a rounded edge does not
+ * start a scroll of nothing.
+ *
+ * @param {number} scrollTop
+ * @param {number} height
+ * @param {number} top
+ * @param {number} bottom
+ * @returns {number|null}
+ */
+export function revealScroll(scrollTop, height, top, bottom) {
+    if (top < scrollTop - 0.5) {
+        return top;
+    }
+
+    if (bottom > scrollTop + height + 0.5) {
+        return Math.min(top, bottom - height);
+    }
+
+    return null;
+}
+
 export default (options = {}) => ({
     target: options.target || 'main, article',
     // A selector for subtrees whose headings are NOT this page's structure — an embedded
-    // demo, a sidebar of related links. `null` keeps every existing call site rendering
-    // exactly what it renders now.
+    // demo, a sidebar of related links. `null` excludes nothing.
     exclude: options.exclude || null,
     levels: Array.isArray(options.levels) ? options.levels : [2, 3],
     offset: typeof options.offset === 'number' ? options.offset : 96,
     numbered: options.numbered === true,
     fillSections: options.fillSections === true,
     sectionEvents: options.sectionEvents !== false,
+    // `layout="rail"`: an outline in the page's flow, with a line through its links and a band
+    // on that line at the current section (railPath(), measureRail(), railBand()).
+    rail: options.rail === true,
+    railD: '',
+    railBoxes: [],
+    // Bound to `data-rail-ready`, which shows the rails and arms the band's transition one frame
+    // after the first measurement, so the first paint places the band without sliding it there.
+    railReady: false,
+    // Below md a rail is a disclosure, closed at first: bound to `data-rail-open` and to its
+    // button's `aria-expanded`.
+    railOpen: false,
 
     /**
      * Start expanded — always, or only from the md breakpoint up.
@@ -64,7 +147,11 @@ export default (options = {}) => ({
     forceExpanded: options.forceExpanded === true,
     forceExpandedMd: options.forceExpandedMd === true,
 
-    /** The minimum heading level in the spine — the indent counts from it. */
+    /**
+     * The level the indent and the numbering count from. init() sets it to the shallowest
+     * heading the page has; until then, and on a page without one, it is the smallest
+     * configured level.
+     */
     baseLevel: typeof options.baseLevel === 'number' ? options.baseLevel : 2,
 
     items: [],
@@ -85,6 +172,11 @@ export default (options = {}) => ({
     _onScroll: null,
     _onReaderMove: null,
     _scrollRaf: 0,
+    _headingChanges: null,
+    _refreshRaf: 0,
+    _railObserver: null,
+    _railDraw: null,
+    _railReadyFrame: 0,
     _sectionEventTimer: null,
     _lastDispatchedIndex: -1,
     _seq: 0,
@@ -99,13 +191,20 @@ export default (options = {}) => ({
      * Built here rather than in the template for the CSP build's sake — the
      * template's version was a string concatenation carrying a Blade expression,
      * and while concatenation itself parses, keeping the arithmetic beside the
-     * tick style is what stops the two from drifting apart. The base level comes
-     * from the options rather than from Blade, so the same number reaches both.
+     * tick style is what stops the two from drifting apart. The base level is the
+     * one init() takes from the headings, so the indent and the numbering start at
+     * the same level.
      */
     linkStyle(item) {
+        // The rail indents in its stylesheet rule, by this depth and a token, and gives the link
+        // its own block padding there, so nothing inline may set either.
+        if (this.rail) {
+            return { '--wk-rail-depth': String(Math.max(0, Number(item.level) - this.baseLevel)), textDecoration: 'none' };
+        }
+
         const depth = (Number(item.level) - this.baseLevel) * 0.5;
 
-        return `padding-left: ${depth}rem; padding-top: 0.125rem; padding-bottom: 0.125rem; text-decoration: none;`;
+        return { paddingLeft: `${depth}rem`, paddingTop: '0.125rem', paddingBottom: '0.125rem', textDecoration: 'none' };
     },
 
     /**
@@ -119,7 +218,7 @@ export default (options = {}) => ({
      * `fillSections` flag, decided here where it is ordinary JavaScript.
      */
     tickStyle(item) {
-        const base = 'display: block; height: var(--reading-spine-tick-height);';
+        const base = { display: 'block', height: 'var(--reading-spine-tick-height)' };
 
         if (! this.fillSections) {
             return base;
@@ -127,7 +226,7 @@ export default (options = {}) => ({
 
         const pct = Number(item.fill || 0) * 100;
 
-        return `${base} background: linear-gradient(to right, var(--reading-spine-color-active) ${pct}%, var(--reading-spine-color-idle) ${pct}%);`;
+        return { ...base, background: `linear-gradient(to right, var(--reading-spine-color-active) ${pct}%, var(--reading-spine-color-idle) ${pct}%)` };
     },
 
     /**
@@ -158,12 +257,202 @@ export default (options = {}) => ({
         }
 
         this.items = this.collectHeadings();
+        this.baseLevel = this.shallowestLevel(this.items);
         this.assignIds(this.items);
         if (this.numbered) this.computeNumbering(this.items);
         // One scroll listener drives both the active section and the per-section fill (see
         // observeActive()), on the element that actually scrolls: a listener on the window would
         // never move the fill in a page that scrolls inside its own region.
         this.observeActive();
+        this.followHeadings();
+        if (this.rail) this.watchRail();
+    },
+
+    /**
+     * Measure the rail whenever its links can have moved, at most once a frame.
+     *
+     * Not in init() itself: the `x-for` renders the links after it, so the first measurement is
+     * the observer's first notification, after layout. The list is observed for a new column
+     * width, a crossed `hide-below` or a filter that changes its height, and each link as well
+     * (measureRail() adds them): a web font that rewraps two titles, or a filter that swaps one
+     * link for another of the same height, leaves the list's size as it was.
+     */
+    watchRail() {
+        const list = this.$root?.querySelector?.('[data-wk-reading-spine-list]');
+        if (! list || typeof ResizeObserver !== 'function') return;
+
+        this._railDraw = frameCoalesce(() => this.measureRail());
+        this._railObserver = new ResizeObserver(() => {
+            // A notification the browser queued before destroy() can arrive after it.
+            if (! this._railObserver) return;
+            this._railDraw?.schedule();
+        });
+        this._railObserver.observe(list);
+    },
+
+    /**
+     * Each rendered link's text box in the `<nav>`'s content, and the rail's path through them.
+     *
+     * The x is the link's own inline-start edge: the stylesheet indents the link and pads its text
+     * clear of the rail, so the script reads where the link starts rather than computing it from
+     * a token, and in a right-to-left page that edge is the right one. Boxes are indexed by
+     * `data-index`, so a link the filter hides leaves a hole and the band still finds the current
+     * entry by its index. Rectangles rather than `offsetTop`, which counts from each link's
+     * positioned `li`.
+     *
+     * From `md` up the outline scrolls inside the `<nav>`, and the rails scroll with it, so the
+     * boxes count from the top of its content rather than from what is in view, and from inside
+     * its scrollbar, which a right-to-left page puts on the left.
+     */
+    measureRail() {
+        const list = this.$root?.querySelector?.('[data-wk-reading-spine-list]');
+        const nav = list?.parentElement;
+        if (! nav) return;
+
+        // Where the content's top-left corner is in the viewport right now.
+        const origin = nav.getBoundingClientRect();
+        const originX = origin.left + nav.clientLeft;
+        const originY = origin.top + nav.clientTop - nav.scrollTop;
+        const rtl = getComputedStyle(nav).direction === 'rtl';
+        const boxes = [];
+
+        list.querySelectorAll('a[data-index]').forEach((link) => {
+            this._railObserver?.observe(link);
+            if (! isRendered(link)) return;
+
+            const box = link.getBoundingClientRect();
+            const style = getComputedStyle(link);
+            const edge = (rtl ? box.right : box.left) - originX;
+
+            boxes[Number(link.dataset.index)] = {
+                // On the pixel's middle, so a 1px stroke covers one pixel instead of two halves.
+                x: Math.round(edge) + (rtl ? -0.5 : 0.5),
+                top: box.top - originY + parseFloat(style.paddingTop),
+                bottom: box.bottom - originY - parseFloat(style.paddingBottom),
+            };
+        });
+
+        this.railBoxes = boxes;
+        this.railD = railPath(boxes);
+
+        if (! this.railReady && ! this._railReadyFrame && boxes.length > 0) {
+            // The first time there are boxes, the outline is placed on the current entry at once:
+            // a page opened at a section far down shows its entry, and nothing slides there.
+            this.revealActive(false);
+            this._railReadyFrame = requestAnimationFrame(() => {
+                this._railReadyFrame = 0;
+                if (this._railDraw) this.railReady = true;
+            });
+        }
+    },
+
+    /**
+     * The band on the rail: a clip of the active rail to the current entry's text box.
+     *
+     * Four points whose top and bottom edges are the box's, collapsed to a line while no entry is
+     * current, so a change of entry keeps the shape and the transition in the stylesheet slides
+     * the edges. With `fill-sections` the top edge stays on the first entry the rail shows, so the
+     * band fills the line down to the current entry, as far as the reader has come. An object, so
+     * the binding merges into the element's style rather than replacing it.
+     *
+     * @returns {{clipPath: string}}
+     */
+    railBand() {
+        const box = this.railBoxes[this.activeIndex];
+        // The boxes have a hole for every entry the filter hides, so the first is the first one set.
+        const from = this.fillSections ? this.railBoxes.find((entry) => entry) : box;
+        const top = box ? from.top : 0;
+        const bottom = box ? box.bottom : 0;
+
+        return { clipPath: `polygon(0 ${top}px, 100% ${top}px, 100% ${bottom}px, 0 ${bottom}px)` };
+    },
+
+    /**
+     * Scroll the rail's outline so the current entry is in it, when the outline is taller than
+     * the window allows.
+     *
+     * Only the `<nav>` moves, and only as far as it takes (revealScroll()): `scrollIntoView()`
+     * would move the page under the reader as well. It glides, and jumps where the reader asked
+     * for reduced motion. A reader who scrolls the outline themselves is left there until the
+     * current section changes.
+     *
+     * @param {boolean} [animate=true] - false for the first placement, which nothing should be seen sliding to.
+     */
+    revealActive(animate = true) {
+        const nav = this.$root?.querySelector?.('[data-wk-reading-spine-list]')?.parentElement;
+        if (! nav || nav.scrollHeight <= nav.clientHeight) return;
+
+        const link = nav.querySelector(`a[data-index="${this.activeIndex}"]`);
+        if (! isRendered(link)) return;
+
+        const box = link.getBoundingClientRect();
+        const top = box.top - nav.getBoundingClientRect().top - nav.clientTop + nav.scrollTop;
+        const next = revealScroll(nav.scrollTop, nav.clientHeight, top, top + box.height);
+
+        if (next !== null) {
+            nav.scrollTo({ top: next, behavior: scrollBehavior(animate && ! prefersReducedMotion()) });
+        }
+    },
+
+    /** Open or close the rail's outline below md, from its disclosure button. */
+    toggleRail() {
+        this.railOpen = ! this.railOpen;
+    },
+
+    /**
+     * Collect the headings again when the page changes under the spine, at most once a frame.
+     *
+     * A section a Livewire morph adds, removes or renames after init() would otherwise never
+     * reach the spine: it would go on listing what is gone, and measure the active section
+     * against elements no longer on the page (utils/heading-changes.js).
+     */
+    followHeadings() {
+        // Checked first: without the platform's observer there is nothing to follow with.
+        if (typeof MutationObserver !== 'function') return;
+
+        const container = this._container();
+        if (!container) return;
+
+        this._headingChanges = new MutationObserver((records) => {
+            // A change the browser queued before destroy() can arrive after it.
+            if (! this._headingChanges || this._refreshRaf || ! changesOutside(records, this.$el)) return;
+
+            this._refreshRaf = requestAnimationFrame(() => {
+                this._refreshRaf = 0;
+                if (this._headingChanges) this.refresh();
+            });
+        });
+        this._headingChanges.observe(container, HEADING_CHANGES);
+    },
+
+    /**
+     * Take a fresh collection of the headings, when it lists other ones than the spine does.
+     *
+     * The reader is still in the same section, wherever it now stands in the list, so the mark
+     * stays on it and no section-changed event announces a move that did not happen.
+     */
+    refresh() {
+        const items = this.collectHeadings();
+        if (sameHeadings(items, this.items)) return;
+
+        this.assignIds(items);
+        this.baseLevel = this.shallowestLevel(items);
+        if (this.numbered) this.computeNumbering(items);
+
+        this.activeIndex = indexInFresh(items, this.items, this.activeIndex);
+        this._lastDispatchedIndex = indexInFresh(items, this.items, this._lastDispatchedIndex);
+        this.items = items;
+
+        this.updateSectionFills();
+        this.recomputeActive();
+
+        // The links the `x-for` renders for the new list are measured once they are there.
+        this._railDraw?.schedule();
+    },
+
+    /** The element the headings are collected in: the nearest ancestor that matches `target`, else the first match in the document. */
+    _container() {
+        return this.$el?.closest(this.target) ?? document.querySelector(this.target);
     },
 
     /**
@@ -178,7 +467,7 @@ export default (options = {}) => ({
      * resolves — the Blade caller checks `items.length`.
      */
     collectHeadings() {
-        const container = this.$el?.closest(this.target) ?? document.querySelector(this.target);
+        const container = this._container();
         if (!container) {
             // Warn when a non-default custom target resolved to nothing.
             // The default `'main, article'` is intentionally permissive —
@@ -220,28 +509,25 @@ export default (options = {}) => ({
     },
 
     /**
-     * Ensure every heading has an `id` so the spine link works as an
-     * anchor and the browser back/forward + scroll-restoration work
-     * naturally. Existing IDs respected; duplicates are disambiguated
-     * with -2 / -3 suffixes (so two h2s with identical text get
-     * stable, unique IDs).
+     * Ensure every heading has an `id` so the spine link works as an anchor and the browser's
+     * back, forward and scroll restoration work naturally, and give every entry a key of its own
+     * for `x-for` (utils/heading-ids.js). An id a heading already carries is kept, even when two
+     * headings share it; a generated one never duplicates an id on the page.
      */
     assignIds(items) {
-        const seen = new Map();
-        items.forEach((item) => {
-            if (item.el.id) {
-                item.id = item.el.id;
-                return;
-            }
-            let base = this.slugify(item.text);
-            if (!base) base = `section-${++this._seq}`;
-            let final = base;
-            const count = seen.get(base) || 0;
-            if (count > 0) final = `${base}-${count + 1}`;
-            seen.set(base, count + 1);
-            item.el.id = final;
-            item.id = final;
-        });
+        assignHeadingIds(items, (text) => this.slugify(text), () => ++this._seq);
+    },
+
+    /**
+     * The shallowest heading level among the entries, which is where the indent and the
+     * numbering both start.
+     *
+     * `levels` names the levels the spine may show, not the ones a page uses. A page with only
+     * h3 under `levels="2,3"` has its top entries at h3. They are numbered 1, 2, 3, and they
+     * stand without an indent rather than as if an h2 stood above them.
+     */
+    shallowestLevel(items) {
+        return items.length > 0 ? Math.min(...items.map((item) => Number(item.level))) : this.baseLevel;
     },
 
     /**
@@ -252,7 +538,7 @@ export default (options = {}) => ({
      */
     computeNumbering(items) {
         if (items.length === 0) return;
-        const baseLevel = Math.min(...items.map((i) => i.level));
+        const baseLevel = this.shallowestLevel(items);
         const counters = {};
         items.forEach((item) => {
             // Reset any deeper counters when we ascend back up the tree.
@@ -333,6 +619,7 @@ export default (options = {}) => ({
         if (next !== this.activeIndex) {
             this.activeIndex = next;
             this._maybeDispatchSectionChange();
+            if (this.rail) this.revealActive();
         }
     },
 
@@ -361,7 +648,9 @@ export default (options = {}) => ({
      * window never moves there, so a fill read from it would never move either.
      */
     updateSectionFills() {
-        if (!this.fillSections || this.items.length === 0) return;
+        // The rail fills its line by entry in railBand() and paints no ticks, so it needs no fill
+        // within a section, and no work on every frame of a scroll.
+        if (!this.fillSections || this.rail || this.items.length === 0) return;
         const root = scrollRootOf(this.items[0].el);
         const rootTop = root ? root.getBoundingClientRect().top : 0;
         const scrolled = root ? root.scrollTop : window.scrollY;
@@ -415,6 +704,31 @@ export default (options = {}) => ({
         if (this._scrollRaf) {
             cancelAnimationFrame(this._scrollRaf);
             this._scrollRaf = 0;
+        }
+
+        if (this._headingChanges) {
+            this._headingChanges.disconnect();
+            this._headingChanges = null;
+        }
+
+        if (this._refreshRaf) {
+            cancelAnimationFrame(this._refreshRaf);
+            this._refreshRaf = 0;
+        }
+
+        if (this._railObserver) {
+            this._railObserver.disconnect();
+            this._railObserver = null;
+        }
+
+        if (this._railDraw) {
+            this._railDraw.cancel();
+            this._railDraw = null;
+        }
+
+        if (this._railReadyFrame) {
+            cancelAnimationFrame(this._railReadyFrame);
+            this._railReadyFrame = 0;
         }
 
         if (this._sectionEventTimer) clearTimeout(this._sectionEventTimer);
@@ -530,7 +844,10 @@ export default (options = {}) => ({
      */
     scrollTo(id, event) {
         if (event) event.preventDefault();
-        const el = document.getElementById(id);
+        // An entry's key, or an id. Two headings may share an id, and each entry jumps to its own
+        // heading rather than to the first element that carries the id.
+        const entry = this.items.find((it) => it.key === id);
+        const el = entry ? entry.el : document.getElementById(id);
         if (!el) return;
         const root = scrollRootOf(el);
         const top = el.getBoundingClientRect().top - (this._line(root) - 8) + (root ? root.scrollTop : window.scrollY);
@@ -543,12 +860,12 @@ export default (options = {}) => ({
         this._held = true;
 
         try {
-            history.replaceState(null, '', `#${id}`);
+            history.replaceState(null, '', `#${entry ? entry.id : id}`);
         } catch {
             // Cross-origin iframe-srcdoc — URL hash mirror unavailable
         }
 
-        const idx = this.items.findIndex((it) => it.id === id);
+        const idx = entry ? this.items.indexOf(entry) : this.items.findIndex((it) => it.id === id);
         if (idx >= 0) this.activeIndex = idx;
 
         // Focus goes where the reader asked to go. `preventDefault()` at the top suppressed

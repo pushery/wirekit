@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console\Verify\Checks;
 
 use Pushery\WireKit\Console\Verify\VerifyCheck;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
+use Pushery\WireKit\Support\BooleanProp;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -69,14 +70,14 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
             }
 
             foreach ($mine as $key => $value) {
-                // THE PREFIX COMES OFF BEFORE THE COMPARISON, and this line is the whole check.
+                // The prefix comes off before the comparison, and this line is the whole check.
                 //
                 // Our keys are `wirekit::Dismiss`; an application that predates the prefix wrote
                 // `Dismiss`. Comparing the two as stored finds nothing in common, so the check
                 // would report a clean bill of health over precisely the collision it exists to
                 // name — and it is the flat-namespace problem itself that makes that silence
                 // expensive, because the legacy-key bridge keeps that application's wording
-                // flowing into the component exactly as it did before.
+                // flowing into the component.
                 $plain = str_starts_with((string) $key, BaseLocaleJsonLoader::NAMESPACE)
                     ? substr((string) $key, strlen(BaseLocaleJsonLoader::NAMESPACE))
                     : (string) $key;
@@ -121,7 +122,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
         // WireKit renders its own `wirekit::Home` — so the wording difference has no effect on
         // anything the component shows, and the warning's own last sentence ("the legacy-key
         // bridge keeps applying your wording inside the component") would be untrue.
-        $bridgeIsOn = (bool) config('wirekit.translations.legacy_key_bridge', true);
+        $bridgeIsOn = BooleanProp::from(config('wirekit.translations.legacy_key_bridge', true), true);
 
         if (! $bridgeIsOn) {
             $this->reportInfo(sprintf(
@@ -196,7 +197,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                 "Translation key '%s' means something different in your catalog than in WireKit (%s), "
                 .'and %s renders it — so that component will show your wording in a context it was not '
                 .'written for. %s Until then, the legacy-key bridge keeps applying your wording inside '
-                .'the component, exactly as before.',
+                .'the component.',
                 $plain,
                 implode(', ', $locales),
                 $rendered[$key],
@@ -219,11 +220,12 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
      * Holding `Home` and `wirekit::Home` with DIFFERENT wordings is the state the divergence
      * message a few methods up explicitly asks for: translate the namespaced key to give the
      * component its wording back, keep the plain one for your own pages. Reporting that at
-     * warning severity made the two checks contradict each other — follow the first one's
-     * advice and the second one fails your gate, with no third state that satisfies both.
+     * warning severity would make the two checks contradict each other — follow the first
+     * one's advice and the second one would fail your gate, with no third state that
+     * satisfies both.
      *
-     * Holding both with the SAME wording is the case worth a warning, and it is the one this
-     * check was written for: somebody copied the string across and now maintains two of it.
+     * Holding both with the SAME wording is the case worth a warning: somebody copied the
+     * string across and now maintains two of it.
      * Nothing else in the system will ever mention the day they drift apart.
      *
      * @param  array<string, array<string, bool>>  $ambiguous  namespaced key => locale => same string
@@ -305,7 +307,7 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                 // matches either quoting in one pass — the catalog holds keys containing
                 // apostrophes. And the pattern spells each call with an escaped parenthesis, so
                 // this file never contains the literal sequence a translation-key scanner looks
-                // for: written inline, the needle reads to TranslationKeyDriftTest as this
+                // for: written inline, the needle would read to such a scanner as this
                 // command emitting a key of its own.
                 //
                 // ALL THREE call forms, because a key reachable by only one of the other two

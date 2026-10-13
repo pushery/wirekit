@@ -6,7 +6,7 @@ $actionsClasses
 $active
 $attributes
 $attributes->class([$navClasses,
-$attributes->except('rel')->class([$classes,
+$attributes->except('rel')->class(['wk-touch-row',
 $attributes->except(['density']);
 $attributes->get('id'))
 $attributes->get('rel',
@@ -16,6 +16,7 @@ $attributes->has('aria-labelledby'))
 $attributes->merge
 $brand
 $classes
+$classes,
 $colorClasses
 $colorClasses])
 $compact
@@ -93,7 +94,7 @@ $variantClasses,
 'forceMobile'
 'full'
 'full']))
-'hover:bg-[var(--color-wk-bg-subtle)]',
+'hover:bg-[var(--color-wk-bg-hover)]',
 'href'
 'inline-flex
 'lg'
@@ -301,6 +302,7 @@ Same
 See
 So
 Sticks
+Tab
 Tab,
 Tailwind
 The
@@ -360,7 +362,7 @@ __('wirekit::Toggle
 `data-wk-navbar-items`
 `display:
 `dist/wirekit.css`).
-`false`
+`false`:
 `footer`
 `force-mobile`,
 `forceMobile`
@@ -381,7 +383,7 @@ __('wirekit::Toggle
 `px-[var(--padding-wk-x-lg)]`
 `scroll`
 `sm/md/lg/xl/2xl/full`.
-`wk-navbar-mobile`,
+`wk-navbar-mobile`
 `wk-navbar-scroll`
 `wk-scroll-fade`
 `x-ref`
@@ -412,7 +414,7 @@ always-shown
 an
 anchored
 and
-announced
+announcing
 anywhere
 apart.
 app
@@ -444,6 +446,7 @@ bar
 bar's
 bar,
 bar.
+bar:
 base
 be
 beat,
@@ -484,12 +487,10 @@ breakpoint
 breakpoint,
 breakpoint.
 brings
-broken.
 browser,
 button
 button.
 by
-byte-identically
 call
 caller
 caller's
@@ -502,15 +503,14 @@ cap,
 carries
 carries)
 carry
-case
 cast
-changes,
 child,
 class
 class="flex
 class="shrink-0
 class="sr-only">{{
 class="w-6
+class="wk-touch-target
 class="{{
 classes
 client-only
@@ -568,7 +568,6 @@ density:
 derives
 desktop
 developer
-developers
 did
 discarded,
 disclosure
@@ -613,7 +612,6 @@ every
 exactly
 except('rel')
 exist
-existing
 explicit
 fades
 fallback
@@ -625,6 +623,7 @@ false,
 feature
 fill="none"
 filter_var($container,
+first
 first.
 fits
 fix
@@ -646,6 +645,7 @@ focus-visible:ring-[var(--color-wk-ring)]',
 focus:outline-hidden
 folds
 follow.
+follows
 font-[number:var(--font-wk-heading-weight)]',
 for
 forward
@@ -684,7 +684,7 @@ hides
 hint
 horizontal
 hover,
-hover:bg-[var(--color-wk-bg-subtle)]
+hover:bg-[var(--color-wk-bg-hover)]
 hover:text-[color:var(--color-wk-text)]',
 how
 href="{{
@@ -696,6 +696,7 @@ id,
 id:
 id="{{
 identical
+ids
 ids,
 if
 implode('
@@ -765,7 +766,6 @@ mark.
 marker
 marketing
 marketing-landing-page
-markup
 markup.
 match
 matters,
@@ -792,6 +792,7 @@ modal
 more,
 most
 move
+moves
 muted
 mx-auto',
 n/a
@@ -806,6 +807,7 @@ navigation
 navigation')
 never
 new
+next
 no
 node
 none.
@@ -865,6 +867,7 @@ page
 page's
 page-edge
 page-level
+page;
 painted
 pair
 pairing
@@ -918,6 +921,7 @@ replaced
 resizing
 resolved
 resolves
+resolving
 responsive
 responsive.
 reveal.
@@ -958,7 +962,6 @@ shadow-[var(--shadow-wk-sm)]',
 shape
 shared
 ship
-shipped
 should
 show
 shown
@@ -993,6 +996,7 @@ spine.
 stack
 stack,
 stand
+stands
 state
 state)
 stays
@@ -1014,6 +1018,7 @@ stroke="currentColor"
 stylesheet
 stylesheet's
 subject
+suffix.
 supplying
 supported
 survives
@@ -1093,7 +1098,6 @@ was
 way.
 ways
 we
-were
 what
 wheel
 when
@@ -1134,6 +1138,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0
 x-transition:leave-start="opacity-100
 x-transition:leave="transition
+x-wk-focus-first="mobileOpen"
 you
 z-[var(--z-wk-chrome)]'
 {

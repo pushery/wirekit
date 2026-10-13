@@ -121,7 +121,6 @@ $writer->writeString($value,
 200,
 255
 4,
-93
 :
 </div>
 <div
@@ -167,7 +166,6 @@ Mark
 Pushery\WireKit\WireKit;
 QR
 QR-code
-REASON
 Renders
 Resolve
 SVG
@@ -213,7 +211,6 @@ __('wirekit::QR
 a
 above
 accessible
-act
 action
 all
 alpha
@@ -234,6 +231,7 @@ array
 arrive
 as
 assistive
+at
 attribute
 authors
 auto-derived
@@ -258,12 +256,10 @@ border-[var(--color-wk-border)]
 both
 both;
 branches
-browsers
-but
+browser
 caller
 caller's
 can
-cannot
 catalog,
 catch
 change
@@ -279,7 +275,6 @@ color:
 colors
 colors,
 colors.
-comment
 component's
 concern.
 content
@@ -295,7 +290,6 @@ developer
 does
 early.
 echoing
-either
 element,
 encourage
 enum.
@@ -304,13 +298,12 @@ error-correction
 every
 exists
 experience:
-expired.
 eye
 failures,
 fill's
 first,
 flags
-floor.
+floor
 fn
 focusable="false"',
 for
@@ -321,7 +314,6 @@ from
 fully
 function
 gate
-gave:
 generates
 generic
 give
@@ -343,17 +335,14 @@ install
 instead
 interactive
 into
-invites
 is
 it
 it,
 items-center
 its
 itself
-justification
-justified
 justify-center
-keeping
+keep
 keeps
 label
 labels
@@ -369,7 +358,6 @@ list
 live
 lives
 load-bearing.
-longer
 look
 margin
 markup
@@ -380,12 +368,10 @@ must
 n/a
 name
 name.
-needed
 needs
 new
 no
 non-text
-none
 not
 nothing
 null
@@ -402,6 +388,7 @@ opacity),
 opaque,
 optimistic-ui:
 or
+order.
 ours:
 out
 outside
@@ -430,8 +417,6 @@ reach
 reaches
 read
 reader
-reason
-removing
 render
 result
 return
@@ -452,9 +437,8 @@ should
 shown
 skipped.
 so
-something
 square
-statement,
+statement;
 static
 stays
 still
@@ -464,6 +448,7 @@ string
 string;
 strtoupper((string)
 support
+tab
 taken
 takes
 tech
@@ -486,7 +471,6 @@ typo
 unknown
 use
 useful
-versions
 via
 view's
 violation.
@@ -503,7 +487,6 @@ with
 with.
 without
 work
-worse
 would
 wrapper
 write

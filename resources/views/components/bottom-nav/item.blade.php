@@ -17,9 +17,9 @@
     $attributes = $attributes->except(['interactive']);
     // Auto-inject rel="noopener noreferrer" when target="_blank". This component
     // takes an href and echoes the caller's bag onto the element that carries it,
-    // so the caller's target passed straight through to a bare anchor. The house
-    // rule makes the injection unconditional for exactly that shape. Rendered
-    // explicitly with the bag echoed via except('rel'), because
+    // so a caller's target would otherwise reach a bare anchor; for that shape the
+    // injection is unconditional. Rendered explicitly with the bag echoed via
+    // except('rel'), because
     // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');
@@ -123,7 +123,7 @@
     data-wk-bottom-nav-item
     data-active="{{ $active ? 'true' : 'false' }}"
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes]) }}
+    {{ $attributes->except('rel')->class(['wk-touch-row', $classes]) }}
 >
     @if($icon)
         <span class="relative inline-flex" aria-hidden="true">

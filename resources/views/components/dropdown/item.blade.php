@@ -6,10 +6,9 @@
     'disabled' => false,
     'icon' => null,
     'shortcut' => null, // keyboard-shortcut hint shown at the inline-end (e.g. "⌘K")
-    // "This is the page you are on." A navigation menu's most common state, and until now
-    // there was no way to say it — so the only mark on screen was the focus ring the menu
-    // puts on its first item when it opens, which reads as a selection to everyone who did
-    // not put it there.
+    // "This is the page you are on." A navigation menu's most common state. Without it the
+    // only mark on screen would be the focus ring the menu puts on its first item when it
+    // opens, which reads as a selection to everyone who did not put it there.
     //
     // Deliberately NOT painted as a background. Hover and focus already use the subtle
     // surface, and a third thing that looks like those two would not tell them apart. The
@@ -58,8 +57,8 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         // The item's own shape, and the panel's inline padding is what makes room for it.
-        // A square row inside a rounded panel is what the starter kit reported, and the
-        // ring follows the box: `--radius-wk-nav-item` is the panel radius minus that
+        // A square row would sit oddly inside a rounded panel, and the ring follows the
+        // box: `--radius-wk-nav-item` is the panel radius minus that
         // padding, set on the panel in the stylesheet with the same arithmetic the rounded
         // navigation columns use.
         'rounded-[var(--radius-wk-nav-item)]',
@@ -67,16 +66,16 @@
         // `focus-visible`, not `focus`, and a RING rather than only a surface.
         //
         // The menu focuses its first item on open so keyboard users land inside it. With a
-        // plain `focus:` background that meant every mouse-opened menu painted its first entry
-        // the moment it appeared — and a filled row reads as "you are here", not as "the
+        // plain `focus:` background every mouse-opened menu would paint its first entry the
+        // moment it appeared — and a filled row reads as "you are here", not as "the
         // caret is here", even on a page the menu does not list.
         //
         // `focus-visible` is the heuristic the browser already maintains: it matches after a
         // programmatic focus when the last interaction was the keyboard, and does not after a
         // click. So the keyboard user keeps the mark and the mouse user, who never asked for
-        // it, no longer gets one. The ring is what separates focus from the `active` state
+        // it, does not get one. The ring is what separates focus from the `active` state
         // below, which is a weight-and-color change and can sit under it without conflict.
-        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-inset',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -85,8 +84,8 @@
 
     // Color classes — danger variant or default neutral text
     $colorClasses = $danger
-        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)]'
-        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]';
+        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)]'
+        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)]';
 
     // Disabled state — muted appearance, no pointer events
     $disabledClasses = $disabled
@@ -107,7 +106,7 @@
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —
     // if caller passed rel="prev", theirs wins and our auto-injection is lost,
-    // silently re-introducing the tabnabbing vulnerability. Hence except('rel')
+    // silently leaving the page open to tabnabbing. Hence except('rel')
     // + explicit rel attribute render.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href && str_contains($targetAttr, '_blank');
@@ -134,7 +133,7 @@
          theirs: this fills a gap rather than overriding an author. --}}
     @if($active && ! $attributes->has('aria-current')) aria-current="{{ $href ? 'page' : 'true' }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except(['rel', 'type'])->class([$classes, $colorClasses, $activeClasses, $disabledClasses]) }}
+    {{ $attributes->except(['rel', 'type'])->class(['wk-touch-row', $classes, $colorClasses, $activeClasses, $disabledClasses]) }}
 >
     {{-- Optional icon (resolved via WireKit icon system) --}}
     @if($icon)

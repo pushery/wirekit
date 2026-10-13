@@ -1,46 +1,33 @@
 {{-- optimistic-ui: supported
      Its checked state is a server value even though the menu around it is not, so
      `undo` is right: a single boolean whose previous value belongs to the server,
-     and putting it back costs the reader nothing — the same call toggle-button made.
-
-     THE OBSTACLE WAS REAL, AND IT WAS SETTLED BY MEASUREMENT.
+     and putting it back costs the reader nothing — the same call toggle-button makes.
 
      This component IS the button, so the announcer has nowhere to go inside it —
-     a live region there becomes part of the accessible name. The established
-     answer is a `display: contents` wrapper, which five components already use;
-     none of them, however, sits inside a `role="menu"`. Here the wrapper lands
-     between the panel's `role="menu"` and this `role="menuitemcheckbox"`, and a
-     menu owns its menuitems DIRECTLY. Break that and the item stops being part
-     of the menu for a screen reader, silently — the DOM looks identical.
+     a live region there becomes part of the accessible name. It sits in a
+     `display: contents` wrapper instead, which lands between the panel's
+     `role="menu"` and this `role="menuitemcheckbox"`, and a menu owns its
+     menuitems DIRECTLY. Break that and the item stops being part of the menu for
+     a screen reader, silently — the DOM looks identical.
 
-     The specs say a role-less `display: contents` element leaves the
-     accessibility tree along with the box tree, which would keep the ownership.
-     "Say" is not a basis for shipping an ARIA relationship, so it was read out of
-     real trees, in all three baseline engines, via `ariaSnapshot()`:
-
-         chromium  identical with and without the wrapper
-         firefox   identical
-         webkit    identical
+     A role-less `display: contents` element leaves the accessibility tree along
+     with the box tree, so the ownership holds. In Chromium, Firefox and WebKit
+     the tree is the same with and without the wrapper, both items direct
+     children of the menu:
 
          - menu "Options":
            - menuitemcheckbox "Wrap lines" [checked]
            - text: announcer
            - menuitemcheckbox "Show gutter"
-
-     Both items stay direct children of the menu in every engine. The wrapper is
-     invisible to assistive technology, and this ships on that measurement rather
-     than on the spec's promise. --}}
+     --}}
 @props([
     // The Livewire method to call when the item is toggled, showing the new
     // checked state before the server agrees. A refusal puts the old state back.
     // Adds a `display: contents` wrapper — see the note above for why that is
-    // safe inside a menu, and how it was checked.
+    // safe inside a menu.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'checked' => false,
@@ -65,7 +52,7 @@
     $disabled = BooleanProp::from($disabled, false);
 
     // The layer holds the value: without `optimistic` this item keeps its own
-    // `x-data="{ on }"` and behaves byte-identically to before. With it, the
+    // `x-data="{ on }"`. With it, the
     // layer owns `value` and the local state would be a second writer of one
     // value, so the two are mutually exclusive by construction rather than by
     // documentation.
@@ -95,25 +82,21 @@
         // `focus-visible` plus a RING, which is the shape dropdown/item.blade.php
         // carries with its full reasoning — read it there rather than here.
         //
-        // A surface alone cannot mark focus in this menu, and the reason is a token
-        // equality rather than anything in this file: dark mode declares
-        // --color-wk-bg-subtle and --color-wk-bg-elevated as the SAME value, and the
-        // panel behind this row is bg-elevated. So the focused row changed by 1.00:1
-        // — it did not change — while `focus:outline-hidden` had already removed the
-        // browser's own ring. Light mode managed 1.04:1. The ring measures 17.2:1 in
-        // dark and 19.8:1 in light against that panel, and the two tokens stay as
-        // they are: 20.5% IS dark's elevated tone by decision (dist/wirekit.css,
-        // `[data-wk-tone="inverse"]`), so re-tinting one would move every hover in
-        // the catalog to close a focus hole.
+        // A surface alone cannot mark focus in this menu. The background is
+        // --color-wk-bg-hover, the text color mixed at 4% into the panel behind this
+        // row: about 1.1:1, a shade that follows the pointer and is far too faint to
+        // say where the keyboard is, while `focus:outline-hidden` takes the browser's
+        // own ring away. The ring measures 17.2:1 in dark and 19.8:1 in light against
+        // that panel.
         // The same shape as `dropdown.item`: the panel's inline padding makes room for it,
         // and a focused row that stayed square would be the reported defect on a sibling.
         'rounded-[var(--radius-wk-nav-item)]',
         'focus:outline-hidden',
-        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-inset',
         'focus-visible:ring-[var(--color-wk-ring)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'cursor-pointer',
     ]), $scope);
 
@@ -152,7 +135,7 @@
     @endif
     aria-checked="{{ $checkedBool ? 'true' : 'false' }}"
     @if($disabled) aria-disabled="true" @endif
-    {{ $attributes->class([$classes, $disabledClasses]) }}
+    {{ $attributes->class(['wk-touch-row', $classes, $disabledClasses]) }}
 >
     {{-- Checkbox box — a bordered square that is ALWAYS visible (mirrors the
          radio-item's always-visible circle), filled with the accent + a

@@ -29,6 +29,7 @@ $activeIntent;
 $activeIntentAliases
 $activeIntentAliases[(string)
 $activeIntent]
+$announceBusy
 $as
 $as);
 $attributes
@@ -102,6 +103,7 @@ $expression):
 $finalRel
 $focusableTrigger
 $forceLoading
+$forceLoading;
 $hasIcon
 $hasIcon,
 $hasModel
@@ -122,6 +124,8 @@ $iconOnlyBelowClasses
 $iconOnlyBelowClasses,
 $iconOnlyBelowLabelClass
 $iconOnlyHeightClasses
+$iconOnlyShrinkClasses
+$iconOnlyShrinkClasses,
 $iconOnlySquareToken
 $iconRight
 $iconSize
@@ -246,6 +250,7 @@ $tooltipOuterAttributes
 $tooltip]);
 $touchClasses
 $touchClasses,
+$touchFloor
 $touchTextFloor
 $triggerDescribes
 $triggerExplainsDisabled
@@ -262,6 +267,7 @@ $wrapLabel
 '
 ''
 '')
+'')),
 ''));
 '');
 '',
@@ -282,6 +288,8 @@ $wrapLabel
 '/^(?:min-h|h|w|p[xytrblse]?)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/')
+'/^shrink(?:-|$)/'))
 '2xl'
 '2xl']);
 '2xl'],
@@ -470,6 +478,7 @@ $wrapLabel
 'scope'
 'selfToggle'
 'shadow-[var(--shadow-wk-md)]',
+'shrink-0'
 'size'
 'size',
 'slot'
@@ -493,6 +502,7 @@ $wrapLabel
 'toggle()',
 'tooltip'
 'top'),
+'touchFloor'
 'touchTextFloor'
 'tracking-[var(--font-wk-letter-spacing)]',
 'transition-colors',
@@ -521,6 +531,7 @@ $wrapLabel
 'wk-swap-flip',
 'wk-swap-rotate',
 'wk-tooltip-');
+'wk-touch-row',
 'wk-touch-target
 'wrapLabel'
 'x-bind:'.$stateAttribute
@@ -604,9 +615,7 @@ $wrapLabel
 (avoids
 (bool)
 (button
-(byte-identical);
 (c
-(current
 (debug
 (declarative
 (default)
@@ -617,6 +626,7 @@ $wrapLabel
 (filled($tooltip)
 (function_exists('logger'))
 (function_exists('svg')
+(implicit
 (int)
 (is_string($key)
 (it
@@ -643,6 +653,7 @@ $wrapLabel
 (the
 (transparent
 (true
+(true)
 (which
 (wire:click
 );
@@ -655,6 +666,7 @@ $wrapLabel
 -------
 --------
 -----------
+--color-wk-bg-soft,
 --color-wk-bg:
 --color-wk-info-tone,
 --color-wk-warning-bg
@@ -669,6 +681,7 @@ $wrapLabel
 .'label
 .'rendered
 ...>
+.=
 .wk-button-group
 /
 /*
@@ -702,7 +715,6 @@ $wrapLabel
 24x24
 28px,
 2rem
-2rem,
 2xl
 300),
 32
@@ -711,7 +723,7 @@ $wrapLabel
 360px
 390px
 393px
-3rem.
+3rem,
 4.1.2)
 4.78).
 44
@@ -787,7 +799,9 @@ $wrapLabel
 @endif>
 @endisset
 @endphp
+@endunless
 @if
+@if($announceBusy)
 @if($computedRel)
 @if($declarativeLoading)
 @if($disabled)
@@ -822,6 +836,7 @@ $wrapLabel
 @php
 @props([
 @props.
+@unless($attributes->has('data-wk-busy-text'))
 A
 A11y
 ABOVE
@@ -829,11 +844,9 @@ ALSO
 AND
 ANY
 APG
-API:
 ARIA
 AT
 Accessible
-Adding
 All
 Alpine
 Alpine's
@@ -863,6 +876,7 @@ BooleanProp::from($iconOnly,
 BooleanProp::from($loading,
 BooleanProp::from($pressed,
 BooleanProp::from($selfToggle,
+BooleanProp::from($touchFloor,
 BooleanProp::from($touchTextFloor,
 BooleanProp::from($wrapLabel,
 Both
@@ -983,6 +997,7 @@ One
 Only
 Operating
 Otherwise
+Outside
 PERFECTLY
 PHP
 PHP,
@@ -1069,6 +1084,7 @@ Uncontrolled
 Upstream
 Use
 Uses
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 VIEWPORT.
 Validate
@@ -1123,7 +1139,7 @@ Wrap
 ['x-on:mouseenter',
 ['xs',
 [--color-wk-ring:var(--color-wk-accent-fg)]
-[--wk-touch-min:0px]'
+[--wk-touch-min:0px]',
 [],
 [];
 [overflow-wrap:anywhere]'
@@ -1149,6 +1165,7 @@ Wrap
 \Pushery\WireKit\Support\SlotControl::reachable((string)
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
+\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
 \Pushery\WireKit\Support\UtilityClasses::without($sizeClasses,
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -1170,6 +1187,7 @@ Wrap
 ];
 __('wirekit::(opens
 __('wirekit::Could
+__('wirekit::Loading')
 __('wirekit::Saving'),
 __toString
 `$as`
@@ -1201,7 +1219,7 @@ __toString
 `<template
 `<template>`
 `<x-slot:iconLeft>`
-`<x-slot:iconRight>`
+`<x-slot:iconRight>`.
 `<x-wirekit::scroll-area
 `<x-wirekit::tooltip>`
 `=`,
@@ -1250,7 +1268,6 @@ __toString
 `border-e-[var(--color-wk-accent)]`
 `break-word`
 `card`
-`class="h-12
 `class="whitespace-normal"`
 `class`
 `clearTimeout`
@@ -1283,8 +1300,10 @@ __toString
 `focusable-trigger`
 `forceLoading=true`
 `forceLoading`
+`forceLoading`,
 `foreground
 `gap-1`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -1293,10 +1312,12 @@ __toString
 `hidden`,
 `href`
 `icon-only-below=""`
+`iconOnlyBelow`
 `iconOnlyBelow`,
 `iconOnly`
 `iconOnly`,
 `icon`
+`icon`.
 `inbox`
 `inline-flex`
 `inverted`
@@ -1338,6 +1359,7 @@ __toString
 `role="img"`.
 `role="link"`
 `selfToggle`
+`shrink`
 `sm`
 `span`:
 `sr-only`
@@ -1353,6 +1375,7 @@ __toString
 `toggle-button`,
 `toggleBooleanStateDirective`
 `tooltip`,
+`touchFloor`
 `true`
 `true`,
 `undo`
@@ -1370,6 +1393,8 @@ __toString
 `wire:model`/`x-model`
 `wire:show`
 `wk-field`
+`wk-tooltip-panel`
+`wk-touch-row`,
 `wk-touch-target`
 `wrap-label="false"`
 `wrapLabel`
@@ -1429,15 +1454,15 @@ add
 added
 adds
 adds.
-adopting
+adds:
 after
-afternoon.
 again.
 against
 agree
 agreed
 alias
 aligned
+alike.
 all
 all,
 all.
@@ -1452,6 +1477,7 @@ alone.
 along
 alongside
 already
+already,
 also
 always
 always,
@@ -1468,18 +1494,23 @@ and
 and,
 animate
 annotate.
+announce
 announced
-announcement
+announced,
 announcer
 announces
 announcing
 anonymous
 another.
 answer
+answer,
+answers
 anticipate
 any
 anywhere
 anywhere,
+apart
+apart:
 app
 app(IconResolver::class)->resolve($name);
 appear
@@ -1490,11 +1521,13 @@ appending
 application
 applied
 applies
+apply
 arbitrary
 are
 are.
 area
 area's
+area.
 arguments
 aria-atomic="true"
 aria-busy="true"
@@ -1539,7 +1572,6 @@ assistive
 assistive,
 association
 at
-attached
 attempted
 attribute
 attribute's
@@ -1556,6 +1588,8 @@ automated
 automatically
 avatar.group
 avoid.
+away
+away,
 axe
 axe-core
 axis
@@ -1587,8 +1621,7 @@ becomes
 becoming
 been
 before
-before;
-behavior
+behavior;
 behind
 being
 belongs
@@ -1599,6 +1632,7 @@ below.
 below;
 beside
 between
+bg,
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
@@ -1608,10 +1642,13 @@ bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
+bg-[var(--color-wk-bg-soft)]
 bg-[var(--color-wk-danger)]
 bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
+bg-muted
+bg-subtle
 bg-transparent
 bind
 binding
@@ -1680,6 +1717,7 @@ build
 built
 built-in
 busy
+busy.
 but
 button
 button's
@@ -1692,7 +1730,6 @@ buttons).
 buttons,
 by
 byte-identical
-byte-identically,
 bytes
 c"
 call
@@ -1705,13 +1742,13 @@ callout/alert).
 calls
 calls.
 can
+can.
 cancel
 cancels
 candidate
 candidates
 cannot
 canonical
-capability
 card
 card's
 card,
@@ -1747,6 +1784,7 @@ chevron
 chevrons,
 child
 child)
+child,
 children
 choice
 choice,
@@ -1768,6 +1806,7 @@ class="rounded-[var(--radius-wk-sm)]
 class="shrink-0">{{
 class="sr-only"
 class="sr-only">{{
+class="wk-tooltip-panel
 class="{{
 classes
 classes.
@@ -1811,7 +1850,6 @@ comment
 comment,
 commit
 common
-commonest
 compete
 compiled
 compiles
@@ -1838,7 +1876,6 @@ config('wirekit.components.tooltip.placement',
 configuration
 configured
 configured.
-conflict
 connection
 consequence
 console
@@ -1889,6 +1926,7 @@ covered
 covers
 crossed
 crossfade
+crowded
 cursor-pointer
 custom
 cut
@@ -1905,9 +1943,13 @@ data-effect="{{
 data-orientation
 data-orientation="{{
 data-stack-below="{{
+data-wk-announcer
+data-wk-busy-spinner
+data-wk-busy-text="{{
 data-wk-optimistic-announcer
 data-wk-prose-skip
 data-wk-ref-scope
+data-wk-sr-host
 data-wk-swap
 data-wk-swap-off
 data-wk-swap-on
@@ -1920,6 +1962,7 @@ data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
 dead.
 debug
+decide
 decided
 decided,
 decision
@@ -1940,8 +1983,8 @@ default).
 default,
 default.
 default:
+default;
 defect
-defect:
 define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
 definition,
@@ -1980,9 +2023,9 @@ directions,
 directive
 disable
 disable,
+disable.
 disabled
 disabled,
-disabled.
 disabled:cursor-not-allowed
 disabled:opacity-[var(--opacity-wk-disabled)]
 disabling.
@@ -1993,10 +2036,8 @@ dismiss
 dismissible
 dist/wirekit.css
 dist/wirekit.css).
-distinguish:
 div
 do
-docblock
 docs
 docs,
 docs.
@@ -2043,6 +2084,7 @@ edge.
 edges,
 edges.
 editing
+effect.
 effect="fade"
 either
 either.
@@ -2097,8 +2139,6 @@ exclusive
 exhausting
 exist
 exist,
-existed
-existing
 exists
 exists,
 exists.
@@ -2108,12 +2148,10 @@ expandos.
 explains,
 explicit
 explicitly
-exposed
 expression
 expression="isDark".
 expressions.
 extra
-factory
 factory,
 fade="…">`,
 fading
@@ -2215,15 +2253,14 @@ focusable
 focused
 focused,
 follow
-followable.
 follows
 font
 font-[number:var(--font-wk-body-weight)]
 for
 for.
 for:
-forbidden
 forced
+forced-colors
 forcing
 foreach
 form
@@ -2277,6 +2314,7 @@ grid
 group
 group.
 group;
+grown
 guarantee,
 guarantees
 guard
@@ -2295,7 +2333,6 @@ half.
 halves
 hand
 hand,
-hand-mount
 hand-written
 handler
 handler.
@@ -2346,7 +2383,6 @@ hit
 hit,
 hoists
 hold
-holding
 holds
 holds.
 honoring
@@ -2354,7 +2390,6 @@ honors
 hook
 horizontal
 host
-house
 hover
 hover,
 hover.
@@ -2365,9 +2400,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
-hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
@@ -2380,7 +2415,6 @@ href
 href="{{
 hue
 hyphen,
-hypothetical
 icon
 icon's
 icon,
@@ -2477,6 +2511,7 @@ it,
 it.
 it:
 it;
+item
 item,
 items-center
 items-stretch
@@ -2496,6 +2531,7 @@ key
 keyboard
 kill
 kit
+kit's
 know),
 knowing
 knows
@@ -2506,7 +2542,6 @@ label.
 labeled
 labels
 labels).
-ladder
 lands
 last
 last:border-b-0
@@ -2639,6 +2674,7 @@ missing,
 missing-accessible-name
 missing:
 mistake
+mixed
 modal
 modals,
 mode
@@ -2673,6 +2709,7 @@ names,
 names.
 naming
 narrow
+narrower
 native
 natively,
 navigable
@@ -2686,6 +2723,7 @@ needs
 needs.
 negative
 neighbor.
+neighbors,
 neither
 neither:
 nest
@@ -2724,7 +2762,6 @@ nothing,
 nothing.
 nothing;
 notice:
-now
 now.
 nowhere
 nowhere,
@@ -2783,7 +2820,6 @@ order
 order.
 ordinary
 org
-original
 orphaned
 other
 other.
@@ -2828,6 +2864,7 @@ padding.
 page
 page,
 page.
+page:
 pages
 pagination
 paint
@@ -2896,6 +2933,7 @@ placement:
 places.
 plain
 plus
+point:
 pointer
 pointer-events
 pointer-events-none"
@@ -2910,7 +2948,6 @@ possible
 post-process
 pre-Alpine
 pre-checking
-pre-fix
 precisely
 preference.
 prefers
@@ -3005,7 +3042,6 @@ reasoning
 rebuilds.
 receive
 receiver,
-records
 red
 red:
 redone
@@ -3046,7 +3082,6 @@ replace
 replaced
 replacement
 replaces
-report
 reported
 reports
 repository.
@@ -3069,6 +3104,7 @@ rest
 restored
 restoring
 rests
+restyles
 result
 resulting
 retargeted
@@ -3076,7 +3112,6 @@ return
 returns
 rides
 right
-right.
 ring
 ring,
 role
@@ -3112,7 +3147,6 @@ rule
 rules
 run
 run.
-rung
 runs
 runtime
 runtime.
@@ -3140,6 +3174,7 @@ screen
 screen,
 screen-reader-skipping
 screen.
+screen:
 scroll
 seam
 second
@@ -3152,6 +3187,7 @@ select
 selected
 selector
 selectors.
+selects,
 self-toggle
 self-toggle.
 semantic
@@ -3165,7 +3201,6 @@ set,
 set.
 set.');
 sets
-setting
 settles
 setup
 shadow-[var(--shadow-wk-none)]
@@ -3177,17 +3212,16 @@ shapes
 share,
 shared
 shares
-shipped
 shipping.
 ships
 short
 should
 show
-showed
 shown
 shows
 shrink
 shrink-0
+shrink-0';
 shrinks
 sibling
 siblings
@@ -3245,6 +3279,7 @@ source-baked
 source-detection
 space
 space).
+space.
 span
 specific
 specificity
@@ -3271,6 +3306,7 @@ stacked
 stacking-context
 stacks
 stacks:
+stand
 standalone
 stands
 starting
@@ -3285,12 +3321,10 @@ status
 stay
 stay,
 stay.
-stayed
 stays
 step
 still
 stop
-stopped
 stops
 storage/logs/laravel.log.
 story:
@@ -3375,9 +3409,11 @@ tall
 tall,
 taller
 target
+target's
 target="_blank".
 teaches
 tech
+technology
 teleport:
 teleported
 tell
@@ -3408,6 +3444,7 @@ text-level
 text.
 text/bg/border
 than
+than.
 that
 that's
 that:
@@ -3433,7 +3470,7 @@ thing.
 things,
 third
 this
-this:
+this,
 those
 thought
 three
@@ -3462,7 +3499,6 @@ to.
 toCssClasses()
 toHtml().
 today
-today's
 together
 together,
 toggle
@@ -3476,10 +3512,12 @@ token
 token,
 tokens
 tokens.
+told
 too
 too,
 too.
 took
+toolbar
 toolbar,
 tooltip
 tooltip's
@@ -3561,7 +3599,6 @@ unlayered
 unless
 unlike
 unpressed
-unreachable,
 unrelated
 unsteady
 untargeted
@@ -3569,12 +3606,12 @@ untestable.
 until
 up
 up.
+upright
 upstream
 usable
 use
 use.
 use:
-used,
 useful
 user
 uses
@@ -3584,6 +3621,7 @@ utilities
 utility
 utility,
 utility.
+utils/busy-announcer.js
 v4
 valid
 validateProp
@@ -3603,6 +3641,7 @@ variant
 variant's
 variants
 vertical
+very
 via
 view
 view's
@@ -3618,8 +3657,8 @@ visually
 visually-hidden
 voice
 void
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4"
 w-4',
@@ -3636,6 +3675,7 @@ w-[var(--size-wk-md-compact)]',
 w-[var(--size-wk-sm)]',
 w-max
 wait
+wait.
 walk
 wants
 wants.
@@ -3645,6 +3685,7 @@ warning,
 warning:
 was
 waste
+watches
 way
 way.
 ways
@@ -3714,7 +3755,6 @@ with.
 withholds
 without
 wk-touch-text-floor'
-won
 word
 word)
 word,
@@ -3769,6 +3809,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-announce-busy
 xl
 xmlns="http://www.w3.org/2000/svg"
 yet.

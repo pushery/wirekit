@@ -189,6 +189,7 @@ $wrapperClasses
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -406,6 +407,7 @@ $wrapperClasses
 .($descriptionParts
 .($stateText
 ...>
+.=
 .wk-progress-indeterminate
 /
 /*
@@ -447,11 +449,10 @@ $wrapperClasses
 2.
 2.4
 20px,
-2rem,
 3.
 36
 36"
-3rem.
+3rem,
 4.
 4.1.1
 4.1.3).
@@ -539,10 +540,8 @@ A
 A11y
 ALSO
 AND
-API:
 ARIA
 AT
-Adding
 Alpine
 Alpine's
 Also
@@ -649,6 +648,7 @@ Only
 Operating
 Opt-in
 Optional
+Outside
 Override
 PATHINFO_EXTENSION);
 PDF,
@@ -697,6 +697,7 @@ UNBOUND
 URL
 Upload
 Uploaded")
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 Validate
 Validated
@@ -725,6 +726,7 @@ Without
 ['primary',
 [0,
 [__('wirekit::KB'),
+[overflow-wrap:break-word]
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate)
@@ -768,9 +770,10 @@ __toString
 `aria-label`
 `aria-labelledby`
 `aria-valuenow`
-`class="h-12
+`break-word`
 `class`
 `div`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -782,11 +785,11 @@ __toString
 `intent`
 `label`
 `personalize()`
-`progress`
 `prop="false"`
 `rem`
 `role="group"`
 `role="img"`.
+`shrink`
 `state="uploading"`
 `state`,
 `svg`,
@@ -797,6 +800,7 @@ __toString
 `value`
 `variant`
 `variant`.
+`w-0`:
 `wire:poll`
 `wk-progress-fill`
 `wk-progress-indeterminate`
@@ -846,6 +850,7 @@ an
 anchor
 anchor.
 anchor:
+anchor;
 anchored
 and
 animate
@@ -861,6 +866,7 @@ any
 anything
 anything,
 apart
+apart.
 app(IconResolver::class)->resolve($name);
 appear.
 application
@@ -903,6 +909,7 @@ assistive
 at
 attached
 attachment
+attachments
 attempted
 attribute
 attribute's
@@ -932,6 +939,7 @@ bar.
 bar:
 bare
 be
+be:
 because
 becomes
 been
@@ -961,6 +969,7 @@ branch
 branch's
 break
 breaking
+breaks
 browse
 browser
 browser's,
@@ -983,11 +992,13 @@ caller-supplied
 callers
 calling
 can
+can.
 cannot
 canonical
 card
 card's
 card.
+cards.
 carried
 carrier
 carries
@@ -1013,6 +1024,7 @@ circle
 circle)
 circular
 circumference
+claiming
 claims
 clamped
 class
@@ -1064,10 +1076,10 @@ config('wirekit.components.progress.circle-size',
 config('wirekit.components.progress.size',
 config('wirekit.components.progress.variant',
 configured
-conflict
 consistently
 console
 console).
+container
 content
 content,
 context
@@ -1082,6 +1094,7 @@ count($units)
 count.
 counts
 covered
+cut:
 cx="18"
 cy="18"
 danger
@@ -1095,6 +1108,7 @@ data-wk-attachment-name
 data-wk-attachment-state
 data-wk-attachment-status>{{
 data-wk-prose-skip
+data-wk-sr-host
 debug
 decided
 decimal
@@ -1109,7 +1123,6 @@ default
 default),
 default.
 default:
-defect
 define('WIREKIT_BLADE_ICONS_WARNED',
 defined('WIREKIT_BLADE_ICONS_WARNED'))
 degradation:
@@ -1127,8 +1140,8 @@ developer's
 developer's.
 developers
 did
+differ
 dimensions
-direct
 directory
 disagree
 display
@@ -1137,13 +1150,14 @@ div
 does
 does.
 done
+done.
 down
 download
 drawing
 drawn
 draws
 drew
-drifted
+drift
 dropdown
 dropdowns
 drops
@@ -1157,6 +1171,7 @@ easy
 echoed
 echoes
 edge
+effect.
 effective
 either
 either,
@@ -1174,6 +1189,7 @@ empty
 empty)
 empty-state
 end
+end,
 enough
 entry
 enum;
@@ -1239,14 +1255,12 @@ focus-visible:ring-[var(--color-wk-ring)]">
 focus-visible:ring-offset-[length:var(--ring-wk-offset)]
 focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
 focus:outline-hidden
-followable.
 follows
 font
 font-[family-name:var(--font-wk-sans)]'])
 font-[number:var(--font-wk-heading-weight)]
 font-medium">{{
 for
-forbidden
 forbids
 forced-colors
 forced.
@@ -1271,11 +1285,12 @@ gate,
 gated
 generic
 geometry:
-get
 gets
+give
 gives
 global
 glyph
+glyph,
 glyph.
 go
 goes
@@ -1291,7 +1306,6 @@ h-[var(--size-wk-sm)]',
 h-[var(--size-wk-xl,6rem)]',
 h-full
 h/w
-had
 half
 half-wired
 hand-roll
@@ -1322,6 +1336,7 @@ human
 icon
 icon's
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -1353,6 +1368,7 @@ informative
 informative.
 injected
 injection
+inline
 inner
 inset-0
 inset-y-0
@@ -1398,13 +1414,13 @@ label
 label's
 label.
 labels).
-ladder
 landmark;
 larger
 later
 layer.
 layout
 leave
+leaves
 left
 legacy
 length
@@ -1433,7 +1449,6 @@ lost,
 loudly,
 low-emphasis
 made
-makes
 manager
 map.
 markers
@@ -1455,6 +1470,7 @@ mean
 meaning).
 meaning.
 means
+meant
 media
 media+name
 merge
@@ -1463,8 +1479,9 @@ metadata;
 method.
 min
 min((float)
+min-content
 min-w-0
-minted
+mint
 mirrors
 missing
 missing,
@@ -1493,6 +1510,7 @@ names
 naming
 needed
 needs
+neighbors,
 neither
 nest
 nested
@@ -1533,7 +1551,6 @@ occurrence
 octets
 of
 off
-old
 omitted
 on
 on.
@@ -1584,7 +1601,6 @@ part
 partial
 parts
 pass
-passed
 passthrough
 path
 pathinfo($fileName,
@@ -1598,6 +1614,7 @@ person
 personalization
 place
 placeholder
+policy
 polish:
 poll
 polls
@@ -1733,6 +1750,7 @@ rounded-[var(--radius-wk-full)]
 rounded-[var(--radius-wk-sm)]
 rounds
 row
+row,
 rule
 rule)
 rule),
@@ -1750,6 +1768,7 @@ scope
 screen
 screen-reader-skipping
 screen.
+scrolls
 second
 see
 see.
@@ -1762,7 +1781,6 @@ set.
 sets
 settled
 shape
-shape.
 shapes.
 share
 shimmer
@@ -1774,7 +1792,9 @@ showValue
 shown
 shown:
 shows
+shrink
 shrink-0
+shrink-0';
 sibling
 silent-wrong-color
 silently.
@@ -1784,7 +1804,6 @@ sit
 site
 sits
 size
-size,
 size="md"
 size="sm"
 sized
@@ -1801,8 +1820,10 @@ sorts
 source
 source-baked
 space).
+space.
 span
 split
+squeezing
 sr-only
 src="{{
 stable
@@ -1815,12 +1836,10 @@ stay
 stays
 still
 stop
-stopped
 stops
 storage/logs/laravel.log.
 str_contains($relAttr,
 str_contains($targetAttr,
-straight
 streamed
 streaming).
 strictness
@@ -1836,6 +1855,8 @@ stroke-width="3"
 stroke="var(--color-wk-bg-muted)"
 stroke="{{
 structure.
+style
+style,
 style="display:inline-block;"></span>
 style="transition:
 style="width:
@@ -1873,6 +1894,7 @@ teaches
 tech).
 technology
 technology:
+tell
 test
 text
 text)
@@ -1888,6 +1910,7 @@ that
 the
 their
 theirs.
+them
 them.
 theme
 themselves,
@@ -1943,6 +1966,7 @@ two
 type
 unchanged,
 unconditional
+unconditional.
 under
 unit
 unknown
@@ -1951,7 +1975,6 @@ unknown.
 unless
 unresolvable
 until
-up
 up.
 update
 updates.
@@ -1979,14 +2002,16 @@ var(--transition-wk-duration)
 var(--transition-wk-easing)"
 variant
 variants
+version
 via
 view's
 viewBox="0
 visible
 visual
 vocabulary
-w-12"`
+w-0"
 w-12',
+w-12`
 w-3',
 w-4',
 w-5

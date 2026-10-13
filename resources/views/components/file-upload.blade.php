@@ -35,8 +35,8 @@
     // said nothing" from "the caller chose this text". The shipped default is
     // written for a large area; in `compact` it would make the control wider than
     // the row it exists to fit, so there it names the control without painting.
-    // Resolved below — a null default also keeps TranslatableDefaultsGuardTest
-    // satisfied, which is what a hard literal here would fail.
+    // Resolved below from the translation catalog: a literal default here would stay
+    // English whatever the application's language.
     'label' => null,
     // Accessible name for each file's remove button. The `:name` placeholder is
     // replaced with the file name at runtime, so translators control word order
@@ -82,7 +82,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -162,7 +162,7 @@
     // "Drop files here or click to browse", which describes an area, and a
     // compact control is not one. Hiding it visually keeps the name — `sr-only`
     // clips, it does not remove the node from the accessibility tree, so the
-    // <label> still names the input exactly as before.
+    // <label> still names the input.
     $labelText = $label ?? __('wirekit::Drop files here or click to browse');
     $labelIsVisible = $variantValue !== 'compact' || $label !== null;
 
@@ -313,7 +313,7 @@
 
 {{-- Alpine: tracks drag-over state + an array of selected file metadata for preview.
      We read the files directly from the native input change event. --}}
-<div
+<div data-wk-sr-host
     {{-- The file list, the byte formatting and the drop handling live in the
          factory (resources/js/components/file-upload.js). The drop handler was
          four statements and a `const`, which Alpine's CSP build does not parse —
@@ -353,7 +353,7 @@
     <label
         for="{{ $uploadId }}"
         :class="dragging
-            ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-bg-muted)]'
+            ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-bg-active)]'
             : {{ \Pushery\WireKit\Support\AlpinePayload::string(($hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]').($disabled ? '' : ' hover:border-[var(--color-wk-accent)]')) }}"
         class="{{ $dropzoneClasses }}"
         @dragover.prevent="dragOver()"
@@ -414,14 +414,20 @@
          Margin-top carries the dropzone-gap token inline for the same reason;
          wirekit.css defines the variable either way. The class-based
          `mt-[var(--padding-wk-y-sm)]` in $listClasses says the same to a reader
-         of the classes. ListStyleAntiDriftTest requires the class and the inline list-style alike. --}}
+         of the classes, so the class and the inline list-style both stay. --}}
     <ul data-wk-prose-skip role="list" class="{{ $listClasses }}" style="list-style: none; padding: 0; margin: var(--padding-wk-y-sm) 0 0 0;" x-show="files.length > 0" x-cloak>
         <template x-for="(file, index) in files" :key="file.name">
             <li data-wk-prose-skip class="{{ $fileItemClasses }}">
                 {{-- Filename — flex-1 grows to fill available space so the size + X get
-                     pushed to the right edge of the row (standard file-uploader UX).
-                     min-w-0 + truncate prevents long names from blowing out the flex line. --}}
-                <span class="flex-1 truncate min-w-0" x-text="file.name"></span>
+                     pushed to the right edge of the row (standard file-uploader UX). A long
+                     name is cut in the middle: the start gives way with an ellipsis, the end
+                     stays, the extension and the characters before it, where two versions of
+                     one file differ. `whitespace-pre` keeps a space at the seam. The whole name
+                     is the title. --}}
+                <span class="flex min-w-0 flex-1" :title="file.name">
+                    <span class="min-w-0 overflow-hidden text-ellipsis whitespace-pre" x-text="fileNameStart(file.name)"></span>
+                    <span class="shrink-0 whitespace-pre" x-text="fileNameEnd(file.name)"></span>
+                </span>
                 {{-- File size — fixed width so it doesn't shift when remove button appears --}}
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums shrink-0" x-text="formatBytes(file.size)"></span>
                 {{-- Remove button — chip-style X aligned with <x-wirekit::tags-input>:
@@ -443,7 +449,7 @@
                          enough that nobody notices it is the wrong somewhere. --}}
                     data-wk-file-remove
                     @click="removeFile(index)"
-                    class="relative shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer before:absolute before:left-1/2 before:top-1/2 before:h-[var(--size-wk-touch-target)] before:w-[var(--size-wk-touch-target)] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
+                    class="relative shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer before:absolute before:left-1/2 before:top-1/2 before:h-[var(--size-wk-touch-target)] before:w-[var(--size-wk-touch-target)] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                     :aria-label="removeLabel.replace(':name', file.name)"
                 >
                     {{-- X icon — decorative, label is on the button. Matches the

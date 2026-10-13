@@ -74,11 +74,11 @@
         'sm' => 'h-4 w-4',
         default => 'h-5 w-5',
     };
-    // filled (default) reproduces the original chrome so existing usage renders
-    // unchanged; ghost is the new borderless/transparent surface.
+    // filled (default) draws the bordered chrome; ghost is a borderless,
+    // transparent surface.
     $surfaceChrome = match ($surface) {
-        'ghost' => 'border-transparent bg-transparent text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-subtle)] hover:text-[color:var(--color-wk-text)]',
-        default => 'border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]',
+        'ghost' => 'border-transparent bg-transparent text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-hover)] hover:text-[color:var(--color-wk-text)]',
+        default => 'border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)]',
     };
     $controlClasses = 'wk-touch-target '.WireKit::resolveClasses('theme-controller', 'control', implode(' ', [
         'inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)]',
@@ -126,7 +126,7 @@
     x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }}, fixedReason: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::This page sets the mode.')) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($label) }}, optionLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from($optionLabels) }} })"
     data-wk-theme-controller
     data-variant="{{ $variant }}"
-    {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class([$classes]) }}
 >
     <span id="{{ $fixedReasonId }}" class="sr-only" x-text="fixedMessage"></span>
 
@@ -170,7 +170,9 @@
             </x-wirekit::swap>
         </button>
     @elseif($variant === 'switch')
-        <label class="inline-flex cursor-pointer items-center gap-[var(--gap-wk-sm)]">
+        {{-- With its name in sight the label is a row a finger taps, so it takes the touch floor
+             of every interactive row (`wk-touch-row`); without it, the track keeps its own hit area. --}}
+        <label class="{{ ! $hideLabel && (string) $label !== '' ? 'wk-touch-row ' : '' }}inline-flex cursor-pointer items-center gap-[var(--gap-wk-sm)]">
             {{-- A real checkbox with role="switch": it is focusable, it toggles on
                  Space, and it announces its state — all of which a styled div has
                  to reimplement badly. --}}
@@ -260,7 +262,7 @@
              the keyboard model and the escape handling with it rather than this file
              rebuilding them; a menu has no focus trap, and Tab closes it.
 
-             THREE SPANS RATHER THAN ONE EXPRESSION. `x-show` per mode keeps every string in
+             Three spans rather than one expression. `x-show` per mode keeps every string in
              the markup, rendered from the locale file; building the label from `theme` would
              move the copy into an Alpine expression as JavaScript string literals. --}}
         {{-- The menu takes the control's name, the way a submenu takes its trigger's. --}}
@@ -292,7 +294,7 @@
             </x-slot:trigger>
 
             @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
-                {{-- BOTH HALVES OF THE STATE ARE BOUND, and for one reason: the stored mode lives
+                {{-- both halves of the state are bound, and for one reason: the stored mode lives
                      in the reader's browser, so the server does not know which of the three is on.
                      Same reason the trigger's label is bound.
 

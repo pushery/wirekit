@@ -14,7 +14,7 @@
  * the other one where the row reached an end and its arrow is disabled. It does so only when the
  * focus was lost: a reader who has moved on during the round trip keeps where they went.
  *
- * ONE SLOT PER PAGE, as module state: one keyboard presses one arrow at a time, and the cell
+ * One slot per page, as module state: one keyboard presses one arrow at a time, and the cell
  * that pressed it may itself be replaced by the morph. The Livewire hook is registered once.
  *
  * The row is found in its own list. `table.reorder` and `reorder` both mount this, and two lists

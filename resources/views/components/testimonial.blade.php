@@ -50,6 +50,10 @@
     $derivedInitials = $initials ?? \Pushery\WireKit\Support\Initials::from($author);
 
     $classes = WireKit::resolveClasses('testimonial', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'flex h-full flex-col gap-[var(--gap-wk-md)]',
         'rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'bg-[var(--color-wk-bg-elevated)]',
@@ -76,10 +80,11 @@
     <figcaption data-wk-testimonial-author class="flex items-center gap-[var(--gap-wk-sm)]">
         @if($avatar || $derivedInitials)
             {{-- `alt=""`, not the author's name: the name is the very next thing in this
-                 figcaption, as real text. Naming the image with it made every attribution
-                 announce the person twice — "Ada Lovelace, image. Ada Lovelace" — which is
-                 the decorative-image case WCAG describes, and the image genuinely is one
-                 here because the information it carries is already present. --}}
+                 figcaption, as real text. Naming the image with it would make every
+                 attribution announce the person twice — "Ada Lovelace, image. Ada
+                 Lovelace" — which is the decorative-image case WCAG describes, and the
+                 image genuinely is one here because the information it carries is already
+                 present. --}}
             <x-wirekit::avatar
                 :src="$avatar"
                 alt=""
@@ -90,9 +95,11 @@
         @endif
 
         <span class="min-w-0 flex-1">
-            <span class="block truncate text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $author }}</span>
+            {{-- Name and role wrap rather than end in an ellipsis: they are the quote's source, read
+                 whole. A token with no break point breaks through the card's own overflow-wrap. --}}
+            <span class="block text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $author }}</span>
             @if($role)
-                <span data-wk-testimonial-role class="block truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $role }}</span>
+                <span data-wk-testimonial-role class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $role }}</span>
             @endif
         </span>
 

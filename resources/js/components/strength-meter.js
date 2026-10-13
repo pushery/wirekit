@@ -1,7 +1,7 @@
 /**
  * Strength meter — a row of bars for how hard something is to guess, without a field attached.
  *
- * `password-input` has always had one, bound to its own field. A code generator, a passphrase
+ * `password-input` carries one, bound to its own field. A code generator, a passphrase
  * built from settings, or a key whose strength the server computes needs the same display with
  * the value coming from somewhere else, so the value arrives three ways:
  *
@@ -117,6 +117,15 @@ export default function wirekitStrengthMeter(config = {}) {
 
         barColor(index) {
             return strengthBarColor(index, this.steps, this.max);
+        },
+
+        /**
+         * The style of bar `index`, as an object: Alpine sets it property by property, where a
+         * string would be written with `setAttribute()`, which a `style-src` without
+         * `'unsafe-inline'` refuses.
+         */
+        barStyle(index) {
+            return { backgroundColor: this.barColor(index) };
         },
     };
 }

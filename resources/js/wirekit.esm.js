@@ -13,17 +13,22 @@ import { position } from './utils/floating.js';
 import { contrast } from './utils/wcag-contrast.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerScrollToMagic } from './utils/scroll-to.js';
+import { registerPagerFocusMagics } from './utils/pager-focus.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerImeDirective } from './utils/ime.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerScrollIntoViewDirective } from './utils/scroll-into-view.js';
 import { registerStuckDirective } from './utils/stuck.js';
+import { registerAnnounceBusyDirective } from './utils/busy-announcer.js';
 import { registerCounterDirective } from './utils/counter.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerFindableDirective } from './utils/findable.js';
+import { registerFitTextDirective } from './utils/fit-text.js';
+import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
@@ -165,6 +170,8 @@ export function installRuntime(Alpine) {
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
     registerScrollToMagic(Alpine);
+    // A page turned under Livewire keeps the focus in its pager. See utils/pager-focus.js.
+    registerPagerFocusMagics(Alpine);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
@@ -180,6 +187,8 @@ export function installRuntime(Alpine) {
     registerScrollIntoViewDirective(Alpine);
     // A sticky element says when it rests at its line. See utils/stuck.js.
     registerStuckDirective(Alpine);
+    // A button's wait is announced once it lasts. See utils/busy-announcer.js.
+    registerAnnounceBusyDirective(Alpine);
     // A field's character count, counted in the browser. See utils/counter.js.
     registerCounterDirective(Alpine);
     // The tokens a button puts into an input, without a request. See utils/insert-token.js.
@@ -188,12 +197,18 @@ export function installRuntime(Alpine) {
     registerUnsavedDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
+    // A fitted text whose words a script writes keeps its copies in step. See utils/fit-text.js.
+    registerFitTextDirective(Alpine);
+    // A menu a button opens takes the focus to its first entry. See utils/focus-first.js.
+    registerFocusFirstDirective(Alpine);
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
     // See utils/scroll-inset.js.
     installScrollInset();
+    // A radio the arrow keys reach keeps its focus ring in WebKit. See utils/arrow-focus.js.
+    installArrowFocus();
 }
 
 /**
@@ -202,11 +217,10 @@ export function installRuntime(Alpine) {
  *   import { register, wirekitDropdown, wirekitModal } from '.../dist/wirekit.esm.js';
  *   Alpine.plugin((Alpine) => register(Alpine, { wirekitDropdown, wirekitModal }));
  *
- * This is what makes the ESM bundle worth choosing over the IIFE one. Until it existed
- * the module had exactly ONE export — the default installer, which references every
- * factory — so no bundler could drop anything and a one-component app shipped the
- * whole graph: byte-for-byte the size of the plain IIFE build. The docs advertised
- * tree-shaking the whole time.
+ * This is what makes the ESM bundle worth choosing over the IIFE one. With the default
+ * installer as its only export — it references every factory — no bundler could drop
+ * anything, and a one-component app would ship the whole graph, the size of the plain
+ * IIFE build.
  *
  * The keys are the `x-data` names the Blade components emit, so passing the imported
  * bindings straight through is both the shortest and the correct spelling.
@@ -327,8 +341,8 @@ export default function (Alpine) {
 
 /*
  * Every factory by name, so a bundler can keep the handful a developer imports and drop
- * the rest. Generated from the import list above; the two must stay in step, which
- * `EsmBundleIsTreeShakeableTest` asserts.
+ * the rest. Generated from the import list above, and in step with it: a factory imported
+ * there and missing here could not be imported by name.
  */
 export {
     wirekitChartJs,
@@ -428,8 +442,8 @@ export {
     wirekitStickyPanelShadows,
     wirekitStream,
     // Not a factory either: WCAG 2.1 contrast, for a page that reports what a reader's theme
-    // actually resolved to. The same surface as `Pushery\WireKit\Theming\WcagContrast`, held
-    // against it over one corpus by WcagContrastJsMatchesThePhpTest.
+    // actually resolved to. The same surface as `Pushery\WireKit\Theming\WcagContrast`, with
+    // the same answers.
     //
     // Importable on its own as `resources/js/utils/wcag-contrast.js` -- it has no dependencies
     // and ships in the package, so a caller who wants the arithmetic and none of the runtime

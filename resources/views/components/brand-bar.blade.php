@@ -24,7 +24,7 @@
     // container so the brand-bar's CHROME (background, border, sticky
     // behavior) stays edge-to-edge while the CONTENT (brand, tagline,
     // actions) aligns with the body's container-wrapped column. Default
-    // false preserves the v2.0.0 edge-to-edge content behavior.
+    // false keeps the content edge to edge as well.
     'container' => false,
     // `max` — container max-width tier when `container=true`. One of
     // `sm/md/lg/xl/2xl/full`. Defaults to `xl` (the most common

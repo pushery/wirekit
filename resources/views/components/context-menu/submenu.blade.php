@@ -54,18 +54,17 @@
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'whitespace-nowrap',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         // `focus-visible` + a ring, per dropdown/item.blade.php — and this block is
         // the same `context-menu.item` name the row component resolves, so the two
-        // defaults have to agree. The background alone marked nothing: dark's
-        // --color-wk-bg-subtle equals its --color-wk-bg-elevated, the panel behind
-        // this row.
+        // defaults have to agree. The background is the hover's shade, one step
+        // from the panel behind this row, and too faint to mark focus on its own.
         'focus:outline-hidden',
-        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-inset',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -116,8 +115,8 @@
         x-on:mouseenter="scheduleOpen()"
         x-on:mouseleave="scheduleClose()"
         x-on:keydown="onTriggerKey"
-        x-bind:class="subOpen ? 'bg-[var(--color-wk-bg-subtle)]' : ''"
-        {{ $attributes->class([$itemClasses, $disabledClasses]) }}
+        x-bind:class="subOpen ? 'bg-[var(--color-wk-bg-hover)]' : ''"
+        {{ $attributes->class(['wk-touch-row', $itemClasses, $disabledClasses]) }}
     >
         @if($icon)
             <span class="shrink-0 w-5 h-5" aria-hidden="true">

@@ -27,6 +27,10 @@
     // No margin between items (space-y) — spacing comes from content padding
     // inside each item, so the vertical connector line stays continuous.
     $classes = WireKit::resolveClasses('timeline', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         // list-none + m-0 + p-0 strip the browser-default <ol> decimal markers
         // and marker indent. Timeline renders its own visual markers per item
         // (dots and connectors); UA "1. 2. 3." prefixes would clash.

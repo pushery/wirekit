@@ -8,10 +8,7 @@
 "20ch"
 "4.5rem
 "Status:"
-"a
-"fixed"
 "lg:[minmax(0,1fr)_20rem]"
-"no
 "step
 "{$bp}:grid-cols-{$n}".
 $align,
@@ -432,7 +429,7 @@ $wrapperClasses
 (a
 (anything
 (background
-(bg-…),
+(bg-…)
 (color-stripped)
 (never
 (no
@@ -630,6 +627,7 @@ IS
 Icon-tint
 It
 Its
+Leaving
 Legend:
 Let
 Merged
@@ -665,7 +663,6 @@ Split
 Status-Tiles
 Support\OuterAttributes.
 Tailwind
-That
 The
 There
 They
@@ -741,6 +738,7 @@ __('wirekit::shop.example'),
 `gap`
 `gap`,
 `grid-cols-1`
+`grid-template-columns`.
 `grid-template-columns`:
 `lg:[[a]_1fr_[b]]`
 `lg:[minmax(0,1fr)_20rem]`,
@@ -758,6 +756,7 @@ __('wirekit::shop.example'),
 `role="list"`
 `row`
 `space`,
+`space`.
 `sr-only`
 `stack`
 `style-src-attr`)
@@ -793,9 +792,7 @@ always
 an
 and
 another
-another).
 answers
-any
 anyone
 apart.
 appear
@@ -803,7 +800,7 @@ application
 application,
 applied
 applies
-applies,
+apply.
 arbitrary
 arbitrary-value
 are
@@ -831,6 +828,7 @@ auto,
 auto-derived
 axe
 axis
+back
 badge
 badge-soft
 bag
@@ -845,7 +843,6 @@ beats
 because
 become
 before
-behind
 being
 below
 below.
@@ -874,19 +871,14 @@ breakpoint
 breakpoint:
 breakpoints
 breakpoints,
-broke
 browser
 bug
-bug.
 built
 but
 by
-byte
-byte.
 call
 caller
 caller's
-came
 can
 cannot
 cannot,
@@ -900,7 +892,6 @@ carries
 carrying
 case
 cast
-cause
 caution:
 centerer
 centering
@@ -925,6 +916,7 @@ class="truncate
 class="{{
 classes
 classes;
+cleaner
 clear
 clip-rule="evenodd"/></svg>',
 clip:
@@ -947,6 +939,7 @@ columns
 columns,
 combination
 come
+comes
 commonest
 compete.
 compilation),
@@ -984,8 +977,9 @@ dashboard
 data
 data,
 data-key="{{
-data-table,
+data-table.
 data-wk-prose-skip
+data-wk-sr-host>
 database,
 debug
 debug:
@@ -996,6 +990,7 @@ declaration
 default
 default,
 default.
+default:
 definition
 deliberate:
 denylist
@@ -1008,7 +1003,7 @@ differ
 direct
 directly
 disappear
-disentangle".
+disentangle
 disk
 distinct
 do
@@ -1017,7 +1012,6 @@ does
 does,
 does.
 domains
-down.
 draws
 dropped
 drops
@@ -1025,7 +1019,7 @@ dynamic
 each
 early.
 easy
-edge
+edge,
 either
 element
 element,
@@ -1049,7 +1043,6 @@ everyone
 exact
 exactly
 exist,
-existing
 exists
 explicit
 express
@@ -1116,7 +1109,7 @@ gap-y-[var(--gap-wk-xs)]">
 generates
 get
 glance
-glued
+glue
 go
 grammar.
 greedy
@@ -1124,7 +1117,6 @@ grid
 grid).
 grid-cols
 grid-template-columns
-grids
 growing
 grows
 h-full
@@ -1142,9 +1134,8 @@ height.
 here
 here.
 hide
-historical
+hold
 holding
-holds
 hover
 hover:shadow-[var(--shadow-wk-sm)]
 hovering
@@ -1170,6 +1161,7 @@ instead
 instead,
 intent
 intent-tinted
+intent.
 intents
 interactive
 interpolated
@@ -1185,19 +1177,20 @@ it,
 it.
 it:
 item
+item:
 items-center
 items.
 its
 itself
 itself,
-jammed
+jam
 job
 justify-center
 justify-center:
 keeps
 kept
 keyboard-operable
-killing
+kill
 know;
 knows
 label
@@ -1250,7 +1243,6 @@ longer
 looks
 lopsided
 made
-magic
 make
 makes
 many
@@ -1283,7 +1275,6 @@ monochrome
 more
 most
 move
-moved
 moves:
 must
 muted
@@ -1313,7 +1304,6 @@ nor
 not
 nothing
 nothing.
-now
 null
 null)
 null))
@@ -1323,7 +1313,6 @@ null;
 occupy,
 of
 of.
-off
 on
 on.
 on:
@@ -1333,6 +1322,7 @@ one.
 one:
 ones
 only
+only.
 onto
 opening
 opens,
@@ -1355,8 +1345,8 @@ overflows
 own
 own,
 padding
-padding"
 padding,
+padding.
 painful
 pair
 part
@@ -1364,6 +1354,7 @@ per
 phone
 place,
 placed
+plain
 plus
 points
 policy
@@ -1377,10 +1368,8 @@ prefix,
 preg_match($trackValue,
 preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|%|vw|vmin|vmax)$/',
 preg_split('/\s+/',
-premise
 present
 presentational
-preserve
 preview
 printed,
 problem
@@ -1390,6 +1379,7 @@ promised.
 promises
 prop
 prop's
+prop.
 property
 property,
 property;
@@ -1410,30 +1400,23 @@ reachable
 reaches
 read
 read,
-readability
 reader
 readers
 reads
 real
-really
 reason
-reasoning
 regardless
 relative
-removes.
 render
 render,
-rendered,
 renders
 renders;
 repeat(),
 repeat(7,
 repeat(auto-fit,
 replaced
-report
 reported
 reports
-repository
 rescue
 resolve
 result
@@ -1488,11 +1471,9 @@ sidebar
 silently
 silently.
 simply
-since
 single
 single-line
 site
-site.
 sits
 sitting
 six
@@ -1554,13 +1535,12 @@ success
 such
 supported
 suppressing
-suppression
 surface
-surfaced
 survives
 syntax
 tag,
 tags
+take
 takes
 tallest
 tally
@@ -1587,7 +1567,6 @@ the
 their
 them
 them,
-them;
 themselves.
 then
 there
@@ -1639,9 +1618,8 @@ twice:
 two
 two-line
 two-word
-two.
-unchanged.
 unclamped
+under
 underscore
 unknown
 unless
@@ -1655,7 +1633,6 @@ use
 used
 user
 uses
-using
 usually
 utility
 validated
@@ -1685,7 +1662,6 @@ way,
 week
 well
 well.
-were
 what
 whatever
 when

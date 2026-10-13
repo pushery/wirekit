@@ -89,7 +89,7 @@
         'shadow-[var(--shadow-wk-md)]',
         'text-[color:var(--color-wk-text)]',
         'transition-opacity duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-default',
         'aria-disabled:opacity-[var(--opacity-wk-disabled)] aria-disabled:cursor-default',
@@ -169,14 +169,14 @@
          went to the slides and then back to the arrow on their left. --}}
     <button
         type="button"
-        x-on:click="prev()"
+        x-on:click="prev($el)"
         {{-- At an end the arrow says it is unavailable rather than going `disabled`: a
              disabled button cannot hold the focus, so pressing Next onto the last slide would
              drop the reader's place on the page. prev() and next() do nothing there already.
              Only a carousel with nothing to step through takes the arrows out of the order. --}}
         :aria-disabled="!loop && current === 0"
         :disabled="total <= 1"
-        class="{{ $buttonClasses }} {{ $prevPosClass }}"
+        class="wk-touch-target {{ $buttonClasses }} {{ $prevPosClass }}"
         aria-label="{{ __('wirekit::Previous slide') }}"
         data-wk-carousel-prev
     >
@@ -185,12 +185,14 @@
         </svg>
     </button>
 
-    {{-- The scroll region. tabindex + role + label are the house rule for any
-         scrollable container: without them the slides are reachable by mouse and
-         by nothing else. Arrow keys then scroll it natively — no key handler of
-         our own to get wrong. --}}
+    {{-- The scroll region. Like every scrollable container here it takes a
+         tabindex, a role and a label: without them the slides are reachable by
+         mouse and by nothing else. Arrow keys then scroll it natively and snap to the next
+         slide; Home and End, which a horizontal scroller does not take, go to the
+         first and the last slide through onViewportKey(). --}}
     <div
         x-ref="viewport"
+        x-on:keydown="onViewportKey($event)"
         tabindex="0"
         role="group"
         aria-label="{{ __('wirekit:::label slides', ['label' => $label]) }}"
@@ -203,10 +205,10 @@
 
     <button
         type="button"
-        x-on:click="next()"
+        x-on:click="next($el)"
         :aria-disabled="!loop && current === total - 1"
         :disabled="total <= 1"
-        class="{{ $buttonClasses }} {{ $nextPosClass }}"
+        class="wk-touch-target {{ $buttonClasses }} {{ $nextPosClass }}"
         aria-label="{{ __('wirekit::Next slide') }}"
         data-wk-carousel-next
     >
@@ -224,7 +226,7 @@
         <template x-for="(_, i) in total" :key="i">
             <button
                 type="button"
-                x-on:click="goTo(i)"
+                x-on:click="goTo(i, $el)"
                 :aria-current="current === i ? 'true' : 'false'"
                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Go to slide :number')) }}.replace(':number', i + 1)"
                 data-wk-carousel-dot
@@ -261,7 +263,7 @@
                  claim the reader paused it. --}}
             <button
                 type="button"
-                x-on:click="toggle()"
+                x-on:click="toggle($el)"
                 {{-- Static as well as bound. Before Alpine runs, both <svg> children are
                      decorative and the bindings have not evaluated, so the control is a
                      nameless, stateless "button" — and to a server-side accessibility
@@ -286,7 +288,7 @@
                 {{-- Resolved server-side: a literal here would be untranslatable AND invisible to every __() extractor. --}}
                 :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Play carousel')) }}"
                 data-wk-carousel-playpause
-                class="ms-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-touch-target ms-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg x-show="playing" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 5h4v14H6zM14 5h4v14h-4z" />

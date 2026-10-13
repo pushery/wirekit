@@ -54,20 +54,20 @@
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         // `focus-visible` + a ring, per dropdown/item.blade.php — which resolves
         // under this same `dropdown.item` block, so the two defaults have to agree
         // or a personalization inherits whichever file the reader happened to open.
-        // The background alone marks nothing: dark's --color-wk-bg-subtle equals
-        // its --color-wk-bg-elevated, which is the panel this row sits on.
+        // The background is the hover's shade, one step from the panel this row sits
+        // on, and too faint to mark focus on its own.
         // The same shape as `dropdown.item`: the panel's inline padding makes room for it,
         // and a focused row that stayed square would be the reported defect on a sibling.
         'rounded-[var(--radius-wk-nav-item)]',
         'focus:outline-hidden',
-        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-inset',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -125,8 +125,8 @@
         x-on:mouseenter="scheduleOpen()"
         x-on:mouseleave="scheduleClose()"
         x-on:keydown="onTriggerKey"
-        x-bind:class="subOpen ? 'bg-[var(--color-wk-bg-subtle)]' : ''"
-        {{ $attributes->class([$itemClasses, $disabledClasses]) }}
+        x-bind:class="subOpen ? 'bg-[var(--color-wk-bg-hover)]' : ''"
+        {{ $attributes->class(['wk-touch-row', $itemClasses, $disabledClasses]) }}
     >
         {{-- Optional leading icon (decorative — the label is the accessible name) --}}
         @if($icon)

@@ -23,10 +23,7 @@
     // rendered.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -82,7 +79,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -122,9 +119,7 @@
     $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
-    // same element. `id` was stripped from the start; `name` was not, and a caller that
-    // passed one got two name attributes on one control — invalid HTML the browser
-    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
 
     // A caller's `x-ref` belongs to the caller's component, and this one renders its own root
@@ -265,7 +260,7 @@
      method is not an expression Alpine's CSP parser accepts, and under a strict
      policy the element would get an EMPTY scope, leaving the show/hide button and
      the whole meter dead with no error to say why. --}}
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
+<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
@@ -282,7 +277,7 @@
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     <div class="relative">
@@ -329,20 +324,20 @@
                 class="wk-touch-target absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
                 @if($fieldDisabled) disabled @endif
                 @click="showPassword = !showPassword"
-                {{-- Static aria-label and aria-pressed guard the pre-Alpine render
-                     (axe scans the DOM before hydration may complete); the bound
-                     pair below overrides both once the scope exists. `false` is the
-                     state the markup actually represents — the factory seeds
-                     `showPassword: false`, so the field ships masked.
+                {{-- The static aria-label guards the pre-Alpine render (axe scans the
+                     DOM before hydration may complete); the bound one below overrides
+                     it once the scope exists. "Show password" is the state the markup
+                     actually represents: the factory seeds `showPassword: false`, so
+                     the field ships masked.
 
-                     aria-pressed AND a swapped label, as the carousel's play/pause
-                     control does: the label says what the button will DO and the
-                     state says what it has already done, and a reader who lands on
-                     the button after someone else revealed the field learns that
-                     from the state alone. --}}
+                     No `aria-pressed`. The name already carries the state, since it
+                     says what the button will do, "Show password" or "Hide password",
+                     and a toggle that reports its state twice reports it ambiguously:
+                     "Hide password, pressed" leaves a reader to work out whether
+                     pressed means the password is shown or that they pressed hide.
+                     The carousel's play/pause button dropped its pressed state for
+                     the same reason. --}}
                 aria-label="{{ $showPasswordLabel }}"
-                aria-pressed="false"
-                :aria-pressed="showPassword ? 'true' : 'false'"
                 :aria-label="showPassword ? {{ \Pushery\WireKit\Support\AlpinePayload::from($hidePasswordLabel) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($showPasswordLabel) }}"
             >
                 {{-- Eye icon (show) --}}

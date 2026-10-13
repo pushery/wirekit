@@ -32,18 +32,15 @@
     // always rendered.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'name' => null,
     'id' => null,
     'label' => null,
-    // `error` was undeclared while `label` was not, so `:error` on this control
-    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
-    // message the developer wrote, silently not shown, on a control that is part of forms.
+    // `error` is declared like `label`: undeclared, `:error` on this control would land in
+    // the attribute bag and render as a stray HTML attribute — a validation message the
+    // developer wrote, silently not shown, on a control that is part of forms.
     'error' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -96,7 +93,7 @@
     $attributes = \Pushery\WireKit\Support\NumericModel::number($attributes);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     /*
      * The Laravel validation bag, which this control never consulted. Every other form
@@ -138,7 +135,7 @@
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@input']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@input', 'x-on:click']);
 
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
@@ -156,8 +153,8 @@
     // need to style the track + thumb via CSS variables.
     //
     // The id is the same on every render: Livewire's morph recognizes an element by it, and an
-    // id drawn fresh per render made every round trip REPLACE the range input, so a drag bound
-    // with `wire:model.live` lost its thumb mid-gesture. Seeded from the bound property when
+    // id drawn fresh per render would make every round trip REPLACE the range input, so a drag
+    // bound with `wire:model.live` would lose its thumb mid-gesture. Seeded from the bound property when
     // there is no name, counted per render order when there is neither. DomId keeps it unique on
     // the page like every other form control: a second slider with the same name gets `-2`, so
     // its label and its hint do not point at the first one.
@@ -172,6 +169,8 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered (partials/field-help).
     $helpId = filled($help) && filled($label) ? $sliderId.'-help' : null;
+    // Markup a caller puts after the label and its help, in their row (partials/label-after).
+    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // Numbers, whatever the attribute or the data carried: a text would throw in the
     // arithmetic below. A bound or a step that holds no number takes its configured default,
@@ -265,10 +264,9 @@
     // the ticks. Build a string-keyed map (the Alpine `current` value is always a
     // string) so the slider can announce the label via aria-valuetext and echo
     // it in the tooltip / value display. A plain list of positions carries no
-    // extra meaning, so it does NOT get aria-valuetext — the number IS the value,
-    // and the DOM stays byte-identical to before.
-    // A caller-supplied aria-valuetext binding wins over our own (mirrors the v2.8.0
-    // aria-label precedence rule). An explicit `valueTextMap` prop decouples the spoken
+    // extra meaning, so it does NOT get aria-valuetext — the number IS the value.
+    // A caller-supplied aria-valuetext binding wins over our own (the same
+    // precedence as aria-label). An explicit `valueTextMap` prop decouples the spoken
     // text from the visual ticks entirely.
     $callerBindsValueText = $attributes->has('aria-valuetext')
         || $attributes->has('x-bind:aria-valuetext')
@@ -377,7 +375,7 @@
 
     // Live value display next to the slider.
     /*
-     * THE WIDEST TEXT THIS BOX WILL EVER SHOW, so it can reserve that width once and stop
+     * The widest text this box will ever show, so it can reserve that width once and stop
      * resizing while the thumb is held.
      *
      * The value span is a SIBLING of the track inside a `w-full` flex row, so the track's
@@ -522,20 +520,21 @@
          bind to the WRAPPER, not the <input>. The tooltip bubble + tick marks
          are positioned `left: pct%` relative to the overlay container, which
          fills the wrapper; the <input> track also fills it (`w-full`). Routing
-         a width override onto the input alone (the old path — $attributes lands
-         on the input) made the input narrower than its overlay container, so
-         the bubble's `pct%` resolved against the WIDER container and floated
-         far to the side of the thumb. Sizing the wrapper keeps the input, the
-         overlay container, and therefore the bubble + marks all at ONE width.
+         a width override onto the input alone would make the input narrower
+         than its overlay container, so the bubble's `pct%` would resolve
+         against the WIDER container and float far to the side of the thumb.
+         Sizing the wrapper keeps the input, the overlay container, and
+         therefore the bubble + marks all at ONE width.
          Input-semantic attributes (wire:model, aria-*, data-*) still flow to
          the <input> below via except(['class','style']). --}}
     {{-- A parent's hand-written `x-model` answers `x-modelable` above, so it belongs HERE
          and not on the range input with the rest. On the input it still tracks a drag -- both
          sides listen to the same event -- but the other direction is silent: Alpine sets
-         `el.value` without dispatching, so a programmatic change from the parent moved the thumb
-         and left `current` behind, with the bubble and the tick marks reading the old number. --}}
+         `el.value` without dispatching, so there a programmatic change from the parent would move
+         the thumb and leave `current` behind, with the bubble and the tick marks reading the old
+         number. --}}
     {{ $attributes->whereStartsWith('x-model')->whereDoesntStartWith('x-modelable') }}
-    {{ $attributes->only(['class', 'style'])->class([$wrapperClasses]) }}
+    data-wk-sr-host {{ $attributes->only(['class', 'style'])->class([$wrapperClasses]) }}
 >
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the mirror: a nested
@@ -551,12 +550,17 @@
     @if($label)
         {{-- With help, the label and its button are one item of the row, the button outside the
              label so it stays out of the field's name. --}}
-        @if($helpId)
-        <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+        @if($helpId || $hasLabelAfter)
+        <div data-wk-label-row class="{{ $hasLabelAfter ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
         @endif
-        <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</label>
-        @if($helpId)
-            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $sliderId)])
+        {{-- Its own label rather than the label component: it stands beside the track in this row,
+             not above a control, and takes the row's smaller type. --}}
+        <label data-wk-field-label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</label>
+        @if($helpId || $hasLabelAfter)
+            @if($helpId)
+                @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $sliderId)])
+            @endif
+            @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif
         </div>
         @endif
     @elseif($needsSrOnlyFallback)
@@ -576,7 +580,7 @@
                  right-aligns (extends inward/left), and centers (-50%) in the middle.
                  (The native thumb has no JS-readable width, so pct doubles as the shift.) --}}
             <div class="pointer-events-none absolute bottom-full z-10 mb-1.5" :style="bubbleStyle()" aria-hidden="true">
-                <span class="block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="bubbleShiftStyle()" x-text="valueText"></span>
+                <span class="wk-tooltip-panel block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="bubbleShiftStyle()" x-text="valueText"></span>
             </div>
         @endif
 
@@ -614,6 +618,7 @@
                  that is the one moment the two can silently diverge. --}}
             value="{{ $currentValue }}"
             @input="current = $event.target.value"
+            x-on:click="focusControl($el)"
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
                 {{-- `change` fires once at the end of a drag and once per keypress
@@ -629,8 +634,8 @@
                 x-on:keydown="mark()"
             @endif
             {{-- Labeled discrete slider: announce the mark's label, not the bare
-                 number. Only bound for a labeled MAP so plain sliders stay
-                 byte-identical (the number is already the value). --}}
+                 number. Only bound for a labeled MAP: on a plain slider the
+                 number already is the value. --}}
             @if($bindValueText) :aria-valuetext="valueText" @endif
             @if($disabled) disabled @endif
             {{-- class / style are consumed by the wrapper above; everything
@@ -687,8 +692,8 @@
         {{-- aria-live="polite" so screen readers get the updated value when
              the user releases the slider, not on every tick. --}}
         {{-- `data-wk-slider-value` is the styling hook for the box. The `aria-live` element
-             inside it is the announced TEXT, and since the value gained its width reservation
-             it is a grid child, so a rule aimed at it no longer reaches the box. --}}
+             inside it is the announced TEXT, and beside its width reservation it is a grid
+             child, so a rule aimed at it does not reach the box. --}}
         <span data-wk-slider-value class="{{ $valueClasses }}">
             {{-- The reservation. `aria-hidden` because it is the same value said twice, and
                  `invisible` rather than `hidden` because a hidden element occupies nothing

@@ -6,6 +6,9 @@ namespace Pushery\WireKit;
 
 use Illuminate\Support\Facades\File;
 use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Components\Field;
+use Pushery\WireKit\Components\FieldSet;
+use Pushery\WireKit\Components\SidebarGroup;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\ClassPropsExtractor;
 use Pushery\WireKit\Support\ComponentTokens;
@@ -14,235 +17,31 @@ use Pushery\WireKit\Support\PropsParser;
 class ComponentRegistry
 {
     /**
+     * The catalog, read once per process from resources/catalog/components.php.
+     *
+     * @var array<string, array{category: string, description: string}>|null
+     */
+    private static ?array $catalog = null;
+
+    /**
      * Component metadata registry. Every top-level component MUST have an entry.
      * Anti-drift tests enforce this — adding a blade file without a registry
      * entry will fail CI.
+     *
+     * The entries are data and live in resources/catalog/components.php; this method is the one
+     * way to read them.
      *
      * @return array<string, array{category: string, description: string}>
      */
     public static function all(): array
     {
-        return [
-            // ── Form ──
-            'checkbox' => ['category' => 'Form', 'description' => 'Checkbox input with label, hint, and error support'],
-            'color-picker' => ['category' => 'Form', 'description' => 'Native color picker with preview swatch'],
-            'combobox' => ['category' => 'Form', 'description' => 'Autocomplete select with search filtering'],
-            'date-picker' => ['category' => 'Form', 'description' => 'Calendar-based date input'],
-            'editor' => ['category' => 'Form', 'description' => 'Rich-text editor (ProseMirror-based peer-dependency adapter; Tiptap recommended) with toolbar + hidden-input form binding'],
-            'field' => ['category' => 'Form', 'description' => 'Form field wrapper with label, hint, and error'],
-            'file-upload' => ['category' => 'Form', 'description' => 'Drag-and-drop file upload area'],
-            'filter-builder' => ['category' => 'Form', 'description' => 'Active-filter chip bar with a typed add/edit popover (field/operator/value)'],
-            'form' => ['category' => 'Form', 'description' => 'Form wrapper that inherits an error-announcement policy to every control inside'],
-            'input' => ['category' => 'Form', 'description' => 'Text input with prefix/suffix support'],
-            'label' => ['category' => 'Form', 'description' => 'Form label with required indicator'],
-            'multi-select' => ['category' => 'Form', 'description' => 'Multi-value select with tag display'],
-            'number-input' => ['category' => 'Form', 'description' => 'Numeric input with stepper buttons'],
-            'otp-input' => ['category' => 'Form', 'description' => 'One-time password input with auto-focus'],
-            'password-input' => ['category' => 'Form', 'description' => 'Password input with visibility toggle and strength meter'],
-            'phone' => ['category' => 'Form', 'description' => 'International phone field with a country picker, binding an E.164 value'],
-            'radial-progress' => ['category' => 'Display', 'description' => 'Radial progress ring — determinate, token-driven, with threshold coloring'],
-            'radio' => ['category' => 'Form', 'description' => 'Radio button with label and hint'],
-            'range-slider' => ['category' => 'Form', 'description' => 'Dual-thumb range slider'],
-            'rating' => ['category' => 'Form', 'description' => 'Star rating input'],
-            'inline-edit' => ['category' => 'Form', 'description' => 'Edit a value in place, with an explicit confirm step'],
-            'select' => ['category' => 'Form', 'description' => 'Native select dropdown'],
-            'slider' => ['category' => 'Form', 'description' => 'Single-thumb slider with value display'],
-            'tags-input' => ['category' => 'Form', 'description' => 'Tag entry input with add/remove'],
-            'textarea' => ['category' => 'Form', 'description' => 'Multi-line text input with resize control'],
-            'time-picker' => ['category' => 'Form', 'description' => 'Time selection input'],
-            'toggle' => ['category' => 'Form', 'description' => 'Toggle switch with label and hint'],
-            'unsaved-hint' => ['category' => 'Display', 'description' => 'Says beside the save button that a form holds values its server does not have yet; x-wk-unsaved frames each unsaved field and can ask before leaving'],
-            'toggle-button' => ['category' => 'Display', 'description' => 'Single two-state button that stays pressed (aria-pressed) — the bold/italic/mute shape'],
-            'tool-call' => ['category' => 'Display', 'description' => 'One tool invocation an assistant made — name, status, arguments as JSON, and the result behind a disclosure'],
+        if (self::$catalog === null) {
+            /** @var array<string, array{category: string, description: string}> $entries */
+            $entries = require \dirname(__DIR__).'/resources/catalog/components.php';
+            self::$catalog = $entries;
+        }
 
-            // ── Layout ──
-            'app-rail' => ['category' => 'Navigation', 'description' => 'Full-height module rail with tooltip, below (captions under the icons), or inline labels'],
-            'app-shell' => ['category' => 'Layout', 'description' => 'App shell with header, sidebar, and main content'],
-            'aspect-ratio' => ['category' => 'Layout', 'description' => 'Constrained aspect ratio wrapper'],
-            'center' => ['category' => 'Layout', 'description' => 'Center content horizontally and vertically'],
-            'container' => ['category' => 'Layout', 'description' => 'Max-width content container with optional padding'],
-            'divider' => ['category' => 'Layout', 'description' => 'Horizontal or vertical divider with optional label'],
-            'grid' => ['category' => 'Layout', 'description' => 'CSS grid with responsive column syntax'],
-            'header' => ['category' => 'Layout', 'description' => 'Sticky page header for app-shell layouts'],
-            'logo-cloud' => ['category' => 'Marketing', 'description' => 'Partner / customer logo wall, exposed as a labeled list'],
-            'main' => ['category' => 'Layout', 'description' => 'Primary content area in app-shell layouts'],
-            'resizable' => ['category' => 'Layout', 'description' => 'Resizable panel layout'],
-            'band' => ['category' => 'Layout', 'description' => 'Edge-to-edge strip with padding and one rule'],
-            'row' => ['category' => 'Layout', 'description' => 'Horizontal flex container'],
-            'page-header' => ['category' => 'Layout', 'description' => 'Screen title, optional description and actions that drop under the title when the row runs out'],
-            'section' => ['category' => 'Layout', 'description' => 'Full-width page section with background and padding'],
-            'spacer' => ['category' => 'Layout', 'description' => 'Flexible space filler in flex layouts'],
-            'stack' => ['category' => 'Layout', 'description' => 'Vertical flex container'],
-            'sticky-panel' => ['category' => 'Layout', 'description' => 'Sticky companion column (header / scrollable body / footer) pinned beside an article'],
-            'skip-link' => ['category' => 'Layout', 'description' => 'WCAG 2.4.1 skip-link to main landmark (keyboard bypass)'],
-            'visually-hidden' => ['category' => 'Layout', 'description' => 'Screen-reader-only content wrapper'],
-
-            // ── Typography ──
-            'blockquote' => ['category' => 'Typography', 'description' => 'Styled blockquote with optional citation'],
-            'code' => ['category' => 'Typography', 'description' => 'Inline code with monospace font'],
-            'code-block' => ['category' => 'Typography', 'description' => 'Multi-line code block with copy button'],
-            'heading' => ['category' => 'Typography', 'description' => 'Semantic heading (h1–h6) with auto-sizing'],
-            'highlight' => ['category' => 'Typography', 'description' => 'Text with highlighted query matches'],
-            'indicator' => ['category' => 'Display', 'description' => 'Anchors a count badge, status dot, or ribbon to any corner of any target — RTL-safe'],
-            'kbd' => ['category' => 'Typography', 'description' => 'Keyboard key indicator'],
-            'link' => ['category' => 'Typography', 'description' => 'Styled anchor with external link support'],
-            'list' => ['category' => 'Typography', 'description' => 'Ordered or unordered list with type (disc / decimal / roman / alpha / none) and spacing variants'],
-            'mark' => ['category' => 'Typography', 'description' => 'Highlighted text mark'],
-            'prose' => ['category' => 'Typography', 'description' => 'Typography wrapper for raw HTML content'],
-            'team-section' => ['category' => 'Marketing', 'description' => 'Team roster grid, exposed as a labeled list'],
-            'team-member' => ['category' => 'Marketing', 'description' => 'One person in a team section — avatar, name, role, links'],
-            'text' => ['category' => 'Typography', 'description' => 'Body text with size, variant, and weight'],
-
-            // ── Navigation ──
-            'bento-grid' => ['category' => 'Layout', 'description' => 'Asymmetric feature showcase — cells claim different amounts of space'],
-            'bento-cell' => ['category' => 'Layout', 'description' => 'One cell of a bento grid; claims 1x1, 2x1, 1x2 or 2x2 from md up'],
-            'bottom-nav' => ['category' => 'Navigation', 'description' => 'Fixed mobile tab bar — safe-area aware, 44px targets, aria-current'],
-            'brand' => ['category' => 'Navigation', 'description' => 'Logo and name combo for header/sidebar'],
-            'brand-bar' => ['category' => 'Navigation', 'description' => 'Page-chrome wrapper for brand + tagline + actions with content-edge padding'],
-            'breadcrumb' => ['category' => 'Navigation', 'description' => 'Breadcrumb trail with separator'],
-            'menubar' => ['category' => 'Navigation', 'description' => 'Horizontal menu bar with dropdowns'],
-            'navbar' => ['category' => 'Navigation', 'description' => 'Top navigation bar'],
-            'navigation-menu' => ['category' => 'Navigation', 'description' => 'Accessible navigation menu with mega-menu support'],
-            'overflow-nav' => ['category' => 'Navigation', 'description' => 'Wrapping row of links kept to a number of lines, the rest behind a +N menu; the current page never leaves the rows'],
-            'pagination' => ['category' => 'Navigation', 'description' => 'Page navigation for paginated data'],
-            'profile' => ['category' => 'Navigation', 'description' => 'Avatar and name display for headers'],
-            'scroll-to-top' => ['category' => 'Navigation', 'description' => 'Floating scroll-to-top button'],
-            'shell-bar' => ['category' => 'Layout', 'description' => 'Aligned column head that draws an app shell\'s top rule'],
-            'scope-switcher' => ['category' => 'Navigation', 'description' => 'Searchable switcher for the team, server or site a page is about'],
-            'sidebar' => ['category' => 'Navigation', 'description' => 'Vertical sidebar navigation'],
-            'stepper' => ['category' => 'Navigation', 'description' => 'Step indicator for multi-step flows'],
-            'wizard' => ['category' => 'Navigation', 'description' => 'Multi-step flow container — holds the step, gates advancing, announces the change'],
-            'tabs' => ['category' => 'Navigation', 'description' => 'Tabbed content navigation'],
-
-            // ── Overlay ──
-            'alert-dialog' => ['category' => 'Overlay', 'description' => 'Confirmation dialog with required action'],
-            'command-palette' => ['category' => 'Overlay', 'description' => 'Searchable command palette (⌘K)'],
-            'context-menu' => ['category' => 'Overlay', 'description' => 'Right-click context menu'],
-            'drawer' => ['category' => 'Overlay', 'description' => 'Slide-out panel from screen edge'],
-            'dropdown' => ['category' => 'Overlay', 'description' => 'Dropdown menu with items'],
-            'fab' => ['category' => 'Overlay', 'description' => 'Floating action button that fans out into secondary actions'],
-            'hover-card' => ['category' => 'Overlay', 'description' => 'Content preview on hover'],
-            'lightbox' => ['category' => 'Overlay', 'description' => 'Focus-trapped media viewer for images, video, and embeds — reusable, keyboard-navigable, event-driven'],
-            'mockup' => ['category' => 'Marketing', 'description' => 'Frame chrome for a screenshot or live composition — browser, window, code, phone, tablet'],
-            'modal' => ['category' => 'Overlay', 'description' => 'Dialog overlay with backdrop'],
-            'popover' => ['category' => 'Overlay', 'description' => 'Contextual content popover'],
-            'toast-region' => ['category' => 'Overlay', 'description' => 'Toast notification container'],
-            'tooltip' => ['category' => 'Overlay', 'description' => 'Hover tooltip with configurable position'],
-            'tour' => ['category' => 'Overlay', 'description' => 'Guided product tour with steps'],
-
-            // ── Marketing ──
-            // Four canonical conversion-focused primitives. `footer` stays
-            // Layout (structural primitive used on any page); `reveal` stays
-            // Display (generic animation primitive); `brand-bar` stays
-            // Navigation (header chrome). The Marketing category is reserved
-            // for components whose PRIMARY purpose is marketing / conversion
-            // — narrow scope, clear semantic.
-            'announcement-banner' => ['category' => 'Marketing', 'description' => 'Dismissible page-edge announcement bar with persisted dismissal and an optional inline CTA'],
-            'cta' => ['category' => 'Marketing', 'description' => 'Call-to-action banner section'],
-            'faq' => ['category' => 'Marketing', 'description' => 'FAQ block — accordion of questions that emits FAQPage JSON-LD derived from what it rendered'],
-            'faq-item' => ['category' => 'Marketing', 'description' => 'One question and answer inside an FAQ; records itself for the FAQPage schema'],
-            'feature' => ['category' => 'Marketing', 'description' => 'Individual feature card for feature grids'],
-            'feature-grid' => ['category' => 'Marketing', 'description' => 'Responsive grid for feature cards'],
-            'footer' => ['category' => 'Layout', 'description' => 'Landing page footer with columns and legal'],
-            'hero' => ['category' => 'Marketing', 'description' => 'Landing page hero with title, lede, and actions'],
-
-            // ── Display ──
-            'accordion' => ['category' => 'Display', 'description' => 'Collapsible content panels'],
-            'action-bar' => ['category' => 'Display', 'description' => 'Floating action bar for bulk operations'],
-            'activity-row' => ['category' => 'Display', 'description' => 'Activity-feed / timeline row with kind-colored dot, actor, timestamp, and badge slot'],
-            'alert' => ['category' => 'Display', 'description' => 'Contextual alert message'],
-            'attachment' => ['category' => 'Display', 'description' => 'File/image attachment card with formatted size, type label, upload state, and actions'],
-            'attachment-group' => ['category' => 'Display', 'description' => 'Group of attachments — vertical stack or horizontal scroll-snap row'],
-            'assistant-message' => ['category' => 'Display', 'description' => 'AI assistant turn — roles, streaming body, model chip, reasoning disclosure, and coalesced screen-reader announcements'],
-            'avatar' => ['category' => 'Display', 'description' => 'User avatar with image, initials, or status'],
-            'badge' => ['category' => 'Display', 'description' => 'Small status label'],
-            'branch-switcher' => ['category' => 'Display', 'description' => 'Steps between several generated answers — prev/next, a live count, and a polite announcement per move'],
-            'button' => ['category' => 'Display', 'description' => 'Action button with variants and loading state'],
-            'button-group' => ['category' => 'Display', 'description' => 'Welds adjacent controls into one unit — collapsed inner radii and a single seam, RTL-safe'],
-            'calendar' => ['category' => 'Display', 'description' => 'Calendar date display'],
-            'callout' => ['category' => 'Display', 'description' => 'Highlighted information callout'],
-            'card' => ['category' => 'Display', 'description' => 'Content container card with optional link'],
-            'carousel' => ['category' => 'Display', 'description' => 'Image/content carousel with autoplay'],
-            'cart-item' => ['category' => 'Display', 'description' => 'Ecommerce cart line — thumbnail, name, unit price with compare-at, quantity stepper, line total, remove control'],
-            'cart-list' => ['category' => 'Display', 'description' => 'Semantic list that holds cart lines — names the list for assistive tech and draws the separators between them'],
-            'cart-summary' => ['category' => 'Display', 'description' => 'Order totals panel — subtotal, discount, shipping, tax and an emphasized grand total above the rule'],
-            'chat-marker' => ['category' => 'Display', 'description' => 'In-thread meta row — streaming/tool status, system note, or labeled date break between chat messages'],
-            'clipboard-button' => ['category' => 'Display', 'description' => 'Copy-to-clipboard button'],
-            'collapsible' => ['category' => 'Display', 'description' => 'Single disclosure — one trigger toggles one collapsible region (WAI-ARIA Disclosure)'],
-            'countdown' => ['category' => 'Display', 'description' => 'Live countdown to an absolute deadline with overdue + urgent states (client-side, no polling)'],
-            'data-list' => ['category' => 'Display', 'description' => 'Key-value data display list'],
-            'empty-state' => ['category' => 'Display', 'description' => 'Placeholder for empty content areas'],
-            'flag' => ['category' => 'Display', 'description' => 'Country or region flag, with a same-size placeholder for a code there is no artwork for'],
-            'image' => ['category' => 'Display', 'description' => 'Content image as a figure with alt text, lazy loading, CLS-safe ratio box, and optional caption'],
-            'image-compare' => ['category' => 'Display', 'description' => 'Before/after image comparison slider'],
-            'image-gallery' => ['category' => 'Display', 'description' => 'Responsive image grid with an accessible, keyboard-navigable lightbox'],
-            'product-card' => ['category' => 'Display', 'description' => 'Ecommerce product card — image, price with compare-at, rating, stock state, CTA'],
-            'page-progress' => ['category' => 'Display', 'description' => 'Page-edge bar reporting the request the reader is waiting on (navigation + Livewire round trips)'],
-            'progress' => ['category' => 'Display', 'description' => 'Progress bar with optional value display'],
-            'qr-code' => ['category' => 'Display', 'description' => 'QR code generator'],
-            'reading-bookmark' => ['category' => 'Display', 'description' => 'Save / restore scroll position with return-prompt UX'],
-            'reading-meta' => ['category' => 'Display', 'description' => 'Time-to-read estimate from word count, optional remaining-time + per-paragraph annotations'],
-            'reading-minimap' => ['category' => 'Display', 'description' => 'Every-item density overview with click + drag-pan navigation'],
-            'reading-progress' => ['category' => 'Display', 'description' => 'Viewport-pinned reading-progress indicator (bar or dot)'],
-            'reading-shell' => ['category' => 'Display', 'description' => 'Composition wrapper with toggles + density preset'],
-            'reading-spine' => ['category' => 'Display', 'description' => 'Sidebar mini-TOC tracking scroll, expanding on hover/focus'],
-            'reading-toc' => ['category' => 'Display', 'description' => 'Horizontal sticky-strip TOC for marketing landing pages'],
-            'reorder' => ['category' => 'Display', 'description' => 'Drag handle and move-up / move-down arrows for one row of a list Livewire sorts, so a keyboard and a screen reader can reorder it too'],
-            'replay-button' => ['category' => 'Display', 'description' => 'Re-mount the closest [data-replay-target] ancestor — companion to the `data-replayable` animation contract'],
-            'scroll-area' => ['category' => 'Display', 'description' => 'Scrollable content area with styled scrollbar'],
-            'segmented-control' => ['category' => 'Display', 'description' => 'Segmented toggle control'],
-            'skeleton' => ['category' => 'Display', 'description' => 'Loading placeholder skeleton'],
-            'spinner' => ['category' => 'Display', 'description' => 'Accessible loading spinner (size + semantic intent, role=status)'],
-            'shimmer' => ['category' => 'Display', 'description' => 'Animated text-glyph shimmer for live/streaming status (background-clip:text, Livewire :active-bindable)'],
-            'chart-mixed' => ['category' => 'Display', 'description' => 'Multi-type / multi-axis chart (per-dataset type field, dual y-axis)'],
-            'sparkline' => ['category' => 'Display', 'description' => 'Inline trend sparkline (axis-less line/area chart)'],
-            'spine-aware' => ['category' => 'Layout', 'description' => 'Opt-in wrapper that joins the page-edge content spine via WireKit::spinePadding()'],
-            'stage-card' => ['category' => 'Display', 'description' => 'Pipeline / kanban / roadmap stage card with intent left-stripe, count pill, and optional progress'],
-            'stat' => ['category' => 'Display', 'description' => 'Single statistic display'],
-            'stats' => ['category' => 'Display', 'description' => 'Statistics group container'],
-            'step-marker' => ['category' => 'Display', 'description' => 'Numbered step chip — a filled square-cornered marker for onboarding and how-to sequences'],
-            'status-dot' => ['category' => 'Display', 'description' => 'Status dot that sits in the line beside a value, named for a screen reader and explained in a tooltip'],
-            'status-matrix' => ['category' => 'Display', 'description' => '2D grid of typed status cells (tristate / toggle / status / heat) with sticky headers'],
-            'status-tiles' => ['category' => 'Display', 'description' => 'N entities as colored status tiles, one glance — a fleet light with optional legend and colorblind-safe status icons'],
-            'stream' => ['category' => 'Display', 'description' => 'Streaming text output (SSE) with correct live-region a11y, reduced-motion buffering, and defined abort / error states'],
-            'strength-meter' => ['category' => 'Display', 'description' => 'Strength meter — bars for how hard a value is to guess, with the step named and spoken; the display password-input uses'],
-            'swap' => ['category' => 'Display', 'description' => 'Two-state icon primitive — fade (crossfade), rotate or flip between two children'],
-            'table' => ['category' => 'Display', 'description' => 'Data table with sorting and styling options'],
-            'ticker' => ['category' => 'Display', 'description' => 'Compact label + value + delta widget for dashboards'],
-            'testimonial' => ['category' => 'Marketing', 'description' => 'Cited customer quote — figure/blockquote semantics, author, role, logo, optional rating'],
-            'testimonial-grid' => ['category' => 'Marketing', 'description' => 'Responsive grid of testimonials, exposed as a labeled list'],
-            'theme-controller' => ['category' => 'Layout', 'description' => 'Drop-in dark-mode control — button, switch, menu or system/light/dark select'],
-            'timeline' => ['category' => 'Display', 'description' => 'Vertical timeline of events'],
-            'tree-view' => ['category' => 'Display', 'description' => 'Hierarchical tree view'],
-
-            // ── Blueprint Primitives ──
-            'conversation' => ['category' => 'Display', 'description' => 'Stick-to-bottom chat transcript scroller — follow-output, unread jump-to-latest, and history anchor-preserve'],
-            'data-table' => ['category' => 'Display', 'description' => 'Client-mode data table with sort, search, selection, density, and column manager'],
-            'date-separator' => ['category' => 'Display', 'description' => 'Horizontal divider with centered date label'],
-            'event-calendar' => ['category' => 'Display', 'description' => 'Scheduling calendar with month, week, and agenda views'],
-            'kanban' => ['category' => 'Display', 'description' => 'Horizontal scrollable board of status columns'],
-            'kanban-column' => ['category' => 'Display', 'description' => 'Single column within a kanban board'],
-            'message' => ['category' => 'Display', 'description' => 'Chat/comment message bubble with author, timestamp, and delivery status'],
-            'message-group' => ['category' => 'Display', 'description' => 'A run of messages from one sender, with the avatar and name printed once'],
-            'message-typing' => ['category' => 'Display', 'description' => 'Animated three-dot typing indicator bubble for chat threads'],
-            'notification-center' => ['category' => 'Display', 'description' => 'Bell trigger with unread badge and a grouped, realtime-capable notification panel'],
-            'pricing-table' => ['category' => 'Marketing', 'description' => 'Responsive grid of pricing plans, exposed as a labeled list'],
-            'pricing-tier' => ['category' => 'Marketing', 'description' => 'A single pricing plan — name, formatted amount, features, CTA, optional featured highlight'],
-            'price' => ['category' => 'Display', 'description' => 'Locale-aware currency display with optional discount'],
-            'quick-replies' => ['category' => 'Display', 'description' => 'Suggested replies under a message — a named group of chips that dispatch the answer the reader picked'],
-            'reaction' => ['category' => 'Display', 'description' => 'Emoji reaction pill with count and toggle state'],
-            'reveal' => ['category' => 'Display', 'description' => 'Animation wrapper — viewport / click / manual triggers, 11 in/out presets'],
-            'toolbar' => ['category' => 'Navigation', 'description' => 'Horizontal bar with search, filters, and action buttons'],
-            'usage-meter' => ['category' => 'Display', 'description' => 'Usage-vs-limit meter with threshold intent, panel grid, and plan-paywall gate'],
-
-            // ── System ──
-            'chart' => ['category' => 'System', 'description' => 'Chart.js wrapper component'],
-            'fonts' => ['category' => 'System', 'description' => 'GDPR-compliant font loader'],
-            'glass' => ['category' => 'System', 'description' => 'Liquid Glass extension — include once as the first element of the layout body; takes no props and renders no slot'],
-            'icon' => ['category' => 'System', 'description' => 'SVG icon with preset support'],
-            'map' => ['category' => 'System', 'description' => 'Map adapter (MapLibre/Leaflet peer dependency) with markers and an accessible location list'],
-            'structured-data' => ['category' => 'System', 'description' => 'JSON-LD script block emitter (XSS-safe via JSON_HEX_TAG)'],
-        ];
+        return self::$catalog;
     }
 
     /**
@@ -310,9 +109,8 @@ class ComponentRegistry
      * canonical = their alias).
      *
      * Used by ExportJsonCommand to emit a `tag_alias` field next to
-     * `tag` so a downstream tool integrator who hard-coded the
-     * double-colon form during the v2.0 → v2.2 migration window can
-     * still grep against the schema and find the component.
+     * `tag` so a downstream tool that hard-codes the double-colon form
+     * can still grep against the schema and find the component.
      */
     public static function tagAlias(string $name): ?string
     {
@@ -462,8 +260,7 @@ class ComponentRegistry
      * an entry mapping the component name → its class. Both paths
      * return the same shape so downstream callers don't branch.
      *
-     * One entry per prop, with its metadata, since v2.1.0 (a flat
-     * name→default-string map before that). The fields make inline-comment
+     * One entry per prop, with its metadata. The fields make inline-comment
      * metadata available without source-grepping, and parsing the tokens
      * keeps a `config(...)` default whole and an inline comment out of it.
      *
@@ -538,8 +335,8 @@ class ComponentRegistry
 
     /**
      * Return the backing class FQCN for class-based components, or null for
-     * anonymous Blade components. Used by the JSON-manifest exporter to
-     * skip false-positive slot detection on class-side public properties.
+     * anonymous Blade components. A class registered under the tag of an
+     * anonymous view is not one of them: see VIEW_CLASSES.
      *
      * @return class-string|null
      */
@@ -563,23 +360,60 @@ class ComponentRegistry
     ];
 
     /**
+     * Classes registered under the tag of an anonymous view, keyed by that tag.
+     *
+     * WireKitServiceProvider registers them from this list. The markup and the declared props stay
+     * in the view, so every reader of `@props` finds them there, which is why none of them is in
+     * CLASS_COMPONENTS. Each class exists for what only a constructor can do: it runs before the
+     * slot renders.
+     *
+     * @var array<string, class-string>
+     */
+    public const VIEW_CLASSES = [
+        // A set hands the controls in its slot what they point at.
+        'field.set' => FieldSet::class,
+        // A field does the same for the one control it labels: the control learns the label it is
+        // named by, and the field learns the element its label points at.
+        'field' => Field::class,
+        // The group does the opposite: it keeps its own `collapsible` from the rows in its slot,
+        // which read the sidebar's through `@aware`.
+        'sidebar.group' => SidebarGroup::class,
+    ];
+
+    /**
+     * The names the class behind a component's view hands that view as data: its public
+     * properties.
+     *
+     * They reach the template as variables, where a slot scan cannot tell them from slots, and
+     * none of them is anything a developer passes. Both kinds of class hand them over, a class
+     * component and a class behind an anonymous view.
+     *
+     * @return list<string>
+     */
+    private static function viewDataNamesOf(string $name): array
+    {
+        $class = self::CLASS_COMPONENTS[$name] ?? self::VIEW_CLASSES[$name] ?? null;
+
+        return $class !== null ? ClassPropsExtractor::publicPropertyNames($class) : [];
+    }
+
+    /**
      * Get the blade file path for a component.
      *
      * Resolves the top-level `components/<name>.blade.php` first, and falls back
      * to the directory-component form `components/<name>/index.blade.php` when the
      * top-level file does not exist (e.g. `list` lives at `list/index.blade.php`).
-     * Without this fallback the registry read that component's props from a
-     * non-existent path and reported it with zero props. Mirrors the
-     * dual enumeration ComponentRegistryTest already uses for membership.
+     * Without this fallback the registry would read that component's props from
+     * a path that does not exist and report it with zero props.
      */
     private static function bladeFilePath(string $name): string
     {
         $base = __DIR__.'/../resources/views/components/';
 
         // `parent.child` → components/parent/child.blade.php. Without this the
-        // props of every sub-component were unreachable: `table.th` has carried a
-        // documented `headerScope` prop since 2.16.0 that no discovery surface
-        // could report, because the path it looked at did not exist.
+        // props of every sub-component would be unreachable: `table.th` carries a
+        // documented `headerScope` prop that no discovery surface could report,
+        // because the path it would look at does not exist.
         if (str_contains($name, '.')) {
             [$parent, $child] = explode('.', $name, 2);
             $nested = $base.$parent.'/'.$child.'.blade.php';
@@ -599,8 +433,8 @@ class ComponentRegistry
             return $indexed;
         }
 
-        // Neither exists — return the top-level path so downstream behavior
-        // (PropsParser → []) is unchanged for a genuinely missing component.
+        // Neither exists — return the top-level path, which PropsParser reads as
+        // no props (`[]`) for a genuinely missing component.
         return $topLevel;
     }
 
@@ -612,14 +446,12 @@ class ComponentRegistry
      * a path to hand to a parser that returns nothing for a missing file. A
      * caller that must DECIDE (does this component have a template at all?)
      * needs the other answer, and building it by re-walking the directory is how
-     * this repo ends up with two resolvers that disagree.
+     * two resolvers come to disagree.
      *
-     * It already did. `ExportJsonCommand` carried its own walk that knew the flat
-     * and dotted forms but not `components/<name>/index.blade.php`, so `list` —
-     * the one component in that form — resolved to nothing and shipped with an
-     * EMPTY slots array in every manifest, while its template renders `{{ $slot }}`
-     * on the last line. Nothing went red: an empty list is what a genuinely
-     * slot-less component reports, and thirty-seven of those are correct.
+     * A walk that knows the flat and dotted forms but not
+     * `components/<name>/index.blade.php` resolves `list`, the one component in that
+     * form, to nothing, and an empty slots list from it reads exactly like the list
+     * of a component that has no slot.
      */
     public static function existingBladeFilePath(string $name): ?string
     {
@@ -639,7 +471,11 @@ class ComponentRegistry
      * class-based component's public properties are referenced in its template
      * as `{{ $name }}`, which a slot scanner reads as a required named slot
      * unless it is told otherwise. A caller that forgets the exclusion does not
-     * fail, it reports `chart` as requiring an `<x-slot:chartConfig>`.
+     * fail, it reports `chart` as requiring an `<x-slot:chartConfig>`. The class
+     * behind an anonymous view hands its view data the same way: `field` hands
+     * the `wkField` it builds for the control it labels.
+     *
+     * Takes a sub-component's dotted name as well (`field.set`).
      *
      * @return list<array{name: string, required: bool}>
      */
@@ -651,12 +487,10 @@ class ComponentRegistry
             return [];
         }
 
-        $class = self::componentClass($name);
-
         return BladeParser::extractSlotsWithMetadataFromSource(
             (string) file_get_contents($path),
             $path,
-            $class !== null ? ClassPropsExtractor::publicPropertyNames($class) : [],
+            self::viewDataNamesOf($name),
         );
     }
 

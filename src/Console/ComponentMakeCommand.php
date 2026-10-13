@@ -19,7 +19,7 @@ use Pushery\WireKit\WireKit;
  * vendor:publish --tag=wirekit-views (which would copy the entire view tree).
  *
  * `--base` defaults:
- *   1. Explicit --base= wins (today's behavior).
+ *   1. Explicit --base= wins.
  *   2. Self-derivation: if `name` IS itself a valid component (e.g.
  *      `wirekit:component button`), use it. Most common case.
  *   3. Right-segment derivation: `my-button` → `button`,

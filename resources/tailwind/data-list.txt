@@ -333,7 +333,7 @@ displayed
 dist/wirekit.css
 dist/wirekit.css,
 does
-doubles
+double
 drop
 drops
 early.
@@ -446,7 +446,6 @@ lists
 literally
 live
 long
-longer
 makes
 markers
 markup

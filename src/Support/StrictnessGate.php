@@ -32,10 +32,10 @@ use Pushery\WireKit\WireKit;
  *      false never throws, not even in console / artisan / Pest.
  *   2. Default: console / artisan / Pest → throw, HTTP request → do not.
  * So an HTTP request with APP_DEBUG=true logs at ERROR level and renders the
- * fallback, and a single prop typo does not 500 the whole Blade view. That
- * split replaced an always-throw-in-debug behavior which took down the entire
- * page on a typo that was purely cosmetic. IconResolver reads the second
- * decision alone, for the reason on shouldThrowOnInvalid().
+ * fallback, and a single prop typo does not 500 the whole Blade view: throwing
+ * on every invalid value in debug would take down the entire page over a typo
+ * that is purely cosmetic. IconResolver reads the second decision alone, for
+ * the reason on shouldThrowOnInvalid().
  */
 final class StrictnessGate
 {
@@ -50,11 +50,10 @@ final class StrictnessGate
      * One list, read by the predicate and by the reader of the component's own template, so
      * the two cannot come to disagree about which directives the rule covers.
      *
-     * `x-effect` and `x-model` were added after an adopting application reported that its own
-     * copy of this guard had needed them, and its reasoning holds here. `x-effect` is what a
-     * caller reaches for when a component's own `x-init` cannot follow a change — that is, the
-     * very tool the first instance of this defect calls for, so repairing one collision runs
-     * straight into the next. And a discarded `x-model` is a two-way binding that silently
+     * `x-effect` and `x-model` belong on it. `x-effect` is what a caller reaches for when a
+     * component's own `x-init` cannot follow a change — that is, the very tool the first
+     * instance of this defect calls for, so repairing one collision would run straight into
+     * the next. And a discarded `x-model` is a two-way binding that silently
      * never binds, which is the quietest failure of the five: a discarded `x-data` is visible
      * because nothing happens at all, while a discarded `x-model` looks like a field that just
      * does not change.
@@ -217,9 +216,10 @@ final class StrictnessGate
         // An explicit config wins in BOTH directions: `true` forces fail-fast
         // even in an HTTP request, `false` forces degradation even in console.
         // Unset (null) falls back to the console/HTTP default.
-        $explicit = config('wirekit.validation.throw_on_invalid');
+        // Read as a switch: from the environment, `off` arrives as the string 'off'.
+        $explicit = BooleanProp::orNull(config('wirekit.validation.throw_on_invalid'));
         if ($explicit !== null) {
-            return (bool) $explicit;
+            return $explicit;
         }
 
         return app()->runningInConsole();
@@ -230,9 +230,9 @@ final class StrictnessGate
      */
     public static function isStrict(): bool
     {
-        $configured = config('wirekit.validation.strict');
+        $configured = BooleanProp::orNull(config('wirekit.validation.strict'));
         if ($configured !== null) {
-            return (bool) $configured;
+            return $configured;
         }
 
         return (bool) config('app.debug');
@@ -351,12 +351,11 @@ final class StrictnessGate
     /**
      * Warns on unknown prop KEYS in dev.
      *
-     * Pre-fix, Wirekit's prop validation only checked VALUES of declared
-     * props — unknown keys (e.g. `<x-wirekit::button variant="ghost">`
-     * when the prop is `surface`) were passed through to the attribute
-     * bag silently and the component rendered with default `surface=
-     * "filled"`. The dev got no signal that their intended `ghost`
-     * treatment didn't apply.
+     * Value validation covers declared props only. An unknown key (e.g.
+     * `<x-wirekit::button variant="ghost">` when the prop is `surface`)
+     * passes through to the attribute bag silently and the component
+     * renders with the default `surface="filled"`; this warning is the
+     * signal that the intended `ghost` treatment didn't apply.
      *
      * This helper compares an actual attribute-bag's keys against the
      * declared `@props` keys + a per-component allowlist of legitimate
@@ -487,15 +486,13 @@ final class StrictnessGate
      * The scope directives in `$actual` that this component will DISCARD. The VERDICT, with
      * no logging and no environment gate.
      *
-     * Split out of `warnScopeDirectiveCollisions()` for the same reason `unknownPropNames()`
-     * was split out of `warnUnknownProps()`, and the docblock there states it in a sentence
+     * Kept apart from `warnScopeDirectiveCollisions()` for the same reason `unknownPropNames()`
+     * is kept apart from `warnUnknownProps()`, and the docblock there states it in a sentence
      * that applies here word for word: the warner "only logs, so nothing can fail on it, and
      * it returns early outside `app.debug` — so in production the signal does not exist at
-     * all." An adopting application can therefore not assert on it, and one of them was carrying
-     * a second, weaker implementation of this question over 4422 component tags: weaker
-     * because it had to re-derive the occupied directives from the Blade source itself, with
-     * no way to tell an unconditional `x-data` from one inside an `@if`. That distinction is
-     * the whole point of `scopeDirectivesSetBy()`, and it was not available to them.
+     * all." An application asserts on this verdict instead of re-deriving the occupied
+     * directives from the Blade source, which cannot tell an unconditional `x-data` from one
+     * inside an `@if`. That distinction is the whole point of `scopeDirectivesSetBy()`.
      *
      * The two share this one implementation so the rule cannot drift between the warning a
      * developer sees at runtime and the answer a test asserts on.
@@ -618,17 +615,17 @@ final class StrictnessGate
      * The attribute names in `$actual` that are neither declared props nor legitimate
      * passthrough. The VERDICT, with no logging and no environment gate.
      *
-     * Split out of `warnUnknownProps()` because a second caller needs the same answer for
+     * Kept apart from `warnUnknownProps()` because a second caller needs the same answer for
      * a different purpose: a guard over the Blade snippets in the README and in PHP
-     * docblocks. Those snippets are the most-copied lines the package has, and one of them
-     * taught `variant` on `button` — a prop the component does not declare, which Blade
-     * folds into the attribute bag where it renders as a literal HTML attribute nothing
-     * reads. The page looked finished, no test failed, and the `Delete` button rendered in
-     * the ACCENT color: a destructive action styled as the primary call to action.
+     * docblocks. Those snippets are the most-copied lines the package has, and a snippet
+     * teaching `variant` on `button` — a prop the component does not declare — has Blade
+     * fold it into the attribute bag, where it renders as a literal HTML attribute nothing
+     * reads. The page looks finished, no test fails, and the `Delete` button renders in the
+     * ACCENT color: a destructive action styled as the primary call to action.
      *
-     * `warnUnknownProps()` could not have caught it. It only logs, so nothing can fail on
-     * it, and it returns early outside `app.debug` — so in production the signal does not
-     * exist at all. Hence a predicate a test can assert on, and the two share this one
+     * `warnUnknownProps()` cannot catch that. It only logs, so nothing can fail on it, and
+     * it returns early outside `app.debug` — so in production the signal does not exist at
+     * all. Hence a predicate a test can assert on, and the two share this one
      * implementation so the rule cannot drift between them.
      *
      * @param  array<string, mixed>  $actual  attribute name => value
@@ -685,7 +682,7 @@ final class StrictnessGate
             // this it reports `show-value` as undeclared — a false positive on correct
             // documentation, which is the failure mode that costs the most trust.
             //
-            // CALLERS MUST PASS THE RAW ATTRIBUTE NAME, not a pre-camel-cased one. The
+            // Callers must pass the raw attribute name, not a pre-camel-cased one. The
             // prefix skips above are the reason: `aria-label` camel-cases to `ariaLabel`
             // and `x-on:click` to `xOn:click`, neither of which starts with `aria-` or
             // `x-` any more, so a caller that normalizes first defeats every passthrough

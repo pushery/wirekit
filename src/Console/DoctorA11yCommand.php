@@ -45,7 +45,7 @@ use Pushery\WireKit\Theming\WcagContrast;
  *      counted toward the verdict or exit code. This matches
  *      docs/theming.md "Intentional trade-offs" and keeps WireKit's own
  *      decorative border (intentionally ~1.3-2.5:1) auditing clean while
- *      no longer letting a sub-3:1 CONTROL border pass silently.
+ *      a sub-3:1 CONTROL border never passes silently.
  */
 class DoctorA11yCommand extends Command
 {
@@ -131,7 +131,7 @@ class DoctorA11yCommand extends Command
         //
         // Unlike the props linter there is no second empty state here: these rules
         // scan any Blade file, not only ones using a WireKit component, so a
-        // non-empty walk always had something in scope.
+        // non-empty walk always has something in scope.
         //
         // The refusal is conditioned on the theme-contrast stage, and that is the
         // substance rather than a special case: this command has TWO stages, and
@@ -319,8 +319,8 @@ class DoctorA11yCommand extends Command
             // The frame of a field that is not saved yet (x-wk-unsaved): a state, so 3:1,
             // against the field fill it sits on.
             ['name' => 'border-unsaved on bg-input', 'fg' => '--color-wk-border-unsaved', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui'],
-            // border-strong is the COMMUNICATING form-control border introduced in
-            // 2.16.0 precisely because WCAG 1.4.11 requires >= 3:1 for it.
+            // border-strong is the COMMUNICATING form-control border, and WCAG 1.4.11
+            // requires >= 3:1 for it.
             // It is NOT decorative — it is the resting + hover edge of input / select
             // / textarea / checkbox, so it is hard-checked, and against the field
             // FILL (--color-wk-bg-input) it actually sits on, not the page bg.
@@ -472,7 +472,7 @@ class DoctorA11yCommand extends Command
         $css = (string) preg_replace('!/\*.*?\*/!s', '', $css);
 
         // Which presentation each block actually describes, before any of it is read as a
-        // token table. See splitByPresentation() for the defect this answers.
+        // token table. See splitByPresentation() for the at-rule case this handles.
         $byPresentation = self::splitByPresentation($css);
 
         $extract = function (string $selector, string $source): array {
@@ -839,14 +839,13 @@ class DoctorA11yCommand extends Command
             // A literal `class` only — never `:class`, `x-bind:class` or `@class`.
             //
             // A bound class list is where the BRANCHES live, and two classes in different
-            // branches never render together. The first version of this scan matched them
-            // and produced SIX contrast failures over this package's own views, every one
-            // of them a pairing that cannot occur: `text on accent 1.10:1` came from an
-            // event-calendar ternary whose true branch sets the accent background with
-            // inverse text and whose false branch sets ordinary text on nothing.
+            // branches never render together. Matching them would report pairings that
+            // cannot occur: an event-calendar ternary whose true branch sets the accent
+            // background with inverse text and whose false branch sets ordinary text on
+            // nothing would read as `text on accent 1.10:1`.
             //
-            // Six invented findings is not a rough edge. It is the failure mode this whole
-            // command is written against, and it would have shipped as a FAIL.
+            // An invented finding is the failure mode this whole command is written
+            // against, and here it would be a FAIL.
             preg_match_all('/(?<![:\w-])class="([^"]{0,2000})"/', $contents, $chunks);
 
             foreach ($chunks[1] as $chunk) {

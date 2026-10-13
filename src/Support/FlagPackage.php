@@ -12,14 +12,14 @@ namespace Pushery\WireKit\Support;
  * than the directory, so a file the manifest does not name is never served, and no URL is built
  * for a flag that does not exist.
  *
- * The class is named after the separate package the artwork once lived in. It ships here for
- * the reason the fonts do: they ship unconditionally and are only loaded when
- * `<x-wirekit::fonts />` asks for them, the flags are small against them, and a second
- * repository would cost a CI lane, a release cycle, a Packagist registration and a hand-kept
- * version pairing.
+ * The artwork ships inside WireKit for the reason the fonts do: they ship unconditionally and are
+ * only loaded when `<x-wirekit::fonts />` asks for them, the flags are small against them, and a
+ * second repository would cost a CI lane, a release cycle, a Packagist registration and a
+ * hand-kept version pairing.
  *
- * The NAME stays because the country-picker recipe calls `FlagPackage::isoCodes()` in published
- * documentation. Renaming it is a breaking change, and a breaking change needs a major version.
+ * The class keeps the name of a package all the same, because the country-picker recipe calls
+ * `FlagPackage::isoCodes()` in published documentation. Renaming it is a breaking change, and a
+ * breaking change needs a major version.
  *
  * Where the artwork is:
  *
@@ -121,18 +121,12 @@ final class FlagPackage
 
         // `root()` IS the flags directory — it is the path that holds `flags.json`, and it
         // returns null when that file is not directly inside it. So the format folder sits one
-        // level down from `$root`, not two: appending `flags/` here asked for
-        // `<root>/flags/4x3/de.svg` and the artwork lives at `<root>/4x3/de.svg`.
-        //
-        // The lookup missed by exactly one segment, `realpath()` returned false, and the route
-        // turned that into a 404 for every code in every install that had not published the
-        // artwork. `manifest()` and `isoCodes()` read `$root.'/flags.json'` and were right all
-        // along, which is why the page rendered and only the image bytes were missing.
+        // level below `$root`: the artwork for `de` in 4x3 is `<root>/4x3/de.svg`, under the
+        // same base `manifest()` and `isoCodes()` read `$root.'/flags.json'` from.
         $file = realpath($root.'/'.$format.'/'.$code.'.svg');
 
-        // Containment is asserted against `$root` itself for the same reason. This is narrower
-        // than the old `$root.'/flags/'`, not wider: a code that climbs out of the flags
-        // directory still fails it, and FORMATS above already pins the middle segment.
+        // Containment is asserted against `$root` itself for the same reason: a code that climbs
+        // out of the flags directory fails it, and FORMATS above already pins the middle segment.
         return $file !== false && str_starts_with($file, $root.'/') && is_file($file) ? $file : null;
     }
 

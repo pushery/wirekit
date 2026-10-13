@@ -519,6 +519,7 @@ filled
 filtered
 finished
 first
+fits
 flags
 flex-1
 flex-col
@@ -567,6 +568,7 @@ how;
 href="{{
 hyphen,
 hyphenate.
+hyphenation
 hyphens-auto',
 identifier:
 if
@@ -622,6 +624,7 @@ leave
 left
 left-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)]
 left-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)]
+letters
 like
 line
 line.
@@ -817,6 +820,7 @@ so
 some
 spacing
 span
+split
 state
 state.
 states
@@ -890,6 +894,7 @@ trim($label)
 trim($stepAction)
 true).'
 truth:
+twelve
 type="button"
 under
 unknown
@@ -926,6 +931,7 @@ where
 wherever
 whether
 which
+whole,
 whose
 why
 width,

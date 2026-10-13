@@ -32,9 +32,8 @@ final class ReplacingPersonalizationsCheck extends VerifyCheck
      * A replacement is a legitimate choice and often the right one. What it also
      * does is end the flow of later improvements to that block — permanently, and
      * without a word. The personalization keeps looking like a decision somebody
-     * made, which it is; that it has since swallowed three upstream changes is
-     * visible nowhere. An adopting application found this by reading the installed
-     * package, not by being told.
+     * made, which it is; that it has since swallowed upstream changes is visible
+     * nowhere.
      *
      * So this reports, and does not judge: a WARN that names the blocks, because
      * the same output on a deliberate replacement is the point — the developer

@@ -13,13 +13,13 @@
 
 @php
     /*
-     * A `<div>` here was correct for ONE slot shape and mouse-only for every other.
+     * A `<div>` here would be correct for ONE slot shape and mouse-only for every other.
      *
-     * The reasoning was sound as far as it went: `<x-wirekit::button>` in the slot inside a
-     * `<button>` is invalid nested markup, and the inner button does carry the keyboard
-     * path. But both docs pages invite arbitrary slot content — an icon, a text span, a
-     * `<x-wirekit::icon>` — and for all of those this element WAS the control: no role, no
-     * tabindex, no key handler, closeable by pointer alone.
+     * `<x-wirekit::button>` in the slot inside a `<button>` is invalid nested markup, and the
+     * inner button does carry the keyboard path. But both docs pages invite arbitrary slot
+     * content — an icon, a text span, a `<x-wirekit::icon>` — and for all of those this
+     * element IS the control: as a `<div>` it would have no role, no tabindex and no key
+     * handler, closeable by pointer alone.
      *
      * So the wrapper asks what it is wrapping. The slot is already-rendered HTML, so an
      * interactive descendant is a fact rather than a guess, and its presence is exactly the

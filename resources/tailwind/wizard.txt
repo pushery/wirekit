@@ -24,6 +24,7 @@ $align,
 $alignClasses
 $alignClasses,
 $alignFields
+$announceBusy
 $announcementTemplate
 $as
 $as);
@@ -75,6 +76,7 @@ $finalRel
 $follow
 $follow)
 $forceLoading
+$forceLoading;
 $gap,
 $gapClasses
 $gapClasses,
@@ -92,6 +94,8 @@ $iconOnlyBelowClasses
 $iconOnlyBelowClasses,
 $iconOnlyBelowLabelClass
 $iconOnlyHeightClasses
+$iconOnlyShrinkClasses
+$iconOnlyShrinkClasses,
 $iconOnlySquareToken
 $iconRight
 $incompleteTemplate
@@ -169,6 +173,7 @@ $targetAttr
 $total
 $touchClasses
 $touchClasses,
+$touchFloor
 $touchTextFloor
 $type
 $upcomingClasses
@@ -181,6 +186,7 @@ $wrapMode
 '
 ''
 '')
+'')),
 '');
 '',
 '';
@@ -191,6 +197,7 @@ $wrapMode
 '.$iconOnlySquareToken.';']);
 '.$message);
 '/^(?:min-h|h|w|p[xytrblse]?)-/');
+'/^shrink(?:-|$)/')
 '2xl'
 '2xl']))
 '2xl']);
@@ -377,6 +384,7 @@ $wrapMode
 'scale'
 'scale',
 'scope'
+'shrink-0'
 'size'
 'size',
 'sm'
@@ -400,6 +408,7 @@ $wrapMode
 'text-[length:var(--text-wk-sm)]
 'text-[length:var(--text-wk-sm)]',
 'total'
+'touchFloor'
 'touchTextFloor'
 'tracking-[var(--font-wk-letter-spacing)]',
 'transition-colors',
@@ -423,6 +432,7 @@ $wrapMode
 'wk-button',
 'wk-button-group',
 'wk-form-row'
+'wk-touch-row',
 'wk-touch-target
 'wrap'
 'wrapLabel'
@@ -474,15 +484,14 @@ $wrapMode
 (active
 (and
 (avoids
-(byte-identical);
 (config('app.debug'))
-(current
 (debug
 (declarative
 (default)
 (dist/wirekit.css),
 (e.g.
 (function_exists('logger'))
+(implicit
 (index
 (int)
 (is_string($key)
@@ -501,6 +510,7 @@ $wrapMode
 (text
 (the
 (transparent
+(true)
 (v3
 (which
 (wire:click
@@ -514,6 +524,7 @@ $wrapMode
 -------
 --------
 -----------
+--color-wk-bg-soft,
 --color-wk-bg:
 --color-wk-info-tone,
 --color-wk-warning-bg
@@ -658,6 +669,7 @@ $wrapMode
 @endphp
 @endunless
 @foreach($steps
+@if($announceBusy)
 @if($callerLabelledBy
 @if($computedRel)
 @if($count
@@ -689,6 +701,7 @@ $wrapMode
 @props([
 @props.
 @unless($attributes->has('aria-label')
+@unless($attributes->has('data-wk-busy-text'))
 @unless($attributes->has('role'))
 @unless($isCompleted)
 @unless($isCurrent)
@@ -722,6 +735,7 @@ BooleanProp::from($forceLoading,
 BooleanProp::from($iconOnly,
 BooleanProp::from($indicator,
 BooleanProp::from($loading,
+BooleanProp::from($touchFloor,
 BooleanProp::from($touchTextFloor,
 BooleanProp::from($wrapLabel,
 Both
@@ -765,7 +779,6 @@ Examples
 FIRST
 FORM
 FUTURE
-Flipping
 Following
 Fully
 HAVE
@@ -813,6 +826,7 @@ Next
 No
 Normalize:
 Normalized
+Not
 Nothing
 Null
 ONLY
@@ -902,7 +916,6 @@ Visual
 WCAG
 WITH
 WITHHELD
-We
 Welded
 What
 Whatever
@@ -924,6 +937,7 @@ WireKit::warnUnknownProps('button',
 WireKit::warnUnknownProps()
 With
 Without
+Wrapping
 [
 [$callerLabelledBy,
 ['current'
@@ -935,7 +949,7 @@ Without
 ['start',
 ['xs',
 [--color-wk-ring:var(--color-wk-accent-fg)]
-[--wk-touch-min:0px]'
+[--wk-touch-min:0px]',
 []
 [])
 [],
@@ -953,6 +967,7 @@ Without
 \Pushery\WireKit\Support\SafeUrl::href($step['href']
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::PADDING);
+\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Support\UtilityClasses::without($heightClasses,
 \Pushery\WireKit\Support\UtilityClasses::without($sizeClasses,
 \Pushery\WireKit\VariantResolver::INTENTS);
@@ -975,6 +990,7 @@ __('wirekit::(opens
 __('wirekit:::label
 __('wirekit::Back')
 __('wirekit::Completed')
+__('wirekit::Loading')
 __('wirekit::Next')
 __('wirekit::Progress')
 __('wirekit::Step
@@ -986,8 +1002,8 @@ __('wirekit::This
 `--gap-wk-*`
 `--gap-wk-md`
 `--size-wk-sm`
-`--space-wk-*`,
 `--space-wk-md`'s
+`--space-wk-md`,
 `--wk-stepper-circle`,
 `--wk-stepper-index`
 `--wk-touch-min`
@@ -1005,9 +1021,8 @@ __('wirekit::This
 `<body>`.
 `<button>`
 `<button>`,
-`<span>`
 `<x-slot:iconLeft>`
-`<x-slot:iconRight>`
+`<x-slot:iconRight>`.
 `=`
 `@`-variant
 `@`-variants
@@ -1075,6 +1090,7 @@ __('wirekit::This
 `follow`
 `forceLoading=true`
 `forceLoading`
+`forceLoading`,
 `foreground
 `gap-1`
 `gap-[var(--gap-wk-md)]`
@@ -1084,9 +1100,11 @@ __('wirekit::This
 `hidden`,
 `href`
 `icon-only-below=""`
+`iconOnlyBelow`
 `iconOnlyBelow`,
 `iconOnly`
 `iconOnly`,
+`icon`.
 `index`.
 `indicator="false"`
 `init()`,
@@ -1117,12 +1135,12 @@ __('wirekit::This
 `px`
 `rescueFocus()`
 `resources/views/**/*.blade.php`
-`responsive`
 `role="link"`
 `row`
 `scale="gap"`
+`shrink`
 `sm`
-`space`,
+`space`:
 `sr-only`
 `src/VariantResolver.php`,
 `stackBelow`
@@ -1134,7 +1152,8 @@ __('wirekit::This
 `table.th
 `target`
 `toggleBooleanStateDirective`
-`toolbar`,
+`toolbar`
+`touchFloor`
 `true`
 `true`,
 `variant="ghost"`
@@ -1151,6 +1170,7 @@ __('wirekit::This
 `wk-field`
 `wk-form-row`
 `wk-stepper-circle`
+`wk-touch-row`,
 `wk-touch-target`
 `wrap-label="false"`
 `wrapLabel`
@@ -1196,11 +1216,9 @@ actually
 add
 added
 additional
-additive:
 adds
-adopting
+adds:
 advance
-affected
 affordance
 after
 against
@@ -1209,6 +1227,7 @@ alert
 alert-dialog
 alias
 aligned
+alike.
 all
 all,
 all.
@@ -1220,8 +1239,8 @@ alone
 alone,
 along
 alongside
-alongside,
 already
+already,
 also
 always
 always;
@@ -1230,7 +1249,9 @@ an
 anchor
 anchor,
 and
+announce
 announced
+announced,
 announced.
 announcement
 announcement,
@@ -1239,6 +1260,8 @@ announces
 anonymous
 another
 answer
+answer,
+answers
 anticipate
 any
 anything
@@ -1246,7 +1269,9 @@ anything,
 anything.
 anywhere
 anywhere,
+apart
 apart,
+apart:
 appear
 appear.';
 appearance
@@ -1255,10 +1280,12 @@ application
 application's
 application,
 applied
+apply
 arbitrary
 are
 are,
 area
+area.
 aria-busy="true"
 aria-current
 aria-current="step"
@@ -1293,7 +1320,6 @@ assembled
 assistive
 assistive,
 at
-attached
 attribute
 attribute's
 attribute,
@@ -1307,6 +1333,8 @@ automated
 automatically
 avatar.group
 avoid.
+away
+away,
 away.
 axe
 axe-core
@@ -1334,11 +1362,9 @@ beat
 because
 become
 becomes
-been
 before
 beforehand.
 beginning.
-behavior
 behavior;
 behind
 being
@@ -1351,6 +1377,7 @@ below;
 beside
 bespoke
 between
+bg,
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
@@ -1360,10 +1387,13 @@ bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
+bg-[var(--color-wk-bg-soft)]
 bg-[var(--color-wk-danger)]
 bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
+bg-muted
+bg-subtle
 bg-transparent
 binding
 bindings,
@@ -1423,18 +1453,17 @@ build
 building
 built
 busy
+busy.
 but
 button
 button's
 button)
-button,
 button.
 button:
 buttons
 buttons,
 by
 byte-identical
-byte-identically.
 bytes
 call
 caller
@@ -1463,7 +1492,6 @@ centered
 centering
 chain,
 change
-change,
 changed
 changes
 changes,
@@ -1572,6 +1600,7 @@ console,
 construction.
 container
 container's
+container,
 container-relative
 contains
 content
@@ -1604,7 +1633,7 @@ count($steps)
 coverage
 covers
 created
-cure
+crowded
 current
 current),
 current).
@@ -1623,7 +1652,10 @@ danger:
 data-orientation
 data-orientation="{{
 data-stack-below="{{
+data-wk-busy-spinner
+data-wk-busy-text="{{
 data-wk-prose-skip
+data-wk-sr-host
 data-wk-step-complete="{{
 data-wk-stepper-caption
 data-wk-stepper-label
@@ -1632,11 +1664,11 @@ data-wk-stepper="{{
 data-wk-wizard-step="{{
 dead
 debug
+decide
 decided
 decided,
 decides
 decimal
-decision.
 declaration
 declarative
 declare.
@@ -1647,9 +1679,9 @@ decorative;
 default
 default).
 default,
+default:
 defaulting
 defect
-defect:
 defines
 definition,
 deleted;
@@ -1684,9 +1716,9 @@ differently
 directives
 disable
 disable,
+disable.
 disabled
 disabled,
-disabled.
 disabled:cursor-not-allowed
 disabled:opacity-[var(--opacity-wk-disabled)]
 disabling.
@@ -1695,11 +1727,9 @@ discoverable
 display
 dist/wirekit.css
 distance
-distinguish:
 div
 do
 do,
-docblock
 docs,
 docs.
 docs/components/stepper.md
@@ -1773,11 +1803,9 @@ every
 everything
 everything.
 exactly
-example
 except('rel')
 exist
 exist,
-existed
 existing
 exists
 exists,
@@ -1871,7 +1899,6 @@ focusable
 focused
 follow
 follow="current"
-followed
 follows
 font
 font-[number:var(--font-wk-body-weight)]
@@ -1925,6 +1952,7 @@ grid,
 group
 group.
 group;
+grown
 guarantee,
 guess
 guessing
@@ -1939,7 +1967,6 @@ had
 half
 half,
 half.
-halves
 hand
 hands
 hang
@@ -1981,7 +2008,7 @@ hint
 hint,
 historical
 hit
-holding
+hold
 holds
 honoring
 honors
@@ -1996,9 +2023,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
-hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
@@ -2014,6 +2041,7 @@ hue
 hydration
 hyphen,
 hyphenate.
+hyphenation
 hyphens-auto',
 icon
 icon-only
@@ -2055,7 +2083,6 @@ inline-flex
 inner
 input
 inside
-installed
 instead
 instead.
 instead:
@@ -2109,7 +2136,6 @@ justify-start
 justify="between">
 keep
 keeps
-kept
 key
 key,
 key.
@@ -2130,6 +2156,7 @@ labels
 labels,
 labels:
 ladder
+ladder.
 lands
 language.
 last
@@ -2138,6 +2165,7 @@ last:border-e-0
 later
 later.
 layout,
+lays
 lazy
 leave
 leaves
@@ -2147,6 +2175,7 @@ left-[calc(50%+var(--wk-stepper-circle,var(--size-wk-sm))/2)]
 left-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)]
 left-to-right;
 lets
+letters
 lg
 lg"
 lift
@@ -2215,6 +2244,7 @@ marked.
 marker
 marker.
 markers
+marks
 markup
 markup,
 match
@@ -2236,7 +2266,6 @@ mean
 meaningful
 means
 meant
-meant.
 measure
 measures
 measures.
@@ -2264,6 +2293,7 @@ mirrors
 missing
 missing-accessible-name
 mix
+mixed
 mode
 mode").
 model
@@ -2338,7 +2368,6 @@ nothing,
 nothing.
 nothing;
 notice:
-now
 nowhere
 nowhere,
 null
@@ -2396,7 +2425,6 @@ order.
 ordered.
 ordinary
 org
-original
 orphaned
 other
 other.
@@ -2448,6 +2476,7 @@ padding.
 padding:
 page
 page.
+page:
 pagination
 paint
 paint.
@@ -2477,7 +2506,6 @@ path.
 paths
 per
 per-intent
-per-page
 percentage
 perception
 person
@@ -2496,11 +2524,12 @@ place.
 place:
 placed
 placeholder
-places.
+places,
 plain
 plugin
 plus
 point
+point:
 pointer-events-none"
 pointer-events-none'
 pointer`
@@ -2509,7 +2538,6 @@ position
 position,
 positioned
 positions
-pre-fix
 precisely
 preference.
 prefers
@@ -2527,16 +2555,13 @@ pressed
 pressing
 prevent
 prevent.
-preview,
 primary:
-primitive
 prod).
 prod.
 produces
 produces;
 progress
 prohibits
-project
 promise.
 promoting
 prop
@@ -2573,7 +2598,6 @@ rather
 rationale
 raw
 re-consent
-re-spacing
 reach
 reachable
 reaches
@@ -2589,9 +2613,7 @@ reason
 reason.
 reasoning
 rebuilds.
-records
 red
-rediscover
 redone
 redundant
 reference
@@ -2627,10 +2649,8 @@ renders,
 renumbered,
 repairs.
 replaces
-report
 reported
 reports
-repository
 repository.
 request
 request,
@@ -2653,7 +2673,6 @@ returns
 rides
 right
 right-[calc(-50%+var(--wk-stepper-circle,var(--size-wk-sm))/2-0.5rem)]
-right.
 ring
 ring).
 ring,
@@ -2678,7 +2697,6 @@ row
 row's
 row.
 row:
-rows
 rows,
 rule
 run
@@ -2707,6 +2725,7 @@ scoped
 scoping
 screen
 screen,
+screen:
 scroll
 seam
 second
@@ -2728,7 +2747,6 @@ set
 set.
 set:
 sets
-setting
 setup
 shadow-[var(--shadow-wk-none)]
 shadow-[var(--shadow-wk-sm)]
@@ -2747,7 +2765,6 @@ ships
 short
 should
 show
-showed
 showing
 showing.
 shown
@@ -2807,7 +2824,9 @@ sorting
 source
 source-detection
 space
+space.
 spacing
+spacing.
 span
 specific
 specificity
@@ -2830,6 +2849,7 @@ srgb,
 stable
 stacks
 stacks:
+stand
 standing
 stands
 started
@@ -2840,10 +2860,10 @@ state.
 states
 states,
 static
+status
 stay
 stay,
 stay.
-stayed
 staying
 stays
 step
@@ -2930,6 +2950,7 @@ tall
 tall,
 taller
 target
+target's
 target="_blank".
 technology
 tell
@@ -2962,6 +2983,7 @@ text-start'
 text.
 text/bg/border
 than
+than.
 that
 that's
 that,
@@ -2983,7 +3005,7 @@ they
 thing.
 third
 this
-this:
+this,
 those
 three
 three-item
@@ -2994,12 +3016,10 @@ throw
 throwing
 throws.
 time
-time,
 tint
 to
 to.
 today
-today's
 together
 toggle,
 toggles
@@ -3008,11 +3028,11 @@ token)
 token,
 tokens
 tokens.
+told
 too
-too,
 too-long
 too.
-took
+toolbar
 top-[calc(var(--wk-stepper-circle,var(--size-wk-sm))/2)]
 top-[var(--wk-stepper-circle,var(--size-wk-sm))]
 total:
@@ -3047,6 +3067,7 @@ truth:
 truthy
 turn
 turns
+twelve
 twice.
 two
 two,
@@ -3059,7 +3080,6 @@ typed.
 typed:
 typography,
 unbound
-unchanged
 unconditional
 unconditionally
 unconditionally,
@@ -3081,11 +3101,11 @@ unvalidated
 up
 up.
 upcoming
+upright
 upstream
 use
 use.
 used
-used,
 useful
 user
 uses
@@ -3096,6 +3116,7 @@ utilities
 utility
 utility,
 utility.
+utils/busy-announcer.js
 v4
 v4's
 valid
@@ -3116,6 +3137,7 @@ variant:
 variants
 vertical
 vertically
+very
 via
 view
 view's
@@ -3140,12 +3162,14 @@ w-[var(--size-wk-md-compact)]',
 w-[var(--size-wk-sm)]',
 w-full
 wait
+wait.
 wants
 warn
 warning,
 warning:
 was
 waste
+watches
 way
 we
 weight
@@ -3169,6 +3193,7 @@ whitespace-nowrap',
 whitespace;
 who
 whole
+whole,
 whose
 why
 why.
@@ -3207,7 +3232,6 @@ without
 wizard
 wizard.step:
 wk-touch-text-floor'
-won
 word
 word,
 word:
@@ -3247,6 +3271,7 @@ x-on:click="prev()"
 x-show="current
 x-show="{{
 x-text="announcement"></div>
+x-wk-announce-busy
 xl
 xmlns="http://www.w3.org/2000/svg"
 yes:

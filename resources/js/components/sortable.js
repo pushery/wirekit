@@ -40,19 +40,19 @@ let activePick = null;
  * Space or Enter lifts an item, the arrows move it, Space or Enter drops it,
  * Escape puts it back.
  *
- * ONE EVENT, THE WHOLE ORDER. The new sequence is emitted once, when the move
+ * One event, the whole order. The new sequence is emitted once, when the move
  * finishes — not a swap per crossing. A stream of swaps makes the final state
  * depend on the order the responses arrive in, which is network timing: wrong
  * whenever two are in flight, and impossible to test deterministically. A drag
  * cannot promise the order of its own intermediate steps, so it does not report
  * them.
  *
- * IDENTITY COMES FROM THE DOM. Each item names itself with `data-sortable-id`;
+ * Identity comes from the DOM. Each item names itself with `data-sortable-id`;
  * without one it falls back to its index at mount, which is honest but only
  * usable for a list the server can address positionally. The event carries ids,
  * never elements.
  *
- * THE KEYBOARD PATH HAS TO SPEAK. Lifting an item, moving it and dropping it
+ * The keyboard path has to speak. Lifting an item, moving it and dropping it
  * are three actions whose whole outcome is a position, and a position that only
  * exists as pixels reaches nobody using a screen reader: the item was grabbed,
  * three arrow presses happened, and every one of them was silent. WCAG 4.1.3
@@ -61,22 +61,22 @@ let activePick = null;
  * item, because focus is already on the item and the reader has just heard it —
  * repeating a whole card back on every arrow press is noise, not information.
  *
- * THE SENTENCES ARE TEMPLATES FROM THE SERVER. ":position of :total" is not the
+ * The sentences are templates from the server. ":position of :total" is not the
  * word order every language uses, so the numbers are substituted after the
  * translation rather than before it — the same shape carousel uses for its slide
  * announcement. The English fallbacks here are for a developer who mounts the
  * factory by hand; the component passes the catalog string.
  *
- * BETWEEN LISTS, ONLY WHERE A BOARD ASKS FOR IT. Inside an element marked
+ * Between lists, only where a board asks for it. Inside an element marked
  * `data-sortable-connected` — `<x-wirekit::kanban sortable cross-column>` — a card
  * can leave its list for another one on the same board: dragged onto it, or moved
  * with ArrowLeft/ArrowRight while lifted, Up/Down still moving it within. Outside
- * such a board the arrows keep the meaning they always had, so a list that did not
- * ask for this behaves exactly as before. A move between lists reports once, as
+ * such a board the arrows keep their ordinary meaning, so a list that does not ask
+ * for this behaves as a single sortable list. A move between lists reports once, as
  * `wirekit:sortable:moved` with both lists' new order; a move within one list still
  * reports `wirekit:sortable:reordered`.
  *
- * A THIRD WAY, FOR A POINTER THAT CANNOT DRAG. WCAG 2.2 SC 2.5.7 asks that whatever a drag
+ * A third way, for a pointer that cannot drag. WCAG 2.2 SC 2.5.7 asks that whatever a drag
  * does, a single pointer can do without one, and someone who points with a head pointer or an
  * eye tracker can click but not drag. In reorder mode, which the column's Reorder button turns
  * on, a click picks a card up and the next click places it: on another card, which it takes the
@@ -264,7 +264,7 @@ export default function wirekitSortable(config = {}) {
          *
          * `data-sortable-connected` is opt-in — `<x-wirekit::kanban sortable cross-column>` —
          * and everything that lets a card leave its list asks here first. Without the marker a
-         * list behaves exactly as it did before cards could leave at all.
+         * list behaves as a single sortable list, which no card leaves.
          */
         _board() {
             return this.$root.closest?.('[data-sortable-connected]') ?? null;
@@ -954,7 +954,7 @@ export default function wirekitSortable(config = {}) {
             }
 
             // On a connected board the horizontal arrows change the column — and only there, so a
-            // list that did not ask for this keeps the meaning those two keys always had.
+            // list that does not ask for this keeps those two keys' ordinary meaning.
             if ((key === 'ArrowLeft' || key === 'ArrowRight') && this._board()) {
                 event.preventDefault();
                 this._moveAcross(item, key === 'ArrowRight' ? 1 : -1);

@@ -283,6 +283,7 @@ Without
 `window.open`,
 `wire:id`,
 `wire:key`,
+`wk-tooltip-panel`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
 `x-ref`
@@ -355,7 +356,6 @@ become
 becomes
 becoming
 been
-before;
 being
 belongs
 below
@@ -400,7 +400,7 @@ checks
 child
 children
 class="rounded-[var(--radius-wk-sm)]
-class="{{
+class="wk-tooltip-panel
 classes
 classic
 clears
@@ -449,6 +449,7 @@ dead.
 debug
 default
 default,
+default;
 delayHide:
 delayShow:
 deliberately
@@ -494,7 +495,6 @@ event
 events
 every
 exactly
-existing
 expandos.
 explains,
 expression
@@ -525,6 +525,7 @@ focused,
 follows
 for
 forced
+forced-colors
 four
 fragment
 fresh
@@ -638,6 +639,7 @@ make
 makes
 many
 marked
+marker
 markers
 marks
 markup
@@ -727,6 +729,7 @@ our
 out
 out.
 output
+outside
 over
 overflow
 overlay
@@ -771,6 +774,7 @@ preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 present
 press
 prod).
+project
 prop
 prop's
 props
@@ -804,7 +808,6 @@ removing
 render
 render,
 rendered
-rendering
 renders
 renders.
 replacement
@@ -812,6 +815,7 @@ requires
 resolved
 resolves
 rests
+restyles
 role:
 role="button"
 role="tooltip"
@@ -835,6 +839,7 @@ second
 see
 sees
 sees.
+selects,
 server
 set
 settles
@@ -907,6 +912,7 @@ theme's
 theme.
 then
 there
+there.
 therefore
 they
 things,

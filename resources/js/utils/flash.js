@@ -5,7 +5,7 @@
  * moment, green for an addition, amber for one fewer, red for a removal, and a removed line
  * leaves only after its red.
  *
- * THE SERVER WRITES THREE ATTRIBUTES AND NOTHING ELSE:
+ * The server writes three attributes and nothing else:
  *
  *   - `data-wk-flash`: the tone, one of the intents (success, warning, danger, info, primary,
  *     neutral). Its tint is a token, `--color-wk-flash-{tone}`.
@@ -14,12 +14,12 @@
  *   - `data-wk-flash-leave`: the row is on its way out. It is drawn once more, flashes, and is
  *     taken out of the page when the flash ends.
  *
- * WHY AN ATTRIBUTE PLUS AN OBSERVER, the reasoning `x-wk-indeterminate` gives: the value comes
+ * Why an attribute plus an observer, the reasoning `x-wk-indeterminate` gives: the value comes
  * from the server, a Livewire render writes it onto the element that is already there, and Alpine
  * does not initialize an element again. A mutation on an attribute is true whoever wrote it, so
  * this also works in a page without Livewire.
  *
- * WHY THE WEB ANIMATIONS API and not a keyframe class: an animation started from script starts
+ * Why the Web Animations API and not a keyframe class: an animation started from script starts
  * every time it is asked to, so the second change of a row lights it up again without a second
  * set of keyframes. A table row is painted by its cells, and a cell with a background of its own
  * (a frozen column, a striped row) would cover the row's tint, so for a `<tr>` the cells flash.

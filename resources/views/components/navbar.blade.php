@@ -9,8 +9,8 @@
     // desktop item row hidden). Useful for (a) previewing the mobile state
     // in docs without resizing the browser, (b) dedicated mobile app views,
     // and (c) embedding the navbar inside a container that is narrower than
-    // the 768px breakpoint. Defaults to `false` so existing developers keep
-    // the responsive behavior.
+    // the 768px breakpoint. Defaults to `false`: the navbar follows the
+    // breakpoint.
     'forceMobile' => false,
     // `container` — when true, wraps the inner flex-row in a max-width
     // container so the navbar's CHROME (background, border, sticky
@@ -196,18 +196,18 @@
     ]), $scope);
 
     // The disclosure's id, and the string the hamburger's `aria-controls` points at.
-    // Both were the literal `wk-navbar-mobile`, which is correct for exactly one navbar per
-    // page — and a page with two (a `forceMobile` demo beside a live bar, a marketing header
-    // above an app bar, several previews in one document) shipped duplicate ids, so every
-    // hamburger on it resolved to the FIRST menu and the second bar's button announced a
-    // disclosure it does not own.
+    // A literal `wk-navbar-mobile` would be correct for exactly one navbar per page; a page
+    // with two (a `forceMobile` demo beside a live bar, a marketing header above an app bar,
+    // several previews in one document) would carry duplicate ids, every hamburger on it
+    // resolving to the FIRST menu and the second bar's button announcing a disclosure it
+    // does not own.
     //
     // The base is passed to the shared registry rather than replaced by a generated id: the
     // registry hands the FIRST sight of a base back verbatim and only appends `-2`, `-3`, …
-    // to the ones that follow. So a page with a single navbar renders byte-identically to
-    // before — which matters, because this string is a documented handle that developer CSS
-    // and page-level scripts are allowed to select on — and only the second navbar's markup
-    // changes, which is the case that was broken. A caller-supplied `id` derives the menu's
+    // to the ones that follow. So a page with a single navbar keeps `wk-navbar-mobile` —
+    // which matters, because this string is a documented handle that developer CSS and
+    // page-level scripts are allowed to select on — and only a second navbar's ids carry a
+    // suffix. A caller-supplied `id` derives the menu's
     // id from it instead, so the pairing stays readable in their own markup.
     $mobileId = \Pushery\WireKit\Support\DomId::unique(
         ($navId = $attributes->get('id')) ? $navId.'-mobile' : 'wk-navbar-mobile',
@@ -267,6 +267,9 @@
             id="{{ $mobileId }}"
             @if(! $forceMobile) data-wk-navbar-items @endif
             x-show="mobileOpen"
+            {{-- The list stands before the menu button in the page and is laid out below it, so the
+                 next Tab after opening would leave the bar: opening moves the focus to its first entry. --}}
+            x-wk-focus-first="mobileOpen"
             {{-- Hiding the list drops the focus inside it, so Escape hands it to the menu button
                  first. The key then reaches the bar, which closes the list. --}}
             x-on:keydown.escape="mobileOpen && $refs.wkNavbarToggle.focus()"
@@ -299,7 +302,7 @@
             :aria-expanded="mobileOpen ? 'true' : 'false'"
             aria-controls="{{ $mobileId }}"
             aria-label="{{ __('wirekit::Toggle navigation') }}"
-            class="{{ $hamburgerClasses }} p-2 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+            class="wk-touch-target {{ $hamburgerClasses }} p-2 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             {{-- Hamburger icon (open state) --}}
             <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">

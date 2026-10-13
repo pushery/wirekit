@@ -14,6 +14,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/carousel/
  */
+import { focusClicked } from '../utils/focus-clicked.js';
 import { prefersReducedMotion, scrollBehavior, watchReducedMotion } from '../utils/motion.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 export default function wirekitCarousel(config = {}) {
@@ -166,7 +167,11 @@ export default function wirekitCarousel(config = {}) {
          * Scroll a slide into view. The scroller does the moving; we only say
          * where to.
          */
-        goTo(index) {
+        goTo(index, control = null) {
+            // `control` is the dot a click came from: it takes the focus where the engine did not,
+            // so the arrows reach the carousel after the click (utils/focus-clicked.js).
+            focusClicked(control);
+
             if (index < 0 || index >= this.total) return;
 
             const slide = this._slides[index];
@@ -204,7 +209,28 @@ export default function wirekitCarousel(config = {}) {
             this._restartTimer();
         },
 
-        next() {
+        /**
+         * Home and End on the focused slides: the first and the last slide.
+         *
+         * The arrows are the browser's: it scrolls the viewport and snaps to the next slide. Home
+         * and End are keys of the block direction, which a horizontal scroller does not take, so
+         * left to the browser they would move nothing; they go through goTo() instead, and the
+         * page does not scroll. Only on the viewport itself, and without a modifier: a field or a
+         * control in a slide keeps the keys for its own use.
+         *
+         * @param {KeyboardEvent} event
+         */
+        onViewportKey(event) {
+            if (event.target !== this.$refs.viewport || (event.key !== 'Home' && event.key !== 'End')) return;
+            if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+
+            event.preventDefault();
+            this.goTo(event.key === 'Home' ? 0 : this.total - 1);
+        },
+
+        next(control = null) {
+            focusClicked(control);
+
             if (this.current < this.total - 1) {
                 this.goTo(this.current + 1);
             } else if (this.loop) {
@@ -212,7 +238,9 @@ export default function wirekitCarousel(config = {}) {
             }
         },
 
-        prev() {
+        prev(control = null) {
+            focusClicked(control);
+
             if (this.current > 0) {
                 this.goTo(this.current - 1);
             } else if (this.loop) {
@@ -235,8 +263,21 @@ export default function wirekitCarousel(config = {}) {
             this._stopTimer();
         },
 
-        toggle() {
-            this.playing ? this.pause() : this.play();
+        toggle(control = null) {
+            focusClicked(control);
+
+            if (this.playing) {
+                this.pause();
+
+                return;
+            }
+
+            // Play is a request to rotate, and the control that takes it stands inside the
+            // carousel: its own focus, or the pointer resting on it, holds the hover pause, which
+            // would keep the slides still under a button that now reads "Pause carousel". The
+            // next pointer or focus that enters pauses again.
+            this._hoverPaused = false;
+            this.play();
         },
 
         /**

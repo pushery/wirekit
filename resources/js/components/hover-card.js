@@ -8,8 +8,8 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  * Shows on hover with delay, hides on leave. Stays open when hovering
  * the card itself. Uses Floating UI for positioning.
  *
- * THE KEYBOARD MODEL IS SPELLED OUT HERE BECAUSE THE TELEPORT REMOVED THE ONE
- * THE BROWSER WOULD HAVE GIVEN US FOR FREE. The panel moves to the overlay root
+ * The keyboard model is spelled out here because the teleport removed the one
+ * the browser would have given us for free. The panel moves to the overlay root
  * at the end of <body> so its `position: fixed` box escapes every ancestor
  * containing block — and sequential focus order follows the DOM, not the
  * screen. A reader who focused the trigger and pressed Tab therefore landed on

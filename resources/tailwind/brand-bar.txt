@@ -193,7 +193,6 @@ bar's
 be
 behavior)
 behavior,
-behavior.
 below.
 bg-[var(--color-wk-bg)]'
 block,
@@ -319,7 +318,6 @@ paints
 parent
 pins
 presentational
-preserves
 primary
 prod).
 prop's
@@ -376,7 +374,6 @@ unknown
 unvalidated
 use
 using
-v2.0.0
 value
 values
 variant
@@ -386,6 +383,7 @@ view's
 visible-text
 w-full
 was
+well.
 what
 when
 which

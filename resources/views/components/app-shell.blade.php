@@ -15,8 +15,8 @@
     // padded column. False is the full-bleed navigation column — the sidebar meets
     // the top and the inline-start edge of the shell with nothing between.
     //
-    // A prop because the two utilities that produce the inset were literals on the
-    // <aside>, and the attribute bag lands on the ROOT element — so they were
+    // A prop because the two utilities that produce the inset sit on the <aside>, and
+    // the attribute bag lands on the ROOT element — so as literals they would be
     // unreachable from a call site by any means except a CSS rule targeting the
     // vendor's own marker class and out-specifying Tailwind by emission order.
     // Pair it with the sidebar's own `variant="flush"`: this removes the gap around
@@ -30,7 +30,7 @@
     // layout, without hiding the header slot at lg and hand-placing a topbar in the
     // default slot.
     //
-    // A `sticky` HEADER STOPS WORKING IN THIS MODE, and the reason is structural rather
+    // A `sticky` header stops working in this mode, and the reason is structural rather
     // than a bug to fix here. `position: sticky` sticks to the nearest scrolling ancestor;
     // in `content` mode the header's nearest one is the content column, which carries
     // `overflow-hidden` (see the comment on that element below) and therefore never
@@ -58,8 +58,8 @@
     // would spend horizontal room a phone does not have on a decoration nothing is
     // beside.
     'panel' => false,
-    // The shell's own chrome surface. `default` leaves the shell on --color-wk-bg, which is
-    // every existing app-shell and stays byte-identical. The other tones point the root at
+    // The shell's own chrome surface. `default` leaves the shell on --color-wk-bg. The other
+    // tones point the root at
     // the same `--color-wk-rail-*` roles the rail and a toned sidebar read, so a shell, its
     // rail and its second column become one continuous chrome surface with the content panel
     // sitting on top of it. A flush sidebar inside a toned shell follows automatically — it
@@ -100,7 +100,7 @@
 
     $headerPlacement = in_array($headerPlacement, ['shell', 'content'], true) ? $headerPlacement : 'shell';
 
-    // The inset, as the two utilities it always was — now behind a name. Only at lg+:
+    // The inset, as two utilities behind a name. Only at lg+:
     // on mobile the sidebar is an off-canvas overlay anchored flush from the top, so
     // an inset there would leave a strip of backdrop above it.
     $asideInset = $sidebarInset
@@ -117,8 +117,8 @@
     // Height: the screen's height as a minimum (default, document-scroll) vs exactly the viewport's
     // (viewport-fixer). Only in the fixed-height mode does the inner
     // `flex flex-1 overflow-hidden` row get a bounded height to distribute, so the
-    // sidebar/main internal scroll regions finally engage — the `viewport` prop
-    // replaces the old manual `style="height: ..."` override developers had to write.
+    // sidebar/main internal scroll regions engage without a manual
+    // `style="height: ..."` override.
     $classes = WireKit::resolveClasses('app-shell', 'base', implode(' ', [
         'flex flex-col w-full',
         // Both heights give back what a strip above the page takes (`--wk-strip-inset`, 0px
@@ -133,10 +133,10 @@
         $viewport
             ? 'h-[var(--wk-shell-height,calc(100dvh-var(--wk-strip-inset,0px)))] overflow-hidden'
             : 'min-h-[var(--wk-shell-height,calc(100vh-var(--wk-strip-inset,0px)))]',
-        // An untoned shell keeps the literal it always had, rather than routing through
-        // the role token with a fallback. The two resolve to the same color today, and
-        // that is exactly why: a shell nobody toned must not start depending on a
-        // variable a developer might repoint for their rail.
+        // An untoned shell keeps the plain literal rather than routing through the role
+        // token with a fallback. The two resolve to the same color, and that is exactly
+        // why: a shell nobody toned must not depend on a variable a developer might
+        // repoint for their rail.
         $tone === 'default' ? 'bg-[var(--color-wk-bg)]' : 'bg-[var(--color-wk-rail-bg)]',
         $tone === 'default' ? 'text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-rail-text)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -150,11 +150,10 @@
     //
     // `overflow-hidden` is what makes the radius actually clip its content. Overlays are
     // unaffected: dropdown, tooltip, modal and drawer all teleport to the overlay root,
-    // so nothing that opens from the first row is cut off. The browser test asserts that
-    // rather than trusting it.
+    // so nothing that opens from the first row is cut off.
     $contentPanelClasses = $panel
         ? implode(' ', [
-            // AN EVEN INSET ON ALL FOUR SIDES, and rounded on all four corners.
+            // An even inset on all four sides, and rounded on all four corners.
             //
             // Rounding only the inline-start corners and sitting flush against the chrome
             // does not hold up: a curve needs something to curve away FROM. With the panel's
@@ -174,8 +173,8 @@
             'lg:rounded-[var(--radius-wk-shell-panel)]',
             'lg:overflow-hidden',
             // No border. With a real gap around it the tone difference IS the boundary, and a
-            // border would be a third line in a place that already had one too many: the flush
-            // rail's own edge sat 1px away from this one, doubling it.
+            // border would be a third line in a place that already has one too many: the flush
+            // rail's own edge would sit 1px away from this one, doubling it.
             'bg-[var(--color-wk-bg)]',
             'text-[color:var(--color-wk-text)]',
         ])
@@ -190,17 +189,14 @@
     //
     // So the gap moves INSIDE the navigation column: the column grows by it, insets its own
     // contents by the same amount, and the panel gives up its inline-start margin. Nothing
-    // moves — the modules sit exactly where they sat, the panel starts exactly where it
-    // started — and the rule now reaches the panel because the column does.
-    //
-    // It is also the completion of a decision this file already made rather than a reversal
-    // of one: the column ALREADY treated that gap as its own trailing space, which is why it
-    // gave up its trailing inset. It just did not own the pixels.
+    // moves — the modules and the panel sit where they would sit with the gap between them —
+    // and the rule reaches the panel because the column does. The column treats that gap as
+    // its own trailing space in any case, which is why it carries no trailing inset.
     //
     // Narrow on purpose. A `variant="panel"` rail is a floating card whose gap is the point,
     // and a shell whose panel-adjacent column is the SIDEBAR is a shape this library ships no
-    // example of — neither takes the gutter, and for both the panel keeps its margin exactly
-    // as before. The rail's variant is read from the rendered slot because that is the only
+    // example of — neither takes the gutter, and for both the panel keeps its margin. The
+    // rail's variant is read from the rendered slot because that is the only
     // thing a shell can see of what it was handed.
     $navTakesPanelGutter = $panel
         && isset($rail)
@@ -211,11 +207,10 @@
     //
     // Below `lg` this shell moves its navigation off-canvas — a decision the shell makes, not
     // one the developer asked for — and the panel is then reachable only through `sidebarOpen`.
-    // If nothing in the slots sets that, the phone gets a shell with no navigation at all: on a
-    // 375px screen, eleven controls behind a panel with no handle. Nothing renders wrong, no
-    // error appears, and the desktop layout it was built against is untouched, so it survives
-    // every look that is not taken on a phone. Seven of this library's own examples shipped
-    // exactly that.
+    // If nothing in the slots sets that, the phone gets a shell with no navigation at all: every
+    // control of it behind a panel with no handle. Nothing renders wrong, no error appears, and
+    // the desktop layout it was built against is untouched, so it survives every look that is
+    // not taken on a phone.
     //
     // The check reads the slots as strings because that is the only thing the shell can see:
     // slot content is captured before this view runs, so a `<x-wirekit::sidebar.toggle>`
@@ -249,7 +244,7 @@
     // two ids.
     $drawerId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-shell-nav-');
 
-    // WHAT THE DRAWER BINDINGS FALL BACK TO WHILE THE PANEL IS NOT A DIALOG.
+    // What the drawer bindings fall back to while the panel is not a dialog.
     //
     // `null` is the obvious answer and it is a destructive one. Alpine does not read a null
     // binding as "leave the attribute as the server wrote it" — `bindAttribute` tests the
@@ -258,15 +253,15 @@
     // `aria-selected`.
     //
     // On the single-column shell those bindings and the slot's own attribute bag land on the
-    // SAME aside. So `x-slot:sidebar role="complementary" aria-label="Section navigation"` was
-    // written correctly by the server and then deleted the moment Alpine initialized — above
-    // the breakpoint always, below it whenever the drawer was closed. Markup that is right
-    // in view-source and gone by the first paint is the worst version of this: the seam
-    // looks like it works, and the only reader who finds out is the one using it.
+    // SAME aside. With a `null` fallback, `x-slot:sidebar role="complementary" aria-label="Section
+    // navigation"` would be written correctly by the server and deleted the moment Alpine
+    // initialized — above the breakpoint always, below it whenever the drawer is closed. Markup
+    // that is right in view-source and gone by the first paint is the worst version of this: the
+    // seam looks like it works, and the only reader who finds out is the one using it.
     //
-    // The console branch does NOT have the defect and must not be changed to match: there
-    // the bindings sit on the drawer GROUP and the bags on the two aside elements inside it,
-    // so the two never write the same attribute.
+    // The console branch does not share the problem and needs no such fallback: there the
+    // bindings sit on the drawer GROUP and the bags on the two aside elements inside it, so the
+    // two never write the same attribute.
     //
     // Resolved into the expression as a literal rather than seeded as a scope key, because
     // both routes into that scope are closed. The factory returns a fixed object and drops
@@ -288,8 +283,8 @@
     $sidebarAuthoredRole = $sidebarSlotAttributes->get('role');
     $sidebarAuthoredLabel = $sidebarSlotAttributes->get('aria-label');
 
-    // Anything that is not a non-empty string keeps the literal `null` the binding resolved
-    // to before — a valueless `role` arrives as `true` and is not a role name, and a bound
+    // Anything that is not a non-empty string keeps the literal `null` — a valueless `role`
+    // arrives as `true` and is not a role name, and a bound
     // `:role="null"` never reaches the markup either.
     //
     // Through `AlpinePayload::string()` with NO quotes around it. This is a caller-supplied
@@ -312,10 +307,15 @@
     x-data="wirekitAppShell({ drawerId: {{ \Pushery\WireKit\Support\AlpinePayload::from($drawerId) }} })"
     {{-- The stable way to find this shell from a test or a developer's own script.
          Its three siblings below are conditional, and the `x-data` expression above is
-         not an identity: a browser case matched the literal "sidebarOpen" inside it and
-         went dark the moment that state moved into a factory, while the shell rendered
-         exactly as before. Seventy-three components already carry such a hook. --}}
+         not an identity: it changes whenever the shell's state moves, while the shell
+         renders the same. Most components carry such a hook. --}}
     data-wk-app-shell
+    {{-- A shell that fills the screen scrolls its columns inside itself; on paper it and every
+         column in it grow to their content (`data-wk-print-expand`, the print block). --}}
+    data-wk-print-expand
+    {{-- A shell that fills the screen keeps its chrome out of a notch, a camera island and a
+         home indicator; the rule that reads this lives in the shipped stylesheet. --}}
+    @if($viewport) data-wk-viewport @endif
     @if($tone !== 'default') data-wk-tone="{{ $tone }}" @endif
     @if($panel) data-wk-panel @endif
     @if($navTakesPanelGutter) data-wk-nav-gutter @endif
@@ -334,18 +334,14 @@
          when the shell is embedded, and the drawer would then sit against that
          ancestor and take its height instead of the shell's. Owning the
          context makes the two coincide everywhere. --}}
-    <div class="relative flex flex-1 overflow-hidden">
+    <div data-wk-print-expand class="relative flex flex-1 overflow-hidden">
         @if(isset($sidebar) || isset($rail))
             {{-- Mobile backdrop.
 
                  The scrim paints from --color-wk-overlay, like every other backdrop in the
-                 library (modal, drawer, alert-dialog, command-palette, tour, lightbox). It
-                 shipped as a bare `bg-black/50` and was the one overlay a theme could not
-                 reach: Retro Terminal sets the token to 0.8 and dressed every scrim on a page
-                 except this one, and the dark block steps the token to 0.7 while this stayed
-                 at 0.5 — the shell's own navigation was the least-dimmed overlay exactly where
-                 dimming matters most. `lg:hidden` is why it survived that long: the divergence
-                 needs a mobile viewport to be visible at all. --}}
+                 library (modal, drawer, alert-dialog, command-palette, tour, lightbox), so a
+                 theme that sets the token — Retro Terminal to 0.8, the dark block to 0.7 —
+                 dims the shell's own navigation exactly as it dims every other overlay. --}}
             <div
                 x-ref="drawerBackdrop"
                 x-show="sidebarOpen"
@@ -395,15 +391,15 @@
                      unnamed icons on a screen with no hover is no navigation at all. Beside a module
                      column it keeps its narrow form, which is what fits a phone there. --}}
                 @unless(isset($sidebar)) data-wk-rail-only @endunless
-                {{-- `invisible` when closed carries two fixes at once, both learned in the
-                     browser on the single-column form above. A drawer parked at -100% is
+                {{-- `invisible` when closed does two things at once, as on the single-column
+                     form. A drawer parked at -100% is
                      only off-SCREEN while something clips it, and `position: fixed`/absolute
                      is clipped by its containing block ONLY while no ancestor has become
                      one — `contain: layout`, a transform or a filter each make an ancestor
                      exactly that, and then -100% means "left of THAT box", which paints in
-                     full wherever that box sits. The second is the one that was always a
-                     defect: a translated drawer is still focusable and still in the
-                     accessibility tree, so keyboard users tab into a menu they cannot see.
+                     full wherever that box sits. The second: a translated drawer is still
+                     focusable and still in the accessibility tree, so keyboard users would
+                     tab into a menu they cannot see.
                      `visibility` is in the transition list so the slide-OUT is still seen —
                      when either end of the interpolation is `visible`, that value holds for
                      the whole duration. --}}
@@ -421,6 +417,9 @@
                      keyboard, so without them focus would walk on through the controls the
                      backdrop covers, where nobody can see it. --}}
                 x-ref="drawer"
+                {{-- The hook the shipped stylesheet keeps this panel's foot above a home
+                     indicator with, in a shell that fills the screen. --}}
+                data-wk-shell-drawer
                 {{-- Written by the server, not bound through Alpine. The id is known at
                      render time, so a binding would only make it appear once Alpine has
                      initialized — and until then the toggle's `aria-controls` names an
@@ -458,7 +457,7 @@
                         data-wk-drawer-close
                         x-on:click="sidebarOpen = false"
                         aria-label="{{ __('wirekit::Close') }}"
-                        class="inline-flex items-center justify-center p-2 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-rail-muted)] hover:bg-[var(--color-wk-rail-hover-bg)] hover:text-[color:var(--color-wk-rail-hover-fg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-rail-ring)] transition-colors cursor-pointer"
+                        class="wk-touch-target inline-flex items-center justify-center p-2 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-rail-muted)] hover:bg-[var(--color-wk-rail-hover-bg)] hover:text-[color:var(--color-wk-rail-hover-fg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-rail-ring)] transition-colors cursor-pointer"
                     >
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -468,9 +467,9 @@
                 {{-- `role="presentation"` by DEFAULT, and the slot's own attributes can take it
                      back. Both of these columns are layout: the landmark is the `<nav>` inside
                      them, which already carries its own name. Left as bare `<aside>` elements
-                     they are two implicit `complementary` regions with no accessible name, and
-                     axe reports `landmark-unique` on any application that follows the console
-                     blueprint — not on a misuse of it, on the documented composition.
+                     they would be two implicit `complementary` regions with no accessible name,
+                     and axe would report `landmark-unique` on any application that follows the
+                     console blueprint — not on a misuse of it, on the documented composition.
 
                      A default LABEL was the other candidate and is worse: it satisfies the rule
                      by turning one redundant landmark into two named redundant landmarks, and a
@@ -479,8 +478,7 @@
 
                      The attribute bag is what makes this a seam rather than a decision imposed
                      on every application: `<x-slot:rail role="complementary" aria-label="…">`
-                     restores a real landmark where one is genuinely wanted. Before this the bag
-                     was dropped, so that call site did nothing at all. --}}
+                     restores a real landmark where one is genuinely wanted. --}}
                 <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($rail)->merge(['role' => 'presentation'])->class(['wk-app-shell-rail flex shrink-0']) }}>
                     {{ $rail }}
                 </aside>
@@ -506,7 +504,7 @@
                  only applies once the sidebar is in its in-flow column
                  position at lg+. --}}
             <aside
-                {{-- `invisible` when closed, and it carries two fixes at once.
+                {{-- `invisible` when closed, and it does two things at once.
                      A drawer parked at -100% is only off-SCREEN while something
                      clips it, and `position: fixed` is clipped by the viewport
                      ONLY while no ancestor is its containing block. `contain:
@@ -534,19 +532,22 @@
                      keyboard, so without them focus would walk on through the controls the
                      backdrop covers, where nobody can see it. --}}
                 x-ref="drawer"
+                {{-- The hook the shipped stylesheet keeps this panel's foot above a home
+                     indicator with, in a shell that fills the screen. --}}
+                data-wk-shell-drawer
                 {{-- Written by the server, not bound through Alpine. The id is known at
                      render time, so a binding would only make it appear once Alpine has
                      initialized — and until then the toggle's `aria-controls` names an
                      element that does not exist. The factory still carries the same value
                      so the toggle can read it from scope. --}}
                 id="{{ $drawerId }}"
-                {{-- THE FALLBACK IS THE SLOT'S OWN VALUE, not `null`, and that is the whole
+                {{-- The fallback is the slot's own value, not `null`, and that is the whole
                      difference between a seam and a seam that survives to the first paint.
                      This element carries the drawer bindings AND the slot's attribute bag, so
                      a null here does not leave what the server wrote — Alpine removes the
                      attribute outright. `<x-slot:sidebar role="complementary" aria-label="…">`
-                     rendered correctly and was deleted at init, above the breakpoint and with
-                     the drawer closed alike.
+                     would render correctly and be deleted at init, above the breakpoint and
+                     with the drawer closed alike.
                      The drawer's own semantics still win while it is open: what covers the
                      page is a dialog, whatever the column beside the content was called. The
                      rest of the time the call site's landmark is what stands.
@@ -574,7 +575,7 @@
                      mobile overlay width.
                      lg:transition-[width] animates the column in sync with the sidebar's own
                      transition-[width] (compositor cost is a one-shot deliberate toggle, mirroring
-                     the sidebar — kept out of dist so the shipped-CSS web-vitals guard stays clean). --}}
+                     the sidebar — kept out of the shipped stylesheet). --}}
                 {{-- `max-lg:[&>*]:…` — below the breakpoint the sidebar is a DRAWER,
                      and a drawer is not a card.
                      The `card` variant is deliberately as tall as its content and
@@ -599,8 +600,8 @@
                      it works the same way it does in the console branch above. What this one
                      does NOT get is a `presentation` default: there is only one column here, so
                      nothing collides, and a lone complementary region beside the content is a
-                     reasonable thing for an application to have. Changing that silently would
-                     take a landmark away from every sidebar-only shell that ships today. --}}
+                     reasonable thing for an application to have; a `presentation` default would
+                     take that landmark away from every sidebar-only shell. --}}
                 {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[translate,transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
                 x-cloak
             >
@@ -622,7 +623,7 @@
                             data-wk-drawer-close
                             x-on:click="sidebarOpen = false"
                             aria-label="{{ __('wirekit::Close') }}"
-                            class="inline-flex items-center justify-center p-2 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-subtle)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                            class="wk-touch-target inline-flex items-center justify-center p-2 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-hover)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                         >
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -642,7 +643,7 @@
                  content, so a wide table or a long unbroken string inside the slot
                  would push this column past the shell and squeeze the sidebar rather
                  than scrolling within itself. --}}
-            <div data-wk-content-panel class="{{ trim('flex min-w-0 flex-1 flex-col overflow-hidden '.$contentPanelClasses) }}">
+            <div data-wk-content-panel data-wk-print-expand class="{{ trim('flex min-w-0 flex-1 flex-col overflow-hidden '.$contentPanelClasses) }}">
                 @isset($header)
                     {{ $header }}
                 @endisset
@@ -655,8 +656,8 @@
                  Wrapping it is the only way to give the content column an edge, and the
                  wrapper is `flex flex-col` so a `<x-wirekit::main>` inside still stretches
                  exactly as it does unwrapped. Emitted ONLY when a panel was asked for, so
-                 every shell that did not ask keeps its original DOM. --}}
-            <div data-wk-content-panel class="{{ trim('flex min-w-0 flex-1 flex-col overflow-hidden '.$contentPanelClasses) }}">
+                 a shell that did not ask keeps its plain DOM. --}}
+            <div data-wk-content-panel data-wk-print-expand class="{{ trim('flex min-w-0 flex-1 flex-col overflow-hidden '.$contentPanelClasses) }}">
                 {{ $slot }}
             </div>
         @else

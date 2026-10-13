@@ -13,19 +13,19 @@ namespace Pushery\WireKit\Support;
  * failure directions are both real and both silent:
  *
  *   A reference INSIDE a comment surfaces as a live one. `var(--color-wk-X)` in
- *   a docblock became a phantom token reference and a false Tier-1 violation.
- *   The same class bit the class inventory and, on 2026-09-05, a Tailwind scan
- *   that read two utility names out of a comment explaining why they had been
- *   replaced — the stylesheet then carried a selector no source emitted.
+ *   a docblock reads as a token reference and reports a Tier-1 violation that
+ *   does not exist, and a class inventory lists utilities only a comment names.
+ *   Tailwind's own scanner shows the same class from the outside: it compiles a
+ *   utility a comment names, so the stylesheet carries a selector no source
+ *   emits.
  *
  *   And a stripper that is too eager destroys code. The line-comment rule below
  *   has to survive `https://`, or a `class="… https://x.io …"` attribute is cut
  *   at the colon and every utility to its right disappears from the inventory.
  *
- * It was `ClassInventory`'s private method until a second caller needed exactly
- * these rules. Two copies of a stripper this delicate is the drift the parser
- * rules in this repository exist to prevent — one of them would gain a fix the
- * other never sees, and neither reports anything when they disagree.
+ * It is a class of its own because more than one scanner needs exactly these
+ * rules. Two copies of a stripper this delicate drift apart: one of them gains a
+ * fix the other never sees, and neither reports anything when they disagree.
  *
  * Conservative on purpose, and it handles the four shapes this codebase mixes in
  * one file: block, line, HTML and Blade.

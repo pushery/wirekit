@@ -108,6 +108,7 @@ $wkNonce
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -243,6 +244,7 @@ $wkNonce
 ..,
 ...>
 ..]
+.=
 /
 //
 />
@@ -257,9 +259,8 @@ $wkNonce
 20px
 20px,
 24x24
-2rem,
 3.
-3rem.
+3rem,
 44x44
 500s
 :
@@ -320,9 +321,7 @@ A11y
 AA
 ALSO
 AND
-API:
 AT
-Adding
 An
 BARE
 BETWEEN
@@ -413,6 +412,7 @@ Operating
 Optional
 Ordered
 Output
+Outside
 PERFECTLY
 PHP
 Pass
@@ -462,6 +462,7 @@ URLs
 UTF-8
 UTF-8,
 Usage:
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 Vite
 WCAG
@@ -485,6 +486,7 @@ XSS
 ['label'
 [...])`
 [],
+[overflow-wrap:anywhere]
 [structured-data]:
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
@@ -522,17 +524,18 @@ __toString
 `Schema`
 `Svg
 `ancestor`
+`anywhere`
 `aria-hidden="true"`
 `aria-hidden`
 `aria-label`
 `aria-labelledby`
 `array_key_last()`
-`class="h-12
 `class="…"`
 `class`
 `current`
 `flex-wrap`,
 `group-data-`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -550,6 +553,7 @@ __toString
 `schema`
 `script-src`
 `self-center`
+`shrink`
 `slot`
 `wire:key`
 `wk-touch-target`
@@ -573,6 +577,7 @@ after
 against
 alias
 align.
+alignment
 aligns
 all
 all,
@@ -645,7 +650,6 @@ be
 because
 becomes
 before
-before.
 behind
 being
 belongs
@@ -692,6 +696,7 @@ called
 caller
 caller's
 can
+can.
 cannot
 carries
 carries,
@@ -717,7 +722,6 @@ choice
 chose
 class
 class="flex
-class="shrink-0"
 class="{{
 classes
 close
@@ -744,7 +748,6 @@ condition
 config('app.debug'))
 config('wirekit.components.breadcrumb.separator',
 configured
-conflict
 console
 console).
 construct
@@ -798,7 +801,6 @@ developer
 developer's
 did
 diff
-direct
 discards
 display
 document
@@ -807,6 +809,7 @@ does
 does.
 doesn't
 down
+drawn
 draws
 drift
 dropdown
@@ -815,6 +818,7 @@ each
 early
 early.
 edge.
+effect.
 either
 either.
 element
@@ -837,6 +841,7 @@ encodes
 enough
 entry
 escaping
+ever
 every
 everywhere
 exactly
@@ -859,6 +864,7 @@ false)
 false),
 favorite
 feature
+file
 files
 finds
 first
@@ -874,11 +880,9 @@ focus
 fold
 folded
 folder
-followable.
 font-[number:var(--font-wk-body-weight)]',
 footgun:
 for
-forbidden
 force
 forcing
 found.`
@@ -896,11 +900,12 @@ gap-[var(--padding-wk-x-xs)]'
 gate
 gate,
 generic
-get
 gets
+give
 gives
 global
 glyph
+glyph,
 glyph.
 goes
 group
@@ -935,6 +940,7 @@ href="{{
 icon
 icon's
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -994,7 +1000,6 @@ label,
 label.
 labels).
 labels.
-ladder
 landmark
 landmark,
 lands
@@ -1052,6 +1057,7 @@ match
 matching
 may
 means:
+meant
 merge
 message
 middle
@@ -1068,6 +1074,7 @@ modal
 modals,
 mode
 mode.
+moves
 multi-line
 must
 n/a
@@ -1081,12 +1088,14 @@ nav).
 navigates;
 navigation
 needs
+neighbors,
 neither
 neither.
 nested
 nesting
 neutralizes
 never
+next
 no
 nobody
 node
@@ -1169,8 +1178,10 @@ picks
 pixels
 place
 placeholder
+places
 plain
 point
+point,
 point.
 points
 policy
@@ -1201,7 +1212,6 @@ provides
 pseudo-element
 publish
 publishes
-put
 putting
 qualified:
 ran
@@ -1263,8 +1273,9 @@ room
 root
 root;
 row
+row,
+row.
 rule
-rung
 same
 say)
 says
@@ -1291,11 +1302,15 @@ shape
 shapes
 shares:
 shell's
+short
 should
 show
 shown
 shrank
+shrink
 shrink-0',
+shrink-0';
+shrinks,
 siblings
 sidebar
 simply
@@ -1303,7 +1318,6 @@ since
 single
 sits
 size
-size,
 size="sm"
 sized
 skip.
@@ -1316,6 +1330,7 @@ source
 source-baked
 source.
 space).
+space.
 spacing
 span
 splits
@@ -1330,7 +1345,6 @@ step
 steps
 still
 stop
-stopped
 stops
 storage/logs/laravel.log.
 strictness
@@ -1386,6 +1400,7 @@ throw
 throw,
 throws
 tile
+title,
 to
 toCssClasses()
 toHtml().
@@ -1412,6 +1427,8 @@ two
 type
 type="application/ld+json">
 type="application/ld+json"@if($wkNonce)
+typed
+unaffected.
 under
 unescaped)
 unknown
@@ -1441,8 +1458,8 @@ vector.
 via
 view's
 visible
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5
@@ -1466,8 +1483,10 @@ while
 whitespace
 who
 whole
+whole.
 whose
 why.
+wider
 width
 width,
 win.
@@ -1478,6 +1497,7 @@ word,
 would
 wrapped
 wrapper
+wrapping
 written
 wrong
 yet.

@@ -7,9 +7,9 @@
 "background-color:
 "box-shadow:
 $alt
-$attributes->class([$groupClasses])
 $attributes->getAttributes());
 $attributes->merge($avatarStyle
+$attributes->merge(['data-size'
 $avatarStyle
 $avatarStyle]
 $baseClasses
@@ -36,6 +36,7 @@ $shape`
 $size,
 $sizeClasses
 $sizeClasses,
+$size])->class([$groupClasses])
 $slot
 $src
 $src)
@@ -283,6 +284,7 @@ __('wirekit::Online'),
 `:remaining="7"`
 `aria-label`
 `class="cirlce"`
+`data-size`
 `default
 `initials`
 `prop="false"`
@@ -402,6 +404,7 @@ developer
 developer's
 dims
 disc.
+discs
 does
 dot
 double-ring
@@ -501,6 +504,8 @@ language.
 later
 layer
 layout
+less.
+lets
 like
 list
 literal
@@ -555,6 +560,7 @@ other
 otherwise
 outer
 overflow
+overlap
 overrides
 own
 pair
@@ -644,6 +650,7 @@ sizing.
 slot
 slot.
 small
+smallest
 so
 something
 span
@@ -669,6 +676,7 @@ tag
 technology
 text
 text-[color:var(--color-wk-text-muted)]"
+text-[length:var(--text-wk-2xs)]',
 text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]',

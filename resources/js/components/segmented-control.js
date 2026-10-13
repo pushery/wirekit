@@ -6,23 +6,19 @@ import { watchModelEvents } from '../utils/model-events.js';
 /**
  * Segmented control — a radiogroup that behaves like the native one it imitates.
  *
- * The handlers moved out of the template because none of the three parsed under
- * Alpine's CSP build: the click handler was three statements and a `new`, and
- * both arrow handlers used optional chaining. Under a strict
- * Content-Security-Policy the segments rendered, took focus, and did nothing.
+ * The handlers live here because none of the three parses under Alpine's CSP
+ * build: the click handler is three statements and a `new`, and both arrow
+ * handlers need optional chaining. Inline, under a strict
+ * Content-Security-Policy, the segments would render, take focus, and do nothing.
  *
- * Moving them here also closed the gap between what the component did and what
- * its documentation promised, which was wider than the CSP problem:
- *
- *   - ArrowDown / ArrowUp / Home / End were documented and never bound at all.
- *   - Neither arrow wrapped. On the last segment ArrowRight reached for a
- *     nextElementSibling that does not exist and stopped; on the FIRST segment
- *     ArrowLeft reached backwards into the hidden input that carries the form
- *     value — not focusable, so the key simply died there. Native radio groups
- *     wrap in both directions, and so does the WAI-ARIA radio pattern.
+ * The keyboard model is the native radio group's: every arrow key moves and
+ * selects, Home and End jump to the ends, and both directions wrap, as in the
+ * WAI-ARIA radio pattern.
  *
  * Navigation is written against the segments themselves rather than sibling
- * traversal, which is what made the hidden input reachable in the first place.
+ * traversal. A sibling walk from the FIRST segment would reach backwards into
+ * the hidden input that carries the form value — not focusable, so the key
+ * would simply die there.
  *
  * Lifecycle resources held on `this`, every one released in destroy():
  *   - _stopServerSync (the server-value observer) — stopped.
@@ -81,10 +77,9 @@ export default function wirekitSegmentedControl(config = {}) {
             // constructing this factory by hand is unaffected.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
-            // here, but the ESM harnesses construct this factory with barren stubs:
-            // `test-segmented-control.mjs` passes `{ querySelectorAll }` and
-            // `test-server-value-seed.mjs` a lone `getAttribute`. A factory that requires
-            // more than it uses turns that into a TypeError at init.
+            // here, but a unit harness can construct this factory with a barren stub,
+            // and a factory that requires more than it uses turns that into a TypeError
+            // at init.
             if (config.selected == null) {
                 const seed = typeof this.$root?.getAttribute === 'function'
                     ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
@@ -204,7 +199,7 @@ export default function wirekitSegmentedControl(config = {}) {
          * Split out of select() because the optimistic layer writes `selected`
          * itself — on the flip AND on the rollback — and has to be able to run
          * the same sync afterwards. Without it a rolled-back control would show
-         * the old segment while the form still submitted the new one.
+         * the old segment while the form still submits the new one.
          */
         _notify() {
             const input = this._writeHiddenInput();

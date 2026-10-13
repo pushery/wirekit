@@ -5,6 +5,9 @@
     'threshold' => 1.5,
     'size' => config('wirekit.components.scroll-to-top.size', 'md'),
     'position' => 'bottom-right',
+    // Over a floating action button in the same bottom corner: centered on it, one gap above it.
+    // Ignored in a top corner, where there is no button below to stand on.
+    'aboveFab' => false,
     'forceVisible' => false,
     'scope' => null,
 ])
@@ -26,6 +29,7 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $forceVisible = BooleanProp::from($forceVisible, false);
+    $aboveFab = BooleanProp::from($aboveFab, false);
 
     // Scroll-to-top button — appears after scrolling past a configurable
     // viewport multiplier (default: 1.5x viewport height). Uses Alpine.js
@@ -88,7 +92,7 @@
     //
     // Underscores rather than spaces for the same class of reason: an arbitrary value
     // containing a literal space is never compiled, so the offset silently falls back to
-    // `auto`. `ArbitraryValueHasNoLiteralSpaceTest` caught this line's first draft.
+    // `auto`.
     //
     // The two BOTTOM corners carry `env(safe-area-inset-bottom, 0px)`; the top two do not
     // need it. On a notched iPhone the home-indicator inset is 34px and this button sat
@@ -101,6 +105,32 @@
         'top-left' => 'top-[var(--padding-wk-x-lg)] left-[var(--padding-wk-x-lg)]',
         default => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
     };
+
+    // Over a floating action button in the same corner, every term read from the tokens the
+    // button reads (`.wk-fab` and fab/button.blade.php): its edge offset, the host's
+    // `--wk-fab-lift`, its size, which steps down on a phone, and one gap. The inline edge is the
+    // floating action button's own, on the same logical side it sits on (`end` and `start`), moved
+    // in by half the difference of the two sizes, so this button stands centered on it in either
+    // reading direction. One class per side and size, written out for the Tailwind scan.
+    if ($aboveFab && in_array($position, ['bottom-right', 'bottom-left'], true)) {
+        $centeredOnFab = match ($size) {
+            'sm' => [
+                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)]',
+                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-sm))_/_2)]',
+            ],
+            'lg' => [
+                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)]',
+                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-lg))_/_2)]',
+            ],
+            default => [
+                'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)]',
+                'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right,0px)_+_var(--wk-scrollbar-inset,0px)_+_(var(--size-wk-fab)_-_var(--size-wk-md))_/_2)]',
+            ],
+        };
+
+        $positionClasses = 'bottom-[calc(var(--padding-wk-x-lg)_+_var(--wk-fab-lift,0px)_+_var(--size-wk-fab)_+_var(--gap-wk-sm)_+_env(safe-area-inset-bottom,0px))] '
+            .($position === 'bottom-left' ? $centeredOnFab[0] : $centeredOnFab[1]);
+    }
 
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
@@ -140,6 +170,10 @@
     x-transition:leave-start="opacity-100 translate-y-0"
     x-transition:leave-end="opacity-0 translate-y-2"
     @click="scrollToTop()"
+    {{-- Fixed in a corner: the page keeps an element that takes the focus out from under it
+         (WCAG 2.4.11, resources/js/utils/scroll-inset.js). Hidden below its threshold, it
+         covers nothing. --}}
+    @if(str_starts_with($position, 'top')) data-wk-scroll-inset="top" @else data-wk-scroll-inset="bottom" @endif
     {{-- aria-label via merge so a caller can override the default — a
          hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins).

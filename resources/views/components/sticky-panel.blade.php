@@ -124,7 +124,8 @@
     {{ $attributes->merge(['style' => 'top: '.($offset).'; width: 100%; --wk-sticky-panel-w: '.($width).';'])->class([$asideClasses]) }}
     @if(filled($label)) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
 >
-    <div class="{{ $componentClasses }}" style="max-height: {{ $resolvedMaxHeight }};">
+    {{-- Paper does not scroll: on paper the panel and its body grow to all they hold. --}}
+    <div data-wk-print-expand class="{{ $componentClasses }}" style="max-height: {{ $resolvedMaxHeight }};">
         @if(isset($header))
             {{-- Non-scrolling header, pinned to the top of the panel. --}}
             <div class="shrink-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
@@ -150,6 +151,7 @@
             <div class="relative flex flex-col flex-1 min-h-0" x-data="wirekitStickyPanelShadows()">
                 <div
                     x-ref="scroller"
+                    data-wk-print-expand
                     {{-- Reachability unconditional, landmark opt-in — and BOTH branches of this
                          `@if($scrollShadow)` carry the same shape, so `:scroll-shadow="false"`
                          behaves like the default. --}}
@@ -167,6 +169,7 @@
         @else
             {{-- Scrollable body, no shadow affordance (:scrollShadow="false"). --}}
             <div
+                data-wk-print-expand
                 tabindex="0"
                 @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
                 class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-x-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"

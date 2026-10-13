@@ -5,6 +5,7 @@
  * positioning with automatic flip and shift middleware.
  */
 import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as offsetMiddleware } from '@floating-ui/dom';
+import { FOCUSABLE } from './first-control.js';
 
 /**
  * Is focus already inside `container`?
@@ -28,6 +29,42 @@ export function focusIsWithin(container) {
     }
 
     return container.contains(active);
+}
+
+/**
+ * The element a panel is placed against when its trigger is a wrapper around what the developer
+ * wrote.
+ *
+ * `tooltip`, `popover` and `dropdown` hold their trigger in a wrapper inside a root that is
+ * `relative inline-block`. In a flex or grid container that stretches its items, as `stack` does
+ * by default, that root becomes a block as wide as the container, and the wrapper with it, while
+ * the button inside keeps its own width. A panel centered on the wrapper then stands in the middle
+ * of the row, away from the button, and one aligned to the end stands at the row's far edge.
+ *
+ * The panel is placed against what the reader sees instead: the first rendered control inside the
+ * wrapper, else the one rendered element it holds. A wrapper with neither, such as a tooltip around
+ * plain text whose wrapper takes the focus itself, keeps the wrapper. A disabled control counts,
+ * since a tooltip on a disabled button says why it is disabled. `hover-card` places against its
+ * control for the same reason.
+ *
+ * @param {Element|null|undefined} wrapper
+ * @returns {Element|null|undefined}
+ */
+export function placementReference(wrapper) {
+    if (! wrapper || typeof wrapper.querySelectorAll !== 'function') {
+        return wrapper;
+    }
+
+    const rendered = (el) => el.getClientRects().length > 0;
+    const control = [...wrapper.querySelectorAll(FOCUSABLE)].find(rendered);
+
+    if (control) {
+        return control;
+    }
+
+    const children = [...wrapper.children].filter(rendered);
+
+    return children.length === 1 ? children[0] : wrapper;
 }
 
 /**
@@ -97,8 +134,8 @@ export function liftAboveTriggerDialog(reference, floating) {
  *   placements is the Y (vertical) axis, so a `right`-placed panel that
  *   overflows the RIGHT viewport edge is never pulled back horizontally and
  *   relies solely on `flip` (which also fails when BOTH sides overflow on a
- *   narrow viewport). Opt-in (default `false`) so dropdown / tooltip
- *   positioning stays byte-identical; popover passes `true` because it is the
+ *   narrow viewport). Opt-in (default `false`), so a dropdown or a tooltip
+ *   keeps the plain main-axis shift; popover passes `true` because it is the
  *   overlay that supports explicit left/right placement. A `limitShift()`
  *   limiter prevents the panel from over-shifting off its anchor.
  * @param {boolean} options.fitViewport - Cap the panel's height to the space
@@ -107,7 +144,7 @@ export function liftAboveTriggerDialog(reference, floating) {
  *   by `shift` and then CLIPPED by the panel's own `overflow-hidden`, so the
  *   entries at the top — usually the important ones — simply disappear. Opt-in
  *   for the same reason as `crossAxisShift`: most of the overlay family calls
- *   this helper and their current geometry must not move.
+ *   this helper, and a caller that does not ask keeps its geometry.
  * @param {number} options.minHeight - Floor for `fitViewport`. Below this the
  *   panel stops shrinking and is allowed to overflow, because a menu too short to
  *   show two entries is worse than one that reaches past the fold. Two rows, not
@@ -129,7 +166,7 @@ export function liftAboveTriggerDialog(reference, floating) {
  * @param {boolean} options.autoReposition - Keep the panel pinned to its trigger
  *   while it is open: re-run the SAME middleware pipeline on scroll, resize, and
  *   ancestor-scroll via Floating UI's `autoUpdate`. Opt-in (default `false`, like
- *   `fitViewport`/`crossAxisShift`) so existing callers stay byte-identical. When
+ *   `fitViewport`/`crossAxisShift`), so a caller that does not ask places once. When
  *   enabled, `position()` resolves with a `stop` cleanup function on the result —
  *   the caller MUST call it on close/destroy or the scroll/resize listeners leak
  *   (the caller owns teardown). No `animationFrame` option: the default
@@ -155,8 +192,7 @@ export function liftAboveTriggerDialog(reference, floating) {
  *   unconditional repair loops forever. Writing a `top`
  *   makes the re-entrant run see a placed panel and stop, after exactly one extra pass.
  *
- *   Opt-in, like the options above, so no existing caller changes behavior. Like `autoReposition`
- *   it returns a `stop` the caller owns.
+ *   Opt-in, like the options above. Like `autoReposition` it returns a `stop` the caller owns.
  *
  *   A function instead of `true` is called with the panel before the placement is put back, for a
  *   caller that writes inline style of its own besides the placement. The same update removes that
@@ -181,8 +217,8 @@ export async function position(reference, floating, {
     const middleware = [
         offsetMiddleware(offset),
         flip({ padding: 8 }),
-        // crossAxis:false + no limiter === the original `shift({ padding: 8 })`,
-        // so existing callers (dropdown, tooltip) are unaffected.
+        // crossAxis:false + no limiter is the plain `shift({ padding: 8 })` that
+        // the callers without `crossAxisShift` (dropdown, tooltip) get.
         shift({
             crossAxis: crossAxisShift,
             limiter: crossAxisShift ? limitShift() : undefined,

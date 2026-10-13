@@ -11,7 +11,7 @@
     // non-balanced layout this prop is reported through the strictness gate
     // and has no effect on the columns.
     'asideWidth' => null,
-    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    // Optional reveal animation. Null = no animation (default).
     'animateIn' => null,
     // `size` — vertical-rhythm tier. One of `sm` / `md` / `lg`. Default
     // `lg` (= `--space-wk-section-lg` at `sm+` viewports). Mobile viewport
@@ -38,6 +38,10 @@
     // that rule lives in axe's best-practice tag rather than the WCAG tags most suites
     // run — so it is invisible to an axe sweep and visible in Lighthouse.
     'level' => 1,
+    // Shrinks the title down to a floor so it takes the fewest lines the floor needs: true for the
+    // `--text-wk-fit-floor` token, a length such as `0.75em` for a floor of its own, null or false for
+    // none.
+    'fit' => null,
     'scope' => null,
 ])
 
@@ -55,6 +59,13 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $gradient = BooleanProp::from($gradient, false);
     $tightOnMobile = BooleanProp::from($tightOnMobile, false);
+
+    // The title's fitted box. It stands inside the heading, so the heading's size at each breakpoint is
+    // the largest the title takes.
+    $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'hero');
+    $fitBag = $fitFloor === false ? null : new \Illuminate\View\ComponentAttributeBag(array_filter([
+        'style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null,
+    ]));
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'hero');
 
@@ -113,11 +124,11 @@
     // `dark` establishes a real dark TOKEN CONTEXT (the bare `dark` class), not
     // just a dark band: every --color-wk-* token resolves to its `.dark` value
     // for the whole subtree, so a token-surfaced child (<x-wirekit::code-block>,
-    // card, input, table) renders a DARK surface instead of a light one — fixing
-    // the white-on-white bug class (a code-block in a dark hero). Painting from
+    // card, input, table) renders a DARK surface instead of a light one, so a
+    // code-block in a dark hero never renders white on white. Painting from
     // the regular --color-wk-bg / --color-wk-text (which are dark / light under
     // `.dark`) keeps the band identical in light mode AND keeps the hero
-    // genuinely dark in dark mode — the old `bg-inverse` flipped the band to
+    // genuinely dark in dark mode — a `bg-inverse` band would flip to
     // near-white in dark mode. `accent` stays a colored surface (no `.dark`,
     // it isn't dark); its token-surfaced children read the page mode, which is
     // fine because the accent surface is colored, not near-white.
@@ -131,8 +142,7 @@
     };
 
     // Layout map: drives outer flex direction, copy/aside column flex factors, and text alignment.
-    // — replaces the previous hardcoded 50/50 (flex-1 + flex-1 lg:flex-row) split.
-    //   balanced — 50/50 split at lg+, identical to v1.2.x behavior.
+    //   balanced — 50/50 split at lg+.
     //   lead     — 60/40 split (copy slightly favored).
     //   centered — single column, max-w-md container, text-center.
     //   stacked  — both rows full-width, copy on top, aside below; like centered for copy alignment
@@ -247,7 +257,7 @@
 
                 @isset($title)
                     <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-3xl,1.875rem)] sm:text-[length:var(--font-wk-heading-2xl,3.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] tracking-tight mb-[var(--space-wk-md,1rem)]">
-                        {{ $title }}
+                        {{ $fitBag !== null ? \Pushery\WireKit\Support\FitText::box($title, $fitBag) : $title }}
                     </h{{ $levelValue }}>
                 @endisset
 

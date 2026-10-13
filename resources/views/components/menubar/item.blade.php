@@ -34,13 +34,20 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'focus:outline-hidden',
-        'focus:bg-[var(--color-wk-bg-subtle)]',
+        // `focus-visible` and a ring, per dropdown/item.blade.php. The background is the hover's
+        // shade, one step from the panel, too faint to say where the keyboard is on its own, and
+        // `focus:outline-hidden` takes the browser's own ring away. `focus-visible` keeps a menu
+        // opened by the pointer from painting the entry it focuses.
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-inset',
+        'focus-visible:ring-[var(--color-wk-ring)]',
         'cursor-pointer',
     ]), $scope);
 
     $colorClasses = $danger
-        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)]'
-        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]';
+        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)]'
+        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)]';
 
     $disabledClasses = $disabled
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
@@ -72,7 +79,7 @@
          document instead of continuing from the menubar. --}}
     x-on:click="closeAndFocusTrigger()"
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->except('rel')->class(['wk-touch-row', $classes, $colorClasses, $disabledClasses]) }}
 >
     <span>{{ $slot }}</span>
 

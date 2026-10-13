@@ -51,8 +51,11 @@ $wrapperClasses
 /components/hover-card#inline-in-running-text.
 1.4.13
 2.4.3,
+200);
 200,
+300);
 300,
+8);
 8,
 </div>
 </span>
@@ -106,6 +109,7 @@ Its
 LEGITIMATELY
 NOT
 OUTSIDE
+One
 Only
 Pushery\WireKit\WireKit;
 Scrolls
@@ -132,6 +136,9 @@ Without
 \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
 \Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\NumericProp::from($delayHide,
+\Pushery\WireKit\Support\NumericProp::from($delayShow,
+\Pushery\WireKit\Support\NumericProp::from($offset,
 \Pushery\WireKit\WireKit::warnUnknownProps('hover-card',
 ])
 ]),
@@ -188,6 +195,7 @@ back
 back.
 backwards
 bag
+bare
 be
 because
 behavior.
@@ -229,6 +237,7 @@ control
 coordinates
 counterpart
 debug
+default.
 delayHide:
 delayShow:
 delegated
@@ -259,8 +268,10 @@ entirely
 error.
 event
 exists,
+expression.
 fires
 first
+first:
 fixed`,
 flags
 flow
@@ -355,6 +366,9 @@ non-interactive
 not
 nothing
 null,
+number
+numbers,
+object
 of
 off
 offset:
@@ -401,6 +415,7 @@ prod).
 prohibits
 promise
 promises.
+prop's
 props
 puts
 qualified:
@@ -408,6 +423,7 @@ rather
 reach
 reachable
 reaches
+read
 read-only
 reader
 reads
@@ -448,16 +464,19 @@ so
 something
 somewhere
 spelling,
+stand
 state
 steps
 still
 structured
 table
 tabs
+takes
 teleport
 teleport,
 teleported
 teleported,
+text
 than
 that
 the
@@ -467,6 +486,7 @@ there
 there,
 these
 this
+three
 to
 to.
 too,
@@ -480,6 +500,7 @@ two
 unchanged
 under
 unknown
+unquoted
 usage
 use
 value
@@ -503,6 +524,7 @@ would
 wrapper
 wrapper,
 wrapping
+written
 x-cloak
 x-data
 x-data="wirekitHoverCard({

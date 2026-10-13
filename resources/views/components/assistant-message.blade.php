@@ -82,7 +82,7 @@
         'min-w-[1.5rem] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)]',
         'rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-subtle)]',
         'bg-[var(--color-wk-bg-subtle)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
+        'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'wk-transition',
     ]), $scope);
@@ -155,7 +155,7 @@
     data-role="{{ $roleValue }}"
     role="article"
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $speaker }}" @endunless
-    {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class([$classes]) }}
 >
     {{-- A system turn is not a person, so it gets no avatar. --}}
     @if($roleValue !== 'system')

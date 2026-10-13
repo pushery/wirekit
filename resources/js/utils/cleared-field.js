@@ -21,7 +21,7 @@
  *     while the answer is in flight stays red, as it should;
  *   - the attribute comes off on the next `input` event, and on `invalid`, which the browser
  *     fires when a submit attempt finds the field empty — so trying to submit it empty turns it
- *     red again, exactly as before.
+ *     red again.
  *
  * Installed once per page. Outside Livewire nothing hooks, and the two listeners have nothing to
  * remove, because nothing ever sets the attribute.

@@ -21,12 +21,12 @@
     // $name is this item's identity twice over: the Alpine state key the whole
     // open/close model compares against (activeItem === $name), and the base the
     // panel's DOM id below is built from. With no trigger label to slug it is
-    // COUNTED, not randomized. A uniqid() fallback stood here, and it made both
-    // halves move on every render: `activeItem === $name` could no longer match an
-    // item after a morph, and the panel — which teleports out of the morphed
-    // subtree — kept the previous id while the trigger's aria-controls got a new
-    // one. DomId's counter is per request and per prefix, so stable markup order
-    // returns the same value; a label that slugs to nothing takes the same route.
+    // COUNTED, not randomized: a uniqid() would move both halves on every render,
+    // so `activeItem === $name` could not match an item after a morph, and the
+    // panel — which teleports out of the morphed subtree — would keep the previous
+    // id while the trigger's aria-controls named a new one. DomId's counter is per
+    // request and per prefix, so stable markup order returns the same value; a
+    // label that slugs to nothing takes the same route.
     $slug = \Illuminate\Support\Str::slug((string) $trigger);
     $name = $slug !== '' ? $slug : \Pushery\WireKit\Support\DomId::unique(null, 'wk-nav-item-');
 
@@ -49,7 +49,7 @@
         'rounded-[var(--radius-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
@@ -118,7 +118,7 @@
              No utility class is named in this comment on purpose. Tailwind scans Blade
              comments too, so an illustrative one here would compile into the stylesheet as
              a real rule that nothing emits. --}}
-        {{ $attributes->except('rel')->class($triggerClasses) }}
+        {{ $attributes->except('rel')->class(['wk-touch-row', $triggerClasses]) }}
     >
         {{ $slot->hasActualContent() ? $slot : $trigger }}
         @if($opensNewTab)
@@ -134,7 +134,7 @@
     >
         <button
             type="button"
-            x-on:click="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
+            x-on:click="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, $el)"
             :aria-expanded="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
             {{-- aria-expanded + aria-controls, and deliberately NO aria-haspopup.
                  This is a disclosure navigation menu: the button reveals a
@@ -146,7 +146,7 @@
                  "true". --}}
             aria-controls="{{ $panelId }}"
             data-wk-nav-trigger="{{ $name }}"
-            class="{{ $triggerClasses }}"
+            class="wk-touch-row {{ $triggerClasses }}"
         >
             {{ $trigger }}
             {{-- Chevron indicator --}}

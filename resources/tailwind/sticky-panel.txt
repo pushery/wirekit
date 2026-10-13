@@ -167,6 +167,7 @@ Non-scrolling
 Normalized
 OVERLAY
 OVERLAYS
+Paper
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Reachability
@@ -214,6 +215,7 @@ address-bar
 affordance
 affordance.
 against
+all
 always
 an
 and
@@ -299,6 +301,7 @@ content
 content",
 cover
 covered
+data-wk-print-expand
 data-wk-prose-skip
 debug
 default
@@ -349,6 +352,7 @@ gets
 given
 grew
 grid)
+grow
 growing
 h-full
 happens
@@ -359,6 +363,7 @@ height
 height)
 here
 hidden
+hold.
 hovered
 iOS/Android
 identically.
@@ -455,6 +460,7 @@ panel
 panel's
 panel.
 panels
+paper
 parent,
 per
 percentage
@@ -491,6 +497,7 @@ same
 sat
 scans
 scroll
+scroll:
 scrollable
 scrolled.
 scroller
@@ -542,6 +549,7 @@ them);
 them.
 there
 therefore
+they
 this
 this,
 through

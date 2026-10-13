@@ -201,7 +201,9 @@
         @elseif($isIndeterminate)
             <div class="wk-progress-fill {{ $fillClasses }}"></div>
         @else
-            <div class="wk-progress-fill {{ $fillClasses }}" style="width: {{ $percent }}%"></div>
+            {{-- The value rides in an inline style over `w-0`: where a policy drops the style, the
+                 bar stays empty rather than claiming the work is done. --}}
+            <div class="wk-progress-fill {{ $fillClasses }} w-0" style="width: {{ $percent }}%"></div>
         @endif
     </div>
 </div>

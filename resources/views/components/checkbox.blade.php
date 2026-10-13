@@ -4,14 +4,10 @@
      layer adds is confirmation, the undo, and the announcement. --}}
 @props([
     // The Livewire method this component should call, when it should show the
-    // new value before the server has agreed to it. Null leaves the component
-    // exactly as it has always rendered.
+    // new value before the server has agreed to it. Null renders the plain checkbox.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -62,7 +58,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -88,7 +84,8 @@
 
     // `lang` names the language of the label's words, a language picker's "Deutsch" or "Français",
     // so it goes on the <label>, which holds the text and the field alike. On the field alone the
-    // text kept the page's language and a screen reader said it in the page's voice (WCAG 3.1.2).
+    // text would keep the page's language, and a screen reader would say it in the page's voice
+    // (WCAG 3.1.2).
     $labelLang = $attributes->get('lang');
     $attributes = $attributes->except('lang');
 
@@ -120,14 +117,13 @@
     // changing baseline, so the row stays put. The card variant is block-level `flex`
     // (no line-box baseline) and is unaffected.
     //
-    // ROUTED THROUGH THE CLASS SEAM, like the box below, and that is the whole point of
+    // Routed through the class seam, like the box below, and that is the whole point of
     // the two `resolveClasses` calls here. The default label is `inline-flex`, so it is as
     // wide as its own content: a `flex-1` in the slot has nothing to stretch against and a
     // right-aligned second element lands behind the first instead of at the row's edge. The
     // commonest list form an application builds — control, name on the left, code or count
-    // on the right edge — was therefore not buildable with this component, and there was no
-    // seam to change it either: the box was the ONLY surface that went through
-    // `resolveClasses`, and the label wrapper and its text stood in the template as literals.
+    // on the right edge — needs the label wrapper and its text to be overridable, so both go
+    // through `resolveClasses` as the box does.
     //
     // Passing `class="flex w-full"` on the tag is not a way around it: the attribute bag is
     // spread onto the `<input>`, not onto this `<label>`, so it never reaches the element
@@ -136,12 +132,12 @@
     // Both variants share one block, matching how `base` below serves both — an override
     // that wants to touch only one reads `$variantValue` from a closure, or scopes itself.
     $labelClasses = WireKit::resolveClasses('checkbox', 'label', $variantValue === 'card'
-        ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-subtle)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
+        ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
         : 'group inline-flex items-start gap-2 cursor-pointer relative align-top', $scope);
 
-    // The visible label text. Its size was fixed at `--text-wk-md` regardless of the `size`
-    // prop, which sizes only the box — routing it through the seam is what makes that
-    // adjustable, and it is the surface a row layout needs (`min-w-0 flex-1` on this span is
+    // The visible label text. Its size is `--text-wk-md` whatever the `size` prop says, which
+    // sizes only the box — routing it through the seam is what makes it adjustable, and it is
+    // the surface a row layout needs (`min-w-0 flex-1` on this span is
     // what gives a trailing element the edge to sit against).
     //
     // `sr-only` for `hideLabel` is appended OUTSIDE the seam on purpose: an override replaces
@@ -153,6 +149,15 @@
         'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5',
         $scope,
     );
+
+    // On a touch surface the default label is a row, as on the radio: a tap on its text toggles
+    // the box, so it takes the 44px floor of every interactive row (`wk-touch-row`), and
+    // `wk-choice-row` keeps a one-line row in the middle of it. Both sit outside the class seam,
+    // so a personalization of `checkbox.label` keeps them. Only with a visible text: a hidden
+    // label leaves the box alone, and the box answers a finger through the hit area of
+    // `wk-touch-target`.
+    // The condition is the one the text below renders visibly under.
+    $rowMarkers = $variantValue !== 'card' && ! $hideLabel && ($slot->hasActualContent() || $label) ? 'wk-touch-row wk-choice-row ' : '';
 
     // Resolve a page-unique DOM id. Array-style names ("tags[]") dedup on their
     // base, plain duplicate names get a -2/-3 suffix, and the first occurrence keeps
@@ -204,6 +209,12 @@
     // Only with a label to stand beside, which is also where its hidden copy is rendered.
     $helpLabel = $slot->hasActualContent() ? trim(html_entity_decode(strip_tags((string) $slot), ENT_QUOTES | ENT_HTML5)) : (string) ($label ?? '');
     $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
+    // Markup a caller puts after the label and its help, in their row (partials/label-after).
+    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    // The control sits inside the label, so the row around it stands whenever the slot is passed,
+    // filled or not: a mark that comes and goes between two renders then leaves the markup around
+    // the control as it was.
+    $labelAfterGiven = isset($labelAfter);
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // Visual box styling. The <input> uses .peer + .sr-only, and this box listens
@@ -221,11 +232,10 @@
     // the card's own edge, so taps in the gap BETWEEN two cards would land on the upper
     // card's checkbox. The card variant needs no reserve and must not grow one.
     //
-    // Note this does not make the checkbox newly conformant: axe reports no `target-size`
-    // violation today, because 2.5.8's spacing exception counts the free room around the
-    // control. That is the point — conformance rested on nothing being placed beside it,
-    // and in a dense list (ten call sites in one adopting application, several of them
-    // dense) that room is exactly what runs out.
+    // This is about the dense case, not a lone box: axe reports no `target-size` violation
+    // for a lone box, because 2.5.8's spacing exception counts the free room around the
+    // control. Conformance then rests on nothing being placed beside it, and in a dense
+    // list that room is exactly what runs out.
     // The marker is set in front of the resolved block rather than inside it, so a
     // personalization of the block keeps the hit area.
     $boxClasses = ($variantValue === 'card' ? '' : 'wk-touch-target ').WireKit::resolveClasses('checkbox', 'base', implode(' ', [
@@ -234,8 +244,9 @@
         'rounded-[var(--radius-wk-sm)]',
         'border-[length:var(--border-wk-width)]',
         // One border color for the state, chosen here rather than appended afterwards: an error
-        // class added after the block lost to the resting one, because both are single classes
-        // and the stylesheet sorts `-error` before `-strong`, so an invalid box stayed gray. The
+        // class added after the block would lose to the resting one, because both are single
+        // classes and the stylesheet sorts `-error` before `-strong`, so an invalid box would
+        // stay gray. The
         // hover border belongs to the resting state only, for the same reason the fields' does.
         $isInvalid
             ? 'border-[var(--color-wk-border-error)]'
@@ -246,9 +257,9 @@
         'peer-indeterminate:bg-[var(--color-wk-accent)]',
         'peer-indeterminate:border-[var(--color-wk-accent)]',
         // A checked or indeterminate box keeps its accent border under the pointer. The hover
-        // border above is a LATER rule of the same specificity, so on its own it recolored the
-        // border of a checked box too, and a gray ring stood around the accent fill. These
-        // compound variants outrank it exactly when both states hold.
+        // border above is a LATER rule of the same specificity, so on its own it would recolor
+        // the border of a checked box too, and a gray ring would stand around the accent fill.
+        // These compound variants outrank it exactly when both states hold.
         'peer-checked:peer-hover:border-[var(--color-wk-accent)]',
         'peer-indeterminate:peer-hover:border-[var(--color-wk-accent)]',
         'peer-focus-visible:ring-[length:var(--ring-wk-width)]',
@@ -280,13 +291,13 @@
     ]);
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     {{-- With help, the label shares a row with its button, which may not sit inside the
          label: it would become part of the control's name. --}}
-    @if($helpId)
-    <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+    @if($helpId || $labelAfterGiven)
+    <div data-wk-label-row class="{{ $labelAfterGiven ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($labelAfterGiven)<span class="{{ $variantValue === 'card' ? 'inline-flex min-w-0 flex-1 items-center gap-[var(--gap-wk-xs)]' : 'inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]' }}">@endif
     @endif
-    <label for="{{ $id }}" @if($labelLang !== null && $labelLang !== '') lang="{{ $labelLang }}" @endif class="{{ $labelClasses }}">
+    <label for="{{ $id }}" @if($labelLang !== null && $labelLang !== '') lang="{{ $labelLang }}" @endif class="{{ $rowMarkers }}{{ $labelClasses }}">
         {{-- Native checkbox: visually hidden but fully accessible + Livewire-compatible.
              Siblings below consume its :checked / :indeterminate / :focus-visible / :disabled state via peer-*. --}}
         <input
@@ -310,16 +321,16 @@
             @endif
             @if($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
             {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
-                 caller's own class became a second class attribute and the browser kept only
-                 this one. --}}
+                 caller's own class would become a second class attribute, and the browser
+                 keeps only the first. --}}
             {{ $attributes->except('type')->except(['id', 'name', 'aria-describedby'])->class(['peer', 'sr-only']) }}
         />
 
         {{-- Visual box — sibling of .peer (consumes peer-checked bg/border). The
              check + indeterminate overlays are nested HERE and fill the box
              (w-full h-full), flex-centered by the box, so they stay over the box
-             in BOTH the default and card variants (card label padding no longer
-             offsets them). They toggle via the label's group-has-[:checked] /
+             in BOTH the default and card variants (card label padding does not
+             offset them). They toggle via the label's group-has-[:checked] /
              group-has-[:indeterminate] (a nested element isn't a sibling of .peer,
              so peer-checked can't reach it; the box bg/border still use peer-*). --}}
         {{-- `wk-choice-frame` marks the element whose edge is the control, outside the resolved block so a
@@ -351,13 +362,16 @@
 @endphp
         @if($slot->hasActualContent())
             {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
-            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @elseif($label)
-            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="wk-choice-text {{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
-    @if($helpId)
-        @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => ! $hideLabel, 'helpField' => (string) ($name)])
+    @if($helpId || $labelAfterGiven)
+        @if($helpId)
+            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => ! $hideLabel, 'helpField' => (string) ($name)])
+        @endif
+        @if($labelAfterGiven)</span>@if($hasLabelAfter)@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif @endif
     </div>
     @endif
 

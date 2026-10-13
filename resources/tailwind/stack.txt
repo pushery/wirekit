@@ -97,7 +97,7 @@ $wrap
 --}}
 //
 0.75rem
-1rem),
+1rem).
 :
 </{{
 <{{
@@ -114,7 +114,6 @@ Blade's
 BooleanProp::from($wrap,
 Both
 Declared
-Default
 Dev-only
 Fully
 Normalized
@@ -125,6 +124,7 @@ Resolved
 See
 Short
 Tailwind
+The
 UNBOUND
 Which
 WireKit
@@ -144,7 +144,7 @@ WireKit::validateProp('stack',
 `md`
 `prop="false"`
 `row`
-`space`
+`space`,
 a
 action
 against
@@ -176,6 +176,7 @@ could
 data-wk-prose-skip
 debug
 default
+default,
 defines
 derived:
 developer
@@ -187,9 +188,6 @@ early.
 element,
 emits
 escaping
-every
-exactly
-existing
 falling
 false);
 false,
@@ -202,7 +200,6 @@ for
 form:
 from
 full
-here.
 historical
 implode('
 imports
@@ -211,9 +208,7 @@ interactive
 interpolated
 into
 is
-is.
 it
-keeps
 ladder
 ladders
 later
@@ -231,6 +226,7 @@ names
 never
 no
 not
+nothing
 null,
 of
 on
@@ -255,7 +251,6 @@ props
 qualified:
 rather
 reach
-reachable
 reads
 reasoning;
 renders
@@ -300,7 +295,6 @@ view's
 was
 what
 when
-where
 which
 who
 whose

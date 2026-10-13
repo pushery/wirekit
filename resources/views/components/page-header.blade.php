@@ -47,7 +47,7 @@
     //
     // So the scale is Tailwind's container ladder, which shares its NAMES with the viewport one
     // and not its meanings: `sm` here is 24rem of HEADER, where a viewport `sm` is 40rem of
-    // window. Null keeps today's behavior exactly, so no existing header moves.
+    // window. Null sets no width, so the actions wrap only when they do not fit beside the title.
     'stackBelow' => null,
     // Stick to the top of the box the page scrolls in, `--wk-strip-inset` below a strip of chrome.
     // Resting there, the header keeps as much space above its content as below it and fades in a
@@ -126,6 +126,10 @@
      * own line.
      */
     $classes = WireKit::resolveClasses('page-header', 'base', implode(' ', array_filter([
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'wk-page-header',
         '@container/wk-page-header',
         'flex flex-wrap items-start justify-between',
@@ -173,9 +177,8 @@
      * to tune it is a descendant selector against this component's internal markup, which
      * turns private markup into someone else's public API.
      *
-     * The defaults are byte-for-byte what these two divs carried as literals, so nothing
-     * rendered moves; what changes is that a developer can now say so through
-     * `WireKit::personalize()`, a scope, or `components.page-header.classes.{block}`.
+     * The defaults are the classes these two divs render, and a developer changes them
+     * through `WireKit::personalize()`, a scope, or `components.page-header.classes.{block}`.
      */
     // Whether the title and the description come from their slots, asked as `hasActualContent()`.
     // `filled()` counts the comment markers Livewire writes around an `@if` as content, and a
@@ -202,8 +205,8 @@
         // control. Three longhands say the same thing with nothing left to order.
         //
         // Beside the actions frame, which grows too, the column grows 999 times faster: it keeps
-        // all but a hair of the free space, as it did when it was the only thing growing, and the
-        // frame stays as wide as its buttons until it wraps to a line of its own.
+        // all but a hair of the free space, and the frame stays as wide as its buttons until it
+        // wraps to a line of its own.
         $actionsBesideTitle ? 'min-w-0 grow-[999] basis-[16rem]' : 'min-w-0 grow basis-[16rem]',
         $stackClass,
     ])), $scope);
@@ -225,7 +228,7 @@
 <div data-wk-prose-skip @if($sticky) x-data x-wk-stuck data-wk-scroll-inset="top" @endif {{ $attributes->class([$classes, $stickyClasses]) }}>
     <div class="{{ $columnClasses }}">
         {{-- With meta, the heading and the meta share a row that wraps. Without it the heading is
-             the column's first child exactly as before, so no existing header changes. --}}
+             the column's first child. --}}
         @if($hasMeta)
             <div data-wk-page-header-title-row class="flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]">
         @endif
@@ -248,9 +251,8 @@
         @endif
 
         @if($hasDescription)
-            {{-- `mt` from the SPACE ladder, which is the family a margin reads — a margin
-                 taking a `--gap-wk-*` value is what `SpacingFamilyRatchetTest` freezes, and
-                 it caught this line. The tight end of it, because the sentence belongs to
+            {{-- `mt` from the SPACE ladder, which is the family a margin reads; a margin
+                 never takes a `--gap-wk-*` value. The tight end of it, because the sentence belongs to
                  the title above it: a distance the size of the row's own gap would read as
                  a third block rather than as the title's second line. The sentence keeps to the
                  wide reading measure: in a page's full width it ran to two lines of about 190

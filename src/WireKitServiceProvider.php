@@ -17,9 +17,6 @@ use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\ComponentAttributeBag;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
-use Pushery\WireKit\Components\Field;
-use Pushery\WireKit\Components\FieldSet;
-use Pushery\WireKit\Components\SidebarGroup;
 use Pushery\WireKit\Console\BoostSkillsCommand;
 use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
@@ -47,6 +44,7 @@ use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
+use Pushery\WireKit\Support\BooleanProp;
 use Pushery\WireKit\Support\ContainedFile;
 use Pushery\WireKit\Support\DomId;
 use Pushery\WireKit\Support\FaqCollector;
@@ -128,7 +126,7 @@ class WireKitServiceProvider extends ServiceProvider
                 fn (Loader $loader): BaseLocaleJsonLoader => new BaseLocaleJsonLoader(
                     $loader,
                     __DIR__.'/../lang',
-                    (bool) ($this->app['config']->get('wirekit.translations.legacy_key_bridge', true)),
+                    BooleanProp::from($this->app['config']->get('wirekit.translations.legacy_key_bridge', true), true),
                 ),
             );
         }
@@ -205,7 +203,7 @@ class WireKitServiceProvider extends ServiceProvider
             // a component asks for. Copy the keys out of the reference rather
             // than retyping the English.
             //
-            // WHAT THE PUBLISHED COPY IS: an inert REFERENCE, not a load path.
+            // What the published copy is: an inert REFERENCE, not a load path.
             // Laravel's JSON loader reads `lang/{locale}.json` plus any directory
             // registered through `addJsonPath()`, and `lang/vendor/wirekit/` is
             // neither — so a `de.json` placed at the destination below is never
@@ -382,19 +380,14 @@ class WireKitServiceProvider extends ServiceProvider
                 }
             });
 
-            // Three files on that path have a class behind them, under the same tag. The markup and
+            // A few files on that path have a class behind them, under the same tag. The markup and
             // the declared props stay in the view, so every reader of `@props` still finds them
-            // there. A set hands the controls in its slot what they point at, and a slot renders
-            // before the view that holds it; only a constructor runs early enough.
-            $blade->component(FieldSet::class, $prefix.'::field.set');
-
-            // A field does the same for the one control it labels: the control learns the label
-            // it is named by, and the field learns the element its label points at.
-            $blade->component(Field::class, $prefix.'::field');
-
-            // The group does the opposite: it keeps its own `collapsible` from the rows in its
-            // slot, which read the sidebar's through `@aware`.
-            $blade->component(SidebarGroup::class, $prefix.'::sidebar.group');
+            // there. The list, with the reason each class exists, is ComponentRegistry::VIEW_CLASSES;
+            // the registry reads it as well, so the data a class hands its view is never taken for
+            // a slot.
+            foreach (ComponentRegistry::VIEW_CLASSES as $tag => $class) {
+                $blade->component($class, $prefix.'::'.$tag);
+            }
         });
 
         // Register class-based Blade components with 'wirekit' prefix
@@ -440,7 +433,7 @@ class WireKitServiceProvider extends ServiceProvider
         // The generated URL is cache-busted with `?v={filemtime}` so browsers
         // automatically pick up new content instead of serving a stale cached
         // copy forever. Since the URL changes whenever the file changes, the
-        // asset route now serves with `Cache-Control: public, max-age=31536000,
+        // asset route serves with `Cache-Control: public, max-age=31536000,
         // immutable` (standard fingerprinted-asset caching, see
         // `registerAssetRoutes()` below).
         // Takes an optional CSP nonce: @wirekitStyles($nonce). Apps without a CSP
@@ -814,15 +807,15 @@ class WireKitServiceProvider extends ServiceProvider
      *
      * Every teleported panel lives inside one landmark, and a landmark exists to be
      * announced — so its name is read by exactly the people who cannot see that the
-     * region is empty of meaning otherwise. It was a literal in the bundle, which meant
-     * an application shipping eight languages announced one English word in eight
-     * otherwise translated region lists.
+     * region is empty of meaning otherwise. A literal in the bundle would make an
+     * application shipping eight languages announce one English word in eight otherwise
+     * translated region lists.
      *
      * The name rides the bundle's own `<script>` tag rather than an inline script or a
-     * `<div>` of its own, and both alternatives were rejected for reasons worth keeping:
-     * an inline script is a second thing a strict Content-Security-Policy must nonce and
-     * a second thing that can be blocked, and emitted markup lands wherever the developer
-     * put `@wirekitScripts` — inside an `overflow: hidden` wrapper it would be clipped,
+     * `<div>` of its own, and both alternatives are worse: an inline script is a second
+     * thing a strict Content-Security-Policy must nonce and a second thing that can be
+     * blocked, and emitted markup lands wherever the developer put `@wirekitScripts` —
+     * inside an `overflow: hidden` wrapper it would be clipped,
      * which is the exact problem teleporting out of the tree exists to solve. The tag is
      * already present, already nonced, and already re-rendered by the server on every
      * page a `wire:navigate` arrives at.
@@ -975,11 +968,11 @@ class WireKitServiceProvider extends ServiceProvider
         ];
 
         // Bundled fonts, served straight from the package when they were never
-        // published. Without this the fonts component emitted no
-        // <link> at all for a configured-but-unpublished family, and the page
-        // fell back to system fonts — a difference nobody notices in review and
-        // everybody notices in production, because the app looked right locally
-        // where the publish had been run once by hand.
+        // published. Without this the fonts component would emit no <link> at
+        // all for a configured-but-unpublished family, and the page would fall
+        // back to system fonts — a difference nobody notices in review and
+        // everybody notices in production, because the app looks right locally
+        // wherever the publish was run once by hand.
         //
         // The route serves the family's whole directory: the CSS and the woff2
         // files it @font-face-references, which are siblings of it.

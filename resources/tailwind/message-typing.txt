@@ -13,9 +13,9 @@ $alt
 $announce
 $announcement
 $attributes->class([$classes])
-$attributes->class([$groupClasses])
 $attributes->getAttributes());
 $attributes->merge($avatarStyle
+$attributes->merge(['data-size'
 $author
 $author)
 $authorInitials
@@ -52,6 +52,7 @@ $sideValue
 $size,
 $sizeClasses
 $sizeClasses,
+$size])->class([$groupClasses])
 $slot
 $src
 $src)
@@ -342,6 +343,7 @@ __('wirekit::Typing…');
 `:remaining="7"`
 `aria-label`
 `class="cirlce"`
+`data-size`
 `default
 `initials`
 `message`
@@ -472,6 +474,7 @@ d="M12
 data-side="{{
 data-wk-message-typing
 data-wk-prose-skip
+data-wk-sr-host
 debug
 declaration
 default
@@ -485,6 +488,7 @@ developer
 developer's
 dims
 disc.
+discs
 do,
 does
 dot
@@ -609,6 +613,8 @@ later
 layer
 layout
 layout:
+less.
+lets
 like
 list
 literal
@@ -677,6 +683,7 @@ other
 otherwise
 outer
 overflow
+overlap
 overrides
 own
 pair
@@ -778,6 +785,7 @@ sizing.
 slot
 slot.
 small
+smallest
 so
 something
 span
@@ -806,6 +814,7 @@ technology.
 text
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]"
+text-[length:var(--text-wk-2xs)]',
 text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]',
@@ -824,6 +833,7 @@ this
 those
 thread
 through
+title="{{
 to
 total.
 trailing

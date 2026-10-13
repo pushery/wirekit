@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — sub-component
      Not a component but an @include shared by `sidebar.group` and `sidebar.collapsible`. It
      renders no UI and accepts nothing a server could refuse. --}}
-{{-- THE FIRST PAINT OF A REMEMBERED SECTION.
+{{-- The first paint of a remembered section.
 
      A folding section with `persist` keeps its open state in the reader's browser, and no server
      can read localStorage. So the markup carries the state the server chose, and Alpine applies

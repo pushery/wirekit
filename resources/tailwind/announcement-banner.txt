@@ -60,6 +60,7 @@ $surfaceValue
 '.');
 '.',
 '0'),
+'[overflow-wrap:break-word]',
 'base',
 'bg-[color-mix(in_srgb,oklch(var(--wk-banner-hue-l)_var(--wk-banner-hue-c)_var(--wk-banner-hue,var(--theme-hue,264)))_12%,var(--color-wk-bg-elevated))]
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg-elevated))]
@@ -211,7 +212,6 @@ DOM,
 Declared
 Dev-only
 ELEMENT
-EnumPropsFallThroughTheValidatorTest
 FILTER_VALIDATE_BOOLEAN);
 For
 Full
@@ -220,6 +220,7 @@ HUE
 How
 In
 Independent
+Inherited
 It
 LANDMARK
 Left
@@ -249,6 +250,7 @@ Text
 The
 Turn
 UNBOUND
+URL,
 WITHOUT
 Where
 Whether
@@ -287,6 +289,7 @@ __('wirekit::Dismiss')
 `aria-label`
 `aria-labelledby`
 `badge`
+`break-word`
 `dismissible="false"`
 `dismissible`
 `false`
@@ -316,12 +319,14 @@ accent,
 accessible
 accident.
 across
+address
 affordance
 against
 alert
 alert.
 all
 all,
+alone,
 also
 always
 ambient,
@@ -330,7 +335,6 @@ and
 announcement
 announcements
 anything
-apart,
 apart.
 application
 applied:
@@ -383,6 +387,7 @@ bottom,
 bottom-0
 box.
 break
+breaks
 bring
 brings
 browser
@@ -411,8 +416,8 @@ claim
 class
 class="h-4
 class="min-w-0
-class="ms-auto
 class="shrink-0">{{
+class="wk-touch-target
 clickable
 close
 color
@@ -428,6 +433,7 @@ composed
 composition,
 computed
 constants
+content
 content,
 content-edge
 contract
@@ -487,6 +493,7 @@ element
 else
 else,
 elseif
+email
 ends
 enforce.
 enum
@@ -496,7 +503,6 @@ even
 every
 everything
 exactly
-exempting
 existing
 exists
 exists,
@@ -528,6 +534,7 @@ fixed,
 flag.
 flags
 flashing
+flex
 flips
 floating
 flows
@@ -561,10 +568,11 @@ gone
 guards
 h-[var(--wk-strip-height)]
 had
+had.
+hands
 harvest
 has
 has,
-have
 having
 height
 holding
@@ -582,6 +590,7 @@ in_array($position,
 in_array($surface,
 inherit
 inline
+inside;
 instance
 instead
 instead.
@@ -614,6 +623,8 @@ landmark.
 landmarks
 last
 later
+layout
+leaves
 let
 lets
 level:
@@ -644,12 +655,14 @@ means
 measure
 meets,
 mid-sentence.
+min-content
 modal
 modality
 monochrome
 more
 most
 moves
+ms-auto
 must
 n/a
 name
@@ -716,6 +729,7 @@ persistKey:
 persistence
 pinned
 pins
+point,
 policy
 positively
 precedence
@@ -752,14 +766,16 @@ render
 replay/reset
 resettable,
 resolved
-returning
+returns
 ring
 role
 role,
 role="alert":
 role="region"
 rounded-[var(--radius-wk-sm)]
+row
 rtrim(rtrim(number_format((float)
+running
 safe
 same
 say.
@@ -772,7 +788,6 @@ sentence.
 session-scoped
 sets
 several
-shapes
 shared
 shell
 should
@@ -834,6 +849,7 @@ survives
 switch
 switches
 system
+table
 takes
 tall,
 tell
@@ -890,8 +906,8 @@ turning
 turns
 two
 type="button"
+typed
 underneath
-unguarded
 unknown
 unless
 up
@@ -902,6 +918,7 @@ usual
 validates
 value
 value,
+value.
 var(--wk-banner-hue))`
 vertical
 via
@@ -932,6 +949,7 @@ which
 whichever
 whole
 whose
+width
 with
 without
 word
@@ -939,7 +957,6 @@ worse
 would
 wrapper,
 writing
-written
 x-cloak
 x-data="wirekitDismissible({@if($persistsDismissal)
 x-show="shown"

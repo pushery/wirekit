@@ -7,8 +7,9 @@
     'dismissible' => config('wirekit.components.modal.dismissible', true),
     // Whether the reader is asked before closing the dialog by Escape, a click beside it or its
     // close button while its fields hold changes. On by default: a click beside a filled form
-    // threw away what had been typed into it. A close the page makes and a Cancel control never
-    // ask. `discardQuestion` replaces the question, which is in the reader's language otherwise.
+    // would otherwise throw away what has been typed into it. A close the page makes and a
+    // Cancel control never ask. `discardQuestion` replaces the question, which is in the
+    // reader's language otherwise.
     'confirmDiscard' => config('wirekit.components.modal.confirm-discard', true),
     'discardQuestion' => null,
     // Whether opening locks the page's scroll. False for an overlay that lives inside a page
@@ -17,7 +18,7 @@
     'describedby' => null,
     // Names the dialog when it has no header sub-component. A dialog with no
     // accessible name is announced as just "dialog", and the failure is silent —
-    // see the aria-labelledby block below for why one had to be added.
+    // see the aria-labelledby block below.
     // (No component tag in this comment: Blade compiles tags inside comments too,
     // and one here breaks the @props array it sits in.)
     'ariaLabel' => null,
@@ -29,13 +30,12 @@
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
-    // `dismissible="false"` meant the opposite of what the call site reads as, on the
-    // one switch a confirmation dialog exists to set. All four reads below are truth
-    // tests (the x-data seed, the Escape listener and the two backdrop handlers), and
-    // modal.header's close-X hangs off the seeded Alpine value, so the string turned
-    // every one of them back ON: Escape closed the dialog, the overlay closed it, and
-    // the close-X the prop suppresses was rendered. Nothing went red and the page
-    // rendered either way — only the bound spelling `:dismissible="false"` worked.
+    // `dismissible="false"` would otherwise mean the opposite of what the call site reads
+    // as, on the one switch a confirmation dialog exists to set. All four reads below are
+    // truth tests (the x-data seed, the Escape listener and the two backdrop handlers),
+    // and modal.header's close-X hangs off the seeded Alpine value, so the string would
+    // turn every one of them back ON: Escape would close the dialog, the overlay would
+    // close it, and the close-X the prop suppresses would render.
     //
     // Normalized against the prop's own default so a cast never turns dismissal off on
     // a modal that never asked for it.
@@ -63,7 +63,7 @@
     // re-rendered on its own still carries the id the dialog's aria-labelledby names.
     $titleId = $name !== null ? 'wk-modal-title-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-modal-title-');
 
-    // HOW THE DIALOG GETS ITS NAME, and why this is not just `aria-labelledby`.
+    // How the dialog gets its name, and why this is not just `aria-labelledby`.
     //
     // Only the header sub-component ever puts the labeling id on an element, so an
     // unconditional aria-labelledby would, in a modal built without a header — a
@@ -99,8 +99,7 @@
 
     // aria-* belongs on the element that carries role="dialog", not on the
     // x-data wrapper. `aria-label` on a roleless <div> is prohibited by ARIA and
-    // simply does not reach assistive tech — the same defect that was fixed on
-    // combobox, one component over.
+    // simply does not reach assistive tech.
     $ariaAttributes = collect($attributes->getAttributes())
         ->filter(fn ($value, string $key): bool => str_starts_with($key, 'aria-'))
         ->all();
@@ -158,6 +157,10 @@
         'rounded-[var(--radius-wk-xl)]',
         'shadow-[var(--shadow-wk-lg)]',
         'overflow-x-hidden overflow-y-auto',
+        // A typed token with no break point, an email address or a URL, breaks rather than being
+        // cut off at the panel's edge. Inherited by everything inside; `break-word` leaves every
+        // min-content width alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
     ]), $scope);
 
     // Size mapping to modal width tokens
@@ -172,6 +175,13 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // The dialog is teleported, so where the component is written only its trigger shows.
+    // Without one the root would be an empty box, which a flex or grid container still counts as
+    // an item with a gap of its own beside it, so it generates no box. With a trigger it keeps its
+    // box, and the trigger its place: its own width in a grid cell, the margin a
+    // stack gives its children. `class="contents"` on the component hands the trigger over.
+    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(['contents']);
 @endphp
 
 {{-- Modal component — teleported to the overlay root for proper stacking context.
@@ -190,12 +200,12 @@
 <div
     x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText) : 'null' }} })"
     @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
-    {{ $attributes }}
+    {{ $rootAttributes }}
 >
     {{-- Trigger slot — always visible, clicking opens the modal.
-         The wrapper only carries the click listener, so it generates no box. As a block it kept a
-         button in the slot at its own width inside a container that stretches its children, and
-         a caller cannot reach it with a class. On its own `contents` changes nothing a page shows;
+         The wrapper only carries the click listener, so it generates no box. As a block it would
+         keep a button in the slot at its own width inside a container that stretches its
+         children, where a caller cannot reach it with a class. On its own `contents` changes nothing a page shows;
          `class="contents"` on the component root is what hands the trigger to the container. --}}
     @isset($trigger)
         <div class="contents" x-on:click="show()">
@@ -207,10 +217,9 @@
     <template x-teleport="#wk-overlay-root">
         <div x-show="isOpen" x-cloak>
             {{-- Backdrop.
-                 Leave transition intentionally omitted: pest-plugin-browser's
-                 `assertDontSee()` is synchronous (no auto-wait), and any fade-out
-                 (even 150ms) races against the assertion. Instant close is also
-                 better UX — it matches the platform dialog convention. --}}
+                 Leave transition intentionally omitted: an instant close matches the
+                 platform dialog convention, and whatever checks right after a close
+                 that the dialog is gone does not race a fade-out. --}}
             <div
                 x-show="isOpen"
                 x-transition:enter="transition ease-out duration-200"
@@ -255,7 +264,7 @@
                         aria-labelledby="{{ $titleId }}"
                     @endif
                     @if($describedby) aria-describedby="{{ $describedby }}" @endif
-                    {{-- aria-* the caller passed, moved here from the roleless wrapper.
+                    {{-- aria-* the caller passed, on the dialog rather than the roleless wrapper.
                          aria-label is excluded: it is resolved above so an explicit name
                          and the header can never both be emitted. --}}
                     {{ $dialogAriaAttributes }}
@@ -272,4 +281,9 @@
             </div>
         </div>
     </template>
+
+    {{-- The dialog the question about discarded changes is asked in, when the modal asks one. --}}
+    @if($discardQuestionText !== null)
+        @include('wirekit::components.partials.discard-question', ['question' => $discardQuestionText, 'lockScroll' => $lockScroll, 'scope' => $scope])
+    @endif
 </div>

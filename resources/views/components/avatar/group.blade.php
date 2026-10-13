@@ -25,12 +25,13 @@
 
     // Overlap + ring live in the .wk-avatar-group CSS class (dist/wirekit.css):
     // logical negative margin (RTL-safe) + a surface-color ring around each disc.
+    // `data-size` lets the class overlap the smallest discs less.
     $groupClasses = WireKit::resolveClasses('avatar.group', 'base', 'wk-avatar-group', $scope);
 
     // Counter chip mirrors the avatar size dims + circle shape so it sits flush
     // in the stack. Literal class strings per size for the Tailwind scanner.
     $chipSize = match ($size) {
-        'xs' => 'w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] text-[length:var(--text-wk-sm)]',
+        'xs' => 'w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] text-[length:var(--text-wk-2xs)]',
         'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-sm)]',
         'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-lg)]',
         'xl' => 'w-16 h-16 text-[length:var(--text-wk-lg)]',
@@ -47,7 +48,7 @@
     ]);
 @endphp
 
-<div role="group" @if($label) aria-label="{{ $label }}" @endif {{ $attributes->class([$groupClasses]) }}>
+<div role="group" @if($label) aria-label="{{ $label }}" @endif {{ $attributes->merge(['data-size' => $size])->class([$groupClasses]) }}>
     {{ $slot }}
     @if($remaining !== null && (int) $remaining > 0)
         {{-- Hidden from assistive technology ONLY when something else says the total.

@@ -23,6 +23,9 @@
     // embedding the entire reading surface inside a modal body, sidebar
     // pane, preview iframe, or Livewire panel.
     'boundary' => null,
+    // `layout` — the spine's. `ticks` pins it to the page's edge; `rail` makes it an outline in
+    // a column beside the slot, which the shell builds (see below).
+    'layout' => 'ticks',
     'scope' => null,
 ])
 
@@ -47,10 +50,9 @@
     // when they need primitive-level customization beyond the density preset.
     //
     // No new state machine — this is purely Blade composition. Each child
-    // component carries its own Alpine state independently. Footgun guard:
-    // tests assert that opting out of, say, the bookmark via :bookmark="false"
-    // also drops the bookmark Blade tag from the output (no orphaned Alpine
-    // init that would silently break).
+    // component carries its own Alpine state independently. Opting out of,
+    // say, the bookmark via :bookmark="false" drops the bookmark Blade tag
+    // from the output, so no orphaned Alpine init is left to break silently.
     //
     // Density preset (comfortable | compact | minimal) is the starting-point
     // shape. Per-primitive toggles WIN over density — passing
@@ -104,6 +106,15 @@
     // Bookmark default is "true if a key is set" — independent of density.
     $bookmarkExplicit = $bookmark === null ? true : filter_var($bookmark, FILTER_VALIDATE_BOOL);
     $renderBookmark = $bookmarkExplicit && $bookmarkKey !== null;
+
+    // A rail stands in the page's flow, in a column of its own, where the default spine is pinned
+    // to an edge and takes no room. So with `layout="rail"` the shell puts the slot and the rail
+    // side by side from `md`, the rail in the 14.375rem column its documentation uses, and below
+    // `md` the slot takes the whole width while the rail stays hidden. The rail takes no
+    // `expand` and no `boundary`: it is always expanded, and it stays in its column. An unknown
+    // layout raises in debug and reads as `ticks` in production.
+    $layout = WireKit::validateProp('reading-shell', 'layout', (string) $layout, ['ticks', 'rail']);
+    $renderRail = $renderSpine && $layout === 'rail';
 @endphp
 
 <div {{ $attributes->class([WireKit::resolveClasses('reading-shell', 'base', 'wk-reading-shell', $scope)]) }}>
@@ -115,7 +126,7 @@
         />
     @endif
 
-    @if ($renderSpine)
+    @if ($renderSpine && ! $renderRail)
         <x-wirekit::reading-spine
             :expand="$densityDefaults['spineExpand']"
             :boundary="$boundary"
@@ -144,5 +155,16 @@
         <x-wirekit::reading-meta :scope="$scope" />
     @endif
 
-    {{ $slot }}
+    @if ($renderRail)
+        <x-wirekit::grid cols="1" template="md:[minmax(0,1fr)_14.375rem]" gap="lg">
+            {{-- `min-w-0`, so a wide code block in the article scrolls inside it rather than
+                 widening the column and pushing the rail off the page. --}}
+            <div class="min-w-0">
+                {{ $slot }}
+            </div>
+            <x-wirekit::reading-spine layout="rail" :scope="$scope" />
+        </x-wirekit::grid>
+    @else
+        {{ $slot }}
+    @endif
 </div>

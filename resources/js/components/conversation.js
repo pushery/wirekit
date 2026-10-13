@@ -26,12 +26,14 @@
  *   - _resizeObserver (ResizeObserver) — disconnected in destroy()
  *   - _onScrollBound (scroll listener on the viewport) — removed in destroy()
  *   - _scrollFrame (frameCoalesce, the scroll handler's frame) — canceled in destroy()
+ *   - _releaseFocusRings (focusin listener on the viewport and its pending frame) — called in destroy()
  *   Every callback null-guards `_viewport` first: browser-queued observer and
  *   scroll callbacks can fire AFTER destroy() has torn the component down.
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { pluralize } from '../utils/plural.js';
 import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
+import { keepFocusRingsInView } from '../utils/reveal-focus-ring.js';
 export default function wirekitConversation(config = {}) {
     return {
         // True while the reader is parked at (or within `threshold` of) the
@@ -76,12 +78,16 @@ export default function wirekitConversation(config = {}) {
         _anchorDelta: 0,
         _anchorOffsetTop: 0,
 
-        // Coalescer for the scroll handler. See init() for why the work moved
-        // off the event and onto the frame.
+        // Coalescer for the scroll handler. See init() for why the work runs
+        // on the frame rather than on the event.
         _scrollFrame: null,
 
         // Coalescer for the post-write anchor re-capture on the follow-output path.
         _anchorFrame: null,
+
+        // Removes the listener that gives a focused message's controls room for their ring at the
+        // viewport's edge (utils/reveal-focus-ring.js).
+        _releaseFocusRings: null,
 
         init() {
             // The scrollable viewport — x-ref="viewport" when the component
@@ -101,6 +107,10 @@ export default function wirekitConversation(config = {}) {
             this._scrollFrame = frameCoalesce(() => this._onScroll());
             this._onScrollBound = () => this._scrollFrame.schedule();
             this._viewport.addEventListener('scroll', this._onScrollBound, { passive: true });
+
+            // A reaction or a button the keyboard reaches at the viewport's top or bottom edge keeps
+            // its whole ring, also where the browser does not read the viewport's scroll padding.
+            this._releaseFocusRings = keepFocusRingsInView(this._viewport);
 
             // childList = a new message row; characterData = streamed tokens
             // appended into an existing bubble.
@@ -156,6 +166,8 @@ export default function wirekitConversation(config = {}) {
                 this._viewport.removeEventListener('scroll', this._onScrollBound);
             }
             this._onScrollBound = null;
+            this._releaseFocusRings?.();
+            this._releaseFocusRings = null;
             this._viewport = null;
         },
 

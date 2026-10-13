@@ -207,6 +207,7 @@ $wrapperClasses
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -214,6 +215,7 @@ $wrapperClasses
 'Run:
 'UTF-8')));
 '[WireKit]
+'[overflow-wrap:break-word]',
 'accent'
 'accent',
 'active'
@@ -232,6 +234,7 @@ $wrapperClasses
 'bg-[var(--color-wk-accent-fg)]',
 'bg-[var(--color-wk-bg)]',
 'bg-[var(--color-wk-bg-muted)]',
+'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-bg-subtle)]
 'bg-[var(--color-wk-code-bg)]',
 'bg-[var(--color-wk-danger)]
@@ -473,6 +476,7 @@ $wrapperClasses
 (\Throwable
 (`.wk-scroll-fade…:focus-within
 (`:label="__('Change
+(`aria-busy`),
 (`data-wk-tooltip-surface`
 (a
 (adapts
@@ -530,6 +534,7 @@ $wrapperClasses
 --}}
 -text
 ...>
+.=
 .wk-text-shimmer
 /
 /*
@@ -578,15 +583,15 @@ $wrapperClasses
 20px,
 24
 24"
-2rem,
 3.888A2.25
 30%,
 300),
-3rem.
+3rem,
 4%,
 4.1.3).
 4.5
 4471"
+44x44
 48.208
 500s
 6
@@ -699,12 +704,10 @@ A).
 A11y
 ALSO
 AND
-API:
 APPLICATION
 ARIA
 AT
 Accept
-Adding
 Alpine
 Alpine's
 Also
@@ -793,6 +796,7 @@ Icon
 IconResolver,
 If
 In
+Inherited
 Inherits
 It
 Its
@@ -846,6 +850,7 @@ Once
 Only
 Operating
 Optional
+Outside
 Overrides
 PERFECTLY
 Per-instance
@@ -883,6 +888,7 @@ Same
 Seconds
 See
 Set
+Shrunk
 Silent
 Single-line
 Size
@@ -913,8 +919,10 @@ Trigger
 UI
 UNBOUND
 URL
+URL,
 Unlike
 Uses
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 VISUAL
 Validate
@@ -1050,12 +1058,13 @@ __toString
 `as="div
 `as="span"`
 `auto`,
+`break-word`
 `card`
-`class="h-12
 `class`
 `clearTimeout`
 `cloneNode(true)`,
 `config()`
+`data-wk-touch`
 `delayHide`
 `delayHide`.
 `delayShow`
@@ -1073,6 +1082,7 @@ __toString
 `fixed`
 `focusable-trigger`
 `get_weather`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -1090,6 +1100,7 @@ __toString
 `mask-image`,
 `min-h-*`
 `min-w-0`
+`min-w-0`:
 `min-width`
 `mouseenter`
 `mouseenter`/`mouseleave`
@@ -1107,6 +1118,7 @@ __toString
 `overflow:
 `parentNode`
 `pointer-events-none`
+`pointer:
 `position:
 `prop="false"`
 `resolveClasses()`,
@@ -1114,6 +1126,7 @@ __toString
 `role="region"`
 `scrollable-region-focusable`
 `search_docs`,
+`shrink`
 `soft`
 `span`:
 `stableId()`
@@ -1135,6 +1148,8 @@ __toString
 `wirekit:badge-dismissed`
 `wk-`
 `wk-collapsible`
+`wk-tooltip-panel`
+`wk-touch-target`,
 `wrap="false"`
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
@@ -1161,6 +1176,7 @@ accent-fg
 accept
 accessibility
 accessible
+accordion's
 acknowledge
 across
 action
@@ -1169,6 +1185,7 @@ active
 actual
 actually
 add
+address
 adds
 after
 again.
@@ -1318,7 +1335,6 @@ becomes
 becoming
 been
 before
-before;
 behalf,
 behind
 being
@@ -1331,6 +1347,7 @@ below;
 between
 bg
 bg).
+bg-muted
 bg-white
 bg.
 bind
@@ -1375,6 +1392,7 @@ both
 both;
 bound
 box
+box,
 box.
 box:
 branch's
@@ -1390,6 +1408,7 @@ bubble's
 bug
 build
 bundle
+busy
 but
 button
 button's
@@ -1413,6 +1432,7 @@ calls
 calls.
 calmer,
 can
+can.
 cancel
 cancels
 cannot
@@ -1422,6 +1442,7 @@ card
 card's
 card,
 cards)
+carried
 carries
 carry
 case
@@ -1433,6 +1454,7 @@ catch
 catch.
 caught
 cell
+centers
 chain
 change
 changes
@@ -1458,12 +1480,14 @@ class="flex-1"></span>
 class="h-4
 class="inline-block
 class="min-w-0
+class="min-w-0">{{
 class="mt-[var(--space-wk-sm)]"
 class="mt-[var(--space-wk-sm)]">
 class="rounded-[var(--radius-wk-sm)]
-class="shrink-0"
 class="sr-only"
 class="w-4
+class="wk-collapsible-trigger
+class="wk-tooltip-panel
 class="wk-touch-target
 class="{{
 classes
@@ -1485,6 +1509,7 @@ close-icons,
 closed
 closed.
 closes
+coarse`
 code
 code"
 code",
@@ -1531,7 +1556,6 @@ config('wirekit.components.tooltip.delay-show',
 config('wirekit.components.tooltip.offset',
 config('wirekit.components.tooltip.placement',
 configured
-conflict
 console
 console).
 construction.
@@ -1563,7 +1587,6 @@ counterpart:
 counts
 coverage
 covered
-covers
 crammed
 crossed
 currentColor
@@ -1578,11 +1601,13 @@ dark
 data-language="{{
 data-replayable="true"
 data-status="{{
+data-wk-badge-dismiss
 data-wk-code-block>
 data-wk-prose-skip
+data-wk-sr-host
 data-wk-tool-call
 data-wk-tool-call-announcer>{{
-data-wk-tool-call-name>{{
+data-wk-tool-call-name
 data-wk-tool-call-status>
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
@@ -1639,7 +1664,6 @@ difference
 different
 differentiator:
 dim
-direct
 disabled
 disagree
 disappearing,
@@ -1692,6 +1716,7 @@ edge
 edge,
 edge.
 effect
+effect.
 either
 either.
 element
@@ -1704,6 +1729,7 @@ ellipsis)
 ellipsis;"
 else
 elseif
+email
 embedded
 emit
 emits
@@ -1740,7 +1766,6 @@ exactly
 examples.
 except
 exhausting
-existing
 exists
 exists.
 expanding
@@ -1822,6 +1847,8 @@ flex-wrap
 flight
 flight,
 flips
+floor
+floors
 flow.
 focus
 focus,
@@ -1835,16 +1862,16 @@ focus.
 focusable
 focused,
 follow
-followable.
 follows
 font
 font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]"
 font-[number:var(--font-wk-body-weight)]',
+footer
 for
 for,
 for.
-forbidden
 forced
+forced-colors
 forces
 forcing
 foreground
@@ -1862,6 +1889,7 @@ front
 full
 full-catalog
 full-radius
+full-width
 fully
 function
 function).
@@ -1880,11 +1908,13 @@ generic
 generic-scroll-region
 get
 gets
+give
 give.
 given,
 gives
 global
 glyph
+glyph,
 glyph.
 glyphs
 glyphs.
@@ -1893,6 +1923,7 @@ go,
 goes
 gone,
 gradient
+gray
 grid
 group
 grows
@@ -1905,6 +1936,7 @@ h-4
 h-5
 h/w
 had
+had.
 half
 halves
 hand,
@@ -1927,6 +1959,7 @@ have
 have)
 having
 header
+header.
 hears
 height
 height,
@@ -1952,7 +1985,6 @@ hoists
 holding
 holds
 host
-house
 hover
 hover,
 hover.
@@ -1967,6 +1999,7 @@ icon
 icon's
 icon,
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -2017,6 +2050,7 @@ inserts
 inset
 inside
 inside,
+inside;
 installed
 installed.
 installed.'
@@ -2090,7 +2124,6 @@ label.
 label;
 labels
 labels).
-ladder
 landmark
 landmark,
 landmark.
@@ -2168,6 +2201,7 @@ margin
 markdown
 marked
 marker
+marker,
 markers
 markers,
 marketing
@@ -2194,6 +2228,7 @@ meets,
 menus
 merge
 message
+min-content
 min-height
 min-w-0">{{
 mints
@@ -2202,6 +2237,7 @@ mismatch
 missing
 missing,
 missing:
+mixed
 modal
 modals,
 mode
@@ -2242,10 +2278,12 @@ narrower
 native
 needed
 needs
+neighbors,
 neighbors.
 neither
 nest
 nested
+neutral
 neutralize
 never
 new
@@ -2264,6 +2302,7 @@ nor
 not
 not:
 nothing
+nothing,
 nothing.
 now.
 null
@@ -2415,6 +2454,7 @@ plaintext`
 plugin,
 plus
 point
+point,
 point.
 pointed
 pointer
@@ -2450,6 +2490,7 @@ problem
 prod).
 produces
 prohibits
+project
 promise
 promise,
 prop
@@ -2536,6 +2577,7 @@ registry
 regularly
 relative
 remains
+remove
 removed
 removes
 removes,
@@ -2571,6 +2613,7 @@ response…");
 responsive
 rest
 rests
+restyles
 result
 return
 returned
@@ -2607,13 +2650,13 @@ row
 row's
 row,
 row.
+row:
 rows,
 rtl;
 rtl`
 rule
 rules
 run
-rung
 running
 running.
 running:
@@ -2641,12 +2684,14 @@ scroll-area
 scroller:
 scrolling
 scrolls
+seam
 second
 see
 see.
 seeded
 sees
 sees.
+selects,
 semantic
 sensible
 sensible.
@@ -2673,11 +2718,15 @@ shift.
 shimmer
 shimmers)
 shipped
+short
+short.
 should
 show
 shown
 shows
+shrink
 shrink-0
+shrink-0';
 shrinks
 sibling
 siblings
@@ -2716,6 +2765,7 @@ source
 source-baked
 space
 space).
+space.
 span
 speech.
 spelled
@@ -2755,7 +2805,6 @@ steps
 steps.
 still
 stop
-stopped
 stops
 stopwatch
 storage/logs/laravel.log.
@@ -2778,6 +2827,7 @@ stumbles
 style="direction:
 style="display:inline-block;"></span>
 style="unicode-bidi:
+stylesheet
 stylesheet's
 stylesheet).
 stylesheets
@@ -2792,6 +2842,7 @@ supplies
 supports
 supposed
 surface
+surface,
 surface.
 surfaces
 surrounding
@@ -2867,6 +2918,7 @@ then
 then,
 there
 there).
+there.
 therefore
 they
 thing
@@ -2875,7 +2927,6 @@ things,
 third
 this
 those
-those,
 three
 through
 throw
@@ -2959,6 +3010,7 @@ truthy
 truthy.
 try
 turn
+turns
 twenty
 twice
 twice.
@@ -3022,8 +3074,8 @@ visible
 visual
 vocabulary
 w-1.5
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4
 w-4"
@@ -3078,8 +3130,10 @@ wiring
 with
 within
 without
+wk-collapsible-trigger
 word
 word)
+word,
 word.
 word:
 words;

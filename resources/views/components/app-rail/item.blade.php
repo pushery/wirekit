@@ -12,9 +12,9 @@
     // pushes a history entry and writes `…#` into the address bar, and a modified click
     // opens a dead duplicate tab.
     //
-    // Additive on purpose: switching automatically when `href` is "#" would have been the
-    // tidier API and would have changed the rendered element under every existing caller,
-    // including their CSS.
+    // Opt-in on purpose: switching automatically when `href` is "#" would be the tidier API,
+    // and would change the rendered element, and the caller's CSS with it, for a caller who
+    // never asked.
     'as' => 'a',
     'active' => false,
     // What the active entry is to a screen reader: `page` for the page itself, the default,
@@ -40,7 +40,7 @@
     // the account trigger at the foot of a rail, labeled with a person's name, which is
     // unambiguous even when cut and whose row would otherwise grow past its neighbors.
     //
-    // So the default stays the rule, and nothing changes for any existing rail. A caller
+    // So the default stays the rule. A caller
     // who sets this takes the trade knowingly, on an entry where the name is not what tells
     // the entries apart. The full name stays in the accessible name untouched (the span is
     // clipped visually, never shortened), and it is repeated as a `title`, because the kit's
@@ -131,7 +131,7 @@
         // inset panel `--size-wk-rail`'s inset-and-border budget is underspent and the
         // leftover lands inside this module, so the column re-points this token there and the
         // glyph ends up on the column's axis instead of 2.5px beside it. Everywhere else the
-        // fallback is the tier this always used. See the `[data-wk-nav-gutter]` block in
+        // fallback, the `sm` padding tier, applies. See the `[data-wk-nav-gutter]` block in
         // dist/wirekit.css for the derivation.
         'px-[var(--wk-rail-item-pad,var(--padding-wk-x-sm))] py-[var(--padding-wk-y-sm)]',
         'gap-[var(--padding-wk-x-sm)]',
@@ -163,8 +163,8 @@
         // reads as one unit at a spacing that would look cramped horizontally.
         //
         // The inline padding drops to the xs tier in this mode, and that is what buys the
-        // caption its room: at the sm tier the pill ate 20px of an 76px column and every
-        // name over seven characters was clipped. The pill still spans the full column, so
+        // caption its room: at the sm tier the pill would take 20px of a 76px column and clip
+        // every name over seven characters. The pill still spans the full column, so
         // nothing about the hover target changes.
         'group-data-[labels=below]/wk-rail:flex-col group-data-[labels=below]/wk-rail:gap-[2px]',
         'group-data-[labels=below]/wk-rail:px-[var(--padding-wk-x-xs)]',
@@ -172,8 +172,8 @@
         'group-data-[labels=inline]/wk-rail:justify-start',
         // Resting foreground scoped to NON-active items. Unscoped, this and the active
         // block's foreground are both single-class selectors in the same layer, so the
-        // winner would be decided by Tailwind's emission order rather than by state —
-        // the exact defect sidebar.item documents, where the active item rendered muted.
+        // winner would be decided by Tailwind's emission order rather than by state, and
+        // the active item could render muted, as sidebar.item notes for itself.
         'not-[[aria-current]]:text-[color:var(--color-wk-rail-muted)]',
         'not-[[aria-current]]:hover:bg-[var(--color-wk-rail-hover-bg)]',
         'not-[[aria-current]]:hover:text-[color:var(--color-wk-rail-hover-fg)]',
@@ -214,8 +214,8 @@
     ]), $scope);
 
     // The glyph follows the token the rail's width is built from, rather than a literal of the
-    // same size: a theme that set `--size-wk-rail-icon` widened the rail around icons that did
-    // not grow. Under the name (`labels="below"`) it follows its own token, which defaults to the
+    // same size: a theme that sets `--size-wk-rail-icon` would otherwise widen the rail around
+    // icons that do not grow. Under the name (`labels="below"`) it follows its own token, which defaults to the
     // same size, so the labeled rail can carry a larger icon without widening the narrow one.
     $iconClasses = WireKit::resolveClasses('app-rail.item', 'icon', implode(' ', [
         'size-[var(--size-wk-rail-icon)]',
@@ -225,14 +225,14 @@
     // `sr-only` is the RESTING state, never `hidden` — the string is the link's
     // accessible name and has to survive every mode.
     //
-    // AND IT IS NEVER TRUNCATED BY DEFAULT. A navigation entry whose name is clipped does not name
+    // And it is never truncated by default. A navigation entry whose name is clipped does not name
     // anything: "Insig…" is not a destination, and the reader cannot tell it from
-    // "Insights" or "Insight reports" without hovering. Maintainer's rule, and it is
-    // absolute — so a name that does not fit WRAPS. An item two lines tall beside items
-    // one line tall is a small untidiness; a module nobody can identify is a defect.
+    // "Insights" or "Insight reports" without hovering. The rule is absolute — so a name
+    // that does not fit WRAPS. An item two lines tall beside items one line tall is a small
+    // untidiness; a module nobody can identify is a defect.
     //
     // The one way out is `truncate`, opt-in and argued at the prop: it exists for an entry
-    // that is not a destination, and it leaves this default exactly as it was.
+    // that is not a destination, and it leaves this default untouched.
     //
     // `break-words` rather than plain wrapping, because a single long word has no space to
     // break at and would otherwise overflow the column instead of wrapping inside it.
@@ -243,10 +243,11 @@
         // The mode still decides HOW a
         // name is laid out (below, inline); this decides only WHETHER it is in the layout yet.
         'group-data-[wk-names]/wk-rail:not-sr-only',
-        // `max-w-full`, NOT a full width, and the difference is the whole fix. The reset of
+        // `max-w-full`, NOT a full width, and the difference is the whole point. The reset of
         // `sr-only` on the line above sets `width: auto`, and it is emitted after the width
-        // utility at the same specificity, so the name was as wide as its text: no wrapping
-        // could apply, and "Benachrichtigungen" ran out of the rail. That reset does not touch
+        // utility at the same specificity, so with a full width the name would be as wide as
+        // its text: no wrapping could apply, and "Benachrichtigungen" would run out of the
+        // rail. That reset does not touch
         // `max-width`, so this bound holds in every build. (The reset's class name is not
         // written out here: Tailwind reads this file as text and would compile it bare.)
         'group-data-[labels=below]/wk-rail:max-w-full',
@@ -297,8 +298,7 @@
     // A `<button>` arrives with a border, a background, its own font and centered text, and
     // none of that is in the rail's class list because an anchor needs none of it. The reset
     // lives in the SHIPPED stylesheet, not as utilities here — otherwise `as="button"` would
-    // work only where the developer's build scanned this package, which is the same failure
-    // the drawer panel had.
+    // work only where the developer's build scanned this package.
     $buttonReset = $railTag === 'button' ? 'wk-rail-item-button' : '';
 
     // The pointer rides the same condition but stays a utility rather than joining
@@ -310,7 +310,7 @@
     // already carries the pointer, and one without should not claim it.
     $buttonCursor = $railTag === 'button' ? 'cursor-pointer' : '';
 
-    $linkAttributes = $attributes->except('rel')->class(['wk-rail-item', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']);
+    $linkAttributes = $attributes->except('rel')->class(['wk-rail-item', 'wk-touch-row', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']);
 @endphp
 
 {{-- THREE literal branches, and the shape is forced rather than chosen.

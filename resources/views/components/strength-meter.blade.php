@@ -97,7 +97,7 @@
      re-initializes a component whose `x-data` changes. The factory reads the attribute at init
      and follows it after that. --}}
 <div
-    {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class([$classes]) }}
     x-data="wirekitStrengthMeter({ max: {{ $max }}, levels: {{ AlpinePayload::from($levels) }}, template: {{ AlpinePayload::string($template) }} })"
     x-modelable="value"
     data-wk-server-value="{{ $steps }}"

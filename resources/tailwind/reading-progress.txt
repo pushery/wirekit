@@ -139,9 +139,9 @@ $variantValue
 (a
 (background-
 (consistent
-(default
 (default)
 (default),
+(default).
 (default):
 (default,
 (developer-set
@@ -158,7 +158,6 @@ $variantValue
 (standalone
 (string)
 (typically
-(v2.4.0
 (which
 ),
 );
@@ -179,7 +178,6 @@ $variantValue
 0px)');
 0px)`
 1))
-1):
 10%
 100%
 100%;
@@ -253,7 +251,6 @@ Disabled
 Dot
 END
 Each
-Ext
 FILTER_VALIDATE_BOOL);
 FIXED
 Fully
@@ -470,7 +467,6 @@ carry
 cast
 center
 center;
-change).
 changes
 chapter
 children
@@ -570,7 +566,6 @@ even
 events
 every
 everywhere
-existing
 exists;
 explicit
 extensions)
@@ -875,7 +870,6 @@ scroll-to-top
 scrolling
 scrolls
 scrolls.
-sees
 sees.
 segment
 segment.
@@ -952,7 +946,7 @@ stylesheet
 stylesheet).
 stylesheet,
 success
-supported
+supported:
 surface
 surface).
 surfaces

@@ -549,7 +549,6 @@ __('wirekit::Usage');
 `intent`
 `label`
 `personalize()`
-`progress`
 `prop="false"`
 `rem`
 `svg`,
@@ -560,6 +559,7 @@ __('wirekit::Usage');
 `value`
 `variant`
 `variant`.
+`w-0`:
 `wire:poll`
 `wk-progress-fill`
 `wk-progress-indeterminate`
@@ -699,6 +699,7 @@ circle
 circle)
 circular
 circumference
+claiming
 claims
 clamped
 clamps
@@ -771,7 +772,6 @@ debug
 decided
 default
 default.
-defect
 depend
 depends
 derive
@@ -789,11 +789,12 @@ dist/wirekit.css)
 docs
 does
 done
+done.
 double-announce
 drawing
 drawn
 drew
-drifted
+drift
 drops
 duplicate
 duration-[var(--transition-wk-duration)]
@@ -891,7 +892,6 @@ h-[var(--size-wk-md)]',
 h-[var(--size-wk-sm)]',
 h-[var(--size-wk-xl,6rem)]',
 h-full
-had
 halves
 has
 have
@@ -1008,7 +1008,7 @@ method.
 metric
 min
 min((float)
-minted
+mint
 mirrors
 missing
 mode,
@@ -1059,7 +1059,6 @@ numeric
 of
 off
 ok.
-old
 omitted
 on
 on.
@@ -1112,6 +1111,7 @@ period
 place
 plan
 plan-paywall
+policy
 polish:
 poll
 polls
@@ -1169,7 +1169,6 @@ reads.
 real
 reason
 reason,
-reason:
 reasoning
 recipe.
 recommend
@@ -1199,6 +1198,7 @@ result
 retunes
 reuses
 richer
+rides
 right.
 ring
 role,
@@ -1285,6 +1285,8 @@ stroke-linecap="round"
 stroke-width="3"
 stroke="var(--color-wk-bg-muted)"
 stroke="{{
+style
+style,
 style="grid-column:
 style="transition:
 style="width:
@@ -1374,7 +1376,6 @@ unresolvable
 until
 untouched
 untouched.
-up
 up.
 updates.
 upgrade
@@ -1408,6 +1409,7 @@ viewBox="0
 viewports.
 visible
 vocabulary
+w-0"
 w-full
 w-full',
 warn

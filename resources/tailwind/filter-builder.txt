@@ -489,22 +489,19 @@ chipText()
 chipText(filter))"
 chips
 class="block">
-class="cursor-pointer
 class="fixed
 class="flex
 class="h-3.5
 class="h-4
-class="inline-flex
 class="mt-2
 class="p-0.5
 class="pointer-events-none
-class="px-[var(--padding-wk-x-md)]
-class="px-[var(--padding-wk-x-sm)]
 class="relative
 class="relative">
 class="sr-only"
 class="text-[length:var(--text-wk-sm)]
 class="wk-field
+class="wk-touch-row
 class="{{
 cleared'),
 click
@@ -537,6 +534,7 @@ count
 count,
 coverage
 current
+cursor-pointer
 cursor-pointer"
 cursor-pointer">{{
 custom
@@ -546,6 +544,7 @@ d="M7
 data-table's
 data-wk-filter-remove
 data-wk-prose-skip
+data-wk-sr-host
 debug
 decoration:
 default
@@ -672,7 +671,7 @@ hold.
 holding
 holds
 host
-hover:bg-[var(--color-wk-bg-subtle)]
+hover:bg-[var(--color-wk-bg-hover)]
 hover:border-[var(--color-wk-border-strong-hover)]
 hover:text-[color:var(--color-wk-danger-text)]
 hover:text-[color:var(--color-wk-text)]
@@ -686,6 +685,7 @@ in
 inconsistent
 independently
 inline-block">
+inline-flex
 input
 inset-y-0
 inside
@@ -841,6 +841,7 @@ props
 pt-1">
 put
 puts
+px-[var(--padding-wk-x-md)]
 px-[var(--padding-wk-x-sm)]
 py-[var(--padding-wk-y-sm)]
 py-[var(--padding-wk-y-sm)]',

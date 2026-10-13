@@ -115,6 +115,7 @@ $val
 0;
 1
 16);
+1`
 2.
 3-4
 3-4-link
@@ -126,7 +127,8 @@ $val
 :data-active="item.index
 :data-level="item.level"
 :href="'#'
-:key="item.id">
+:key="item.key">
+:title="item.text"></span></a>
 </div>
 </li>
 </nav>
@@ -146,11 +148,11 @@ $val
 ===
 =>
 >
-></a>
+><span
 >=
 ?
 ??
-@click="scrollTo(item.id,
+@click="scrollTo(item.key,
 @endif
 @endphp
 @if($showScope)
@@ -183,7 +185,6 @@ FILTER_VALIDATE_BOOL)
 Features
 Features,
 Fully
-IO
 Inline-style
 Its
 JS
@@ -233,6 +234,7 @@ __('wirekit::Page
 `false`
 `flex
 `flush`
+`line-height:
 `merge()`
 `offset`
 `padding-inline-start:
@@ -278,12 +280,10 @@ back
 back.
 background
 backslash
-backward-compatible
 bag
 bag's
 be
 because
-before.
 behalf,
 behavior
 behind
@@ -302,7 +302,9 @@ bottom
 bottom-sticky
 bound
 boundary.
+box
 box,
+box.
 breakpoint)
 breathing
 browser
@@ -312,20 +314,24 @@ by
 call
 caller
 caller's
+can
 can't
 cannot
 case:
 cast
 catalog
+center
 center;"
 chrome
 class
 class="contents"
+class="min-w-0
 class="wk-reading-toc__item
 class="wk-reading-toc__link
 class="wk-reading-toc__list
 classes
 client-only
+clipped
 collapsed-ticks
 collect(explode(',',
 comma-separated
@@ -339,6 +345,8 @@ contracts
 controls
 convention"
 current
+cut
+cut,
 data
 data-position="{{
 data-wk-prose-skip
@@ -350,6 +358,7 @@ deep
 default
 defaults
 defensively
+descenders
 developer
 developer's
 developer-supplied
@@ -368,12 +377,12 @@ drops
 each
 edge
 edge-to-edge
+ellipsis
 empty
 encode
 escapes
 etc.
 every
-exactly
 excessive;
 exist
 explicitly.
@@ -396,6 +405,7 @@ flex-row
 flex-row`,
 flex;
 flips
+floor
 flush
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -413,6 +423,7 @@ goes
 gone.
 hands
 has
+have
 heading
 heading.
 headings);
@@ -436,7 +447,7 @@ indentation
 independently
 initializer.
 inline
-inline-block
+inline-flex
 inner
 input
 instead
@@ -472,6 +483,7 @@ levels:
 levels="2,3"
 lg:block',
 like
+line
 link
 link.
 list
@@ -479,6 +491,7 @@ literal
 live
 load-bearing
 locale
+makes
 margin:
 markers,
 marketing
@@ -493,6 +506,7 @@ md:block',
 mean
 mobile
 mode
+moves
 n/a
 name
 name,
@@ -501,6 +515,7 @@ narrow
 nav
 navigation
 needed
+needs
 nested
 never
 no
@@ -520,6 +535,7 @@ on
 on.
 one
 one,
+one-line
 one.
 only
 opposite
@@ -531,14 +547,16 @@ ordinary
 otherwise
 our
 ours.
+overflow
 overflow).
 overflow-x-auto"
 overflow.
 own
+own,
 owned
 owns,
-padded.
 padding
+pads
 page
 pages
 parser
@@ -561,7 +579,7 @@ props
 px
 px-[var(--padding-wk-x-sm)]
 px-[var(--reading-toc-padding-x)]
-py-[var(--padding-wk-y-xs)]
+py-[var(--padding-wk-y-xs)]"
 py-[var(--reading-toc-padding-y)]
 qualified:
 rather
@@ -574,7 +592,6 @@ reading-toc.js
 reads
 reduced-motion
 rendered
-rendering
 renders
 resolves
 responsive
@@ -585,7 +602,6 @@ roll
 room
 root
 root,
-rootMargin
 round($unit
 rounded
 rounded-[var(--radius-wk-sm)]
@@ -621,6 +637,7 @@ sm:block',
 so
 source
 spacing
+span
 spine
 staggered
 stand
@@ -637,9 +654,10 @@ style
 style="list-style:
 stylesheet
 such
-symmetrically
+symmetrically.
 symmetry.
 tag
+taller:
 target
 target=null
 text
@@ -661,6 +679,7 @@ told
 top
 top-sticky
 top/bottom
+touch
 trim($v))
 true,
 truncate
@@ -696,11 +715,12 @@ whose
 why.
 widths).
 wins).
-wins,
+wins.
 wirekitReadingToc
 with
 without
 wk-scrollbar
+wk-touch-row
 work.
 works
 would

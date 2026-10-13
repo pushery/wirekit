@@ -41,9 +41,9 @@
     // (preview iframes, SSR without a Tailwind build step, embeds).
     // `wk-data-list-item` carries the inter-row separator via a shipped
     // dist/wirekit.css rule (`.wk-data-list-item:not(:last-child)`) rather
-    // than an inline border-bottom — so the LAST row omits the rule and no
-    // longer doubles against the container's own bottom border. The rest of the layout stays inline for preview-iframe / SSR
-    // robustness.
+    // than an inline border-bottom — so the LAST row omits the rule and does
+    // not double against the container's own bottom border. The rest of the
+    // layout stays inline for preview-iframe / SSR robustness.
     $itemClasses = WireKit::resolveClasses('data-list', 'item', implode(' ', [
         'wk-data-list-item',
         'py-[var(--padding-wk-y-sm)]',

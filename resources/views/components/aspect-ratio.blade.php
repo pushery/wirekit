@@ -33,7 +33,9 @@
      a radius) silently took the ratio away, which is the one thing this
      component is for. merge() folds them into one declaration list with the
      caller last, so a caller who really means to override the ratio still can.
-     Pinned by a guard in the package's own suite. --}}
-<div {{ $attributes->merge(['style' => 'aspect-ratio: '.$aspectValue])->class([$classes]) }}>
+     The declaration closes with its own semicolon: some Laravel releases join a
+     caller's style to it with a space alone, and the two would read as one
+     invalid declaration. Pinned by a guard in the package's own suite. --}}
+<div {{ $attributes->merge(['style' => 'aspect-ratio: '.$aspectValue.';'])->class([$classes]) }}>
     {{ $slot }}
 </div>

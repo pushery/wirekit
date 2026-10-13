@@ -6,7 +6,7 @@
 
      Params: $overflowAction (label, icon, attributes). --}}
 <x-wirekit::tooltip :text="$overflowAction['label']" :focusable-trigger="false" :describes="false">
-    <x-wirekit::button size="xs" intent="neutral" surface="ghost" icon-only data-wk-overflow-action :attributes="$overflowAction['attributes']">
+    <x-wirekit::button size="xs" intent="neutral" surface="ghost" icon-only data-wk-overflow-action class="wk-touch-row" :attributes="$overflowAction['attributes']">
         <x-slot:iconLeft><x-wirekit::icon :name="$overflowAction['icon']" size="sm" aria-hidden="true" /></x-slot:iconLeft>
         {{ $overflowAction['label'] }}
     </x-wirekit::button>

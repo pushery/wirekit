@@ -241,6 +241,7 @@ $wrap
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '0'
 '2xl'
 '<svg
@@ -270,7 +271,7 @@ $wrap
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-accent-fg)]',
 'bg-[var(--color-wk-bg)]',
-'bg-[var(--color-wk-bg-muted)]',
+'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
@@ -587,6 +588,7 @@ $wrap
 --}}
 -text
 ...>
+.=
 /
 //
 />
@@ -611,11 +613,10 @@ $wrap
 2.1.1
 2.1.1).
 20px,
-2rem,
 3.5
 30%,
 300),
-3rem.
+3rem,
 4%,
 4l-8
 4l8
@@ -741,13 +742,11 @@ ABOVE
 ALSO
 ALWAYS
 AND
-API:
 APPLICATION's
 ARIA
 AT
 Accept
 Accessible
-Adding
 Alpine
 Alpine's
 Alpine-only
@@ -885,6 +884,7 @@ One
 Only
 Operating
 Optional
+Outside
 Override
 PERFECTLY
 Pick
@@ -955,6 +955,7 @@ Two
 UI
 UNBOUND
 Uses
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 Validate
 WAS
@@ -1100,7 +1101,6 @@ __toString
 `axe-core`
 `card`
 `changedLabel`
-`class="h-12
 `class`
 `clearTimeout`
 `cloneNode(true)`,
@@ -1122,6 +1122,7 @@ __toString
 `focusable-trigger`
 `form`
 `gridcell`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -1162,6 +1163,7 @@ __toString
 `role="img"`.
 `role="region"`
 `rows`/`columns`
+`shrink`
 `soft`
 `span`:
 `status`
@@ -1180,6 +1182,7 @@ __toString
 `wire:id`,
 `wire:key`,
 `wirekit:badge-dismissed`
+`wk-tooltip-panel`
 `wrap="false"`
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
@@ -1252,6 +1255,7 @@ anticipate
 any
 anything
 anywhere
+apart
 app
 app()->getLocale()));
 app(IconResolver::class)->resolve($name);
@@ -1346,7 +1350,6 @@ becomes
 becoming
 been
 before
-before;
 behalf,
 being
 belonged
@@ -1364,6 +1367,7 @@ bg
 bg).
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-success)]"></span>
+bg-muted
 bg.
 bind
 binds
@@ -1438,6 +1442,7 @@ caller's
 caller-supplied
 calls.
 can
+can.
 cancel
 cancels
 cannot
@@ -1492,11 +1497,11 @@ class="inline-block
 class="inline-flex
 class="mt-2
 class="rounded-[var(--radius-wk-sm)]
-class="shrink-0"
 class="text-[color:var(--color-wk-text-subtle)]">—</span>
 class="text-[color:var(--color-wk-warning-text)]"></span>
 class="text-[length:var(--text-wk-sm)]
 class="w-full
+class="wk-tooltip-panel
 class="{{
 classes
 classes,
@@ -1554,11 +1559,11 @@ config('wirekit.components.tooltip.delay-show',
 config('wirekit.components.tooltip.offset',
 config('wirekit.components.tooltip.placement',
 configured
-conflict
 connects
 console
 console).
 construction.
+container
 containers.
 content
 content).
@@ -1602,6 +1607,7 @@ data-r="{{
 data-replayable="true"
 data-table
 data-table,
+data-wk-badge-dismiss
 data-wk-prose-skip
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
@@ -1655,7 +1661,6 @@ different
 differentiates
 differently
 dim
-direct
 disabled
 disappearing,
 discoverable.
@@ -1676,6 +1681,7 @@ double
 down
 down.
 drawer
+drawn
 drawn.
 draws
 drift
@@ -1703,6 +1709,7 @@ edit
 editable
 editable:
 edited
+effect.
 either
 element
 element,
@@ -1824,14 +1831,14 @@ focus-within
 focusable
 focusable.
 focused,
-followable.
 follows
 font
 font-[family-name:var(--font-wk-sans)]',
 font-[number:var(--font-wk-heading-weight)]
+footer
 for
-forbidden
 forced
+forced-colors
 forces
 forcing
 foreach
@@ -1871,12 +1878,15 @@ generic
 get
 gets
 getter
+give
 gives
 global
 glyph
+glyph,
 glyph.
 go
 goes
+gray
 green
 green→red
 grid
@@ -1955,7 +1965,7 @@ house
 hover
 hover,
 hover.
-hover:bg-[var(--color-wk-bg-muted)]'
+hover:bg-[var(--color-wk-bg-active)]'
 hover:opacity-100',
 how
 however
@@ -1966,6 +1976,7 @@ icon
 icon's
 icon,
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -2065,7 +2076,6 @@ label.
 label;
 labels
 labels).
-ladder
 lands
 lanes
 language.
@@ -2138,6 +2148,7 @@ map.
 map:
 margin
 marked
+marker
 markers
 marketing
 marks
@@ -2174,6 +2185,7 @@ mismatch
 missing
 missing,
 missing:
+mixed
 mobile
 mobile).
 modal
@@ -2217,9 +2229,11 @@ navigates
 navigation
 needed
 needs
+neighbors,
 neither
 nest
 nested
+neutral
 never
 new
 next
@@ -2397,6 +2411,7 @@ problem
 prod).
 produced
 produces
+project
 promise
 promises
 prop
@@ -2408,7 +2423,6 @@ proxy
 publishing
 purpose,
 purpose.
-put
 puts
 px-2'
 px-2',
@@ -2510,6 +2524,7 @@ respect
 responsive
 rest
 rests
+restyles
 result
 retrofitted,
 return
@@ -2554,6 +2569,7 @@ routinely
 roving
 row
 row).
+row,
 row-axis
 row.
 rowCount:
@@ -2562,7 +2578,6 @@ rows,
 rule
 rules
 run
-rung
 runtime
 safe.
 safe:
@@ -2593,6 +2608,7 @@ see
 see.
 sees
 sees.
+selects,
 semantic
 semantics
 semantics.
@@ -2616,6 +2632,7 @@ shape,
 share
 shared
 shipped
+short
 shorthand
 shorthand:
 should
@@ -2623,6 +2640,8 @@ show
 show"
 shown
 shows
+shrink
+shrink-0';
 sibling
 siblings
 sidebar
@@ -2659,6 +2678,7 @@ source
 source-baked
 space
 space).
+space.
 span
 spelled
 spelling
@@ -2688,7 +2708,6 @@ sticky-z
 sticky-z.
 still
 stop
-stopped
 stops
 stops.
 storage/logs/laravel.log.
@@ -2724,6 +2743,7 @@ supplied
 supposed
 surely
 surface
+surface,
 surface.
 surfaces
 surrounding
@@ -2806,6 +2826,7 @@ themes.
 then
 there
 there).
+there.
 there:
 therefore
 they
@@ -2886,6 +2907,7 @@ true,
 truthy
 truthy.
 try
+turns
 twice
 twice.
 two
@@ -2959,8 +2981,8 @@ visual
 visually
 vocabulary
 w-1.5
-w-12"`
 w-12',
+w-12`
 w-2.5
 w-24
 w-3',

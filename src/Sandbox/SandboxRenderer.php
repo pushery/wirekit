@@ -23,9 +23,8 @@ use Illuminate\Support\Facades\Blade;
  * prop takes the value as given, because the component escapes it on
  * output the way it does in any application, and a second escape reaches
  * the page as text: a title reading `&amp;`, a query string with a
- * parameter called `amp;b`. That no component in the sandbox echoes a
- * string prop raw is asserted over the whole schema registry by
- * `SandboxRendersWhatAnApplicationRendersTest`, not assumed.
+ * parameter called `amp;b`. No component in the sandbox echoes a string
+ * prop raw, which is what makes the single escape safe.
  *
  * SSTI defense: developer values are bound as runtime DATA and referenced
  * from the assembled template through Blade expressions — they are NEVER
@@ -111,8 +110,8 @@ final class SandboxRenderer
      * @param  array<string, mixed>  $props  the validated values as given — what a bound prop receives
      * @param  array<string, mixed>  $escaped  the same values HTML-escaped — what the raw slot echo receives
      */
-    // `$source` is written on every path, never left null — the nullable by-ref type made
-    // callers guard against a state this method does not produce.
+    // `$source` is written on every path, never left null, so its by-ref type is not nullable
+    // and a caller has no null state to guard against.
     private static function doRender(string $component, array $props, array $escaped, string &$source = ''): string
     {
         // Build: <x-wirekit::{component} :prop="$__wk_pN" …>{!! $__wk_body !!}</…>
@@ -173,11 +172,10 @@ final class SandboxRenderer
                 //
                 // A number is bound here too, but for a different reason: the
                 // schema declares it as an int, and `level="4"` passes the string
-                // "4". Both render identically across the catalog today, since
-                // nothing compares a numeric prop strictly — so this is about the
-                // snippet teaching the right shape rather than about a bug. The
-                // first `=== 4` added anywhere would turn every quoted snippet
-                // into a silent miss, and the reader would have pasted it.
+                // "4". The two render alike only while no component compares a
+                // numeric prop strictly; under an `=== 4` a quoted snippet would
+                // miss silently, after the reader had pasted it. So the snippet
+                // teaches the shape the schema declares.
                 $sourceAttrs .= is_string($value)
                     ? ' '.self::snippetAttribute($key, $value)
                     : ' :'.$key.'="'.$value.'"';
@@ -192,7 +190,7 @@ final class SandboxRenderer
         // already HTML-escaped by the validator (so it can only emit inert
         // entities, never live markup), and a raw echo of a DATA variable is
         // never re-parsed as Blade — so a `{{ … }}` / `@…` in the body stays
-        // literal. This reproduces the previous single-escaped slot-text output.
+        // literal, and the slot text reaches the page escaped exactly once.
         $data['__wk_body'] = $body;
         $bodyExpr = $body === '' ? '' : '{!! $__wk_body !!}';
 

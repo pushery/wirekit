@@ -18,13 +18,13 @@ use Pushery\WireKit\WireKit;
  * The form key `name` is CORRECT to repeat; only the DOM `id` must be unique.
  *
  * This keeps a per-request registry: the FIRST sight of a base returns it verbatim
- * (so a lone `id="email"` stays byte-identical), and each subsequent collision
+ * (so a lone `id="email"` stays as written), and each subsequent collision
  * appends `-2`, `-3`, … The registry is reset after each HTTP request, which keeps it
  * per request under Octane (FPM starts every request with empty static state anyway),
  * and by {@see WireKit::flush()}.
  *
  * Opt out with `config('wirekit.a11y.dedupe_ids', false)` — then the preferred
- * value is returned verbatim (the pre-2.20 behavior).
+ * value is returned verbatim, and may collide.
  *
  * A control with NEITHER `id` nor `name` gets a derived id too, and that one is
  * COUNTED rather than random. The difference is the whole point: a random id is
@@ -80,8 +80,8 @@ final class DomId
             return $fallbackPrefix.($seen + 1);
         }
 
-        // Opt-out restores the exact pre-2.20 behavior (verbatim, may collide).
-        if (! config('wirekit.a11y.dedupe_ids', true)) {
+        // Opted out: the preferred value verbatim, which may collide.
+        if (! BooleanProp::from(config('wirekit.a11y.dedupe_ids', true), true)) {
             return $preferred;
         }
 
@@ -108,7 +108,7 @@ final class DomId
      */
     public static function distinct(string $id): string
     {
-        if (! config('wirekit.a11y.dedupe_ids', true)) {
+        if (! BooleanProp::from(config('wirekit.a11y.dedupe_ids', true), true)) {
             return $id;
         }
 

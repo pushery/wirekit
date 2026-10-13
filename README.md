@@ -16,7 +16,7 @@
 
 A free, open-source UI component library for **Laravel Livewire** — build app dashboards and marketing pages with **Tailwind CSS v4** and **Alpine.js**, zero utility-class soup.
 
-A comprehensive component library covering forms, navigation, overlays, layout, marketing, data display, and more — fully themeable, accessible by default, and dark-mode aware.
+A comprehensive component library covering forms, navigation, overlays, layout, marketing, data display, and more — fully themeable, accessible by default (built and tested to WCAG 2.2 AA), and dark-mode aware.
 
 → **Full documentation: [docs.wirekit.app](https://docs.wirekit.app)**
 

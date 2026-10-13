@@ -112,7 +112,13 @@
         x-on:click="isOpen = !isOpen"
         :aria-expanded="isOpen ? 'true' : 'false'"
         aria-controls="{{ $uid }}"
-        class="{{ $triggerClasses }}"
+        {{-- wk-collapsible-trigger is a marker, carried outside the class seam so an override
+             cannot remove it: the stylesheet floors its height to the touch target under
+             `pointer: coarse` and on a `data-wk-touch` surface, as it does the accordion's
+             header. A height floor rather than `wk-touch-target`, because the trigger is a
+             full-width row: that class centers a 44x44 box, and both ends of the row would stay
+             short. --}}
+        class="wk-collapsible-trigger {{ $triggerClasses }}"
     >
         <span class="flex-1 min-w-0">{{ $trigger }}</span>
         {{-- Chevron — rotates 180° when open. Decorative. --}}

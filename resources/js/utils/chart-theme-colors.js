@@ -30,9 +30,9 @@
  * document only when no ancestor does.
  *
  * Both classes scope the tokens of everything under them, so a light panel can sit on a dark page.
- * Reading the mode from `<html>` and `<body>` alone gave a chart in such a panel the page's mode,
- * its fallbacks and its tooltip. `closest()` includes the element itself and reaches `<body>` and
- * `<html>`, so a page that sets its theme there answers the same as before.
+ * Reading the mode from `<html>` and `<body>` alone would give a chart in such a panel the page's
+ * mode, its fallbacks and its tooltip. `closest()` includes the element itself and reaches
+ * `<body>` and `<html>`, so a page that sets its theme there is still answered from there.
  *
  * @param {Element|null} element - the chart's own element, or null for the document's theme
  * @returns {'dark'|'light'}
@@ -64,6 +64,8 @@ export function themeModeOf(element) {
  *   <body> propagates correctly.
  * @param {Element|null} [element] - the chart's own element. Its nearest `.dark` or `.light`
  *   decides the mode, and the probe that resolves each token hangs beside it, inside its cascade.
+ * @param {{categorical?: boolean}} [options] - `categorical` also reads the chart palette's
+ *   tokens (`chart`, `chartEdge`, `chartLabel`), for a chart drawn in that palette.
  * @returns {{
  *   accent: string,
  *   danger: string,
@@ -75,10 +77,13 @@ export function themeModeOf(element) {
  *   orange: string,
  *   textPrimary: string,
  *   textMuted: string,
- *   border: string
+ *   border: string,
+ *   chart?: string[],
+ *   chartEdge?: string[],
+ *   chartLabel?: string
  * }} rgb()/rgba() string values for each token.
  */
-export function resolveThemeColors(style, element = null) {
+export function resolveThemeColors(style, element = null, options = {}) {
     const isDark = themeModeOf(element) === 'dark';
 
     // Probe element: hidden div appended to <body> so var() resolves
@@ -174,9 +179,10 @@ export function resolveThemeColors(style, element = null) {
         return false;
     };
 
-    // The surface every series is read against: the page's own background token. A chart sits on
-    // it, or on a card the default themes keep at the same value.
-    const background = resolve('--color-wk-bg', '#ffffff', '#0a0a0a');
+    // The surface every series is read against: the one the chart stands on. The chart paints no
+    // background of its own, and every surface WireKit paints declares `--color-wk-surface` for
+    // what it holds, a card, a footer or a muted band; on the page it is the page's background.
+    const background = resolve('--color-wk-surface', '#ffffff', '#0a0a0a');
 
     // WCAG relative luminance of an rgb()/rgba() or #rrggbb string, or null for anything else. An
     // unparseable color is left alone below rather than second-guessed.
@@ -264,6 +270,34 @@ export function resolveThemeColors(style, element = null) {
         border:      resolve('--color-wk-border', '#e4e4e7', '#52525b'),
     };
 
+    // The categorical palette, read only for a chart drawn in it. A fill and an edge per series:
+    // the edge carries the data and holds 3:1 on the page, the pastel fill need not. Taken as the
+    // tokens give them, with no substitute: they are chart colors by declaration. The fallbacks are
+    // the shipped values, for a page without the stylesheet.
+    if (options.categorical) {
+        colors.chart = [
+            resolve('--color-wk-chart-1', '#80b7eb', '#679dd0'),
+            resolve('--color-wk-chart-2', '#f0e399', '#d5c980'),
+            resolve('--color-wk-chart-3', '#adeeff', '#93d3e4'),
+            resolve('--color-wk-chart-4', '#e79a8f', '#cc8177'),
+            resolve('--color-wk-chart-5', '#d3c178', '#b9a85f'),
+            resolve('--color-wk-chart-6', '#80d5b5', '#66bb9c'),
+            resolve('--color-wk-chart-7', '#c4ceff', '#abb4e4'),
+            resolve('--color-wk-chart-8', '#d59bcc', '#bb82b2'),
+        ];
+        colors.chartEdge = [
+            resolve('--color-wk-chart-1-edge', '#5393cd', '#80b7eb'),
+            resolve('--color-wk-chart-2-edge', '#9d8f36', '#f0e399'),
+            resolve('--color-wk-chart-3-edge', '#159cb7', '#adeeff'),
+            resolve('--color-wk-chart-4-edge', '#cd776c', '#e79a8f'),
+            resolve('--color-wk-chart-5-edge', '#a28d34', '#d3c178'),
+            resolve('--color-wk-chart-6-edge', '#35a07e', '#80d5b5'),
+            resolve('--color-wk-chart-7-edge', '#7d89d2', '#c4ceff'),
+            resolve('--color-wk-chart-8-edge', '#ba78b0', '#d59bcc'),
+        ];
+        colors.chartLabel = resolve('--color-wk-chart-label', '#171717', '#171717');
+    }
+
     probe?.remove();
     return colors;
 }
@@ -291,6 +325,38 @@ export function palette(colors) {
         colors.pink ?? '#f9a8d4',
         colors.orange ?? '#fdba74',
     ];
+}
+
+/**
+ * The fill and the edge of each series in the palette a chart asks for.
+ *
+ * `semantic` is the palette above with the same color as both, which is how the adapters have always
+ * drawn a series. `categorical` is the chart tokens, a pastel fill and the edge that carries the
+ * data, and needs `resolveThemeColors(…, { categorical: true })`; without them it falls back to
+ * `semantic`.
+ *
+ * @param {ReturnType<resolveThemeColors>} colors
+ * @param {string} [scheme] - `semantic` or `categorical`
+ * @returns {{fill: string, edge: string}[]}
+ */
+export function seriesColors(colors, scheme = 'semantic') {
+    if (scheme === 'categorical' && Array.isArray(colors.chart) && Array.isArray(colors.chartEdge)) {
+        return colors.chart.map((fill, i) => ({ fill, edge: colors.chartEdge[i] ?? fill }));
+    }
+
+    return palette(colors).map((color) => ({ fill: color, edge: color }));
+}
+
+/**
+ * The palette a chart's configuration names. The server writes `wkPalette` only for a chart drawn
+ * in the categorical palette, so a configuration without the key is `semantic`, the palette every
+ * chart was drawn in before there was a choice.
+ *
+ * @param {object|null|undefined} config
+ * @returns {'semantic'|'categorical'}
+ */
+export function paletteSchemeOf(config) {
+    return config?.wkPalette === 'categorical' ? 'categorical' : 'semantic';
 }
 
 /**

@@ -50,11 +50,10 @@
     // unresolvable reference. Default `null` keeps the documented behavior, so nothing
     // that composes the description changes.
     //
-    // Read through BooleanProp below, and that is the whole of this prop's history: the
-    // check was a bare `!== false`, so only the BOUND spelling `:describedby="false"`
-    // worked. `describedby="false"` compiles to the STRING "false", which is not `false`
-    // and is truthy besides, so the unresolvable reference the prop exists to remove
-    // shipped anyway — silently, in the spelling a reader is most likely to write.
+    // Read through BooleanProp below: `describedby="false"` compiles to the STRING
+    // "false", which is not `false` and is truthy besides, so a bare `!== false` would
+    // honor only the BOUND spelling `:describedby="false"` and ship the unresolvable
+    // reference silently, in the spelling a reader is most likely to write.
     'describedby' => null,
 ])
 
@@ -105,6 +104,18 @@
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
+    // The dialog's name comes from `label`, from `aria-label` or from its title, whose id the
+    // panel's aria-labelledby names; only `alert-dialog.title` puts that id on an element. Without
+    // any of them the reference points at nothing, which per ARIA leaves the dialog with no name:
+    // it is announced as a bare "alert dialog", and no scan of the page can see it. Reported through
+    // strict validation, as a modal reports it: an exception in a test or a console run, a log line
+    // in a request.
+    if (! filled($label) && ! filled($callerLabel) && ! str_contains((string) $slot, 'data-wk-alert-dialog-title')) {
+        WireKit::validateProp('alert-dialog', 'label', '', [
+            'a non-empty label, or an <x-wirekit::alert-dialog.title> to name the dialog',
+        ]);
+    }
+
     $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-modal '.WireKit::resolveClasses('alert-dialog', 'backdrop', implode(' ', [
         'fixed inset-0',
         'z-[var(--z-wk-modal)]',
@@ -137,11 +148,18 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // The dialog is teleported, so where the component is written only its trigger shows.
+    // Without one the root would be an empty box, which a flex or grid container still counts as
+    // an item with a gap of its own beside it, so it generates no box. With a trigger it keeps its
+    // box, and the trigger its place: its own width in a grid cell, the margin a
+    // stack gives its children. `class="contents"` on the component hands the trigger over.
+    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(['contents']);
 @endphp
 
 <div
     x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
-    {{ $attributes }}
+    {{ $rootAttributes }}
 >
     {{-- Trigger slot — clicking opens the alert dialog.
          The wrapper only carries the click listener, so it generates no box. As a block it kept a

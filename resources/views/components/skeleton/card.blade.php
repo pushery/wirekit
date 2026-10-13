@@ -39,7 +39,7 @@
      property first shipped in Safari 18.0, above this library's Safari 16.4 floor. Nothing
      depends on it — without support the skeleton renders the ordinary way. The intrinsic-size
      hint travels as a custom property so it stays tunable per variant. --}}
-<div
+<div data-wk-sr-host
     role="status"
     aria-live="polite"
     aria-label="{{ __('wirekit::Loading') }}"

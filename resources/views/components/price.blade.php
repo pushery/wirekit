@@ -12,12 +12,24 @@
     'deltaFormat' => 'percent',
     'size' => config('wirekit.components.price.size', 'md'),
     'minorUnits' => false,
+    // The amount is the lowest of several, the price of the cheapest variant of a product: a word
+    // before it, "from" in the application's language, says so on screen and to a screen reader.
+    'from' => false,
+    // At most this many decimals, for a price that has more than its currency: a price per piece
+    // such as 0.045 €. Never fewer than the currency's own, and trailing zeros drop back to them.
+    'maxPrecision' => null,
+    // Shrinks the price from its size down to a floor so it fits its line: the struck price, the word
+    // "from" and the amount shrink together, the change, the suffix and the unit price keep their
+    // size. true for the `--text-wk-fit-floor` token, a length such as `8px` for a floor of its own,
+    // null or false for none.
+    'fit' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\LocalizedNumber;
+    use Pushery\WireKit\Support\StrictnessGate;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -29,6 +41,8 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $minorUnits = BooleanProp::from($minorUnits, false);
+    $from = BooleanProp::from($from, false);
+    $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'price');
 
     $locale = $locale ?? app()->getLocale();
 
@@ -40,7 +54,21 @@
     // Locale-aware currency display, through the helper that also knows what to write without
     // the intl extension: WireKit does not require it, and a formatter built here directly
     // would not exist in an application that lacks it, so the whole page would fail to render.
-    $money = static fn ($value): string => LocalizedNumber::currency((float) $value, (string) $currency, $locale);
+    // A whole number of decimals from 0 to 20, as an attribute writes it ("4") or as a bound int.
+    // Anything else is refused like any prop value, and the price keeps its currency's digits.
+    if ($maxPrecision !== null && $maxPrecision !== '') {
+        $precision = filter_var($maxPrecision, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 20]]);
+
+        if ($precision === false) {
+            StrictnessGate::reject('price', 'maxPrecision', is_scalar($maxPrecision) ? (string) $maxPrecision : get_debug_type($maxPrecision), 'a whole number of decimals from 0 to 20', '');
+        }
+
+        $maxPrecision = $precision === false ? null : $precision;
+    } else {
+        $maxPrecision = null;
+    }
+
+    $money = static fn ($value): string => LocalizedNumber::currency((float) $value, (string) $currency, $locale, maxPrecision: $maxPrecision);
     $formattedAmount = $money($displayAmount);
     $formattedBase = $displayBase !== null ? $money($displayBase) : null;
 
@@ -95,6 +123,44 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
+    // With `fit`, the struck price, the word "from" and the amount are one fitted text on one line, so
+    // they keep one size as they shrink. The box carries the size and the amount's weight, so the
+    // copies that measure the text are as wide as its widest part; the struck price and the word keep
+    // the body weight they show without `fit`, and inherit the fitted size.
+    $fitted = null;
+
+    if ($fitFloor !== false) {
+        $fitParts = [];
+
+        if ($formattedBase !== null) {
+            $fitParts[] = '<del class="font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;">'
+                .'<span class="sr-only">'.e(__('wirekit::Previous price')).'</span><bdi>'.e($formattedBase).'</bdi></del>';
+        }
+
+        if ($from) {
+            $fitParts[] = '<span class="font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]">'.e(__('wirekit::from')).'</span>';
+        }
+
+        $fitParts[] = '<bdi class="text-[color:var(--color-wk-text)]">'.e($formattedAmount).'</bdi>';
+
+        // What a reader sees, which the copies measure: the screen reader's "Previous price" is not
+        // part of the line.
+        $fitPlain = implode(' ', array_filter(
+            [$formattedBase, $from ? __('wirekit::from') : null, $formattedAmount],
+            static fn (?string $part): bool => $part !== null && $part !== '',
+        ));
+
+        $fitted = \Pushery\WireKit\Support\FitText::box(
+            new \Illuminate\Support\HtmlString(implode(' ', $fitParts)),
+            new \Illuminate\View\ComponentAttributeBag(array_filter([
+                'class' => $sizeClasses.' font-[number:var(--font-wk-heading-weight)]',
+                'style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null,
+            ])),
+            false,
+            $fitPlain,
+        );
+    }
+
     // Delta intent classes
     $deltaClasses = match ($deltaIntent) {
         'success' => implode(' ', [
@@ -112,7 +178,10 @@
     };
 @endphp
 
-<span {{ $attributes->class([$baseClasses]) }}>
+<span data-wk-sr-host {{ $attributes->class([$baseClasses]) }}>
+    @if($fitted !== null)
+        {{ $fitted }}
+    @else
     {{-- Strike-through compare-at price (UVP / RRP / MSRP).
          Uses inline `text-decoration` to bypass Tailwind v4 class-ordering
          where `no-underline` could shadow `line-through` on the same element,
@@ -121,9 +190,9 @@
     @if($formattedBase !== null)
         {{-- The compare-at matches the main price SIZE (same $sizeClasses); the
              de-emphasis comes from the muted color + the strike, not a smaller
-             font. A one-step-smaller old price read as odd next to the current
-             one — equal size keeps the pair balanced while the strike still says
-             which is the old number. --}}
+             font. A one-step-smaller old price would read as odd next to the
+             current one — equal size keeps the pair balanced while the strike
+             still says which is the old number. --}}
         <del
             class="text-[color:var(--color-wk-text-muted)] {{ $sizeClasses }}"
             style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;"
@@ -137,10 +206,14 @@
         </del>
     @endif
 
-    {{-- Primary price --}}
-    <bdi class="{{ $sizeClasses }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+    {{-- Primary price, behind the word "from" when it is the lowest of several. The word stands on
+         the amount's own line, so a price without it renders the amount alone, and the word is
+         text a screen reader reads with the amount: "from €19.99", after a struck price
+         "Previous price €24.99, from €19.99". --}}
+    @if($from)<span class="{{ $sizeClasses }} text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::from') }}</span> @endif<bdi class="{{ $sizeClasses }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
         {{ $formattedAmount }}
     </bdi>
+    @endif
 
     {{-- Delta badge --}}
     @if($formattedDelta !== null)

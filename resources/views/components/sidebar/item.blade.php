@@ -17,6 +17,10 @@
     // The identity of this row when the parent sidebar is in `selection` mode. Ignored
     // in the default navigation mode, where `href` is the identity.
     'value' => null,
+    // The element: `a`, a destination, or `button`, an action such as signing out in a form
+    // that posts. A button takes `type` from the tag, `button` unless it says `submit` or
+    // `reset`. Ignored in `selection` mode, where every row is an option.
+    'as' => 'a',
 ])
 
 {{-- Inherited from the parent <x-wirekit::sidebar>. A row cannot know on its own which
@@ -76,16 +80,16 @@
     $notCurrentClasses = $selectionMode
         ? [
             'not-[[aria-selected=true]]:text-[color:var(--color-wk-text-muted)]',
-            'not-[[aria-selected=true]]:hover:bg-[var(--color-wk-bg-muted)]',
+            'not-[[aria-selected=true]]:hover:bg-[var(--color-wk-bg-active)]',
             'not-[[aria-selected=true]]:hover:text-[color:var(--color-wk-text)]',
         ]
         : [
             'not-[[aria-current]]:text-[color:var(--color-wk-text-muted)]',
-            'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-muted)]',
+            'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-active)]',
             'not-[[aria-current]]:hover:text-[color:var(--color-wk-text)]',
         ];
 
-    // WHERE THE KEYBOARD IS — a third mark, and it has to be a third one.
+    // Where the keyboard is — a third mark, and it has to be a third one.
     //
     // In `selection` mode the listbox keeps DOM focus on the column and moves an
     // `aria-activedescendant` instead, so the browser draws nothing on the option
@@ -94,7 +98,7 @@
     // said which row the reader was on.
     //
     // A RING rather than a fill, because the fill is taken. The chosen row already
-    // renders `$activeClasses` — `bg-[var(--color-wk-bg-muted)]` — so painting the
+    // renders `$activeClasses` — `bg-[var(--color-wk-bg-active)]` — so painting the
     // keyboard's position with that same token would make the chosen row and the
     // marked row look identical, which is the one distinction the two states exist
     // to draw. scope-switcher can use the fill precisely because nothing else there
@@ -199,7 +203,7 @@
     $iconClasses = WireKit::resolveClasses('sidebar.item', 'icon', 'w-5 h-5', $scope);
 
     $activeClasses = WireKit::resolveClasses('sidebar.item', 'active', implode(' ', [
-        'bg-[var(--color-wk-bg-muted)]',
+        'bg-[var(--color-wk-bg-active)]',
         'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-body-weight)]',
     ]), $scope);
@@ -210,7 +214,19 @@
     // our auto-injection would silently fail, re-introducing tabnabbing.
     // To force-override, we remove rel from the bag and render it separately
     // whenever we have a computed value.
-    $targetAttr = $attributes->get('target', '');
+    // A link or a button. A button has no address, so `href`, `target` and `rel` mean nothing on
+    // it and are not written; its `type` comes from the tag.
+    $itemTag = WireKit::validateProp('sidebar.item', 'as', (string) $as, ['a', 'button']) === 'button' && ! $selectionMode ? 'button' : 'a';
+    $buttonType = in_array($attributes->get('type'), ['submit', 'reset'], true) ? (string) $attributes->get('type') : 'button';
+    // A `<button>` arrives with its own appearance, border, font and centered text, which a link
+    // never had. The shipped rule `.wk-sidebar-item-button` takes those back; the two that the
+    // row's own utilities set in some state, the fill and the weight, are put back here for the
+    // row at rest only, so the hover and the current row keep theirs.
+    $buttonClasses = $itemTag === 'button'
+        ? ['wk-sidebar-item-button', 'cursor-pointer', 'bg-transparent' => ! $active, '[font-weight:inherit]' => ! $active]
+        : [];
+
+    $targetAttr = $itemTag === 'a' ? $attributes->get('target', '') : '';
     $opensNewTab = str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')

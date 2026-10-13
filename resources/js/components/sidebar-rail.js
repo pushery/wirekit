@@ -53,8 +53,9 @@ export default function wirekitSidebarRail(config = {}) {
          * rows below it move down, and they move back once the column settles.
          *
          * A separate marker rather than delaying `data-collapsed`, and that is not caution:
-         * twenty-five rules key off that attribute — centering, badge shape, headings, the
-         * column width itself — and holding it back would hold all of them back. This one is
+         * every rule of the folded column keys off that attribute — centering, badge shape,
+         * headings, the column width itself — and holding it back would hold all of them
+         * back. This one is
          * read by exactly the rules that hide TEXT, so the geometry moves on time and only
          * the words wait.
          */
@@ -72,8 +73,7 @@ export default function wirekitSidebarRail(config = {}) {
          * still in flight — the column lays out at its unstyled width, and the moment the CSS
          * lands the browser animates the ARRIVAL of the styled width. The reader sees a column
          * unfold on a page where nothing was toggled. With a warm cache the styles are there
-         * before first paint and nothing shows, which is why this only ever surfaced on
-         * cmd+shift+R.
+         * before first paint and nothing shows; a hard reload is where it would show.
          *
          * Set after a frame rather than in `init()` itself: setting it synchronously lands in
          * the same style recalculation as the first paint, which is the thing being avoided.
@@ -111,7 +111,7 @@ export default function wirekitSidebarRail(config = {}) {
 
                 if (next !== this.collapsed) {
                     this.collapsed = next;
-                    this._announce();
+                    this._announce('viewport');
                 }
             };
             this._viewport?.addEventListener?.('change', this._onViewportChange);
@@ -165,13 +165,13 @@ export default function wirekitSidebarRail(config = {}) {
             // announcement lands on nobody. That order is not an edge case: it is the order
             // the documented external-trigger snippet uses, and the one
             // `header-placement="content"` produces, because a sidebar column comes before
-            // the topbar that drives it. A persisted collapsed state therefore rendered
-            // `aria-expanded="true"` on a collapsed sidebar until the first click.
+            // the topbar that drives it. Announced synchronously, a persisted collapsed state
+            // would render `aria-expanded="true"` on a collapsed sidebar until the first click.
             //
             // `$nextTick` and not a bare `setTimeout`: it is Alpine's own "after the current
             // work is finished", which is exactly the boundary that matters here, and it is
             // the idiom the rest of this directory already uses.
-            this.$nextTick(() => this._announce());
+            this.$nextTick(() => this._announce('init'));
         },
 
         destroy() {
@@ -234,7 +234,7 @@ export default function wirekitSidebarRail(config = {}) {
             // screen, so there is no width to wait for.
             if (next === this.collapsed) {
                 writePersistedFlag(this._persistKey, this._chosen, this._persistDriver);
-                this._announce();
+                this._announce('toggle');
 
                 return;
             }
@@ -242,7 +242,7 @@ export default function wirekitSidebarRail(config = {}) {
             this.collapsed = next;
 
             if (this.collapsed) {
-                // Narrowing: the names go at once, which is the half that always looked right.
+                // Narrowing: the names go at once, and nothing below them moves.
                 clearTimeout(this._settleFallback);
                 this.settling = false;
             } else {
@@ -270,14 +270,13 @@ export default function wirekitSidebarRail(config = {}) {
             }
 
             writePersistedFlag(this._persistKey, this._chosen, this._persistDriver);
-            this._announce();
+            this._announce('toggle');
         },
 
         // Raise the arrival marker for exactly as long as the fade lasts, then drop it.
         // A marker that stayed would re-run the animation on the next unrelated re-render,
-        // and one that never rose would leave the names snapping in — the defect the fade
-        // was added for. Collapsing raises nothing: there the names leave at once, which
-        // is the half that always looked right.
+        // and one that never rose would leave the names snapping in. Collapsing raises
+        // nothing: there the names leave at once.
         _markArrival() {
             if (this.collapsed) {
                 return;
@@ -290,13 +289,25 @@ export default function wirekitSidebarRail(config = {}) {
             }, 600);
         },
 
-        _announce() {
+        /**
+         * Tell the page what the column shows, and why it says so now.
+         *
+         * `cause` is `init` for the announcement after the column starts, `toggle` when the reader
+         * folds or opens it, and `viewport` when a resize moves it into or out of the drawer.
+         * `collapsed` is what the column shows; `chosenCollapsed` is the reader's choice, the value
+         * the sidebar's own store keeps. The two differ in the drawer, which names its entries
+         * whatever was chosen. A page that keeps the choice on its server saves `chosenCollapsed`
+         * on a `toggle` and on nothing else: the other two change no choice.
+         *
+         * @param {'init'|'toggle'|'viewport'} cause
+         */
+        _announce(cause) {
             window.dispatchEvent(
                 new CustomEvent('wirekit:sidebar:toggled', {
                     // Optional chaining because the id is optional AND because $el is an
                     // Alpine magic that a plain unit harness does not provide -- reading it
-                    // unguarded made the component untestable outside a browser.
-                    detail: { id: this.$el?.id || null, collapsed: this.collapsed },
+                    // unguarded would make the component untestable outside a browser.
+                    detail: { id: this.$el?.id || null, collapsed: this.collapsed, chosenCollapsed: this._chosen, cause },
                 }),
             );
         },

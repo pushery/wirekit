@@ -1,6 +1,38 @@
 import { controlIsDisabled } from '../utils/fieldset-disabled.js';
 import { formatDecimal } from '../utils/locale-number.js';
 
+// One segmenter for every name: building one per call would repeat the locale lookup.
+let graphemeSegmenter = null;
+
+/**
+ * A file name in two parts for a list row that cuts it in the middle: the start gives way, and the
+ * end stays, the extension and the eight characters before it, where two versions of one file
+ * differ. A name too short to be worth cutting stays whole in the start. The parts are split
+ * between graphemes, so an emoji or a letter with its accent is never cut in two.
+ *
+ * @param {unknown} name
+ * @returns {{start: string, end: string}}
+ */
+export function splitFileName(name) {
+    const text = String(name ?? '');
+
+    if (graphemeSegmenter === null && typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+        graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    }
+
+    const graphemes = graphemeSegmenter
+        ? Array.from(graphemeSegmenter.segment(text), (part) => part.segment)
+        : Array.from(text);
+    const dot = graphemes.lastIndexOf('.');
+    const keep = (dot > 0 ? graphemes.length - dot : 0) + 8;
+
+    if (graphemes.length <= keep + 4) {
+        return { start: text, end: '' };
+    }
+
+    return { start: graphemes.slice(0, -keep).join(''), end: graphemes.slice(-keep).join('') };
+}
+
 /**
  * File upload — the drop zone, and keeping the native input in step with it.
  *
@@ -10,18 +42,19 @@ import { formatDecimal } from '../utils/locale-number.js';
  * Everything else — the form submission, Livewire's upload — reads the input,
  * not this state, so the two must never drift.
  *
- * The drop handler moved out of the template along with the rest: it was four
- * statements and a `const`, and Alpine's CSP build parses one expression. Under
- * a strict Content-Security-Policy dropping a file did nothing at all, silently,
- * while clicking the label still worked — the kind of half-working that reads as
- * a browser quirk rather than a policy failure.
+ * The drop handler lives here rather than in the template: it is four statements
+ * and a `const`, and Alpine's CSP build parses one expression. Inline, under a
+ * strict Content-Security-Policy, dropping a file would do nothing at all,
+ * silently, while clicking the label still worked — the kind of half-working that
+ * reads as a browser quirk rather than a policy failure.
  *
  * The list also has to follow the input when something ELSE empties it, and three
  * things do. Livewire clears a bound input by assigning `value` once the property goes
  * back to empty, which is what a save action does; a native form reset clears it; and a
  * page without either can ask for it with the `wirekit:file-upload-reset` event. None of
- * the three fires `change`, so without listening for them the rows stayed on screen over
- * an input and a property that held nothing, and the next submit failed as "required".
+ * the three fires `change`, so without listening for them the rows would stay on screen
+ * over an input and a property that hold nothing, and the next submit would fail as
+ * "required".
  *
  * Lifecycle resources held on `this`, each released in destroy():
  *   - _unwatch (the unwatch function of `$wire.$watch`) — Livewire also releases it
@@ -51,11 +84,10 @@ export default function wirekitFileUpload(config = {}) {
     // time the button has gone with its row. The walk from a detached node reaches
     // nothing.
     //
-    // Deliberately no `?? this.$el` fallback: that is precisely what made the same
-    // defect quiet in `tags-input`. A button answers `querySelectorAll` perfectly well
-    // and has no rows inside it, so the list came back EMPTY and the code took its
-    // last-resort branch — focus to the control, a plausible enough place for focus to
-    // be that nobody noticed it was the wrong one.
+    // Deliberately no `?? this.$el` fallback. A button answers `querySelectorAll`
+    // perfectly well and has no rows inside it, so the list would come back EMPTY and
+    // the code would take its last-resort branch — focus to the control, a plausible
+    // enough place for focus that the wrong answer would look right.
     let rootEl = null;
 
     /**
@@ -191,6 +223,16 @@ export default function wirekitFileUpload(config = {}) {
             }
         },
 
+        /** The part of a file name that gives way in a list row (see splitFileName). */
+        fileNameStart(name) {
+            return splitFileName(name).start;
+        },
+
+        /** The part of a file name that stays in a list row: its extension and what comes before it. */
+        fileNameEnd(name) {
+            return splitFileName(name).end;
+        },
+
         /**
          * A size a person can read.
          *
@@ -298,7 +340,7 @@ export default function wirekitFileUpload(config = {}) {
          * the middle of using. So focus is placed deliberately afterwards rather than
          * left where the DOM happens to leave it.
          *
-         * And nothing else reports the change. The list is the only feedback there was,
+         * And nothing else reports the change. The list is the only other feedback,
          * which is no feedback at all for a reader who cannot see it — so the removal
          * says which file went.
          *

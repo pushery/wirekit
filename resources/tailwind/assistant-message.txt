@@ -51,7 +51,6 @@ $attributes
 $attributes->class([$classes,
 $attributes->class([$classes])
 $attributes->class([$classes]);
-$attributes->class([$groupClasses])
 $attributes->class([$iconClasses]);
 $attributes->class([$wrapperClasses])
 $attributes->class(['relative
@@ -69,6 +68,7 @@ $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
 $attributes->merge($depthStyle
+$attributes->merge(['data-size'
 $attributes->merge(['rel'
 $attributes]
 $attrs
@@ -219,6 +219,7 @@ $sizeClasses,
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
+$size])->class([$groupClasses])
 $slot
 $slot)
 $slot),
@@ -300,6 +301,7 @@ $x)`
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 '<span
 '<svg
@@ -375,6 +377,7 @@ $x)`
 'bg-[var(--color-wk-bg-elevated)]',
 'bg-[var(--color-wk-bg-muted)]
 'bg-[var(--color-wk-bg-muted)]',
+'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-bg-subtle)]
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
@@ -477,7 +480,7 @@ $x)`
 'h-8
 'hover'
 'hover',
-'hover:bg-[var(--color-wk-bg-muted)]
+'hover:bg-[var(--color-wk-bg-active)]
 'hover:opacity-[var(--opacity-wk-hover)]',
 'hover:underline
 'href'
@@ -837,6 +840,7 @@ $x)`
 ...
 ...>
 ...])
+.=
 .not-wk-prose
 .not-wk-prose,
 .wk-avatar-group
@@ -883,19 +887,19 @@ $x)`
 24"
 2;
 2c-2.67
-2rem,
 3
 30%,
 300),
 30rem
 3m0
-3rem.
+3rem,
 3v5.25"
 4
 4%,
 4-1.79
 4-4s-1.79-4-4-4-4
 44px
+44x44
 4v2h16v-2c0-2.66-5.33-4-8-4z"
 4zm0
 5.25
@@ -1054,7 +1058,6 @@ AI
 ALSO
 ALWAYS
 AND
-API:
 APPLICATION
 ARIA
 ASCII
@@ -1192,6 +1195,7 @@ If
 Ignored
 Images
 In
+Inherited
 Inherits
 Inline
 It
@@ -1251,6 +1255,7 @@ Operating
 Opt-IN,
 Optimized
 Optional
+Outside
 Overlap
 Overrides
 PERFECTLY
@@ -1354,12 +1359,14 @@ UI,
 UIs
 UNBOUND
 URL
+URL,
 URLs
 Ugly
 Unconditional,
 Unlike
 Uses
 UtilityClasses::PADDING);
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 UtilityClasses::without($panelClasses,
 VISUAL
@@ -1593,10 +1600,10 @@ __toString
 `as`
 `base`
 `base`,
+`break-word`
 `card`
 `chat`
 `class="cirlce"`
-`class="h-12
 `class`
 `clearTimeout`
 `cloneNode(true)`,
@@ -1610,7 +1617,9 @@ __toString
 `cursor-pointer`
 `cursor:
 `data-density`
+`data-size`
 `data-wk-prose-skip`,
+`data-wk-touch`
 `default
 `default`
 `delayHide`
@@ -1628,6 +1637,7 @@ __toString
 `false`
 `fixed`
 `focusable-trigger`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -1672,6 +1682,7 @@ __toString
 `p-[var(--padding-wk-x-md)]`
 `parentNode`
 `pointer-events-none`
+`pointer:
 `position:
 `preset`
 `prop="false"`
@@ -1685,6 +1696,7 @@ __toString
 `role="img"`.
 `sentence|all|off`
 `shape="cirlce"`
+`shrink`
 `size`
 `size`,
 `sm`,
@@ -1720,6 +1732,8 @@ __toString
 `wk-`
 `wk-collapsible`
 `wk-prose`
+`wk-tooltip-panel`
+`wk-touch-target`,
 `wrap="false"`
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
@@ -1751,6 +1765,7 @@ accept
 accessibility
 accessibility:
 accessible
+accordion's
 across
 act
 action
@@ -1762,6 +1777,7 @@ adapting
 add
 added
 additive
+address
 adds
 affects
 affordance.
@@ -1823,6 +1839,7 @@ any
 anyone
 anything
 anyway.
+apart
 app
 app(IconResolver::class)->resolve($name);
 appear
@@ -1950,13 +1967,10 @@ becomes
 becoming
 been
 before
-before.
-before;
 began
 behalf
 behalf,
 behavior
-behavior).
 behind
 being
 belong
@@ -1973,6 +1987,7 @@ better.
 between
 bg
 bg).
+bg-muted
 bg.
 bigger
 bind
@@ -2028,6 +2043,7 @@ bound,
 boundary,
 box
 box)
+box,
 box-shadow
 box-shadow.
 box.
@@ -2076,6 +2092,7 @@ calmer,
 came
 can
 can't
+can.
 cancel
 cancels
 cannot
@@ -2086,6 +2103,7 @@ card
 card's
 card,
 cards)
+carried
 carries
 carries.
 carry
@@ -2107,6 +2125,7 @@ cell
 cells
 cells)
 centering,
+centers
 change
 changes
 characters
@@ -2141,8 +2160,8 @@ class="flex-1
 class="font-[number:var(--font-wk-heading-weight)]
 class="inline-block
 class="mt-[var(--space-wk-xs,0.25rem)]
+class="relative"><span
 class="rounded-[var(--radius-wk-sm)]
-class="shrink-0"
 class="shrink-0">
 class="sr-only"
 class="sr-only">'.e(__('wirekit::(opens
@@ -2150,6 +2169,8 @@ class="sr-only">{{
 class="w-3/5
 class="w-4
 class="w-full
+class="wk-collapsible-trigger
+class="wk-tooltip-panel
 class="{{
 classes
 classes:
@@ -2171,6 +2192,7 @@ close-icons,
 closed
 closes
 coarse-pointer
+coarse`
 code
 code",
 code,
@@ -2233,7 +2255,6 @@ config('wirekit.components.tooltip.placement',
 configuration/system
 configured
 confirmation
-conflict
 consistent
 console
 console).
@@ -2314,9 +2335,11 @@ data-wk-assistant-meta
 data-wk-assistant-model>{{
 data-wk-assistant-reasoning
 data-wk-assistant-reasoning-label>{{
+data-wk-badge-dismiss
 data-wk-popover
 data-wk-prose-skip
 data-wk-prose-skip>
+data-wk-sr-host
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
@@ -2393,6 +2416,7 @@ disclosure's
 disclosure:
 disclosures
 discoverable.
+discs
 dismiss
 dismissLabel.
 dismissible
@@ -2422,6 +2446,7 @@ double
 double-ring
 down
 drawer
+drawn
 draws
 drift
 drives
@@ -2445,6 +2470,7 @@ edge
 edge.
 edges,
 effect
+effect.
 eight
 either
 either.
@@ -2459,6 +2485,7 @@ else
 else,
 elseif
 elsewhere,
+email
 embedded
 emit
 emits
@@ -2499,6 +2526,7 @@ exactly
 example
 example.
 excluding
+exclusion
 exclusion,
 exempted
 exempts
@@ -2589,6 +2617,7 @@ flips
 floated
 floating
 floor
+floors
 flow.
 flush
 flush.
@@ -2607,7 +2636,6 @@ focused
 focused,
 focuses
 follow
-followable.
 followed
 follows
 font
@@ -2618,10 +2646,10 @@ footer
 footnote
 for
 for.
-forbidden
 force
 force-override,
 forced
+forced-colors
 forces
 forcing
 foreground
@@ -2645,6 +2673,7 @@ front
 full
 full-catalog
 full-radius
+full-width
 fully
 function
 function).
@@ -2667,12 +2696,14 @@ generic
 genuinely
 get
 gets
+give
 give.
 given,
 gives
 glance
 global
 glyph
+glyph,
 glyph.
 glyphs
 glyphs.
@@ -2683,6 +2714,7 @@ goes.
 gone,
 gradient
 granted
+gray
 grid
 group
 grow
@@ -2713,6 +2745,7 @@ h/w
 h2
 h2,
 had
+had.
 half
 halves
 hand,
@@ -2744,6 +2777,7 @@ have)
 having
 header
 header,
+header.
 heading
 headings,
 height
@@ -2779,7 +2813,6 @@ holds
 hole
 horizontal
 host
-house
 hover
 hover,
 hover-card
@@ -2796,6 +2829,7 @@ icon
 icon's
 icon,
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -2860,6 +2894,7 @@ inserts
 inset
 inside
 inside,
+inside;
 installed
 installed.
 installed.'
@@ -2964,6 +2999,7 @@ leaving
 left
 legitimately
 length,
+less.
 let
 lets
 letterforms
@@ -3018,6 +3054,7 @@ look.
 looking
 looks
 lookup
+lose
 loss
 lost
 lost,
@@ -3086,6 +3123,7 @@ missing
 missing,
 missing:
 mistake
+mixed
 modal
 modals,
 mode
@@ -3137,6 +3175,7 @@ needed
 needs
 needs:
 negative
+neighbors,
 neither
 nest
 nested
@@ -3261,6 +3300,7 @@ overflow,
 overflow-x-auto)
 overflow.
 overhead.
+overlap
 overlay
 override
 override.
@@ -3350,6 +3390,7 @@ plain
 plain-text
 plugin,
 point
+point,
 point.
 pointed
 pointer
@@ -3369,7 +3410,6 @@ post-process
 posts,
 pre
 pre-checking
-pre-v2.10.0
 precedence
 preferences
 preflight
@@ -3401,6 +3441,7 @@ prod).
 produced
 produced:
 prohibits
+project
 prominent
 promise
 prop
@@ -3542,6 +3583,7 @@ response…");
 responsive
 rest
 rests
+restyles
 result
 retrieval
 return
@@ -3590,7 +3632,9 @@ rounded-[var(--radius-wk-lg)]
 rounded-[var(--radius-wk-sm)]',
 rounded-full
 row
+row,
 row.
+row:
 row;
 rows,
 rule
@@ -3637,6 +3681,7 @@ scroll
 scrollbar
 scrolling
 scrolls.
+seam
 second
 section
 see
@@ -3644,6 +3689,7 @@ see.
 seeded
 sees
 sees.
+selects,
 semantic
 sending.
 sensible
@@ -3676,14 +3722,17 @@ ship.
 shipped
 ships
 short
+short.
 should
 show
 shown
 shown.
 shows
+shrink
 shrink,
 shrink-0
 shrink-0',
+shrink-0';
 shrink-to-fit
 sibling
 siblings
@@ -3722,6 +3771,7 @@ slot.
 slot:
 small
 smaller
+smallest
 smooth
 so
 so,
@@ -3741,6 +3791,7 @@ source.
 sources
 space
 space).
+space.
 span
 spans
 speaker.
@@ -3785,7 +3836,6 @@ stays:
 sticky
 still
 stop
-stopped
 stops
 stopwatch
 storage/logs/laravel.log.
@@ -3846,7 +3896,7 @@ switches
 system
 tab
 tab)"
-tab)')).'</span>'
+tab)')).'</span></span>'
 tabbable.
 tabbed
 tabindex
@@ -3860,6 +3910,7 @@ tag's
 tag,
 tag.
 tags
+take
 takes
 taking
 tall.
@@ -3896,6 +3947,7 @@ text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-text-muted)]',
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[length:var(--text-wk-2xs)]',
 text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]
@@ -3928,6 +3980,7 @@ then
 there
 there).
 there,
+there.
 therefore
 these
 they
@@ -3985,7 +4038,6 @@ told
 too
 too,
 too.
-took
 took,
 tooltip
 tooltip's
@@ -4148,8 +4200,8 @@ visually
 vocabularies
 vocabulary
 w-1.5
-w-12"`
 w-12',
+w-12`
 w-3',
 w-3.5
 w-4',
@@ -4172,7 +4224,7 @@ way
 way,
 ways
 we
-weighs
+weight
 well
 well-formed
 were
@@ -4198,8 +4250,8 @@ widening
 wider
 width
 width)
+width).
 width,
-width;
 widths
 win.
 window
@@ -4212,6 +4264,7 @@ wire:model
 with
 within
 without
+wk-collapsible-trigger
 word
 word)
 word.

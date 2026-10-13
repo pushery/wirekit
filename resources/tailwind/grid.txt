@@ -6,7 +6,6 @@
 "1fr
 "20ch"
 "4.5rem
-"a
 "lg:[minmax(0,1fr)_20rem]"
 "{$bp}:grid-cols-{$n}".
 $align,
@@ -380,6 +379,7 @@ Every
 FALLBACK
 Fully
 It
+Leaving
 Merged
 NOT
 Named
@@ -390,7 +390,6 @@ Renders
 Resolved
 Split
 Tailwind
-That
 The
 This
 Tokens
@@ -435,6 +434,7 @@ Written
 `gap`
 `gap`,
 `grid-cols-1`
+`grid-template-columns`.
 `grid-template-columns`:
 `lg:[[a]_1fr_[b]]`
 `lg:[minmax(0,1fr)_20rem]`,
@@ -448,6 +448,7 @@ Written
 `none`
 `row`
 `space`,
+`space`.
 `stack`
 `style-src-attr`)
 `style-src`
@@ -466,7 +467,6 @@ all:
 allowed
 allowed,
 already
-always
 an
 and
 another
@@ -474,7 +474,7 @@ anyone
 appear
 application
 applies
-applies,
+apply.
 arbitrary
 arbitrary-value
 are
@@ -493,6 +493,7 @@ attribute,
 attribute.
 auto,
 auto-derived
+back
 base
 base,
 base.
@@ -502,7 +503,6 @@ beats
 because
 become
 before
-behind
 being
 below
 better
@@ -518,10 +518,7 @@ browser
 built
 but
 by
-byte
-byte.
 call
-came
 can
 cannot
 cannot,
@@ -533,6 +530,7 @@ changes
 class
 class,
 classes
+cleaner
 closed
 collapsing
 collect($colsTokens)
@@ -572,13 +570,14 @@ decides
 decision
 declaration
 default
+default,
 default.
 definition
 denylist
 developer's
 differ
 disappear
-disentangle".
+disentangle
 documented
 does
 does,
@@ -615,7 +614,6 @@ falling
 false;
 find.
 finds
-first
 fit
 fit,
 fit-content().
@@ -639,9 +637,7 @@ greedy
 grid
 grid-cols
 grid-template-columns
-grids
 growing
-had
 half
 hand.
 handed
@@ -651,8 +647,6 @@ has
 have
 here
 here.
-historical
-holds
 identical
 if
 ignored.
@@ -775,6 +769,7 @@ painful
 part
 phone
 placed
+plain
 policy
 positively
 precedence
@@ -784,7 +779,6 @@ prefix,
 preg_match($trackValue,
 preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|%|vw|vmin|vmax)$/',
 preg_split('/\s+/',
-premise
 presentational
 preview
 printed,
@@ -792,6 +786,7 @@ prod).
 produces.
 promised.
 prop
+prop.
 property
 property,
 property;
@@ -806,24 +801,17 @@ reachable
 reaches
 read
 read,
-readability
 reader
 reads
-really
 reason
-reasoning
-removes.
 render
-rendered,
 renders
 renders;
 repeat(),
 repeat(7,
 repeat(auto-fit,
 replaced
-report
 reported
-repository
 resolve
 result
 ride
@@ -853,7 +841,6 @@ shrink
 sidebar
 silently
 simply
-since
 single
 site
 six
@@ -893,10 +880,10 @@ style,
 such
 supported
 suppressing
-suppression
 survives
 syntax
 tag,
+take
 takes
 taught
 template
@@ -908,7 +895,6 @@ that
 the
 their
 them,
-them;
 themselves.
 then
 there
@@ -917,10 +903,8 @@ they
 thing
 third.
 this
-those
 thought
 three-pane
-through
 tighter
 time
 to
@@ -935,7 +919,7 @@ true)
 true,
 true;
 two
-two.
+under
 underscore
 unknown
 unrequested
@@ -944,7 +928,6 @@ until
 unvalidated
 up,
 use
-using
 utility
 validated
 value
@@ -959,13 +942,11 @@ was
 way
 week
 well
-were
 what
 whatever
 when
 where
 which
-while
 whole
 whole.
 whose

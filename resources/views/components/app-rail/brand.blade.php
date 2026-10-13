@@ -20,8 +20,8 @@
     // in the default slot and the wordmark in `<x-slot:expanded>`, and the two swap with the
     // rail's LIVE state.
     //
-    // Leave the slot out and nothing changes — the default slot is drawn at every width, byte
-    // for byte as before. The markers below are emitted only when there is something to swap
+    // Leave the slot out and the default slot is drawn at every width. The markers below are
+    // emitted only when there is something to swap
     // with, so a rail with one mark carries no rule that could hide it.
     //
     // The accessible name comes from `name` and is unaffected, which is what makes the swap
@@ -132,9 +132,9 @@
     $tag = $href !== null ? 'a' : 'div';
     // Auto-inject rel="noopener noreferrer" when target="_blank". This component
     // takes an href and echoes the caller's bag onto the element that carries it,
-    // so the caller's target passed straight through to a bare anchor. The house
-    // rule makes the injection unconditional for exactly that shape. Rendered
-    // explicitly with the bag echoed via except('rel'), because
+    // so a caller's target would otherwise reach a bare anchor; for that shape the
+    // injection is unconditional. Rendered explicitly with the bag echoed via
+    // except('rel'), because
     // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');

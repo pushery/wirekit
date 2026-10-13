@@ -27,9 +27,8 @@
     // resizable.js); this template just marks up the element and lets
     // Alpine attach the WAI-ARIA Window Splitter attributes at init time.
     //
-    // The `index` prop is kept for backward compatibility — it was used by
-    // the old JS implementation to locate the previous panel by ordinal,
-    // but the new implementation uses `previousElementSibling` instead.
+    // The `index` prop is accepted and not read: the Alpine component finds
+    // the previous panel through `previousElementSibling`.
     //
     // The inner <span data-wk-resizable-grip> is a centered, direction-aware
     // three-dot pill that marks the drag target visually. It is aria-hidden
@@ -59,6 +58,8 @@
          selected or copied again until a reload, and nothing reports it. --}}
     x-on:lostpointercapture="onPointerUp($event)"
     x-on:keydown="onKeyDown($event)"
+    x-on:focus="onFocus()"
+    x-on:blur="onBlur()"
     @if($needsName) aria-label="{{ $label ?? __('wirekit::Resize panel') }}" @endif
     {{ $attributes->class([$classes]) }}
 >

@@ -25,6 +25,11 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
+    // The tour is teleported, so nothing of it shows where it is written. Its root generates no
+    // box, which a flex or grid container would otherwise count as an empty item with a gap of
+    // its own beside it. Outside the personalized classes, so a personalized base keeps it.
+    $rootClasses = trim($classes.' contents');
+
     // This tour's steps have already drawn 0, 1, 2, … from the counter:
     // Blade renders a component's slot before its view. The reset readies
     // the counter for the next tour on the page. See
@@ -48,13 +53,13 @@
         announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Step :current of :total')) }}
     })"
     @keydown.escape.window.capture="escapeTour($event)"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class([$rootClasses]) }}
 >
     {{-- Teleported to the overlay root — escapes any ancestor containing blocks
          (e.g. transform: translateZ(0) in docs PreviewRenderer) so
          fixed positioning resolves against the viewport. --}}
     <template x-teleport="#wk-overlay-root">
-        <div x-show="active" x-cloak x-ref="overlay">
+        <div x-show="active" x-cloak x-ref="overlay" class="relative">
             {{-- Overlay backdrop --}}
             <div
                 class="wk-overlay-fixed wk-overlay-layer-modal fixed inset-0 z-[var(--z-wk-modal)] bg-[var(--color-wk-overlay)]"

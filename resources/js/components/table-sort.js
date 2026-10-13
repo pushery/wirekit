@@ -65,30 +65,48 @@ export default function wirekitTableSort(config = {}) {
         /**
          * A cell's value as a number, or NaN when it is not one.
          *
-         * `Number()` alone reads only the machine spelling, so a column formatted for the
-         * page — "1.234,56" in German, "1 234,56" in French — came back NaN and fell through
-         * to the text comparison below. That comparison splits on digit runs, so "1.234,56"
-         * sorted before "999,00" on its leading `1`: the column looked sorted and was not.
+         * Cell text is read the way the page's reader reads it: as a number in the page's
+         * locale first, and in the machine spelling only when the locale cannot have written
+         * it. On a German page "12.345" is twelve thousand three hundred and forty-five. Read
+         * the machine way first it would be just over twelve, and a column of whole numbers
+         * would sort "2.000", "12.345", "999". `Number()` cannot read "1.234,56" or
+         * "1 234,56" at all, and the text comparison below splits on digit runs, so without
+         * the locale reading those would sort on their leading digits too.
          *
-         * The locale path is deliberately strict. It accepts only a CANONICALLY grouped
-         * number — groups of exactly three digits — so a German page containing the machine
-         * value "1.5" is NOT read as 15: it fails the pattern and falls through to the text
-         * comparison, which is where an ambiguous value belongs. `2025-01-15` fails for the
-         * same reason and keeps sorting chronologically, which is the behavior the comment
-         * below this one was written to protect.
+         * A `data-wk-sort-value` is the other way round. It carries the machine spelling, so
+         * that is read first, whatever the page's locale.
+         *
+         * @param {string} raw
+         * @param {boolean} [machineFirst=false]  true for a `data-wk-sort-value`
          */
-        _toNumber(raw) {
+        _toNumber(raw, machineFirst = false) {
             if (raw === '') {
                 return NaN;
             }
 
-            // The machine spelling first — it is what `data-wk-sort-value` carries, and it
-            // must keep winning regardless of the page's locale.
-            const plain = Number(raw);
-            if (!isNaN(plain)) {
-                return plain;
+            if (machineFirst) {
+                const machine = Number(raw);
+
+                return isNaN(machine) ? this._localeNumber(raw) : machine;
             }
 
+            const local = this._localeNumber(raw);
+
+            return isNaN(local) ? Number(raw) : local;
+        },
+
+        /**
+         * `raw` read as a number written in the page's locale, or NaN when the locale cannot
+         * have written it.
+         *
+         * Deliberately strict, so it claims only what the locale's own formatting produces:
+         * canonical groups of exactly three digits after a first group that does not start
+         * with a zero, or digits on both sides of the locale's decimal separator. "1.5" and
+         * "0.125" on a German page are neither, so the machine spelling reads them as one and
+         * a half and as an eighth. An ISO date such as `2025-01-15` is neither number, and the
+         * text comparison sorts it chronologically.
+         */
+        _localeNumber(raw) {
             const { group, decimal } = this._separators;
             if (!group || !decimal || group === decimal) {
                 return NaN;
@@ -105,7 +123,7 @@ export default function wirekitTableSort(config = {}) {
             const isSpace = /^[\s\u00a0\u202f]$/.test(group);
             const g = isSpace ? '[\\s\\u00a0\\u202f]' : esc(group);
             const d = esc(decimal);
-            const grouped = new RegExp(`^[+-]?\\d{1,3}(?:${g}\\d{3})+(?:${d}\\d+)?$`);
+            const grouped = new RegExp(`^[+-]?[1-9]\\d{0,2}(?:${g}\\d{3})+(?:${d}\\d+)?$`);
             const plainDecimal = new RegExp(`^[+-]?\\d+${d}\\d+$`);
 
             if (!grouped.test(raw) && !plainDecimal.test(raw)) {
@@ -169,14 +187,12 @@ export default function wirekitTableSort(config = {}) {
          */
         _reorderRows() {
             // $root, NOT $el. sortBy() is reached from an @click on the header's
-            // sort <button>, so at call time Alpine binds $el to that button —
-            // which has no <tbody> (and no <thead th> descendants), so
-            // $el.querySelector would return null and this method would
-            // early-return: the aria-sort indicator (a reactive binding) flipped
-            // but the rows never moved. $root is the x-data <table>, which owns
-            // both. The handler sat on the <th> itself when this was first hit;
-            // moving it into the button for keyboard operability changed which
-            // wrong element $el points at, not that it is the wrong element.
+            // sort <button>, so at call time Alpine binds $el to that button,
+            // which has no <tbody> and no <thead th> descendants: $el.querySelector
+            // would return null and this method would return early, so the
+            // aria-sort indicator (a reactive binding) would flip while the rows
+            // stayed where they were. $root is the x-data <table>, which owns
+            // both, wherever inside it the handler sits.
             const tbody = this.$root.querySelector('tbody');
             if (!tbody) return;
 
@@ -186,11 +202,11 @@ export default function wirekitTableSort(config = {}) {
                  * Only rows the table STILL has, and every row it has now.
                  *
                  * `_originalOrder` is a snapshot of node references taken once at init, and
-                 * `appendChild` on a detached node RE-ATTACHES it. So after a Livewire
-                 * re-render — a filter applied, a page turned, a row deleted — clearing the
-                 * sort put the old nodes back into the table: rows the server had removed
-                 * reappeared, with stale content, and nothing reported it. The table simply
-                 * showed data that was no longer there.
+                 * `appendChild` on a detached node RE-ATTACHES it. After a Livewire
+                 * re-render — a filter applied, a page turned, a row deleted — restoring the
+                 * whole snapshot would put the old nodes back into the table: rows the server
+                 * has removed would return with stale content, showing data that no longer
+                 * exists, and nothing would report it.
                  *
                  * The snapshot is still worth keeping: it is the only record of the order
                  * the server sent, and re-deriving it from the current DOM after a sort
@@ -232,30 +248,28 @@ export default function wirekitTableSort(config = {}) {
              *
              * Everything the comparator needs is derived ONCE PER ROW here, because a
              * comparator runs O(n log n) times and none of this work depends on the pair
-             * being compared. Reading it inside the comparator meant a 500-row table did
-             * roughly 4,500 text extractions instead of 500, and `_toNumber` compiles two
-             * regular expressions per call — so the same table also built 9,000 RegExp
+             * being compared. Read inside the comparator, a 500-row table would extract
+             * text roughly 4,500 times instead of 500, and since `_toNumber` compiles its
+             * regular expressions on every call, it would also build thousands of RegExp
              * objects to answer a question about 500 cells.
-             *
-             * Nothing about the ORDER changes: same value per row, same numeric rule,
-             * same locale comparison.
              */
             const keyed = rows.map((row) => {
                 const cell = row.cells[colIndex];
+                const sortValue = cell?.dataset.wkSortValue;
 
                 // Prefer explicit sort value, fall back to trimmed text content
-                const val = cell?.dataset.wkSortValue ?? cell?.textContent?.trim() ?? '';
+                const val = sortValue ?? cell?.textContent?.trim() ?? '';
 
                 // Numeric comparison ONLY when each value is FULLY numeric.
                 // parseFloat() reads a leading number out of a non-numeric
-                // string — "2025-01-15" → 2025 — which collapsed every ISO date
-                // in a column to its year, so they compared equal and the
-                // column never sorted. Number() returns NaN unless the whole
+                // string — "2025-01-15" → 2025 — which would collapse every ISO
+                // date in a column to its year, so they would compare equal and
+                // the column would not sort. Number() returns NaN unless the whole
                 // string parses, so dates / "12px" / "$5" / "3 items" correctly
                 // fall through to the locale comparison below (which orders ISO
                 // dates chronologically via numeric:true). The `=== ''` guard
                 // stops Number('') === 0 from treating empty cells as numeric.
-                return { row, val, num: this._toNumber(val) };
+                return { row, val, num: this._toNumber(val, sortValue !== undefined) };
             });
 
             /*

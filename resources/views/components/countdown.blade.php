@@ -219,7 +219,7 @@
     :class="expired
         ? 'text-[color:var(--color-wk-danger-text)]'
         : (urgent ? 'text-[color:var(--color-wk-warning-text)]' : 'text-[color:var(--color-wk-text)]')"
-    {{ $attributes->class([$baseClasses]) }}
+    data-wk-sr-host {{ $attributes->class([$baseClasses]) }}
 >
     @if($slot->hasActualContent())
     {{-- Headless mode: the developer's markup renders its own copy around the

@@ -1,25 +1,29 @@
 /**
  * WireKit Scope Switcher — the searchable list inside the popover.
  *
- * WHAT THIS IS, AND WHAT IT DELIBERATELY IS NOT. A scope switcher is NAVIGATION, not a form
+ * What this is, and what it deliberately is not. A scope switcher is NAVIGATION, not a form
  * field: its "value" is the page you are on, and choosing an item goes there. Nothing is
  * submitted, and there is no hidden input. That is why it is neither a combobox (a form
  * field whose trigger IS its text input) nor a dropdown (the WAI-ARIA menu pattern, where an
  * `<input>` inside `role="menu"` violates the owned-elements rule and there is only
  * type-ahead, never search).
  *
- * THE DOM IS THE MODEL. Items are collected from the rendered markup on init rather than
+ * The DOM is the model. Items are collected from the rendered markup on init rather than
  * passed in as JSON. The server already rendered them, and duplicating the list into a
  * config object gives two copies to keep in step — the shape of defect this codebase keeps
  * finding elsewhere. Filtering hides and shows what is already there.
  *
- * FOCUS NEVER LEAVES THE INPUT. Items are never focused; the active one is published through
+ * Focus never leaves the input. Items are never focused; the active one is published through
  * `aria-activedescendant`, which is what lets a reader type and steer at once. That single
  * decision is the reason the arrow keys must call preventDefault: without it the caret jumps
  * to the ends of the query while the list moves, and the two fight each other.
  */
 import { pluralize } from '../utils/plural.js';
+import { pageScrollBehavior } from '../utils/motion.js';
 import { foldForSearch } from '../utils/search-fold.js';
+
+/** What separates the words of a row: space, dot, hyphen, underscore and slash. */
+const WORD_BREAK = /[\s.\-_/]+/;
 
 export default function wirekitScopeSwitcher(config = {}) {
     return {
@@ -102,8 +106,8 @@ export default function wirekitScopeSwitcher(config = {}) {
 
             this._shadowObserver = new IntersectionObserver((entries) => {
                 // Null-guard against a post-destroy fire: a browser-queued callback can run
-                // after Alpine teardown, and writing to a torn-down scope is the exact
-                // null-callback class the house rule for these plugins exists for.
+                // after Alpine teardown, and writing to a torn-down scope throws where
+                // nobody is looking.
                 if (!this._shadowObserver) {
                     return;
                 }
@@ -123,8 +127,7 @@ export default function wirekitScopeSwitcher(config = {}) {
 
         destroy() {
             // Both of these outlive the component otherwise: an observer holds the node it
-            // watches, and a pending timeout fires into a torn-down scope. The house rule for
-            // Alpine plugins here exists because of exactly that null-callback class.
+            // watches, and a pending timeout fires into a torn-down scope.
             this._observer?.disconnect();
             this._observer = null;
             this._shadowObserver?.disconnect();
@@ -164,9 +167,10 @@ export default function wirekitScopeSwitcher(config = {}) {
 
         /**
          * Does `token` appear in `haystack` as a SUBSEQUENCE — its letters in order, gaps
-         * allowed? This is what forgives a dropped letter: `wroker` still walks through
-         * `worker-01.example.com`. Linear in the haystack and allocation-free, so it is cheap enough
-         * to run over every row on every keystroke.
+         * allowed? This is what forgives a dropped letter: `wrker` still walks through
+         * `worker-01.example.com`. A swapped pair does not, its letters are out of order, and
+         * `_within()` is there for that. Linear in the haystack and allocation-free, so it is
+         * cheap enough to run over every row on every keystroke.
          */
         _subsequence(haystack, token) {
             let at = 0;
@@ -242,6 +246,11 @@ export default function wirekitScopeSwitcher(config = {}) {
          * The distance budget grows with the token because one wrong letter in three is a
          * different word, while one in ten is a typo. Tokens shorter than three characters
          * skip step 3 entirely: at that length everything is within one edit of everything.
+         *
+         * A token typed with the row's own punctuation, `wroker-01.example.com`, is split at it
+         * before step 3, and each part has to find the row on its own, as the same words typed
+         * with spaces between them do. Step 3 compares against the row's words, which are split
+         * at that punctuation, so the whole token is close to none of them.
          */
         _matches(haystack, token) {
             if (haystack.includes(token)) {
@@ -252,13 +261,19 @@ export default function wirekitScopeSwitcher(config = {}) {
                 return true;
             }
 
+            if (WORD_BREAK.test(token)) {
+                const parts = token.split(WORD_BREAK).filter(Boolean);
+
+                return parts.length > 0 && parts.every((part) => this._matches(haystack, part));
+            }
+
             if (token.length < 3) {
                 return false;
             }
 
             const budget = token.length >= 8 ? 2 : 1;
 
-            return haystack.split(/[\s.\-_/]+/).some((word) => word && this._within(word, token, budget));
+            return haystack.split(WORD_BREAK).some((word) => word && this._within(word, token, budget));
         },
 
         /**
@@ -266,8 +281,8 @@ export default function wirekitScopeSwitcher(config = {}) {
          * than widening — a reader adding a word expects fewer results, not more.
          *
          * Matching is fault-tolerant on purpose. A strict substring test answers "is this
-         * exactly in there", and a reader typing a hostname from memory is not exact: one
-         * missing letter — `wroker` for `worker` — returned NOTHING over a list that had it,
+         * exactly in there", and a reader typing a hostname from memory is not exact: two
+         * swapped letters — `wroker` for `worker` — returned NOTHING over a list that had it,
          * which reads as a broken search rather than as a strict one.
          */
         filter() {
@@ -289,13 +304,15 @@ export default function wirekitScopeSwitcher(config = {}) {
             this.visibleCount = visible;
             this._hideEmptyGroups();
 
-            // The active row must always be one the reader can see. Keeping a hidden row
-            // active is how Enter activates something nobody was looking at.
+            // The active row must always be one the reader can see: not hidden, and inside the
+            // part of the list that shows. Keeping a hidden row active is how Enter activates
+            // something nobody was looking at, and so is a row scrolled out of view: a list the
+            // reader scrolled down keeps its offset while the rows above it go, and the first
+            // match then sits above what shows. Scrolled as the arrow keys scroll, to the nearest
+            // edge, so a row already in view does not move.
             const active = this._items.find((i) => i.key === this.activeKey);
 
-            if (! active || active.el.hidden) {
-                this.setActive(first ? first.key : null, false);
-            }
+            this.setActive(active && ! active.el.hidden ? active.key : (first ? first.key : null));
 
             this._announce();
         },
@@ -335,7 +352,40 @@ export default function wirekitScopeSwitcher(config = {}) {
 
             // `nearest` and not `center`: the list should move only when it has to, or the
             // whole thing lurches on every arrow press.
-            item?.el.scrollIntoView({ block: 'nearest' });
+            item?.el.scrollIntoView({ block: 'nearest', behavior: pageScrollBehavior() });
+        },
+
+        /**
+         * Bring the active row into the list's view as the panel opens, moving the list alone.
+         *
+         * `scrollIntoView` moves every scrolling ancestor, the page among them, and the panel is
+         * not placed yet when it opens: the popover positions it after this runs, so the page
+         * could move toward wherever the panel stood before. Scrolling the list alone puts the
+         * row in view wherever the panel ends up. The panel opens from a smaller scale, which
+         * both rectangles carry, so the distance is divided by it. A row in full view stays where
+         * it is; one outside it goes to the middle, so the rows around it show as well.
+         */
+        _revealActive() {
+            const list = this.$refs.list;
+            const row = this._items.find((i) => i.key === this.activeKey)?.el;
+
+            // A list without a box yet has nothing to measure and nothing to scroll.
+            if (! list || ! row || row.hidden || ! list.offsetHeight) {
+                return;
+            }
+
+            const box = list.getBoundingClientRect();
+            const at = row.getBoundingClientRect();
+
+            if (at.top >= box.top && at.bottom <= box.bottom) {
+                return;
+            }
+
+            // Back from the scaled rectangles to the list's own pixels. The scale is never zero
+            // here: at zero every rectangle is one point, and the row counted as in view above.
+            const scale = box.height / list.offsetHeight;
+
+            list.scrollTop += ((at.top + at.bottom) / 2 - (box.top + box.bottom) / 2) / scale;
         },
 
         /** Step through the VISIBLE rows. No wrap — the ends are a useful boundary here. */
@@ -427,23 +477,32 @@ export default function wirekitScopeSwitcher(config = {}) {
         },
 
         /**
-         * Clear the search when the panel closes, driven by the popover's own `open`.
+         * Follow the popover's own `open`: clear the search when the panel closes, and show the
+         * active row when it opens.
          *
-         * Without this, reopening shows yesterday's search over a list the reader has
+         * Without the clearing, reopening shows yesterday's search over a list the reader has
          * already forgotten typing into — it reads as a broken list rather than as a
          * remembered one.
          *
          * The call shape is not incidental. Alpine's CSP build interprets expressions
-         * against a narrower grammar that has no statements in it, so the `if (! open)
-         * reset()` this replaced was never evaluated there — no error, just a search box
-         * that remembered yesterday's query. A call parses under both builds.
+         * against a narrower grammar that has no statements in it, so an `if (! open)
+         * reset()` would never be evaluated there — no error, just a search box that
+         * remembers yesterday's query. A call parses under both builds.
+         *
+         * Opening shows the active row, which is the current scope after a reset. A long list
+         * can hold it below the part that shows, and the panel only gets its box as it opens,
+         * so the row is brought into view on the next tick.
          *
          * @param {boolean} open Whether the popover is currently showing.
          */
         syncOpen(open) {
             if (! open) {
                 this.reset();
+
+                return;
             }
+
+            this.$nextTick(() => this._revealActive());
         },
 
         reset() {
@@ -456,9 +515,10 @@ export default function wirekitScopeSwitcher(config = {}) {
             this._hideEmptyGroups();
             this.visibleCount = this._items.length;
 
-            // Open on the current scope, which is where a reader's eye goes anyway.
+            // Open on the current scope, which is where a reader's eye goes anyway. Without a
+            // scroll: a reset runs while the panel closes, and opening brings the row into view.
             const current = this._items.find((i) => i.current);
-            this.setActive(current ? current.key : (this._items[0]?.key ?? null));
+            this.setActive(current ? current.key : (this._items[0]?.key ?? null), false);
         },
 
         /** The id `aria-activedescendant` points at, or empty when nothing is active. */

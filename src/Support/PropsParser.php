@@ -26,10 +26,9 @@ namespace Pushery\WireKit\Support;
  * extraction regex below ONLY captures the outer `@props(...)` wrapper;
  * everything inside the array body is handed off to the tokenizer.
  *
- * This class is THE source of truth for prop extraction. Every developer
- * (CLI commands, drift audits, future schema-export pipelines) routes
- * through here. A drift-audit test (PropsParserCallerDriftTest) blocks
- * new regex-based @props parsers from being added to `src/`.
+ * This class is THE source of truth for prop extraction: CLI commands, drift
+ * audits and schema exports read props through here, and nothing in `src/`
+ * parses `@props` with a regex of its own.
  *
  * Return shape per entry:
  *   - `name` — prop name, string-key stripped of quotes.
@@ -98,9 +97,9 @@ final class PropsParser
      *
      * Same shape, same tokenizer, same guarantees — only the directive name
      * differs, which is why this delegates rather than growing a second parser.
-     * The house rule against a regex `@props` reader applies to `@aware` for the
-     * same reason it applies to `@props`: a nested `config(...)` default carries
-     * commas, and an inline comment carries anything at all.
+     * A regex reader is as wrong for `@aware` as for `@props`: a nested
+     * `config(...)` default carries commas, and an inline comment carries anything
+     * at all.
      *
      * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
@@ -136,8 +135,9 @@ final class PropsParser
         // captures the outer wrapper. Multi-line + nested-bracket-aware
         // matching is left to the tokenizer, where it works correctly.
         // The regex requires balanced brackets at the OUTER level only;
-        // anything inside is opaque to the regex.
-        if (! preg_match('/@'.preg_quote($directive, '/').'\s*\(\s*\[/s', $source, $startMatch, PREG_OFFSET_CAPTURE)) {
+        // anything inside is opaque to the regex. An `@` right after another is Blade's escape:
+        // `@@props([` writes text and declares nothing.
+        if (! preg_match('/(?<!@)@'.preg_quote($directive, '/').'\s*\(\s*\[/s', $source, $startMatch, PREG_OFFSET_CAPTURE)) {
             return [];
         }
         $arrayBodyStart = $startMatch[0][1] + strlen($startMatch[0][0]) - 1;
@@ -246,7 +246,7 @@ final class PropsParser
      * Walk source from `$openBracketIndex` (must point at `[`) and return
      * the substring including the brackets `[…]` with matching depth.
      *
-     * PHP'S OWN LEXER DECIDES WHAT IS CODE, and that is the whole point of this
+     * PHP's own lexer decides what is code, and that is the whole point of this
      * shape. The question "which `]` closes this `[`" is only hard because a
      * bracket can appear inside a string, a comment, or a heredoc body and mean
      * nothing — and each of those is a separate rule with its own edge cases.
@@ -610,7 +610,7 @@ final class PropsParser
             'default_normalized' => $defaultNormalized,
             // `type_hint` is reserved for future @phpdoc-driven augmentation
             // (e.g. parsing `@var bool $foo` from preceding docblocks). The
-            // field exists today so the return shape is stable from v2.0.0.
+            // field exists so the return shape stays stable.
             'type_hint' => null,
             'comment' => $current['comment'],
             'examples' => self::extractExamples($current['comment']),

@@ -54,7 +54,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -93,7 +93,10 @@
     $errorId = $targetId ? "{$targetId}-error" : null;
 
     // Wrapper spacing — vertical stacks (space-y); horizontal lets the inner flex row drive layout.
-    $wrapperClasses = WireKit::resolveClasses('field', 'base', $isHorizontal ? '' : 'space-y-1.5', $scope);
+    // In both, a typed token with no break point in a label, a hint or an error, an email address
+    // or a URL, breaks rather than running out of the field. `break-word` leaves every
+    // min-content width alone, so the horizontal row keeps the layout it had.
+    $wrapperClasses = WireKit::resolveClasses('field', 'base', ($isHorizontal ? '' : 'space-y-1.5 ').'[overflow-wrap:break-word]', $scope);
 @endphp
 
 {{-- `data-wk-field` is how the shared row grid tells a field from a submit button: the
@@ -108,6 +111,7 @@
             @if($label)
                 <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $targetId" :for="$labelFor" :id="$labelId" :required="$required" :scope="$scope" class="w-1/3 shrink-0 pt-[var(--padding-wk-y-sm)]">
                     {{ $label }}
+                    <x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after>
                 </x-wirekit::label>
             @endif
             <div class="flex-1 min-w-0 space-y-1.5">
@@ -124,6 +128,7 @@
         @if($label)
             <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $targetId" :for="$labelFor" :id="$labelId" :required="$required" :scope="$scope">
                 {{ $label }}
+                <x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after>
             </x-wirekit::label>
         @elseif($inAlignedRow)
             {{-- A field with no label still needs to occupy the label row, or it slides up

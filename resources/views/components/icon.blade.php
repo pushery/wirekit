@@ -50,11 +50,8 @@
         'md' => 'h-5 w-5',
         'lg' => 'h-6 w-6',
         'xl' => 'h-8 w-8',
-        // 3rem. The ladder stopped at 2rem, which put the house rule against
-        // `class="h-12 w-12"` on an icon in direct conflict with the API: a
-        // feature tile or an empty-state glyph needs this size, and the
-        // forbidden hand-written utility was the only way to get it. Adding the
-        // rung is what makes the rule followable.
+        // 3rem, for a feature tile or an empty-state glyph, so that size never
+        // needs a hand-written `h-12 w-12` on an icon.
         '2xl' => 'h-12 w-12',
     ];
 
@@ -99,6 +96,14 @@
 
     if (UtilityClasses::has($callerClass, '/^(?:w|size)-/')) {
         $iconClasses = UtilityClasses::without($iconClasses, '/^(?:w|size)-/');
+    }
+
+    // An icon keeps its drawn size in a flex row, where it would otherwise shrink with its
+    // neighbors, down to nothing when the row is short of space. Outside a flex container the
+    // class has no effect. A `shrink` utility of the caller's replaces it, so an icon meant to
+    // give way still can.
+    if (! UtilityClasses::has($callerClass, '/^shrink(?:-|$)/')) {
+        $iconClasses .= ' shrink-0';
     }
 
     $mergedAttributes = $attributes->class([$iconClasses]);

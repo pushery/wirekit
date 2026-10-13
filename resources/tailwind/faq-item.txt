@@ -12,6 +12,7 @@ $buttonId
 $buttonPad
 $buttonPad,
 $chevronClasses
+$el)"
 $findable
 $itemId
 $itemSize
@@ -73,7 +74,7 @@ $wrapperClasses
 'focus-visible:ring-[var(--color-wk-ring)]',
 'focus-visible:ring-inset',
 'font-[number:var(--font-wk-heading-weight)]',
-'hover:bg-[var(--color-wk-bg-muted)]',
+'hover:bg-[var(--color-wk-bg-active)]',
 'id'
 'level'
 'level',
@@ -915,6 +916,7 @@ xmlns="http://www.w3.org/2000/svg"
 }}">
 }})
 }})"
+}},
 }}</span>
 }}>
 }}`

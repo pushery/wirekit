@@ -109,11 +109,8 @@
             // text alternative" violation.
             //
             // `focusable="false"` stays because it is harmless and belongs to the
-            // same decorative statement, but its REASON is no longer the one this
-            // comment gave: it justified the attribute with browsers 93 versions
-            // below the support floor. A justification a reader cannot act on is
-            // worse than none — it invites either removing something needed or
-            // keeping something for a reason that expired.
+            // same decorative statement; no browser at or above the support floor
+            // needs it to keep the SVG out of the tab order.
             if (str_contains($svgContent, '<svg ') && ! str_contains($svgContent, 'aria-hidden=')) {
                 $svgContent = preg_replace(
                     '/<svg\b/u',

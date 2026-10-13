@@ -90,7 +90,7 @@
         'text-left',
         'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-heading-weight)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -136,7 +136,7 @@
             id="{{ $buttonId }}"
             aria-controls="{{ $panelId }}"
             :aria-expanded="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) ? 'true' : 'false'"
-            @click="toggle({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
+            @click="toggle({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}, $el)"
             {{-- wk-accordion-trigger is a marker, carried outside the class seam so an
                  override cannot remove it: the stylesheet floors its height to the touch
                  target under `pointer: coarse`, where the row is otherwise shorter.

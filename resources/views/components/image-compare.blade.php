@@ -140,7 +140,9 @@
     // Built here rather than written as a second style= on the <figure>. Two style
     // attributes on one element means the browser keeps the first and drops the
     // rest, so a caller styling this figure would take the aspect ratio with it.
-    $figureStyle = 'touch-action: none;'.($ratio ? ' aspect-ratio: '.$ratio.';' : '');
+    // `touch-action` keeps the swipes along the slider's axis for the divider and leaves the
+    // page every swipe across it, so a reader scrolls past the image on a touch screen.
+    $figureStyle = 'touch-action: '.($isVertical ? 'pan-x' : 'pan-y').';'.($ratio ? ' aspect-ratio: '.$ratio.';' : '');
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);

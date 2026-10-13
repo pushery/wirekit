@@ -20,7 +20,7 @@
  * Everything else is plain reactive state (`open`) plus Alpine's own
  * `@click.outside` / `@keydown.escape` directives, whose teardown Alpine manages.
  *
- * WHY BOTH SUBTRACTIVE GESTURES PLACE FOCUS AND SAY SOMETHING. Removing a chip and
+ * Why both subtractive gestures place focus and say something. Removing a chip and
  * clearing the set are the two primary keyboard gestures here, and without this both
  * would end with focus on `<body>` and nothing announced — so the next Tab would restart
  * at the top of the page, and the filter set, which is exactly the state a reader cannot

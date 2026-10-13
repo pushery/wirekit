@@ -19,6 +19,7 @@ $sortable
 'flex
 'font-[family-name:var(--font-wk-sans)]',
 'horizontal'
+'horizontal')
 'horizontal',
 'min-h-0',
 'orientation'
@@ -44,11 +45,13 @@ $sortable
 </div>
 <div
 =
+===
 =>
 >
 @endif
 @endphp
 @endunless
+@if($orientationValue
 @if($sortable
 @if($sortable)
 @php
@@ -148,6 +151,7 @@ clips
 column
 column's
 column,
+columns
 columns.
 columns:
 compiled
@@ -161,6 +165,7 @@ counts
 dash
 data-sortable
 data-sortable-connected
+data-wk-print-wrap
 debug
 default
 did
@@ -190,6 +195,7 @@ flex-col
 flex-row
 flips
 floor
+flow
 for
 from
 front,
@@ -224,6 +230,7 @@ library,
 lifted
 lifted.
 limit,
+line.
 list
 live
 looking
@@ -238,6 +245,7 @@ n/a
 name
 neither
 never
+next
 no
 no-op,
 nor
@@ -270,6 +278,7 @@ paints.
 pair.
 panned
 panning
+paper
 past
 phone
 pins
@@ -295,11 +304,13 @@ scroll
 scrollable
 scroller
 selector
+sheet
 shipped
 ships.
 shown
 shrinks
 sideways
+sideways:
 silently
 silently.
 site

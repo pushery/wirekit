@@ -9,10 +9,7 @@
     // exactly as it has always rendered.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -103,7 +100,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -141,9 +138,7 @@
     $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
-    // same element. `id` was stripped from the start; `name` was not, and a caller that
-    // passed one got two name attributes on one select — invalid HTML the browser
-    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
@@ -210,6 +205,13 @@
         'cursor-pointer',
     ]), $scope);
 
+    // A width utility in the caller's `class` replaces the field's own `w-full`, as on a number input.
+    // Beside it the stylesheet's order would decide which width wins, not the attribute. A width
+    // under a variant is left alone, because it applies at a width of its own.
+    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
+        $selectClasses = \Pushery\WireKit\Support\UtilityClasses::without($selectClasses, '/^w-/');
+    }
+
     // Border and focus-ring color switch between error, success, and normal state — all via
     // tokens. Each state names its own ring color: a second one in the base list would be
     // decided by the stylesheet's order, which put the resting ring over the error one.
@@ -271,13 +273,13 @@
     ]);
 @endphp
 
-<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($inAlignedRow)
         {{-- An empty label track, held so that the control stays on the middle one. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>
@@ -357,23 +359,14 @@
         </div>
     </div>
 
-    {{-- Nothing to choose: what is missing, and where it is created. It sits outside the
-         select, which is disabled, so the link stays in the tab order, and the select names it
-         in aria-describedby, so a screen reader on the field hears why it is empty. The
-         `empty` slot replaces the sentence and the link, for a control of the caller's own. --}}
+    {{-- Nothing to choose: what is missing, and where it is created (partials/empty-choice). --}}
     @if($showEmpty)
-        <div data-wk-prose-skip data-wk-select-empty id="{{ $id }}-empty" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
-            @isset($empty)
-                {{ $empty }}
-            @else
-                {{ $emptyText }}
-                @if(filled($emptyHref) && $emptyNavigates)
-                    <x-wirekit::link :href="$emptyHref" wire:navigate>{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
-                @elseif(filled($emptyHref))
-                    <x-wirekit::link :href="$emptyHref">{{ filled($emptyAction) ? $emptyAction : __('wirekit::Create one') }}</x-wirekit::link>
-                @endif
-            @endisset
-        </div>
+        @include('wirekit::components.partials.empty-choice', [
+            'emptyFor' => 'select',
+            'emptyId' => $id.'-empty',
+            'emptySlot' => $empty ?? null,
+            'emptyClass' => null,
+        ])
     @endif
 
     @if($optimisticConfig)

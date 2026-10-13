@@ -5,7 +5,7 @@
     // new user sees FIRST is the one with no data, and a single muted sentence can only say
     // that nothing is here — it cannot say what to do about it, which is the whole job of that
     // screen. `emptyText` is the default, so a caller that does not care changes nothing.
-    // Same shape as data-table, which is where the reasoning was first written down.
+    // Same shape as data-table.
     'emptyText' => __('wirekit::Nothing here yet'),
     // The fleet: a list of entities to render as status tiles. Each entry:
     //   ['key' => 'app-1', 'label' => __('wirekit::shop.example'), 'intent' => 'danger', 'href' => '…', 'meta' => '2 issues']
@@ -19,8 +19,8 @@
     'columns' => '2 sm:3 md:4 lg:6',
     'gap' => 'sm',
     // Promote the status word from the screen-reader-only span into a visible,
-    // intent-tinted caption on every tile. Off by default so existing tiles are
-    // unchanged.
+    // intent-tinted caption on every tile. Off by default: the word is then for
+    // screen readers only.
     'showStatus' => false,
     // Let the caption wrap instead of clamping it to one line. Off by default, and
     // that default is load-bearing rather than caution: a wrapping caption grows the
@@ -110,14 +110,14 @@
     // The tile is a BLOCK outer carrying the real padding, wrapping an inner flex
     // centerer ($tileInner). This is deliberate: a flex column used directly as a
     // stretched grid item sizes the auto row to its CONTENT height and then border-box
-    // squeezes the vertical padding to zero, so a two-line tile jammed its label against
-    // the top edge (a magic min-height "fixed" it only for one font size and broke at
-    // another). A block outer's padding IS counted in the grid row, so it always applies
-    // and adapts to the real content; the inner flex then vertically centers, balancing
-    // both the two-line tiles and the single-line (no-caption) ones at the same row height.
-    // h-full so the tile fills the listitem wrapper the grid now stretches (the
-    // wrapper, not the tile, is the grid item since role="listitem" moved
-    // off the <a> to preserve its native link role).
+    // squeezes the vertical padding to zero, so a two-line tile would jam its label against
+    // the top edge, and a fixed min-height would hold for one font size only. A block
+    // outer's padding IS counted in the grid row, so it always applies and adapts to the
+    // real content; the inner flex then vertically centers, balancing both the two-line
+    // tiles and the single-line (no-caption) ones at the same row height.
+    // h-full so the tile fills the listitem wrapper the grid stretches (the wrapper, not
+    // the tile, is the grid item: role="listitem" sits on the wrapper so the <a> keeps
+    // its native link role).
     $tileBase = 'block h-full rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] px-[var(--padding-wk-x-sm)] py-1';
     $tileInner = 'flex h-full flex-col justify-center gap-[var(--gap-wk-xs)]';
     $tileLink = ' transition-shadow hover:shadow-[var(--shadow-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
@@ -145,7 +145,7 @@
         // the monitoring. Shown as one word, an operator is sent to the wrong place, and
         // the color cannot rescue it because the color is the same by construction.
         //
-        // Absent, nothing changes for any existing call site. Present, only the word
+        // Absent, the word comes from the intent. Present, only the word
         // moves: the `sr-only` "Status:" prefix, the intent tint and the shaped icon are
         // all untouched, so a custom word cannot cost the tile its accessible name or
         // its non-color channel.
@@ -160,8 +160,8 @@
             'color' => $intentColor($intent),
             'icon' => $intentIcon($intent),
             // NB the space before $intentSurface: without it the last $tileBase class
-            // (py-1) glued onto the first surface class (bg-…), silently killing the
-            // tile's vertical padding — the real cause of the "no padding" bug.
+            // (py-1) would glue onto the first surface class (bg-…) and silently kill
+            // the tile's vertical padding.
             'statusText' => __('wirekit::Status: :status', ['status' => $statusWord]),
             // The blank status word (no "Status:" prefix) for the visible caption.
             'statusWord' => $statusWord,
@@ -173,7 +173,7 @@
     $wrapperClasses = WireKit::resolveClasses('status-tiles', 'base', 'flex flex-col gap-[var(--gap-wk-md)]', $scope);
 @endphp
 
-<div {{ $outerAttributes }} {{ $attributes->only('class')->class([$wrapperClasses]) }}>
+<div {{ $outerAttributes }} {{ $attributes->only('class')->class([$wrapperClasses]) }} data-wk-sr-host>
     @if($legend && count($tiles) > 0)
         {{-- Legend: intent word + count + shaped icon (never color alone). --}}
         <div class="flex flex-wrap gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-xs)]">
@@ -220,8 +220,8 @@
                             </span>
                             @if($tile['meta'] !== null)
                                 {{-- Its OWN title when it clamps. The tile carries `title=label`,
-                                     so hovering a truncated meta caption surfaced the label
-                                     instead — a tooltip that answers a question the reader did
+                                     so hovering a truncated meta caption would surface the
+                                     label instead — a tooltip that answers a question the reader did
                                      not ask, and reads as a bug rather than as a missing
                                      feature. Only when it can actually clip: an unclamped
                                      caption wraps and needs no tooltip at all. --}}
@@ -243,8 +243,8 @@
                             </span>
                             @if($tile['meta'] !== null)
                                 {{-- Its OWN title when it clamps. The tile carries `title=label`,
-                                     so hovering a truncated meta caption surfaced the label
-                                     instead — a tooltip that answers a question the reader did
+                                     so hovering a truncated meta caption would surface the
+                                     label instead — a tooltip that answers a question the reader did
                                      not ask, and reads as a bug rather than as a missing
                                      feature. Only when it can actually clip: an unclamped
                                      caption wraps and needs no tooltip at all. --}}

@@ -67,7 +67,7 @@
         'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         'text-[length:var(--text-wk-sm)]',
         'cursor-pointer',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'transition-colors duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
@@ -105,8 +105,8 @@
                 {{-- The press hands the answer to the application and performs nothing
                      itself: what a reply DOES is the application's decision, and a
                      component that sent it would have to know how. --}}
-                x-on:click="$dispatch('wirekit:quick-replies-select', { value: {{ AlpinePayload::string($item['value']) }}, label: {{ AlpinePayload::string($item['label']) }}, index: {{ $index }} })"
-                class="{{ $chipClasses }}"
+                x-on:click="$dispatch('wirekit:quick-replies-select', { value: {{ AlpinePayload::string($item['value']) }}, label: {{ AlpinePayload::string($item['label']) }}, index: {{ (int) $index }} })"
+                class="wk-touch-row {{ $chipClasses }}"
             >{{ $item['label'] }}</button>
         @endforeach
     </div>

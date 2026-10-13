@@ -189,7 +189,7 @@
     $cellBox = 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-center border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
 
     // A focusable interactive cell button (tristate / toggle).
-    $cellButton = 'inline-flex items-center justify-center min-w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors '.($isEditable ? 'cursor-pointer hover:bg-[var(--color-wk-bg-muted)]' : 'cursor-default');
+    $cellButton = 'inline-flex items-center justify-center min-w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors '.($isEditable ? 'cursor-pointer hover:bg-[var(--color-wk-bg-active)]' : 'cursor-default');
 
     // ── The strings that reach a reader from JAVASCRIPT ───────────────────
     //
@@ -311,7 +311,7 @@
                                                  movement. `aria-disabled` rather than `disabled`: the cell must
                                                  stay focusable to be read and navigated from, which a disabled
                                                  button is not. --}}
-                                            @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
+                                            @keydown="moveFocus($event, {{ (int) $ri }}, {{ (int) $ci }})"
                                             @unless($isEditable) aria-disabled="true" @endunless
                                             @if($isEditable)
                                                 @click="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
@@ -341,7 +341,7 @@
                                             {{-- See the tristate cell above: navigation is unconditional, and a
                                                  non-editable switch says so instead of accepting an Enter that
                                                  changes nothing. --}}
-                                            @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
+                                            @keydown="moveFocus($event, {{ (int) $ri }}, {{ (int) $ci }})"
                                             @unless($isEditable) aria-disabled="true" @endunless
                                             @if($isEditable)
                                                 @click="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
