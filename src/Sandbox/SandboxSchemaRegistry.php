@@ -36,12 +36,10 @@ namespace Pushery\WireKit\Sandbox;
  * The catalog is not covered end to end, and the renderer does not need it to
  * be: it is functional with whatever schemas are seeded, and more can be added
  * at any time.
- * Anti-drift test fails the build if a registered schema references
- * a prop not in the component's `@props([...])` block, and
- * `SandboxSchemaOffersEveryAcceptedValueTest` holds every `allowed_values`
- * list to the component's own `validateProp()` list, in both directions.
- * `SandboxSchemaDecidesEveryPropTest` holds the other half: every prop of a
- * registered component is offered here or refused there, with a reason.
+ * A registered schema names only props the component declares in its
+ * `@props([...])` block, and every `allowed_values` list is the component's
+ * own `validateProp()` list, no value more and none less. Every prop of a
+ * registered component is offered here or left out on purpose.
  *
  * `allowed_schemes` is REQUIRED on every prop whose value reaches an `href`,
  * `src` or `action` attribute, in a schema you register as much as in a built-in
@@ -147,6 +145,7 @@ final class SandboxSchemaRegistry
             'disabled' => ['type' => 'bool', 'default' => false],
             'wrapLabel' => ['type' => 'bool', 'default' => false],
             'touchTextFloor' => ['type' => 'bool', 'default' => false],
+            'touchFloor' => ['type' => 'bool', 'default' => false],
             // Offered rather than refused, even though the sandbox renders at ONE width and
             // the swap it drives happens at another. What the reader sees change is the class
             // list and the box, which is what the prop is about; a refusal would have had to
@@ -261,6 +260,9 @@ final class SandboxSchemaRegistry
             'tracking' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'tight', 'tighter']],
             // No default: an unset break keeps the browser's own rules, as it does on text.
             'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
+            // No default: an unset fit keeps the heading at its size. Offered as on and off; a
+            // floor of its own is a length, which the endpoint does not take as free input.
+            'fit' => ['type' => 'bool'],
             'body' => ['type' => 'string', 'default' => 'Heading'],
         ]);
 
@@ -280,6 +282,8 @@ final class SandboxSchemaRegistry
             // No default: an unset leading keeps the theme's own line height.
             'leading' => ['type' => 'string', 'allowed_values' => ['tight', 'normal', 'relaxed']],
             'wrap' => ['type' => 'bool', 'default' => true],
+            // No default: an unset fit keeps the text at its size. Offered as on and off, as on heading.
+            'fit' => ['type' => 'bool'],
             'family' => ['type' => 'string', 'default' => 'sans', 'allowed_values' => ['sans', 'mono']],
             'tabular' => ['type' => 'bool', 'default' => false],
             // No default: an unset measure lets the text run as wide as its container.

@@ -136,6 +136,7 @@ $wrap
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '2xl'
 '<svg
 '<svg'.$cleaned.'>';
@@ -157,7 +158,7 @@ $wrap
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-accent-fg)]',
 'bg-[var(--color-wk-bg)]',
-'bg-[var(--color-wk-bg-muted)]',
+'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
@@ -376,6 +377,7 @@ $wrap
 --}}
 -text
 ...>
+.=
 /
 //
 />
@@ -390,10 +392,9 @@ $wrap
 1px
 2.1.1).
 20px,
-2rem,
 30%,
 300),
-3rem.
+3rem,
 4%,
 500s
 6),
@@ -451,11 +452,9 @@ A
 A11y
 ALSO
 AND
-API:
 ARIA
 AT
 Accept
-Adding
 Alpine
 Alpine's
 Also
@@ -550,6 +549,7 @@ OUTLINE:
 On
 Operating
 Optional
+Outside
 PERFECTLY
 Pick
 Pushery\WireKit\Icons\IconResolver;
@@ -602,6 +602,7 @@ Trigger
 UI
 UNBOUND
 Uses
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 Validate
 WAS
@@ -682,7 +683,6 @@ __toString
 `as="div
 `as="span"`
 `card`
-`class="h-12
 `class`
 `clearTimeout`
 `cloneNode(true)`,
@@ -698,6 +698,7 @@ __toString
 `false`
 `fixed`
 `focusable-trigger`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -728,6 +729,7 @@ __toString
 `position:
 `prop="false"`
 `role="img"`.
+`shrink`
 `soft`
 `span`:
 `surface="outline"`,
@@ -740,6 +742,7 @@ __toString
 `wire:id`,
 `wire:key`,
 `wirekit:badge-dismissed`
+`wk-tooltip-panel`
 `wrap="false"`
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
@@ -796,6 +799,7 @@ another.
 answer
 anticipate
 any
+apart
 app
 app(IconResolver::class)->resolve($name);
 appear
@@ -870,7 +874,6 @@ becomes
 becoming
 been
 before
-before;
 behalf,
 being
 belongs
@@ -882,6 +885,7 @@ below;
 between
 bg
 bg).
+bg-muted
 bg.
 bind
 binds
@@ -940,6 +944,7 @@ caller's
 caller-supplied
 calls.
 can
+can.
 cancel
 cancels
 cannot
@@ -970,7 +975,7 @@ chrome
 class
 class="inline-block
 class="rounded-[var(--radius-wk-sm)]
-class="shrink-0"
+class="wk-tooltip-panel
 class="{{
 classes
 classes:
@@ -1015,10 +1020,10 @@ config('wirekit.components.tooltip.delay-show',
 config('wirekit.components.tooltip.offset',
 config('wirekit.components.tooltip.placement',
 configured
-conflict
 console
 console).
 construction.
+container
 containers.
 content
 content,
@@ -1041,6 +1046,7 @@ currentColor;
 cut
 dark
 data-replayable="true"
+data-wk-badge-dismiss
 data-wk-prose-skip
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
@@ -1083,7 +1089,6 @@ dialog
 did
 different
 dim
-direct
 disabled
 disappearing,
 discoverable.
@@ -1103,6 +1108,7 @@ dot
 double
 down
 drawer
+drawn
 draws
 drift
 drop
@@ -1121,6 +1127,7 @@ ease-in
 ease-out
 edge
 edge.
+effect.
 either
 element
 element,
@@ -1153,7 +1160,6 @@ events
 every
 exactly
 exhausting
-existing
 exists.
 expandos.
 explains,
@@ -1204,6 +1210,7 @@ flags
 flatten
 flattened
 flattens
+flex
 flips
 flow.
 focus
@@ -1214,12 +1221,12 @@ focus-visible:ring-[var(--color-wk-ring)]"
 focus-within
 focusable
 focused,
-followable.
 follows
 font
+footer
 for
-forbidden
 forced
+forced-colors
 forces
 forcing
 foreground
@@ -1246,12 +1253,15 @@ gate
 gate,
 get
 gets
+give
 gives
 global
 glyph
+glyph,
 glyph.
 go
 goes
+gray
 grid
 grows
 guarantees
@@ -1298,7 +1308,6 @@ hit,
 hoists
 holds
 host
-house
 hover
 hover,
 hover.
@@ -1311,6 +1320,7 @@ icon
 icon's
 icon,
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -1394,7 +1404,6 @@ label.
 label;
 labels
 labels).
-ladder
 lands
 later
 layout
@@ -1442,6 +1451,7 @@ many
 map.
 margin
 marked
+marker
 markers
 marketing
 marks
@@ -1468,6 +1478,7 @@ mismatch
 missing
 missing,
 missing:
+mixed
 modal
 modals,
 mode
@@ -1499,9 +1510,11 @@ naming
 native
 needed
 needs
+neighbors,
 neither
 nest
 nested
+neutral
 never
 new
 next
@@ -1567,6 +1580,7 @@ out
 out.
 outline
 output
+outside
 over
 overflow
 overhead.
@@ -1649,13 +1663,13 @@ preview
 pricing-card
 problem
 prod).
+project
 prop
 prop's
 props
 provides
 proxy
 purpose,
-put
 puts
 px-2'
 px-2',
@@ -1725,6 +1739,7 @@ respect
 responsive
 rest
 rests
+restyles
 result
 return
 returns
@@ -1744,10 +1759,10 @@ root;
 rounded
 rounded-full
 row
+row,
 row.
 rule
 run
-rung
 runtime
 safe.
 safe:
@@ -1766,6 +1781,7 @@ see
 see.
 sees
 sees.
+selects,
 semantic
 sensible
 separates
@@ -1779,10 +1795,13 @@ shape
 shape,
 shared
 shipped
+short
 should
 show
 shown
 shows
+shrink
+shrink-0';
 sibling
 siblings
 sidebar
@@ -1814,6 +1833,7 @@ source
 source-baked
 space
 space).
+space.
 span
 spelled
 spelling,
@@ -1834,7 +1854,6 @@ stay
 stays
 still
 stop
-stopped
 stops
 storage/logs/laravel.log.
 strategy:
@@ -1854,6 +1873,7 @@ subtree,
 supplementary
 supposed
 surface
+surface,
 surface.
 surfaces
 surrounding
@@ -1911,6 +1931,7 @@ themes.
 then
 there
 there).
+there.
 therefore
 they
 things,
@@ -1976,6 +1997,7 @@ true,
 truthy
 truthy.
 try
+turns
 twice
 twice.
 two
@@ -2025,8 +2047,8 @@ visible
 visual
 vocabulary
 w-1.5
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5

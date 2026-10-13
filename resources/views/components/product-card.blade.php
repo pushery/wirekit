@@ -31,6 +31,12 @@
     'price' => null,
     // The price before the reduction. Renders struck through, and the saving is announced.
     'compareAt' => null,
+    // The price is the lowest of several, the cheapest variant's: it reads "from €19.99".
+    'from' => false,
+    // The unit price (Grundpreis) for goods sold by weight, volume, length or area, and the unit it
+    // refers to ("1 kg"), written beside the price as `price` writes it.
+    'unitPrice' => null,
+    'unitMeasure' => null,
     'currency' => config('wirekit.currency', 'USD'),
     'minorUnits' => false,
     // The locale every amount is written in, handed to each `price` with the currency. Unset, an
@@ -68,6 +74,7 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $minorUnits = BooleanProp::from($minorUnits, false);
+    $from = BooleanProp::from($from, false);
 
     $availability = WireKit::validateProp('product-card', 'availability', $availability, ['in-stock', 'low-stock', 'out-of-stock']);
 
@@ -81,6 +88,16 @@
         && (float) $compareAt > (float) $price;
 
     $ratingValue = ($rating === null || $rating === '') ? null : (float) $rating;
+
+    // The badges stand over the picture's corners. A card without a picture has no area for them
+    // to stand over, so there they form a row of their own above the name, which they would
+    // otherwise cover: the sale and a caller's badges at the start, the stock at the end.
+    $hasBadge = $onSale || isset($badge) || $isOut || $availability === 'low-stock';
+    $badgesInFlow = $hasBadge && ! isset($media) && blank($image);
+    $badgesClass = $badgesInFlow
+        ? 'flex flex-col items-start gap-[var(--gap-wk-xs)]'
+        : 'absolute start-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10 flex flex-col items-start gap-[var(--gap-wk-xs)]';
+    $stockClass = $badgesInFlow ? 'ms-auto' : 'absolute end-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10';
 
     $classes = WireKit::resolveClasses('product-card', 'base', implode(' ', [
         'group relative flex h-full flex-col',
@@ -113,7 +130,7 @@
     data-availability="{{ $availability }}"
     {{ $attributes->class([$classes]) }}
 >
-    <div class="relative">
+    <div @class(['relative', 'flex items-start gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] pt-[var(--padding-wk-x-md)]' => $badgesInFlow])>
         {{-- The media area takes a URL or a slot, and the slot wins.
 
              `image` covers the ordinary case and stays exactly as it was. The slot is for
@@ -150,7 +167,7 @@
         @if($onSale || isset($badge))
             <div
                 data-wk-product-card-badges
-                class="absolute start-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10 flex flex-col items-start gap-[var(--gap-wk-xs)]"
+                class="{{ $badgesClass }}"
             >
                 @if($onSale)
                     {{-- The badge is the visual shorthand. It is NOT the accessible story:
@@ -178,11 +195,11 @@
         @if($isOut)
             {{-- Not a tint over the image: a reader who cannot resolve the wash
                  sees a normal product. The word is the signal. --}}
-            <span data-wk-product-card-stock class="absolute end-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10">
+            <span data-wk-product-card-stock class="{{ $stockClass }}">
                 <x-wirekit::badge intent="neutral" surface="solid" size="sm">{{ __('wirekit::Out of stock') }}</x-wirekit::badge>
             </span>
         @elseif($availability === 'low-stock')
-            <span data-wk-product-card-stock class="absolute end-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10">
+            <span data-wk-product-card-stock class="{{ $stockClass }}">
                 <x-wirekit::badge intent="warning" surface="solid" size="sm">{{ __('wirekit::Low stock') }}</x-wirekit::badge>
             </span>
         @endif
@@ -209,8 +226,10 @@
         </h{{ $levelValue }}>
 
         @if($description)
-            {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
-            <div data-wk-product-card-description data-wk-prose-skip class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</div>
+            {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p.
+                 A link or a button in it stands above the card's link, which covers the card, so it
+                 takes its own clicks; the text around it stays part of the card. --}}
+            <div data-wk-product-card-description data-wk-prose-skip class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $description }}</div>
         @endif
 
         @if($ratingValue !== null)
@@ -235,7 +254,13 @@
                  `price` computes a percentage only from an explicit `:delta`, which this
                  card does not pass, so no percentage is announced. Passing one would put a
                  discount figure on every product card that is on sale, which is a visible
-                 design change. --}}
+                 design change.
+
+                 The `priceNote` slot stands right under the price, apart from `action` and in
+                 every availability: the lowest price of the last 30 days beside a reduction, or
+                 "VAT included, plus shipping" with its link, in the same field of vision and read
+                 right after the price. Its directives open at the start of the line, so a card
+                 without the slot renders no trace of it. --}}
             <span data-wk-product-card-price class="mt-auto">
                 <x-wirekit::price
                     :amount="$price"
@@ -243,8 +268,15 @@
                     :currency="$currency"
                     :minor-units="$minorUnits"
                     :locale="$locale"
+                    :from="$from"
+                    :unit-price="$unitPrice"
+                    :unit-measure="$unitMeasure"
                 />
             </span>
+@if(isset($priceNote))
+            {{-- Its link to the shipping costs stands above the card's link, as in the description. --}}
+            <div data-wk-product-card-price-note class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $priceNote }}</div>
+@endif
         @endif
 
         {{-- The CTA sits above the stretched link, or the link would swallow every

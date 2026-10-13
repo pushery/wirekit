@@ -66,13 +66,11 @@ export default function wirekitAppShell(config = {}) {
         _opener: null,
 
         /*
-         * The drawer's settle wait, both halves.
+         * The drawer's settle wait, both halves: the timer and the `transitionend` handler.
          *
-         * `_armTimer` was already reachable from `destroy()` and was the only half being
-         * cleaned up; the `transitionend` handler lived in a closure, so nothing outside the
-         * settle could release it. Declared here with the other handles because a handle
-         * that only appears inside a method is one nobody reading the teardown knows to
-         * look for.
+         * Both are held here so `destroy()` can release both. A handler that lived only in a
+         * closure could not be released from anywhere outside the settle, and a handle that
+         * only appears inside a method is one nobody reading the teardown knows to look for.
          */
         _settlePanel: null,
         _onSettle: null,
@@ -87,9 +85,9 @@ export default function wirekitAppShell(config = {}) {
          * semantics it happened to load with, and nothing about the page would look wrong.
          *
          * False where `matchMedia` does not exist. That is the reading with no measurement
-         * behind it, and the shell behaved exactly this way — as layout, with no dialog
-         * semantics — before this factory. A guard that invents modal behavior on a host it
-         * cannot measure would trap focus in a page that has no backdrop to escape from.
+         * behind it, and it leaves the shell as layout, with no dialog semantics. A guard that
+         * invents modal behavior on a host it cannot measure would trap focus in a page that
+         * has no backdrop to escape from.
          */
         isDrawer: false,
 
@@ -107,8 +105,8 @@ export default function wirekitAppShell(config = {}) {
             // Crossing to a wide viewport while the drawer is open has to RELEASE it. The
             // same element becomes `display: contents` there and the backdrop is
             // `lg:hidden`, so a trap left armed would hold focus inside two columns that
-            // are no longer covering anything — the mirror image of the bug above, and
-            // harder to notice because the screen looks entirely normal.
+            // are no longer covering anything — the mirror image of the failure the trap
+            // exists for, and harder to notice because the screen looks entirely normal.
             this._onViewportChange = () => {
                 this._syncViewport();
 
@@ -130,9 +128,8 @@ export default function wirekitAppShell(config = {}) {
             // works at all. The shell's documented contract is that SOMETHING writes to
             // `sidebarOpen` — the validation in the template says so in as many words, and
             // the toggle it ships is one of several plausible writers. A `toggleSidebar()`
-            // that armed the trap would therefore be armed for the button we ship and
-            // silently absent for every control a developer wires themselves, which is the
-            // failure mode this component already had.
+            // that armed the trap would therefore be armed for the shell's own button and
+            // silently absent for every control a developer wires themselves.
             this.$watch?.('sidebarOpen', (open) => {
                 open ? this._armTrap() : this._releaseTrap();
             });
@@ -367,7 +364,7 @@ export default function wirekitAppShell(config = {}) {
          * this component actually makes. The trapping itself is the library's business and
          * is tested there.
          *
-         * The sibling rail carries the same lesson about `$el`, learned the same way.
+         * The sibling rail has a seam of the same kind around `$el`.
          */
         _createTrap(panel, options) {
             return createFocusTrap(panel, options);
@@ -384,13 +381,13 @@ export default function wirekitAppShell(config = {}) {
          *    `sidebarOpen`, not that our button did.
          * 2. The shell's own sidebar toggle, preferring the one whose `aria-controls`
          *    names THIS drawer. This is what carries the WebKit case, where the opening
-         *    click left focus on `<body>` and candidate 1 is therefore worthless.
+         *    click leaves focus on `<body>` and candidate 1 is therefore worthless.
          * 3. `undefined`, which hands the decision back to `focus-trap` unchanged. A shell
-         *    with no toggle and no usable opener is no worse off than before.
+         *    with no toggle and no usable opener gets the library's own choice.
          *
          * `<body>` is rejected explicitly at step 1 rather than left to fall through:
          * `body.focus()` succeeds as a no-op, so returning it would look like a decision
-         * and behave like the bug.
+         * and leave the reader at the top of the document.
          *
          * Deliberately does NOT force a `tabindex` onto the candidate the way
          * `overlay.js` does for a surviving container. A toggle is a control and is
@@ -517,14 +514,13 @@ export default function wirekitAppShell(config = {}) {
             this._trap = null;
             trap.deactivate(deactivateOptions);
 
-            // `_opener` is deliberately NOT cleared here, and that is load-bearing rather
-            // than an omission. `focus-trap` runs its whole return-focus step — resolving
-            // the node through `setReturnFocus` included — inside a `setTimeout(…, 0)`
-            // (`delayReturnFocus` defaults to true, verified in the installed 8.2.2
-            // source). Clearing the reference on this line would therefore delete the
-            // answer before the question is asked, and the resolver would fall through to
-            // the toggle in cases where it knew a better target. It is overwritten on the
-            // next open and dropped in `destroy()`.
+            // `_opener` is deliberately NOT cleared here: `focus-trap` runs its whole
+            // return-focus step — resolving the node through `setReturnFocus` included —
+            // inside a `setTimeout(…, 0)` (`delayReturnFocus` defaults to true). Clearing
+            // the reference on this line would therefore delete the answer before the
+            // question is asked, and the resolver would fall through to the toggle in cases
+            // where it knew a better target. It is overwritten on the next open and dropped
+            // in `destroy()`.
         },
     };
 }

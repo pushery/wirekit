@@ -54,8 +54,8 @@
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'cursor-pointer select-none',
-        'hover:bg-[var(--color-wk-bg-muted)]',
-        $selected ? 'bg-[var(--color-wk-bg-muted)] font-[number:var(--font-wk-heading-weight)]' : null,
+        'hover:bg-[var(--color-wk-bg-active)]',
+        $selected ? 'bg-[var(--color-wk-bg-active)] font-[number:var(--font-wk-heading-weight)]' : null,
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
     ]));
@@ -101,7 +101,7 @@
          only be entered by clicking a row, and the whole arrow model below it was dead
          for anyone using a keyboard. --}}
     <div
-        class="{{ $labelClasses }}"
+        class="wk-touch-row {{ $labelClasses }}"
         role="treeitem"
         @if($hasChildren) aria-expanded="{{ $expanded ? 'true' : 'false' }}" aria-owns="{{ $groupId }}" @endif
         @if($selected) aria-selected="true" @endif
@@ -127,11 +127,12 @@
 
         {{-- Optional icon --}}
         @if($icon)
-            <x-wirekit::icon :name="$icon" size="sm" class="shrink-0" />
+            <x-wirekit::icon :name="$icon" size="sm" />
         @endif
 
-        {{-- Node label text --}}
-        <span class="truncate">{{ $label }}</span>
+        {{-- Node label text, on one line like every row of the tree. A name the line cuts is whole
+             in its title, so a reader with a pointer can read the rest. --}}
+        <span class="truncate" title="{{ $label }}">{{ $label }}</span>
     </div>
 
     {{-- Nested children group --}}

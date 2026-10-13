@@ -103,8 +103,8 @@ export default function wirekitAlertDialog(config = {}) {
         /**
          * May the destructive action fire?
          *
-         * True whenever no phrase was asked for — a dialog without a brake must
-         * behave exactly as it did before this existed.
+         * True whenever no phrase was asked for — a dialog without a brake does not
+         * hold its action back.
          *
          * The comparison trims the ends and is otherwise EXACT. Trimming is the one
          * concession, and it is there because a trailing space arrives from a

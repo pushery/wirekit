@@ -134,9 +134,8 @@
     // neither applies is it derived, exactly as it always was.
     //
     // A boolean expression rather than a `match (true)`: this is a precedence between three
-    // booleans, not a switch over an enum, and written as a match its last arm read as an enum
-    // default returning a raw value — EnumPropsFallThroughTheValidatorTest cannot tell the two
-    // shapes apart, and exempting the file would have unguarded every real enum arm in it.
+    // booleans, not a switch over an enum, and a match whose last arm returns a value reads as an
+    // enum default that hands back the caller's raw value.
     $isDismissible = ! $strip && ($dismissibleStated ?? ($hasKey || ! $persistValue));
     $persistsDismissal = $isDismissible && $hasKey && $persistValue;
 
@@ -196,6 +195,10 @@
     // (--padding-wk-x-lg), so the banner's text edge lines up with every other
     // page-chrome component instead of floating on its own margin.
     $classes = WireKit::resolveClasses('announcement-banner', 'base', implode(' ', array_filter([
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'wk-announcement-banner',
         'flex w-full items-center justify-center gap-[var(--gap-wk-sm)]',
         // A strip's height is a token and a vertical padding would only fight it, so a strip
@@ -250,7 +253,7 @@
                  where there is not: a control always needs a name, even when the banner
                  deliberately is not a landmark. --}}
             aria-label="{{ __('wirekit::Dismiss') }} {{ $callerLabel ?? (filled($label) ? $label : __('wirekit::Announcement')) }}"
-            class="ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]"
+            class="wk-touch-target ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]"
         >
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

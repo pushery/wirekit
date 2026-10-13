@@ -14,13 +14,8 @@ namespace Pushery\WireKit\Support;
  * tell them apart, and a second copy of six variant branches guarantees that they
  * eventually can.
  *
- * The failure would be quiet in the way this codebase keeps rediscovering: nothing
- * breaks, no test goes red, the two bars simply drift a border-radius apart over a few
- * releases until someone screenshots them side by side.
- *
- * The strings are the ones `tabs` already shipped, moved rather than rewritten, and the
- * move is proven by rendering every variant/orientation pair before and after and
- * diffing the markup byte for byte.
+ * The failure would be quiet: nothing breaks, and the two bars simply drift a
+ * border-radius apart over a few releases until someone sees them side by side.
  *
  * `resolveClasses` is deliberately NOT called here. It applies the developer's per-
  * component `scope` override, which is a question about a call site rather than about a

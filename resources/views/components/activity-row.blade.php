@@ -54,6 +54,10 @@
     };
 
     $classes = WireKit::resolveClasses('activity-row', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'flex items-start gap-3',
         'py-[var(--padding-wk-y-sm)]',
         'font-[family-name:var(--font-wk-sans)]',
@@ -61,7 +65,7 @@
     ]), $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+<div data-wk-sr-host {{ $attributes->class([$classes]) }}>
     {{-- Leading kind dot. Decorative (aria-hidden) — the kind is conveyed
          textually by the sr-only span below, so the activity is
          distinguishable without color perception (WCAG 1.4.1). --}}

@@ -114,6 +114,7 @@ component
 content'),
 current
 data-wk-prose-skip
+data-wk-skip-link
 default
 default;
 docs

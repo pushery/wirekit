@@ -405,7 +405,6 @@ __('wirekit::Stage
 `intent`
 `label`
 `personalize()`
-`progress`
 `prop="false"`
 `rem`
 `svg`,
@@ -416,6 +415,7 @@ __('wirekit::Stage
 `value`
 `variant`
 `variant`.
+`w-0`:
 `wire:poll`
 `wk-progress-fill`
 `wk-progress-indeterminate`
@@ -505,6 +505,7 @@ bar:
 base
 baseline.
 be
+be:
 because
 becomes
 been
@@ -549,6 +550,7 @@ circle
 circle)
 circular
 circumference
+claiming
 claims
 clamped
 class
@@ -599,10 +601,10 @@ cx="18"
 cy="18"
 danger
 dashboard
+data-wk-sr-host
 debug
 decided
 default
-defect
 depend
 depends
 design
@@ -615,10 +617,11 @@ disagree
 dist/wirekit.css)
 does
 done
+done.
 drawing
 drawn
 drew
-drifted
+drift
 drops
 duration-[var(--transition-wk-duration)]
 each
@@ -695,7 +698,6 @@ h-[var(--size-wk-md)]',
 h-[var(--size-wk-sm)]',
 h-[var(--size-wk-xl,6rem)]',
 h-full
-had
 has
 have
 header.
@@ -792,7 +794,7 @@ method.
 min
 min((float)
 min(100,
-minted
+mint
 mirrors
 missing
 mode,
@@ -834,7 +836,6 @@ number;
 numeric
 of
 off
-old
 omitted
 on
 on.
@@ -855,6 +856,7 @@ otherwise
 out,
 outer
 outside
+over
 over.
 overflow-hidden',
 overflowing.
@@ -872,6 +874,7 @@ percentage
 percentage,
 pill
 pipeline
+policy
 polish:
 poll
 polls
@@ -925,7 +928,6 @@ reads.
 real
 reason
 reason,
-reason:
 region
 rely
 removal
@@ -943,6 +945,7 @@ resolving.)
 result
 retunes
 richer
+rides
 right.
 ring
 roadmap
@@ -1003,6 +1006,7 @@ stat
 state
 static
 stay
+stays
 still
 stop
 streamed
@@ -1019,6 +1023,7 @@ stroke-width="3"
 stroke="var(--color-wk-bg-muted)"
 stroke="{{
 style
+style,
 style="transition:
 style="width:
 stylesheet's
@@ -1091,7 +1096,6 @@ unit,
 unknown
 unresolvable
 until
-up
 up.
 updates.
 upload
@@ -1115,6 +1119,7 @@ view's
 viewBox="0
 visible
 vocabulary
+w-0"
 w-full
 warning
 was

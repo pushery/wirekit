@@ -24,7 +24,7 @@ final class DirectoryHash
      * concern, not freshness.
      *
      * $transform maps a source file's bytes to what the publisher would actually
-     * write, and exists because one file is no longer copied verbatim: a family's
+     * write, and exists because one file is not copied verbatim: a family's
      * stylesheet has `wirekit.fonts.display` substituted into it on the way out.
      * Without it, the question "is the published copy current?" would compare the
      * published file against bytes nobody ever writes, and every non-default

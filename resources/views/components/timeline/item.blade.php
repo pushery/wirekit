@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — presentational
      Renders no interactive element, so there is no action whose result could be
      shown early. --}}
-{{-- WHY `datetime` IS A SEPARATE PROP, AND WHY THE ELEMENT CHANGES WITHOUT IT.
+{{-- Why `datetime` is a separate prop, and why the element changes without it.
 
      HTML is explicit about this: a `<time>` without a `datetime` attribute must have text
      content that is itself a valid datetime string. Every call site in this repository passes

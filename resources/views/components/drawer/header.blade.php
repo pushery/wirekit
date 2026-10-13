@@ -53,7 +53,7 @@
         'cursor-pointer',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -73,6 +73,7 @@
 <div {{ $attributes->class([$classes]) }}>
     {{-- Title wrapper — bears the aria-labelledby target ID. --}}
     <div
+        data-wk-drawer-title
         x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
         class="min-w-0 flex-1"
     >

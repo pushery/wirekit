@@ -1,7 +1,7 @@
 /**
  * Observers that cannot outlive the component that made them.
  *
- * THE DEFECT THIS EXISTS FOR, stated as what a developer sees. An observer's
+ * The defect this exists for, stated as what a developer sees. An observer's
  * callback keeps running after the element is gone — Livewire morphs the node
  * away, Alpine tears the component down, and the callback fires once more into
  * a `this` whose fields are already null. The page fills with
@@ -41,7 +41,7 @@
  * and a namespace holding one function is the costlier road to the same place.
  * Plugin authors bundle; an import reaches them and commits us to nothing.
  *
- * WHAT IT DOES NOT DO. It does not free you from calling `stop()` in
+ * What it does not do. It does not free you from calling `stop()` in
  * `destroy()`. Nothing can: a plugin that never tears down leaks its observer
  * whatever wrapper it used, and a helper that pretended otherwise would be
  * worse than none because it would read as a guarantee. What it removes is the

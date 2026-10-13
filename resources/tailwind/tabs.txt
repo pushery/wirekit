@@ -227,6 +227,7 @@ ${$key}
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '0'
 '2xl'
 '<svg
@@ -256,7 +257,7 @@ ${$key}
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-accent-fg)]',
 'bg-[var(--color-wk-bg)]',
-'bg-[var(--color-wk-bg-muted)]',
+'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-danger)]
 'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
@@ -437,6 +438,7 @@ ${$key}
 'wirekit:badge-dismissed'
 'wk-tabs-'
 'wk-tooltip-');
+'wk-touch-row',
 'wrap'
 'x-circle'
 'x-on:focusin',
@@ -552,6 +554,7 @@ ${$key}
 -----------
 --border-wk-badge-width
 --border-wk-width
+--color-wk-bg-soft,
 --color-wk-bg:
 --color-wk-info-fg,
 --color-wk-info-tone
@@ -569,6 +572,7 @@ ${$key}
 -text
 ...>
 ...]
+.=
 /
 //
 />
@@ -589,11 +593,10 @@ ${$key}
 2.4.3,
 20px,
 2N
-2rem,
 3,
 30%,
 300),
-3rem.
+3rem,
 4%,
 4.78).
 500s
@@ -685,16 +688,13 @@ ${$key}
 @props.
 A
 A11y
-ACTIVATION
 ALSO
 AND
 APG
-API:
 ARIA
 AT
 Accept
 Accepts
-Adding
 All
 Alpine
 Alpine's
@@ -779,7 +779,6 @@ Everything
 Examples
 FILTER_VALIDATE_BOOLEAN);
 FINDABLE
-FOCUS
 Falls
 Fast
 First
@@ -791,7 +790,6 @@ GROWS
 Generate
 German
 Graceful
-HERE,
 HOVERABLE:
 HTML
 HTML,
@@ -828,8 +826,6 @@ Livewire's
 Livewire.
 Logger
 MAINTENANCE
-MANUAL.
-MODEL
 MORPH
 MOST
 Matches
@@ -849,7 +845,6 @@ Not
 Nothing
 Null
 Null,
-ON
 ONCE
 ONE
 ONLY
@@ -865,6 +860,7 @@ One
 Only
 Operating
 Optional
+Outside
 PANEL.
 PERFECTLY
 PHP
@@ -879,7 +875,6 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\TablistStyles;
 Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
-READS
 REMAIN
 REPLACES
 REQUIRED:
@@ -894,7 +889,6 @@ Rich
 Root
 Roving
 RuntimeException
-SEEDED
 SERVER
 SERVER,
 SERVER.
@@ -910,6 +904,7 @@ SVG:
 SWAPS:
 Same
 See
+Seeded
 Selection
 Selection,
 Set
@@ -966,6 +961,7 @@ Unset,
 Upstream
 Use
 Uses
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 VERTICAL
 Validate
@@ -976,7 +972,6 @@ WAI-ARIA
 WAS
 WCAG
 WHICH
-WHY
 WIDTH
 WITHOUT
 WRAPPER,
@@ -987,6 +982,7 @@ Whatever
 When
 Whether
 Which
+Why
 WireKit
 WireKit's
 WireKit's.
@@ -1124,7 +1120,6 @@ __toString
 `bordered`
 `card`
 `class="`;
-`class="h-12
 `class`
 `clearTimeout`
 `cloneNode(true)`,
@@ -1151,6 +1146,7 @@ __toString
 `focusable-trigger`
 `foreground
 `gap-1`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -1196,6 +1192,7 @@ __toString
 `role="img"`.
 `role="tab"`
 `selected`
+`shrink`
 `soft`
 `span`:
 `src/VariantResolver.php`,
@@ -1219,6 +1216,7 @@ __toString
 `wire:key`,
 `wirekit:badge-dismissed`
 `wirekit:tab-changed`
+`wk-tooltip-panel`
 `wrap="false"`
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
@@ -1257,6 +1255,7 @@ action.
 activate.
 activates
 activating
+activation
 active
 active,
 active-tab
@@ -1276,6 +1275,7 @@ agree
 alert;
 alias
 alias,
+alike.
 all
 all,
 all.
@@ -1419,11 +1419,8 @@ becomes
 becoming
 been
 before
-before.
-before;
 behalf,
 behavior
-behind
 being
 belongs
 below
@@ -1436,6 +1433,7 @@ beside
 between
 bg
 bg).
+bg,
 bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
 bg-[color-mix(in_srgb,var(--color-wk-info-tone)_12%,var(--color-wk-bg))]
@@ -1445,10 +1443,13 @@ bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-bg)]
 bg-[var(--color-wk-bg-elevated)]
 bg-[var(--color-wk-bg-muted)]
+bg-[var(--color-wk-bg-soft)]
 bg-[var(--color-wk-danger)]
 bg-[var(--color-wk-info-tone)]
 bg-[var(--color-wk-success)]
 bg-[var(--color-wk-warning)]
+bg-muted
+bg-subtle
 bg-transparent
 bg.
 bind
@@ -1527,7 +1528,6 @@ buttons).
 buttons,
 buttons.
 by
-byte
 byte-identical
 bytes
 calibrated
@@ -1542,6 +1542,7 @@ calls
 calls.
 came
 can
+can.
 cancel
 cancels
 candidate
@@ -1587,8 +1588,8 @@ clash
 class
 class="inline-block
 class="rounded-[var(--radius-wk-sm)]
-class="shrink-0"
 class="wk-tab
+class="wk-tooltip-panel
 class="{{
 classes
 classes.
@@ -1656,7 +1657,6 @@ config('wirekit.components.tooltip.placement',
 configuration
 configured
 configured.
-conflict
 considers
 console
 console).
@@ -1710,6 +1710,7 @@ danger:
 dangling
 dark
 data-replayable="true"
+data-wk-badge-dismiss
 data-wk-prose-skip
 data-wk-server-value="{{
 data-wk-tooltip-describedby="{{
@@ -1771,7 +1772,6 @@ difference
 different
 different.
 dim
-direct
 directive:
 disabled
 disabled,
@@ -1806,6 +1806,7 @@ dot
 double
 down
 drawer
+drawn
 draws
 drift
 drive
@@ -1835,6 +1836,7 @@ edge
 edge.
 edit
 effect
+effect.
 effective
 either
 element
@@ -1877,7 +1879,6 @@ exactly
 exceed
 exhausting
 exist
-existing
 exists
 exists,
 exists.
@@ -1974,13 +1975,13 @@ focusable
 focused,
 follow
 follow.
-followable.
 follows
 font
 font-[number:var(--font-wk-body-weight)]
+footer
 for
-forbidden
 forced
+forced-colors
 forces
 forcing
 foreach
@@ -2016,15 +2017,18 @@ generated
 get
 gets
 ghost()
+give
 given.
 gives
 glob
 global
 glyph
+glyph,
 glyph.
 go
 goes
 gone.
+gray
 grid
 group,
 group.
@@ -2087,7 +2091,6 @@ holds
 horizontal
 horizontally
 host
-house
 hover
 hover,
 hover.
@@ -2098,9 +2101,9 @@ hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
+hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]
 hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
 hover:bg-[var(--color-wk-accent-hover)]
-hover:bg-[var(--color-wk-bg-subtle)]
 hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
@@ -2119,6 +2122,7 @@ icon
 icon's
 icon,
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -2174,7 +2178,6 @@ installed.'
 instance
 instead
 instead,
-instead.
 intact
 integration
 intent
@@ -2247,7 +2250,6 @@ label;
 labels
 labels).
 labels:
-ladder
 ladders
 land
 landmark
@@ -2306,6 +2308,7 @@ loudly
 loudly,
 make
 makes
+manual.
 many
 map
 map.
@@ -2313,6 +2316,7 @@ margin
 margins
 marked
 marked.
+marker
 markers
 marketing
 marks
@@ -2352,6 +2356,7 @@ mismatch
 missing
 missing,
 missing:
+mixed
 mobile
 mobile.
 modal
@@ -2395,6 +2400,7 @@ navigation
 needed
 needs
 negative
+neighbors,
 neither
 nest
 nested
@@ -2489,13 +2495,13 @@ otherwise
 otherwise.
 our
 out
-out,
 out.
 outer
 outline
 outline()
 outlive
 output
+outside
 over
 overflow
 overflow-hidden
@@ -2624,10 +2630,10 @@ primary:
 problem
 prod).
 prohibits
+project
 prop
 prop's
 property
-proposal
 props
 provided.
 provides
@@ -2636,7 +2642,6 @@ pull
 pulls
 purpose,
 purpose:
-put
 puts
 px-2'
 px-2',
@@ -2746,6 +2751,7 @@ rest,
 rest.
 restored
 rests
+restyles
 result
 resulting
 return
@@ -2781,10 +2787,10 @@ roving-focus
 roving-tabindex
 row
 row);
+row,
 row.
 rule
 run
-rung
 running
 runs
 runtime
@@ -2823,6 +2829,7 @@ segments.
 selected
 selection
 selection.
+selects,
 semantic
 sensible
 separates
@@ -2848,12 +2855,15 @@ share,
 shared
 shipped
 shipping.
+short
 shorthand
 should
 show
 shown
 shows
+shrink
 shrink-0
+shrink-0';
 sibling
 siblings
 sidebar
@@ -2900,6 +2910,7 @@ source-baked
 source-detection
 space
 space).
+space.
 space;
 span
 spec
@@ -3067,6 +3078,7 @@ themes.
 then
 there
 there).
+there.
 therefore
 these
 they
@@ -3160,6 +3172,7 @@ true;
 truthy
 truthy.
 try
+turns
 twice
 twice.
 two
@@ -3174,7 +3187,6 @@ unavailable,
 unavailable.
 unbound
 uncaught
-unchanged
 unchanged.
 unchanged:
 under
@@ -3236,8 +3248,8 @@ visible;
 visual
 vocabulary
 w-1.5
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5
@@ -3298,6 +3310,7 @@ wiring.
 with
 within
 without
+wk-touch-row
 wondering
 word)
 word.

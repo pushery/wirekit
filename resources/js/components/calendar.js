@@ -95,11 +95,11 @@ export default function wirekitCalendar(config = {}) {
 
     // Every read of `initial` below branches on `initial` itself, never on the
     // number a getter hands back. `getMonth()` is zero-based, so a January value
-    // yields 0 — and `0 || today.getMonth()` fell through to today, opening the
-    // grid on the current month while the form carried January. A seasonal
-    // defect: wrong for one month a year and correct the other eleven, which is
-    // why it survived. The question being asked is "was a value supplied?", so
-    // the test is on the value's presence and not on the digit it produced.
+    // yields 0, and `0 || today.getMonth()` would fall through to today: the grid
+    // would open on the current month while the form carried January, wrong for
+    // one month a year and right for the other eleven. The question being asked
+    // is "was a value supplied?", so the test is on the value's presence and not
+    // on the digit it produced.
     return {
         _modelEvents: null,
         // Puts the starting date back when the form is reset (utils/form-reset.js). Released in
@@ -160,9 +160,9 @@ export default function wirekitCalendar(config = {}) {
         selected: startValue,
 
         // ── Range mode ────────────────────────────────────────────────────────
-        // `selected` is the start in both modes, so every existing read of it —
-        // the optimistic layer's bind, the hidden input, the keyboard model —
-        // keeps working untouched. Only `selectedEnd` is new.
+        // `selected` is the start in both modes, so every read of it — the
+        // optimistic layer's bind, the hidden input, the keyboard model — means the
+        // same in both. Range mode adds only `selectedEnd`.
         range: !! config.range,
         selectedEnd: endValue,
         // The day under the pointer while a range is half-made. It drives the
@@ -171,7 +171,7 @@ export default function wirekitCalendar(config = {}) {
         hoverDate: null,
         focusedDay: initial ? initial.getDate() : today.getDate(),
         // The base of the ids this calendar names its grids by. The template hands it over unique
-        // on the page; a config without it derives the base from the name, as before.
+        // on the page; a config without it derives the base from the name.
         _idBase: config.idBase || ((config.name || 'date') + '-calendar'),
         // Multi-month display: render N consecutive months side by side (1 = the
         // classic single grid). Clamped 1..4. focusOffset tracks which displayed
@@ -394,8 +394,11 @@ export default function wirekitCalendar(config = {}) {
 
         /** Shading state for one day. Cheap enough to run per cell, per render. */
         _rangeFlags(dateStr) {
+            // Every key in every branch. The view binds `day.rangeMarker` to
+            // `data-wk-in-range`, and Alpine renders a field the object does not have
+            // as an empty attribute, which the stylesheet reads as a day in a range.
             if (! this.range || ! this.selected) {
-                return { isRangeStart: false, isRangeEnd: false, isInRange: false };
+                return { isRangeStart: false, isRangeEnd: false, isInRange: false, isProvisionalEnd: false, rangeMarker: null };
             }
 
             // While only the start is set, the day under the pointer stands in for
@@ -414,7 +417,7 @@ export default function wirekitCalendar(config = {}) {
             const end = this.selectedEnd || provisional;
 
             // Ordered the same way selectDate() orders a second click, so the shading
-            // between the two days no longer depends on which one came first.
+            // between the two days does not depend on which one came first.
             const lo = end !== null && end < this.selected ? end : this.selected;
             const hi = end !== null && end < this.selected ? this.selected : end;
 
@@ -427,12 +430,10 @@ export default function wirekitCalendar(config = {}) {
             // `isInRange`, which is exclusive precisely because the endpoints
             // normally fill themselves.
             //
-            // So the provisional end fell between them and stayed blank — the
-            // days on either side of the pointer shaded, and the one under it
-            // did not. The documented behavior is
-            // what makes it a defect rather than a preference: it promises the
-            // shading answers "what am I about to choose", and the day being
-            // chosen was the one day it did not answer for.
+            // Without it the provisional end would fall between them and stay
+            // blank, the days on either side of the pointer shaded and the one
+            // under it not, while the documented behavior promises that the
+            // shading answers "what am I about to choose".
             //
             // It is shaded rather than filled: a dark fill would claim a choice
             // that has not been made, and the difference between "selected" and
@@ -441,9 +442,9 @@ export default function wirekitCalendar(config = {}) {
 
             return {
                 // The caps are the ORDERED ends, not "the one clicked first". While the
-                // pointer sits before the start, the day under it is the visual start —
-                // and keying these off `selected` gave the left cap's rounding to the
-                // day on the right.
+                // pointer sits before the start, the day under it is the visual start,
+                // and keying these off `selected` would give the left cap's rounding to
+                // the day on the right.
                 isRangeStart: end !== null && dateStr === lo,
                 isRangeEnd: end !== null && dateStr === hi,
                 isInRange,
@@ -493,7 +494,7 @@ export default function wirekitCalendar(config = {}) {
          * Split out of selectDate() because the optimistic layer writes
          * `selected` itself — on the flip AND on the rollback — and has to run
          * the same sync afterwards. Without it a rolled-back calendar would
-         * show the old date while the form still submitted the new one.
+         * show the old date while the form still submits the new one.
          *
          * It reads `selected` rather than taking an argument for the same
          * reason: after a rollback there is no argument, only the value the
@@ -508,8 +509,8 @@ export default function wirekitCalendar(config = {}) {
 
             // Two named fields as well, matching `date-picker`: a server that
             // reads `name[start]` / `name[end]` from one gets them from the other.
-            // The combined `name` field stays, so an existing single-date handler
-            // is not broken by switching a calendar to range mode.
+            // The combined `name` field is written as well, so a single-date handler
+            // keeps working when a calendar switches to range mode.
             if (this.range) {
                 for (const [ref, value] of [['hiddenStart', this.selected], ['hiddenEnd', this.selectedEnd]]) {
                     this.$refs[ref]?.setAttribute('value', value ?? '');
@@ -582,11 +583,11 @@ export default function wirekitCalendar(config = {}) {
                         // but the day the reader lands on is still the same weekday
                         // one week down, which is what the keyboard table promises.
                         // Read it BEFORE the view moves: `nextMonth()` writes
-                        // `focusedDay = 1`, and a bare call to it therefore threw the
-                        // reader to the 1st of the next month instead. ArrowRight is
-                        // the branch where day 1 IS the answer, which is why the
-                        // default is right there and wrong here; ArrowLeft has
-                        // overridden it in exactly this shape all along.
+                        // `focusedDay = 1`, so a bare call to it would throw the
+                        // reader to the 1st of the next month. ArrowRight is the
+                        // branch where day 1 IS the answer, which is why the default
+                        // is right there and wrong here; ArrowLeft overrides it in
+                        // exactly this shape.
                         const sameWeekdayNextWeek = new Date(fYear, fMonth, this.focusedDay + 7).getDate();
                         this.nextMonth();
                         this.focusedDay = sameWeekdayNextWeek;
@@ -602,9 +603,9 @@ export default function wirekitCalendar(config = {}) {
                         this.focusedDay = new Date(fYear, fMonth, this.focusedDay - 7).getDate();
                         this.focusOffset--;
                     } else {
-                        // The mirror of ArrowDown above, and broken the same way:
-                        // `prevMonth()` also lands on the 1st, which is not a day any
-                        // reader arrowing UPWARD asked for.
+                        // The mirror of ArrowDown above: `prevMonth()` also lands on
+                        // the 1st, which is not a day any reader arrowing UPWARD asked
+                        // for.
                         const sameWeekdayPrevWeek = new Date(fYear, fMonth, this.focusedDay - 7).getDate();
                         this.prevMonth();
                         this.focusedDay = sameWeekdayPrevWeek;
@@ -644,32 +645,48 @@ export default function wirekitCalendar(config = {}) {
             }
         },
 
+        /**
+         * Keep the keyboard's day on the day that took the focus.
+         *
+         * A click focuses the day it lands on, and the arrow keys and the grid's one tab stop
+         * have to go on from that day rather than from the one the keyboard stood on before.
+         * Bound to the day's focus event, as the menubar binds its triggers, rather than to
+         * its click: the optimistic layer's click never reaches `selectDate()`. A focus the
+         * arrow keys set changes nothing here, `_focusDay()` has put the day there already.
+         */
+        followFocus(day, offset) {
+            if (! day?.isCurrentMonth) {
+                return;
+            }
+
+            this.focusedDay = day.dayOfMonth;
+            this.focusOffset = offset;
+        },
+
         _focusDay() {
             // Moving focus IS hovering, for someone who is not using a pointer.
             //
             // The provisional end — the shading and the `aria-selected` that say
-            // "release here and this is your range" — was written for `hoverDay()`
-            // and reachable only from `mouseenter`. So a keyboard user picking a
-            // range got the first date, then no feedback at all until they committed
-            // the second one: the preview existed and they could not see it, and
-            // there is no second way to find out what a range will be before making
-            // it.
+            // "release here and this is your range" — is set by `hoverDay()`. Reached
+            // only from `mouseenter`, it would leave a keyboard user picking a range
+            // with the first date and then no feedback at all until they committed
+            // the second one, and there is no other way to find out what a range
+            // will be before making it.
             //
             // Set here rather than in each arrow branch because every one of them
-            // ends in this call — six branches, and a seventh added later would have
-            // to remember. `hoverDay()` keeps its own guard, so this is a no-op
-            // unless a range is genuinely half-made.
+            // ends in this call, and a branch added later would otherwise have to
+            // remember. `hoverDay()` keeps its own guard, so this is a no-op unless a
+            // range is genuinely half-made.
             //
-            // This does mean an arrow key now moves `aria-selected` onto cells nobody
-            // has chosen, and that objection was raised and is worth answering rather
-            // than leaving for someone to rediscover. It is deliberate: while a range
-            // is half-made the provisional span IS the pending selection — it is
-            // exactly what the pointer user is looking at — and the grid pattern's
-            // `aria-selected` is the closest true statement available. The suggested
-            // alternative, announcing it through the live region instead, would fire
-            // on every arrow key; a state on the focused cell is read when the cell is
-            // read, which is quieter, not louder. And it only happens between the two
-            // ends, which is the one moment the information is what the reader wants.
+            // An arrow key therefore moves `aria-selected` onto cells nobody has
+            // chosen, and deliberately: while a range is half-made the provisional
+            // span IS the pending selection — it is exactly what the pointer user is
+            // looking at — and the grid pattern's `aria-selected` is the closest true
+            // statement available. Announcing it through the live region instead
+            // would fire on every arrow key; a state on the focused cell is read when
+            // the cell is read, which is quieter, not louder. And it only happens
+            // between the two ends, which is the one moment the information is what
+            // the reader wants.
             //
             // The guard is what keeps this narrow: an ordinary calendar, or a range
             // with both ends set, moves no selection anywhere.
@@ -679,7 +696,7 @@ export default function wirekitCalendar(config = {}) {
 
             this.$nextTick(() => {
                 // Scope to the focused grid in multi-month mode (day numbers repeat
-                // across grids); the single-month selector is unchanged.
+                // across grids); a single month has only the one grid.
                 const sel = this.months > 1
                     ? `[data-wk-month="${this.focusOffset}"] [data-wk-day="${this.focusedDay}"]`
                     : `[data-wk-day="${this.focusedDay}"]`;
@@ -697,12 +714,12 @@ export default function wirekitCalendar(config = {}) {
         /**
          * The accessible name of one day cell.
          *
-         * The visible text of a day button is the day number alone, and that is
-         * the whole of what a screen reader announced: "15, button", with the
-         * month, the year and the fact that it is today carried only by the
-         * heading above the grid and by a ring drawn around the cell. Neither
-         * survives the reader moving through the cells, which is the way the
-         * grid is meant to be read. The WAI-ARIA date-picker example this
+         * The visible text of a day button is the day number alone, and on its
+         * own that is the whole of what a screen reader would announce: "15,
+         * button", with the month, the year and the fact that it is today
+         * carried only by the heading above the grid and by a ring drawn around
+         * the cell. Neither survives the reader moving through the cells, which
+         * is the way the grid is meant to be read. The WAI-ARIA date-picker example this
          * component follows names every cell with its full date, so this does
          * too — and appends the translated word for today, the one part of a
          * date no formatter can supply.

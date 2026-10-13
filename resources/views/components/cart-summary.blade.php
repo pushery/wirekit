@@ -31,7 +31,7 @@
     'label' => __('wirekit::Order summary'),
     // The heading level is the CALLER's, not this component's. A cart page whose outline already
     // has an <h2> above the summary needs an <h3> here, and a component that writes its tag
-    // literally forces a broken outline on it. Default 2 keeps every existing caller identical.
+    // literally forces a broken outline on it. Default 2: the summary under the page's <h1>.
     'level' => 2,
     'scope' => null,
 ])

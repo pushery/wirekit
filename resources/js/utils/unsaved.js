@@ -12,10 +12,13 @@
  *     region, so the change from saved to unsaved is spoken once.
  *
  * `x-wk-unsaved.confirm` also asks before the reader leaves the page with unsaved fields: the
- * browser's own question on a reload, a closed tab or an address typed in, and `confirm()` with
- * the hint's question before a `wire:navigate` visit. A step through the history is not stopped.
+ * browser's own question on a reload, a closed tab or an address typed in, and before a
+ * `wire:navigate` visit the hint's question, in the alert dialog an unsaved hint ships with in a
+ * template. The visit is held while the dialog is open and goes on, past the question, when the
+ * reader answers Leave. A page without a hint asks with `confirm()`. A step through the history
+ * is not stopped.
  *
- * WHAT COUNTS AS SAVED: every field keeps the value it counts as saved with, at first what the
+ * What counts as saved: every field keeps the value it counts as saved with, at first what the
  * server rendered. A request of the component that comes back without a validation error saves
  * every deferred field, since any request sends them, not only the save; one that comes back with
  * a validation error saves nothing. A value the server writes into a field itself, loading,
@@ -23,10 +26,14 @@
  * `wire:submit` of the form around the field that comes back without a validation error, or a
  * `wirekit:saved` the component dispatches, with `scope` naming the scope
  * (`x-wk-unsaved.until-saved="name"`), `paths` naming bound properties, or neither for every field
- * of the component. A field with `.live`, `.blur`, `.change` or `.lazy` sends its value itself and
- * is not tracked; nor are file fields, nor anything inside `data-wk-unsaved-off`.
+ * of the component. A save the server turns away without a validation error, over a conflict or an
+ * edit someone else holds, says so with `wirekit:not-saved` in the same response, which names its
+ * fields the same way: they stay unsaved although the request came back clean. A value the server
+ * wrote, and a field a `wirekit:saved` of that response names, still count as saved. A field with
+ * `.live`, `.blur`, `.change` or `.lazy` sends its value itself and is not tracked; nor are file
+ * fields, nor anything inside `data-wk-unsaved-off`.
  *
- * WHY THE COMPONENT'S OWN STATE: `wire:model` sits on a native field as often as on a component's
+ * Why the component's own state: `wire:model` sits on a native field as often as on a component's
  * root, whose value lives in Alpine and never shows in the DOM. Livewire keeps both sides for every
  * component, the values the server sent and the values the page holds, and `wire:dirty` compares
  * exactly those two, and the value a field counts as saved with moves only from there. A response
@@ -46,6 +53,13 @@ export const WK_UNSAVED_HINT_ATTRIBUTE = 'data-wk-unsaved-hint';
 export const WK_UNSAVED_SHOWN_ATTRIBUTE = 'data-wk-unsaved-shown';
 export const WK_UNSAVED_OFF_ATTRIBUTE = 'data-wk-unsaved-off';
 export const WK_UNSAVED_QUESTION_ATTRIBUTE = 'data-wk-unsaved-confirm';
+// The template an unsaved hint ships its dialog in, and the element of that dialog's title that
+// takes the question.
+export const WK_UNSAVED_DIALOG_ATTRIBUTE = 'data-wk-unsaved-question';
+export const WK_UNSAVED_DIALOG_TEXT_ATTRIBUTE = 'data-wk-unsaved-question-text';
+// What the dialog's Leave dispatches, from its button, bubbling. The listener below names it
+// literally, so the event names it listens for can be read off the source.
+export const WK_UNSAVED_LEAVE_EVENT = 'wirekit:unsaved-leave';
 
 /** The modifiers that send a value on their own, so the field is never unsaved for long. */
 const SELF_SENDING_MODIFIERS = ['live', 'blur', 'change', 'lazy'];
@@ -188,20 +202,24 @@ function names(signal, entry, path) {
     return paths === null || paths.includes(path);
 }
 
-/** The `wirekit:saved` dispatches of a response, each as what it names. */
-function savedSignals(effects) {
+/**
+ * The dispatches of a response whose name the test accepts, each as what it names. The name is
+ * compared at the call, `(name) => name === 'wirekit:saved'`, which is where a reader looks for the
+ * events this module listens for.
+ */
+function signalsNamed(effects, isNamed) {
     const dispatches = effects && Array.isArray(effects.dispatches) ? effects.dispatches : [];
 
     return dispatches
-        .filter((dispatch) => dispatch && dispatch.name === 'wirekit:saved')
+        .filter((dispatch) => dispatch && isNamed(dispatch.name))
         .map((dispatch) => (dispatch.params && typeof dispatch.params === 'object' && ! Array.isArray(dispatch.params) ? dispatch.params : {}));
 }
 
 /**
  * Weigh the response a component received since anything last asked, once. A field the server
  * wrote is saved; so is a field a `wirekit:saved` of the response names; and, unless the response
- * carries a validation error, every field of a scope without `.until-saved`, and the fields of a
- * form whose `wire:submit` sent the request.
+ * carries a validation error or a `wirekit:not-saved` that names the field, every field of a scope
+ * without `.until-saved`, and the fields of a form whose `wire:submit` sent the request.
  *
  * @param {object} component
  */
@@ -233,7 +251,8 @@ function settle(component) {
 
     const errors = snapshot && snapshot.memo ? snapshot.memo.errors : null;
     const failed = Boolean(errors) && typeof errors === 'object' && Object.keys(errors).length > 0;
-    const signals = savedSignals(component.effects);
+    const signals = signalsNamed(component.effects, (name) => name === 'wirekit:saved');
+    const refusals = signalsNamed(component.effects, (name) => name === 'wirekit:not-saved');
     const fields = shared(FIELDS_KEY, () => new WeakMap()).get(component) ?? new Map();
 
     for (const path of Array.from(saved.keys())) {
@@ -246,8 +265,9 @@ function settle(component) {
         const wrote = sent !== undefined && ! sameJson(sent, server);
         const submitted = request.form !== null && el !== null && typeof request.form.contains === 'function' && request.form.contains(el);
         const signaled = signals.some((signal) => names(signal, entry, path));
+        const refused = refusals.some((signal) => names(signal, entry, path));
 
-        if (wrote || signaled || (! failed && (entry === null || ! entry.untilSaved || submitted))) {
+        if (wrote || signaled || (! failed && ! refused && (entry === null || ! entry.untilSaved || submitted))) {
             saved.set(path, server);
         }
     }
@@ -452,6 +472,74 @@ export function scopeHoldingUnsaved(scopes) {
     return null;
 }
 
+/** The dialog each hint's template was put into the page as, once it was needed. */
+const mountedDialogs = new WeakMap();
+
+/**
+ * The alert dialog the question before a visit is asked in, by its Alpine data: the one the
+ * scope's own hint ships with, else the one of a hint elsewhere on the page, put into the page
+ * the first time it is needed and kept there. Null without a hint, and without Alpine.
+ */
+export function questionDialogFor(scope) {
+    const selector = `[${WK_UNSAVED_DIALOG_ATTRIBUTE}]`;
+    const template = scope.querySelector(selector)
+        ?? (typeof document.querySelector === 'function' ? document.querySelector(selector) : null);
+    const blueprint = template?.content?.firstElementChild;
+
+    if (! blueprint) {
+        return null;
+    }
+
+    let root = mountedDialogs.get(template);
+
+    if (! root || ! root.isConnected) {
+        const alpine = window.Alpine;
+
+        if (! alpine || typeof alpine.initTree !== 'function') {
+            return null;
+        }
+
+        // Asked during a visit, which only a page with a body starts; without one there is no
+        // place for the dialog, and the browser asks instead.
+        if (! document.body) {
+            return null;
+        }
+
+        root = typeof document.importNode === 'function' ? document.importNode(blueprint, true) : blueprint.cloneNode(true);
+        document.body.appendChild(root);
+        // At once rather than a microtask later, when Alpine's observer would: the dialog is
+        // opened in the same turn. Alpine marks what it started, so the observer skips it.
+        alpine.initTree(root);
+        mountedDialogs.set(template, root);
+    }
+
+    return root._x_dataStack?.[0] ?? null;
+}
+
+/**
+ * Whether the link a reader pressed goes to `url` with `wire:navigate.preserve-scroll`, so the
+ * visit a question held back goes on the way that link would have gone.
+ */
+export function linkPreservesScroll(link, url) {
+    if (! link || ! url || typeof link.getAttributeNames !== 'function') {
+        return false;
+    }
+
+    const preserves = link.getAttributeNames().some((name) => /^(?:wire:navigate|x-navigate)(?:\.[\w-]+)*\.preserve-scroll(?:\.|$)/.test(name));
+
+    if (! preserves) {
+        return false;
+    }
+
+    try {
+        const base = typeof document.baseURI === 'string' ? document.baseURI : undefined;
+
+        return new URL(link.getAttribute('href'), base).href === new URL(String(url), base).href;
+    } catch {
+        return false;
+    }
+}
+
 /** The commit hook and the four page listeners, once per page. */
 function install() {
     if (typeof window === 'undefined' || typeof document === 'undefined' || window[INSTALLED_FLAG]) {
@@ -471,15 +559,97 @@ function install() {
 
     // A `wire:navigate` visit never unloads the page, so the browser does not ask. A step back or
     // forward through the history is let through: it cannot be held without breaking the history.
+    // Any other visit is held while the dialog asks, and goes on when the reader answers Leave.
+    let heldVisit = null;
+    // The visit the reader agreed to, let through once on its way.
+    let leaving = false;
+    // The link the reader pressed last, for the way a held visit goes on.
+    let pressedLink = null;
+    const remember = (event) => {
+        pressedLink = event.target && typeof event.target.closest === 'function' ? event.target.closest('[href]') : null;
+    };
+
+    document.addEventListener('pointerdown', remember, true);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            remember(event);
+        }
+    }, true);
+
     document.addEventListener('livewire:navigate', (event) => {
         if (event.detail && event.detail.history) {
             return;
         }
 
+        if (leaving) {
+            leaving = false;
+
+            return;
+        }
+
         const scope = scopeHoldingUnsaved(registry());
 
-        if (scope && ! window.confirm(questionFor(scope))) {
-            event.preventDefault();
+        if (! scope) {
+            return;
+        }
+
+        const dialog = questionDialogFor(scope);
+
+        if (! dialog) {
+            if (! window.confirm(questionFor(scope))) {
+                event.preventDefault();
+            }
+
+            return;
+        }
+
+        event.preventDefault();
+
+        // Asked once: the page behind an open dialog is inert, and a second visit while it is
+        // open changes nothing.
+        if (dialog.isOpen) {
+            return;
+        }
+
+        const url = event.detail ? event.detail.url : null;
+        heldVisit = { dialog, url, preserveScroll: linkPreservesScroll(pressedLink, url) };
+
+        const text = dialog.$refs?.panel?.querySelector?.(`[${WK_UNSAVED_DIALOG_TEXT_ATTRIBUTE}]`);
+
+        if (text) {
+            text.textContent = questionFor(scope);
+        }
+
+        dialog.show();
+    });
+
+    // Leave (WK_UNSAVED_LEAVE_EVENT): the dialog closes, and the visit goes on past the question.
+    document.addEventListener('wirekit:unsaved-leave', () => {
+        const visit = heldVisit;
+        heldVisit = null;
+
+        if (! visit || ! visit.url) {
+            return;
+        }
+
+        visit.dialog.close();
+
+        const navigate = window.Alpine && window.Alpine.navigate;
+
+        if (typeof navigate !== 'function') {
+            window.location.assign(String(visit.url));
+
+            return;
+        }
+
+        // The visit fires `livewire:navigate` again inside this call, where the flag lets it
+        // through; it is taken back however the call ends.
+        leaving = true;
+
+        try {
+            navigate(String(visit.url), { preserveScroll: visit.preserveScroll });
+        } finally {
+            leaving = false;
         }
     });
 
@@ -547,7 +717,13 @@ function install() {
  * @param {object} Alpine
  */
 export function registerUnsavedDirective(Alpine) {
-    Alpine.directive('wk-unsaved', (el, { modifiers, expression }, { effect, cleanup }) => {
+    // On a clone for a Livewire morph, only the scope attribute. The morph compares the clone with
+    // the element and would take the attribute off the element without it. The rest registers the
+    // scope, and a clone is thrown away without a cleanup, so its entry would stay in the registry
+    // and be compared again after every request.
+    const skipDuringClone = typeof Alpine.skipDuringClone === 'function' ? Alpine.skipDuringClone : (callback) => callback;
+
+    Alpine.directive('wk-unsaved', skipDuringClone((el, { modifiers, expression }, { effect, cleanup }) => {
         install();
 
         el.setAttribute(WK_UNSAVED_SCOPE_ATTRIBUTE, '');
@@ -582,5 +758,7 @@ export function registerUnsavedDirective(Alpine) {
             registry().delete(entry);
             shared(ENTRIES_KEY, () => new WeakMap()).delete(el);
         });
-    });
+    }, (el) => {
+        el.setAttribute(WK_UNSAVED_SCOPE_ATTRIBUTE, '');
+    }));
 }

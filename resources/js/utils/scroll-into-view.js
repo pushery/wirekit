@@ -19,7 +19,7 @@
  * does not carry the attribute, and a render that took it away would take the focus with it.
  * `x-wk-scroll-into-view.nofocus` leaves the focus where it is.
  *
- * ONE RESPONSE, ONE TARGET: when one render brings several regions, the first in the document comes
+ * One response, one target: when one render brings several regions, the first in the document comes
  * into view and takes the focus, and the others stay where they are. Each region asks on its own,
  * and the last to ask would otherwise win, which is the lowest on the page.
  *
@@ -40,22 +40,61 @@ export const SETTLE_AFTER_MS = 800;
 /** Node.DOCUMENT_POSITION_PRECEDING, spelled out so the module reads the same outside a browser. */
 const PRECEDING = 2;
 
-/** Whether the whole element is inside the viewport. */
-function inFullView(el) {
-    const rect = el.getBoundingClientRect();
-    const height = window.innerHeight || document.documentElement.clientHeight;
-    const width = window.innerWidth || document.documentElement.clientWidth;
+/**
+ * The part of the window the element can be seen in: the viewport, narrowed by the box inside the
+ * borders of every ancestor that clips what overflows it. In an application shell the main area
+ * scrolls under a fixed header, and a region whose top stands between the top of the window and
+ * the top of that area is cut off by it, while the window alone would count it as in view.
+ *
+ * @param {HTMLElement} el
+ * @returns {{top: number, left: number, bottom: number, right: number}}
+ */
+function visibleArea(el) {
+    const area = {
+        top: 0,
+        left: 0,
+        bottom: window.innerHeight || document.documentElement.clientHeight,
+        right: window.innerWidth || document.documentElement.clientWidth,
+    };
 
-    return rect.top >= 0 && rect.left >= 0 && rect.bottom <= height && rect.right <= width;
+    // The body and the root element hand their overflow to the viewport, which the area starts as.
+    for (let node = el.parentElement; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
+        const style = window.getComputedStyle(node);
+
+        // One test covers both axes: an axis that clips makes the other scroll, except `clip`
+        // beside `visible`, where reading the visible axis as clipped only asks for a scroll that
+        // moves nothing, since an element that clips that way does not scroll.
+        if (style.overflowX === 'visible' && style.overflowY === 'visible') {
+            continue;
+        }
+
+        const box = node.getBoundingClientRect();
+        const top = box.top + node.clientTop;
+        const left = box.left + node.clientLeft;
+
+        area.top = Math.max(area.top, top);
+        area.left = Math.max(area.left, left);
+        area.bottom = Math.min(area.bottom, top + node.clientHeight);
+        area.right = Math.min(area.right, left + node.clientWidth);
+    }
+
+    return area;
 }
 
-/** Whether no part of the element is inside the viewport. */
+/** Whether the whole element is inside the part of the window it can be seen in. */
+function inFullView(el) {
+    const rect = el.getBoundingClientRect();
+    const area = visibleArea(el);
+
+    return rect.top >= area.top && rect.left >= area.left && rect.bottom <= area.bottom && rect.right <= area.right;
+}
+
+/** Whether no part of the element is inside the part of the window it can be seen in. */
 function outOfView(el) {
     const rect = el.getBoundingClientRect();
-    const height = window.innerHeight || document.documentElement.clientHeight;
-    const width = window.innerWidth || document.documentElement.clientWidth;
+    const area = visibleArea(el);
 
-    return rect.bottom <= 0 || rect.top >= height || rect.right <= 0 || rect.left >= width;
+    return rect.bottom <= area.top || rect.top >= area.bottom || rect.right <= area.left || rect.left >= area.right;
 }
 
 // The regions this module gave a tabindex, and the hook that keeps it through a render while the
@@ -66,10 +105,10 @@ let morphHookInstalled = false;
 /**
  * Keep the tabindex this module set on a focused region when Livewire renders the component again.
  *
- * The morph makes the element match the server's markup, which never carried the attribute: it
- * removed it from a region that still held the focus, and the browser then moved the focus to the
- * page. Writing it onto the incoming element keeps it; once the focus has left, the next render
- * takes it away as before.
+ * The morph makes the element match the server's markup, which never carries the attribute: it
+ * would remove it from a region that still holds the focus, and the browser would then move the
+ * focus to the page. Writing it onto the incoming element keeps it; once the focus has left, the
+ * next render takes it away.
  */
 function keepOwnTabindexThroughRenders() {
     if (morphHookInstalled || typeof window === 'undefined' || typeof window.Livewire?.hook !== 'function') {

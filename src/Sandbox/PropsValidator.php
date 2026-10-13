@@ -204,9 +204,8 @@ final class PropsValidator
 
             // Escaped for the `clean` view, which is for a value echoed raw: the renderer's
             // slot. A value passed to a component as a prop takes the `values` view instead,
-            // because the component escapes it on output. Handing props this view escaped every
-            // one of them twice. That no sandbox component echoes a string prop raw is asserted
-            // over the whole registry by `SandboxRendersWhatAnApplicationRendersTest`.
+            // because the component escapes it on output, and this view would escape it a second
+            // time. No sandbox component echoes a string prop raw, so props never need this view.
             return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
         }
 

@@ -205,8 +205,8 @@
         warning: {{ \Pushery\WireKit\Support\AlpinePayload::from($wireModelWarning) }},
     })"
     @if($active !== null)
-        {{-- The channel, and only when it is used: an unchanged call site renders
-             byte for byte what it did before. The attribute is written by the
+        {{-- The channel, and only when it is used: a call site without `active`
+             renders no attribute for it. The attribute is written by the
              server on every render and bound by nobody, which is what makes "the
              server changed it" a fact the DOM can state rather than something to
              infer. See utils/server-value.js for why a dedicated attribute rather
@@ -238,10 +238,10 @@
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
                 :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? {{ \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses) }}"
-                class="wk-tab {{ $tabClasses }}"
+                class="wk-tab wk-touch-row {{ $tabClasses }}"
             >
                 @if($tab['icon'])
-                    <x-wirekit::icon :name="$tab['icon']" size="sm" class="shrink-0" />
+                    <x-wirekit::icon :name="$tab['icon']" size="sm" />
                 @endif
                 <span>{{ $tab['label'] }}</span>
                 @if($tab['badge'] !== null && $tab['badge'] !== '')

@@ -67,12 +67,14 @@ export default function wirekitProgress(config = {}) {
          *
          * Not rounded: the visible readout and `aria-valuenow` are both derived
          * from the same clamped number, and rounding only here is how a bar drawn
-         * at 94% ends up beside the text "4 / 5".
+         * at 94% ends up beside the text "4 / 5". An object, so Alpine sets it property by property through the element's `style`: a string
+         * it writes with `setAttribute()`, which takes every other inline style with it and which a
+         * `style-src` without `'unsafe-inline'` refuses.
          */
         fillStyle() {
             const c = this._clamped();
 
-            return c === null ? '' : `width: ${(c / this._max) * 100}%`;
+            return c === null ? {} : { width: `${(c / this._max) * 100}%` };
         },
 
         /** What a screen reader announces. Empty while indeterminate, so the attribute is absent. */

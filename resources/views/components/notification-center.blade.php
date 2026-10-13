@@ -72,6 +72,14 @@
 
     $titleId = $id.'-title';
 
+    // The footer link is named by its own text and the panel's title, `See all Notifications`:
+    // alone in the footer, `See all` carries no sentence, paragraph, list item or table cell that
+    // says where it goes, which is the context WCAG 2.4.4 allows, and a link list read it bare.
+    // Its own text comes first, so the words a voice user reads aloud still start the name.
+    $seeAllId = $id.'-see-all';
+    // A group's label names the group's list, by an id that is bound per group inside the panel.
+    $groupLabelId = \Pushery\WireKit\Support\AlpinePayload::string($id.'-group-').' + groupIndex';
+
     // The DISPLAY title, resolved once. The raw `$title` stays the record of whether the caller
     // supplied one — that is what the list's landmark role is gated on — while everything that
     // must always carry a name renders this.
@@ -83,7 +91,7 @@
 
     // Shared row chrome for both row variants (a real <a> when the item carries
     // an href, a <button> otherwise) — ONE interactive element per row.
-    $row = 'w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors cursor-pointer border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
+    $row = 'w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors cursor-pointer border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -153,7 +161,7 @@
         {{-- Only the count is unknown server-side, so the title is in every form the factory
              chooses from, in the form the count takes ("1 non lu", "3 non lus"). --}}
         :aria-label="unreadCount > 0 ? bellName() : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => $titleResolved])) }}"
-        class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+        class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
     >
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
         {{-- Unread count pill (decorative — the count is in the bell's aria-label).
@@ -215,7 +223,7 @@
                 {{-- Ghost button (subtle hover surface), not a hover-underline
                      text-link — matches WireKit's other in-panel actions
                      (e.g. data-table "Clear", filter-builder "Clear all"). --}}
-                class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
+                class="wk-touch-row px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
             >{{ __('wirekit::Mark all read') }}</button>
         </div>
 
@@ -232,9 +240,9 @@
                 class="flex flex-wrap items-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                 {{-- The checked filter is a fill, which forced colors does not paint, so
                      `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
-                <button type="button" role="radio" data-filter="all" @click="setFilter('all')" :aria-checked="activeFilter === 'all'" :tabindex="activeFilter === 'all' ? 0 : -1" :class="activeFilter === 'all' ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="wk-state-button {{ $tab }}">{{ __('wirekit::All') }}</button>
+                <button type="button" role="radio" data-filter="all" @click="setFilter('all')" :aria-checked="activeFilter === 'all'" :tabindex="activeFilter === 'all' ? 0 : -1" :class="activeFilter === 'all' ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-active)]'" class="wk-state-button wk-touch-row {{ $tab }}">{{ __('wirekit::All') }}</button>
                 <template x-for="t in types" :key="t">
-                    <button type="button" role="radio" :data-filter="t" @click="setFilter(t)" :aria-checked="activeFilter === t" :tabindex="activeFilter === t ? 0 : -1" x-text="t" :class="activeFilter === t ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="wk-state-button {{ $tab }} capitalize"></button>
+                    <button type="button" role="radio" :data-filter="t" @click="setFilter(t)" :aria-checked="activeFilter === t" :tabindex="activeFilter === t ? 0 : -1" x-text="t" :class="activeFilter === t ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-active)]'" class="wk-state-button wk-touch-row {{ $tab }} capitalize"></button>
                 </template>
             </div>
         @endif
@@ -250,73 +258,84 @@
             </div>
 
             {{-- Grouped notification list --}}
-            <template x-for="group in groups" :key="groupKey(group)">
+            <template x-for="(group, groupIndex) in groups" :key="groupKey(group)">
                 <div>
-                    <p data-wk-prose-skip x-show="group.label" x-cloak class="sticky top-0 px-[var(--padding-wk-x-md)] py-1 text-[length:var(--text-wk-xs)] uppercase tracking-wide font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-subtle)] bg-[var(--color-wk-bg-elevated)]" x-text="group.label"></p>
-                    <template x-for="item in group.items" :key="item.id">
-                        {{-- One interactive element per row. Items WITH href render as a
-                             real <a> (native navigation + middle-click work) and items
-                             without one as a <button>; BOTH route through activate(item),
-                             which marks the row read and dispatches the bubbling
-                             `notification-action` event ({id, href}) the developer
-                             listens for. actionLabel renders as the row's call-to-action
-                             line — never a nested control (button-in-button is invalid). --}}
-                        <div class="contents">
-                            <template x-if="item.href">
-                                <a data-wk-prose-skip
-                                    data-wk-notification-row
-                                    :href="item.href"
-                                    @click="activate(item)"
-                                    class="{{ $row }}"
-                                >
-                                    {{-- NO aria-label on the row. An aria-label REPLACES the name
-                                         computed from the content, so a row labeled with title +
-                                         actionLabel announced the headline and silently dropped the
-                                         body and the time — the substance of the notification and
-                                         the thing a reader triages by. The name is computed from
-                                         the content instead, which reads in visual order: unread
-                                         prefix, title, body, time, action. --}}
-                                    {{-- Unread dot — paired with the visually hidden "Unread."
-                                         prefix below, so the state is never color alone. The
-                                         marker is on the unread dot only: the forced-colors rule
-                                         keeps it filled, and a read row stays without one. --}}
-                                    <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
-                                    <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
-                                    <span class="min-w-0 flex-1">
-                                        <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
-                                        <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
-                                        <span x-show="item.timeLabel" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="item.timeLabel"></span>
-                                        <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent-text)]" x-text="item.actionLabel"></span>
-                                    </span>
-                                </a>
-                            </template>
-                            <template x-if="!item.href">
-                                <button
-                                    type="button"
-                                    data-wk-notification-row
-                                    @click="activate(item)"
-                                    class="{{ $row }}"
-                                >
-                                    {{-- No aria-label here either — same reason as the link row. --}}
-                                    {{-- Unread dot — paired with the visually hidden "Unread."
-                                         prefix below, so the state is never color alone. The
-                                         marker is on the unread dot only: the forced-colors rule
-                                         keeps it filled, and a read row stays without one. --}}
-                                    <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
-                                    <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
-                                    <span class="min-w-0 flex-1">
-                                        {{-- leading-snug tightens the title's line-box so the
-                                             time/body sit closer to the name (the default
-                                             line-height left too generous a vertical gap). --}}
-                                        <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
-                                        <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
-                                        <span x-show="item.timeLabel" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="item.timeLabel"></span>
-                                        <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent-text)]" x-text="item.actionLabel"></span>
-                                    </span>
-                                </button>
-                            </template>
-                        </div>
-                    </template>
+                    {{-- A group's label stays at the top of the list while its items scroll, and tells the
+                         list how much of the top it covers, so an item that takes the focus on the way up
+                         rests below it (WCAG 2.4.11). --}}
+                    <p data-wk-prose-skip :id="{{ $groupLabelId }}" data-wk-scroll-inset="top" x-show="group.label" x-cloak class="sticky top-0 px-[var(--padding-wk-x-md)] py-1 text-[length:var(--text-wk-xs)] uppercase tracking-wide font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-subtle)] bg-[var(--color-wk-bg-elevated)]" x-text="group.label"></p>
+                    {{-- The group is a list, so a screen reader hears how many notifications it holds and
+                         can move from one to the next, and its label names it when the panel is grouped:
+                         "Today, list, 3 items" says which notifications the label stands over (WCAG 1.3.1).
+                         An ungrouped panel is one list without a name. role="list" is not redundant: WebKit
+                         drops the semantics of a list whose markers are removed, and the inline list-style
+                         keeps the markers off where a stylesheet did not scan this view, as in cart-list. --}}
+                    <ul data-wk-prose-skip role="list" :aria-labelledby="group.label ? {{ $groupLabelId }} : null" class="list-none" style="list-style: none; margin: 0; padding: 0;">
+                        <template x-for="item in group.items" :key="item.id">
+                            {{-- One interactive element per row. Items WITH href render as a
+                                 real <a> (native navigation + middle-click work) and items
+                                 without one as a <button>; BOTH route through activate(item),
+                                 which marks the row read and dispatches the bubbling
+                                 `notification-action` event ({id, href}) the developer
+                                 listens for. actionLabel renders as the row's call-to-action
+                                 line — never a nested control (button-in-button is invalid). --}}
+                            <li data-wk-prose-skip>
+                                <template x-if="item.href">
+                                    <a data-wk-prose-skip
+                                        data-wk-notification-row
+                                        :href="item.href"
+                                        @click="activate(item)"
+                                        class="wk-touch-row {{ $row }}"
+                                    >
+                                        {{-- NO aria-label on the row. An aria-label REPLACES the name
+                                             computed from the content, so a row labeled with title +
+                                             actionLabel announced the headline and silently dropped the
+                                             body and the time — the substance of the notification and
+                                             the thing a reader triages by. The name is computed from
+                                             the content instead, which reads in visual order: unread
+                                             prefix, title, body, time, action. --}}
+                                        {{-- Unread dot — paired with the visually hidden "Unread."
+                                             prefix below, so the state is never color alone. The
+                                             marker is on the unread dot only: the forced-colors rule
+                                             keeps it filled, and a read row stays without one. --}}
+                                        <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
+                                        <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
+                                            <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
+                                            <span x-show="item.timeLabel" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="item.timeLabel"></span>
+                                            <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent-text)]" x-text="item.actionLabel"></span>
+                                        </span>
+                                    </a>
+                                </template>
+                                <template x-if="!item.href">
+                                    <button
+                                        type="button"
+                                        data-wk-notification-row
+                                        @click="activate(item)"
+                                        class="wk-touch-row {{ $row }}"
+                                    >
+                                        {{-- No aria-label here either — same reason as the link row. --}}
+                                        {{-- Unread dot — paired with the visually hidden "Unread."
+                                             prefix below, so the state is never color alone. The
+                                             marker is on the unread dot only: the forced-colors rule
+                                             keeps it filled, and a read row stays without one. --}}
+                                        <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
+                                        <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'wk-unread-dot bg-[var(--color-wk-accent)]'"></span>
+                                        <span class="min-w-0 flex-1">
+                                            {{-- leading-snug tightens the title's line-box so the
+                                                 time/body sit closer to the name (the default
+                                                 line-height left too generous a vertical gap). --}}
+                                            <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
+                                            <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
+                                            <span x-show="item.timeLabel" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="item.timeLabel"></span>
+                                            <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent-text)]" x-text="item.actionLabel"></span>
+                                        </span>
+                                    </button>
+                                </template>
+                            </li>
+                        </template>
+                    </ul>
                 </div>
             </template>
         </div>
@@ -325,7 +344,7 @@
             {{-- Footer — ghost action (subtle full-width hover surface), NOT a
                  hover-underline text-link, matching the "Mark all read" header
                  action and WireKit's in-panel-action standard. --}}
-            <a data-wk-prose-skip href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-muted)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
+            <a data-wk-prose-skip id="{{ $seeAllId }}" aria-labelledby="{{ $seeAllId }} {{ $titleId }}" href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-active)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
         @endif
     </div>
     </template>

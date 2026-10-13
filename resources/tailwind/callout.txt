@@ -33,6 +33,7 @@ $variantValue])->class([$baseClasses,
 &&
 ',
 '<path
+'[overflow-wrap:break-word]',
 'animateIn'
 'base',
 'bg'
@@ -98,7 +99,7 @@ $variantValue])->class([$baseClasses,
 ($variantValue)
 (15%
 (default
-(default,
+(default).
 (named
 (no
 (or
@@ -217,6 +218,7 @@ Dev-only
 ENTIRE
 HTML
 IS
+Inherited
 It
 Livewire
 NOT
@@ -240,6 +242,7 @@ That
 The
 This
 UNBOUND
+URL,
 Validate
 Variant
 Visually
@@ -257,6 +260,7 @@ With
 ],
 `@if`
 `alert`
+`break-word`
 `complementary`
 `intent`
 `prop="false"`
@@ -273,11 +277,13 @@ actions
 actual
 add
 added
+address
 against
 alert-style
 alias
 alias.
 aliases
+alone,
 already
 also
 an
@@ -321,6 +327,9 @@ border;
 bordered=false
 both
 bottom-0
+box.
+break
+breaks
 button
 buttons
 by
@@ -379,8 +388,10 @@ drawn.
 each
 early.
 element,
+email
 error
 every
+everything
 explicitly
 fails,
 falls
@@ -409,6 +420,7 @@ given
 given).
 gives
 h-5"
+had.
 has
 have
 heading
@@ -424,6 +436,7 @@ in
 info
 inline
 inside
+inside;
 instanceof
 instead
 intent
@@ -436,24 +449,27 @@ it
 items-center
 items-start
 its
+keeps
 label)
 landed
 landmark
 landmark,
 landmarks
+layout
+leaves
 left-0
 list
 live
 load
 loads,
 long
-longer
 looks
 markers
 match
 mb-1
 mean
 message
+min-content
 min-w-0">
 mt-0.5">{{
 mt-0.5',
@@ -489,6 +505,7 @@ optimistic-ui:
 or
 order,
 otherwise
+out
 over
 overflowing
 own
@@ -502,6 +519,7 @@ persistent
 phone
 place
 plain
+point,
 points
 present
 presentational
@@ -521,7 +539,6 @@ region.
 regions.
 reports
 reserved
-restore
 result
 reveal
 role
@@ -531,6 +548,7 @@ role="status"
 roles
 rounded-l-[var(--radius-wk-lg)]
 row
+running
 same-role
 screen
 second
@@ -559,6 +577,7 @@ stronger
 success
 supports
 surface;
+table
 tag
 take:
 takes
@@ -580,6 +599,7 @@ title
 title+body+action
 to
 toggle
+token
 tooltip,
 top-0
 trades
@@ -587,11 +607,11 @@ true);
 true,
 truthy
 two
+typed
 unknown
 until
 use
 uses
-v1.5.0-identical).
 variant
 variant-derived
 via
@@ -608,6 +628,7 @@ what
 when
 which
 whose
+width
 wins
 with
 words

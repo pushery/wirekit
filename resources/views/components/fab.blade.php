@@ -71,6 +71,9 @@
     x-on:keydown.arrow-down="move(1, $event)"
     data-wk-fab
     data-position="{{ $position }}"
+    {{-- Fixed at the bottom: the page keeps an element that takes the focus out from under it
+         (WCAG 2.4.11, resources/js/utils/scroll-inset.js). --}}
+    data-wk-scroll-inset="bottom"
     {{ $attributes->class([$classes]) }}
 >
     {{-- flex-col-reverse above means the actions render BEFORE the trigger in the

@@ -10,7 +10,7 @@
     //
     // The default is null rather than '' so the two cases can be told apart. With ''
     // as the default, "the developer marked this decorative" and "the developer forgot"
-    // produced byte-identical markup — and the forgotten one is a content image that
+    // would produce identical markup — and the forgotten one is a content image that
     // announces nothing, which no automated check can see either, because `alt=""` IS
     // valid HTML and IS the correct answer for the other case.
     'alt' => null,
@@ -39,6 +39,14 @@
     // Fetch priority for the image a page shows first: 'high', 'low' or 'auto'. Null leaves the
     // choice to the browser.
     'fetchpriority' => null,
+    // Art direction: another file, often another crop, for a media condition. Each entry is an
+    // array with `srcset` and, as it needs them, `media`, `sizes`, `type` (`image/avif`) and the
+    // file's `width` and `height` in pixels. They render as `<source>` elements in a `<picture>`
+    // before the image, and the browser loads the first that matches, else `src`. With `width`
+    // and `height` on each, the box takes the ratio of the source the browser chose before the
+    // file arrives, so a portrait crop on a phone and a landscape one on a desk do not move the
+    // page as they load. `alt`, `loading` and `fetchpriority` stay on the image.
+    'sources' => [],
     'scope' => null,
 ])
 
@@ -84,6 +92,17 @@
     };
     $roundedClass = $rounded ? 'rounded-[var(--radius-wk-md)]' : '';
 
+    // The sources that name a file. One without `srcset` would select nothing, so it is left out,
+    // and a value of the wrong kind is read as no source at all. The picture below opens and
+    // closes in directives at the start of their lines, so an image without sources renders
+    // the image alone, with no trace of the picture, and `contents` takes the picture's own box
+    // out of the layout: the image sizes against the figure as it does without one.
+    $sources = \Pushery\WireKit\Support\ListProp::renumbered($sources);
+    $pictureSources = array_values(array_filter(
+        is_array($sources) ? $sources : [],
+        static fn ($source): bool => is_array($source) && filled($source['srcset'] ?? null),
+    ));
+
     $figureClasses = WireKit::resolveClasses('image', 'base', implode(' ', [
         'm-0',
         'font-[family-name:var(--font-wk-sans)]',
@@ -102,6 +121,12 @@
 @endphp
 
 <figure {{ $attributes->class([$figureClasses]) }}>
+@if($pictureSources !== [])
+    <picture class="contents">
+@foreach($pictureSources as $source)
+        <source srcset="{{ $source['srcset'] }}"@if(filled($source['media'] ?? null)) media="{{ $source['media'] }}"@endif @if(filled($source['sizes'] ?? null)) sizes="{{ $source['sizes'] }}"@endif @if(filled($source['type'] ?? null)) type="{{ $source['type'] }}"@endif @if(filled($source['width'] ?? null)) width="{{ $source['width'] }}"@endif @if(filled($source['height'] ?? null)) height="{{ $source['height'] }}"@endif>
+@endforeach
+@endif
     <img data-wk-prose-skip
         src="{{ $src }}"
         alt="{{ $alt ?? '' }}"
@@ -115,6 +140,9 @@
         @if($ratio) style="aspect-ratio: {{ $ratio }}" @endif
         class="{{ $imgClasses }}"
     />
+@if($pictureSources !== [])
+    </picture>
+@endif
 
     @if($caption)
         <figcaption class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">

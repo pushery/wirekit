@@ -40,6 +40,7 @@ $variantValue
 'scope'
 'sticky
 'sticky'
+'sticky')
 'sticky']),
 'text-[color:var(--color-wk-text-muted)]',
 'text-[length:var(--text-wk-xs)]',
@@ -53,9 +54,11 @@ $variantValue
 ($format
 ($variant)
 (Support\Moment).
+(WCAG
 (silent
 --}}
 //
+2.4.11).
 2026"
 40,
 7"
@@ -74,8 +77,10 @@ $variantValue
 >
 ?
 ??
+@endif
 @endphp
 @endunless
+@if($variantValue
 @php
 @props([
 @props.
@@ -154,6 +159,8 @@ config('app.timezone',
 context
 context.
 could
+covers,
+data-wk-scroll-inset="top"
 date
 datetime="{{
 day
@@ -173,6 +180,7 @@ every
 fallback
 fallback:
 flags
+focus
 font-[number:var(--font-wk-heading-weight)]"
 for
 format
@@ -181,6 +189,7 @@ from
 full
 here:
 holds
+how
 identical
 if
 implode('
@@ -211,9 +220,11 @@ locale
 match
 matters
 may
+message
 missing
 month
 more
+much
 n/a
 name
 names
@@ -225,6 +236,7 @@ null)
 null,
 object
 of
+on
 one,
 one.
 only
@@ -252,9 +264,11 @@ rendered
 renders
 reports.
 resolve
+rests
 result
 role="separator"
 screen
+scroller
 sentence
 separator
 shown
@@ -268,6 +282,8 @@ sticky
 string
 string:
 surface
+takes
+tells
 than
 that
 the
@@ -275,16 +291,19 @@ then
 there
 this
 token
+top
 top-0
 translated
 turns
 two
 unchanged.
 unknown
+up
 use
 value
 view's
 was
+way
 what
 when
 where

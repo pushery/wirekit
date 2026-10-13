@@ -193,22 +193,19 @@ final class BaseLocaleJsonLoader implements Loader
         // The un-prefixed copy, at the very bottom, and it is a compatibility layer rather
         // than a leftover.
         //
-        // Registering this package's lang directory as a JSON path had a side effect nobody
-        // designed: its keys were plain English words, so an APPLICATION calling `__('Close')`
-        // in its own template got a translation it never wrote. Prefixing every key would end
-        // that silently — the text simply reverts to English, no error, no failing test, and
-        // the reader notices before anyone else does. That is the same shape of failure this
-        // whole change exists to fix, and shipping it as the fix would have been the worst
-        // available answer.
+        // This package's lang directory is registered as a JSON path, so an APPLICATION calling
+        // `__('Close')` in its own template reads a plain key from this catalog. Without the
+        // plain copy that text would revert to English silently — no error, no failing test,
+        // and the reader notices before anyone else does.
         //
         // So the catalog is offered BOTH ways: `wirekit::Close` for the components, and `Close`
-        // for whoever was already relying on it. The plain copy sits UNDERNEATH `$lines`, so an
-        // application's own entry still wins over it exactly as before — this adds a fallback,
-        // it never takes a decision away.
+        // for the application's own lookups. The plain copy sits UNDERNEATH `$lines`, so an
+        // application's own entry still wins over it — this adds a fallback, it never takes a
+        // decision away.
         //
-        // And it does NOT re-open the defect. The components no longer ask for `Close`; they
-        // ask for `wirekit::Close`, which an application's plain `Map`/`Read`/`Dismiss` cannot
-        // reach. The plain layer answers only lookups the application makes on its own behalf.
+        // And an application's plain entry never reaches a component. The components ask for
+        // `wirekit::Close`, which an application's plain `Map`/`Read`/`Dismiss` cannot reach.
+        // The plain layer answers only lookups the application makes on its own behalf.
         $plain = [];
 
         foreach ($ours as $key => $value) {
@@ -275,14 +272,12 @@ final class BaseLocaleJsonLoader implements Loader
     }
 
     /**
-     * Let an application's PRE-NAMESPACE override of a plain key keep applying.
+     * Let an application's override of a plain key, such as `Close`, apply to our namespaced one.
      *
-     * Before this package prefixed its keys, an application translated `Close` by writing
-     * `"Close"` in its own `lang/{locale}.json`, and that entry outranked ours because the real
-     * loader's result is merged last. After the rename our key is `wirekit::Close`, which their
-     * catalog says nothing about — so without this step every existing override would stop
-     * working in the release that renamed the keys, silently, with no test going red and no
-     * error anywhere, which is the very failure the rename exists to prevent.
+     * An application translates `Close` by writing `"Close"` in its own `lang/{locale}.json`, an
+     * entry meant to outrank ours, since the real loader's result is merged last. Our key is
+     * `wirekit::Close`, which that catalog says nothing about, so without this step such an
+     * override would not apply, silently and with no error anywhere.
      *
      * The price is named rather than hidden: for an application that has the collision, the
      * bridge PRESERVES it. If their `Map` means "to map" and ours means "a map", the bridge

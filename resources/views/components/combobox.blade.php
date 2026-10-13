@@ -7,14 +7,10 @@
      clicked option, so a rollback restores the PREVIOUS selection's label. --}}
 @props([
     // Livewire method to call optimistically. The choice appears immediately
-    // and is put back if the call fails. Absent -> this component renders
-    // exactly as it did before, down to the byte.
+    // and is put back if the call fails. Absent -> the plain combobox.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -36,7 +32,7 @@
     // `false` renders a select-only combobox: a focusable trigger instead of a text field, for a
     // short list nobody needs to search, with the keyboard of the WAI-ARIA select-only pattern.
     'searchable' => true,
-    // `false` hides the clear button. The default stays true, because for most lists "none of
+    // `false` hides the clear button. The default is true, because for most lists "none of
     // them" is a real answer a reader must be able to give back. It is NOT one everywhere: a
     // control whose value is a PRECONDITION for the field around it -- the country in a phone
     // number, which is what assembles the E.164 -- ends up in a state where the reader sees a
@@ -52,11 +48,10 @@
     'placeholder' => config('wirekit.components.combobox.placeholder') ?? __('wirekit::Select…'),
     'disabled' => false,
     'error' => null,
-    // `hint` — the one Form control with both `label` and `error` that did not have it. A
-    // caller writing `hint="Start typing to search"` got the string on the wrapper div as a
-    // stray HTML attribute: never displayed, never announced, and never reported, because
-    // Blade folds an undeclared prop into the attribute bag without complaint. Every sibling
-    // control has carried it for releases.
+    // `hint`, as every sibling control carries it. Undeclared, `hint="Start typing to search"`
+    // would land on the wrapper div as a stray HTML attribute: never displayed, never announced,
+    // and never reported, because Blade folds an undeclared prop into the attribute bag without
+    // complaint.
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
     // field's description (partials/field-help).
@@ -65,8 +60,8 @@
     // `label` renders an associated x-wirekit::label (for={comboId}); `hideLabel`
     // keeps it in the DOM for assistive tech but visually hidden (compact
     // toolbar / header fields); `ariaLabel` sets aria-label directly on the
-    // role="combobox" input for the label-less case. All default to today's
-    // behavior (no label at all), so existing comboboxes render byte-identically.
+    // role="combobox" input for the label-less case. All default to no label at
+    // all.
     'label' => null,
     'hideLabel' => false,
     'ariaLabel' => null,
@@ -83,6 +78,18 @@
     'searchDebounce' => config('wirekit.components.combobox.search-debounce', 300),
     // The application cut its results at a limit. The list then says there are more.
     'truncated' => false,
+    // What the field says when there is nothing to choose, as on `select`: the sentence, where the
+    // missing record is created (a link after it; null for a reader who may not create one), the
+    // link's text ("Create one" without it), and whether the link moves with `wire:navigate`. Set,
+    // the combobox is disabled while there is nothing to choose and names the sentence in its
+    // aria-describedby. The `empty` slot replaces the sentence and the link.
+    'emptyText' => null,
+    'emptyHref' => null,
+    'emptyAction' => null,
+    'emptyNavigate' => false,
+    // That there is nothing to choose. A list from `options` says it by holding no option; a server
+    // search starts every list empty, so there the application says it.
+    'nothingToChoose' => false,
     'scope' => null,
 ])
 
@@ -114,6 +121,8 @@
     $clearable = BooleanProp::from($clearable, true);
     $server = BooleanProp::from($server, false) && $searchable;
     $truncated = BooleanProp::from($truncated, false);
+    $emptyNavigate = BooleanProp::from($emptyNavigate, false);
+    $nothingToChoose = BooleanProp::from($nothingToChoose, false);
     $searchMinLength = max(1, (int) $searchMinLength);
     $searchDebounce = max(0, (int) $searchDebounce);
 
@@ -128,7 +137,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -164,17 +173,16 @@
     // a nested map of sub-options (mirrors <x-wirekit::select>: `['Europe' =>
     // ['de' => 'Germany', ...]]`). The extra `value`-key guard keeps the legacy
     // single-option shape `['value' => 'x']` (no label) working as an option.
-    // Grouped options carry a `group` key; ungrouped options omit it, so a
-    // group-free combobox normalizes byte-identically to before.
+    // Grouped options carry a `group` key; ungrouped options omit it.
     //
     // An array option may also carry a medium (`icon`, `image`, `avatar` or `flag`), a `description`,
     // `keywords` and a `selectedLabel`. OptionMedia validates them and adds only the keys an
-    // option uses, so an option without them normalizes exactly as it did before they existed.
+    // option uses, so an option without them normalizes to its value and label alone.
     //
     // A LIST is decided by the ARRAY, never by one key: keys 0, 1, 2 … in order, and within a
     // group by that group's own array. PHP turns a numeric string key into an integer, so
-    // deciding by the key's type read `[31 => 'Rain jacket']` and every `pluck('name', 'id')`
-    // as a list and submitted the NAMES instead of the ids.
+    // deciding by the key's type would read `[31 => 'Rain jacket']` and every
+    // `pluck('name', 'id')` as a list and submit the NAMES instead of the ids.
     $normalizeOption = function ($key, $opt, bool $inList) {
         if (is_array($opt)) {
             $value = (string) ($opt['value'] ?? $key);
@@ -213,6 +221,18 @@
         }
     }
 
+    // Nothing to choose: the sentence or the `empty` slot, and a list with no option or the
+    // application's word. The combobox is then disabled, and the sentence takes the hint's place,
+    // because a hint says how to choose. A link to a fragment of the page never takes
+    // `wire:navigate`, which would fetch the page instead of scrolling to it.
+    $emptyNavigates = $emptyNavigate && ! str_starts_with((string) $emptyHref, '#');
+    $showEmpty = (filled($emptyText) || isset($empty))
+        && ($nothingToChoose || (! $server && $normalized === []));
+
+    if ($showEmpty) {
+        $disabled = true;
+    }
+
     $hasGroups = false;
     foreach ($normalized as $o) {
         if (! empty($o['group'])) {
@@ -238,7 +258,7 @@
     $richRows = $optionUses['media'] || $optionUses['descriptions'];
     // An option in another language than the page names it on its row (WCAG 3.1.2). The binding
     // is only written when some option has a `lang`, or the server sends the rows, so every
-    // other list renders as it did.
+    // other list carries none.
     $optionsCarryLang = $server || collect($normalized)->contains(static fn (array $option): bool => isset($option['lang']));
 
     // Server search. The results travel on an attribute of their own rather than in `x-data`,
@@ -294,9 +314,12 @@
     // The hint describes the control only while no error does — an error supersedes it, the
     // same precedence input.blade.php uses, so the reader is never pointed at two messages.
     $hintId = $comboId.'-hint';
-    $showsHint = $hint !== null && $hint !== '' && ! $showsError;
+    $showsHint = $hint !== null && $hint !== '' && ! $showsError && ! $showEmpty;
+    $emptyId = $comboId.'-empty';
 
-    $ownDescribedBy = $showsError ? $errorId : ($showsHint ? $hintId : null);
+    // The sentence about nothing to choose first, then the error or the hint.
+    $ownDescribedBy = trim(($showEmpty ? $emptyId : '').' '.($showsError ? $errorId : ($showsHint ? $hintId : '')));
+    $ownDescribedBy = $ownDescribedBy !== '' ? $ownDescribedBy : null;
     $callerDescribedBy = $attributes->get('aria-describedby');
     $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
     $describedBy = $describedBy !== '' ? $describedBy : null;
@@ -306,7 +329,7 @@
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? ''));
     // `required` stays in the bag, read rather than consumed (see the label below). It is checked
     // against the CHOICE through a stand-in, not on the search field, where typed text that is no
-    // option satisfied it; a combobox found empty says so under the field (partials/required-message),
+    // option would satisfy it; a combobox found empty says so under the field (partials/required-message),
     // unless the server's own message already stands there.
     $required = (bool) $attributes->get('required', false);
     $requiredMessageId = $required && ! $hasError ? $comboId.'-required' : null;
@@ -321,8 +344,8 @@
     };
 
     // Option-row sizing — scales the DROPDOWN with `size` so the open panel
-    // matches its trigger (a `lg` combobox had `sm`-sized options before, which
-    // read as a mismatch). Text size mirrors the trigger; padding scales with it.
+    // matches its trigger (a `lg` combobox with `sm`-sized options would read as
+    // a mismatch). Text size mirrors the trigger; padding scales with it.
     $optionRowClasses = match ($size) {
         'sm' => 'p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)]',
         'lg' => 'p-[var(--padding-wk-y-md)] text-[length:var(--text-wk-lg)]',
@@ -335,7 +358,7 @@
 
     // The chosen option shows what `aria-selected` says: a check at the end of its row. The row's
     // tint follows the highlight, which the keyboard and the pointer move, so without the check
-    // the chosen option looked like every other one once the list was open. The check is ink,
+    // the chosen option would look like every other one once the list is open. The check is ink,
     // so it holds in grayscale and in forced colors.
     $optionCheckClasses = WireKit::resolveClasses('combobox', 'option-check', 'h-4 w-4 shrink-0', $scope);
 
@@ -431,8 +454,8 @@
         'max-h-60 overflow-auto',
         // `[overflow-wrap:anywhere]` lets an option name with no space or hyphen break inside the
         // word instead of widening its row past the panel. The panel takes its width from the field,
-        // so a repository name with underscores scrolled the whole list sideways, and on a phone the
-        // name could only be read by scrolling. It sits on the panel rather than the row so group
+        // so a repository name with underscores would scroll the whole list sideways, and on a phone
+        // the name could only be read by scrolling. It sits on the panel rather than the row so group
         // headings, descriptions and the empty state inherit it, and it is `anywhere` rather than
         // `break-word` because only `anywhere` lowers the min-content width. A space still wins
         // wherever there is one.
@@ -513,6 +536,15 @@
     // A caller's `form` stays on the visible field, where Enter then submits the form it joined,
     // and goes to the hidden field this component submits as well (Support\FormOwner).
     $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
+
+    // A width utility in the caller's `class` replaces the root's own `w-full`, as on a number input.
+    // Beside it the stylesheet's order would decide which width wins, not the attribute. The search
+    // field inside keeps its own and fills the root at whatever width it takes. A width under a
+    // variant is left alone, because it applies at a width of its own.
+    $rootClasses = 'relative w-full';
+    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
+        $rootClasses = \Pushery\WireKit\Support\UtilityClasses::without($rootClasses, '/^w-/');
+    }
 @endphp
 
 {{-- `wk-combobox` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-` class
@@ -526,11 +558,11 @@
              `true`, so this reads it without consuming it. --}}
         @if($searchable)
             {{-- The id is for the list, which a label cannot name by `for`. --}}
-            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $comboId" :for="$comboId" :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $comboId" :for="$comboId" :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
         @else
             {{-- A `div` is not a labelable element, so `for` would point at nothing: the trigger
                  takes its name from this label through `aria-labelledby` instead. --}}
-            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $comboId" :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $comboId" :id="$comboId.'-label'" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
         @endif
     @endif
 <div
@@ -552,17 +584,18 @@
     x-modelable="selected"
     {{-- `x-model` is routed here too, and for the same reason: `x-modelable` above is what
          ANSWERS it, and a hand-written one is how a parent component embeds this control. Left
-         to the bag below it landed on the search input beside its built-in `x-model="query"` --
+         to the bag below it would land on the search input beside its built-in `x-model="query"` --
          two `x-model` attributes on one tag, where the browser keeps the first and the caller's
          is dropped without a word. `x-modelable` is excluded: a caller may not redirect the seam. --}}
     {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
     {{-- The roleless wrapper otherwise carries ONLY layout — every caller attribute
-         (aria-describedby, data-*, autocomplete, required, …) is routed to the
-         role="combobox" input below, never left stranded on this <div>. --}}
+         (aria-describedby, data-*, required, …) is routed to the role="combobox" input
+         below, never left stranded on this <div>. `autocomplete` is the exception: the
+         search field keeps it off. --}}
     {{-- `class` as well as `style`, as `slider` does. The input below excludes `class` from its
          own bag, so without it here `<x-wirekit::combobox class="max-w-[10rem]">` would reach the
          markup nowhere at all and size nothing. --}}
-    {{ $attributes->only(['class', 'style'])->class(['relative w-full']) }}
+    {{ $attributes->only(['class', 'style'])->class([$rootClasses]) }}
 >
     @if($optimisticConfig)
         {{-- `display: contents` — this element's `relative` is the containing
@@ -629,18 +662,22 @@
              from the ariaLabel prop / caller attribute lands on this input (the
              labelable role="combobox" control), never the roleless wrapper. --}}
         @if(! $label && $resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
-        {{-- Every OTHER caller attribute (data-*, autocomplete, required, readonly …)
-             reaches the actual control here, not the wrapper. --}}
+        {{-- Every OTHER caller attribute (data-*, required, readonly …) reaches the actual
+             control here, not the wrapper. A caller's `autocomplete` does not: the field keeps
+             `autocomplete="off"` above, so the browser's own suggestions do not open over the
+             list. --}}
         {{-- `wire:model*` is excluded here and rendered on the Alpine root above: on
              this element it would be a second model binding beside `x-model="query"`,
              pointed at the search text. --}}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{-- `required` is checked against the choice (the stand-in above), so the search field
              carries it as `aria-required` only: as a native attribute, typed text that is no option
-             satisfied it. --}}
+             would satisfy it. --}}
         @if($required) aria-required="true" @endif
         {{ $attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label', 'class', 'style', 'aria-describedby', 'required'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $inputClasses }}"
+        {{-- On a touch surface the clear button takes the touch target, and the end padding holds it. --}}
+        @if(! $disabled && $clearable) data-wk-combobox-clearable @endif
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     />
     @else
@@ -684,11 +721,12 @@
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{ $attributes->except('aria-controls')->except('aria-expanded')->except(['aria-label', 'class', 'style', 'aria-describedby', 'required', 'autocomplete', 'placeholder', 'readonly'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $triggerClasses }}"
+        @if(! $disabled && $clearable) data-wk-combobox-clearable @endif
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     >
         {{-- Two spans rather than one binding that swaps the text and its color: the placeholder
              color would otherwise live in a runtime class string no scope can restyle. --}}
-        <span class="block min-w-0 truncate" x-show="selectedText !== ''" x-text="selectedText" @if($initialText === '') x-cloak @endif>{{ $initialText }}</span>
+        <span class="block min-w-0 truncate" :title="selectedText" x-show="selectedText !== ''" x-text="selectedText" @if($initialText === '') x-cloak @endif>{{ $initialText }}</span>
         <span class="block min-w-0 truncate text-[color:var(--color-wk-text-placeholder)]" x-show="selectedText === ''" @if($initialText !== '') x-cloak @endif>{{ $placeholder }}</span>
     </div>
     @endif
@@ -721,7 +759,7 @@
                  is a mutation the server has to hear about. `undefined` would be
                  the absence of a choice; null is a choice. --}}
             @click="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
-            class="absolute end-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+            class="wk-field-affordance absolute end-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
             aria-label="{{ $clearSelectionLabel }}"
         >
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -852,12 +890,12 @@
                             :class="opt.disabled
                                 ? 'text-[color:var(--color-wk-text-muted)] opacity-[var(--opacity-wk-disabled)] cursor-not-allowed'
                                 : (opt._idx === highlight
-                                    ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
-                                    : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
+                                    ? 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] cursor-pointer'
+                                    : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
                             {{-- `data-active` on the row the arrow keys are on, for the forced-colors
                                  mark the stylesheet draws through `wk-listbox-option`. --}}
                             :data-active="opt._idx === highlight ? '' : null"
-                            class="wk-listbox-option {{ $optionRowClasses }}"
+                            class="wk-listbox-option wk-touch-row {{ $optionRowClasses }}"
                             @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
                             @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                             @mouseenter="hoverOption(opt, opt._idx)"
@@ -895,10 +933,10 @@
                 :class="opt.disabled
                     ? 'text-[color:var(--color-wk-text-muted)] opacity-[var(--opacity-wk-disabled)] cursor-not-allowed'
                     : (idx === highlight
-                        ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
-                        : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
+                        ? 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] cursor-pointer'
+                        : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
                 :data-active="idx === highlight ? '' : null"
-                class="wk-listbox-option {{ $optionRowClasses }}"
+                class="wk-listbox-option wk-touch-row {{ $optionRowClasses }}"
                 @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 @mouseenter="hoverOption(opt, idx)"
@@ -940,13 +978,12 @@
 
     {{-- Empty state when filter produces no matches. Teleported for the same
          reason as the list above — it is the same panel wearing different content,
-         and leaving it behind would fix the case with results and keep the bug for
-         the case without. --}}
+         and left behind it would stay under the stacking context the list escapes. --}}
     <template x-teleport="#wk-overlay-root">
     <div
         {{-- Keyed for the same reason as the list above — it is the same panel
-             wearing different content, and leaving it unkeyed would fix the case
-             with results and keep the defect for the case without.
+             wearing different content, and unkeyed it would be swapped by the
+             morph the list's key prevents.
              Its own value rather than the list's: a key names a node, and these
              are two nodes. Naming them alike would be a claim that the morph may
              treat either as the other, which is not something this component has
@@ -1003,6 +1040,16 @@
         <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($showsHint)
         <p data-wk-prose-skip id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
+
+    {{-- Nothing to choose: what is missing, and where it is created (partials/empty-choice). --}}
+    @if($showEmpty)
+        @include('wirekit::components.partials.empty-choice', [
+            'emptyFor' => 'combobox',
+            'emptyId' => $emptyId,
+            'emptySlot' => $empty ?? null,
+            'emptyClass' => 'mt-[var(--space-wk-xs)]',
+        ])
     @endif
 
     @if($optimisticConfig)

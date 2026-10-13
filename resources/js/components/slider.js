@@ -23,6 +23,8 @@
  * @param {number} config.max       the input's max, mirrored for the pct math
  * @param {Object} config.marksMap  value -> label, for the announced text
  */
+import { focusClicked } from '../utils/focus-clicked.js';
+
 export default function wirekitSlider(config = {}) {
     return {
         current: config.current != null ? String(config.current) : '',
@@ -62,6 +64,18 @@ export default function wirekitSlider(config = {}) {
             if (el && String(el.value) !== String(this.current)) {
                 el.value = String(this.current);
             }
+        },
+
+        /**
+         * Give the range the focus a click on it did not. WebKit does not focus an
+         * `<input type="range">` it clicks, so after a click or a drag in Safari the arrow
+         * keys reached nothing, where Blink and Gecko move the thumb. Called from the
+         * input's click with the input itself (utils/focus-clicked.js).
+         *
+         * @param {HTMLElement} el
+         */
+        focusControl(el) {
+            focusClicked(el);
         },
 
         /**

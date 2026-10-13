@@ -30,6 +30,14 @@
     // hand-rolled per tile. null = the existing plain card surface, unchanged.
     // primary | success | warning | danger | info | neutral.
     'intent' => null,
+    // The tile as a link into the figure's report: the whole tile becomes an `<a>` with the kit's
+    // focus ring and a raised shadow on hover, and stays one item of a `stats` grid. Its name is
+    // what it shows, label and value first. Null keeps the tile a `<div>`.
+    'href' => null,
+    // Shrinks the value from `value` down to a floor so it fits its line: true for the
+    // `--text-wk-fit-floor` token, a length such as `1rem` for a floor of its own, null or false for
+    // none. A value written in the slot keeps its size.
+    'fit' => null,
     'scope' => null,
 ])
 
@@ -43,6 +51,13 @@
     $animate = BooleanProp::from($animate, false);
     $descriptionDeferred = BooleanProp::from($descriptionDeferred, false);
     $descriptionAnimate = BooleanProp::from($descriptionAnimate, false);
+
+    // The value's fitted box, on one line. While it counts up, the copies keep the final value, so the
+    // value has its final size from the first frame and does not jump as it counts.
+    $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'stat');
+    $fitBag = $fitFloor === false ? null : new \Illuminate\View\ComponentAttributeBag(array_filter([
+        'style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null,
+    ]));
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
@@ -142,7 +157,7 @@
         $core = $decimalSeparator === '' ? $core : str_replace($decimalSeparator, '.', $core);
 
         // A value with no digits at all ("N/A", an em dash) counts to zero and
-        // keeps its text, which is what it did before and is the honest answer:
+        // keeps its text, which is the honest answer:
         // there is nothing to count.
         $targetValue = is_numeric($core) ? (float) $core : 0.0;
     }
@@ -151,6 +166,29 @@
     // argument reads the reader's browser rather than the application. Laravel
     // spells a regional locale `pt_BR`; Intl reads `pt-BR`.
     $statLocale = str_replace('_', '-', app()->getLocale());
+
+    // A link the way a card is one: the URL as written, Blade's escape undone (Support\UrlProp).
+    $href = \Pushery\WireKit\Support\UrlProp::text($href);
+    $href = $href === '' ? null : $href;
+    $tag = $href !== null ? 'a' : 'div';
+
+    // The card's treatment of a card that links: the pointer, the shadow raised on hover and the
+    // kit's focus ring standing off the tile, so the tile answers the pointer and the keyboard.
+    $linkClasses = $href !== null ? implode(' ', [
+        'cursor-pointer',
+        'transition-shadow duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
+        'hover:shadow-[var(--shadow-wk-lg)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
+    ]) : '';
+
+    // A tile that opens a new tab says so, and keeps the page that opened it out of reach, as a
+    // card does. The rel is written out rather than merged: a caller's rel would replace it.
+    $opensNewTab = $href !== null && str_contains((string) $attributes->get('target', ''), '_blank');
+    $relAttr = (string) $attributes->get('rel', '');
+    $computedRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : ($relAttr !== '' ? $relAttr : null);
 
     // Container: card-like surface with padding + elevated background + border
     $classes = WireKit::resolveClasses('stat', 'base', implode(' ', [
@@ -250,9 +288,13 @@
     <div {!! $animateAttr !!} data-replayable="true" {{ $outerAttributes }}>
 @endif
 
-<div
-    {{ $attributes->merge($intentTileStyle ? ['style' => $intentTileStyle] : [])->class([$classes]) }}
-    @if($intent !== null && $label) role="group" aria-label="{{ $label }}" @endif
+<{{ $tag }} data-wk-prose-skip
+    @if($href !== null) href="{{ $href }}" @endif
+    @if($computedRel !== null) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except(['rel'])->merge($intentTileStyle ? ['style' => $intentTileStyle] : [])->class([$classes, $linkClasses]) }} data-wk-sr-host
+    {{-- A tile with an intent is a group named by its label. A linked tile is a link, named by
+         what it shows, and a group role would take that role away. --}}
+    @if($intent !== null && $label && $href === null) role="group" aria-label="{{ $label }}" @endif
     @if($animate)
         {{-- Counter scope on root. Description spans inside read $root.animating
              / $root.progress. When $needsEntranceWrapper is also true, the
@@ -306,11 +348,15 @@
             <div
                 class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums"
             >
-                <span x-text="value">{{ $value }}</span>
+                @if($fitBag !== null)
+                    {{ \Pushery\WireKit\Support\FitText::box((string) $value, $fitBag, false, null, new \Illuminate\View\ComponentAttributeBag(['x-text' => 'value'])) }}
+                @else
+                    <span x-text="value">{{ $value }}</span>
+                @endif
             </div>
         @else
             <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums">
-                {{ $value }}
+                {{ $fitBag !== null ? \Pushery\WireKit\Support\FitText::box((string) $value, $fitBag, false) : $value }}
             </div>
         @endif
     @elseif($slot->hasActualContent())
@@ -343,6 +389,9 @@
                     {{ $change }}
                 </span>
             @endif
+            {{-- The description is a flex item beside the change, never narrower than its longest
+                 word: `anywhere` lets a typed token in it, an email address, wrap, and the change
+                 keeps its width. --}}
             @if($description)
                 @if($descriptionDeferred && $animate)
                     {{-- Option A — defer fade-in. Description hides while counter runs;
@@ -351,17 +400,21 @@
                         x-show="!animating"
                         x-transition.opacity.duration.200ms
                         x-bind:aria-hidden="animating ? 'true' : null"
-                        class="text-[color:var(--color-wk-text-muted)]"
+                        class="text-[color:var(--color-wk-text-muted)] [overflow-wrap:anywhere]"
                     >{{ $description }}</span>
                 @elseif($descriptionAnimate && $animate)
                     {{-- Option C — synchronous color count-up. Text color interpolates
                          from muted → text on the same 1.2s timeline as the value via
-                         the `progress` reactive (0 = start, 1 = settled). --}}
+                         the `progress` reactive (0 = start, 1 = settled). An object, which
+                         Alpine sets property by property, where a string it would write
+                         with `setAttribute()`, which a `style-src` without
+                         `'unsafe-inline'` refuses. --}}
                     <span
-                        x-bind:style="'color: color-mix(in srgb, var(--color-wk-text-muted) ' + ((1 - progress) * 100) + '%, var(--color-wk-text) ' + (progress * 100) + '%)'"
+                        x-bind:style="{ color: 'color-mix(in srgb, var(--color-wk-text-muted) ' + ((1 - progress) * 100) + '%, var(--color-wk-text) ' + (progress * 100) + '%)' }"
+                        class="[overflow-wrap:anywhere]"
                     >{{ $description }}</span>
                 @else
-                    <span class="text-[color:var(--color-wk-text-muted)]">{{ $description }}</span>
+                    <span class="text-[color:var(--color-wk-text-muted)] [overflow-wrap:anywhere]">{{ $description }}</span>
                 @endif
             @endif
         </div>
@@ -373,7 +426,10 @@
             {{ $citation }}
         </span>
     @endif
-</div>
+    @if($opensNewTab)
+        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
+    @endif
+</{{ $tag }}>
 
 @if($needsEntranceWrapper)
     </div>

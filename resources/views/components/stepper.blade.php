@@ -108,8 +108,10 @@
         // within their min-w-0 column on a phone instead of overflowing the
         // horizontal row. A long word breaks at a syllable, with a hyphen, where the
         // document's `lang` says how; the arbitrary break stays the fallback for a word the
-        // browser cannot hyphenate. A column narrower than a word does not get this far: the
-        // shipped stylesheet draws the compact form there (see the caption below).
+        // browser cannot hyphenate. The shipped stylesheet keeps a word under twelve letters
+        // whole, so hyphenation does not split one that fits on the next line. A column
+        // narrower than a word does not get this far: the shipped stylesheet draws the
+        // compact form there (see the caption below).
         $isVertical ? '' : 'max-w-full [overflow-wrap:anywhere] hyphens-auto',
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text)]',

@@ -1,18 +1,15 @@
 {{-- optimistic-ui: supported --}}
 @props([
     // The Livewire method this toggle should call, when it should show the new
-    // state before the server has agreed to it. Null (the default) is today's
-    // behavior exactly: the developer's own wire:model / wire:click, untouched.
+    // state before the server has agreed to it. Null (the default) leaves the
+    // developer's own wire:model / wire:click untouched.
     //
     // It is a METHOD NAME rather than a boolean because the component cannot
     // know the action otherwise — WireKit passes server actions through the
     // attribute bag, so a component never sees the developer's wire:click.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -40,7 +37,7 @@
     // Where the words sit: `end` after the switch and its label, `start` before the switch.
     'statePosition' => 'end',
     // The track's color for each state: `accent`, `success`, `danger` or `neutral`. On is the
-    // accent and off is neutral, as before; "green on, red off" is `on-intent="success"
+    // accent and off is neutral by default; "green on, red off" is `on-intent="success"
     // off-intent="danger"`.
     'onIntent' => 'accent',
     'offIntent' => 'neutral',
@@ -67,7 +64,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -142,6 +139,12 @@
     // Only with a label to stand beside, which is also where its hidden copy is rendered.
     $helpLabel = (string) ($label ?? '');
     $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
+    // Markup a caller puts after the label and its help, in their row (partials/label-after).
+    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    // The control sits inside the label, so the row around it stands whenever the slot is passed,
+    // filled or not: a mark that comes and goes between two renders then leaves the markup around
+    // the control as it was.
+    $labelAfterGiven = isset($labelAfter);
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // Size scale: track width/height + knob offset distance
@@ -198,6 +201,12 @@
 
     // The words for the state, when either is given. Where they go is the caller's choice.
     $hasStateText = filled($onLabel) || filled($offLabel);
+
+    // On a touch surface a label that shows a text beside the switch is a row: a tap on the text
+    // flips the switch, so it takes the 44px floor of every interactive row (`wk-touch-row`). Its
+    // content is centered by `items-center`. A switch alone keeps its size and answers a finger
+    // through the hit area of `wk-touch-target`.
+    $rowMarker = ($label && ! $hideLabel) || $hasStateText ? 'wk-touch-row ' : '';
     $statePosition = WireKit::validateProp('toggle', 'statePosition', (string) $statePosition, ['end', 'start']);
 
     // Track: the neutral fill is the contrast-bound control border, see the arms above. WCAG 1.4.11
@@ -279,13 +288,13 @@
      full duration for a reader who had asked their operating system for no motion. The
      marker is also what lets an application's own motion setting win, since the
      `data-reduce-motion` escape hatch is written against the same selector. --}}
-<div {{ $outerAttributes }} class="wk-toggle space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} class="wk-toggle relative space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     {{-- With help, the label shares a row with its button, which may not sit inside the
          label: it would become part of the control's name. --}}
-    @if($helpId)
-    <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+    @if($helpId || $labelAfterGiven)
+    <div data-wk-label-row class="{{ $labelAfterGiven ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($labelAfterGiven)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
     @endif
-    <label for="{{ $id }}" class="inline-flex items-center gap-3 cursor-pointer">
+    <label for="{{ $id }}" class="{{ $rowMarker }}inline-flex items-center gap-3 cursor-pointer">
         {{-- Switch visual: wrapper contains input (.peer), track, and knob as siblings --}}
         {{-- so peer-checked:* selectors resolve correctly (peer-checked targets siblings only). --}}
         <span class="{{ $wrapperClasses }}">
@@ -342,8 +351,11 @@
             <span data-wk-toggle-state="{{ $statePosition }}" aria-hidden="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] select-none"><span data-wk-toggle-state-off>{{ $offLabel }}</span><span data-wk-toggle-state-on>{{ $onLabel }}</span></span>
         @endif
     </label>
-    @if($helpId)
-        @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => ! $hideLabel, 'helpField' => (string) ($name)])
+    @if($helpId || $labelAfterGiven)
+        @if($helpId)
+            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => ! $hideLabel, 'helpField' => (string) ($name)])
+        @endif
+        @if($labelAfterGiven)</span>@if($hasLabelAfter)@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif @endif
     </div>
     @endif
 

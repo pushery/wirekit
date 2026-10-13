@@ -2,7 +2,7 @@
  * Whether a panel holds input its reader would lose: the question a modal or a drawer asks before
  * the reader closes it by Escape, a click beside it or its close button.
  *
- * WHEN THE STATE IS TAKEN. Not when the panel opens. A dialog is often filled by its server after it
+ * When the state is taken. Not when the panel opens. A dialog is often filled by its server after it
  * opened: `wire:click="edit(42)"` opens it and the answer brings the record's values a moment later.
  * Taken at the open, those values would read as the reader's changes, and a dialog nobody touched
  * would ask. So the state is taken at the reader's first touch of the panel, a press or a key the
@@ -18,6 +18,13 @@
  *
  * AND `x-wk-unsaved`. A field inside the panel that the unsaved directive marks holds a value its
  * server does not have, so the panel holds changes whatever the state taken here says.
+ *
+ * Fields that come and go. Each field is compared with its own value at the state, not the panel
+ * as a whole: a server that shows another step after the first touch adds fields nobody typed
+ * into, and a whole-panel comparison read them as changes. A field that was not there when the
+ * state was taken joins it at the reader's next press or key, with the value it holds then; until
+ * that, or after a close from beside the panel, it counts only once it differs from the value its
+ * markup gave it. A field that has gone counts no more.
  */
 
 /** What a reader does to a panel before changing a field in it: a press, or a key. */
@@ -34,11 +41,21 @@ const ACTION_TYPES = new Set(['button', 'submit', 'reset', 'image']);
  * @returns {string}
  */
 export function fieldState(root) {
+    return JSON.stringify(fieldsOf(root).map(({ key, value }) => [key, value]));
+}
+
+/**
+ * The fields of a panel that count, each with its key and its value.
+ *
+ * @param {Element|null} root
+ * @returns {Array<{ field: Element, key: string, value: string|string[] }>}
+ */
+function fieldsOf(root) {
     if (! root || typeof root.querySelectorAll !== 'function') {
-        return '';
+        return [];
     }
 
-    const pairs = [];
+    const fields = [];
 
     root.querySelectorAll(FIELD_SELECTOR).forEach((field, index) => {
         const type = String(field.type || '').toLowerCase();
@@ -51,7 +68,6 @@ export function fieldState(root) {
             return;
         }
 
-        const key = field.name || field.id || `#${index}`;
         let value;
 
         if (type === 'checkbox' || type === 'radio') {
@@ -64,10 +80,43 @@ export function fieldState(root) {
             value = field.value;
         }
 
-        pairs.push([key, value]);
+        fields.push({ field, key: field.name || field.id || `#${index}`, value });
     });
 
-    return JSON.stringify(pairs);
+    return fields;
+}
+
+/**
+ * The value a field's markup gave it, read the way `fieldsOf()` reads its value: the default of a
+ * text field, the default check of a box, the options a select had selected in its markup, or its
+ * first enabled option when none had.
+ *
+ * @param {Element} field
+ * @returns {string|string[]}
+ */
+function markupValueOf(field) {
+    const type = String(field.type || '').toLowerCase();
+
+    if (type === 'checkbox' || type === 'radio') {
+        return field.defaultChecked ? 'on' : 'off';
+    }
+
+    if (type === 'file') {
+        return '0';
+    }
+
+    if (field.tagName === 'SELECT') {
+        const options = Array.from(field.options || []);
+        const selected = options.filter((option) => option.defaultSelected).map((option) => option.value);
+
+        if (field.multiple) {
+            return selected;
+        }
+
+        return selected.length > 0 ? selected[0] : (options.find((option) => ! option.disabled)?.value ?? '');
+    }
+
+    return field.defaultValue ?? '';
 }
 
 /**
@@ -81,9 +130,21 @@ export function createDiscardGuard() {
     let taken = null;
     let listening = null;
 
+    // The state is each field's value, by the field. The first press or key takes every field; a
+    // later one adds the fields that appeared since, with the value they hold before it acts.
     const take = (event) => {
-        if (taken === null && event && event.isTrusted) {
-            taken = fieldState(armedOn);
+        if (! event || ! event.isTrusted) {
+            return;
+        }
+
+        if (taken === null) {
+            taken = new Map();
+        }
+
+        for (const { field, value } of fieldsOf(armedOn)) {
+            if (! taken.has(field)) {
+                taken.set(field, JSON.stringify(value));
+            }
         }
     };
 
@@ -133,7 +194,12 @@ export function createDiscardGuard() {
                 return true;
             }
 
-            return taken !== null && fieldState(root) !== taken;
+            if (taken === null) {
+                return false;
+            }
+
+            // A field taken that has gone is not in this list, and counts no more.
+            return fieldsOf(root).some(({ field, value }) => JSON.stringify(value) !== (taken.has(field) ? taken.get(field) : JSON.stringify(markupValueOf(field))));
         },
     };
 }

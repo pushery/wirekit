@@ -25,8 +25,8 @@
     // Heading above the marker list — and the switch that makes that list a LANDMARK.
     //
     // The visible heading is ALWAYS rendered, so the fallback survives as a resolved variable;
-    // only the `role="region"` waits for a caller-supplied name. Unnamed it fell back to
-    // "Locations", which made every map on a store-locator page the same rotor entry (axe:
+    // only the `role="region"` waits for a caller-supplied name. A fallback name such as
+    // "Locations" would make every map on a store-locator page the same rotor entry (axe:
     // `landmark-unique`).
     'listLabel' => null,
     // Show the marker-list sidebar. Set list="false" for a map-only surface — the
@@ -59,9 +59,10 @@
     $provider = WireKit::validateProp('map', 'provider', $provider, ['maplibre', 'leaflet']);
     $highlight = WireKit::validateProp('map', 'highlight', $highlight, ['ring', 'fill']);
     $highlightColor = WireKit::validateProp('map', 'highlightColor', $highlightColor, ['accent', 'success', 'warning', 'danger', 'neutral']);
-    // Counted, not random. The map mounts a JS instance against this id, and a random one
-    // meant every Livewire round trip produced an id the mounted map no longer matched — the
-    // pan and zoom the reader had set were discarded by an update elsewhere on the page.
+    // Counted, not random. The map mounts a JS instance against this id, and with a random
+    // one every Livewire round trip would produce an id the mounted map no longer matches —
+    // the pan and zoom the reader had set would be discarded by an update elsewhere on the
+    // page.
     $id = $attributes->get('id') ?? \Pushery\WireKit\Support\DomId::unique(null, 'map-');
     // Map-only mode: hide the visual sidebar but keep the list in the DOM (sr-only)
     // so assistive tech can still reach the locations.
@@ -135,7 +136,7 @@
          flush inside the rounded, clipped card, split only by that border. (Plain
          prose, no bare utility tokens: Tailwind scans Blade comments too, so a
          literal class name here would emit a dead selector and trip the drift audit.) --}}
-    {{ $attributes->only('class')->class([$base.' flex flex-col sm:flex-row border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden']) }}
+    data-wk-sr-host {{ $attributes->only('class')->class([$base.' '.($showList ? 'flex flex-col sm:flex-row' : 'flex flex-col').' border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden']) }}
 >
     {{-- Map canvas — the library draws here. Falls back to a placeholder + the
          list when no peer library is loaded (progressive enhancement). --}}
@@ -158,8 +159,8 @@
              preview link-block (a capture-phase click handler that preventDefaults
              demo-navigation anchors) excludes anchors inside [role="application"],
              so Leaflet's <a href="#"> zoom/attribution controls keep working inside
-             a preview. Keep this role on the mount — dropping it silently kills
-             Leaflet map controls on the docs site (asserted in MapRenderTest). --}}
+             a preview. Keep this role on the mount: without it, Leaflet's zoom and
+             attribution controls stop working inside a docs preview. --}}
         {{-- min-height floor (matches the wrapper above) is load-bearing on its
              own. Once maplibre-gl.css's `.maplibregl-map { position: relative }`
              applies, and it outranks the layered `.absolute`, `absolute inset-0`
@@ -202,9 +203,19 @@
          `-1` rather than dropping the attribute: with `list="false"` the element collapses to
          the sr-only companion, which does not scroll. A tab stop there would put keyboard focus
          on something nobody can see (WCAG 2.4.7), so it stays out of the tab order while the
-         wiring stays readable. --}}
-    <div @if(filled($listLabel)) role="region" aria-label="{{ $listLabel }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only' }}">
-        <p data-wk-prose-skip class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
+         wiring stays readable.
+
+         Its buttons keep theirs, because the canvas is opaque to a keyboard and the list is the
+         only way to the places. While one of them has the focus the list shows, under the map,
+         as a skip link does. Without a sidebar the map stays a column on every width, so the
+         list takes a line below the canvas and the canvas keeps its size. Hidden again once the
+         focus leaves. --}}
+    {{-- Paper does not scroll: on paper the list prints every place. --}}
+    <div data-wk-print-expand @if(filled($listLabel)) role="region" aria-label="{{ $listLabel }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only focus-within:not-sr-only focus-within:border-t-[length:var(--border-wk-width)] focus-within:border-[var(--color-wk-border)]' }}">
+        {{-- The heading stays at the top of the list while it scrolls, and tells the list how
+             much of the top it covers, so a place that takes the focus on the way up rests
+             below it (WCAG 2.4.11). --}}
+        <p data-wk-prose-skip data-wk-scroll-inset="top" class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
             {{ $listLabelResolved }} (<span x-text="markerCount"></span>)
         </p>
         <ul data-wk-prose-skip role="list" class="list-none divide-y divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
@@ -216,12 +227,16 @@
                         :aria-label="m.label + (m.body ? ', ' + m.body : '') + {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::, latitude :lat, longitude :lng')) }}.replace(':lat', m.lat).replace(':lng', m.lng)"
                         :aria-current="selectedId === m.id ? 'true' : null"
                         :class="selectedId === m.id ? {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedClasses) }} : ''"
-                        class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"
+                        class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"
                     >
                         <span class="mt-1 shrink-0 h-2.5 w-2.5 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($dotClasses) }}[m.intent || 'accent']"></span>
+                        {{-- Each line wraps instead of being cut at one line. The list is where a
+                             sighted reader reads a marker's whole name, since selecting a row only pans
+                             the map, and a row has no fixed height to keep. A cut line loses its end
+                             under the text spacing a reader may set (WCAG 1.4.12). --}}
                         <span class="min-w-0 flex-1">
-                            <span class="block text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] truncate" x-text="m.label"></span>
-                            <span x-show="m.body" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] truncate" x-text="m.body"></span>
+                            <span class="block text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] [overflow-wrap:anywhere]" x-text="m.label"></span>
+                            <span x-show="m.body" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] [overflow-wrap:anywhere]" x-text="m.body"></span>
                             <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)] tabular-nums" x-text="formatCoordinates(m)"></span>
                         </span>
                     </button>

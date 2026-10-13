@@ -5,8 +5,8 @@
 "open
 $attributes
 $attributes->class([$classes])
-$attributes->class([$itemClasses,
 $attributes->class([$wrapperClasses])
+$attributes->class(['wk-touch-row',
 $attributes->except(['rel',
 $attributes->get('rel',
 $attributes->get('target',
@@ -15,6 +15,7 @@ $attributes->getAttributes());
 $attributes]
 $callerLabel,
 $classes
+$classes,
 $colorClasses
 $colorClasses,
 $computedRel
@@ -28,6 +29,7 @@ $disabledClasses])
 $finalRel
 $href
 $itemClasses
+$itemClasses,
 $label
 $offset
 $opensNewTab
@@ -54,7 +56,7 @@ $wrapperClasses
 'a'
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
-'bg-[var(--color-wk-bg-subtle)]'
+'bg-[var(--color-wk-bg-hover)]'
 'border-[length:var(--border-wk-width)]
 'border-[var(--color-wk-border-subtle)]',
 'border-t',
@@ -69,13 +71,13 @@ $wrapperClasses
 'false'"
 'fixed
 'flex
-'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+'focus-visible:bg-[var(--color-wk-bg-hover)]',
 'focus-visible:ring-[length:var(--ring-wk-width)]',
 'focus-visible:ring-[var(--color-wk-ring)]',
 'focus-visible:ring-inset',
 'focus:outline-hidden',
 'font-[family-name:var(--font-wk-sans)]',
-'hover:bg-[var(--color-wk-bg-subtle)]',
+'hover:bg-[var(--color-wk-bg-hover)]',
 'href'
 'icon'
 'label'
@@ -103,7 +105,7 @@ $wrapperClasses
 'text-[length:var(--text-wk-md)]',
 'transition-colors',
 'true'
-'type'])->class([$classes,
+'type'])->class(['wk-touch-row',
 'w-5
 'whitespace-nowrap',
 'wk-context-menu-hint-');
@@ -137,8 +139,6 @@ $wrapperClasses
 *
 */
 +
---color-wk-bg-elevated,
---color-wk-bg-subtle
 --}}
 /
 /*
@@ -351,7 +351,6 @@ after
 against
 agree.
 all
-alone
 along
 along:
 along;
@@ -493,7 +492,6 @@ covers
 cursor
 cuts
 d="M7.5
-dark's
 data-wk-prose-skip
 data-wk-submenu
 data-wk-submenu-panel
@@ -545,7 +543,6 @@ elements
 else.
 embedding
 emitted
-equals
 escaped
 escapes
 event
@@ -554,6 +551,7 @@ ever
 every
 exists
 explains
+faint
 false
 false);
 false,
@@ -627,8 +625,9 @@ hint
 hold
 honors
 horizontally
-hover:bg-[var(--color-wk-bg-subtle)]'
-hover:bg-[var(--color-wk-bg-subtle)]';
+hover's
+hover:bg-[var(--color-wk-bg-hover)]'
+hover:bg-[var(--color-wk-bg-hover)]';
 href="{{
 icon
 id.
@@ -711,7 +710,7 @@ longer
 longest
 made
 makes
-marked
+mark
 markup
 max-w-[calc(100vw-1rem)]
 may
@@ -762,7 +761,6 @@ not:
 nothing
 nothing,
 nothing.
-nothing:
 null
 null);
 null,
@@ -770,7 +768,6 @@ of
 off
 offset:
 on
-on,
 on.
 once
 one
@@ -802,6 +799,8 @@ overly
 overrides
 overscroll-contain',
 own
+own,
+own.
 owns
 owns,
 padding
@@ -898,8 +897,8 @@ root,
 rounded,
 roving
 row
-row.
-rows,
+row,
+rows.
 rule
 rule,
 run
@@ -924,6 +923,7 @@ sequence
 server
 serves
 set
+shade,
 shape
 shapes
 sharpest
@@ -950,6 +950,7 @@ state;
 states
 stay
 stays
+step
 still
 stop
 stop,
@@ -977,7 +978,6 @@ tabindex="-1"
 tabindex="0"
 table
 tag
-taken
 takes
 teleport
 teleport,
@@ -1004,6 +1004,7 @@ through
 time
 to
 token
+too
 too,
 tooltip.
 touch

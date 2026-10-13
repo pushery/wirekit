@@ -40,10 +40,9 @@ import { prefersReducedMotion } from '../utils/motion.js';
  * decimals it shows.
  *
  * Only the hand-mount path reaches this — the component supplies all four from
- * PHP. The split is by POSITION rather than by class, which is the half that was
- * wrong in every locale including English: the old form stripped digits out and
- * concatenated everything left over AFTER the number, so `$1,250.50` settled as
- * `1250.50$`.
+ * PHP. The split is by POSITION rather than by class, which matters in every
+ * locale including English: stripping the digits out and concatenating everything
+ * left over AFTER the number would settle `$1,250.50` as `1250.50$`.
  */
 function parseCounterTarget(target) {
     const firstDigit = /\d/.exec(target);

@@ -6,18 +6,17 @@
  * it to the end. A bar that fills on a timer lies on the first request that runs long,
  * and one that stops dead on a round number reads as hung.
  *
- * Ported from a build that ran in production from 2026-09-08, and the two decisions below
- * are the ones that build paid for. Both look like polish and neither is:
+ * The two decisions below look like polish, and neither is:
  *
- *   A POLL IS NOT A REQUEST THE READER MADE. A screen polling every three seconds ran the
- *   bar through on every tick. No suite could see it: nothing was broken, and the evidence was
- *   a bar that blinked on its own — which teaches its reader to ignore it, and then it no
- *   longer reports the waiting that IS worth reporting. The test is Livewire's own metadata,
- *   not a list of method names that would need keeping in step with every template.
+ *   A poll is not a request the reader made. A screen polling every three seconds would run
+ *   the bar through on every tick, and a bar that blinks on its own teaches its reader to
+ *   ignore it — then it no longer reports the waiting that IS worth reporting. The test is
+ *   Livewire's own metadata, not a list of method names that would need keeping in step with
+ *   every template.
  *
- *   ONE DECREMENT PER MESSAGE, WHICHEVER EVENT ARRIVES. Livewire cancels a message a newer
- *   one supersedes. A counter that only falls on success leaves the bar sitting on a page
- *   with nothing left to wait for.
+ *   One decrement per message, whichever event arrives. Livewire cancels a message a newer
+ *   one supersedes. A counter that only falls on success would leave the bar sitting on a
+ *   page with nothing left to wait for.
  *
  * The fill animates with `transform: scaleX` rather than `width`, which is the same choice
  * the reading bar documents and a stronger one here: this bar moves precisely while the main
@@ -27,7 +26,7 @@
  * Lifecycle resources held on `this`:
  *   - the two `livewire:navigate` / `livewire:navigated` document listeners
  *   - the show / hide timers and the tick interval
- *   - `_releaseHook`, whatever Livewire handed back for the seam we took
+ *   - `_releaseHook`, the release `Livewire.interceptMessage()` handed back
  *   all released in destroy().
  *
  * @param {Object} config
@@ -129,55 +128,43 @@ export default function wirekitPageProgress(config = {}) {
                 return;
             }
 
-            if (typeof livewire.interceptMessage === 'function') {
-                // `interceptMessage` is what the `commit` hook is itself built on, and it is the
-                // only one of the two handed the message's ACTIONS. The `commit` hook receives
-                // `message.payload`, which carries the calls and not their metadata — so the poll
-                // question cannot be asked one layer up.
-                this._releaseHook = livewire.interceptMessage(({ message, onFinish, onError, onCancel }) => {
-                    const actions = Array.from(message?.actions ?? []);
+            // `interceptMessage` is what the `commit` hook is itself built on, and it is the only
+            // seam handed the message's ACTIONS. The `commit` hook receives `message.payload`,
+            // which carries the calls and not their metadata — so the poll question cannot be
+            // asked one layer up. Every Livewire release this package supports provides it.
+            this._releaseHook = livewire.interceptMessage(({ message, onFinish, onError, onCancel }) => {
+                const actions = Array.from(message?.actions ?? []);
 
-                    // An empty action set is a component refresh with no call, not a poll —
-                    // and `every()` answers true for it, which would silence real refreshes.
-                    if (actions.length > 0 && actions.every((action) => action?.metadata?.type === 'poll')) {
+                // An empty action set is a component refresh with no call, not a poll —
+                // and `every()` answers true for it, which would silence real refreshes.
+                if (actions.length > 0 && actions.every((action) => action?.metadata?.type === 'poll')) {
+                    return;
+                }
+
+                this.begin();
+
+                let done = false;
+                const finish = () => {
+                    if (done) {
                         return;
                     }
 
-                    this.begin();
+                    done = true;
+                    this.end();
+                };
 
-                    let done = false;
-                    const finish = () => {
-                        if (done) {
-                            return;
-                        }
-
-                        done = true;
-                        this.end();
-                    };
-
-                    onFinish(finish);
-                    onError(finish);
-                    onCancel(finish);
-                });
-
-                return;
-            }
-
-            if (typeof livewire.hook === 'function') {
-                // The older seam, kept so a Livewire without `interceptMessage` reports requests
-                // rather than nothing. It cannot tell a poll apart, which is why the assertion
-                // about the poll rule holds the branch above rather than this one.
-                this._releaseHook = livewire.hook('commit', ({ respond }) => {
-                    this.begin();
-                    respond(() => this.end());
-                });
-            }
+                onFinish(finish);
+                onError(finish);
+                onCancel(finish);
+            });
         },
 
-        // Started in two places — when the delay elapses, and when a hidden tab comes back —
-        // so it is one method rather than two copies of an easing constant.
+        // Started in three places — when the delay elapses, when a request begins in the fade-out
+        // window, and when a hidden tab comes back — so it is one method rather than three copies
+        // of an easing constant. In a hidden tab it starts nothing: the first two can fire there,
+        // and the third starts it once the reader is back.
         _startTick() {
-            if (this._tick || ! this.active) {
+            if (this._tick || ! this.active || this._visibility?.isHidden()) {
                 return;
             }
 

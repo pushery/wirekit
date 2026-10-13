@@ -100,9 +100,8 @@
     // events on whatever sits under it (typically nothing — it's 3px tall — but
     // defensive against overlap with a sticky nav).
 
-    // Resolve boundary. Three shapes supported (v2.4.0 Ext 1):
-    //   null         → viewport-fixed (default — every existing developer
-    //                   sees zero change).
+    // Resolve boundary. Three shapes supported:
+    //   null         → viewport-fixed (default).
     //   'container'  → position: sticky in the nearest positioned ancestor.
     //   '<selector>' → position: sticky + Alpine init() asserts an ancestor
     //                   matching the CSS selector exists; warns + falls back

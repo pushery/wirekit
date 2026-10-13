@@ -9,18 +9,19 @@ $active
 $attributes
 $attributes->class('relative')
 $attributes->class(['wk-navigation-menu',
-$attributes->except('rel')->class($triggerClasses)
-$attributes->except('rel')->class([$classes,
+$attributes->except('rel')->class(['wk-touch-row',
 $attributes->get('rel',
 $attributes->get('target',
 $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge
 $classes
+$classes,
 $classes])
 $colorClasses
 $colorClasses])
 $computedRel
+$el)"
 $finalRel
 $hasPanel
 $href
@@ -42,6 +43,7 @@ $targetAttr
 $trigger
 $trigger);
 $triggerClasses
+$triggerClasses])
 &&
 '#',
 ''
@@ -53,7 +55,6 @@ $triggerClasses
 'active'
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
-'block',
 'border-[length:var(--border-wk-width)]
 'cursor-pointer',
 'duration-[var(--transition-wk-duration)]',
@@ -63,7 +64,7 @@ $triggerClasses
 'flex
 'focus:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
-'hover:bg-[var(--color-wk-bg-subtle)]',
+'hover:bg-[var(--color-wk-bg-hover)]',
 'href'
 'inline-flex
 'max-w-[calc(100vw-1rem)]',
@@ -92,7 +93,8 @@ $triggerClasses
 'wk-nav-item-');
 'wk-nav-panel-');
 'wk-scrollbar
-'x-on:focusout']);
+'x-on:focusout',
+'x-on:keydown.escape.window.capture']);
 ($relAttr
 (4px).
 (Support\CallerListeners).
@@ -117,6 +119,7 @@ $triggerClasses
 //
 />
 0
+1.4.13):
 2.4.3
 24
 24"
@@ -134,6 +137,7 @@ $triggerClasses
 <a
 <body>
 <body>),
+<body>.
 <button
 <div
 <nav
@@ -360,12 +364,15 @@ carried
 carry
 cast
 causing
+centers
 chevron
 children
 clamp
 class
+class="min-w-0
 class="sr-only">{{
 class="w-4
+class="wk-touch-row
 class="{{
 classes
 click
@@ -455,7 +462,6 @@ explicit
 explicit-prop
 fails.
 fall
-fallback
 falls
 false);
 false,
@@ -468,8 +474,11 @@ fixed
 fixed`
 flags
 flex
+flex-1">{{
 flex-col',
 flips
+floor
+flow
 flyout
 flyout).
 focus
@@ -491,7 +500,6 @@ generic
 get
 global
 goes
-got
 grid
 guards)
 h-4
@@ -503,10 +511,10 @@ handlers
 hands
 hardcoded
 has
+hears
 height
 helper
 here
-here,
 here:
 hidden`
 hint
@@ -530,6 +538,7 @@ incoming
 indicator
 individual
 injection.
+inline
 inserted
 inside
 instead
@@ -544,19 +553,20 @@ item's
 item.
 item:
 items-center
+items-center',
 items.
 its
 itself
 just
 keep
 keeps
-kept
 key
 keyboard
 keydown
 keys
 kinds
 label
+label,
 lands
 later
 left
@@ -572,9 +582,9 @@ listens
 live
 location.
 longer
-made
 makes
 margin
+mark
 marker
 markup
 match
@@ -630,6 +640,7 @@ node's
 node's.
 non-empty
 noopener
+nor
 noreferrer"
 noreferrer')
 not
@@ -710,7 +721,6 @@ pseudo-element
 pulls
 purpose.
 qualified:
-randomized.
 randomized:
 rather
 rationale
@@ -732,7 +742,7 @@ rel="{{
 relative
 relied
 render
-render:
+render,
 rendered
 renders
 renders.
@@ -752,6 +762,7 @@ root
 root,
 root.
 route.
+row
 rule
 rules
 run
@@ -797,7 +808,6 @@ state
 stay
 steady
 still
-stood
 stop
 stops,
 str_contains($relAttr,
@@ -815,6 +825,7 @@ tab
 tab)')
 tag
 takes
+taller.
 target.
 target="_blank".
 teleport
@@ -836,6 +847,7 @@ to.
 token
 too,
 top-level
+touch
 transformed
 transition-transform
 translate-y-0"
@@ -874,6 +886,7 @@ well-formed
 what
 when
 where
+wherever
 which
 while
 who
@@ -896,6 +909,7 @@ x-on:click.outside
 x-on:click="open({{
 x-on:focusout="handleBarFocusOut($event)"
 x-on:focusout="handlePanelFocusOut($event,
+x-on:keydown.escape.window.capture="escapeAnywhere($event)"
 x-on:keydown="handleBarKeydown($event)"
 x-on:keydown="handlePanelKeydown($event,
 x-on:mouseenter="cancelClose()"
@@ -923,5 +937,6 @@ zone
 }}"
 }}">
 }})"
+}},
 }}</span>
 —

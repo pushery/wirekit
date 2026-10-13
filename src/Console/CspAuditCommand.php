@@ -111,7 +111,9 @@ class CspAuditCommand extends Command
      * `x-wk-findable` is WireKit's own and belongs here for the reason the others do: it
      * takes the place of `x-show` on a disclosure panel and hands its value to
      * `evaluateLater()`, so under the CSP build it meets the same parser. Its `.collapse`
-     * modifier is covered by the modifier part of the name pattern. The kit's other
+     * modifier is covered by the modifier part of the name pattern. `x-wk-focus-first` hands
+     * its value to the same evaluator, to know when the menu it sits on opens, and
+     * `x-wk-fit-text` to know the text it writes into a fitted text. The kit's other
      * directives evaluate nothing and stay off: `x-wk-indeterminate`, `x-wk-flash`, `x-wk-ime`,
      * `x-wk-unsaved`, which reads its modifiers and takes its value as a scope name, read as
      * written, and `x-wk-ref`, whose value is a ref name.
@@ -119,7 +121,7 @@ class CspAuditCommand extends Command
     private const EXPRESSION_ATTRIBUTES = [
         'x-data', 'x-show', 'x-if', 'x-text', 'x-html', 'x-model', 'x-modelable',
         'x-init', 'x-effect', 'x-bind', 'x-on', 'x-intersect', 'x-id',
-        'x-wk-findable',
+        'x-wk-findable', 'x-wk-focus-first', 'x-wk-fit-text',
     ];
 
     /**
@@ -271,16 +273,17 @@ class CspAuditCommand extends Command
                 continue;
             }
 
-            // For `x-data` the grammar answers the wrong question, and it answers it
-            // affirmatively in both directions that matter. `x-data="{ open: false }"`
-            // parses and is exactly the form a CSP build has no factory for;
-            // `x-data="wirekitAlertDialog({…})"` parses and leaves the element WITHOUT A
-            // SCOPE when nothing registered that name.
+            // For `x-data` the grammar answers only half the question. An inline object is
+            // the grammar's to decide: the CSP build evaluates `x-data="{ open: false }"`,
+            // and a method or a getter in the object does not parse, so it is reported like
+            // any rejected expression. A call is not: `x-data="wirekitAlertDialog({…})"`
+            // parses, and leaves the element WITHOUT A SCOPE when nothing registered that
+            // name.
             //
-            // The second is the dangerous one because it fails upward: no scope means
-            // `x-show` cannot evaluate, so it never sets `display: none`, while Alpine's
-            // init removes `x-cloak` regardless. The panel is visible and every control in
-            // it is dead — which reads as a layout bug, not as a missing script.
+            // A missing registration is the dangerous case because it fails upward: no scope
+            // means `x-show` cannot evaluate, so it never sets `display: none`, while Alpine's
+            // init removes `x-cloak` regardless. The panel is visible and every control in it
+            // is dead — which reads as a layout bug, not as a missing script.
             //
             // And not over a substitution. An `x-data="@js(…)"` reaches this loop as a
             // placeholder, and a placeholder is a bare identifier, so judging it would report
@@ -381,10 +384,10 @@ class CspAuditCommand extends Command
                 // scanned is not a clean result, it is an unasked question.
                 'registrations_seen' => count($registrationScan['names']),
                 'registration_files' => count($registrationScan['files']),
-                // ONE unambiguous field, because the two counts above were already here and the
-                // report they came from still got read as clean. A developer has to know to look
-                // at them, and `unregistered: 0` sits right next to them saying the reassuring
-                // thing. This says whether the question was asked at all.
+                // ONE unambiguous field, because the two counts above are easy to read past: a
+                // developer has to know to look at them, and `unregistered: 0` sits right next to
+                // them saying the reassuring thing. This says whether the question was asked at
+                // all.
                 //
                 // A field rather than an exit code, deliberately. Failing would redden every
                 // application that has no Alpine registrations because it has no Alpine, which is
@@ -529,8 +532,6 @@ class CspAuditCommand extends Command
          * registration as missing — and the report's own wording makes that expensive: it
          * says the element "renders VISIBLE and dead", which sends a developer to repair
          * something that already works.
-         *
-         * Reported twice from one application against v2.48.0.
          *
          * The surface is the one the audit already walks for `x-data`, so this adds no
          * reach beyond what is being judged: a name is looked for exactly where it is used.
@@ -687,8 +688,8 @@ class CspAuditCommand extends Command
      * Reported rather than scanned by default, and that split is deliberate: a defect in a
      * package's views is not something the adopting application can fix, so failing its
      * gate on one would make this command unusable there. Naming the gap costs nothing and
-     * is the whole difference between "clean" and "clean over part of the tree" — the two
-     * states this report was indistinguishable between.
+     * is the whole difference between "clean" and "clean over part of the tree" — two
+     * states a report that does not name the gap cannot tell apart.
      *
      * @param  array<int, string>  $paths
      * @return array<string, array<int, string>>
@@ -1115,12 +1116,12 @@ class CspAuditCommand extends Command
                 // anything, and one of the things it commonly is happens to be the exact
                 // failure this command exists to find.
                 //
-                // The version that reported `JSON.parse(…)` as unresolvable therefore caught
-                // the form nobody writes by hand and passed the form everyone writes, in the
-                // same file on the same line — and a reader checking whether the fix had landed
-                // planted a literal probe, watched it fire, and concluded the opposite of the
-                // truth. That is the worst direction for an audit to be wrong in: it does not
-                // merely miss, it actively certifies.
+                // Judging only the substituted form would report a literal `JSON.parse(…)` as
+                // unresolvable and pass an `@js(…)` that renders to it, in the same file on
+                // the same line: it would catch the form nobody writes by hand and pass the
+                // form everyone writes, and a reader planting a literal probe would watch it
+                // fire and conclude the opposite of the truth. That is the worst direction for
+                // an audit to be wrong in: it does not merely miss, it actively certifies.
                 $unresolved = self::unresolvedReason($rendering);
 
                 // A Livewire action is judged as Livewire PRESENTS it. `wire:click="alert"`
@@ -1409,11 +1410,9 @@ class CspAuditCommand extends Command
     private function report(int $scanned, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = [], array $unregistered = [], array $registrationScan = ['names' => [], 'files' => []]): int
     {
         // Named rather than implied. "Scanned" reads as "checked, and it works", and
-        // the difference between what this measures and what a reader hears is the
-        // exact gap a developer fell into: three dead listeners were found here, the
-        // FIX for them passed here, and it was just as dead. The audit had produced
-        // well-founded confidence, and on the second round that confidence did not
-        // hold.
+        // the difference between what this measures and what a reader hears is a gap
+        // a developer falls into: a listener that passes here can still be dead at
+        // runtime, and so can the fix for it.
         $this->line(sprintf('Scanned %d Alpine expression(s) for GRAMMAR and resolvability.', $scanned));
 
         // WHERE, on the same footing as WHAT. The count is true of the directories that were
@@ -1431,20 +1430,18 @@ class CspAuditCommand extends Command
         // — so every identifier in it becomes unresolvable at runtime while remaining
         // perfectly resolvable at the source this audit reads.
         //
-        // That is not a defect in the check; it is a boundary of it. It is printed because
-        // of what happened without it: a developer read PASS over 83 expressions, believed
-        // the scope question settled, and looked at the markup layer LAST — after the
-        // runtime error had already named their own expression and sent them the other way.
-        // An oracle that does not state its boundary is read as covering it.
+        // That is not a defect in the check; it is a boundary of it, and it is printed
+        // because a PASS without it reads as the scope question settled: the developer
+        // looks at the markup layer LAST, after the runtime error has named their own
+        // expression and sent them the other way. An oracle that does not state its
+        // boundary is read as covering it.
         $this->line('This does NOT decide whether a scope survives the rendered markup — a passed-through');
         $this->line('`x-data` on a component that sets its own is discarded, and every identifier in it is');
         $this->line('then dead at runtime while resolving fine here. WireKit warns about that collision');
         $this->line('separately, in the application log, when app.debug is on.');
 
         // The registration surface, and it sits AFTER the qualifier above rather than
-        // between it and its claim. `CspAuditStatesItsBoundaryTest` measures the distance
-        // between those two sentences in the source and fails when something drifts in —
-        // which this block did, by 521 characters, on its first placement.
+        // between it and its claim, so the qualifier stays beside what it qualifies.
         //
         // It belongs on the same footing as the view surface for the same reason: the
         // `x-data` check is only as good as this set, and an empty one disables it silently.

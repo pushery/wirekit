@@ -4,7 +4,7 @@
  * Free-form tag entry: type + Enter/comma to create tags.
  * Backspace on empty input removes the last tag, Escape drops the text being typed.
  *
- * WHY EVERY EXIT SAYS SOMETHING. All four state changes here are invisible to a
+ * Why every exit says something. All four state changes here are invisible to a
  * screen reader on their own: a tag is committed (the field empties and a chip
  * appears somewhere the reader is not), a tag is taken back by Backspace (a
  * destructive change with no focus move behind it), and two of the exits leave the
@@ -35,6 +35,23 @@
 import { onFormReset } from '../utils/form-reset.js';
 import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
+import { isComposing } from '../utils/ime.js';
+
+/**
+ * A sentence template with its `:key` placeholders filled, or '' when there is no template.
+ *
+ * @param {unknown} template
+ * @param {Record<string, string>} replacements
+ * @returns {string}
+ */
+function fillTemplate(template, replacements) {
+    if (typeof template !== 'string' || template === '') return '';
+
+    return Object.keys(replacements).reduce(
+        (carry, key) => carry.split(`:${key}`).join(replacements[key]),
+        template
+    );
+}
 
 export default function wirekitTagsInput(config = {}) {
     const announcements = config.announcements && typeof config.announcements === 'object'
@@ -172,6 +189,77 @@ export default function wirekitTagsInput(config = {}) {
         },
 
         /**
+         * A comma that reaches the field without a keydown ends a tag as a typed one does.
+         *
+         * `@keydown.comma` hears only a key that reports itself as a comma. A pasted list, text
+         * dropped into the field, dictation and an on-screen keyboard that reports no key put
+         * the comma into the text instead. So the text is read as it changes: every complete
+         * piece before the last comma becomes a tag, and what follows the last comma stays in
+         * the field to be finished. A duplicate is skipped, since the list holds it already. A
+         * full set stops the pieces, and the rest of the reader's text stays in the field,
+         * which turns read-only, as a refused `addTag()` leaves it.
+         *
+         * Not while an input method composes: the comma may still be converted. The
+         * composition's end calls this again.
+         */
+        onInput(event) {
+            if (isComposing(event)) return;
+
+            const input = this.$refs.input;
+            const value = typeof input?.value === 'string' ? input.value : '';
+
+            if (! value.includes(',')) return;
+
+            const pieces = value.split(',');
+            const rest = pieces.pop();
+            const added = [];
+            let duplicate = null;
+            let stoppedAt = -1;
+
+            for (let i = 0; i < pieces.length; i++) {
+                const piece = pieces[i].trim();
+
+                if (piece === '') continue;
+
+                if (this.tags.includes(piece)) {
+                    duplicate ??= piece;
+                    continue;
+                }
+
+                if (this.atMaxTags) {
+                    stoppedAt = i;
+                    break;
+                }
+
+                this.tags.push(piece);
+                added.push(piece);
+            }
+
+            input.value = (stoppedAt === -1 ? rest : [...pieces.slice(stoppedAt), rest].join(',')).trimStart();
+
+            if (added.length > 0) {
+                this._commit();
+            }
+
+            // One write for the whole batch: a live region written twice in one task reads only
+            // the last. The added names come first, then why text was left behind, the two
+            // joined as sentences so a screen reader pauses between them.
+            const said = [];
+
+            if (added.length > 0) {
+                said.push(fillTemplate(announcements.added, { name: added.join(', ') }));
+            }
+
+            if (stoppedAt !== -1) {
+                said.push(fillTemplate(announcements.limit, { count: String(this._maxTags) }));
+            } else if (added.length === 0 && duplicate !== null) {
+                said.push(fillTemplate(announcements.duplicate, { name: duplicate }));
+            }
+
+            this._announceTagText(said.filter((sentence) => sentence !== '').join('. '));
+        },
+
+        /**
          * Remove a tag by index — the chip's own remove button, and nothing else.
          *
          * The removal takes the focused element away with it. Chips are keyed by
@@ -245,7 +333,7 @@ export default function wirekitTagsInput(config = {}) {
          * writes back and the baseline is never read.
          *
          * `run` is looked up rather than assumed — without the layer this
-         * component behaves exactly as before, down to the byte.
+         * component behaves as a plain field.
          */
         _commit() {
             // Every change the reader makes passes here, so it is also the field's `change`.
@@ -303,12 +391,12 @@ export default function wirekitTagsInput(config = {}) {
          * layer's region and overwrite the "Saving" it had queued a moment earlier.
          */
         _announceTag(template, replacements) {
-            if (typeof template !== 'string' || template === '') return;
+            this._announceTagText(fillTemplate(template, replacements));
+        },
 
-            const text = Object.keys(replacements).reduce(
-                (carry, key) => carry.split(`:${key}`).join(replacements[key]),
-                template
-            );
+        /** The live-region write itself, for a sentence already filled; '' says nothing. */
+        _announceTagText(text) {
+            if (text === '') return;
 
             this.tagAnnouncement = '';
             queueMicrotask(() => { this.tagAnnouncement = text; });

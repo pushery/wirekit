@@ -32,13 +32,11 @@
 
     $paddingClasses = match (WireKit::validateProp('band', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg'])) {
         'none' => '',
-        // No literal fallbacks. SIX of the eight here disagreed with the token they stood in
-        // for — x-sm said 0.5rem against 0.625rem, y-sm 0.5rem against 0.375rem, x-lg 1.25rem
-        // against 1rem, and so on. A fallback fires only when the token did not resolve, so
-        // one carrying a different number turns a missing value into a WRONG one, and the band
-        // renders at a padding scale nothing in the theme uses. These are core tokens declared
-        // unconditionally, so the case never arises — which is precisely why nobody noticed
-        // them drifting.
+        // No literal fallbacks. A fallback fires only when the token did not resolve, so one
+        // carrying a different number than its token turns a missing value into a WRONG one,
+        // and the band would render at a padding scale nothing in the theme uses. These are
+        // core tokens declared unconditionally, so a fallback would never fire, and a copy of
+        // each value written here would drift from its token unseen.
         'xs' => 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
         'sm' => 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]',
         'md' => 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-md)]',
@@ -53,10 +51,9 @@
 
     // `$as` is interpolated into the tag name below, so an unvalidated value is written
     // straight into the opening tag — `as="div onmouseover=alert(1)"` would arrive as an
-    // attribute. `tagName()` checks the SHAPE rather than an allowlist, and the reason is in
-    // its own test: an enum has to guess which elements a caller might legitimately want, and
-    // `article` is exactly the kind a guess omits. An allowlist enum was this check's
-    // first shape.
+    // attribute. `tagName()` checks the SHAPE rather than an allowlist: an enum has to guess
+    // which elements a caller might legitimately want, and `article` is exactly the kind a
+    // guess omits.
     $as = \Pushery\WireKit\WireKit::tagName('band', (string) $as);
 
     $classes = WireKit::resolveClasses('band', 'base', trim(implode(' ', array_filter([

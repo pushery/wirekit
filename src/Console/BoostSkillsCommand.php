@@ -385,8 +385,7 @@ final class BoostSkillsCommand extends Command
      *
      * Takes the array and the key rather than the value, so the parameter can be
      * typed: reading `$manifest[$key]` at the call site would hand this a `mixed`,
-     * and `MixedTypeRatchetTest` counts every one of those as a deliberate edit —
-     * correctly, since the narrowing was available here for the asking.
+     * where the array's own type narrows the value here.
      *
      * @param  array<string, mixed>  $manifest
      */

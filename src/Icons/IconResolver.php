@@ -168,15 +168,13 @@ final class IconResolver
             }
         }
 
-        // 3. Fall through to the
-        // underlying blade-icons identifier when the alias matches the
-        // ICON name (no prefix) in the active preset family. This
-        // catches the bug class where developers write
-        // `<x-wirekit::icon name="briefcase" />` expecting the
-        // blade-heroicons icon — pre-fix we threw because `briefcase`
-        // wasn't aliased, even though the underlying SVG ships in the
-        // package. We log an INFO line so the dev knows the alias
-        // fell through (and consider promoting it to the preset).
+        // 3. Fall through to the underlying blade-icons identifier when the
+        // alias matches the ICON name (no prefix) in the active preset family.
+        // A developer who writes `<x-wirekit::icon name="briefcase" />`
+        // expecting the blade-heroicons icon gets it: `briefcase` is no alias,
+        // but the underlying SVG ships in the package. We log an INFO line so
+        // the dev knows the alias fell through (and can consider promoting it
+        // to the preset).
         $fallthrough = $this->resolveFallthrough($alias, $presets);
         if ($fallthrough !== null) {
             // Log at info level only — visible in development logs as
@@ -419,7 +417,7 @@ final class IconResolver
      * a tool actually has — "is this a name WireKit KNOWS, or did it just happen to
      * work?" — except by reading an info-level log line, which is not an API.
      *
-     * DELIBERATELY WITHOUT THE FALLTHROUGH. That is the whole point: a name only in here
+     * Deliberately without the fallthrough. That is the whole point: a name only in here
      * if somebody declared it. Add the fallthrough and every valid glyph name becomes an
      * "alias", which is the same as answering yes to everything.
      *

@@ -115,8 +115,8 @@
             @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $domId }}-label" @endunless
         @endif
     @endif
-    {{-- The marker stays bare without a `column-id`, so a column that does not name itself
-         renders exactly as before; the sortable then falls back to the column's position. --}}
+    {{-- The marker stays bare without a `column-id`; the sortable then falls back to the
+         column's position. --}}
     @if($sortable)
         @if(filled($columnId))
             data-sortable-column="{{ $columnId }}"
@@ -169,9 +169,9 @@
          tabindex="0" lets keyboard users scroll the column when the cards inside have no other
          focusable element. That half is unconditional.
 
-         The LANDMARK half is not. It fell back to "Column items", so a six-column board was six
-         rotor entries with one name — axe reports that as `landmark-unique`, and the name meant
-         to tell the columns apart was what made them identical. A named column exposes its
+         The LANDMARK half is not. A fallback name such as "Column items" would make a six-column
+         board six rotor entries with one name — axe reports that as `landmark-unique`, and the
+         name meant to tell the columns apart would make them identical. A named column exposes its
          body under its OWN label; an unnamed one stays reachable and simply is not a
          destination. --}}
     {{-- The body clips on both axes and its first card stands flush with its top, so a card's

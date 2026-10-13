@@ -21,6 +21,10 @@
     };
 
     $classes = WireKit::resolveClasses('blockquote', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'border-l-4',
         'pl-[var(--space-wk-md,1rem)]',
         'py-[var(--space-wk-xs,0.25rem)]',

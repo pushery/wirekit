@@ -8,10 +8,10 @@
     'bordered' => true,
     // Opt-in one-sided accent stripe (default OFF). The plain callout is the
     // alert-style 4-sided tinted border; a one-sided colored stripe reads as
-    // generic dashboard chrome, so it is no longer the default. Pass `stripe`
-    // to restore the accent bar deliberately.
+    // generic dashboard chrome, so it is not the default. Pass `stripe` to
+    // add the accent bar deliberately.
     'stripe' => false,
-    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    // Optional reveal animation. Null = no animation (default).
     'animateIn' => null,
     // The heading, as a prop or as the `title` slot (the slot wins when both are given).
     // It was a slot only, and `title="…"` on the tag then landed on the wrapper as an HTML
@@ -56,6 +56,10 @@
     // title+body+action slots. With bordered=false the tinted background carries the
     // surface; pass `stripe` to add an opt-in one-sided accent bar.
     $baseClasses = WireKit::resolveClasses('callout', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'relative flex items-start gap-3',
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-x-lg)]',

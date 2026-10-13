@@ -31,6 +31,8 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
     use Pushery\WireKit\Support\AlpinePayload;
     use Pushery\WireKit\Support\BooleanProp;
@@ -38,7 +40,12 @@
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    // `@aware` does not take its key out of the attribute bag, so the spelling written on the
+    // tag would render as a stray HTML attribute. Both spellings, as in field.
+    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the control —
     // the opposite of what the call site says, with no error either way.
@@ -126,14 +133,12 @@
     // over once rather than read back out of the DOM — a factory that parses its own markup
     // cannot be constructed in a test, and this one is.
     //
-    // The display name is deliberately not in here. With it every country's name would appear
-    // twice, once in its own <option> and again in this JSON, for a label the factory only builds
-    // for a button, and this layer has no button — a native <select> announces its selected
-    // option by itself. Layer B, which does have a button, adds the name for the countries it
-    // offers.
+    // The display name is deliberately not in here: the country combobox below carries every
+    // name in its own options and announces the selected one itself, so a copy in this JSON
+    // would only send each name twice.
     //
-    // The trunk prefix is omitted where a region has none, which is 101 of 245: `null` and
-    // "absent" mean the same thing to the factory, and absent costs no bytes.
+    // The trunk prefix is omitted where a region has none: `null` and "absent" mean the same
+    // thing to the factory, and absent costs no bytes.
     $regions = [];
 
     foreach ($ordered as $code => $display) {
@@ -167,8 +172,7 @@
     // AlpinePayload rather than json_encode: a plain encode escapes non-ASCII as \uXXXX, and
     // Alpine's CSP tokenizer knows only a handful of escapes — it drops the backslash and keeps
     // the letters, so a country name would arrive mangled with nothing thrown and nothing logged.
-    // This payload carries no names today; it will when layer B needs them for its button, and a
-    // guard that waited for that would be waiting for the bug.
+    // This payload carries no names, and stays right if it ever does.
     $config = AlpinePayload::from([
         'country' => $start,
         'regions' => $regions,
@@ -243,9 +247,9 @@
     // removed with the warning `UnboundModel` gives, and the number binds with `wire:model`.
     \Pushery\WireKit\Support\UnboundModel::drop('phone', $attributes);
 
-    // The country control's own name. It carried the field's label, so a screen reader heard
-    // "Phone number" twice and only the role and the value told the two controls apart, and
-    // without a label it had no name at all.
+    // The country control's own name. With the field's label as its name a screen reader would
+    // hear "Phone number" twice, with only the role and the value telling the two controls
+    // apart, and without a label it would have no name at all.
     $countryName = filled($label)
         ? __('wirekit:::label, country', ['label' => $label])
         : __('wirekit::Country');
@@ -253,7 +257,7 @@
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPhone({{ $config }})">
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- TWO controls, ONE value, and that is why this is a group rather than a field with an
@@ -266,15 +270,12 @@
          back to it hears the message on the way into the group. --}}
     <div role="group" @if($label) aria-label="{{ $label }}" @endif @if($ownDescribedBy !== '') aria-describedby="{{ $ownDescribedBy }}" @endif class="{{ $groupClasses }}">
         {{-- The country control is a combobox, which is what buys the flag: an <option> carries
-             no image, so the native select this replaced could never show one. What it costs is
-             named rather than glossed over — the phone's own country wheel is gone, and with it
-             the platform keyboard model. The search field is the trade: 245 countries is a list
-             nobody should scroll, and typing three letters beats spinning a wheel past Uruguay.
+             no image, so a native select could never show one. What it costs is named rather
+             than glossed over — the phone's own country wheel, and with it the platform keyboard
+             model. The search field is the trade: a list of every country is one nobody should
+             scroll, and typing three letters beats spinning a wheel past Uruguay.
 
-             The binding is `x-model`, answered by the combobox's `x-modelable="selected"`. That
-             seam did not work for a hand-written binding until the commit before this one: it
-             landed on the combobox's own search input beside that input's `x-model="query"`, and
-             the browser kept the first of the two.
+             The binding is `x-model`, answered by the combobox's `x-modelable="selected"`.
 
              The accessible name of each row carries the country AND its dialing code. A bare
              `+49` beside the box is invisible to a reader who cannot see it, and the number then
@@ -289,9 +290,7 @@
             panel-width="auto"
             {{-- No clear button. A phone number cannot be assembled without a country -- the
                  dialing code IS the prefix -- so clearing it would leave the reader looking at a
-                 number while the form submits an empty string. Layer A's native select had no
-                 such affordance, and gaining one on the way to flags would have been a
-                 regression nothing here would have caught. --}}
+                 number while the form submits an empty string. --}}
             :clearable="false"
             {{-- The country is part of this control, not the control a surrounding field
                  labels: that is the number below, which carries the field's `name` as its id.

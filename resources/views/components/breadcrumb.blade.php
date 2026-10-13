@@ -59,7 +59,11 @@
     // `flex-wrap`, so a trail that does not fit breaks between items rather than inside them. Without
     // it each item shrank to its longest word, wrapped its own label, and a long trail still ran
     // past a phone's edge.
-    $listClasses = WireKit::resolveClasses('breadcrumb', 'list', 'list-none m-0 p-0 flex flex-wrap items-center gap-[var(--padding-wk-x-xs)] text-[length:var(--text-wk-sm)]', $scope);
+    //
+    // `anywhere` for a label with no break point, a file name or a typed title, that is wider than a
+    // whole row. A wrapping row places each item at its full width, so only such an item ever
+    // shrinks, and every other label still moves to the next line whole.
+    $listClasses = WireKit::resolveClasses('breadcrumb', 'list', 'list-none m-0 p-0 flex flex-wrap items-center gap-[var(--padding-wk-x-xs)] [overflow-wrap:anywhere] text-[length:var(--text-wk-sm)]', $scope);
 
     // Link classes (for non-final items with href).
     $linkClasses = WireKit::resolveClasses('breadcrumb', 'link', implode(' ', [
@@ -120,8 +124,8 @@
     // reverse diff could not trace back to any source.
     $actionsClasses = WireKit::resolveClasses('breadcrumb', 'actions', implode(' ', [
         'inline-flex items-center shrink-0',
-        // The wrapper aligns ITSELF, so the nav keeps its default and a trail without this
-        // slot renders exactly as it did before.
+        // The wrapper aligns ITSELF, so the nav keeps its default alignment and a trail
+        // without this slot is unaffected.
         'self-center',
         'gap-[var(--padding-wk-x-xs)]',
         'ms-[var(--padding-wk-x-sm)]',
@@ -168,7 +172,7 @@
                 @if($isLast)
                     {{-- Current page: no link, aria-current tells AT "this is where you are" --}}
                     <span class="{{ $currentClasses }} {{ $iconWrap }}" aria-current="page">
-                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
+                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" />@endif
                         {{ $label }}
                     </span>
                 @elseif($href === null)
@@ -181,12 +185,12 @@
                          classes are the `ancestor` block's rather than the current
                          page's, for the same reason. --}}
                     <span class="{{ $ancestorClasses }} {{ $iconWrap }}">
-                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
+                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" />@endif
                         {{ $label }}
                     </span>
                 @else
                     <a data-wk-prose-skip href="{{ $href }}" class="{{ $linkClasses }} {{ $iconWrap }}">
-                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
+                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" />@endif
                         {{ $label }}
                     </a>
                 @endif

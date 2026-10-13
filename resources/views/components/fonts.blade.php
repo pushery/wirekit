@@ -92,7 +92,7 @@
      *
      * Read out of the stylesheet rather than assembled from the key: the file is named after
      * the FAMILY (`Inter-Regular.woff2`, `VT323-Regular.woff2`), not the preset key, and every
-     * one of the twenty-one families carries exactly one Regular face. Parsing the `src` the
+     * bundled family carries exactly one Regular face. Parsing the `src` the
      * browser would parse anyway means the two can never disagree.
      *
      * Only when published as a static file. The route-served fallback resolves through PHP
@@ -215,9 +215,8 @@
         }
 
         // The family NAME is narrowed exactly like the local names above, and for the same
-        // reason — it reaches the same `<style>` block. It was not, and the paragraph above
-        // explaining why narrowing beats escaping sat directly over the one value that got
-        // neither. Blade's `{{ }}` is worse than nothing here: inside `<style>` the browser
+        // reason — it reaches the same `<style>` block. Blade's `{{ }}` is worse than nothing
+        // here: inside `<style>` the browser
         // does not decode HTML entities, so an escaped quote stays the literal `&#039;` and
         // breaks the rule, while `;`, `{` and `}` pass through untouched.
         $safeFamily = trim((string) preg_replace('/[^A-Za-z0-9 _-]/', '', (string) $family));
@@ -286,9 +285,7 @@
              than a choice: `dist/wirekit.css` declares `--font-wk-sans` and
              `--font-wk-mono` and NOT `--font-wk-serif`. Omitting the other two
              lets a better value stand; omitting this one would leave the token
-             undefined and drop every serif surface to the browser default.
-             `FontSystemTest` pins exactly that split, so if the stylesheet ever
-             gains a serif declaration the test says to delete this line. --}}
+             undefined and drop every serif surface to the browser default. --}}
         --font-wk-serif: {!! $serifPreset ? $serifPreset->fontFamily() : 'ui-serif, Georgia, serif' !!};
         @if($monoPreset)--font-wk-mono: {!! $monoPreset->fontFamily() !!};@endif
     }

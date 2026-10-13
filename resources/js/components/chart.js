@@ -1,8 +1,22 @@
 import { keepRaw } from '../utils/keep-raw.js';
-import { resolveThemeColors, palette, withOpacity, themeModeOf } from '../utils/chart-theme-colors.js';
+import { resolveThemeColors, palette, seriesColors, paletteSchemeOf, withOpacity, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
 import { followChartServerData } from '../utils/chart-server-data.js';
+import { followPointLink, pointLink, takePointLinks } from '../utils/chart-point-links.js';
+import { takeTooltipExtras, tooltipExtraRows } from '../utils/chart-tooltip-extras.js';
+
+/**
+ * How much of a series' fill shows, by chart type, in each palette. The semantic colors are strong,
+ * so a bar, a polar segment and the area under a line are thinned to let the grid read through
+ * them. The categorical fills are pastels already: a bar is drawn in its fill as it is, its edge
+ * carrying the outline, and a polar segment or an area is thinned less. A slice of a pie or a
+ * doughnut is solid in both, as it has no grid behind it.
+ */
+const FILL_OPACITY = {
+    semantic: { polarArea: 0.55, bar: 0.6, line: 0.18 },
+    categorical: { polarArea: 0.75, bar: 1, line: 0.35 },
+};
 
 /**
  * Global registry of every Chart.js instance created by `wirekitChartJs`.
@@ -123,6 +137,18 @@ export default function wirekitChartJs(config) {
         // Stops following the data the component renders beside the chart; set once the
         // chart exists. See utils/chart-server-data.js.
         _stopFollowingServerData: null,
+
+        // Where the data points lead, one row per dataset, or null when none does. See
+        // utils/chart-point-links.js.
+        _links: null,
+
+        // The tooltip's further values, or null when the chart has none. See
+        // utils/chart-tooltip-extras.js.
+        _tooltipExtras: null,
+
+        // The palette the series are drawn in, `semantic` or `categorical`, as the server named it.
+        // Read once from the factory's argument, so a second build of the chart reads the same.
+        _scheme: paletteSchemeOf(config),
 
         /**
          * Paint a visible advisory where the chart would have been.
@@ -361,6 +387,18 @@ Chart.register(...registerables);</pre>
                 // is; the call covers a caller who passes a reactive object.
                 const rawConfig = Alpine.raw(config);
 
+                // The palette is the component's, read above; Chart.js has no use for the key.
+                delete rawConfig.wkPalette;
+
+                // Where the data points lead: out of the configuration before Chart.js reads it, and
+                // onto a click and the pointer over a point.
+                this._links = takePointLinks(rawConfig);
+                this._linkPoints(rawConfig);
+
+                // The tooltip's further values: out of the configuration as well, and under the values.
+                this._tooltipExtras = takeTooltipExtras(rawConfig);
+                this._extendTooltip(rawConfig);
+
                 // Record which datasets have user-provided colors BEFORE
                 // we apply theme defaults. These are excluded from dark
                 // mode re-theming to preserve manual color choices.
@@ -498,6 +536,15 @@ Chart.register(...registerables);</pre>
             const chart = this._rawChart();
             const next = payload?.data;
 
+            // New points bring their own addresses, and an update without any takes the old ones away,
+            // with the pointer a point that had one may still be showing.
+            this._links = takePointLinks(payload);
+            this._tooltipExtras = takeTooltipExtras(payload);
+
+            if (! this._links && chart?.canvas) {
+                chart.canvas.style.cursor = '';
+            }
+
             if (! chart || ! next || ! Array.isArray(next.datasets)) {
                 return;
             }
@@ -530,6 +577,68 @@ Chart.register(...registerables);</pre>
             chart.data.datasets.length = incoming.length;
 
             chart.update();
+        },
+
+        /**
+         * Follow a click on a data point to its address, and show a pointer over a point that has one.
+         *
+         * The point is the one under the pointer, among the elements the chart's interaction mode
+         * reports for the event, and the nearest of them where none is under it: in `index` mode a
+         * column reports every dataset, and the one the reader aims at is the one to follow. The
+         * handlers are set on every chart and do nothing until a point has an address, so a Livewire
+         * update that brings the first one needs no rebuild.
+         *
+         * @param {Object} config - The Chart.js configuration, completed in place.
+         */
+        _linkPoints(config) {
+            const target = (event, elements) => {
+                if (! this._links || ! Array.isArray(elements) || elements.length === 0) {
+                    return null;
+                }
+
+                const under = elements.find(({ element }) => typeof element?.inRange === 'function' && element.inRange(event.x, event.y));
+                const chosen = under || elements.reduce((best, item) => {
+                    const distance = Math.hypot((item.element?.x ?? 0) - event.x, (item.element?.y ?? 0) - event.y);
+
+                    return ! best || distance < best.distance ? { item, distance } : best;
+                }, null)?.item;
+
+                return chosen ? pointLink(this._links, chosen.datasetIndex, chosen.index) : null;
+            };
+
+            config.options = config.options || {};
+            config.options.onClick = (event, elements) => {
+                const url = target(event, elements);
+
+                if (url) {
+                    followPointLink(url, event.native ?? null);
+                }
+            };
+            config.options.onHover = (event, elements, chart) => {
+                if (! this._links || ! chart?.canvas) {
+                    return;
+                }
+
+                chart.canvas.style.cursor = target(event, elements) ? 'pointer' : '';
+            };
+        },
+
+        /**
+         * Name the point's further values under the tooltip's values, one line each.
+         *
+         * Read when the tooltip draws, so a Livewire update that brings new values reaches the next
+         * tooltip, and set on every chart, doing nothing until the chart has some. The tooltip draws
+         * on the canvas, so the values are written as text.
+         *
+         * @param {Object} config - The Chart.js configuration, completed in place.
+         */
+        _extendTooltip(config) {
+            config.options = config.options || {};
+            config.options.plugins = config.options.plugins || {};
+            config.options.plugins.tooltip = config.options.plugins.tooltip || {};
+            config.options.plugins.tooltip.callbacks = { ...config.options.plugins.tooltip.callbacks };
+            config.options.plugins.tooltip.callbacks.afterBody = (items) => tooltipExtraRows(this._tooltipExtras, items?.[0]?.dataIndex)
+                .map(({ label, value }) => `${label}: ${value}`);
         },
 
         /**
@@ -736,8 +845,9 @@ Chart.register(...registerables);</pre>
          * Both wirekitChartJs and wirekitApexChart consume the same helpers
          * so dataset palettes, fallbacks, and probe behavior stay in lockstep.
          */
-        _resolveThemeColors(style) { return resolveThemeColors(style, this.$refs?.canvas ?? null); },
+        _resolveThemeColors(style) { return resolveThemeColors(style, this.$refs?.canvas ?? null, { categorical: this._scheme === 'categorical' }); },
         _palette(colors)           { return palette(colors); },
+        _seriesColors(colors)      { return seriesColors(colors, this._scheme); },
         _withOpacity(color, op)    { return withOpacity(color, op); },
 
         // Read the OS-level prefers-reduced-motion preference. Mirrors the
@@ -757,48 +867,24 @@ Chart.register(...registerables);</pre>
          * (tracked in _manualColorIndices for dark mode re-theming).
          */
         _applyThemeToDatasets(config, colors) {
-            const palette = this._palette(colors);
+            const series = this._seriesColors(colors);
 
             (config.data?.datasets || []).forEach((dataset, i) => {
-                const color = palette[i % palette.length];
+                // A dataset that names a color of its own is the developer's, whole: the rule the
+                // re-theme below follows. A border named alone is neither replaced here nor left in
+                // this mode's palette color by the next change of mode.
+                if (dataset.backgroundColor || dataset.borderColor) {
+                    return;
+                }
 
-                if (!dataset.backgroundColor) {
-                    if (['pie', 'doughnut'].includes(config.type)) {
-                        // Pie / doughnut: each slice is a flat color wedge.
-                        // Solid (no opacity) keeps adjacent wedges crisply
-                        // distinguishable; pie charts have no gridlines for
-                        // transparency to reveal.
-                        const len = dataset.data?.length || 1;
-                        dataset.backgroundColor = palette.slice(0, len);
-                        dataset.borderColor = palette.slice(0, len);
-                    } else if (config.type === 'polarArea') {
-                        // Polar area: segments overlay a radial gridline
-                        // backdrop. Drop fill opacity to ~0.55 so the
-                        // gridline rings stay visible behind each segment.
-                        const len = dataset.data?.length || 1;
-                        dataset.backgroundColor = palette.slice(0, len)
-                            .map(c => this._withOpacity(c, 0.55));
-                        dataset.borderColor = palette.slice(0, len);
-                    } else if (config.type === 'bar') {
-                        dataset.backgroundColor = this._withOpacity(color, 0.6);
-                        dataset.borderColor = color;
-                        dataset.borderWidth = 1;
-                    } else if (config.type === 'radar') {
-                        // Radar: polygon fill MUST stay translucent so the
-                        // axial gridlines + value rings remain visible
-                        // through the polygon. 0.18 gives a noticeable
-                        // hue tint without obscuring the chart structure.
-                        dataset.backgroundColor = this._withOpacity(color, 0.18);
-                        dataset.borderColor = color;
-                        dataset.borderWidth = 2;
-                        dataset.pointBackgroundColor = color;
-                    } else {
-                        // Line, area, scatter, etc.
-                        dataset.backgroundColor = this._withOpacity(color, 0.18);
-                        dataset.borderColor = color;
-                        dataset.borderWidth = 2;
-                        dataset.pointBackgroundColor = color;
-                    }
+                Object.assign(dataset, this._datasetColors(config.type, dataset, i, series));
+
+                // Line widths are set here only, never on a re-theme: a change of mode recolors
+                // a chart and leaves its lines as they were drawn.
+                if (config.type === 'bar') {
+                    dataset.borderWidth = 1;
+                } else if (!['pie', 'doughnut', 'polarArea'].includes(config.type)) {
+                    dataset.borderWidth = 2;
                 }
             });
         },
@@ -809,38 +895,56 @@ Chart.register(...registerables);</pre>
          * user-provided colors (tracked in _manualColorIndices) are skipped.
          */
         _reapplyThemeToDatasets(config, colors) {
-            const palette = this._palette(colors);
-            const type = config.type;
+            const series = this._seriesColors(colors);
 
             (config.data?.datasets || []).forEach((dataset, i) => {
                 // Skip datasets with user-provided manual colors
                 if (this._manualColorIndices.has(i)) return;
 
-                const color = palette[i % palette.length];
-
-                if (['pie', 'doughnut'].includes(type)) {
-                    const len = dataset.data?.length || 1;
-                    dataset.backgroundColor = palette.slice(0, len);
-                    dataset.borderColor = palette.slice(0, len);
-                } else if (type === 'polarArea') {
-                    const len = dataset.data?.length || 1;
-                    dataset.backgroundColor = palette.slice(0, len)
-                        .map(c => this._withOpacity(c, 0.55));
-                    dataset.borderColor = palette.slice(0, len);
-                } else if (type === 'bar') {
-                    dataset.backgroundColor = this._withOpacity(color, 0.6);
-                    dataset.borderColor = color;
-                } else if (type === 'radar') {
-                    dataset.backgroundColor = this._withOpacity(color, 0.18);
-                    dataset.borderColor = color;
-                    dataset.pointBackgroundColor = color;
-                } else {
-                    // Line, area, scatter, etc.
-                    dataset.backgroundColor = this._withOpacity(color, 0.18);
-                    dataset.borderColor = color;
-                    dataset.pointBackgroundColor = color;
-                }
+                Object.assign(dataset, this._datasetColors(config.type, dataset, i, series));
             });
+        },
+
+        /**
+         * The colors of one dataset in the chart's palette, by chart type.
+         *
+         * A pie, a doughnut and a polar area color each slice or segment, so the series run along
+         * the data. Every other type colors the dataset as a whole: the edge draws the line, the
+         * outline of a bar and the points, and the fill the area under them, thinned as
+         * `FILL_OPACITY` says. In the semantic palette fill and edge are the same color.
+         *
+         * @param {string} type - the chart's type
+         * @param {object} dataset
+         * @param {number} i - the dataset's index
+         * @param {{fill: string, edge: string}[]} series - from `_seriesColors()`
+         * @returns {object} the color properties to assign
+         */
+        _datasetColors(type, dataset, i, series) {
+            const opacity = FILL_OPACITY[this._scheme];
+            const thinned = (color, amount) => (amount >= 1 ? color : this._withOpacity(color, amount));
+
+            if (['pie', 'doughnut', 'polarArea'].includes(type)) {
+                const slices = series.slice(0, dataset.data?.length || 1);
+
+                return {
+                    backgroundColor: slices.map(({ fill }) => thinned(fill, opacity[type] ?? 1)),
+                    borderColor: slices.map(({ edge }) => edge),
+                };
+            }
+
+            const { fill, edge } = series[i % series.length];
+
+            if (type === 'bar') {
+                return { backgroundColor: thinned(fill, opacity.bar), borderColor: edge };
+            }
+
+            // Line, area, radar, scatter and bubble: the area under a line, the inside of a radar's
+            // polygon and of a bubble are the thinned fill.
+            return {
+                backgroundColor: thinned(fill, opacity.line),
+                borderColor: edge,
+                pointBackgroundColor: edge,
+            };
         },
 
         /**

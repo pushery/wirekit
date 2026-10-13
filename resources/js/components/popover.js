@@ -10,7 +10,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
  */
-import { position } from '../utils/floating.js';
+import { placementReference, position } from '../utils/floating.js';
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { withOpenAlias } from '../utils/open-alias.js';
@@ -110,7 +110,7 @@ export default function wirekitPopover(config = {}) {
 
             if (trigger && panel) {
                 this._stopAutoUpdate?.();
-                const { stop } = await position(trigger, panel, {
+                const { stop } = await position(placementReference(trigger), panel, {
                     // Capped to the room on a short viewport and scrolled inside, so a phone held
                     // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
                     fitViewport: true,

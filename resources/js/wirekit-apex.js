@@ -18,7 +18,7 @@
 import wirekitApexChart from './components/chart-apex.js';
 import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 
-// HOW MANY TIMES THIS FILE IS ON THE PAGE — which is the question the warning below was
+// How many times this file is on the page — which is the question the warning below was
 // always trying to ask, and the one it could never answer.
 //
 // Counting REGISTRATIONS would not answer it, because this file registers twice by design:

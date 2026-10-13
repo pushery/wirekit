@@ -49,7 +49,7 @@
             aria-label="{{ $collapsed ? __('wirekit::Expand sidebar') : __('wirekit::Collapse sidebar') }}"
             :aria-expanded="collapsed ? 'false' : 'true'"
             :aria-label="collapsed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand sidebar')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse sidebar')) }}"
-            class="{{ $collapseBtnClasses }}"
+            class="wk-touch-row {{ $collapseBtnClasses }}"
         >
             {{-- The glyph `sidebar.collapse-toggle` draws too, from one partial, so the two never read as
                  different buttons. --}}

@@ -125,6 +125,11 @@ CSS,
        accent-fg (specificity 0) in dark mode too, so accent + fg move
        together instead of the fg snapping to the dark-mode near-black. */
     --color-wk-accent-fg: #fff;
+    /* The hover the label also sits on, violet-700 as the page names it: white
+       reads on it at 7.29:1. Pinned beside the pair for the same reason: the
+       default hover is near white in dark mode, where the white label would not
+       read under the pointer. */
+    --color-wk-accent-hover: oklch(0.491 0.27 292.581);
 CSS,
                 'dark_vars' => null,
             ],
@@ -140,6 +145,8 @@ CSS,
     /* Co-tuned label color — white clears WCAG AA at 6.44:1 on this
        indigo; pinned for both modes (see the `soft` preset for the why). */
     --color-wk-accent-fg: #fff;
+    /* indigo-700, the page's hover: white reads on it at 8.07:1 (see `soft`). */
+    --color-wk-accent-hover: oklch(0.457 0.24 277.023);
     /* A short start, most of the distance early, then a long settle. */
     --transition-wk-easing: cubic-bezier(0.2, 0, 0, 1);
 CSS,
@@ -239,6 +246,9 @@ CSS,
        near-BLACK label clears 14.23:1. Pinned for both modes (see the
        `soft` preset). */
     --color-wk-accent-fg: #0d0d0d;
+    /* The page's hover: the label reads on it at 14.47:1. The default hover is
+       near black in light mode, where this near-black label would not read. */
+    --color-wk-accent-hover: #33ff66;
     --radius-wk-sm: 0px;
     --radius-wk-md: 0px;
     --radius-wk-lg: 0px;
@@ -258,6 +268,8 @@ CSS,
     /* Co-tuned label color — white clears WCAG AA at 5.26:1 on this
        blue; pinned for both modes (see the `soft` preset for the why). */
     --color-wk-accent-fg: #fff;
+    /* blue-700, the page's hover: white reads on it at 6.82:1 (see `soft`). */
+    --color-wk-accent-hover: oklch(0.488 0.243 264.376);
     /* A quadratic ease-out, the curve the preset's page teaches. */
     --transition-wk-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 CSS,

@@ -140,8 +140,8 @@ class ExportApiMapCommand extends Command
     /**
      * Resolve the running WireKit version. Delegates to VersionResolver so
      * the three export commands stay in lockstep — see VersionResolver for
-     * the priority order. `$packageRoot` is preserved for backward-compat
-     * with the existing call site but no longer consulted directly.
+     * the priority order. `$packageRoot` stays in the signature for its
+     * caller and is not consulted.
      */
     private function detectVersion(string $packageRoot): string
     {
@@ -562,7 +562,7 @@ class ExportApiMapCommand extends Command
     /**
      * Command id → the anchor its heading actually renders on `/cli-reference`.
      *
-     * THE COMMAND ID IS NOT THE ANCHOR, and assuming it was cost eleven broken
+     * The command ID is not the anchor, and assuming it was cost eleven broken
      * deep links in the published manifest. `## `wirekit:show {name}`` slugs to
      * `wirekitshow-name`, not `wirekitshow`: the argument placeholder is part of
      * the heading, and GitHub's rule DELETES disallowed characters rather than
@@ -572,9 +572,7 @@ class ExportApiMapCommand extends Command
      *
      * A map rather than a lookup, because `docs/` is export-ignored: the page
      * does not exist inside an installed package, so this cannot be read at
-     * runtime. `CliAnchorDriftTest` closes that gap from the other side — it
-     * derives the truth from the real headings and fails on any divergence, so
-     * the map cannot drift without the build saying so.
+     * runtime, so each entry is written to match its command's heading there.
      *
      * A command absent here is deliberate rather than forgotten: it has no
      * heading on the page, and it gets the page without a fragment.
@@ -622,7 +620,7 @@ class ExportApiMapCommand extends Command
         $commands = [];
         if ($application !== null) {
             foreach ($application->all() as $name => $command) {
-                // THE `wirekit:` PREFIX IS NOT PROOF OF OWNERSHIP. This runs
+                // The `wirekit:` prefix is not proof of ownership. This runs
                 // inside whatever application invoked it, and a host is free to
                 // register its own `wirekit:`-prefixed command — the
                 // documentation site does exactly that with
@@ -760,8 +758,8 @@ class ExportApiMapCommand extends Command
         // page is not publicly rendered — a class whose wk-stripped name
         // IS a registry component with a non-public docs page names that
         // component to AI tooling enumerating the list. The public-CSS-API
-        // catalog PAGE row is a separate, deliberate surface (kept since
-        // v2.2.0, lockstep-guarded) and is NOT affected by this filter.
+        // catalog PAGE row is a separate, deliberate surface and is NOT
+        // affected by this filter.
         // Non-component class names (wk-glass-refract, wk-stagger, …)
         // never match a registry key and always stay.
         if ($this->option('public')) {

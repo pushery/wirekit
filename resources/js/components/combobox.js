@@ -35,6 +35,7 @@
  *                                      `searchMinLength`, `searchDebounce` and `searchTexts`
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
+import { pageScrollBehavior } from '../utils/motion.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { requiredCheckState } from '../utils/required-check.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
@@ -546,7 +547,7 @@ export default function wirekitCombobox(config = {}) {
             const option = document.getElementById(`${this._listId}-opt-${this.highlight}`);
 
             if (option && typeof option.scrollIntoView === 'function') {
-                option.scrollIntoView({ block: 'nearest' });
+                option.scrollIntoView({ block: 'nearest', behavior: pageScrollBehavior() });
             }
         },
 

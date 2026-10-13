@@ -71,6 +71,7 @@ $users
 'transition-[background-color,border-color,box-shadow]',
 'true'
 'users'
+'wk-touch-row',
 (array)
 (bool)
 (first
@@ -118,7 +119,6 @@ Intl.PluralRules
 It
 Livewire
 NOT
-No
 Normalized
 Null
 OVERRIDES
@@ -162,7 +162,6 @@ __('wirekit::Saving'),
 `trans_choice`
 `wk-state-button`
 a
-able
 about.
 above
 accessible
@@ -198,7 +197,6 @@ attribute
 auto-derived
 axe
 bag
-been
 before
 binds
 block,
@@ -207,7 +205,6 @@ border
 browser
 browser's,
 browser:
-build
 built
 button
 button's
@@ -219,8 +216,7 @@ call,
 call.
 caller's
 cannot
-capability
-carry
+carries
 case,
 cast
 change
@@ -228,15 +224,13 @@ chooses.
 class="[font-variant-emoji:emoji]"
 class="font-[number:var(--font-wk-heading-weight)]
 class="inline-flex
-class="inline-flex">
+class="relative
 class="sr-only"
 class="sr-only">
 client's
-commonest
 compiles
 component
 component's
-component.
 compute
 config('app.debug'),
 content.
@@ -244,6 +238,7 @@ controls
 correct
 count
 data-wk-optimistic-announcer
+data-wk-sr-host
 debug
 decides
 default
@@ -256,9 +251,6 @@ emoji
 empty:
 every
 exactly
-existed
-exposed
-factory
 false);
 false,
 feature
@@ -280,8 +272,6 @@ from
 gap-x-1">
 gap-x-1',
 gave
-give
-hand-mount
 hardcoded
 has
 having
@@ -297,6 +287,7 @@ implode(…,
 imports
 in
 in,
+inline-flex">
 inside
 into
 is
@@ -431,7 +422,6 @@ string,
 stylesheet's
 such
 supported
-surface
 tabular-nums"
 tabular-nums">{{
 tell
@@ -441,7 +431,6 @@ than
 that
 that:
 the
-there
 things.
 this
 ticker's
@@ -458,15 +447,12 @@ type="button"
 undo
 undone.'),
 unknown
-unreachable,
-up
 use
 value.
 variant
 via
 view's
 was
-way
 what
 when
 whenever

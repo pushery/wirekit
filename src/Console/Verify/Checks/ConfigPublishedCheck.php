@@ -43,11 +43,11 @@ final class ConfigPublishedCheck extends VerifyCheck
     /**
      * Report the `WIREKIT_*` switches the published config still reads through `env()`.
      *
-     * Since 2.59.0 the stub reads every switch through `EnvValue::get()`, where a blank line
-     * such as `WIREKIT_DEDUPE_IDS=` in `.env` keeps the default. `env()` returns that line as
-     * an empty string, and a config published before then keeps calling it: the fix lives in
-     * the stub and never reaches the copy. Information, like a config that predates options,
-     * because the copy still works as it did.
+     * The stub reads every switch through `EnvValue::get()`, where a blank line such as
+     * `WIREKIT_DEDUPE_IDS=` in `.env` keeps the default. `env()` returns that line as an empty
+     * string, and a config published from an older stub keeps calling it, because a published
+     * copy never receives the stub's changes. Information, like a config that predates options,
+     * because the copy keeps working.
      */
     private function checkEnvReads(): void
     {
@@ -164,12 +164,10 @@ final class ConfigPublishedCheck extends VerifyCheck
         // `components.*.classes` cannot match, since `*` is exactly one segment and that
         // precision is deliberate.
         //
-        // Reported twice from two applications before this line existed, and the first
-        // report was closed by the pattern above: `components.link.classes.base` and
-        // `components.segmented-control.classes.segment-selected` are flat names and were
-        // fixed, while `components.sidebar.item.classes.active` kept being called residue.
-        // A partly-repaired exemption reads as a repaired one — the second report looks
-        // like a regression rather than the half that was never covered.
+        // Without it, `components.link.classes.base` and
+        // `components.segmented-control.classes.segment-selected` would pass as flat names
+        // while `components.sidebar.item.classes.active` is reported as residue, and a
+        // partly-covered exemption reads as a complete one.
         //
         // Two segments and no more: sub-components nest exactly one level in this catalog
         // (a registry key is a flat name or a singly-dotted one, never deeper), so a third `*`
@@ -272,9 +270,8 @@ final class ConfigPublishedCheck extends VerifyCheck
         }
 
         // Every option, not just the two scalars at the top. A leaf missing inside
-        // a section the file already declares was invisible to the old comparison,
-        // and that is the common case: sections are added rarely, options within
-        // them every release.
+        // a section the file already declares is the common case: sections are
+        // added rarely, options within them every release.
         //
         // The same three filters as the other direction. Without them a configuration with
         // working `icons.aliases` would be told the option is missing, and the printed remedy
@@ -343,7 +340,7 @@ final class ConfigPublishedCheck extends VerifyCheck
                     return false;
                 }
 
-                // LEAF HERE, BRANCH THERE. `components.checkbox => []` in the
+                // Leaf here, branch there. `components.checkbox => []` in the
                 // developer's file is a leaf; the stub carries
                 // `components.checkbox => ['size' => 'md', …]`, a branch. Flattening
                 // puts `components.checkbox` on one side and `components.checkbox.size`

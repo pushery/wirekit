@@ -14,6 +14,10 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('code', $attributes->getAttributes());
 
     $classes = WireKit::resolveClasses('code', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
         'text-[length:0.875em]',
         'bg-[var(--color-wk-code-bg)]',

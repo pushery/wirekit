@@ -63,7 +63,7 @@
      title as the purpose of the grouped items (kanban column / pipeline
      stage / roadmap quarter). --}}
 <div
-    {{ $attributes->merge(['style' => $intentBorderStyle])->class([$classes]) }}
+    {{ $attributes->merge(['style' => $intentBorderStyle])->class([$classes]) }} data-wk-sr-host
     @if($label) @unless($attributes->has('role')) role="group" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
 >
     @if($label || $count !== null)

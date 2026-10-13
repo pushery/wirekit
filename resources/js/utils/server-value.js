@@ -50,7 +50,7 @@
 export const WK_SERVER_VALUE_ATTRIBUTE = 'data-wk-server-value';
 
 export function observeServerValue(el, onChange, attribute = WK_SERVER_VALUE_ATTRIBUTE) {
-    // Defensive per the house rule for observers: a component may be torn down
+    // Defensive, as every observer here is: a component may be torn down
     // between init() and the first callback, and an observer firing into a dead
     // scope throws where nobody is looking. A root without `getAttribute` is not
     // an element and has no attribute to follow; reading one here would throw

@@ -16,6 +16,72 @@ import { createFocusTrap } from '../utils/focus-trap.js';
 import { holdPageInert, inOverlayRoot, lockScroll, releasePageInert, unlockScroll } from '../utils/overlay.js';
 import { FOCUSABLE } from '../utils/first-control.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { prefersReducedMotion } from '../utils/motion.js';
+import { FITTED, panBy, settle, zoomTo } from '../utils/zoom-pan.js';
+
+/** One step of the zoom buttons and keys, as a factor of the scale. */
+const ZOOM_STEP = 1.5;
+
+/** The scale a double click or a double tap toggles to. */
+const ZOOM_DOUBLE = 2;
+
+/** One step of the arrow keys on an enlarged picture, as a share of the viewer's stage. */
+const PAN_STEP = 0.1;
+
+/** Two taps closer than this, in time and in CSS pixels, are a double tap. */
+const DOUBLE_TAP_MS = 300;
+const DOUBLE_TAP_PX = 30;
+
+/** Which way each arrow moves an enlarged image: the content the reader asked to see comes in. */
+const ARROWS = Object.freeze({
+    ArrowLeft: [1, 0],
+    ArrowRight: [-1, 0],
+    ArrowUp: [0, 1],
+    ArrowDown: [0, -1],
+});
+
+/** The pan buttons, by side, each the step of its arrow key. */
+const PAN_SIDES = Object.freeze({
+    left: ARROWS.ArrowLeft,
+    right: ARROWS.ArrowRight,
+    up: ARROWS.ArrowUp,
+    down: ARROWS.ArrowDown,
+});
+
+/** Whether a key event comes from a field, where `+`, `-`, `0` and the arrows are text. */
+function typing(target) {
+    if (! target || typeof target.closest !== 'function') {
+        return false;
+    }
+
+    return target.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]') !== null;
+}
+
+/**
+ * Whether a key comes with Ctrl, Cmd or Alt. Ctrl or Cmd with `+`, `-` or `0` zooms the whole page
+ * in every desktop browser, and a reader who relies on that must keep it inside the viewer. AltGr,
+ * which some layouts report as Ctrl with Alt, types a character and is not a modifier here.
+ */
+function modified(event) {
+    if (typeof event.getModifierState === 'function' && event.getModifierState('AltGraph')) {
+        return false;
+    }
+
+    return Boolean(event.ctrlKey || event.metaKey || event.altKey);
+}
+
+/** An element's box in viewport pixels, or null while it has none. */
+function rectOf(element) {
+    if (! element || typeof element.getBoundingClientRect !== 'function') {
+        return null;
+    }
+
+    const rect = element.getBoundingClientRect();
+
+    return rect.width > 0 && rect.height > 0
+        ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+        : null;
+}
 
 /**
  * The focusable control an event came from, or null. Duck-typed rather than `instanceof Element`,
@@ -42,8 +108,8 @@ export default function wirekitLightbox(config = {}) {
      * A method called from an expression runs with `this` set to the MERGED scope of the element
      * the expression is on. A trigger inside a tooltip (the house shape for an icon button) sees
      * the tooltip's scope first, and the tooltip has an `open` of its own, so `this.open = true`
-     * in `openAt()` opened the tooltip and left the gallery closed, with no error. The same held
-     * for `$refs`: from inside the tooltip, `this.$refs` are the tooltip's. Bound at `init()`,
+     * in `openAt()` would open the tooltip and leave the gallery closed, with no error. The same
+     * holds for `$refs`: from inside the tooltip, `this.$refs` are the tooltip's. Bound at `init()`,
      * this is the scope of the lightbox's own root, where `open` and `$refs` are the lightbox's.
      */
     let host = null;
@@ -64,6 +130,27 @@ export default function wirekitLightbox(config = {}) {
         // out-of-range case is handled once here rather than at each of the two
         // bindings that need it.
         _slides: Array.isArray(config.slides) ? config.slides : [],
+
+        // Zoom inside an open image, with `zoomable`. `_zoom` is the current image's scale and
+        // translation (utils/zoom-pan.js), back to fitted on every change of slide and on close.
+        // The enlarged image may cover the whole stage, not only the box it was fitted to.
+        // `_zoomAnimated` lets the buttons and the keys ease the transform; a gesture follows the
+        // pointer without one.
+        _zoomable: config.zoomable === true,
+        _maxZoom: typeof config.maxZoom === 'number' && config.maxZoom > 1 ? config.maxZoom : 4,
+        _zoom: FITTED,
+        _zoomAnimated: false,
+        _dragging: false,
+        // The pointers down on the image, by id, and what they are doing together: a drag of one,
+        // a pinch of two. `_trackpadPinch` is a pinch that arrives as WebKit's gesture events.
+        _pointers: null,
+        _gesture: null,
+        _trackpadPinch: null,
+        _lastTap: null,
+        _lastPointerType: '',
+        _resizeHandler: null,
+        // What a button or a key did, said by the dialog's second live region: "Zoom 200%".
+        zoomAnnouncement: '',
 
         /** The current slide's caption, or '' when there is none. */
         get currentCaption() {
@@ -160,13 +247,24 @@ export default function wirekitLightbox(config = {}) {
                 }
             };
             window.addEventListener('pagehide', this._leaveHandler);
+
+            // A phone turned on its side, or a browser bar that comes and goes, resizes the stage
+            // and the fitted box under an enlarged image: settled again, it leaves no gap.
+            if (this._zoomable) {
+                this._resizeHandler = () => {
+                    if (this.isOpen && this._zoom.scale > 1) {
+                        this._settleZoom();
+                    }
+                };
+                window.addEventListener('resize', this._resizeHandler, { passive: true });
+            }
         },
 
         /**
          * Point an embed slide's frame at its source.
          *
-         * Alpine's CSP build evaluates nothing on an `<iframe>`, so a `:src` on the frame never
-         * ran there and the slide stayed blank. The frame carries no binding; the wrapper around it
+         * Alpine's CSP build evaluates nothing on an `<iframe>`, so a `:src` on the frame would never
+         * run there and the slide would stay blank. The frame carries no binding; the wrapper around it
          * calls this, which is plain JavaScript and runs under both builds. The source was checked
          * on the server, where a scheme other than http(s) or a path is dropped.
          *
@@ -191,17 +289,18 @@ export default function wirekitLightbox(config = {}) {
                 return;
             }
             self.current = Math.max(0, Math.min(index, self.count - 1));
+            self._resetZoom();
 
             /*
              * Already open? Then this is a NAVIGATION, not an opening.
              *
              * Called on a viewer that is already up — a second thumbnail clicked behind the
              * overlay, a `wirekit-lightbox-open` event fired twice, a developer calling
-             * `openAt()` to jump — this built a SECOND focus trap over the same container
-             * and assigned it over `this._trap`. The first stayed active with nobody holding
-             * it: `close()` deactivates one trap, so the orphan kept its document-level
-             * keydown listener and went on trapping Tab inside markup the reader had already
-             * left. The only way out was a reload.
+             * `openAt()` to jump — arming again would build a SECOND focus trap over the same
+             * container and assign it over `this._trap`. The first would stay active with
+             * nobody holding it: `close()` deactivates one trap, so the orphan would keep its
+             * document-level keydown listener and go on trapping Tab inside markup the reader
+             * had already left, until a reload.
              *
              * The index is set above, before this returns, so the navigation still happens —
              * it is only the arming that is skipped, because it has already been done.
@@ -217,20 +316,19 @@ export default function wirekitLightbox(config = {}) {
             self.isOpen = true;
 
             /*
-             * Hold the page still. This is `role="dialog" aria-modal="true"` and it took no
-             * scroll lock at all, so the page scrolled behind it — a wheel or a swipe over
-             * the backdrop moved the article underneath, and on iOS the rubber-band ran the
-             * whole document while the viewer stayed put.
+             * Hold the page still. This is `role="dialog" aria-modal="true"`, and without a
+             * scroll lock the page would scroll behind it — a wheel or a swipe over the
+             * backdrop would move the article underneath, and on iOS the rubber-band would
+             * run the whole document while the viewer stayed put.
              *
-             * `aria-modal="true"` is the part that makes it a defect rather than a nicety:
-             * the attribute tells assistive technology that everything outside is inert,
-             * and the page behind was still both scrollable and, to a pointer, live.
+             * `aria-modal="true"` is the part that makes that a defect rather than a nicety:
+             * the attribute tells assistive technology that everything outside is inert, and
+             * the page behind would still be both scrollable and, to a pointer, live.
              *
              * The REFERENCE-COUNTED helper from `overlay.js`, not a private `body.style`
              * write. A lightbox opens from inside a modal readily enough, and two components
              * each holding their own idea of the body's overflow is how a page ends up
-             * frozen after the last one closes — `command-palette` carries a comment about
-             * exactly that, from when it did keep its own.
+             * frozen after the last one closes.
              */
             if (self._lockScroll) {
                 self._holdsScrollLock = true;
@@ -264,6 +362,7 @@ export default function wirekitLightbox(config = {}) {
                         // inert page would refuse.
                         self._releasePageInert();
                         self._releaseScrollLock();
+                        self._resetZoom();
                         self.isOpen = false;
                         self._trap = null;
                     },
@@ -278,6 +377,8 @@ export default function wirekitLightbox(config = {}) {
 
         close() {
             const self = host ?? this;
+
+            self._resetZoom();
 
             self._releasePageInert();
             self._releaseScrollLock();
@@ -322,6 +423,7 @@ export default function wirekitLightbox(config = {}) {
             self.current = self.loop
                 ? (self.current + 1) % self.count
                 : Math.min(self.current + 1, self.count - 1);
+            self._resetZoom();
         },
 
         prev() {
@@ -333,12 +435,405 @@ export default function wirekitLightbox(config = {}) {
             self.current = self.loop
                 ? (self.current - 1 + self.count) % self.count
                 : Math.max(self.current - 1, 0);
+            self._resetZoom();
         },
 
         // Whether prev/next is available (for disabling the controls at the ends
         // when loop is off).
         get hasPrev() { return this.loop || this.current > 0; },
         get hasNext() { return this.loop || this.current < this.count - 1; },
+
+        get canZoomIn() { return this._zoom.scale < this._maxZoom; },
+        get canZoomOut() { return this._zoom.scale > 1; },
+        // An enlarged image can be moved, and the pan buttons show only then.
+        get canPan() { return this._zoom.scale > 1; },
+
+        /**
+         * The transform of slide `idx`'s image: the zoom of the current one, fitted for the others.
+         * A method rather than an inline expression, so the CSP build evaluates it. An object, so
+         * Alpine sets it property by property through the element's `style`: a string it writes
+         * with `setAttribute()`, which takes every other inline style with it and which a
+         * `style-src` without `'unsafe-inline'` refuses.
+         */
+        zoomStyle(idx) {
+            const self = host ?? this;
+            const zoom = idx === self.current ? self._zoom : FITTED;
+            const style = {
+                transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`,
+                transformOrigin: '0 0',
+                cursor: zoom.scale > 1 ? (self._dragging ? 'grabbing' : 'grab') : 'zoom-in',
+            };
+
+            if (self._zoomAnimated && ! prefersReducedMotion()) {
+                style.transitionProperty = 'opacity, transform';
+            }
+
+            return style;
+        },
+
+        zoomIn() { (host ?? this)._zoomBy(ZOOM_STEP); },
+        zoomOut() { (host ?? this)._zoomBy(1 / ZOOM_STEP); },
+
+        /**
+         * Move an enlarged image one step toward `side`, as its arrow key does: the content on
+         * that side comes in. The way to move it with a pointer that cannot drag (WCAG 2.5.7).
+         */
+        pan(side) {
+            const self = host ?? this;
+
+            if (PAN_SIDES[side] && self._zoom.scale > 1) {
+                self._panStep(PAN_SIDES[side]);
+            }
+        },
+
+        /** One step of the arrow keys and the pan buttons; false when the stage has no size yet. */
+        _panStep([dx, dy]) {
+            const self = host ?? this;
+            const geometry = self._geometry();
+
+            if (! geometry) {
+                return false;
+            }
+
+            self._zoomAnimated = true;
+            self._zoom = panBy(self._zoom, dx * PAN_STEP * geometry.frame.width, dy * PAN_STEP * geometry.frame.height, geometry.box, geometry.frame);
+
+            return true;
+        },
+
+        resetZoom() {
+            const self = host ?? this;
+
+            if (self._zoom.scale === 1) {
+                return;
+            }
+
+            self._zoomAnimated = true;
+            self._zoom = FITTED;
+            self._announceZoom();
+        },
+
+        /** `+` and `=` zoom in, `-` out, `0` back; the arrows move an enlarged image. */
+        onZoomKey(event) {
+            const self = host ?? this;
+
+            if (! self._zoomable || modified(event) || typing(event.target)) {
+                return;
+            }
+
+            if (event.key === '+' || event.key === '=') {
+                self.zoomIn();
+            } else if (event.key === '-') {
+                self.zoomOut();
+            } else if (event.key === '0') {
+                self.resetZoom();
+            } else if (ARROWS[event.key] && self._zoom.scale > 1) {
+                // While the image is enlarged the arrows move it, and they are Prev and Next again
+                // at the fitted size: the slide handlers after this one must not see the key.
+                if (! self._panStep(ARROWS[event.key])) {
+                    return;
+                }
+            } else {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation?.();
+        },
+
+        /**
+         * The wheel zooms around the pointer. A wheel with `ctrlKey` is the form a trackpad pinch takes
+         * where it arrives as a wheel at all, and it steps faster, as a pinch reports small deltas.
+         */
+        onZoomWheel(event) {
+            const self = host ?? this;
+
+            if (! self._zoomable) {
+                return;
+            }
+
+            // Over a zoomable image the wheel zooms, at either end of the scale: it must never
+            // scroll a page left unlocked behind the viewer instead.
+            event.preventDefault();
+
+            // A pinch that also arrives as gesture events is read from those alone.
+            if (self._trackpadPinch) {
+                return;
+            }
+
+            const geometry = self._geometry(event.currentTarget);
+
+            if (! geometry) {
+                return;
+            }
+
+            // A line or a page of scrolling, as some mice report it, in pixels.
+            const unit = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? geometry.frame.height : 1);
+            const factor = Math.exp(-event.deltaY * unit * (event.ctrlKey ? 0.01 : 0.002));
+            const at = self._pointIn(geometry.box, event.clientX, event.clientY);
+
+            self._zoomAnimated = false;
+            self._zoom = zoomTo(self._zoom, self._zoom.scale * factor, at, at, geometry.box, geometry.frame, self._maxZoom);
+        },
+
+        /**
+         * WebKit's own gesture events (`gesturestart`, `gesturechange`, `gestureend`), whose `scale`
+         * counts from the start of the pinch: the form a pinch takes where it does not arrive as a
+         * wheel. A pinch on a touch screen is read from the pointers, and a browser that sends both
+         * is answered once, by them.
+         */
+        onZoomGesture(event) {
+            const self = host ?? this;
+
+            if (! self._zoomable || (self._pointers?.size ?? 0) > 0) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (event.type === 'gestureend') {
+                self._trackpadPinch = null;
+
+                return;
+            }
+
+            if (event.type === 'gesturestart' || ! self._trackpadPinch) {
+                self._trackpadPinch = { from: self._zoom };
+            }
+
+            const geometry = self._geometry(event.currentTarget);
+
+            if (! geometry || ! Number.isFinite(event.scale)) {
+                return;
+            }
+
+            const from = self._trackpadPinch.from;
+            const at = self._pointIn(geometry.box, event.clientX, event.clientY);
+
+            self._zoomAnimated = false;
+            self._zoom = zoomTo(from, from.scale * event.scale, at, at, geometry.box, geometry.frame, self._maxZoom);
+        },
+
+        /** A double click toggles between the fitted size and twice it, around the point. */
+        onZoomDoubleClick(event) {
+            const self = host ?? this;
+
+            // A double tap is read from the pointer events, which a touch screen also turns into a
+            // double click: answering both would zoom in and straight back out.
+            if (self._lastPointerType === 'touch') {
+                return;
+            }
+
+            self._toggleZoomAt(event.clientX, event.clientY, event.currentTarget);
+        },
+
+        onZoomPointerDown(event) {
+            const self = host ?? this;
+
+            // The main button of a mouse, a pen or a finger; a right click opens its menu.
+            if (! self._zoomable || (event.pointerType === 'mouse' && event.button !== 0)) {
+                return;
+            }
+
+            self._lastPointerType = event.pointerType || '';
+            self._pointers ??= new Map();
+            self._pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            // Held by the image until it is let go, so a drag that ends over the backdrop does not
+            // become a click there, which would close the viewer. A pointer the browser no longer
+            // counts as active cannot be held, and the gesture goes on without it.
+            try {
+                event.currentTarget?.setPointerCapture?.(event.pointerId);
+            } catch {
+                // NotFoundError: nothing to hold.
+            }
+            self._startGesture(event.currentTarget);
+        },
+
+        onZoomPointerMove(event) {
+            const self = host ?? this;
+            const gesture = self._gesture;
+
+            if (! gesture || ! self._pointers?.has(event.pointerId)) {
+                return;
+            }
+
+            self._pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            const points = [...self._pointers.values()];
+            const { box, frame } = gesture;
+            self._zoomAnimated = false;
+
+            if (gesture.type === 'pinch' && points.length >= 2) {
+                // The point of the image that was under the fingers stays under them, scaled by how
+                // far apart they have moved and carried along with them.
+                const mid = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
+                const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                self._zoom = zoomTo(gesture.from, gesture.from.scale * (distance / gesture.distance), self._pointIn(box, gesture.mid.x, gesture.mid.y), self._pointIn(box, mid.x, mid.y), box, frame, self._maxZoom);
+                gesture.moved = true;
+            } else if (gesture.type === 'drag') {
+                const dx = event.clientX - gesture.start.x;
+                const dy = event.clientY - gesture.start.y;
+
+                if (Math.abs(dx) + Math.abs(dy) > 3) {
+                    gesture.moved = true;
+                    self._dragging = true;
+                }
+
+                self._zoom = panBy(gesture.from, dx, dy, box, frame);
+            }
+        },
+
+        /** The end of a press on the image, and a `pointercancel`, which ends it without a tap. */
+        onZoomPointerUp(event) {
+            const self = host ?? this;
+
+            if (! self._pointers?.has(event.pointerId)) {
+                return;
+            }
+
+            const gesture = self._gesture;
+            self._pointers.delete(event.pointerId);
+
+            if (event.type !== 'pointercancel' && event.pointerType === 'touch' && gesture && ! gesture.moved && self._pointers.size === 0) {
+                const now = Date.now();
+                const last = self._lastTap;
+
+                if (last && now - last.time < DOUBLE_TAP_MS && Math.hypot(event.clientX - last.x, event.clientY - last.y) < DOUBLE_TAP_PX) {
+                    self._lastTap = null;
+                    self._toggleZoomAt(event.clientX, event.clientY, event.currentTarget);
+                } else {
+                    self._lastTap = { time: now, x: event.clientX, y: event.clientY };
+                }
+            }
+
+            self._dragging = false;
+            self._gesture = null;
+
+            // A pinch that loses one finger goes on as a drag of the other, from where the image
+            // now is. That finger was part of a pinch, so its lift is not a tap.
+            if (self._pointers.size > 0) {
+                self._startGesture(event.currentTarget);
+
+                if (self._gesture) {
+                    self._gesture.moved = true;
+                }
+            }
+        },
+
+        _startGesture(target) {
+            const geometry = this._geometry(target);
+            const points = [...(this._pointers?.values() ?? [])];
+
+            if (! geometry || points.length === 0) {
+                this._gesture = null;
+
+                return;
+            }
+
+            if (points.length >= 2) {
+                this._gesture = {
+                    type: 'pinch',
+                    ...geometry,
+                    from: this._zoom,
+                    mid: { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 },
+                    distance: Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y)),
+                    moved: false,
+                };
+            } else {
+                this._gesture = { type: 'drag', ...geometry, from: this._zoom, start: points[0], moved: false };
+            }
+        },
+
+        _toggleZoomAt(clientX, clientY, target) {
+            const self = host ?? this;
+            const geometry = self._geometry(target);
+
+            if (! self._zoomable || ! geometry) {
+                return;
+            }
+
+            const at = self._pointIn(geometry.box, clientX, clientY);
+            self._zoomAnimated = true;
+            self._zoom = self._zoom.scale > 1
+                ? FITTED
+                : zoomTo(self._zoom, ZOOM_DOUBLE, at, at, geometry.box, geometry.frame, self._maxZoom);
+        },
+
+        /** The buttons and the keys: a step around the middle of the stage, said aloud. */
+        _zoomBy(factor) {
+            const self = host ?? this;
+            const geometry = self._geometry();
+
+            if (! self._zoomable || ! geometry) {
+                return;
+            }
+
+            const { box, frame } = geometry;
+            const center = self._pointIn(box, frame.left + frame.width / 2, frame.top + frame.height / 2);
+            const next = zoomTo(self._zoom, self._zoom.scale * factor, center, center, box, frame, self._maxZoom);
+
+            // At either end the step changes nothing, and saying the same scale again would only
+            // repeat what the reader already heard.
+            if (next.scale === self._zoom.scale) {
+                return;
+            }
+
+            self._zoomAnimated = true;
+            self._zoom = next;
+            self._announceZoom();
+        },
+
+        _settleZoom() {
+            const geometry = this._geometry();
+
+            if (geometry) {
+                this._zoomAnimated = false;
+                this._zoom = settle(this._zoom, geometry.box, geometry.frame);
+            }
+        },
+
+        /**
+         * Where the current image stands at its fitted size (`box`), and the area its enlarged
+         * form may cover (`frame`, the dialog's stage), both in viewport pixels. The box is the
+         * wrapper around the image, which the image's own transform never moves. Null while either
+         * has no size, such as a video slide or a closed viewer.
+         */
+        _geometry(target = null) {
+            const self = host ?? this;
+            const stage = self.$refs?.stage ?? null;
+            const holder = target && typeof target.closest === 'function'
+                ? target.closest('[data-wk-lightbox-zoom]')
+                : stage?.querySelector?.(`[data-wk-lightbox-zoom="${self.current}"]`) ?? null;
+            const box = rectOf(holder);
+            const frame = rectOf(stage);
+
+            return box && frame ? { box, frame } : null;
+        },
+
+        /** A viewport point relative to the fitted box, or the box's middle when there is none. */
+        _pointIn(box, clientX, clientY) {
+            return Number.isFinite(clientX) && Number.isFinite(clientY)
+                ? { x: clientX - box.left, y: clientY - box.top }
+                : { x: box.width / 2, y: box.height / 2 };
+        },
+
+        _announceZoom() {
+            const template = typeof config.zoomAnnouncement === 'string' && config.zoomAnnouncement !== ''
+                ? config.zoomAnnouncement
+                : 'Zoom :percent%';
+
+            this.zoomAnnouncement = template.replace(':percent', String(Math.round(this._zoom.scale * 100)));
+        },
+
+        _resetZoom() {
+            this._zoom = FITTED;
+            this._zoomAnimated = false;
+            this._dragging = false;
+            this._gesture = null;
+            this._trackpadPinch = null;
+            this._lastTap = null;
+            this._pointers?.clear();
+            this.zoomAnnouncement = '';
+        },
 
         destroy() {
             if (this._openHandler) {
@@ -352,6 +847,10 @@ export default function wirekitLightbox(config = {}) {
             if (this._leaveHandler) {
                 window.removeEventListener('pagehide', this._leaveHandler);
                 this._leaveHandler = null;
+            }
+            if (this._resizeHandler) {
+                window.removeEventListener('resize', this._resizeHandler);
+                this._resizeHandler = null;
             }
             this._returnTo = null;
             this._releasePageInert();

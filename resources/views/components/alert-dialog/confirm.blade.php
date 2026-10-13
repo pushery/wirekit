@@ -33,7 +33,7 @@
      place initial focus here — that is the whole safety promise of the pattern — but a
      marker makes the destructive control findable by tests and by a caller's own script.
 
-     THE BLOCK IS REAL, and both halves are needed:
+     The block is real, and both halves are needed:
 
        * `x-on:click.capture` and the keydown twin actually REFUSE the activation. A
          control held back only by `aria-disabled` stays clickable, so a stray Enter would

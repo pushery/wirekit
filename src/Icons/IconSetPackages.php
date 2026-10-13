@@ -20,9 +20,9 @@ use Illuminate\Support\Str;
  * That is all this class is for.
  *
  * The map is deliberately NOT a method on the preset contract: adding one would be a
- * breaking change for anyone who has implemented `IconPreset` themselves, and this is
- * a minor. `IconSetPackagesMatchComposerSuggestTest` holds it against the `suggest`
- * block in composer.json, which is the list a developer actually reads.
+ * breaking change for anyone who has implemented `IconPreset` themselves. It names the
+ * packages of the `suggest` block in composer.json, which is the list a developer actually
+ * reads.
  */
 final class IconSetPackages
 {

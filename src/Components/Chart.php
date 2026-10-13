@@ -8,9 +8,12 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\View\Component;
 use Illuminate\View\View;
 use Pushery\WireKit\Charts\ChartManager;
+use Pushery\WireKit\Charts\ChartPointLinks;
+use Pushery\WireKit\Charts\ChartTooltipExtras;
 use Pushery\WireKit\Charts\TypeNotSupportedException;
 use Pushery\WireKit\Contracts\ChartAdapter;
 use Pushery\WireKit\Support\ListProp;
+use Pushery\WireKit\WireKit;
 use RuntimeException;
 
 /**
@@ -90,6 +93,16 @@ final class Chart extends Component
     public bool $chartsDisabled = false;
 
     /**
+     * The links of the data points that lead somewhere, in reading order, for the list the view
+     * renders after the chart. No point on a canvas or inside the chart's image takes the focus,
+     * so this list is how a keyboard and a screen reader reach them. Empty when no point has an
+     * address. See `ChartPointLinks`.
+     *
+     * @var list<array{url: string, text: string, navigate: bool}>
+     */
+    public array $pointLinks = [];
+
+    /**
      * @param  string  $type  Chart type — validated against the active adapter's supportedTypes().
      * @param  array<int, string>|Arrayable<int, string>  $labels  X-axis / segment labels, as an
      *                                                             array or a Collection.
@@ -125,8 +138,8 @@ final class Chart extends Component
      *                                `config('wirekit.charts.library')` — the built-in keys `chartjs`
      *                                / `apexcharts`, OR a fully qualified class name implementing
      *                                `ChartAdapter`. When `null` (default), the chart uses whatever
-     *                                the global `wirekit.charts.library` config resolves to, matching
-     *                                the pre-v2.3.0 behavior. When set, this chart instance binds
+     *                                the global `wirekit.charts.library` config resolves to.
+     *                                When set, this chart instance binds
      *                                to the named library regardless of the app default — two charts
      *                                on the same page can use different libraries. Use this when a
      *                                specific chart type requires a specific library (e.g. `boxplot`
@@ -135,6 +148,15 @@ final class Chart extends Component
      *                                in an app whose default is the OTHER library. Removes the need
      *                                for path-based library-config switching in renderers (docs
      *                                sites, sample apps, developer integrations).
+     * @param  array<array-key, mixed>|Arrayable<array-key, mixed>  $tooltipExtras  Further values the
+     *                                                                              tooltip names for each point, without a series of their own:
+     *                                                                              `['label' => 'Receipts', 'data' => [12, 30]]`, or a list of
+     *                                                                              them, each with an optional `decimals`, `prefix` and `suffix`.
+     * @param  string|null  $palette  The colors the series take: `semantic` (the accent, the state
+     *                                colors and three further accents) or `categorical` (eight pastels
+     *                                from the `--color-wk-chart-*` tokens, each a fill and an edge).
+     *                                When null, `config('wirekit.components.chart.palette')` decides,
+     *                                and that is `semantic` unless the application changes it.
      */
     public function __construct(
         public string $type = 'bar',
@@ -161,21 +183,41 @@ final class Chart extends Component
         // injection below). `valueDecimals` rounds raw float y-values in the
         // custom tooltip to N decimal places; `valuePrefix` / `valueSuffix`
         // wrap each formatted number (e.g. "€", " ms", "%"). All three are
-        // null by default → today's behavior (raw value, no affix) preserved
-        // byte-for-byte. `valueDecimals` is typed `int|string|null` because a
-        // plain attribute arrives as a string. A numeric one would coerce to a
-        // bare `?int` anyway (Blade builds the component through the container,
-        // which does not declare strict_types), but a non-numeric one would be a
-        // TypeError; with the union, the normalization below turns it into null.
+        // null by default: the raw value, without an affix. `valueDecimals` is
+        // typed `int|string|null` because a plain attribute arrives as a
+        // string. A numeric one would coerce to a bare `?int` anyway (Blade
+        // builds the component through the container, which does not declare
+        // strict_types), but a non-numeric one would be a TypeError; with the
+        // union, the normalization below turns it into null.
         public int|string|null $valueDecimals = null,
         public ?string $valuePrefix = null,
         public ?string $valueSuffix = null,
+        // Further values the tooltip names for each point, without a series of their own: one
+        // extra as `['label' => …, 'data' => […]]`, or a list of them. See ChartTooltipExtras.
+        array|Arrayable $tooltipExtras = [],
+        public ?string $palette = null,
     ) {
         // Labels are a list whatever keys they arrive with: a Collection that was filtered or
         // sorted keeps its keys, and with those the config would carry an object where both
         // libraries read an array.
         $labels = $this->labels = array_values(self::listFrom($labels));
         $datasets = $this->datasets = self::datasetsFrom($datasets);
+
+        // The palette, the application's default when the chart names none, so one line of config
+        // draws every chart in it. `semantic` is the palette every chart had before there was a choice.
+        // A configured value that is not a string is rejected by the name of its type.
+        $configured = config('wirekit.components.chart.palette', 'semantic');
+        $this->palette = WireKit::validateProp(
+            'chart',
+            'palette',
+            $palette ?? (is_string($configured) ? $configured : get_debug_type($configured)),
+            ['semantic', 'categorical'],
+        );
+
+        // Where the data points lead, taken out of the data before an adapter reads it: `urls` on a
+        // dataset and `url` on a point are keys no chart library knows.
+        [$datasets, $pointLinkGrid] = ChartPointLinks::extract($datasets);
+        $this->datasets = $datasets;
 
         /** @var ChartManager $manager Resolved from the container singleton */
         $manager = app(ChartManager::class);
@@ -220,11 +262,40 @@ final class Chart extends Component
         // Normalize data via adapter.
         $normalized = $adapter->normalizeData($type, $labels, $datasets);
 
+        // The tooltip's further values travel with the data as well, written in the application's
+        // locale, so a Livewire update that brings new points brings their values.
+        $extras = ChartTooltipExtras::from($tooltipExtras);
+
+        if ($extras !== []) {
+            $normalized['wkTooltipExtras'] = $extras;
+        }
+
+        // The grid travels with the data, so the script follows a click to the address of the
+        // point under it, and a Livewire update that brings new points brings their addresses.
+        if ($pointLinkGrid !== []) {
+            $normalized['wkLinks'] = $pointLinkGrid;
+        }
+
         // Merge default options with user options (user options win).
         $mergedOptions = array_replace_recursive(
             $adapter->defaultOptions($type),
             $options,
         );
+
+        // The list names each point as the chart shows it, a date as its axis writes one, which
+        // the merged options decide.
+        if ($pointLinkGrid !== []) {
+            $this->pointLinks = ChartPointLinks::list(
+                $pointLinkGrid,
+                $labels,
+                $datasets,
+                is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null,
+                $valuePrefix,
+                $valueSuffix,
+                ChartPointLinks::rangePairs($adapter->name(), $type, $datasets),
+                ChartPointLinks::dateZone($adapter->name(), $mergedOptions),
+            );
+        }
 
         // Annotations passthrough — the adapters consume the options.annotations
         // (ApexCharts native) / options.plugins.annotation (Chart.js plugin)
@@ -277,9 +348,9 @@ final class Chart extends Component
             // crash the tooltip renderer at hover time.
             $decimals = is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null;
 
-            // Only attach the wk* keys when at least one is meaningful — keeps
-            // the emitted config byte-for-byte identical to pre-feature output
-            // when the developer passes none of the three props.
+            // Only attach the wk* keys when at least one is meaningful, so the
+            // emitted config carries none of them when the developer passes none
+            // of the three props.
             if ($decimals !== null || $valuePrefix !== null || $valueSuffix !== null) {
                 $mergedOptions['tooltip']['wkValueDecimals'] = $decimals;
                 $mergedOptions['tooltip']['wkValuePrefix'] = $valuePrefix;
@@ -288,6 +359,13 @@ final class Chart extends Component
         }
 
         $this->chartConfig = array_merge($normalized, ['options' => $mergedOptions]);
+
+        // Written for the categorical palette only, so a semantic chart's config stays as it was.
+        // The script reads it and takes it out before the library sees the config.
+        if ($this->palette === 'categorical') {
+            $this->chartConfig['wkPalette'] = 'categorical';
+        }
+
         $this->chartData = $normalized;
         $this->alpineComponent = $adapter->alpineComponent();
         $this->chartLibrary = $adapter->name();

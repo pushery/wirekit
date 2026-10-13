@@ -27,6 +27,12 @@
     // opt back in with `pointer-events-auto`. Return a view or HtmlString for HTML (a plain
     // string is escaped). Null → no overlay.
     'slideOverlay' => null,
+    // Zoom inside an open image: three buttons, the keys `+` `-` `0`, the wheel, a double click or
+    // a double tap, a pinch, and dragging the enlarged image. Images only; a video or an embed
+    // keeps its own controls.
+    'zoomable' => false,
+    // The largest scale, as a multiple of the size the image is fitted to. A number above 1.
+    'maxZoom' => 4,
     'scope' => null,
 ])
 
@@ -45,6 +51,17 @@
     $loop = BooleanProp::from($loop, true);
     $showCaptions = BooleanProp::from($showCaptions, true);
     $lockScroll = BooleanProp::from($lockScroll, true);
+    $zoomable = BooleanProp::from($zoomable, false);
+
+    // The factory's zoom keys, for a zoomable viewer only: every other lightbox renders exactly the
+    // markup it did before the prop existed. The largest scale is a number above 1, as the factory
+    // reads it; anything else is the default. The announcement travels as a template for the
+    // reason the position does, below.
+    $maxZoom = is_numeric($maxZoom) && (float) $maxZoom > 1 ? (float) $maxZoom : 4.0;
+    $zoomConfig = $zoomable
+        ? ', zoomable: true, maxZoom: '.\Pushery\WireKit\Support\AlpinePayload::from($maxZoom)
+            .', zoomAnnouncement: '.\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Zoom :percent%'))
+        : '';
 
     // Normalize each entry to ['src','alt','caption','type','poster']. `poster`
     // is a video-only still shown before the clip paints its first frame (so the
@@ -114,7 +131,7 @@
 @endphp
 
 <div
-    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }} })"
+    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }}{{ $zoomConfig }} })"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Optional trigger content (thumbnails / buttons). Anything here can call
@@ -125,7 +142,11 @@
 
     @if($count > 0)
         {{-- The overlay — teleported to the overlay root, focus-trapped, arrow/Escape keyboard.
-             createFocusTrap returns focus to the trigger on close. --}}
+             createFocusTrap returns focus to the trigger on close. `tabindex="-1"` makes the
+             dialog the place focus stays after a click on something that takes none (a button
+             in WebKit, the image in every engine), so the keys keep reaching it; it is no stop
+             in the tab order, and `outline-hidden` keeps a key press after such a click from
+             drawing a ring around the whole stage. --}}
         <template x-teleport="#wk-overlay-root">
             <div
                 x-show="isOpen"
@@ -133,11 +154,15 @@
                 x-ref="stage"
                 role="dialog"
                 aria-modal="true"
+                tabindex="-1"
                 {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, __('wirekit::Media viewer')) }}
                 x-on:keydown.escape.prevent="close()"
+@if($zoomable)
+                x-on:keydown="onZoomKey($event)"
+@endif
                 x-on:keydown.arrow-right.prevent="next()"
                 x-on:keydown.arrow-left.prevent="prev()"
-                class="wk-overlay-fixed wk-overlay-layer-modal fixed inset-0 z-[var(--z-wk-modal)] flex items-center justify-center p-[var(--space-wk-md)]"
+                class="wk-overlay-fixed wk-overlay-layer-modal fixed inset-0 z-[var(--z-wk-modal)] flex items-center justify-center p-[var(--space-wk-md)] outline-hidden"
             >
                 {{-- Backdrop — click closes. Per-instance color via inline style. --}}
                 <div
@@ -193,6 +218,9 @@
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                                             </svg>
                                         </span>
+@if($zoomable)
+                                        <div :data-wk-lightbox-zoom="idx" class="flex items-start touch-none select-none">
+@endif
                                         <img data-wk-prose-skip
                                             :src="item.src"
                                             :alt="item.alt"
@@ -202,8 +230,24 @@
                                             x-on:load="loaded = true"
                                             x-on:error="loaded = true"
                                             :class="loaded ? 'opacity-100' : 'opacity-0'"
+@if($zoomable)
+                                            :style="zoomStyle(idx)"
+                                            draggable="false"
+                                            x-on:wheel="onZoomWheel($event)"
+                                            x-on:dblclick="onZoomDoubleClick($event)"
+                                            x-on:pointerdown="onZoomPointerDown($event)"
+                                            x-on:pointermove.passive="onZoomPointerMove($event)"
+                                            x-on:pointerup="onZoomPointerUp($event)"
+                                            x-on:pointercancel="onZoomPointerUp($event)"
+                                            x-on:gesturestart="onZoomGesture($event)"
+                                            x-on:gesturechange="onZoomGesture($event)"
+                                            x-on:gestureend="onZoomGesture($event)"
+@endif
                                             class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] object-contain shadow-[var(--shadow-wk-lg)] transition-opacity duration-[var(--transition-wk-duration)]"
                                         />
+@if($zoomable)
+                                        </div>
+@endif
                                     </div>
                                 </template>
                             </div>
@@ -214,7 +258,7 @@
                                  pointer-events-none like the gallery's thumbnail overlay; a control inside
                                  opts back in and sits in the dialog's focus trap. --}}
                             @foreach($slides as $i => $slide)
-                                <div data-wk-slide-overlay="{{ $i }}" x-show="current === {{ $i }}" class="pointer-events-none absolute inset-0">
+                                <div data-wk-slide-overlay="{{ $i }}" x-show="current === {{ (int) $i }}" class="pointer-events-none absolute inset-0">
                                     {{ $slideOverlay($slide, $i) }}
                                 </div>
                             @endforeach
@@ -245,14 +289,19 @@
                          out of the controls and back to the trap's fallback, inside a
                          modal where there is nothing on screen to say so. `aria-disabled`
                          announces the same state and keeps the button where it is; the
-                         clamp in prev() is what actually refuses the step. --}}
+                         clamp in prev() is what actually refuses the step.
+
+                         Every control stands its spacing plus the screen's inset on its
+                         edge in from that edge: under `viewport-fit=cover` it clears a
+                         notch, a camera island or a home indicator, and the inset is 0
+                         on a screen without one. --}}
                     <button
                         type="button"
                         x-on:click="prev()"
                         :aria-disabled="hasPrev ? null : 'true'"
                         :class="hasPrev ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Previous') }}"
-                        class="absolute left-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="wk-touch-target absolute left-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M12.5 4L7 10l5.5 6"/></svg>
                     </button>
@@ -264,7 +313,7 @@
                         :aria-disabled="hasNext ? null : 'true'"
                         :class="hasNext ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Next') }}"
-                        class="absolute right-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="wk-touch-target absolute right-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] top-1/2 z-20 -translate-y-1/2 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 4L13 10l-5.5 6"/></svg>
                     </button>
@@ -274,11 +323,81 @@
                     type="button"
                     x-on:click="close()"
                     aria-label="{{ __('wirekit::Close') }}"
-                    class="absolute right-[var(--space-wk-md)] top-[var(--space-wk-md)] z-20 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-touch-target absolute right-[calc(var(--space-wk-md)+env(safe-area-inset-right,0px))] top-[calc(var(--space-wk-md)+env(safe-area-inset-top,0px))] z-20 flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 >
                     <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
 
+@if($zoomable)
+                {{-- Zoom, in the corner opposite Close. `aria-disabled` at the ends for the reason Prev
+                     and Next give above: the button under the reader's focus stays in the tab order.
+                     After Close in the markup, so the control that takes focus on opening is the one
+                     it was without zoom. A physical `left`, as Close's `right` is physical: the corner
+                     opposite Close stays opposite it in either reading direction, until the viewer's
+                     controls move to logical sides together. --}}
+                <div role="group" aria-label="{{ __('wirekit::Zoom') }}" class="absolute left-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-[calc(var(--space-wk-md)+env(safe-area-inset-top,0px))] z-20 flex gap-[var(--gap-wk-sm)]">
+                    <button
+                        type="button"
+                        x-on:click="zoomIn()"
+                        :aria-disabled="canZoomIn ? null : 'true'"
+                        :class="canZoomIn ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
+                        aria-label="{{ __('wirekit::Zoom in') }}"
+                        class="wk-touch-target flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    >
+                        <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.5 12.5L17 17M8.5 6v5M6 8.5h5"/></svg>
+                    </button>
+                    <button
+                        type="button"
+                        x-on:click="zoomOut()"
+                        :aria-disabled="canZoomOut ? null : 'true'"
+                        :class="canZoomOut ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
+                        aria-label="{{ __('wirekit::Zoom out') }}"
+                        class="wk-touch-target flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    >
+                        <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.5 12.5L17 17M6 8.5h5"/></svg>
+                    </button>
+                    <button
+                        type="button"
+                        x-on:click="resetZoom()"
+                        :aria-disabled="canZoomOut ? null : 'true'"
+                        :class="canZoomOut ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
+                        aria-label="{{ __('wirekit::Reset zoom') }}"
+                        class="wk-touch-target flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    >
+                        <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg>
+                    </button>
+                </div>
+
+                {{-- Pan, one row under Zoom while the image is enlarged: each button moves it the step
+                     of its arrow key, so a pointer that cannot drag reaches every part of it (WCAG
+                     2.5.7). Hidden at the fitted size, where there is nothing to move. A physical
+                     side on purpose, the one of the Zoom row it stands under. --}}
+                <div role="group" aria-label="{{ __('wirekit::Pan') }}" x-show="canPan" x-cloak class="absolute left-[calc(var(--space-wk-md)+env(safe-area-inset-left,0px))] top-[calc(var(--space-wk-md)+var(--size-wk-md)+var(--gap-wk-sm)+env(safe-area-inset-top,0px))] z-20 flex gap-[var(--gap-wk-sm)]">
+                    @foreach ([
+                        'left' => [__('wirekit::Pan left'), 'M12 5l-5 5 5 5'],
+                        'up' => [__('wirekit::Pan up'), 'M5 12l5-5 5 5'],
+                        'down' => [__('wirekit::Pan down'), 'M5 8l5 5 5-5'],
+                        'right' => [__('wirekit::Pan right'), 'M8 5l5 5-5 5'],
+                    ] as $side => [$panLabel, $panPath])
+                        <button
+                            type="button"
+                            x-on:click="pan({{ \Pushery\WireKit\Support\AlpinePayload::string($side) }})"
+                            aria-label="{{ $panLabel }}"
+                            class="wk-touch-target flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        >
+                            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ $panPath }}"/></svg>
+                        </button>
+                    @endforeach
+                </div>
+
+                {{-- What a button or a key did to the scale, said politely: the reader who pressed it
+                     cannot see the image change. Its own region beside the slide's, present from the
+                     start for the reason given there. --}}
+                <div aria-live="polite" aria-atomic="true" class="sr-only">
+                    <span x-text="zoomAnnouncement"></span>
+                </div>
+
+@endif
                 {{-- Which slide is showing, announced politely on every change. Stepping
                      with Next or the arrow keys swaps the media under a reader who cannot
                      see it and leaves focus on the control that did it, so without this

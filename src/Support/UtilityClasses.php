@@ -36,6 +36,20 @@ final class UtilityClasses
     public const TEXT_COLOR = '/^text-(?:\[(?:color:|var\(--color)|(?:black|white|transparent|current|inherit)$|[a-z]+-\d{2,3}(?:\/\d+)?$)/';
 
     /**
+     * A font SIZE: a size keyword, with or without a line height (`text-sm`, `text-lg/7`), a typed
+     * arbitrary value (`text-[length:…]`, `text-(length:…)`), or an arbitrary length (`text-[15px]`).
+     * A color, an alignment or an untyped `text-[var(…)]`, which Tailwind reads as a color, does not
+     * match.
+     */
+    public const FONT_SIZE = '/^text-(?:(?:xs|sm|base|lg|xl|[2-9]xl)(?:\/\S+)?$|\[length:|\(length:|\[\d*\.?\d+(?:px|rem|em|%|vw|vh|ch|ex|pt)\]$)/';
+
+    /**
+     * A font WEIGHT: a weight keyword, a typed arbitrary value (`font-[number:…]`, `font-(number:…)`)
+     * or a number (`font-[550]`). A family (`font-sans`, `font-[family-name:…]`) does not match.
+     */
+    public const FONT_WEIGHT = '/^font-(?:(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$|\[number:|\(number:|\[\d+\]$)/';
+
+    /**
      * The class string without the variant-free utilities whose name matches `$pattern`.
      *
      * The pattern is matched against the utility alone: an important marker (`!p-0`, `p-0!`) and the

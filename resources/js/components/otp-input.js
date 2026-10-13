@@ -6,18 +6,10 @@ import { watchModelEvents } from '../utils/model-events.js';
  * One-time-code input — one box per character, with auto-advance and paste
  * distribution.
  *
- * ## Why this file was replaced rather than edited
- *
- * A `wirekitOtpInput` factory was registered in every bundle and called by
- * nothing: the template carried its own inline copy, and that copy is what ran.
- * The two had drifted, and the template's was the newer — it had the alphabet
- * support that shipped in v2.22.0, which this file never learned. So the module
- * a reader would open to understand the component described a version that had
- * not existed for a while, and still only accepted digits.
- *
- * The template's copy has moved here whole. It had to: an inline object literal
- * cannot define methods under Alpine's CSP build, so the component was inert
- * under a strict Content-Security-Policy.
+ * The component's whole behavior lives in this factory rather than in an inline
+ * object literal in the template: an inline literal cannot define methods under
+ * Alpine's CSP build, so the component would be inert under a strict
+ * Content-Security-Policy.
  *
  * ## The alphabet
  *
@@ -36,8 +28,8 @@ import { watchModelEvents } from '../utils/model-events.js';
  * `wire:model` sits on the hidden field, and the boxes write to it. The other direction
  * holds as well: when something other than the boxes sets the bound property, the server
  * emptying it after a submit or filling it in, the boxes show the new value. Without that
- * they kept a code the field no longer held, and the next submit sent the field's value
- * under a row of filled boxes.
+ * they would keep a code the field no longer holds, and the next submit would send the
+ * field's value under a row of filled boxes.
  *
  * Lifecycle resources held on `this`, each released in destroy():
  *   - _unwatch (the unwatch function of `$wire.$watch`). Livewire also releases it when the
@@ -490,7 +482,7 @@ export default function wirekitOtpInput(config = {}) {
          * Emitted as an event rather than called directly, so the component
          * still owes nothing to the optimistic layer: an application can listen
          * for it to auto-submit, which is what a one-time code usually does, and
-         * a page that ignores it behaves exactly as before.
+         * a page that ignores it loses nothing.
          *
          * Guarded against repeating: backspacing out of a full code and retyping
          * the last character is one completion, not two, and a component that

@@ -12,24 +12,24 @@ use IntlDatePatternGenerator;
  * A date whose ORDER follows the locale, not only its words.
  *
  * `Carbon::translatedFormat('M j')` translates the month NAME and keeps the English
- * arrangement, so a German page rendered "Sep. 7" where German writes "7. Sep.", and a
- * full date came out as "Sonntag, September 7, 2026". The words were right and the
- * sentence was not — which reads worse than an untranslated date, because it looks like
- * the locale was applied and got it wrong.
+ * arrangement, so a German page would render "Sep. 7" where German writes "7. Sep.", and a
+ * full date would come out as "Sonntag, September 7, 2026": the words right and the
+ * sentence not — which reads worse than an untranslated date, because it looks like the
+ * locale was applied and got it wrong.
  *
- * The fix is a CLDR SKELETON: a description of which fields are wanted (`MMMd` = abbreviated
- * month plus day) that ICU turns into the pattern that locale actually uses. The order is
- * never spelled out here, which is the point — spelling it out is the bug.
+ * The answer is a CLDR SKELETON: a description of which fields are wanted (`MMMd` =
+ * abbreviated month plus day) that ICU turns into the pattern that locale actually uses. The
+ * order is never spelled out here, which is the point — spelling it out would be the bug.
  *
  * Two things this deliberately does NOT do, both mirroring {@see LocalizedNumber}:
  *
  * 1. It does not require `ext-intl`. The extension is not a WireKit dependency, and making
- *    it one would break every application without it. Without intl the output is exactly
- *    what it was before this class existed — `translatedFormat()` with the caller's format.
+ *    it one would break every application without it. Without intl the output is
+ *    `translatedFormat()` with the caller's format.
  * 2. It does not read the locale from the formatter's own default. `IntlDateFormatter`
  *    falls back to the ICU default locale, which has nothing to do with `App::getLocale()`,
- *    so the locale is passed explicitly. Omitting it would have "fixed" the bug while
- *    changing nothing on a page whose locale is set by Laravel.
+ *    so the locale is passed explicitly. Omitted, it would change nothing on a page whose
+ *    locale is set by Laravel.
  */
 final class LocalizedDate
 {

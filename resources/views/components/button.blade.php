@@ -12,13 +12,17 @@
     // a button on its own is right at its designed size; this is for one that shares a row with a
     // field, where it would otherwise read a size below the field beside it.
     'touchTextFloor' => false,
+    // On a touch screen, stand at the touch target's size rather than at the drawn size with a
+    // hit area around it. Default false: in a dense toolbar an icon square grown to 44px runs
+    // over its container, so it keeps its size there and answers the finger through the area.
+    // This is for an icon button in a row with labeled buttons, which stand at 44px there.
+    'touchFloor' => false,
     // Show the icon alone and keep the label as the accessible name.
     //
-    // The seam for the icon itself already existed — `<x-slot:iconLeft>` and `<x-slot:iconRight>`
-    // have shipped for a long time, so the report that named both halves missing was half right.
-    // What was missing is this: a button carrying only an icon still took the HORIZONTAL padding
-    // of a text button, so it rendered as a wide box with a small glyph floating in the middle,
-    // and there was nothing holding the label in the accessibility tree once it was hidden.
+    // The icon itself goes into `<x-slot:iconLeft>` or `<x-slot:iconRight>`. What this adds: a
+    // button carrying only an icon would otherwise take the HORIZONTAL padding of a text button
+    // and render as a wide box with a small glyph floating in the middle, and nothing would hold
+    // the label in the accessibility tree once it is hidden.
     //
     // The case is a row action that has to narrow on a phone, where a translated label can take
     // half of what the table leaves. Without the prop the icon and an `sr-only` label go into the
@@ -64,22 +68,23 @@
     // sibling actions. Setting loadingTarget emits wire:target so the spinner only
     // reacts to that action. NOTE: this is `loadingTarget`, NOT `target` — a
     // `target` prop would collide with the HTML target attribute (target="_blank"
-    // + the rel tabnabbing auto-inject). Null = today's untargeted behavior
-    // (byte-identical); scoping is strictly opt-in.
+    // + the rel tabnabbing auto-inject). Null = the untargeted behavior; scoping
+    // is strictly opt-in.
     'loadingTarget' => null,
-    // Whether the busy state DISABLES the control, or merely announces itself.
+    // Whether the busy state DISABLES the control, or only marks it busy.
     //
-    // `disabled` is what this component has always used, and it costs the focus: the
-    // browser blurs a control the moment it becomes disabled, so the element the reader
+    // `disabled`, the default, costs the focus: the browser blurs a control the
+    // moment it becomes disabled, so the element the reader
     // just activated stops being focused for the whole in-flight window and focus falls to
     // `<body>`. That is WCAG 2.4.3, on every request.
     //
-    // `false` swaps the attribute for `aria-busy`, which announces the same wait while the
-    // element stays focusable and in the tab order. Livewire's `.attr` sets the attribute
-    // to `true` (its `toggleBooleanStateDirective` does), so this yields a valid
-    // `aria-busy="true"` rather than the attribute's own name.
+    // `false` swaps the attribute for `aria-busy`, which tells assistive technology the
+    // control is busy while it stays focusable and in the tab order. Neither attribute
+    // announces the wait. Livewire's `.attr` sets the attribute to `true` (its
+    // `toggleBooleanStateDirective` does), so this yields a valid `aria-busy="true"` rather
+    // than the attribute's own name.
     //
-    // The default stays `true`, and the trade is the developer's to make: a control that
+    // The default is `true`, and the trade is the developer's to make: a control that
     // stays enabled while its action is in flight can be pressed twice.
     'disableOnLoading' => true,
     'scope' => null,
@@ -97,11 +102,12 @@
     $disableOnLoading = BooleanProp::from($disableOnLoading, true);
 
     // Blade compiles an UNBOUND attribute to a string, and the string 'false' is truthy — so
-    // `wrap-label="false"` would have meant the opposite of what the call site reads as, with
-    // the page rendering either way and nothing to say so. Normalized against this prop's own
+    // `wrap-label="false"` would mean the opposite of what the call site reads as, with the
+    // page rendering either way and nothing to say so. Normalized against this prop's own
     // default, like every other boolean on this component.
     $wrapLabel = BooleanProp::from($wrapLabel, false);
     $touchTextFloor = BooleanProp::from($touchTextFloor, false);
+    $touchFloor = BooleanProp::from($touchFloor, false);
     $iconOnly = BooleanProp::from($iconOnly, false);
 
     /*
@@ -139,11 +145,11 @@
     // `loadingTarget` implies `loading`, because there is no other reason to set it.
     //
     // Both branches below hang on `$loading`; `loadingTarget` only SCOPES a spinner that
-    // `loading` switches on. So `loading-target="submit"` without `loading` rendered a
-    // button byte-identical to one without the attribute — no spinner, no disable, nothing
-    // — while reading at the call site exactly like a working busy state.
+    // `loading` switches on. Without this, `loading-target="submit"` without `loading` would
+    // render a button byte-identical to one without the attribute — no spinner, no disable,
+    // nothing — while reading at the call site exactly like a working busy state.
     //
-    // Nothing goes red over it: no error, no warning, no log. On a screen a person cannot
+    // Nothing would go red over it: no error, no warning, no log. On a screen a person cannot
     // leave without submitting, a re-consent screen for one, a slow connection then gets no
     // feedback at all, neither visual nor assistive, until the answer comes back.
     $loading = $loading || $loadingTarget !== null;
@@ -166,27 +172,26 @@
         // spinner stacks above the text. `inline-flex` alone does not
         // prevent the inner TEXT NODE from soft-wrapping at its own
         // whitespace; `whitespace-nowrap` clamps the text to one line.
-        // `wrapLabel` flips only the clamp, and the default stays one line. The reasoning above
+        // `wrapLabel` flips only the clamp, and the default is one line. The reasoning above
         // is right for a label the application wrote — "Save", "Send test". It is the wrong
         // answer for a label a user typed: a template name, a channel label, an org login are as
         // long as somebody made them, and a row of those would run off the edge of a card rather
         // than take a second line.
         //
-        // `flex-nowrap` comes WITH the wrap, and it is what keeps the original reasoning true:
-        // the concern in that comment is the spinner ending up ABOVE the text, which is the flex
+        // `flex-nowrap` comes WITH the wrap, and it is what keeps the reasoning above true:
+        // the concern there is the spinner ending up ABOVE the text, which is the flex
         // LINE breaking rather than the text soft-wrapping. Holding the line together lets the
         // label take a second row while the spinner stays beside it.
         //
         // `whitespace-normal` is emitted explicitly rather than by omission: a developer's own
         // `class="whitespace-normal"` does not reliably win, because two Tailwind utilities for
         // one property are decided by their order in the generated stylesheet rather than in the
-        // attribute — which is exactly why an adopting application had to wrap its labels in a
-        // `<span>` instead.
+        // attribute.
         //
         // `[overflow-wrap:anywhere]` comes with the wrap as well. `whitespace-normal` only allows a
         // break at a space or a hyphen, and a typed name often has neither: a template name with
-        // underscores, a channel, a repository. The label then stayed as wide as the whole word,
-        // because that word was its min-content width and a flex row cannot shrink the button below
+        // underscores, a channel, a repository. Without it the label would stay as wide as the whole
+        // word, because that word is its min-content width and a flex row cannot shrink the button below
         // it. `break-word` would allow the break without lowering min-content; `anywhere` does both,
         // and a space still wins wherever there is one. Spelled as an arbitrary property, the same
         // spelling text and heading use for their break values.
@@ -307,7 +312,7 @@
      * than instead of it — so the size is still validated on this path, by the one call that
      * publishes the allow-list.
      *
-     * What changes is the horizontal padding, which is the whole defect: a text button's `px`
+     * What changes is the horizontal padding, which is the whole point: a text button's `px`
      * around a single glyph is a wide box with something small in the middle. The font size and
      * the radius stay, because the glyph is sized in `em` by every icon this catalog ships and
      * the corner is a property of the size rather than of the content.
@@ -437,10 +442,18 @@
      * unlayered rule and no utility outranks it, while a property it merely reads is set here
      * and nowhere else. Welded into a button group the stylesheet takes both back: the buttons
      * touch there, and each patch would reach into its neighbor.
+     *
+     * `touchFloor` gives the other answer, for a square in a row of labeled buttons, which
+     * stand at 44px on a touch screen: the button takes the floor as its size, 44 by 44 for the
+     * square, and draws no patch. It does so through `wk-touch-row`, the marker the kit's own
+     * small controls carry where they stand beside other controls. A labeled button stands at
+     * the height floor already, and the marker adds a width floor only a very short label is
+     * narrower than.
      */
-    $touchClasses = $iconOnly
-        ? 'wk-touch-target [--wk-touch-min:0px]'
-        : match ($iconOnlyBelow) {
+    $touchClasses = match (true) {
+        $touchFloor => 'wk-touch-row',
+        $iconOnly => 'wk-touch-target [--wk-touch-min:0px]',
+        default => match ($iconOnlyBelow) {
             'xs' => 'wk-touch-target max-[22.5rem]:[--wk-touch-min:0px]',
             'sm' => 'wk-touch-target max-sm:[--wk-touch-min:0px]',
             'md' => 'wk-touch-target max-md:[--wk-touch-min:0px]',
@@ -448,7 +461,8 @@
             'xl' => 'wk-touch-target max-xl:[--wk-touch-min:0px]',
             '2xl' => 'wk-touch-target max-2xl:[--wk-touch-min:0px]',
             default => '',
-        };
+        },
+    };
 
     $iconOnlyBelowLabelClass = match ($iconOnlyBelow) {
         'xs' => 'max-[22.5rem]:sr-only',
@@ -459,6 +473,18 @@
         '2xl' => 'max-2xl:sr-only',
         default => '',
     };
+
+    /*
+     * The square keeps its width in a flex row that is short of space. A flex item shrinks down to
+     * its min-content width, and the square of `iconOnly` gives its padding away, so that is the
+     * glyph and the border: a crowded row would turn it into a narrow upright bar and narrow what
+     * a finger can hit with it. `iconOnlyBelow` keeps its padding inside its fixed width, which holds
+     * its min-content at the square, so it does not shrink in the first place. A `shrink` utility
+     * of the caller's replaces this, as it does on `icon`.
+     */
+    $iconOnlyShrinkClasses = $iconOnly && ! \Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^shrink(?:-|$)/')
+        ? 'shrink-0'
+        : '';
 
     $heightClasses = $iconOnly
         ? $iconOnlyHeightClasses
@@ -482,9 +508,9 @@
 
     // A link surface flows like the text around it: no padding and no fixed height, which its
     // own classes say (`p-0 h-auto`). Beside the size's padding and height the stylesheet's order
-    // decided instead: the auto height won by sorting after the fixed one, while the inline
-    // padding sets the more specific property and kept a padding on both sides of a link meant
-    // to sit flush with its sentence.
+    // would decide instead: the auto height wins by sorting after the fixed one, while the inline
+    // padding sets the more specific property and would keep a padding on both sides of a link
+    // meant to sit flush with its sentence.
     // So the size's padding and height are left out here, and its text size and radius stay.
     if ($surface === 'link') {
         $sizeClasses = \Pushery\WireKit\Support\UtilityClasses::without($sizeClasses, \Pushery\WireKit\Support\UtilityClasses::PADDING);
@@ -508,12 +534,12 @@
     // When `loading=true` is set without ANY `wire:*` action attribute
     // (wire:click / wire:submit / wire:click.prevent / wire:keydown / etc.),
     // the developer wants the DECLARATIVE loading state — the button stays
-    // in its loading look until they manually flip it. The pre-fix behavior
-    // attached `wire:loading` to the spinner and `wire:loading.attr` to the
-    // button, both of which are no-ops outside a Livewire request — so the
-    // spinner never showed AND the button never disabled. We now distinguish:
-    //   - $loading + wire:*  → wire:loading.attr (current — implicit while
-    //                          a Livewire request is in flight)
+    // in its loading look until they manually flip it. `wire:loading` on the
+    // spinner and `wire:loading.attr` on the button are both no-ops outside a
+    // Livewire request — the spinner would never show AND the button would
+    // never disable. So the two are told apart:
+    //   - $loading + wire:*  → wire:loading.attr (implicit while a Livewire
+    //                          request is in flight)
     //   - $loading + no wire:*  → unconditional spinner + native disabled
     //                            (declarative — developer toggles `loading`)
     $hasWireAction = false;
@@ -534,11 +560,17 @@
         $declarativeLoading = true;
     }
 
+    // A wait that runs past a second is announced, through one status region for the page: the
+    // spinner says it to a sighted reader only, `disabled` takes the focus away and `aria-busy`
+    // announces nothing. utils/busy-announcer.js watches the spinner. Not under `forceLoading`,
+    // whose spinner shows a state rather than a wait.
+    $announceBusy = $loading && ! $forceLoading;
+
     // `disableOnLoading` is read on the declarative path too (`loading` set with no `wire:*`
     // attribute on the tag), not only in the `wire:loading.attr` branch at the bottom of this
     // file. Otherwise a call site that opted out would still get the native `disabled`, lose
-    // focus to `<body>` for the whole in-flight window, and get no `aria-busy` announcement in
-    // its place: the WCAG 2.4.3 failure the prop exists to avoid.
+    // focus to `<body>` for the whole in-flight window, and get no `aria-busy` in its place:
+    // the WCAG 2.4.3 failure the prop exists to avoid.
     //
     // Two boundaries below are deliberate rather than oversights:
     //
@@ -549,15 +581,15 @@
     //   The swap is scoped to `<button>`, exactly like `wire:loading.attr` below.
     //   `disabled` is inert on an anchor, so the link branch withholds the `href`
     //   instead; that is a different mechanism with a different trade, and the
-    //   wire:loading path has never applied this prop to it either.
+    //   wire:loading path does not apply this prop to it either.
     $declarativeBusyOnly = $tag === 'button'
         && $declarativeLoading
         && ! $forceLoading
         && ! $disableOnLoading;
 
-    // The docblock on the prop records an adopting project setting `aria-busy` through
-    // the attribute bag by hand rather than using `loading` at all. Emitting ours beside
-    // theirs would put the attribute on the element twice.
+    // A caller may set `aria-busy` through the attribute bag by hand rather than using
+    // `loading` at all. Emitting ours beside theirs would put the attribute on the
+    // element twice.
     $emitAriaBusy = $declarativeBusyOnly && ! $attributes->has('aria-busy');
 
     $isDisabled = $disabled || ($declarativeLoading && ! $declarativeBusyOnly);
@@ -565,8 +597,8 @@
     // `disabled` is not a valid attribute on <a>, and `:disabled` never matches
     // one — so on the link branch the `disabled:` variants in $baseClasses select
     // nothing and the native attribute is inert. A `href` button rendered with
-    // `disabled` therefore stayed fully styled, Tab-reachable and navigable, and
-    // announced to a screen reader as an ordinary link.
+    // `disabled` would therefore stay fully styled, Tab-reachable and navigable,
+    // and announce to a screen reader as an ordinary link.
     //
     // A link cannot be disabled natively, so the href is WITHHELD instead: without
     // it the element is neither focusable nor navigable, and `role="link"` +
@@ -588,16 +620,17 @@
         : '';
 @endphp
 
-<{{ $tag }} data-wk-prose-skip
+<{{ $tag }} data-wk-prose-skip data-wk-sr-host
     @if($href && ! $linkDisabled) href="{{ $href }}" @endif
     @if($tag === 'button') type="{{ $type }}" @endif
     @if($linkDisabled) role="link" aria-disabled="true" @endif
     @disabled($tag === 'button' && $isDisabled)
     @if($emitAriaBusy) aria-busy="true" @endif
+    @if($announceBusy) x-wk-announce-busy @unless($attributes->has('data-wk-busy-text')) data-wk-busy-text="{{ __('wirekit::Loading') }}" @endunless @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $buttonBag->class([$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $touchClasses, $linkDisabledClasses]) }}
+    {{ $buttonBag->class([$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $iconOnlyShrinkClasses, $touchClasses, $linkDisabledClasses]) }}
     {{-- `disabled` is inert on an anchor, so the link branch gets the treatment
-         this component already uses for a disabled link instead. `wire:loading.attr`
+         this component uses for a disabled link instead. `wire:loading.attr`
          adds a `disabled` attribute, which a browser honors on a button and ignores
          on an <a>, where the link would stay navigable for the whole request, the
          one moment a second click does the most damage. Same classes as
@@ -611,12 +644,12 @@
     {{-- Loading spinner: declarative path renders always; wire:loading
          path renders only while a Livewire request is in flight. --}}
     @if($declarativeLoading)
-        <svg class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <svg data-wk-busy-spinner class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
     @elseif($loading)
-        <svg wire:loading @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <svg wire:loading @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif data-wk-busy-spinner class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>

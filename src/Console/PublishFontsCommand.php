@@ -15,9 +15,8 @@ use Pushery\WireKit\Support\FileWrite;
  * Publish exactly the font families the app has configured.
  *
  * The all-or-nothing `wirekit-fonts` tag copies the whole tree — 5.8 MB, against
- * roughly 430 KB for a typical two-family setup. The per-preset tags added in
- * 2.17.0 fix the size but not the problem, because using them means hardcoding a
- * preset NAME:
+ * roughly 430 KB for a typical two-family setup. The per-preset tags fix the size
+ * but not the problem, because using them means hardcoding a preset NAME:
  *
  *     php artisan vendor:publish --tag=wirekit-font-ibm-plex-sans
  *
@@ -111,12 +110,12 @@ class PublishFontsCommand extends Command
             $alreadyPublished = is_dir($target);
 
             // Skip ONLY when the published copy already mirrors the bundled bytes.
-            // The old skip-if-dir-exists check silently did nothing after a
-            // `composer update` left the vendor tree with new font bytes and
-            // public/ with the previous release's — the app kept serving stale
-            // fonts, and both this command and `wirekit:verify` reported success.
-            // Now a byte drift overwrites (an upgrade heals itself); `--force`
-            // still overwrites unconditionally.
+            // A skip on the directory's existence alone would do nothing after a
+            // `composer update` leaves the vendor tree with new font bytes and
+            // public/ with the previous release's: the app would keep serving
+            // stale fonts while this command reported success. A byte drift
+            // overwrites, so an upgrade heals itself; `--force` overwrites
+            // unconditionally.
             if ($alreadyPublished && ! $this->option('force') && DirectoryHash::matches($source, $target, FontCss::publishTransform())) {
                 $this->line("  Skipped {$preset->key} — already up to date");
                 $published[] = $relative;

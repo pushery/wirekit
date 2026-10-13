@@ -7,9 +7,9 @@ namespace Pushery\WireKit\Support;
 /**
  * Per-render sequential counter for `<x-wirekit::tour.step>` children.
  *
- * Solves the bug class where every `tour.step` defaulted to
- * `index=0`, so all steps rendered with `data-wk-tour-step="0"` and
- * the tour's `next()` JS could only locate the first step.
+ * Without it every `tour.step` would default to `index=0`: all steps
+ * would render with `data-wk-tour-step="0"`, and the tour's `next()`
+ * JS could only locate the first step.
  *
  * Mechanism: each `<x-wirekit::tour.step>` calls `next()` when its own
  * `$index` prop is null (the default), getting the next sequential
@@ -22,8 +22,9 @@ namespace Pushery\WireKit\Support;
  * relies on starting at zero. The service provider resets it after
  * each request and before each queued job, and `WireKit::flush()` in
  * tests; without that, a render that stopped between a step and its
- * tour left the counter mid-count, and the next tour in a long-running
- * process numbered its steps from there while `tour.js` looks for step 0.
+ * tour would leave the counter mid-count, and the next tour in a
+ * long-running process would number its steps from there while
+ * `tour.js` looks for step 0.
  * Each tour's Alpine scope is isolated via `x-data="wirekitTour(...)"`,
  * so per-tour `currentStep === N` matches that tour's own steps even
  * though numbering restarts.

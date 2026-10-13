@@ -13,13 +13,10 @@
 @props([
     // Livewire method to call optimistically. The date appears immediately and
     // is put back if the call fails. Single-date mode only — see the note above.
-    // Absent -> this component renders exactly as it did before, down to the byte.
+    // Absent -> the component renders without an optimistic layer.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -56,8 +53,8 @@
     // language and the page disagree: an operator on an English laptop entering a date on a
     // German screen is the common case.
     //
-    // Off by default, so an existing call site renders byte for byte as before. On, it renders
-    // NOTHING when the two orders agree — the overwhelmingly common case.
+    // Off by default. On, it renders NOTHING when the two orders agree — the overwhelmingly
+    // common case.
     //
     // If you want the application's own format, the answer is a different component.
     // `x-wirekit::calendar` takes the application locale and draws the dates itself. The
@@ -68,7 +65,7 @@
     // pre-compiler scans raw text for component tags, before any of this is a PHP comment —
     // so a tag written here is compiled into a real invocation, and every render of this
     // component then dies on `Undefined variable $component`.
-    'formatHint' => false,
+    'formatHint' => config('wirekit.components.date-picker.format-hint', false),
     'scope' => null,
 ])
 
@@ -105,7 +102,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
@@ -227,6 +224,8 @@
     // The field's help, after its own messages: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $dateId.'-help' : null;
+    // Markup a caller puts after the label and its help, in their row (partials/label-after).
+    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) requires every input to
@@ -354,23 +353,19 @@
     ]);
 @endphp
 
-<div {{ $outerAttributes }} class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '') data-wk-ref-scope @endif>
+{{-- With the format hint on, the element right before an empty hint keeps no space below it. The
+     hint is always in the markup, because the field's description names it before the browser
+     decides whether it has anything to say, and the stack spaces every child but the last, so the
+     gap above an empty hint made the picker taller than one without it. A rule on the element
+     before the hint rather than a negative margin on the hint: that element is often the input,
+     which is inline-block, and an inline-block's margin does not collapse. --}}
+<div {{ $outerAttributes }} @class(['relative w-full space-y-1.5', '[&>:has(+[data-wk-format-hint]:empty)]:[margin-block-end:0]' => $formatHint]) @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        {{-- With help, the label shares a row with its button, outside the label so it stays out
-             of the field's name, and the row takes the space below. --}}
-        @if($helpId)
-        <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)] mb-[var(--space-wk-xs)]">
-        @endif
-        <label for="{{ $dateId }}" @class(['block', 'mb-[var(--padding-wk-y-xs)]' => ! $helpId, 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]'])>
-            {{-- One marker, in the dense house form: no whitespace, `ms-0.5` carries the
-                 gap, as in every field component. A second marker in this label would print
-                 two asterisks on a required field. --}}
-            {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
-        </label>
-        @if($helpId)
-            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $dateId)])
-        </div>
-        @endif
+        {{-- The label every field shows, through the label component: its type and weight, the
+             help beside it, the mark after it and the required marker. The wrapper's
+             `space-y-1.5` puts the field's own distance below it, so a date picker stands on one
+             line with an input beside it. --}}
+        <x-wirekit::label for="{{ $dateId }}" :required="$required" :help="$help" :help-id="$helpId" :help-field="(string) ($name ?? $dateId)">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($needsSrOnlyFallback)
         {{-- Screen-reader-only label fallback. Visible-label-less demos still
              pass WCAG 4.1.2 because the input has a programmatically-
@@ -456,7 +451,7 @@
     @endif
 
     @if($hint && !$hasError)
-        <p data-wk-prose-skip id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($formatHint)
@@ -465,22 +460,20 @@
              page's language; the two dates in it are formatted at runtime. --}}
         <p
             data-wk-prose-skip
+            data-wk-format-hint
             id="{{ $formatHintId }}"
             x-data="wirekitDateFormatHint({
                 locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale())) }},
                 template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
             })"
             x-text="message"
-            {{-- `--space-wk-xs` and not the padding token the hint above reads, though the two
-                 render the same 0.25rem. A margin between two stacked elements is a space, and a
-                 margin reading a padding family is only right where it cancels one. --}}
-            class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]"
+            class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]"
         ></p>
     @endif
 
     @if($showsError)
         {{-- Error message linked via aria-describedby for assistive tech. --}}
-        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 
     @if($optimisticConfig)

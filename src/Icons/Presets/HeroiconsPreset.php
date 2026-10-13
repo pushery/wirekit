@@ -24,8 +24,8 @@ final class HeroiconsPreset implements IconPreset
             // box is filled, not what kind of mark it is: in the navigation row (close, menu,
             // chevrons, check) every glyph is a thin outline, and a filled disc there would be
             // a different kind of mark rather than a heavier one. One alias cannot fit both,
-            // and the row decides. `IconSystemTest` holds this as a decision rather than as a
-            // threshold, so an ink measurement does not overturn it.
+            // and the row decides: a decision rather than a threshold, so an ink measurement
+            // does not overturn it.
             'search' => 'heroicon-m-magnifying-glass',
             'chevron-down' => 'heroicon-m-chevron-down',
             'chevron-up' => 'heroicon-m-chevron-up',
@@ -61,21 +61,14 @@ final class HeroiconsPreset implements IconPreset
             'moon' => 'heroicon-m-moon',
             'sun' => 'heroicon-m-sun',
 
-            // Six words the vocabulary was missing, added together because they were
-            // reported together — the eighth report of that shape, which is the finding
-            // behind the finding.
+            // `system` is the third theme state beside `sun` and `moon`, so a theme
+            // control can name all three of its positions. No icon family spells the
+            // concept the same way (computer-desktop / monitor / device-desktop), so the
+            // WORD is ours and the glyph is each set's own — which is what these aliases
+            // are for. Every target below exists in its set.
             //
-            // `system` is the third theme state. `sun` and `moon` were both here and
-            // "follows the system" was not, so a theme control could name two of its
-            // three positions. No icon family spells the concept the same way
-            // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
-            // glyph is each set's own — which is what these aliases are for.
-            //
-            // Every target below exists in its set, checked against the installed
-            // Heroicons package and the full recursive git tree of the other three.
-            //
-            // `article` was proposed with these and deliberately left out: it needs two
-            // substitutions and "editorial unit" is the most arguable of the seven.
+            // `article` is deliberately absent: two of the sets would need a substitute
+            // glyph for it, and "editorial unit" is an arguable concept to begin with.
             'system' => 'heroicon-m-computer-desktop',
             'code' => 'heroicon-m-code-bracket',
             'key' => 'heroicon-m-key',
@@ -87,19 +80,15 @@ final class HeroiconsPreset implements IconPreset
             'list-bullets' => 'heroicon-m-list-bullet',
             'list-checks' => 'heroicon-m-clipboard-document-check',
 
-            // The text-formatting marks a composer toolbar is built from.
+            // The text-formatting marks a composer toolbar is built from. With `code`,
+            // `link` and `list-bullets`, part of the same toolbar, these five complete the
+            // group, so a formatting bar names its buttons out of this one set; drawing
+            // some by hand would put two iconographies in one row of controls.
             //
-            // The vocabulary already carried `code`, `link` and `list-bullets` — part of
-            // the same toolbar — so a formatting bar could name some of its buttons out of
-            // this set and had to draw the rest by hand, which puts two iconographies in
-            // one row of controls. These five close the group.
-            //
-            // Every target below was read out of the installed SVG trees under vendor/,
-            // per set, per name, rather than off a website. All four families draw a
-            // genuine cognate: the bold B, the slanted I, the struck and the underlined
-            // letterform, the numbered list. Phosphor spells four of them `text-*`, which
-            // is why the right-hand sides differ across the presets — the word is the
-            // CONCEPT, the picture is each family's own.
+            // All four families draw a genuine cognate: the bold B, the slanted I, the
+            // struck and the underlined letterform, the numbered list. Phosphor spells
+            // four of them `text-*`, which is why the right-hand sides differ across the
+            // presets — the word is the CONCEPT, the picture is each family's own.
             //
             // `list-numbers` takes that spelling on purpose rather than Lucide's
             // `list-ordered`: `list-bullets` and `list-checks` are already here under it,
@@ -118,11 +107,9 @@ final class HeroiconsPreset implements IconPreset
             'chart-line' => 'heroicon-m-presentation-chart-line',
             'folders' => 'heroicon-m-folder',
 
-            // A seventh, and it came from the docs rather than from a report: five
-            // blueprint pages reached for `pulse` and two of them meant a telephone
-            // ("Voice call", "Call"). The vocabulary had no word for one, so the
-            // pages borrowed a name that does not resolve on the default config at
-            // all — which is how a missing word turns into a broken page.
+            // A telephone, for a call control ("Voice call", "Call"). Without a word for
+            // it a page borrows one such as `pulse`, which does not resolve on the
+            // default config at all, and the missing word turns into a broken page.
             'phone' => 'heroicon-m-phone',
             'book-open' => 'heroicon-m-book-open',
             'sign-out' => 'heroicon-m-arrow-right-on-rectangle',
@@ -130,18 +117,16 @@ final class HeroiconsPreset implements IconPreset
             'map' => 'heroicon-m-map',
             'file-text' => 'heroicon-m-document-text',
 
-            // Common semantic aliases (v2.6.4) — promoted from the heroicons-app/
-            // marketing extension presets so they resolve on EVERY base preset
-            // without stacking. Every base preset (heroicons/lucide/phosphor/
-            // tabler) shares this identical keyset — `live` INCLUDED: every base preset
-            // carries it (signal / radio), while the marketing preset carries no `live` entry
-            // at all.
+            // Common semantic aliases, carried by EVERY base preset (heroicons/lucide/
+            // phosphor/tabler) so they resolve without stacking an extension. `live` is
+            // one of the shared words too: every base preset carries it (signal / radio),
+            // while the marketing preset carries no `live` entry at all.
             'copy' => 'heroicon-m-clipboard-document',
             'globe' => 'heroicon-m-globe-alt',
             'book' => 'heroicon-m-book-open',
             'lightbulb' => 'heroicon-m-light-bulb',
 
-            // SaaS app aliases (v2.9.0) — high-frequency dashboard / settings /
+            // SaaS app aliases — high-frequency dashboard / settings /
             // billing icons every signed-in app reaches for. Shared keyset across
             // every base preset; identifiers follow each upstream library.
             'settings' => 'heroicon-m-cog-6-tooth',
@@ -151,7 +136,7 @@ final class HeroiconsPreset implements IconPreset
             'credit-card' => 'heroicon-m-credit-card',
 
             // Infrastructure & system — subprocessor / breach registers, hosting,
-            // status dashboards. Verified against blade-heroicons Mini SVGs.
+            // status dashboards, all drawn from the blade-heroicons Mini set.
             'server' => 'heroicon-m-server',
             'database' => 'heroicon-m-circle-stack', // heroicons has no `database`
             'cloud' => 'heroicon-m-cloud',
@@ -162,16 +147,15 @@ final class HeroiconsPreset implements IconPreset
             'bolt' => 'heroicon-m-bolt',
             'refresh' => 'heroicon-m-arrow-path', // heroicons calls it arrow-path
             // Undo — the counter-clockwise arrow every set ships under a different name.
-            // Named for the CONCEPT, not for one family's spelling: the proposal reached us
-            // as `arrow-counter-clockwise`, which is Phosphor's word for it and would have
-            // made the vocabulary read differently depending on which set a project loads.
-            // Verified against the SVG files: lucide `undo`, tabler `arrow-back-up`,
-            // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
-            // undo glyphs, not four things that look roughly alike.
+            // Named for the CONCEPT, not for one family's spelling: Phosphor's word for it,
+            // `arrow-counter-clockwise`, would make the vocabulary read differently
+            // depending on which set a project loads. Lucide `undo`, tabler
+            // `arrow-back-up`, phosphor `arrow-counter-clockwise` and heroicons
+            // `arrow-uturn-left` are four real undo glyphs, not four things that look
+            // roughly alike.
             'undo' => 'heroicon-m-arrow-uturn-left', // heroicons calls it arrow-uturn-left
-            // Media controls. An app with audio playback had to
-            // hand-roll inline SVGs — against the catalog's own "use the icon
-            // component" rule — because the base set had no play/pause at all.
+            // Media controls, so audio playback draws its buttons through the icon
+            // component rather than with inline SVGs.
             'play' => 'heroicon-m-play',
             'pause' => 'heroicon-m-pause',
             'stop' => 'heroicon-m-stop',
@@ -179,21 +163,18 @@ final class HeroiconsPreset implements IconPreset
             'mute' => 'heroicon-m-speaker-x-mark',
             'microphone' => 'heroicon-m-microphone',
             // ── Admin navigation ────────────────────────────────────────────
-            // Five concepts every administrative interface has, and none of them
-            // was expressible. An application's main navigation could name two of its
-            // seven items through this vocabulary and reached for the icon
-            // package's OWN glyph names for the rest — `users`, `stack`,
-            // `scales`, `clock-counter-clockwise`.
+            // Five concepts every administrative interface has. Without a word for each,
+            // a navigation reaches for the icon package's OWN glyph names — `users`,
+            // `stack`, `scales`, `clock-counter-clockwise`.
             //
             // Those raw names work, and that is the problem: they resolve because
             // the full package happens to be installed, which is a dependency on
-            // the icon set rather than a contract with WireKit. When that application
-            // tried to ship only the icons it actually renders, four test files
-            // went red — the restriction removed the coincidence.
+            // the icon set rather than a contract with WireKit, and an application
+            // that ships only the icons it renders loses them.
             //
             // `users` is a separate word from `user` on purpose: managing accounts
-            // is a different menu item from your own profile, and the two sharing
-            // one glyph was forced rather than chosen.
+            // is a different menu item from your own profile, and the two need not
+            // share one glyph.
             'users' => 'heroicon-m-users',
             'history' => 'heroicon-m-clock',
             'legal' => 'heroicon-m-scale',
@@ -201,26 +182,25 @@ final class HeroiconsPreset implements IconPreset
             'layers' => 'heroicon-m-square-3-stack-3d',
 
             // `stack` is the concept `layers` already names, shipped as its own
-            // word because that is the word applications write — the navigation
-            // above reached for `stack` and got a synonym it does not use.
-            // Undeclared, the name did not fail cleanly either: Phosphor calls its
-            // own glyph `stack`, so the raw-name fallthrough answered it under that
-            // one family and threw under the rest, which reads as "the icon broke
-            // when we changed preset" rather than as a word nobody promised. Two
-            // spellings on one glyph is what this vocabulary already does for
+            // word because that is the word applications write. Undeclared, the
+            // name would not fail cleanly either: Phosphor calls its own glyph
+            // `stack`, so the raw-name fallthrough would answer it under that one
+            // family and throw under the rest, which reads as "the icon broke when
+            // we changed preset" rather than as a word nobody promised. Two
+            // spellings on one glyph is what this vocabulary also does for
             // settings/gear, book/book-open and billing/credit-card.
             'stack' => 'heroicon-m-square-3-stack-3d',
 
-            // ─── The overflow affordance, and five words an adopting application
-            // reached for and did not find.
+            // ─── The overflow affordance, and the other words an application
+            // reaches for beside it.
             //
-            // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE
-            // PRESETS — checked file by file, not assumed. That is the whole
-            // admission test: a word enters this vocabulary only when every set
-            // we ship can answer it with a glyph that means the same thing. An
-            // alias that resolves in three sets and substitutes something else
-            // in the fourth is worse than no alias, because it looks like a
-            // contract right up until somebody changes preset.
+            // Every one of these is a true cognate in all four interchangeable
+            // presets. That is the whole admission test: a word enters this
+            // vocabulary only when every set we ship can answer it with a glyph
+            // that means the same thing. An alias that resolves in three sets and
+            // substitutes something else in the fourth is worse than no alias,
+            // because it looks like a contract right up until somebody changes
+            // preset.
             //
             // `more` rather than `overflow`, `ellipsis` or `dots-three`. The last
             // two are one family's own spelling, and enshrining a family spelling
@@ -236,7 +216,7 @@ final class HeroiconsPreset implements IconPreset
             // The pop-up button's marker: a stacked pair of chevrons, one up and one down.
             // It says "this shows the current choice, and there are others" — the distinction
             // from a single downward chevron, which says "this opens a list of actions". A
-            // scope switcher in a breadcrumb is the first thing here to need it, and every
+            // scope switcher in a breadcrumb is one control that needs it, and every
             // set draws it: Heroicons and Lucide as chevrons, Phosphor and Tabler as carets.
             // Same shape, same meaning, so the word is honest in all four.
             'chevron-up-down' => 'heroicon-m-chevron-up-down',
@@ -248,12 +228,10 @@ final class HeroiconsPreset implements IconPreset
             'scan' => 'heroicon-m-viewfinder-circle', // The nearest true cognate: a framing reticle.
 
             // Notification, labeling, mail and media — concepts every
-            // administrative interface has, and none of them had a word here.
-            // A page that needed one reached for the icon package's own glyph
-            // name, which resolves only while that optional package happens to
-            // be installed: a dependency on the icon set rather than a contract
-            // with this library. `bell` and `bell-slash` move here from the
-            // app extension — same glyph, so nothing rendered changes.
+            // administrative interface has. Without a word here a page reaches for
+            // the icon package's own glyph name, which resolves only while that
+            // optional package happens to be installed: a dependency on the icon
+            // set rather than a contract with this library.
             'bell' => 'heroicon-m-bell',
             'bell-slash' => 'heroicon-m-bell-slash',
             'tag' => 'heroicon-m-tag',
@@ -286,23 +264,21 @@ final class HeroiconsPreset implements IconPreset
             'reply' => 'heroicon-m-arrow-uturn-left',
             'forward' => 'heroicon-m-arrow-uturn-right',
             // ---------------------------------------------------------------
-            // Promoted from the heroicons extension presets on 2026-08-26.
+            // Words all four base presets carry.
             // ---------------------------------------------------------------
-            // These words lived only in `heroicons-app` / `heroicons-marketing`, which
-            // emit heroicon identifiers exclusively. A lucide, phosphor or tabler
-            // install therefore could not reach them at all — stacking the extensions
-            // resolved the alias onto a glyph that set does not ship, and blade-icons
-            // threw rather than degrading.
+            // They live here rather than in `heroicons-app` / `heroicons-marketing`,
+            // which emit heroicon identifiers exclusively: there a lucide, phosphor or
+            // tabler install would resolve the alias onto a glyph its set does not
+            // ship, and blade-icons throws rather than degrading.
             //
-            // Each one was checked against the real SVG trees in vendor/, per set, per
-            // name — not against a website and not by assuming a spelling. What is
+            // Each target is a glyph its set ships under exactly that name. What is
             // taken here is the CONCEPT; the target is each family's own picture of it,
             // which is why the right-hand sides differ.
             //
-            // Deliberately NOT taken, and the reasons are worth keeping:
+            // Deliberately NOT taken:
             //   a11y — no genuine cognate in all three.
-            //   cursor-arrow-rays — the SPELLING stays out, and the concept came in as
-            //     `click` below. A family's name for its own drawing is not a word the
+            //   cursor-arrow-rays — the SPELLING stays out; the concept is `click`
+            //     below. A family's name for its own drawing is not a word the
             //     vocabulary can share; the concept behind it is.
             //   ai, sparkle, cube-transparent — a spelling variant of a word that is
             //     already here, not a second concept. `sparkle` beside `sparkles`, or
@@ -319,58 +295,54 @@ final class HeroiconsPreset implements IconPreset
             'arrow-right' => 'heroicon-m-arrow-right',
             'arrow-up' => 'heroicon-m-arrow-up',
             // NOT `arrow-top-right-on-square` — that is the box-with-escaping-arrow glyph,
-            // and `external-link` above already owns it. Pointing both words at it made them
-            // render identically here while staying two distinct glyphs on lucide, phosphor
-            // and tabler: switching preset silently swapped an external-link mark for a plain
-            // diagonal arrow. Heroicons ships the true cognate, so the word means one thing.
+            // and `external-link` above already owns it. Pointing both words at it would
+            // render them identically here while they stay two distinct glyphs on lucide,
+            // phosphor and tabler, so switching preset would swap an external-link mark for
+            // a plain diagonal arrow. Heroicons ships the true cognate, so the word means
+            // one thing.
             'arrow-up-right' => 'heroicon-m-arrow-up-right',
             'chart-pie' => 'heroicon-m-chart-pie',
-            // Promoted out of the marketing extension under the CONCEPT name. The
-            // extension spells it `cursor-arrow-rays`, which is heroicons' name for its
-            // own picture rather than a word anybody would reach for; that spelling stays
-            // there as the older name and is not removed. All four sets draw a pointer
-            // with an action mark, checked against the svg files in vendor/ per set.
+            // The CONCEPT name for what the marketing extension spells
+            // `cursor-arrow-rays`, heroicons' name for its own picture rather than a word
+            // anybody would reach for; that spelling stays in the extension. All four
+            // sets draw a pointer with an action mark.
             'click' => 'heroicon-m-cursor-arrow-rays',
             'code-bracket' => 'heroicon-m-code-bracket',
             'cog-6-tooth' => 'heroicon-m-cog-6-tooth',
-            // Promoted out of the marketing extension: every set draws the same isometric
-            // box for this concept, so the word means one thing whichever is installed.
+            // Every set draws the same isometric box for this concept, so the word means
+            // one thing whichever is installed.
             'cube' => 'heroicon-m-cube',
-            // Likewise. Note the SINGULAR `sparkle` stays in the extension — phosphor and
-            // heroicons each ship only one sparkle glyph, so promoting both words would
-            // make them indistinguishable there.
+            // Likewise for sparkles. The SINGULAR `sparkle` stays in the extension:
+            // phosphor and heroicons each ship only one sparkle glyph, so carrying both
+            // words here would make them indistinguishable there.
             'sparkles' => 'heroicon-m-sparkles',
             'command-line' => 'heroicon-m-command-line',
             'finger-print' => 'heroicon-m-finger-print',
             'fire' => 'heroicon-m-fire',
             'heart' => 'heroicon-m-heart',
             'link' => 'heroicon-m-link',
-            // A paperclip, not a chain link: three blueprint pages were drawing an
-            // external-link box on an "Attach file" button because the vocabulary had no
-            // word for an attachment. All four sets ship a real paperclip, checked against
-            // the svg files rather than against a website.
+            // A paperclip, not a chain link: without a word for an attachment, an "Attach
+            // file" button reaches for whatever is near, an external-link box included.
+            // All four sets ship a real paperclip.
             'attach' => 'heroicon-m-paper-clip',
             'live' => 'heroicon-m-signal',
             /*
-             * `video` and `emoji` — added 2026-09-08 because three blueprints were reaching
-             * for them and settling for something else. A chat header labeled "Video call"
-             * rendered a bar chart; an "Emoji" button rendered a heart. The label and the
-             * glyph contradicted each other, which is worse than a plain icon: a sighted
-             * reader trusts the picture and a screen-reader user is told the other thing.
+             * `video` and `emoji` name what a video-call button and an emoji picker show.
+             * Without them such a control reaches for the nearest alias, and a "Video call"
+             * label over a bar chart contradicts its own picture. That is worse than a plain
+             * icon: a sighted reader trusts the picture and a screen-reader user is told the
+             * other thing.
              *
-             * Taken only because ALL FOUR interchangeable presets ship a genuine cognate,
-             * verified by reading the SVG files rather than a website: heroicons
-             * `video-camera` / `face-smile`, lucide `video` / `smile`, phosphor
+             * Taken only because ALL FOUR interchangeable presets ship a genuine cognate:
+             * heroicons `video-camera` / `face-smile`, lucide `video` / `smile`, phosphor
              * `video-camera` / `smiley`, tabler `video` / `mood-smile`.
              */
             'video' => 'heroicon-m-video-camera',
             'emoji' => 'heroicon-m-face-smile',
             'lock-closed' => 'heroicon-m-lock-closed',
             'open-source' => 'heroicon-m-code-bracket',
-            // Promoted out of the marketing extension: every set ships a real brush.
-            // The paragraph above listed this word as having no cognate in all three,
-            // which the svg trees refute — tabler draws it as `brush`, and taking the
-            // concept rather than one family's spelling is exactly the rule here.
+            // Every set ships a real brush; tabler draws it as `brush`, and the word names
+            // the concept rather than one family's spelling.
             'paint-brush' => 'heroicon-m-paint-brush',
             'puzzle-piece' => 'heroicon-m-puzzle-piece',
             'security' => 'heroicon-m-lock-closed',

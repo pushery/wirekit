@@ -66,7 +66,7 @@
         'inline-flex items-center justify-center shrink-0',
         'p-1 rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
+        'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
     ]), $scope);
@@ -101,7 +101,7 @@
             :aria-expanded="collapsed ? 'false' : 'true'"
             :aria-label="collapsed ? {{ AlpinePayload::from($expandName) }} : {{ AlpinePayload::from($collapseName) }}"
             @if($for !== null) aria-controls="{{ $for }}" @endif
-            class="{{ $classes }}"
+            class="wk-touch-row {{ $classes }}"
         >
             @include('wirekit::components.partials.sidebar-collapse-glyph')
         </button>

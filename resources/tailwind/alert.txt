@@ -35,6 +35,7 @@ $variantValue])->class([$baseClasses,
 &&
 ',
 '<path
+'[overflow-wrap:break-word]',
 'alert'
 'alert');
 'animateIn'
@@ -97,7 +98,7 @@ $variantValue])->class([$baseClasses,
 (`fill="currentColor"`),
 (assertive
 (avoids
-(default,
+(default).
 (inert
 (only
 (optional)
@@ -209,6 +210,7 @@ $variantValue])->class([$baseClasses,
 @php
 @props([
 @props.
+A
 ARIA
 Accessible
 Alpine
@@ -227,6 +229,7 @@ Dismiss
 Dismissal
 FIRST
 HTML
+Inherited
 Left
 No
 Normalized
@@ -238,6 +241,7 @@ SVG
 Simple
 The
 UNBOUND
+URL,
 Validate
 Variant
 Visually
@@ -256,6 +260,7 @@ __('wirekit::Information'),
 __('wirekit::Notice'),
 __('wirekit::Success'),
 __('wirekit::Warning'),
+`break-word`
 `data-intent`
 `intent`
 `prop="false"`
@@ -266,6 +271,7 @@ about,
 accent
 action
 actions
+address
 affordance
 against
 ahead
@@ -274,6 +280,7 @@ alerts
 alias
 alias;
 aliases
+alone,
 an
 and
 animateIn
@@ -310,7 +317,11 @@ blade-icons
 bool
 border,
 both
+box.
+break
+breaks
 button
+by
 call
 caller-supplied
 calm
@@ -326,6 +337,7 @@ class="sr-only">{{
 class="text-[color:var(--color-wk-text-muted)]">{{
 class="w-4
 class="w-5
+class="wk-touch-target
 classes:
 clip-rule="evenodd"
 color
@@ -364,8 +376,11 @@ dismissible)
 docs
 double-x-data
 each
+email
 emitting
 error
+every
+everything
 falls
 false)
 false);
@@ -393,6 +408,7 @@ goes
 gray
 h-4"
 h-5"
+had.
 has
 heroicons-style
 hidden
@@ -409,6 +425,7 @@ in
 info
 info,
 inline
+inside;
 instead.
 intent
 into
@@ -424,6 +441,7 @@ keeps
 label
 land
 layout
+leaves
 leaving
 list
 local;
@@ -435,6 +453,7 @@ mb-0.5">{{
 mean
 merge(),
 message
+min-content
 min-w-0">
 moving
 mt-0.5">{{
@@ -465,6 +484,7 @@ opposite
 optimism
 optimistic-ui:
 opts
+or
 other
 otherwise
 out
@@ -479,6 +499,7 @@ path
 paths
 per
 persists
+point,
 pointing
 prefix
 preview
@@ -492,6 +513,7 @@ prop
 prop's
 props
 quiet
+rather
 reaches
 reader
 readers
@@ -504,7 +526,9 @@ restore
 reveal
 role
 rounded-[var(--radius-wk-sm)]
+row
 rule
+running
 same
 saying
 screen
@@ -513,6 +537,7 @@ send
 set.
 ship
 shown
+shrink-0
 silently
 silently.
 site
@@ -533,7 +558,9 @@ stroke-width="2"
 stroke="currentColor"
 subtle
 success
+table
 text-[color:var(--color-wk-text-muted)]
+than
 that
 the
 there).
@@ -548,6 +575,7 @@ title
 to
 toggle
 toggles
+token
 tokens
 treatment
 true),
@@ -561,7 +589,6 @@ until
 use
 used
 user
-v1.5.0-identical).
 variant
 variant-derived
 via
@@ -577,6 +604,7 @@ which
 while
 who
 whole
+width
 wins
 with
 without

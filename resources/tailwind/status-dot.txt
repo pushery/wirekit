@@ -405,6 +405,7 @@ Without
 `wire:id`,
 `wire:key`,
 `wk-status-dot`
+`wk-tooltip-panel`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
 `x-ref`
@@ -487,7 +488,6 @@ become
 becomes
 becoming
 been
-before;
 being
 belongs
 below
@@ -535,7 +535,7 @@ checks
 child
 children
 class="rounded-[var(--radius-wk-sm)]
-class="{{
+class="wk-tooltip-panel
 classes
 classic
 clears
@@ -595,6 +595,7 @@ default
 default,
 default.
 default:
+default;
 delayHide:
 delayShow:
 deliberately
@@ -648,7 +649,6 @@ event
 events
 every
 exactly
-existing
 expandos.
 explains,
 explains.
@@ -817,6 +817,7 @@ makes
 manages
 many
 marked
+marker
 markers
 marks
 markup
@@ -913,6 +914,7 @@ out
 out.
 outermost
 output
+outside
 over
 overflow
 overlay
@@ -961,6 +963,7 @@ present
 press
 prod).
 production.
+project
 prop
 prop's
 props
@@ -995,7 +998,6 @@ removing
 render
 render,
 rendered
-rendering
 renders
 renders.
 replacement
@@ -1004,6 +1006,7 @@ requires
 resolved
 resolves
 rests
+restyles
 result
 role
 role:
@@ -1033,6 +1036,7 @@ second
 see
 sees
 sees.
+selects,
 selects.
 server
 server,
@@ -1119,6 +1123,7 @@ theme.
 then
 there
 there,
+there.
 therefore
 they
 things,

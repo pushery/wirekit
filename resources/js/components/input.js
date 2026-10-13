@@ -2,13 +2,13 @@
  * Input — the trailing affordances: clear the field, copy its value.
  *
  * Only a `clearable` / `copyable` input mounts this. A plain input carries no
- * Alpine at all, and must keep rendering byte-identically.
+ * Alpine at all.
  *
- * The behavior lived in an inline `x-data` and could not stay there: the object
- * declared methods, and method shorthand is not in the grammar Alpine's CSP
- * build parses. Under a strict Content-Security-Policy the X and the copy
- * button rendered and did nothing — the field kept its text, the clipboard kept
- * its old contents, and nothing said why.
+ * The behavior lives in this factory rather than in an inline `x-data`: the
+ * object declares methods, and method shorthand is not in the grammar Alpine's
+ * CSP build parses. Under a strict Content-Security-Policy an inline object would
+ * leave the X and the copy button rendered and doing nothing — the field keeping
+ * its text, the clipboard its old contents, and nothing saying why.
  *
  * The island holds the buttons only. It sits in the field's frame beside the
  * field, never around it: an `x-ref` registers on the nearest `x-data` root, so

@@ -1,8 +1,8 @@
 {{-- optimistic-ui: n/a — sub-component
      Not a component but an @include shared by `combobox` and `multi-select`. It lays out one
      option row's medium, label and description, and accepts nothing a server could refuse. --}}
-{{-- THE INSIDE OF AN OPTION ROW WHEN THE LIST USES MEDIA OR DESCRIPTIONS. A list that uses
-     neither never includes this, and keeps the single `x-text` row it always had.
+{{-- The inside of an option row when the list uses media or descriptions. A list that uses
+     neither never includes this, and keeps a single `x-text` row.
 
      The label and the description each carry an id, and the row points at them with
      `aria-labelledby` and `aria-describedby`. Without that the option's name would be computed

@@ -51,7 +51,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -106,9 +106,31 @@
     // placed by its baseline; the dot flipping display none↔block re-rounds that
     // baseline on a 2× display and nudges the next row. align-top pins the label by
     // its top edge instead. The card variant is block-level `flex` and is unaffected.
-    $labelClasses = $variantValue === 'card'
-        ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-subtle)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
-        : 'group inline-flex items-start gap-2 cursor-pointer relative align-top';
+    //
+    // Routed through the class seam, like the checkbox's label: a scope or a personalization
+    // reaches the label's display mode, gap and padding under `radio.label`. A card rings for a
+    // radio the arrow keys reached as well, which WebKit does not count as `:focus-visible`
+    // (utils/arrow-focus.js).
+    $labelClasses = WireKit::resolveClasses('radio', 'label', $variantValue === 'card'
+        ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-hover)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)] in-data-[wk-arrow-focus]:has-[:focus]:ring-[length:var(--ring-wk-width)] in-data-[wk-arrow-focus]:has-[:focus]:ring-[var(--color-wk-ring)]'
+        : 'group inline-flex items-start gap-2 cursor-pointer relative align-top', $scope);
+
+    // The visible label text, under `radio.text` as on the checkbox: the surface a row layout
+    // needs, where `min-w-0 flex-1` gives a trailing element the edge to sit against.
+    $textClasses = WireKit::resolveClasses(
+        'radio',
+        'text',
+        'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5',
+        $scope,
+    );
+
+    // On a touch surface the default label is a row: a tap on its text selects the radio, so it
+    // takes the 44px floor of every interactive row (`wk-touch-row`), and `wk-choice-row` keeps a
+    // one-line row in the middle of it. Both sit outside the class seam, so a personalization of
+    // `radio.label` keeps them. A radio without a visible text is its circle alone, which answers
+    // a finger through the hit area of `wk-touch-target`.
+    // The condition is the one the text below renders under.
+    $rowMarkers = $variantValue !== 'card' && $label ? 'wk-touch-row wk-choice-row ' : '';
 
     // Auto-generate ID: a radio set shares one `name` by definition, so the default
     // folds the value in — that part was always right and is unchanged.
@@ -161,6 +183,12 @@
     // Only with a label to stand beside, which is also where its hidden copy is rendered.
     $helpLabel = (string) ($label ?? '');
     $helpId = filled($help) && $helpLabel !== '' ? $id.'-help' : null;
+    // Markup a caller puts after the label and its help, in their row (partials/label-after).
+    $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    // The control sits inside the label, so the row around it stands whenever the slot is passed,
+    // filled or not: a mark that comes and goes between two renders then leaves the markup around
+    // the control as it was.
+    $labelAfterGiven = isset($labelAfter);
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
@@ -195,6 +223,12 @@
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'peer-focus-visible:ring-[var(--color-wk-ring)]',
         'peer-focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
+        // The same ring for a radio the arrow keys reached: WebKit does not count that focus as
+        // `:focus-visible`, and the scripts mark the page while it lasts (utils/arrow-focus.js).
+        'in-data-[wk-arrow-focus]:peer-focus:ring-[length:var(--ring-wk-width)]',
+        'in-data-[wk-arrow-focus]:peer-focus:ring-offset-[length:var(--ring-wk-offset)]',
+        'in-data-[wk-arrow-focus]:peer-focus:ring-[var(--color-wk-ring)]',
+        'in-data-[wk-arrow-focus]:peer-focus:ring-offset-[var(--color-wk-ring-offset)]',
         'peer-disabled:opacity-[var(--opacity-wk-disabled)]',
         'peer-disabled:cursor-not-allowed',
         'transition-colors',
@@ -207,10 +241,10 @@
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0">
     {{-- With help, the label shares a row with its button, which may not sit inside the
          label: it would become part of the control's name. --}}
-    @if($helpId)
-    <div data-wk-label-row class="flex items-center gap-[var(--gap-wk-xs)]">
+    @if($helpId || $labelAfterGiven)
+    <div data-wk-label-row class="{{ $labelAfterGiven ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($labelAfterGiven)<span class="{{ $variantValue === 'card' ? 'inline-flex min-w-0 flex-1 items-center gap-[var(--gap-wk-xs)]' : 'inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]' }}">@endif
     @endif
-    <label for="{{ $id }}" @if($labelLang !== null && $labelLang !== '') lang="{{ $labelLang }}" @endif class="{{ $labelClasses }}">
+    <label for="{{ $id }}" @if($labelLang !== null && $labelLang !== '') lang="{{ $labelLang }}" @endif class="{{ $rowMarkers }}{{ $labelClasses }}">
         {{-- Native radio input — visually hidden but accessible + Livewire wire:model compatible --}}
         <input
             type="radio"
@@ -247,11 +281,14 @@
     // `true`.
     $wkRequiredMarker = (bool) $attributes->get('required', false);
 @endphp
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="wk-choice-text {{ $textClasses }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
-    @if($helpId)
-        @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => true, 'helpField' => (string) ($nameAttr ?? $id)])
+    @if($helpId || $labelAfterGiven)
+        @if($helpId)
+            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => true, 'helpField' => (string) ($nameAttr ?? $id)])
+        @endif
+        @if($labelAfterGiven)</span>@if($hasLabelAfter)@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif @endif
     </div>
     @endif
 

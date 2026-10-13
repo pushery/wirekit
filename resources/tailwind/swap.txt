@@ -85,7 +85,6 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Renders
 Static
-That
 The
 UNBOUND
 Use
@@ -107,7 +106,6 @@ a
 a11y
 absorb
 action
-afternoon.
 again.
 against
 all,
@@ -136,7 +134,6 @@ before
 between
 binds
 block,
-bug
 but
 c"
 call
@@ -152,7 +149,6 @@ class="col-start-1
 client
 client.
 compiles
-component
 component's
 config('wirekit.components.swap.effect',
 consequence
@@ -174,7 +170,6 @@ element
 element,
 ends
 every
-exactly
 exists
 expression
 expression="isDark".
@@ -194,7 +189,6 @@ help,
 here:
 hidden
 holds.
-hypothetical
 icon.
 implode('
 imports
@@ -231,7 +225,6 @@ null;
 of
 on
 on.
-one
 one.
 one:
 opposite
@@ -260,7 +253,6 @@ result
 row-start-1"
 screen
 server
-shipped
 shown
 silently.
 since
@@ -304,7 +296,6 @@ whenever
 which
 whole
 whose
-with
 work
 would
 you

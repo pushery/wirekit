@@ -559,8 +559,8 @@ headingLevels
 height
 height,
 here.
+hide
 hideBelow
-hides
 hiding
 hit
 holding
@@ -643,7 +643,6 @@ listens
 literal
 live
 lives
-longer
 lost:
 m-0
 machine
@@ -979,6 +978,7 @@ why
 with
 within
 without
+wk-tooltip-panel
 would
 wrapper
 wrapper).

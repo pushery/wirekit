@@ -274,17 +274,17 @@ final class OptionalDependenciesCheck extends VerifyCheck
         // a project crosses it without any file changing and a reminder that
         // went quiet would go quiet at exactly the wrong moment.
         //
-        // What changed is the advice. The old single WARN offered three values
-        // and promised that recording one would silence the reminder — and two
-        // of the three did not. Someone on the community tier followed the
-        // instruction, saw the identical message with the identical advice, and
-        // the reasonable conclusion is that the doctor is imprecise. That is the
-        // erosion this command cannot afford: a warning nobody can act on
+        // The advice differs by outcome. A single WARN that promised that
+        // recording a tier would silence the reminder would break that promise
+        // for the community tier: someone on it who followed the instruction
+        // would see the identical message with the identical advice, and the
+        // reasonable conclusion would be that the doctor is imprecise. That is
+        // the erosion this command cannot afford: a warning nobody can act on
         // teaches people to skim, and then the real findings go unread too.
         //
         // So a declared community tier gets its own line that confirms the value
-        // arrived AND says why it still speaks, and the unset case keeps the
-        // full explanation minus the promise it could not keep.
+        // arrived AND says why it still speaks, and the unset case gets the full
+        // explanation without a promise to fall silent.
         $tier = config('wirekit.charts.apex_license');
 
         if ($tier === 'commercial' || $tier === 'oem') {

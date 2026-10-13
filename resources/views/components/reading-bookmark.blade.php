@@ -62,7 +62,7 @@
         throw new \InvalidArgumentException('<x-wirekit::reading-bookmark> requires a `key` prop (e.g. key="article-{{ $post->slug }}").');
     }
 
-    // Resolve boundary (v2.4.0 Ext 1 extended). null = viewport-pinned;
+    // Resolve boundary. null = viewport-pinned;
     // 'container' = scoped to nearest positioned ancestor; any other
     // non-empty string is treated as a CSS selector and surfaces the
     // same scoped (Tailwind `absolute`) shape.
@@ -127,8 +127,12 @@
 
 {{-- A wrapper with no box of its own: it holds nothing but the Alpine scope, so the
      live region below can sit OUTSIDE the pill while still reading the pill's state.
-     It takes no classes and is not positioned, so the pill's `fixed` / `absolute`
-     resolves against exactly what it did before. --}}
+     It is not positioned. Scoped to a container, the pill is `absolute` against the
+     nearest positioned ancestor, the reading frame; a positioned wrapper would be that
+     ancestor instead, a box of no height, and the pill would stand wherever the wrapper
+     sits in the flow. Pinned to the viewport, the pill is `fixed` and resolves against
+     neither. The live region has a positioned host of its own, so its visually hidden
+     text stays inside the component in both cases. --}}
 <div {{ $outerAttributes }}
     {{-- Bookmark key exposed as a data attribute so sibling primitives
          (reading-minimap E2) can wire to the same localStorage payload
@@ -136,10 +140,9 @@
     data-reading-bookmark-key="{{ $key }}"
     @if($callerRef !== '') data-wk-ref-scope @endif
     {{-- Saving, restoring and the cross-tab sync live in the factory
-         (resources/js/components/reading-bookmark.js). The block did not parse
-         under Alpine's CSP build, so nothing was saved and the resume prompt
-         never appeared — silently, which is this component's whole failure
-         mode. --}}
+         (resources/js/components/reading-bookmark.js), because Alpine's CSP
+         build does not parse such a block inline: inline, nothing would be
+         saved and the resume prompt would never appear, silently. --}}
     x-data="wirekitReadingBookmark({
         key: {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }},
         target: {{ \Pushery\WireKit\Support\AlpinePayload::from($resolvedTarget) }},
@@ -154,7 +157,9 @@
          pill carrying role="status" while being toggled with x-show would be that
          exact shape, and the one thing this component says to a screen-reader user
          would be the thing least likely to be heard. --}}
-    <div class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="promptAnnouncement"></div>
+    <div class="relative">
+        <div class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="promptAnnouncement"></div>
+    </div>
 
     <div
         x-show="showPrompt"
@@ -167,6 +172,10 @@
         x-transition:leave-end="opacity-0 translate-y-2"
         {{ $attributes->class([$rootClass]) }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
+        {{-- Fixed at the bottom of the viewport: the page keeps an element that takes the focus out
+             from under the pill (WCAG 2.4.11, resources/js/utils/scroll-inset.js). Scoped to a box,
+             it is not fixed and covers no band of the page. --}}
+        @unless($useScoped) data-wk-scroll-inset="bottom" @endunless
     >
         <span class="wk-reading-bookmark__label">{{ $resumePrompt }}</span>
         {{-- Both controls spell out `cursor-pointer` because nothing else supplies
@@ -178,7 +187,7 @@
         <button
             type="button"
             @click="resume()"
-            class="wk-reading-bookmark__resume inline-flex items-center cursor-pointer px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+            class="wk-reading-bookmark__resume wk-touch-row inline-flex items-center cursor-pointer px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
         >
             {{ __('wirekit::Resume') }}
         </button>
@@ -186,7 +195,7 @@
             type="button"
             @click="dismiss()"
             aria-label="{{ __('wirekit::Dismiss') }}"
-            class="wk-reading-bookmark__dismiss inline-flex items-center justify-center cursor-pointer w-[var(--size-wk-target-min)] h-[var(--size-wk-target-min)] rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+            class="wk-reading-bookmark__dismiss wk-touch-target inline-flex items-center justify-center cursor-pointer w-[var(--size-wk-target-min)] h-[var(--size-wk-target-min)] rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 10-1.06-1.06L10 8.94 6.28 5.22z" />

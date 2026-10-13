@@ -22,7 +22,7 @@
     // width, which hurts readability on wide screens.
     //   `default` (default) — ~65ch via --measure-wk.
     //   `wide` — ~78ch via --measure-wk-wide.
-    //   `none` — no clamp (full container width; the pre-v2.10.0 behavior).
+    //   `none` — no clamp (full container width).
     'measure' => 'default',
     // `preset` — a readability tuning applied on top of size/density/measure.
     // Kept as its OWN axis (a data-preset attribute + CSS) rather than a bundle
@@ -85,9 +85,10 @@
     // everything inside it, up to a prose nested in that block, which styles its own content
     // again. The two middle lines are that boundary, for a prose inside the block and for one
     // more level of the same (a documentation page whose example is a prose with a block of its
-    // own); a deeper level is not covered. Without the exclusion, a button link inside prose came
-    // out underlined, a code block wrapped and took a second padding, and table cells lost their
-    // own padding. `:where()` adds no specificity, so every rule weighs exactly what it did before.
+    // own); a deeper level is not covered. Without the exclusion, a button link inside prose would
+    // come out underlined, a code block would wrap and take a second padding, and table cells would
+    // lose their own padding. `:where()` adds no specificity, so the exclusion changes the weight of
+    // no rule.
     $presetValue = ($preset === null || $preset === '')
         ? null
         : (in_array($preset, ['chat', 'reading', 'large'], true)

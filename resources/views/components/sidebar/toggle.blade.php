@@ -19,7 +19,7 @@
         'p-2',
         'rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
@@ -51,7 +51,7 @@
          console error that stops the rest of the expression. --}}
     :aria-controls="$data.drawerId || null"
     aria-label="{{ $ariaLabel }}"
-    {{ $attributes->except('aria-label')->class([$classes]) }}
+    {{ $attributes->except('aria-label')->class(['wk-touch-target', $classes]) }}
 >
     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />

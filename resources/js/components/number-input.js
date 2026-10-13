@@ -301,7 +301,7 @@ export default function wirekitNumberInput(config = {}) {
          * snapshot nothing consumes would be ceremony.
          *
          * `run` is looked up rather than assumed: without the layer this
-         * component behaves exactly as before, down to the byte.
+         * component behaves as a plain field.
          */
         _commit() {
             if (typeof this.run === 'function') {

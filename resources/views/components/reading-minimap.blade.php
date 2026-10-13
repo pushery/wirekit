@@ -272,7 +272,7 @@
 
     {{-- Heading anchors. Real <a> elements in a named <nav>:
          the only part of the minimap that reaches assistive technology, which
-         is why the wrapper above no longer hides its whole subtree. --}}
+         is why the wrapper above does not hide its whole subtree. --}}
     @if (filter_var($headingAnchors, FILTER_VALIDATE_BOOL))
         <nav
             class="wk-reading-minimap__anchors"
@@ -324,7 +324,7 @@
          Centering gives a "pointer-at-the-tooltip-arrow" feel even though
          there's no literal arrow. --}}
     <div
-        class="wk-reading-minimap__tooltip absolute pointer-events-none px-2 py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
+        class="wk-reading-minimap__tooltip wk-tooltip-panel absolute pointer-events-none px-2 py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
         aria-hidden="true"
         :class="tooltipText ? '' : 'hidden'"
         :style="tooltipStyle()"

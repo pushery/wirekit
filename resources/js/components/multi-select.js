@@ -18,6 +18,7 @@
  *   utils/server-search.js, which also takes `searchMinLength`, `searchDebounce` and `searchTexts`
  */
 import { controlIsDisabled } from '../utils/fieldset-disabled.js';
+import { pageScrollBehavior } from '../utils/motion.js';
 import { position } from '../utils/floating.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { requiredCheckState } from '../utils/required-check.js';
@@ -691,7 +692,7 @@ export default function wirekitMultiSelect(config = {}) {
             const option = document.getElementById(id);
 
             if (option && typeof option.scrollIntoView === 'function') {
-                option.scrollIntoView({ block: 'nearest' });
+                option.scrollIntoView({ block: 'nearest', behavior: pageScrollBehavior() });
             }
         },
 
@@ -965,8 +966,8 @@ export default function wirekitMultiSelect(config = {}) {
                 fitViewport: true,
                 matchReferenceWidth: this._panelWidth === 'trigger',
                 minReferenceWidth: this._panelWidth !== 'trigger',
-                // Follow the field on scroll/resize; this is the panel the v2.19.0
-                // fixed-positioning switch made most visibly pin on scroll.
+                // Follow the field on scroll/resize: a fixed-position panel would
+                // otherwise stay pinned while the page scrolls.
                 autoReposition: true,
                 // A framework update patches the teleported panel against its template, whose
                 // `style` carries none of what this call writes: the placement is gone while the

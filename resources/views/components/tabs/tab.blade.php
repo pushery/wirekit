@@ -63,8 +63,8 @@
     // on the same element, where dispatch order at the target is registration order rather
     // than phase order.
     //
-    // So the component takes the handlers off instead. That is the half the proposal behind
-    // this change left out, and it is the half that keeps `disabled` meaning disabled.
+    // So the component takes the handlers off instead, which is what keeps `disabled` meaning
+    // disabled.
     $tabAttributes = $disabled
         ? $attributes->filter(fn ($value, $key): bool => ! is_string($key)
             || preg_match('/^(?:wire:|x-on:|@|on)(?:click|mousedown|mouseup|keydown|keyup|keypress)\b/i', $key) !== 1)
@@ -88,10 +88,10 @@
          order, and the arrow keys reach the rest. --}}
     tabindex="{{ $selected ? '0' : '-1' }}"
     @if($disabled) aria-disabled="true" @endif
-    {{ $tabAttributes->class(['wk-tab', $tabClasses, $stateClasses]) }}
+    {{ $tabAttributes->class(['wk-tab', 'wk-touch-row', $tabClasses, $stateClasses]) }}
 >
     @if($icon)
-        <x-wirekit::icon :name="$icon" size="sm" class="shrink-0" />
+        <x-wirekit::icon :name="$icon" size="sm" />
     @endif
 
     <span>{{ $slot }}</span>

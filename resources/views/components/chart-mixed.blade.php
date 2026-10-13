@@ -18,6 +18,16 @@
     'inline' => false,
     'replayable' => false,
     'library' => null,
+    // The tooltip's value format. Not declared, they stayed in the bag and reached the wrapper as
+    // attributes of a `div`, while the chart's tooltip printed every value raw.
+    'valueDecimals' => null,
+    'valuePrefix' => null,
+    'valueSuffix' => null,
+    // Further values the tooltip names for each point, the receipts beside a day's revenue.
+    'tooltipExtras' => [],
+    // The colors the series take, `semantic` or `categorical`; null leaves it to the chart's
+    // config default, as on the chart itself.
+    'palette' => null,
     'scope' => null,
 ])
 
@@ -138,6 +148,11 @@
         :inline="$inline"
         :replayable="$replayable"
         :library="$library"
+        :valueDecimals="$valueDecimals"
+        :valuePrefix="$valuePrefix"
+        :valueSuffix="$valueSuffix"
+        :tooltipExtras="$tooltipExtras"
+        :palette="$palette"
         :attributes="$chartAriaAttributes"
     />
 </div>

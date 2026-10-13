@@ -35,8 +35,8 @@
     // menus and popovers use: the elevated background, the body text and the theme's border.
     'surface' => 'inverted',
     'scope' => null,
-    // What the host AND the trigger wrapper root in. `div` keeps every existing call site
-    // rendering exactly as before; `as="span"` is what makes this component usable inside a
+    // What the host AND the trigger wrapper root in. `div` is the default; `as="span"` is
+    // what makes this component usable inside a
     // text-level one.
     //
     // It has to move BOTH elements, and that is the whole reason it is one prop rather
@@ -269,7 +269,9 @@
         x-cloak
         role="tooltip"
         id="{{ $tooltipId }}"
-        class="{{ $tooltipClasses }}"
+        {{-- `wk-tooltip-panel` is the marker the stylesheet's forced-colors rule selects, outside
+             the resolved classes so a project that restyles the panel keeps its edge there. --}}
+        class="wk-tooltip-panel {{ $tooltipClasses }}"
     >
         {{-- Rich content slot or plain text --}}
         @if(isset($content))

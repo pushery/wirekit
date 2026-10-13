@@ -195,11 +195,11 @@
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]',
         'no-underline cursor-pointer',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         // The keyboard's position is its own state, published by the input through
         // aria-activedescendant. It is deliberately NOT aria-selected — that says "this is
         // the chosen one", which here means the scope the page is already showing.
-        'data-[active]:bg-[var(--color-wk-bg-muted)]',
+        'data-[active]:bg-[var(--color-wk-bg-active)]',
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
@@ -236,14 +236,16 @@
             @if($currentRow && $currentRow['image'])
                 <img data-wk-prose-skip src="{{ $currentRow['image'] }}" alt="" class="h-4 w-4 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
             @elseif($currentRow && $currentRow['icon'])
-                <x-wirekit::icon :name="$currentRow['icon']" size="sm" class="shrink-0" />
+                <x-wirekit::icon :name="$currentRow['icon']" size="sm" />
             @endif
 
             {{-- The id is how the LIST reaches this text. The panel is teleported to the
                  overlay root, so it is not a descendant of this button in the DOM and shares
                  no Alpine scope with it; an id is the one handle that survives both. --}}
+            {{-- One line at most 12rem wide; a name it cuts is whole in its title. --}}
             <span
                 id="{{ $id }}-current-label"
+                title="{{ $currentRow['label'] ?? $labelText }}"
                 @class([
                     'truncate max-w-[12rem]',
                     'text-[color:var(--color-wk-text-muted)]' => $currentRow === null,
@@ -259,7 +261,7 @@
             {{-- The pop-up-button marker: a stacked pair of chevrons says "this shows the
                  current choice and there are others", where a single downward one would say
                  "this opens a list of actions". Decorative — the button is already named. --}}
-            <x-wirekit::icon name="chevron-up-down" size="sm" class="shrink-0 text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
+            <x-wirekit::icon name="chevron-up-down" size="sm" class="text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
         </x-wirekit::button>
     </x-slot:trigger>
 
@@ -284,7 +286,7 @@
         {{-- Header. First focusable element in the panel, so the popover's focus trap lands
              here on open and a reader can type immediately. --}}
         <div class="flex items-center gap-[var(--gap-wk-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]">
-            <x-wirekit::icon name="search" size="sm" class="shrink-0 text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
+            <x-wirekit::icon name="search" size="sm" class="text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
 
             <input
                 {{-- Key presses of an input method composing text stop here, before the keys below (utils/ime.js). --}}
@@ -387,7 +389,7 @@
                         x-on:pointermove.passive="setActive({{ \Pushery\WireKit\Support\AlpinePayload::string($row['key']) }}, false)"
                         data-label="{{ $row['label'] }}"
                         x-on:click="onItemClick($event, {{ $isCurrent ? 'true' : 'false' }})"
-                        class="wk-listbox-option {{ $itemClasses }}"
+                        class="wk-listbox-option wk-touch-row {{ $itemClasses }}"
                     >
                         @if($row['image'])
                             <img data-wk-prose-skip src="{{ $row['image'] }}" alt="" class="h-5 w-5 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
@@ -404,11 +406,11 @@
                                     </x-slot:badge>
                                 </x-wirekit::indicator>
                             @else
-                                <x-wirekit::icon :name="$row['icon']" class="shrink-0" />
+                                <x-wirekit::icon :name="$row['icon']" />
                             @endif
                         @endif
 
-                        <span class="truncate">{{ $row['label'] }}</span>
+                        <span class="truncate" title="{{ $row['label'] }}">{{ $row['label'] }}</span>
 
                         @if($row['status'])
                             <x-wirekit::visually-hidden>{{ $statusLabels[$row['status']] }}</x-wirekit::visually-hidden>
@@ -420,7 +422,7 @@
 
                         @if($isCurrent)
                             <x-wirekit::icon name="check" size="sm" @class([
-                                'shrink-0 text-[color:var(--color-wk-accent-text)]',
+                                'text-[color:var(--color-wk-accent-text)]',
                                 'ms-auto' => ! $row['meta'],
                             ]) aria-hidden="true" />
                         @endif
@@ -483,7 +485,7 @@
                          block loses its text color here too. --}}
                     class="{{ \Pushery\WireKit\Support\UtilityClasses::without($itemClasses, \Pushery\WireKit\Support\UtilityClasses::TEXT_COLOR) }} text-[color:var(--color-wk-accent-content)]"
                 >
-                    <x-wirekit::icon :name="$create['icon'] ?? 'plus'" class="shrink-0" aria-hidden="true" />
+                    <x-wirekit::icon :name="$create['icon'] ?? 'plus'" aria-hidden="true" />
                     {{ $create['label'] }}
                 </a>
             </div>

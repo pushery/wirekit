@@ -130,6 +130,7 @@ $warnNoBody
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '0'
 '0']
 '2xl'
@@ -139,6 +140,7 @@ $warnNoBody
 'Rendering
 'Run:
 '[WireKit]
+'[overflow-wrap:break-word]',
 '_blank');
 'a'
 'animateIn'
@@ -259,7 +261,7 @@ $warnNoBody
 (bool)
 (button
 (config('app.debug'))
-(default,
+(default).
 (default:
 (e.g.
 (each
@@ -293,6 +295,7 @@ $warnNoBody
 -out
 .
 ...>
+.=
 .wk-card-body[data-wk-padded="false"]
 /
 //
@@ -302,8 +305,7 @@ $warnNoBody
 16px
 2.1.1
 20px,
-2rem,
-3rem.
+3rem,
 500s
 :
 </div>
@@ -346,9 +348,7 @@ A
 A11y
 ALSO
 AND
-API:
 AT
-Adding
 Alpine
 Alpine's
 An
@@ -370,6 +370,7 @@ CALL
 COMPLETE
 CONTAINER,
 CSP
+Card's
 Catching
 Check
 Comfortable
@@ -404,6 +405,7 @@ Icon
 IconResolver,
 If
 In
+Inherited
 It
 Its
 Keyed
@@ -428,6 +430,7 @@ One
 Operating
 Opt-in,
 Optional
+Outside
 PERFECTLY
 PURPOSE
 Preferring
@@ -471,6 +474,8 @@ Through
 Throwing
 UNBOUND
 URL
+URL,
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 VALUE).
 Validated
@@ -554,11 +559,12 @@ __toString
 `base`,
 `block`
 `border-color`
+`break-word`
 `chevron`
-`class="h-12
 `class`
 `console`
 `e()`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -570,12 +576,14 @@ __toString
 `outline`
 `outline`,
 `outlined`
+`outlined`,
 `overflow="auto"`
 `prop="false"`
 `px-[var(--padding-wk-x-lg)]`
 `rel`
 `ring-inset`
 `role="img"`.
+`shrink`
 `str_starts_with`
 `strip_tags()`
 `surface="outline"`
@@ -602,7 +610,6 @@ accent
 accept
 accessibility
 accessible
-across
 action
 action,
 action.
@@ -610,6 +617,7 @@ acts
 acts,
 actual
 add
+address
 admits
 affordance
 affordance.
@@ -724,6 +732,7 @@ branch's
 break
 break.
 break;
+breaks
 browser's,
 bug
 build
@@ -742,6 +751,7 @@ caller's
 callers.
 came
 can
+can.
 cannot
 cannot,
 canonical
@@ -805,7 +815,6 @@ component's
 component,
 component-tag
 components
-components.
 composer
 composition
 computed
@@ -814,7 +823,6 @@ condition
 config('app.debug'))
 config('wirekit.components.card.variant',
 configured
-conflict
 console
 console).
 console.warn:
@@ -874,7 +882,6 @@ developer's
 development-time
 did
 different
-direct
 directly
 display
 dist/wirekit.css).
@@ -907,6 +914,7 @@ echoes
 edge
 edge-to-edge
 edge.
+effect.
 either
 element
 element,
@@ -914,6 +922,7 @@ elements
 elevated
 else
 elseif
+email
 embedded
 emit
 emits
@@ -933,11 +942,10 @@ evenly,
 event
 ever
 every
+everything
 exactly
 except('rel'):
 exhausting
-existing
-exists
 exists.
 explicitly
 express
@@ -966,6 +974,7 @@ fix.
 flags
 flat
 flat.
+flex
 flips
 flush
 focus
@@ -978,11 +987,9 @@ focus-visible:ring-offset-[length:var(--ring-wk-offset)]
 focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
 focusable
 fold
-followable.
 follows
 for
 for,
-forbidden
 forcing
 foreach
 found.`
@@ -1002,9 +1009,12 @@ gate,
 generates
 get
 gets
+give
 given,
+gives
 global
 glyph
+glyph,
 glyph.
 goes
 goes.
@@ -1013,6 +1023,7 @@ guard:
 guess
 h-5
 h/w
+had.
 half
 hand-written
 handler.
@@ -1035,10 +1046,8 @@ hidden
 hides
 hint
 historical
-historically
 hit.
 holds
-house
 hover
 hover,
 href
@@ -1047,6 +1056,7 @@ https://docs.wirekit.app/components/card.')
 icon
 icon's
 icon-only
+icon.
 icon/avatar/illustration.
 icon;
 iconSlot
@@ -1071,6 +1081,7 @@ inline-end
 inline-flex
 inset,
 inside
+inside;
 installed
 installed.'
 instead
@@ -1104,7 +1115,6 @@ kill
 kind
 kit's
 labels).
-ladder
 lands
 later
 layout
@@ -1152,6 +1162,7 @@ matching
 may
 mean
 means
+meant
 meant:
 media
 merge
@@ -1160,6 +1171,7 @@ message:
 metric
 migrated.
 migration.
+min-content
 min-w-0">{{
 miss
 missing
@@ -1172,7 +1184,6 @@ modifiers
 mouse,
 moves
 moving
-muscle-memory
 must
 muted
 n/a
@@ -1185,6 +1196,7 @@ naming
 necessary.
 need
 needs
+neighbors,
 neither
 neither,
 neither:
@@ -1273,7 +1285,6 @@ page
 page.
 pages
 panned
-parity
 part
 past
 path
@@ -1287,6 +1298,7 @@ phone
 pinned
 place
 placeholder
+point,
 pointer
 post-process
 pre-checking
@@ -1309,7 +1321,6 @@ prop's
 props
 protection
 provides
-put
 qualified:
 radius,
 rather
@@ -1372,9 +1383,11 @@ root
 root;
 round
 rounded
+row
+row,
 rtl:-scale-x-100">
 rule
-rung
+running
 runs
 safe:
 sake.
@@ -1406,10 +1419,12 @@ shadow
 shape
 shape.
 shared
+short
 should
 shown
 shows
 shrink
+shrink-0';
 side
 side.
 sides
@@ -1422,7 +1437,6 @@ single
 site
 sits
 size
-size,
 size="sm"
 sized
 slot
@@ -1438,6 +1452,7 @@ source
 source-baked
 space
 space).
+space.
 span
 specificity,
 spelled
@@ -1455,7 +1470,6 @@ still
 stop
 stop,
 stop.
-stopped
 storage/logs/laravel.log.
 str_contains($rawSlot,
 str_contains($relAttr,
@@ -1526,6 +1540,7 @@ to
 to,
 toCssClasses()
 toHtml().
+token
 tokens
 told
 too
@@ -1551,6 +1566,7 @@ turns
 two
 two,
 type="{{
+typed
 unchanged.
 under
 under-warning,
@@ -1563,14 +1579,12 @@ until
 up
 use
 use:
-used
 used,
 useful
 uses
 utilities
 utility
 utility,
-v1.5.0-identical).
 v4
 valid
 validateProp
@@ -1590,8 +1604,8 @@ view.
 visible
 visual
 vocabulary
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4',
 w-5
@@ -1633,6 +1647,7 @@ wins
 with
 without
 wolf.
+word.
 working
 working.
 works

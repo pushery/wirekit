@@ -223,7 +223,6 @@ a
 across
 action
 alone
-always
 an
 and
 animates
@@ -282,8 +281,6 @@ from
 generated.
 gives:
 grids
-had.
-has
 if
 implode('
 implode(';
@@ -324,11 +321,9 @@ not
 null
 null,
 of
-offered
 on
 on:
 one.
-ones
 optimistic-ui:
 or
 order.
@@ -338,7 +333,6 @@ per-step
 presentational
 prod).
 producing
-prop
 property;
 props
 qualified:
@@ -351,7 +345,6 @@ rules
 rules.
 runaway
 rung
-rungs
 runtime
 runtime-concatenated
 see
@@ -365,7 +358,6 @@ so
 spacing
 spellings
 stagger
-stay
 step
 step):
 step.

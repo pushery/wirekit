@@ -46,7 +46,7 @@
 /**
  * The intents a cell may wear — the SAME seven `<x-wirekit::badge>` validates
  * against, and the same seven the Blade class table carries. Module scope
- * because two methods read it now: the built-in status-word scan and the
+ * because two methods read it: the built-in status-word scan and the
  * row-declared intent. Two copies of a closed list is how one of them quietly
  * stops accepting a word the other does.
  */
@@ -167,8 +167,8 @@ export default function wirekitDataTable(config = {}) {
 
                         // So does a request that never came back: Livewire hands a network
                         // failure to neither of the two above, only to `respond`, which ends
-                        // every commit. A response still ends the wait at its render, after the
-                        // state is read, through `succeed`, as before.
+                        // every commit. A response ends the wait at its render, after the state
+                        // is read, through `succeed`.
                         respond?.(() => afterRenderFrame(back));
                     }
                 });
@@ -658,7 +658,8 @@ export default function wirekitDataTable(config = {}) {
         avatarStyle(row, col) {
             const tint = this.avatarTints[this.avatarText(row, col)];
 
-            return tint ? `background-color: ${tint.bg}; color: ${tint.fg};` : '';
+            // An object, which Alpine sets property by property rather than writing the attribute.
+            return tint ? { backgroundColor: tint.bg, color: tint.fg } : {};
         },
         /**
          * Status word -> intent for a `cellType: 'badge'` column.
@@ -682,12 +683,11 @@ export default function wirekitDataTable(config = {}) {
          */
         badgeIntent(value, col = null) {
             const v = String(value).toLowerCase();
-            // Held four until 2026-08-29, so a column declaring
-            // `'intents' => ['processing' => 'accent']` named a value the badge component
-            // accepts and got `neutral` back — silently, because an unknown intent falls
-            // back rather than complaining. One library, one word, two vocabularies is the
-            // defect; the fallback only hid it. It lives at module scope now (see
-            // `KNOWN_INTENTS`) because `rowIntent` reads the same list.
+            // Every intent the badge component accepts, so a column declaring
+            // `'intents' => ['processing' => 'accent']` gets `accent`. A shorter list here
+            // would hand such a column `neutral` without a word, because an unknown intent
+            // falls back rather than complaining. It is `KNOWN_INTENTS` at module scope
+            // because `rowIntent` reads the same list.
             const known = KNOWN_INTENTS;
 
             if (col && col.intents) {

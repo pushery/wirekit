@@ -2,10 +2,10 @@
  * A chart follows the labels and series its component renders on a Livewire update.
  *
  * The chart root carries `wire:ignore`: without it the morph would tear down the drawn chart on
- * every round trip. The price was that nothing new ever reached it either, attributes included,
- * so a page that filtered a table and a chart showed the new period in the table and the old
- * one in the chart. The component now renders its data half on a `<template>` right after the
- * root, outside the ignored element; the morph updates that attribute like any other, and this
+ * every round trip. The price is that nothing new reaches it either, attributes included, so a
+ * page that filters a table and a chart would show the new period in the table and the old one
+ * in the chart. So the component renders its data half on a `<template>` right after the root,
+ * outside the ignored element; the morph updates that attribute like any other, and this
  * reports the new payload to the factory, which updates the chart in place. The chart's name,
  * which describes that data, travels with it and is set on the root here.
  *

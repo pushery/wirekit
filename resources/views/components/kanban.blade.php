@@ -79,6 +79,9 @@
     {{-- The marker every column's sortable looks for before it lets a card leave. Only on a
          sortable board: a board that does not sort has nothing to connect. --}}
     @if($sortable && $crossColumn) data-sortable-connected @endif
+    {{-- A sheet does not scroll sideways: on paper the columns of a horizontal board flow onto
+         the next line. --}}
+    @if($orientationValue === 'horizontal') data-wk-print-wrap @endif
     {{ $attributes->class([$baseClasses]) }}
 >
     {{ $slot }}

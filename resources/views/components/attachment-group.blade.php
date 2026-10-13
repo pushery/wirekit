@@ -56,6 +56,9 @@
     tabindex="{{ $isRow ? '0' : '-1' }}"
     data-wk-attachment-group
     data-orientation="{{ $orientationValue }}"
+    {{-- A sheet does not scroll sideways: on paper a row of attachments flows onto the next
+         line. --}}
+    @if($isRow) data-wk-print-wrap @endif
     {{ $attributes->except('tabindex')->class([$classes]) }}
 >
     {{ $slot }}

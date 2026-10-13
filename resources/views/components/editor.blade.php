@@ -20,10 +20,7 @@
     // what you wrote — see the note above.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -77,7 +74,7 @@
     $required = BooleanProp::from($required, false);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
     use Illuminate\Support\Str;
@@ -137,7 +134,7 @@
         default => WireKit::validateProp('editor', 'size', $size, ['sm', 'md', 'lg']),
     };
 
-    // STABLE across re-renders, which the old `Str::random(6)` was not. Here the two
+    // STABLE across re-renders, which a `Str::random(6)` id would not be. Here the two
     // halves are on opposite sides of the server/client line: the <label id> and the
     // error/hint <p id> are re-rendered per request, while aria-labelledby and
     // aria-describedby are serialized into the x-data payload and applied ONCE, at
@@ -225,14 +222,21 @@
         default => 'min-h-[12rem]',
     };
 
+    // The document as the form field holds it, and the field is where the factory reads it: the
+    // config carries no copy. A document is markup or JSON text, so a character reference the page
+    // decoded would change what it says, text `&lt;img` becoming an element or an escaped quote
+    // ending a JSON string. The field is written with double encoding whatever echo format the
+    // application chose, and the browser hands back exactly these bytes. A document given as an
+    // array becomes JSON text through the JSON encoder.
+    $editorFieldText = is_string($value)
+        ? $value
+        : ($value !== null ? \Pushery\WireKit\Support\AlpinePayload::json($value) : '');
+
     // Config handed to the wirekitEditor Alpine factory (→ window.wirekitEditor).
     $jsConfig = [
         // The browser prompt shown when inserting a link. resources/js has no translator,
         // and this string is a question put to the reader.
         'linkPromptLabel' => __('wirekit::Link URL'),
-        // A document given as an array reaches the factory as JSON text it parses. Written by
-        // the JSON encoder, a character reference in it cannot end a string of that text.
-        'value' => $value !== null && ! is_string($value) ? \Pushery\WireKit\Support\AlpinePayload::json($value) : $value,
         'format' => $formatValue,
         'editable' => (bool) $editable,
         'extensions' => $extensions ?? config('wirekit.components.editor.extensions', []),
@@ -327,13 +331,13 @@
 
 @endphp
 
-<div {{ $outerAttributes }} class="w-full space-y-1.5" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="relative w-full space-y-1.5" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
         {{-- No `for`: the element it could name is the content host, a div no label can name,
              and the surface a reader types into is built in the browser. The label names that
              surface by reference (`ariaLabelledby` below), and the factory wires a click on it
              to focus the surface, as a label does for a field. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $id" :id="$id.'-label'" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name ?? $id" :id="$id.'-label'" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
 @if($optimisticConfig)
@@ -385,6 +389,8 @@
              format="json" there's no server renderer, so the seed is empty. --}}
         <div
             x-ref="content"
+            {{-- Paper does not scroll: on paper the host grows to the whole text. --}}
+            data-wk-print-expand
             {{-- The engine builds the textbox inside this host and takes its attributes once, at
                  mount, so the invalid state of an empty required editor is written onto it here. --}}
             @if($requiredMessageId) x-effect="_syncRequiredInvalid()" @endif
@@ -440,7 +446,7 @@
                 class="wk-field block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-hidden {{ $minHeight }}"
                 {{-- wire:model binds to the textarea the editor writes to. --}}
                 {{ $wireModel }}
-            >{{ is_string($value) ? $value : ($value !== null ? \Pushery\WireKit\Support\AlpinePayload::json($value) : '') }}</textarea>
+            >{!! e($editorFieldText) !!}</textarea>
             {{-- The form field is hidden while the engine runs, and a hidden required field would
                  stop the form without a word, so a required editor checks through a stand-in. --}}
             @if($required)

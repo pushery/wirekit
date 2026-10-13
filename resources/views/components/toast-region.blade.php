@@ -9,9 +9,9 @@
     //
     // `role="region"` plus a name is a landmark, and this component is designed to be
     // mounted several times on one page — one per corner, or one per section through
-    // `eventScope`. With a built-in name every one of them was the same rotor entry
+    // `eventScope`. With a built-in name every one of them would be the same rotor entry
     // called "Notifications", which is what axe reports as `landmark-unique`: the name
-    // meant to tell them apart is exactly what made them identical. So the role waits
+    // meant to tell them apart would make them identical. So the role waits
     // for a name the CALLER chose, never one the component can invent. Nothing is lost
     // without it — the two live regions below are the announcement path, and they do
     // not depend on the landmark. Name it after the surface ("Form notifications").
@@ -42,6 +42,12 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $filled = BooleanProp::from($filled, false);
+
+    // Both stand in the x-data object as bare numbers, so each is read as a number first: text
+    // written there unquoted would run as an expression. One that holds no number takes the
+    // configured default.
+    $max = \Pushery\WireKit\Support\NumericProp::positive($max, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.toast-region.max', 5), 5));
+    $duration = \Pushery\WireKit\Support\NumericProp::from($duration, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.toast-region.duration', 5000), 5000));
 
     // Position classes — map human-friendly names to fixed positioning
     $positionClasses = match ($position) {
@@ -214,7 +220,13 @@
      Toasts are dispatched via: $dispatch('wirekit-toast', { title, message, variant })
      With name prop: $dispatch('wirekit-toast-{name}', { ... }) for scoped regions. --}}
 <div
-    x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, scope: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventScope) }} })"
+    x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, scope: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventScope) }}, edge: {{ \Pushery\WireKit\Support\AlpinePayload::from($isTopEdge ? 'top' : 'bottom') }} })"
+    {{-- While a toast shows, the stack covers a band at its edge, and the page keeps an element
+         that takes the focus out of that band (WCAG 2.4.11, resources/js/utils/scroll-inset.js). --}}
+    x-bind:data-wk-scroll-inset="scrollInset"
+    {{-- At the very top or bottom of the page no scroll brings an element out from under the
+         stack, so the stack moves to the other edge while such an element has the focus. --}}
+    x-bind:data-wk-toast-yield="yieldEdge"
     {{-- Kept reachable behind an open modal dialog, which makes the rest of the page inert:
          a toast raised while a dialog is open is still announced, and its controls still
          answer. --}}
@@ -318,8 +330,9 @@
                 </svg>
             </div>
 
-            {{-- Content: title + message --}}
-            <div class="flex-1 min-w-0">
+            {{-- Content: title + message. A typed token with no break point in either, a file name or
+                 an email address, breaks rather than widening the toast past the screen. --}}
+            <div class="flex-1 min-w-0 [overflow-wrap:break-word]">
                 <template x-if="toast.title">
                     <div
                         class="font-[number:var(--font-wk-heading-weight)]"
@@ -348,7 +361,7 @@
                 type="button"
                 @click="remove(toast.id)"
                 aria-label="{{ __('wirekit::Dismiss notification') }}"
-                class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-[var(--opacity-wk-hover)]' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-touch-target shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-[var(--opacity-wk-hover)]' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

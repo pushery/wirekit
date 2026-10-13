@@ -174,7 +174,7 @@ class VariantResolver
             'success' => '--color-wk-success',
             'warning' => '--color-wk-warning',
             'danger' => '--color-wk-danger',
-            'neutral' => null, // neutral has its own bg-muted
+            'neutral' => null, // neutral has its own fill, --color-wk-bg-soft
             default => null,
         };
 
@@ -188,8 +188,11 @@ class VariantResolver
             default => '--color-wk-text',
         };
 
+        // `neutral` fills with --color-wk-bg-soft, the text color mixed into the surface the button
+        // stands on: a soft button stands on bg, on bg-subtle (a card footer) and on bg-muted (a
+        // selected row), and no single gray stands apart from all three.
         $bgClass = $tintToken === null
-            ? 'bg-[var(--color-wk-bg-muted)]'
+            ? 'bg-[var(--color-wk-bg-soft)]'
             : "bg-[color-mix(in_srgb,var({$tintToken})_12%,var(--color-wk-bg))]";
 
         // The hover, as on the other four surfaces. `soft` is the surface for secondary
@@ -208,7 +211,7 @@ class VariantResolver
         // construction — the text is dark on a light theme and light on a dark one, so the
         // hover always moves AWAY from the background rather than in a fixed direction.
         $hoverClass = $tintToken === null
-            ? 'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]'
+            ? 'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-soft))]'
             : "hover:bg-[color-mix(in_srgb,var({$tintToken})_18%,var(--color-wk-bg))]";
 
         return implode(' ', [

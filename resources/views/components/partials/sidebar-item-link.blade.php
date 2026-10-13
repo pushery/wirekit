@@ -23,14 +23,20 @@
         {{-- No `aria-current`, and that is the point of the mode rather than an omission.
              A page you are on and a value you have picked are two different claims; a row
              that made both would be wrong about one of them. --}}
-        {{ $attributes->except(['rel', 'href'])->class(['wk-sidebar-item', $classes, $activeClasses => $isSelected]) }}
+        {{ $attributes->except(['rel', 'href'])->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $isSelected]) }}
     >
+@elseif($itemTag === 'button')
+<button data-wk-prose-skip
+    type="{{ $buttonType }}"
+    @if($active) aria-current="{{ $ariaCurrent }}" @endif
+    {{ $attributes->except(['rel', 'target', 'type'])->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active, ...$buttonClasses]) }}
+>
 @else
 <a data-wk-prose-skip
     href="{{ $href }}"
     @if($active) aria-current="{{ $ariaCurrent }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-sidebar-item', $classes, $activeClasses => $active]) }}
+    {{ $attributes->except('rel')->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active]) }}
 >
 @endif
     @if($icon)
@@ -52,7 +58,7 @@
          still the link's accessible name (the icon is decorative). --}}
     {{-- WRAPS, never truncates. A navigation entry whose name is clipped does not name
          anything — "Terminal set…" is not a destination, and the reader cannot tell it from
-         its neighbor without hovering. Maintainer's rule, and it is absolute.
+         its neighbor without hovering.
          `break-words` lets a single long word break inside itself, where it has no space to
          break at, and `min-w-0` gives that break room to happen: a flex item is never narrower
          than its min-content width, which `break-words` does not lower, so without it the word
@@ -94,8 +100,16 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
         </svg>
     @endif
+    {{-- On a touch surface a finger gets a square of the touch target around the row. An open
+         row is wider than that and the square adds nothing; a folded one keeps the width the
+         rail's derived width leaves it, which is what keeps its icon on the column's axis, and the
+         square reaches past it into the scroller's inset instead. Drawn by the stylesheet under a
+         coarse pointer and on `data-wk-touch` only; the span itself takes no pointer event. --}}
+    <span class="wk-touch-target pointer-events-none absolute inset-0" aria-hidden="true"></span>
 @if($selectionMode)
     </div>
+@elseif($itemTag === 'button')
+</button>
 @else
 </a>
 @endif

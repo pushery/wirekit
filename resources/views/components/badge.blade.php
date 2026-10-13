@@ -146,8 +146,11 @@
             'text-[color:var(--color-wk-info-text)]',
             'border-[color-mix(in_srgb,var(--color-wk-info-tone)_20%,transparent)]',
         ]),
+        // The fill of a neutral control on the soft surface, as on a button: the text color mixed
+        // into the surface the badge stands on, so it stays apart from a gray card footer or a row
+        // that turns gray on hover, where bg-muted vanished into the surface.
         'neutral' => implode(' ', [
-            'bg-[var(--color-wk-bg-muted)]',
+            'bg-[var(--color-wk-bg-soft)]',
             'text-[color:var(--color-wk-text)]',
             'border-[var(--color-wk-border-subtle)]',
         ]),
@@ -281,15 +284,15 @@
                 <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
             @endif
             @if($leadingIcon)
-                <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" class="shrink-0" />
+                <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" />
             @endif
             {{ $slot }}
             @if($trailingIcon)
-                <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" class="shrink-0" />
+                <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
             @endif
             @if($dismissible)
-                <button type="button" x-on:click="dismiss()" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
-                    <x-wirekit::icon name="close" size="xs" aria-hidden="true" class="shrink-0" />
+                <button type="button" x-on:click="dismiss()" data-wk-badge-dismiss aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
+                    <x-wirekit::icon name="close" size="xs" aria-hidden="true" />
                 </button>
             @endif
         </span>
@@ -303,15 +306,15 @@
             <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
         @endif
         @if($leadingIcon)
-            <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" class="shrink-0" />
+            <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" />
         @endif
         {{ $slot }}
         @if($trailingIcon)
-            <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" class="shrink-0" />
+            <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
         @endif
         @if($dismissible)
-            <button type="button" x-on:click="dismiss()" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
-                <x-wirekit::icon name="close" size="xs" aria-hidden="true" class="shrink-0" />
+            <button type="button" x-on:click="dismiss()" data-wk-badge-dismiss aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
+                <x-wirekit::icon name="close" size="xs" aria-hidden="true" />
             </button>
         @endif
     </span>

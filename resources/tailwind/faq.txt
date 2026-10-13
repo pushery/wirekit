@@ -24,6 +24,7 @@ $chevronClasses
 $classes
 $containerClasses
 $data;
+$el)"
 $emitSchema
 $findable
 $itemId
@@ -109,7 +110,7 @@ $wrapperClasses
 'focus-visible:ring-inset',
 'font-[number:var(--font-wk-heading-weight)]',
 'gap-[var(--padding-wk-y-sm)]',
-'hover:bg-[var(--color-wk-bg-muted)]',
+'hover:bg-[var(--color-wk-bg-active)]',
 'https://schema.org',
 'https://schema.org']
 'id'
@@ -172,7 +173,7 @@ $wrapperClasses
 (array_key_exists('@type',
 (back-compat).
 (default
-(default;
+(default).
 (every
 (int)
 (is_array($payload)
@@ -338,6 +339,7 @@ Home
 INF,
 IS
 In
+Inherited
 Invalid
 It
 Items
@@ -415,6 +417,7 @@ Turn
 Two
 U+FFFD
 UNBOUND
+URL,
 URLs
 UTF-8
 UTF-8,
@@ -443,6 +446,7 @@ XSS
 [1,
 [],
 [];
+[overflow-wrap:break-word]
 [structured-data]:
 \Pushery\WireKit\Support\AlpinePayload::from($itemId)
 \Pushery\WireKit\Support\AlpinePayload::string($mode)
@@ -484,6 +488,7 @@ __('wirekit::Frequently
 `aria-labelledby`
 `bg-[var(--color-wk-bg)]`
 `bordered`
+`break-word`
 `collapsible`,
 `data-reduce-motion`
 `data-wk-accordion-mode`
@@ -532,6 +537,7 @@ action
 actually
 add
 added
+address
 adds
 against
 agree.
@@ -539,6 +545,7 @@ all
 allowed
 almost
 alone
+alone,
 already
 also
 always
@@ -613,10 +620,10 @@ be.
 because
 becomes
 before
-before.
 behavior
 behavior:
 behind
+being
 belongs
 below,
 below.
@@ -661,7 +668,6 @@ button:
 buttons
 buttons)
 by
-byte-identical
 call
 caller
 caller's
@@ -751,6 +757,7 @@ costs
 could
 covers
 currently
+cut
 d="M5.23
 dash
 data
@@ -808,6 +815,7 @@ dynamic-class-composition
 each
 early.
 eases
+edge.
 either
 either.
 element
@@ -816,6 +824,7 @@ element.
 elevated
 else
 elsewhere
+email
 emit
 emits
 empty
@@ -892,6 +901,7 @@ group,
 grow
 h-4
 had
+had.
 hair-line
 half
 half-turn
@@ -916,7 +926,7 @@ here
 here,
 here.
 here:
-hidden
+hidden.
 hidden="until-found"
 hides
 hold
@@ -984,9 +994,11 @@ know
 know:
 lands
 later
+layout
 layouts.
 ld+json
 leave
+leaves
 left
 left-aligned,
 legacy
@@ -1013,7 +1025,6 @@ logger()->warning('WireKit
 logs
 long
 longer
-look).
 look;
 looks
 loop
@@ -1151,6 +1162,7 @@ pair.
 pairings
 pairs
 panel
+panel;
 panels
 parent
 parent's
@@ -1168,6 +1180,7 @@ pins
 pitfall
 plain
 plugin
+point,
 point.
 point:
 pointing
@@ -1175,7 +1188,6 @@ policy
 policy.
 position.
 practices
-pre-variant
 preceded
 prefix
 preparing
@@ -1458,6 +1470,7 @@ type
 type="application/ld+json">
 type="application/ld+json"@if($wkNonce)
 type="button"
+typed
 unbound
 unbroken
 unconditionally
@@ -1564,6 +1577,7 @@ xmlns="http://www.w3.org/2000/svg"
 }}"@endif>
 }})
 }})"
+}},
 }}</span>
 }}>
 }}`

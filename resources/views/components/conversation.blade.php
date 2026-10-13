@@ -62,8 +62,8 @@
     // content width never jumps when the vertical scrollbar appears/disappears as
     // messages stream in — the "flicker" of a plain overflow-y:auto viewport.
     // Progressive enhancement: browsers below the property's support (Safari
-    // < 18.2) simply skip it (unknown-property → ignored) and keep today's
-    // behavior; nothing depends on it.
+    // < 18.2) simply skip it (unknown-property → ignored) and let the width
+    // jump; nothing depends on it.
     $viewportClasses = 'wk-scrollbar '.WireKit::resolveClasses('conversation', 'viewport', implode(' ', [
         'overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
         // A control the focus scrolls into view stops a ring's reach short of the edge, where the
@@ -85,8 +85,10 @@
     x-data="wirekitConversation({{ $alpineConfig }})"
     {{ $attributes->class([$rootClasses]) }}
 >
+    {{-- `data-wk-print-expand`: paper does not scroll, so on paper this box grows to all it holds. --}}
     <div
         x-ref="viewport"
+        data-wk-print-expand
         role="log"
         aria-live="polite"
         aria-relevant="additions text"

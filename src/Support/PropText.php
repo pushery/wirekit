@@ -19,10 +19,11 @@ use Illuminate\View\ComponentAttributeBag;
  * a screen reader reads them out, and a form submits them as the value. Read here, every way of
  * writing the prop arrives as the same text, which the view escapes once.
  *
- * Only what Blade's escape writes is undone, as in UrlProp: `&amp;`, `&lt;`, `&gt;`, `&quot;` and
- * `&#039;`. A reference Blade never writes, `&#106;` or `&mdash;`, stays text, so a URL prop keeps
- * the scheme it was read with. The price is a bound value that holds one of the five as literal
- * text: it reads as the character it names.
+ * Only the five characters Blade's escape writes are restored, as in UrlProp, in any spelling PHP's
+ * decoder reads: `&amp;`, `&lt;`, `&gt;`, `&quot;` and `&#039;`, and their numeric forms such as
+ * `&#34;` or `&#x26;`. A reference to any other character, `&#106;` or `&mdash;`, stays text, so a
+ * URL prop keeps the scheme it was read with. The price is a bound value that holds one of the five
+ * as literal text, in any of those spellings: it reads as the character it names.
  *
  * @internal Called from the view composer the service provider registers and from the class
  *           components; not a developer-facing API.

@@ -105,38 +105,21 @@ export default function wirekitInlineEdit(config = {}) {
             // which a wire:navigate then takes with it. The house pattern for
             // this is the combobox's: announce on window, let the others close.
             if (config.exclusive !== false) {
-                // The component ROOT, captured once. init() runs on the x-data
-                // element, so `this.$el` is the root HERE — but not everywhere.
-                //
-                // That difference made this component impossible to open at all.
-                // `open()` is invoked from the trigger's x-on:click, so Alpine
-                // resolves `$el` to the BUTTON there, while this handler runs
-                // from a window event, where it resolves to the root. Comparing
-                // the two never matched, so the instance that had just set
-                // `editing = true` canceled ITSELF, synchronously, inside its
-                // own open(). Nothing threw, nothing logged, the button just
-                // looked dead — and a single component on an empty page did it
-                // too, so it never read as a multi-instance problem.
+                // The sender is identified by its component ROOT on both sides:
+                // `open()` sends `this.$root`, and this listener compares against
+                // `this.$root` too (the note in `open()` says why it is not `$el`
+                // there).
                 this._exclusiveHandler = (event) => {
                     if (!this._exclusiveHandler) return;      // torn down mid-flight
 
-                    // Resolved AT EVENT TIME, never captured at init.
-                    //
-                    // `open()` sends `this.$root` — live — so this listener compares
-                    // against the live root too. A `this.$el` frozen here would be the
-                    // same element in the ordinary case, but a Livewire morph can swap
-                    // the root element while Alpine keeps this instance alive, and then
-                    // the frozen reference points at a node that is no longer in the
-                    // document: the sender's live root would match neither the stale
-                    // `===` nor the stale `.contains()`, so the component would treat its
-                    // OWN open as somebody else's and cancel itself.
-                    //
-                    // That exact self-cancel already happened once on the SENDER side
-                    // and is documented above `open()`. It was fixed there and left
-                    // standing here — half a fix, and the half nobody looked at is the
-                    // one that broke. Seen as a morph-seam failure that reproduces only
-                    // under CI parallelism, with the node and scope ids UNCHANGED,
-                    // which is what says the instance survived and closed itself.
+                    // Resolved AT EVENT TIME, never captured at init. A `this.$el`
+                    // frozen here would be the same element in the ordinary case, but
+                    // a Livewire morph can swap the root element while Alpine keeps
+                    // this instance alive, and then the frozen reference points at a
+                    // node that is no longer in the document: the sender's live root
+                    // would match neither the stale `===` nor the stale `.contains()`,
+                    // so the component would treat its OWN open as somebody else's and
+                    // cancel itself.
                     const root = this.$root;
 
                     if (!root) return;
@@ -217,7 +200,8 @@ export default function wirekitInlineEdit(config = {}) {
         open() {
             // A disabled fieldset around the field locks it as the `disabled` prop does. It
             // disables the trigger, the field and both buttons, but not the value, which is no
-            // native control: a click there opened an editor whose field and buttons took no input.
+            // native control: a click there would open an editor whose field and buttons take no
+            // input.
             if (this.editing || this.saving || config.disabled === true || disabledByFieldset(this.$root)) return;
             this._previous = this._snapshot(this.draft);
             this.editing = true;
@@ -225,8 +209,8 @@ export default function wirekitInlineEdit(config = {}) {
             // `$root`, not `$el`: this method is invoked from the trigger's
             // x-on:click, where `$el` is the BUTTON. Listeners identify the
             // sender by comparing against a component root, so sending the
-            // button meant nobody could recognize it — including this component,
-            // which then canceled itself. `$root` is the same element in every
+            // button would mean nobody could recognize it — including this
+            // component, which would then cancel itself. `$root` is the same element in every
             // calling context, which is the property this identity needs.
             window.dispatchEvent(new CustomEvent('wirekit:inline-edit-opened', {
                 detail: { source: this.$root, name: config.name },
@@ -578,16 +562,15 @@ export default function wirekitInlineEdit(config = {}) {
                  * lands anywhere inside this component has not left it — and the confirm and
                  * cancel buttons are inside it.
                  *
-                 * Without this, those two buttons were unreachable by either input method.
-                 * Tabbing out of the control moved focus onto Confirm, this handler read
-                 * "not the control" as "gone", and the draft was discarded before the key
-                 * came back up. A mouse press failed the same way for a different reason:
-                 * a button takes focus on mousedown, so the discard ran in the gap before
-                 * mouseup and the button was hidden by the time the click would have
-                 * reached it. Only a synthetic press-and-release with no gap between them
-                 * ever committed, which is why it looked correct under test. A textarea was
-                 * left with exactly one way to save — the shortcut the view refuses to rely
-                 * on, because a reader who does not know it has none.
+                 * Without this, those two buttons would be unreachable by either input
+                 * method. Tabbing out of the control moves focus onto Confirm, and this
+                 * handler would read "not the control" as "gone" and discard the draft
+                 * before the key came back up. A mouse press would fail the same way for a
+                 * different reason: a button takes focus on mousedown, so the discard would
+                 * run in the gap before mouseup and hide the button before the click
+                 * reached it. A textarea would be left with exactly one way to save — the
+                 * shortcut the view refuses to rely on, because a reader who does not know
+                 * it has none.
                  *
                  * The same containment covers a control supplied through the editor slot: a
                  * composite widget moves focus between its own parts, and none of those

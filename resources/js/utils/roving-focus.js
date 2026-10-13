@@ -64,7 +64,7 @@ export function moveRovingFocus(root, direction, selector = '[role=tab]:not([dis
  * composite widget that already imports that one needs this one next, and each of those is
  * then a few lines rather than a re-derivation.
  *
- * THE ONE SUBTLETY IS THE REPEATED CHARACTER, and getting it wrong is what makes a
+ * The one subtlety is the repeated character, and getting it wrong is what makes a
  * type-ahead feel broken. Pressing `a` repeatedly must CYCLE through every row starting
  * with `a`, so a buffer of all-identical characters searches for that single character
  * beginning AFTER the current row. A genuine refinement — `co` growing to `com` — must

@@ -111,7 +111,6 @@ Fully
 Inline
 It
 Its
-JS
 NOT
 NOTE:
 Not
@@ -153,7 +152,7 @@ __('wirekit::Resize
 `flex:
 `index`
 `lostpointercapture`
-`previousElementSibling`
+`previousElementSibling`.
 `resize:
 `resize`
 `role="separator"`
@@ -163,6 +162,7 @@ __('wirekit::Resize
 `wirekitResizableHandle`
 a
 absorb
+accepted
 accompanying
 action
 actual
@@ -195,7 +195,6 @@ attributes
 auto-derived
 avoid
 back.
-backward
 be
 because
 behind.
@@ -210,7 +209,6 @@ bound
 branching.
 browser's
 browser-native
-but
 buttons,
 by
 caller
@@ -232,7 +230,6 @@ click.
 clicks
 client-only
 comment
-compatibility
 component
 component's
 container
@@ -285,6 +282,7 @@ events
 every
 exposes
 few
+finds
 first
 flags
 flex
@@ -314,7 +312,6 @@ hidden
 horizontal/vertical`
 horizontal`
 identically.
-implementation
 implode('
 imports
 in
@@ -322,7 +319,6 @@ init
 inline
 inner
 inside
-instead.
 integers
 interactive
 interactive.
@@ -335,7 +331,6 @@ itself
 just
 keep
 keeps
-kept
 keyboard
 last
 later
@@ -349,7 +344,6 @@ list
 little
 live
 lives
-locate
 locks
 logic
 lose
@@ -374,7 +368,6 @@ native
 needs
 neither
 nested
-new
 next
 no
 non-last
@@ -386,7 +379,6 @@ null
 null)
 null,
 of
-old
 on
 one
 one,
@@ -396,7 +388,6 @@ only
 onto
 optimistic-ui:
 or
-ordinal,
 orientation,
 orientation.
 orientations
@@ -444,6 +435,7 @@ rather
 reach
 reachable
 read
+read:
 reader
 reload,
 removed
@@ -509,6 +501,7 @@ these
 this
 three-dot
 three-panel
+through
 time.
 to
 to.
@@ -523,7 +516,6 @@ until
 up
 us.
 use
-used
 user-select:
 uses
 value
@@ -551,8 +543,10 @@ wrapper
 wrapper,
 writing
 x-data="wirekitResizableHandle"
+x-on:blur="onBlur()"
 x-on:click="stepFromControl(-1)"></span>
 x-on:click="stepFromControl(1)"></span>
+x-on:focus="onFocus()"
 x-on:keydown="onKeyDown($event)"
 x-on:lostpointercapture="onPointerUp($event)"
 x-on:pointercancel="onPointerUp($event)"

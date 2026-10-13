@@ -22,33 +22,43 @@
          The quantity is this row's live region in this form, and the line total is not: a press
          moves both, and the reader pressed for the quantity. --}}
     <div data-wk-cart-item-stepper role="group" aria-label="{{ $name ? __('wirekit::Quantity of :name', ['name' => $name]) : __('wirekit::Quantity') }}" class="inline-flex shrink-0 items-center gap-[var(--gap-wk-xs)]" x-data>
-        <x-wirekit::button
-            intent="neutral"
-            surface="outline"
-            :size="$size"
-            icon-only
-            :disabled="$atMin"
-            x-on:click="$dispatch('wirekit:cart-decrement', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
-        >
-            <x-slot:iconLeft>
-                <x-wirekit::icon name="minus" size="sm" aria-hidden="true" />
-            </x-slot:iconLeft>
-            {{ $name ? __('wirekit::Decrease the quantity of :name', ['name' => $name]) : __('wirekit::Decrease :field', ['field' => __('wirekit::Quantity')]) }}
-        </x-wirekit::button>
+        {{-- Each button shows its name in a tooltip, on hover and on visible focus. The tooltip
+             repeats the name rather than describing the button, so the slot stays its only
+             accessible name, and the button itself stays the tab stop. --}}
+        <x-wirekit::tooltip :text="$decrementName" :focusable-trigger="false" :describes="false">
+            <x-wirekit::button
+                intent="neutral"
+                surface="outline"
+                :size="$size"
+                icon-only
+                :disabled="$atMin"
+                x-on:click="$dispatch('wirekit:cart-decrement', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
+            >
+                {{-- On a line that leaves at zero, the last press takes the line out, so this − says
+                     so with the remove control's glyph and name. The event stays the decrement: the
+                     application decides what the press means. --}}
+                <x-slot:iconLeft>
+                    <x-wirekit::icon :name="$decrementRemoves ? $removeIcon : 'minus'" size="sm" aria-hidden="true" />
+                </x-slot:iconLeft>
+                {{ $decrementName }}
+            </x-wirekit::button>
+        </x-wirekit::tooltip>
         <span data-wk-cart-item-quantity aria-live="polite" class="min-w-[3ch] text-center tabular-nums text-[length:var(--text-wk-md)]">{{ $quantityText }}</span>
-        <x-wirekit::button
-            intent="neutral"
-            surface="outline"
-            :size="$size"
-            icon-only
-            :disabled="$atMax"
-            x-on:click="$dispatch('wirekit:cart-increment', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
-        >
-            <x-slot:iconLeft>
-                <x-wirekit::icon name="plus" size="sm" aria-hidden="true" />
-            </x-slot:iconLeft>
-            {{ $name ? __('wirekit::Increase the quantity of :name', ['name' => $name]) : __('wirekit::Increase :field', ['field' => __('wirekit::Quantity')]) }}
-        </x-wirekit::button>
+        <x-wirekit::tooltip :text="$incrementName" :focusable-trigger="false" :describes="false">
+            <x-wirekit::button
+                intent="neutral"
+                surface="outline"
+                :size="$size"
+                icon-only
+                :disabled="$atMax"
+                x-on:click="$dispatch('wirekit:cart-increment', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
+            >
+                <x-slot:iconLeft>
+                    <x-wirekit::icon name="plus" size="sm" aria-hidden="true" />
+                </x-slot:iconLeft>
+                {{ $incrementName }}
+            </x-wirekit::button>
+        </x-wirekit::tooltip>
     </div>
 @else
     {{-- No width of our own, and the utility that would set one is deliberately not named:

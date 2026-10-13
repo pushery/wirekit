@@ -5,15 +5,15 @@
     'icon' => null,
     'title' => null,
     'description' => null,
-    // Heading level for the title (1–6). Defaults to 3 (the v1.5.0-identical
-    // <h3>); set it to match the surrounding document outline so screen-reader
-    // heading navigation stays correct (e.g. level=2 directly under a page <h1>,
-    // or level=1 when the empty-state IS the page's main content).
+    // Heading level for the title (1–6). Defaults to 3, an <h3>; set it to match
+    // the surrounding document outline so screen-reader heading navigation stays
+    // correct (e.g. level=2 directly under a page <h1>, or level=1 when the
+    // empty-state IS the page's main content).
     'level' => 3,
-    // Container chrome: default (no border/bg — v1.5.0-identical) · outline (dashed
+    // Container chrome: default (no border/bg) · outline (dashed
     // border, reads as a placeholder drop-zone) · muted (filled muted surface).
     'variant' => config('wirekit.components.empty-state.variant', 'default'),
-    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    // Optional reveal animation. Null = no animation (default).
     'animateIn' => null,
     'scope' => null,
 ])
@@ -26,7 +26,8 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('empty-state', $attributes->getAttributes());
 
-    // outline ↔ outlined spelling-pair alias (house rule — EnumValueAliasConsistencyTest).
+    // `outlined` is read as `outline`, so either spelling of the pair works, as on the other
+    // components that take it.
     $variantAliases = ['outlined' => 'outline'];
     $variant = $variantAliases[$variant] ?? $variant;
 
@@ -82,15 +83,18 @@
     @endif
 
     @if($title)
-        {{-- Dynamic heading tag — level is validated to 1–6 in the @php block. --}}
-        <h{{ $levelValue }} data-wk-prose-skip class="mb-1 text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        {{-- Dynamic heading tag — level is validated to 1–6 in the @php block. A centered column item
+             is as wide as its longest word, so `anywhere` rather than `break-word`: it lets a typed
+             token with no break point (a pasted URL) wrap, and a title whose words fit keeps its width. --}}
+        <h{{ $levelValue }} data-wk-prose-skip class="mb-1 [overflow-wrap:anywhere] text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
         </h{{ $levelValue }}>
     @endif
 
     @if($description)
-        {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
-        <div data-wk-prose-skip class="mb-4 max-w-md text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+        {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p.
+             `anywhere` for the reason the title has it; a description whose words fit keeps its width. --}}
+        <div data-wk-prose-skip class="mb-4 max-w-md [overflow-wrap:anywhere] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $description }}
         </div>
     @endif

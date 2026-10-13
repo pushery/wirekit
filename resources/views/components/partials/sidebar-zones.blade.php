@@ -11,12 +11,12 @@
      is a copy that will drift: the zone mechanics below are subtle enough that
      the second copy would be the one missing `min-h-0` a year from now.
 
-     WHY THE SCROLL REGION NEEDS NO tabindex/role/label OF ITS OWN. The house rule
-     for a generic `overflow-y-auto` container is that it must be keyboard
-     reachable (WCAG 2.1.1) — normally `tabindex="0"` plus `role="region"` and a
-     name. This one is exempt under the landmark shape: it is a direct child of
-     the `<nav>` landmark, which carries its own accessible name, and every item
-     inside it is a focusable `<a>`. Browser landmark navigation reaches the
+     Why the scroll region needs no tabindex/role/label of its own. A generic
+     `overflow-y-auto` container must be keyboard reachable (WCAG 2.1.1), normally
+     through `tabindex="0"` plus `role="region"` and a name. This one is exempt
+     under the landmark shape: it is a direct child of the `<nav>` landmark,
+     which carries its own accessible name, and every item inside it is a
+     focusable `<a>`. Browser landmark navigation reaches the
      region and Tab reaches its contents, so the extra annotation would add a
      second stop that announces nothing new. Same shape as the reading table of
      contents, whose scrolling list sits directly inside its labeled nav. --}}
@@ -92,12 +92,11 @@
                  first row one pixel below the rail's. The negative margin gives the
                  observer its pixel and the reader none. --}}
             <div x-ref="topSentinel" aria-hidden="true" class="h-px shrink-0 -mb-px"></div>
-            {{-- The rows carry the rhythm, NOT the scroller. When the gap sat on the
-                 scroller the two sentinels were flex children of it and took part: an
-                 invisible 1px marker plus one gap pushed the whole list down, so the
-                 first row sat 17px below the rule where the rail's sat at 6px. The
-                 sentinels are still where the observer needs them — inside the scroll
-                 container — they simply no longer space anything. --}}
+            {{-- The rows carry the rhythm, NOT the scroller. A gap on the scroller
+                 would space its two sentinels too, since they are its flex children: an
+                 invisible 1px marker plus one gap would push the whole list down, below
+                 where the rail's first row sits. The sentinels stay where the observer
+                 needs them — inside the scroll container — and space nothing. --}}
             <div class="flex flex-col gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
             <div x-ref="bottomSentinel" aria-hidden="true" class="h-px shrink-0 -mt-px"></div>
         </div>

@@ -10,17 +10,18 @@
 $alt
 $as,
 $attributes
-$attributes)->class([$classes])
-$attributes->class([$groupClasses])
+$attributes)->class(['wk-touch-row'
 $attributes->except('tabindex')
 $attributes->getAttributes());
 $attributes->has('x-data'))
 $attributes->merge($avatarStyle
+$attributes->merge(['data-size'
 $avatar
 $avatarAlt
 $avatarInitials
 $avatarInitials"
 $avatarOnly
+$avatarOnly,
 $avatarSrc
 $avatarStyle
 $avatarStyle]
@@ -29,6 +30,7 @@ $chipClasses
 $chipSize
 $chipSize,
 $classes
+$classes])
 $control
 $fromInitials
 $fromInitialsStyle
@@ -60,6 +62,7 @@ $shape`
 $size,
 $sizeClasses
 $sizeClasses,
+$size])->class([$groupClasses])
 $slot
 $slot)`:
 $slot->hasActualContent();
@@ -135,7 +138,7 @@ $total
 'gap-[var(--gap-wk-xl)]',
 'gap-[var(--gap-wk-xs)]',
 'group/wk-profile'
-'hover:bg-[var(--color-wk-bg-muted)]
+'hover:bg-[var(--color-wk-bg-active)]
 'initials'
 'inline-flex
 'interactive'
@@ -214,6 +217,7 @@ $total
 'w-[var(--size-wk-sm)]
 'w-[var(--size-wk-xs)]
 'wk-avatar-group',
+'wk-touch-target'
 'x-on:keydown.space.prevent']);
 'xl'
 'xl',
@@ -395,7 +399,6 @@ One
 Only
 Optional
 Overlap
-Pre-fix,
 Profile
 Pushery\WireKit\Support\AvatarPalette.
 Pushery\WireKit\Support\AvatarPalette;
@@ -462,15 +465,16 @@ __('wirekit::Online'),
 `<img
 `StrictnessGate::discardedScopeDirectives`
 `['src'
-`app-rail.item`
+`app-rail.item`,
 `aria-label`
 `button`
 `class="cirlce"`
 `cursor-pointer`
 `cursor:
+`data-size`
 `default
 `default`
-`div`
+`div`:
 `gap-0`
 `group-data-[collapsed]`,
 `group-data-[settling]`
@@ -503,6 +507,7 @@ __('wirekit::Online'),
 `src`),
 `statusVariant="Dot"`
 `status`
+`title`,
 `trim((string)
 `truncate`
 `x-data`
@@ -623,7 +628,6 @@ button,
 button-like
 button.
 by
-byte-for-byte.
 call
 caller
 caller's
@@ -700,8 +704,9 @@ cosmetic:
 costs
 could
 counter.
-crashed
+crash
 crc32-palette
+cuts
 d="M12
 data-wk-prose-skip
 debug
@@ -722,7 +727,6 @@ developer
 developer's
 developer-supplied
 diagnosed
-did
 did),
 difference
 dim:
@@ -731,8 +735,9 @@ direction.
 directly
 disc.
 discard
+discs
 display
-div
+div.
 do
 docs
 document
@@ -750,6 +755,7 @@ dropdown-trigger
 duration-[var(--transition-wk-duration)]
 each
 early.
+echoed
 either
 element
 element,
@@ -779,7 +785,6 @@ exist
 exist.
 existed
 existed,
-existing
 exists
 fact
 fallback
@@ -791,6 +796,7 @@ fill="currentColor"
 filled($name)
 firing
 first
+first.
 fixed
 flags
 flex
@@ -822,7 +828,7 @@ fully
 gap
 genuinely
 gets
-given`
+given`,
 gives
 glance
 go
@@ -940,9 +946,11 @@ later
 layer
 layout
 leaves
+less.
 lets
 light
 like
+line
 line.
 lines
 list
@@ -1012,7 +1020,7 @@ nobody
 none
 none.
 nor
-normalizer.
+normalized
 not
 not:
 nothing
@@ -1052,6 +1060,7 @@ out
 outer
 outside
 overflow
+overlap
 overrides
 own
 own,
@@ -1069,7 +1078,6 @@ panel
 parent
 part
 pass
-passing
 passive
 passthrough
 path
@@ -1087,12 +1095,10 @@ pointer
 pointer,
 pointer`
 post
-pre-existing
 preflight
 premise
 presence
 presentational
-preserves
 primitive,
 primitives
 problem:
@@ -1143,7 +1149,6 @@ removes,
 render
 render,
 rendered
-renderer
 rendering
 renders
 renders.
@@ -1227,6 +1232,7 @@ sizing.
 slot
 slot.
 small
+smallest
 so
 something
 span
@@ -1251,6 +1257,7 @@ still
 stood
 stop
 stops
+straight
 string
 string,
 strings
@@ -1273,6 +1280,7 @@ technology
 tells
 text
 text-[color:var(--color-wk-text-muted)]"
+text-[length:var(--text-wk-2xs)]',
 text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]
@@ -1300,9 +1308,9 @@ this
 those
 through
 tighter
+title="{{
 to
 tokens
-took
 top
 total.
 trade
@@ -1340,7 +1348,6 @@ use
 use,
 used:
 utilities,
-v2.38.0,
 v4
 v4's
 validator,

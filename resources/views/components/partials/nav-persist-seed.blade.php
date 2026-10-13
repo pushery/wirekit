@@ -1,7 +1,7 @@
 {{-- optimistic-ui: n/a — sub-component
      Not a component but an @include shared by `sidebar` and `app-rail`. It renders no UI and
      accepts nothing a server could refuse. --}}
-{{-- THE FIRST PAINT OF A REMEMBERED COLUMN, and it is the one thing Blade cannot do alone.
+{{-- The first paint of a remembered column, and it is the one thing Blade cannot do alone.
 
      A column with `persist` and the `local` driver stores its state in the reader's browser,
      and no server can read localStorage — so the markup carries the SEED width, the browser
@@ -18,19 +18,18 @@
      That is not a style choice. `AlpinePayload` is the encoder for a directive attribute; in a
      script body HTML escaping does not apply, so a payload carrying the closing-tag sequence
      would end the block and everything after it would parse as markup. Attributes go through
-     Blade's
-     ordinary escaping, `dataset` hands them back as plain strings, and the body then has no
-     interpolation left to get wrong.
+     Blade's ordinary escaping, `dataset` hands them back as plain strings, and the body then
+     has no interpolation left to get wrong.
 
      It is a correction and never a requirement. Blocked by a policy, thrown by a browser
-     with storage switched off, or simply never reached, the column keeps exactly the behavior
-     it has today: Alpine reads the same value and applies the same class one frame later. That
-     is what makes it safe to ship unconditionally — the failure mode is the status quo.
+     with storage switched off, or simply never reached, it leaves the column as the column is
+     without it: Alpine reads the same value and applies the same class one frame later. That
+     is what makes it safe to ship unconditionally — the failure mode is the column without
+     the seed.
 
-     The nonce is why the objection recorded in `app-rail`'s own prop comment no longer holds.
-     It said an inline script is what a strict `script-src 'self'` policy blocks, which is true
-     of an UNNONCED one; `fonts.blade.php` already answers the same objection the same way for
-     its inline <style>, and this reads the identical helper.
+     The nonce answers the objection that an inline script is what a strict
+     `script-src 'self'` policy blocks: that is true of an UNNONCED one, and `fonts.blade.php`
+     answers it the same way for its inline <style>, through the identical helper.
 
      Params: $seedKey, $seedOn (the boolean the server rendered), $seedClassOn, $seedClassOff,
      and $seedMinWidth (a width the state is gated on, or null). --}}

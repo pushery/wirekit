@@ -79,6 +79,7 @@ $validated
 '/^(?:h|size)-/');
 '/^(?:w|size)-/'))
 '/^(?:w|size)-/');
+'/^shrink(?:-|$)/'))
 '0'
 '2xl'
 '<svg
@@ -98,7 +99,7 @@ $validated
 '[WireKit]
 'aria-label');
 'base',
-'bg-[var(--color-wk-bg-muted)]
+'bg-[var(--color-wk-bg-active)]
 'cursor-pointer
 'expanded'
 'false'
@@ -111,7 +112,7 @@ $validated
 'h-5
 'h-6
 'h-8
-'hover:bg-[var(--color-wk-bg-muted)]',
+'hover:bg-[var(--color-wk-bg-active)]',
 'icon'
 'img';
 'label'
@@ -176,6 +177,7 @@ $validated
 -
 --}}
 ...>
+.=
 .focus().
 /
 /*
@@ -193,9 +195,8 @@ $validated
 1rem;"
 20px,
 250ms
-2rem,
 3l5
-3rem.
+3rem,
 5-5
 500s
 5V3z"/>
@@ -258,10 +259,8 @@ A11y
 ALSO
 AND
 APG
-API:
 ARIA
 AT
-Adding
 Alpine
 Alpine's
 Alpine.
@@ -322,6 +321,7 @@ OR
 OUTER
 Operating
 Optional
+Outside
 PERFECTLY
 Padding
 Pushery\WireKit\Icons\IconResolver;
@@ -358,6 +358,7 @@ UNBOUND
 Uniform
 Unlike
 Uses
+UtilityClasses::has($callerClass,
 UtilityClasses::without($iconClasses,
 VISIBLE,
 WAI-ARIA
@@ -397,9 +398,9 @@ __toString
 `aria-labelledby`
 `aria-selected="true"`
 `bg-[var(--color-wk-bg)]`
-`class="h-12
 `class`
 `data-reduce-motion`
+`h-12
 `h-4`
 `h-5`
 `h-7`
@@ -412,6 +413,7 @@ __toString
 `role="tree"`
 `role="treeitem"`
 `selected`
+`shrink`
 `sidebar/item.blade.php`
 `transition-transform`
 `wk-`
@@ -532,6 +534,7 @@ called
 caller
 caller's
 can
+can.
 cannot
 carried
 carries
@@ -558,9 +561,8 @@ class
 class,
 class="h-4
 class="list-none
-class="shrink-0"
-class="truncate">{{
-class="{{
+class="truncate"
+class="wk-touch-row
 classes
 click
 clickable
@@ -580,7 +582,6 @@ components
 composer
 condition
 configured
-conflict
 console
 console).
 contain
@@ -597,6 +598,7 @@ covered
 covers
 cues,
 cursor
+cuts
 d="M6
 data-wk-prose-skip
 data-wk-tree-node
@@ -625,13 +627,13 @@ dev
 developer
 developer's
 did
-direct
 directly
 disc
 documented
 does
 does.
 down
+drawn
 draws
 dropdown
 dropdowns
@@ -641,6 +643,7 @@ duration-[var(--transition-wk-duration)]',
 each
 early
 early.
+effect.
 either
 element
 element,
@@ -699,10 +702,8 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
 focus.
 focusin
-followable.
 font-[number:var(--font-wk-heading-weight)]'
 for
-forbidden
 forced-colors
 forcing
 form;
@@ -716,11 +717,11 @@ function_exists('svg'))
 gap-1',
 gate
 gate,
-get
 gets
 give
 global
 glyph
+glyph,
 glyph.
 goes
 grayscale,
@@ -752,11 +753,11 @@ hidden
 hidden/shown
 hint
 historical
-house
 hover
 icon
 icon's
 icon-only
+icon.
 icon;
 icons
 icons).
@@ -812,7 +813,6 @@ keyboard.
 kill
 label
 labels).
-ladder
 land
 landed
 landmark,
@@ -859,6 +859,7 @@ matches
 matching
 may
 mean
+meant
 merely
 merge
 message
@@ -883,6 +884,7 @@ nav
 navigation
 needed
 needs
+neighbors,
 neighbors.
 neither
 nested
@@ -967,6 +969,7 @@ pl-4"
 place
 placeholder
 point
+pointer
 pointing
 post-process
 practices
@@ -990,7 +993,6 @@ prop's
 prop,
 props
 provides
-put
 puts
 py-[var(--padding-wk-y-sm)]',
 qualified:
@@ -1002,6 +1004,7 @@ reach
 reached
 reaches
 reacts
+read
 reader
 reads
 real
@@ -1028,6 +1031,7 @@ resources/js/components/tree-view-node.js:
 respect
 responsive
 rest
+rest.
 restores
 result
 return
@@ -1054,7 +1058,6 @@ rows
 rule
 rule,
 run
-rung
 same
 screen
 screen-reader-skipping
@@ -1072,16 +1075,18 @@ set
 sets
 shape
 shared
+short
 should
 shown
+shrink
 shrink-0
+shrink-0';
 sibling
 sighted
 silently.
 single
 site
 size
-size,
 size="sm"
 sized
 so
@@ -1091,6 +1096,7 @@ source
 source-baked
 space
 space).
+space.
 spacer
 span
 spelling,
@@ -1103,7 +1109,6 @@ steps
 still
 stop,
 stop.
-stopped
 storage/logs/laravel.log.
 strictness
 string
@@ -1138,6 +1143,7 @@ taking
 teaches
 test
 text
+text,
 text-[color:var(--color-wk-text-muted)]
 than
 that
@@ -1157,6 +1163,8 @@ throw,
 throws
 tile
 tint
+title,
+title="{{
 to
 toCssClasses()
 toHtml().
@@ -1207,8 +1215,8 @@ view
 view's
 viewBox="0
 visual
-w-12"`
 w-12',
+w-12`
 w-3',
 w-4
 w-4',
@@ -1263,5 +1271,6 @@ yet.
 },
 }}
 }}"
+}}">{{
 }}</span>
 —

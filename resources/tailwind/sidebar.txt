@@ -14,7 +14,6 @@
 "explicitly
 "false",
 "group,
-"icon
 "intersecting"
 "navigation"
 "not
@@ -27,7 +26,9 @@
 $action
 $active
 $active)
+$active,
 $activeClasses
+$active]
 $active])
 $always
 $always])
@@ -35,13 +36,14 @@ $ariaCurrent
 $ariaLabel
 $as
 $as);
+$as,
 $attributes
 $attributes->class
 $attributes->class([$classes,
 $attributes->class([$classes])->merge($navLabelAttrs)
 $attributes->class(['relative
 $attributes->class(['wk-sidebar-collapse-toggle
-$attributes->except('aria-label')->class([$classes])
+$attributes->except('aria-label')->class(['wk-touch-target',
 $attributes->except('rel')->class(['wk-sidebar-item',
 $attributes->except(['mode',
 $attributes->except(['rel',
@@ -50,17 +52,21 @@ $attributes->get(
 $attributes->get('data-current');
 $attributes->get('rel',
 $attributes->get('target',
+$attributes->get('type')
 $attributes->getAttributes());
 $attributes->has('aria-labelledby')
 $attributes->has('aria-labelledby'))
 $attributes->merge(['rel'
 $attributes]
 $badge
+$buttonClasses
+$buttonType
 $callerLabel
 $callerLabel,
 $childClasses
 $classes
 $classes,
+$classes])
 $collapseBtnClasses
 $collapseName
 $collapsed
@@ -111,6 +117,7 @@ $iconClasses
 $iconClasses])
 $isSelected
 $isSelected])
+$itemTag
 $keyboardActiveClasses
 $label
 $labelClasses
@@ -198,6 +205,7 @@ $zoneInset
 '')
 '');
 '',
+'';
 ')').matches)
 ',
 '0'
@@ -210,8 +218,12 @@ $zoneInset
 'M15.75
 'M9
 '[--wk-nav-pad:var(--padding-wk-y-sm)]',
+'[font-weight:inherit]'
 '[wirekit]
 '_blank');
+'a'
+'a',
+'a';
 'active'
 'active',
 'always'
@@ -220,12 +232,14 @@ $zoneInset
 'aria-label'])
 'aria-label'])->class([$groupClasses])
 'as'
+'as',
 'badge'
 'base',
+'bg-[var(--color-wk-bg-active)]',
 'bg-[var(--color-wk-bg-elevated)]'
-'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-rail-bg)]';
 'bg-[var(--color-wk-tooltip-bg)]',
+'bg-transparent'
 'border-[length:var(--border-wk-width)]
 'border-[length:var(--border-wk-width)]',
 'border-[var(--color-wk-border)]'
@@ -234,6 +248,10 @@ $zoneInset
 'border-e-[length:var(--border-wk-width)]';
 'border-s-[length:var(--border-wk-width)]'
 'border-s-[length:var(--border-wk-width)]',
+'button'
+'button')
+'button';
+'button'])
 'card',
 'card';
 'children',
@@ -292,9 +310,9 @@ $zoneInset
 'h-full',
 'heading'
 'heading']);
-'hover:bg-[var(--color-wk-bg-muted)]
-'hover:bg-[var(--color-wk-bg-muted)]',
-'hover:bg-[var(--color-wk-bg-subtle)]',
+'hover:bg-[var(--color-wk-bg-active)]
+'hover:bg-[var(--color-wk-bg-active)]',
+'hover:bg-[var(--color-wk-bg-hover)]',
 'hover:text-[color:var(--color-wk-text)]',
 'hover:text-[color:var(--color-wk-text-muted)]',
 'href'
@@ -323,10 +341,10 @@ $zoneInset
 'none';
 'none'],
 'noopener')
-'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-muted)]',
+'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-active)]',
 'not-[[aria-current]]:hover:text-[color:var(--color-wk-text)]',
 'not-[[aria-current]]:text-[color:var(--color-wk-text-muted)]',
-'not-[[aria-selected=true]]:hover:bg-[var(--color-wk-bg-muted)]',
+'not-[[aria-selected=true]]:hover:bg-[var(--color-wk-bg-active)]',
 'not-[[aria-selected=true]]:hover:text-[color:var(--color-wk-text)]',
 'not-[[aria-selected=true]]:text-[color:var(--color-wk-text-muted)]',
 'null'
@@ -348,6 +366,7 @@ $zoneInset
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-xs)]',
 'relative
+'reset'],
 'role',
 'rotate-180'
 'rotate-180'"
@@ -381,6 +400,7 @@ $zoneInset
 'submenu'
 'surface'
 'surface',
+'target',
 'text'
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-muted)]',
@@ -402,6 +422,7 @@ $zoneInset
 'true'
 'true'"
 'true']);
+'type'])->class(['wk-sidebar-item',
 'uppercase
 'value'
 'variant'
@@ -422,6 +443,7 @@ $zoneInset
 'wk-sidebar-option-'
 'wk-sidebar-option-'.\Illuminate\Support\Str::slug((string)
 'wk-tooltip-');
+'wk-touch-row',
 'x-on:focusin',
 'x-on:focusout',
 'x-on:keydown.escape.window.capture']);
@@ -522,6 +544,7 @@ $zoneInset
 .'a
 .'of
 .'the
+...$buttonClasses])
 ...$keyboardActiveClasses,
 ...$notCurrentClasses,
 ...$surface,
@@ -547,12 +570,11 @@ $zoneInset
 16.4
 16px
 16rem
-17px
 18
 18V6Z"
 1;
 1px
-2.1.1)
+2.1.1),
 2.1.1).
 2.25
 2.25'
@@ -563,7 +585,6 @@ $zoneInset
 20.25H6A2.25
 24
 24"
-25
 28px
 3.5rem
 3.75
@@ -582,7 +603,6 @@ $zoneInset
 6.75h16.5M3.75
 67%
 6A2.25
-6px.
 6v12A2.25
 7.5
 7.5"
@@ -655,6 +675,7 @@ $zoneInset
 @class([
 @else
 @elseif($collapsible)
+@elseif($itemTag
 @elseif($label)
 @endif
 @endif>
@@ -772,9 +793,7 @@ CAPTURE
 CARD,
 CAREFUL:
 COLUMN
-COLUMN,
 CONTAINER
-CONTENT
 CONTROL
 CSP
 CSS
@@ -808,6 +827,7 @@ Do
 Documented
 DomId::unique(WireKit::stableId(
 Done
+Drawn
 Drop
 EMISSION
 ENT_HTML5));
@@ -848,7 +868,6 @@ ID
 INNER
 INVERT,
 IS
-ITS
 Icon
 Ignored
 Immediately
@@ -869,7 +888,6 @@ JSON.parse(…)
 JavaScript
 Js::from
 KEY,
-KEYBOARD
 LABEL
 LINKS:
 LITERAL
@@ -882,7 +900,6 @@ Livewire's
 MERGED
 MODE
 MORPH
-Maintainer's
 Marked
 Marker
 Matched
@@ -890,8 +907,7 @@ Merged
 Merging
 Mirrors
 NAME
-NAME,
-NEEDS
+NAME:
 NEITHER
 NO
 NON-active
@@ -910,7 +926,6 @@ Note
 Nothing
 Null
 OBJECT
-OF
 OFF,
 ON
 ONE
@@ -921,7 +936,7 @@ ORIGINAL
 OUTER
 OUTSIDE
 OWN
-OWN.
+Of
 On
 Once
 One
@@ -931,7 +946,6 @@ Opt-in
 Optional
 Out
 Outside
-PAINT
 PHP,
 Params:
 Passing
@@ -946,8 +960,6 @@ Pushery\WireKit\Support\PersistedCookie;
 Pushery\WireKit\WireKit;
 RAIL
 READ
-REGION
-REMEMBERED
 RENDER
 RESTING
 RING
@@ -963,14 +975,11 @@ Reported
 Resolvable
 Rich
 Riding
-SCROLL
-SECTION.
 SEED
 SELECTION
 SHAPE
 SIBLING
 SIBLING.
-SIDE
 SIDEBAR's
 SILENT
 SOURCE
@@ -1016,7 +1025,6 @@ Teleporting
 That
 The
 There
-These
 This
 Three
 To
@@ -1045,7 +1053,6 @@ WCAG
 WHEN
 WHERE
 WHICH
-WHY
 WIDTH
 WITHOUT
 WRAPPER,
@@ -1070,6 +1077,7 @@ WireKit::tagName('tooltip',
 WireKit::validateProp('sidebar',
 WireKit::validateProp('sidebar.collapse-toggle',
 WireKit::validateProp('sidebar.collapsible',
+WireKit::validateProp('sidebar.item',
 WireKit::validateProp('tooltip',
 WireKit::warnUnknownProps('tooltip',
 With
@@ -1081,6 +1089,7 @@ ZONE
 [
 [$callerLabelledBy,
 [$toneSurface]),
+['a',
 ['aria-label'
 ['card',
 ['class'
@@ -1093,6 +1102,8 @@ ZONE
 ['page',
 ['seedKey'
 ['start',
+['submit',
+['wk-sidebar-item-button',
 ['x-on:mouseenter',
 []
 [];
@@ -1172,6 +1183,7 @@ __()
 `->merge()`
 `-active-fg`).
 `-mb-px`
+`.wk-sidebar-item-button`
 `1lh`
 `:active="request()->is('posts*')"`.
 `:active`
@@ -1207,12 +1219,12 @@ __()
 `Pushery\WireKit\Components\SidebarGroup`
 `[data-wk-disclosure-arrow]`
 `_x_dataStack`,
+`a`,
 `absolute`
 `accent`
 `accent`,
 `action`
 `app-rail`
-`app-rail`'s
 `app-rail`.
 `aria-activedescendant`
 `aria-controls`
@@ -1228,11 +1240,14 @@ __()
 `as="div
 `as="span"`
 `badge`
-`bg-[var(--color-wk-bg-muted)]`
+`bg-[var(--color-wk-bg-active)]`
 `bleed`.
 `border-e`
 `break-words`
+`button`
+`button`,
 `card`
+`card`.
 `clearTimeout`
 `cloneNode(true)`,
 `collapsed
@@ -1249,6 +1264,7 @@ __()
 `data-collapsed`
 `data-current`
 `data-wk-ready`,
+`data-wk-touch`
 `dataset`
 `default-collapsed`,
 `default`
@@ -1267,7 +1283,6 @@ __()
 `elevated`
 `fade`
 `false`
-`false`,
 `false`.
 `fixed`
 `flex-1`
@@ -1276,6 +1291,7 @@ __()
 `focusable-trigger`
 `fonts.blade.php`
 `footer`
+`footer`,
 `force-open`,
 `group-data-[collapsed]/wk-sidebar:*`.
 `group/wk-sidebar`
@@ -1284,6 +1300,7 @@ __()
 `hidden`:
 `hover:bg`
 `href`
+`href`,
 `icon="cube"`
 `id`
 `initListbox()`
@@ -1333,7 +1350,9 @@ __()
 `prop="false"`
 `ps-`)
 `px-x-sm
+`rel`
 `relative`
+`reset`.
 `right`
 `role="region"`
 `role`
@@ -1360,10 +1379,12 @@ __()
 `sr-only`
 `sr-only`:
 `stableId`
+`submit`
 `svg()`
 `swapElements`
 `tabindex="0"`
 `tagName()`
+`target`
 `text-[color:var(--color-wk-text)]`
 `text`
 `this.$refs.tooltip`
@@ -1372,6 +1393,7 @@ __()
 `toggle`
 `toggle`:
 `true`
+`type`
 `typeof
 `undefined`
 `value`
@@ -1386,6 +1408,7 @@ __()
 `wk-`
 `wk-shell-foot`
 `wk-sidebar-collapse-toggle`
+`wk-tooltip-panel`
 `writeActiveMarker()`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-bind`
@@ -1405,10 +1428,10 @@ above
 above,
 above.
 absence
-absolute.
+absolute
 absolutely
 absorbs
-academic.
+academic:
 accent
 accept
 accepts
@@ -1429,7 +1452,7 @@ add
 add,
 added
 added:
-address
+address,
 address.
 addresses
 adds
@@ -1461,7 +1484,6 @@ alone.
 along
 already
 already-selected
-already;
 also
 alternative
 alternatives
@@ -1498,7 +1520,6 @@ anticipate.
 any
 anyone
 anything
-anything.
 anyway
 anyway.
 apart
@@ -1510,6 +1531,7 @@ app-shell's
 app.
 apparatus
 appear
+appearance,
 appeared
 appeared,
 appearing
@@ -1538,8 +1560,9 @@ aria-expanded="{{
 aria-hidden
 aria-hidden="true"
 aria-hidden="true">
+aria-hidden="true"></span>
 aria-label
-aria-label),
+aria-label).
 aria-label="{{
 aria-label=`
 aria-labelledby
@@ -1550,7 +1573,6 @@ arms
 around
 array_filter([
 arrive
-arrived
 arrives
 arrives,
 arriving
@@ -1566,8 +1588,7 @@ asked.
 asking
 asks
 assembled
-asserted
-asserting
+assert
 assertion
 assistive
 association
@@ -1597,9 +1618,11 @@ avoids
 away
 axes:
 axis
+axis,
 back
 back,
 back.
+back;
 background
 background,
 badge)
@@ -1615,7 +1638,7 @@ band,
 band.
 band;
 bare
-bare,
+bare.
 base
 be
 because
@@ -1624,8 +1647,6 @@ becomes
 becoming
 been
 before
-before.
-before;
 began
 began.
 begins.
@@ -1656,7 +1677,7 @@ block
 block's
 block,
 blocking
-blocks,
+blocks:
 body
 body,
 bolted
@@ -1718,9 +1739,6 @@ button?
 buttons.
 by
 by,
-byte
-byte-different
-byte-identical
 cache
 cache.
 call
@@ -1752,12 +1770,12 @@ case,
 case.
 case:
 cases
+cases,
 cast
 cast,
 catalog
 catch
 catch.
-caught
 cell
 center
 centered
@@ -1772,7 +1790,6 @@ chained
 change
 change,
 changes
-changes.
 charge,
 check
 check,
@@ -1786,6 +1803,7 @@ chevron:
 child
 child.
 children
+children:
 choice
 choice,
 choice.
@@ -1822,6 +1840,9 @@ class="w-full"
 class="wk-rail-hide">{{
 class="wk-scroll-shadow-bottom"></div>
 class="wk-scroll-shadow-top"></div>
+class="wk-tooltip-panel
+class="wk-touch-row
+class="wk-touch-target
 class="{{
 classes
 classes,
@@ -1846,6 +1867,7 @@ closes
 closing-tag
 closing.
 clusters
+coarse
 code
 coincide
 cold
@@ -1952,7 +1974,6 @@ copying
 corner.
 correct
 correct.
-corrected
 correction
 correctly,
 corrects
@@ -1970,6 +1991,7 @@ counters,
 counting
 counts
 counts,
+couple
 coupled
 cover
 crossed
@@ -2013,8 +2035,6 @@ decide
 decided
 decides
 decision
-decision,
-decisions
 declaration
 declare
 declared
@@ -2027,9 +2047,11 @@ decorative:
 decorative;
 deduper
 default
+default)
 default,
 default-trigger
 default.
+default;
 defect
 defined`
 defines
@@ -2045,12 +2067,11 @@ delta
 demand
 depend
 dependably
-depending
 depends
 derivable
+derived
 descendant
 descendants
-described
 description
 designs
 destination
@@ -2104,6 +2125,7 @@ documented
 documents
 documents.
 does
+does,
 does.
 dot
 dot.
@@ -2157,6 +2179,7 @@ el.classList.add(on
 el.classList.remove(cfg.wkSeedClassOn,
 element
 element,
+element:
 elements
 elements,
 elements:
@@ -2169,14 +2192,12 @@ emission
 emit
 emits
 emitted
-emitted,
 emitting
 emphasized
 empty
 empty.
 encoder
 end
-ended
 ends
 enough
 ensures
@@ -2200,6 +2221,7 @@ evaluated
 evaluator
 even
 event
+event.
 events
 ever
 every
@@ -2211,7 +2233,6 @@ exceptions
 exempt
 exist
 existed
-existing
 exists
 exists,
 exists.
@@ -2248,7 +2269,6 @@ fail,
 failure
 fall
 fall,
-fallback
 fallback,
 falling
 falls
@@ -2262,7 +2282,6 @@ farthest
 fault
 fault,
 feature
-fell
 few
 fewer
 fight
@@ -2272,6 +2291,7 @@ fill,
 fill="none"
 filling
 finds
+finger
 finish
 fire
 fires
@@ -2279,7 +2299,6 @@ first
 first,
 first-visit
 first.
-five
 fix
 fixed
 fixed`
@@ -2327,6 +2346,7 @@ followed
 followed,
 follows
 follows,
+font
 font's
 font-[number:var(--font-wk-heading-weight)]
 foot
@@ -2339,6 +2359,7 @@ force-override,
 force-shown
 forceOpen:
 forced
+forced-colors
 forcing
 foreground
 foreground,
@@ -2426,10 +2447,11 @@ h-3.5
 h-5',
 h-5'])
 had
+had.
 half
 half,
 half-working
-halved
+halve
 halves
 hamburger
 hand,
@@ -2446,7 +2468,6 @@ hangs
 happen
 happen:
 happens
-hard
 hardcoded
 hardcoding
 hardest:
@@ -2462,7 +2483,6 @@ heading.
 height
 height,
 height.
-held
 helper
 helper,
 helper.
@@ -2490,13 +2510,11 @@ hit,
 hoists
 holding
 holds
-holds.
 hook
 horizontal,
 host
 host's
 host,
-house
 hover
 hover,
 hover.
@@ -2522,7 +2540,7 @@ id="{{
 idea
 identical
 identical,
-identically
+identically,
 identifier
 identity
 identity.
@@ -2534,7 +2552,6 @@ ignored
 ignored.
 image
 immediately
-immediately.
 implode('
 important
 imports
@@ -2542,6 +2559,7 @@ improvements
 in
 in,
 in.
+in_array($attributes->get('type'),
 in_array($mode,
 in_array($toggle,
 in_array($variant,
@@ -2579,11 +2597,13 @@ inline-start
 inner
 inserts
 inset
+inset-0"
 insets
 inside
 instant
 instead
 instead,
+instead.
 instead;
 intact
 intentional
@@ -2618,7 +2638,6 @@ it),
 it,
 it.
 it:
-it;
 item
 item's
 item,
@@ -2639,6 +2658,7 @@ justify-between
 justify-center
 justify-center',
 keep
+keep,
 keeping
 keeps
 kept
@@ -2651,7 +2671,6 @@ keyed
 keys
 keys,
 kind
-kit's
 know
 know.
 knowing
@@ -2816,7 +2835,6 @@ miss
 miss,
 missing
 missing"
-missing:
 mistake
 ml-auto
 ml-auto.
@@ -2923,6 +2941,7 @@ note
 nothing
 nothing,
 nothing.
+nothing;
 now
 now,
 now.
@@ -2973,9 +2992,10 @@ one-pixel
 one-tab-stop
 one.
 one:
-one;
 ones:
 only
+only,
+only;
 onmouseover=alert(1)"`
 onto
 open
@@ -2993,6 +3013,7 @@ opposite
 optimistic
 optimistic-ui:
 option
+option.
 optional
 optional.
 optionally
@@ -3034,7 +3055,6 @@ owns
 owns,
 padded
 padding
-padding"
 padding,
 paddings
 pads
@@ -3069,7 +3089,6 @@ parent
 parse
 parser
 part
-part:
 partial
 partial,
 pass
@@ -3100,7 +3119,6 @@ persist
 persist:
 persistDriver:
 persisted
-persistence
 persists
 personalization
 phase,
@@ -3130,6 +3148,7 @@ point
 pointer
 pointer,
 pointer-events
+pointer-events-none
 pointing
 points
 points.
@@ -3143,9 +3162,9 @@ positioned
 positioning
 positions
 possible
+posts.
 practice.
 precisely
-preference:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
@@ -3159,13 +3178,13 @@ prevent:
 previews
 previous
 private
-probe
 problem
 problem.
 prod).
 produced
 production,
 profile
+project
 promise
 promises.
 prop
@@ -3201,7 +3220,6 @@ quarter-rem
 question
 queues
 quiet,
-quo.
 quote
 racing
 radius
@@ -3258,11 +3276,8 @@ rebuilding
 receive
 receiver,
 reconciles
-recorded
 rectangles
 red
-red-proof.
-red-proof;
 red:
 reduced-motion
 redundant
@@ -3337,6 +3352,7 @@ rest
 rest.
 rests
 restyle
+restyles
 result
 retinted
 retinting
@@ -3375,7 +3391,6 @@ root:
 rotate-90'
 rotates
 rotation
-roughly
 round
 rounded
 rounded,
@@ -3448,9 +3463,11 @@ second-to-last
 section
 section's
 section,
+section.
 section:
 see
 seed
+seed.
 seeded
 seeding
 seeds
@@ -3466,6 +3483,7 @@ selective:
 selector
 selector,
 selectors
+selects,
 self
 self-contained
 self.dataset;
@@ -3493,6 +3511,7 @@ sets
 settle.
 settles
 set…"
+several
 shadow
 shadow.
 shadows
@@ -3565,10 +3584,12 @@ sideways
 sighted
 signal
 signals
+signing
 silent
 silently
 silently.
 simply
+since
 single
 single-class
 sit
@@ -3576,6 +3597,7 @@ site
 sites,
 sits
 sits,
+sits.
 sitting
 size
 size,
@@ -3593,7 +3615,9 @@ smudged
 snap
 snaps
 so
+so.
 solved
+some
 somebody
 something
 something.
@@ -3602,8 +3626,8 @@ somewhere
 sorts
 source
 space
-spaced
 spaces
+spaces.
 spacing
 span
 spare.
@@ -3612,10 +3636,11 @@ spell
 spelled
 spelling,
 spellings
-spending
+spend
 split
 splitting
 spreads
+square
 sr-only
 sr-only):
 stable
@@ -3636,7 +3661,6 @@ state:
 stated
 states
 static
-status
 stay
 stayed
 staying
@@ -3692,9 +3716,8 @@ subtree
 subtree,
 subtree.
 such
-sum:
+sum
 summary
-superglobal
 supplied
 supplied.
 supply
@@ -3704,11 +3727,10 @@ supposed
 suppresses
 surface
 surface.
-surfaced
+surface;
 surfaces
 surrounding
 survive
-survived
 survives
 survives,
 svg(\Pushery\WireKit\WireKit::icon($icon),
@@ -3759,7 +3781,6 @@ ternary
 ternary,
 test
 test.
-tests
 text
 text,
 text-[color:var(--color-wk-accent-fg)]
@@ -3774,6 +3795,7 @@ that.
 the
 their
 theirs
+theirs.
 them
 them.
 them:
@@ -3793,14 +3815,12 @@ therefore
 these
 they
 thing
-thing,
 things
 things,
 things.
 things:
 third
 this
-this,
 those
 thought
 three
@@ -3823,10 +3843,6 @@ title
 to
 to,
 to.
-today
-today)
-today,
-today:
 together.
 together:
 toggle
@@ -3844,7 +3860,6 @@ tone
 tone,
 toned
 toned,
-toned.
 tones
 toning
 too
@@ -3861,6 +3876,7 @@ tooltip.
 tooltips
 top
 total
+touch
 touch,
 touching
 towards
@@ -3919,6 +3935,7 @@ two,
 two.
 type
 type="button"
+type="{{
 typeof
 typography
 unaffected
@@ -3928,11 +3945,9 @@ unavailable,
 unbalanced.
 unbound
 uncaught
-unchanged
 unchanged.
 unchanged:
 unconditionally
-unconditionally,
 unconditionally.
 under
 under.
@@ -4024,22 +4039,21 @@ w-full',
 w-max
 waiting
 walk
-wanted
 wants
 wants.
 warning
 was
-was.
 watches
 way
 way"
 way,
+way.
 we
 web
+weight,
 well
 well-formed
 well.
-were
 what
 whatever
 when
@@ -4057,7 +4071,7 @@ why
 wide
 widened
 widening
-wider,
+wider
 widget
 widgets
 width
@@ -4109,6 +4123,7 @@ writers
 writes
 writing
 written
+written;
 wrong
 wrong.
 wrong:

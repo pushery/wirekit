@@ -3,8 +3,8 @@
  * reads, which text the field or a pill shows, and when an avatar falls back to initials.
  *
  * The keys themselves are normalized on the server (`OptionMedia`), so an option reaching this
- * file carries only the keys it uses. Every function here treats a missing key as the option it
- * was before those keys existed, which is what keeps a plain list behaving exactly as it did.
+ * file carries only the keys it uses. Every function here treats a missing key as no media at
+ * all, so a list whose options carry none renders as a plain list.
  */
 import { foldForSearch } from './search-fold.js';
 

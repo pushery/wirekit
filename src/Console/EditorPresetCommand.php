@@ -72,8 +72,8 @@ class EditorPresetCommand extends Command
                 $this->line('  '.$hint);
             }
 
-            // Invalid input is still FAILURE (exit 1), never INVALID (exit 2) —
-            // strict Laravel/Artisan convention (see CliUniformityAuditTest).
+            // Invalid input is FAILURE (exit 1), never INVALID (exit 2), as for every
+            // wirekit:* command.
             return self::FAILURE;
         }
 

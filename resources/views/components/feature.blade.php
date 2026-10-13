@@ -11,7 +11,7 @@
     'tone' => null,
     'size' => null,
     // Optional reveal animation when the feature card scrolls into view.
-    // Null = no animation (default, v1.5.0-identical).
+    // Null = no animation (default).
     'animateIn' => null,
     // Heading level for the title (1-6). Defaults to 3 — a card in a grid of features — so nothing
     // moves for a caller who never sets it. Set it to match the surrounding document
@@ -35,6 +35,10 @@
 
     // Feature — individual feature card for feature-grid.
     $classes = WireKit::resolveClasses('feature', 'base', implode(' ', [
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'flex flex-col',
         'gap-[var(--gap-wk-sm)]',
     ]), $scope);
@@ -47,8 +51,8 @@
     $tone = $intent ?? $tone ?? config('wirekit.components.feature.tone', 'accent');
     $size ??= config('wirekit.components.feature.size', 'md');
 
-    // Tone map. accent uses the auto-switching --color-wk-accent-fg foreground (replaces the
-    // hardcoded text-white from v1.2.x — same contrast bug class fixed in CTA + Hero).
+    // Tone map. accent uses the auto-switching --color-wk-accent-fg foreground, which keeps
+    // its contrast on any accent, as CTA and Hero do.
     // soft / success / warning / danger use color-mix(in_srgb, …) tinted backgrounds, the
     // same pattern already proven in alert/badge/callout/message/reaction/toast-region.
     $toneMap = [

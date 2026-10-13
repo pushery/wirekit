@@ -22,8 +22,8 @@
      nothing failing. `_commitRecent()` is where a color is settled in all four cases,
      which is why a color lands in "recents" there and nowhere else. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
-    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
     // reads: no native constraint, no aria-required, no asterisk.
     'required' => false,
     // The Livewire method to call once a color is settled — a released drag, a
@@ -32,20 +32,15 @@
     // reader wrote. See the note at the top of this file.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'name' => null,
     'id' => null,
-    // `error` and `hint` were undeclared on the one Form-category CONTROL that never
-    // got them, so `:error="$errors->first('brand_color')"` landed in the attribute
-    // bag and rendered as `error="…"` on the native `<input type="color">` — invalid
-    // HTML carrying a validation message the reader is never shown. The same class was
-    // closed once for the four controls that take a `label`; this one takes a `name`
-    // instead and fell outside that reading of it.
+    // `error` and `hint` are declared: undeclared, `:error="$errors->first('brand_color')"`
+    // would land in the attribute bag and render as `error="…"` on the native
+    // `<input type="color">` — invalid HTML carrying a validation message the reader is
+    // never shown.
     //
     // No `label` prop comes with them, deliberately. The accessible name here is the
     // DEFAULT SLOT (rendered `sr-only` beside the swatch, documented on the component
@@ -61,8 +56,8 @@
     'showValue' => true,
     'disabled' => false,
     // Popover mode — a from-scratch HSV picker (SV plane + hue + alpha + format
-    // input + swatches + eyedropper + copy + recents). Default false keeps the
-    // native <input type="color"> render byte-identical. Boolean flag (not a `mode`
+    // input + swatches + eyedropper + copy + recents). Default false renders the
+    // native <input type="color">. Boolean flag (not a `mode`
     // prop) per the prop-naming convention — same call the date-picker `range` made.
     'popover' => false,
     'format' => config('wirekit.components.color-picker.format', 'hex'), // hex | rgb | hsl | oklch
@@ -165,17 +160,17 @@
         : ($name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker'));
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // Page-unique. The name still shapes the id — `name="brand"` is still `wk-color-brand`,
     // which is what makes it readable — but it goes through the deduper, so a SECOND picker
     // bound to the same field (which is what a repeater row is) becomes `wk-color-brand-2`
-    // instead of colliding, where the second one's `<label for>` pointed at the first one's
-    // input and clicking it focused the wrong control.
+    // instead of colliding, where the second one's `<label for>` would point at the first
+    // one's input and a click on it would focus the wrong control.
     //
-    // `Str::random(6)` for the nameless case had the opposite problem: it changed on every
-    // render, so a Livewire morph broke the association it had just made. `DomId::unique`
-    // counts instead of randomizing, which survives one.
+    // A random id for the nameless case would have the opposite problem: it changes on every
+    // render, so a Livewire morph would break the association it had just made.
+    // `DomId::unique` counts instead of randomizing, which survives one.
     $pickerId = \Pushery\WireKit\Support\DomId::unique($id ?? ($name ? 'wk-color-'.$name : null), 'wk-color-');
 
     // Explicit prop OR the Laravel validation bag, keyed by `name`. The read is
@@ -259,7 +254,7 @@
         // The swatch ring is this control's boundary, so it carries the error state the
         // way every sibling control does. Outside the error state it stays on the
         // decorative token: a ring around an ARBITRARY user-chosen color cannot be held
-        // to a contrast floor against what is inside it (FormControlBorderTokenTest).
+        // to a contrast floor against what is inside it.
         $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
         'overflow-hidden',
         'cursor-pointer',
@@ -324,7 +319,7 @@
      unconditional on purpose: a wrapper that only appears when a message does gives the
      component two DOM shapes, and the one a developer inspects is whichever they hit
      first. --}}
-<div {{ $outerAttributes }} class="{{ $fieldClasses }}" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="relative {{ $fieldClasses }}" @if($callerRef !== '') data-wk-ref-scope @endif>
 @if(! $popoverValue)
     {{-- ── Native mode (default). ── Slightly wider swatch↔readout gap than the
          shared wrapper default: the hex pill sits inline next to the swatch, and
@@ -335,7 +330,7 @@
          field without an event. On this element, not the field: a caller's attributes land on the
          field, and a listener of theirs with the same name would replace this one. --}}
     <div x-data="{ current: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} }" class="{{ $nativeWrapperClasses }}" x-on:reset.window="current = $event.target === $refs.wkNativeColor.form && !$event.defaultPrevented ? $refs.wkNativeColor.defaultValue : current">
-        <label for="{{ $pickerId }}" class="{{ $swatchClasses }}">
+        <label for="{{ $pickerId }}" class="wk-touch-row {{ $swatchClasses }}">
             <input
                 type="color"
                 {{-- aria-required, not the native attribute: HTML's `required` does not apply
@@ -364,10 +359,8 @@
                      ONLY accessible name the native `<input type="color">` gets — there is no
                      visible label beside it. It goes through the catalog for the same reason the
                      popover branch below does: both keys already ship in every locale, so a
-                     literal here hands a translated application a fully localized picker with one
-                     English name on it. The label guard could not see this one — it matches a
-                     label as an element's whole raw text (`>Color picker<`), and this sat inside a
-                     `{{ … }}` echo. --}}
+                     literal here would hand a translated application a fully localized picker
+                     with one English name on it. --}}
                 <span class="sr-only">{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}</span>
             @endif
         </label>
@@ -391,8 +384,7 @@
             'hexErrorLabel' => __('wirekit::Not a valid color value. Example: :example'),
         ];
         // With withClear on, the readout binds the displayValue getter (which
-        // shows "No color" while cleared); otherwise the plain formattedValue,
-        // byte-identical to before withClear existed.
+        // shows "No color" while cleared); otherwise the plain formattedValue.
         $readoutExpr = $withClear ? 'displayValue' : 'formattedValue';
         // Checkerboard backdrop so alpha is legible — a structural transparency
         // grid (like the SV-plane white/black axes, it is NOT themeable).
@@ -410,13 +402,12 @@
         // color stays on screen and says it was not saved — actionable, because
         // the previous color is one click away in the recents strip.
         //
-        // The JS DOES call `mark()` at pointerdown, and the reasoning that first
-        // said it should not is worth keeping because it is a tempting mistake:
-        // `keep` never rolls back, so why hold a baseline? Because `keep` covers
-        // only the SERVER's refusal. A CANCELED request still restores — and a
-        // second drag started during the first one's round trip is exactly that.
-        // Without the mark, the restore writes back the value the drag produced,
-        // so the marker stays put and the cancellation is invisible. The rule
+        // The JS calls `mark()` at pointerdown although `keep` never rolls back:
+        // `keep` covers only the SERVER's refusal. A CANCELED request still
+        // restores — and a second drag started during the first one's round trip
+        // is exactly that. Without the mark, the restore would write back the value
+        // the drag produced, so the marker would stay put and the cancellation
+        // would be invisible. The rule
         // that a baseline belongs to the START of the gesture holds for every
         // streaming control, regardless of which failure exit it takes.
         $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
@@ -477,7 +468,7 @@
                  popover path uses (change commits to recents). Native sheets pick
                  opaque sRGB hex — alpha keeps its current value. --}}
             <template x-if="useNative">
-                <label for="{{ $nativeId }}" class="{{ $swatchClasses }}">
+                <label for="{{ $nativeId }}" class="wk-touch-row {{ $swatchClasses }}">
                     <input
                         type="color"
                         @if($required) aria-required="true" @endif
@@ -520,7 +511,7 @@
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
-                class="inline-flex items-center cursor-pointer rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
+                class="wk-touch-row inline-flex items-center cursor-pointer rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
             >
                 {{ $trigger }}
             </button>
@@ -536,7 +527,7 @@
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
-                class="{{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
+                class="wk-touch-row {{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
                 style="{{ $checker }}"
             >
                 <span class="absolute inset-0" :style="swatchStyle"@if($withClear) x-show="!cleared"@endif></span>
@@ -556,8 +547,8 @@
 
         {{-- Picker panel — teleported out of the document flow + Floating-UI positioned (see
              wirekitColorPicker._anchor) so it escapes any clipping/stacking
-             ancestor and sits a clear gap below the swatch (no longer flush
-             against the trigger circle). click.outside lives HERE (on the panel),
+             ancestor and sits a clear gap below the swatch. click.outside lives
+             HERE (on the panel),
              not the root, because teleporting moves the panel out of the subtree. --}}
         <template x-teleport="#wk-overlay-root">
         <div
@@ -594,9 +585,9 @@
                 @keydown.arrow-right.prevent="nudgePlane(1, 0)"
                 @keydown.arrow-up.prevent="nudgePlane(0, 1)"
                 @keydown.arrow-down.prevent="nudgePlane(0, -1)"
-                {{-- The plane announces `role="slider"`, and the hue and opacity sliders have
-                     carried Home/End since they were written. This one had neither, so a
-                     reader following the pattern the role promises got no response. --}}
+                {{-- The plane announces `role="slider"`, so it takes Home/End as the hue and
+                     opacity sliders do: without them a reader following the pattern the role
+                     promises would get no response. --}}
                 @keydown.home.prevent="planeHome()"
                 @keydown.end.prevent="planeEnd()"
                 class="relative h-40 w-full cursor-crosshair touch-none overflow-hidden rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
@@ -672,8 +663,7 @@
                  `button`, so the browser's default arrow applies, and
                  the panel's buttons are styled entirely by these literal utility
                  strings — only the trigger and the swatch get a pointer from
-                 elsewhere ($swatchClasses), which is what made the file look
-                 covered while six controls were not. --}}
+                 elsewhere ($swatchClasses). --}}
             {{-- The value row and, while the field holds a value it cannot read, the message
                  for the eye (WCAG 3.3.1): the error region inside the row speaks it and is
                  hidden from sight. One element in the panel's stack either way, so a panel
@@ -683,12 +673,12 @@
                 <button
                     type="button"
                     @click="cycleFormat()"
-                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-touch-row shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     {{-- The name STARTS with the word the button shows. A static
-                         `aria-label` overrode the visible "hex"/"rgb" entirely, so
-                         someone using voice control could not activate the control
-                         by the word in front of them, and a reader heard a command
-                         with no trace of the one piece of state the button
+                         `aria-label` would override the visible "hex"/"rgb" entirely,
+                         so someone using voice control could not activate the control
+                         by the word in front of them, and a reader would hear a
+                         command with no trace of the one piece of state the button
                          displays. WCAG 2.5.3, Label in Name — a name may add
                          context, as long as it begins from what is written. --}}
                     :aria-label="format + {{ \Pushery\WireKit\Support\AlpinePayload::from(', '.__('wirekit::Cycle color format')) }}"
@@ -700,11 +690,11 @@
                     @change="onInput($event.target.value)"
                     aria-label="{{ __('wirekit::Color value') }}"
                     :aria-invalid="invalidInput ? 'true' : 'false'"
-                    {{-- The field said "invalid" and nothing else: no message, and nothing
-                         pointing at one. A reader heard that their value was wrong with no
-                         way to learn WHY or what a right one looks like, which is what
-                         WCAG 3.3.1 asks for in text. The region below is always present and
-                         always referenced, so the description resolves — a `describedby`
+                    {{-- Without the region below the field would say "invalid" and nothing
+                         else: a reader would hear that their value was wrong with no way to
+                         learn WHY or what a right one looks like, which is what WCAG 3.3.1
+                         asks for in text. The region is always present and always
+                         referenced, so the description resolves — a `describedby`
                          pointing at a `display: none` element is ignored by assistive
                          technology, which is why it is emptied rather than hidden. --}}
                     aria-describedby="{{ $pickerId }}-hex-error"
@@ -721,9 +711,9 @@
                         class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         aria-label="{{ __('wirekit::Pick a color from the screen') }}"
                     >
-                        {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip).
-                             The previous glyph was a pencil path — read as "edit", never as
-                             "pick a color from the screen". --}}
+                        {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip):
+                             a pencil would read as "edit", never as "pick a color from the
+                             screen". --}}
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2 22 1-1h3l9-9"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-3l9-9"/><path stroke-linecap="round" stroke-linejoin="round" d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
                     </button>
                 @endif
@@ -734,8 +724,7 @@
                     :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($copyColorLabel) }}"
                 >
                     {{-- Canonical clipboard glyph (matches <x-wirekit::clipboard-button>);
-                         stroke-width 2 on a clean single shape renders crisp at 16px —
-                         the old two-rect "duplicate" glyph at 1.8 read as blurry. --}}
+                         stroke-width 2 on a clean single shape renders crisp at 16px. --}}
                     <svg x-show="copyIdle" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
                     {{-- Copied confirmation — a success-colored checkmark. --}}
                     <svg x-show="copied" x-cloak class="h-4 w-4 text-[color:var(--color-wk-success)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>

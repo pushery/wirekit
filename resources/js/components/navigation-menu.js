@@ -8,8 +8,8 @@
  * `aria-haspopup` — a trigger announces its panel with `aria-expanded` plus
  * `aria-controls`, and nothing else.
  *
- * THE KEYBOARD MODEL IS SPELLED OUT HERE BECAUSE THE TELEPORT REMOVED THE ONE
- * THE BROWSER WOULD HAVE GIVEN US FOR FREE. Each panel moves to the overlay
+ * The keyboard model is spelled out here because the teleport removed the one
+ * the browser would have given us for free. Each panel moves to the overlay
  * root at the end of <body> so its `position: fixed` box escapes every ancestor
  * containing block — and sequential focus order follows the DOM, not the
  * screen. A reader who opened a panel and pressed Tab therefore landed on the
@@ -27,9 +27,11 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
  */
+import { focusClicked } from '../utils/focus-clicked.js';
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { focusIsWithin, position } from '../utils/floating.js';
+import { isComposing } from '../utils/ime.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { watchCurrent } from '../utils/watch-current.js';
 
@@ -158,9 +160,12 @@ export default function wirekitNavigationMenu() {
         },
 
         /**
-         * Open a panel on hover/click.
+         * Open a panel on hover/click. `clicked` is the trigger a click came from, which takes the
+         * focus where the engine did not, so the arrows go into the panel from it
+         * (utils/focus-clicked.js). A hover passes none: it moves no focus.
          */
-        async open(name) {
+        async open(name, clicked = null) {
+            focusClicked(clicked);
             clearTimeout(this._hideTimer);
             this._pointerMovedInPanel = false;
             this.activeItem = name;
@@ -344,6 +349,37 @@ export default function wirekitNavigationMenu() {
             // Focus first, hide second — see the ordering note in the module
             // docstring.
             this._getTrigger(name)?.focus({ preventScroll: true });
+            this.closeAll();
+        },
+
+        /**
+         * Escape anywhere while a flyout is open.
+         *
+         * Heard on the WINDOW: a flyout a pointer opened leaves the focus where it was, and a key
+         * pressed there, on `<body>` or in the page's content, reaches neither the bar's handler
+         * nor the teleported panel's. WCAG 1.4.13 asks for content shown on hover to be
+         * dismissible without moving the pointer or the focus, and Escape is the mechanism it
+         * names.
+         *
+         * Heard in the CAPTURE phase, and a press that closes the flyout is marked as handled, so
+         * a modal or a drawer around the reader leaves it alone. With the focus in the bar or in
+         * the open panel this does nothing: their own handlers run next, close the flyout and hand
+         * the focus back to its trigger.
+         *
+         * @param {KeyboardEvent} event
+         */
+        escapeAnywhere(event) {
+            // An Escape that abandons an input method's conversion belongs to the input method.
+            if (isComposing(event)) return;
+
+            if (this.activeItem === null) return;
+
+            const focused = document.activeElement;
+            const panel = this.$refs[`panel-${this.activeItem}`];
+
+            if (focused && (this.$root.contains(focused) || panel?.contains(focused))) return;
+
+            event.preventDefault();
             this.closeAll();
         },
 

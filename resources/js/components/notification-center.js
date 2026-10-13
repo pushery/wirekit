@@ -64,7 +64,7 @@ const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]),
  *   - `x-show` writes `display: none`, which leaves the element in the DOM and
  *     in every `querySelectorAll` result. "Mark all read" is exactly that — it
  *     is hidden while nothing is unread — and `focus()` on it does nothing, so
- *     the browser drops focus on `<body>`: the same nowhere the bug produced.
+ *     the browser would drop focus on `<body>`.
  *   - The type filter is a ROVING-TABINDEX radiogroup, so every radio except the
  *     checked one carries `tabindex="-1"` while still matching
  *     `button:not([disabled])` — the selector clauses are an OR, and a button
@@ -116,11 +116,11 @@ export default function wirekitNotificationCenter(config = {}) {
         /**
          * The summary line, and the key a group renders under.
          *
-         * Both used optional chaining or nullish coalescing in the template —
-         * neither exists in the grammar Alpine's CSP build parses, so this
-         * component went silent under a strict Content-Security-Policy. The
-         * fallbacks are the point of both expressions, so they move here whole
-         * rather than being spelled out again with && chains at the binding.
+         * Both need optional chaining or nullish coalescing, and neither exists
+         * in the grammar Alpine's CSP build parses: written in the template,
+         * this component would go silent under a strict Content-Security-Policy.
+         * The fallbacks are the point of both expressions, so they live here
+         * whole rather than spelled out with && chains at the binding.
          */
         get summaryLine() {
             if (this.unreadCount <= 0) {
@@ -164,7 +164,8 @@ export default function wirekitNotificationCenter(config = {}) {
             // The notifications reach this component on an attribute of the root rather than in
             // `x-data`, so that attribute renders the same on every update. A morph that changed
             // it would have Alpine reset the component to the new expression and initialize it
-            // again, which closed an open panel under the reader each time a notification arrived.
+            // again, which would close an open panel under the reader each time a notification
+            // arrived.
             // Read here, followed below; items passed in `config`, as by a factory built outside
             // Blade, come first. `$root` is checked rather than assumed for the same reason.
             if (config.items === undefined && typeof this.$root?.getAttribute === 'function') {
@@ -560,12 +561,12 @@ export default function wirekitNotificationCenter(config = {}) {
         // Resolved through `$refs.panel`, NEVER `$root`. The radios live in the
         // panel, and the panel is teleported to `#wk-overlay-root` at the end of
         // <body> — so it is not a descendant of the element `$root` is bound to,
-        // and a downward `querySelector` from there finds nothing. Selection had
-        // already moved by then, which is what made the failure quiet rather than
-        // loud: `activeFilter` changed, the roving `:tabindex` turned the radio
-        // under the reader's focus into -1 and `:aria-checked` turned it false,
-        // and the ring stayed on a radio that is no longer the selected one. Same
-        // reason the scroll guard and the panel focus walk above read the ref.
+        // and a downward `querySelector` from there would find nothing. Selection
+        // moves before the focus does, so that failure would be quiet rather than
+        // loud: `activeFilter` would change, the roving `:tabindex` would turn the
+        // radio under the reader's focus into -1 and `:aria-checked` turn it false,
+        // and the ring would stay on a radio that is no longer the selected one.
+        // Same reason the scroll guard and the panel focus walk above read the ref.
         filterMove(dir) {
             const order = ['all', ...this.types];
             const i = Math.max(0, order.indexOf(this.activeFilter));

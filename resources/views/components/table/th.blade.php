@@ -11,8 +11,8 @@
     // sort button, e.g. "sortBy('name')". When set, the header label + indicator
     // are wrapped in a <button wire:click> so the sort is reachable by keyboard
     // (WCAG 2.1.1) — the plain <th> click on a cursor-pointer cell is mouse-only.
-    // Null keeps today's static <span> (the developer supplies their own control
-    // via $attributes), so existing markup renders byte-identically. Ignored in
+    // Null keeps a static <span> (the developer supplies their own control
+    // via $attributes). Ignored in
     // Alpine-sort mode (the `column` prop already renders its own button model).
     'sortAction' => null,
     'align' => 'left', // left | center | right
@@ -65,6 +65,11 @@
     // row), and a sort indicator stays upright under the label. A turned head is one line, so it
     // outranks `wrap`.
     'sideways' => false,
+    // The type of the head: `header` (the default), the size and weight of a column head, or
+    // `cell`, the size and weight of a body cell. A row header (`headerScope="row"`) is often a
+    // value of its row, a product name or a budget, and reads as one with `cell`. It changes the
+    // type alone: the scope, the alignment and the responsive hiding stay what the other props say.
+    'variant' => 'header', // header | cell
 ])
 
 @php
@@ -82,12 +87,23 @@
     $sortable = BooleanProp::from($sortable, false);
     $sideways = BooleanProp::from($sideways, false);
 
-    // Alignment maps to text-* utilities
+    // Alignment maps to text-* utilities. An unknown value is reported through the strictness gate
+    // and, where the gate does not throw, aligns left.
+    $align = filled($align) ? WireKit::validateProp('table.th', 'align', (string) $align, ['left', 'center', 'right']) : 'left';
+
     $alignClass = match ($align) {
         'center' => 'text-center',
         'right' => 'text-right',
         default => 'text-left',
     };
+
+    // The size and weight of a column head, or of a body cell with `variant="cell"`: the same two
+    // utilities `table.td` sets. An unknown value is reported through the strictness gate and,
+    // where the gate does not throw, keeps the head's type.
+    $variant = filled($variant) ? WireKit::validateProp('table.th', 'variant', (string) $variant, ['header', 'cell']) : 'header';
+    $typeClasses = $variant === 'cell'
+        ? 'font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-md)]'
+        : 'font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-sm)]';
 
     // The same alignment as a flex justification, for the sort-action button: it is
     // `w-full` so its hit area covers the cell, and a full-width flex container
@@ -225,8 +241,7 @@
     // via table[data-wk-compact] selector
     $classes = WireKit::resolveClasses('table.th', 'base', implode(' ', [
         $cellPadding,
-        'font-[number:var(--font-wk-heading-weight)]',
-        'text-[length:var(--text-wk-sm)]',
+        $typeClasses,
         $scopeText,
         $alignClass,
         $hideClasses,
@@ -261,6 +276,16 @@
         // where the developer supplies the control) keeps the pointer on the cell.
         $padOnButton ? 'select-none hover:text-[color:var(--color-wk-text)]' : '',
     ]), $scope);
+
+    // A font size or weight in the caller's `class` replaces the head's own. Beside it the
+    // stylesheet's order would decide which one wins, not the attribute. A size or weight under a
+    // variant is left alone, because it applies in a state or at a width of its own.
+    $callerClass = \Illuminate\Support\Arr::toCssClasses($attributes->get('class', ''));
+    foreach ([\Pushery\WireKit\Support\UtilityClasses::FONT_SIZE, \Pushery\WireKit\Support\UtilityClasses::FONT_WEIGHT] as $property) {
+        if (\Pushery\WireKit\Support\UtilityClasses::has($callerClass, $property)) {
+            $classes = \Pushery\WireKit\Support\UtilityClasses::without($classes, $property);
+        }
+    }
 
     // ARIA: sortable columns expose their current sort state.
     //
@@ -322,8 +347,8 @@
         {{-- Livewire sort mode. With `sortAction`, the label + indicator sit in a
              keyboard-operable <button wire:click> (WCAG 2.1.1 — the cursor-pointer
              cell alone is mouse-only); the button carries the focus ring, aria-sort
-             stays on the <th>. Without it, the static <span> renders exactly as
-             before. The direction indicator is shared between both shapes. --}}
+             stays on the <th>. Without it, the label renders in a static <span>.
+             The direction indicator is shared between both shapes. --}}
         @php
             $sortIndicator = match ($sortDirection) {
                 'asc' => '<svg aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>',

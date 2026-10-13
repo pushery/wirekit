@@ -2,6 +2,13 @@ import { onFormReset } from '../utils/form-reset.js';
 import { watchCurrent } from '../utils/watch-current.js';
 
 /**
+ * How far a finger or a pen moves along the slider's axis before it drags the divider, in CSS
+ * pixels. About the distance a browser waits before it takes a touch over as a scroll, so the
+ * two make their call on the same stretch of the gesture.
+ */
+const DIRECT_DRAG_SLOP = 10;
+
+/**
  * WireKit Image Compare Alpine Component.
  *
  * Before/after image slider with full keyboard, touch, and pointer support.
@@ -80,8 +87,8 @@ export default function wirekitImageCompare(config = {}) {
         },
 
         // Click-to-position: snap handle to click coordinates ────────
-        // Guard against click events that are the tail of a drag — those
-        // were already handled by the pointermove listeners.
+        // A click dispatched while a drag still runs is ignored. The click a press
+        // produces comes after its pointerup has ended the drag, and lands here.
         onTrackClick(event) {
             if (this._dragging) return;
             this._setFromPointer(event);
@@ -92,6 +99,15 @@ export default function wirekitImageCompare(config = {}) {
         // leaves the component bounds.
         startDrag(event) {
             event.preventDefault();
+
+            // A finger or a pen may be starting a scroll. The figure's `touch-action` leaves
+            // the page every swipe across the slider's axis, and the browser takes such a
+            // gesture over with `pointercancel` once it has moved far enough to tell. The moves
+            // before that point still reach the listeners below, so for these pointers the
+            // divider waits until the gesture runs along its axis. A mouse starts no scroll
+            // and drags at once.
+            const direct = event.pointerType === 'touch' || event.pointerType === 'pen';
+            const handle = this._sliderHandle(event);
 
             // Canceling pointerdown also cancels the focus it would have moved to the
             // pressed control — that move is part of the default action. Without this line
@@ -104,7 +120,13 @@ export default function wirekitImageCompare(config = {}) {
             // `preventScroll` because the control is already under the pointer — there is
             // nothing to bring into view, and scrolling here would pull the track out from
             // under the gesture that is starting.
-            this._sliderHandle(event)?.focus?.({ preventScroll: true });
+            //
+            // A finger or a pen gives the focus once the drag or the tap is certain: a swipe
+            // that scrolls past the image must not pull the focus out of the field the reader
+            // is typing in.
+            if (! direct) {
+                handle?.focus?.({ preventScroll: true });
+            }
 
             // A second pointerdown without an intervening pointerup would otherwise
             // overwrite the handles below and strand the previous pair on document.
@@ -118,12 +140,51 @@ export default function wirekitImageCompare(config = {}) {
             // reading fresh (the track may have shifted since the last drag).
             const dragRect = this.$refs.track ? this.$refs.track.getBoundingClientRect() : null;
 
-            this._moveHandler = (e) => this._setFromPointer(e, dragRect);
-            this._upHandler = () => {
+            let engaged = ! direct;
+            const fromX = event.clientX;
+            const fromY = event.clientY;
+            // A press on the handle grabs it; a press on the track also names the spot.
+            const onTrack = ! event.currentTarget?.matches?.('[role="slider"]');
+
+            this._moveHandler = (e) => {
+                if (! engaged) {
+                    const dx = Math.abs(e.clientX - fromX);
+                    const dy = Math.abs(e.clientY - fromY);
+                    const along = this.orientation === 'vertical' ? dy : dx;
+                    const across = this.orientation === 'vertical' ? dx : dy;
+
+                    if (along < DIRECT_DRAG_SLOP || along <= across) {
+                        return;
+                    }
+
+                    engaged = true;
+                    handle?.focus?.({ preventScroll: true });
+                }
+
+                this._setFromPointer(e, dragRect);
+            };
+            this._upHandler = (e) => {
                 this._releaseDragListeners();
-                // Defer clearing the drag flag by a microtask so the trailing
-                // click event (from the same pointer sequence) still sees
-                // _dragging === true and is ignored by onTrackClick.
+
+                // A finger or a pen that lifts where it touched down tapped. WebKit sends no
+                // click after a tap whose pointerdown was canceled, as the one above is, so the
+                // tap moves the divider here; where a click does follow, it lands on the same
+                // spot. A gesture that moved farther was a swipe, and a `pointercancel` a
+                // scroll: both leave the divider and the focus alone.
+                if (! engaged && e?.type === 'pointerup'
+                    && Math.abs(e.clientX - fromX) < DIRECT_DRAG_SLOP
+                    && Math.abs(e.clientY - fromY) < DIRECT_DRAG_SLOP) {
+                    if (onTrack) {
+                        this._setFromPointer(e);
+                    }
+
+                    handle?.focus?.({ preventScroll: true });
+                }
+
+                // Cleared a microtask later rather than here. A click the same press produces is
+                // an event of its own, dispatched after this one, so it finds the flag cleared and
+                // lands where the press ended: on the spot the last move set, or, after a press
+                // that did not move, on the spot pressed.
                 queueMicrotask(() => {
                     this._dragging = false;
                 });
@@ -227,28 +288,30 @@ export default function wirekitImageCompare(config = {}) {
          * Policy, in the quiet way — the images render, the wipe simply never
          * moves.
          *
-         * Style strings belong in JavaScript anyway. Reading the clip geometry
-         * next to the drag handler that produces `value` is easier than reading
-         * it inside an attribute.
+         * Styles belong in JavaScript anyway. Reading the clip geometry next to
+         * the drag handler that produces `value` is easier than reading it inside
+         * an attribute. An object, so Alpine sets it property by property through the element's `style`: a string
+         * it writes with `setAttribute()`, which takes every other inline style with it and which a
+         * `style-src` without `'unsafe-inline'` refuses.
          */
         clipStyle() {
             return this.orientation === 'vertical'
-                ? `clip-path: inset(${100 - this.value}% 0 0 0)`
-                : `clip-path: inset(0 0 0 ${100 - this.value}%)`;
+                ? { clipPath: `inset(${100 - this.value}% 0 0 0)` }
+                : { clipPath: `inset(0 0 0 ${100 - this.value}%)` };
         },
 
         dividerStyle() {
             const size = 'var(--wk-image-compare-divider-size, 2px)';
 
             return this.orientation === 'vertical'
-                ? `top: ${this.value}%; left: 0; right: 0; height: ${size}; transform: translateY(-50%)`
-                : `left: ${this.value}%; top: 0; bottom: 0; width: ${size}; transform: translateX(-50%)`;
+                ? { top: `${this.value}%`, left: '0', right: '0', height: size, transform: 'translateY(-50%)' }
+                : { left: `${this.value}%`, top: '0', bottom: '0', width: size, transform: 'translateX(-50%)' };
         },
 
         handleStyle() {
             return this.orientation === 'vertical'
-                ? `top: ${this.value}%; left: 50%; transform: translate(-50%, -50%)`
-                : `left: ${this.value}%; top: 50%; transform: translate(-50%, -50%)`;
+                ? { top: `${this.value}%`, left: '50%', transform: 'translate(-50%, -50%)' }
+                : { left: `${this.value}%`, top: '50%', transform: 'translate(-50%, -50%)' };
         },
 
         _emit() {

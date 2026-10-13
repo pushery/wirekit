@@ -39,8 +39,8 @@ export default function wirekitColorPicker(config = {}) {
         // listeners (every teardown path must call stop()).
         _stopAutoUpdate: null,
         // `change` and `blur` on the hidden field for `wire:model.change` and `wire:model.blur`,
-        // which listen on that field alone (utils/model-events.js): `change` with every pick, as
-        // before, and `blur` when the reader leaves the picker and its panel. Released in destroy().
+        // which listen on that field alone (utils/model-events.js): `change` with every pick, and
+        // `blur` when the reader leaves the picker and its panel. Released in destroy().
         _modelEvents: null,
         // Puts the starting color back when the form is reset (utils/form-reset.js). Released in
         // destroy().
@@ -291,7 +291,7 @@ export default function wirekitColorPicker(config = {}) {
                 return;
             }
 
-            // WAS THE READER INSIDE THE PANEL? Asked BEFORE anything hides, because
+            // Was the reader inside the panel? Asked BEFORE anything hides, because
             // it decides whether focus is ours to move at all. Programmatic closes
             // and closes that arrive while focus sits elsewhere leave it alone —
             // taking focus from somebody who never had it in the panel would be a
@@ -406,7 +406,7 @@ export default function wirekitColorPicker(config = {}) {
 
         // Readout text. The cleared ("no color") state overrides the formatted
         // value; withClear off keeps cleared false, so this always returns the
-        // formatted value (byte-identical to before withClear existed).
+        // formatted value.
         get displayValue() {
             return this.cleared ? this._noColorLabel : this.formattedValue;
         },
@@ -425,7 +425,7 @@ export default function wirekitColorPicker(config = {}) {
         get alphaLeft() { return `${this.a * 100}%`; },
 
         /**
-         * The style strings, built here rather than in the template.
+         * The styles, built here rather than in the template.
          *
          * A template literal is one of the forms Alpine's CSP build cannot
          * parse, and this component is nothing but positioned gradients — so
@@ -433,17 +433,19 @@ export default function wirekitColorPicker(config = {}) {
          * marker stacked at the origin and no gradient at all.
          *
          * The getters above already produced the individual values; these only
-         * assemble them, which is why they sit next to each other.
+         * assemble them, which is why they sit next to each other. An object, so Alpine sets it property by property through the element's `style`: a string
+         * it writes with `setAttribute()`, which takes every other inline style with it and which a
+         * `style-src` without `'unsafe-inline'` refuses.
          */
-        get swatchStyle() { return `background-color: ${this.cssColor}`; },
-        get planeStyle() { return `background-color: ${this.hueCss}`; },
+        get swatchStyle() { return { backgroundColor: this.cssColor }; },
+        get planeStyle() { return { backgroundColor: this.hueCss }; },
         get planeMarkerStyle() {
-            return `left: ${this.planeLeft}; top: ${this.planeTop}; background-color: ${this.hex}`;
+            return { left: this.planeLeft, top: this.planeTop, backgroundColor: this.hex };
         },
-        get hueMarkerStyle() { return `left: ${this.hueLeft}`; },
-        get alphaTrackStyle() { return `background: linear-gradient(to right, transparent, ${this.hex})`; },
-        get alphaMarkerStyle() { return `left: ${this.alphaLeft}`; },
-        recentStyle(recent) { return `background-color: ${recent}`; },
+        get hueMarkerStyle() { return { left: this.hueLeft }; },
+        get alphaTrackStyle() { return { background: `linear-gradient(to right, transparent, ${this.hex})` }; },
+        get alphaMarkerStyle() { return { left: this.alphaLeft }; },
+        recentStyle(recent) { return { backgroundColor: recent }; },
 
         // ── Pointer drag (plane + sliders) ────────────────────────────
 
@@ -707,7 +709,7 @@ export default function wirekitColorPicker(config = {}) {
          * the cancellation is invisible.
          *
          * Looked up rather than assumed, like `run` below: without a layer this
-         * component behaves exactly as before, down to the byte.
+         * component behaves as a plain field.
          */
         _markGesture() {
             if (typeof this.mark === 'function') {
@@ -719,7 +721,7 @@ export default function wirekitColorPicker(config = {}) {
          * Hand the settled color to the optimistic layer, if one wraps this.
          *
          * `run` is looked up rather than assumed: without a layer this component
-         * behaves exactly as it did before, down to the byte — the property the
+         * behaves as a plain field — the property the
          * whole opt-in shape rests on.
          */
         _commit() {

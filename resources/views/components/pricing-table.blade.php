@@ -167,7 +167,7 @@
                 :class="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}
                     ? {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses) }}
                     : {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalUnselectedClasses) }}"
-                class="wk-state-button cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-state-button wk-touch-row cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 data-wk-pricing-interval-toggle="{{ $intervalKey }}"
             >{{ $intervalLabelText }}</button>
         @endforeach

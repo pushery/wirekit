@@ -9,7 +9,8 @@
 
     {{-- A sibling of <main>, never a descendant of it. `expand="hover"` keeps the
          spine narrow at rest and opens it on hover; `expand="always"` suits a
-         dedicated docs layout. --}}
+         dedicated docs layout. For an outline that stays open in a grid column
+         beside the article, see `layout="rail"` in the recipe. --}}
     <x-wirekit::reading-spine
         target="main"
         levels="2,3"

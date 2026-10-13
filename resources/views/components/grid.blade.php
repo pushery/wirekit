@@ -25,12 +25,11 @@
     // from `lg` — the layout this form exists for.
     'template' => null, // @example "14rem 1fr 18rem" @example "4.5rem repeat(7, minmax(0, 1fr))" @example "lg:[minmax(0,1fr)_20rem]"
     'gap' => config('wirekit.components.grid.gap', 'md'),
-    // Which spacing ladder `gap` names a rung on: `space`, what this prop has always read, or
-    // `gap`, the tighter ladder WireKit's own components use inside themselves. The two share
-    // the rung names `xs`…`2xl` and differ from `md` up, so a card grid written against
-    // `--gap-wk-md` could not become this component without every gap growing by a third.
-    // `row` and `stack` have had the same prop since it was first reported for them; the
-    // grids were left behind only because that report came from a repository using those two.
+    // Which spacing ladder `gap` names a rung on: `space`, the default, or `gap`, the tighter
+    // ladder WireKit's own components use inside themselves. The two share the rung names
+    // `xs`…`2xl` and differ from `md` up, so a card grid written against `--gap-wk-md` could
+    // not become this component without every gap growing by a third. `row` and `stack` take
+    // the same prop.
     'scale' => 'space',
     'align' => null,
     'as' => 'div',
@@ -139,7 +138,7 @@
             $trackProp = null;
             $templateAt = [];
         } elseif ($templateAt === []) {
-            // No breakpoint: exactly what this prop has always rendered, byte for byte.
+            // No breakpoint: the track list as a plain inline `grid-template-columns`.
             $trackStyle = 'grid-template-columns: '.$templateBase.';';
         } else {
             // With breakpoints the base can NOT stay an inline `grid-template-columns`:
@@ -167,10 +166,9 @@
     // disappear ENTIRELY and stack the grid into one column. Elsewhere a
     // dropped inline style costs a shade or a width; here it costs the whole statement.
     //
-    // The suppression was there for readability — "a class that never applies is one
-    // more thing for the next reader to disentangle". That reasoning holds only while
-    // the class really never applies, and its premise is exactly what a strict CSP
-    // removes. An inline style beats a class on specificity every time it is allowed,
+    // Leaving the class out would read cleaner — a class that never applies is one more
+    // thing for the next reader to disentangle — but under a strict CSP it does apply.
+    // An inline style beats a class on specificity every time it is allowed,
     // so emitting both changes nothing about what renders; it only decides what happens
     // when the style does not arrive.
     //
@@ -184,7 +182,7 @@
     $colsTokens = preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols));
 
     if ($responsiveTemplate) {
-        // With breakpoints `cols` is no longer a fallback — it is the ACTIVE value at every
+        // With breakpoints `cols` is not a fallback — it is the ACTIVE value at every
         // breakpoint the template leaves free, including the default. `cols="1"
         // template="lg:[1fr_20rem]"` needs `grid-cols-1` below `lg`: dropped as an unrequested
         // default (the rule above), the phone would get no column definition at all, and
@@ -238,7 +236,7 @@
         : '';
 
     // Resolved before the rungs, so an unknown ladder name is reported as what it is rather
-    // than silently falling through to the historical one.
+    // than silently falling back to `space`.
     $scale = WireKit::validateProp('grid', 'scale', (string) $scale, ['space', 'gap']);
 
     // Two maps written out rather than one with a token name assembled at runtime: Tailwind

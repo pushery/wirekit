@@ -7,10 +7,10 @@
     // The two direction labels. `Previous`/`Next` are correct for a page-ordered list and
     // MISLEADING on a reverse-chronological one, where "next" moves BACKWARD in time — a
     // reader on a changelog or an activity feed is told the opposite of what the button
-    // does. There was no way to say otherwise: the strings were baked in, and translating
-    // them globally would have changed every paginator in the application.
+    // does. Translating the two strings globally would change every paginator in the
+    // application, so each paginator takes its own.
     //
-    // Null keeps today's behavior exactly, including its translation.
+    // Null keeps the translated `Previous` and `Next`.
     'previousLabel' => null,
     'nextLabel' => null,
     // Turn pages inside a Livewire component instead of loading a new document. Every control keeps
@@ -23,8 +23,7 @@
     // first and then in the whole document, as Livewire's own pager does. False keeps the scroll
     // position. Read only with `livewire`, because a navigation starts at the top anyway.
     'scrollTo' => 'body',
-    // Offer a choice of page size beside the summary: `[10, 25, 50, 100]`. Null offers none and the
-    // pager renders exactly as before.
+    // Offer a choice of page size beside the summary: `[10, 25, 50, 100]`. Null offers none.
     //
     // With a choice on offer the pager also renders when everything fits one page, as the summary and
     // the choice without page links. Otherwise picking the largest size removes the control that would
@@ -95,7 +94,7 @@
 
     $singlePage = ! $paginator->hasPages();
 
-    // A PAGINATOR THAT DOES NOT KNOW ITS LAST PAGE CAN ONLY DRIVE `mini`, so it gets `mini`
+    // A paginator that does not know its last page can only drive `mini`, so it gets `mini`
     // whatever was asked for. That is a cursor paginator, and it is also the plain paginator
     // `simplePaginate()` returns: both know whether another page exists, and neither knows how
     // many there are.
@@ -166,7 +165,7 @@
         'text-[color:var(--color-wk-text)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'hover:border-[var(--color-wk-border-hover)]',
         'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
@@ -206,6 +205,13 @@
         'bg-[var(--color-wk-accent)]',
         'text-[color:var(--color-wk-accent-fg)]',
         'font-[number:var(--font-wk-heading-weight)]',
+        // Focusable from a script only (`tabindex="-1"` under Livewire), when a page turn hands
+        // the focus back to the navigation, so it shows where the focus is like the links do.
+        'focus:outline-hidden',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
+        'focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
     ]);
 
     // Absolute-ize paginator URLs. Under Livewire's WithPagination the current-path
@@ -238,6 +244,7 @@
     $previousAction = null;
     $nextAction = null;
     $scrollHandler = null;
+    $landedHandler = null;
 
     $livewire = BooleanProp::from($livewire, false);
 
@@ -259,13 +266,16 @@
             $firstPageAction = $pageAction(1);
         }
 
-        // One call to a magic, which finds the target (the nearest matching ancestor, else the
-        // first match in the document) and scrolls it into view. Reaching the document inside the
-        // expression is refused by Alpine's CSP build, however the expression gets there, and a
-        // target that is not an ancestor of the pager is the common case.
-        if ($scrollTo !== false && $scrollTo !== null && $scrollTo !== '') {
-            $scrollHandler = '$wkScrollTo('.\Pushery\WireKit\Support\AlpinePayload::from((string) $scrollTo).')';
-        }
+        // One call to a magic in each page control's click. It notes the turn, so the focus can land
+        // in the navigation the server sends back (the control the reader chose may come back as a
+        // span), and scrolls to the target: the nearest matching ancestor, else the first match in
+        // the document. Reaching the document inside the expression is refused by Alpine's CSP
+        // build, however the expression gets there, and a handler there holds one call.
+        $scrollTarget = ($scrollTo !== false && $scrollTo !== null && $scrollTo !== '') ? (string) $scrollTo : '';
+        $scrollHandler = '$wkPagerTurn('.$pageNameJs.', '.\Pushery\WireKit\Support\AlpinePayload::from($scrollTarget).')';
+        // The elements a turn renders new, the current page and a disabled end, take the focus
+        // back from the page once the navigation is in. See utils/pager-focus.js.
+        $landedHandler = '$wkPagerLanded('.$pageNameJs.')';
     }
 
     // The choice of page size, prepared for the partial that draws it.
@@ -427,7 +437,7 @@
                  no state — the numbers on either side already say a range was elided — so it
                  is the one span here that really is decoration. --}}
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true"><span aria-hidden="true">&laquo;</span> {{ $previousText }}</span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" @if($landedHandler) x-init="{{ $landedHandler }}" @endif><span aria-hidden="true">&laquo;</span> {{ $previousText }}</span>
             @else
                 <a data-wk-prose-skip href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" @if($previousAction) wire:click.prevent="{{ $previousAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif><span aria-hidden="true">&laquo;</span> {{ $previousText }}</a>
             @endif
@@ -447,7 +457,7 @@
             @if($paginator->hasMorePages())
                 <a data-wk-prose-skip href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" @if($nextAction) wire:click.prevent="{{ $nextAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>{{ $nextText }} <span aria-hidden="true">&raquo;</span></a>
             @else
-                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true">{{ $nextText }} <span aria-hidden="true">&raquo;</span></span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" @if($landedHandler) x-init="{{ $landedHandler }}" @endif>{{ $nextText }} <span aria-hidden="true">&raquo;</span></span>
             @endif
         </div>
 
@@ -474,7 +484,7 @@
             {{-- Glyph-only, so the name has to come from the label — see the note on the
                  simple variant above for why the label needs a role that admits one. --}}
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $previousText }}">&laquo;</span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $previousText }}" @if($landedHandler) x-init="{{ $landedHandler }}" @endif>&laquo;</span>
             @else
                 <a data-wk-prose-skip href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ $previousText }}" @if($previousAction) wire:click.prevent="{{ $previousAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>&laquo;</a>
             @endif
@@ -500,7 +510,7 @@
                     {{-- null url = separator (ellipsis) --}}
                     <span class="{{ $buttonDisabled }}" aria-hidden="true" @if($pageAction) wire:key="{{ 'paginator-'.$pageName.'-gap'.$loop->index }}" @endif>{!! $link['label'] !!}</span>
                 @elseif($link['active'])
-                    <span class="{{ $buttonActive }}" aria-current="page" @if($pageAction) wire:key="{{ 'paginator-'.$pageName.'-page'.$link['label'] }}" @endif>{!! $link['label'] !!}</span>
+                    <span class="wk-pagination-current {{ $buttonActive }}" aria-current="page" @if($pageAction) wire:key="{{ 'paginator-'.$pageName.'-page'.$link['label'] }}" tabindex="-1" @endif @if($landedHandler) x-init="{{ $landedHandler }}" @endif>{!! $link['label'] !!}</span>
                 @else
                     <a data-wk-prose-skip href="{{ $abs($link['url']) }}" class="{{ $buttonBase }}" aria-label="{{ __('wirekit::Go to page :page', ['page' => $link['label']]) }}" @if($pageAction) wire:click.prevent="{{ $pageAction((int) $link['label']) }}" wire:key="{{ 'paginator-'.$pageName.'-page'.$link['label'] }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>{!! $link['label'] !!}</a>
                 @endif
@@ -509,7 +519,7 @@
             @if($paginator->hasMorePages())
                 <a data-wk-prose-skip href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ $nextText }}" @if($nextAction) wire:click.prevent="{{ $nextAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>&raquo;</a>
             @else
-                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $nextText }}">&raquo;</span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $nextText }}" @if($landedHandler) x-init="{{ $landedHandler }}" @endif>&raquo;</span>
             @endif
         </div>
     @endif

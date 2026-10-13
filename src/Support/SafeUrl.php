@@ -85,7 +85,12 @@ final class SafeUrl
     }
 
     /**
-     * The scheme the browser reads from the URL, lowercase, or null for a relative URL.
+     * The scheme the URL names as written, lowercase, or null when it names none.
+     *
+     * The characters are read as they stand, the first of the two readings `allows()` makes. A
+     * character reference is not decoded, so `&#106;avascript:alert(1)` names no scheme here,
+     * while a page whose echo leaves the reference standing hands the browser `javascript:`. This
+     * is no verdict about a link: `allows()` and `href()` give that.
      */
     public static function scheme(string $url): ?string
     {

@@ -11,11 +11,10 @@
  *
  * ## What it does not do
  *
- * The channel is a PARAMETER, so opening a dropdown does not close a popover.
- * That is today's behavior kept deliberately: making every overlay close every
- * other is a product decision about how the interface feels, not a defect fix,
- * and it would arrive silently in a patch release. Siblings of the same
- * component are what overlapped, and siblings are what this closes.
+ * The channel is a PARAMETER, so opening a dropdown does not close a popover,
+ * deliberately: making every overlay close every other is a product decision
+ * about how the interface feels, not a defect fix. Siblings of the same
+ * component are what would overlap, and siblings are what this closes.
  *
  * ## Why a uid rather than comparing elements
  *
@@ -44,8 +43,8 @@ let sequence = 0;
 export function coordinateOverlay({ channel, onOther }) {
     if (typeof channel !== 'string' || channel === '') {
         // Thrown rather than tolerated: a coordination that listens to nothing
-        // looks installed and is silent, which is indistinguishable from the
-        // bug it was added to fix.
+        // looks installed and is silent, which is indistinguishable from having
+        // none.
         throw new TypeError('coordinateOverlay: `channel` must be a non-empty event name.');
     }
 

@@ -150,8 +150,8 @@ export const TOUCH_SURFACE_ATTRIBUTE = 'data-wk-touch';
  *
  * `data-wk-touch` applies the stylesheet's touch sizes to everything inside the element it sits
  * on, on any pointer (a till with a mouse plugged in reports a fine one). A dialog teleported here
- * from inside that element is no longer inside it, so its fields and buttons took the mouse sizes
- * again, in exactly the place the surface was meant to cover.
+ * from inside that element is no longer inside it, so without this mark its fields and buttons
+ * would take the mouse sizes again, in exactly the place the surface is meant to cover.
  *
  * Alpine keeps a pointer from a teleported clone back to the `<template>` it came from, so the
  * question "did this come from a touch surface" has an answer at the moment the clone arrives.

@@ -11,6 +11,11 @@
     'scope' => null,
 ])
 
+{{-- The table's `sticky-header`, which pins this head to the top of the table's own scroller. --}}
+@aware([
+    'stickyHeader' => false,
+])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -18,6 +23,13 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('table.head', $attributes->getAttributes());
 
     use Pushery\WireKit\WireKit;
+
+    // `@aware` leaves the key in the bag, so a tag that also writes it would render it as an
+    // attribute. While the head is pinned it tells the table's scroller how much of the top it
+    // covers (`data-wk-scroll-inset`), so an element that takes the focus on the way up comes to
+    // rest below it rather than under it (WCAG 2.4.11).
+    $attributes = $attributes->except(['stickyHeader', 'sticky-header']);
+    $pinned = \Pushery\WireKit\Support\BooleanProp::from($stickyHeader, false);
 
     // Thead styling — subtle background + bottom border divider
     // Sticky header: when parent table has data-wk-sticky-header, thead sticks to top
@@ -36,6 +48,6 @@
     ])), $scope);
 @endphp
 
-<thead data-wk-table-head {{ $attributes->class([$classes]) }}>
+<thead data-wk-table-head @if($pinned) data-wk-scroll-inset="top" @endif {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </thead>

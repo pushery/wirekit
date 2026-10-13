@@ -98,11 +98,10 @@
     ]), $scope);
 
     // Auto-generate id for aria-labelledby
-    // STABLE across re-renders, which the old `Str::random(6)` was not — and `progress`
-    // one directory up had this exact defect for this exact reason: inside a wire:poll
-    // region every poll minted a new id, so aria-labelledby and the label's id drifted
-    // apart on every tick. A progress indicator that polls is the normal case, not an
-    // edge one.
+    // STABLE across re-renders, which a `Str::random(6)` id would not be: inside a
+    // wire:poll region every poll would mint a new id, and aria-labelledby and the
+    // label's id would drift apart on every tick. A progress indicator that polls is
+    // the normal case, not an edge one.
     $labelId = \Pushery\WireKit\Support\DomId::unique(null, 'progress-circle-').'-label';
 
     // Pull the caller's name off the wrapper so it can go on the element that

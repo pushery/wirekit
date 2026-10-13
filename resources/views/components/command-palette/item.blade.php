@@ -77,7 +77,7 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'cursor-pointer',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden',
         // `data-active`, not `focus`, and this is the one menu-ish component where
         // that distinction matters. The option is `tabindex="-1"` under the list's
@@ -85,12 +85,11 @@
         // it — the highlight is written by `_paintActive()`. So a `focus:` background here
         // would be inert, and there is none.
         //
-        // The RING is the mark, for the reason dropdown/item.blade.php records: dark
-        // mode declares --color-wk-bg-subtle and --color-wk-bg-elevated as the same
-        // value, and the palette panel is bg-elevated, so the highlighted row moved
-        // 1.00:1 against what it sits on. Light managed 1.04:1. The ring measures
-        // 17.2:1 dark and 19.8:1 light.
-        'data-[active=true]:bg-[var(--color-wk-bg-subtle)]',
+        // The RING is the mark, for the reason dropdown/item.blade.php records. The
+        // background is the hover's shade, --color-wk-bg-hover, about 1.1:1 against the
+        // palette panel: it shows which row the pointer is on and is too faint to mark
+        // the highlighted one alone. The ring measures 17.2:1 dark and 19.8:1 light.
+        'data-[active=true]:bg-[var(--color-wk-bg-hover)]',
         'data-[active=true]:ring-[length:var(--ring-wk-width)]',
         'data-[active=true]:ring-inset',
         'data-[active=true]:ring-[var(--color-wk-ring)]',
@@ -127,7 +126,7 @@
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-listbox-option', $classes, $disabledClasses]) }}
+    {{ $attributes->except('rel')->class(['wk-listbox-option', 'wk-touch-row', $classes, $disabledClasses]) }}
 >
     @if($icon)
         <span class="shrink-0 w-5 h-5 text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
@@ -137,7 +136,9 @@
         </span>
     @endif
 
-    <span class="flex-1 truncate">{{ $slot }}</span>
+    {{-- One line; a label the line cuts is whole in its title, as plain text, since the slot may
+         carry markup such as a highlighted match. --}}
+    <span class="flex-1 truncate" title="{{ trim(preg_replace('/\s+/', ' ', strip_tags((string) $slot)) ?? '') }}">{{ $slot }}</span>
 
     @if($shortcut)
         <span class="ml-auto flex items-center gap-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">

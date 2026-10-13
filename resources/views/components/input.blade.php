@@ -15,15 +15,18 @@
     // rendered.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
+    // For `type="date"` and `type="datetime-local"`: a sentence below the field when the browser
+    // writes dates in a different order than the page, with a worked example, as date-picker's
+    // prop of the same name. A native date field takes its order from the browser's language and
+    // never from the page, so `03.04.2026` and `04/03/2026` are both accepted and one of them is
+    // the wrong day. Nothing renders while the two orders agree. Other types ignore it.
+    'formatHint' => config('wirekit.components.input.format-hint', false),
     // Explained in a tooltip from a question mark beside the label, and read as the
     // field's description (partials/field-help).
     'help' => null,
@@ -50,18 +53,18 @@
     'size' => config('wirekit.components.input.size', 'md'),
     'type' => 'text',
     // Monospace the field value — for SKUs, measurements, codes, hashes. Swaps the
-    // input font to --font-wk-mono; off by default (byte-identical). The <x-slot:leading>
+    // input font to --font-wk-mono; off by default. The <x-slot:leading>
     // / <x-slot:trailing> named slots put an icon or addon INSIDE the field frame (a
     // search glyph, a unit) — distinct from the text-only `prefix`/`suffix` props.
     'mono' => false,
     'prefix' => null,
     'suffix' => null,
-    // Optional trailing affordances (opt-in; default off for byte-identical
-    // back-compat). `clearable` shows an X button that empties the field,
+    // Optional trailing affordances (opt-in; off by default). `clearable` shows an
+    // X button that empties the field,
     // refocuses it, and dispatches input/change so wire:model / x-model sync.
     // `copyable` shows a copy-to-clipboard button with a brief "Copied" state.
     // Both route the field through the flex wrapper and add a tiny inline Alpine
-    // island; when neither is set the input renders exactly as before.
+    // island; when neither is set the input renders without them.
     'clearable' => false,
     // What the X says it clears, as its accessible name and its tooltip. A field whose X
     // lifts more than the text (a found receipt, a started return) says so here.
@@ -76,10 +79,9 @@
     // what it stands for, which a screen reader hears after it: `['{YYYY}' => 'the year']`.
     'tokens' => null,
     'scope' => null,
-    // HTML5 form-state props — surface in the schema so AI / IDE tools
-    // know about them, while preserving the pre-existing attribute-bag
-    // passthrough so the plain HTML-attribute form (required, disabled,
-    // readonly as bare attributes) keeps working byte-identically.
+    // HTML5 form-state props — declared so the schema and AI / IDE tools
+    // know about them, and passed through like the bare HTML attributes
+    // (required, disabled, readonly) a plain form writes.
     'required' => false,
     'disabled' => false,
     'readonly' => false,
@@ -160,7 +162,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -206,9 +208,7 @@
     $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
-    // same element. `id` was stripped from the start; `name` was not, and a caller that
-    // passed one got two name attributes on one control — invalid HTML the browser
-    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
@@ -226,10 +226,16 @@
     // One description list for the control: the component's own id first, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
-    $describedBy = trim(
-        ($hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')))
-        .' '.((string) $attributes->get('aria-describedby', ''))
-    );
+    // The format hint is a description whenever it is on, not only when it has something to say:
+    // its text is decided in the browser, after this markup is written, and an element with no
+    // text adds nothing to a computed description.
+    $formatHint = BooleanProp::from($formatHint, false);
+    $showsFormatHint = $formatHint && in_array($type, ['date', 'datetime-local'], true);
+    $describedBy = trim(implode(' ', array_filter([
+        $hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')),
+        $showsFormatHint ? $id.'-format-hint' : '',
+        (string) $attributes->get('aria-describedby', ''),
+    ], static fn (string $part): bool => $part !== '')));
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
@@ -281,6 +287,13 @@
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
     ]), $scope);
+
+    // A width utility in the caller's `class` replaces the field's own `w-full`, as on a number input.
+    // Beside it the stylesheet's order would decide which width wins, not the attribute. A width
+    // under a variant is left alone, because it applies at a width of its own.
+    if (\Pushery\WireKit\Support\UtilityClasses::has(\Illuminate\Support\Arr::toCssClasses($attributes->get('class', '')), '/^w-/')) {
+        $inputClasses = \Pushery\WireKit\Support\UtilityClasses::without($inputClasses, '/^w-/');
+    }
 
     // Border and focus-ring color switch between error, success, and normal state — all via
     // tokens. Each state names its own ring color and the base list names none: two ring colors
@@ -403,9 +416,9 @@
     }
 @endphp
 
-<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($inAlignedRow)
         {{-- An empty label track, held so that the control stays on the middle one. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>
@@ -462,6 +475,9 @@
                 id="{{ $id }}"
                 @if($name !== '') name="{{ $name }}" @endif
                 type="{{ $type }}"
+                {{-- The kit draws its own clear button, so on a field of type search the browser's
+                     is hidden through this marker (dist/wirekit.css) and the field shows one. --}}
+                @if($clearable) data-wk-clearable @endif
                 @if($required) required @endif
                 @if($disabled) disabled @endif
                 @if($readonly) readonly @endif
@@ -480,6 +496,9 @@
                 {{ $attributes->except('aria-describedby')->class([
                     'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
                     'w-full h-full bg-transparent border-none shadow-none',
+                    // A flex item keeps the width of its content unless told otherwise, so in a
+                    // frame narrower than that the field would reach past the frame's edge.
+                    'min-w-0',
                     'block' => ! $isNativeTemporal,
                     'grid items-center' => $isNativeTemporal,
                     $fontFamilyClass,
@@ -523,7 +542,7 @@
                         @if($disabled) disabled @endif
                         aria-label="{{ $copyText }}"
                         :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($copyText) }}"
-                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                     >
                         <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z"/>
@@ -549,7 +568,7 @@
                              nothing, and `copyable readonly` is the documented token field. --}}
                         @if($disabled || $readonly) disabled @endif
                         aria-label="{{ $clearText }}"
-                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                        class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                     >
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
@@ -600,6 +619,11 @@
          screen reader: the line holds space, not text, so there is nothing here to select
          either. Without it a drag-select across a form carries one stray no-break space per
          reserved field into whatever gets pasted. --}}
+    @if($showsFormatHint)
+        {{-- The message and the format hint below it are one part, for the same reason as the
+             tokens below: an aligned row has three tracks, and a fourth part has none. --}}
+        <div class="space-y-1.5 min-w-0">
+    @endif
     @if($insertTokens !== [])
         {{-- The tokens and the message below them are one part, so an aligned row keeps its three
              tracks: a fourth part would have no track of its own in the row's subgrid. --}}
@@ -617,7 +641,7 @@
         <div class="flex items-start gap-[var(--gap-wk-sm)]">
             <div class="min-w-0 flex-1">
     @endif
-    @if($inAlignedRow && ! $counter && $insertTokens === [] && ! ($reserveMessage || ($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
+    @if($inAlignedRow && ! $counter && $insertTokens === [] && ! $showsFormatHint && ! ($reserveMessage || ($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
         {{-- Nothing below the control, and the track still ends here, or the row's next field
              would be pulled up into it. --}}
         <span data-wk-field-part="message" aria-hidden="true"></span>
@@ -643,6 +667,24 @@
         </div>
     @endif
     @if($insertTokens !== [])
+        </div>
+    @endif
+    @if($showsFormatHint)
+            {{-- Composed in the browser, which alone knows its own date order. The translated
+                 sentence travels from here, so the wording is the page's language. While the two
+                 orders agree the paragraph is empty, and its negative top margin cancels the space
+                 above it: a field with the hint on stands as tall as one without it. --}}
+            <p
+                data-wk-prose-skip
+                data-wk-format-hint
+                id="{{ $id }}-format-hint"
+                x-data="wirekitDateFormatHint({
+                    locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale())) }},
+                    template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
+                })"
+                x-text="message"
+                class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] empty:-mt-1.5"
+            ></p>
         </div>
     @endif
 

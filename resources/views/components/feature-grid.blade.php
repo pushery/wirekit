@@ -5,7 +5,7 @@
     'cols' => config('wirekit.components.feature-grid.cols', '1 sm:2 lg:3'),
     'gap' => 'lg',
     // Which spacing ladder `gap` names a rung on: `space` (the default) or the tighter `gap`
-    // ladder, as on `grid`. The rungs offered stay the ones this prop has always had.
+    // ladder, as on `grid`.
     'scale' => 'space',
     // Cascade entrance animations across direct children.
     // null = no stagger (default — each child animates simultaneously)

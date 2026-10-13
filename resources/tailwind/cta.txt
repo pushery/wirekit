@@ -65,6 +65,7 @@ $variantClasses])
 (<
 (=
 (WireKit::validateProp('cta',
+(a
 (code-block,
 (default
 (int)
@@ -244,7 +245,7 @@ first-allowed
 flags
 flex-row
 flex-wrap
-flipped
+flip
 focus
 font-[number:var(--font-wk-heading-weight)]
 footer.blade.php
@@ -321,7 +322,6 @@ nothing
 null,
 of
 off-enum
-old
 on
 one
 one.

@@ -120,9 +120,8 @@ export default function wirekitOptimistic(config = {}) {
         failure: config.failure === 'keep' ? 'keep' : 'undo',
         errorRegion: config.errorRegion || null,
         args: config.args || [],
-        // Passed in rather than read here: the house rule is that a developer
-        // warning is gated in Blade on config('app.debug') and does not reach a
-        // production page at all.
+        // Passed in rather than read here: a developer warning is gated in Blade
+        // on config('app.debug') and does not reach a production page at all.
         debug: config.debug === true,
 
         _bindMissing: false,
@@ -173,23 +172,19 @@ export default function wirekitOptimistic(config = {}) {
                 return direct.getAttribute('wire:id');
             }
 
-            // A TELEPORTED NODE IS FOUND BY ITS MARKER, NEVER BY ITS POSITION.
+            // A teleported node is found by its marker, never by its position.
             //
-            // This walked `document.body.children`, which was true while Alpine dropped
-            // teleported panels straight into <body>. Every overlay panel now lands inside
-            // `#wk-overlay-root` — one level deeper — so the loop matched nothing, `_hostId`
-            // stayed null, and `_wire()` fell through to Alpine's componentless `$wire` stub.
-            // That stub's `$id` is a truthy no-op function, so it passes the guard in `run()`
-            // and `$intercept` is never installed: the value flips optimistically, no request
-            // is ever made, and nothing settles. The layer sits at "optimistic" forever.
+            // Overlay panels land inside `#wk-overlay-root`, not directly in <body>, and a
+            // walk by position would have to know that nesting. Without a host id `_wire()`
+            // falls through to Alpine's componentless `$wire` stub, whose `$id` is a truthy
+            // no-op function: it passes the guard in `run()`, `$intercept` is never
+            // installed, the value flips optimistically, no request is ever made, and the
+            // layer sits at "optimistic" forever — a refusal that never arrives, for a
+            // control that never asked.
             //
-            // It read as a refusal that never arrived. It was a control that never asked.
-            //
-            // Only one component could see it — `dropdown.checkbox-item` is the single
-            // optimistic component whose layer wrapper is born INSIDE the panel. Everywhere
-            // else the wrapper sits outside, `closest()` finds the host directly, and this
-            // branch is never reached. So twenty-two neighbors stayed green over a broken
-            // shared mechanism.
+            // This branch is reached only by a layer wrapper born INSIDE a panel, such as
+            // `dropdown.checkbox-item`'s; a wrapper outside it finds the host through
+            // `closest()` above.
             //
             // The guard tests `querySelectorAll` rather than `document.body`: the ESM cases
             // hand this factory a deliberately barren document with neither.
@@ -197,10 +192,9 @@ export default function wirekitOptimistic(config = {}) {
                 return null;
             }
 
-            // A LOOP, not a single hop, and the extra lines buy the class rather than the
-            // case: a popover inside a modal teleports twice, and one hop would lose it
-            // exactly as this lost the first one. Bounded, because a node whose back-link
-            // points into itself would otherwise spin forever.
+            // A LOOP, not a single hop: a popover inside a modal teleports twice, and one
+            // hop would lose it. Bounded, because a node whose back-link points into itself
+            // would otherwise spin forever.
             let node = el;
 
             for (let hops = 0; node && hops < 10; hops += 1) {
@@ -241,23 +235,19 @@ export default function wirekitOptimistic(config = {}) {
             // Marks the subtree as carrying a provisional state, so the stylesheet can
             // give the in-flight control a VISIBLE treatment.
             //
-            // Rule 6 of this layer's own contract says "the pending state has to be
-            // visible and legible", and it was not: `aria-busy` was bound and nothing in
-            // the shipped stylesheet painted it, so the provisional state was audible to
-            // a screen reader and invisible to everyone else. A sighted user flipped a
-            // toggle and saw a finished change — which is the exact promise the contract
-            // says must be shown as withdrawable.
+            // The pending state has to be visible and legible. `aria-busy` alone, with
+            // nothing in the stylesheet painting it, is audible to a screen reader and
+            // invisible to everyone else: a sighted user flipping a toggle would see a
+            // finished change, where the layer promises a change that can still be taken
+            // back.
             //
-            // Stamped by the FACTORY rather than added to each of the twenty-three
-            // templates. The factory is the one place that knows a subtree is optimistic;
-            // a per-template marker is twenty-three chances to forget, and a
-            // hand-mounted factory would never get one at all.
+            // Stamped by the FACTORY rather than added to each template that uses the
+            // layer. The factory is the one place that knows a subtree is optimistic; a
+            // per-template marker is one more place to forget, and a hand-mounted factory
+            // would never get one at all.
             // Optional chaining because `$el` is an Alpine magic that a plain unit harness
-            // does not provide. Without it `init()` throws there, and the failure names
-            // setAttribute rather than anything about the layer — which is how the JS suite
-            // went red on a change that was correct in a browser. The marker is still
-            // asserted in that harness against an $el double, so the guard against crashing
-            // does not weaken the guard.
+            // does not provide. Without it `init()` would throw there, and the failure would
+            // name setAttribute rather than anything about the layer.
             this.$el?.setAttribute('data-wk-optimistic', '');
             this._stampState();
 
@@ -641,10 +631,9 @@ export default function wirekitOptimistic(config = {}) {
             // is careful about everywhere else.
             // Asking `typeof wire[action] === 'function'` looks like the check to
             // make here and is worth nothing: Livewire's wire is a proxy that
-            // answers "function" for every name, so this guard was true for a
-            // method that does not exist — and, worse, true for a wire attached
-            // to no component at all. It could never fail, which is the same as
-            // not being here.
+            // answers "function" for every name, so such a guard would be true for
+            // a method that does not exist — and, worse, true for a wire attached
+            // to no component at all. It could never fail.
             //
             // What can be false is whether a component was resolved. Without one
             // there is nothing to call, and applying first would leave the
@@ -739,14 +728,13 @@ export default function wirekitOptimistic(config = {}) {
 
             onFailure(decide(() => this._settle(failureExit)));
 
-            // `preventDefault()` is the whole point, and its absence put a Laravel
-            // stack trace on a reader's phone. Livewire's default for a non-2xx is
-            // to render the server's error page into a full-screen iframe — which
-            // is right for an app that has not handled the failure, and wrong here
-            // by definition: a component that declares `optimistic` has said it
-            // OWNS this path. It rolls the value back and announces the refusal,
-            // and then Livewire covers that with a stack trace the reader can do
-            // nothing with.
+            // `preventDefault()` is the whole point. Livewire's default for a
+            // non-2xx is to render the server's error page into a full-screen
+            // iframe — which is right for an app that has not handled the failure,
+            // and wrong here by definition: a component that declares `optimistic`
+            // has said it OWNS this path. It rolls the value back and announces the
+            // refusal, and without this Livewire would cover that with a stack
+            // trace the reader can do nothing with.
             //
             // The failure is not swallowed — it goes to the console, where a
             // developer looks and a reader does not. Handling something and hiding
@@ -933,19 +921,16 @@ export default function wirekitOptimistic(config = {}) {
         /**
          * Put the state on the element, so styling can reach it.
          *
-         * The rejected state needs exactly this and it was never built: "the
-         * state becomes `rejected`, not `rolled-back` — a component's styling
-         * needs to tell 'put back' from 'still yours, not saved'". Nothing bound
-         * to `state` in any of the twenty-three templates, and the only visible
-         * treatment in the library keys off `aria-busy`, which covers the pending
-         * state alone. So a refusal on a `keep` component looked EXACTLY like a
-         * success: the value stayed, the outline cleared, and the announcement
-         * went into an `sr-only` region. The page promised "you are told it did
-         * not save" and told nobody who was looking.
+         * A component's styling needs to tell 'put back' (`rolled-back`) from
+         * 'still yours, not saved' (`rejected`), and `aria-busy` covers the
+         * pending state alone. Without the state on the element a refusal on a
+         * `keep` component would look EXACTLY like a success: the value stays,
+         * the outline clears, and the announcement goes into an `sr-only`
+         * region, so nobody who is looking is told it did not save.
          *
          * Stamped by the factory for the same reason the marker above is: it is
-         * the one place that knows, and twenty-three templates are twenty-three
-         * chances to forget.
+         * the one place that knows, and a stamp per template is one more place
+         * to forget.
          */
         _stampState() {
             this.$el?.setAttribute('data-wk-optimistic-state', this.state);
@@ -1025,8 +1010,8 @@ export default function wirekitOptimistic(config = {}) {
          *
          * ACTIVE means carrying text, not merely present. An empty error region
          * is not a speaker, and a presence check would silence this layer while
-         * nothing else is talking — which is the common case, since eighteen
-         * form controls render the region and announce_error defaults to on.
+         * nothing else is talking — which is the common case, since the form
+         * controls render the region and announce_error defaults to on.
          *
          * "Email is required" tells the user what to do; "could not save" does
          * not, and WCAG 3.3.1 wants the specific one to be the one heard.

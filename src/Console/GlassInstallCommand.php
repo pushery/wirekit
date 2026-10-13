@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\File;
  * and the HTML parser has no "in head" insertion mode for SVG: it terminates that section
  * and switches to the body. Every metadata tag after it — a canonical link, the Open Graph
  * block, a layout's @stack('meta') — is reparented into <body>, where a crawler does not
- * look. The page still renders, which is why this went unnoticed.
+ * look. The page still renders, so nothing on it would say so.
  */
 class GlassInstallCommand extends Command
 {
@@ -54,8 +54,8 @@ class GlassInstallCommand extends Command
         /*
          * An EDITED published file is not overwritten without `--force`.
          *
-         * A developer may have edited the published CSS to adjust the look, before the
-         * `--glass-wk-*` tokens let that live in their own stylesheet. This command is
+         * A developer may have edited the published CSS to adjust the look, rather than
+         * set the `--glass-wk-*` tokens in their own stylesheet. This command is
          * plausibly re-run after upgrading the package, and a silent copy would take the
          * customization with no output difference from a first install.
          *
@@ -114,9 +114,8 @@ class GlassInstallCommand extends Command
         $this->newLine();
         // The BODY, and as its first element — never the head. This component emits an
         // <svg>, and an SVG in the head ends head parsing: every metadata tag after it is
-        // reparented into the body, where a crawler does not look. The command is the last
-        // place that still said `<head>`, and it is the one a developer reads while doing
-        // the install rather than afterwards.
+        // reparented into the body, where a crawler does not look. This message is what a
+        // developer reads while doing the install rather than afterwards.
         $this->info('Add as the FIRST element of your layout\'s <body> — not the <head>:');
         $this->line('  <body>');
         $this->line('      <x-wirekit::glass />');

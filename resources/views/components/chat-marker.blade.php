@@ -66,16 +66,12 @@
 
 @if($variantValue === 'separator')
     {{-- Delegate to the divider rather than re-implementing label-between-rules:
-         one implementation, no drift.
-
-         The divider is a `role="separator"`, and assistive technology commonly
-         announces that role WITHOUT reading its inner text — which would make a
-         date break ("Today") silent in a transcript. Giving the separator an
-         explicit accessible NAME fixes that without changing the divider's own
-         contract: AT announces "Today, separator". --}}
+         one implementation, no drift. The divider names its separator with the label,
+         because assistive technology announces a `role="separator"` without reading its
+         inner text, so a date break reads "Today, separator". A name the caller gives,
+         `aria-label` or `aria-labelledby`, replaces it. --}}
     <x-wirekit::divider
         :label="\Pushery\WireKit\Support\SlotContent::text($slot)"
-        :aria-label="\Pushery\WireKit\Support\SlotContent::text($slot)"
         {{ $attributes }}
     />
 @else
@@ -100,7 +96,7 @@
         {{ $attributes->except('aria-busy')->class([$classes]) }}
     >
         @if($icon)
-            <x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />
+            <x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" />
         @endif
 
         <span data-wk-chat-marker-content>

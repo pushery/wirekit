@@ -31,6 +31,10 @@
 
     use Pushery\WireKit\WireKit;
 
+    // An unknown value is reported through the strictness gate and, where the gate does not throw,
+    // aligns left.
+    $align = filled($align) ? WireKit::validateProp('table.td', 'align', (string) $align, ['left', 'center', 'right']) : 'left';
+
     $alignClass = match ($align) {
         'center' => 'text-center',
         'right' => 'text-right',

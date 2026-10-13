@@ -4,11 +4,11 @@ import { watchCurrent } from '../utils/watch-current.js';
 /**
  * Data table — the column-visibility menu's disclosure and its anchoring.
  *
- * A small component nested inside the table's own scope, and the last inline
- * `x-data` in the file. It did not parse under Alpine's CSP build (method
- * shorthand, multiple statements, an arrow function in the accompanying
- * `x-init`), so under a strict Content-Security-Policy the whole nested scope
- * failed to build: the menu button toggled nothing.
+ * A small component nested inside the table's own scope. It is a factory
+ * because its object needs what Alpine's CSP build does not parse in an inline
+ * `x-data` (method shorthand, multiple statements, an arrow function in
+ * `x-init`): inline, under a strict Content-Security-Policy the nested scope
+ * would not build and the menu button would toggle nothing.
  *
  * Anchoring goes through `window.wirekitPosition`, which ships in the full
  * bundle but not the core one. Absence is a supported configuration rather than

@@ -14,19 +14,17 @@
     // run they are the same value, and a server that cannot tell "not set" from
     // "explicitly collapsed=false" would override a developer who asked for expanded.
     'collapsed' => null,
-    // The state on a FIRST visit, before the store has anything to say. It is the third case
-    // the persistence has always been missing: an explicit `collapsed` wins and turns the seeding
-    // OFF, a stored value decides when there is one, and with neither the component fell back to
-    // a hard `false`. An application whose sidebar should start collapsed and follow the reader
-    // afterwards could not say so — the nearest thing was rebuilding the kit's own cookie read
-    // in a layout, superglobal fallback and all.
+    // The state on a FIRST visit, before the store has anything to say. Of the three cases, an
+    // explicit `collapsed` wins and turns the seeding OFF, a stored value decides when there is
+    // one, and with neither this does — so an application whose sidebar should start collapsed
+    // and follow the reader afterwards can say so.
     //
     // Both drivers answer this the same way, which is the half that makes it one idea rather
     // than two. The cookie driver seeds the first RENDER from here; the local driver renders
     // from here and then hands this same value to the store read as its fallback, so an empty
     // localStorage keeps it instead of collapsing to `false`.
     //
-    // Default `false`, so every existing call site renders byte for byte as before.
+    // Default `false`.
     'defaultCollapsed' => null,
     // Surface shape. `card` (default) is the self-contained panel: background,
     // border on all four sides, rounded, meant to sit inside a padded column.
@@ -37,11 +35,11 @@
     // Two variants rather than a set of booleans, because the halves are not
     // independent: a rounded panel with no border reads as a rendering fault, and
     // a full-bleed column with a radius shows a sliver of the page at each corner.
-    // Default stays `card` so no existing sidebar changes.
+    // Default `card`.
     // Which ARIA contract this column carries, and the two are not interchangeable.
     //
-    // `navigation` (the default, and byte-identical to every sidebar that exists today)
-    // is a list of LINKS: each row is in the tab order, Enter follows it, and the row for
+    // `navigation` (the default) is a list of LINKS: each row is in the tab order, Enter
+    // follows it, and the row for
     // the page you are on is marked `aria-current`.
     //
     // `selection` is one CONTROL holding many choices: the container is in the tab order
@@ -56,8 +54,8 @@
     'selected' => null,
     'variant' => 'card',
     // The surface tone, on the same `--color-wk-rail-*` roles the module rail reads —
-    // minus `accent`, for the reason spelled out where the value is validated. `default` is every sidebar that
-    // exists today and is byte-identical to it; the other tones let the second
+    // minus `accent`, for the reason spelled out where the value is validated. `default` paints
+    // the generic surface; the other tones let the second
     // navigation column carry its own color, which is what a console shell needs when
     // its rail is dark chrome and the content is a light sheet.
     //
@@ -73,7 +71,7 @@
     // An outside trigger reaches this sidebar through the `wirekit:sidebar:toggle`
     // window event instead; see the docs page.
     'toggle' => 'end',
-    // WHICH SIDE OF THE CONTENT this column stands on: 'start' (default) or 'end'.
+    // Which side of the content this column stands on: 'start' (default) or 'end'.
     //
     // It decides two things a reader reads as one — where the separator is drawn, and which
     // way the collapse chevron points. Both belong on the edge that FACES the content: a
@@ -112,11 +110,9 @@
     // scrollbar alone is easy to miss on a track that fades when idle.
     //
     // It has to be separable from the zones, and that is the point of the prop:
-    // the zones and the shadows arrived as one thing, so a developer with their
-    // own edge treatment could only be rid of ours by dropping `header` and
-    // `footer` entirely — which also gives up the sticky head and foot, a
-    // completely unrelated capability. Two decisions were being made by one
-    // answer.
+    // a developer with their own edge treatment can drop ours without dropping
+    // `header` and `footer`, and with them the sticky head and foot, a
+    // completely unrelated capability.
     'scrollShadows' => true,
     // The head and foot zones inset their content to line up with the navigation
     // below them. That is right for a brand row or a plain block, and wrong for a
@@ -158,8 +154,7 @@
     }
 
     // The seeding above only fires when the store HAS something. Where it does not, this is the
-    // answer — and it is the prop's whole reason: `false` was not a decision, it was the absence
-    // of one.
+    // answer.
     $defaultCollapsed = BooleanProp::from($defaultCollapsed, false);
     $collapsed = BooleanProp::from($collapsed, $defaultCollapsed);
 
@@ -175,13 +170,10 @@
 
     // MERGED into the bag rather than written as a conditional attribute on the tag.
     // `<nav @if(…) data-wk-tone=… @endif {{ $attributes }}>` leaves the spaces around the
-    // conditional behind when it is false, so an untoned sidebar rendered `<nav  aria-label=`
-    // with two spaces — byte-different from what it always emitted, which a case asserting
-    // the classic sidebar is unchanged caught immediately. Merging keeps the untoned output
-    // identical and costs nothing.
+    // conditional behind when it is false, so an untoned sidebar would render
+    // `<nav  aria-label=` with two spaces.
     // ONE merge, not two chained ones: a second `->merge()` call re-orders the rendered
-    // attributes (class moved ahead of aria-label), which is byte-different output for a
-    // sidebar nobody toned. The union keeps the label first, exactly where it always was.
+    // attributes (class ahead of aria-label). The union keeps the label first.
     $navLabelAttrs += $tone === 'default' ? [] : ['data-wk-tone' => $tone];
 
     // Published so the token remap in dist/wirekit.css can tell a FLUSH column — which
@@ -194,7 +186,7 @@
     // sides) so the OUTER gap between the sidebar border and each item's
     // hover/active highlight matches the INNER gap between the item edge
     // and the label text. With asymmetric `px-x-sm py-y-sm` (0.625rem
-    // horizontal, 0.375rem vertical) the outer gap looked 67% larger
+    // horizontal, 0.375rem vertical) the outer gap would look 67% larger
     // than the inner — visually unbalanced.
     $variant = in_array($variant, ['card', 'flush'], true) ? $variant : 'card';
 
@@ -210,15 +202,15 @@
     //
     // The rail is safe there because its items switch both at once, through roles built for
     // it (`--color-wk-rail-hover-fg` / `-active-fg`). Rather than ship a combination that is
-    // unreadable on five of the bundled themes, the scale here stops at the tones a generic
+    // unreadable on several of the bundled themes, the scale here stops at the tones a generic
     // subtree can carry. A colored second column is expressible by toning the RAIL and
     // leaving this one neutral, which is what every reference console does anyway.
     $tone = WireKit::validateProp('sidebar', 'tone', $tone, ['default', 'muted', 'inverse']);
 
-    // A toned column paints from the roles; an untoned one keeps the literals it always
-    // had rather than routing through a variable with the same value. The two resolve
-    // identically today, and that is exactly the reason: a sidebar nobody toned must not
-    // start depending on a token a developer might repoint for their rail.
+    // A toned column paints from the roles; an untoned one keeps the generic literals
+    // rather than routing through a variable with the same value. The two resolve
+    // identically, and that is exactly the reason: a sidebar nobody toned must not depend
+    // on a token a developer might repoint for their rail.
     $toneSurface = $tone === 'default'
         ? 'bg-[var(--color-wk-bg-elevated)]'
         : 'bg-[var(--color-wk-rail-bg)]';
@@ -234,8 +226,8 @@
     //
     // `'border-'.$edge.'-[length:…]'` reads better and is invisible to Tailwind: the scanner
     // reads text, so a class assembled from fragments appears nowhere in this file and is
-    // emitted into no stylesheet. Both sides would have lost their separator entirely, and
-    // the drift guard caught exactly that. Both spellings stay whole here.
+    // emitted into no stylesheet. Both sides would lose their separator entirely, so both
+    // spellings stay whole here.
     //
     // LOGICAL edges, so a right-to-left document mirrors with the writing direction rather
     // than against it.
@@ -258,8 +250,8 @@
             'h-full',
             // A flush column deliberately paints NOTHING by default — flush means the
             // host's background IS the column's. A toned one has to paint, or the tone it
-            // was given is simply not there. Emitted only when toned, so the default
-            // flush column is unchanged.
+            // was given is simply not there. Emitted only when toned, so a default
+            // flush column paints nothing.
             ...($tone === 'default' ? [] : [$toneSurface]),
         ]
         : [
@@ -271,18 +263,18 @@
 
     $classes = WireKit::resolveClasses('sidebar', 'base', implode(' ', [
         // Marker class. The tone remap in dist/wirekit.css addresses the column through
-        // it, and the browser tests address it too — a `group/wk-sidebar` name is a
-        // Tailwind grouping handle, not something a stylesheet or a probe can select.
+        // it — a `group/wk-sidebar` name is a Tailwind grouping handle, not something a
+        // stylesheet or a script can select.
         'wk-sidebar',
         // Publishes what this column pads its children by, so a chrome band placed in a zone
         // can cancel it without hardcoding the token. See shell-bar's `bleed`.
         '[--wk-nav-pad:var(--padding-wk-y-sm)]',
         'flex flex-col',
-        // No gap between the zones, and that is the fix rather than an omission. This
-        // gap spaced head-from-scroller and scroller-from-foot, so the first row sat a
-        // full 8px lower than the rail's first module before its own spacing even began.
-        // The scroller pads itself now — exactly as the rail's does — which puts the two
-        // columns on one rhythm instead of two that happen to look close.
+        // No gap between the zones, deliberately. A gap here would space head-from-scroller
+        // and scroller-from-foot, so the first row would sit a full 8px lower than the
+        // rail's first module before its own spacing even began. The scroller pads itself,
+        // exactly as the rail's does, which puts the two columns on one rhythm instead of
+        // two that happen to look close.
         'p-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-sm)]',
         ...$surface,
@@ -309,8 +301,8 @@
 
     // Collapse toggle button — only rendered (and only styled) for a collapsible
     // sidebar. Resolvable rather than a local variable: as a local it could not be
-    // themed, moved or replaced, so the only way to restyle the one chrome control
-    // in the component was a CSS rule against `> button:first-child` — a selector
+    // themed, moved or replaced, and the only way to restyle the one chrome control
+    // in the component would be a CSS rule against `> button:first-child` — a selector
     // that depends on the vendor's child order and breaks the moment anything is
     // rendered before it.
     $collapseBtnClasses = WireKit::resolveClasses('sidebar', 'toggle', implode(' ', [
@@ -348,7 +340,7 @@
         'inline-flex items-center justify-center shrink-0',
         'p-1 rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
+        'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
         // Riding on the footer band, in flow. The band places it (`.wk-shell-foot` in
@@ -363,8 +355,8 @@
     ]), $scope);
 
     // Three zones — fixed head, scrolling middle, fixed foot — but ONLY when a
-    // head or foot is actually supplied. A sidebar with neither keeps rendering
-    // its slot bare, so nothing about an existing call site changes.
+    // head or foot is actually supplied. A sidebar with neither renders its slot
+    // bare.
     //
     // The zones exist because every developer building this layout writes the same
     // three lines and makes the same mistake in them: without `min-h-0` on the
@@ -420,10 +412,9 @@
          so the two columns stay interchangeable in a shell. It is DERIVED from the
          icon and the paddings rather than written as a round number: a collapsed row
          centers its icon and an expanded row aligns it to the leading padding, and
-         those coincide only when the column is exactly as wide as its content. The
-         literal 3.5rem that stood here was described as "icon + padding" and was a
-         quarter-rem wider, which centering halved into a 1.5px sideways jump on
-         every expand. --}}
+         those coincide only when the column is exactly as wide as its content. A
+         round literal such as 3.5rem is a quarter-rem wider than icon + padding,
+         which centering would halve into a 1.5px sideways jump on every expand. --}}
     <nav
         {{-- The rail's folded state lives in resources/js/components/sidebar-rail.js.
              It cannot live here: an inline object literal cannot declare methods
@@ -434,16 +425,16 @@
              cannot resolve. --}}
         x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, pinned: {{ $collapsedPinned ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::from($persistDriver) }} })"
         {{-- Emitted STATICALLY as well as bound, for the same reason the width below is.
-             Until Alpine boots, `:data-collapsed` has not run — and roughly 25 descendant
-             rules key off `group-data-[collapsed]/wk-sidebar:*`. Without this a column that
-             was asked to start collapsed renders at the right WIDTH with its contents laid
-             out for the wrong one, until the first frame. Alpine's binding then owns the
+             Until Alpine boots, `:data-collapsed` has not run — and every descendant rule
+             of the folded column keys off `group-data-[collapsed]/wk-sidebar:*`. Without
+             this a column that was asked to start collapsed would render at the right WIDTH
+             with its contents laid out for the wrong one, until the first frame. Alpine's binding then owns the
              attribute: it sets '' or null on every toggle, so the two never disagree. --}}
         @if($collapsed) data-collapsed @endif
         :data-collapsed="collapsed ? '' : null"
         {{-- Read by exactly the rules that hide TEXT, and by nothing else. While the column
              is widening back the names stay out of the layout, so they are never set at a
-             width they will not keep — which is what made the rows jump and settle. --}}
+             width they will not keep, which would make the rows jump and settle. --}}
         :data-settling="settling ? '' : null"
         {{-- Read by ONE rule: the label fade-in. It marks the moment the names come back
              into flow after an expand, which is the only moment that animation is about.
@@ -451,12 +442,12 @@
         :data-just-expanded="justExpanded ? '' : null"
         {{-- OBJECT syntax, not a ternary, and the difference is load-bearing. A ternary hands
              Alpine one class to add, and Alpine only ever removes what it added itself — so the
-             static width below survived every toggle and a collapsed column stayed at 16rem with
-             two width utilities on it. The object form names BOTH classes, so Alpine removes the
+             static width below would survive every toggle and a collapsed column would stay at
+             16rem with two width utilities on it. The object form names BOTH classes, so Alpine removes the
              one whose condition is false no matter who put it there. --}}
         :class="{ 'w-[var(--size-wk-rail,3.25rem)]': collapsed, 'w-[var(--wk-sidebar-w,16rem)]': ! collapsed }"
         {{-- The row gap the collapse control needs. Without it the button's hover surface
-             ended exactly where the adjacent item's began — two gray rectangles sharing an
+             would end exactly where the adjacent item's began — two gray rectangles sharing an
              edge, which reads as one smudged block rather than as two controls. --}}
         :data-wk-ready="ready ? '' : null"
         {{-- The width transition is gated on `data-wk-ready`, which Alpine sets one frame after
@@ -477,9 +468,9 @@
         @include('wirekit::components.partials.sidebar-zones')
         {{-- Without a footer zone the control is still the column's last row. With one it
              rides ON that band instead, rendered by `sidebar-zones` — a control that changes
-             the column's width was spending a whole navigation row on itself, which is the
+             the column's width would otherwise spend a whole navigation row on itself, the
              most expensive way to present the least important thing in the column. The app
-             rail made this correction already; the sidebar had not. --}}
+             rail places its expander the same way. --}}
         @if($toggle !== 'none' && ! isset($footer))
             {{-- The wrapper claims the leftover height, the padding holds the distance. Two
                  elements because the two jobs are the same CSS property on one — see the note

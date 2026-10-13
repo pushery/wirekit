@@ -94,7 +94,7 @@
     ]), $scope);
 @endphp
 
-<div
+<div data-wk-sr-host
     @unless($attributes->has('role')) role="status" @endunless
     @unless($attributes->has('aria-live')) aria-live="polite" @endunless
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless

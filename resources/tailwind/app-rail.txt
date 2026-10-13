@@ -402,6 +402,7 @@ $variant,
 'wk-rail-group-');
 'wk-rail-item-button'
 'wk-tooltip-');
+'wk-touch-row',
 'x-on:focusin',
 'x-on:focusout',
 'x-on:keydown.escape.window.capture']);
@@ -583,12 +584,11 @@ $variant,
 A
 ALSO
 AND
-API
+API,
 ARIA
 ARRIVAL
 AT
 Accessible
-Additive
 Adds
 Alpine
 Alpine's
@@ -625,7 +625,6 @@ CALLER
 CALLER's
 CAPTURE
 COLLIDE
-COLUMN,
 COMPILED
 COMPILED,
 CONTENT
@@ -638,7 +637,6 @@ Centering
 Consistent
 DEFAULT
 DEFAULT,
-DEFAULT.
 Declared
 Decorative:
 Default
@@ -686,7 +684,6 @@ ID
 INITIAL
 INSIDE
 IS
-IT
 ITS
 Ignored
 Immediately
@@ -712,10 +709,8 @@ Link
 Livewire
 Livewire's
 MORPH
-Maintainer's
 Makes
 NAME
-NEVER
 NON-active
 NOT
 No
@@ -725,7 +720,6 @@ Not
 Nothing
 Null
 OBJECT
-OF
 OFF,
 ON
 ON.
@@ -744,7 +738,6 @@ Opt-in
 Opt-in:
 Orthogonal
 Override
-PAINT
 PARENT
 PHP
 PHP.
@@ -757,7 +750,6 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Put
 REACH
-REMEMBERED
 RENDER
 REQUIRED,
 RESTING
@@ -795,7 +787,6 @@ Switch
 THE
 THIS
 THREE
-TRUNCATED
 TWO
 Tab
 Tailwind
@@ -949,7 +940,6 @@ __('wirekit::Modules'),
 `a`
 `a`.
 `absolute`
-`app-rail`'s
 `app-rail`.
 `aria-current`
 `aria-describedby`
@@ -976,6 +966,7 @@ __('wirekit::Modules'),
 `data-wk-names`;
 `data-wk-rail-badge`
 `data-wk-ready`,
+`data-wk-touch`
 `dataset`
 `delayHide`
 `delayHide`.
@@ -1000,7 +991,6 @@ __('wirekit::Modules'),
 `expanded`,
 `fade`
 `false`
-`false`,
 `false`.
 `fixed`
 `flex-1`
@@ -1062,6 +1052,7 @@ __('wirekit::Modules'),
 `shrink-0`
 `sidebar.item`
 `sidebar`
+`sm`
 `span`:
 `sr-only`
 `sr-only`,
@@ -1082,6 +1073,7 @@ __('wirekit::Modules'),
 `wire:key`,
 `wire:navigate`
 `wire:poll`
+`wk-tooltip-panel`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`,
 `x-ref`
@@ -1163,6 +1155,7 @@ ancestor,
 ancestors,
 anchor
 anchor.
+anchor;
 and
 and,
 animates
@@ -1202,11 +1195,13 @@ appended
 application
 applies
 applies,
+applies.
 apply,
 arbitrate.
 arcs
 are
 are.
+area
 area's
 argued
 argument
@@ -1219,6 +1214,7 @@ aria-expanded="{{
 aria-hidden:
 aria-hidden="true"
 aria-hidden="true">
+aria-hidden="true"></span>
 aria-label
 aria-label="{{
 aria-labelledby
@@ -1241,6 +1237,7 @@ as
 as,
 asked
 asked,
+asked.
 assembled
 assertion
 assistive
@@ -1248,7 +1245,6 @@ association
 assumes
 assumption
 at
-ate
 attribute
 attribute,
 attribute.
@@ -1264,6 +1260,7 @@ avatar
 avoids
 away
 axis
+axis,
 axis.
 axis;
 back
@@ -1292,8 +1289,6 @@ becomes
 becoming
 been
 before
-before.
-before;
 begin
 behaves.
 behavior
@@ -1319,7 +1314,7 @@ block
 block's
 block,
 block:
-blocks,
+blocks:
 blueprint
 body
 boolean
@@ -1373,13 +1368,11 @@ button:
 buys
 by
 by,
-byte
 calc
 call
 called
 caller
 caller's
-caller,
 caller-supplied
 calls.
 can
@@ -1404,6 +1397,7 @@ cell
 center
 center.
 centered
+centered,
 centered:
 centering
 centers
@@ -1418,7 +1412,7 @@ changed
 changes
 changes.
 changing
-characters
+characters.
 check
 check,
 checks
@@ -1450,6 +1444,8 @@ class="w-full"
 class="w-full">
 class="wk-scrollbar
 class="wk-shell-foot
+class="wk-tooltip-panel
+class="wk-touch-target
 class="{{
 classes
 classes,
@@ -1460,8 +1456,8 @@ clears
 click
 client-only
 climbs
+clip
 clipped
-clipped.
 clipping
 clipping,
 clone
@@ -1472,6 +1468,7 @@ closing
 closing-tag
 cluster
 clusters
+coarse
 code
 code.
 cold
@@ -1616,9 +1613,9 @@ decorative
 default
 default,
 default.
+default;
 defaults
 defeat
-defect
 defect.
 defined
 delayHide:
@@ -1678,7 +1675,6 @@ document.currentScript;
 documentation
 documented
 documents
-documents,
 does
 does.
 does:
@@ -1777,6 +1773,7 @@ evaluated
 evaluator
 even
 event
+event.
 events
 ever
 every
@@ -1787,7 +1784,6 @@ except('rel'),
 exception
 exempt
 exist.
-existing
 exists
 exists,
 exists:
@@ -1845,6 +1841,7 @@ filled($badge)
 filled($badgeLabel)
 fills
 finds
+finger
 finish
 finished
 fire
@@ -1853,7 +1850,6 @@ first
 first,
 fit
 fits
-fix.
 fixable
 fixed
 fixed:
@@ -1894,6 +1890,7 @@ footer
 for
 for.
 forced
+forced-colors
 foreground
 foreground,
 foreground.
@@ -1975,7 +1972,6 @@ gutter
 h-2
 had
 had,
-had.
 hairline
 half
 half-mark
@@ -2023,15 +2019,14 @@ high
 highlight
 hint
 history
+hit
 hit,
 hoists
 holds
-holds.
 hook
 horizontal
 horizontally.
 host
-house
 hover
 hover,
 hover.
@@ -2094,7 +2089,9 @@ inline-start
 inserts
 inset
 inset,
+inset-0"
 inset-and-border
+inset.
 insets
 inside
 instead
@@ -2320,7 +2317,7 @@ moving
 moving.
 much
 must
-muted.
+muted,
 n/a
 name
 name,
@@ -2379,6 +2376,7 @@ not,
 not.
 not:
 note
+notes
 nothing
 nothing.
 nothing:
@@ -2418,8 +2416,8 @@ one
 one,
 one.
 one:
-one;
 only
+only,
 only.
 only;
 onmouseover=alert(1)"`
@@ -2467,7 +2465,6 @@ own:
 owns
 owns,
 package
-package,
 package.
 padding
 padding,
@@ -2552,9 +2549,11 @@ plan,
 platform
 plus
 point
+point.
 pointer
 pointer,
 pointer-events
+pointer-events-none
 pointer`
 pointing
 policy
@@ -2578,6 +2577,7 @@ press
 prevent:
 preventing
 prod).
+project
 promise
 promised
 promises
@@ -2611,7 +2611,6 @@ quiet
 quiet,
 quiet:
 quieter
-quo.
 quoted
 racing
 radius.
@@ -2656,7 +2655,6 @@ rebound
 rebuilding
 receive
 receiver,
-recorded
 records
 records:
 red:
@@ -2721,6 +2719,7 @@ resources/js/components/app-rail.js.
 resting
 rests
 restyle
+restyles
 result
 return;
 review".
@@ -2788,6 +2787,7 @@ script
 scroll
 scrolled.
 scroller
+scroller's
 scroller.
 scrolling,
 seam,
@@ -2798,6 +2798,7 @@ section
 section-label
 see
 seed
+seed.
 seeded
 seeding
 seeds
@@ -2808,6 +2809,7 @@ selections.
 selector
 selectors
 selects
+selects,
 self
 self.dataset;
 self.previousElementSibling;
@@ -2828,7 +2830,6 @@ settles
 seven
 shadow.
 shape
-shape.
 shapes
 share
 shared
@@ -2909,6 +2910,7 @@ spellings,
 spending
 splits
 spread
+square
 square-app-icon
 squeeze
 sr-only
@@ -2946,7 +2948,6 @@ stores
 str_contains($icon,
 str_contains($relAttr,
 str_contains($targetAttr,
-straight
 strategy:
 stray
 strict
@@ -3078,6 +3079,7 @@ tick
 tidier
 tidiness.
 tier
+tier,
 tighter
 time
 time,
@@ -3094,7 +3096,6 @@ to
 to,
 to.
 to:
-today:
 together
 together,
 toggle
@@ -3128,6 +3129,7 @@ transition
 transition,
 transition-transform
 translated
+transparent,
 trap
 travel
 treat
@@ -3149,6 +3151,7 @@ true);
 true,
 true;
 truncate,
+truncated
 truncated)
 truncating,
 truthy
@@ -3175,7 +3178,7 @@ unbound
 uncaught
 unchanged.
 uncompiled
-unconditional
+unconditional.
 unconditionally
 under
 under.
@@ -3196,6 +3199,7 @@ unstyled,
 untidiness;
 until
 untouched
+untouched.
 untraceable,
 unwraps
 up
@@ -3204,7 +3208,6 @@ up.
 usable
 use
 use:
-used.
 useless.
 user
 uses
@@ -3264,7 +3267,6 @@ wants.
 warning
 warns
 was
-was.
 way
 way,
 way.

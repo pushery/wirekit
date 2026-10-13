@@ -39,12 +39,13 @@ export default function wirekitAssistantMessage(config = {}) {
         /**
          * The body text already announced — the TEXT, deliberately, not its length.
          *
-         * This was an index, and an index is only meaningful against the string it was
-         * taken from. A streamed body grows, so it held for the append path; but a body
-         * can also be REPLACED — a regenerate, an edit, an error sentence taking the
-         * answer's place — and after a Livewire morph the index pointed into a string
-         * that no longer existed. Keeping the text instead makes the question answerable:
-         * is what is there now a continuation of what has been said, or something else?
+         * Text rather than an index, because an index is only meaningful against the
+         * string it was taken from. A streamed body grows, so an index would hold for the
+         * append path; but a body can also be REPLACED — a regenerate, an edit, an error
+         * sentence taking the answer's place — and after a Livewire morph an index would
+         * point into a string that no longer exists. Keeping the text makes the question
+         * answerable: is what is there now a continuation of what has been said, or
+         * something else?
          */
         _consumed: '',
 
@@ -123,12 +124,14 @@ export default function wirekitAssistantMessage(config = {}) {
          * to a length test — which is why the cheap form of this check closes half the
          * hole and reads as if it closed all of it.
          *
-         * The two failures it ends look nothing alike, and the quiet one is the worse:
-         * against a SHORTER body the pending slice was '' forever, so the live region
-         * went silent for the rest of the component's life while the reader still held
-         * the last sentence of the PREVIOUS answer; against a longer one it sliced
-         * mid-string and read out a fragment. In both, the visible body updates exactly
-         * as it should, so there is nothing for a sighted developer to notice.
+         * Without this reset there are two failures, they look nothing alike, and the
+         * quiet one is the worse:
+         * against a SHORTER body the pending slice would stay '' forever, so the live
+         * region would go silent for the rest of the component's life while the reader
+         * still held the last sentence of the PREVIOUS answer; against a longer one it
+         * would slice mid-string and read out a fragment. In both, the visible body
+         * updates exactly as it should, so there is nothing for a sighted developer to
+         * notice.
          *
          * Starting over does NOT re-announce the whole answer token by token, which is
          * the flooding this component exists to prevent: the reset happens once per

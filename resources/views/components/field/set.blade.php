@@ -70,11 +70,9 @@
     // The <fieldset> points at its own message, the way a control in the slot does.
     //
     // A group whose controls are not form controls has nothing else that can carry the
-    // reference. A row of buttons choosing a template is the reported shape: a <button>
-    // cannot be marked invalid and takes no error of its own, so the message rendered and
-    // nothing in the accessibility tree pointed at it — which is why an adopting
-    // application kept a hand-built `role="group"` with `aria-describedby` instead of
-    // reaching for this component.
+    // reference. A row of buttons choosing a template is such a group: a <button> cannot be
+    // marked invalid and takes no error of its own, so without this the message would render
+    // with nothing in the accessibility tree pointing at it.
     //
     // Through the same composer the controls use, so the order is the one they get and a
     // caller's own `aria-describedby` is APPENDED rather than replaced: written twice, the
@@ -93,11 +91,10 @@
     $classes = WireKit::resolveClasses('field.set', 'base', 'min-w-0 border-0 p-0 m-0', $scope);
 
     // The caption and the group hint resolve through the configuration seam like every
-    // other surface in the library. They shipped as literals, and that left a project
-    // whose group captions are `sm` with no route at all: the prop's typography was not
-    // overridable, and the one overridable caption component (`field.legend`) loses the
-    // caption ROLE when it is written into this component's default slot. Overriding a
-    // block here is what a project reaches for instead of rebuilding the <fieldset>.
+    // other surface in the library, so a project whose group captions are `sm` overrides a
+    // block here instead of rebuilding the <fieldset>. The one other caption component
+    // (`field.legend`) loses the caption ROLE when it is written into this component's
+    // default slot.
     $legendClasses = WireKit::resolveClasses('field.set', 'legend', 'mb-1 text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]', $scope);
     $hintClasses = WireKit::resolveClasses('field.set', 'hint', 'mb-3 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]', $scope);
 
@@ -113,7 +110,7 @@
     $legendIsSlot = $legend instanceof \Illuminate\View\ComponentSlot;
 
     // `filled()` rather than a bare truthiness test: `legend="0"` is a caption a caller
-    // asked for, and the old `@if($legend)` dropped it silently.
+    // asked for, and `@if($legend)` would drop it silently.
     $hasLegend = $legendIsSlot ? $legend->hasActualContent() : filled($legend);
 @endphp
 
@@ -142,11 +139,12 @@
         <p data-wk-prose-skip id="{{ $group->hintId }}" class="{{ $hintClasses }}">{{ $group->hint }}</p>
     @endif
 
-    @if(config('app.debug') && str_contains((string) $slot, '<legend'))
+    @if(config('app.debug') && \Pushery\WireKit\Support\FieldGroup::hasLooseLegend((string) $slot))
         @php
-            // Gated on debug per the house rule: a developer warning never reaches a
-            // production page. Silence was the defect here — the demoted caption looks
-            // right, so the only way a developer learns about it is being told.
+            // Gated on debug: a developer warning never reaches a production page. The
+            // demoted caption looks right, so being told is the only way a developer
+            // learns about it. A set
+            // nested in the slot carries its own legend correctly and does not count.
             logger()->warning('[wirekit] field.set: a <legend> was found in the default slot, where it is a grandchild of the <fieldset> and therefore not the group caption. Move it into <x-slot:legend> (rich content is supported there) or pass the `legend` prop.');
         @endphp
     @endif

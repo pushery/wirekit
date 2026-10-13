@@ -10,10 +10,10 @@ $alignClass
 $alignClass,
 $alt
 $attributes->class([$baseClasses])
-$attributes->class([$groupClasses])
 $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge($avatarStyle
+$attributes->merge(['data-size'
 $author
 $author;
 $authorAvatar
@@ -49,6 +49,7 @@ $sideValue
 $size,
 $sizeClasses
 $sizeClasses,
+$size])->class([$groupClasses])
 $slot
 $src
 $src)
@@ -352,6 +353,7 @@ __('wirekit::Online'),
 `:remaining="7"`
 `aria-label`
 `class="cirlce"`
+`data-size`
 `default
 `initials`
 `max-w-full`
@@ -489,9 +491,11 @@ costs
 could
 counter.
 crc32-palette
+cuts
 d="M12
 data-wk-message-group-author
 data-wk-prose-skip
+data-wk-sr-host
 debug
 declaration
 default
@@ -504,6 +508,7 @@ developer
 developer's
 dims
 disc.
+discs
 does
 dot
 double-ring
@@ -639,6 +644,7 @@ later
 layer
 layout
 leaves
+less.
 lets
 like
 line
@@ -713,6 +719,7 @@ otherwise
 outer
 over
 overflow
+overlap
 overrides
 own
 painted
@@ -829,6 +836,7 @@ sizing.
 slot
 slot.
 small
+smallest
 so
 something
 source
@@ -865,6 +873,7 @@ text
 text,
 text-[color:var(--color-wk-text)]">{{
 text-[color:var(--color-wk-text-muted)]"
+text-[length:var(--text-wk-2xs)]',
 text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]
@@ -885,6 +894,8 @@ those
 through
 through.
 timestamp:
+title.
+title="{{
 to
 total.
 trailing

@@ -27,8 +27,8 @@
     // here would give a German application a translated form with a toolbar that announces
     // and hovers "Bold", "Italic", "Bullet list".
     // The keys are written out LITERALLY, one `__()` per row, for the same reason
-    // countdown.blade.php gives: `lang:extract` and TranslationKeyDriftTest read the source,
-    // so a key built from a variable is a key no reference file can ever know about.
+    // countdown.blade.php gives: `lang:extract` reads the source, so a key built from a
+    // variable is a key no reference file can ever know about.
     $svgAttrs = 'class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
     $meta = [
         'bold' => [__('wirekit::Bold'), 'B', 'font-bold', "isActive('bold')"],
@@ -63,7 +63,7 @@
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text-muted)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
+        'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'cursor-pointer',
         // Disabled state — only the history buttons (undo/redo) ever set [disabled]
@@ -154,7 +154,7 @@
                              own shadow rather than the ring's. The floor holds the edge under a
                              theme whose border width is 0px. --}}
                         :aria-pressed="{{ $active }} ? 'true' : 'false'"
-                        :class="{{ $active }} ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-border-strong)]' : ''"
+                        :class="{{ $active }} ? 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-border-strong)]' : ''"
                     @endif
                     aria-label="{{ $label }}"
                     tabindex="{{ $commandKey === $tabStopKey ? '0' : '-1' }}"

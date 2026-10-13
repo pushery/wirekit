@@ -117,3 +117,18 @@ export function watchReducedMotion(onChange) {
 export function scrollBehavior(animate) {
     return animate ? 'smooth' : 'instant';
 }
+
+/**
+ * The `behavior` of a scroll whose speed the page decides: `'auto'`, which follows the scroller's
+ * own `scroll-behavior`, and a jump where the reader asked for reduced motion.
+ *
+ * For the window, `'auto'` reads `scroll-behavior` on `<html>`. The stylesheet's reduced-motion
+ * rule turns that to `auto` only on an element with a `wk-` class, and an application's `<html>`
+ * seldom carries one, so a page with `scroll-behavior: smooth` glided a scroll the reader asked to
+ * keep still.
+ *
+ * @returns {'auto'|'instant'}
+ */
+export function pageScrollBehavior() {
+    return prefersReducedMotion() ? 'instant' : 'auto';
+}

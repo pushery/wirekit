@@ -437,7 +437,7 @@ final class WcagContrast
         $aa = $threshold === 'ui' ? 3.0 : 4.5;
         // Generous tolerance: anything within 0.5 of the AA threshold (but
         // below it) is "warn" rather than a hard "fail" — e.g. text 4.0–4.49
-        // or UI 2.5–2.99. Pinned by WcagContrastTest's classify() cases.
+        // or UI 2.5–2.99.
         if ($ratio >= $aa) {
             return 'pass';
         }

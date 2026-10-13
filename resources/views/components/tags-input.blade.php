@@ -23,10 +23,7 @@
     // change and says it was not saved — see the note above.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -80,7 +77,7 @@
 
 @php
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -102,7 +99,7 @@
 
     // A caller's `id` goes on the text field, the element a `<label for>` elsewhere on the
     // page and a link to `#id` reach. Without one the field takes the component's id with
-    // `-input` after it, as before.
+    // `-input` after it.
     $callerId = filled($attributes->get('id'));
     $fieldId = $callerId ? $id : $id.'-input';
 
@@ -122,8 +119,8 @@
 
     // Normalize the initial value into an array of strings. Accepts a real
     // array (e.g. `:value="['Laravel', 'Livewire']"`) or a comma-separated
-    // string (e.g. `value="Laravel,Livewire"`); both shapes appear in
-    // existing developer codebases. A Collection is read as the list it holds; the branch
+    // string (e.g. `value="Laravel,Livewire"`); both shapes are common in
+    // developer code. A Collection is read as the list it holds; the branch
     // below would otherwise take it for no value and start the field empty.
     $value = \Pushery\WireKit\Support\ListProp::from($value);
     if (is_string($value)) {
@@ -261,13 +258,13 @@
     [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus', 'maxlength']);
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     <div
-        x-data="wirekitTagsInput({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, maxTags: {{ $maxTags ?? 'null' }}, tags: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialTags) }}, announcements: {{ $tagAnnouncements }} })"
+        x-data="wirekitTagsInput({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, maxTags: {{ $tagLimit ?? 'null' }}, tags: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialTags) }}, announcements: {{ $tagAnnouncements }} })"
         {{-- The tag set lives only in Alpine and leaves through hidden inputs, which
              emit nothing when a binding writes their value. `x-modelable` is the bridge
              Alpine provides for exactly that, and `wire:model` compiles to `x-model`, so
@@ -341,7 +338,9 @@
             <span role="list" style="display: contents">
             <template x-for="(tag, i) in tags" :key="'tag-'+i">
                 <span role="listitem" class="{{ $tagClasses }}">
-                    <span x-text="tag"></span>
+                    {{-- `anywhere`, so a tag with no break point, an email address, counts as breakable
+                         in its chip's width: the chip shrinks to the row and wraps the tag inside. --}}
+                    <span x-text="tag" class="[overflow-wrap:anywhere]"></span>
                     <button
                         type="button"
                         {{-- How the component finds the remaining chips after one is
@@ -354,7 +353,7 @@
                         @if($disabled) disabled @endif
                         @click="removeTag(i)"
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', tag)"
-                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                     </button>
@@ -411,6 +410,9 @@
                 x-bind:readonly="atMaxTags"
                 @keydown.enter.prevent="addTag()"
                 @keydown.comma.prevent="addTag()"
+                {{-- A comma that arrives without its key (a paste, an on-screen keyboard) ends a tag too. --}}
+                @input="onInput($event)"
+                @compositionend="onInput($event)"
                 @keydown.backspace="onBackspace($event)"
                 @keydown.escape="onEscape($event)"
                 {{-- `w-0`: the input grows into the row through `flex-1`, and asks for no more than its

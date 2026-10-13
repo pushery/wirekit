@@ -10,7 +10,7 @@
      group is never that ancestor. The prop stays declared below, because that declaration is
      what every catalog and guard reads. A view compiled before the class existed reaches this
      file anonymously until its cache is cleared: the prop then arrives as an attribute, and the
-     group folds as before. --}}
+     group still folds. --}}
 @props([
     'label' => null,
     // When set, the group heading becomes a disclosure button that folds its items.
@@ -79,18 +79,17 @@
 
     // Read THROUGH the bag rather than written before it. A hardcoded attribute followed
     // by the bag's own emits the attribute twice and the FIRST one wins, so a developer's
-    // own name was present in the markup and still never reached the reader — the shape
-    // sidebar.toggle was corrected to, which this component had not caught up with.
+    // own name would be present in the markup and still never reach the reader.
+    // sidebar.toggle reads it the same way.
     $groupLabel = $attributes->has('aria-labelledby')
         ? null
         : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: ((string) $label !== '' ? $label : null));
 
-    // The role is coupled to the NAME, which is the house rule rather than a preference:
-    // a role that names a boundary and then cannot say what the boundary is for is noise
-    // in the accessibility tree of every page that uses one, and it is repeated once per
-    // group. bento-grid, accordion and `sidebar.collapsible` each decided this with their
-    // own red-proof; this file was the last one emitting the role unconditionally, so the
-    // same markup announced a group here and nothing there.
+    // The role is coupled to the NAME: a role that names a boundary and then cannot say
+    // what the boundary is for is noise in the accessibility tree of every page that uses
+    // one, and it is repeated once per group. bento-grid, accordion and
+    // `sidebar.collapsible` couple it the same way, so the same markup announces the same
+    // thing in each of them.
     //
     // A caller who wants a role anyway still gets it — the bag is read first, so an
     // explicit `role` on the tag wins over both branches.
@@ -140,8 +139,8 @@
         {{ $attributes->except(['role', 'aria-label'])->class([$groupClasses]) }}
     >
         {{-- The trigger and the section's own control sit side by side. The wrapper is
-             only emitted when there IS an action, so a group without one keeps the exact
-             DOM it had — a button that was a direct child stays a direct child. --}}
+             only emitted when there IS an action, so in a group without one the button
+             stays a direct child. --}}
         @isset($action)<div class="flex items-center gap-[var(--padding-wk-x-xs)]">@endisset
         <button
             type="button"
@@ -155,7 +154,7 @@
                  has no icon to show at rail width and its children are hidden too, so a
                  focusable-but-invisible sr-only control would be a keyboard focus trap with
                  no visible focus indicator (WCAG 2.4.7). --}}
-            class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
+            class="wk-touch-row {{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
         >
             {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
             <span class="break-words">{{ $label }}</span>
@@ -199,7 +198,7 @@
              interactive control nested inside another one is invalid and unreachable by
              keyboard in practice.
              The row wrapper is emitted ONLY when there is an action, so a group without
-             one keeps the exact DOM it had — including the label's `sr-only` in the
+             one keeps its plain DOM — including the label's `sr-only` in the
              collapsed rail, which is deliberate: the heading stays the group's accessible
              name there rather than being removed. The action is `hidden` instead, because
              a control has nothing to say to a screen reader when the section it acts on

@@ -80,6 +80,10 @@
     // has ever rendered, which is a change to the default output and therefore
     // exactly what an additive prop may not do.
     $classes = WireKit::resolveClasses('link', 'base', implode(' ', array_filter([
+        // A typed token with no break point, an email address or a URL, breaks rather than running
+        // out of the box. Inherited by everything inside; `break-word` leaves every min-content width
+        // alone, so a table or a flex row in the content keeps the layout it had.
+        '[overflow-wrap:break-word]',
         'font-[family-name:var(--font-wk-sans)]',
         // Unconditional, and NOT narrowed to the non-anchor branch. A link is defined by what
         // it does rather than by the tag it happens to render, and this component renders a
@@ -132,7 +136,7 @@
     $extLink = $external && $announceNewTab
         ? '<svg class="inline-block h-3.5 w-3.5 ms-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>'
         : '';
-    $newTabHint = $opensNewTab && $announceNewTab ? '<span class="sr-only">'.e(__('wirekit::(opens in new tab)')).'</span>' : '';
+    $newTabHint = $opensNewTab && $announceNewTab ? '<span class="relative"><span class="sr-only">'.e(__('wirekit::(opens in new tab)')).'</span></span>' : '';
 @endphp
 
 <{{ $as }} data-wk-prose-skip

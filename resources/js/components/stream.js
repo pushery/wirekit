@@ -434,12 +434,12 @@ export default function wirekitStream(config = {}) {
                     //
                     // Only when the developer NAMED the event does the name select —
                     // and this asymmetry is deliberate. Filtering on the default
-                    // ('message') would mean any stream today that sends named frames
-                    // stops rendering entirely: it is currently getting all of them
+                    // ('message') would make a stream that sends named frames stop
+                    // rendering entirely: without a name it gets all of them
                     // concatenated, which is wrong for a multi-event protocol and is
-                    // what a single-event one has been relying on. So opting into
-                    // names is what turns on selection by name, and a stream that
-                    // never mentions them keeps behaving exactly as it did.
+                    // what a single-event one relies on. So opting into names is
+                    // what turns on selection by name, and a stream that never
+                    // mentions them reads every frame.
                     if (this._eventNameSet && eventName !== '' && eventName !== this._eventName) {
                         continue;
                     }

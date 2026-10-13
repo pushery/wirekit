@@ -35,7 +35,7 @@ $scope);
 'focus-visible:outline-hidden
 'font-[family-name:var(--font-wk-sans)]',
 'gap-[var(--gap-wk-xs)]',
-'hover:bg-[var(--color-wk-bg-muted)]',
+'hover:bg-[var(--color-wk-bg-active)]',
 'inline-flex
 'label'
 'min-h-[var(--size-wk-target-min)]',
@@ -52,6 +52,7 @@ $scope);
 ($items
 (\Pushery\WireKit\Support\ListProp::records($replies)
 (defaults
+(int)
 (silent
 (string)
 --}}
@@ -168,7 +169,7 @@ caption.
 case:
 chip
 chosen
-class="{{
+class="wk-touch-row
 client-only
 common
 component

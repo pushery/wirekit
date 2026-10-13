@@ -69,7 +69,7 @@
     // Size classes: width, height, font size scaling
     // Fixed rem values provide a consistent avatar scale independent of input sizing
     $sizeClasses = match (WireKit::validateProp('avatar', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl'])) {
-        'xs' => 'w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] text-[length:var(--text-wk-sm)]',
+        'xs' => 'w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] text-[length:var(--text-wk-2xs)]',
         'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-sm)]',
         'md' => 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-md)]',
         'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-lg)]',

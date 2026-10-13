@@ -65,6 +65,11 @@
     // contains the SVG without affecting ApexCharts' tooltip positioning
     // (tooltips are absolute-positioned inside the wrapper but their target
     // points stay within the plot area).
+    //
+    // No background of its own: the chart stands on the surface of its container, a card, a
+    // footer or the page, as the drawing libraries do. The page color painted here would stand
+    // as a pale box on a card in any theme that lifts its cards off the page. A caller's `style`
+    // can still give the chart one.
     /*
      * Wrapper width MUST be inline `width: 100%` — NOT the Tailwind
      * `w-full` utility. In every rendering context that doesn't load
@@ -93,12 +98,12 @@
     // (height, width) still apply.
     $wrapperTag = ($inline ?? false) ? 'span' : 'div';
     $defaultDisplay = ($inline ?? false) ? 'inline-block; vertical-align: middle' : 'block';
-    $defaultStyle = "width: 100%; min-width: 0; display: {$defaultDisplay}; height: {$height}; background-color: var(--color-wk-bg); overflow: hidden; position: relative;";
+    $defaultStyle = "width: 100%; min-width: 0; display: {$defaultDisplay}; height: {$height}; overflow: hidden; position: relative;";
     $mergedStyle = trim($defaultStyle.' '.$callerStyle);
     $chartAttributes = $attributes->except(['aria-label', 'style']);
 
-    // Default the mountElement prop to 'canvas' so existing developers / direct
-    // Blade-string tests that don't go through the Component class keep working.
+    // 'canvas' when the prop is missing, as it is in a Blade render that does not
+    // go through the Component class.
     $resolvedMountElement = $mountElement ?? 'canvas';
 
     // Wire-streaming attributes — when wireStream is
@@ -229,6 +234,30 @@
      animation. The chart's name travels with its data, because a name that summarizes the data
      changes with it and the root that carries it is ignored as well. A `template` renders nothing. --}}
 <template data-wk-chart-data="{{ \Pushery\WireKit\Support\AlpinePayload::json($chartData + ['ariaLabel' => $chartAriaLabel]) }}"></template>
+{{-- The links of the data points that lead somewhere. A point drawn on a canvas, or inside the
+     chart's image, cannot take the focus, so a keyboard reaches them here and a screen reader reads
+     them after the chart's name. The list stays out of sight until a link in it has the focus, and
+     then stands under the chart, as a skip link does. Outside the `wire:ignore` above, so a
+     Livewire update reaches it with the data. In an inline chart, which can stand in a sentence,
+     the list is spans, the only elements a paragraph can hold. --}}
+@if ($pointLinks !== [] && ! ($inline ?? false))
+    {{-- The wrapper shows and spaces the list; the list keeps the inline reset every list of the
+         kit carries, which would hold its own margin at zero, and says it is a list, which WebKit
+         stops announcing once the markers are gone. --}}
+    <div data-wk-prose-skip class="wk-chart-links sr-only start-0 focus-within:not-sr-only focus-within:mt-[var(--space-wk-xs)]">
+        <ul data-wk-prose-skip role="list" aria-label="{{ __('wirekit::Data points') }}" class="flex flex-wrap gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-xs)] list-none" style="list-style: none; margin: 0; padding: 0;">
+            @foreach ($pointLinks as $link)
+                <li data-wk-prose-skip class="m-0 p-0"><a data-wk-prose-skip href="{{ $link['url'] }}" @if ($link['navigate']) wire:navigate @endif class="wk-focus-ring rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] underline underline-offset-2">{{ $link['text'] }}</a></li>
+            @endforeach
+        </ul>
+    </div>
+@elseif ($pointLinks !== [])
+    <span data-wk-prose-skip role="list" class="wk-chart-links sr-only start-0 focus-within:not-sr-only focus-within:inline-flex flex-wrap gap-x-[var(--gap-wk-md)]" aria-label="{{ __('wirekit::Data points') }}">
+        @foreach ($pointLinks as $link)
+            <span data-wk-prose-skip role="listitem"><a data-wk-prose-skip href="{{ $link['url'] }}" @if ($link['navigate']) wire:navigate @endif class="wk-focus-ring rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text)] underline underline-offset-2">{{ $link['text'] }}</a></span>
+        @endforeach
+    </span>
+@endif
 @if ($needsReplayWrapper)
     </{{ $wrapperTag }}>
 @endif

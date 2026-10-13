@@ -20,6 +20,11 @@ namespace Pushery\WireKit\Support;
  *
  * Normalizing here means both spellings agree, which is what a developer expects
  * from an attribute that is documented as a boolean.
+ *
+ * A configuration switch has the same problem from another side. Its value comes from an
+ * environment variable through EnvValue::get(), which hands on a word `env()` does not
+ * translate as text, so `WIREKIT_DEDUPE_IDS=off` arrives as the string 'off'. The switches
+ * are read here too.
  */
 final class BooleanProp
 {
@@ -28,9 +33,9 @@ final class BooleanProp
      *
      * `filter_var` handles the spellings developers actually write — "false",
      * "0", "off", "no", and their true counterparts — in either case. Anything it
-     * cannot classify falls back to PHP's own truthiness so an unexpected value
-     * behaves as it did before this helper existed, rather than silently becoming
-     * false and turning a feature off.
+     * cannot classify falls back to PHP's own truthiness, so an unexpected value
+     * keeps the meaning PHP gives it rather than silently becoming false and
+     * turning a feature off.
      *
      * A bare attribute (`<x-wirekit::faq schema>`) is compiled by Blade as the
      * bound expression `true`, so it arrives as PHP `true` and keeps meaning "on".
@@ -61,6 +66,34 @@ final class BooleanProp
         }
 
         return (bool) $value;
+    }
+
+    /**
+     * Interpret a value as a boolean, or as unset when it says neither.
+     *
+     * For a SWITCH whose third state, "not set", hands the decision to a default:
+     * `validation.strict` and `validation.throw_on_invalid` in the configuration. The
+     * spellings {@see from()} reads are read here too, and a word that says neither,
+     * `nein` for instance, is unset rather than on, so the default decides.
+     *
+     * The value is whatever a published configuration or the environment holds, so the
+     * parameter takes any type, and a type that cannot say on or off reads as unset.
+     */
+    public static function orNull(mixed $value): ?bool
+    {
+        if ($value === null || is_bool($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '' ? null : filter_var(trim($value), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (bool) $value;
+        }
+
+        return null;
     }
 
     /**

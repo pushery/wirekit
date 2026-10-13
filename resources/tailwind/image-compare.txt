@@ -61,6 +61,7 @@ $wrapperClasses
 ',
 '.
 '.$ratio.';'
+'.($isVertical
 'absolute
 'after',
 'afterAlt'
@@ -98,6 +99,8 @@ $wrapperClasses
 'loading'
 'name'
 'orientation'
+'pan-x'
+'pan-y').';'.($ratio
 'px-2
 'ratio'
 'relative
@@ -307,6 +310,7 @@ __('wirekit::Image
 `name`
 `prop="false"`
 `ratio`
+`touch-action`
 `value
 `value`
 `value`).
@@ -318,10 +322,12 @@ a
 above
 above.
 absolutely-positioned
+across
 active:cursor-grabbing',
 after
 against
 all
+along
 already
 alt="{{
 alts
@@ -357,6 +363,7 @@ attributes
 auto-derived
 avoid
 axes,
+axis
 back.
 bag
 band
@@ -553,6 +560,7 @@ label-anchor
 lands
 later
 layer,
+leaves
 left
 left-2'
 left-2'"
@@ -587,7 +595,6 @@ needed.
 needs
 never
 no
-none;'.($ratio
 not
 nothing
 nothing,
@@ -625,8 +632,10 @@ over
 overflow-hidden
 own
 owns,
+page
 page's
 parse
+past
 paths
 pattern
 percentage
@@ -686,6 +695,8 @@ run
 same
 scanner
 scope.
+screen.
+scrolls
 second
 select-none
 select-none';
@@ -703,6 +714,7 @@ sized
 sizes
 slider
 slider'),
+slider's
 snap
 so
 space
@@ -739,6 +751,8 @@ suffix
 suppress
 swallowed
 swap
+swipe
+swipes
 tabindex="-1"
 table.
 take
@@ -757,6 +771,7 @@ to
 toggle
 top-LEFT
 top-RIGHT
+touch
 toward
 track
 trailing

@@ -78,6 +78,15 @@ export default function wirekitResizableHandle() {
         // for the duration of the drag so mid-move clamping uses a
         // consistent reference and rounding cannot walk the pair sum.
         dragPairSum: null,
+        /*
+         * The listener that takes the focus from the handle when a press lands outside it, held
+         * while the handle has the focus and null otherwise. A browser moves the focus itself on
+         * a press elsewhere, except where a tap lands on content that is not clickable: WebKit
+         * on iOS sends no mouse events there and leaves the focus where it was. On a touch
+         * screen the step controls show for as long as the handle keeps the focus, and they
+         * reach over the panels beside it.
+         */
+        _pressOutside: null,
 
         init() {
             // Locate the wrapper + the panel this handle controls. In the
@@ -151,6 +160,10 @@ export default function wirekitResizableHandle() {
             if (event.target?.closest?.('[data-wk-resizable-step]')) {
                 return;
             }
+            // The focus a press would give the handle, which preventDefault withholds. On a touch
+            // screen the step controls show while the handle has it, and the arrow keys work from
+            // there; a pointer press does not show a focus ring.
+            this.$el.focus?.({ preventScroll: true });
             event.preventDefault();
             this.dragging = true;
             this.$el.dataset.dragging = 'true';
@@ -307,6 +320,38 @@ export default function wirekitResizableHandle() {
             this._dragFrame = null;
             this._pendingPointer = null;
             this._restoreBodyUserSelect();
+            this._releasePressOutside();
+        },
+
+        /**
+         * While the handle has the focus, a press outside it takes the focus away, in the capture
+         * phase so a handler that stops the press further down cannot keep it. A press on the
+         * handle or on one of its step controls keeps it. The focus a press on the handle gives
+         * arrives during that press, after its capture phase has passed the document, so the
+         * press that focused the handle is not the one that blurs it.
+         */
+        onFocus() {
+            if (this._pressOutside) {
+                return;
+            }
+
+            this._pressOutside = (event) => {
+                if (!this.$el.contains(event.target)) {
+                    this.$el.blur();
+                }
+            };
+            document.addEventListener('pointerdown', this._pressOutside, true);
+        },
+
+        onBlur() {
+            this._releasePressOutside();
+        },
+
+        _releasePressOutside() {
+            if (this._pressOutside) {
+                document.removeEventListener('pointerdown', this._pressOutside, true);
+                this._pressOutside = null;
+            }
         },
 
         onKeyDown(event) {

@@ -13,27 +13,31 @@
         {{-- The glyph goes in `iconLeft` and the label in the default slot, where
              `icon-only` hides it visually and keeps it as the accessible name. `button`
              declares `iconOnly` and not `icon`, so an `icon` attribute would render as a
-             plain attribute with no glyph at all, and the alias for this gesture is
-             `close`, not a heroicon spelling. That is also why there is no `aria-label`
+             plain attribute with no glyph at all, and the alias for this gesture is the
+             caller's `remove-icon`, `close` unless they name another, never a heroicon
+             spelling. That is also why there is no `aria-label`
              here: two names on one control is one too many, and the slot is the one the
-             component supports. --}}
-        <x-wirekit::button
-            intent="neutral"
-            surface="ghost"
-            :size="$size === 'lg' ? 'md' : 'sm'"
-            icon-only
-            {{-- `AlpinePayload::from()`, not `Js::from()`. Under the CSP build the
-                 latter emits `JSON.parse(…)` for anything non-scalar and `\u` escapes for
-                 anything non-ASCII — the evaluator cannot resolve the call, and the
-                 tokenizer drops the backslash. Either way the directive would never
-                 evaluate and this button would silently do nothing, in the build a
-                 CSP-strict application ships. --}}
-            x-on:click="$dispatch('wirekit:cart-remove', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
-        >
-            <x-slot:iconLeft>
-                <x-wirekit::icon name="close" size="sm" aria-hidden="true" />
-            </x-slot:iconLeft>
-            {{ $name ? __('wirekit::Remove :name', ['name' => $name]) : __('wirekit::Remove') }}
-        </x-wirekit::button>
+             component supports. The tooltip shows the same name to a reader who sees no
+             word on the button and describes nothing, so the slot stays the only name. --}}
+        <x-wirekit::tooltip as="span" :text="$removeName" :focusable-trigger="false" :describes="false">
+            <x-wirekit::button
+                intent="neutral"
+                surface="ghost"
+                :size="$size === 'lg' ? 'md' : 'sm'"
+                icon-only
+                {{-- `AlpinePayload::from()`, not `Js::from()`. Under the CSP build the
+                     latter emits `JSON.parse(…)` for anything non-scalar and `\u` escapes for
+                     anything non-ASCII — the evaluator cannot resolve the call, and the
+                     tokenizer drops the backslash. Either way the directive would never
+                     evaluate and this button would silently do nothing, in the build a
+                     CSP-strict application ships. --}}
+                x-on:click="$dispatch('wirekit:cart-remove', { item: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemKey) }} })"
+            >
+                <x-slot:iconLeft>
+                    <x-wirekit::icon :name="$removeIcon" size="sm" aria-hidden="true" />
+                </x-slot:iconLeft>
+                {{ $removeName }}
+            </x-wirekit::button>
+        </x-wirekit::tooltip>
     </span>
 @endif

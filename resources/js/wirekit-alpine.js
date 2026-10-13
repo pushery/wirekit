@@ -31,17 +31,22 @@
 import Alpine from 'alpinejs';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerScrollToMagic } from './utils/scroll-to.js';
+import { registerPagerFocusMagics } from './utils/pager-focus.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerImeDirective } from './utils/ime.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerScrollIntoViewDirective } from './utils/scroll-into-view.js';
 import { registerStuckDirective } from './utils/stuck.js';
+import { registerAnnounceBusyDirective } from './utils/busy-announcer.js';
 import { registerCounterDirective } from './utils/counter.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerFindableDirective } from './utils/findable.js';
+import { registerFitTextDirective } from './utils/fit-text.js';
+import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
@@ -223,6 +228,8 @@ if (hostAlpine) {
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(target);
     registerScrollToMagic(target);
+    // A page turned under Livewire keeps the focus in its pager. See utils/pager-focus.js.
+    registerPagerFocusMagics(target);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
@@ -238,6 +245,8 @@ if (hostAlpine) {
     registerScrollIntoViewDirective(target);
     // A sticky element says when it rests at its line. See utils/stuck.js.
     registerStuckDirective(target);
+    // A button's wait is announced once it lasts. See utils/busy-announcer.js.
+    registerAnnounceBusyDirective(target);
     // A field's character count, counted in the browser. See utils/counter.js.
     registerCounterDirective(target);
     // The tokens a button puts into an input, without a request. See utils/insert-token.js.
@@ -246,12 +255,18 @@ if (hostAlpine) {
     registerUnsavedDirective(target);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(target);
+    // A fitted text whose words a script writes keeps its copies in step. See utils/fit-text.js.
+    registerFitTextDirective(target);
+    // A menu a button opens takes the focus to its first entry. See utils/focus-first.js.
+    registerFocusFirstDirective(target);
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
     // See utils/scroll-inset.js.
     installScrollInset();
+    // A radio the arrow keys reach keeps its focus ring in WebKit. See utils/arrow-focus.js.
+    installArrowFocus();
 
     target.data('wirekitChartJs', wirekitChartJs);
     target.data('wirekitDropdown', wirekitDropdown);

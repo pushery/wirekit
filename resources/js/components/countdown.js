@@ -1,23 +1,24 @@
 /**
  * Countdown — a clock that ticks toward a deadline and says when it passes.
  *
- * The inline `x-data` did not parse under Alpine's CSP build (method shorthand,
- * getters, arrow callbacks, `new Intl.NumberFormat`), so under a strict
- * Content-Security-Policy the object failed to build and the timer rendered its
- * static markup and then stood still.
+ * A registered factory rather than an inline `x-data`: built inline, the object
+ * would need method shorthand, getters, arrow callbacks and `new Intl.NumberFormat`,
+ * none of which Alpine's CSP build parses, so under a strict
+ * Content-Security-Policy the timer would render its static markup and then
+ * stand still.
  *
- * The `done` / `_fired` split is the subtle part and is unchanged. They look
- * redundant and are not:
+ * The `done` / `_fired` split is the subtle part. They look redundant and are
+ * not:
  *
  *   `_fired` de-dupes the EVENT — it announces the deadline once.
  *   `done` is a MODEL VALUE that x-modelable binds, and it must be re-derivable.
  *
- * Conflating them was a defect. x-modelable entangles on a microtask AFTER
+ * Conflating them would be a defect. x-modelable entangles on a microtask AFTER
  * init() runs, and its first pass copies the caller's outer value inward — so
- * for a deadline that had already passed at init, the `done = true` set during
- * init was immediately overwritten with the caller's `false`. Latching `done`
- * behind `_fired` then made the overwrite permanent: the binding stayed false
- * for the life of the page and only a reload recovered it. Deriving `done` from
+ * for a deadline that has already passed at init, the `done = true` set during
+ * init is immediately overwritten with the caller's `false`. Latching `done`
+ * behind `_fired` would make the overwrite permanent: the binding would stay
+ * false for the life of the page, until a reload. Deriving `done` from
  * `expired` on every pass is what survives the copy, and watching the VALUE
  * rather than guessing at microtask order is what makes it independent of when
  * Alpine happens to run the entangle pass.
@@ -38,7 +39,8 @@
  * @param {boolean} config.animate       re-key each value so it can transition
  * @param {string}  config.animateStyle  'box' or 'text' for the segments variant, 'none' when off
  * @param {string}  config.expiredText   what to say once the deadline has passed
- * @param {Object}  config.unitPhrases   unit -> [singular, plural] with a :count placeholder
+ * @param {Object}  config.unitPhrases   unit -> { sample count: template with a :count placeholder },
+ *                                       as `PluralPhrases::from()` builds it for `pluralize()`
  */
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { pluralize } from '../utils/plural.js';
@@ -65,7 +67,7 @@ export default function wirekitCountdown(config = {}) {
         /*
          * The change animation plays for the first seconds after the countdown appears and
          * then stops; the value keeps ticking. A box that pulsed every second for as long as
-         * the page stayed open was blinking content with no control to stop it (WCAG 2.2.2
+         * the page stayed open would be blinking content with no control to stop it (WCAG 2.2.2
          * allows five seconds). `calm` turns at CHANGE_ANIMATION_MS: the last pulse starts
          * before then and its 700 ms end inside the five seconds.
          */
@@ -103,7 +105,7 @@ export default function wirekitCountdown(config = {}) {
 
             /*
              * A backgrounded tab throttles this timer but does not stop it, so a clock
-             * nobody can see went on waking the main thread once a second. Pausing is
+             * nobody can see would go on waking the main thread once a second. Pausing is
              * safe here precisely because the tick carries no state: it assigns
              * `Date.now()`, so the first tick after the tab comes back is already the
              * right time — and `_startTicking` assigns it immediately rather than

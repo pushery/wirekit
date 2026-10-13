@@ -29,6 +29,7 @@ import { keepRaw } from '../utils/keep-raw.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
 import { pluralize } from '../utils/plural.js';
+import { hrefScheme } from '../utils/safe-href.js';
 
 /**
  * What counts as a toolbar command for focus purposes.
@@ -83,6 +84,9 @@ export default function wirekitEditor(config = {}) {
         _onLabelPress: null,
         _onLabelClick: null,
         _format: config.format === 'json' ? 'json' : 'html',
+        // The serialized document the engine was built from, read once by _initialContent(). Until
+        // then _initialValue() reads it from the form field.
+        _initialSource: undefined,
         _editable: config.editable !== false,
         // Character count (soft limit). charCount drives the visible counter; the
         // sr-only announce string is debounced so a screen reader speaks when the
@@ -457,7 +461,26 @@ export default function wirekitEditor(config = {}) {
         // ── Output sync ──────────────────────────────────────────────
 
         _initialContent() {
-            return this._parseContent(config.value ?? '');
+            this._initialSource = this._initialValue();
+
+            return this._parseContent(this._initialSource);
+        },
+
+        /**
+         * The serialized document the editor starts from. The rendered component writes it into
+         * its form field only, encoded so the browser hands back exactly those bytes whatever echo
+         * format the application uses; a copy in the config would be decoded once by the page, and
+         * a decoded reference changes what markup or JSON text says. `config.value` remains for a
+         * factory built by hand without a field.
+         */
+        _initialValue() {
+            if (this._initialSource !== undefined) {
+                return this._initialSource;
+            }
+
+            const field = this.$refs.input;
+
+            return field && typeof field.value === 'string' ? field.value : String(config.value ?? '');
         },
 
         /**
@@ -563,7 +586,7 @@ export default function wirekitEditor(config = {}) {
             // The document was built from exactly this value and has not changed since.
             // Alpine hands the bound value in once when the binding starts, and applying
             // it again would re-parse the document on every page load for nothing.
-            if (this._docVersion === 0 && next === String(config.value ?? '')) {
+            if (this._docVersion === 0 && next === this._initialValue()) {
                 return;
             }
 
@@ -580,7 +603,7 @@ export default function wirekitEditor(config = {}) {
                 return this.$refs.input.value;
             }
 
-            return String(config.value ?? '');
+            return this._initialValue();
         },
 
         /**
@@ -710,7 +733,7 @@ export default function wirekitEditor(config = {}) {
          * writes back and the baseline is never read.
          *
          * `run` is looked up rather than assumed — without the layer this
-         * component behaves exactly as before, down to the byte.
+         * component behaves as a plain field.
          */
         _commitOptimistic() {
             if (typeof this.run !== 'function' || !this.editor) {
@@ -806,13 +829,12 @@ export default function wirekitEditor(config = {}) {
             this.editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
         },
 
-        // Scheme denylist for _promptLink. Strips the TAB / LF / CR characters a
-        // browser ignores when resolving a URL scheme (so `java\tscript:` can't slip
-        // through) and leading whitespace, then tests the leading scheme.
+        // Scheme denylist for _promptLink, with the scheme read the way the browser reads it:
+        // every control character and space before it, and a tab or newline inside it, does not
+        // count, so neither `\u0001javascript:` nor `java\tscript:` slips through. The reader is
+        // the one `safeHref()` uses and SafeUrl mirrors, so the three cannot drift apart.
         _isDangerousUrl(url) {
-            const normalized = String(url).replace(/[\t\n\r]/g, '').trim().toLowerCase();
-
-            return /^(?:javascript|data|vbscript):/.test(normalized);
+            return ['javascript', 'data', 'vbscript'].includes(hrefScheme(String(url)));
         },
 
         // Reactive active-state for the toolbar. Reading `_version` registers it as an

@@ -76,4 +76,11 @@
     @if($railTag === 'a' && $opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
+    {{-- On a touch surface a finger gets a square of the touch target around the module. The
+         item keeps the width the rail's derived width leaves it, because that width is what puts
+         the glyph on the column's axis, so the square is a hit area rather than a size: centered,
+         out of flow and transparent, it reaches past the item into the scroller's inset. The
+         stylesheet draws it under a coarse pointer and on `data-wk-touch` only, and the span
+         itself takes no pointer event. --}}
+    <span class="wk-touch-target pointer-events-none absolute inset-0" aria-hidden="true"></span>
 </{{ $railTag }}>

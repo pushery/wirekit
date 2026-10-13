@@ -53,10 +53,10 @@ final class McpServeCommand extends Command
             // hand the child its stdio as a Unix socketpair rather than an
             // anonymous pipe, and on a socket PHP applies default_socket_timeout
             // (60s). An idle session therefore hits that timeout and fgets()
-            // returns false with no EOF — so treating every false as EOF exited
-            // cleanly after exactly 60 seconds of quiet, with status 0 and
-            // nothing on stderr. The client reported "server disconnected" and a
-            // reconnect worked instantly, which made it read as flakiness.
+            // returns false with no EOF — so treating every false as EOF would exit
+            // cleanly after exactly 60 seconds of quiet, with status 0 and nothing
+            // on stderr: the client would report "server disconnected" and a
+            // reconnect would work instantly, which reads as flakiness.
             if ($line === false) {
                 if (self::isIdleTimeout($in)) {
                     continue;

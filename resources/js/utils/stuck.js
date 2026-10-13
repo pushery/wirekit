@@ -17,7 +17,9 @@
  *
  * Lifecycle: a capture listener for `scroll` on the document, which hears every box that scrolls,
  * a listener for `resize` on the window and one MutationObserver, all released in the directive's
- * cleanup, together with a pending frame.
+ * cleanup, together with a pending frame. Nothing while Alpine clones an element for a Livewire
+ * morph: the clone is thrown away without a cleanup, and listeners on the document would outlive
+ * it. The marker a morph takes off the element is put back by the observer above.
  */
 
 export const WK_STUCK_ATTRIBUTE = 'data-wk-stuck';
@@ -79,7 +81,9 @@ export function restsAtItsLine(el, container) {
  * @param {object} Alpine
  */
 export function registerStuckDirective(Alpine) {
-    Alpine.directive('wk-stuck', (el, directive, { cleanup }) => {
+    const skipDuringClone = typeof Alpine.skipDuringClone === 'function' ? Alpine.skipDuringClone : (callback) => callback;
+
+    Alpine.directive('wk-stuck', skipDuringClone((el, directive, { cleanup }) => {
         let container = scrollParent(el);
         let rests = false;
         let frame = 0;
@@ -142,5 +146,5 @@ export function registerStuckDirective(Alpine) {
 
             frame = 0;
         });
-    });
+    }));
 }

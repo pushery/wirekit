@@ -22,6 +22,9 @@
  *     capture) — removed in destroy(). It only clears `_held`, so a late fire
  *     touches nothing that is still in use.
  *   - _scrollRaf (a requestAnimationFrame id) — canceled in destroy().
+ *   - _headingChanges (a MutationObserver on the target) — disconnected in
+ *     destroy(), and null-guarded in its callback and in its frame callback.
+ *   - _refreshRaf (a requestAnimationFrame id) — canceled in destroy().
  *
  * Honors `prefers-reduced-motion: reduce` — the scrollTo handler jumps
  * (`'instant'`) instead of scrolling smoothly when the preference is set.
@@ -30,6 +33,8 @@ import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { scrollRootOf } from '../utils/scroll-root.js';
+import { assignHeadingIds } from '../utils/heading-ids.js';
+import { HEADING_CHANGES, changesOutside, sameHeadings, indexInFresh } from '../utils/heading-changes.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
     levels: Array.isArray(options.levels) ? options.levels : [2],
@@ -41,6 +46,8 @@ export default (options = {}) => ({
     _onScroll: null,
     _onReaderMove: null,
     _scrollRaf: 0,
+    _headingChanges: null,
+    _refreshRaf: 0,
     _seq: 0,
     // True from a jump until the reader moves the page themselves. A jump says which section the
     // reader wants, and it holds for as long as they have not said anything else. A fixed delay
@@ -52,6 +59,50 @@ export default (options = {}) => ({
         this.items = this.collectHeadings();
         this.assignIds(this.items);
         this.observeActive();
+        this.followHeadings();
+    },
+
+    /**
+     * Collect the headings again when the page changes under the strip, at most once a frame.
+     * The same as reading-spine's, for the same reason: a section a Livewire morph adds, removes
+     * or renames after init() would otherwise never reach the strip (utils/heading-changes.js).
+     */
+    followHeadings() {
+        // Checked first: without the platform's observer there is nothing to follow with.
+        if (typeof MutationObserver !== 'function') return;
+
+        const container = this._container();
+        if (!container) return;
+
+        this._headingChanges = new MutationObserver((records) => {
+            // A change the browser queued before destroy() can arrive after it.
+            if (! this._headingChanges || this._refreshRaf || ! changesOutside(records, this.$el)) return;
+
+            this._refreshRaf = requestAnimationFrame(() => {
+                this._refreshRaf = 0;
+                if (this._headingChanges) this.refresh();
+            });
+        });
+        this._headingChanges.observe(container, HEADING_CHANGES);
+    },
+
+    /**
+     * Take a fresh collection of the headings, when it lists other ones than the strip does. The
+     * mark stays on the section the reader is in, wherever it now stands in the list.
+     */
+    refresh() {
+        const items = this.collectHeadings();
+        if (sameHeadings(items, this.items)) return;
+
+        this.assignIds(items);
+        this.activeIndex = indexInFresh(items, this.items, this.activeIndex);
+        this.items = items;
+        this.recomputeActive();
+    },
+
+    /** The element the headings are collected in: the nearest ancestor that matches `target`, else the first match in the document. */
+    _container() {
+        return this.$el?.closest(this.target) ?? document.querySelector(this.target);
     },
 
     /**
@@ -66,7 +117,7 @@ export default (options = {}) => ({
      * resolves — the Blade caller checks `items.length`.
      */
     collectHeadings() {
-        const container = this.$el?.closest(this.target) ?? document.querySelector(this.target);
+        const container = this._container();
         if (!container) {
             // Warn on missed non-default target — mirrors reading-spine's
             // diagnostic. Default `'main, article'` stays silent because a
@@ -97,21 +148,9 @@ export default (options = {}) => ({
      * disambiguated with -2 / -3 suffixes). Mirrors reading-spine.
      */
     assignIds(items) {
-        const seen = new Map();
-        items.forEach((item) => {
-            if (item.el.id) {
-                item.id = item.el.id;
-                return;
-            }
-            let base = this.slugify(item.text);
-            if (!base) base = `section-${++this._seq}`;
-            let final = base;
-            const count = seen.get(base) || 0;
-            if (count > 0) final = `${base}-${count + 1}`;
-            seen.set(base, count + 1);
-            item.el.id = final;
-            item.id = final;
-        });
+        // An id a heading carries is kept, even when two share it; every entry gets a key of its
+        // own for `x-for`, and a generated id never duplicates one on the page (utils/heading-ids.js).
+        assignHeadingIds(items, (text) => this.slugify(text), () => ++this._seq);
     },
 
     /**
@@ -229,6 +268,16 @@ export default (options = {}) => ({
             cancelAnimationFrame(this._scrollRaf);
             this._scrollRaf = 0;
         }
+
+        if (this._headingChanges) {
+            this._headingChanges.disconnect();
+            this._headingChanges = null;
+        }
+
+        if (this._refreshRaf) {
+            cancelAnimationFrame(this._refreshRaf);
+            this._refreshRaf = 0;
+        }
     },
 
     /**
@@ -246,13 +295,14 @@ export default (options = {}) => ({
      *
      * The target is the jump line from `_line()`: below the developer's chrome (`offset`), below
      * the strip's own height while the strip sits at the top, plus 24px of breathing room — a
-     * heading 8-16px under the strip read as fused to its border. Earlier versions used
-     * `... - this.offset + 8`, which landed the heading 8px ABOVE the line, and ignored the
-     * strip's own height, which left the target heading hidden behind the strip.
+     * heading 8-16px under the strip reads as fused to its border.
      */
     scrollTo(id, event) {
         if (event) event.preventDefault();
-        const el = document.getElementById(id);
+        // An entry's key, or an id. Two headings may share an id, and each entry jumps to its own
+        // heading rather than to the first element that carries the id.
+        const entry = this.items.find((it) => it.key === id);
+        const el = entry ? entry.el : document.getElementById(id);
         if (!el) return;
         const reduced = prefersReducedMotion();
         const root = this._scrollRoot(el);
@@ -268,13 +318,13 @@ export default (options = {}) => ({
         // starts cannot walk the mark through every section on the way.
         this._held = true;
 
-        const clicked = this.items.findIndex((it) => it.id === id);
+        const clicked = entry ? this.items.indexOf(entry) : this.items.findIndex((it) => it.id === id);
         if (clicked !== -1) this.activeIndex = clicked;
 
         // Both kinds of scroller mirror the hash: on a page with its own scroll container the URL
         // follows the heading too, so a reader who copies the address bar after a jump gets a
         // link to the section rather than to the top of the page.
-        this._mirrorHash(id);
+        this._mirrorHash(entry ? entry.id : id);
 
         // Focus goes where the reader asked to go. `preventDefault()` above suppressed the
         // anchor's default, and that default moves TWO things: the scroll and the

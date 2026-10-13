@@ -28,9 +28,9 @@ final class RootDarkSymmetryCheck extends VerifyCheck
      * provide a matching declaration in `.dark`, that override silently
      * carries into dark mode — `:root` outranks the `:where(.dark)` WireKit
      * declares its own dark value with, so the token keeps the light value
-     * rather than turning over. The existing checkTokenAlignment()
-     * compares Tailwind↔WireKit pairs, not the developer's own root vs
-     * dark blocks — so this complementary check fills that gap.
+     * rather than turning over. checkTokenAlignment() compares
+     * Tailwind↔WireKit pairs, not the developer's own root vs dark
+     * blocks — this check covers the second.
      *
      * Restricts to `--color-wk-*` family. Font / radius / shadow / motion
      * tokens are typically theme-agnostic (same value in both modes), so

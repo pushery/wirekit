@@ -12,7 +12,7 @@ namespace Pushery\WireKit\Support;
  * `sidebar.collapse-toggle`). They must agree about a stored value, and each carrying its own copy
  * of this order is how one of them would quietly stop agreeing.
  *
- * The REQUEST is asked first and the superglobal only as a fallback, and that order is the fix
+ * The REQUEST is asked first and the superglobal only as a fallback, and that order is the point
  * rather than a detail. PHP fills `$_COOKIE` when it starts a script. Under `fpm-fcgi` it starts
  * the script afresh for every HTTP request, even though one worker process serves many of them,
  * which is why reading the superglobal alone looks correct for as long as it does. A worker that
@@ -22,8 +22,8 @@ namespace Pushery\WireKit\Support;
  * over. There a remembered rail would render in its other state and the client would correct it
  * a frame later, moving the column. Nothing throws; the other state simply renders.
  *
- * The superglobal stays as a fallback because dropping it would be a regression, not a cleanup.
- * The cookie is written by JavaScript, so it arrives as plaintext, and Laravel's `EncryptCookies`
+ * The superglobal is still the fallback. The cookie is written by JavaScript, so it arrives as
+ * plaintext, and Laravel's `EncryptCookies`
  * nulls a plaintext cookie it cannot decrypt unless the name is excepted. An application on FPM
  * that never added that exception is served by `$_COOKIE` and must keep working. The fallback can
  * fail to answer but cannot answer wrongly: a long-lived worker either leaves `$_COOKIE` empty or

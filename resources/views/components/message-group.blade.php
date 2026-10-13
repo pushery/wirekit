@@ -64,7 +64,7 @@
     @if(filled($authorName))
         @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Messages from :name', ['name' => $authorName]) }}" @endunless
     @endif
-    {{ $attributes->class([$baseClasses]) }}
+    data-wk-sr-host {{ $attributes->class([$baseClasses]) }}
 >
     {{-- The sender, once. --}}
     @if($authorAvatar || $authorName)
@@ -89,9 +89,10 @@
              the first message. Only with a name, so an avatar-only group paints no empty line.
              `max-w-full` is what lets `truncate` work here: a column that does not stretch its
              items makes an unbroken line as wide as its text, so without the cap a long name
-             runs past the edge of the run instead of ending in an ellipsis. --}}
+             runs past the edge of the run instead of ending in an ellipsis. A name the line cuts is
+             whole in its title. --}}
         @if(filled($authorName))
-            <span data-wk-message-group-author aria-hidden="true" class="max-w-full truncate text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $authorName }}</span>
+            <span data-wk-message-group-author aria-hidden="true" title="{{ $authorName }}" class="max-w-full truncate text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $authorName }}</span>
         @endif
         {{ $slot }}
     </div>

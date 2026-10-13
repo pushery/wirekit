@@ -14,11 +14,6 @@ use Pushery\WireKit\WireKit;
  * `.wirekit-schema.json` at the developer's project root, which three documented places call
  * "the same JSON manifest" as the first. A tool written against the documentation and pointed
  * at either file gets the same shape, because both come from here.
- *
- * Neither copy was wrong on its own; they were written months apart, and the second one's own
- * docblock claimed "same output shape, single source of truth" while re-deriving slots and
- * sub-components through a private mirror of the first. That is the shape of this defect: the
- * comment asserting the property is what stops anyone checking it.
  */
 final class ComponentManifest
 {
@@ -51,7 +46,7 @@ final class ComponentManifest
             /*
              * For a class-based component whose canonical tag uses the single-hyphen form
              * (`<x-wirekit-chart>`), the double-colon alias (`<x-wirekit::chart>`) is emitted
-             * too, so an integrator grepping the historical shape still matches. An anonymous
+             * too, so an integrator grepping the double-colon shape matches. An anonymous
              * component has no alias and the field is omitted rather than nulled.
              */
             $tagAlias = ComponentRegistry::tagAlias($name);
@@ -113,9 +108,8 @@ final class ComponentManifest
              * The newest RELEASED version, which is a different question from `version` above:
              * that one is the build installed here, and on a deployment pinned to a development
              * branch it is literally that branch name, so it cannot be compared against a
-             * version a page claims to show. This field is the comparable half — it exists
-             * because a documentation page served a changelog frozen four minors back and no
-             * artifact anywhere carried both sides of the comparison that would have said so.
+             * version a page claims to show. This field is the comparable half, so a page that
+             * claims to show a version can be checked against the newest one.
              */
             'released_version' => VersionResolver::released(),
             'generated_at' => date('c'),

@@ -13,9 +13,9 @@
     //
     // `true` draws it BELOW the bar, which is what a head wants. `'top'` draws it
     // above instead, for a bar sitting at the FOOT of a column — an account row at
-    // the bottom of a sidebar is the case. Without it such a bar drew its rule along
-    // the column's bottom edge, so the only way to get a symmetric column was to
-    // leave the foot as a bare row, and a bare row does not match the head it faces.
+    // the bottom of a sidebar is the case. Without it such a bar would draw its rule
+    // along the column's bottom edge, and a symmetric column would need a bare foot
+    // row, which does not match the head it faces.
     'rule' => true,
     // Inline padding, on the page-edge spine scale. `none` is for the rail head,
     // whose content is a centered mark rather than text on the spine.
@@ -78,17 +78,13 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `rule="false"` would otherwise KEEP the rule. Normalize against each prop's
     // own default so a cast never engages a mode that was meant off.
-    // The edge is read BEFORE the boolean normalization below, which is the whole
-    // reason this line exists: BooleanProp::from() collapses any truthy value to
-    // `true`, so `'top'` would arrive at the rule branch as an ordinary bottom rule
-    // and the foot bar would draw its line along the column's bottom edge — the exact
-    // defect this option was added to remove, and silently, since it still draws A rule.
-    // TRI-STATE, modeled as two booleans rather than cast down to one. `rule` accepts
-    // `true` (below), `false` (none) and `'top'` (above), and running it through the boolean
-    // normalizer flattens the third into `true` — the string is truthy. An earlier version
-    // did exactly that and rescued the edge into a variable read one line before the cast,
-    // which works and reads as a workaround around its own modeling. It also tripped the
-    // guard that looks for a prop cast to bool and compared against strings, correctly.
+    //
+    // `rule` is TRI-STATE, modeled as two booleans rather than cast down to one: it accepts
+    // `true` (below), `false` (none) and `'top'` (above). BooleanProp::from() collapses any
+    // truthy value to `true`, and the string is truthy, so `'top'` would arrive as an
+    // ordinary bottom rule and the foot bar would draw its line along the column's bottom
+    // edge, silently, since it still draws A rule. So the edge is read first, and the cast
+    // only answers whether there is a rule at all.
     $ruleOnTop = $rule === 'top';
     $hasRule = $ruleOnTop || BooleanProp::from($rule, true);
     $sticky = BooleanProp::from($sticky, false);
@@ -122,8 +118,7 @@
     // width leaves two width utilities of equal specificity on one element, and the winner is
     // then Tailwind's emission order rather than the prop: `w-auto` sorts before `w-full`, so
     // `w-full` would win and the bar would shift left by the host's padding without widening to
-    // cover it, leaving its rule short of the column's edge. The same defect class this
-    // component's own rail records for its width, and sidebar.item for its foreground.
+    // cover it, leaving its rule short of the column's edge.
     $classes = WireKit::resolveClasses('shell-bar', 'base', implode(' ', [
         'wk-shell-bar',
         'flex shrink-0 items-center',
@@ -188,12 +183,12 @@
          long title would push the `end` cluster off the bar instead of truncating. With it,
          `truncate` on the title actually engages.
 
-         It SCROLLS rather than clipping, and that came out of a mobile sweep: the console
-         layout's top bar — three navigation items and two actions — is about 520px wide, and
-         the content column on a 375px phone clipped 146px of it with `overflow: hidden`. The
-         clipped part is not merely unseen, it is unreachable; nothing scrolls a box that has
-         no scroller. A horizontally scrolling strip of tabs is what every phone-sized app bar
-         does, and it costs desktop nothing because the overflow never engages there.
+         It SCROLLS rather than clipping. A console layout's top bar — three navigation items
+         and two actions — is about 520px wide, and the content column of a 375px phone would
+         clip about 146px of it under `overflow: hidden`. The clipped part would not merely be
+         unseen but unreachable; nothing scrolls a box that has no scroller. A horizontally
+         scrolling strip of tabs is what every phone-sized app bar does, and it costs desktop
+         nothing because the overflow never engages there.
 
          `wk-shell-bar-strip` hides the scrollbar rather than thinning it, and that is a change
          of kind rather than of degree. A thin track still paints, and where it paints is the
@@ -215,7 +210,7 @@
 
              The slot's own attributes land on THIS wrapper, and that is what lets a caller
              write `<x-slot:start class="lg:hidden">`. Without it the only place to hang a
-             responsive class was the control inside, and a control that is `display: none`
+             responsive class would be the control inside, and a control that is `display: none`
              leaves its wrapper behind as a zero-width flex item — which still takes the bar's
              `gap` on both sides of it. The heading beside it then carries a phantom indent
              that nothing in the markup accounts for: one gap's width to the right of the
@@ -242,17 +237,16 @@
              `filled()`, never `?:` — an interpolated caller value can arrive empty, and a
              named container with an empty name is worth less than no role at all.
 
-             Unconditional means unconditional ON A CLUSTER THAT HOLDS SOMETHING. An empty
+             Unconditional means unconditional on a cluster that holds something. An empty
              default slot has nothing to overflow and therefore nothing to scroll to, so a
              tab stop on it is a keypress that lands on a 0 x 0 box and announces nothing —
              the exact outcome `shell-bar.md` warns about under "Never pass `label` to a bar
              whose leading cluster is empty". The gate below enforces that rule rather than
              leaving it to the caller.
 
-             The condition lives in the attribute's VALUE, not around the attribute.
-             `ScrollRegionKeyboardModelGuardTest` strips `@if(...)...@endif` before it reads
-             the wiring, on the grounds that a tab stop behind a Blade conditional is not a
-             keyboard model — so the wrapped form would read as no `tabindex` at all. `map`
+             The condition lives in the attribute's VALUE, not around the attribute: a tab
+             stop behind a Blade conditional is not a keyboard model the markup can show, and
+             read without its conditional the wrapped form has no `tabindex` at all. `map`
              uses the same shape for the same reason.
 
              `hasActualContent()`, never `isEmpty()`. `ComponentSlot::isEmpty()` is a strict
@@ -277,7 +271,7 @@
             // without padding has none, so there the strip keeps the room above and below only and
             // ends where the bar ends, rather than reaching past both of its edges.
             '-my-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]' => $paddingClasses === '',
-            // The strip is a tab stop now, so it must show that it has focus. Behind the
+            // The strip is a tab stop, so it must show that it has focus. Behind the
             // same gate as the `tabindex` above: a ring on something nothing can focus is
             // dead CSS, and keeping the two together means one condition to read.
             'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $slot->hasActualContent(),

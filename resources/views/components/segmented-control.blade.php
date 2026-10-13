@@ -5,9 +5,9 @@
      this component and binds to `selected`. --}}
 @props([
     'label' => null,
-    // `error` was undeclared while `label` was not, so `:error` on this control
-    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
-    // message the developer wrote, silently not shown, on a control that is part of forms.
+    // `error` is declared like `label`: undeclared, `:error` on this control would land in
+    // the attribute bag and render as a stray HTML attribute — a validation message the
+    // developer wrote, silently not shown, on a control that is part of forms.
     'error' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -19,14 +19,11 @@
     // field's description (partials/field-help).
     'help' => null,
     // Livewire method to call optimistically. The segment moves immediately and
-    // is put back if the call fails. Absent -> this component renders exactly as
-    // it did before, down to the byte.
+    // is put back if the call fails. Absent -> the component renders without an
+    // optimistic layer.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     'options' => [],
@@ -53,7 +50,7 @@
     $attributes = $attributes->except(['announceErrors', 'announce-errors']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -191,7 +188,7 @@
     // An option is a label, or the shape `select` takes for one with more to say:
     // `'de' => ['label' => 'Deutsch', 'lang' => 'de']`. `lang` is the language the label is in,
     // which a segment written in another language than the page needs, so a screen reader says
-    // it in that language's voice (WCAG 3.1.2). A flat option renders as it always did.
+    // it in that language's voice (WCAG 3.1.2). A flat option renders without a `lang`.
     $segments = [];
     foreach ($options as $optValue => $optLabel) {
         $segments[$optValue] = is_array($optLabel)
@@ -237,9 +234,9 @@
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0">
+<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0">
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- `name` belongs to the hidden field below, which renders it. On this div it is not a
@@ -249,11 +246,12 @@
         {{-- Selection, the hidden-input mirror and the whole keyboard model live
              in the factory (resources/js/components/segmented-control.js). The
              handlers cannot be inline: Alpine's CSP build parses neither the
-             multi-statement click nor the optional chaining the arrows used, so
-             under a strict Content-Security-Policy the segments went dead.
+             multi-statement click nor the optional chaining the arrows need, so
+             under a strict Content-Security-Policy inline handlers would leave
+             the segments dead.
 
-             The factory's init() writes the initial value into the hidden input,
-             which is what the old x-init here did. --}}
+             The factory's init() writes the initial value into the hidden
+             input. --}}
         {{-- The server's own channel. Livewire rewrites this on every render and
              nothing binds it, so a value the SERVER changed reaches the component
              even though Alpine read `x-data` once and will never read it again.
@@ -270,8 +268,8 @@
              alone, which makes `data-wk-server-value` + observeServerValue the one
              update path. The seed comes from that same attribute at init. --}}
         x-data="wirekitSegmentedControl({ disabled: {{ $disabled ? 'true' : 'false' }} })"
-        {{-- Without the optimistic layer the radiogroup IS this element, exactly
-             as before. With it, the role moves one level in — because the layer
+        {{-- Without the optimistic layer the radiogroup IS this element. With it,
+             the role moves one level in — because the layer
              carries a live region, and a live region is not a radio. A
              radiogroup may only own radios, so the announcer cannot sit in it. --}}
         @unless($optimisticConfig)
@@ -401,7 +399,7 @@
                      rule selects to frame the selected segment. It sits outside the resolved
                      class lists, so a personalized block cannot take it away. --}}
                 @if($segment['lang'] !== null) lang="{{ $segment['lang'] }}" @endif
-                class="wk-segmented-control-segment {{ $segmentClasses }} {{ $sizeClasses }}"
+                class="wk-segmented-control-segment wk-touch-row {{ $segmentClasses }} {{ $sizeClasses }}"
                 :class="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }}
                     ? {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentSelectedClasses) }}
                     : {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses) }}"

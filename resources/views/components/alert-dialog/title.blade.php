@@ -36,6 +36,7 @@
 @endphp
 
 <h{{ $levelValue }} data-wk-prose-skip
+    data-wk-alert-dialog-title
     x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
     {{ $attributes->class([$classes]) }}
 >

@@ -338,7 +338,6 @@ __('wirekit::Progress')
 `intent`
 `label`
 `personalize()`
-`progress`
 `prop="false"`
 `rem`
 `svg`,
@@ -349,6 +348,7 @@ __('wirekit::Progress')
 `value`
 `variant`
 `variant`.
+`w-0`:
 `wire:poll`
 `wk-progress-fill`
 `wk-progress-indeterminate`
@@ -430,6 +430,7 @@ bar)
 bar.
 bar:
 be
+be:
 because
 becomes
 been
@@ -467,6 +468,7 @@ circle
 circle)
 circular
 circumference
+claiming
 claims
 clamped
 class
@@ -509,7 +511,6 @@ danger
 debug
 decided
 default
-defect
 depend
 depends
 design
@@ -522,10 +523,11 @@ disagree
 dist/wirekit.css)
 does
 done
+done.
 drawing
 drawn
 drew
-drifted
+drift
 drops
 duration-[var(--transition-wk-duration)]
 each
@@ -595,7 +597,6 @@ h-[var(--size-wk-md)]',
 h-[var(--size-wk-sm)]',
 h-[var(--size-wk-xl,6rem)]',
 h-full
-had
 has
 have
 height
@@ -620,6 +621,7 @@ indeterminate:
 indicator
 indicators.
 info
+inline
 inset-0
 inset-y-0
 inside
@@ -678,7 +680,7 @@ means
 method.
 min
 min((float)
-minted
+mint
 mirrors
 missing
 mode,
@@ -717,7 +719,6 @@ number;
 numeric
 of
 off
-old
 omitted
 on
 on.
@@ -736,6 +737,7 @@ otherwise
 out,
 outer
 outside
+over
 over.
 overflow-hidden',
 overflowing.
@@ -750,6 +752,7 @@ people
 per
 percentage
 percentage,
+policy
 polish:
 poll
 polls
@@ -797,7 +800,6 @@ reads.
 real
 reason
 reason,
-reason:
 region
 rely
 removal
@@ -815,6 +817,7 @@ resolving.)
 result
 retunes
 richer
+rides
 right.
 ring
 role.
@@ -866,6 +869,7 @@ stable
 state
 static
 stay
+stays
 still
 stop
 streamed
@@ -879,6 +883,8 @@ stroke-linecap="round"
 stroke-width="3"
 stroke="var(--color-wk-bg-muted)"
 stroke="{{
+style
+style,
 style="transition:
 style="width:
 stylesheet's
@@ -937,7 +943,6 @@ under
 unknown
 unresolvable
 until
-up
 up.
 updates.
 upload
@@ -959,6 +964,7 @@ view's
 viewBox="0
 visible
 vocabulary
+w-0"
 w-full
 warning
 was

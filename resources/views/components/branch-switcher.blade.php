@@ -59,7 +59,7 @@
         'inline-flex cursor-pointer items-center justify-center',
         'size-[var(--size-wk-sm)] rounded-[var(--radius-wk-full)]',
         'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)] disabled:hover:bg-transparent',
         'aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)] aria-disabled:hover:bg-transparent',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -81,7 +81,7 @@
         data-wk-branch-switcher
         @unless($attributes->has('role')) role="group" @endunless
         @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $groupLabel }}" @endunless
-        {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->class([$navClasses]) }}
+        {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->class([$navClasses]) }} data-wk-sr-host
     >
         <button
             type="button"
@@ -94,7 +94,7 @@
                  single variant takes the arrows out of the order. --}}
             x-bind:aria-disabled="! canGoPrevious()"
             x-bind:disabled="total <= 1"
-            x-on:click="previous()"
+            x-on:click="previous($el)"
             x-on:keydown.arrow-left.prevent="previous()"
             x-on:keydown.arrow-right.prevent="next()"
         >
@@ -113,7 +113,7 @@
             aria-label="{{ __('wirekit::Next response') }}"
             x-bind:aria-disabled="! canGoNext()"
             x-bind:disabled="total <= 1"
-            x-on:click="next()"
+            x-on:click="next($el)"
             x-on:keydown.arrow-left.prevent="previous()"
             x-on:keydown.arrow-right.prevent="next()"
         >

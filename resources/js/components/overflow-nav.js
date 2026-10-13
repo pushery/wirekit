@@ -35,8 +35,10 @@
 /**
  * The number of rows a wrapping flex row takes for items of these widths, in this order.
  *
- * Half a pixel of slack: widths are fractional, and a sum of them can land a hair over a width
- * that the browser, rounding differently, still fits.
+ * No tolerance: the browser wraps an item that overflows the row by any fraction of a pixel, and the
+ * widths and the capacity come from the same layout, so a sum is compared as it is. A tolerance
+ * would keep an item in a row the browser has already wrapped, and the rows would then take one
+ * line more than they may.
  *
  * @param {number[]} widths
  * @param {number} gap
@@ -52,7 +54,7 @@ export function rowsFor(widths, gap, capacity) {
     let used = 0;
 
     widths.forEach((width, index) => {
-        if (index > 0 && used + gap + width > capacity + 0.5) {
+        if (index > 0 && used + gap + width > capacity) {
             rows += 1;
             used = width;
         } else {
@@ -130,6 +132,21 @@ function outerWidth(el) {
     return el.getBoundingClientRect().width
         + (Number.parseFloat(style.marginLeft) || 0)
         + (Number.parseFloat(style.marginRight) || 0);
+}
+
+/**
+ * The width a flex row has for its items: its box less its borders and its padding.
+ *
+ * Taken from the same box as the entries' widths and kept to the fraction of a pixel, because
+ * `clientWidth` rounds to a whole one, and against a sum that is exact, that half pixel decides
+ * whether an entry wraps.
+ */
+function innerWidth(el, style) {
+    return el.getBoundingClientRect().width
+        - (Number.parseFloat(style.borderLeftWidth) || 0)
+        - (Number.parseFloat(style.borderRightWidth) || 0)
+        - (Number.parseFloat(style.paddingLeft) || 0)
+        - (Number.parseFloat(style.paddingRight) || 0);
 }
 
 export default function wirekitOverflowNav(options = {}) {
@@ -265,9 +282,7 @@ export default function wirekitOverflowNav(options = {}) {
                 widths: items.map(outerWidth),
                 moreWidth: outerWidth(more),
                 gap: Number.parseFloat(style.columnGap) || 0,
-                capacity: row.clientWidth
-                    - (Number.parseFloat(style.paddingLeft) || 0)
-                    - (Number.parseFloat(style.paddingRight) || 0),
+                capacity: innerWidth(row, style),
                 lines: this._lines,
                 pinned: items
                     .map((el, index) => (el.hasAttribute('data-wk-overflow-current') || el.hasAttribute('data-wk-overflow-pinned') ? index : -1))

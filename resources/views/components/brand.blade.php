@@ -11,7 +11,7 @@
     // CSS like every other `.dark`-scoped WireKit rule). Composes with
     // `$mobileLogo`: the mobile mark stays mode-neutral below the breakpoint;
     // the light/dark swap applies to the desktop logo at + breakpoint. Null →
-    // single-logo behavior (byte-identical back-compat).
+    // one logo for both modes.
     'darkLogo' => null,
     // Tailwind breakpoint at which the responsive-logo swap flips back to
     // the full `$logo`. Values: 'sm' / 'md' / 'lg' / 'xl'. Default 'sm'
@@ -52,8 +52,7 @@
     // one place. Not `null`: Blade gives a prop passed as null its default, so null means "/".
     'href' => '/',
     // The mark's height, on the scale `avatar` and the `--size-wk-*` tokens use (1.5, 2, 2.5 and
-    // 3rem), so a mark and an avatar beside it can share a line. `sm` is the height every brand
-    // has always had, written as it always was, so a brand that sets nothing renders as before.
+    // 3rem), so a mark and an avatar beside it can share a line. `sm` is the default height.
     //
     // A CSS length is taken too, for a height the scale does not have: a wordmark that sits in a
     // 28px row is `1.75rem`, between `xs` and `sm`. Numbers with `rem`, `em` or `px` only; the
@@ -220,14 +219,11 @@
         {{-- A NAMED slot `<x-slot:logo>...</x-slot:logo>` was passed
              instead of the URL prop — render its raw markup so callers
              can drop in a custom SVG / colored div / icon without
-             being forced into the URL-string contract. Blueprint authors
-             routinely reach for this shape. Pre-fix this code path
-             crashed the <a>'s HTML because the @elseif below stringified
-             the slot inside <img src="..."> attribute, leaving the rest
-             of the attribute string visible as text in the rendered DOM.
-             Branch placed FIRST so it wins against the URL branches
-             below; the URL branches' `truthy-string` test no longer
-             matches a ComponentSlot when this @if eats it. --}}
+             being forced into the URL-string contract. Branch placed
+             FIRST so it wins against the URL branches below, which
+             would stringify the slot inside the <img src="...">
+             attribute and leave the rest of the attribute string
+             visible as text in the rendered DOM. --}}
         {{ $logo }}
     @elseif($logo && $mobileLogo && $darkLogo)
         {{-- Responsive + mode-aware. Mode-neutral mobile mark below the

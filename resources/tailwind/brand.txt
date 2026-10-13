@@ -150,7 +150,6 @@ $wkMobileStyle
 (alt=""
 (an
 (back-compat).
-(byte-identical
 (fragile).
 (no
 (or
@@ -192,12 +191,10 @@ $wkMobileStyle
 ?
 ?:
 ??
-@elseif
 @elseif($logo
 @elseif($logo)
 @endif
 @endphp
-@if
 @if($computedRel)
 @if($isLink)
 @if($logo
@@ -215,7 +212,6 @@ Accessibility
 Almost
 Auto-inject
 Blade
-Blueprint
 BooleanProp::from($truncate,
 Both
 Branch
@@ -225,7 +221,6 @@ CSS-first
 Caller-provided
 Checked
 Children
-ComponentSlot
 Composes
 DEFAULT,
 DOM.
@@ -262,7 +257,6 @@ Off
 On
 Only
 PHP
-Pre-fix
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Read
@@ -361,7 +355,6 @@ __('wirekit::Home')
 `sm`
 `sm`.
 `truncate="false"`
-`truthy-string`
 `w-auto`
 `width`/`height`
 `wk-brand`
@@ -408,25 +401,20 @@ at
 attribute
 attribute,
 attributes
-authors
 auto-derived
 auto-inject
 avatar
 axes
 back
-back-compat).
 badge)
 bag
 be
 be.
 because
 before
-before.
-behavior
 being
 below
 below,
-below;
 beside
 between
 block,
@@ -435,7 +423,6 @@ both
 both.
 bound,
 branches
-branches'
 brand
 brand-bar
 break
@@ -475,7 +462,6 @@ class="{{
 classes
 classes:
 clear
-code
 collapsed
 colored
 column
@@ -493,7 +479,6 @@ contract.
 corpus,
 costs
 counts
-crashed
 custom
 dark
 data,
@@ -537,7 +522,6 @@ drop
 dropdown/item.blade.php.
 dropping
 e.g.
-eats
 echoed
 either
 element
@@ -594,7 +578,6 @@ goes
 grid.blade.php's
 group
 guard
-had,
 handles
 happens
 has
@@ -604,6 +587,7 @@ header
 header's
 height
 height,
+height.
 height:
 here
 here.
@@ -651,7 +635,6 @@ known
 later
 later,
 leave
-leaving
 left
 length
 less
@@ -680,7 +663,6 @@ logo-only
 logo-only;
 logo.
 logos
-longer
 lose
 loses
 main
@@ -705,6 +687,7 @@ mode
 mode,
 mode-aware.
 mode-neutral
+modes.
 moment
 most
 mutation.
@@ -826,7 +809,6 @@ ring
 root
 root,
 rounded-[var(--radius-wk-sm)]',
-routinely
 row
 row:
 rule
@@ -845,7 +827,6 @@ selector
 set,
 sets
 shape
-shape.
 share
 shift
 shift:
@@ -859,7 +840,6 @@ sidebar.
 silently
 since
 single
-single-logo
 sits
 size
 size.
@@ -885,7 +865,7 @@ strictness
 string
 string)
 string.
-stringified
+stringify
 strings
 strings,
 style
@@ -913,7 +893,6 @@ target.
 target="_blank".
 targets
 template
-test
 text
 text-
 text-[length:var(--text-wk-lg)]
@@ -975,7 +954,6 @@ visibility
 visible
 vs
 was
-was,
 way
 way.
 way:

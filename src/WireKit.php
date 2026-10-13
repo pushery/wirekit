@@ -41,6 +41,7 @@ class WireKit
      */
     public const COMPONENTS_WITHOUT_CLASS_BLOCKS = [
         'faq-item' => 'it renders `accordion.item`, which resolves the classes; personalize `accordion.item` instead.',
+        'fit-text' => 'its markup is the measurement the stylesheet reads and carries no class of its own; style the text through the element around it, or with a `class` on the component.',
         'fonts' => 'it renders `<link>` and `<style>` tags and no styled element.',
         'glass' => 'it renders the stylesheet, the script and a hidden SVG filter definition, and no styled element.',
         'structured-data' => 'it renders a JSON-LD script and no styled element.',
@@ -274,11 +275,11 @@ class WireKit
         // and the shipped config declares these as LITERAL dotted keys. config()/Arr::get()
         // splits the key on '.', so config("wirekit.components.sidebar.item.classes.{block}")
         // walks components -> 'sidebar' -> 'item' and never reaches the literal 'sidebar.item'
-        // key — the override silently no-ops for every dotted sub-component (the larger part of
-        // the catalog; top-level names without a dot always worked). Read the components map
-        // once and index the literal component key directly, then fall back to the dotted
-        // config() path so a developer who used the accidental nested-array form still resolves.
-        // Both forms work -> backward compatible. Do NOT "simplify" this back to a bare config().
+        // key: through config() alone the override would silently no-op for every dotted
+        // sub-component, the larger part of the catalog. So the components map is read once and
+        // the literal component key indexed directly, with the dotted config() path as the
+        // fallback, so a developer who writes the nested-array form resolves too. Both forms
+        // work, and a bare config() here would break the dotted one.
         $components = config('wirekit.components', []);
         $configClasses = $components[$component]['classes'][$block]
             ?? config("wirekit.components.{$component}.classes.{$block}");
@@ -331,10 +332,9 @@ class WireKit
         }
 
         // Returned as-is, NOT cast. The file is strict_types, so this method's
-        // `string` return already rejects a block value of the wrong type — a
-        // number or an array raises the same TypeError it always did. Casting here
-        // would have quietly turned those into "5" and "Array", relaxing an
-        // existing contract as a side effect of adding an unrelated feature.
+        // `string` return rejects a block value of the wrong type: a number or an
+        // array raises a TypeError. Casting here would quietly turn those into "5"
+        // and "Array".
         return $value;
     }
 
@@ -679,8 +679,7 @@ class WireKit
      * (`fade-in`, `slide-up-in`, etc). Also accepts the `fade-up` /
      * `fade-down` / `fade-left` / `fade-right` shorthand naming convention
      * as aliases for the corresponding `slide-*-in` presets — the same map
-     * `<x-wirekit::reveal>` accepts, kept in lockstep by
-     * `FadePresetAliasConsistencyTest`. Unknown values are reported through
+     * `<x-wirekit::reveal>` accepts. Unknown values are reported through
      * validateProp and the strictness gate, and fall back to the first allowed
      * value wherever the gate does not throw.
      *
@@ -699,8 +698,7 @@ class WireKit
 
         // `fade-*` shorthand naming-convention aliases. Resolved BEFORE auto-suffix
         // so `fade-up` resolves to `slide-up-in`, not the non-existent
-        // `fade-up-in`. Same map as resources/views/components/reveal.blade.php
-        // — divergence is blocked by FadePresetAliasConsistencyTest.
+        // `fade-up-in`. The same map as resources/views/components/reveal.blade.php.
         $aliases = [
             'fade-up' => 'slide-up-in',
             'fade-down' => 'slide-down-in',

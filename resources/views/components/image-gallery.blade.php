@@ -34,7 +34,7 @@
     // inside it — so the overlay wrapper is pointer-events-none and the thumbnail still
     // opens the lightbox; interactive controls inside the overlay opt back in with
     // `pointer-events-auto`. Return a view or HtmlString for HTML (a plain string is
-    // escaped). Null → no overlay (galleries without it are byte-identical to before).
+    // escaped). Null → no overlay.
     // It covers the THUMBNAIL only; the zoom view takes `zoomOverlay` below.
     'itemOverlay' => null,
     // The zoom view's own overlay: the same `fn($item, $i)` shape as itemOverlay, laid over the
@@ -44,6 +44,11 @@
     // image, an "AI-generated" marking or a license note, goes to both. Ignored on a static grid,
     // which has no zoom view. Null → no overlay.
     'zoomOverlay' => null,
+    // Zoom inside the image the lightbox shows: buttons, the keys `+` `-` `0`, the wheel, a double
+    // click or a double tap, a pinch, and dragging the enlarged image. Handed to the lightbox with
+    // `maxZoom`, the largest scale as a multiple of the fitted size. Ignored on a static grid.
+    'zoomable' => false,
+    'maxZoom' => 4,
     'scope' => null,
 ])
 
@@ -60,6 +65,7 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $lightbox = BooleanProp::from($lightbox, true);
+    $zoomable = BooleanProp::from($zoomable, false);
 
     // Normalize each entry to ['src', 'alt', 'caption', 'full'].
     //
@@ -69,8 +75,8 @@
     // developer has to pick a side: the small step makes the zoom blurry, the large one makes
     // every tile in a feed pay the zoom's resolution.
     //
-    // Absent — or present and empty — it falls back to `src`, so every gallery shipping today
-    // renders byte-identically. `??` alone would NOT do that: an entry carrying `'full' => ''`
+    // Absent — or present and empty — it falls back to `src`. `??` alone would NOT do that: an
+    // entry carrying `'full' => ''`
     // is a developer's own empty variable, and honoring it would point the lightbox at nothing.
     $items = [];
     foreach (\Pushery\WireKit\Support\ListProp::records($images) as $img) {
@@ -149,9 +155,9 @@
     {{-- The gallery IS a lightbox instance: the thumbnail buttons live in the
          lightbox's default slot, so they share its Alpine scope and call
          openAt(i) directly. The dialog / focus-trap / keyboard / captions all
-         come from the shared <x-wirekit::lightbox> component — the gallery no
-         longer carries its own overlay markup. --}}
-    <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" :slide-overlay="$slideOverlay" {{ $attributes->class([$wrapperClasses]) }}>
+         come from the shared <x-wirekit::lightbox> component — the gallery
+         carries no overlay markup of its own. --}}
+    <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" :slide-overlay="$slideOverlay" :zoomable="$zoomable" :max-zoom="$maxZoom" {{ $attributes->class([$wrapperClasses]) }}>
         <x-wirekit::grid :cols="$columns" :gap="$gap" :role="$gridNamed ? 'group' : null" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null">
             @foreach($items as $i => $item)
                 {{-- Each thumbnail is a real button so the lightbox is
@@ -161,7 +167,7 @@
                 <div class="relative">
                     <button
                         type="button"
-                        x-on:click="openAt({{ $i }})"
+                        x-on:click="openAt({{ (int) $i }})"
                         aria-haspopup="dialog"
                         aria-label="{{ __('wirekit::View image :n', ['n' => $i + 1]) }}{{ $item['alt'] !== '' ? ': '.$item['alt'] : '' }}"
                         class="group block w-full cursor-zoom-in appearance-none border-0 bg-transparent p-0 rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"

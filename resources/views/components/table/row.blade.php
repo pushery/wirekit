@@ -70,7 +70,7 @@
     $detailsHiddenFrom = trim($detailsHiddenFromContainer.' '.$detailsHiddenFromViewport);
 
     /*
-     * The two border corrections the reporter had to write by hand, now emitted here.
+     * The two border corrections a details row needs, emitted here so no call site writes them.
      *
      * 1. While the details row is VISIBLE it continues its record, so the line between the two
      *    has to go -- and that line is the record's own `border-bottom` from `divide-y`.
@@ -125,9 +125,9 @@
         // Striped: every odd RECORD row in a data-wk-striped table gets a subtle tint
         '[table[data-wk-striped]_&:nth-child(odd_of_[data-wk-table-row])]:bg-[var(--color-wk-bg-subtle)]',
         // Hoverable: any row inside a data-wk-hoverable table reacts to hover
-        '[table[data-wk-hoverable]_&:hover]:bg-[var(--color-wk-bg-muted)]',
+        '[table[data-wk-hoverable]_&:hover]:bg-[var(--color-wk-bg-active)]',
         // Striped + hoverable: hover must override the stripe on odd rows (higher specificity)
-        '[table[data-wk-striped][data-wk-hoverable]_&:nth-child(odd_of_[data-wk-table-row]):hover]:bg-[var(--color-wk-bg-muted)]',
+        '[table[data-wk-striped][data-wk-hoverable]_&:nth-child(odd_of_[data-wk-table-row]):hover]:bg-[var(--color-wk-bg-active)]',
     ]), $scope);
 
     // The details row takes the tint of the record it belongs to, or it reads as a separate
@@ -147,12 +147,11 @@
     {{-- `headers` points at the record's row-header cell, so a screen reader reaching this row
          is told which record it continues. Without it the row is an orphan announcing values
          with no subject. --}}
-    {{-- The key is derived, not declared, and the defect it closes is silent. Livewire pairs
+    {{-- The key is derived, not declared, and the defect it prevents is silent. Livewire pairs
          an UNKEYED sibling by position, which is right exactly as long as every record emits one
-         details row, always immediately behind itself. The call site this slot was built for is
-         the one where that stops being true — a row that carries details beside a row that does
-         not — and when it breaks, both rows still render. Only their pairing is wrong, so nothing
-         is red and the screen shows one record's details under another's name.
+         details row, always immediately behind itself. A row that carries details beside a row
+         that does not breaks that, and both rows still render: only their pairing would be
+         wrong, so nothing is red and the screen shows one record's details under another's name.
 
          A details row belongs to exactly one record, and that record's key is already in the bag,
          so there is nothing for a call site to declare.

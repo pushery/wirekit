@@ -8,6 +8,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
+import { pageScrollBehavior } from '../utils/motion.js';
 import {
     holdPageInert,
     inOverlayRoot,
@@ -79,7 +80,7 @@ export default function wirekitCommandPalette(config = {}) {
         // Whether the host reports its requests: the palette has a `loading` slot, or the host
         // has said 'loading' once. Only then can an input the host has not answered yet be told
         // from a search that found nothing. A host that reports only failures never says
-        // 'loading', and its empty state keeps showing as it always did.
+        // 'loading', and its empty state shows as soon as the list is empty.
         _remote: config.remote === true,
 
         // Inputs typed, the newest one sent to the host, and the newest one a report came after.
@@ -390,9 +391,9 @@ export default function wirekitCommandPalette(config = {}) {
          * Take the keys typed after the palette opened and before its field has the focus.
          *
          * The field takes the focus once the panel is shown, a task or more after the open. A
-         * reader who presses the hotkey and types at once typed into nothing for that moment:
-         * from the page itself the keys were lost, and from a field of the page they landed in
-         * that field. Printable keys go to the query instead, Backspace takes the last character,
+         * reader who presses the hotkey and types at once would type into nothing for that
+         * moment: from the page itself the keys would be lost, and from a field of the page they
+         * would land in that field. Printable keys go to the query instead, Backspace takes the last character,
          * and the query goes out as text handed over does (`_takeQuery`). Keys with Ctrl, Cmd or
          * Alt, an input method's composition, and every other key keep their meaning. A field
          * that opens the palette, `command-palette.trigger`, hands its text over itself and is
@@ -644,7 +645,7 @@ export default function wirekitCommandPalette(config = {}) {
         _scrollToActive(items) {
             const item = items[this._activeIndex];
             if (item) {
-                item.scrollIntoView({ block: 'nearest' });
+                item.scrollIntoView({ block: 'nearest', behavior: pageScrollBehavior() });
             }
 
             this._paintActive(items);

@@ -19,8 +19,8 @@
  *
  * Where the reader is standing comes from the EVENT, not from `activeMenu`. Deriving it
  * from the open menu alone gives the same answer for every trigger while the bar is
- * closed, and the arithmetic then runs off that: ArrowDown on the third menu opened the
- * first, and ArrowLeft opened the last.
+ * closed, and the arithmetic would then run off that: ArrowDown on the third menu would
+ * open the first, and ArrowLeft the last.
  *
  * Lifecycle resources held on `this`:
  *   - _navCleanup (document listener) and _stopOutsideRelease (the outside-release
@@ -55,7 +55,7 @@ export default function wirekitMenubar() {
     return {
         activeMenu: null,
 
-        // WHICH TRIGGER IS THE BAR'S ONE TAB STOP. The menubar pattern gives the whole
+        // Which trigger is the bar's one tab stop. The menubar pattern gives the whole
         // bar a single stop and moves between the triggers with the arrow keys, so a
         // reader tabbing past a five-menu bar passes it in one press rather than five.
         // Null until the reader has been anywhere, which `tabindexFor` reads as "the
@@ -63,8 +63,7 @@ export default function wirekitMenubar() {
         rovingTrigger: null,
 
         // Type-ahead buffer and the timeout that forgets it. Both are cleared wherever a
-        // menu stops being open: a pending timeout firing into a closed menu is the
-        // null-callback class this codebase already has a rule about.
+        // menu stops being open, so no pending timeout fires into a closed menu.
         _typeAheadBuffer: '',
         _typeAheadTimer: null,
 
@@ -306,8 +305,8 @@ export default function wirekitMenubar() {
          *
          * Every arrow branch reads its position from here. From `activeMenu` alone the
          * position would be -1 for every trigger equally while the bar is closed: ArrowDown
-         * on the third menu would open the first, and ArrowLeft the last. The reader's focus IS the position when nothing
-         * is open, and only the event knows where that is.
+         * on the third menu would open the first, and ArrowLeft the last. The reader's focus
+         * IS the position when nothing is open, and only the event knows where that is.
          *
          * Scoped to `$root` because the handler is also bound on the teleported panel,
          * which no longer sits inside this component's markup — an unscoped `closest()`
@@ -342,10 +341,9 @@ export default function wirekitMenubar() {
         /**
          * The bar's single tab stop, as a tabindex value for one trigger.
          *
-         * Bound on every trigger. Before this the triggers carried no tabindex at all, so
-         * each was its own tab stop and a five-menu bar cost five presses to pass — the
-         * opposite of what the menubar pattern is for, and what this component's own
-         * keyboard table already promised readers.
+         * Bound on every trigger. Without it each trigger would be its own tab stop and a
+         * five-menu bar would cost five presses to pass — the opposite of what the menubar
+         * pattern is for, and of what this component's own keyboard table promises.
          *
          * The DOM read is the fallback rather than the rule: `rovingTrigger` is reactive
          * and re-runs this binding, a `querySelector` would not. It only answers the first
@@ -420,17 +418,15 @@ export default function wirekitMenubar() {
         /**
          * Handle keyboard navigation for the menubar.
          *
-         * TWO LEVELS SHARE THIS HANDLER, and which one a key belongs to is decided by
+         * Two levels share this handler, and which one a key belongs to is decided by
          * whether a menu is open — not by which element the event came from. Bound on the
          * bar AND on the teleported panel (the panel is no longer a DOM descendant, so
          * nothing bubbles from it to the bar), so both levels arrive here.
          *
          * Position within the bar comes from `_currentTriggerIndex`, which reads the
-         * reader's focus when nothing is open. Deriving it from `activeMenu` alone — as
-         * every branch here once did — gave -1 for every trigger equally with the bar
-         * closed, so ArrowDown on the third menu opened the FIRST and ArrowLeft opened
-         * the LAST. Both looked like the widget ignoring where the reader was standing,
-         * which is exactly what it was doing.
+         * reader's focus when nothing is open. Deriving it from `activeMenu` alone would
+         * give -1 for every trigger equally with the bar closed, so ArrowDown on the third
+         * menu would open the FIRST and ArrowLeft the LAST.
          */
         handleKeydown(event) {
             const triggers = this._getTriggers();
@@ -576,7 +572,7 @@ export default function wirekitMenubar() {
                 case 'End': {
                     // Whichever level is current — the open menu's items, or the bar's
                     // own triggers. Jumping to an end is meaningful at both, and a Home
-                    // that only ever answered inside an open menu swallowed the key on a
+                    // that only answered inside an open menu would swallow the key on a
                     // closed bar while doing nothing with it.
                     const elements = this.activeMenu ? this._getActiveItems() : triggers;
 

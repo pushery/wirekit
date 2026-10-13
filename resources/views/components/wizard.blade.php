@@ -87,7 +87,7 @@
     {{-- No `x-init` here: the factory starts itself from its own `init()`, so a caller's
          `x-init` on the tag lands on this root and runs, instead of standing in the tag a second
          time beside ours, where the parser would drop it. --}}
-    {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class([$classes]) }}
     @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     @if($indicator && $stepNames !== [])

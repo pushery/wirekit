@@ -91,7 +91,7 @@ export default function wirekitStatusMatrix(config = {}) {
         tristateOrder: ['inherit', 'allow', 'deny'],
 
         // The spoken state of a tristate cell, and the plural forms of the
-        // unsaved-changes counter. Both are TRANSLATED ON THE SERVER and handed
+        // unsaved-changes counter. Both are translated on the server and handed
         // over: a string that never passes through `__()` cannot be localized by
         // any application, not even by publishing the views. The English values
         // below are the standalone fallback for a factory built by hand — the

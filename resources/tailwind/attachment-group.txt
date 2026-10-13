@@ -50,8 +50,10 @@ $slot
 >
 ?
 ??
+@endif
 @endphp
 @endunless
+@if($isRow)
 @php
 @props([
 @props.
@@ -93,6 +95,7 @@ aria-label="{{
 around
 as
 at
+attachments
 attachments").
 attribute.
 auditor
@@ -115,6 +118,7 @@ contract
 contract:
 data-orientation="{{
 data-wk-attachment-group
+data-wk-print-wrap
 debug
 default
 delete
@@ -128,6 +132,7 @@ every
 exists
 failure
 flags
+flows
 focus
 focus-visible:outline-hidden
 focus-visible:ring-[color:var(--color-wk-ring)]',
@@ -159,6 +164,7 @@ keyboard-reachable
 labeled
 later
 line
+line.
 list
 lists
 live
@@ -175,19 +181,23 @@ name
 named
 need
 never
+next
 no
 not
 nothing
 null,
+of
 on
 one.
 one:
+onto
 operable
 optimistic-ui:
 overflow
 overflow-x-auto
 overflow-y-hidden
 panels).
+paper
 passing
 plain
 prod).
@@ -215,6 +225,8 @@ scroll-snaps
 scroll:
 scrolls
 server;
+sheet
+sideways:
 snap-mandatory
 snap-x
 so

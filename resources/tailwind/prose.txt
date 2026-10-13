@@ -353,8 +353,6 @@ be
 beats
 because
 becomes
-before.
-behavior).
 below
 best
 better
@@ -386,7 +384,6 @@ but
 button
 by
 caller
-came
 can
 can't
 cannot
@@ -399,6 +396,7 @@ cascades
 cell
 cells
 cells)
+changes
 characters
 child
 clamp
@@ -410,6 +408,7 @@ code,
 collapses
 column
 column.
+come
 comment
 comments
 compiles
@@ -442,7 +441,6 @@ design
 desktop
 developer
 developer's
-did
 direct
 dist/wirekit.css
 dist/wirekit.css,
@@ -463,6 +461,7 @@ every
 everything
 exactly
 example
+exclusion
 exclusion,
 exempted
 exempts
@@ -564,7 +563,7 @@ long
 long-form-article
 long-form:
 longer
-lost
+lose
 margin.
 margin:
 marker
@@ -643,7 +642,6 @@ point
 pointer
 posts,
 pre
-pre-v2.10.0
 precedence
 presentational
 preset.
@@ -686,6 +684,7 @@ root,
 root:
 rule
 rule).
+rule.
 rules
 run
 running
@@ -740,6 +739,7 @@ tabindex="0"
 table
 table,
 tag
+take
 takes
 text
 than
@@ -764,7 +764,6 @@ tokens
 tokens.
 too
 too.
-took
 top
 top-margin
 traces
@@ -805,8 +804,7 @@ visible
 visibly
 wants
 we
-weighs
-what
+weight
 whatever
 when
 where
@@ -818,15 +816,14 @@ whose
 wide
 wider
 width
+width).
 width,
-width;
 with
 without
 word
 worse,
 would
 wrap
-wrapped
 wrapper
 wrappers
 wrapping

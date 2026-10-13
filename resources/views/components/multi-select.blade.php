@@ -5,25 +5,22 @@
      the filter text is separate state and is never rolled back. The optimistic
      scope nests INSIDE this component and binds to `selected`. --}}
 @props([
-    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
-    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
-    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
-    // complain either, because `required` is in its HTML passthrough list — so it looked like
-    // a legitimate attribute all the way down. The result was a required field that submits
-    // empty, in the same form as a plain input that behaves correctly.
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade would fold
+    // it into the bag and it would land on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk — and StrictnessGate would not
+    // complain, because `required` is in its HTML passthrough list. The result would be a
+    // required field that submits empty, in the same form as a plain input that behaves
+    // correctly.
     'required' => false,
-    // `disabled` — declared for the reason `required` is: undeclared, it landed on the wrapper
-    // div, where HTML gives it no meaning, and the field it names stayed in use.
+    // `disabled` — declared for the reason `required` is: undeclared, it would land on the
+    // wrapper div, where HTML gives it no meaning, and the field it names would stay in use.
     'disabled' => false,
     // Livewire method to call optimistically. It receives the FULL new
     // selection as an array. The pill appears immediately and is removed again
-    // if the call fails. Absent -> this component renders exactly as before.
+    // if the call fails. Absent -> the plain multi-select.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
-    // and the optimistic layer has always been able to carry that: it spreads `args`
-    // into the call. No component exposed it, so the capability existed and was
-    // unreachable, and the only way to build the commonest optimistic surface there is
-    // was to hand-mount the factory and give up the component.
+    // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
@@ -72,7 +69,7 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
-    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     use Pushery\WireKit\WireKit;
 
@@ -112,7 +109,7 @@
 
     // A caller's `id` goes on the text field, the element a `<label for>` elsewhere on the
     // page and a link to `#id` reach. Without one the field takes the component's id with
-    // `-input` after it, as before. The option and listbox ids keep `$id` as their stem.
+    // `-input` after it. The option and listbox ids keep `$id` as their stem.
     $callerId = filled($attributes->get('id'));
     $fieldId = $callerId ? $id : $id.'-input';
 
@@ -179,9 +176,9 @@
     // the wrapped pills — py-1 (4px) reads as too tight against the
     // px-x-md (12px) horizontal padding on the sides. The sides take the same
     // inline token as select (md) and the combobox input, so a filter row of
-    // the three starts its text on one line. This line once read `p-` with the
-    // vertical token, which put the placeholder half as far from the border as
-    // the text in the fields beside it.
+    // the three starts its text on one line. A single `p-` with the vertical
+    // token would put the placeholder half as far from the border as the text
+    // in the fields beside it.
     $containerClasses = WireKit::resolveClasses('multi-select', 'base', implode(' ', [
         'flex flex-wrap items-center gap-1',
         'min-h-[var(--size-wk-md)]',
@@ -226,7 +223,7 @@
      * checkbox.
      */
     $optionHighlightedClasses = WireKit::resolveClasses('multi-select', 'option-highlighted', implode(' ', [
-        'bg-[var(--color-wk-bg-muted)]',
+        'bg-[var(--color-wk-bg-active)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
@@ -238,7 +235,7 @@
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
         'cursor-pointer',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
     ]);
 
@@ -272,10 +269,14 @@
         'group flex items-start gap-[var(--gap-wk-sm)] cursor-pointer',
         'py-[var(--padding-wk-y-xs)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)]',
         'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
     ]), $scope);
 
-    $listBoxClasses = 'wk-touch-target '.WireKit::resolveClasses('multi-select', 'list-checkbox', implode(' ', [
+    // The row is the target: a `<label>` that toggles its option and takes the 44px floor of every
+    // option row under touch (`wk-touch-row`, with `wk-choice-row` keeping one line in its middle).
+    // The box inside it keeps its drawn size and no hit area of its own, which would reach past
+    // a shorter row into the search field above it.
+    $listBoxClasses = WireKit::resolveClasses('multi-select', 'list-checkbox', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0 w-5 h-5 mt-0.5',
         'rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]',
         'peer-hover:border-[var(--color-wk-border-strong-hover)] bg-[var(--color-wk-bg-input)]',
@@ -327,12 +328,12 @@
     //
     // An array option may also carry a medium (`icon`, `image`, `avatar` or `flag`), a `description`,
     // `keywords` and a `selectedLabel`; OptionMedia validates them and adds only the keys an
-    // option uses, so an option without them normalizes exactly as it did before.
+    // option uses, so an option without them normalizes to its value and label alone.
     //
     // A LIST is decided by the ARRAY, never by one key: keys 0, 1, 2 … in order. PHP turns a
-    // numeric string key into an integer, so deciding by the key's type read `[31 => 'Rain
-    // jacket']` and every `pluck('name', 'id')` as a list and submitted the NAMES — the pills
-    // looked right and `wire:model` received labels instead of ids.
+    // numeric string key into an integer, so deciding by the key's type would read `[31 => 'Rain
+    // jacket']` and every `pluck('name', 'id')` as a list and submit the NAMES — the pills would
+    // look right and `wire:model` would receive labels instead of ids.
     $options = \Pushery\WireKit\Support\ListProp::records($options);
     $optionsAreAList = array_is_list(collect($options)->all());
     $encodedOptions = collect($options)->map(function ($option, $key) use ($optionsAreAList) {
@@ -369,7 +370,7 @@
     $richRows = $optionUses['media'] || $optionUses['descriptions'];
     // An option in another language than the page names it on its row, its pill and its entry
     // in the list of chosen values (WCAG 3.1.2). The bindings are only written when some option
-    // has a `lang`, or the server sends the rows, so every other list renders as it did.
+    // has a `lang`, or the server sends the rows, so every other list carries none.
     $optionsCarryLang = $server || collect($encodedOptions)->contains(static fn (array $option): bool => isset($option['lang']));
 
     // Normalize the `value` prop to an array of string option keys for
@@ -457,17 +458,17 @@
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- `x-modelable` is what makes `wire:model` work here, and without it the control
-         failed in the direction that looks like success: the pills confirmed the choice to
-         the reader while the server never heard about it. A filter looked set and filtered
-         nothing.
+         would fail in the direction that looks like success: the pills would confirm the
+         choice to the reader while the server never heard about it — a filter that looks
+         set and filters nothing.
 
          The selection lives only in Alpine and reaches a classic form POST through hidden
          inputs, which is a different contract: `wire:model` on a non-input root listens for
-         an `input` event from the subtree, and there was none to hear. `x-modelable` is the
+         an `input` event from the subtree, and there is none to hear. `x-modelable` is the
          bridge Alpine provides for exactly this, so the array becomes bindable both to
          Livewire and to a plain `x-model` in an Alpine page.
 
@@ -553,7 +554,7 @@
                 <ul data-wk-prose-skip role="list" class="m-0 p-0 list-none" style="list-style: none; margin: 0; padding: 0;">
                     <template x-for="(opt, idx) in listOptions" :key="opt.value">
                         <li data-wk-prose-skip>
-                            <label class="{{ $listRowClasses }}"@if($optionsCarryLang) :lang="opt.lang"@endif>
+                            <label class="wk-touch-row wk-choice-row {{ $listRowClasses }}"@if($optionsCarryLang) :lang="opt.lang"@endif>
                                 <input
                                     type="checkbox"
                                     class="peer sr-only"
@@ -566,7 +567,7 @@
                                 <span class="{{ $listBoxClasses }}" aria-hidden="true">
                                     <svg class="hidden group-has-[:checked]:block pointer-events-none w-full h-full p-0.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                                 </span>
-                                <span class="flex min-w-0 flex-col">
+                                <span class="wk-choice-text flex min-w-0 flex-col">
                                     <span x-text="opt.label"></span>
                                     <span x-show="opt.description" x-text="opt.description" class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]"></span>
                                 </span>
@@ -605,7 +606,7 @@
                                 @if($disabled) disabled @endif
                                 @click="{{ $optimisticConfig ? 'runListRemoval(val)' : 'removeFromList(val)' }}"
                                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
-                                class="wk-touch-target relative p-1 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                                class="wk-touch-row relative p-1 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                             >
                                 <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                             </button>
@@ -650,7 +651,7 @@
                         @click="{{ $optimisticConfig ? 'runRemoval(val)' : 'deselect(val)' }}"
                         @if($disabled) disabled @endif
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
-                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                     </button>
@@ -719,14 +720,14 @@
                 :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string($placeholder) }} : ''"
                 {{-- `w-0`: the input grows into the row through `flex-1`, and asks for no more than its
                      minimum. Without it WebKit takes a text input's default width as its minimum, and
-                     a framed field 258px wide stood 13px past its container. --}}
+                     a framed field 258px wide would stand 13px past its container. --}}
                 class="wk-field flex-1 w-0 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden"
             />
         </div>
 
         {{-- Dropdown listbox --}}
         {{-- Teleported to the overlay root at the end of <body>. `position: fixed` escapes a clipping ancestor but NOT
-             a stacking context — the same trap the combobox and dropdown panels were in. --}}
+             a stacking context, which is why the combobox and dropdown panels teleport too. --}}
         <template x-teleport="#wk-overlay-root">
         <div
             {{-- THE MORPH KEY. Livewire identifies a node across an update as
@@ -774,7 +775,7 @@
             {{-- The results on screen answer an older search while a newer one is out. --}}
             @if($server) x-bind:aria-busy="searchAriaBusy()" @endif
             {{-- `[overflow-wrap:anywhere]` lets an option name with no space or hyphen break inside the
-                 word instead of widening its row past the panel, which scrolled the list sideways. The
+                 word instead of widening its row past the panel, which would scroll the list sideways. The
                  combobox panel carries the same class, and its comment has the reasoning. --}}
             class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto [overflow-wrap:anywhere] rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar{{ $panelWidth === 'auto' ? ' w-max' : '' }}"
             @if($panelWidthStyle !== '') style="{{ $panelWidthStyle }}" @endif
@@ -794,7 +795,7 @@
                     {{-- `data-active` on the row the arrow keys are on, for the forced-colors
                          mark the stylesheet draws through `wk-listbox-option`. --}}
                     :data-active="idx === highlight ? '' : null"
-                    class="wk-listbox-option {{ $optionClasses }}"
+                    class="wk-listbox-option wk-touch-row {{ $optionClasses }}"
                     {{-- The string comes from the resolver above, so a scope can
                          restyle it the way it restyles every other class here. --}}
                     :class="idx === highlight ? {{ \Pushery\WireKit\Support\AlpinePayload::string($optionHighlightedClasses) }} : ''"

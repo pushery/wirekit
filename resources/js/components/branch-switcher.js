@@ -25,6 +25,7 @@
  * @param {string} [config.countLabel]    ":current of :total", translated in the template
  * @param {string} [config.announcement]  "Showing response :current of :total", likewise
  */
+import { focusClicked } from '../utils/focus-clicked.js';
 import { watchModelEvents } from '../utils/model-events.js';
 
 export default function wirekitBranchSwitcher(config = {}) {
@@ -81,7 +82,13 @@ export default function wirekitBranchSwitcher(config = {}) {
                 .replace(':total', String(this.total));
         },
 
-        previous() {
+        /*
+         * `button` is the arrow a click came from, which takes the focus where the engine did not,
+         * so the arrow keys it listens to go on working (utils/focus-clicked.js).
+         */
+        previous(button = null) {
+            focusClicked(button);
+
             if (!this.canGoPrevious()) {
                 return;
             }
@@ -89,7 +96,9 @@ export default function wirekitBranchSwitcher(config = {}) {
             this.go(this.current === 1 ? this.total : this.current - 1);
         },
 
-        next() {
+        next(button = null) {
+            focusClicked(button);
+
             if (!this.canGoNext()) {
                 return;
             }

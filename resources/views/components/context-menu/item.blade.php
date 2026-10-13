@@ -52,12 +52,11 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         // `focus-visible` + a ring, per dropdown/item.blade.php. context-menu.js
-        // moves real DOM focus between rows, and the background alone marked
-        // nothing: dark's --color-wk-bg-subtle equals its --color-wk-bg-elevated,
-        // which is the panel this row sits on, while `focus:outline-hidden` had
-        // already taken the browser's own ring away.
+        // moves real DOM focus between rows. The background is the hover's shade,
+        // one step from the panel this row sits on and too faint to mark focus on
+        // its own, and `focus:outline-hidden` takes the browser's own ring away.
         'focus:outline-hidden',
-        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:bg-[var(--color-wk-bg-hover)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-inset',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -65,8 +64,8 @@
     ]), $scope);
 
     $colorClasses = $danger
-        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)]'
-        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]';
+        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)]'
+        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)]';
 
     $disabledClasses = $disabled
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
@@ -93,7 +92,7 @@
     @if($disabled) aria-disabled="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     x-on:click="close()"
-    {{ $attributes->except(['rel', 'type'])->class([$classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->except(['rel', 'type'])->class(['wk-touch-row', $classes, $colorClasses, $disabledClasses]) }}
 >
     @if($icon)
         <span class="shrink-0 w-5 h-5" aria-hidden="true">

@@ -170,25 +170,29 @@ export default function wirekitRangeSlider(config = {}) {
          */
         marksMap: config.marksMap && typeof config.marksMap === 'object' ? config.marksMap : {},
 
-        /** The geometry, built here — a template literal cannot be parsed
-         *  by Alpine's CSP build, and these are all one expression each. */
+        /**
+         * The geometry, built here — a template literal cannot be parsed by Alpine's CSP build, and
+         * these are all one expression each. An object, so Alpine sets it property by property through the element's `style`: a string
+         * it writes with `setAttribute()`, which takes every other inline style with it and which a
+         * `style-src` without `'unsafe-inline'` refuses.
+         */
         rangeFillStyle() {
-            return `left: ${this.minPercent}%; width: ${this.maxPercent - this.minPercent}%`;
+            return { left: `${this.minPercent}%`, width: `${this.maxPercent - this.minPercent}%` };
         },
 
-        minThumbStyle() { return `left: ${this.minPercent}%`; },
-        maxThumbStyle() { return `left: ${this.maxPercent}%`; },
+        minThumbStyle() { return { left: `${this.minPercent}%` }; },
+        maxThumbStyle() { return { left: `${this.maxPercent}%` }; },
 
         minBadgeStyle() {
-            return `left: ${this.minPercent}%; transform: translateX(-${this.minPercent}%)`;
+            return { left: `${this.minPercent}%`, transform: `translateX(-${this.minPercent}%)` };
         },
 
         maxBadgeStyle() {
-            return `left: ${this.maxPercent}%; transform: translateX(-${this.maxPercent}%)`;
+            return { left: `${this.maxPercent}%`, transform: `translateX(-${this.maxPercent}%)` };
         },
 
         mergedBadgeStyle() {
-            return `left: ${(this.minPercent + this.maxPercent) / 2}%`;
+            return { left: `${(this.minPercent + this.maxPercent) / 2}%` };
         },
 
         valueTextFor(value) {
@@ -338,7 +342,7 @@ export default function wirekitRangeSlider(config = {}) {
          * stays where the user left it and the refusal is silent.
          *
          * Looked up rather than assumed, like `run` below: without a layer this
-         * component behaves exactly as it did before, down to the byte.
+         * component behaves as a plain field.
          */
         _markGesture() {
             if (typeof this.mark === 'function') {
@@ -354,7 +358,7 @@ export default function wirekitRangeSlider(config = {}) {
          * per frame. There is no timer either way.
          *
          * `run` is looked up rather than assumed: without the layer this
-         * component behaves exactly as before, down to the byte, which is the
+         * component behaves as a plain field, which is the
          * property the whole opt-in shape rests on.
          */
         _commit() {

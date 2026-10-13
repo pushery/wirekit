@@ -110,7 +110,7 @@ final class ChartJsRegistrationCheck extends VerifyCheck
      *
      * Deliberately a shallow filename check rather than a parse. The question is
      * only "is there another route by which Chart reaches the page", and a false
-     * NEGATIVE here just restores the old warning — while a false positive costs
+     * NEGATIVE here just shows the warning — while a false positive costs
      * a developer a hunt for a defect that does not exist.
      */
     private function providesChartUmdBuild(): bool

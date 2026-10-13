@@ -24,14 +24,14 @@
 
     // Navigation menu link — used inside flyout panels for individual nav items.
     $classes = WireKit::resolveClasses('navigation-menu.link', 'base', implode(' ', [
-        'block',
+        'flex items-center',
         'px-[var(--padding-wk-x-md)]',
         'py-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)]',
         'rounded-[var(--radius-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        'hover:bg-[var(--color-wk-bg-subtle)]',
+        'hover:bg-[var(--color-wk-bg-hover)]',
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
@@ -56,9 +56,11 @@
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes, $colorClasses]) }}
+    {{ $attributes->except('rel')->class(['wk-touch-row', $classes, $colorClasses]) }}
 >
-    {{ $slot }}
+    {{-- One flex item for the whole label, so text and an inline mark beside it flow as they
+         would in a block, and the row centers it when the touch floor makes the row taller. --}}
+    <span class="min-w-0 flex-1">{{ $slot }}</span>
     @if($opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif

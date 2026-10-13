@@ -29,7 +29,7 @@
     'server' => false,              // server-driven: stop local sort/filter, emit events only
     // The order the table starts in: a column key and a direction. In server mode, the order the
     // server already applied, so `aria-sort` and the arrow describe the rows on screen. Without
-    // them every column read "none" over a sorted table, and a screen reader said so.
+    // them every column would read "none" over a sorted table, and a screen reader would say so.
     'sortKey' => null,
     'sortDir' => 'asc',
     // The filter the server applied, for a server-mode table. It fills the search field on the
@@ -40,9 +40,9 @@
     //
     // Only the OUTBOUND event waits. `x-model` still updates on every keystroke, so the
     // client-side filter stays instant and the box never feels laggy — what this delays
-    // is the round trip a server-mode table makes, which was one request per CHARACTER.
-    // Typing an eight-letter name asked the application eight questions and threw away
-    // the first seven answers, each of them a query.
+    // is the round trip a server-mode table makes, which would otherwise be one request per
+    // CHARACTER: typing an eight-letter name would ask the application eight questions and
+    // throw away the first seven answers, each of them a query.
     //
     // Configurable because the right value is a property of the BACKEND, not of the
     // table: a local index wants it short, a rate-limited third-party search wants it
@@ -65,7 +65,7 @@
     // Accessible name for the bulk-action bar, and the switch that makes it a LANDMARK.
     //
     // Same rule as `caption` below the table: `role="region"` plus a name is a landmark,
-    // and several tables on one page each emitted a bar called "Bulk actions" — one name
+    // and several tables on one page would each emit a bar called "Bulk actions" — one name
     // across N rotor entries, which is what axe reports as `landmark-unique`. So the role
     // waits for a name the CALLER chose. Nothing is lost without it: the bar is not a
     // scroll region (no `overflow-*`, no `max-h-*`), so it needs no `tabindex` for WCAG
@@ -89,9 +89,8 @@
 
     // The selection readout is a COUNT that only exists in the browser, so the plural form
     // has to be chosen there: the server renders every form and `Intl.PluralRules` picks.
-    // It shipped as `<span x-text="selectedCount"></span> selected` — a bare English word
-    // inside an `aria-live` region, which is the one string in this toolbar a non-visual
-    // reader is guaranteed to hear.
+    // A bare English word beside the count, inside an `aria-live` region, would be the one
+    // untranslated string in this toolbar a non-visual reader is guaranteed to hear.
     $selectionPhrases = \Pushery\WireKit\Support\AlpinePayload::from(
         \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count selected|[2,*] :count selected')
     );
@@ -114,8 +113,8 @@
     $loading = BooleanProp::from($loading, false);
     // Same contract for the two whose default is spelled as a `config()` fallback rather
     // than a literal. Both gate whole regions of the table — the checkbox column and the
-    // search field — so an unbound `selectable="false"` rendered the very column it asked
-    // to remove, and the row checkboxes came with it.
+    // search field — so an unbound `selectable="false"` would render the very column it asks
+    // to remove, and the row checkboxes would come with it.
     $selectable = BooleanProp::from($selectable, false);
     $stickyColumn = BooleanProp::from($stickyColumn, config('wirekit.components.data-table.sticky-column', false));
 
@@ -123,8 +122,8 @@
      * The frozen leading cells.
      *
      * `inset-inline-start`, never `left`: under `dir="rtl"` the first column is on the right,
-     * and a physical offset would freeze it against the wrong edge — the same correction the
-     * sentinels and shadows already carry.
+     * and a physical offset would freeze it against the wrong edge. The sentinels and the
+     * shadows take the logical property for the same reason.
      *
      * The OFFSET for the second frozen cell is `w-10` — the selection column's width, set by
      * this component a few lines below. It is a constant here rather than a measurement
@@ -138,7 +137,7 @@
      * SPECIFIED value and the row specifies nothing when it is neither.
      */
     $stickyCellBase = $stickyColumn
-        ? WireKit::resolveClasses('data-table', 'sticky-cell', 'sticky z-[1] bg-[var(--color-wk-bg)] group-hover:bg-[var(--color-wk-bg-subtle)]', $scope)
+        ? WireKit::resolveClasses('data-table', 'sticky-cell', 'sticky z-[1] bg-[var(--color-wk-bg)] group-hover:bg-[var(--color-wk-bg-hover)]', $scope)
         : '';
 
     // The selected fill, resolved here rather than written as a literal inside the `:class`
@@ -147,7 +146,21 @@
     // a theme could repaint every row and not the one cell that stays in view. Both branches are
     // resolved here and interpolated; the ternary only chooses between two finished strings.
     $stickySelectedFill = $stickyColumn
-        ? WireKit::resolveClasses('data-table', 'sticky-cell-selected', 'bg-[var(--color-wk-bg-muted)]', $scope)
+        ? WireKit::resolveClasses('data-table', 'sticky-cell-selected', 'bg-[var(--color-wk-bg-active)]', $scope)
+        : '';
+
+    // A selected row's frozen cell takes the fill INSTEAD of the surface, not on top of it. Two
+    // background utilities on one element are settled by their order in Tailwind's stylesheet,
+    // and the hover the surface repeats is a variant, which would beat the fill under the
+    // pointer: a selected row would show the hover in its frozen cells and the fill everywhere
+    // else. So a
+    // selected cell keeps every class of `sticky-cell` but its backgrounds, which leaves its
+    // position and its layer, and takes the fill.
+    $stickySelectedBlock = $stickyColumn
+        ? trim(implode(' ', array_filter(
+            preg_split('/\s+/', $stickyCellBase) ?: [],
+            static fn (string $class): bool => $class !== '' && preg_match('/(^|:)bg-/', $class) !== 1,
+        )).' '.$stickySelectedFill)
         : '';
 
     /*
@@ -165,9 +178,11 @@
      */
     $stickyCellCap = 'max-w-[var(--size-wk-table-sticky-column-max)] whitespace-normal';
 
-    $stickySelectionCell = $stickyColumn ? $stickyCellBase.' start-0' : '';
+    // Where each frozen body cell stands. Its surface, `sticky-cell` or the selected block, follows
+    // the row's state in the `:class` of the cell.
+    $stickySelectionCell = $stickyColumn ? 'start-0' : '';
     $stickyFirstDataCell = $stickyColumn
-        ? $stickyCellBase.($selectable ? ' start-10' : ' start-0').' '.$stickyCellCap
+        ? ($selectable ? 'start-10' : 'start-0').' '.$stickyCellCap
         : 'whitespace-nowrap';
 
     // The header's frozen cells sit above the body's, or a scrolled row would paint over the
@@ -189,7 +204,7 @@
     // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
     // state (sort order, hidden columns, open panels) goes with it on the next round trip.
     // Necessary and not sufficient: the `x-data` expression has to stay the same too, which is
-    // why the rows no longer travel in it (see the state carrier below the root).
+    // why the rows do not travel in it (see the state carrier below the root).
     // A second table with the same name on the page gets `-2`, so its `aria-labelledby` names
     // its own caption and not the first one's (DomId::distinct keeps the first verbatim).
     $id = $attributes->has('id')
@@ -203,6 +218,22 @@
     // object would be read as its own properties.
     $rowsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($rows);
     $colsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($columns);
+
+    // A column's `align` and `cellType` are fixed lists the table's script reads, where an unknown
+    // value aligns left or draws as text. They are reported through the strictness gate like a prop,
+    // with the column in the name, and where the gate does not throw the script keeps that fallback.
+    // The gate is called directly rather than through `WireKit::validateProp()`, as `otp-input` does
+    // for its `group`: `PropValidationParser` reads every `validateProp()` call into the prop catalog
+    // that `/api-map.json` publishes, and a column's value is not a prop of this component.
+    foreach ($colsArr as $index => $col) {
+        foreach (['align' => ['left', 'center', 'right'], 'cellType' => ['text', 'number', 'badge', 'badges', 'code', 'link']] as $field => $allowed) {
+            $columnValue = data_get($col, $field);
+
+            if (filled($columnValue) && ! in_array($columnValue, $allowed, true)) {
+                \Pushery\WireKit\Support\StrictnessGate::enforce('data-table', 'columns['.$index.'].'.$field, is_scalar($columnValue) ? (string) $columnValue : get_debug_type($columnValue), $allowed);
+            }
+        }
+    }
     $hiddenArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($hidden);
 
     // Avatar tints are resolved HERE, in PHP, and that is the whole reason an
@@ -276,9 +307,9 @@
     // `primary` and `info` have no base color of their own — they are soft accents, and
     // `badge` says so in its own branch. The strengths below mirror badge's exactly
     // (info 8%, primary 12%, accent the solid fill) so the same word means the same
-    // thing in a table cell as on a badge. That equivalence IS the fix; three
-    // indistinguishable tints of one hue would have closed the vocabulary gap and
-    // reopened it as a visual one.
+    // thing in a table cell as on a badge. That equivalence is the point; three
+    // indistinguishable tints of one hue would close the vocabulary gap and reopen
+    // it as a visual one.
     // The pill's SHAPE, named once. It is worn by two different cells — a `badge`
     // column, where every row is a pill, and a row that named its own intent below —
     // and two copies of this string is how they would come to differ by a quarter rem
@@ -291,8 +322,8 @@
     // A map of PHP literals rather than a ternary in the template: Tailwind compiles what it
     // finds in this file and the drift inventory traces it, and a class assembled inside an
     // Alpine expression is invisible to both. It travels in the payload and the CELL calls a
-    // method to read it — `??` is outside Alpine's CSP grammar, so an application on the CSP
-    // bundle would have rendered the binding inert with no error at all.
+    // method to read it — `??` is outside Alpine's CSP grammar, so on the CSP bundle the
+    // binding would be inert with no error at all.
     $prominenceClasses = [
         'strong' => 'font-semibold',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
@@ -303,13 +334,13 @@
     // The link cell wears the link component's own default look, resolved through the link
     // component's personalization key, so a developer who restyled links restyles these too.
     // The focus ring is the link's too, the kit's rather than the browser's. The cell is cloned per
-    // row by Alpine, so the component itself cannot render here.
-    // DataTableLinkCellTest renders a default link and checks every one of its classes is on the
-    // cell's anchor, which is what keeps this list and link.blade.php from drifting apart.
+    // row by Alpine, so the component itself cannot render here. The list carries every class of
+    // link.blade.php's default.
     $linkClass = WireKit::resolveClasses('link', 'base', implode(' ', [
+        '[overflow-wrap:break-word]',
         'font-[family-name:var(--font-wk-sans)]',
         'cursor-pointer',
-        // Opacity is in the list: `transition-colors` leaves it out, and the hover dim jumped.
+        // Opacity is in the list: `transition-colors` leaves it out, and the hover dim would jump.
         'transition-[color,text-decoration-color,opacity]',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
@@ -326,7 +357,9 @@
         'success' => 'bg-[color-mix(in_oklch,var(--color-wk-success)_15%,transparent)] text-[color:var(--color-wk-success-text)]',
         'warning' => 'bg-[color-mix(in_oklch,var(--color-wk-warning)_15%,transparent)] text-[color:var(--color-wk-warning-text)]',
         'danger' => 'bg-[color-mix(in_oklch,var(--color-wk-danger)_15%,transparent)] text-[color:var(--color-wk-danger-text)]',
-        'neutral' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]',
+        // The fill of a neutral control on the soft surface, mixed into the surface the cell stands
+        // on, so a neutral badge stays apart from a selected row, which is bg-muted itself.
+        'neutral' => 'bg-[var(--color-wk-bg-soft)] text-[color:var(--color-wk-text-muted)]',
     ];
 
     $base = WireKit::resolveClasses('data-table', 'base', 'w-full font-[family-name:var(--font-wk-sans)] space-y-[var(--space-wk-sm)]', $scope);
@@ -340,7 +373,7 @@
     $columnsPanelId = DomId::unique(null, 'wk-data-table-columns-');
     $columnsButtonId = $columnsPanelId.'-button';
 
-    $iconBtn = 'inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer';
+    $iconBtn = 'inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer';
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -401,9 +434,7 @@
                         aria-label="{{ $searchPlaceholder }}"
                         {{-- Search input is a form control (WCAG 1.4.11): its border
                              comes from the communicating --color-wk-border-strong token
-                             (3:1), never the decorative --color-wk-border (~1.29:1) — the
-                             category-scoped 2.17.0 sweep missed it because data-table is
-                             not in the Form category. --}}
+                             (3:1), never the decorative --color-wk-border (~1.29:1). --}}
                         class="wk-field w-[16rem] max-w-full bg-[var(--color-wk-bg-input)] text-[color:var(--color-wk-text)] text-[length:var(--text-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] transition-colors duration-[var(--transition-wk-duration)] hover:border-[var(--color-wk-border-strong-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     />
                 @endif
@@ -415,17 +446,18 @@
                 {{-- Density toggle. The pressed option is a tint, which forced colors does not paint,
                      so `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
                 <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="group" aria-label="{{ __('wirekit::Row density') }}">
-                    <button type="button" @click="setDensity('comfortable')" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Comfortable') }}</button>
-                    <button type="button" @click="setDensity('compact')" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Compact') }}</button>
+                    <button type="button" @click="setDensity('comfortable')" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Comfortable') }}</button>
+                    <button type="button" @click="setDensity('compact')" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Compact') }}</button>
                 </div>
                 @if($columnManager)
                     {{-- Column manager — a self-contained popover (nested scope; inherits
                          toggleColumn / isColumnVisible / columns from the table scope). --}}
                     {{-- Disclosure + anchoring live in the factory
                          (resources/js/components/data-table-column-menu.js).
-                         Neither the method shorthand nor the x-init arrow
-                         parsed under Alpine's CSP build, so the whole nested
-                         scope failed to build and the button toggled nothing. --}}
+                         Inline, neither the method shorthand nor an x-init
+                         arrow would parse under Alpine's CSP build, so the whole
+                         nested scope would fail to build and the button would
+                         toggle nothing. --}}
                     {{-- A DISCLOSURE, and it says so.
 
                          The panel is not `aria-haspopup="menu"` + `role="menu"`: its
@@ -433,7 +465,7 @@
                          a menu's keyboard model. A reader told "Columns, menu button" would
                          expect arrow keys and menu items and get an unnamed box of checkboxes
                          — and `role="menu"` without `menuitem` children fails ARIA's
-                         required-children rule anyway. `aria-haspopup="true"` would not have helped: ARIA maps the
+                         required-children rule anyway. `aria-haspopup="true"` would not help either: ARIA maps the
                          bare `true` onto `menu`, so it makes the same wrong promise.
 
                          What it really is: a button that discloses a group of checkboxes.
@@ -445,13 +477,13 @@
                          The scroll region keeps a keyboard model through that group role and
                          its focusable checkboxes, which the factory focuses on open. --}}
                     <div x-data="wirekitDataTableColumnMenu()" @click.outside="isOpen = false" @keydown.escape="escapeMenu($event)" class="relative">
-                        <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="isOpen = !isOpen" :aria-expanded="isOpen" aria-controls="{{ $columnsPanelId }}" class="{{ $iconBtn }}">
+                        <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="isOpen = !isOpen" :aria-expanded="isOpen" aria-controls="{{ $columnsPanelId }}" class="wk-touch-row {{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
                             {{ __('wirekit::Columns') }}
                         </button>
                         <div x-show="isOpen" x-cloak x-ref="colMenu" id="{{ $columnsPanelId }}" role="group" aria-labelledby="{{ $columnsButtonId }}" class="fixed z-[var(--z-wk-dropdown)] w-[12rem] max-h-[70vh] overflow-y-auto p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
                             <template x-for="col in columns" :key="col.key">
-                                <label class="flex items-center gap-2 px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-muted)] cursor-pointer">
+                                <label class="flex items-center gap-2 px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-active)] cursor-pointer">
                                     <input type="checkbox" :checked="isColumnVisible(col.key)" @change="toggleColumn(col.key)" class="{{ $checkboxClass }}" />
                                     <span x-text="col.label"></span>
                                 </label>
@@ -480,7 +512,7 @@
                 <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" aria-live="polite" aria-atomic="true" x-text="selectionSummary"></span>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $bulkActions ?? '' }}
-                <button type="button" data-wk-clear-selection @click="clearSelection()" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">{{ __('wirekit::Clear') }}</button>
+                <button type="button" data-wk-clear-selection @click="clearSelection()" class="wk-touch-row text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">{{ __('wirekit::Clear selection') }}</button>
             </div>
         </div>
     @endif
@@ -493,8 +525,8 @@
          caption the region points at it (`aria-labelledby`), which is
          a name the reader chose; without one there is no landmark to be ambiguous about. --}}
     {{-- A table that scrolls sideways shows a shadow at the edge it continues toward. On a phone
-         there is no scrollbar until a drag is already underway, so a table cut off between two
-         columns looked complete. The machinery is `table`'s: two one-pixel sentinels at the
+         there is no scrollbar until a drag is already underway, so without it a table cut off
+         between two columns would look complete. The machinery is `table`'s: two one-pixel sentinels at the
          inline edges of the scroll content, an IntersectionObserver over them in
          `wirekitStickyPanelShadows`, and the `wk-scroll-shadow-start` / `-end` overlays.
 
@@ -514,7 +546,7 @@
         {{-- The sentinels need the table's inline edges, and this scroller also holds the empty
              state and the status region below the table, so the flex row is a wrapper around
              the table alone rather than the scroller itself. `w-fit min-w-full` sizes it the
-             way the table sized itself before: the full width when the table fits, the
+             way the table would size itself: the full width when the table fits, the
              table's own minimum width when it does not. Each sentinel is one real pixel taken
              back by a logical negative margin on the side facing the table, so the observer
              has an area to intersect and the layout pays nothing, in either writing direction. --}}
@@ -523,14 +555,14 @@
         {{-- `w-max` under `stickyColumn`, and it is the difference between the feature working and
              merely rendering: at `w-full` the table squeezes itself into the scroller, nothing
              ever overflows, and a frozen column freezes against an edge that never moves. --}}
-        <table data-wk-prose-skip class="shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($stickyColumn) data-wk-sticky-column @endif @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($callerLabel) aria-label="{{ $callerLabel }}" @endif>
+        <table data-wk-prose-skip class="shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($stickyColumn) data-wk-sticky-column data-wk-data-table @endif @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($callerLabel) aria-label="{{ $callerLabel }}" @endif>
             @if($caption)
                 <caption id="{{ $captionId }}" class="sr-only">{{ $caption }}</caption>
             @endif
             <thead>
                 <tr class="border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                     @if($selectable)
-                        <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)] {{ $stickyHeadSelection }}">
+                        <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)] {{ $stickyHeadSelection }}" @if($stickyColumn) data-wk-frozen @endif>
                             {{-- Tri-state header selection (indeterminate set reactively). --}}
                             <input type="checkbox" data-wk-select-all :checked="allSelected" @change="toggleSelectAll()" x-effect="$el.indeterminate = someSelected" aria-label="{{ __('wirekit::Select all rows') }}" class="{{ $checkboxClass }}" />
                         </th>
@@ -538,6 +570,7 @@
                     <template x-for="col in visibleColumns" :key="col.key">
                         <th data-wk-prose-skip
                             scope="col"
+                            @if($stickyColumn) :data-wk-frozen="isFrozenColumn(col)" @endif
                             :aria-sort="ariaSort(col.key)"
                             {{-- The frozen classes land on the FIRST visible column only. Which one that
                                  is comes from `isFrozenColumn()` in the factory rather than from an
@@ -548,7 +581,7 @@
                             class="px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]"
                         >
                             <template x-if="col.sortable !== false">
-                                <button type="button" @click="toggleSort(col.key)" class="inline-flex items-center gap-1 hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">
+                                <button type="button" @click="toggleSort(col.key)" class="wk-table-sort inline-flex items-center gap-1 hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">
                                     <span x-text="col.label"></span>
                                     <svg x-show="sortKey === col.key && sortDir === 'asc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3l3 4H3z"/></svg>
                                     <svg x-show="sortKey === col.key && sortDir === 'desc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L3 5h6z"/></svg>
@@ -571,9 +604,9 @@
                          own opaque background, and `background: inherit` would take the row's
                          SPECIFIED value — which is nothing at all when the row is neither
                          selected nor hovered. --}}
-                    <tr :class="isSelected(row) ? 'bg-[var(--color-wk-bg-muted)]' : 'hover:bg-[var(--color-wk-bg-subtle)]'" class="group border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors">
+                    <tr :class="isSelected(row) ? 'bg-[var(--color-wk-bg-active)]' : 'hover:bg-[var(--color-wk-bg-hover)]'" class="group border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors">
                         @if($selectable)
-                            <td data-wk-prose-skip class="px-[var(--padding-wk-x-md)] {{ $stickySelectionCell }}" :class="(density === 'compact' ? 'py-1' : 'py-[var(--padding-wk-y-sm)]') + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedFill) }} : '')">
+                            <td data-wk-prose-skip class="px-[var(--padding-wk-x-md)] {{ $stickySelectionCell }}" @if($stickyColumn) data-wk-frozen @endif :class="(density === 'compact' ? 'py-1' : 'py-[var(--padding-wk-y-sm)]') + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedBlock) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyCellBase) }})">
                                 {{-- Unique accessible name per row: prefix with the first
                                      column's value so a screen reader doesn't hear "Select
                                      row" N identical times (WCAG name uniqueness). --}}
@@ -582,7 +615,8 @@
                         @endif
                         <template x-for="col in visibleColumns" :key="col.key">
                             <td data-wk-prose-skip
-                                :class="(col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left') + (density === 'compact' ? ' py-1' : ' py-[var(--padding-wk-y-sm)]') + (isFrozenColumn(col) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyFirstDataCell) }} + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedFill) }} : '') : ' whitespace-nowrap')"
+                                @if($stickyColumn) :data-wk-frozen="isFrozenColumn(col)" @endif
+                                :class="(col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left') + (density === 'compact' ? ' py-1' : ' py-[var(--padding-wk-y-sm)]') + (isFrozenColumn(col) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyFirstDataCell) }} + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedBlock) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyCellBase) }}) : ' whitespace-nowrap')"
                                 class="px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)]"
                             >
                                 <template x-if="col.cellType === 'badge'">
@@ -611,9 +645,8 @@
                                 {{-- A column may carry a `subKey`, and the cell then reads as two lines:
                                      the value over a quieter second one. That is the ordinary shape of an
                                      admin table — order number over date, customer over email, product over
-                                     SKU — and without it between a third and a half of the cells on a real
-                                     data grid cannot be expressed, which is why those pages are still built
-                                     on the plain table.
+                                     SKU — and without it a good share of the cells on a real data grid
+                                     could not be expressed.
 
                                      The wrapper stays a `span` with `block` children rather than becoming a
                                      stack component: the body is an Alpine template, so a WireKit tag here
@@ -632,8 +665,8 @@
                                      a value->intent map on the column could never express it.
 
                                      The threshold itself stays in the application, where it is ordinary PHP and
-                                     can be tested. The alternative was a comparison dialect inside a config array
-                                     (`['<', 10, 'warning']`) — a small language this component would have to parse,
+                                     can be tested. The alternative, a comparison dialect inside a config array
+                                     (`['<', 10, 'warning']`), would be a small language this component has to parse,
                                      document and version, in return for the one dimension it could express. --}}
                                 <template x-if="col.cellType !== 'badge' && col.cellType !== 'badges' && rowIntent(row, col)">
                                     <span class="{{ $pillClass }}" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[rowIntent(row, col)]" x-text="cellText(row, col)"></span>
@@ -689,8 +722,8 @@
                                     </span>
                                 </template>
                                 {{-- The plain branch is also the fallback: a link row without a URL, and a
-                                     cellType this table does not know. Before isPlainCell() an unknown type
-                                     matched no branch at all and the cell rendered empty. --}}
+                                     cellType this table does not know. Without isPlainCell() an unknown type
+                                     would match no branch at all and the cell would render empty. --}}
                                 <template x-if="isPlainCell(row, col) && ! rowIntent(row, col)">
                                     <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
                                         <template x-if="avatarText(row, col)">
@@ -723,11 +756,10 @@
              The `empty` slot replaces the line, it does not sit beside it. The screen a new
              user sees FIRST is this one, and a single muted sentence can only say that
              nothing is here — it cannot say what to do about it, which is the whole job of
-             that screen. `emptyText` stays the default so nothing changes for a table that
-             does not care.
+             that screen. `emptyText` is the default, for a table that does not care.
 
              The container keeps its own centering and padding either way, so a slot holding
-             an `<x-wirekit::empty-state>` lands where the sentence did rather than needing
+             an `<x-wirekit::empty-state>` lands where the sentence does rather than needing
              the caller to re-center it. --}}
         <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
             @isset($empty)
@@ -740,9 +772,8 @@
         {{-- The result-set live region.
 
              Searching a table changes what is on screen without focus moving, which is a
-             status message in the WCAG 4.1.3 sense — and until this existed the only thing
-             this table ever announced was the selection count. A reader could type a query
-             that matched nothing and hear silence.
+             status message in the WCAG 4.1.3 sense. Without this region a reader could type
+             a query that matched nothing and hear silence.
 
              It sits OUTSIDE the empty block and carries its own text rather than the
              `role="status"` going on the block itself. A live region announces a CONTENT

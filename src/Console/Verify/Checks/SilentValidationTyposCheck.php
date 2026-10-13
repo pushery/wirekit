@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console\Verify\Checks;
 
 use Pushery\WireKit\Console\Verify\VerifyCheck;
+use Pushery\WireKit\Support\BooleanProp;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -44,12 +45,8 @@ final class SilentValidationTyposCheck extends VerifyCheck
      * The check NEVER returns FAIL — the doctor's overall exit code is
      * unaffected.
      *
-     * Opt-out: set `wirekit.doctor.scan_logs` to `false` in config.
-     *
-     * This line also offered a `--no-scan-logs` flag "registered separately", and no such
-     * option is declared on the command — Symfony rejects an unknown one, so the sentence
-     * handed a developer trying to quiet the check an error from the very command they
-     * were quieting. The config key is the whole opt-out.
+     * Opt-out: set `wirekit.doctor.scan_logs` to `false` in config. The config key is the
+     * whole opt-out; the command declares no flag for it.
      */
     private function checkSilentValidationTypos(): void
     {
@@ -60,10 +57,9 @@ final class SilentValidationTyposCheck extends VerifyCheck
         // the rest of the doctor's check pipeline. The doctor's contract
         // (see method docblock) is that this check NEVER blocks; we extend
         // the contract here to "NEVER aborts subsequent checks either".
-        // Without this guard, a transient PHP warning escalated to
-        // exception under Pest's strict error handling would abort
-        // `handle()` mid-pipeline and leak as a flaky test ("Alpine plugin
-        // cleanup hygiene" missing because the check never ran).
+        // Without this guard, a transient PHP warning escalated to an
+        // exception would abort `handle()` mid-pipeline, and the checks
+        // after this one would never run.
         try {
             $this->checkSilentValidationTyposBody();
         } catch (\Throwable $e) {
@@ -79,7 +75,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
     {
         // Honor opt-out config — defaults to true (helper IS on by default
         // in dev environments; production developers may disable explicitly).
-        $enabled = (bool) config('wirekit.doctor.scan_logs', true);
+        $enabled = BooleanProp::from(config('wirekit.doctor.scan_logs', true), true);
         if (! $enabled) {
             return;
         }
@@ -164,8 +160,7 @@ final class SilentValidationTyposCheck extends VerifyCheck
         // developer who did exactly what they were told sees no change, which teaches
         // them to stop reading this check — the one outcome a diagnostic cannot afford.
         //
-        // The window is configurable, and 0 restores the old read-everything behavior for
-        // anyone who wants it.
+        // The window is configurable, and 0 reads everything, for anyone who wants it.
         $matches = [];
         $matchCount = 0;
         $recentCount = 0;

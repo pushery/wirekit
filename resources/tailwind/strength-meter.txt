@@ -87,7 +87,6 @@ $word):
 (nothing
 (silent
 (string
-+
 -
 --}}
 //
@@ -197,7 +196,7 @@ __('wirekit::Strong')];
 `:value`
 `aria-label`
 `aria-labelledby`
-`barColor(i)`
+`barStyle(i)`
 `data-wk-server-value`
 `max`.
 `password-input`.
@@ -241,7 +240,6 @@ bag
 bar
 bar's
 bar.
-barColor({{
 bars
 bars),
 bars,
@@ -286,6 +284,7 @@ count($levels))
 current
 danger
 data-wk-server-value="{{
+data-wk-sr-host
 debug
 default
 defaults
@@ -539,7 +538,7 @@ would
 wrapper,
 x-bind:aria-valuenow="steps"
 x-bind:aria-valuetext="valueText"
-x-bind:style="'background-color:'
+x-bind:style="barStyle({{
 x-data="wirekitStrengthMeter({
 x-modelable="value"
 x-text="level">{{

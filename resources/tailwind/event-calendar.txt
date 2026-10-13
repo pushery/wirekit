@@ -68,8 +68,6 @@ $viewTab
 $weekLabel
 $weekStartsOn
 &&
-'
-'%'"></div>
 ''"
 ''"></div>
 ''"></p>
@@ -108,6 +106,7 @@ $weekStartsOn
 'bg-[var(--color-wk-accent)]
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-bg)]'
+'bg-[var(--color-wk-bg-active)]
 'bg-[var(--color-wk-bg-muted)]
 'bg-[var(--color-wk-bg-subtle)]'">
 'bg-[var(--color-wk-border)]',
@@ -232,7 +231,6 @@ $weekStartsOn
 */
 +
 +2px
--
 --color-wk-info-tone,
 --color-wk-info-tone.
 --wk-agenda-time
@@ -248,6 +246,7 @@ $weekStartsOn
 //
 0
 0"
+0"><span
 00:00
 0;
 1
@@ -256,6 +255,7 @@ $weekStartsOn
 1);
 1-hour
 1.4.12)
+100)
 12L6
 16
 16"
@@ -266,13 +266,13 @@ $weekStartsOn
 2,
 2.1.1,
 2.1875rem
+2.4.11).
 2.5.8):
 2.5rem
 20px:
 24px
 2;
 2px
-2px);
 2px/-4px
 3,
 3rem
@@ -281,10 +281,8 @@ $weekStartsOn
 4-4
 4.1.3
 4l4
-4px)'"
 5,
 5px
-5px);
 5rem);"
 5rem);"><span
 6],
@@ -312,7 +310,6 @@ $weekStartsOn
 :count
 :data-wk-tip="blockTip(b)"
 :data-wk-tip="ev.title"
-:data-wk-tip="m.label"
 :date')
 :date,
 :key="'ad-'+day.date.toISOString()">
@@ -332,8 +329,8 @@ $weekStartsOn
 :key="wi">
 :names'))
 :src="a.avatar"
-:style="'top:
-:style="'top:calc('+b.top+'%
+:style="blockStyle(b)"
+:style="nowLineStyle()"></div>
 :tabindex="view
 :total
 <
@@ -482,6 +479,7 @@ Off
 One
 Outside
 PROHIBITS
+Paper
 Plain
 Pressed
 Pushery\WireKit\Support\BooleanProp;
@@ -520,6 +518,7 @@ View
 WCAG
 WEEK
 WORD,
+WebKit
 Week
 When
 Width
@@ -537,6 +536,8 @@ With
 [1,
 [],
 [data-wk-tip]
+[overflow-wrap:anywhere]
+[overflow-wrap:anywhere]"><span
 [{date,label,type?,blocked?}]
 [{id,title,start,end?,allDay?,intent?}]
 \Pushery\WireKit\Support\AlpinePayload::from($dayDetail
@@ -639,6 +640,7 @@ affordance.
 again,
 agenda
 agenda's
+agenda:
 agendaDays"
 agendaEmpty
 ai">
@@ -692,7 +694,7 @@ as
 at
 at,
 ate
-attendeeOverflow(ev)"></span>
+attendeeOverflow(ev)"></span></template>
 attendeeStack(ev)"
 attendees
 attribute
@@ -714,9 +716,11 @@ band.
 band:
 base
 base-color
+basis-0
 be
 because
 become
+before
 behavior
 behind
 being
@@ -807,6 +811,7 @@ cell
 cell,
 cell.
 cell:
+cells
 center
 centered
 centers
@@ -829,8 +834,9 @@ class
 class="absolute
 class="block
 class="border-[length:var(--border-wk-width)]
-class="fixed
 class="flex
+class="flex">
+class="flex-1
 class="grid
 class="h-2
 class="h-4
@@ -841,7 +847,6 @@ class="max-sm:hidden
 class="mb-1
 class="mb-[var(--space-wk-xs)]
 class="min-h-[1.75rem]
-class="min-h-[5.5rem]
 class="min-w-0
 class="mt-0.5
 class="mt-[var(--space-wk-sm)]
@@ -864,7 +869,8 @@ class="w-full
 class="whitespace-nowrap"
 class="wk-avatar-group
 class="wk-state-button
-class="{{
+class="wk-tooltip-panel
+class="wk-touch-row
 classes
 cleanly
 client-side
@@ -881,6 +887,7 @@ colors
 colors,
 column
 column's
+column,
 column.
 column:
 columns
@@ -895,6 +902,7 @@ component's
 component,
 config('wirekit.components.event-calendar.view',
 config('wirekit.components.event-calendar.week-starts-on',
+config('wirekit.components.tooltip.delay-hide',
 conforming
 container
 content
@@ -902,29 +910,37 @@ context),
 context,
 continuous
 contrast
+control,
 costs
 could
 count
 count,
 count.
+covers,
 create
 cursor-pointer
 cursor-pointer"
 cursor-pointer">
 cursor-pointer"><span
 cursor-pointer">{{
+cut
+cut,
 d="M10
 d="M6
 danger
 data-agenda-time
+data-size="xs"
 data-view="agenda"
 data-view="month"
 data-view="week"
 data-wk-date="{{
 data-wk-day-markers="{{
 data-wk-events="{{
+data-wk-print-expand
 data-wk-prose-skip
+data-wk-scroll-inset="top"
 data-wk-show-more
+data-wk-sr-host
 data-wk-view="{{
 data-wk-week-view
 date
@@ -944,6 +960,8 @@ day-name
 day.
 day.allDay"
 day.blocks"
+day.date)"
+day.date)"></span>
 day.events"
 day.markers"
 day.visibleEvents"
@@ -1004,6 +1022,7 @@ engine
 enlarges
 enough
 entries
+equal
 errors;
 established
 ev.id
@@ -1106,7 +1125,6 @@ grid
 grid's
 grid)
 grid-cols-7
-grid-cols-7">
 grid-cols-[3rem_repeat(7,minmax(0,1fr))]
 grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
 grid.
@@ -1115,6 +1133,7 @@ gridline
 gridlines
 gridlines,
 group
+grows
 guard
 guessed
 gutter
@@ -1147,7 +1166,7 @@ heading
 heading,
 hear
 height
-height:calc('+b.height+'%
+height,
 height`
 helper's
 here
@@ -1165,8 +1184,9 @@ hour
 hours"
 house
 hover/focus
-hover:bg-[var(--color-wk-bg-muted)]
+hover:bg-[var(--color-wk-bg-active)]
 hover:text-[color:var(--color-wk-text)]
+how
 hue
 hue,
 hugs
@@ -1224,6 +1244,7 @@ justify-end
 justify-end">
 keep
 keeps
+kept
 key
 keys
 know
@@ -1234,6 +1255,7 @@ labels
 landmark
 lands
 language
+last
 later
 later.
 layer
@@ -1244,7 +1266,6 @@ leaves
 left
 left-0
 left-stripe).
-left:calc('+b.left+'%
 lets
 letter
 level
@@ -1300,7 +1321,9 @@ mi)
 min(6,
 min-h
 min-h-[2.1875rem]
+min-h-[5.5rem]
 min-h-[var(--size-wk-target-min)]
+min-w-0
 min-w-5
 min-w-[var(--size-wk-target-min)]
 minimum
@@ -1323,6 +1346,7 @@ moved
 moves
 moving
 moving,
+much
 must
 mutated,
 muted
@@ -1330,6 +1354,8 @@ n/a
 name
 name,
 names
+narrow
+narrowed,
 navigation
 near-black
 nearly
@@ -1351,7 +1377,6 @@ note
 nothing
 nothing.
 now,
-nowLineTop
 null,
 number
 number's
@@ -1368,9 +1393,11 @@ on.
 once
 once.
 one
+one,
 one-category
 one.
 only
+only,
 open
 opened
 opens
@@ -1412,6 +1439,7 @@ painted.
 pair
 pairings,
 panel
+paper
 parentheses.
 part
 part:
@@ -1438,11 +1466,12 @@ place).
 plain
 plural
 plus
-pointer-events-none"></div>
+pointer
 position,
 pr-1
 present
 pressed
+prints
 prints.
 prod).
 produce
@@ -1474,6 +1503,7 @@ re-deriving
 re-render,
 reach
 reachable
+reached
 reaches
 read
 readable
@@ -1502,6 +1532,7 @@ resolved
 resolves.
 rest
 resting
+rests
 restyle
 restyles
 returns
@@ -1554,7 +1585,9 @@ schedule",
 screen
 scroll
 scroll.capture
+scroll:
 scrollWidth).
+scroller
 scrolls
 search,
 second
@@ -1574,7 +1607,8 @@ separates
 serve:
 set
 sets
-shadow-[var(--shadow-wk-md)]
+seven
+shadow-[var(--shadow-wk-md)]"></div>
 shape
 shaped
 shared
@@ -1660,6 +1694,7 @@ takes
 tall
 target
 target's
+tells
 ternaries
 text
 text's
@@ -1730,6 +1765,7 @@ tint,
 tinted
 tints
 tip
+tipDelayHide:
 title
 title+time
 title,
@@ -1759,7 +1795,6 @@ trip
 true)
 truncate
 truncate"
-truncate"><span
 truncated
 truncated-title
 truncates;
@@ -1774,7 +1809,7 @@ unavailable
 unbound
 under
 under.
-underneath.
+underneath,
 undone.
 unknown
 unless
@@ -1819,6 +1854,8 @@ was
 way
 week
 week"
+week's
+week.
 weekDays"
 weekHasMarkers"
 weekStartsOn:
@@ -1843,12 +1880,13 @@ widest,
 widget's
 width
 width)
-width:calc('+b.width+'%
 will
+window
 with
 withNamesText:
 without
 wk-scrollbar
+wk-touch-row
 word
 working
 worse
@@ -1856,6 +1894,7 @@ worth
 would
 wrap
 wrapping
+wraps
 written
 x-cloak
 x-data="wirekitEventCalendar({
@@ -1872,16 +1911,16 @@ x-for="ev
 x-for="h
 x-for="wd
 x-if="a.avatar"><img
+x-if="attendeeOverflow(ev)
 x-ref="tip"
 x-show="!a.avatar"
 x-show="agendaEmpty"
-x-show="attendeeOverflow(ev)
 x-show="attendeeStack(ev).length
 x-show="categories.length
 x-show="day.isToday"
 x-show="day.overflow
 x-show="m.blocked"
-x-show="pillTime(ev)"
+x-show="pillTime(ev,
 x-show="selectedDay"
 x-show="selectedDayEvents.length
 x-show="tipOpen"
@@ -1908,7 +1947,7 @@ x-text="hourLabel(h)"></div>
 x-text="m.label"></span></span>
 x-text="m.label"></span><span
 x-text="moreWord(day)"></span></button>
-x-text="pillTime(ev)"></span>
+x-text="pillTime(ev,
 x-text="selectedDayLabel"></h{{
 x-text="tipText"
 x-text="title"></h{{

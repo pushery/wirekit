@@ -1,17 +1,14 @@
 /**
  * WCAG 2.1 contrast, in the browser — the counterpart to `Pushery\WireKit\Theming\WcagContrast`.
  *
- * WHY A SECOND IMPLEMENTATION AT ALL. A page that shows a reader what contrast their theme
- * actually produces has to measure what the browser resolved, not what the registry declares:
- * a theme or mode switch re-measures, and the two can disagree. They did — a preset shipped at
- * 1.04:1 on raised surfaces in dark mode while its registry entry was correct, and a value
- * computed on the server would have reported the correct one. So the numbers have to come from
- * `getComputedStyle`, and that means the arithmetic has to exist here.
+ * A page that shows a reader what contrast their theme produces has to measure what the browser
+ * resolved, not what the registry declares: a theme or mode switch re-measures, and the two can
+ * disagree, since a registry entry can be right while the surface a mode resolves to is not. So
+ * the numbers come from `getComputedStyle`, and the arithmetic exists here as well.
  *
- * WHAT KEEPS THE TWO HONEST. `WcagContrastJsMatchesThePhpTest` runs this module in Node against
- * the PHP class over one shared corpus and requires identical answers, `null` for `null`
- * included. Two implementations of one formula drift silently otherwise — each one green
- * against its own expectations.
+ * This module and the PHP class give the same answer to every input, `null` for `null`
+ * included: two implementations of one formula would otherwise drift apart, each correct against
+ * its own expectations.
  *
  * NO `resolveCssVars()` HERE, DELIBERATELY. The PHP class resolves `var()` chains because it
  * reads a stylesheet as text. A browser hands out resolved values already, so a second resolver

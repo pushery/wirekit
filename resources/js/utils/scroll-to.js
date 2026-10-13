@@ -1,3 +1,5 @@
+import { pageScrollBehavior } from './motion.js';
+
 /**
  * `$wkScrollTo(selector)` — scroll the nearest ancestor that matches the selector into view, or
  * the first element in the document that does, and do nothing when there is none.
@@ -26,7 +28,8 @@ export function scrollTo(el, selector) {
     }
 
     if (target && typeof target.scrollIntoView === 'function') {
-        target.scrollIntoView();
+        // The page decides how it scrolls, and a reader who reduced motion gets a jump.
+        target.scrollIntoView({ behavior: pageScrollBehavior() });
     }
 }
 

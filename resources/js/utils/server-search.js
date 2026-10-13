@@ -165,7 +165,7 @@ export function serverSearchState(config = {}) {
 
                     // So does a request that never came back: Livewire hands a network failure
                     // to neither of the two above, only to `respond`, which ends every commit. A
-                    // response still ends the wait at its render, through `succeed`, as before.
+                    // response ends the wait at its render, through `succeed`.
                     respond?.(() => afterRenderFrame(back));
                 });
             }

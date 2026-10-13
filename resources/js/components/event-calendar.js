@@ -2,9 +2,9 @@
  * A calendar day read as a calendar day.
  *
  * `new Date('2026-06-01')` is midnight UTC, which is the evening before anywhere west of it: a
- * calendar opening on that date showed May in New York and the week before in the week view. A
- * `YYYY-MM-DD` string becomes local midnight, as the day markers already read theirs; a value
- * with a time, a Date or a timestamp is read as before.
+ * calendar opening on that date would show May in New York and the week before in the week
+ * view. A `YYYY-MM-DD` string becomes local midnight, as the day markers read theirs; a value
+ * with a time, a Date or a timestamp is read as `new Date()` reads it.
  *
  * @param {string|number|Date} value
  * @returns {Date}
@@ -128,6 +128,9 @@ export default function wirekitEventCalendar(config = {}) {
     const timeFormat = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
     const agendaDayFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'short', day: 'numeric' });
     const fullDateFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+    // A timed event that runs into a later day is named by its whole span, both ends with day and
+    // time, through `formatRange()` so the locale writes the dash or the words between them.
+    const spanFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     // Joins attendee names the way the locale joins a list — "A, B, and C", "A, B und C" — so
     // the one word the catalog has to supply is the "with" in front of it.
     const listFormat = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' });
@@ -290,6 +293,7 @@ export default function wirekitEventCalendar(config = {}) {
 
             this._stopTipRepair?.();
             this._stopTipRepair = null;
+            clearTimeout(this._tipHideTimer);
 
             if (this._clock) {
                 clearInterval(this._clock);
@@ -321,6 +325,46 @@ export default function wirekitEventCalendar(config = {}) {
         },
         _eventEnd(e) {
             return e.end ? parseDay(e.end) : new Date(parseDay(e.start).getTime() + 3600000);
+        },
+        /**
+         * The stretch of time an event covers, as a start and an end that is not part of it.
+         *
+         * A timed event runs from its start to its end, which may fall on a later day. An all-day
+         * event covers whole days: its start day through its `end` day, both included, or its
+         * start day alone without one. An end at or before the start keeps the event to the day
+         * it starts on.
+         *
+         * @returns {{start: Date, end: Date}}
+         */
+        _eventSpan(e) {
+            const start = this._eventStart(e);
+
+            if (e.allDay) {
+                const first = this._startOfDay(start);
+                const last = e.end ? this._startOfDay(parseDay(e.end)) : first;
+
+                return { start: first, end: this._addDays(last > first ? last : first, 1) };
+            }
+
+            const end = this._eventEnd(e);
+
+            return { start, end: end > start ? end : start };
+        },
+        // Whether an event covers any part of a day. An event with no length belongs to the day
+        // it starts on.
+        _coversDay(e, day) {
+            const from = this._startOfDay(day);
+            const to = this._addDays(from, 1);
+            const { start, end } = this._eventSpan(e);
+
+            return end.getTime() === start.getTime()
+                ? start >= from && start < to
+                : start < to && end > from;
+        },
+        // Whether the event began on a day before this one. Its start time is then no time of
+        // this day, so no view prints it here.
+        _startsBefore(e, day) {
+            return this._eventSpan(e).start < this._startOfDay(day);
         },
         // The events every view reads. An event without a `category` is never filtered: it
         // belongs to no chip, so no toggle could bring it back.
@@ -359,9 +403,11 @@ export default function wirekitEventCalendar(config = {}) {
                 .replace(':count', String(this.visibleEvents.length))
                 .replace(':total', String(total));
         },
+        // Every event a day shows: each one that covers any part of it, so an event that crosses
+        // midnight or spans days is on each of its days. An event that began earlier sorts first.
         _eventsOnDay(day) {
             return this.visibleEvents
-                .filter((e) => this._sameDay(this._eventStart(e), day))
+                .filter((e) => this._coversDay(e, day))
                 .sort((a, b) => this._eventStart(a) - this._eventStart(b));
         },
 
@@ -535,7 +581,7 @@ export default function wirekitEventCalendar(config = {}) {
         // this band existed they were silently dropped from week view entirely.
         _allDayFor(day) {
             return this.visibleEvents
-                .filter((e) => e.allDay && this._sameDay(this._eventStart(e), day))
+                .filter((e) => e.allDay && this._coversDay(e, day))
                 .sort((a, b) => this._eventStart(a) - this._eventStart(b));
         },
         // True when ANY day in the focused week carries an all-day event — gates the
@@ -565,13 +611,21 @@ export default function wirekitEventCalendar(config = {}) {
         // don't overlap), but the floored 15-min block renders ~1h tall and visually
         // collides with the next block's text. Treating each block as occupying its
         // rendered footprint pushes such pairs into side-by-side columns instead.
+        //
+        // Each block is the part of its event that falls on this day: an event that began on an
+        // earlier day starts at the top of the column, one that ends on a later day runs to its
+        // foot, and collisions are read from those clipped times. A block that continues an
+        // event carries no start time, which belongs to another day.
         _layoutDay(day) {
             const MIN_BLOCK_MIN = 60; // matches min-h-[2.5rem] (60rem grid / 24h = 2.5rem/h)
+            const from = this._startOfDay(day);
+            const to = this._addDays(from, 1);
             const timed = this._eventsOnDay(day).filter((e) => !e.allDay);
             const cols = []; // each entry = the EFFECTIVE end occupying that column
             const placed = timed.map((e) => {
-                const s = this._eventStart(e);
-                const en = this._eventEnd(e);
+                const span = this._eventSpan(e);
+                const s = span.start < from ? from : span.start;
+                const en = span.end > to ? to : span.end;
                 const effEnd = new Date(Math.max(en.getTime(), s.getTime() + MIN_BLOCK_MIN * 60000));
                 let col = cols.findIndex((endTime) => endTime <= s);
                 if (col === -1) {
@@ -580,12 +634,13 @@ export default function wirekitEventCalendar(config = {}) {
                 } else {
                     cols[col] = effEnd;
                 }
-                return { event: e, start: s, end: en, col };
+                return { event: e, start: s, end: en, col, continues: span.start < from };
             });
             const colCount = Math.max(1, cols.length);
             return placed.map((p) => {
                 const topMin = p.start.getHours() * 60 + p.start.getMinutes();
-                const endMin = p.end.getHours() * 60 + p.end.getMinutes();
+                // The end of the day is minute 1440; read off the clock it would be the 0 of the next.
+                const endMin = p.end.getTime() === to.getTime() ? 1440 : p.end.getHours() * 60 + p.end.getMinutes();
                 const durMin = Math.max(30, endMin - topMin);
                 return {
                     event: p.event,
@@ -593,12 +648,31 @@ export default function wirekitEventCalendar(config = {}) {
                     height: (durMin / 1440) * 100,
                     left: (p.col / colCount) * 100,
                     width: (1 / colCount) * 100,
-                    timeLabel: timeFormat.format(p.start),
+                    timeLabel: p.continues ? '' : timeFormat.format(p.start),
                 };
             });
         },
         get nowLineTop() {
             return ((this.now.getHours() * 60 + this.now.getMinutes()) / 1440) * 100;
+        },
+
+        /*
+         * The current-time line and the events of a day, placed as objects. Alpine sets an object
+         * property by property, so the `display` that `x-show` writes on the line stays when the
+         * clock moves it; a string it writes with `setAttribute()`, which replaces the whole
+         * attribute and which a `style-src` without `'unsafe-inline'` refuses.
+         */
+        nowLineStyle() {
+            return { top: `${this.nowLineTop}%` };
+        },
+
+        blockStyle(b) {
+            return {
+                top: `calc(${b.top}% + 2px)`,
+                height: `calc(${b.height}% - 5px)`,
+                left: `calc(${b.left}% + 2px)`,
+                width: `calc(${b.width}% - 4px)`,
+            };
         },
         nowInWeek() {
             return this.weekDays.some((d) => d.isToday);
@@ -614,13 +688,15 @@ export default function wirekitEventCalendar(config = {}) {
                 if (!byDay.has(key)) byDay.set(key, { events: [], markers: [] });
                 return byDay.get(key);
             };
-            this.visibleEvents
-                .filter((e) => {
-                    const s = this._eventStart(e);
-                    return s >= start && s < end;
-                })
-                .sort((a, b) => this._eventStart(a) - this._eventStart(b))
-                .forEach((e) => bucket(this._eventStart(e)).events.push(e));
+            // Each day of the range lists every event that covers it, so an event that began
+            // before the range or spans days is under each of its days in it.
+            for (let day = start; day < end; day = this._addDays(day, 1)) {
+                const events = this._eventsOnDay(day);
+
+                if (events.length > 0) {
+                    bucket(day).events.push(...events);
+                }
+            }
             // Markers in range surface as their own agenda line — including on a day
             // with no events at all (a marker-only day still appears in the list).
             this.dayMarkers
@@ -638,7 +714,7 @@ export default function wirekitEventCalendar(config = {}) {
                         markers,
                         events: events.map((e) => ({
                             ...e,
-                            timeLabel: e.allDay ? this._allDayLabel : timeFormat.format(this._eventStart(e)),
+                            timeLabel: this._dayTimeLabel(e, date),
                         })),
                     };
                 });
@@ -648,10 +724,25 @@ export default function wirekitEventCalendar(config = {}) {
         },
 
         // ── Event interaction ────────────────────────────────────────────
+        // An event within one day is named by its date and its start time. One that runs into a
+        // later day is named by its whole span, which a pill or a block on a single day cannot
+        // show: the same name is read on every day the event is on.
         eventLabel(e) {
             const s = this._eventStart(e);
-            const time = e.allDay ? this._allDayLabel : timeFormat.format(s);
-            return `${e.title}, ${fullDateFormat.format(s)}, ${time}`;
+            const span = this._eventSpan(e);
+
+            if (e.allDay) {
+                const last = this._addDays(span.end, -1);
+                const days = this._sameDay(span.start, last) ? fullDateFormat.format(s) : fullDateFormat.formatRange(span.start, last);
+
+                return `${e.title}, ${days}, ${this._allDayLabel}`;
+            }
+
+            if (span.end > this._addDays(this._startOfDay(s), 1)) {
+                return `${e.title}, ${spanFormat.formatRange(span.start, span.end)}`;
+            }
+
+            return `${e.title}, ${fullDateFormat.format(s)}, ${timeFormat.format(s)}`;
         },
         // An event's attendees, normalized: a name alone or `{ name, avatar }`, blank names
         // dropped, initials from the first two words for the disc that has no picture.
@@ -711,8 +802,20 @@ export default function wirekitEventCalendar(config = {}) {
         // sees one clock rather than two. The pill truncates its TITLE to make room; the
         // time is the part that must stay whole, because a clipped time is unreadable
         // while a clipped title is still recognizable.
-        pillTime(e) {
-            return e.allDay ? '' : timeFormat.format(this._eventStart(e));
+        //
+        // Empty as well on a day after the one the event began on: its start time is no time of
+        // that day.
+        pillTime(e, day) {
+            return e.allDay || (day && this._startsBefore(e, day)) ? '' : timeFormat.format(this._eventStart(e));
+        },
+        // The time a list row prints for an event on one day: "All day", its start time, or
+        // nothing on a day after the one it began on.
+        _dayTimeLabel(e, day) {
+            if (e.allDay) {
+                return this._allDayLabel;
+            }
+
+            return this._startsBefore(e, day) ? '' : timeFormat.format(this._eventStart(e));
         },
         selectEvent(e) {
             this.$dispatch('event-click', { id: e.id });
@@ -800,7 +903,7 @@ export default function wirekitEventCalendar(config = {}) {
                 label: fullDateFormat.format(this.selectedDate),
                 events: this._eventsOnDay(this.selectedDate).map((e) => ({
                     ...e,
-                    timeLabel: e.allDay ? this._allDayLabel : timeFormat.format(this._eventStart(e)),
+                    timeLabel: this._dayTimeLabel(e, this.selectedDate),
                 })),
             };
         },
@@ -827,6 +930,11 @@ export default function wirekitEventCalendar(config = {}) {
         tipOpen: false,
         tipText: '',
         _tipTarget: null,
+        // The pointer may move from a target onto the bubble without losing it (WCAG 1.4.13), the
+        // way it may onto the tooltip component's panel: leaving arms a hide after the tooltip's own
+        // delay, which bridges the gap between the two, and entering the bubble or a target clears it.
+        _tipDelayHide: Number.isFinite(Number(config.tipDelayHide)) ? Number(config.tipDelayHide) : 100,
+        _tipHideTimer: null,
         // Disconnects the observer that puts the bubble's placement back after a framework
         // update erases it. See the note beside `repairErasure` in tipShow().
         _stopTipRepair: null,
@@ -874,10 +982,16 @@ export default function wirekitEventCalendar(config = {}) {
             return `${b.event.title}, ${b.timeLabel}`;
         },
         async tipShow(e) {
+            // The pointer on the bubble itself keeps it.
+            if (e && e.target && this.$refs?.tip?.contains(e.target)) {
+                clearTimeout(this._tipHideTimer);
+                return;
+            }
             const target = e.target && typeof e.target.closest === 'function'
                 ? e.target.closest('[data-wk-tip]')
                 : null;
             if (!target) return;
+            clearTimeout(this._tipHideTimer);
             if (target === this._tipTarget) return; // already showing for this node
             if (!this._isTruncated(target)) {
                 this.tipHide();
@@ -932,6 +1046,23 @@ export default function wirekitEventCalendar(config = {}) {
                 && this._tipTarget.contains(e.relatedTarget)) {
                 return;
             }
+            // Nor when the pointer moves from the target onto the bubble.
+            if (e && e.relatedTarget && this.$refs?.tip?.contains(e.relatedTarget)) {
+                return;
+            }
+            // A pointer that leaves gets the tooltip's delay to cross the gap to the bubble; a focus
+            // that leaves and a scroll close it at once.
+            if (e && e.type === 'pointerout') {
+                clearTimeout(this._tipHideTimer);
+                this._tipHideTimer = setTimeout(() => this._tipClose(), this._tipDelayHide);
+                return;
+            }
+            this._tipClose();
+        },
+
+        _tipClose() {
+            clearTimeout(this._tipHideTimer);
+            this._tipHideTimer = null;
             this.tipOpen = false;
             this._tipTarget = null;
             this._stopTipRepair?.();

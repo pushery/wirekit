@@ -17,9 +17,10 @@ use Stringable;
  * `/x?a=1&amp;b=2`: the server reads a parameter named `amp;b`, and a signed link loses its
  * signature. Read here, both arrive as the same URL, which the view escapes once.
  *
- * Only what Blade's escape writes is undone: `&amp;`, `&lt;`, `&gt;`, `&quot;` and `&#039;`. A
- * character reference Blade never writes, `&#106;` or `&colon;`, stays text, because decoding one
- * could turn `&#106;avascript:` in a bound value from data into a script URL. None of the five
+ * Only the five characters Blade's escape writes are restored, in any spelling PHP's decoder reads:
+ * `&amp;`, `&lt;`, `&gt;`, `&quot;` and `&#039;`, and their numeric forms such as `&#34;` or
+ * `&#x26;`. A reference to any other character, `&#106;` or `&colon;`, stays text, because decoding
+ * one could turn `&#106;avascript:` in a bound value from data into a script URL. None of the five
  * characters the undo restores can begin a scheme, so the URL keeps the scheme it was read with.
  *
  * @internal Called from the component views; not a developer-facing API.

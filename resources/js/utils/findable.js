@@ -7,10 +7,10 @@
  * removes the attribute. The component listens for `beforematch` itself (`x-on:beforematch`) and
  * opens its own state, so the next render does not close the panel again.
  *
- * WHERE IT IS NOT SUPPORTED, IT IS `x-show`. Support is decided by `'onbeforematch' in
+ * Where it is not supported, it is `x-show`. Support is decided by `'onbeforematch' in
  * document.body`, and without it a closed panel gets the inline `display: none` that `x-show`
  * sets. Nothing is left to how an older engine parses an attribute value it does not know, so the
- * experience below the enhancement is today's by construction rather than by assumption.
+ * experience below the enhancement is `x-show`'s by construction rather than by assumption.
  *
  * What the panel must not carry:
  * - padding, a border or a background of its own: a closed until-found element keeps its box, so

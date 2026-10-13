@@ -34,9 +34,7 @@ namespace Pushery\WireKit\Mcp;
  * extracted from it at BUILD time into a file that ships, and a test fails when
  * the two drift apart.
  *
- * This list is not decoration — `McpServerTest` fails when it stops matching the
- * tools actually registered. It said "four read-only tools" for exactly as long
- * as there were four, and the fifth was added without it noticing.
+ * This list names the tools actually registered, one entry for each.
  */
 final class McpServer
 {
