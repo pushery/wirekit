@@ -9,11 +9,10 @@ $allowedFull
 $allowedFull);
 $allowedFull,
 $attributes
-$attributes->except('style')->merge(['data-replayable'
+$attributes->except('style')->class([$baseClasses])->merge(['data-replayable'
 $attributes->get('style',
 $attributes->getAttributes());
 $baseClasses
-$baseClasses])
 $callerStyle
 $delay
 $delay,
@@ -59,7 +58,6 @@ $validatedTrigger,
 ';
 'base',
 'bounce',
-'class'
 'click',
 'delay'
 'delay',
@@ -105,7 +103,7 @@ $validatedTrigger,
 'threshold'
 'trigger'
 'trigger',
-'true',
+'true'])
 'var(--motion-wk-delay-'.WireKit::validateProp('reveal',
 'var(--motion-wk-delay-{token})'
 'viewport'

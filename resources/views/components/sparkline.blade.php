@@ -236,6 +236,13 @@
     if ($sparklineIsDecorative && ! $sparklineAttributes->has('inert')) {
         $sparklineAttributes = $sparklineAttributes->merge(['inert' => true]);
     }
+
+    // The chart inside learns it too. It is hidden either way, inside this wrapper, and
+    // without the attribute of its own it reported a missing name in the log of every
+    // render, for a graphic its caller had marked as decoration on purpose.
+    if ($sparklineIsDecorative) {
+        $chartAriaAttributes = $chartAriaAttributes->merge(['aria-hidden' => 'true']);
+    }
 @endphp
 
 {{--

@@ -111,6 +111,7 @@ $triggerIsButton
 $triggerName
 $value
 &&
+'
 ''
 '')
 ''))
@@ -249,6 +250,7 @@ $value
 ("Help
 ("Rock
 ($callerLabelledBy
+($helpName
 ($hint
 ($optimistic
 ($options
@@ -936,6 +938,7 @@ branch:
 branches
 brand
 break
+breaks
 bubble's
 bubbling,
 bug
@@ -944,6 +947,7 @@ build
 busy
 but
 button
+button's
 button's.
 button,
 button.
@@ -1190,6 +1194,7 @@ evaluated
 evaluator
 even
 event
+event's
 events
 ever
 every
@@ -1381,6 +1386,7 @@ in:
 in_array('sr-only',
 included.
 including
+indentation,
 indicator
 inert
 init
@@ -1464,6 +1470,7 @@ leave
 leaves
 leaving
 left
+legend
 legitimately
 length,
 less
@@ -1473,6 +1480,7 @@ level
 light
 like
 line
+lines
 linked
 list
 listed
@@ -1745,6 +1753,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 present,
@@ -1923,6 +1932,7 @@ set
 sets
 setting
 settles
+several
 shadow
 shadow.
 shape
@@ -2058,6 +2068,7 @@ text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]',
 text-level
+text:
 than
 that
 that:

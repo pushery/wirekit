@@ -6,6 +6,9 @@
     'scope' => null,
 ])
 
+{{-- The menu's `track-current`: the link carries what `x-wk-current` moves after a visit. --}}
+@aware(['trackCurrent' => false])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -22,6 +25,9 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false);
 
+    // `@aware` leaves its key in the attribute bag, where it would render as a stray attribute.
+    $attributes = $attributes->except(['trackCurrent', 'track-current']);
+
     // Navigation menu link — used inside flyout panels for individual nav items.
     $classes = WireKit::resolveClasses('navigation-menu.link', 'base', implode(' ', [
         'flex items-center',
@@ -35,9 +41,15 @@
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
-    $colorClasses = $active
-        ? 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]'
-        : 'text-[color:var(--color-wk-text)]';
+    $currentColor = 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]';
+    $idleColor = 'text-[color:var(--color-wk-text)]';
+    $colorClasses = $active ? $currentColor : $idleColor;
+
+    // Under the menu's `track-current` the link carries the classes only a current link has and
+    // those only an idle one has, which `x-wk-current` moves after a visit (Support\CurrentState).
+    $trackAttributes = BooleanProp::from($trackCurrent, false)
+        ? \Pushery\WireKit\Support\CurrentState::attributes($currentColor, $idleColor)
+        : [];
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See sidebar/item.blade.php for the rationale on except('rel') + explicit
@@ -56,7 +68,7 @@
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-touch-row', $classes, $colorClasses]) }}
+    {{ $attributes->except('rel')->merge($trackAttributes)->class(['wk-touch-row', $classes, $colorClasses]) }}
 >
     {{-- One flex item for the whole label, so text and an inline mark beside it flow as they
          would in a block, and the row centers it when the touch floor makes the row taller. --}}

@@ -364,6 +364,7 @@ $wrapperClasses
 ($hasLabeledMarks
 ($hasMessage
 ($hasTrackOverlay
+($helpName
 ($hint
 ($isLabeledMarkMap)
 ($m)
@@ -1245,6 +1246,7 @@ box.
 box:
 branch
 brand
+breaks
 browser
 bubble
 bubble's
@@ -1254,6 +1256,7 @@ bug.
 build
 but
 button
+button's
 button's.
 button,
 button:
@@ -1562,6 +1565,7 @@ escapes
 escaping
 evaluated
 event
+event's
 event,
 events
 ever
@@ -1786,6 +1790,7 @@ in
 in.
 in:
 included.
+indentation,
 inert
 init
 initResync()
@@ -1889,6 +1894,7 @@ leaves
 leaving
 left
 left-aligns
+legend
 legitimate
 legitimately
 length,
@@ -2217,6 +2223,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 present
 presentational
 preset.
@@ -2384,6 +2391,7 @@ server-side
 set
 sets
 settles
+several
 shadow-[var(--shadow-wk-sm)]"
 shadow.
 shape
@@ -2557,6 +2565,7 @@ text-[length:var(--text-wk-xs)]
 text-center'
 text-end',
 text-level
+text:
 than
 that
 that:

@@ -104,16 +104,16 @@ $weekStartsOn
 'bg-[color-mix(in_oklch,var(--color-wk-warning)_14%,transparent)]
 'bg-[color-mix(in_oklch,var(--color-wk-warning)_16%,var(--color-wk-bg))]
 'bg-[var(--color-wk-accent)]
-'bg-[var(--color-wk-accent)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg)]'
 'bg-[var(--color-wk-bg-active)]
 'bg-[var(--color-wk-bg-muted)]
 'bg-[var(--color-wk-bg-subtle)]'">
-'bg-[var(--color-wk-border)]',
-'bg-[var(--color-wk-danger)]',
-'bg-[var(--color-wk-info-tone)]',
-'bg-[var(--color-wk-success)]',
-'bg-[var(--color-wk-warning)]',
+'bg-[var(--color-wk-danger-text)]',
+'bg-[var(--color-wk-info-text)]',
+'bg-[var(--color-wk-success-text)]',
+'bg-[var(--color-wk-text-muted)]',
+'bg-[var(--color-wk-warning-text)]',
 'blocked'],
 'category',
 'category-hidden',
@@ -232,7 +232,6 @@ $weekStartsOn
 +
 +2px
 --color-wk-info-tone,
---color-wk-info-tone.
 --wk-agenda-time
 --wk-agenda-time,
 --}}
@@ -254,6 +253,7 @@ $weekStartsOn
 1),
 1);
 1-hour
+1.30:1).
 1.4.12)
 100)
 12L6
@@ -265,6 +265,7 @@ $weekStartsOn
 2
 2,
 2.1.1,
+2.13:1,
 2.1875rem
 2.4.11).
 2.5.8):
@@ -275,6 +276,7 @@ $weekStartsOn
 2px
 2px/-4px
 3,
+3:1
 3rem
 4"/></svg></button>
 4,
@@ -438,6 +440,7 @@ Event
 Events
 Every
 FOREGROUND
+Forced
 Fully
 German
 HERE
@@ -638,6 +641,7 @@ adds
 affordance
 affordance.
 again,
+against
 agenda
 agenda's
 agenda:
@@ -743,6 +747,7 @@ block.
 blocked
 blocks
 boolean
+border
 border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]',
 border-[var(--color-wk-border)]
@@ -941,6 +946,7 @@ data-wk-prose-skip
 data-wk-scroll-inset="top"
 data-wk-show-more
 data-wk-sr-host
+data-wk-truncates
 data-wk-view="{{
 data-wk-week-view
 date
@@ -981,6 +987,7 @@ destination.
 detail
 developer
 diagonal
+did
 did-you-mean,
 different
 disagree
@@ -1120,6 +1127,7 @@ gave
 gives
 goes
 going
+graphic
 gray).
 grid
 grid's
@@ -1204,7 +1212,6 @@ in
 in.
 in_array((int)
 info
-info's
 inherit
 inheriting
 initialize
@@ -1212,10 +1219,12 @@ inline
 inline-flex
 inner
 inset
+inset-ring-[length:max(1px,var(--border-wk-width))]
+inset-ring-[var(--color-wk-text-muted)]'
 inside
 instead
-instead,
 instead.
+instead:
 intent
 intent's
 intent,
@@ -1362,6 +1371,8 @@ nearly
 need.
 needs
 neither
+neither,
+neutral
 neutral.
 never
 new
@@ -1373,6 +1384,7 @@ non-landmark
 none`
 nor
 not
+not.
 note
 nothing
 nothing.
@@ -1434,8 +1446,8 @@ page
 page:
 paginator.
 paint
-paint,
 painted.
+paints
 pair
 pairings,
 panel
@@ -1647,6 +1659,7 @@ spells
 spine:
 sr-only
 stack
+stand
 stands
 state
 status
@@ -1655,6 +1668,7 @@ stay
 stays
 sticky
 still
+stood
 stop
 strength
 strictness
@@ -1705,7 +1719,6 @@ text-[color:var(--color-wk-success-text)]
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text)]"
 text-[color:var(--color-wk-text)]">
-text-[color:var(--color-wk-text)]'
 text-[color:var(--color-wk-text)]',
 text-[color:var(--color-wk-text-inverse)]
 text-[color:var(--color-wk-text-muted)]
@@ -1779,6 +1792,8 @@ today)
 toggle
 token,
 tokens
+tone
+tone,
 tone.
 too
 tooltip

@@ -465,6 +465,7 @@ $wrapperClasses])
 ($fieldLabelId
 ($format)
 ($hasError
+($helpName
 ($label
 ($name
 ($size)
@@ -584,6 +585,7 @@ $wrapperClasses])
 2.1.1).
 2.2
 2.25
+2.85:1
 200ms
 20H13"/></svg>',
 24
@@ -596,6 +598,7 @@ $wrapperClasses])
 3.75
 3.776-1.272
 300),
+3:1
 3L22
 3a5
 4
@@ -1356,6 +1359,7 @@ box
 box,
 branch
 brand
+breaks
 browser
 browser's
 browser,
@@ -1464,6 +1468,7 @@ codepoints,
 collapsed
 collapses
 color
+color,
 colored
 colors
 colors,
@@ -1632,6 +1637,7 @@ double-announce.
 down.
 downward.
 drawer
+drawn
 drives
 dropped
 drops
@@ -1937,6 +1943,7 @@ in.
 in:
 in_array('sr-only',
 included.
+indentation,
 indicator
 inert
 init
@@ -1950,7 +1957,7 @@ inserting
 inserts
 inset
 inset-ring-[length:max(1px,var(--border-wk-width))]
-inset-ring-[var(--color-wk-border-strong)]'
+inset-ring-[var(--color-wk-text-muted)]'
 inside
 inside.
 instanceof
@@ -2035,6 +2042,7 @@ leaves
 leaving
 left
 left'),
+legend
 legitimate
 legitimately
 length
@@ -2053,6 +2061,7 @@ limit|[2,*]
 line
 line)
 line:
+lines
 link
 link.
 linked
@@ -2135,6 +2144,7 @@ moving
 ms-0.5"
 much
 must
+muted
 n/a
 name
 name,
@@ -2322,6 +2332,7 @@ precedes
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -2330,6 +2341,7 @@ preset
 preset,
 preset.
 preset:
+preset;
 press
 pressed
 preview
@@ -2411,6 +2423,7 @@ rendering
 renders
 renders,
 renders.
+replaced
 replacement
 reports
 request
@@ -2508,6 +2521,7 @@ set;
 sets
 settles
 seventeen
+several
 shadow
 shadow.
 shape
@@ -2585,6 +2599,7 @@ stays
 stem
 step
 still
+stood
 stop
 stop,
 stop.
@@ -2605,6 +2620,7 @@ stroke-linecap="round"
 stroke-linejoin="round"
 stroke-width="2"
 stroke="currentColor"
+strong
 style="display:
 style="max-height:
 style="max-width:
@@ -2672,6 +2688,7 @@ text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
 text-level
 text.
+text:
 textAlign:
 textarea
 textarea,

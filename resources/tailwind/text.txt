@@ -96,13 +96,13 @@ $wrap,
 'base',
 'bg-[var(--color-wk-tooltip-bg)]',
 'bold'
-'bold']))
+'bold',
 'break'
 'break',
 'center'
 'center',
 'danger'
-'danger']))
+'danger',
 'default'
 'default',
 'false'
@@ -120,6 +120,8 @@ $wrap,
 'font-bold',
 'font-medium',
 'font-semibold',
+'inherit'
+'inherit']))
 'intent'
 'leading'
 'leading',
@@ -145,7 +147,7 @@ $wrap,
 'medium'
 'medium',
 'mono'
-'mono']))
+'mono',
 'muted'
 'muted',
 'no
@@ -158,7 +160,7 @@ $wrap,
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-xs)]',
 'relaxed'
-'relaxed']))
+'relaxed',
 'right'
 'right']))
 'rounded-[var(--radius-wk-sm)]',
@@ -220,7 +222,7 @@ $wrap,
 'x-on:pointerleave',
 'x-on:pointerup',
 'xl'
-'xl']))
+'xl',
 'xs'
 'z-[var(--z-wk-tooltip)]',
 ($align
@@ -351,8 +353,13 @@ With
 `data-wk-cut-tip`
 `default`
 `false`
+`family`
 `fit`
+`inherit`
+`inherit`.
 `intent`
+`intent`,
+`leading`
 `line-clamp-N`
 `line-clamp-{$lineClamp}`,
 `lineClamp`
@@ -368,6 +375,7 @@ With
 `prop="false"`
 `prose`.
 `sans`
+`size`,
 `tight`,
 `tooltip`
 `true`
@@ -376,6 +384,7 @@ With
 `truncate="tooltip"`.
 `truncate`
 `variant`
+`weight`,
 `white-space`
 `wide`
 `wrap`
@@ -417,6 +426,7 @@ attribute
 attribute.
 auto-derived
 axis
+axis,
 axis:
 axis;
 back
@@ -439,6 +449,7 @@ breaks
 browser.
 build
 but
+button
 by
 call
 caller
@@ -465,6 +476,7 @@ client-only
 close
 code
 color
+color,
 color.
 colors
 column
@@ -481,6 +493,7 @@ container
 container,
 content,
 control
+control's
 control.
 copy
 could
@@ -492,7 +505,7 @@ cut.
 cuts
 cuts',
 cutting
-danger.
+danger
 data-wk-cut-tip
 data-wk-prose-skip
 date
@@ -501,7 +514,7 @@ debug
 decided
 decides
 default
-default)
+default),
 delayHide:
 delayShow:
 describes.
@@ -604,6 +617,8 @@ imports
 in
 indent
 indented
+inherit,
+inherit.
 inside
 instead
 instead,
@@ -641,6 +656,7 @@ line,
 line-height
 lineClamp
 lines
+link,
 list
 listener
 listeners
@@ -740,7 +756,7 @@ reads
 reason
 reason.
 red
-relaxed,
+relaxed
 release,
 reliably,
 renders
@@ -801,7 +817,7 @@ some
 source
 space
 spaces
-spacing.
+spacing,
 spell
 spelled
 spelling
@@ -809,6 +825,7 @@ spelling,
 spells
 stack
 stands
+states
 states:
 stay
 sticky-panel
@@ -890,6 +907,7 @@ wants
 warning
 was
 way
+way,
 weight
 well
 what
@@ -915,6 +933,7 @@ would
 wrap
 wrap:
 wrapper
+writes
 written
 wrote,
 x-bind:tabindex="tabStop"

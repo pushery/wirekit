@@ -25,6 +25,8 @@ $attributes->except(['aria-describedby']);
 $attributes->get('aria-describedby'));
 $attributes->get('class',
 $attributes->getAttributes());
+$attributes->has('aria-label');
+$attributes->has('aria-labelledby')
 $attributes]
 $callerLabel
 $callerLabel,
@@ -47,6 +49,7 @@ $fieldControl
 $fieldControl->forId()
 $fieldControl?->labelId();
 $fieldsetDescribedBy
+$fieldsetDescribedBy;
 $focusableTrigger
 $for
 $group
@@ -58,9 +61,13 @@ $group->message($errors
 $groupMessage
 $hasAfter
 $hasError
+$hasHelp
+$hasLabelAfter
+$hasLabelAfter;
 $hasLegend
 $help,
 $helpButton
+$helpButton,
 $helpField
 $helpField,
 $helpId
@@ -77,16 +84,29 @@ $inAlignedRow
 $isHorizontal
 $label
 $labelAfter
+$labelAfter->hasActualContent();
+$labelAfter])@endif</legend>
 $labelFor
 $labelId
 $legend
-$legend->attributes->class([$legendClasses])
+$legend),
+$legend->attributes
+$legend->attributes->get('class',
 $legend->hasActualContent()
+$legendAttributes
 $legendClasses
 $legendIsSlot
+$legendRow
+$legendRowClasses
+$legendRowClasses],
+$legendText
+$legendText,
+$legendTextId
 $name)
 $name));
 $name;
+$namedByCaller
+$namedByCaller)
 $offset
 $orientation,
 $orientationValue
@@ -94,6 +114,9 @@ $ownName
 $ownName);
 $required
 $scope);
+$setId
+$setId.'-help'
+$setId.'-legend'
 $slot
 $slot)
 $slot))
@@ -123,13 +146,19 @@ $wkFieldSet
 $wkSpacerBlank
 $wrapperClasses
 &&
+'
 ''
 '')
 ''))
+'')));
+'').'
+'')])@endif
 '',
+'';
 ').'[overflow-wrap:break-word]',
 ',
 '.$attributes->get('class',
+'.$helpId)
 'align-fields']);
 'alignFields',
 'announce-errors',
@@ -154,6 +183,7 @@ $wrapperClasses
 'false'
 'fixed'
 'fixed',
+'flex
 'focusableTrigger'
 'font-[family-name:var(--font-wk-sans)]',
 'font-medium',
@@ -213,9 +243,14 @@ $wrapperClasses
 'z-[var(--z-wk-tooltip)]',
 ("Fast
 ("Help
+("Roles
 ($callerLabelledBy
+($group->key
 ($hasError
+($helpName
 ($isHorizontal
+($legendIsSlot
+($legendText
 ($name
 ($orientation)
 ($triggerIsButton)
@@ -251,8 +286,10 @@ $wrapperClasses
 (space-y);
 (string)
 (the
+(true)
 +
 --}}
+->class(array_values(array_filter([$legendClasses,
 /
 //
 0
@@ -383,13 +420,15 @@ $wrapperClasses
 @if($groupMessage
 @if($hasAfter)
 @if($hasError
+@if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after',
 @if($hasLegend)
 @if($helpButton
 @if($hintId)
 @if($inAlignedRow
 @if($isHorizontal)
 @if($label)
-@if($legendIsSlot)
+@if($legendRow
+@if($legendRow)
 @if($surface
 @if($triggerDescribes)
 @if($triggerExplainsDisabled)
@@ -437,6 +476,7 @@ Dense,
 Describing
 Dev-only
 Done
+ENT_HTML5))
 ENT_HTML5)),
 ENT_HTML5));
 ENT_QUOTES
@@ -512,6 +552,7 @@ Rendered
 Renders
 Required
 Rich
+Roles"),
 SHAPE
 SIBLING.
 STATIC
@@ -528,6 +569,7 @@ THE
 TYPE
 Takes
 Teleporting
+Text,
 That
 The
 There
@@ -572,6 +614,7 @@ Wrapper
 Written
 [
 [$callerLabelledBy,
+['helpText'
 ['inverted',
 ['label'
 ['labelAfter'
@@ -579,6 +622,8 @@ Written
 ['x-on:mouseenter',
 [],
 \Illuminate\Support\HtmlString('');
+\Illuminate\View\ComponentAttributeBag)
+\Illuminate\View\ComponentSlot
 \Illuminate\View\ComponentSlot;
 \Pushery\WireKit\Support\AlpinePayload::string($helpField
 \Pushery\WireKit\Support\AlpinePayload::string($helpName
@@ -588,6 +633,7 @@ Written
 \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
 \Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\DomId::distinct(WireKit::stableId('wk-field-set',
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\FieldControl
 \Pushery\WireKit\Support\FieldError::first($errors
@@ -634,6 +680,7 @@ __('wirekit::Help')
 `aria-describedby`,
 `aria-describedby`:
 `aria-hidden`
+`aria-labelledby`,
 `as="div
 `as="span"`
 `break-word`
@@ -642,6 +689,7 @@ __('wirekit::Help')
 `cloneNode(true)`,
 `compileString`
 `data-list`
+`data-wk-field-label`
 `data-wk-field`
 `delayHide`
 `delayHide`.
@@ -795,6 +843,7 @@ aria-hidden="true">
 aria-hidden="true">*</span>@endif
 aria-hidden="true"></span>
 aria-label="{{
+aria-labelledby="{{
 aria-live="polite"
 armed,
 arms
@@ -829,6 +878,7 @@ back
 back.
 background
 background,
+badge
 badge,
 badge.
 bag
@@ -852,6 +902,7 @@ below.
 below;
 beside
 beside)
+beside.
 between
 bind
 binds
@@ -881,6 +932,7 @@ bug
 built
 but
 button
+button's
 button's.
 button,
 button:
@@ -911,6 +963,7 @@ catalog
 catch.
 cell
 center
+centered
 changes
 changes,
 check
@@ -1023,6 +1076,7 @@ dark:
 data-wk-field
 data-wk-field-help>
 data-wk-field-label
+data-wk-field-label>{{
 data-wk-field-part="label"
 data-wk-field-part="message"
 data-wk-label-after
@@ -1074,6 +1128,7 @@ do,
 document
 documented
 does
+does,
 does.
 dot
 double
@@ -1130,6 +1185,7 @@ evaluated
 even
 evenly
 event
+event's
 events
 ever
 every
@@ -1139,6 +1195,7 @@ exists
 expandos.
 explains
 explains,
+explains.
 explanation
 explicit
 explicitly
@@ -1162,6 +1219,7 @@ field:
 fields
 fieldset
 fieldset's
+fieldset,
 file
 filed
 files
@@ -1170,14 +1228,17 @@ fill-rule="evenodd"
 fill="currentColor"
 filled
 filled($help)
+filled($help);
 filled($helpName
 filled($legend);
+filled(...))));
 finds
 finish
 fire
 fires
 fires.
 first
+first-child
 fixed
 fixed`
 fixes
@@ -1217,10 +1278,13 @@ function;
 gap
 gap-[var(--gap-wk-xs)]
 gap-[var(--gap-wk-xs)]">
+gap-[var(--gap-wk-xs)]">@endif<span
 gap-[var(--gap-wk-xs)]">{{
+gap-[var(--gap-wk-xs)]',
 gap-[var(--padding-wk-x-lg)]">
 gap-x-[var(--gap-wk-sm)]
 gap-y-[var(--gap-wk-xs)]
+gap-y-[var(--gap-wk-xs)]',
 gap.
 generic
 get
@@ -1240,6 +1304,8 @@ grid.
 group
 group's
 group's.
+group,
+group.
 group:
 grouping
 groups,
@@ -1325,6 +1391,7 @@ in
 in.
 in_array('sr-only',
 included.
+indentation,
 index.
 indicator
 inert
@@ -1357,6 +1424,7 @@ is.
 isolate`
 isset($after)
 isset($content)
+isset($labelAfter)
 isset($wkField)
 isset($wkFieldSet)
 it
@@ -1370,6 +1438,7 @@ its
 itself
 itself,
 itself.
+join
 joins
 just
 justify-center
@@ -1405,6 +1474,10 @@ leaves
 leaving
 left
 legend
+legend's
+legend,
+legend.
+legend;
 legitimately
 length,
 let
@@ -1446,6 +1519,8 @@ margin)
 margin,
 mark
 mark,
+mark.
+mark:
 marked
 marker
 markers
@@ -1469,6 +1544,7 @@ meets
 menus
 message
 message,
+message.
 messages
 middle
 migration
@@ -1508,6 +1584,7 @@ names.
 naming
 narrow
 native
+need
 needed
 needed).
 needs
@@ -1541,6 +1618,7 @@ nothing.
 null
 null)
 null))
+null)))
 null);
 null,
 null;
@@ -1584,6 +1662,7 @@ order
 order,
 ordinary
 other
+other,
 other.
 otherwise
 our
@@ -1658,6 +1737,7 @@ prefix/suffix
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -1703,6 +1783,7 @@ read
 read,
 read.
 reader
+reader.
 reader:
 readers
 reading
@@ -1800,7 +1881,9 @@ server
 set
 set.
 sets
+setting
 settles
+several
 shadow.
 shape
 shapes,
@@ -1830,6 +1913,7 @@ size,
 sizes
 slides
 slot
+slot's
 slot).
 slot,
 slot.
@@ -1927,6 +2011,7 @@ text-[color:var(--color-wk-text-subtle)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-sm)]
 text-level
+text:
 than
 that
 the
@@ -1968,6 +2053,7 @@ token
 tokens
 told
 too,
+too.
 took
 tooltip
 tooltip's
@@ -1975,6 +2061,7 @@ tooltip,
 tooltip.
 tooltips
 top
+touch
 touch,
 towards
 transformed
@@ -1986,12 +2073,14 @@ trigger
 trigger's
 trigger,
 trim('flex
+trim(($fieldsetDescribedBy
 trim((string)
 trim(html_entity_decode(strip_tags((string)
 trim(strip_tags((string)
 trimmed
 true
 true)
+true));
 true),
 true);
 true,
@@ -2021,6 +2110,7 @@ under
 unique
 unit,
 unknown
+unless
 unlike
 unsteady
 until
@@ -2135,6 +2225,7 @@ x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 xmlns="http://www.w3.org/2000/svg"
+yet,
 yields
 your
 zoom,
@@ -2155,9 +2246,11 @@ zoom,
 }}</legend>
 }}</p>
 }}</span>
+}}</span>@if($hasHelp)@include('wirekit::components.partials.field-help',
 }}</x-slot:after>
 }}</x-wirekit::label>
 }}>
+}}>@if($hasLabelAfter)<span
 }}>{{
 }}@if($required)<span
 }}`

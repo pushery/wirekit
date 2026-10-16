@@ -76,19 +76,19 @@
         'success' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[color:var(--color-wk-success)]',
+            'icon' => 'text-[color:var(--color-wk-success-text)]',
             'stripe' => 'bg-[var(--color-wk-success)]',
         ],
         'warning' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[color:var(--color-wk-warning)]',
+            'icon' => 'text-[color:var(--color-wk-warning-text)]',
             'stripe' => 'bg-[var(--color-wk-warning)]',
         ],
         'danger' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[color:var(--color-wk-danger)]',
+            'icon' => 'text-[color:var(--color-wk-danger-text)]',
             'stripe' => 'bg-[var(--color-wk-danger)]',
         ],
         'neutral' => [

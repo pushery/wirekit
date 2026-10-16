@@ -233,11 +233,11 @@
             // For 'accent' (the filled-background variant), the dot reads on a
             // colored field — use accent-fg so it contrasts with the bg.
             'accent' => 'bg-[var(--color-wk-accent-fg)]',
-            'primary' => 'bg-[var(--color-wk-accent)]',
-            'info' => 'bg-[var(--color-wk-info-tone)]',
-            'success' => 'bg-[var(--color-wk-success)]',
-            'warning' => 'bg-[var(--color-wk-warning)]',
-            'danger' => 'bg-[var(--color-wk-danger)]',
+            'primary' => 'bg-[var(--color-wk-accent-text)]',
+            'info' => 'bg-[var(--color-wk-info-text)]',
+            'success' => 'bg-[var(--color-wk-success-text)]',
+            'warning' => 'bg-[var(--color-wk-warning-text)]',
+            'danger' => 'bg-[var(--color-wk-danger-text)]',
             'neutral' => 'bg-[var(--color-wk-text-muted)]',
             default => 'bg-[var(--color-wk-text-muted)]',
         };

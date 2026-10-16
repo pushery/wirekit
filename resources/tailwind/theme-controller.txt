@@ -49,8 +49,8 @@ $announceBusy
 $ariaLabelFallback
 $attributes
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
 $attributes->class(['wk-touch-row',
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel');
 $attributes->except(['rel',
 $attributes->get('aria-hidden');
@@ -261,6 +261,7 @@ $wrapLabel
 '',
 '';
 '('.$expression.')'
+').WireKit::resolveClasses('theme-controller',
 ',
 '--wk-button-square:
 '.
@@ -268,7 +269,6 @@ $wrapLabel
 '.$iconOnlySquareToken.';']);
 '.$message);
 '.WireKit::resolveClasses('swap',
-'.WireKit::resolveClasses('theme-controller',
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
 '/^(?:h|size)-/'))
@@ -587,6 +587,7 @@ $wrapLabel
 ($surface
 ($surface)
 ($svgHtml
+($touchFloor
 ($width)
 ($wrapLabel
 ('xs').
@@ -837,6 +838,7 @@ $wrapLabel
 :label="$label">
 :name="$modeIcon"
 :not([aria-disabled="true"]).
+:touch-floor="$touchFloor"
 </button>
 </div>
 </label>
@@ -1659,6 +1661,7 @@ _getItems()
 `this`
 `toggle()`
 `toggleBooleanStateDirective`
+`touch-floor`
 `touchFloor`
 `true`
 `true`,
@@ -1680,6 +1683,7 @@ _getItems()
 `wirekitOptimistic`
 `wk-choice-frame`
 `wk-field`
+`wk-touch-row`
 `wk-touch-row`,
 `wk-touch-target`
 `wrap-label="false"`
@@ -1830,6 +1834,7 @@ arbitration,
 are
 are.
 area
+area,
 area.
 arguments
 aria-allowed-attr
@@ -2102,6 +2107,7 @@ card
 caret
 carried
 carries
+carries;
 carry
 carrying
 carve-out:

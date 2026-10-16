@@ -121,6 +121,7 @@ $wkRequiredMarker
 ''
 '')
 ''))
+'')));
 '').'
 '');
 '',
@@ -259,6 +260,7 @@ $wkRequiredMarker
 ($fieldGroup?->isInvalid($errors
 ($groupError
 ($groupOwnsBagEntry
+($helpName
 ($label
 ($name)])
 ($size)
@@ -903,6 +905,7 @@ box:
 branch
 branches:
 brand
+breaks
 brings
 browser
 bubble's
@@ -911,6 +914,7 @@ bug
 builds
 but
 button
+button's
 button's.
 button,
 button:
@@ -1146,6 +1150,7 @@ escaping
 evaluated
 even
 event
+event's
 events
 ever
 every
@@ -1341,6 +1346,7 @@ in
 in.
 in:
 included.
+indentation,
 independent
 indeterminate
 inert
@@ -1416,6 +1422,7 @@ leaves
 leaving
 left
 left,
+legend
 legitimately
 length,
 let
@@ -1425,6 +1432,7 @@ light
 like
 line
 line-box
+lines
 linked
 list
 listener
@@ -1658,6 +1666,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 present
 presentational
 preset
@@ -1802,6 +1811,7 @@ serves
 set
 sets
 settles
+several
 shadow.
 shape
 share

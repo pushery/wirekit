@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Mcp\Server;
+use Laravel\Mcp\Server\Transport\StdioTransport;
 use Pushery\WireKit\Mcp\McpCatalog;
 use Pushery\WireKit\Mcp\McpServer;
+use Pushery\WireKit\Mcp\Sdk\WireKitMcpServer;
 use Pushery\WireKit\Support\VersionResolver;
 
 /**
@@ -16,7 +20,12 @@ use Pushery\WireKit\Support\VersionResolver;
  * process and talk JSON-RPC 2.0 over stdin/stdout to query the WireKit
  * component catalog live while authoring. It is the in-process, zero-hosting
  * delivery path: no port, no daemon, always version-matched to the installed
- * package. Everything it serves ships in the Packagist tarball — see McpServer.
+ * package. Everything it serves ships in the Packagist tarball — see McpDefinitions.
+ *
+ * Where `laravel/mcp` is installed, the SDK serves (Sdk\WireKitMcpServer), with the protocol
+ * revisions it maintains. Where it is not, the package's own loop below serves, which speaks
+ * revision 2025-06-18 only and goes with the next major version. Both answer from the same
+ * definitions, so an assistant hears the same thing either way.
  */
 final class McpServeCommand extends Command
 {
@@ -33,6 +42,10 @@ final class McpServeCommand extends Command
             $this->info('wirekit:mcp-serve speaks JSON-RPC 2.0 over stdio. Configure your editor / MCP client to spawn it — it is not meant to be run interactively.');
 
             return self::SUCCESS;
+        }
+
+        if (self::sdkAvailable()) {
+            return $this->serveThroughTheSdk();
         }
 
         $server = new McpServer(new McpCatalog, VersionResolver::resolve());
@@ -86,6 +99,30 @@ final class McpServeCommand extends Command
                 $this->writeMessage($out, $response);
             }
         }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Whether `laravel/mcp` is installed, with the JSON Schema builder its tools describe their
+     * arguments with, which arrived in Laravel 12.41.1 and is not there below it.
+     */
+    public static function sdkAvailable(): bool
+    {
+        return class_exists(Server::class) && interface_exists(JsonSchema::class);
+    }
+
+    /**
+     * Serve through `laravel/mcp`, the way its own `mcp:start` starts a local server: the stdio
+     * transport, the server from the container, and the transport's loop until the client goes.
+     */
+    private function serveThroughTheSdk(): int
+    {
+        $transport = new StdioTransport;
+        $server = $this->laravel->make(WireKitMcpServer::class, ['transport' => $transport]);
+
+        $server->start();
+        $transport->run();
 
         return self::SUCCESS;
     }

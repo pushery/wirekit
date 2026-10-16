@@ -67,6 +67,11 @@ export function applyFindableState(el, open, supported) {
     }
 }
 
+/** Whether a panel is showing: neither the attribute nor `x-show`'s inline `display: none` hides it. */
+export function isShown(el) {
+    return ! el.hasAttribute('hidden') && el.style.display !== 'none';
+}
+
 /** The house transition duration in milliseconds, read from the element's own token. */
 function durationOf(el) {
     const raw = typeof getComputedStyle === 'function'
@@ -97,6 +102,15 @@ export function registerFindableDirective(Alpine) {
 
         const slide = (opening) => {
             animation?.cancel();
+
+            // A panel something already showed, the browser on a find-in-page match or a component
+            // for a field the browser is about to focus, is not slid open again from nothing: the
+            // match or the field would drop out of sight and come back.
+            if (opening && isShown(el)) {
+                settle();
+
+                return;
+            }
 
             if (opening) {
                 applyFindableState(el, true, supported);

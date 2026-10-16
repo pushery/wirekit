@@ -20,6 +20,10 @@
     //            surface="ghost" size="sm" buttons in a top bar.
     'size' => config('wirekit.components.theme-controller.size', 'md'),
     'surface' => config('wirekit.components.theme-controller.surface', 'filled'),
+    // On a touch screen, stand at the touch target's size, a 44px square, rather than at the drawn
+    // size with a hit area around it: for a toggle in a row of labeled buttons, which stand at
+    // 44px there, as `touch-floor` does on a button. The menu variant hands it to its trigger.
+    'touchFloor' => false,
     // Accessible name. The control has no visible text in the button variant, so
     // without this it announces as "button" and nothing else.
     'label' => __('wirekit::Dark mode'),
@@ -61,6 +65,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so
     // `hideLabel="false"` would mean the opposite of what the call site reads as.
     $hideLabel = BooleanProp::from($hideLabel, false);
+    $touchFloor = BooleanProp::from($touchFloor, false);
 
     // Control (button-variant) chrome. Full literal class strings so the Tailwind
     // scanner sees them. The inner <button> routes through resolveClasses with its
@@ -80,7 +85,10 @@
         'ghost' => 'border-transparent bg-transparent text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-hover)] hover:text-[color:var(--color-wk-text)]',
         default => 'border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)]',
     };
-    $controlClasses = 'wk-touch-target '.WireKit::resolveClasses('theme-controller', 'control', implode(' ', [
+    // `wk-touch-row` takes the touch floor as the control's size and drops the hit area, the
+    // marker a button with `touch-floor` carries; without it the square answers the finger
+    // through `wk-touch-target` and keeps its drawn size.
+    $controlClasses = ($touchFloor ? 'wk-touch-row ' : 'wk-touch-target ').WireKit::resolveClasses('theme-controller', 'control', implode(' ', [
         'inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)]',
         $controlSize,
         $surfaceChrome,
@@ -283,7 +291,7 @@
                      what a speech user says, and a name without it matches nothing (WCAG
                      2.5.3). The names still come from the locale file, through the factory's
                      config. --}}
-                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle :aria-label="$label" x-bind:aria-label="triggerName" x-bind:aria-describedby="fixed ? {{ $fixedReasonRef }} : null">
+                <x-wirekit::button intent="neutral" surface="outline" size="sm" :touch-floor="$touchFloor" data-wk-theme-toggle :aria-label="$label" x-bind:aria-label="triggerName" x-bind:aria-describedby="fixed ? {{ $fixedReasonRef }} : null">
                     @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
                         <span x-show="mode === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }}" x-cloak class="inline-flex items-center gap-[var(--gap-wk-sm)]">
                             <x-wirekit::icon :name="$modeIcon" size="sm" />

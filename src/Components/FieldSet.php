@@ -34,7 +34,7 @@ final class FieldSet extends Component
      * name it was written with, so `announce-error` reached `@props` in kebab case and never
      * became `$announceError`. A constructor parameter is matched in camel case.
      *
-     * `legend` and `scope` are taken for their VALUE. An attribute that is not a constructor
+     * `legend`, `help` and `scope` are taken for their VALUES. An attribute that is not a constructor
      * parameter reaches the view through the attribute bag, and Blade escapes a bound string on
      * its way in there; `@props` reads it back escaped and the view's `{{ }}` escapes it again,
      * so a legend `A & B` would print as `A &amp;amp; B`. A named `legend` slot still arrives as
@@ -50,6 +50,7 @@ final class FieldSet extends Component
         private readonly bool|string|null $announceError = null,
         private readonly Htmlable|string|int|float|null $legend = null,
         private readonly ?string $scope = null,
+        private readonly string|Stringable|null $help = null,
     ) {
         $this->wkFieldSet = FieldGroup::open(PropText::text($name), PropText::text($error), PropText::text($hint));
     }
@@ -64,6 +65,7 @@ final class FieldSet extends Component
         return view($view, [
             'announceError' => $this->announceError,
             'legend' => PropText::text($this->legend),
+            'help' => PropText::text($this->help),
             'scope' => $this->scope,
         ]);
     }

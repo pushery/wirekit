@@ -62,9 +62,11 @@ $triggerExplainsDisabled
 $triggerIsButton
 $triggerName
 &&
+'
 ''
 '')
 ''))
+'')));
 '',
 ',
 '.$attributes->get('class',
@@ -126,6 +128,7 @@ $triggerName
 ("Fast
 ("Help
 ($callerLabelledBy
+($helpName
 ($triggerIsButton)
 (Support\CallerListeners).
 (Support\CallerName).
@@ -533,11 +536,13 @@ bound
 box
 box,
 brand
+breaks
 bubble's
 bubbling,
 bug
 but
 button
+button's
 button's.
 button,
 button:
@@ -699,6 +704,7 @@ escapes
 escaping
 evaluated
 event
+event's
 events
 every
 exactly
@@ -828,6 +834,7 @@ in
 in.
 in_array('sr-only',
 included.
+indentation,
 indicator
 inert
 init
@@ -882,6 +889,7 @@ leave
 leaves
 leaving
 left
+legend
 legitimately
 length,
 let
@@ -889,6 +897,7 @@ lets
 light
 like
 line
+lines
 linked
 list
 listener
@@ -1066,6 +1075,7 @@ positioning
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -1154,6 +1164,7 @@ selects,
 server
 set
 settles
+several
 shadow.
 shape
 share
@@ -1232,6 +1243,7 @@ text
 text,
 text-[color:var(--color-wk-text-subtle)]
 text-level
+text:
 than
 that
 the
@@ -1368,6 +1380,7 @@ wrapping
 wraps
 write
 writing
+written
 wrong
 wrong.
 x-cloak

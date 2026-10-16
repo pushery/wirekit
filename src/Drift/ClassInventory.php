@@ -170,11 +170,26 @@ final class ClassInventory
      *                         CSS scan; this file's `var(--…)` mentions
      *                         are documentation only.
      *
+     *   dist/wirekit-compact.css → see GENERATED_UTILITY_SHEETS.
+     *
      * Kept as a distinct constant from SKIP_PATH_PREFIXES_FOR_CLASS_EXTRACTION
      * so the two semantics never collide silently.
      */
     public const DEFAULT_SKIP_PATH_PREFIXES_FOR_TOKEN_REFERENCES = [
         'resources/views/_safelist.blade.php',
+        'dist/wirekit-compact.css',
+    ];
+
+    /**
+     * Sheets that Tailwind compiles from the utilities the views write, read neither for
+     * references nor for declarations. The compact sheet holds those utilities under short
+     * names: its `var()` references are Tailwind's theme variables, which the application's
+     * Tailwind build declares from the same sources, and its own declarations are Tailwind's
+     * `--tw-*` internals. The kit's own tokens in those utilities are read where they are
+     * written, in the views.
+     */
+    public const GENERATED_UTILITY_SHEETS = [
+        'dist/wirekit-compact.css',
     ];
 
     /**
@@ -421,7 +436,7 @@ final class ClassInventory
         $declared = [];
 
         foreach (['dist', 'resources'] as $root) {
-            foreach ($this->filesUnder($root, ['css'], []) as $file) {
+            foreach ($this->filesUnder($root, ['css'], self::GENERATED_UTILITY_SHEETS) as $file) {
                 $contents = (string) preg_replace('!/\*.*?\*/!s', '', (string) file_get_contents($file->getPathname()));
 
                 if (preg_match_all('/(--[a-zA-Z0-9_-]+)\s*:/u', $contents, $matches) !== false) {

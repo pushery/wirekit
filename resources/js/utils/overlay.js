@@ -58,6 +58,21 @@ export function isTopmostOverlay(token) {
 }
 
 /**
+ * Whether the overlay that answers `showEvent` for `name` is open.
+ *
+ * A trigger that opens an overlay by name has no handle on it, so it asks the stack, which holds
+ * every open overlay and announces each change with `wirekit-overlay-stack-changed`. The event is
+ * part of the question because a modal and a drawer may share a name and still be two overlays.
+ *
+ * @param {string} showEvent - the event the overlay opens on, such as 'wirekit-drawer-show'
+ * @param {string} name - the overlay's `name`
+ * @returns {boolean}
+ */
+export function isNamedOverlayOpen(showEvent, name) {
+    return name !== '' && overlayStack.some((token) => token.showEvent === showEvent && token.name === name);
+}
+
+/**
  * Broadcast a stack-changed event so every mounted overlay refreshes its
  * `isTopmost` flag. Each Alpine instance listens to this on init and
  * re-evaluates `isTopmostOverlay(stackToken)` against its own token —
@@ -453,9 +468,9 @@ export function createOverlay({
         }
     };
 
-    // Stable token identifying this overlay instance on the global stack —
-    // not a string id, just an object reference equality check works.
-    const stackToken = {};
+    // Stable token identifying this overlay instance on the global stack. Identity is the object
+    // reference; the event and the name are what `isNamedOverlayOpen()` reads from it.
+    const stackToken = { showEvent, name };
 
     // The ancestor chain of whatever was focused when the overlay opened,
     // captured AT OPEN TIME because that is the last moment it is still

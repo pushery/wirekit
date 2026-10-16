@@ -67,10 +67,10 @@
         }
 
         if ($steps >= $max) {
-            return 'var(--color-wk-success)';
+            return 'var(--color-wk-success-text)';
         }
 
-        return $steps <= max(1, intdiv($max, 4)) ? 'var(--color-wk-danger)' : 'var(--color-wk-warning)';
+        return $steps <= max(1, intdiv($max, 4)) ? 'var(--color-wk-danger-text)' : 'var(--color-wk-warning-text)';
     };
 
     $classes = WireKit::resolveClasses('strength-meter', 'base', implode(' ', [

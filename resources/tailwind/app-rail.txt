@@ -32,7 +32,7 @@ $attributes->class([$classes,
 $attributes->class(['relative
 $attributes->except('aria-describedby');
 $attributes->except('rel')->class([$classes,
-$attributes->except('rel')->class(['wk-rail-item',
+$attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\CompactClasses::list(['wk-rail-item',
 $attributes->except(['labels',
 $attributes->except(['labels']);
 $attributes->get('aria-describedby',
@@ -46,10 +46,20 @@ $attributes]
 $badge
 $badge,
 $badgeLabel
+$badgeLabel),
+$badgeLabelLimit));
+$badgeLabel],
+$badgeMore
+$badgeMore,
+$badgeMore])
 $badgeSentence
 $badgeSentence,
 $badgeSentenceId
 $badgeSentenceId])));
+$badgeSentences
+$badgeSentences,
+$badgeSentences[0],
+$badgeShown
 $bag
 $brand
 $buttonCursor
@@ -57,6 +67,7 @@ $buttonReset
 $callerLabel
 $callerLabel,
 $classes
+$classes)
 $classes,
 $computedRel
 $computedRel)
@@ -139,9 +150,16 @@ $seedKey,
 $seedMinWidth
 $seedNonce
 $seedOn
+$sentence
+$sentence)
+$sentence),
+$sentence):
+$sentence.'.',
 $separated
 $separatorClasses
 $separatorClasses])
+$shownSentence
+$shownSentence)
 $slot
 $slot)
 $slot;
@@ -162,6 +180,8 @@ $tone
 $tone,
 $tooltipClasses
 $tooltipId
+$trackAttributes
+$trackCurrent
 $triggerDescribes
 $triggerExplainsDisabled
 $triggerIsButton
@@ -181,6 +201,7 @@ $variant,
 '';
 ')').matches)
 ',
+'.$activeClasses,
 '0'
 '1'
 '1'))
@@ -200,6 +221,7 @@ $variant,
 'as',
 'badge'
 'badgeLabel'
+'badgeLabelLimit'
 'base',
 'below'
 'below',
@@ -213,6 +235,7 @@ $variant,
 'button'
 'button')
 'button',
+'button']));
 'button']);
 'cookie'
 'cookie'.
@@ -239,7 +262,7 @@ $variant,
 'elevated')
 'elevated']);
 'expandable'
-'expandable']);
+'expandable',
 'expanded'
 'false'
 'false'"
@@ -386,6 +409,9 @@ $variant,
 'tooltip',
 'tooltip'])
 'top'),
+'track-current']);
+'trackCurrent'
+'trackCurrent',
 'transition-colors
 'true'
 'true']);
@@ -423,12 +449,15 @@ $variant,
 ($labels)
 ($linkAttributes,
 ($relAttr
+($sentence):
 ($triggerIsButton)
 ()
 (2rem)
 (Js::from
 (Support\CallerListeners).
 (Support\CallerName).
+(Support\CompactClasses).
+(Support\CurrentState).
 (Support\UrlProp).
 (The
 (WCAG
@@ -436,10 +465,13 @@ $variant,
 (`data-wk-tooltip-surface`
 (`expanded`
 (`labels="below"`)
+(`not-[[aria-current]]:`).
+(`x-wk-current`,
 (a
 (an
 (below,
 (cfg.wkSeedOn
+(count($badgeSentences))
 (default)
 (e)
 (even
@@ -449,10 +481,14 @@ $variant,
 (on
 (silent
 (stored
+(string
 (string)
 (the
+(true)
 (v3
+)),
 +
+-
 --}}
 ...$surface,
 ...($truncate
@@ -460,7 +496,10 @@ $variant,
 //
 />
 0
+0)
+0,
 0px
+1
 1.25rem.
 1.4.13
 1.4.13.
@@ -479,6 +518,7 @@ $variant,
 340px
 4.5
 4.75rem
+5,
 5.5rem,
 56px
 6),
@@ -490,6 +530,7 @@ $variant,
 :aria-label="expanded
 :class="expanded
 :class="{
+:count
 :data-expanded="expanded
 :data-labels="expanded
 :data-wk-names="(wide
@@ -536,14 +577,17 @@ $variant,
 @class([
 @else
 @elseif($needsTooltip)
+@endforeach
 @endif
 @endif>
 @endif>{{
 @endif`
 @endisset
 @endphp
+@foreach($badgeShown
 @if(!
 @if($active)
+@if($badgeMore
 @if($badgeSentence
 @if($computedRel)
 @if($disabled)
@@ -561,6 +605,7 @@ $variant,
 @if($seedNonce)nonce="{{
 @if($surface
 @if($tone
+@if($trackCurrent)
 @if($triggerDescribes)
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
@@ -618,6 +663,7 @@ BooleanProp::from($expandable,
 BooleanProp::from($expanded,
 BooleanProp::from($focusableTrigger,
 BooleanProp::from($separated,
+BooleanProp::from($trackCurrent,
 BooleanProp::from($truncate,
 Both
 Bound
@@ -699,6 +745,7 @@ JSON
 JSON.parse(…),
 JavaScript
 KEY,
+Keep
 LIVE
 Landmark
 Leading-aligned,
@@ -774,6 +821,7 @@ SWAPS:
 Same
 See
 Set
+Several
 Shape.
 Sharing
 So
@@ -847,6 +895,7 @@ Written
 ['a',
 ['aria-label'
 ['class'
+['count'
 ['default',
 ['flush',
 ['inverted',
@@ -855,23 +904,29 @@ Written
 ['pill',
 ['tooltip',
 ['x-on:mouseenter',
+[(string)
 []
 []),
+[],
+[];
 [{{
 \Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Support\AlpinePayload::from($persist)
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse
 \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand
-\Pushery\WireKit\Support\AlpinePayload::string($expandedWidth)
 \Pushery\WireKit\Support\AlpinePayload::string($labels)
 \Pushery\WireKit\Support\AlpinePayload::string($persistDriver)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
-\Pushery\WireKit\Support\AlpinePayload::string($restingWidth)
+\Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($expandedWidth))
+\Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($restingWidth))
+\Pushery\WireKit\Support\BooleanProp::from($trackCurrent,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
 \Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\CurrentState::attributes($classes.'
 \Pushery\WireKit\Support\DomId::unique(null,
+\Pushery\WireKit\Support\ListProp::renumbered($badgeLabel);
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
 \Pushery\WireKit\Support\SlotContent::text($slot);
 \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
@@ -927,6 +982,7 @@ __('wirekit::Modules'),
 `=`,
 `@aware`
 `@if(…)
+`@persist`,
 `@props`
 `@props`,
 `AlpinePayload`
@@ -940,8 +996,10 @@ __('wirekit::Modules'),
 `a`
 `a`.
 `absolute`
+`app-rail.item`
 `app-rail`.
 `aria-current`
+`aria-current`,
 `aria-describedby`
 `aria-describedby`:
 `aria-expanded`
@@ -952,6 +1010,7 @@ __('wirekit::Modules'),
 `as="span"`
 `as`
 `badge-label`
+`badgeLabelLimit`
 `badge`.
 `break-words`
 `button`
@@ -1062,6 +1121,7 @@ __('wirekit::Modules'),
 `this.$refs.tooltip`
 `title`,
 `tooltip`
+`track-current`
 `true`
 `truncate`,
 `viewport`
@@ -1080,6 +1140,7 @@ __('wirekit::Modules'),
 `x-show="open"`
 `x-show`
 `x-wirekit::`
+`x-wk-current`
 `{{
 `…#`
 a
@@ -1123,6 +1184,7 @@ after.
 afterwards
 again
 again.
+again:
 against
 agree
 agree,
@@ -1138,6 +1200,7 @@ allowed
 allowlist,
 allowlisting
 allows
+allows,
 alone
 alone,
 alone.
@@ -1200,6 +1263,7 @@ apply,
 arbitrate.
 arcs
 are
+are,
 are.
 area
 area's
@@ -1227,6 +1291,10 @@ array
 array.
 array_filter([
 array_filter([(string)
+array_map(
+array_map(static
+array_slice($badgeSentences,
+array_values(array_filter(
 arrival
 arrive
 arrives
@@ -1280,6 +1348,7 @@ bare
 bare,
 bare.)
 base
+base,
 be
 be,
 beat
@@ -1317,6 +1386,7 @@ block:
 blocks:
 blueprint
 body
+bool
 boolean
 booleans
 boots,
@@ -1554,6 +1624,8 @@ costs
 costs:
 could
 count
+count($badgeSentences)
+count($badgeShown);
 counted
 counter
 counter's
@@ -1631,8 +1703,8 @@ derivation.
 derived
 descendant
 descendants
+describe
 described
-describes
 description
 description:
 design,
@@ -1823,6 +1895,7 @@ fallback
 fallback,
 falls
 false
+false)
 false);
 false,
 false;
@@ -1870,6 +1943,7 @@ float.
 floating
 flow
 flow.
+fn
 focus
 focus,
 focus-visible:outline-hidden
@@ -2112,6 +2186,7 @@ is
 is,
 is.
 is:
+is_array($badgeLabel)
 isolate`
 isset($content)
 isset($footer),
@@ -2124,6 +2199,7 @@ it;
 item
 item's
 item,
+item.
 items
 items-center
 items-center',
@@ -2196,10 +2272,12 @@ let
 lets
 lies
 like
+limit
 line
 line,
 line.
 lines
+lines:
 link
 link's
 link,
@@ -2259,9 +2337,11 @@ mask-image:
 masked
 mass
 match
+matches
 matching
 matter:
 matters
+max(1,
 may
 mean
 means
@@ -2305,6 +2385,8 @@ modules'
 modules,
 moment
 moments.
+more
+more',
 morph
 most
 most.
@@ -2508,6 +2590,7 @@ passthrough
 past
 patch,
 patches
+pauses
 payload
 pays
 pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))]
@@ -2520,6 +2603,7 @@ per-instance
 per-mode
 percentage
 perfectly
+period,
 permanently
 persist:
 persistDriver:
@@ -2566,6 +2650,7 @@ practice,
 preference
 preflight
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
+preg_match('/[.!?…:;]$/u',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preprocessor
@@ -2817,6 +2902,8 @@ sentence
 sentence,
 sentence.
 sentence:
+sentences
+sentences,
 separator
 sequence
 server
@@ -3124,6 +3211,7 @@ tracking
 tracks
 trade
 trailing
+trans_choice('wirekit::and
 transformed
 transition
 transition,
@@ -3217,6 +3305,7 @@ utilities
 utilities.
 utility
 utility,
+utils/current.js).
 v4's
 valid
 valuable
@@ -3247,7 +3336,9 @@ visible
 visible,
 visible-or-not
 visibly
+visit
 visit,
+visits
 visual
 visually
 visually,
@@ -3258,7 +3349,9 @@ w-[var(--size-wk-sm,2rem)]',
 w-full
 w-max
 wait
+wait,
 wait.
+waiting
 waits,
 waits.
 walk
@@ -3267,6 +3360,7 @@ wants.
 warning
 warns
 was
+was;
 way
 way,
 way.
@@ -3377,6 +3471,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
+x-wk-current
 xs
 yet.
 you

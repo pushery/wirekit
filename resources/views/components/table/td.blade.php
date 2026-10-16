@@ -97,8 +97,10 @@
         // Compact variant: reduce vertical padding to match th
         '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
         // Sticky first column: freeze the leading body cell. Solid background so
-        // scrolling cells don't show through (the frozen column reads as solid even
-        // on striped tables — the standard frozen-column convention).
+        // scrolling cells don't show through. The stylesheet paints it in the surface the
+        // cell stands on, so on a striped or a hovered row it wears the row's color, and it
+        // lets the table's own lines show through its edges (dist/wirekit.css, the frozen
+        // cells of the component's own tables).
         '[table[data-wk-sticky-column]_&:first-child]:sticky',
         // LOGICAL, not the physical `left` inset. Writing direction does not move a physical edge:
         // under `dir="rtl"` the first column renders on the right, and `left: 0` pinned it to the

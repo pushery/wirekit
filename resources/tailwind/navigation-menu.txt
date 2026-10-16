@@ -10,6 +10,8 @@ $attributes
 $attributes->class('relative')
 $attributes->class(['wk-navigation-menu',
 $attributes->except('rel')->class(['wk-touch-row',
+$attributes->except('rel')->merge($trackAttributes)->class(['wk-touch-row',
+$attributes->except(['trackCurrent',
 $attributes->get('rel',
 $attributes->get('target',
 $attributes->getAttributes());
@@ -21,10 +23,14 @@ $classes])
 $colorClasses
 $colorClasses])
 $computedRel
+$currentColor
 $el)"
 $finalRel
 $hasPanel
 $href
+$idleColor
+$idleColor)
+$idleColor;
 $name
 $name),
 $name`
@@ -40,6 +46,8 @@ $slot
 $slot->hasActualContent()
 $slug
 $targetAttr
+$trackAttributes
+$trackCurrent
 $trigger
 $trigger);
 $triggerClasses
@@ -86,6 +94,8 @@ $triggerClasses])
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text)]';
 'text-[length:var(--text-wk-md)]',
+'track-current']);
+'trackCurrent'
 'transition-colors',
 'trigger'
 'trigger',
@@ -98,8 +108,10 @@ $triggerClasses])
 ($relAttr
 (4px).
 (Support\CallerListeners).
+(Support\CurrentState).
 (Support\UrlProp).
 (WCAG
+(`x-wk-current`,
 (activeItem
 (and
 (avoids
@@ -151,6 +163,7 @@ $triggerClasses])
 >
 ?
 ?:
+@aware(['trackCurrent'
 @else
 @endif
 @endphp
@@ -159,6 +172,7 @@ $triggerClasses])
 @if($computedRel)
 @if($href)
 @if($opensNewTab)
+@if($trackCurrent)
 @php
 @props([
 @props.
@@ -172,6 +186,7 @@ Auto-inject
 BOTH
 Blade
 BooleanProp::from($active,
+BooleanProp::from($trackCurrent,
 Both
 COUNTED,
 CallerRef::onRoot()
@@ -194,6 +209,7 @@ It
 Its
 JS
 KEY,
+Keep
 Leaving
 Left/Right
 Livewire
@@ -230,6 +246,7 @@ Trigger
 UI
 UNBOUND
 URL
+Under
 Uses
 We
 WireKit::resolveClasses('navigation-menu',
@@ -240,10 +257,12 @@ Without
 Wrapped
 [
 ['x-on:keydown',
+[];
 \Illuminate\Support\Str::slug((string)
 \Pushery\WireKit\Support\AlpinePayload::string($name)
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\CurrentState::attributes($currentColor,
 \Pushery\WireKit\Support\DomId::unique($name.'-panel',
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\UrlProp::text($href);
@@ -256,9 +275,12 @@ __('wirekit::(opens
 __('wirekit::Main
 `<template
 `<x-wirekit::navigation-menu.item
+`@aware`
+`@persist`,
 `_x_dataStack`,
 `activeItem
 `activeItem`
+`aria-current`,
 `before:`
 `cloneNode(true)`,
 `contain`
@@ -269,15 +291,20 @@ __('wirekit::Main
 `position:
 `prop="false"`
 `this.$refs['panel-<name>']`
+`track-current="false"`
+`track-current`
+`track-current`:
 `transform`
 `trigger`
 `wire:id`,
 `wire:key`,
+`wire:navigate`
 `wk-`
 `wk-navigation-menu`
 `x-data`
 `x-ref`
 `x-show`
+`x-wk-current`
 a
 a11y
 above
@@ -285,8 +312,10 @@ above.
 accessible
 across
 actually
+address
 after
 again.
+again:
 against
 agree
 already
@@ -314,6 +343,7 @@ as,
 at
 attribute
 attribute,
+attribute.
 attributes
 authors
 auto-derived
@@ -322,9 +352,11 @@ axe-core's
 back
 back.
 bag
+bag,
 bag:
 bar
 bar's
+bar.
 base
 be
 before
@@ -361,6 +393,7 @@ canonical
 capped
 caps
 carried
+carries
 carry
 cast
 causing
@@ -403,6 +436,7 @@ creates
 cross
 cross-menu
 crosses
+current
 d="m19.5
 data-wk-nav-panel-scroll
 data-wk-nav-panel="{{
@@ -448,6 +482,7 @@ element
 emits.
 end
 entered
+entry
 escaped
 escapes
 establishes
@@ -463,8 +498,10 @@ explicit-prop
 fails.
 fall
 falls
+false)
 false);
 false,
+false])
 feature
 fill="none"
 fire
@@ -486,7 +523,7 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
 focused
 focusing
-font-[number:var(--font-wk-heading-weight)]'
+font-[number:var(--font-wk-heading-weight)]';
 for
 forbid
 forces
@@ -511,6 +548,7 @@ handlers
 hands
 hardcoded
 has
+has,
 hears
 height
 helper
@@ -529,6 +567,7 @@ id,
 id="{{
 identity
 identity,
+idle
 illustrative
 implode('
 imports
@@ -557,6 +596,7 @@ items-center',
 items.
 its
 itself
+itself;
 just
 keep
 keeps
@@ -569,6 +609,7 @@ label
 label,
 lands
 later
+leaves
 left
 link
 link's
@@ -580,6 +621,7 @@ listener,
 listener.
 listens
 live
+lives
 location.
 longer
 makes
@@ -593,6 +635,7 @@ may
 mean
 mega-menu
 menu
+menu's
 menu).
 menu.
 menu:
@@ -611,6 +654,7 @@ move
 move,
 moved
 movement
+moves
 moving
 must
 n/a
@@ -673,6 +717,7 @@ other
 otherwise
 our
 out
+outside
 outside-tap
 over:
 overflow
@@ -685,6 +730,7 @@ own.
 owns,
 p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 padding
+page
 panel
 panel's
 panel,
@@ -812,6 +858,7 @@ stop
 stops,
 str_contains($relAttr,
 str_contains($targetAttr,
+stray
 string,
 stroke-linecap="round"
 stroke-linejoin="round"
@@ -842,12 +889,14 @@ there
 they
 things
 this
+those
 to
 to.
 token
 too,
 top-level
 touch
+tracking
 transformed
 transition-transform
 translate-y-0"
@@ -861,9 +910,12 @@ trigger→panel
 trim($relAttr.'
 true
 truthy
+truthy,
+turn
 twice
 two
 type="button"
+unbound
 under
 uniqid()
 unknown
@@ -871,6 +923,7 @@ update
 use
 used
 utility
+utils/current.js).
 value
 value;
 vanish
@@ -880,6 +933,9 @@ view,
 viewBox="0
 viewport
 viewport.
+visit
+visit.
+visits
 was
 way.
 well-formed
@@ -891,6 +947,7 @@ which
 while
 who
 whole
+whose
 wide
 window.
 wire:key="wk-nav-panel-{{
@@ -928,6 +985,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0
 x-transition:leave-start="opacity-100
 x-transition:leave="transition
+x-wk-current
 z-[var(--z-wk-dropdown)]',
 zone
 {{

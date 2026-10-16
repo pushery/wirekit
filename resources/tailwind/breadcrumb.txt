@@ -14,8 +14,8 @@
 $actions
 $actionsClasses
 $ancestorClasses
-$attributes->class([$iconClasses]);
 $attributes->class([$navClasses])
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
 $attributes->get('role');

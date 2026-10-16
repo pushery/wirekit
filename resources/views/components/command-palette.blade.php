@@ -140,7 +140,7 @@
     // The palette is teleported, or fixed where it is not, so it takes no room where it is
     // written. Its root generates no box, which a flex or grid container would otherwise count
     // as an empty item with a gap of its own beside it.
-    $attributes = $attributes->class(['contents']);
+    $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
 @endphp
 
 <div

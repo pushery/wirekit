@@ -87,6 +87,11 @@
     // re-rendered on its own still carries the id the dialog's aria-labelledby names.
     $titleId = $name !== null ? 'wk-drawer-title-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-drawer-title-');
 
+    // The dialog's id, which a `drawer.trigger` naming this drawer points `aria-controls` at while
+    // the drawer is open. Only a named drawer has one, since a trigger can address a drawer only by
+    // name. A second drawer of the same name on the page takes a suffix and keeps its own id.
+    $dialogId = filled($name) ? \Pushery\WireKit\Support\DomId::distinct('wk-drawer-dialog-'.$name) : null;
+
     // Backdrop classes — semi-transparent overlay behind the drawer
     // A caller-supplied `aria-label` names the DIALOG, not the wrapper it was landing on.
     // `{{ $attributes }}` sits on the roleless outer element, so `<x-wirekit::drawer
@@ -198,7 +203,7 @@
     // The drawer is teleported, so nothing of it shows where it is written. Its root generates no
     // box, which a flex or grid container would otherwise count as an empty item with a gap of
     // its own beside it.
-    $attributes = $attributes->class(['contents']);
+    $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
 @endphp
 
 {{-- Drawer component — slides in from the edge of the screen.
@@ -247,6 +252,7 @@
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="{{ $enterStart }}"
                 x-transition:enter-end="{{ $enterEnd }}"
+                @if($dialogId !== null) id="{{ $dialogId }}" @endif
                 role="dialog"
                 {{-- Dynamic aria-modal so a stacked drawer-over-modal (or
                      nested drawer) pair only marks the topmost as modal. --}}

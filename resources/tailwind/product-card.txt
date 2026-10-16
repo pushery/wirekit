@@ -73,8 +73,8 @@ $attributes
 $attributes->class([$baseClasses])
 $attributes->class([$classes])
 $attributes->class([$figureClasses])
-$attributes->class([$iconClasses]);
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('autofocus');
 $attributes->except('class')->class([$classes])
 $attributes->except('form');
@@ -90,6 +90,7 @@ $attributes->get('class',
 $attributes->get('name'),
 $attributes->get('rel',
 $attributes->get('role');
+$attributes->get('style',
 $attributes->get('target',
 $attributes->get('x-ref',
 $attributes->getAttributes());
@@ -98,6 +99,7 @@ $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge
 $attributes->merge($depthStyle
+$attributes->merge(['style'
 $attributes->whereStartsWith('wire:model')
 $attributes]
 $availability
@@ -340,6 +342,7 @@ $ratingValue
 $ratio
 $readonly
 $readonly;
+$recolored
 $relAttr
 $relAttr;
 $required
@@ -451,9 +454,11 @@ $wrapperClasses
 ''"
 '')
 ''))
+'')));
 '')),
 '')).'
 ''));
+''),
 '').'
 '').($disabled
 '');
@@ -461,8 +466,11 @@ $wrapperClasses
 '';
 '+'
 ',
+'--color-wk-warning')
+'--color-wk-warning:');
 '--wk-button-square:
 '--wk-fit-floor:
+'--wk-rating-fill:
 '-1'
 '-1'"
 '.
@@ -473,6 +481,7 @@ $wrapperClasses
 '.$iconOnlySquareToken.';']);
 '.$max.($clearable
 '.$message);
+'.$wrapperClasses,
 '.($helpId
 '.($requiredMessageClass
 '.($requiredMessageId
@@ -546,24 +555,25 @@ $wrapperClasses
 'bg-[var(--color-wk-accent)]
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-accent-fg)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg)]',
 'bg-[var(--color-wk-bg-elevated)]',
 'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-danger)]
-'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
+'bg-[var(--color-wk-danger-text)]',
 'bg-[var(--color-wk-info-fg)]',
+'bg-[var(--color-wk-info-text)]',
 'bg-[var(--color-wk-info-tone)]
-'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]
-'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-success-fg)]',
+'bg-[var(--color-wk-success-text)]',
 'bg-[var(--color-wk-text)]
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-tooltip-bg)]',
 'bg-[var(--color-wk-warning)]
-'bg-[var(--color-wk-warning)]',
 'bg-[var(--color-wk-warning-fg)]',
+'bg-[var(--color-wk-warning-text)]',
 'bg-transparent
 'bind'
 'block',
@@ -852,8 +862,8 @@ $wrapperClasses
 'text-[color:var(--color-wk-text-muted)]',
 'text-[color:var(--color-wk-text-subtle)]
 'text-[color:var(--color-wk-tooltip-text)]',
-'text-[color:var(--color-wk-warning)]
 'text-[color:var(--color-wk-warning-text)]',
+'text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 'text-[length:var(--text-wk-lg)]
 'text-[length:var(--text-wk-lg)]',
 'text-[length:var(--text-wk-md)]
@@ -942,6 +952,7 @@ $wrapperClasses
 ($forceLoading)
 ($formattedBase
 ($from)
+($helpName
 ($hint
 ($iconOnly
 ($iconOnly)
@@ -956,6 +967,7 @@ $wrapperClasses
 ($orientation
 ($precision
 ($rating
+($recolored)
 ($relAttr
 ($resolvedAriaHidden
 ($shouldSetHidden)
@@ -1200,6 +1212,7 @@ $wrapperClasses
 2-2V5a2
 2.09C13.09
 2.1.1).
+2.13:1.
 2.2
 2.25
 2.4.3
@@ -1252,6 +1265,7 @@ $wrapperClasses
 360px
 390px
 393px
+3:1
 3;
 3a2
 3c1.74
@@ -2120,6 +2134,7 @@ __toString
 `$size`
 `$this->validate()`
 `+`
+`--color-wk-warning`
 `--font-wk-body-weight`
 `--opacity-wk-hover`
 `--text-wk-fit-floor`
@@ -2816,6 +2831,7 @@ breakpoint
 breakpoint,
 breakpoint:
 breakpoints
+breaks
 breathless
 brighter,
 browser
@@ -3334,6 +3350,7 @@ down
 download
 draw
 drawer
+drawing
 drawn
 draws
 drift
@@ -3428,6 +3445,7 @@ evaluated
 evaluates
 even
 event
+event's
 event,
 event.
 event:
@@ -3515,8 +3533,8 @@ file.
 files
 fill
 fill,
-fill-[var(--color-wk-warning)]
-fill-[var(--color-wk-warning)]'
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]'
 fill-none
 fill-none'
 fill-none'"
@@ -3713,6 +3731,7 @@ go
 goes
 goods
 grammar.
+graphic,
 gray
 greater
 grid
@@ -3903,6 +3922,7 @@ included,
 included.
 including
 incorrect
+indentation,
 indicator
 indicator,
 inert
@@ -3946,6 +3966,7 @@ intact
 integers.
 integration
 intent
+intent's
 intent)
 intent,
 intent.
@@ -4082,6 +4103,7 @@ left
 left-to-right;
 left.
 legally
+legend
 legitimately
 length
 length,
@@ -4580,6 +4602,7 @@ permanent
 permanently,
 person
 personalization
+personalized
 phase,
 phone
 phone,
@@ -4796,6 +4819,8 @@ rebuilds.
 receive
 receiver,
 receives
+recolored
+recolored.
 record
 records
 rectangle.
@@ -5022,8 +5047,10 @@ server-side
 set
 set.
 sets
+setting
 settles
 setup
+several
 several,
 several.
 shadow
@@ -5220,6 +5247,7 @@ still
 stock
 stock')
 stock.
+stood
 stop
 stop,
 stop:
@@ -5229,6 +5257,7 @@ story
 story:
 str_contains($relAttr,
 str_contains($targetAttr,
+str_contains((string)
 str_starts_with($key,
 straight
 strategy:
@@ -5384,9 +5413,9 @@ text-[color:var(--color-wk-text-muted)]">
 text-[color:var(--color-wk-text-muted)]">'.e(__('wirekit::from')).'</span>';
 text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-text-subtle)]
-text-[color:var(--color-wk-warning)]
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 text-[length:var(--text-wk-sm)]
 text-[length:var(--text-wk-sm)]">
 text-[length:var(--text-wk-xs)]">
@@ -5396,6 +5425,7 @@ text-level
 text-muted
 text.
 text/bg/border
+text:
 text;
 than
 than.
@@ -5477,6 +5507,7 @@ token:
 tokens
 tokens.
 told
+tone,
 too
 too,
 too.
@@ -5643,6 +5674,7 @@ var(--color-wk-X)
 var(--color-wk-bg))
 var(--color-wk-text)
 var(--color-wk-text-muted);
+var(--color-wk-warning);']);
 var(--shadow-wk-badge,
 variable
 variant

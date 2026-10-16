@@ -44,12 +44,12 @@
     // alias links use; accent-text defaults to near-black, which would strip the
     // brand color from an accent spinner, which the accent-as-text repoint exempts.
     $intentColors = [
-        'accent' => 'text-[color:var(--color-wk-accent)]',
-        'primary' => 'text-[color:var(--color-wk-accent)]',
-        'info' => 'text-[color:var(--color-wk-info-tone)]',
-        'success' => 'text-[color:var(--color-wk-success)]',
-        'warning' => 'text-[color:var(--color-wk-warning)]',
-        'danger' => 'text-[color:var(--color-wk-danger)]',
+        'accent' => 'text-[color:var(--color-wk-accent-text)]',
+        'primary' => 'text-[color:var(--color-wk-accent-text)]',
+        'info' => 'text-[color:var(--color-wk-info-text)]',
+        'success' => 'text-[color:var(--color-wk-success-text)]',
+        'warning' => 'text-[color:var(--color-wk-warning-text)]',
+        'danger' => 'text-[color:var(--color-wk-danger-text)]',
         'neutral' => 'text-[color:var(--color-wk-text-muted)]',
     ];
     if ($intent === null || $intent === '') {

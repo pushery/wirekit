@@ -353,6 +353,34 @@
             "code": "<x-wirekit::carousel :loop=\"false\">\n    <x-wirekit::carousel.slide>\n        <div style=\"padding: 3rem 2rem; text-align: center;\">First slide — Previous button is disabled.</div>\n    </x-wirekit::carousel.slide>\n    <x-wirekit::carousel.slide>\n        <div style=\"padding: 3rem 2rem; text-align: center;\">Last slide — Next button is disabled.</div>\n    </x-wirekit::carousel.slide>\n</x-wirekit::carousel>"
         }
     ],
+    "cart-list": [
+        {
+            "title": "A cart with three lines",
+            "code": "<x-wirekit::cart-list>\n    <x-wirekit::cart-item\n        name=\"Brass desk lamp\"\n        image=\"/placeholder/400x400?bg=fde68a&fg=78350f&label=Lamp&gradient=none\"\n        :price=\"3900\"\n        :compare-at=\"5900\"\n        :minor-units=\"true\"\n        currency=\"EUR\"\n        :quantity=\"1\"\n        :line-total=\"3900\"\n    >\n        Warm white · Dimmable\n    </x-wirekit::cart-item>\n    <x-wirekit::cart-item\n        name=\"Walnut notebook\"\n        image=\"/placeholder/400x400?bg=d6d3d1&fg=1c1917&label=Notebook&gradient=none\"\n        :price=\"1200\"\n        :minor-units=\"true\"\n        currency=\"EUR\"\n        :quantity=\"2\"\n        :line-total=\"2400\"\n    >\n        A5 · Dotted\n    </x-wirekit::cart-item>\n    <x-wirekit::cart-item\n        name=\"Merino crew\"\n        image=\"/placeholder/400x400?bg=cbd5e1&fg=0f172a&label=Crew&gradient=none\"\n        :price=\"8900\"\n        :minor-units=\"true\"\n        currency=\"EUR\"\n        :quantity=\"1\"\n        :line-total=\"8900\"\n        :max=\"3\"\n    >\n        Charcoal · M\n    </x-wirekit::cart-item>\n</x-wirekit::cart-list>"
+        },
+        {
+            "title": "A line on sale",
+            "code": "<x-wirekit::cart-list label=\"Sale items\">\n    <x-wirekit::cart-item\n        name=\"Brass desk lamp\"\n        :price=\"3900\"\n        :compare-at=\"5900\"\n        :minor-units=\"true\"\n        currency=\"EUR\"\n        :line-total=\"3900\"\n    />\n</x-wirekit::cart-list>"
+        },
+        {
+            "title": "Stock ceiling and a unit suffix",
+            "code": "<x-wirekit::cart-list label=\"Quantities\">\n    <x-wirekit::cart-item name=\"Merino crew\" :price=\"8900\" :minor-units=\"true\" currency=\"EUR\" :quantity=\"3\" :max=\"3\" :line-total=\"26700\" />\n    <x-wirekit::cart-item name=\"Loose-leaf tea\" :price=\"1450\" :minor-units=\"true\" currency=\"EUR\" :quantity=\"2\" unit=\"kg\" :step=\"1\" :line-total=\"2900\" />\n</x-wirekit::cart-list>"
+        }
+    ],
+    "cart-summary": [
+        {
+            "title": "An order summary",
+            "code": "<x-wirekit::cart-summary\n    :subtotal=\"12400\"\n    :discount=\"500\"\n    :shipping=\"450\"\n    :tax=\"2356\"\n    :total=\"14706\"\n    :minor-units=\"true\"\n    currency=\"EUR\"\n>\n    <x-slot:actions>\n        <x-wirekit::button>Checkout</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::cart-summary>"
+        },
+        {
+            "title": "A summary with nothing but a subtotal and a total",
+            "code": "<x-wirekit::cart-summary :subtotal=\"12400\" :total=\"12400\" :minor-units=\"true\" currency=\"EUR\" />"
+        },
+        {
+            "title": "Free shipping, and shipping that is not known yet",
+            "code": "<x-wirekit::stack gap=\"lg\">\n    <x-wirekit::cart-summary :subtotal=\"12400\" :shipping=\"0\" :total=\"12400\" :minor-units=\"true\" currency=\"EUR\" />\n    <x-wirekit::cart-summary :subtotal=\"12400\" shipping-note=\"Calculated at checkout\" :total=\"12400\" :minor-units=\"true\" currency=\"EUR\" />\n</x-wirekit::stack>"
+        }
+    ],
     "center": [
         {
             "title": "Centered content",
@@ -662,7 +690,11 @@
     "drawer": [
         {
             "title": "Drawer Panel",
-            "code": "<x-wirekit::drawer name=\"settings-drawer\">\n    <x-wirekit::drawer.header>Settings</x-wirekit::drawer.header>\n    <x-wirekit::drawer.body>Settings form content goes here...</x-wirekit::drawer.body>\n    <x-wirekit::drawer.footer>\n        <x-wirekit::drawer.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::drawer.close>\n        <x-wirekit::button size=\"sm\" wire:click=\"save\">Save</x-wirekit::button>\n    </x-wirekit::drawer.footer>\n</x-wirekit::drawer>\n\n<x-wirekit::button @click=\"$dispatch('wirekit-drawer-show', { name: 'settings-drawer' })\">\n    Open Drawer\n</x-wirekit::button>"
+            "code": "<x-wirekit::drawer.trigger for=\"settings-drawer\">Open Drawer</x-wirekit::drawer.trigger>\n\n<x-wirekit::drawer name=\"settings-drawer\">\n    <x-wirekit::drawer.header>Settings</x-wirekit::drawer.header>\n    <x-wirekit::drawer.body>Settings form content goes here...</x-wirekit::drawer.body>\n    <x-wirekit::drawer.footer>\n        <x-wirekit::drawer.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::drawer.close>\n        <x-wirekit::button size=\"sm\" wire:click=\"save\">Save</x-wirekit::button>\n    </x-wirekit::drawer.footer>\n</x-wirekit::drawer>"
+        },
+        {
+            "title": "Filters in a drawer from the bottom",
+            "code": "<x-wirekit::drawer.trigger for=\"filters-preview\" intent=\"neutral\" surface=\"outline\">Filters</x-wirekit::drawer.trigger>\n\n<x-wirekit::drawer name=\"filters-preview\" position=\"bottom\">\n    <x-wirekit::drawer.header>Filters</x-wirekit::drawer.header>\n\n    <x-wirekit::drawer.body>\n        <x-wirekit::checkbox name=\"in-stock\" label=\"In stock only\" />\n    </x-wirekit::drawer.body>\n</x-wirekit::drawer>"
         }
     ],
     "dropdown": [
@@ -705,6 +737,20 @@
         {
             "title": "Custom SVG via iconSlot",
             "code": "<x-wirekit::empty-state title=\"Nothing here\" description=\"Add your first project to get started.\">\n    <x-slot:iconSlot>\n        <svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\" style=\"height: 3rem; width: 3rem;\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\" /></svg>\n    </x-slot:iconSlot>\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Create Project</x-wirekit::button>\n</x-wirekit::empty-state>"
+        }
+    ],
+    "energy-label": [
+        {
+            "title": "An energy label with both links",
+            "code": "<x-wirekit::energy-label efficiency=\"B\" href=\"#energy-label\" sheet=\"#product-information-sheet\" />"
+        },
+        {
+            "title": "A price and its energy label in the same size",
+            "code": "<x-wirekit::row gap=\"sm\" align=\"center\" wrap>\n    <x-wirekit::price :amount=\"499\" currency=\"EUR\" size=\"lg\" />\n    <x-wirekit::energy-label efficiency=\"C\" size=\"lg\" href=\"#energy-label\" sheet=\"#product-information-sheet\" />\n</x-wirekit::row>"
+        },
+        {
+            "title": "The seven classes of the current scale",
+            "code": "<x-wirekit::row gap=\"sm\" wrap>\n    <x-wirekit::energy-label efficiency=\"A\" href=\"#label-a\" />\n    <x-wirekit::energy-label efficiency=\"B\" href=\"#label-b\" />\n    <x-wirekit::energy-label efficiency=\"C\" href=\"#label-c\" />\n    <x-wirekit::energy-label efficiency=\"D\" href=\"#label-d\" />\n    <x-wirekit::energy-label efficiency=\"E\" href=\"#label-e\" />\n    <x-wirekit::energy-label efficiency=\"F\" href=\"#label-f\" />\n    <x-wirekit::energy-label efficiency=\"G\" href=\"#label-g\" />\n</x-wirekit::row>"
         }
     ],
     "event-calendar": [
@@ -2233,6 +2279,10 @@
         {
             "title": "The menu variant, with and without its name",
             "code": "<x-wirekit::row gap=\"lg\" align=\"center\" wrap>\n    <x-wirekit::theme-controller variant=\"menu\" />\n    <x-wirekit::theme-controller variant=\"menu\" hide-label />\n</x-wirekit::row>"
+        },
+        {
+            "title": "A theme toggle as tall as the labeled buttons beside it",
+            "code": "<x-wirekit::row gap=\"sm\" align=\"center\" data-wk-touch>\n    <x-wirekit::button size=\"sm\" surface=\"ghost\">Docs</x-wirekit::button>\n    <x-wirekit::button size=\"sm\" surface=\"ghost\">GitHub</x-wirekit::button>\n    <x-wirekit::theme-controller size=\"sm\" surface=\"ghost\" touch-floor />\n</x-wirekit::row>"
         }
     ],
     "ticker": [
@@ -2275,6 +2325,20 @@
         {
             "title": "Timeline with icons",
             "code": "<x-wirekit::timeline>\n    <x-wirekit::timeline.item icon=\"check\" intent=\"success\" time=\"Just now\">\n        <x-slot:title>Deployed</x-slot:title>\n    </x-wirekit::timeline.item>\n    <x-wirekit::timeline.item icon=\"warning\" intent=\"warning\" time=\"5 min ago\">\n        <x-slot:title>Warning issued</x-slot:title>\n    </x-wirekit::timeline.item>\n    <x-wirekit::timeline.item icon=\"close\" intent=\"danger\" time=\"1 hour ago\">\n        <x-slot:title>Build failed</x-slot:title>\n    </x-wirekit::timeline.item>\n</x-wirekit::timeline>"
+        }
+    ],
+    "tire-label": [
+        {
+            "title": "A tire label with both links",
+            "code": "<x-wirekit::tire-label fuel=\"B\" wet-grip=\"A\" noise=\"B\" href=\"#tire-label\" sheet=\"#product-information-sheet\" />"
+        },
+        {
+            "title": "A price and its tire label in the same size",
+            "code": "<x-wirekit::row gap=\"sm\" align=\"center\" wrap>\n    <x-wirekit::price :amount=\"129\" currency=\"EUR\" size=\"lg\" />\n    <x-wirekit::tire-label fuel=\"C\" wet-grip=\"B\" noise=\"A\" size=\"lg\" href=\"#tire-label\" sheet=\"#product-information-sheet\" />\n</x-wirekit::row>"
+        },
+        {
+            "title": "The classes of the three scales",
+            "code": "<x-wirekit::stack gap=\"lg\">\n    <x-wirekit::row gap=\"lg\" wrap>\n        <x-wirekit::tire-label fuel=\"A\" href=\"#fuel-a\" />\n        <x-wirekit::tire-label fuel=\"B\" href=\"#fuel-b\" />\n        <x-wirekit::tire-label fuel=\"C\" href=\"#fuel-c\" />\n        <x-wirekit::tire-label fuel=\"D\" href=\"#fuel-d\" />\n        <x-wirekit::tire-label fuel=\"E\" href=\"#fuel-e\" />\n    </x-wirekit::row>\n    <x-wirekit::row gap=\"lg\" wrap>\n        <x-wirekit::tire-label wet-grip=\"A\" href=\"#grip-a\" />\n        <x-wirekit::tire-label wet-grip=\"B\" href=\"#grip-b\" />\n        <x-wirekit::tire-label wet-grip=\"C\" href=\"#grip-c\" />\n        <x-wirekit::tire-label wet-grip=\"D\" href=\"#grip-d\" />\n        <x-wirekit::tire-label wet-grip=\"E\" href=\"#grip-e\" />\n    </x-wirekit::row>\n    <x-wirekit::row gap=\"lg\" wrap>\n        <x-wirekit::tire-label noise=\"A\" href=\"#noise-a\" />\n        <x-wirekit::tire-label noise=\"B\" href=\"#noise-b\" />\n        <x-wirekit::tire-label noise=\"C\" href=\"#noise-c\" />\n    </x-wirekit::row>\n</x-wirekit::stack>"
         }
     ],
     "toast": [

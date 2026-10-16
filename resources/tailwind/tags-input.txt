@@ -265,6 +265,7 @@ $wkField->takeLabel($fieldId)
 ("Maximum
 ($callerLabelledBy
 ($hasError
+($helpName
 ($optimistic
 ($t)
 ($triggerIsButton)
@@ -1016,6 +1017,7 @@ branch
 brand
 break
 breakable
+breaks
 breathing
 bridge
 browser
@@ -1026,6 +1028,7 @@ bug
 built
 but
 button
+button's
 button's.
 button,
 button:
@@ -1298,6 +1301,7 @@ escapes
 escaping
 evaluated
 event
+event's
 events
 ever
 every
@@ -1515,6 +1519,7 @@ in.
 in:
 in_array('sr-only',
 included.
+indentation,
 indented
 indicator
 inert
@@ -1613,6 +1618,7 @@ leaves
 leaving
 left
 left-vs-right
+legend
 legitimate
 legitimately
 length
@@ -1625,6 +1631,7 @@ like
 limit
 limits
 line
+lines
 link
 linked
 list
@@ -1871,6 +1878,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -2037,6 +2045,7 @@ set's
 set,
 set.
 settles
+several
 shadow.
 shape
 shapes
@@ -2175,6 +2184,7 @@ text-[color:var(--color-wk-text-subtle)]
 text-[length:var(--text-wk-md)]
 text-input
 text-level
+text:
 than
 that
 that,

@@ -129,11 +129,13 @@ $triggerIsButton
 $triggerName
 $wkField->follow($id);
 &&
+'
 ''
 ''">{{
 '')
 ''))
 '')))
+'')));
 '')),
 ''));
 '');
@@ -299,6 +301,7 @@ $wkField->follow($id);
 ($counterValue
 ($hasError
 ($hasSuccess
+($helpName
 ($hint
 ($reserveMessage
 ($size)
@@ -962,6 +965,7 @@ boundary
 box
 box,
 brand
+breaks
 browser
 bubble's
 bubbling,
@@ -969,6 +973,7 @@ bug
 build.
 but
 button
+button's
 button's.
 button,
 button:
@@ -1216,6 +1221,7 @@ escapes
 escaping
 evaluated
 event
+event's
 events
 every
 exactly
@@ -1408,6 +1414,7 @@ in:
 in_array('sr-only',
 in_array(strtolower(trim($counter)),
 included.
+indentation,
 indicator
 inert
 inherits
@@ -1484,6 +1491,7 @@ leave
 leaves
 leaving
 left
+legend
 legible,
 legitimately
 length,
@@ -1732,6 +1740,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -1876,6 +1885,7 @@ set
 set.
 setting
 settles
+several
 shadow.
 shape
 share
@@ -1999,6 +2009,7 @@ text-[length:var(--text-wk-sm)]
 text-[length:var(--text-wk-sm)]">&nbsp;</p>
 text-end
 text-level
+text:
 textarea
 than
 that

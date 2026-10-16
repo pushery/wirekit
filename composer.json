@@ -59,7 +59,8 @@
     "mallardduck/blade-lucide-icons": "Lucide preset — outline glyphs, plus a separate lab catalog",
     "codeat3/blade-phosphor-icons": "Phosphor preset — one glyph catalog in six weight styles",
     "secondnetwork/blade-tabler-icons": "Tabler preset — outline and filled glyphs in the one catalog",
-    "bacon/bacon-qr-code": "Required for the qr-code component — server-side QR code SVG generation"
+    "bacon/bacon-qr-code": "Required for the qr-code component — server-side QR code SVG generation",
+    "laravel/mcp": "Serves wirekit:mcp-serve through the Laravel MCP SDK and its current protocol revisions; without it the command uses its own loop, which speaks revision 2025-06-18 only"
   },
   "autoload": {
     "psr-4": {

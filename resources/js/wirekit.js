@@ -18,12 +18,14 @@ import { registerAnnounceBusyDirective } from './utils/busy-announcer.js';
 import { registerCounterDirective } from './utils/counter.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
+import { registerCurrentDirective } from './utils/current.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
+import { installFocusInvalid } from './utils/focus-invalid.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
@@ -47,6 +49,7 @@ import wirekitSidebarRail from './components/sidebar-rail.js';
 import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
 import wirekitNavbarScroll from './components/navbar-scroll.js';
 import wirekitOverflowNav from './components/overflow-nav.js';
+import wirekitCardDisclosure from './components/card-disclosure.js';
 import wirekitCollapsible from './components/collapsible.js';
 import wirekitTableReorder from './components/table-reorder.js';
 import wirekitSidebarListbox from './components/sidebar-listbox.js';
@@ -186,6 +189,8 @@ function registerComponents() {
     registerInsertTokenDirective(Alpine);
     // A form that holds what its server does not have yet says so. See utils/unsaved.js.
     registerUnsavedDirective(Alpine);
+    // A navigation Livewire keeps across a visit marks the page it arrived at. See utils/current.js.
+    registerCurrentDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
     // A fitted text whose words a script writes keeps its copies in step. See utils/fit-text.js.
@@ -200,6 +205,9 @@ function registerComponents() {
     installScrollInset();
     // A radio the arrow keys reach keeps its focus ring in WebKit. See utils/arrow-focus.js.
     installArrowFocus();
+    // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
+    // See utils/focus-invalid.js.
+    installFocusInvalid();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
@@ -222,6 +230,7 @@ function registerComponents() {
     Alpine.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
     Alpine.data('wirekitNavbarScroll', wirekitNavbarScroll);
     Alpine.data('wirekitOverflowNav', wirekitOverflowNav);
+    Alpine.data('wirekitCardDisclosure', wirekitCardDisclosure);
     Alpine.data('wirekitCollapsible', wirekitCollapsible);
     Alpine.data('wirekitTableReorder', wirekitTableReorder);
     Alpine.data('wirekitSidebarListbox', wirekitSidebarListbox);

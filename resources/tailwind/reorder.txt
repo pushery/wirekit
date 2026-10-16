@@ -29,9 +29,9 @@ $as
 $as);
 $attributes
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
 $attributes->class(['inline-flex
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel');
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');

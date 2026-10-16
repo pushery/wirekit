@@ -40,8 +40,8 @@ $as);
 $attributes
 $attributes);
 $attributes->class([$classes])
-$attributes->class(['contents']);
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
 $attributes->except('aria-describedby')->class([
 $attributes->except('aria-describedby')->class(['wk-field',
 $attributes->except('class')->class([$classes])
@@ -722,6 +722,7 @@ $wrapLabel
 ($forceLoading)
 ($hasError
 ($hasSuccess
+($helpName
 ($hint
 ($href
 ($iconOnly
@@ -2240,6 +2241,7 @@ breakpoint
 breakpoint,
 breakpoint:
 breakpoints
+breaks
 brief
 brighter,
 browser
@@ -2799,6 +2801,7 @@ etc.)
 etc.),
 evaluated
 event
+event's
 event.
 events
 ever
@@ -3202,6 +3205,7 @@ in_array(strtolower(trim($counter)),
 include
 included.
 including
+indentation,
 independently
 indicator
 indicator,
@@ -3361,6 +3365,7 @@ leaves.
 leaving
 left
 left-to-right;
+legend
 legible,
 legitimately
 length,
@@ -3864,6 +3869,7 @@ prefix/suffix:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational

@@ -128,13 +128,13 @@ $wrapperClasses
 'aria-label');
 'aria-labelledby']);
 'base',
-'bg-[var(--color-wk-accent)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg-muted)]',
-'bg-[var(--color-wk-danger)]',
-'bg-[var(--color-wk-info-tone)]',
-'bg-[var(--color-wk-success)]',
+'bg-[var(--color-wk-danger-text)]',
+'bg-[var(--color-wk-info-text)]',
+'bg-[var(--color-wk-success-text)]',
 'bg-[var(--color-wk-text-muted)]',
-'bg-[var(--color-wk-warning)]',
+'bg-[var(--color-wk-warning-text)]',
 'circle',
 'columns'
 'columns',
@@ -152,6 +152,7 @@ $wrapperClasses
 'info'
 'info',
 'inline-flex
+'inset-ring-[length:max(1px,var(--border-wk-width))]
 'intent'
 'intent',
 'label'
@@ -231,6 +232,7 @@ $wrapperClasses
 (A
 (Component
 (Support\CallerName).
+(WCAG
 (Z%)"
 (`--text-wk-2xs`
 (a
@@ -308,6 +310,8 @@ $wrapperClasses
 1.0
 1.0),
 1.0):
+1.09:1
+1.4.11).
 100
 100"
 100",
@@ -666,6 +670,7 @@ beside
 binding
 block,
 blocked
+border
 bound
 branch
 breaking
@@ -760,6 +765,7 @@ could
 count.
 count:
 counts
+covers
 current
 cx="18"
 cy="18"
@@ -811,6 +817,7 @@ element,
 else
 else,
 empty
+ends:
 enough
 enters
 enum;
@@ -835,6 +842,7 @@ falls
 false
 false);
 false,
+far
 feature
 file
 fill
@@ -907,6 +915,7 @@ hit
 holds
 hook
 house
+how
 hue
 id
 id)
@@ -930,6 +939,7 @@ inert,
 info
 inline
 inset-0
+inset-ring-[var(--color-wk-border-strong)]',
 inset-y-0
 inside
 instead
@@ -969,6 +979,7 @@ less
 lg
 lg:grid-cols-3',
 light
+light,
 like
 limit
 limit".
@@ -989,6 +1000,7 @@ logic.
 low-emphasis
 made
 markers
+marks
 match
 matches
 matching
@@ -1093,6 +1105,7 @@ own
 own,
 owns
 package,
+page,
 pairing,
 pairs
 palette
@@ -1158,6 +1171,7 @@ re-renders,
 re-renders:
 re-resolve
 reach
+reached
 reached,
 read
 readable
@@ -1214,6 +1228,7 @@ rule)
 rule),
 run
 rung
+runs.
 same
 says
 scale
@@ -1230,6 +1245,7 @@ set
 set.
 sets
 settled
+shadow,
 shape
 share
 shimmer
@@ -1273,6 +1289,7 @@ static
 stay
 stays
 still
+stood
 stop
 streamed
 streaming).
@@ -1285,6 +1302,7 @@ stroke-linecap="round"
 stroke-width="3"
 stroke="var(--color-wk-bg-muted)"
 stroke="{{
+strong
 style
 style,
 style="grid-column:

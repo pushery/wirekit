@@ -26,7 +26,7 @@ $animate)
 $animateAttr
 $animateAttr;
 $attributes
-$attributes->class([$iconClasses]);
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except(['rel'])->merge($intentTileStyle
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');

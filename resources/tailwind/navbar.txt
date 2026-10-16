@@ -6,8 +6,8 @@ $actionsClasses
 $active
 $attributes
 $attributes->class([$navClasses,
-$attributes->except('rel')->class(['wk-touch-row',
-$attributes->except(['density']);
+$attributes->except('rel')->merge($trackAttributes)->class(['wk-touch-row',
+$attributes->except(['density',
 $attributes->get('id'))
 $attributes->get('rel',
 $attributes->get('target',
@@ -23,6 +23,7 @@ $compact
 $computedRel
 $container
 $containerClasses
+$currentColor
 $density
 $density,
 $finalRel
@@ -30,6 +31,9 @@ $forceMobile
 $forceMobile)
 $hamburgerClasses
 $href
+$idleColor
+$idleColor)
+$idleColor;
 $isContainerWrapped
 $max
 $max,
@@ -55,6 +59,8 @@ $sticky
 $stickyClasses
 $stickyClasses])
 $targetAttr
+$trackAttributes
+$trackCurrent
 $variantClasses
 $variantClasses,
 &&
@@ -82,7 +88,6 @@ $variantClasses,
 'container',
 'default'),
 'default',
-'default'])
 'density'
 'density',
 'duration-[var(--transition-wk-duration)]',
@@ -135,10 +140,13 @@ $variantClasses,
 'sticky
 'sticky'
 'text-[color:var(--color-wk-accent-text)]
-'text-[color:var(--color-wk-text)]',
+'text-[color:var(--color-wk-text)]';
 'text-[color:var(--color-wk-text-muted)]
 'text-[length:var(--text-wk-md)]',
 'text-[length:var(--text-wk-sm)]'
+'track-current']);
+'trackCurrent'
+'trackCurrent',
 'transition-colors',
 'transparent'
 'transparent')
@@ -159,10 +167,12 @@ $variantClasses,
 (40)
 (50),
 (Support\CallerListeners).
+(Support\CurrentState).
 (Support\UrlProp).
 (WireKit::validateProp('navbar',
 (`--wk-strip-inset`,
 (`aria-current="page"`,
+(`x-wk-current`,
 (a
 (a)
 (b)
@@ -175,7 +185,6 @@ $variantClasses,
 (see
 (silent
 (the
-(true)
 (viewport
 (with
 );
@@ -240,6 +249,7 @@ $variantClasses,
 @if($opensNewTab)
 @if($scroll)
 @if($sticky)
+@if($trackCurrent)
 @isset($actions)
 @isset($brand)
 @php
@@ -259,6 +269,7 @@ BooleanProp::from($active,
 BooleanProp::from($container,
 BooleanProp::from($forceMobile,
 BooleanProp::from($sticky,
+BooleanProp::from($trackCurrent,
 Both
 Brand
 CHROME
@@ -283,6 +294,8 @@ Harmless
 Hiding
 How
 INSIDE
+Keep
+Livewire
 Logo
 Mirrors
 Mobile
@@ -309,6 +322,7 @@ The
 This
 UNBOUND
 URL
+Under
 Useful
 Variants:
 What
@@ -325,8 +339,10 @@ With
 ['menu',
 ['sm',
 ['x-on:keydown.escape']);
+[];
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\CurrentState::attributes($currentColor,
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\Support\UtilityClasses::BACKGROUND_COLOR,
@@ -347,10 +363,11 @@ __('wirekit::Toggle
 `<p>`
 `<x-wirekit::text>`,
 `@aware`
+`@persist`,
 `active`
 `aria-controls`
+`aria-current="page"`,
 `aria-label`
-`bg-[var(…)]`.
 `bg-transparent`
 `box-sizing:
 `calc(a+2*b)`
@@ -383,11 +400,15 @@ __('wirekit::Toggle
 `px-[var(--padding-wk-x-lg)]`
 `scroll`
 `sm/md/lg/xl/2xl/full`.
+`track-current`
+`track-current`:
+`wire:navigate`
 `wk-navbar-mobile`
 `wk-navbar-scroll`
 `wk-scroll-fade`
 `x-ref`
 `x-show`
+`x-wk-current`
 `xl`
 a
 able
@@ -397,12 +418,15 @@ above.
 above:
 absent
 account
+across
 action
 action;
 actions
 actions)
 active
+address
 after
+again:
 against
 align
 aligns
@@ -421,6 +445,7 @@ app
 appear
 appends
 arbitrary
+arbitrary-value
 are
 aria-controls="{{
 aria-current="page"
@@ -487,6 +512,7 @@ breakpoint
 breakpoint,
 breakpoint.
 brings
+browser
 browser,
 button
 button.
@@ -506,6 +532,7 @@ carry
 cast
 child,
 class
+class.
 class="flex
 class="shrink-0
 class="sr-only">{{
@@ -564,7 +591,7 @@ default,
 defeat
 demo
 dense
-density:
+density
 derives
 desktop
 developer
@@ -617,9 +644,11 @@ fades
 fallback
 false
 false"
+false)
 false),
 false);
 false,
+false])
 feature
 fill="none"
 filter_var($container,
@@ -646,7 +675,7 @@ focus:outline-hidden
 folds
 follow.
 follows
-font-[number:var(--font-wk-heading-weight)]',
+font-[number:var(--font-wk-heading-weight)]';
 for
 forward
 from
@@ -678,6 +707,7 @@ held
 hence
 here
 here,
+here.
 hidden
 hidden).
 hides
@@ -685,7 +715,7 @@ hint
 horizontal
 hover,
 hover:bg-[var(--color-wk-bg-hover)]
-hover:text-[color:var(--color-wk-text)]',
+hover:text-[color:var(--color-wk-text)]'
 how
 href="{{
 icon
@@ -696,6 +726,7 @@ id,
 id:
 id="{{
 identical
+idle
 ids
 ids,
 if
@@ -768,6 +799,7 @@ marketing
 marketing-landing-page
 markup.
 match
+matches
 matters,
 max-width
 may
@@ -1042,6 +1074,7 @@ them.
 then
 there
 this
+those
 tier
 tier)
 tier,
@@ -1079,6 +1112,7 @@ unknown
 unspaced.
 up
 use
+utils/current.js).
 values
 verbatim
 vertical
@@ -1092,6 +1126,9 @@ viewport-breakpoint
 views,
 visible
 visible,
+visit
+visit:
+visits
 want
 wants
 was
@@ -1138,6 +1175,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0
 x-transition:leave-start="opacity-100
 x-transition:leave="transition
+x-wk-current
 x-wk-focus-first="mobileOpen"
 you
 z-[var(--z-wk-chrome)]'

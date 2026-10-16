@@ -5,6 +5,7 @@
 "+3"
 "+7").
 "+N"
+".($total
 "4
 "4".
 "4,0".
@@ -25,6 +26,7 @@
 "figure"
 "no
 "nothing
+"outline:
 "set
 "take
 $after->hasActualContent();
@@ -49,10 +51,12 @@ $attributes->except(['id',
 $attributes->get('aria-describedby',
 $attributes->get('class',
 $attributes->get('name'),
+$attributes->get('style',
 $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->merge($avatarStyle
 $attributes->merge(['data-size'
+$attributes->merge(['style'
 $attributes->whereStartsWith('wire:model')
 $attributes]
 $author
@@ -94,6 +98,7 @@ $fromInitialsStyle
 $fullStars
 $fullStars;
 $gap
+$gap)."px
 $groupClasses
 $hasAfter
 $hasLabelAfter
@@ -156,6 +161,7 @@ $ratingSeed
 $ratingValue
 $readonly
 $readonly;
+$recolored
 $remaining
 $required
 $requiredDisabled
@@ -166,6 +172,7 @@ $requiredMessageId
 $requiredMessageId])
 $ringColor
 $ringWidth
+$ringWidth)."px
 $ringWidth;
 $role
 $scope);
@@ -224,8 +231,10 @@ $wrapperClasses
 ''"
 '')
 ''))
+'')));
 '')).'
 ''));
+''),
 '').'
 '').'min-width:
 '').($disabled
@@ -233,11 +242,15 @@ $wrapperClasses
 '';
 ''])));
 ',
+'--color-wk-warning')
+'--color-wk-warning:');
+'--wk-rating-fill:
 '-1'
 '-1'"
 '.$attributes->get('class',
 '.$callerDescribedBy);
 '.$max.($clearable
+'.$wrapperClasses,
 '.($helpId
 '.($requiredMessageClass
 '.($requiredMessageId
@@ -267,14 +280,11 @@ $wrapperClasses
 'author'
 'avatar'
 'away'
+'bar',
 'base',
 'bg-[var(--color-wk-bg-elevated)]',
 'bg-[var(--color-wk-bg-muted)]',
-'bg-[var(--color-wk-danger)]',
-'bg-[var(--color-wk-success)]',
-'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-tooltip-bg)]',
-'bg-[var(--color-wk-warning)]',
 'bind'
 'block',
 'border-[length:var(--border-wk-width)]
@@ -303,6 +313,7 @@ $wrapperClasses
 'errorRegion'
 'false'
 'false'"
+'filled'
 'fixed'
 'fixed',
 'flex
@@ -314,6 +325,7 @@ $wrapperClasses
 'h-4
 'h-6
 'h-8
+'half',
 'heart'
 'help'
 'helpButton'
@@ -322,6 +334,7 @@ $wrapperClasses
 'helpName'
 'helpText'
 'hint'
+'hollow',
 'icon'
 'initials'
 'inline-flex
@@ -396,11 +409,14 @@ $wrapperClasses
 'surface'
 'surface',
 'text'
+'text-[color:var(--color-wk-danger-text)]',
+'text-[color:var(--color-wk-success-text)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-muted)]',
 'text-[color:var(--color-wk-text-subtle)]
 'text-[color:var(--color-wk-tooltip-text)]',
-'text-[color:var(--color-wk-warning)]
+'text-[color:var(--color-wk-warning-text)]',
+'text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 'text-[length:var(--text-wk-md)]',
 'text-[length:var(--text-wk-sm)]',
 'thumb'
@@ -409,10 +425,10 @@ $wrapperClasses
 'transparent',
 'true'
 'value'
-'var(--color-wk-danger)',
-'var(--color-wk-success)',
+'var(--color-wk-danger-text)',
+'var(--color-wk-success-text)',
 'var(--color-wk-text-muted)',
-'var(--color-wk-warning)',
+'var(--color-wk-warning-text)',
 'viewBox'
 'w-16
 'w-2
@@ -447,11 +463,13 @@ $wrapperClasses
 ($callerLabelledBy
 ($clamped
 ($fromInitials
+($helpName
 ($hint
 ($logoAspect
 ($name)])
 ($optimistic
 ($rating
+($recolored)
 ($shape)
 ($size)
 ($status
@@ -534,6 +552,7 @@ $wrapperClasses
 0.0–0.99
 0;
 0a.75.75
+0a5
 0v-.75c0-1.279
 1
 1)
@@ -546,6 +565,7 @@ $wrapperClasses
 1.18
 1.324
 1.34-8
+1.4.1):
 1.4.13
 1.4.13.
 1.5,
@@ -557,9 +577,11 @@ $wrapperClasses
 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73V11z',
 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857
 10
+10"
 10-10L12
 100
 100),
+10z"
 11.54L12
 12,
 12.28
@@ -583,6 +605,7 @@ $wrapperClasses
 2-2V5a2
 2.09C13.09
 2.1.1).
+2.13:1.
 2.2
 2.25
 2.5,
@@ -616,6 +639,7 @@ $wrapperClasses
 3.78-3.4
 3.81
 300),
+3:1
 3a2
 3c1.74
 4
@@ -682,6 +706,7 @@ $wrapperClasses
 </label>
 </span>
 </svg>
+</svg></span>
 </template>
 </x-wirekit::tooltip>
 </{{
@@ -690,6 +715,7 @@ $wrapperClasses
 <body>
 <button
 <button>
+<circle
 <div
 <figcaption
 <figure
@@ -700,6 +726,7 @@ $wrapperClasses
 <label>.
 <p
 <path
+<rect
 <span
 <span>
 <svg
@@ -715,17 +742,22 @@ $wrapperClasses
 =>
 >
 ></p>
-></span>
+><svg
 >=
 ?
 ?:
 ??
 ??=
 @aware(['announceErrors'
+@break
+@case('away')
+@case('busy')
+@case('offline')
 @class([
 @class(['inline-flex
 @click="run(clearTarget({{
 @click="select({{
+@default
 @else
 @elseif($hint)
 @elseif($initials)
@@ -738,6 +770,7 @@ $wrapperClasses
 @endif>
 @endif>+{{
 @endphp
+@endswitch
 @endunless
 @for($i
 @if($alt)
@@ -795,6 +828,7 @@ $wrapperClasses
 @php
 @props([
 @props.
+@switch($status)
 @unless($disabled)
 @unless($readonly)
 A
@@ -881,6 +915,7 @@ FieldError::first($errors,
 Filled
 Fixed
 Floating
+Fluent.
 Fully
 GLOBAL
 GROUP,
@@ -998,6 +1033,7 @@ THIS
 TWICE
 Tailwind
 Takes
+Teams
 Teleporting
 Text
 That
@@ -1112,6 +1148,7 @@ __('wirekit::Saving'),
 `'3/1'`.
 `'width/height'`
 `--color-wk-bg-elevated`,
+`--color-wk-warning`
 `--font-wk-body-weight`
 `.number`
 `:class`
@@ -1391,6 +1428,8 @@ avatar-less
 avatars
 avatars.
 average).
+away
+away,
 axe-core's
 axes
 axis.
@@ -1404,6 +1443,7 @@ bag
 bag,
 bag.
 bag:
+bar,
 bare
 base
 baseline-aligns
@@ -1472,6 +1512,8 @@ bubbling,
 bug
 building
 built
+busy
+busy,
 but
 button
 button's
@@ -1526,6 +1568,7 @@ circle:
 cited
 clamps
 class
+class,
 class:
 class="-my-1
 class="block
@@ -1645,13 +1688,17 @@ current
 cursor-help"
 custom
 cut
+cx="5"
+cy="5"
 d="M12
 d="M2.25
+d="M5
 d="{{
 danger-text
 dark
 dark.
 dark:
+dashed
 data,
 data-wk-field-help>
 data-wk-field-label
@@ -1665,6 +1712,7 @@ data-wk-required-check
 data-wk-required-message
 data-wk-server-value="{{
 data-wk-sr-host
+data-wk-status-shape="{{
 data-wk-testimonial
 data-wk-testimonial-author
 data-wk-testimonial-logo
@@ -1754,10 +1802,15 @@ does:
 does;
 doing.
 dot
+dot,
+dotted
 double-announce
 double-ring
+doubled
 down
+draw;
 drawer
+drawing
 draws
 drop
 dropped
@@ -1815,6 +1868,7 @@ evaluated
 evaluates
 even
 event
+event's
 event,
 events
 every
@@ -1866,13 +1920,15 @@ figcaption,
 figure
 figure,
 fill
-fill-[var(--color-wk-warning)]
-fill-[var(--color-wk-warning)]'
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]'
 fill-none
 fill-none'
 fill-none'"
 fill-rule="evenodd"
 fill="currentColor"
+fill="none"
+fill="var(--color-wk-bg-elevated)"
 filled
 filled($callerLabelledBy)
 filled($help)
@@ -1973,6 +2029,7 @@ glyph
 go
 goes
 grammar.
+graphic,
 gray
 greater
 grid
@@ -1995,6 +2052,7 @@ h-full
 had
 had.
 half
+half-filled
 halves
 hand,
 handled
@@ -2017,6 +2075,7 @@ hears
 hears,
 height
 height,
+height="1.8"
 help
 help,
 help.
@@ -2040,6 +2099,7 @@ hit
 hit,
 hoists
 holds
+hollow
 honest
 horizontal
 host
@@ -2075,6 +2135,7 @@ in.
 in_array('sr-only',
 included.
 including
+indentation,
 independent
 indicator
 individual
@@ -2105,6 +2166,7 @@ instead
 instead,
 int
 integers.
+intent's
 interact
 interaction
 interaction.
@@ -2178,6 +2240,7 @@ leaves
 leaving
 left
 left.
+legend
 legitimately
 length,
 less.
@@ -2187,6 +2250,7 @@ light
 like
 line
 line-height)
+lines
 linked
 list
 list.
@@ -2359,6 +2423,9 @@ observed
 of
 off
 off.
+offline
+offline.
+offset
 offset:
 often
 omission.
@@ -2373,6 +2440,8 @@ one
 one,
 one.
 one:
+online
+online,
 only
 onmouseover=alert(1)"`
 onto
@@ -2403,6 +2472,9 @@ out,
 out.
 outer
 outermost
+outline's
+outline-offset:
+outlines,
 output
 outrank
 outside
@@ -2465,11 +2537,13 @@ permanent
 permanently,
 person
 person,
+personalized
 phase,
 phrasing
 pick
 picking
 picture
+picture.
 place
 place-items-center
 place.
@@ -2503,6 +2577,7 @@ precision
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 premise
 presence
@@ -2540,6 +2615,8 @@ quotation
 quotation.
 quote
 quote's
+r="4.25"
+r="5"
 racing
 radio
 radiogroup
@@ -2588,6 +2665,8 @@ reasoning
 receive
 receiver,
 receives
+recolored
+recolored.
 record
 record,
 records
@@ -2678,6 +2757,7 @@ running
 runs
 runs.
 runtime
+rx="0.9"
 safe.
 safe:
 said
@@ -2731,7 +2811,10 @@ server's
 server-side
 set
 set,
+setting
 settles
+several
+shadow
 shadow.
 shadows:
 shape
@@ -2783,6 +2866,7 @@ small
 smallest
 snapshot.
 so
+solid
 somebody
 someone
 something
@@ -2831,10 +2915,12 @@ stays
 stem
 stepping
 still
+stood
 stop
 stop,
 stop:
 stops
+str_contains((string)
 strategy:
 stray
 string
@@ -2913,7 +2999,7 @@ text-[color:var(--color-wk-text)]">{{
 text-[color:var(--color-wk-text-muted)]"
 text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-text-subtle)]
-text-[color:var(--color-wk-warning)]
+text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 text-[length:var(--text-wk-2xs)]',
 text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]
@@ -2923,6 +3009,7 @@ text-[length:var(--text-wk-sm)]',
 text-[length:var(--text-wk-xs)]
 text-level
 text.
+text:
 than
 that
 that.
@@ -2969,6 +3056,7 @@ together
 toggletip
 token
 tokens
+tone,
 too,
 took
 tooltip
@@ -3065,6 +3153,7 @@ value="{{
 values
 vanished
 var(--color-wk-bg-elevated),
+var(--color-wk-warning);']);
 var(--size-wk-xs);';
 variable
 variant
@@ -3087,6 +3176,7 @@ w-4',
 w-6',
 w-8',
 w-auto
+w-full"
 w-max
 walk
 wants.
@@ -3127,6 +3217,7 @@ width
 width)
 width,
 width.
+width="5.5"
 widths
 window
 window,
@@ -3200,16 +3291,22 @@ x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 x-wk-ref="{{
+x="2.25"
 xmlns="http://www.w3.org/2000/svg"
+y="4.1"
 you
 zero
 zero,
 zoom,
 {
 {$gap}px
+{$gap}px",
 {$palette['bg']};
 {$palette['fg']};";
-{$ringColor}";
+{$ringColor}",
+{$ringColor},
+{$ringColor};
+{$ringWidth}px
 {$total}px
 {{
 {{--

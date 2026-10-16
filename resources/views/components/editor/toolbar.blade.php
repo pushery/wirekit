@@ -150,11 +150,13 @@
                     @if($active)
                         {{-- The pressed fill and text are the hover paint as well, so a pressed
                              command also carries an inset edge, which a button the pointer rests
-                             on does not. `inset-ring` keeps the focus ring outside: it writes its
+                             on does not. It is drawn in the muted text color, which holds 3:1
+                             against the pressed fill in every preset; the strong border color it
+                             replaced stood at 2.85:1 there. `inset-ring` keeps the focus ring outside: it writes its
                              own shadow rather than the ring's. The floor holds the edge under a
                              theme whose border width is 0px. --}}
                         :aria-pressed="{{ $active }} ? 'true' : 'false'"
-                        :class="{{ $active }} ? 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-border-strong)]' : ''"
+                        :class="{{ $active }} ? 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : ''"
                     @endif
                     aria-label="{{ $label }}"
                     tabindex="{{ $commandKey === $tabStopKey ? '0' : '-1' }}"

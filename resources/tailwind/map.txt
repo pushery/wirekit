@@ -163,14 +163,14 @@ $zoom
 'bg-[color-mix(in_oklch,var(--color-wk-danger)_14%,transparent)]',
 'bg-[color-mix(in_oklch,var(--color-wk-success)_14%,transparent)]',
 'bg-[color-mix(in_oklch,var(--color-wk-warning)_14%,transparent)]',
-'bg-[var(--color-wk-accent)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-bg-subtle)]
-'bg-[var(--color-wk-danger)]',
-'bg-[var(--color-wk-info-tone)]',
-'bg-[var(--color-wk-success)]',
+'bg-[var(--color-wk-danger-text)]',
+'bg-[var(--color-wk-info-text)]',
+'bg-[var(--color-wk-success-text)]',
 'bg-[var(--color-wk-text-muted)]',
-'bg-[var(--color-wk-warning)]',
+'bg-[var(--color-wk-warning-text)]',
 'body',
 'border-[length:var(--border-wk-width)]',
 'button'
@@ -832,7 +832,7 @@ __('wirekit::Locations');
 __('wirekit::Map
 __('wirekit::Map'),
 __('wirekit::No
-_intentColor.
+_intentColor,
 `$listLabel`
 `$loading`;
 `$size`
@@ -1004,6 +1004,7 @@ after
 again
 against
 against,
+agree.
 alias
 aligned
 alike.
@@ -1929,7 +1930,6 @@ markers:
 marks
 match
 matches
-matching
 max-2xl:[--wk-touch-min:0px]',
 max-[22.5rem]:[--wk-touch-min:0px]',
 max-h-[24rem]
@@ -2153,6 +2153,7 @@ phrase
 picked
 picks
 pill
+pin
 pin's
 place
 place.
@@ -2304,11 +2305,11 @@ right
 ring
 ring,
 ring-[length:var(--ring-wk-width)]
-ring-[var(--color-wk-accent)]',
+ring-[var(--color-wk-accent-text)]',
 ring-[var(--color-wk-border-hover)]',
-ring-[var(--color-wk-danger)]',
-ring-[var(--color-wk-success)]',
-ring-[var(--color-wk-warning)]',
+ring-[var(--color-wk-danger-text)]',
+ring-[var(--color-wk-success-text)]',
+ring-[var(--color-wk-warning-text)]',
 ring-inset
 role
 role="application"
@@ -2655,6 +2656,7 @@ tokens
 tokens.
 tokens:
 told
+tone
 too
 too,
 toolbar

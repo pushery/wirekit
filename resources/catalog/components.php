@@ -166,6 +166,8 @@ return [
     'image-compare' => ['category' => 'Display', 'description' => 'Before/after image comparison slider'],
     'image-gallery' => ['category' => 'Display', 'description' => 'Responsive image grid with an accessible, keyboard-navigable lightbox'],
     'product-card' => ['category' => 'Display', 'description' => 'Ecommerce product card — image, price with compare-at, rating, stock state, CTA'],
+    'energy-label' => ['category' => 'Display', 'description' => 'EU energy label arrow beside a price — the class in its color, the scale, links to the label and the product information sheet'],
+    'tire-label' => ['category' => 'Display', 'description' => 'EU tire label arrows beside a price — fuel efficiency, wet grip and noise classes with their ranges, links to the label and the product information sheet'],
     'review' => ['category' => 'Display', 'description' => 'One customer review as an article — stars, title, author, date, a verified-purchase badge and the shop\'s reply'],
     'review-summary' => ['category' => 'Display', 'description' => 'Reviews at a glance — the average as stars, the count, and the distribution of stars, each row a filter link'],
     'swatch' => ['category' => 'Display', 'description' => 'A color or pattern value with its name, as a circle or a square'],

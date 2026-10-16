@@ -285,6 +285,7 @@ $triggerName
 ("Help
 ($callerLabelledBy
 ($hasError
+($helpName
 ($size)
 ($stepperField
 ($triggerIsButton)
@@ -962,6 +963,7 @@ bounds,
 box
 box,
 brand
+breaks
 broken
 browse
 browser
@@ -972,6 +974,7 @@ bug
 build,
 but
 button
+button's
 button's.
 button,
 button:
@@ -1222,6 +1225,7 @@ escapes
 escaping
 evaluated
 event
+event's
 events
 ever
 every
@@ -1419,6 +1423,7 @@ in:
 in_array('sr-only',
 included.
 increase
+indentation,
 indicator
 inert
 init
@@ -1496,6 +1501,7 @@ leaving
 left
 left.
 left/right
+legend
 legitimately
 length,
 let
@@ -1770,6 +1776,7 @@ precision
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -1920,6 +1927,7 @@ server's.
 server-side
 set
 settles
+several
 shadow
 shadow.
 shape
@@ -2067,6 +2075,7 @@ text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]
 text-[length:var(--text-wk-sm)]',
 text-level
+text:
 textarea
 than
 that

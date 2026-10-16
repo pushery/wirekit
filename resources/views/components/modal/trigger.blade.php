@@ -4,6 +4,12 @@
     'scope' => null,
     'for' => null,
     'href' => null,
+    // The look of the button the trigger draws, handed to it as written: a trigger above a list is
+    // usually `intent="neutral" surface="outline"`. Null keeps the button's own default. A trigger
+    // with `href` is a link, which takes `size` and has no intent or surface.
+    'intent' => null,
+    'surface' => null,
+    'size' => null,
 ])
 
 @php
@@ -45,6 +51,14 @@
     // sentence, and a button-styled box in the middle of a sentence is the wrong shape. So an
     // address gives an inline `link`, and no address gives a standalone `button`.
     $delegate = filled($href) ? 'link' : 'button';
+
+    // The look the caller gave, for the primitive that takes it: a button takes all three, a link
+    // only its size. Handed on through the bag the primitive reads its props from, and only what was
+    // given, so the primitive's own defaults hold for the rest.
+    $look = array_filter(
+        $delegate === 'link' ? ['size' => $size] : ['intent' => $intent, 'surface' => $surface, 'size' => $size],
+        static fn ($value): bool => $value !== null,
+    );
 @endphp
 
 @if($named)
@@ -53,20 +67,21 @@
      The position this exists for is inside a `<label>`, and a click on it must open the dialog
      without ticking the checkbox the reader has not agreed to yet. A label does nothing for a
      click on an interactive descendant such as this link or button, so the checkbox stays as it
-     is; `.prevent` keeps the link from navigating, and `.stop` keeps the click from reaching
-     handlers on the label and its ancestors. --}}
+     is; `openNamedOverlay($event)` keeps the link from navigating and keeps the click from
+     reaching handlers on the label and its ancestors. A link clicked with Ctrl, Cmd, Shift or Alt
+     opens its page the way any link does, and no dialog. --}}
 @if($delegate === 'link')
 <x-wirekit::link
     :href="$href"
-    x-data="wirekitModalTrigger({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($for) }} })"
-    x-on:click.prevent.stop="openNamedOverlay()"
-    {{ $attributes->except(['for', 'href'])->class([$classes]) }}
+    x-data="wirekitModalTrigger({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($for) }}, panel: {{ \Pushery\WireKit\Support\AlpinePayload::string('wk-modal-dialog-'.$for) }} })"
+    x-on:click="openNamedOverlay($event)"
+    {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
 >{{ $slot }}</x-wirekit::link>
 @else
 <x-wirekit::button
-    x-data="wirekitModalTrigger({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($for) }} })"
-    x-on:click.prevent.stop="openNamedOverlay()"
-    {{ $attributes->except(['for', 'href'])->class([$classes]) }}
+    x-data="wirekitModalTrigger({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($for) }}, panel: {{ \Pushery\WireKit\Support\AlpinePayload::string('wk-modal-dialog-'.$for) }} })"
+    x-on:click="openNamedOverlay($event)"
+    {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
 >{{ $slot }}</x-wirekit::button>
 @endif
 @else

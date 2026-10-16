@@ -72,17 +72,17 @@
         'success' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-success)_35%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_10%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[color:var(--color-wk-success)]',
+            'icon' => 'text-[color:var(--color-wk-success-text)]',
         ],
         'warning' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_35%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_10%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[color:var(--color-wk-warning)]',
+            'icon' => 'text-[color:var(--color-wk-warning-text)]',
         ],
         'danger' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_35%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_10%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[color:var(--color-wk-danger)]',
+            'icon' => 'text-[color:var(--color-wk-danger-text)]',
         ],
         'primary' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,var(--color-wk-border))]',

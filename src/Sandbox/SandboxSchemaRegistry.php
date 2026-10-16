@@ -213,6 +213,13 @@ final class SandboxSchemaRegistry
         // accepts all four spellings; the editor offers the canonical one.
         self::register('card', [
             'surface' => ['type' => 'string', 'default' => 'outline', 'allowed_values' => ['outline', 'elevated', 'flat']],
+            // A card that folds draws its head from the heading, so the heading is offered with it.
+            'collapsible' => ['type' => 'bool', 'default' => false],
+            'heading' => ['type' => 'string', 'default' => 'Payment methods'],
+            'description' => ['type' => 'string'],
+            'level' => ['type' => 'int', 'default' => 3, 'allowed_values' => [2, 3, 4, 5, 6]],
+            'open' => ['type' => 'bool', 'default' => false],
+            'findable' => ['type' => 'bool', 'default' => true],
             'body' => ['type' => 'string', 'default' => 'Card body'],
         ]);
 
@@ -271,20 +278,22 @@ final class SandboxSchemaRegistry
         // `muted: bool` which the renderer emitted as `muted="false"` on the
         // `<p>` tag — silently no-op. Replaced with the real prop.
         self::register('text', [
-            'size' => ['type' => 'string', 'default' => 'base', 'allowed_values' => ['xs', 'sm', 'base', 'lg', 'xl']],
-            'variant' => ['type' => 'string', 'default' => 'default', 'allowed_values' => ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger']],
-            'weight' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'medium', 'semibold', 'bold']],
+            // `inherit` on an axis writes no class for it: the text takes that axis from the control
+            // it sits in.
+            'size' => ['type' => 'string', 'default' => 'base', 'allowed_values' => ['xs', 'sm', 'base', 'lg', 'xl', 'inherit']],
+            'variant' => ['type' => 'string', 'default' => 'default', 'allowed_values' => ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger', 'inherit']],
+            'weight' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'medium', 'semibold', 'bold', 'inherit']],
             // No default for the three the component leaves unset unless asked, so an unset value keeps that.
             'align' => ['type' => 'string', 'allowed_values' => ['left', 'center', 'right']],
             'truncate' => ['type' => 'bool', 'default' => false],
             'lineClamp' => ['type' => 'int', 'allowed_values' => [1, 2, 3, 4, 5, 6]],
             'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
             // No default: an unset leading keeps the theme's own line height.
-            'leading' => ['type' => 'string', 'allowed_values' => ['tight', 'normal', 'relaxed']],
+            'leading' => ['type' => 'string', 'allowed_values' => ['tight', 'normal', 'relaxed', 'inherit']],
             'wrap' => ['type' => 'bool', 'default' => true],
             // No default: an unset fit keeps the text at its size. Offered as on and off, as on heading.
             'fit' => ['type' => 'bool'],
-            'family' => ['type' => 'string', 'default' => 'sans', 'allowed_values' => ['sans', 'mono']],
+            'family' => ['type' => 'string', 'default' => 'sans', 'allowed_values' => ['sans', 'mono', 'inherit']],
             'tabular' => ['type' => 'bool', 'default' => false],
             // No default: an unset measure lets the text run as wide as its container.
             'measure' => ['type' => 'string', 'allowed_values' => ['default', 'wide', 'none']],

@@ -154,7 +154,7 @@
     // an item with a gap of its own beside it, so it generates no box. With a trigger it keeps its
     // box, and the trigger its place: its own width in a grid cell, the margin a
     // stack gives its children. `class="contents"` on the component hands the trigger over.
-    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(['contents']);
+    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
 @endphp
 
 <div

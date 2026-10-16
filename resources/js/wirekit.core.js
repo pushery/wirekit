@@ -6,8 +6,9 @@
  * the `x-wk-ref` directive that files the ref a caller writes on a component under the caller's
  * own component, the `x-wk-fit-text` directive that keeps a fitted text's copies in step with
  * words a script writes, the memory for a field Livewire emptied after a successful action, the
- * scroll inset that keeps a focused element clear of a bar pinned to an edge, and the mark that
- * keeps the focus ring on a radio the arrow keys reach in WebKit. For
+ * scroll inset that keeps a focused element clear of a bar pinned to an edge, the mark that
+ * keeps the focus ring on a radio the arrow keys reach in WebKit, and `wirekit:focus-invalid`,
+ * which takes the focus to the first field a response rejected. For
  * projects that only use the core form components, charts and the before/after
  * slider.
  *
@@ -32,6 +33,7 @@ import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
+import { installFocusInvalid } from './utils/focus-invalid.js';
 import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -68,6 +70,9 @@ function registerCoreComponents() {
     installScrollInset();
     // A radio the arrow keys reach keeps its focus ring in WebKit. See utils/arrow-focus.js.
     installArrowFocus();
+    // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
+    // See utils/focus-invalid.js.
+    installFocusInvalid();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);

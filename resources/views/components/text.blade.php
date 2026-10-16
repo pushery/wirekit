@@ -6,15 +6,18 @@
 @props([
     'size' => 'base',
     'variant' => 'default', // back-compat alias of `intent`
-    'intent' => null,       // canonical color axis: default | muted | subtle | accent | success | warning | danger. null → falls back to `variant`
+    'intent' => null,       // canonical color axis: default | muted | subtle | accent | success | warning | danger | inherit. null → falls back to `variant`
     'weight' => 'normal',
+    // `inherit` on `intent`, `size`, `weight`, `family` and `leading` writes no class for that axis,
+    // so the text takes it from the element around it. A text inside a link, a tab or a button keeps
+    // the control's color, size and weight that way, and follows the control's states with it.
     'align' => null,
     // `true` cuts the text at the end of one line with an ellipsis. `'tooltip'` cuts it the same way
     // and shows the whole text in a tooltip while, and only while, it is cut.
     'truncate' => false,
     'lineClamp' => null,
     'break' => null,        // where an unbroken token may wrap: normal | anywhere | all. null → the default rules, no class
-    // The line height: tight | normal | relaxed, on the leading tokens. null keeps the theme's own
+    // The line height: tight | normal | relaxed | inherit, on the leading tokens. null keeps the theme's own
     // line height, which is `normal`. A second line under a value in a table cell wants `tight`, so it
     // stands close to the line it belongs to; a class from outside could not say so reliably, because
     // two line-height utilities on one element are decided by stylesheet order.
@@ -28,10 +31,10 @@
     // `0.75em` for a floor of its own, null or false for none. A text that `truncate` or `lineClamp`
     // cuts keeps its size, and `fit` beside either is reported.
     'fit' => null,
-    // The typeface: `sans` (the body face, the default) or `mono`, which reads `--font-wk-mono` and
-    // drops the body face's letter spacing. A class from outside could not choose it reliably,
-    // because the base classes already set a family and two families on one element are decided
-    // by stylesheet order.
+    // The typeface: `sans` (the body face, the default), `mono`, which reads `--font-wk-mono` and
+    // drops the body face's letter spacing, or `inherit`. A class from outside could not choose it
+    // reliably, because the base classes already set a family and two families on one element are
+    // decided by stylesheet order.
     'family' => 'sans',
     // Figures of one width, so a column of amounts, dates or counts lines up digit for digit.
     'tabular' => false,
@@ -81,12 +84,14 @@
 
     // Literal arms, as for every class here: an assembled class has no rule behind it. The sans
     // tracking belongs to the sans face; a monospaced face spaces its own letters.
-    $familyClasses = match (WireKit::validateProp('text', 'family', (string) $family, ['sans', 'mono'])) {
+    $familyClasses = match (WireKit::validateProp('text', 'family', (string) $family, ['sans', 'mono', 'inherit'])) {
         'mono' => 'font-[family-name:var(--font-wk-mono)]',
+        'inherit' => '',
         default => 'font-[family-name:var(--font-wk-sans)] tracking-[var(--font-wk-letter-spacing)]',
     };
 
-    $sizeClasses = match (WireKit::validateProp('text', 'size', $size, ['xs', 'sm', 'base', 'lg', 'xl'])) {
+    $sizeClasses = match (WireKit::validateProp('text', 'size', $size, ['xs', 'sm', 'base', 'lg', 'xl', 'inherit'])) {
+        'inherit' => '',
         'xs' => 'text-[length:var(--text-wk-xs,0.75rem)]',
         'sm' => 'text-[length:var(--text-wk-sm)]',
         'base' => 'text-[length:var(--text-wk-md)]',
@@ -103,7 +108,8 @@
     // The error names the prop the CALLER wrote, not the canonical one.
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
-    $variantClasses = match (WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger'])) {
+    $variantClasses = match (WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger', 'inherit'])) {
+        'inherit' => '',
         'default' => 'text-[color:var(--color-wk-text)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
         'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
@@ -115,7 +121,8 @@
 
     // `normal` is the theme's body weight rather than a fixed 400, so text follows a theme that sets
     // its running text lighter or heavier, as the rest of the body copy does.
-    $weightClasses = match (WireKit::validateProp('text', 'weight', $weight, ['normal', 'medium', 'semibold', 'bold'])) {
+    $weightClasses = match (WireKit::validateProp('text', 'weight', $weight, ['normal', 'medium', 'semibold', 'bold', 'inherit'])) {
+        'inherit' => '',
         'normal' => 'font-[number:var(--font-wk-body-weight)]',
         'medium' => 'font-medium',
         'semibold' => 'font-semibold',
@@ -172,7 +179,8 @@
     };
 
     // Literal arms, as for the other props here: an assembled class has no rule behind it.
-    $leadingClasses = match ($leading === null ? null : WireKit::validateProp('text', 'leading', (string) $leading, ['tight', 'normal', 'relaxed'])) {
+    $leadingClasses = match ($leading === null ? null : WireKit::validateProp('text', 'leading', (string) $leading, ['tight', 'normal', 'relaxed', 'inherit'])) {
+        'inherit' => '',
         'tight' => 'leading-[var(--leading-wk-tight)]',
         'relaxed' => 'leading-[var(--leading-wk-relaxed)]',
         'normal', null => 'leading-[var(--font-wk-line-height,1.5)]',

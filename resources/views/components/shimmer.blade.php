@@ -51,7 +51,7 @@
     // Per-instance duration override via the design-token custom property.
     $style = ($active && $duration) ? "--shimmer-wk-duration: {$duration};" : null;
 
-    $attrs = $attributes->class([$classes]);
+    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
     if ($style !== null) {
         $attrs = $attrs->merge(['style' => $style]);
     }

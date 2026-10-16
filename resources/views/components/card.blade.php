@@ -26,6 +26,35 @@
     // child, and nothing says so until someone drops a full-bleed image or a table
     // into that card.
     'overflow' => 'hidden',
+    // Fold the card under its own head: the head becomes the trigger, and everything in the slot,
+    // body and footer, folds away beneath it. Without it the card has no head, no region and no
+    // script of its own.
+    'collapsible' => false,
+    // Start a collapsible card open. A fold the reader made on an earlier visit never closes it on
+    // load, so a card that needs the reader is open every time. Read when the card first renders:
+    // during the visit the state is the reader's. Null unless given: a card that does not fold
+    // hands an `open` it was given to its element, as `as="details"` needs.
+    'open' => null,
+    // The reasons a collapsible card stands open for, as the server sees them now: a list of names, or
+    // a map of each name to whether it holds. With one the card starts open, and after a response
+    // only a reason it did not have opens it again, so a card the reader folded stays folded.
+    'openWhen' => [],
+    // A key under which the browser remembers whether the reader left the card open. An application
+    // that keeps this in its own store passes it as `open` and saves `wirekit:card-toggled` instead.
+    'persist' => null,
+    // The name `wirekit:card-open` opens the card by, reported in `wirekit:card-toggled` as well.
+    // Handed to the element on a card that does not fold, as `open` is.
+    'name' => null,
+    // The text of a collapsible card's trigger. The `heading` slot takes markup instead.
+    'heading' => null,
+    // The level of the heading the trigger stands in, 2 to 6.
+    'level' => 3,
+    // The line under the heading, shown whether the card is open or closed. The `description` slot
+    // takes markup instead.
+    'description' => null,
+    // Closed content stays findable by the browser's find in page, which opens the card. Switch it
+    // off for content that must stay out of sight until the reader opens it.
+    'findable' => true,
     'scope' => null,
 ])
 
@@ -202,6 +231,115 @@
         logger()->debug('WireKit card: `chevron` is set on a card that neither links nor runs an action, so no chevron is drawn.');
     }
 
+    // A card that folds. Its own head is the trigger and its whole slot, body and footer, is the part
+    // that folds, so the head is drawn here from the card's own props rather than by `card.header`:
+    // a child reads its parent through `@aware`, which walks outward past a card whose tag does not
+    // carry the key, and a plain card inside `sidebar collapsible` would read the sidebar's
+    // `collapsible` and draw a trigger with no state behind it.
+    $collapsible = BooleanProp::from($collapsible, false);
+    $findable = BooleanProp::from($findable, true);
+
+    // A card that links or runs an action is a control already, and a control cannot hold the
+    // button of a head. Reported, and drawn without folding.
+    if ($collapsible && $isInteractive) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('card', 'collapsible', 'true', 'a card without href or an action of its own', '');
+        $collapsible = false;
+    }
+
+    // `open` and `name` are attributes of some elements (`as="details"`, `as="fieldset"`), so a card
+    // that does not fold hands one it was given to its element, where the element reads it.
+    if (! $collapsible) {
+        $attributes = $attributes->merge(array_filter(['open' => $open, 'name' => $name], static fn ($value): bool => $value !== null));
+    }
+
+    // The reasons, each a name once: from a list, or the names a map holds true. A name is one word on
+    // the element, so the spaces inside it become hyphens.
+    $openReasons = [];
+    $openWhenValue = \Pushery\WireKit\Support\ListProp::from($openWhen);
+
+    foreach (is_array($openWhenValue) ? $openWhenValue : (filled($openWhenValue) ? [$openWhenValue] : []) as $reasonKey => $reasonValue) {
+        $reason = is_string($reasonKey) ? (BooleanProp::from($reasonValue, false) ? $reasonKey : null) : $reasonValue;
+
+        if (is_scalar($reason) && trim((string) $reason) !== '') {
+            $openReasons[] = (string) preg_replace('/\s+/u', '-', trim((string) $reason));
+        }
+    }
+
+    $openReasons = array_values(array_unique($openReasons));
+    $openNow = $collapsible && (BooleanProp::from($open, false) || $openReasons !== []);
+
+    // The head is drawn only on a card that folds, so these say nothing on any other card; debug says so.
+    if (! $collapsible && (filled($heading) || filled($description) || filled($persist) || $openReasons !== []) && config('app.debug')) {
+        logger()->debug('WireKit card: `heading`, `description`, `persist` and `open-when` are read only on a card with `collapsible`; a card that does not fold takes its head from card.header.');
+    }
+
+    if ($collapsible) {
+        // The trigger needs a name, and the heading is it.
+        if (blank($heading)) {
+            WireKit::validateProp('card', 'heading', '', ['a heading for the trigger']);
+        }
+
+        // A bad level falls back to 3, never to the page's own heading.
+        $levelValue = in_array((int) $level, [2, 3, 4, 5, 6], true) ? (int) $level : 3;
+
+        if ($levelValue !== (int) $level) {
+            WireKit::validateProp('card', 'level', (string) $level, ['2', '3', '4', '5', '6']);
+        }
+
+        // Stable across a Livewire round trip, and apart on a page with two cards of one name or one
+        // heading: from the caller's id, else the name, else the text of the heading.
+        $idSeed = filled($name) ? (string) $name : (is_string($heading) ? $heading : null);
+        $idBase = filled($attributes->get('id'))
+            ? (string) $attributes->get('id')
+            : \Pushery\WireKit\Support\DomId::distinct(WireKit::stableId('wk-card', $idSeed));
+        $triggerId = $idBase.'-trigger';
+        $panelId = $idBase.'-panel';
+        $hintsId = $idBase.'-hints';
+        $hasHints = isset($hints) && $hints->hasActualContent();
+
+        // The head: the padding and type of `card.header`, positioned so the trigger can stretch
+        // over all of it.
+        $headClasses = WireKit::resolveClasses('card', 'head', implode(' ', [
+            'relative',
+            'px-[var(--padding-wk-x-lg)]',
+            'py-[var(--padding-wk-x-lg)]',
+            'font-[family-name:var(--font-wk-sans)]',
+            'font-[number:var(--font-wk-heading-weight)]',
+            'text-[length:var(--text-wk-lg)]',
+            'text-[color:var(--color-wk-text)]',
+        ]), $scope);
+
+        // The whole head answers the pointer and a finger: the button stretches over it with its
+        // `::after`, and the focus ring outlines the head inside the card, which clips its own box.
+        $triggerClasses = WireKit::resolveClasses('card', 'trigger', implode(' ', [
+            'w-full text-start cursor-pointer',
+            'after:absolute after:inset-0',
+            'focus-visible:outline-hidden',
+            'focus-visible:after:ring-[length:var(--ring-wk-width)]',
+            'focus-visible:after:ring-inset',
+            'focus-visible:after:ring-[var(--color-wk-ring)]',
+        ]), $scope);
+
+        $descriptionClasses = WireKit::resolveClasses('card', 'description', implode(' ', [
+            'mt-[var(--space-wk-xs)]',
+            'font-[number:var(--font-wk-body-weight)]',
+            'text-[length:var(--text-wk-sm)]',
+            'text-[color:var(--color-wk-text-muted)]',
+        ]), $scope);
+
+        $hintsClasses = WireKit::resolveClasses('card', 'hints', implode(' ', [
+            'shrink-0 flex flex-wrap items-center gap-[var(--gap-wk-xs)]',
+            'font-[number:var(--font-wk-body-weight)]',
+            'text-[length:var(--text-wk-sm)]',
+        ]), $scope);
+
+        // The line between head and content belongs to the content, so a closed card shows none.
+        $contentClasses = WireKit::resolveClasses('card', 'content', implode(' ', [
+            'border-t-[length:var(--border-wk-width)]',
+            'border-[var(--color-wk-border-subtle)]',
+        ]), $scope);
+    }
+
     // `block` stays with the anchor and is deliberately NOT part of the interactive set:
     // an `<a>` is inline and needs it to fill the card's box, which makes it a display
     // fix rather than an affordance. Putting it on the interactive branch would change
@@ -299,7 +437,27 @@
 
 <{{ $tag }} data-wk-prose-skip
     data-wk-card
-    @if($warnNoBody)
+    @if($collapsible)
+        {{-- The card's own state. A field the browser finds invalid opens it in the capture phase,
+             before the browser tries to focus the field; `wirekit:card-open` opens it from inside
+             or, addressing it, from anywhere, and `wirekit:card-close` folds it the same two ways;
+             an address that names an element inside opens it on load and on `hashchange`. The
+             reasons are read again after every response, so a reason the card did not have opens
+             it. The server's `open` is an attribute the factory reads once rather than a value in
+             `x-data`, which must not change between responses: Alpine builds a component anew from
+             a changed expression, and the reader's state would go with it. The composition warning
+             rides in the same factory, since an element cannot carry two `x-data`. --}}
+        data-wk-card-collapsible
+        @if($openNow) data-wk-card-open @endif
+        @if($openReasons !== []) data-wk-card-reasons="{{ implode(' ', $openReasons) }}" @endif
+        x-data="wirekitCardDisclosure({ persist: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($persist) ? (string) $persist : null) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }}, warning: {{ \Pushery\WireKit\Support\AlpinePayload::from($warnNoBody ? '[wirekit] card: content sits directly in the card with no card.body — the card root is a padding-free frame, so this content renders flush against the border. Wrap it in card.body (or card.footer). See https://docs.wirekit.app/components/card.' : null) }} })"
+        x-on:invalid.capture="revealForInvalid()"
+        x-on:wirekit:card-open="openFrom()"
+        x-on:wirekit:card-open.window="openByName($event)"
+        x-on:wirekit:card-close="closeFrom($event)"
+        x-on:wirekit:card-close.window="closeByName($event)"
+        x-on:hashchange.window="openForFragment()"
+    @elseif($warnNoBody)
         {{-- Debug-only composition warning. It cannot be an inline console.warn:
              under Alpine's CSP build naming `console` throws while BUILDING the
              component, which takes down the very element being warned about. --}}
@@ -311,9 +469,65 @@
     {{-- Same rule as link: see that component for why the value is read out of the bag
          instead of written before it. --}}
     @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
-    {{ $attributes->except($tag === 'button' ? ['rel', 'type'] : ['rel'])->merge($scrollKeyboardModel)->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
+    {{ $attributes->except($tag === 'button' ? ['rel', 'type'] : ['rel'])->merge($scrollKeyboardModel)->class([$baseClasses, $variantClasses, $interactiveClasses, 'wk-card-collapsible' => $collapsible]) }}
 >
-    @if($showChevron)
+    @if($collapsible)
+        {{-- The head. The trigger stands in a heading of the given level and names the folding part
+             with `aria-controls`; the hints beside it are its description, read with it; the line
+             under the heading stays visible in both states. The chevron's turn is motion, and the
+             `wk-card-collapsible` marker on the card puts it under the reduced-motion rule. --}}
+        <div data-wk-card-head class="{{ $headClasses }}">
+            <div class="flex items-center gap-[var(--gap-wk-sm)]">
+                <h{{ $levelValue }} data-wk-prose-skip class="m-0 min-w-0 flex-1">
+                    <button
+                        type="button"
+                        id="{{ $triggerId }}"
+                        aria-controls="{{ $panelId }}"
+                        :aria-expanded="isOpen ? 'true' : 'false'"
+                        @if($hasHints) aria-describedby="{{ $hintsId }}" @endif
+                        x-on:click="toggle()"
+                        class="wk-card-trigger {{ $triggerClasses }}"
+                    >{{ $heading }}</button>
+                </h{{ $levelValue }}>
+                @if($hasHints)
+                    <span id="{{ $hintsId }}" class="{{ $hintsClasses }}">{{ $hints }}</span>
+                @endif
+                <svg
+                    class="wk-card-chevron shrink-0 w-4 h-4 text-[color:var(--color-wk-text-subtle)] transition-transform duration-[var(--transition-wk-duration)]"
+                    :class="isOpen ? 'rotate-180' : ''"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                >
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            @if(filled($description))
+                <div data-wk-card-description class="{{ $descriptionClasses }}">{{ $description }}</div>
+            @endif
+        </div>
+        {{-- The part that folds, body and footer together, one box that is never `display:
+             contents`. Findable, it is `hidden="until-found"` while closed where the engine
+             supports it, so find in page opens it; the line and the padding sit on the elements
+             inside, because a closed until-found element keeps its box. See utils/findable.js. --}}
+        @if($findable)
+            <div
+                id="{{ $panelId }}"
+                x-ref="region"
+                data-wk-card-region
+                x-wk-findable.collapse="isOpen"
+                x-on:beforematch="reveal()"
+                @unless($openNow) hidden="until-found" @endunless
+            >
+                <div class="{{ $contentClasses }}">{{ $slot }}</div>
+            </div>
+        @else
+            <div id="{{ $panelId }}" x-ref="region" data-wk-card-region x-show="isOpen" x-collapse @unless($openNow) x-cloak @endunless>
+                <div class="{{ $contentClasses }}">{{ $slot }}</div>
+            </div>
+        @endif
+    @elseif($showChevron)
         {{-- The content takes the column that can shrink and the chevron the one that cannot, so no
              text ever runs under it. Decorative: the link's own text already names where it goes. --}}
         <div class="flex-1 min-w-0">{{ $slot }}</div>

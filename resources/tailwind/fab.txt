@@ -13,7 +13,7 @@ $accessibleLabel
 $ariaLabel
 $attributes
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel')->class([$classes.'
 $attributes->except('rel')->class([$classes])
 $attributes->get('aria-hidden');

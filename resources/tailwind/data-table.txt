@@ -333,6 +333,7 @@ $value]))
 2.1.1,
 2l2.5
 300),
+3:1
 3h-5zM6
 3l3
 4.1.3
@@ -497,6 +498,7 @@ Every
 FILTER_VALIDATE_BOOLEAN)
 FIRST
 For
+Forced
 Freeze
 Fully
 HAS
@@ -1060,6 +1062,7 @@ col.key
 col.key"
 collides
 color
+color,
 colors
 column
 column's
@@ -1164,6 +1167,7 @@ describe
 destroy-and-rebuild
 developer
 dialect
+did
 differ
 difference
 different
@@ -1317,7 +1321,6 @@ font-[family-name:var(--font-wk-sans)]
 font-[number:var(--font-wk-heading-weight)]
 font-semibold"
 for
-forced
 foreach
 form
 form="{{
@@ -1427,8 +1430,11 @@ inherits
 initial
 inline
 inline-flex
+inner
 input
 input:
+inset-ring-[length:max(1px,var(--border-wk-width))]
+inset-ring-[var(--color-wk-text-muted)]'
 inside
 instant
 intent
@@ -1630,6 +1636,7 @@ needing
 needs
 negative
 neither
+neither,
 neither.
 nested
 neutral
@@ -1728,7 +1735,7 @@ page:
 paginator,
 paging
 paint
-paint,
+paints
 pair
 pair.
 pairing
@@ -2107,7 +2114,6 @@ text-[color:var(--color-wk-info-text)]',
 text-[color:var(--color-wk-success-text)]',
 text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text)]"
-text-[color:var(--color-wk-text)]'
 text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-text-muted)]"
 text-[color:var(--color-wk-text-muted)]">{{
@@ -2146,7 +2152,7 @@ through
 throw
 time
 times
-tint,
+tint
 tinted
 tints
 to

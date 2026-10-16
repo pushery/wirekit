@@ -47,9 +47,9 @@ $as);
 $attributes
 $attributes);
 $attributes->class([$classes])
-$attributes->class(['contents']);
 $attributes->class(['cursor-pointer',
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
 $attributes->except($as
 $attributes->except('aria-describedby')->class([
 $attributes->except('aria-describedby')->class(['wk-field',
@@ -133,6 +133,7 @@ $describedbyEnabled
 $describes
 $describes;
 $dialogAriaAttributes
+$dialogId
 $disableOnLoading
 $disableOnLoading;
 $disabled
@@ -241,6 +242,7 @@ $loading
 $loadingTarget
 $lockScroll
 $lockScroll,
+$look
 $meaning
 $meaning)
 $message
@@ -294,6 +296,8 @@ $sizeClasses
 $sizeClasses)`
 $sizeClasses,
 $sizeClasses])
+$size]
+$size],
 $slot
 $slot)
 $slot))
@@ -357,6 +361,7 @@ $underline,
 $underlineClasses
 $underlineClasses,
 $useWrapper
+$value
 $variant,
 $variantClasses
 $variantClasses,
@@ -577,7 +582,7 @@ $wrapLabel
 'hover:text-[color:var(--color-wk-text)]',
 'hover:underline
 'href'
-'href'])->class([$classes])
+'href'])->merge($look)->class([$classes])
 'icon-only
 'iconOnly'
 'iconOnlyBelow'
@@ -822,6 +827,7 @@ $wrapLabel
 ($forceLoading)
 ($hasError
 ($hasSuccess
+($helpName
 ($hint
 ($iconOnly
 ($iconOnly)
@@ -841,6 +847,7 @@ $wrapLabel
 ($tokenText
 ($tokensValue
 ($triggerIsButton)
+($value):
 ($value,
 ($wkField
 ($wrapLabel
@@ -938,6 +945,7 @@ $wrapLabel
 (v3
 (which
 (wire:click
+);
 *
 **It
 *-bg
@@ -1280,6 +1288,7 @@ $wrapLabel
 @if($describedBy
 @if($describedby)
 @if($describedbyEnabled)
+@if($dialogId
 @if($disabled
 @if($disabled)
 @if($discardQuestionText
@@ -1361,6 +1370,7 @@ Aligning
 All
 Alpine
 Alpine's
+Alt
 An
 And
 Around
@@ -1443,10 +1453,12 @@ Centered,
 Clear
 Click
 Close
+Cmd,
 Composed
 Container
 Copy-to-clipboard
 Counted,
+Ctrl,
 DECLARATIVE
 DEFAULT
 DIALOG,
@@ -1511,6 +1523,7 @@ HOVERABLE:
 HTML
 HTML,
 HTML5
+Handed
 Header
 Heading
 Help
@@ -1658,6 +1671,7 @@ Setting
 Several
 Shared
 Shared:
+Shift
 Show
 Silent
 Size
@@ -1798,6 +1812,7 @@ Your
 ['date',
 ['default',
 ['field'
+['intent'
 ['inverted',
 ['label'
 ['labelAfter'
@@ -1806,6 +1821,7 @@ Your
 ['question'
 ['rel',
 ['rel'])->class([$classes])
+['size'
 ['sm',
 ['x-on:keydown.escape.window']);
 ['x-on:mouseenter',
@@ -1839,6 +1855,7 @@ Your
 \Pushery\WireKit\Support\AlpinePayload::string($helpName
 \Pushery\WireKit\Support\AlpinePayload::string($name)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
+\Pushery\WireKit\Support\AlpinePayload::string('wk-modal-dialog-'.$for)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
 \Pushery\WireKit\Support\BooleanProp::from($alignFields,
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
@@ -1847,6 +1864,7 @@ Your
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
 \Pushery\WireKit\Support\DateModel::warn('input',
+\Pushery\WireKit\Support\DomId::distinct('wk-modal-dialog-'.$name)
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\FieldControl)
@@ -1932,7 +1950,6 @@ __('wirekit::To
 `.number`
 `.prevent`
 `.self`
-`.stop`
 `.wk-button-group[data-stack-below="…"]`
 `.wk-button`
 `03.04.2026`
@@ -1995,6 +2012,7 @@ __('wirekit::To
 `aria-busy="true"`
 `aria-busy`
 `aria-busy`,
+`aria-controls`
 `aria-describedby`
 `aria-describedby`:
 `aria-disabled="true"`
@@ -2117,6 +2135,7 @@ __('wirekit::To
 `inline-flex`
 `input`:
 `int`
+`intent="neutral"
 `inverted`
 `isolation:
 `items-center`.
@@ -2146,6 +2165,7 @@ __('wirekit::To
 `md`:
 `min-h-0`
 `min-h`
+`modal.trigger`
 `mouseenter`
 `mouseenter`/`mouseleave`
 `mouseleave`
@@ -2155,6 +2175,7 @@ __('wirekit::To
 `null`
 `null`,
 `offset`
+`openNamedOverlay($event)`
 `open`
 `open`,
 `optimistic="method"`
@@ -2459,6 +2480,7 @@ arms
 around
 array
 array:
+array_filter(
 array_filter([
 array_key_exists('aria-labelledby',
 arrive
@@ -3238,6 +3260,7 @@ drawer.blade.php
 drawer/close.blade.php.
 drawn
 draws
+draws,
 dresses
 drift
 drifts.
@@ -3338,6 +3361,7 @@ etc.)
 etc.),
 evaluated
 event
+event's
 events
 events.
 ever
@@ -3429,6 +3453,7 @@ filled($helpName
 filled($href)
 filled($iconOnlyBelow)
 filled($label)
+filled($name)
 filled($stackBelow)
 filled($tokenValue)
 filled()
@@ -3548,6 +3573,7 @@ frame.
 framed
 fresh
 from
+from,
 front
 full
 fully
@@ -3575,6 +3601,7 @@ gate,
 gated
 gates
 gave
+gave,
 generate
 generated
 generates
@@ -3804,6 +3831,7 @@ include
 included.
 including
 increments
+indentation,
 independent
 independently
 indicator
@@ -3979,6 +4007,7 @@ leaving
 left
 left-to-right;
 left.
+legend
 legible,
 legitimately
 length,
@@ -4203,7 +4232,7 @@ natively,
 navigable
 navigable,
 navigated
-navigating,
+navigating
 navigation
 near-miss
 nearest
@@ -4321,6 +4350,7 @@ only:
 onmouseover=alert(1)"`
 onto
 open
+open.
 opened
 opening
 opens
@@ -4531,6 +4561,7 @@ preg_match('/<(?:button|a)\b/i',
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 presence
 present
@@ -4545,6 +4576,7 @@ preview,
 previous
 primary:
 primitive
+primitive's
 primitive.
 priority
 prod).
@@ -4737,6 +4769,7 @@ resolves
 resources/js/components/input.js,
 responsive
 rest
+rest.
 resting
 restored
 rests
@@ -5142,6 +5175,7 @@ success,
 success-hover
 success:
 such
+suffix
 suggests.
 supplied
 supplies
@@ -5156,6 +5190,7 @@ surface="filled">{{
 surface="ghost"
 surface="ghost">Discard</x-wirekit::button>
 surface="outline"
+surface="outline"`.
 surfaces
 surrounding
 survive
@@ -5252,6 +5287,7 @@ text-level
 text-only
 text.
 text/bg/border
+text:
 textarea
 than
 than.
@@ -5286,6 +5322,7 @@ this,
 this.
 those
 three
+three,
 three-line
 threshold
 through
@@ -5480,6 +5517,7 @@ user-agent
 uses
 uses.
 using
+usually
 utilities
 utility
 utility,
@@ -5690,6 +5728,7 @@ writing
 written
 written,
 written.
+written:
 wrong
 wrong.
 wrote
@@ -5718,7 +5757,6 @@ x-model="typed"
 x-on:change="run($event.target.value)"
 x-on:click
 x-on:click.capture="blockUnlessConfirmed($event)"
-x-on:click.prevent.stop="openNamedOverlay()"
 x-on:click.self="handleBackdropClick()"
 x-on:click="$dispatch('wirekit:field-help',
 x-on:click="_discardChanges()">{{
@@ -5727,6 +5765,7 @@ x-on:click="dismissByReader('close-button')"
 x-on:click="dismissOverlay()"
 x-on:click="dismissOverlay()",
 x-on:click="handleBackdropClick()"
+x-on:click="openNamedOverlay($event)"
 x-on:click="show()"
 x-on:click="show()">
 x-on:click="{{

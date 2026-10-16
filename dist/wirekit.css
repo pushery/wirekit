@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.66.0 — MIT License
+ * WireKit CSS v2.67.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -168,6 +168,33 @@
        make the override reachable. */
     --color-wk-info: #0891b2;
 
+    /* ─── Energy label (`<x-wirekit::energy-label>`) ───
+       The seven colors of the efficiency arrow, from the best class to the worst, as the EU
+       energy labeling acts set them: CMYK 100-0-100-0, 70-0-100-0, 30-0-100-0, 0-0-100-0,
+       0-30-100-0, 0-70-100-0 and 0-100-100-0, converted to sRGB. A legal color, so the same in
+       every theme and both modes. */
+    --color-wk-energy-1: #00a651;
+    --color-wk-energy-2: #4cb848;
+    --color-wk-energy-3: #bfd730;
+    --color-wk-energy-4: #fff200;
+    --color-wk-energy-5: #fdb913;
+    --color-wk-energy-6: #f37021;
+    --color-wk-energy-7: #ed1c24;
+    /* ─── Tire Label ───
+       The two colored scales of the EU tire label, Regulation (EU) 2020/740, Annex II, from class A
+       to class E, in the sRGB the EU product database draws the label with: fuel efficiency in the
+       energy colors with its own B, wet grip in blues. Legal colors, the same in both modes. */
+    --color-wk-tire-fuel-1: #00a651;
+    --color-wk-tire-fuel-2: #9aca3c;
+    --color-wk-tire-fuel-3: #fff200;
+    --color-wk-tire-fuel-4: #fdb913;
+    --color-wk-tire-fuel-5: #ed1c24;
+    --color-wk-tire-grip-1: #0066b3;
+    --color-wk-tire-grip-2: #0080c6;
+    --color-wk-tire-grip-3: #4ba6dd;
+    --color-wk-tire-grip-4: #75bee9;
+    --color-wk-tire-grip-5: #abe1fa;
+
     /* ─── Chart Palette (`palette="categorical"` on a chart) ───
        Eight pastels a chart's series take in order, each a fill and an edge. The edge carries
        the data, the line of a line chart and the outline of a bar or a slice, and stands at
@@ -311,13 +338,14 @@
        read as one coherent pair. */
     --color-wk-border-success: oklch(45.6% 0.17 149.7);
     /* border-unsaved marks a value the server does not have yet (x-wk-unsaved): the frame of a
-       field, the ring of a checkbox, a radio or a switch, and the symbol and sentence of
-       <x-wirekit::unsaved-hint>. An unsaved value is a warning, so the token is the warning
-       text color, amber beside the red of an error and the green of a success. It follows
-       the mode and a preset's warning color, and stays readable as the hint's sentence
-       (4.5:1) and visible as a frame (3:1, WCAG 1.4.11). Set it to mark unsaved values in
-       another color. */
-    --color-wk-border-unsaved: var(--color-wk-warning-text);
+       field and the line around a checkbox, a radio or a switch. Unsaved is a hint, not a fault,
+       so the token is the light warning color, one line of it and nothing else, and the words
+       beside the field's label say what the line means: a strong frame read as a field that was
+       refused. The line is not held at 3:1, since the words carry the state (WCAG 1.4.1) and a
+       field that holds a value is told by that value and its label. It follows the mode and a
+       preset's warning color. Set it to mark unsaved values in another color, or to
+       `var(--color-wk-warning-text)` for a line at 3:1. */
+    --color-wk-border-unsaved: var(--color-wk-warning);
 
     /* ─── Focus Ring ─── */
     --color-wk-ring: oklch(14.5% 0 0);
@@ -1301,7 +1329,7 @@
     --color-wk-bg-active: var(--color-wk-bg-muted);
     --color-wk-code: var(--color-wk-text);
     --color-wk-code-bg: var(--color-wk-bg-muted);
-    --color-wk-border-unsaved: var(--color-wk-warning-text);
+    --color-wk-border-unsaved: var(--color-wk-warning);
     --shadow-wk-badge: 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
     --color-wk-rail-bg: var(--color-wk-bg-elevated);
     --color-wk-rail-text: var(--color-wk-text);
@@ -2032,9 +2060,11 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
 }
 
 /* A field whose value the server does not have yet, inside `x-wk-unsaved`: see
-   resources/js/utils/unsaved.js. The frame says it in its own color, so it reads as neither an
-   error nor a success. An invalid field keeps its error border: the rule skips `aria-invalid`, and
-   it sits before the `:user-invalid` rule below, which wins a tie by coming later.
+   resources/js/utils/unsaved.js. The frame takes the light warning color and nothing else, no
+   ring and no fill, so the field reads as unsaved rather than refused, and the words beside its
+   label say what the frame means. An invalid field keeps its error border: the rule skips
+   `aria-invalid`, and it sits before the `:user-invalid` rule below, which wins a tie by coming
+   later.
 
    The second selector is for a component whose `wire:model` sits on its root rather than on the
    field, and `:where()` keeps it at the weight of the first, below `:user-invalid`.
@@ -2043,27 +2073,26 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
    of its own, so there the frame takes the color, and the field inside is left out by a `:where()`
    that adds no weight.
 
-   The outline draws the edge again inside the border box, twice the border width and at least
-   2px, so an unsaved value reads as a warning rather than as a hairline. With a border it
-   covers the border and as much again inside it; under a theme whose border width is 0px, as
-   in the Material and Minimal presets, it is the only edge. It takes no room, so the field
-   does not move when it becomes unsaved. */
+   The outline draws the same line again inside the border box, in the border's width and never
+   under 1px: over a border it changes nothing, and under a theme whose border width is 0px, as
+   in the Material and Minimal presets, it is the only edge. It takes no room, so the field does
+   not move when it becomes unsaved, and the field's focus ring, a shadow, stays as it is. */
 .wk-field[data-wk-unsaved]:not([aria-invalid="true"]):where(:not(.wk-field-frame .wk-field)),
 :where([data-wk-unsaved]:not(.wk-field)) .wk-field:not([aria-invalid="true"]):where(:not(.wk-field-frame .wk-field)),
 .wk-field-frame:has(.wk-field[data-wk-unsaved]:not([aria-invalid="true"])),
 :where([data-wk-unsaved]:not(.wk-field)) .wk-field-frame:has(.wk-field:not([aria-invalid="true"])) {
     border-color: var(--color-wk-border-unsaved);
-    outline: max(2px, calc(var(--border-wk-width) * 2)) solid var(--color-wk-border-unsaved);
-    outline-offset: calc(max(2px, calc(var(--border-wk-width) * 2)) * -1);
+    outline: max(1px, var(--border-wk-width)) solid var(--color-wk-border-unsaved);
+    outline-offset: calc(max(1px, var(--border-wk-width)) * -1);
 }
 
-/* A checkbox, a radio or a switch whose value the server does not have yet: a ring in the
+/* A checkbox, a radio or a switch whose value the server does not have yet: a line of 1px in the
    same color around the box or the track, clear of the control's own edge, which keeps
    telling checked from unchecked. `x-wk-unsaved` marks the native input, and the frame that
    draws the control follows it. An invalid control keeps its error edge and takes no ring,
    and while the keyboard has the focus on the control its focus ring takes the place. */
 [data-wk-unsaved]:not([aria-invalid="true"]):not(:focus-visible) ~ .wk-choice-frame {
-    outline: max(2px, calc(var(--border-wk-width) * 2)) solid var(--color-wk-border-unsaved);
+    outline: 1px solid var(--color-wk-border-unsaved);
     outline-offset: 2px;
 }
 
@@ -2094,6 +2123,30 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
 
 [data-wk-unsaved-hint]:not([data-wk-unsaved-shown]) [data-wk-unsaved-text] {
     display: none;
+}
+
+/* The words beside the label of a field whose value the server does not have yet. `x-wk-unsaved`
+   puts them on the field's label as `data-wk-unsaved-note`, in the language of the page, and
+   takes them off once the field counts as saved or turns invalid. Small and in the muted text
+   color, in the line of the label, so nothing below the field moves while it is typed into.
+
+   The empty alternative text keeps them out of the field's accessible name, which stays its
+   label. It is above the support baseline (Safari 17.4 against a floor of 16.4), so it waits for
+   `@supports`; below it the words are read with the label, which then says the field is unsaved,
+   and nothing else changes. */
+[data-wk-unsaved-note]::after {
+    content: attr(data-wk-unsaved-note);
+    margin-inline-start: 0.5em;
+    font-size: var(--text-wk-xs);
+    font-weight: 400;
+    color: var(--color-wk-text-muted);
+    white-space: nowrap;
+}
+
+@supports (content: "x" / "") {
+    [data-wk-unsaved-note]::after {
+        content: attr(data-wk-unsaved-note) / "";
+    }
 }
 
 /* A required field the reader left invalid is red: every field, not only the ones that spell
@@ -2143,6 +2196,13 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
         border-color: var(--color-wk-border-error);
         outline-color: var(--color-wk-border-error);
     }
+}
+
+/* A combobox that can be cleared keeps its text clear of that button: it stands beside the
+   chevron, from 2rem to 3.5rem before the end of the field, and the end padding holds both.
+   The touch rules below widen both to the touch target. */
+[data-wk-combobox-clearable] {
+    padding-inline-end: 3.5rem;
 }
 
 @media (pointer: coarse) {
@@ -2403,6 +2463,18 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
         padding-inline-end: calc(2rem + var(--size-wk-touch-target));
     }
 
+    /* A searchable combobox has a chevron that is a button and takes the touch target as well,
+       so the clear button stands after it, and the text keeps clear of one or both. */
+    input[data-wk-combobox-search] {
+        padding-inline-end: calc(0.5rem + var(--size-wk-touch-target));
+    }
+    input[data-wk-combobox-search][data-wk-combobox-clearable] {
+        padding-inline-end: calc(0.5rem + 2 * var(--size-wk-touch-target));
+    }
+    input[data-wk-combobox-search] ~ button[data-wk-combobox-clear] {
+        inset-inline-end: calc(0.5rem + var(--size-wk-touch-target));
+    }
+
     /* A sort head is as wide as its column's name, which can be narrower than a finger (`ID`),
        so it takes the width of the touch target as well as its height. */
     button.wk-table-sort {
@@ -2517,6 +2589,16 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
        is cut (`tabindex="0"`), so a line that fits keeps its height. */
     [data-wk-cut-tip][tabindex="0"] {
         padding-block: max(0px, calc((var(--size-wk-target-min) - 1lh) / 2));
+    }
+
+    /* A tire or energy label that wraps keeps its rows half a target apart. Each arrow takes the
+       touch target as an area out of flow, centered on the arrow, and the small gap between rows
+       let that area reach into the arrow or the sheet link of the next row, where the one painted
+       last takes the taps on its neighbor's edge. Half a target clears it whatever the arrow's
+       height, and a label that does not wrap has no row gap to show. */
+    [data-wk-tire-label],
+    [data-wk-energy-label] {
+        row-gap: calc(var(--size-wk-touch-target) / 2);
     }
 }
 
@@ -2665,6 +2747,18 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
     padding-inline-end: calc(2rem + var(--size-wk-touch-target));
 }
 
+:where([data-wk-touch]) input[data-wk-combobox-search] {
+    padding-inline-end: calc(0.5rem + var(--size-wk-touch-target));
+}
+
+:where([data-wk-touch]) input[data-wk-combobox-search][data-wk-combobox-clearable] {
+    padding-inline-end: calc(0.5rem + 2 * var(--size-wk-touch-target));
+}
+
+:where([data-wk-touch]) input[data-wk-combobox-search] ~ button[data-wk-combobox-clear] {
+    inset-inline-end: calc(0.5rem + var(--size-wk-touch-target));
+}
+
 :where([data-wk-touch]) button.wk-table-sort {
     min-width: var(--size-wk-touch-target);
 }
@@ -2706,6 +2800,11 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
 
 :where([data-wk-touch]) [data-wk-cut-tip][tabindex="0"] {
     padding-block: max(0px, calc((var(--size-wk-target-min) - 1lh) / 2));
+}
+
+:where([data-wk-touch]) [data-wk-tire-label],
+:where([data-wk-touch]) [data-wk-energy-label] {
+    row-gap: calc(var(--size-wk-touch-target) / 2);
 }
 
 /* touch-surface: generated section ends ─────────────────────────── */
@@ -2975,7 +3074,9 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
    `--color-wk-bg-hover` and `--color-wk-bg-active`, each in the state that paints it: a card or a panel always, a menu item
    under the pointer or the keyboard, a selected row, a striped one. A rule of this file that
    paints a surface states it in the same rule. An element of your own that paints a surface with
-   those classes is followed as well; one that paints it another way names it with
+   those classes is followed as well, in either spelling, `bg-[var(…)]` or `bg-[color:var(…)]`, and
+   so are the gray hovers the kit itself leaves to you: `hover:` over `bg-subtle` or `bg-muted`, also
+   on a row that is not current or not selected. One that paints it another way names it with
    `data-wk-surface`, or with `data-wk-surface-hover` for a gray that comes with the pointer.
    Those rules come last, so a surface you name wins over one the classes imply.
 
@@ -2991,6 +3092,35 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
    does not darken a fill whose surface stays as it was. */
 
 /* At rest, and an open submenu, which keeps the shade of its row under the pointer. */
+
+:where(.bg-\[color\:var\(--color-wk-bg\)\]) {
+    --color-wk-surface: var(--color-wk-bg);
+    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+}
+
+:where(.bg-\[color\:var\(--color-wk-bg-active\)\]) {
+    --color-wk-surface: var(--color-wk-bg-active);
+    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+}
+
+:where(.bg-\[color\:var\(--color-wk-bg-elevated\)\]) {
+    --color-wk-surface: var(--color-wk-bg-elevated);
+    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+    --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-elevated));
+    --color-wk-bg-active: color-mix(in srgb, var(--color-wk-text) 8%, var(--color-wk-bg-elevated));
+}
+
+:where(.bg-\[color\:var\(--color-wk-bg-hover\)\]) {
+    --color-wk-surface: var(--color-wk-bg-hover);
+    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+}
+
+:where(.bg-\[color\:var\(--color-wk-bg-muted\)\]) {
+    --color-wk-surface: var(--color-wk-bg-muted);
+    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+    --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-muted));
+    --color-wk-bg-active: var(--color-wk-bg);
+}
 
 :where(.bg-\[color\:var\(--color-wk-bg-subtle\)\]) {
     --color-wk-surface: var(--color-wk-bg-subtle);
@@ -3052,6 +3182,20 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
         --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
     }
 
+    :where(.hover\:bg-\[color\:var\(--color-wk-bg-muted\)\]:hover) {
+        --color-wk-surface: var(--color-wk-bg-muted);
+        --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+        --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-muted));
+        --color-wk-bg-active: var(--color-wk-bg);
+    }
+
+    :where(.hover\:bg-\[color\:var\(--color-wk-bg-subtle\)\]:hover) {
+        --color-wk-surface: var(--color-wk-bg-subtle);
+        --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+        --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-subtle));
+        --color-wk-bg-active: color-mix(in srgb, var(--color-wk-text) 8%, var(--color-wk-bg-subtle));
+    }
+
     :where(.hover\:bg-\[var\(--color-wk-bg-active\)\]:hover) {
         --color-wk-surface: var(--color-wk-bg-active);
         --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
@@ -3067,6 +3211,20 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
     :where(.hover\:bg-\[var\(--color-wk-bg-hover\)\]:hover) {
         --color-wk-surface: var(--color-wk-bg-hover);
         --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+    }
+
+    :where(.hover\:bg-\[var\(--color-wk-bg-muted\)\]:hover) {
+        --color-wk-surface: var(--color-wk-bg-muted);
+        --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+        --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-muted));
+        --color-wk-bg-active: var(--color-wk-bg);
+    }
+
+    :where(.hover\:bg-\[var\(--color-wk-bg-subtle\)\]:hover) {
+        --color-wk-surface: var(--color-wk-bg-subtle);
+        --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+        --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-subtle));
+        --color-wk-bg-active: color-mix(in srgb, var(--color-wk-text) 8%, var(--color-wk-bg-subtle));
     }
 }
 
@@ -3114,6 +3272,26 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
     ) {
         --color-wk-surface: var(--color-wk-bg-active);
         --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+    }
+
+    :where(
+        .not-\[\[aria-current\]\]\:hover\:bg-\[var\(--color-wk-bg-muted\)\]:not([aria-current]):hover,
+        .not-\[\[aria-selected\=true\]\]\:hover\:bg-\[var\(--color-wk-bg-muted\)\]:not([aria-selected=true]):hover
+    ) {
+        --color-wk-surface: var(--color-wk-bg-muted);
+        --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+        --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-muted));
+        --color-wk-bg-active: var(--color-wk-bg);
+    }
+
+    :where(
+        .not-\[\[aria-current\]\]\:hover\:bg-\[var\(--color-wk-bg-subtle\)\]:not([aria-current]):hover,
+        .not-\[\[aria-selected\=true\]\]\:hover\:bg-\[var\(--color-wk-bg-subtle\)\]:not([aria-selected=true]):hover
+    ) {
+        --color-wk-surface: var(--color-wk-bg-subtle);
+        --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+        --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-subtle));
+        --color-wk-bg-active: color-mix(in srgb, var(--color-wk-text) 8%, var(--color-wk-bg-subtle));
     }
 }
 
@@ -3886,99 +4064,38 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
     --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
 }
 
-/* The frozen cell draws the lines along its own edges. In a collapsed table a line belongs
-   to the edge between two cells, and a sticky cell with a background is its own stacking
-   context, painted above the table's lines: under the frozen column a line shows only where
-   the cells leave it uncovered. WebKit places each of those backgrounds on whole device pixels
-   on its own, so a line that sits on a fraction of a pixel lost part or all of its width under
-   the frozen column while the columns beside it showed it whole.
+/* The frozen cells of the component's own tables (`.wk-table`) leave the lines to the table, as
+   the data table's do. Each is masked off for a line and a half at its top and its bottom, so the
+   line the table draws between two rows shows through it as it is drawn beside it, in every
+   engine and wherever the row sits inside a pixel. A frozen cell is sticky with a background of
+   its own, painted above the table's lines, so without the mask a line showed only where the cell
+   left it uncovered, and WebKit, which places each background on whole device pixels, lost part
+   or all of a line on a fraction of a pixel. A line drawn on the frozen cell itself, the earlier
+   answer, landed on other device pixels than the table's own in Blink where the rows sit on a
+   fraction of one, and came out twice beside itself.
 
-   The line is taken from where the table already draws it rather than restated: the cell
-   inherits its row's edge (the last header row first inherits the head's, the first footer
-   row the foot's), and a pseudo-element inherits it from the cell. A row that draws no line,
-   such as a record whose detail row is open, therefore draws none here either. The
-   pseudo-element sits on the edge, one line width out from the cell's padding box, so where
-   the engine already shows the line it lies on top of it.
-
-   Only the component's own tables (`.wk-table`): a table another stylesheet styles may draw
-   its lines on the cells themselves, and inheriting the row's edge would replace them. */
-.wk-table[data-wk-sticky-column] > thead > tr:last-child {
-    border-bottom: inherit;
-}
-
-.wk-table[data-wk-sticky-column] > tfoot > tr:first-child {
-    border-top: inherit;
-}
-
-.wk-table[data-wk-sticky-column] > :is(thead, tbody) > tr > :is(th, td):first-child {
-    border-bottom: inherit;
-}
-
-.wk-table[data-wk-sticky-column] > tfoot > tr > :is(th, td):first-child {
-    border-top: inherit;
-}
-
-.wk-table[data-wk-sticky-column] > :is(thead, tbody) > tr > :is(th, td):first-child::after {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    inset-block-end: calc(var(--border-wk-width) * -1);
-    border-bottom: inherit;
-    pointer-events: none;
-}
-
-.wk-table[data-wk-sticky-column] > tfoot > tr > :is(th, td):first-child::before {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    inset-block-start: calc(var(--border-wk-width) * -1);
-    border-top: inherit;
-    pointer-events: none;
-}
-
-/* Each frozen body cell is painted after the one above it, so the cell below a line still
-   covered part of the line the cell above draws. The cell below therefore draws it again, on
-   its own top edge, where nothing is painted after it. It draws its row's own edge, which is
-   the line above the row whenever the row draws a line at all.
-
-   Two body rows have no line of their own: the last one, and a record whose detail row is
-   open. For those the order turns around instead. The last row's frozen cell takes the lowest
-   layer, a record that has a detail row the middle one and every other body row the top one,
-   so the cell above such a row is painted after it and the line its pseudo-element draws stays
-   in view. The middle layer keeps a record above the last row while its detail row is closed,
-   and the last record, whose detail row is the last row, takes the lowest. A detail row draws
-   nothing above itself: the line between a record and its details is left out on purpose.
-
-   The header cell stays above all of these layers, and all of them stay below a sticky header. */
-.wk-table[data-wk-sticky-column] > tbody > tr > :is(th, td):first-child {
-    z-index: 3;
-}
-
-.wk-table[data-wk-sticky-column] > tbody > tr:has(+ tr[data-wk-table-details]) > :is(th, td):first-child {
-    z-index: 2;
-}
-
-.wk-table[data-wk-sticky-column] > tbody > tr:last-child > :is(th, td):first-child,
-.wk-table[data-wk-sticky-column] > tbody > tr:nth-last-child(2):has(+ tr[data-wk-table-details]:last-child) > :is(th, td):first-child {
-    z-index: 1;
-}
-
-.wk-table[data-wk-sticky-column] > tbody > tr + tr:not([data-wk-table-details]) > :is(th, td):first-child::before {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    inset-block-start: calc(var(--border-wk-width) * -1);
-    border-bottom: inherit;
-    pointer-events: none;
+   What shows in the bands is the row behind the cell, so the cell wears that row's color: it
+   paints the surface it stands on, which a striped row, a hovered one, a filled head and a card
+   around the table each name, rather than the page's background. A cell's text never reaches its
+   edge. The data table draws its frozen cells itself and carries no `.wk-table`. */
+.wk-table[data-wk-sticky-column] > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+    --color-wk-surface: inherit;
+    --color-wk-bg-soft: inherit;
+    --color-wk-bg-hover: inherit;
+    --color-wk-bg-active: inherit;
+    background-color: var(--color-wk-surface);
+    --wk-frozen-edge: calc(var(--border-wk-width) * 1.5);
+    -webkit-mask-image: linear-gradient(to bottom, transparent var(--wk-frozen-edge), #000 var(--wk-frozen-edge), #000 calc(100% - var(--wk-frozen-edge)), transparent calc(100% - var(--wk-frozen-edge)));
+    mask-image: linear-gradient(to bottom, transparent var(--wk-frozen-edge), #000 var(--wk-frozen-edge), #000 calc(100% - var(--wk-frozen-edge)), transparent calc(100% - var(--wk-frozen-edge)));
 }
 
 /* The data table's frozen cells (`data-wk-frozen`: the selection cell and the first data cell)
    leave the lines to the table. Each is masked off for a line and a half at its top and its
    bottom, so the line the table draws between two rows shows through it as it is drawn beside it,
    in every engine and wherever the row sits inside a pixel. A line drawn on the frozen cell
-   instead, as the table's frozen column does, landed on other device pixels than the table's own
-   where the rows sit on a fraction of one: in Blink at 2x a whole pixel away, so the line came out
-   twice beside itself.
+   instead, as the table's frozen column did until it took the same mask, landed on other device
+   pixels than the table's own where the rows sit on a fraction of one: in Blink at 2x a whole
+   pixel away, so the line came out twice beside itself.
 
    What shows in the bands is the row behind the cell, and a frozen cell of the data table wears
    its row's color in every state, so the bands do not show. A cell's text never reaches its edge. */
@@ -5156,6 +5273,217 @@ dl[data-layout="grid"] {
     z-index: 1;
 }
 
+/* ─── Energy label (<x-wirekit::energy-label>) ────────────── */
+/* The image the EU energy labeling acts ask for beside a price on the web: the range of the
+   scale in black on the blunt side, then an arrow in the color of the product's class, with the
+   class in white, bold and in the size of the price, centered in the rectangular part. A visible
+   black edge runs around the arrow and the letter. The colors are legal colors, so forced colors
+   leave the image as they leave a picture. `data-wk-direction="left"` mirrors it: the arrow
+   points left and the range sits on its right. */
+.wk-energy-image {
+    display: inline-flex;
+    align-items: stretch;
+    height: 1.6em;
+    line-height: 1;
+    forced-color-adjust: none;
+}
+
+.wk-energy-image[data-wk-direction="left"],
+.wk-energy-image[data-wk-direction="left"] .wk-energy-arrow {
+    flex-direction: row-reverse;
+}
+
+.wk-energy-image[data-wk-energy-step="1"] {
+    --wk-energy: var(--color-wk-energy-1);
+}
+
+.wk-energy-image[data-wk-energy-step="2"] {
+    --wk-energy: var(--color-wk-energy-2);
+}
+
+.wk-energy-image[data-wk-energy-step="3"] {
+    --wk-energy: var(--color-wk-energy-3);
+}
+
+.wk-energy-image[data-wk-energy-step="4"] {
+    --wk-energy: var(--color-wk-energy-4);
+}
+
+.wk-energy-image[data-wk-energy-step="5"] {
+    --wk-energy: var(--color-wk-energy-5);
+}
+
+.wk-energy-image[data-wk-energy-step="6"] {
+    --wk-energy: var(--color-wk-energy-6);
+}
+
+.wk-energy-image[data-wk-energy-step="7"] {
+    --wk-energy: var(--color-wk-energy-7);
+}
+
+.wk-energy-range {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.2em 0.3em;
+    background: #fff;
+    border: 1px solid #000;
+    color: #000;
+    font-family: var(--font-wk-sans);
+    font-size: 0.4em;
+    font-weight: 700;
+}
+
+.wk-energy-range svg {
+    flex: 1 1 auto;
+    width: 0.6em;
+    min-height: 0;
+    margin-block: 0.1em;
+}
+
+.wk-energy-arrow {
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.wk-energy-body {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1em;
+    padding-inline: 0.2em;
+    background: var(--wk-energy);
+    border-block: 1px solid #000;
+}
+
+.wk-energy-tip {
+    flex: none;
+    width: 0.55em;
+    height: 100%;
+    overflow: visible;
+}
+
+.wk-energy-image[data-wk-direction="left"] .wk-energy-tip {
+    transform: scaleX(-1);
+}
+
+.wk-energy-tip polygon {
+    fill: var(--wk-energy);
+}
+
+.wk-energy-tip polyline {
+    fill: none;
+    stroke: #000;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
+
+/* The class in white with a black edge, so it reads on the yellow of the middle classes too.
+   The acts name Calibri Bold; Carlito is its metric-compatible open counterpart. */
+.wk-energy-letter {
+    color: #fff;
+    font-family: Calibri, Carlito, var(--font-wk-sans);
+    font-weight: 700;
+    white-space: nowrap;
+    text-shadow:
+        -0.04em 0 0 #000, 0.04em 0 0 #000, 0 -0.04em 0 #000, 0 0.04em 0 #000,
+        -0.03em -0.03em 0 #000, 0.03em -0.03em 0 #000, -0.03em 0.03em 0 #000, 0.03em 0.03em 0 #000;
+}
+
+/* ─── Tire label (<x-wirekit::tire-label>) ─────────────────── */
+/* The class arrows of the EU tire label for a shop on the web, one per parameter, drawn with the
+   energy label's arrow: pointing left, the class centered in the rectangular part, the range of
+   the classes in black on white beside it, then the parameter's pictogram. Fuel efficiency and wet
+   grip take the color of their class; the noise arrow is white with a black class, as the noise
+   classes are black on the label. Class and range are set in Noto Sans, bold, falling back to the
+   body face where it is not installed. */
+.wk-tire-image .wk-energy-arrow {
+    flex-direction: row-reverse;
+}
+
+.wk-tire-image .wk-energy-tip {
+    transform: scaleX(-1);
+}
+
+.wk-tire-image .wk-energy-letter,
+.wk-tire-image .wk-energy-range {
+    font-family: "Noto Sans", var(--font-wk-sans);
+}
+
+.wk-tire-image[data-wk-tire="fuel"][data-wk-tire-step="1"] {
+    --wk-energy: var(--color-wk-tire-fuel-1);
+}
+
+.wk-tire-image[data-wk-tire="fuel"][data-wk-tire-step="2"] {
+    --wk-energy: var(--color-wk-tire-fuel-2);
+}
+
+.wk-tire-image[data-wk-tire="fuel"][data-wk-tire-step="3"] {
+    --wk-energy: var(--color-wk-tire-fuel-3);
+}
+
+.wk-tire-image[data-wk-tire="fuel"][data-wk-tire-step="4"] {
+    --wk-energy: var(--color-wk-tire-fuel-4);
+}
+
+.wk-tire-image[data-wk-tire="fuel"][data-wk-tire-step="5"] {
+    --wk-energy: var(--color-wk-tire-fuel-5);
+}
+
+.wk-tire-image[data-wk-tire="grip"][data-wk-tire-step="1"] {
+    --wk-energy: var(--color-wk-tire-grip-1);
+}
+
+.wk-tire-image[data-wk-tire="grip"][data-wk-tire-step="2"] {
+    --wk-energy: var(--color-wk-tire-grip-2);
+}
+
+.wk-tire-image[data-wk-tire="grip"][data-wk-tire-step="3"] {
+    --wk-energy: var(--color-wk-tire-grip-3);
+}
+
+.wk-tire-image[data-wk-tire="grip"][data-wk-tire-step="4"] {
+    --wk-energy: var(--color-wk-tire-grip-4);
+}
+
+.wk-tire-image[data-wk-tire="grip"][data-wk-tire-step="5"] {
+    --wk-energy: var(--color-wk-tire-grip-5);
+}
+
+.wk-tire-image[data-wk-tire="noise"] {
+    --wk-energy: #fff;
+}
+
+.wk-tire-image[data-wk-tire="noise"] .wk-energy-letter {
+    color: #000;
+    text-shadow: none;
+}
+
+.wk-tire-pictogram {
+    display: inline-flex;
+    align-items: center;
+    margin-inline-start: 0.15em;
+    color: #000;
+    background: #fff;
+}
+
+.wk-tire-pictogram svg {
+    width: 1.1em;
+    height: 1.1em;
+}
+
+.wk-tire-decibels {
+    align-self: center;
+    margin-inline-start: 0.1em;
+    color: #000;
+    background: #fff;
+    font-family: "Noto Sans", var(--font-wk-sans);
+    font-size: 0.5em;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 /* ─── Indicator (<x-wirekit::indicator>) ───────────────────── */
 /* Anchors a count badge / status dot / ribbon to a corner of ANY target,   */
 /* so a bell, avatar or card stops needing hand-rolled                       */
@@ -5749,7 +6077,10 @@ dl[data-layout="grid"] {
        render, but a ring with no inline style should still be a ring at rest
        rather than an invisible transparent disc. */
     --wk-radial-value: 0;
-    --wk-radial-fill: var(--color-wk-accent);
+    --wk-radial-fill: var(--color-wk-accent-text);
+    /* The edge of the track, a line on either side of the ring: the light track alone stood at
+       1.09:1 on the page, so where the ring ran could not be read (WCAG 1.4.11). */
+    --wk-radial-edge: max(1px, var(--border-wk-width));
 
     inline-size: var(--wk-radial-size);
     block-size: var(--wk-radial-size);
@@ -5761,6 +6092,13 @@ dl[data-layout="grid"] {
     inset: 0;
     border-radius: var(--radius-wk-full);
     background:
+        radial-gradient(
+            farthest-side,
+            transparent calc(100% - var(--wk-radial-thickness)),
+            var(--color-wk-border-strong) calc(100% - var(--wk-radial-thickness)) calc(100% - var(--wk-radial-thickness) + var(--wk-radial-edge)),
+            transparent calc(100% - var(--wk-radial-thickness) + var(--wk-radial-edge)) calc(100% - var(--wk-radial-edge)),
+            var(--color-wk-border-strong) calc(100% - var(--wk-radial-edge))
+        ),
         conic-gradient(
             var(--wk-radial-fill) calc(var(--wk-radial-value) * 1%),
             var(--color-wk-bg-muted) 0
@@ -5931,6 +6269,12 @@ dl[data-layout="grid"] {
     --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-muted));
     --color-wk-bg-active: var(--color-wk-bg);
     border-color: var(--color-wk-bg-muted);
+    /* The pressed state is an edge as well as a tint (WCAG 1.4.1, 1.4.11): a line in the muted
+       text color just inside the border, at 5.29:1 or more against the tinted fill in every preset
+       and mode, where the strong border color stood at 2.63:1. An outline rather than a shadow, so
+       the focus ring, which is a shadow, is drawn beside it rather than in its place. */
+    outline: max(1px, var(--border-wk-width)) solid var(--color-wk-text-muted);
+    outline-offset: calc(-1 * (var(--border-wk-width) + max(1px, var(--border-wk-width))));
 }
 
 /* The pressed icon's color, from the button's active intent. On the pressed surface, across
@@ -9600,6 +9944,29 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     }
     .wk-slider::-moz-range-thumb {
         box-shadow: 0 0 0 var(--border-wk-width) var(--color-wk-border-strong);
+    }
+
+    /* ------------------------------------------------------------ */
+    /* 9 — A card that folds prints open.                            */
+    /*                                                              */
+    /* Paper has no button to open it with, so the folding part of  */
+    /* a collapsible card prints whatever the reader left it at. It  */
+    /* is hidden by the `hidden` attribute, by `x-show`'s inline     */
+    /* `display: none` or, where the engine reveals hidden content   */
+    /* on find in page, by `content-visibility`, and all three are   */
+    /* undone. The chevron says nothing on paper.                   */
+    [data-wk-card-region] {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    @supports (content-visibility: visible) {
+        [data-wk-card-region] {
+            content-visibility: visible !important;
+        }
+    }
+    .wk-card-chevron {
+        display: none !important;
     }
 }
 

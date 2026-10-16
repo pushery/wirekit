@@ -172,6 +172,17 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
+    // A filled star is a graphic, so it takes the warning intent's text tone, which stands at 3:1
+    // on the page where the warning fill stood at 2.13:1. A rating its developer recolored by
+    // setting `--color-wk-warning` on it, inline or through a personalized class, keeps drawing
+    // in that color: that is how this component has been recolored.
+    $recolored = str_contains((string) $attributes->get('style', ''), '--color-wk-warning')
+        || str_contains((string) $attributes->get('class', '').' '.$wrapperClasses, '--color-wk-warning:');
+
+    if ($recolored) {
+        $attributes = $attributes->merge(['style' => '--wk-rating-fill: var(--color-wk-warning);']);
+    }
+
     // Icon size scales with the size prop
     $iconSize = match ($size) {
         'sm' => 'h-4 w-4',
@@ -446,14 +457,14 @@
                                  unfilled rides in a custom property, and the classes cut it from the end
                                  side, which is the left in a page written from right to left. Without the property, as
                                  where a policy drops the style, the star is cut whole and stays empty. --}}
-                            <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)] absolute inset-0 [clip-path:inset(0_var(--wk-rating-cut,100%)_0_0)] rtl:[clip-path:inset(0_0_0_var(--wk-rating-cut,100%))]" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5" style="--wk-rating-cut: {{ (1 - $fraction) * 100 }}%">
+                            <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))] fill-[var(--wk-rating-fill,var(--color-wk-warning-text))] absolute inset-0 [clip-path:inset(0_var(--wk-rating-cut,100%)_0_0)] rtl:[clip-path:inset(0_0_0_var(--wk-rating-cut,100%))]" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5" style="--wk-rating-cut: {{ (1 - $fraction) * 100 }}%">
                                 <path d="{{ $shape['path'] }}"/>
                             </svg>
                         </span>
                     @else
                         <svg
                             aria-hidden="true"
-                            class="{{ $iconSize }} {{ $isFull ? 'text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)]' : 'text-[color:var(--color-wk-text-subtle)] fill-none' }}"
+                            class="{{ $iconSize }} {{ $isFull ? 'text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))] fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]' : 'text-[color:var(--color-wk-text-subtle)] fill-none' }}"
                             viewBox="{{ $shape['viewBox'] }}"
                             stroke="currentColor"
                             stroke-width="1.5"
@@ -554,7 +565,7 @@
                         aria-hidden="true"
                         class="{{ $iconSize }} transition-colors duration-[var(--transition-wk-duration)]"
                         :class="(hovered >= {{ $i }} || (!hovered && rating >= {{ $i }}))
-                            ? 'text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)]'
+                            ? 'text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))] fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]'
                             : 'text-[color:var(--color-wk-text-subtle)] fill-none'"
                         viewBox="{{ $shape['viewBox'] }}"
                         stroke="currentColor"

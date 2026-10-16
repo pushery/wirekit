@@ -85,12 +85,12 @@
     // list pairs the dot color with the text label, so color is never the sole
     // signal (a11y).
     $dotClasses = [
-        'accent' => 'bg-[var(--color-wk-accent)]',
-        'success' => 'bg-[var(--color-wk-success)]',
-        'warning' => 'bg-[var(--color-wk-warning)]',
-        'danger' => 'bg-[var(--color-wk-danger)]',
-        // info takes --color-wk-info-tone, matching the map pin's _intentColor.
-        'info' => 'bg-[var(--color-wk-info-tone)]',
+        'accent' => 'bg-[var(--color-wk-accent-text)]',
+        'success' => 'bg-[var(--color-wk-success-text)]',
+        'warning' => 'bg-[var(--color-wk-warning-text)]',
+        'danger' => 'bg-[var(--color-wk-danger-text)]',
+        // The same tone as the map pin's _intentColor, so a row's dot and its pin agree.
+        'info' => 'bg-[var(--color-wk-info-text)]',
         'neutral' => 'bg-[var(--color-wk-text-muted)]',
     ];
 
@@ -100,10 +100,10 @@
     // doesn't have to be the theme accent (near-black on the stock theme).
     $highlightClasses = [
         'ring' => [
-            'accent' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-accent)]',
-            'success' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-success)]',
-            'warning' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-warning)]',
-            'danger' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-danger)]',
+            'accent' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-accent-text)]',
+            'success' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-success-text)]',
+            'warning' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-warning-text)]',
+            'danger' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-danger-text)]',
             'neutral' => 'bg-[var(--color-wk-bg-subtle)] ring-[length:var(--ring-wk-width)] ring-inset ring-[var(--color-wk-border-hover)]',
         ],
         'fill' => [

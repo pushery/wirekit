@@ -186,6 +186,7 @@ $wkField->follow($id);
 ''">{{
 '')
 ''))
+'')));
 '')),
 ''));
 ''),
@@ -388,6 +389,7 @@ $wkField->follow($id);
 ($candidate):
 ($hasError
 ($hasSuccess
+($helpName
 ($optionLabel['label']
 ($relAttr
 ($reserveMessage
@@ -1198,6 +1200,7 @@ bug
 build
 but
 button
+button's
 button's.
 button,
 button.
@@ -1478,6 +1481,7 @@ escaping
 evaluated
 even
 event
+event's
 events
 ever
 every
@@ -1684,6 +1688,7 @@ in:
 in_array('sr-only',
 included.
 including
+indentation,
 indicator
 inert
 inherited
@@ -1777,6 +1782,7 @@ leave
 leaves
 leaving
 left
+legend
 legitimately
 length,
 let
@@ -2061,6 +2067,7 @@ preflight
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -2223,6 +2230,7 @@ server-side
 set
 set.
 settles
+several
 shadow.
 shape
 shapes
@@ -2364,6 +2372,7 @@ text-[color:var(--color-wk-text-subtle)]"
 text-[length:var(--text-wk-sm)]">&nbsp;</p>
 text-level
 text.
+text:
 than
 that
 that:

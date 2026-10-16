@@ -60,10 +60,14 @@
     $percent = $max > 0 ? ($clamped / $max) * 100 : 0;
 
     // Track (the background bar) — use design tokens for color + radius
+    // The track is light, and an edge in the strong border color marks where it ends: the light
+    // fill alone stood at 1.09:1 on the page, so how far the bar reached could not be read without
+    // the value as text (WCAG 1.4.11). The edge is a shadow, which the fill covers where it runs.
     $trackClasses = WireKit::resolveClasses('progress', 'track', implode(' ', [
         'relative w-full overflow-hidden',
         'rounded-[var(--radius-wk-full)]',
         'bg-[var(--color-wk-bg-muted)]',
+        'inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-border-strong)]',
     ]), $scope);
 
     // Track height scales with the size prop
@@ -78,12 +82,12 @@
     // aliases the accent until an application gives info a hue of its own, and neutral uses the
     // muted text token for a low-emphasis gray bar.
     $fillColor = match ($variantValue) {
-        'success' => 'bg-[var(--color-wk-success)]',
-        'warning' => 'bg-[var(--color-wk-warning)]',
-        'danger' => 'bg-[var(--color-wk-danger)]',
+        'success' => 'bg-[var(--color-wk-success-text)]',
+        'warning' => 'bg-[var(--color-wk-warning-text)]',
+        'danger' => 'bg-[var(--color-wk-danger-text)]',
         'neutral' => 'bg-[var(--color-wk-text-muted)]',
-        'info' => 'bg-[var(--color-wk-info-tone)]',
-        default => 'bg-[var(--color-wk-accent)]', // primary + accent
+        'info' => 'bg-[var(--color-wk-info-text)]',
+        default => 'bg-[var(--color-wk-accent-text)]', // primary + accent
     };
 
     // Optional fill motion (determinate only — the indeterminate bar already

@@ -940,9 +940,10 @@ export default function wirekitEventCalendar(config = {}) {
         _stopTipRepair: null,
 
         _isTruncated(target) {
-            const els = (typeof target.matches === 'function' && target.matches('.truncate'))
+            // A hook rather than the `truncate` utility, which compact classes rename.
+            const els = (typeof target.matches === 'function' && target.matches('[data-wk-truncates]'))
                 ? [target]
-                : Array.from(target.querySelectorAll('.truncate'));
+                : Array.from(target.querySelectorAll('[data-wk-truncates]'));
             // +1 tolerates sub-pixel rounding so an exactly-fitting line never tips.
             if (els.some((el) => el.scrollWidth > el.clientWidth + 1)) {
                 return true;

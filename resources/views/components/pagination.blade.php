@@ -30,9 +30,9 @@
     // undo it. An empty list still gets nothing: there the list's own empty state speaks.
     //
     // `wire:model` on the pager moves onto the select and sets that Livewire property; under
-    // `livewire` the change also goes back to the first page. Without `wire:model` the choice is a GET
-    // form that sends it as `perPageName`, keeps the parameters the page links carry, and drops the
-    // page number, so the list starts at its first page.
+    // `livewire` the change also goes back to the first page. Without `wire:model` the choice is a row
+    // of links, one per size, each sending it as `perPageName`, keeping the parameters the page links
+    // carry and dropping the page number, so the list starts at its first page.
     'perPageOptions' => null,
     'perPageName' => 'per_page',
     // Draw the summary on a list that fits one page too: seven results say there are seven, the
@@ -282,9 +282,7 @@
     $perPageCurrent = null;
     $perPageLabelId = null;
     $perPageSelectAttributes = null;
-    $perPageUsesForm = false;
-    $perPageAction = null;
-    $perPageQuery = [];
+    $perPageLinks = [];
 
     if ($offersPerPage) {
         $perPageCurrent = (string) $paginator->perPage();
@@ -309,26 +307,35 @@
                 $selectAttributes['wire:change'] = e($firstPageAction);
             }
         } else {
-            // The form sends the choice through its own Apply button, never on `change`: a
-            // select that loads a new page as its value changes does it at every arrow key on
-            // Windows and Linux, where the arrows change a closed select's value, and moves the
-            // focus to the top of a new document without the reader having asked (WCAG 3.2.2).
-            $perPageUsesForm = true;
-
-            // The form goes where the page links go and keeps what they keep: the query the
+            // Without Livewire the choice is a row of links, one per size, and never a form of
+            // the pager's own: a browser does not nest forms, so inside a form of the developer's
+            // the pager's form was dropped, its button sent the developer's form, and the controls
+            // after the pager fell out of that form. A link also loads nothing until it is
+            // followed, where a select that loads on `change` does it at every arrow key on
+            // Windows and Linux (WCAG 3.2.2).
+            //
+            // Each link goes where the page links go and keeps what they keep: the query the
             // paginator was given (`withQueryString()`, `appends()`), without its own page number,
-            // so the list starts at its first page, and without an earlier choice of size.
+            // so the list starts at its first page, and with the size it names in place of an
+            // earlier one.
             $sample = method_exists($paginator, 'getCursorName')
                 ? ($paginator->nextPageUrl() ?? $paginator->previousPageUrl())
                 : $paginator->url(1);
-            $perPageAction = $abs($paginator->path());
             parse_str((string) parse_url((string) $sample, PHP_URL_QUERY), $kept);
             unset($kept[$pagingName], $kept[$perPageName]);
 
-            // Flattened to the names form fields carry, so `filter[status]` survives the round trip.
-            foreach (array_filter(explode('&', http_build_query($kept))) as $pair) {
-                [$queryName, $queryValue] = array_pad(explode('=', $pair, 2), 2, '');
-                $perPageQuery[] = [urldecode($queryName), urldecode($queryValue)];
+            // The sample already holds a query the path carries of its own, so the link starts
+            // from the path without it, and it ends on the fragment the page links end on.
+            $perPagePath = $abs(\Illuminate\Support\Str::before($paginator->path(), '?'));
+            $perPageFragment = (string) $paginator->fragment();
+
+            foreach ($perPageChoices as $size => $label) {
+                $perPageLinks[] = [
+                    'label' => $label,
+                    'url' => $perPagePath.'?'.\Illuminate\Support\Arr::query($kept + [$perPageName => (string) $size])
+                        .($perPageFragment !== '' ? '#'.$perPageFragment : ''),
+                    'current' => (string) $size === $perPageCurrent,
+                ];
             }
         }
 

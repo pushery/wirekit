@@ -160,7 +160,7 @@ $wrap,
 'bg-[var(--color-wk-bg)]',
 'bg-[var(--color-wk-tooltip-bg)]',
 'bold'
-'bold']))
+'bold',
 'border-b-[length:max(1px,var(--border-wk-width))]
 'break'
 'break',
@@ -168,7 +168,7 @@ $wrap,
 'center',
 'column',
 'danger'
-'danger']))
+'danger',
 'data-[wk-stuck]:border-b-[var(--color-wk-border)]',
 'default'
 'default',
@@ -194,6 +194,8 @@ $wrap,
 'heading');
 'headingFocusable'
 'headingId'
+'inherit'
+'inherit']))
 'intent'
 'leading'
 'leading',
@@ -225,7 +227,7 @@ $wrap,
 'min-w-0
 'min-w-0'
 'mono'
-'mono']))
+'mono',
 'muted'
 'muted',
 'no
@@ -239,7 +241,7 @@ $wrap,
 'py-[var(--padding-wk-y-xs)]',
 'py-[var(--wk-page-header-rest-gap,var(--padding-wk-y-md))]',
 'relaxed'
-'relaxed']))
+'relaxed',
 'right'
 'right']))
 'rounded-[var(--radius-wk-sm)]',
@@ -327,7 +329,6 @@ $wrap,
 'x-on:pointerup',
 'xl'
 'xl',
-'xl']))
 'xs'
 'z-[var(--z-wk-sticky)]',
 'z-[var(--z-wk-tooltip)]',
@@ -594,6 +595,7 @@ Written
 `e()`
 `false`
 `false`,
+`family`
 `filled()`
 `fit`
 `flex-1`
@@ -608,7 +610,11 @@ Written
 `heading`
 `hide-below-container`
 `hide-below`
+`inherit`
+`inherit`.
 `intent`
+`intent`,
+`leading`
 `level="2
 `line-clamp-N`
 `line-clamp-{$lineClamp}`,
@@ -631,6 +637,7 @@ Written
 `prose`.
 `row
 `sans`
+`size`,
 `sm`
 `tabindex="-1"`
 `tabindex`
@@ -645,6 +652,7 @@ Written
 `truncate`
 `utils/overlay.js`
 `variant`
+`weight`,
 `white-space`
 `wide`
 `wrap`
@@ -718,6 +726,7 @@ auto-derived
 auto`,
 away
 axis
+axis,
 axis:
 axis;
 back
@@ -808,6 +817,7 @@ client-only
 close
 code
 color
+color,
 color.
 colors
 column
@@ -837,6 +847,7 @@ content,
 context
 contract,
 control
+control's
 control.
 copy
 cost
@@ -850,7 +861,7 @@ cut.
 cuts
 cuts',
 cutting
-danger.
+danger
 data
 data-wk-cut-tip
 data-wk-page-header-actions
@@ -868,7 +879,7 @@ decision.
 declared
 decoration:
 default
-default)
+default),
 default,
 default:
 defaults
@@ -1078,6 +1089,8 @@ in_array($stackBelow,
 includes
 indent
 indented
+inherit,
+inherit.
 injection
 inside
 inside;
@@ -1148,6 +1161,7 @@ line;
 lineClamp
 lines
 link
+link,
 link.
 list
 listener
@@ -1334,7 +1348,7 @@ reads;
 reason
 reason.
 red
-relaxed,
+relaxed
 release,
 reliably,
 relies
@@ -1451,7 +1465,7 @@ space
 space,
 space.
 spaces
-spacing.
+spacing,
 spell
 spelled
 spelled:
@@ -1464,6 +1478,7 @@ start
 starts
 state
 state,
+states
 states:
 status
 stay
@@ -1616,6 +1631,7 @@ warning
 was
 was,
 way
+way,
 way.
 weight
 well

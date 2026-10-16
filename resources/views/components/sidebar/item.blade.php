@@ -36,6 +36,8 @@
     // value: `sidebar.group` has a `collapsible` of its own that folds its rows, and the
     // class behind the group keeps that one out of this search.
     'collapsible' => false,
+    // The sidebar's `track-current`: the row carries what `x-wk-current` moves after a visit.
+    'trackCurrent' => false,
 ])
 
 @php
@@ -55,7 +57,7 @@
     // echoes and renders as a stray HTML attribute on the <a>/<button>. `selected`
     // is the one that bites hardest: it IS a real HTML attribute, just not on these
     // elements, so it reads as intentional to anyone looking at the DOM.
-    $attributes = $attributes->except(['mode', 'selected', 'collapsible']);
+    $attributes = $attributes->except(['mode', 'selected', 'collapsible', 'trackCurrent', 'track-current']);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
@@ -207,6 +209,13 @@
         'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-body-weight)]',
     ]), $scope);
+
+    // Under the sidebar's `track-current` a link row carries what `x-wk-current` moves after a
+    // visit: the active classes it does not share with its base, and its own `aria-current` word.
+    // Its resting look follows `aria-current` by itself (`not-[[aria-current]]:`).
+    $trackAttributes = BooleanProp::from($trackCurrent, false) && ! $selectionMode
+        ? \Pushery\WireKit\Support\CurrentState::attributes($classes.' '.$activeClasses, $classes, $ariaCurrent)
+        : [];
 
     // Auto-inject rel="noopener noreferrer" and SR hint when target="_blank".
     // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —

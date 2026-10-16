@@ -65,8 +65,8 @@ $attributes
 $attributes->class([$baseClasses])
 $attributes->class([$classes])
 $attributes->class([$figureClasses])
-$attributes->class([$iconClasses]);
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('class')->class([$classes])
 $attributes->except('rel');
 $attributes->except('type')->except('aria-describedby')->class(['wk-field',
@@ -324,6 +324,7 @@ $roundedClass]);
 $rowAttributes
 $rowAttributes->class([$classes])
 $rowAttributes->class([$compactClasses])
+$rowId
 $scope);
 $shouldSetHidden
 $sign
@@ -842,6 +843,7 @@ $wrapLabel
 ($formattedBase
 ($from)
 ($hasError
+($helpName
 ($iconOnly
 ($iconOnly)
 ($iconOnlyBelow
@@ -1800,6 +1802,7 @@ Your
 \Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
+\Pushery\WireKit\Support\DomId::distinct($itemKey);
 \Pushery\WireKit\Support\DomId::unique($attributes->get('id')
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\FieldError::first($errors
@@ -1878,6 +1881,8 @@ __toString
 `--wk-touch-min`
 `-12,5
 `-12.5%`.
+`-2`,
+`-3`
 `-`
 `.attr`
 `.blur`
@@ -2236,6 +2241,7 @@ adds
 adds:
 adjusted:
 after
+after,
 again
 again.
 against
@@ -2327,6 +2333,7 @@ appears
 appended
 application
 application's
+application.
 applied
 applies
 applies,
@@ -2554,6 +2561,7 @@ breakpoint
 breakpoint,
 breakpoint:
 breakpoints
+breaks
 brighter,
 brings
 broken
@@ -3143,6 +3151,7 @@ evaluated
 evaluator
 even
 event
+event's
 events
 ever
 every
@@ -3547,6 +3556,7 @@ identical
 identifier
 identity
 ids
+ids.
 if
 ignores
 image
@@ -3581,6 +3591,7 @@ included.
 including
 incorrect
 increase
+indentation,
 indicator
 indicator,
 inert
@@ -3746,6 +3757,7 @@ left-to-right;
 left.
 left/right
 legally
+legend
 legitimately
 length
 length,
@@ -3910,6 +3922,7 @@ min-w-0`
 min-w-[24px]
 min:
 min="{{
+mini
 minimum
 minor
 mints
@@ -4158,6 +4171,7 @@ padding,
 padding.
 page
 page's
+page)
 page,
 page-unique
 page.
@@ -4284,6 +4298,7 @@ preg_replace(
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 preg_split('/\s+/',
 present
@@ -4616,6 +4631,7 @@ set.
 sets
 settles
 setup
+several
 several,
 several.
 shadow
@@ -4962,6 +4978,7 @@ text-level
 text-muted
 text.
 text/bg/border
+text:
 text;
 textarea
 than

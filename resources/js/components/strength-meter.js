@@ -23,7 +23,7 @@
  * @param {string}   [config.template] the status sentence, with `:value` for the step's name
  */
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
-import { clampStrength, strengthBarColor } from '../utils/strength.js';
+import { clampStrength, strengthBarColor, strengthBarStyle } from '../utils/strength.js';
 import { watchCurrent } from '../utils/watch-current.js';
 
 export default function wirekitStrengthMeter(config = {}) {
@@ -119,13 +119,9 @@ export default function wirekitStrengthMeter(config = {}) {
             return strengthBarColor(index, this.steps, this.max);
         },
 
-        /**
-         * The style of bar `index`, as an object: Alpine sets it property by property, where a
-         * string would be written with `setAttribute()`, which a `style-src` without
-         * `'unsafe-inline'` refuses.
-         */
+        /** The style of bar `index`, its fill and, while it is unlit, its edge; see utils/strength.js. */
         barStyle(index) {
-            return { backgroundColor: this.barColor(index) };
+            return strengthBarStyle(index, this.steps, this.max);
         },
     };
 }

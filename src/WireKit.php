@@ -7,9 +7,12 @@ namespace Pushery\WireKit;
 use Closure;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\AvatarPalette;
 use Pushery\WireKit\Support\StrictnessGate;
+use Pushery\WireKit\Theming\ModeTokens;
+use Pushery\WireKit\Theming\WcagContrast;
 
 class WireKit
 {
@@ -50,6 +53,14 @@ class WireKit
 
     /** @var array<string, array<string, mixed>> */
     protected static array $defaults = [];
+
+    /**
+     * The package's token tables per mode, read once per process: the stylesheet they come
+     * from is the installed package's and does not change while it runs.
+     *
+     * @var array{light: array<string, string>, dark: array<string, string>}|null
+     */
+    private static ?array $modeTokens = null;
 
     /** @var array<string, array<string, array<string, mixed>>> */
     protected static array $scoped = [];
@@ -419,7 +430,7 @@ class WireKit
      * `figure`, a custom element — and break the ones it did not think of. A tag name has
      * exactly one shape, and nothing that satisfies it can carry an attribute.
      *
-     * @throws \InvalidArgumentException when the value cannot be a tag name
+     * @throws InvalidArgumentException when the value cannot be a tag name
      */
     public static function tagName(string $component, string $as): string
     {
@@ -429,7 +440,7 @@ class WireKit
             return $as;
         }
 
-        throw new \InvalidArgumentException(sprintf(
+        throw new InvalidArgumentException(sprintf(
             'WireKit [%s]: `as` must be an HTML tag name, got "%s". Anything with a space or '.
             'an `=` in it is rendered into the opening tag as an attribute.',
             $component,
@@ -598,6 +609,29 @@ class WireKit
     }
 
     /**
+     * WireKit's own token values for a mode, `light` or `dark`, as `--name => value`.
+     *
+     * Read from the package's stylesheet the way `wirekit:doctor:a11y --theme-contrast` reads it,
+     * through {@see ModeTokens}: dark is the light table with the dark blocks on top, and every
+     * `var()` is substituted, so a value is a color {@see WcagContrast} can measure. For an
+     * application that checks colors of its own against the kit's: the page background of the
+     * dark mode is `WireKit::tokens('dark')['--color-wk-bg']`. These are the package's values; an
+     * application's own overrides live in its stylesheet.
+     *
+     * @return array<string, string>
+     */
+    public static function tokens(string $mode = 'light'): array
+    {
+        if ($mode !== 'light' && $mode !== 'dark') {
+            throw new InvalidArgumentException("WireKit::tokens() takes 'light' or 'dark', not '{$mode}'.");
+        }
+
+        self::$modeTokens ??= ModeTokens::effective((string) file_get_contents(dirname(__DIR__).'/dist/wirekit.css'));
+
+        return self::$modeTokens[$mode];
+    }
+
+    /**
      * Deterministic avatar color pair for a key (initials / name).
      *
      * Exposes {@see AvatarPalette::for()} so a
@@ -666,6 +700,7 @@ class WireKit
         Support\DomId::reset();
         Support\InlineScriptHashes::reset();
         StrictnessGate::forgetLogged();
+        Support\CompactClasses::forget();
         Support\TourStepCounter::reset();
         Support\FaqCollector::reset();
     }

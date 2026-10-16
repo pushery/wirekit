@@ -33,6 +33,7 @@ $active])
 $always
 $always])
 $ariaCurrent
+$ariaCurrent)
 $ariaLabel
 $as
 $as);
@@ -44,7 +45,7 @@ $attributes->class([$classes])->merge($navLabelAttrs)
 $attributes->class(['relative
 $attributes->class(['wk-sidebar-collapse-toggle
 $attributes->except('aria-label')->class(['wk-touch-target',
-$attributes->except('rel')->class(['wk-sidebar-item',
+$attributes->except('rel')->merge($trackAttributes)->class(['wk-sidebar-item',
 $attributes->except(['mode',
 $attributes->except(['rel',
 $attributes->except(['role',
@@ -183,6 +184,8 @@ $tone];
 $tooltipClasses
 $tooltipId
 $tooltipPlacement
+$trackAttributes
+$trackCurrent
 $trailing
 $triggerClasses
 $triggerClasses;
@@ -206,8 +209,10 @@ $zoneInset
 '');
 '',
 '';
+'']
 ')').matches)
 ',
+'.$activeClasses,
 '0'
 '1'
 '1'))
@@ -257,7 +262,7 @@ $zoneInset
 'children',
 'collapsed'
 'collapsible'
-'collapsible']);
+'collapsible',
 'cookie'
 'cookie'.
 'cookie']);
@@ -415,6 +420,9 @@ $zoneInset
 'tooltipPlacement'
 'top'),
 'top');
+'track-current']);
+'trackCurrent'
+'trackCurrent',
 'transition-colors
 'transition-colors',
 'trigger',
@@ -491,7 +499,9 @@ $zoneInset
 (`border-s`,
 (`data-wk-tooltip-surface`
 (`group-data-[collapsed]/wk-sidebar:*`)
+(`not-[[aria-current]]:`).
 (`true`,
+(`x-wk-current`,
 (a
 (accessible
 (an
@@ -783,6 +793,7 @@ BooleanProp::from($forceOpen,
 BooleanProp::from($open,
 BooleanProp::from($scrollShadows,
 BooleanProp::from($submenu,
+BooleanProp::from($trackCurrent,
 BooleanProp::from($zoneInset,
 Both
 Browser
@@ -888,6 +899,7 @@ JSON.parse(…)
 JavaScript
 Js::from
 KEY,
+Keep
 LABEL
 LINKS:
 LITERAL
@@ -1039,6 +1051,7 @@ UNBOUND
 UNNONCED
 UNSCOPED
 URL
+Under
 Ungated,
 Uniform
 Unscoped,
@@ -1105,6 +1118,7 @@ ZONE
 ['submit',
 ['wk-sidebar-item-button',
 ['x-on:mouseenter',
+['x-wk-current'
 []
 [];
 [transform-box:fill-box]
@@ -1123,6 +1137,7 @@ ZONE
 \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
 \Pushery\WireKit\Support\CallerName::split($attributes);
 \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+\Pushery\WireKit\Support\CurrentState::attributes($classes.'
 \Pushery\WireKit\Support\DomId::unique(
 \Pushery\WireKit\Support\DomId::unique(null,
 \Pushery\WireKit\Support\PersistedCookie::flag($persist);
@@ -1212,6 +1227,7 @@ __()
 `>
 `@aware`
 `@aware`,
+`@persist`,
 `@props`
 `AlpinePayload`
 `Illegal
@@ -1392,6 +1408,8 @@ __()
 `toggle="start"`
 `toggle`
 `toggle`:
+`track-current`
+`track-current`:
 `true`
 `type`
 `typeof
@@ -1420,6 +1438,7 @@ __()
 `x-show="!
 `x-show="open"`
 `x-show`
+`x-wk-current`
 a
 able
 about
@@ -1452,6 +1471,7 @@ add
 add,
 added
 added:
+address
 address,
 address.
 addresses
@@ -1465,6 +1485,7 @@ after
 afterwards
 again
 again.
+again:
 against
 against,
 agree
@@ -1640,6 +1661,7 @@ band;
 bare
 bare.
 base
+base,
 be
 because
 become
@@ -2814,6 +2836,7 @@ meet
 memory
 menus
 merely
+merge
 merge,
 message:
 methods
@@ -2995,6 +3018,7 @@ one:
 ones:
 only
 only,
+only:
 only;
 onmouseover=alert(1)"`
 onto
@@ -3350,6 +3374,7 @@ resolves
 resources/js/components/sidebar-rail.js.
 rest
 rest.
+resting
 rests
 restyle
 restyles
@@ -3519,6 +3544,7 @@ shape
 shape.
 shape:
 shapes
+share
 shared
 shares.
 sharing
@@ -3992,6 +4018,7 @@ utilities)
 utility
 utility,
 utility:
+utils/current.js).
 v4
 valid
 validated.
@@ -4029,8 +4056,11 @@ visible.
 visible:
 visibly
 vision.
+visit
 visit,
 visit.
+visit:
+visits
 visual
 visually
 w-5"
@@ -4100,6 +4130,7 @@ wk-scrollbar"
 wk-submenu-indicator
 word
 word)
+word.
 words;
 work
 work.

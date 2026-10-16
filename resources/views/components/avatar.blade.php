@@ -105,11 +105,14 @@
         default => 'w-2.5 h-2.5',
     };
 
+    // The status in the color of its text tone, and in a shape of its own, so the four do not
+    // rest on color alone (WCAG 1.4.1): online is a filled dot, busy a dot crossed by a bar, away
+    // a half-filled dot, offline a hollow one. The shapes readers know from Teams and Fluent.
     $statusColor = match ($status) {
-        'online' => 'bg-[var(--color-wk-success)]',
-        'busy' => 'bg-[var(--color-wk-danger)]',
-        'away' => 'bg-[var(--color-wk-warning)]',
-        'offline' => 'bg-[var(--color-wk-text-muted)]',
+        'online' => 'text-[color:var(--color-wk-success-text)]',
+        'busy' => 'text-[color:var(--color-wk-danger-text)]',
+        'away' => 'text-[color:var(--color-wk-warning-text)]',
+        'offline' => 'text-[color:var(--color-wk-text-muted)]',
         default => null,
     };
 
@@ -129,13 +132,21 @@
         $gap = 2;
         $total = $gap + $ringWidth;
         $ringColor = match ($status) {
-            'online' => 'var(--color-wk-success)',
-            'busy' => 'var(--color-wk-danger)',
-            'away' => 'var(--color-wk-warning)',
+            'online' => 'var(--color-wk-success-text)',
+            'busy' => 'var(--color-wk-danger-text)',
+            'away' => 'var(--color-wk-warning-text)',
             'offline' => 'var(--color-wk-text-muted)',
             default => 'transparent',
         };
-        $statusRingStyle = "box-shadow: 0 0 0 {$gap}px var(--color-wk-bg-elevated), 0 0 0 {$total}px {$ringColor}";
+        // The ring takes a shape per status as the dot does: solid when online, doubled when busy,
+        // dotted when away, dashed when offline. A dotted and a dashed line are outlines, which a
+        // shadow cannot draw; the outline's offset leaves the same gap around the picture.
+        $statusRingStyle = match ($status) {
+            'busy' => "box-shadow: 0 0 0 {$gap}px var(--color-wk-bg-elevated), 0 0 0 {$total}px {$ringColor}, 0 0 0 ".($total + $gap)."px var(--color-wk-bg-elevated), 0 0 0 ".($total + $gap + $ringWidth)."px {$ringColor}",
+            'away' => "outline: {$ringWidth}px dotted {$ringColor}; outline-offset: {$gap}px",
+            'offline' => "outline: {$ringWidth}px dashed {$ringColor}; outline-offset: {$gap}px",
+            default => "box-shadow: 0 0 0 {$gap}px var(--color-wk-bg-elevated), 0 0 0 {$total}px {$ringColor}",
+        };
     }
 
     // Status dot accessibility labels (for screen readers). Through the catalog,
@@ -191,14 +202,32 @@
         <span
             role="img"
             aria-label="{{ $statusLabel }}"
+            data-wk-status-shape="{{ match ($status) { 'busy' => 'bar', 'away' => 'half', 'offline' => 'hollow', default => 'filled' } }}"
             @class([
                 'absolute bottom-0 right-0',
                 'rounded-full',
+                'bg-[var(--color-wk-bg-elevated)]',
                 'ring-2 ring-[var(--color-wk-bg-elevated)]',
                 $statusSize,
                 $statusColor,
             ])
-        ></span>
+        ><svg class="block h-full w-full" viewBox="0 0 10 10" aria-hidden="true">
+            @switch($status)
+                @case('busy')
+                    <circle cx="5" cy="5" r="5" fill="currentColor" />
+                    <rect x="2.25" y="4.1" width="5.5" height="1.8" rx="0.9" fill="var(--color-wk-bg-elevated)" />
+                    @break
+                @case('away')
+                    <circle cx="5" cy="5" r="4.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M5 0a5 5 0 0 0 0 10z" fill="currentColor" />
+                    @break
+                @case('offline')
+                    <circle cx="5" cy="5" r="4.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    @break
+                @default
+                    <circle cx="5" cy="5" r="5" fill="currentColor" />
+            @endswitch
+        </svg></span>
     @endif
 
     @if($status && $statusVariant === 'ring' && $statusLabel)

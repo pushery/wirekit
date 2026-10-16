@@ -27,9 +27,9 @@ $animationValue
 $ariaLabelAttr
 $ariaLabelledbyAttr
 $attributes
-$attributes->class([$iconClasses]);
 $attributes->class([$wrapperClasses])
 $attributes->class(['w-full
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel')->class([$rootClasses,
 $attributes->except(['aria-label',
 $attributes->get('aria-hidden');
@@ -207,14 +207,14 @@ $wrapperClasses
 'aria-label');
 'aria-labelledby']);
 'base',
-'bg-[var(--color-wk-accent)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg-elevated)]',
 'bg-[var(--color-wk-bg-muted)]',
-'bg-[var(--color-wk-danger)]',
-'bg-[var(--color-wk-info-tone)]',
-'bg-[var(--color-wk-success)]',
+'bg-[var(--color-wk-danger-text)]',
+'bg-[var(--color-wk-info-text)]',
+'bg-[var(--color-wk-success-text)]',
 'bg-[var(--color-wk-text-muted)]',
-'bg-[var(--color-wk-warning)]',
+'bg-[var(--color-wk-warning-text)]',
 'bytes'
 'circle',
 'danger'
@@ -247,6 +247,7 @@ $wrapperClasses
 'info'
 'info',
 'inline-flex
+'inset-ring-[length:max(1px,var(--border-wk-width))]
 'intent'
 'intent',
 'label'
@@ -428,8 +429,10 @@ $wrapperClasses
 1);
 1.
 1.0
+1.09:1
 1.2
 1.4.1
+1.4.11).
 10
 10.0
 100
@@ -841,6 +844,7 @@ aliases
 all
 all,
 allowed
+alone
 alone,
 already
 also
@@ -1094,6 +1098,7 @@ count($units)
 count.
 counts
 covered
+covers
 cut:
 cx="18"
 cy="18"
@@ -1190,6 +1195,7 @@ empty)
 empty-state
 end
 end,
+ends:
 enough
 entry
 enum;
@@ -1224,6 +1230,7 @@ false)
 false),
 false);
 false,
+far
 feature
 feature,
 file
@@ -1371,6 +1378,7 @@ injection
 inline
 inner
 inset-0
+inset-ring-[var(--color-wk-border-strong)]',
 inset-y-0
 inside
 inside,
@@ -1427,6 +1435,7 @@ length
 less
 lg
 light
+light,
 like
 line
 line:
@@ -1593,6 +1602,7 @@ own.
 package
 package,
 page
+page,
 page.
 pages
 palette
@@ -1675,6 +1685,7 @@ re-renders,
 re-renders:
 re-resolve
 reach
+reached
 reaches
 read
 readable
@@ -1757,6 +1768,7 @@ rule),
 rule:
 rules
 rung
+runs.
 same
 say
 says
@@ -1780,6 +1792,7 @@ set
 set.
 sets
 settled
+shadow,
 shape
 shapes.
 share
@@ -1835,6 +1848,7 @@ status
 stay
 stays
 still
+stood
 stop
 stops
 storage/logs/laravel.log.
@@ -1854,6 +1868,7 @@ stroke-linecap="round"
 stroke-width="3"
 stroke="var(--color-wk-bg-muted)"
 stroke="{{
+strong
 structure.
 style
 style,

@@ -42,6 +42,7 @@ $widest,
 $widestLevel
 $wkBar
 $wkBar++)
+$wkBarColor
 $word
 $word):
 &&
@@ -56,10 +57,12 @@ $word):
 'flex
 'font-[family-name:var(--font-wk-sans)]',
 'grid
+'inset
 'label'
 'level',
 'levels'
 'max'
+'none'
 'scope'
 'showLevel'
 'text-[color:var(--color-wk-text-muted)]',
@@ -67,10 +70,11 @@ $word):
 'total'
 'value'
 'var(--color-wk-bg-muted)'
+'var(--color-wk-bg-muted)')
 'var(--color-wk-bg-muted)';
-'var(--color-wk-danger)'
-'var(--color-wk-success)';
-'var(--color-wk-warning)';
+'var(--color-wk-danger-text)'
+'var(--color-wk-success-text)';
+'var(--color-wk-warning-text)';
 'w-full
 ($index
 ($levels[min($steps,
@@ -128,12 +132,14 @@ $word):
 @include
 @include('wirekit::components.partials.strength-bars',
 @php
+@php($wkBarColor
 @props([
 A
 ARIA
 Alpine
 AlpinePayload::from($levels)
 AlpinePayload::string($template)
+An
 BARS
 BooleanProp::from($announce,
 BooleanProp::from($showLevel,
@@ -211,6 +217,7 @@ accessible
 across
 action
 after
+against
 all.
 alone
 already
@@ -252,8 +259,10 @@ below;
 beside
 block,
 booted
+border
 borrowing
 both
+box-shadow:
 built
 but
 by
@@ -274,6 +283,7 @@ class="h-1
 class="sr-only"
 class="{{
 color
+color,
 complete
 component
 component,
@@ -296,6 +306,7 @@ drew
 duration-[var(--transition-wk-duration)]"
 each
 early.
+edge
 element
 element,
 else
@@ -318,6 +329,7 @@ from
 function
 gap-1"
 gap-[var(--gap-wk-sm)]',
+give
 grid:
 hands
 has
@@ -364,6 +376,7 @@ look
 many
 markup
 max(1,
+max(1px,
 max:
 may
 mb_strlen($widest)
@@ -377,6 +390,7 @@ meters.
 min(max((int)
 min-w-0',
 morph,
+muted
 muted.
 n/a
 name
@@ -388,6 +402,7 @@ new
 no
 node
 node,
+none.
 not
 nothing
 nothing.
@@ -405,6 +420,8 @@ or
 other
 our
 page
+page;
+pair
 per
 polite
 pre-hydration
@@ -478,7 +495,9 @@ steps.
 steps:
 strength
 strength:
+strengthBarStyle().
 string
+strong
 style="background-color:
 sub-component
 subject
@@ -514,6 +533,8 @@ utils/strength.js,
 utils/strength.js.
 value,
 values
+var(--border-wk-width))
+var(--color-wk-border-strong)'
 view's
 warning,
 weakest
@@ -556,5 +577,6 @@ yet)
 }}">
 }})"
 }},
+}};
 }}</span>
 —

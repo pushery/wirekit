@@ -133,14 +133,15 @@
     // Solid intent fills for the small agenda status-dot. The $eventClasses
     // BLOCK style above carries a `border-l-2` left stripe — applied to an 8px
     // circle it ate half the dot (it read as "cut off"). The dot needs a plain
-    // solid fill of the intent color instead, info's being --color-wk-info-tone.
+    // solid fill instead: the intent's text tone, which a dot as a graphic needs to stand at
+    // 3:1 on the page (the fill tone of warning stood at 2.13:1, a neutral border at 1.30:1).
     $eventDot = [
-        'accent' => 'bg-[var(--color-wk-accent)]',
-        'info' => 'bg-[var(--color-wk-info-tone)]',
-        'success' => 'bg-[var(--color-wk-success)]',
-        'warning' => 'bg-[var(--color-wk-warning)]',
-        'danger' => 'bg-[var(--color-wk-danger)]',
-        'neutral' => 'bg-[var(--color-wk-border)]',
+        'accent' => 'bg-[var(--color-wk-accent-text)]',
+        'info' => 'bg-[var(--color-wk-info-text)]',
+        'success' => 'bg-[var(--color-wk-success-text)]',
+        'warning' => 'bg-[var(--color-wk-warning-text)]',
+        'danger' => 'bg-[var(--color-wk-danger-text)]',
+        'neutral' => 'bg-[var(--color-wk-text-muted)]',
     ];
 
     // Day-marker band classes by type — a tinted surface distinct from event
@@ -265,11 +266,12 @@
             @keydown.arrow-down.prevent="viewMove(1)"
             @keydown.arrow-left.prevent="viewMove(-1)"
             @keydown.arrow-up.prevent="viewMove(-1)">
-            {{-- The checked view is a tint, which forced colors does not paint, so
-                 `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
-            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Month') }}</button>
-            <button type="button" role="radio" data-view="week" @click="setView('week')" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Week') }}</button>
-            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Agenda') }}</button>
+            {{-- The checked view is a tint and an inner edge in the muted text color, which holds
+                 3:1 against the tint where the tint alone did not. Forced colors paints neither,
+                 so `wk-state-button` is the marker the stylesheet frames it by in that mode. --}}
+            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Month') }}</button>
+            <button type="button" role="radio" data-view="week" @click="setView('week')" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Week') }}</button>
+            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row {{ $viewTab }}">{{ __('wirekit::Agenda') }}</button>
         </div>
     </div>
 
@@ -332,7 +334,7 @@
                                     {{-- The TITLE is what truncates; `min-w-0` is what lets it,
                                          because a flex child will not shrink below its content
                                          without it and the pill would overflow instead. --}}
-                                    <span class="min-w-0 truncate" x-text="ev.title"></span>
+                                    <span data-wk-truncates class="min-w-0 truncate" x-text="ev.title"></span>
                                     {{-- Smaller rather than recolored. The pill's background comes
                                          from the event's intent, so a muted FOREGROUND here would
                                          be a new contrast pair per intent; the week view's
@@ -377,7 +379,7 @@
                     <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="wk-touch-row w-full flex items-center gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-md)] text-start hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                         <span class="shrink-0 w-2 h-2 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventDot) }}[ev.intent || 'accent']"></span>
                         <span class="shrink-0 text-end text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums" style="width: var(--wk-agenda-time, 5rem);" x-text="ev.timeLabel"></span>
-                        <span class="min-w-0 flex-1 truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
+                        <span data-wk-truncates class="min-w-0 flex-1 truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
                         {{-- Attendees: at most three faces and a count. aria-hidden, because the row's own
                              name (`rowLabel`) already carries every name — the stack is the sighted half of
                              that, not a second announcement. `.wk-avatar-group` is the same overlap and ring
@@ -433,7 +435,7 @@
                             <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" class="block w-full [overflow-wrap:anywhere] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
                         </template>
                         <template x-for="ev in day.allDay" :key="ev.id">
-                            <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" class="block w-full truncate text-left px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="ev.title"></button>
+                            <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" data-wk-truncates class="block w-full truncate text-left px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="ev.title"></button>
                         </template>
                     </div>
                 </template>
@@ -495,10 +497,10 @@
                              var(--color-wk-bg), so the hour gridlines do not show THROUGH
                              the block. --}}
                         <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="blockTip(b)" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[b.event.intent || 'accent']" :style="blockStyle(b)" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
-                            <span class="block font-[number:var(--font-wk-heading-weight)] leading-[var(--leading-wk-tight)] truncate" x-text="b.event.title"></span>
+                            <span data-wk-truncates class="block font-[number:var(--font-wk-heading-weight)] leading-[var(--leading-wk-tight)] truncate" x-text="b.event.title"></span>
                             {{-- Secondary line: a smaller (2xs) tight time so the title
                                  leads and the two lines sit close in the compact block. --}}
-                            <span class="block text-[length:var(--text-wk-2xs)] leading-[var(--leading-wk-tight)] truncate" x-text="b.timeLabel"></span>
+                            <span data-wk-truncates class="block text-[length:var(--text-wk-2xs)] leading-[var(--leading-wk-tight)] truncate" x-text="b.timeLabel"></span>
                         </button>
                     </template>
                 </div>
@@ -546,7 +548,7 @@
                                  first-paint fallback). --}}
                             <span class="shrink-0 text-right text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums" style="width: var(--wk-agenda-time, 5rem);"><span data-agenda-time class="whitespace-nowrap" x-text="ev.timeLabel"></span></span>
                             {{-- pl gives the title a small, even gap from the time column. --}}
-                            <span class="min-w-0 flex-1 pl-[var(--space-wk-sm)] truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
+                            <span data-wk-truncates class="min-w-0 flex-1 pl-[var(--space-wk-sm)] truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
                             {{-- Attendees: at most three faces and a count. aria-hidden, because the row's own
                                  name (`rowLabel`) already carries every name — the stack is the sighted half of
                                  that, not a second announcement. `.wk-avatar-group` is the same overlap and ring

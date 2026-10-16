@@ -17,8 +17,8 @@ $as
 $as,
 $attributes
 $attributes->class([
-$attributes->class([$classes]);
-$attributes->class([$iconClasses]);
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('aria-busy')->class([$classes])
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');

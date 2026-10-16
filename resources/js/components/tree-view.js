@@ -305,7 +305,7 @@ export default function wirekitTreeView() {
             }
 
             this.$dispatch('tree-node-select', {
-                label: treeitem.querySelector('span.truncate')?.textContent?.trim(),
+                label: treeitem.querySelector('[data-wk-tree-label]')?.textContent?.trim(),
             });
         },
     };

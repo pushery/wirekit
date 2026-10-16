@@ -7,6 +7,8 @@
  *
  *   - the field carries `data-wk-unsaved`, and the stylesheet frames it in
  *     `--color-wk-border-unsaved`, unless it is invalid;
+ *   - the field's label carries `data-wk-unsaved-note`, the words the stylesheet writes beside
+ *     it, unless the field is invalid, a radio button, or a checkbox of a list;
  *   - the scope carries `data-wk-has-unsaved`;
  *   - every `<x-wirekit::unsaved-hint>` in the scope shows its sentence, which is a polite live
  *     region, so the change from saved to unsaved is spoken once.
@@ -61,11 +63,20 @@ export const WK_UNSAVED_DIALOG_TEXT_ATTRIBUTE = 'data-wk-unsaved-question-text';
 // literally, so the event names it listens for can be read off the source.
 export const WK_UNSAVED_LEAVE_EVENT = 'wirekit:unsaved-leave';
 
+// The words beside the label of an unsaved field: on the label, where the stylesheet writes them,
+// and on the scope or a hint, which name them in the reader's language. Two names, so that the
+// hint, which names them, never shows them itself.
+export const WK_UNSAVED_NOTE_ATTRIBUTE = 'data-wk-unsaved-note';
+export const WK_UNSAVED_WORDS_ATTRIBUTE = 'data-wk-unsaved-words';
+
 /** The modifiers that send a value on their own, so the field is never unsaved for long. */
 const SELF_SENDING_MODIFIERS = ['live', 'blur', 'change', 'lazy'];
 
 /** Asked when neither the scope nor a hint in it names a question in the reader's language. */
 export const WK_UNSAVED_DEFAULT_QUESTION = 'You have unsaved changes. Leave this page anyway?';
+
+/** Beside the label when neither the scope nor a hint in it names the words in the reader's language. */
+export const WK_UNSAVED_DEFAULT_NOTE = 'Unsaved change';
 
 /**
  * Remembered on `window`, the one scope a second copy of this module on the page shares with the
@@ -79,6 +90,7 @@ const REQUESTS_KEY = '__wirekitUnsavedRequests';
 const SUBMITS_KEY = '__wirekitUnsavedSubmits';
 const ENTRIES_KEY = '__wirekitUnsavedEntries';
 const FIELDS_KEY = '__wirekitUnsavedFields';
+const NOTED_KEY = '__wirekitUnsavedNoted';
 
 /** How long a submit waits for the request it starts before it is taken for something else. */
 const SUBMIT_WINDOW_MS = 2000;
@@ -386,17 +398,119 @@ function hintsOf(scope) {
         .filter((hint) => hint.parentElement?.closest(`[${WK_UNSAVED_SCOPE_ATTRIBUTE}]`) === scope);
 }
 
+/** The last text of a node that holds more than white space, looked for from the end. */
+function lastWords(node) {
+    const children = node.childNodes ?? [];
+
+    for (let index = children.length - 1; index >= 0; index--) {
+        const child = children[index];
+
+        if (child.nodeType === 3 && String(child.nodeValue).trim() !== '') {
+            return child;
+        }
+
+        const inside = child.nodeType === 1 ? lastWords(child) : null;
+
+        if (inside) {
+            return inside;
+        }
+    }
+
+    return null;
+}
+
 /**
  * Write the sentence of a hint again. The text was there, hidden; writing it changes the live
  * region, which is what a screen reader announces, where a change of `display` alone is not
- * reported by every one.
+ * reported by every one. The sentence stands in a badge, after the white space of its markup, so
+ * the text written is the last that holds words.
  */
 function announce(hint) {
     const text = hint.querySelector('[data-wk-unsaved-text]');
+    const words = text ? lastWords(text) : null;
 
-    if (text && text.lastChild && text.lastChild.nodeType === 3) {
-        text.lastChild.nodeValue = String(text.lastChild.nodeValue);
+    if (words) {
+        words.nodeValue = String(words.nodeValue);
     }
+}
+
+/** Whether the browser finds a field invalid after the reader touched it, where it can say. */
+function userInvalid(el) {
+    try {
+        return typeof el.matches === 'function' && el.matches(':user-invalid');
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The labels that say a field is unsaved: the field's own, or those of the first field inside a
+ * component whose root carries `wire:model`. None for a radio button or a checkbox bound to a
+ * list, since every option of the group would say it, and none for an invalid field, whose error
+ * comes first.
+ *
+ * @param {{el: Element, path: string, component: object}} field
+ * @returns {Element[]}
+ */
+function labelsToNote(field) {
+    const control = field.el.labels
+        ? field.el
+        : (typeof field.el.querySelector === 'function' ? field.el.querySelector('input:not([type="hidden"]), select, textarea') : null);
+
+    if (! control || ! control.labels || control.labels.length === 0) {
+        return [];
+    }
+
+    const type = String(control.getAttribute('type') ?? '').toLowerCase();
+
+    if (type === 'radio' || (type === 'checkbox' && Array.isArray(valueAt(field.component.reactive, field.path)))) {
+        return [];
+    }
+
+    if (control.getAttribute('aria-invalid') === 'true' || field.el.getAttribute('aria-invalid') === 'true' || userInvalid(control)) {
+        return [];
+    }
+
+    return Array.from(control.labels);
+}
+
+/** The words beside the label: the scope's own, a hint's, or the English default. An empty value shows none. */
+export function noteFor(scope) {
+    if (scope.hasAttribute(WK_UNSAVED_WORDS_ATTRIBUTE)) {
+        return scope.getAttribute(WK_UNSAVED_WORDS_ATTRIBUTE) ?? '';
+    }
+
+    const hint = hintsOf(scope).find((candidate) => candidate.hasAttribute(WK_UNSAVED_WORDS_ATTRIBUTE));
+
+    return hint ? hint.getAttribute(WK_UNSAVED_WORDS_ATTRIBUTE) ?? '' : WK_UNSAVED_DEFAULT_NOTE;
+}
+
+/**
+ * Put the words on the labels that say their field is unsaved, and take them off every label the
+ * scope wrote them on before that no longer does. Remembered per scope, so a label outside the
+ * scope, which a `for` points at, is cleared as well, and a label a morph cleared is written again.
+ *
+ * @param {Element} scope
+ * @param {Set<Element>} labels
+ */
+function writeNotes(scope, labels) {
+    const store = shared(NOTED_KEY, () => new WeakMap());
+    const words = labels.size > 0 ? noteFor(scope) : '';
+    const noted = words === '' ? new Set() : labels;
+
+    for (const label of store.get(scope) ?? []) {
+        if (! noted.has(label)) {
+            label.removeAttribute(WK_UNSAVED_NOTE_ATTRIBUTE);
+        }
+    }
+
+    for (const label of noted) {
+        if (label.getAttribute(WK_UNSAVED_NOTE_ATTRIBUTE) !== words) {
+            label.setAttribute(WK_UNSAVED_NOTE_ATTRIBUTE, words);
+        }
+    }
+
+    store.set(scope, noted);
 }
 
 /**
@@ -406,6 +520,7 @@ function announce(hint) {
  */
 export function refreshScope(scope) {
     let unsaved = false;
+    const labels = new Set();
 
     // Every field is compared and marked, no early exit: an effect that calls this reads each
     // field's value, and that read is what makes it run again when the field changes.
@@ -414,8 +529,15 @@ export function refreshScope(scope) {
 
         flag(field.el, WK_UNSAVED_ATTRIBUTE, differs);
         unsaved = unsaved || differs;
+
+        if (differs) {
+            for (const label of labelsToNote(field)) {
+                labels.add(label);
+            }
+        }
     }
 
+    writeNotes(scope, labels);
     flag(scope, WK_HAS_UNSAVED_ATTRIBUTE, unsaved);
 
     for (const hint of hintsOf(scope)) {
@@ -757,6 +879,8 @@ export function registerUnsavedDirective(Alpine) {
         cleanup(() => {
             registry().delete(entry);
             shared(ENTRIES_KEY, () => new WeakMap()).delete(el);
+            // The words go with the scope that wrote them.
+            writeNotes(el, new Set());
         });
     }, (el) => {
         el.setAttribute(WK_UNSAVED_SCOPE_ATTRIBUTE, '');

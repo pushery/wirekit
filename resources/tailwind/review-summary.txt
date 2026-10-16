@@ -31,8 +31,8 @@ $as
 $as);
 $attributes
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('autofocus');
 $attributes->except('class')->class([$classes])
 $attributes->except('form');
@@ -46,8 +46,10 @@ $attributes->get('aria-labelledby');
 $attributes->get('class',
 $attributes->get('name'),
 $attributes->get('role');
+$attributes->get('style',
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes->merge(['style'
 $attributes->whereStartsWith('wire:model')
 $attributes]
 $average,
@@ -171,6 +173,7 @@ $placeholderAttributes['role']
 $ratingSeed
 $readonly
 $readonly;
+$recolored
 $required
 $requiredDisabled
 $requiredFormOwner
@@ -246,14 +249,19 @@ $wrapperClasses
 ''"
 '')
 ''))
+'')));
 '')).'
 ''));
+''),
 '').'
 '').($disabled
 '');
 '',
 '';
 ',
+'--color-wk-warning')
+'--color-wk-warning:');
+'--wk-rating-fill:
 '-1'
 '-1'"
 '.
@@ -262,6 +270,7 @@ $wrapperClasses
 '.$max.'
 '.$max.($clearable
 '.$n
+'.$wrapperClasses,
 '.($helpId
 '.($requiredMessageClass
 '.($requiredMessageId
@@ -406,7 +415,7 @@ $wrapperClasses
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-subtle)]
 'text-[color:var(--color-wk-tooltip-text)]',
-'text-[color:var(--color-wk-warning)]
+'text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 'text-[length:var(--text-wk-md)]',
 'text-[length:var(--text-wk-sm)]',
 'thumb'
@@ -440,10 +449,12 @@ $wrapperClasses
 ($callerLabelledBy
 ($clamped
 ($counts
+($helpName
 ($hint
 ($isInformative
 ($name)])
 ($optimistic
+($recolored)
 ($resolvedAriaHidden
 ($shouldSetHidden)
 ($size
@@ -582,6 +593,7 @@ $wrapperClasses
 2-2V5a2
 2.09C13.09
 2.1.1).
+2.13:1.
 2.2
 2.25
 2.5.8).
@@ -614,6 +626,7 @@ $wrapperClasses
 3.81
 30,
 300),
+3:1
 3]`.
 3a2
 3c1.74
@@ -1108,6 +1121,7 @@ __toString
 `$id`
 `$refs`
 `$this->validate()`
+`--color-wk-warning`
 `--font-wk-body-weight`
 `.number`
 `:class`
@@ -1457,6 +1471,7 @@ branch
 branch's
 brand
 break
+breaks
 browser
 browser's
 bubble's
@@ -1522,6 +1537,7 @@ circle
 circle:
 clamps
 class
+class,
 class="-my-1
 class="block
 class="cursor-default">
@@ -1569,6 +1585,7 @@ collapsed
 collapses
 color
 color.
+color:
 colors
 colors,
 column
@@ -1757,6 +1774,7 @@ double-announce
 down
 down.
 drawer
+drawing
 drawn
 draws
 drop
@@ -1818,6 +1836,7 @@ evaluated
 evaluates
 even
 event
+event's
 event,
 events
 every
@@ -1867,8 +1886,8 @@ fields
 files
 fill
 fill,
-fill-[var(--color-wk-warning)]
-fill-[var(--color-wk-warning)]'
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]'
 fill-none
 fill-none'
 fill-none'"
@@ -1985,6 +2004,7 @@ glyph.
 go
 goes
 grammar.
+graphic,
 greater
 grid
 grid-cols-[auto_minmax(0,1fr)_auto]
@@ -2086,6 +2106,7 @@ in.
 in_array('sr-only',
 included.
 including
+indentation,
 indicator
 inert
 inert.
@@ -2114,6 +2135,7 @@ instead,
 int
 intact
 integers.
+intent's
 intent.
 inter-attribute
 interact
@@ -2203,6 +2225,7 @@ leaves
 leaving
 left
 left.
+legend
 legitimately
 length,
 let
@@ -2212,6 +2235,7 @@ like
 like,
 line
 line-height)
+lines
 link.
 linked
 links
@@ -2500,6 +2524,7 @@ per-star
 permanent
 permanently,
 personalization
+personalized
 phase,
 phrasing
 pick
@@ -2545,6 +2570,7 @@ preg_replace(
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 preg_split('/\s+/',
 present
@@ -2619,6 +2645,8 @@ reason:
 receive
 receiver,
 receives
+recolored
+recolored.
 record
 records
 red:
@@ -2773,7 +2801,9 @@ server's
 server-side
 set
 sets
+setting
 settles
+several
 shadow.
 shape
 shapes
@@ -2866,11 +2896,13 @@ stem
 step
 stepping
 still
+stood
 stop
 stop,
 stop:
 stops
 storage/logs/laravel.log.
+str_contains((string)
 strategy:
 stray
 strictness
@@ -2961,9 +2993,10 @@ text-[color:var(--color-wk-text)]',
 text-[color:var(--color-wk-text-muted)]
 text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-text-subtle)]
-text-[color:var(--color-wk-warning)]
+text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 text-end
 text-level
+text:
 than
 that
 that.
@@ -3013,6 +3046,7 @@ together
 toggletip
 token
 tokens
+tone,
 too,
 took
 tooltip
@@ -3106,6 +3140,7 @@ value.
 value="{{
 values
 vanished
+var(--color-wk-warning);']);
 variable
 variant
 vertical

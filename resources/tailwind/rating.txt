@@ -37,8 +37,10 @@ $attributes->except(['id',
 $attributes->get('aria-describedby',
 $attributes->get('class',
 $attributes->get('name'),
+$attributes->get('style',
 $attributes->get('x-ref',
 $attributes->getAttributes());
+$attributes->merge(['style'
 $attributes->whereStartsWith('wire:model')
 $attributes]
 $callerDescribedBy
@@ -121,6 +123,7 @@ $ownName);
 $ratingSeed
 $readonly
 $readonly;
+$recolored
 $required
 $requiredDisabled
 $requiredFormOwner
@@ -157,21 +160,28 @@ $value
 $value,
 $wrapperClasses
 &&
+'
 ''
 ''"
 '')
 ''))
+'')));
 '')).'
 ''));
+''),
 '').'
 '').($disabled
 '',
 ',
+'--color-wk-warning')
+'--color-wk-warning:');
+'--wk-rating-fill:
 '-1'
 '-1'"
 '.$attributes->get('class',
 '.$callerDescribedBy);
 '.$max.($clearable
+'.$wrapperClasses,
 '.($helpId
 '.($requiredMessageClass
 '.($requiredMessageId
@@ -277,7 +287,7 @@ $wrapperClasses
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-subtle)]
 'text-[color:var(--color-wk-tooltip-text)]',
-'text-[color:var(--color-wk-warning)]
+'text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 'text-[length:var(--text-wk-md)]',
 'text-[length:var(--text-wk-sm)]',
 'thumb'
@@ -303,9 +313,11 @@ $wrapperClasses
 ("Help
 ($callerLabelledBy
 ($clamped
+($helpName
 ($hint
 ($name)])
 ($optimistic
+($recolored)
 ($size)
 ($triggerIsButton)
 (($clamped
@@ -411,6 +423,7 @@ $wrapperClasses
 2-2V5a2
 2.09C13.09
 2.1.1).
+2.13:1.
 2.2
 2.25
 2.5.8).
@@ -441,6 +454,7 @@ $wrapperClasses
 3.78-3.4
 3.81
 300),
+3:1
 3a2
 3c1.74
 4
@@ -833,6 +847,7 @@ __('wirekit::Saving'),
 `$id`
 `$refs`
 `$this->validate()`
+`--color-wk-warning`
 `--font-wk-body-weight`
 `.number`
 `:class`
@@ -1124,6 +1139,7 @@ box
 box,
 branch
 brand
+breaks
 browser
 browser's
 bubble's
@@ -1177,6 +1193,7 @@ chosen.
 circle
 circle:
 clamps
+class,
 class="-my-1
 class="cursor-default">
 class="inline-flex
@@ -1212,6 +1229,7 @@ code
 collapsed
 collapses
 color
+color:
 colors
 colors,
 column
@@ -1360,6 +1378,7 @@ dot
 double-announce
 down
 drawer
+drawing
 draws
 drop
 dropped
@@ -1412,6 +1431,7 @@ evaluated
 evaluates
 even
 event
+event's
 event,
 events
 every
@@ -1454,8 +1474,8 @@ field.
 field:
 fields
 fill
-fill-[var(--color-wk-warning)]
-fill-[var(--color-wk-warning)]'
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]'
 fill-none
 fill-none'
 fill-none'"
@@ -1549,6 +1569,7 @@ glyph
 go
 goes
 grammar.
+graphic,
 greater
 grid
 group
@@ -1628,6 +1649,7 @@ in.
 in_array('sr-only',
 included.
 including
+indentation,
 indicator
 inert
 inert.
@@ -1649,6 +1671,7 @@ instead
 instead,
 int
 integers.
+intent's
 interact
 interaction
 interaction.
@@ -1719,6 +1742,7 @@ leaves
 leaving
 left
 left.
+legend
 legitimately
 length,
 let
@@ -1727,6 +1751,7 @@ light
 like
 line
 line-height)
+lines
 linked
 list
 list.
@@ -1972,6 +1997,7 @@ per-instance
 per-star
 permanent
 permanently,
+personalized
 phase,
 phrasing
 pick
@@ -2009,6 +2035,7 @@ precision
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -2073,6 +2100,8 @@ reason:
 receive
 receiver,
 receives
+recolored
+recolored.
 record
 records
 red:
@@ -2192,7 +2221,9 @@ server
 server's
 server-side
 set
+setting
 settles
+several
 shadow.
 shape
 shapes
@@ -2272,10 +2303,12 @@ stays
 stem
 stepping
 still
+stood
 stop
 stop,
 stop:
 stops
+str_contains((string)
 strategy:
 stray
 string
@@ -2344,8 +2377,9 @@ text-[color:var(--color-wk-danger-text)]">{{
 text-[color:var(--color-wk-text)]">{{
 text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-text-subtle)]
-text-[color:var(--color-wk-warning)]
+text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 text-level
+text:
 than
 that
 that.
@@ -2387,6 +2421,7 @@ together
 toggletip
 token
 tokens
+tone,
 too,
 took
 tooltip
@@ -2469,6 +2504,7 @@ value.
 value="{{
 values
 vanished
+var(--color-wk-warning);']);
 variable
 vertical
 via

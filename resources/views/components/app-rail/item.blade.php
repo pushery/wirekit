@@ -56,7 +56,12 @@
     // the module carries a tooltip with the sentence in every mode, under the name where the name
     // is a tooltip as well, and the sentence becomes the link's description for a screen reader,
     // so the bare count leaves the name. Ignored without a `badge`.
+    //
+    // A list of sentences names each waiting item on a line of its own: the tooltip shows at
+    // most `badgeLabelLimit` of them and then how many more there are, and the description
+    // names every one.
     'badgeLabel' => null,
+    'badgeLabelLimit' => 5,
     // Where the tooltip opens. `right` is correct for a rail on the inline-start edge;
     // a right-hand rail wants `left`.
     'placement' => 'right',
@@ -66,7 +71,7 @@
 {{-- Read from the enclosing app-rail component. The item cannot decide on its own
      whether its label is drawn — that is the rail's mode — and prop-drilling it onto
      every module is exactly the repetition `@aware` exists to remove. --}}
-@aware(['labels' => 'tooltip', 'expandable' => false])
+@aware(['labels' => 'tooltip', 'expandable' => false, 'trackCurrent' => false])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -89,7 +94,7 @@
     // from the attribute bag, so a key also written on this tag would render as a stray
     // HTML attribute. Blade accepts both spellings, so both are dropped.
     $expandable = BooleanProp::from($expandable, false);
-    $attributes = $attributes->except(['labels', 'expandable']);
+    $attributes = $attributes->except(['labels', 'expandable', 'trackCurrent', 'track-current']);
 
     // A caller may mark the module current with `data-current` in the attribute bag
     // instead of `:active`; an explicit `:active` always wins. Livewire's own
@@ -104,8 +109,34 @@
 
     $labelText = $label !== '' ? $label : \Pushery\WireKit\Support\SlotContent::text($slot);
 
-    // The counter's sentence, only beside a counter: without one it describes nothing.
-    $badgeSentence = filled($badge) && filled($badgeLabel) ? (string) $badgeLabel : null;
+    // The counter's sentences, only beside a counter: without one they describe nothing. A string
+    // is one sentence, as it always was; a list is one sentence per waiting item.
+    $badgeLabel = \Pushery\WireKit\Support\ListProp::renumbered($badgeLabel);
+    $badgeSentences = match (true) {
+        ! filled($badge) => [],
+        is_array($badgeLabel) => array_values(array_filter(
+            array_map(static fn ($sentence): string => trim((string) $sentence), $badgeLabel),
+            static fn (string $sentence): bool => $sentence !== '',
+        )),
+        filled($badgeLabel) => [(string) $badgeLabel],
+        default => [],
+    };
+
+    // The tooltip's lines: as many sentences as the limit allows, then one line saying how many
+    // more wait, so a module with many waiting items keeps a tooltip that fits beside the rail.
+    $badgeShown = array_slice($badgeSentences, 0, max(1, (int) $badgeLabelLimit));
+    $badgeMore = count($badgeSentences) - count($badgeShown);
+
+    // The description names every sentence. Several are read as one run of text, so each one
+    // without a closing mark of its own ends with a period, and the reader pauses between them.
+    $badgeSentence = match (count($badgeSentences)) {
+        0 => null,
+        1 => $badgeSentences[0],
+        default => implode(' ', array_map(
+            static fn (string $sentence): string => preg_match('/[.!?…:;]$/u', $sentence) === 1 ? $sentence : $sentence.'.',
+            $badgeSentences,
+        )),
+    };
     $badgeSentenceId = $badgeSentence !== null ? \Pushery\WireKit\Support\DomId::unique(null, 'wk-rail-badge-') : null;
 
     // The link's description: a caller's own first, then the counter's sentence. Taken out of the
@@ -310,7 +341,14 @@
     // already carries the pointer, and one without should not claim it.
     $buttonCursor = $railTag === 'button' ? 'cursor-pointer' : '';
 
-    $linkAttributes = $attributes->except('rel')->class(['wk-rail-item', 'wk-touch-row', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']);
+    // Under the rail's `track-current` a link entry carries the active classes it does not share
+    // with its base, which `x-wk-current` moves after a visit (Support\CurrentState). Its resting
+    // look follows `aria-current` by itself (`not-[[aria-current]]:`).
+    $trackAttributes = \Pushery\WireKit\Support\BooleanProp::from($trackCurrent, false) && $railTag === 'a'
+        ? \Pushery\WireKit\Support\CurrentState::attributes($classes.' '.$activeClasses, $classes)
+        : [];
+
+    $linkAttributes = $attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\CompactClasses::list(['wk-rail-item', 'wk-touch-row', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']));
 @endphp
 
 {{-- THREE literal branches, and the shape is forced rather than chosen.
@@ -345,7 +383,12 @@
             @if($nameTooltip)
                 <span class="block" x-show="! expanded">{{ $labelText }}</span>
             @endif
-            <span class="block">{{ $badgeSentence }}</span>
+            @foreach($badgeShown as $shownSentence)
+                <span class="block">{{ $shownSentence }}</span>
+            @endforeach
+            @if($badgeMore > 0)
+                <span class="block">{{ trans_choice('wirekit::and :count more', $badgeMore, ['count' => $badgeMore]) }}</span>
+            @endif
         </x-slot:content>
         @include('wirekit::components.partials.app-rail-link')
         <span id="{{ $badgeSentenceId }}" hidden>{{ $badgeSentence }}</span>
