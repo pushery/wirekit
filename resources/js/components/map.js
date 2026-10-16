@@ -417,16 +417,17 @@ export default function wirekitMap(config = {}) {
         // Resolve an intent to its computed theme color. Map pins are drawn by the
         // peer library OUTSIDE WireKit's CSS, so we can't hand them a `var(--…)`
         // reference — we read the token's COMPUTED value off the component root, which
-        // honors the active theme + any per-instance scope. `info` reads
-        // --color-wk-info-tone, like the rest of the intent system. Returns '' when there's no
+        // honors the active theme + any per-instance scope. A pin is a graphic that carries the
+        // intent, so it takes the intent's text tone, which holds 3:1 on the page where the
+        // fill tone of warning did not. Returns '' when there's no
         // DOM (node) — callers treat an empty color as "library default pin".
         _intentColor(intent) {
             const tokens = {
-                accent: '--color-wk-accent',
-                success: '--color-wk-success',
-                warning: '--color-wk-warning',
-                danger: '--color-wk-danger',
-                info: '--color-wk-info-tone',
+                accent: '--color-wk-accent-text',
+                success: '--color-wk-success-text',
+                warning: '--color-wk-warning-text',
+                danger: '--color-wk-danger-text',
+                info: '--color-wk-info-text',
             };
             const name = tokens[intent] || tokens.accent;
             if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function' || !this.$el) {

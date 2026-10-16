@@ -47,13 +47,13 @@
     // uses. 'auto' falls back to currentColor for an embedded context where the bar
     // should take the color of the text around it.
     $fillColor = match (WireKit::validateProp('page-progress', 'intent', (string) $intent, ['primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto'])) {
-        'success' => 'var(--page-progress-fill, var(--color-wk-success))',
-        'warning' => 'var(--page-progress-fill, var(--color-wk-warning))',
-        'danger' => 'var(--page-progress-fill, var(--color-wk-danger))',
+        'success' => 'var(--page-progress-fill, var(--color-wk-success-text))',
+        'warning' => 'var(--page-progress-fill, var(--color-wk-warning-text))',
+        'danger' => 'var(--page-progress-fill, var(--color-wk-danger-text))',
         'neutral' => 'var(--page-progress-fill, var(--color-wk-text-muted))',
         'auto' => 'var(--page-progress-fill, currentColor)',
-        'primary' => 'var(--page-progress-fill, var(--color-wk-accent))',
-        'info' => 'var(--page-progress-fill, var(--color-wk-info-tone))',
+        'primary' => 'var(--page-progress-fill, var(--color-wk-accent-text))',
+        'info' => 'var(--page-progress-fill, var(--color-wk-info-text))',
     };
 
     // Marker class — reduced-motion and print rules in dist/wirekit.css scope to it,

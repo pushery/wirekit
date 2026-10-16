@@ -2,16 +2,27 @@
      Its state is which menu is open. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
 @props([
+    // Keep the current entry with the address in a menu Livewire keeps across `wire:navigate`
+    // visits with `@persist`, which it does not render again: after each visit the entry whose
+    // link matches the page takes the current state and `aria-current`, in the browser
+    // (`x-wk-current`, utils/current.js). It moves the links of the bar itself; a link in a panel lives in the overlay
+    // root, outside the bar.
+    'trackCurrent' => false,
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu', $attributes->getAttributes());
+
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy, so
+    // `track-current="false"` would otherwise turn the tracking on.
+    $trackCurrent = BooleanProp::from($trackCurrent, false);
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -32,6 +43,7 @@
      class token and its descendants, and every item's chevron sits under this root. --}}
 <nav
     x-data="wirekitNavigationMenu()"
+    @if($trackCurrent) x-wk-current @endif
     {{-- Outside-click close is handled in wirekitNavigationMenu()'s
          document-level pointerdown listener, not here: the flyout panels
          teleport to the overlay root, so a Blade x-on:click.outside on this root would

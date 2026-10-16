@@ -142,7 +142,7 @@
 @endphp
 
 <div
-    {{ $attributes->except('style')->merge(['data-replayable' => 'true', 'class' => $baseClasses]) }}
+    {{ $attributes->except('style')->class([$baseClasses])->merge(['data-replayable' => 'true']) }}
     x-data="wirekitAnimate({{ \Pushery\WireKit\Support\AlpinePayload::string($validatedPreset) }}, {{ $optionsJson }})"
     @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >

@@ -1,7 +1,7 @@
 !==
 "--indicator-wk-offset:
 "end"
-$attributes->class([$classes]);
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
 $attributes->getAttributes());
 $attrs
 $attrs->merge(['style'

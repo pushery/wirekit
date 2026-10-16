@@ -6,6 +6,13 @@
     // the container binding or Vite — see WireKit::cspNonce(). Pass one explicitly
     // when the application mints a value per response and publishes it nowhere.
     'nonce' => null,
+    // A family for this page in place of `wirekit.fonts.sans`, `.serif` or `.mono`: a key
+    // from the registry, of that category. Null keeps the configured one. For a font that
+    // changes per shop or per tenant without touching the config; list such families in
+    // `wirekit.fonts.publish` so they are published and keep their preload.
+    'sans' => null,
+    'serif' => null,
+    'mono' => null,
 ])
 
 @php
@@ -21,6 +28,22 @@
     use Pushery\WireKit\Fonts\FontRegistry;
 
     $fontConfig = config('wirekit.fonts', []);
+
+    // A family named on this call wins over the configured one for this page only. The key is
+    // checked against its category, as the config is at boot: a typo is reported where the
+    // developer is, and in production the page keeps the configured family.
+    foreach (['sans' => $sans, 'serif' => $serif, 'mono' => $mono] as $wkCategory => $wkKey) {
+        if (! filled($wkKey)) {
+            continue;
+        }
+
+        // The fallback is the configured family, so a key that names nothing changes nothing.
+        $wkKey = \Pushery\WireKit\Support\StrictnessGate::enforce('fonts', $wkCategory, (string) $wkKey, array_keys(FontRegistry::category($wkCategory)), (string) ($fontConfig[$wkCategory] ?? ''));
+
+        if (FontRegistry::get($wkKey)?->category === $wkCategory) {
+            $fontConfig[$wkCategory] = $wkKey;
+        }
+    }
 
     // Resolve configured font presets (null if not configured)
     $sansPreset = ($fontConfig['sans'] ?? null)

@@ -73,6 +73,11 @@
     // aria-labelledby directly wins over this default and suppresses it, so the
     // element never carries two conflicting names.
     'label' => __('wirekit::Modules'),
+    // Keep the current entry with the address in a rail Livewire keeps across `wire:navigate`
+    // visits with `@persist`, which it does not render again: after each visit the entry whose
+    // link matches the page takes the current state and `aria-current`, in the browser
+    // (`x-wk-current`, utils/current.js). `app-rail.item` reads it from here.
+    'trackCurrent' => false,
     'scope' => null,
 ])
 
@@ -89,6 +94,7 @@
     // `expandable="false"` would otherwise turn the toggle ON. Normalize against each
     // prop's own default so a cast never engages a mode that was meant off.
     $expandable = BooleanProp::from($expandable, false);
+    $trackCurrent = BooleanProp::from($trackCurrent, false);
     $persistDriver = WireKit::validateProp('app-rail', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
     // Whether the CALLER set `expanded`, taken before anything below answers it. The factory and
@@ -209,6 +215,7 @@
 
 <nav
     data-wk-rail
+    @if($trackCurrent) x-wk-current @endif
     data-labels="{{ $labels }}"
     {{-- The names of a rail that cannot expand, present before Alpine runs, and only in the
          modes that show names at all. The binding below agrees with this on arrival and adds the
@@ -267,8 +274,10 @@
              only ever removes what it added itself — so the static initial width emitted below
              survived every toggle, leaving two width utilities on the element and a rail that
              never actually changed size. The object form names BOTH classes, so the one whose
-             condition is false is removed regardless of who put it there. --}}
-        :class="{ [{{ \Pushery\WireKit\Support\AlpinePayload::string($expandedWidth) }}]: expanded, [{{ \Pushery\WireKit\Support\AlpinePayload::string($restingWidth) }}]: ! expanded }"
+             condition is false is removed regardless of who put it there. Alpine removes a class
+             by its name, so both carry the names the static width is written with
+             (Support\CompactClasses). --}}
+        :class="{ [{{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($expandedWidth)) }}]: expanded, [{{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($restingWidth)) }}]: ! expanded }"
     @endif
     {{ $attributes->class([
         $classes,

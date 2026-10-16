@@ -36,7 +36,7 @@
     href="{{ $href }}"
     @if($active) aria-current="{{ $ariaCurrent }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active]) }}
+    {{ $attributes->except('rel')->merge($trackAttributes)->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active]) }}
 >
 @endif
     @if($icon)

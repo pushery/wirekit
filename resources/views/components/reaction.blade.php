@@ -87,7 +87,10 @@
     $stateClasses = $active
         ? implode(' ', [
             'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
-            'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,transparent)]',
+            // The edge says pressed in a second channel beside the tint: drawn in the accent's text
+            // color, it stands at the contrast that color holds as text on the tint, where the
+            // translucent accent it replaced read as a faint outline.
+            'border-[var(--color-wk-accent-content)]',
             'text-[color:var(--color-wk-accent-content)]',
         ])
         : implode(' ', [

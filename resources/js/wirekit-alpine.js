@@ -42,12 +42,14 @@ import { registerAnnounceBusyDirective } from './utils/busy-announcer.js';
 import { registerCounterDirective } from './utils/counter.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
+import { registerCurrentDirective } from './utils/current.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
+import { installFocusInvalid } from './utils/focus-invalid.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -72,6 +74,7 @@ import wirekitSidebarRail from './components/sidebar-rail.js';
 import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
 import wirekitNavbarScroll from './components/navbar-scroll.js';
 import wirekitOverflowNav from './components/overflow-nav.js';
+import wirekitCardDisclosure from './components/card-disclosure.js';
 import wirekitCollapsible from './components/collapsible.js';
 import wirekitTableReorder from './components/table-reorder.js';
 import wirekitSidebarListbox from './components/sidebar-listbox.js';
@@ -253,6 +256,8 @@ if (hostAlpine) {
     registerInsertTokenDirective(target);
     // A form that holds what its server does not have yet says so. See utils/unsaved.js.
     registerUnsavedDirective(target);
+    // A navigation Livewire keeps across a visit marks the page it arrived at. See utils/current.js.
+    registerCurrentDirective(target);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(target);
     // A fitted text whose words a script writes keeps its copies in step. See utils/fit-text.js.
@@ -267,6 +272,9 @@ if (hostAlpine) {
     installScrollInset();
     // A radio the arrow keys reach keeps its focus ring in WebKit. See utils/arrow-focus.js.
     installArrowFocus();
+    // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
+    // See utils/focus-invalid.js.
+    installFocusInvalid();
 
     target.data('wirekitChartJs', wirekitChartJs);
     target.data('wirekitDropdown', wirekitDropdown);
@@ -289,6 +297,7 @@ if (hostAlpine) {
     target.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
     target.data('wirekitNavbarScroll', wirekitNavbarScroll);
     target.data('wirekitOverflowNav', wirekitOverflowNav);
+    target.data('wirekitCardDisclosure', wirekitCardDisclosure);
     target.data('wirekitCollapsible', wirekitCollapsible);
     target.data('wirekitTableReorder', wirekitTableReorder);
     target.data('wirekitSidebarListbox', wirekitSidebarListbox);

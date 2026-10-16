@@ -17,34 +17,14 @@ use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\ComponentAttributeBag;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
-use Pushery\WireKit\Console\BoostSkillsCommand;
-use Pushery\WireKit\Console\ClassByAreaCommand;
-use Pushery\WireKit\Console\ComponentMakeCommand;
-use Pushery\WireKit\Console\CspAuditCommand;
-use Pushery\WireKit\Console\CursorRulesCommand;
-use Pushery\WireKit\Console\DoctorA11yCommand;
-use Pushery\WireKit\Console\DoctorPropsCommand;
-use Pushery\WireKit\Console\EditorPresetCommand;
-use Pushery\WireKit\Console\ExportApiMapCommand;
-use Pushery\WireKit\Console\ExportBlocksCommand;
-use Pushery\WireKit\Console\ExportJsonCommand;
-use Pushery\WireKit\Console\GlassInstallCommand;
-use Pushery\WireKit\Console\InstallCommand;
-use Pushery\WireKit\Console\ListComponentsCommand;
-use Pushery\WireKit\Console\ListFontsCommand;
-use Pushery\WireKit\Console\ListIconsCommand;
-use Pushery\WireKit\Console\MakeCommand;
-use Pushery\WireKit\Console\McpServeCommand;
-use Pushery\WireKit\Console\PublishFontsCommand;
-use Pushery\WireKit\Console\PublishIconsCommand;
-use Pushery\WireKit\Console\ShowComponentCommand;
-use Pushery\WireKit\Console\ThemeCommand;
-use Pushery\WireKit\Console\VerifyInstallationCommand;
 use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\AssetTags;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\BooleanProp;
+use Pushery\WireKit\Support\CompactClassAttributes;
+use Pushery\WireKit\Support\CompactClasses;
 use Pushery\WireKit\Support\ContainedFile;
 use Pushery\WireKit\Support\DomId;
 use Pushery\WireKit\Support\FaqCollector;
@@ -136,7 +116,8 @@ class WireKitServiceProvider extends ServiceProvider
     {
         // Reset the per-render registries after each request and before each queued job: DOM
         // ids start clean, a rejected prop value is reported again, tour steps count from zero,
-        // and a question an orphaned faq-item left behind reaches no later FAQ. The registries
+        // a question an orphaned faq-item left behind reaches no later FAQ, and the compact switch
+        // is read again. The registries
         // are static, and static state lasts as long as the PHP script that holds it: FPM starts
         // the script afresh for every HTTP request, so they start empty there anyway, while an
         // Octane worker and a queue worker run one script across many requests or jobs. A queue
@@ -145,6 +126,7 @@ class WireKitServiceProvider extends ServiceProvider
         $resetPerRender = static function (): void {
             DomId::reset();
             StrictnessGate::forgetLogged();
+            CompactClasses::forget();
             TourStepCounter::reset();
             FaqCollector::reset();
         };
@@ -154,32 +136,8 @@ class WireKitServiceProvider extends ServiceProvider
         // ── Publishable assets (FIRST — must register before anything that could fail) ──
         // Registered early so vendor:publish always works, even if later steps throw.
         if ($this->app->runningInConsole()) {
-            // Register artisan commands
-            $this->commands([
-                BoostSkillsCommand::class,
-                ClassByAreaCommand::class,
-                ComponentMakeCommand::class,
-                CursorRulesCommand::class,
-                DoctorA11yCommand::class,
-                DoctorPropsCommand::class,
-                EditorPresetCommand::class,
-                ExportApiMapCommand::class,
-                ExportBlocksCommand::class,
-                CspAuditCommand::class,
-                ExportJsonCommand::class,
-                GlassInstallCommand::class,
-                InstallCommand::class,
-                ListComponentsCommand::class,
-                ListFontsCommand::class,
-                ListIconsCommand::class,
-                MakeCommand::class,
-                McpServeCommand::class,
-                PublishFontsCommand::class,
-                PublishIconsCommand::class,
-                ShowComponentCommand::class,
-                ThemeCommand::class,
-                VerifyInstallationCommand::class,
-            ]);
+            // Register the artisan commands listed in resources/catalog/commands.php.
+            $this->commands(require __DIR__.'/../resources/catalog/commands.php');
 
             $this->publishes([
                 __DIR__.'/../config/wirekit.php' => config_path('wirekit.php'),
@@ -282,34 +240,21 @@ class WireKitServiceProvider extends ServiceProvider
                 ], 'wirekit-font-'.$preset->key);
             }
 
-            // JavaScript bundles — published to public/vendor/wirekit/
-            // Optional: improves performance by serving via web server instead of PHP route
-            $this->publishes([
-                __DIR__.'/../dist/wirekit.js' => public_path('vendor/wirekit/wirekit.js'),
-                __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
-                __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
-                __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
-                __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
-                __DIR__.'/../dist/wirekit-optimistic.js' => public_path('vendor/wirekit/wirekit-optimistic.js'),
-                __DIR__.'/../dist/wirekit-theme.js' => public_path('vendor/wirekit/wirekit-theme.js'),
-                __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
-                __DIR__.'/../dist/wirekit-alpine.csp.js' => public_path('vendor/wirekit/wirekit-alpine.csp.js'),
-            ], 'wirekit-scripts');
+            // The files in dist/ an application loads, listed in resources/catalog/dist-files.php.
+            // `wirekit-scripts` publishes the scripts, which a web server then serves instead of
+            // the PHP route; `wirekit-assets` publishes every file at once, the stylesheets
+            // included.
+            $distFiles = require __DIR__.'/../resources/catalog/dist-files.php';
+            $publishedAs = static fn (array $files): array => array_combine(
+                array_map(static fn (string $file): string => __DIR__.'/../dist/'.$file, $files),
+                array_map(static fn (string $file): string => public_path('vendor/wirekit/'.$file), $files),
+            );
 
-            // All assets (CSS + JS) — convenience tag for publishing everything at once
-            $this->publishes([
-                __DIR__.'/../dist/wirekit.css' => public_path('vendor/wirekit/wirekit.css'),
-                __DIR__.'/../dist/wirekit.js' => public_path('vendor/wirekit/wirekit.js'),
-                __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
-                __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
-                __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
-                __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
-                __DIR__.'/../dist/wirekit-optimistic.js' => public_path('vendor/wirekit/wirekit-optimistic.js'),
-                __DIR__.'/../dist/wirekit-theme.js' => public_path('vendor/wirekit/wirekit-theme.js'),
-                __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
-                __DIR__.'/../dist/wirekit-alpine.csp.js' => public_path('vendor/wirekit/wirekit-alpine.csp.js'),
-                __DIR__.'/../dist/wirekit.min.css' => public_path('vendor/wirekit/wirekit.min.css'),
-            ], 'wirekit-assets');
+            $this->publishes($publishedAs(array_keys(array_filter(
+                $distFiles,
+                static fn (string $type): bool => str_starts_with($type, 'application/javascript'),
+            ))), 'wirekit-scripts');
+            $this->publishes($publishedAs(array_keys($distFiles)), 'wirekit-assets');
         }
 
         // ── Translations ──
@@ -350,6 +295,21 @@ class WireKitServiceProvider extends ServiceProvider
         $this->callAfterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
             $componentsPath = __DIR__.'/../resources/views/components';
             $blade->anonymousComponentPath($componentsPath, $prefix);
+
+            // The class lists of the kit's own views go through the compact table at render time
+            // (Support\CompactClassAttributes). A view of the application, a published copy and an
+            // inline template are compiled as they are. The check reads the file back because the
+            // compiler keeps the path of the last file it compiled, and `compileString()` called on
+            // its own would otherwise be taken for that file.
+            $viewsRoot = (realpath(__DIR__.'/../resources/views') ?: __DIR__.'/../resources/views').DIRECTORY_SEPARATOR;
+            $blade->prepareStringsForCompilationUsing(static function (string $template) use ($blade, $viewsRoot): string {
+                $path = (string) $blade->getPath();
+                $real = $path === '' ? false : realpath($path);
+
+                return $real !== false && str_starts_with($real, $viewsRoot) && file_get_contents($real) === $template
+                    ? CompactClassAttributes::rewrite($template)
+                    : $template;
+            });
 
             // A directive written on a tag without a value reaches the view as `true`, which the
             // attribute bag renders as the directive's own name, and Alpine throws on a bare
@@ -421,8 +381,8 @@ class WireKitServiceProvider extends ServiceProvider
         //
         //   1. If a published copy of the file this directive links exists under
         //      public/vendor/wirekit/ AND carries the same bytes as the package's own copy
-        //      in dist/ (`publishedIsStale()`: the sizes first, a hash when they agree), the
-        //      web server serves it directly (fastest path).
+        //      in dist/ (`AssetTags::publishedIsStale()`: the sizes first, a hash when they
+        //      agree), the web server serves it directly (fastest path).
         //
         //   2. Otherwise — either no published copy, OR one that differs from the package's
         //      (a `composer update pushery/wirekit` without the matching
@@ -670,112 +630,42 @@ class WireKitServiceProvider extends ServiceProvider
     }
 
     /**
-     * Resolve the absolute path of an asset file inside the package's dist/
-     * directory at runtime.
+     * The absolute path of a file in the package's dist/ directory, or null when it is missing.
      *
-     * Called from the `@wirekitStyles` / `@wirekitScripts` Blade directives to
-     * (a) read the current `filemtime()` for cache-busting query strings, and
-     * (b) compare against the published copy to detect staleness and fall back
-     * to the route-based serving path when necessary.
-     *
-     * Uses `__DIR__` at call time so the path resolves relative to the real
-     * location of this file, regardless of where the caller sits — crucial
-     * because the Blade directive's PHP code is compiled into a cached view
-     * file under `storage/framework/views/` where `__DIR__` would otherwise
-     * point to the wrong directory.
+     * This method and the tag builders below are what the asset directives compile to, so they
+     * keep their names here; each delegates to {@see AssetTags}, which holds the rules.
      *
      * @param  string  $file  Filename inside dist/ (e.g. "wirekit.css")
-     * @return string|null Absolute path if the file exists, null otherwise
      */
     public static function distPath(string $file): ?string
     {
-        $path = __DIR__.'/../dist/'.$file;
-
-        return file_exists($path) ? $path : null;
+        return AssetTags::distPath($file);
     }
 
-    /**
-     * The URL of a dist file, with a version query: the published copy when it is current, the
-     * package's asset route when that copy is missing or stale.
-     *
-     * Extracted from scriptTag() when the theme script became a second tag that needs the same
-     * decision. The staleness check exists so a developer who published the assets once and then
-     * upgraded the package does not silently keep serving the old file.
-     */
+    /** The URL of a dist file with its version query; see {@see AssetTags::source()}. */
     protected static function assetSource(string $file): string
     {
-        $published = public_path('vendor/wirekit/'.$file);
-        $dist = self::distPath($file);
-
-        if (self::publishedIsStale($published, $dist)) {
-            $version = $dist ? filemtime($dist) : time();
-
-            return url('/wirekit/'.$file).'?v='.$version;
-        }
-
-        return asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
+        return AssetTags::source($file);
     }
 
     /**
-     * The `@wirekitThemeScript` tag: dist/wirekit-theme.js, written into the page or loaded as a file.
-     *
-     * One script serves both deliveries because it reads its configuration from its own tag, from
-     * `data-wk-theme-storage` and `data-wk-theme-key`, instead of having values written into its
-     * code. The inline form therefore puts nothing but the file's own code inside the script block,
-     * and the file form loads the same code.
-     *
-     * The file form is a classic tag with no `defer` and no `async`, unlike the bundle tags: it has to
-     * hold the page until the theme is set, which is exactly what a deferred script does not do.
+     * The `@wirekitThemeScript` tag; see {@see AssetTags::themeScriptTag()}.
      *
      * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
      */
     public static function themeScriptTag(string $nonceAttr = ''): string
     {
-        $storage = config('wirekit.theme.storage', 'local') === 'cookie' ? 'cookie' : 'local';
-        $attributes = $nonceAttr
-            .' data-wk-theme-storage="'.$storage.'"'
-            .' data-wk-theme-key="'.e((string) config('wirekit.theme.storage_key', 'wirekit-theme')).'"';
-
-        if (config('wirekit.theme.script', 'inline') === 'external') {
-            return '<script'.$attributes.' src="'.self::assetSource('wirekit-theme.js').'"></script>'."\n";
-        }
-
-        return '<script'.$attributes.'>'.self::themeScriptSource().'</script>'."\n";
+        return AssetTags::themeScriptTag($nonceAttr);
     }
 
-    /**
-     * The theme script's code without its license banner, read once per process.
-     *
-     * The banner is the only comment in the built file, and a page does not need a license notice
-     * written into it.
-     */
+    /** The theme script's code without its license banner; see {@see AssetTags::themeScriptSource()}. */
     protected static function themeScriptSource(): string
     {
-        static $source = null;
-
-        if ($source === null) {
-            $path = self::distPath('wirekit-theme.js');
-
-            if ($path === null) {
-                // Said out loud: an empty script block renders cleanly and sets no theme at all.
-                logger()->warning('WireKit: dist/wirekit-theme.js is missing, so @wirekitThemeScript renders an empty script. Reinstall the package.');
-            }
-
-            $code = $path === null ? '' : (string) file_get_contents($path);
-            $source = trim((string) preg_replace('#\A/\*!.*?\*/#s', '', $code));
-        }
-
-        return $source;
+        return AssetTags::themeScriptSource();
     }
 
     /**
-     * Build one `<script>` tag for a bundle, published copy or package route.
-     *
-     * Extracted from the `@wirekitScripts` directive when the ApexCharts adapter became a
-     * second, optional tag. Duplicating the published-vs-route decision and the cache-busting
-     * timestamp would have meant two copies of a rule that is easy to get subtly wrong — the
-     * staleness check exists so a developer who published assets once and then upgraded the
-     * package does not silently keep serving the old file.
+     * One `<script>` tag for a bundle; see {@see AssetTags::scriptTag()}.
      *
      * @param  string  $file  bundle filename, e.g. `wirekit.js`
      * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
@@ -783,117 +673,29 @@ class WireKitServiceProvider extends ServiceProvider
      */
     public static function scriptTag(string $file, string $nonceAttr = '', string $extraAttrs = ''): string
     {
-        $src = self::assetSource($file);
-
-        // `data-navigate-once` — the bundle registers Alpine components and document
-        // listeners, and that is a once-per-DOCUMENT job. Livewire's navigate re-executes a
-        // head script on every client-side hop unless the attribute is there, as its own
-        // bundle's tag has it. Without it the bundle runs once more per hop, and the
-        // listener set grows for as long as somebody navigates without a full reload,
-        // which in a console shell is the normal way to use the app.
-        //
-        // Counting <script> tags does not see it — the old tag is replaced rather than added,
-        // so the DOM keeps showing exactly one; `performance.getEntriesByType('resource')`
-        // across two real hops does.
-        //
-        // Unconditional rather than gated on Livewire being installed. It is an inert data
-        // attribute to anything that does not read it, and a detection branch here would be
-        // a second thing to keep right for no gain.
-        return '<script'.$nonceAttr.$extraAttrs.' data-navigate-once="true" src="'.$src.'" defer></script>'."\n";
+        return AssetTags::scriptTag($file, $nonceAttr, $extraAttrs);
     }
 
-    /**
-     * The translated accessible name for the overlay landmark, as an HTML attribute.
-     *
-     * Every teleported panel lives inside one landmark, and a landmark exists to be
-     * announced — so its name is read by exactly the people who cannot see that the
-     * region is empty of meaning otherwise. A literal in the bundle would make an
-     * application shipping eight languages announce one English word in eight otherwise
-     * translated region lists.
-     *
-     * The name rides the bundle's own `<script>` tag rather than an inline script or a
-     * `<div>` of its own, and both alternatives are worse: an inline script is a second
-     * thing a strict Content-Security-Policy must nonce and a second thing that can be
-     * blocked, and emitted markup lands wherever the developer put `@wirekitScripts` —
-     * inside an `overflow: hidden` wrapper it would be clipped,
-     * which is the exact problem teleporting out of the tree exists to solve. The tag is
-     * already present, already nonced, and already re-rendered by the server on every
-     * page a `wire:navigate` arrives at.
-     *
-     * Falls back to the English literal in the bundle when the catalog has no entry: a
-     * landmark with no accessible name is worse than one named in the wrong language.
-     */
+    /** The overlay landmark's translated name as an attribute; see {@see AssetTags::overlayLabelAttribute()}. */
     public static function overlayLabelAttribute(): string
     {
-        return ' data-wk-overlay-label="'.e(__('wirekit::Overlays')).'"';
+        return AssetTags::overlayLabelAttribute();
     }
 
     /**
-     * The stylesheet tag, decided by the same rule as `scriptTag()`.
-     *
-     * Both tags decide through `publishedIsStale()` and no directive inlines the rule, so
-     * the stylesheet and the scripts cannot disagree about which copy is current.
+     * The stylesheet tag; see {@see AssetTags::styleTag()}.
      *
      * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
      */
     public static function styleTag(string $file, string $nonceAttr = ''): string
     {
-        $published = public_path('vendor/wirekit/'.$file);
-        $dist = self::distPath($file);
-
-        if (self::publishedIsStale($published, $dist)) {
-            $version = $dist ? filemtime($dist) : time();
-            $src = url('/wirekit/'.$file).'?v='.$version;
-        } else {
-            $src = asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
-        }
-
-        return '<link rel="stylesheet"'.$nonceAttr.' href="'.$src.'">'."\n";
+        return AssetTags::styleTag($file, $nonceAttr);
     }
 
-    /**
-     * Is the published copy something other than what this package ships?
-     *
-     * Compared by content, not by modification time. A modification time answers "which
-     * file was written later", and that is not the question: Composer writes an upgraded
-     * `dist/` with whatever timestamp the archive or the filesystem hands it, and a
-     * `vendor:publish` from the previous version can carry a later one. A time comparison
-     * would then call the published copy current and serve the old bytes, with a
-     * fresh-looking `?v=` stamp and no error anywhere.
-     *
-     * A missing published file is stale by definition. Beyond that: sizes first, because two
-     * files of different length cannot be equal and the check costs one stat; a hash only when
-     * the sizes agree, which is the one case where bytes still have to be read.
-     *
-     * Memoized per request, keyed by the published file's own mtime and size, so the answer
-     * self-invalidates the moment anything republishes — rather than by path alone, which
-     * would cache a verdict across a publish inside a long-lived worker.
-     */
+    /** Whether the published copy differs from the package's; see {@see AssetTags::publishedIsStale()}. */
     protected static function publishedIsStale(string $published, ?string $dist): bool
     {
-        if (! file_exists($published)) {
-            return true;
-        }
-
-        // Nothing to compare against. The published copy is all there is, so serve it —
-        // returning "stale" here would route to a file the package does not have.
-        if ($dist === null || ! is_file($dist)) {
-            return false;
-        }
-
-        static $memo = [];
-
-        $publishedSize = filesize($published);
-        $key = $published.'|'.filemtime($published).'|'.$publishedSize.'|'.$dist;
-
-        if (isset($memo[$key])) {
-            return $memo[$key];
-        }
-
-        $distSize = filesize($dist);
-
-        return $memo[$key] = $publishedSize !== $distSize
-            || hash_file('xxh128', $published) !== hash_file('xxh128', $dist);
+        return AssetTags::publishedIsStale($published, $dist);
     }
 
     /**
@@ -941,31 +743,14 @@ class WireKitServiceProvider extends ServiceProvider
      */
     protected function registerAssetRoutes(): void
     {
-        // Map route paths to dist/ files with their MIME types.
-        //
-        // `; charset=utf-8` is not decoration on a text type. Without it a
-        // browser opening the URL on its own falls back to a legacy single-byte
-        // encoding, and every em-dash in the file renders as mojibake — reported
-        // from the field against /wirekit/wirekit.css.
-        //
-        // Only the DIRECT hit is affected, which is why it survived so long: a
-        // stylesheet loaded from a page inherits the document's encoding, so
-        // every app looked fine and only someone pasting the asset URL into the
-        // address bar ever saw it. The font route below has always declared it;
-        // the routes below were written first and never caught up.
-        $assets = [
-            'wirekit/wirekit.css' => ['file' => 'wirekit.css', 'type' => 'text/css; charset=utf-8'],
-            'wirekit/wirekit.min.css' => ['file' => 'wirekit.min.css', 'type' => 'text/css; charset=utf-8'],
-            'wirekit/wirekit.js' => ['file' => 'wirekit.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit.core.js' => ['file' => 'wirekit.core.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit.esm.js' => ['file' => 'wirekit.esm.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit-tiptap.js' => ['file' => 'wirekit-tiptap.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit-optimistic.js' => ['file' => 'wirekit-optimistic.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit-theme.js' => ['file' => 'wirekit-theme.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript; charset=utf-8'],
-            'wirekit/wirekit-alpine.csp.js' => ['file' => 'wirekit-alpine.csp.js', 'type' => 'application/javascript; charset=utf-8'],
-        ];
+        // Route paths to dist/ files with their content types: the same files the publish groups
+        // name, from resources/catalog/dist-files.php, which also says why each text type carries
+        // its charset.
+        $assets = [];
+
+        foreach (require __DIR__.'/../resources/catalog/dist-files.php' as $file => $type) {
+            $assets['wirekit/'.$file] = ['file' => $file, 'type' => $type];
+        }
 
         // Bundled fonts, served straight from the package when they were never
         // published. Without this the fonts component would emit no <link> at

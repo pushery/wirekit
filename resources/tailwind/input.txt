@@ -609,6 +609,7 @@ $wrapLabel
 ($forceLoading)
 ($hasError
 ($hasSuccess
+($helpName
 ($hint
 ($iconOnly
 ($iconOnly)
@@ -1926,6 +1927,7 @@ breakpoint
 breakpoint,
 breakpoint:
 breakpoints
+breaks
 brief
 brighter,
 browser
@@ -2412,6 +2414,7 @@ etc.)
 etc.),
 evaluated
 event
+event's
 events
 ever
 every
@@ -2778,6 +2781,7 @@ in_array(strtolower(trim($counter)),
 include
 included.
 including
+indentation,
 independently
 indicator
 indicator,
@@ -2911,6 +2915,7 @@ leaves.
 leaving
 left
 left-to-right;
+legend
 legible,
 legitimately
 length,
@@ -3342,6 +3347,7 @@ prefix/suffix:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -3872,6 +3878,7 @@ text-level
 text-only
 text.
 text/bg/border
+text:
 textarea
 than
 than.

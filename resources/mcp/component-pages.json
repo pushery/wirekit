@@ -1,6 +1,7 @@
 {
     "attachment-group": "attachment",
     "bento-cell": "bento-grid",
+    "cart-item": "cart-list",
     "faq-item": "faq",
     "glass": "liquid-glass",
     "kanban-column": "kanban",

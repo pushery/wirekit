@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Support;
 
 use Pushery\WireKit\WireKit;
-use Pushery\WireKit\WireKitServiceProvider;
 
 /**
  * The CSP hash sources (`sha256-…`) of the inline scripts WireKit writes into a page.
@@ -60,7 +59,7 @@ final class InlineScriptHashes
                 'seedOn' => false,
             ])->render()),
             // Empty while the theme script loads as a file, which a `'self'` source already admits.
-            self::body(WireKitServiceProvider::themeScriptTag()),
+            self::body(AssetTags::themeScriptTag()),
         ];
 
         return array_values(array_filter($bodies, static fn (string $body): bool => $body !== ''));

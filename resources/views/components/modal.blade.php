@@ -63,6 +63,11 @@
     // re-rendered on its own still carries the id the dialog's aria-labelledby names.
     $titleId = $name !== null ? 'wk-modal-title-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-modal-title-');
 
+    // The dialog's id, which a `modal.trigger` naming this modal points `aria-controls` at while the
+    // modal is open. Only a named modal has one, since a trigger can address a modal only by name.
+    // A second modal of the same name on the page takes a suffix and keeps its own id.
+    $dialogId = filled($name) ? \Pushery\WireKit\Support\DomId::distinct('wk-modal-dialog-'.$name) : null;
+
     // How the dialog gets its name, and why this is not just `aria-labelledby`.
     //
     // Only the header sub-component ever puts the labeling id on an element, so an
@@ -181,7 +186,7 @@
     // an item with a gap of its own beside it, so it generates no box. With a trigger it keeps its
     // box, and the trigger its place: its own width in a grid cell, the margin a
     // stack gives its children. `class="contents"` on the component hands the trigger over.
-    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(['contents']);
+    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
 @endphp
 
 {{-- Modal component — teleported to the overlay root for proper stacking context.
@@ -250,6 +255,7 @@
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
+                    @if($dialogId !== null) id="{{ $dialogId }}" @endif
                     role="dialog"
                     {{-- Dynamic aria-modal so a stacked modal-over-modal pair only
                          marks the topmost as modal — ARIA spec compliance. --}}

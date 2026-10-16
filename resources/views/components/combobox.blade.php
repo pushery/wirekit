@@ -32,6 +32,12 @@
     // `false` renders a select-only combobox: a focusable trigger instead of a text field, for a
     // short list nobody needs to search, with the keyboard of the WAI-ARIA select-only pattern.
     'searchable' => true,
+    // Free input, after the WAI-ARIA editable combobox with list autocomplete: the text in the field
+    // is the value. `wire:model` binds the text, `required` checks it, `name` submits it, and the
+    // caller's `autocomplete` token stays on the field, so a browser can fill an address into it.
+    // A suggestion fills the field and says which one it was with `wirekit:combobox-choose`. For an
+    // address, a name or anything else a list cannot hold in full. Implies `searchable`.
+    'freeInput' => false,
     // `false` hides the clear button. The default is true, because for most lists "none of
     // them" is a real answer a reader must be able to give back. It is NOT one everywhere: a
     // control whose value is a PRECONDITION for the field around it -- the country in a phone
@@ -78,6 +84,9 @@
     'searchDebounce' => config('wirekit.components.combobox.search-debounce', 300),
     // The application cut its results at a limit. The list then says there are more.
     'truncated' => false,
+    // A line under the suggestions naming their source, as the license of their data may require:
+    // "© OpenStreetMap contributors" for suggestions from OpenStreetMap.
+    'attribution' => null,
     // What the field says when there is nothing to choose, as on `select`: the sentence, where the
     // missing record is created (a link after it; null for a reader who may not create one), the
     // link's text ("Create one" without it), and whether the link moves with `wire:navigate`. Set,
@@ -117,7 +126,9 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
     $hideLabel = BooleanProp::from($hideLabel, false);
-    $searchable = BooleanProp::from($searchable, true);
+    $freeInput = BooleanProp::from($freeInput, false);
+    // Free text needs the text field; a select-only trigger takes no typing.
+    $searchable = BooleanProp::from($searchable, true) || $freeInput;
     $clearable = BooleanProp::from($clearable, true);
     $server = BooleanProp::from($server, false) && $searchable;
     $truncated = BooleanProp::from($truncated, false);
@@ -188,11 +199,14 @@
             $value = (string) ($opt['value'] ?? $key);
             $label = (string) ($opt['label'] ?? $opt['value'] ?? $key);
 
+            // `data` travels with the option to the page, for `wirekit:combobox-choose` to hand over:
+            // the parts of an address a suggestion stands for, for instance.
             return [
                 'value' => $value,
                 'label' => $label,
                 'disabled' => (bool) ($opt['disabled'] ?? false),
-            ] + \Pushery\WireKit\Support\OptionMedia::fields('combobox', $opt, $value, $label);
+            ] + \Pushery\WireKit\Support\OptionMedia::fields('combobox', $opt, $value, $label)
+                + (isset($opt['data']) && is_array($opt['data']) ? ['data' => $opt['data']] : []);
         }
 
         return $inList
@@ -332,7 +346,9 @@
     // option would satisfy it; a combobox found empty says so under the field (partials/required-message),
     // unless the server's own message already stands there.
     $required = (bool) $attributes->get('required', false);
-    $requiredMessageId = $required && ! $hasError ? $comboId.'-required' : null;
+    // With free input the text is the value, and the field itself is required: the browser checks
+    // it and says so, as on any text field.
+    $requiredMessageId = $required && ! $hasError && ! $freeInput ? $comboId.'-required' : null;
     $describedBy = trim(($describedBy ?? '').' '.($requiredMessageId ?? ''));
     $describedBy = $describedBy !== '' ? $describedBy : null;
 
@@ -507,7 +523,9 @@
     // `after: '_syncQuery'` is what makes the rollback readable. The field shows
     // the chosen option's label, and after an undo it must show the PREVIOUS
     // one's — an option nobody clicked, so it can only come from the value.
-    $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+    // Free input has no choice to send: the text is the value, and it travels with the form or the
+    // model like any field's, so it takes no optimistic layer.
+    $optimisticConfig = ($optimistic === null || $disabled || $freeInput) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'selected',
         'after' => '_syncQuery',
         // The field's own error region. Without it the layer's generic "Could not save"
@@ -571,7 +589,7 @@
          the new expression and initialize it again, dropping the open list and the reader's
          typing. The factory reads both once and follows Livewire's later renders of them. In
          server mode the options are the search results on `data-wk-server-options`. --}}
-    x-data="wirekitCombobox({ listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }}{{ $serverConfig }} })"
+    x-data="wirekitCombobox({ listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }}{{ $freeInput ? ', freeInput: true' : '' }}{{ $serverConfig }} })"
     data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json($value) }}"
     @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @else data-wk-options="{{ \Pushery\WireKit\Support\AlpinePayload::json($normalized) }}" @endif
     @click.outside="isOpen = false"
@@ -581,7 +599,7 @@
          `wire:model` would bind the typed text and the server would receive three letters
          rather than the option behind them. `wire:model` compiles to `x-model`, and
          `x-modelable` is what lets a non-input element answer it. --}}
-    x-modelable="selected"
+    x-modelable="{{ $freeInput ? 'query' : 'selected' }}"
     {{-- `x-model` is routed here too, and for the same reason: `x-modelable` above is what
          ANSWERS it, and a hand-written one is how a parent component embeds this control. Left
          to the bag below it would land on the search input beside its built-in `x-model="query"` --
@@ -604,8 +622,9 @@
         <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
     @endif
 
-    {{-- Hidden input holding the selected *value* for form submission. --}}
-    @if($name)
+    {{-- Hidden input holding the selected *value* for form submission. With free input the text field
+         below carries the name itself, since its text is the value. --}}
+    @if($name && ! $freeInput)
         {{-- Static value as well as the bound one: the field is empty until Alpine
              boots, and a form submitted in that window sends nothing while the
              visible control already shows the value. Both come from the same PHP
@@ -615,7 +634,7 @@
     @endif
     {{-- The browser validates no hidden field, so a required combobox checks its choice through a
          stand-in of its own. --}}
-    @if($required)
+    @if($required && ! $freeInput)
         @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
     @endif
 
@@ -635,18 +654,32 @@
         :aria-activedescendant="isOpen && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
         aria-autocomplete="list"
         placeholder="{{ $placeholder }}"
-        autocomplete="off"
+        {{-- With free input the caller's token stays, so a browser can fill an address or a name in
+             and the purpose of the field can be read (WCAG 1.3.5). The suggestions of this field
+             open only while it has some for what was typed, never on focus, where a browser opens
+             its own. --}}
+        autocomplete="{{ $freeInput && filled($attributes->get('autocomplete')) ? $attributes->get('autocomplete') : 'off' }}"
+        @if($freeInput && $name) name="{{ $name }}" @endif
         x-model="query"
-        @focus="isOpen = true"
+        @unless($freeInput) @focus="isOpen = true" @endunless
         @input="openAndReset()"
         @keydown.arrow-down.prevent="openAndMove(1)"
         @keydown.arrow-up.prevent="moveHighlight(-1)"
-        @keydown.home.prevent="openAtFirst()"
-        @keydown.end.prevent="openAtLast()"
+        {{-- With free input Home and End move the caret in the text, as in any text field. --}}
+        @unless($freeInput)
+            @keydown.home.prevent="openAtFirst()"
+            @keydown.end.prevent="openAtLast()"
+        @endunless
         {{-- runIf, not run: Enter can fire with nothing highlighted, and on a closed
              list it only opens it, and `run(undefined)` would send the server a value
              nobody chose and then roll back from it. --}}
-        @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(enterValue())' : 'enterKey()' }}"
+        @if($freeInput)
+            {{-- Enter takes the suggestion the arrow keys reached, and otherwise leaves the key to the
+                 form, which a text field submits. --}}
+            @keydown.enter="freeEnter($event)"
+        @else
+            @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(enterValue())' : 'enterKey()' }}"
+        @endif
         @keydown.escape="escapeList($event)"
         {{-- Tab leaves the field, and an open list leaves with it. The key keeps its meaning:
              nothing is chosen, and the focus moves on by itself. --}}
@@ -673,10 +706,12 @@
         {{-- `required` is checked against the choice (the stand-in above), so the search field
              carries it as `aria-required` only: as a native attribute, typed text that is no option
              would satisfy it. --}}
-        @if($required) aria-required="true" @endif
+        @if($required && $freeInput) required @elseif($required) aria-required="true" @endif
         {{ $attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label', 'class', 'style', 'aria-describedby', 'required'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $inputClasses }}"
-        {{-- On a touch surface the clear button takes the touch target, and the end padding holds it. --}}
+        {{-- The search field: on a touch surface its chevron and its clear button take the touch
+             target, and the end padding holds whichever of them it has. --}}
+        data-wk-combobox-search
         @if(! $disabled && $clearable) data-wk-combobox-clearable @endif
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     />
@@ -748,12 +783,14 @@
         </template>
     @endif
 
-    {{-- Clear button — visible only when a value is selected. Positioned left of the chevron. --}}
+    {{-- Clear button — visible only when a value is selected. It stands before the chevron, from 2rem
+         to 3.5rem before the end of the field, and after a searchable field's chevron on a touch
+         surface, where both take the touch target. --}}
     @if(!$disabled && $clearable)
         <button
             type="button"
             data-wk-combobox-clear
-            x-show="selected"
+            x-show="{{ $freeInput ? 'query' : 'selected' }}"
             x-cloak
             {{-- run(null), not runIf: clearing IS a choice — "none of them" — and it
                  is a mutation the server has to hear about. `undefined` would be
@@ -787,7 +824,11 @@
         @if($disabled) disabled @endif
         tabindex="-1"
         aria-hidden="true"
-        class="absolute end-3 top-1/2 -translate-y-1/2 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-transform duration-[var(--transition-wk-duration)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)]"
+        data-wk-combobox-arrow
+        {{-- A pointer target like the clear button beside it, so it is one: 24px under a mouse,
+             the touch target on a touch surface (wk-field-affordance), right up against the clear
+             button and never under it. --}}
+        class="wk-field-affordance absolute end-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-transform duration-[var(--transition-wk-duration)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)]"
         :class="isOpen ? 'rotate-180' : ''"
     >
         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -898,7 +939,10 @@
                             class="wk-listbox-option wk-touch-row {{ $optionRowClasses }}"
                             @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
                             @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
-                            @mouseenter="hoverOption(opt, opt._idx)"
+                            {{-- pointermove, not mouseenter: a list that opens or scrolls under a resting
+                                 pointer fires mouseenter on the row beneath it, and that row would take the
+                                 highlight, and Enter, from a reader who never moved the mouse. --}}
+                            x-on:pointermove.passive="hoverOption(opt, opt._idx)"
                             {{-- A pressed option would otherwise take focus from a select-only trigger,
                                  which has no text to type into and must keep it. --}}
                             @if(! $searchable) @mousedown.prevent @endif
@@ -939,7 +983,8 @@
                 class="wk-listbox-option wk-touch-row {{ $optionRowClasses }}"
                 @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
-                @mouseenter="hoverOption(opt, idx)"
+                {{-- pointermove, not mouseenter: see the grouped rows above. --}}
+                x-on:pointermove.passive="hoverOption(opt, idx)"
                 @if(! $searchable) @mousedown.prevent @endif
                 @if($richRows)
                     @if($optionUses['descriptions'])
@@ -972,6 +1017,19 @@
                 class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]"
                 style="list-style: none;"
             ></li>
+        @endif
+        @if(filled($attribution))
+            {{-- The source of the suggestions, under them, as the license of their data asks. An
+                 option that cannot be chosen, like the note above, since a listbox may hold nothing
+                 else, and the highlight never lands here. --}}
+            <li data-wk-prose-skip
+                role="option"
+                aria-disabled="true"
+                data-wk-combobox-attribution
+                x-show="filtered.length > 0"
+                class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]"
+                style="list-style: none;"
+            >{{ $attribution }}</li>
         @endif
     </ul>
     </template>
@@ -1009,7 +1067,11 @@
         @endif
         {{-- A server search shows this before anything is typed too: "Type to search" is the
              answer to an empty field there, where the list is empty until the reader asks. --}}
-        @if($server)
+        {{-- With free input a text no suggestion matches is still the value, so nothing says "No
+             results" under it. --}}
+        @if($freeInput)
+            x-show="false"
+        @elseif($server)
             x-show="isOpen && filtered.length === 0"
         @else
             x-show="isOpen && filtered.length === 0 && query !== ''"

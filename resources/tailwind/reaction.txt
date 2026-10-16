@@ -36,8 +36,8 @@ $users
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
 'bg-[var(--color-wk-bg-muted)]',
 'bind'
-'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,transparent)]',
 'border-[length:var(--border-wk-width)]',
+'border-[var(--color-wk-accent-content)]',
 'border-transparent',
 'count'
 'cursor-pointer
@@ -164,6 +164,8 @@ __('wirekit::Saving'),
 a
 about.
 above
+accent
+accent's
 accessible
 action
 after
@@ -198,6 +200,7 @@ auto-derived
 axe
 bag
 before
+beside
 binds
 block,
 boolean,
@@ -220,6 +223,7 @@ carries
 case,
 cast
 change
+channel
 chooses.
 class="[font-variant-emoji:emoji]"
 class="font-[number:var(--font-wk-heading-weight)]
@@ -228,12 +232,15 @@ class="relative
 class="sr-only"
 class="sr-only">
 client's
+color
+color,
 compiles
 component
 component's
 compute
 config('app.debug'),
 content.
+contrast
 controls
 correct
 count
@@ -244,6 +251,7 @@ decides
 default
 derived
 does
+drawn
 duplicate
 each
 edge
@@ -251,6 +259,7 @@ emoji
 empty:
 every
 exactly
+faint
 false);
 false,
 feature
@@ -276,6 +285,7 @@ hardcoded
 has
 having
 helper,
+holds
 id
 id.
 id="{{
@@ -346,6 +356,7 @@ optimistic
 optimistic-ui:
 ordinary
 otherwise
+outline.
 own
 owns
 page
@@ -372,6 +383,7 @@ reaction
 reaction.
 reactions
 reactions|{1}
+read
 reader
 reads
 reason
@@ -398,6 +410,7 @@ runs,
 same
 save.
 saw,
+says
 second
 select-none',
 separate
@@ -414,6 +427,7 @@ six
 so
 spreads
 standing
+stands
 state
 state.
 stays
@@ -436,10 +450,13 @@ this
 ticker's
 time.
 tint
+tint,
+tint:
 to
 tokens
 told
 trans_choice('wirekit::{0}
+translucent
 travel
 truthy
 two
@@ -456,6 +473,7 @@ was
 what
 when
 whenever
+where
 which
 wins).
 with

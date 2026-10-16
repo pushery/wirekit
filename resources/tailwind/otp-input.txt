@@ -353,6 +353,7 @@ $wrapperClasses
 ($callerLabelledBy
 ($group
 ($hasError
+($helpName
 ($justify)
 ($stretch
 ($triggerIsButton)
@@ -1205,6 +1206,7 @@ built
 bundle.
 but
 button
+button's
 button's.
 button,
 button:
@@ -1530,6 +1532,7 @@ escapes
 escaping
 evaluated
 event
+event's
 events
 every
 everything
@@ -1778,6 +1781,7 @@ in:
 in_array($justify,
 in_array('sr-only',
 included.
+indentation,
 index
 indicator
 inert
@@ -1875,6 +1879,7 @@ leave
 leaves
 leaving
 left
+legend
 legitimate
 legitimately
 length
@@ -1889,6 +1894,7 @@ light
 like
 line
 line.
+lines
 linked
 list
 list,
@@ -2198,6 +2204,7 @@ preg_match('/\p{Ll}/u',
 preg_match('/\p{Lu}/u',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -2375,6 +2382,7 @@ server-side
 set
 sets
 settles
+several
 shadow.
 shape
 share
@@ -2528,6 +2536,7 @@ text-[length:var(--text-wk-lg)]
 text-[length:var(--text-wk-md)]
 text-[length:var(--text-wk-xl)]
 text-level
+text:
 than
 that
 that:

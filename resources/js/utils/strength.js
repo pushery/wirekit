@@ -18,6 +18,13 @@
 export const STRENGTH_MUTED = 'var(--color-wk-bg-muted)';
 
 /**
+ * The edge of an unlit bar. The muted fill alone stands at 1.09:1 on the page, so how many bars
+ * there are, and so how far the lit ones reach, was hard to see (WCAG 1.4.11); a line in the
+ * strong border color inside the bar stands at 3:1. A lit bar keeps its fill without one.
+ */
+export const STRENGTH_UNLIT_EDGE = 'inset 0 0 0 max(1px, var(--border-wk-width)) var(--color-wk-border-strong)';
+
+/**
  * The fill of bar `index` (0-based) at `value` lit steps of `max`.
  *
  * @param {number} index
@@ -31,14 +38,30 @@ export function strengthBarColor(index, value, max) {
     }
 
     if (value >= max) {
-        return 'var(--color-wk-success)';
+        return 'var(--color-wk-success-text)';
     }
 
     if (value <= Math.max(1, Math.floor(max / 4))) {
-        return 'var(--color-wk-danger)';
+        return 'var(--color-wk-danger-text)';
     }
 
-    return 'var(--color-wk-warning)';
+    return 'var(--color-wk-warning-text)';
+}
+
+/**
+ * The style of bar `index` as an object, its fill and, while it is unlit, its edge. An object,
+ * because Alpine sets it property by property, where a string would be written with
+ * `setAttribute()`, which a `style-src` without `'unsafe-inline'` refuses.
+ *
+ * @param {number} index
+ * @param {number} value
+ * @param {number} max
+ * @returns {{backgroundColor: string, boxShadow: string}}
+ */
+export function strengthBarStyle(index, value, max) {
+    const color = strengthBarColor(index, value, max);
+
+    return { backgroundColor: color, boxShadow: color === STRENGTH_MUTED ? STRENGTH_UNLIT_EDGE : 'none' };
 }
 
 /**

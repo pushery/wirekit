@@ -252,6 +252,7 @@ $wkField->takeLabel($uploadId)
 ($callerLabelledBy
 ($capture)
 ($hasError
+($helpName
 ($label
 ($name
 ($showsError
@@ -990,6 +991,7 @@ box
 box,
 box.
 brand
+breaks
 browse",
 browse');
 browser
@@ -1296,6 +1298,7 @@ escapes
 escaping
 evaluated
 event
+event's
 event.
 events
 ever
@@ -1505,6 +1508,7 @@ in.
 included.
 including
 indent;
+indentation,
 index)
 inert
 init
@@ -1582,6 +1586,7 @@ leaves
 leaving
 left
 legacy
+legend
 legitimate
 legitimately
 length,
@@ -1593,6 +1598,7 @@ lights
 like
 line
 line.
+lines
 linked
 list
 list,
@@ -1856,6 +1862,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 present
 preset.
 preset:
@@ -2012,6 +2019,7 @@ set,
 sets
 setting
 settles
+several
 shadow,
 shadow.
 shape
@@ -2151,6 +2159,7 @@ text-[color:var(--color-wk-text-subtle)]';
 text-[length:var(--text-wk-xs)]
 text-ellipsis
 text-level
+text:
 than
 that
 the

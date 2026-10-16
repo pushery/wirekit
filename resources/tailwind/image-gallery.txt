@@ -24,9 +24,9 @@ $as
 $as);
 $attributes
 $attributes);
-$attributes->class([$classes]);
 $attributes->class([$figureClasses])
 $attributes->class([$wrapperClasses])
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
 $attributes->except('id')->class([$wrapperClasses,
 $attributes->except('id')->class([$wrapperClasses])
 $attributes->getAttributes());

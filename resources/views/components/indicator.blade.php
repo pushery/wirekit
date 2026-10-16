@@ -32,7 +32,7 @@
     // Per-instance nudge via the token custom property.
     $style = $offset !== null && $offset !== '' ? "--indicator-wk-offset: {$offset};" : null;
 
-    $attrs = $attributes->class([$classes]);
+    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
     if ($style !== null) {
         $attrs = $attrs->merge(['style' => $style]);
     }

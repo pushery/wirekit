@@ -41,7 +41,16 @@
     // Debug only, and it never throws: a chart described by neighboring text (a figure
     // caption, a data table beside it) is a legitimate composition, and a fatal here
     // would break a page that is already accessible.
-    if ((bool) config('app.debug') && ! $attributes->has('aria-label')) {
+    //
+    // Nor does it fire for a chart that is named another way or has nothing to say: one
+    // named by `aria-labelledby` reads that name, and one hidden from assistive technology
+    // with `aria-hidden="true"`, such as a decorative sparkline beside the figure it draws,
+    // announces nothing at all.
+    $chartIsNamedOrHidden = $attributes->has('aria-label')
+        || filled($attributes->get('aria-labelledby'))
+        || filter_var($attributes->get('aria-hidden'), FILTER_VALIDATE_BOOLEAN);
+
+    if ((bool) config('app.debug') && ! $chartIsNamedOrHidden) {
         logger()->warning(
             'wirekit::chart: this chart renders to a canvas that assistive technology cannot read, and it '
             .'has no aria-label — so it announces only "Chart". Pass a label that summarizes what the data '

@@ -17,6 +17,7 @@ $family
 $family));
 $file
 $fontConfig
+$fontConfig[$wkCategory]
 $fontConfig['mono']
 $fontConfig['sans']
 $fontConfig['serif']
@@ -31,6 +32,7 @@ $locals)),
 $m)
 $monoPreset
 $monoPreset->fontFamily()
+$mono]
 $n):
 $name)),
 $nonce
@@ -47,8 +49,10 @@ $published
 $publishedCss
 $safeFamily
 $safeFamily,
+$sans,
 $sansPreset
 $sansPreset->fontFamily()
+$serif,
 $serifPreset
 $serifPreset->fontFamily()
 $source
@@ -63,24 +67,36 @@ $value
 $value)
 $version
 $warnMissing
+$wkCategory
+$wkCategory)
+$wkCategory,
+$wkKey
+$wkKey)
+$wkKey,
+$wkKey;
 $wkNonce
 &&
 ''
 '')
+''));
 '',
 ',
 'ascent-override'
 'descent-override'
 'family'
 'line-gap-override'
+'mono'
 'nonce'
 'overrides'
+'sans'
+'serif'
 'size-adjust'
 'src'
 'ui-serif,
 'unsafe-inline'
 '{{
 (!
+($fontConfig[$wkCategory]
 ($fontConfig['fallbacks']
 ($fontConfig['mono']
 ($fontConfig['sans']
@@ -96,6 +112,8 @@ $wkNonce
 ((array)
 (?FontPreset
 (FontPreset
+(FontRegistry::get($wkKey)?->category
+(['sans'
 (`/wirekit/fonts/...`),
 (`Inter-Regular.woff2`,
 (array)
@@ -179,6 +197,7 @@ FontCss::matchesConfiguredDisplay((string)
 FontRegistry::get($fontConfig['mono'])
 FontRegistry::get($fontConfig['sans'])
 FontRegistry::get($fontConfig['serif'])
+For
 Fully
 Georgia,
 HTML
@@ -195,6 +214,7 @@ NOT
 NOTHING,
 Narrowed
 Not
+Null
 ONLY
 OTHER
 OWN
@@ -233,6 +253,7 @@ Without
 [])
 []);
 [];
+\Pushery\WireKit\Support\StrictnessGate::enforce('fonts',
 \Pushery\WireKit\WireKit::cspNonce();
 \Pushery\WireKit\WireKit::warnUnknownProps('fonts',
 ])
@@ -244,6 +265,8 @@ __DIR__.'/../../fonts/'.$preset->cssFile;
 `--font-wk-mono`
 `--font-wk-sans`
 `--font-wk-serif`.
+`.mono`:
+`.serif`
 `105%;
 `:root`
 `;`,
@@ -260,6 +283,8 @@ __DIR__.'/../../fonts/'.$preset->cssFile;
 `swap`
 `vendor:publish`
 `wire:navigate`,
+`wirekit.fonts.publish`
+`wirekit.fonts.sans`,
 `{`
 `{{
 `}`
@@ -270,6 +295,7 @@ action
 activated
 actually
 after
+against
 alive
 all,
 already
@@ -289,6 +315,7 @@ are
 argument
 array
 array_filter([
+array_keys(FontRegistry::category($wkCategory)),
 array_map(static
 array_values(array_filter(array_map(
 artisan
@@ -318,6 +345,7 @@ block,
 block.
 body
 bool
+boot:
 box
 brace
 break
@@ -332,6 +360,7 @@ bytes.
 cache
 cache-busting
 cache.
+call
 came
 can
 cannot
@@ -340,7 +369,9 @@ carry
 case
 category
 category,
+category.
 changes
+checked
 choice
 choice:
 classic
@@ -354,6 +385,7 @@ component
 component's
 config
 config('wirekit.fonts',
+config;
 configured
 configured)
 contain,
@@ -433,7 +465,10 @@ fallback
 fallbacks
 falls
 false;
+families
 family
+family,
+family.
 fast
 faster.
 fetch
@@ -451,6 +486,7 @@ file_get_contents($published),
 file_get_contents($publishedCss);
 filemtime($source)
 files
+filled($wkKey))
 filtered:
 finds
 first
@@ -510,6 +546,7 @@ into
 invalidates
 invented:
 is
+is,
 is_array($spec))
 is_file($source)
 it
@@ -524,6 +561,7 @@ joins
 just
 keep
 keeps
+key
 key,
 key:
 last
@@ -598,6 +636,7 @@ one
 one-year
 one.
 only
+only.
 open;
 opposite
 optimistic-ui:
@@ -630,6 +669,7 @@ path,
 paying
 per
 php
+place
 placing
 plain
 point.
@@ -669,6 +709,7 @@ reads
 reads,
 reason
 refuses.
+registry,
 rel="preload"
 rel="stylesheet">`,
 rel="stylesheet"@if($wkNonce)
@@ -676,6 +717,7 @@ remove.
 renders
 replace
 replaces
+reported
 request
 request()->headers->has('X-Livewire-Navigate')
 requests
@@ -715,6 +757,7 @@ shape
 shift
 shipped
 ships
+shop
 shown
 silent:
 silently
@@ -748,11 +791,13 @@ surface
 swap
 system
 tells
+tenant
 text
 than
 that
 that,
 the
+their
 then
 there
 therefore
@@ -782,6 +827,7 @@ trusting
 turn
 two
 type="font/woff2"
+typo
 typography
 unconfigured
 undefined
@@ -825,6 +871,7 @@ while
 whole
 whose
 win,
+wins
 wirekit.fonts.display
 wirekit:publish-fonts
 with

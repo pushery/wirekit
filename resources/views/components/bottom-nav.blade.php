@@ -14,6 +14,12 @@
     // `active` from its router. Handy for a self-contained demo. Read by each item
     // via @aware.
     'interactive' => false,
+    // Keep the current entry with the address in a bar Livewire keeps across `wire:navigate`
+    // visits with `@persist`, which it does not render again: after each visit the entry whose
+    // link matches the page takes the current state and `aria-current`, in the browser
+    // (`x-wk-current`, utils/current.js). Each entry's `data-active` follows as well. Not with `interactive`, which marks
+    // the entry a click picks.
+    'trackCurrent' => false,
     'scope' => null,
 ])
 
@@ -31,6 +37,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $mobileOnly = BooleanProp::from($mobileOnly, true);
     $interactive = BooleanProp::from($interactive, false);
+    $trackCurrent = BooleanProp::from($trackCurrent, false);
 
     $isInteractive = filter_var($interactive, FILTER_VALIDATE_BOOLEAN);
 
@@ -59,6 +66,7 @@
     data-wk-bottom-nav
     data-wk-scroll-inset="bottom"
     @if($isInteractive) x-data="{ active: null }" @endif
+    @if(! $isInteractive && $trackCurrent) x-wk-current @endif
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

@@ -439,6 +439,7 @@ $wkField->takeLabel($fieldId)
 ($callerId
 ($callerLabelledBy
 ($hasError
+($helpName
 ($option,
 ($option['label']
 ($option['value']
@@ -739,7 +740,6 @@ $wkField->takeLabel($fieldId)
 @keydown.home.prevent="openAtFirst()"
 @keydown.tab="dropdownOpen
 @mousedown="keepFocusOnPress($event)"
-@mouseenter="hoverOption(idx)"
 @php
 @pointerdown="notePress($event)"
 @props([
@@ -801,6 +801,7 @@ Empty
 Empty-state
 Encode
 Enter
+Enter,
 Escape
 Every
 Explained
@@ -1404,6 +1405,7 @@ below
 below,
 below.
 below;
+beneath
 beside
 between
 bg-[var(--color-wk-bg-elevated)]
@@ -1439,6 +1441,7 @@ box,
 branch
 brand
 break
+breaks
 bridge
 browser
 browser's
@@ -1448,6 +1451,7 @@ bubbling,
 bug
 but
 button
+button's
 button's.
 button,
 button.
@@ -1787,6 +1791,7 @@ escaping
 evaluated
 even
 event
+event's
 events
 ever
 every
@@ -2001,6 +2006,7 @@ hide
 hides
 high
 highlight
+highlight,
 highlighted
 hint
 hit
@@ -2058,6 +2064,7 @@ in_array('sr-only',
 included.
 includes
 incoming
+indentation,
 index
 indexes
 indicator
@@ -2178,6 +2185,7 @@ leaves
 leaves.
 leaving
 left
+legend
 legitimately
 length
 length,
@@ -2191,6 +2199,7 @@ limit.
 line
 line,
 line.
+lines
 link
 linked
 list
@@ -2282,8 +2291,12 @@ more
 more.
 morph
 mouse
+mouse.
+mouseenter
+mouseenter:
 move
 move.
+moved
 moves
 moving
 ms-0.5"
@@ -2522,6 +2535,7 @@ pointed
 pointer
 pointer-events
 pointer-events-none
+pointermove,
 pointing
 points
 polite
@@ -2539,6 +2553,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -2644,6 +2659,7 @@ resort.
 rest
 restart
 restarts
+resting
 restore
 restoring
 rests
@@ -2953,6 +2969,7 @@ text-[color:var(--color-wk-text-muted)]',
 text-[color:var(--color-wk-text-subtle)]
 text-[length:var(--text-wk-md)]
 text-level
+text:
 than
 that
 that.
@@ -3242,6 +3259,7 @@ x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
 x-on:pointerleave="pointerleave($event)"
+x-on:pointermove.passive="hoverOption(idx)"
 x-on:pointerup="pointerup($event)"
 x-ref="field"
 x-ref="filterInput"

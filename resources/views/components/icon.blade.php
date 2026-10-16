@@ -106,7 +106,7 @@
         $iconClasses .= ' shrink-0';
     }
 
-    $mergedAttributes = $attributes->class([$iconClasses]);
+    $mergedAttributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
     if ($shouldSetHidden) {
         $mergedAttributes = $mergedAttributes->merge(['aria-hidden' => 'true']);
     }

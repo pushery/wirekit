@@ -186,10 +186,12 @@ hamburgers).
 
 ## Modal / Drawer / Dropdown trigger pattern
 
-NEVER place a `<x-wirekit::modal.trigger>` (or drawer/dropdown
-equivalents) outside its parent overlay component. The trigger reads
-its target via the named slot context — orphaned triggers do nothing
-and create silent bugs.
+NEVER place a `<x-wirekit::modal.trigger>` without a `for` outside its
+parent modal, or a dropdown trigger outside its dropdown. Such a
+trigger calls into the overlay it is nested in, so an orphaned one does
+nothing and creates a silent bug. A `modal.trigger` WITH a `for` names
+its modal and works from anywhere. A drawer is opened from outside
+itself, so `<x-wirekit::drawer.trigger>` always takes a `for`.
 
 ```blade
 {{-- ✅ RIGHT --}}
@@ -202,6 +204,14 @@ and create silent bugs.
     <x-wirekit::modal.header>Title</x-wirekit::modal.header>
     <x-wirekit::modal.body>…</x-wirekit::modal.body>
 </x-wirekit::modal>
+
+{{-- ✅ RIGHT: a drawer opened by name from a toolbar --}}
+<x-wirekit::drawer.trigger for="filters">Filters</x-wirekit::drawer.trigger>
+
+<x-wirekit::drawer name="filters" position="bottom">
+    <x-wirekit::drawer.header>Filters</x-wirekit::drawer.header>
+    <x-wirekit::drawer.body>…</x-wirekit::drawer.body>
+</x-wirekit::drawer>
 ```
 
 ## Accessibility defaults

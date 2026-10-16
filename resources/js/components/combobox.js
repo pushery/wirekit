@@ -33,6 +33,9 @@
  * @param {boolean} [config.server]     the options are the server's results for the typed text;
  *                                      see utils/server-search.js, which also takes
  *                                      `searchMinLength`, `searchDebounce` and `searchTexts`
+ * @param {boolean} [config.freeInput]  the text in the field is the value; a suggestion only fills
+ *                                      the field and is announced with `wirekit:combobox-choose`
+ *                                      (see freeEnter() and _announceChoice())
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { pageScrollBehavior } from '../utils/motion.js';
@@ -96,6 +99,11 @@ export default function wirekitCombobox(config = {}) {
         // Without a search field the trigger is a select-only combobox: it never filters, so
         // `query` stays empty and `filtered` is always the whole list.
         _searchable: config.searchable !== false,
+
+        // Free input: the text in the field is the value, which `x-modelable` hands to `wire:model`,
+        // and a suggestion only fills the field. The list opens while there are suggestions for
+        // what was typed, never on focus, and nothing is highlighted until the arrow keys move.
+        _free: config.freeInput === true,
 
         // The label this component put into `query` itself, so `filtered` can tell it apart from
         // something the reader typed. Not a mode flag: it is compared by value, so deleting back
@@ -216,6 +224,13 @@ export default function wirekitCombobox(config = {}) {
 
             this._resetValue = this.selected;
 
+            // With free input the value is the text: it seeds the field, and no option is chosen.
+            if (this._free) {
+                this.query = this.selected === null || this.selected === undefined ? '' : String(this.selected);
+                this.selected = null;
+                this._resetValue = this.query;
+            }
+
             if (! Array.isArray(config.options) && ! this._server) {
                 const options = readAttribute(OPTIONS_ATTRIBUTE);
 
@@ -232,6 +247,15 @@ export default function wirekitCombobox(config = {}) {
                 // A new list is new rows under the old indexes, so the keyboard starts at the
                 // first enabled row again, as it does when the reader types.
                 this.highlight = -1;
+
+                // With free input the suggestions open as they arrive for the reader typing in the
+                // field, and close when there are none; nothing is marked until an arrow key moves.
+                if (this._free) {
+                    this.isOpen = options.length > 0 && this._fieldHasFocus();
+
+                    return;
+                }
+
                 this.highlightFirst();
             });
 
@@ -251,7 +275,12 @@ export default function wirekitCombobox(config = {}) {
             //
             // selectOption() keeps its own call rather than leaning on this: that path runs
             // synchronously inside the click, and a watcher flushes a microtask later.
-            watchCurrent(this, 'selected', () => this._syncQuery());
+            watchCurrent(this, 'selected', () => {
+                // With free input the field holds the value itself, and nothing writes a choice.
+                if (! this._free) {
+                    this._syncQuery();
+                }
+            });
 
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:combobox-open',
@@ -301,7 +330,7 @@ export default function wirekitCombobox(config = {}) {
             // The root carries the binding. The value travels as the event's detail: an event
             // without one would have `x-model` read the root's `value`, which a <div> has not.
             const root = this.$root;
-            this._modelEvents = watchModelEvents(root, () => root, { detail: () => this.selected });
+            this._modelEvents = watchModelEvents(root, () => root, { detail: () => (this._free ? this.query : this.selected) });
 
             // A value the server changed reaches the choice, and the `selected` watcher above
             // writes its label. A value equal to the choice on screen, such as the reader's own
@@ -310,6 +339,20 @@ export default function wirekitCombobox(config = {}) {
                 const value = jsonValue(raw);
 
                 if (value === undefined) {
+                    return;
+                }
+
+                // With free input the server's value is the text of the field, unless the reader is
+                // typing in it: a response to an earlier keystroke would take the later ones back.
+                if (this._free) {
+                    const text = value === null ? '' : String(value);
+
+                    this._resetValue = text;
+
+                    if (text !== this.query && ! this._fieldHasFocus()) {
+                        this.query = text;
+                    }
+
                     return;
                 }
 
@@ -583,6 +626,16 @@ export default function wirekitCombobox(config = {}) {
          * that did not, and it is the one the user reaches by typing.
          */
         openAndReset() {
+            // Free input opens on suggestions, not on typing, and marks none of them: Enter then
+            // keeps the text the reader typed rather than a suggestion they never reached.
+            if (this._free) {
+                this.highlight = -1;
+                this.isOpen = this.typedQuery() !== '' && this.filtered.length > 0;
+                this._queueSearch(this.typedQuery());
+
+                return;
+            }
+
             this.isOpen = true;
 
             // Seeded to "nothing" first, because `highlightFirst()` only assigns when it
@@ -620,8 +673,12 @@ export default function wirekitCombobox(config = {}) {
             return this.query === this._seededQuery ? '' : this.query;
         },
 
-        /** Arrow into the list from the field. */
+        /** Arrow into the list from the field. With free input only while there are suggestions. */
         openAndMove(delta) {
+            if (this._free && this.filtered.length === 0) {
+                return;
+            }
+
             this.isOpen = true;
             this.moveHighlight(delta);
         },
@@ -662,6 +719,20 @@ export default function wirekitCombobox(config = {}) {
 
         selectOption(opt) {
             if (opt.disabled) {
+                return;
+            }
+
+            // With free input a suggestion fills the field, which is the value, and the page hears
+            // which one it was, to fill other fields from it.
+            if (this._free) {
+                this.query = chosenText(opt);
+                this._seededQuery = this.query;
+                this.isOpen = false;
+                this.highlight = -1;
+                this._queueSearch('');
+                this._announceChoice(opt);
+                this._modelEvents?.commit();
+
                 return;
             }
 
@@ -784,6 +855,54 @@ export default function wirekitCombobox(config = {}) {
             }
 
             this.activateHighlighted();
+        },
+
+        /**
+         * Enter with free input. A suggestion the arrow keys reached fills the field, and the key
+         * stops there; otherwise the text stays the value and the key goes on to the form, which a
+         * text field submits.
+         *
+         * @param {KeyboardEvent} event
+         */
+        freeEnter(event) {
+            const option = this.isOpen ? this.filtered[this.highlight] : undefined;
+
+            if (option && ! option.disabled) {
+                event?.preventDefault();
+                this.selectOption(option);
+
+                return;
+            }
+
+            this.isOpen = false;
+        },
+
+        /**
+         * Tell the page which suggestion filled a free-input field: its value, the text it put
+         * into the field and the whole option, `data` included, so an address can fill the postal
+         * code and the city beside it. From the field, so it rises through the form and the
+         * component around it.
+         *
+         * @param {object} opt
+         */
+        _announceChoice(opt) {
+            const field = this._searchSource();
+            const option = { ...opt };
+
+            delete option._idx;
+
+            field?.dispatchEvent?.(new CustomEvent('wirekit:combobox-choose', {
+                detail: { value: opt.value, label: chosenText(opt), option },
+                bubbles: true,
+                composed: true,
+            }));
+        },
+
+        /** Whether the reader is in the text field, where suggestions arriving may open. */
+        _fieldHasFocus() {
+            const field = this._searchSource();
+
+            return typeof document !== 'undefined' && Boolean(field) && document.activeElement === field;
         },
 
         /**
@@ -1047,6 +1166,15 @@ export default function wirekitCombobox(config = {}) {
          */
         _restore() {
             this.isOpen = false;
+
+            // With free input the form's reset puts the text back, which the field itself does too.
+            if (this._free) {
+                this.query = this._resetValue ?? '';
+                this._seededQuery = '';
+
+                return;
+            }
+
             this.selected = this._resetValue;
             this._syncQuery();
 
@@ -1075,6 +1203,19 @@ export default function wirekitCombobox(config = {}) {
         },
 
         clearSelection() {
+            // With free input the text is the value, and clearing it is the reader's edit: the model
+            // follows the text through `x-modelable`, and the focus goes back into the field.
+            if (this._free) {
+                this.query = '';
+                this._seededQuery = '';
+                this.isOpen = false;
+                this._queueSearch('');
+                this._modelEvents?.commit();
+                this._searchSource()?.focus?.();
+
+                return;
+            }
+
             this.selected = null;
             this.query = '';
             this.isOpen = false;

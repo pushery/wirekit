@@ -1,10 +1,15 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. --}}
+{{-- optimistic-ui: n/a — navigation
+     Its only interactive elements are the links of rows drawn from `items`, each leading to its
+     address. What the slot holds is the developer's markup. --}}
 @props([
     'type' => 'disc',
     'spacing' => 'sm',
     'as' => null,
+    // Rows as data, drawn in this one render rather than one `list.item` (and a `link` and a `text`
+    // in it) per row: a long list of a thousand rows renders three thousand components otherwise.
+    // A row is its text, or `['text' => …, 'href' => …, 'meta' => …]`: the text, the address the
+    // text links to, and a short note after it in the small muted text. The slot follows the rows.
+    'items' => null,
     'scope' => null,
 ])
 
@@ -70,6 +75,61 @@
     ]), $scope);
 @endphp
 
+@php
+    // The rows, each as its text, its address and its note. Their link and their note carry
+    // exactly the classes `<x-wirekit::link>` and `<x-wirekit::text as="span" size="sm"
+    // intent="muted">` render with, through the same personalization, so a row looks as those two
+    // components would draw it.
+    $rows = [];
+
+    $items = \Pushery\WireKit\Support\ListProp::records($items);
+
+    foreach (is_iterable($items) ? $items : [] as $row) {
+        $row = is_array($row) ? $row : ['text' => $row];
+
+        // A row's address is data, often typed by somebody else. One the browser would run as
+        // script, `javascript:` and the like, leaves the row as text rather than a link. A number
+        // is a relative path, as it is to every component that reads its links from a list.
+        $href = $row['href'] ?? null;
+        $href = is_int($href) || is_float($href) ? (string) $href : $href;
+        $href = is_string($href) || $href instanceof \Stringable || $href instanceof \BackedEnum
+            ? \Pushery\WireKit\Support\SafeUrl::href(\Pushery\WireKit\Support\UrlProp::text($href))
+            : '';
+
+        $rows[] = [
+            'text' => (string) ($row['text'] ?? ''),
+            'href' => $href !== '' ? $href : null,
+            'meta' => filled($row['meta'] ?? null) ? (string) $row['meta'] : null,
+        ];
+    }
+
+    if ($rows !== []) {
+        $rowClasses = WireKit::resolveClasses('list-item', 'base', '', $scope);
+        $rowLinkClasses = WireKit::resolveClasses('link', 'base', implode(' ', [
+            '[overflow-wrap:break-word]',
+            'font-[family-name:var(--font-wk-sans)]',
+            'cursor-pointer',
+            'transition-[color,text-decoration-color,opacity]',
+            'duration-[var(--transition-wk-duration)]',
+            'ease-[var(--transition-wk-easing)]',
+            'hover:opacity-[var(--opacity-wk-hover)]',
+            'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]',
+            'text-[color:var(--color-wk-accent-text)]',
+            'underline underline-offset-2',
+        ]));
+        $rowMetaClasses = WireKit::resolveClasses('text', 'base', implode(' ', [
+            'font-[family-name:var(--font-wk-sans)] tracking-[var(--font-wk-letter-spacing)]',
+            'leading-[var(--font-wk-line-height,1.5)]',
+            'text-[length:var(--text-wk-sm)]',
+            'text-[color:var(--color-wk-text-muted)]',
+            'font-[number:var(--font-wk-body-weight)]',
+        ]));
+    }
+@endphp
+
 <{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+    @foreach($rows as $row)
+        <li data-wk-prose-skip class="{{ $rowClasses }}">@if($row['href'] !== null)<a data-wk-prose-skip href="{{ $row['href'] }}" class="{{ $rowLinkClasses }}">{{ $row['text'] }}</a>@else{{ $row['text'] }}@endif @if($row['meta'] !== null)<span class="{{ $rowMetaClasses }}">{{ $row['meta'] }}</span>@endif</li>
+    @endforeach
     {{ $slot }}
 </{{ $tag }}>

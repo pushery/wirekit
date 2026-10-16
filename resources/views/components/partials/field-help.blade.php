@@ -23,6 +23,12 @@
      The description is a `hidden` element. A screen reader reading the page in order then
      meets the text once, on the field, rather than again after the label; an element that is
      hidden still describes the control that points at it. --}}
+@php
+    // The name is one line of text: a label or legend written over several lines in a view hands
+    // over its line breaks and indentation, and neither belongs in the button's name or the
+    // event's label.
+    $helpName = trim((string) preg_replace('/\s+/u', ' ', (string) ($helpName ?? '')));
+@endphp
 @if($helpButton ?? true)
     <x-wirekit::tooltip as="span" :text="$helpText" :focusable-trigger="false" class="shrink-0" data-wk-field-help>
         <button

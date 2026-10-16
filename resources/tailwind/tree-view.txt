@@ -7,8 +7,8 @@
 "tree
 "tree"s.
 $attributes
-$attributes->class([$iconClasses]);
 $attributes->class([$nodeClasses])
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
@@ -601,6 +601,7 @@ cursor
 cuts
 d="M6
 data-wk-prose-skip
+data-wk-tree-label
 data-wk-tree-node
 dead
 debug

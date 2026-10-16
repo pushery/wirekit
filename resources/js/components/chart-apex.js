@@ -862,6 +862,29 @@ const APEX_OUTLINED_TYPES = ['bar', 'rangeBar', 'pie', 'donut', 'polarArea'];
 const APEX_LABEL_ON_FILL_TYPES = [...APEX_OUTLINED_TYPES, 'treemap', 'heatmap'];
 
 /**
+ * The animations of a chart that is themed again, or told the reader's motion preference again.
+ *
+ * Less motion turns the animations off; it never turns on what the chart's own options turned off.
+ * Both paths wrote `enabled: !reduced`, so a heatmap drawn with `chart.animations.enabled: false`
+ * animated on its first theme swap and again when the reader allowed motion. A theme swap moves
+ * its colors over 250 ms where the chart animates updates at all.
+ *
+ * @param {object|undefined} own the `chart.animations` of the chart's own options
+ * @param {boolean} reduced whether the reader asked for less motion
+ * @returns {{enabled: boolean, dynamicAnimation: {enabled: boolean, speed: number}}}
+ */
+export function themeSwapAnimations(own, reduced) {
+    const mine = own !== null && typeof own === 'object' ? own : {};
+    const enabled = !reduced && mine.enabled !== false;
+    const updates = enabled && mine.dynamicAnimation?.enabled !== false;
+
+    return Object.assign({}, mine, {
+        enabled,
+        dynamicAnimation: Object.assign({}, mine.dynamicAnimation, { enabled: updates, speed: updates ? 250 : 0 }),
+    });
+}
+
+/**
  * WireKit ApexCharts Alpine Component.
  *
  * Initializes an ApexCharts instance with automatic WireKit theming via CSS
@@ -1149,6 +1172,11 @@ window.ApexCharts = ApexCharts;</pre>
                 const colors = this._resolveThemeColors(style);
                 const fontFamily = style.getPropertyValue('--font-wk-sans').trim()
                     || 'ui-sans-serif, system-ui, sans-serif';
+
+                // The theme the chart is built with, in the form the observer compares, so the
+                // first class change on html or body that leaves the palette as it is themes
+                // nothing. Unset, it let that first change through on every chart of the page.
+                this._themeSignature = fontFamily + '|' + JSON.stringify(colors);
 
                 // Track datasets that carry user-supplied colors BEFORE we apply
                 // theme defaults — those are excluded from dark-mode re-theming
@@ -1651,7 +1679,7 @@ window.ApexCharts = ApexCharts;</pre>
                 // resetting the series would replay the entrance this is turning off.
                 try {
                     this.chart.updateOptions(
-                        { chart: { animations: { enabled: ! reduced } } },
+                        { chart: { animations: { enabled: themeSwapAnimations(this._rawConfig?.chart?.animations, reduced).enabled } } },
                         false,
                         false
                     );
@@ -1894,21 +1922,18 @@ window.ApexCharts = ApexCharts;</pre>
                     radarLabelsInside(themed);
                     withoutHiddenKeyboardNavigation(themed, (this.$refs.mount || this.$el).closest('[aria-hidden="true"]') !== null);
 
-                    // Smooth transition — collapsed to instant
-                    // under prefers-reduced-motion.
-                    const reduced = this._reducedMotion();
+                    // Smooth transition, collapsed to instant under prefers-reduced-motion and
+                    // never turned on where the chart's own options turned it off.
+                    const animations = themeSwapAnimations(rawConfig?.chart?.animations, this._reducedMotion());
                     if (!themed.chart) themed.chart = {};
-                    themed.chart.animations = {
-                        enabled: !reduced,
-                        dynamicAnimation: { enabled: !reduced, speed: reduced ? 0 : 250 },
-                    };
+                    themed.chart.animations = animations;
 
                     // Re-resolve var() references on the dark-mode swap so
                     // per-dataset / colorScale / annotation colors pick up
                     // the new .dark cascade values. Same reasoning as the
                     // initial-mount resolveCssVarsDeep() above.
                     const resolvedThemed = resolveCssVarsDeep(themed, style, new Map(), { host: this.$refs?.mount?.parentElement ?? null });
-                    this.chart.updateOptions(resolvedThemed, false, !reduced);
+                    this.chart.updateOptions(resolvedThemed, false, animations.dynamicAnimation.enabled);
 
                     // A theme swap can rebuild the SVG root, which arrives
                     // carrying ApexCharts' tabindex again. Re-apply.
@@ -2332,10 +2357,15 @@ window.ApexCharts = ApexCharts;</pre>
             const palette = this._seriesColors(colors)
                 .map(({ fill, edge }) => (APEX_EDGE_TYPES.includes(apexChartType) ? edge : fill));
             const isFlatSeries = (rawConfig.series || []).every((s) => typeof s === 'number');
+            // The developer's `colors` reach the series. ApexCharts lets a series' own color win
+            // over `colors[i]`, so a palette color written onto every series kept such a palette
+            // from drawing on any type: a brand palette's bars took the accent, and each row of a
+            // one-color heatmap a color of its own. A series that names its color keeps it.
+            const developerColors = Array.isArray(rawConfig.colors) && rawConfig.colors.length > 0;
             const themedSeries = isFlatSeries
                 ? rawConfig.series
                 : (rawConfig.series || []).map((series, i) => {
-                    if (this._manualColorIndices.has(i) || (series && series.color)) {
+                    if (developerColors || this._manualColorIndices.has(i) || (series && series.color)) {
                         return series;
                     }
                     return Object.assign({}, series, { color: palette[i % palette.length] });
@@ -2414,7 +2444,7 @@ window.ApexCharts = ApexCharts;</pre>
                         (rawConfig.dataLabels && rawConfig.dataLabels.style) || {},
                     ),
                 }),
-                stroke: this._themeStroke(rawConfig.stroke, apexChartType, colors, Math.max(themedSeries.length, 1)),
+                stroke: this._themeStroke(rawConfig.stroke, apexChartType, colors, Math.max(themedSeries.length, 1), developerColors),
             });
         },
 
@@ -2434,12 +2464,13 @@ window.ApexCharts = ApexCharts;</pre>
          *
          * A pastel fill does not stand at 3:1 on a light page, so a bar, a slice and a polar segment
          * are outlined in the series' edge, a pixel wide. Every key the developer set wins, colors
-         * included; the semantic palette keeps the stroke as `_resolveStroke` gives it.
+         * included; the semantic palette keeps the stroke as `_resolveStroke` gives it, and so does
+         * a chart whose `colors` replace the palette, which has no edges to draw.
          */
-        _themeStroke(stroke, type, colors, count) {
+        _themeStroke(stroke, type, colors, count, ownColors = false) {
             const resolved = this._resolveStroke(stroke);
 
-            if (this._scheme !== 'categorical' || !APEX_OUTLINED_TYPES.includes(type)) {
+            if (this._scheme !== 'categorical' || !APEX_OUTLINED_TYPES.includes(type) || ownColors) {
                 return resolved;
             }
 

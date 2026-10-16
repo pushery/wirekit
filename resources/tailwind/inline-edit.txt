@@ -961,6 +961,7 @@ $wrapLabel
 ($forceLoading)
 ($hasError
 ($hasSuccess
+($helpName
 ($hint
 ($iconOnly
 ($iconOnly)
@@ -3649,6 +3650,7 @@ etc.),
 evaluated
 even
 event
+event's
 events
 events,
 ever
@@ -4155,6 +4157,7 @@ included.
 including
 increase
 indefinitely
+indentation,
 independently
 indicator
 indicator,
@@ -4345,6 +4348,7 @@ left,
 left-to-right;
 left.
 left/right
+legend
 legible,
 legitimately
 length,
@@ -4946,6 +4950,7 @@ preg_match('/<(img|svg|video|audio|iframe|picture|canvas|object|embed)\b/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace(
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -5688,6 +5693,7 @@ text-level
 text-only
 text.
 text/bg/border
+text:
 textarea
 textarea's
 textarea,

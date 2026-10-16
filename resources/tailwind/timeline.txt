@@ -12,7 +12,7 @@
 "list,
 $after
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
 $attributes->get('role');
@@ -126,10 +126,10 @@ $variant;
 'time'
 'true';
 'true']);
-'var(--color-wk-accent)',
-'var(--color-wk-danger)',
-'var(--color-wk-success)',
-'var(--color-wk-warning)',
+'var(--color-wk-accent-text)',
+'var(--color-wk-danger-text)',
+'var(--color-wk-success-text)',
+'var(--color-wk-warning-text)',
 'variant'
 'warning'
 'xl'
@@ -532,7 +532,7 @@ clash.
 class
 class="[li:last-child_&]:hidden"
 class="sr-only">{{
-class="text-[color:var(--color-wk-accent-fg)]"
+class="text-[color:var(--color-wk-bg)]"
 class="text-[length:var(--text-wk-md)]
 class="{{
 classes
@@ -1128,7 +1128,7 @@ valid
 validateProp
 value
 value,
-var(--color-wk-accent-fg);"></div>
+var(--color-wk-bg);"></div>
 var(--color-wk-border);
 var(--color-wk-border);"
 var(--size-wk-xs,

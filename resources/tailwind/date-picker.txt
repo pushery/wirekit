@@ -164,6 +164,7 @@ $wkField
 $wkField->labelText()
 $wkField->takeLabel($dateId)
 &&
+'
 ''
 '')
 ''))
@@ -304,6 +305,7 @@ $wkField->takeLabel($dateId)
 ($date)
 ($fieldLabelId
 ($hasError
+($helpName
 ($hint
 ($isRange)
 ($name
@@ -1022,6 +1024,7 @@ box
 box,
 brackets,
 brand
+breaks
 browser
 browser,
 bubble's
@@ -1029,6 +1032,7 @@ bubbling,
 bug
 but
 button
+button's
 button's.
 button).
 button,
@@ -1288,6 +1292,7 @@ escaping
 etc.),
 evaluated
 event
+event's
 event,
 events
 ever
@@ -1477,6 +1482,7 @@ in.
 in:
 in_array('sr-only',
 included.
+indentation,
 indicator
 inert
 init
@@ -1561,6 +1567,7 @@ leave
 leaves
 leaving
 left
+legend
 legitimately
 length,
 less
@@ -1569,6 +1576,7 @@ lets
 light
 like
 line
+lines
 linked
 list
 list,
@@ -1828,6 +1836,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -1971,6 +1980,7 @@ server-side
 set
 set,
 settles
+several
 shadow.
 shape
 share
@@ -2099,6 +2109,7 @@ text-[length:var(--text-wk-lg)]',
 text-[length:var(--text-wk-md)]',
 text-[length:var(--text-wk-sm)]',
 text-level
+text:
 than
 that
 that:

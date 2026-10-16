@@ -85,13 +85,13 @@
     // token — useful for embedded contexts (iframes, browser extensions) where
     // the developer wants the bar to match the surrounding text color.
     $variantColor = match ($variantValue) {
-        'success' => 'var(--reading-progress-fill, var(--color-wk-success))',
-        'warning' => 'var(--reading-progress-fill, var(--color-wk-warning))',
-        'danger' => 'var(--reading-progress-fill, var(--color-wk-danger))',
+        'success' => 'var(--reading-progress-fill, var(--color-wk-success-text))',
+        'warning' => 'var(--reading-progress-fill, var(--color-wk-warning-text))',
+        'danger' => 'var(--reading-progress-fill, var(--color-wk-danger-text))',
         'neutral' => 'var(--reading-progress-fill, var(--color-wk-text-muted))',
         'auto' => 'var(--reading-progress-fill, currentColor)',
-        'info' => 'var(--reading-progress-fill, var(--color-wk-info-tone))',
-        default => 'var(--reading-progress-fill, var(--color-wk-accent))', // primary
+        'info' => 'var(--reading-progress-fill, var(--color-wk-info-text))',
+        default => 'var(--reading-progress-fill, var(--color-wk-accent-text))', // primary
     };
 
     // Position: top (default) or bottom — the edge itself is resolved further down,

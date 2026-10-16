@@ -16,6 +16,7 @@
 "aria-hidden
 "false",
 "none
+"©
 #wk-overlay-root,
 $after->hasActualContent();
 $after])
@@ -35,6 +36,7 @@ $attributes->except('class')->class([$classes])
 $attributes->except('x-ref');
 $attributes->except(['announceErrors',
 $attributes->get('aria-describedby');
+$attributes->get('autocomplete')
 $attributes->get('class',
 $attributes->get('rel',
 $attributes->get('required',
@@ -46,6 +48,7 @@ $attributes->merge(['rel'
 $attributes->only(['class',
 $attributes->whereStartsWith(['wire:model',
 $attributes]
+$attribution
 $boxClasses
 $callerAriaLabel
 $callerAriaLabel;
@@ -81,7 +84,6 @@ $descriptionText.'
 $descriptionText]
 $descriptions
 $disabled
-$disabled)
 $disabled])
 $empty
 $emptyAction
@@ -114,6 +116,9 @@ $finalRel
 $focusableTrigger
 $formOwner
 $formOwner,
+$freeInput
+$freeInput)
+$freeInput;
 $groupIsAList
 $groupIsAList);
 $hasAfter
@@ -151,8 +156,8 @@ $key);
 $key,
 $key;
 $label
+$label)
 $label));
-$label);
 $label,
 $labelAfter
 $listClasses
@@ -180,6 +185,7 @@ $opensNewTab
 $opt)
 $opt);
 $opt,
+$opt['data']]
 $opt['group'];
 $opt['value']
 $optimistic,
@@ -362,6 +368,7 @@ $wkField->takeLabel($searchable
 'aria-label');
 'ariaLabel'
 'as'
+'attribution'
 'auto'
 'auto',
 'auto'],
@@ -436,6 +443,7 @@ $wkField->takeLabel($searchable
 'focusableTrigger'
 'font-[family-name:var(--font-wk-sans)]',
 'font-medium',
+'freeInput'
 'h-4
 'h-[var(--size-wk-lg)]
 'h-[var(--size-wk-md)]
@@ -488,6 +496,7 @@ $wkField->takeLabel($searchable
 'none']))
 'noopener')
 'nothingToChoose'
+'off'
 'offset'
 'opt',
 'optimistic'
@@ -516,6 +525,7 @@ $wkField->takeLabel($searchable
 'px-[var(--padding-wk-x-sm)]',
 'py-1',
 'py-[var(--padding-wk-y-xs)]',
+'query'
 'readonly'])->whereDoesntStartWith(['wire:model',
 'reject',
 'relative
@@ -537,6 +547,7 @@ $wkField->takeLabel($searchable
 'searchable'
 'searching'
 'selectOption(opt)'
+'selected'
 'selected',
 'server'
 'shadow-[var(--shadow-wk-md)]',
@@ -622,6 +633,7 @@ $wkField->takeLabel($searchable
 ($callerLabelledBy
 ($clearLabelText
 ($hasError
+($helpName
 ($isGroup)
 ($key,
 ($name
@@ -678,6 +690,7 @@ $wkField->takeLabel($searchable
 (int)
 (is_array($opt)
 (is_array($opt))
+(isset($opt['data'])
 (label
 (mirrors
 (no
@@ -704,6 +717,7 @@ $wkField->takeLabel($searchable
 (when
 (whether
 (which
+(wk-field-affordance),
 );
 *filtered*
 *value*
@@ -752,6 +766,7 @@ $wkField->takeLabel($searchable
 1.06L8.94
 1.152v.75a.75.75
 1.2
+1.3.5).
 1.324
 1.4.13
 1.4.13.
@@ -787,11 +802,14 @@ $wkField->takeLabel($searchable
 24
 24"
 24"><path
+24px
 24px,
+2rem
 3
 3.1.2).
 3.3.1
 3.518
+3.5rem
 3.72a.75.75
 3.75
 3.776-1.272
@@ -911,8 +929,10 @@ $wkField->takeLabel($searchable
 @click="{{
 @else
 @elseif($fieldLabelId)
+@elseif($required)
 @elseif($requiredMessageId)
 @elseif($resolvedAriaLabel)
+@elseif($server)
 @elseif($showsHint)
 @elseif(filled($emptyHref))
 @elseif(filled($help))
@@ -938,6 +958,8 @@ $wkField->takeLabel($searchable
 @if($external)
 @if($focusableTrigger)
 @if($formOwner)
+@if($freeInput
+@if($freeInput)
 @if($hasAfter)
 @if($hasError)
 @if($hasGroups)
@@ -947,13 +969,13 @@ $wkField->takeLabel($searchable
 @if($label)
 @if($media)
 @if($mediaPerRow
-@if($name)
+@if($name
 @if($optimisticConfig)
 @if($optionUses['descriptions'])
 @if($optionUses['media'])
 @if($optionsCarryLang)
 @if($panelWidthStyle
-@if($required)
+@if($required
 @if($requiredDisabled
 @if($requiredMessageBound
 @if($requiredMessageId)
@@ -967,6 +989,7 @@ $wkField->takeLabel($searchable
 @if($triggerDescribes)
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
+@if(filled($attribution))
 @if(filled($emptyHref)
 @if(filled($help))
 @if(filled($helpId
@@ -984,18 +1007,19 @@ $wkField->takeLabel($searchable
 @keydown.arrow-up.prevent="moveHighlight(-1)"
 @keydown.end.prevent="openAtLast()"
 @keydown.enter.prevent="{{
+@keydown.enter="freeEnter($event)"
 @keydown.escape="escapeList($event)"
 @keydown.home.prevent="openAtFirst()"
 @keydown.tab="isOpen
 @keydown="{{
 @mousedown.prevent
 @mousedown="keepFocusOnPress($event)"
-@mouseenter="hoverOption(opt,
 @php
 @pointerdown="notePress($event)"
 @props([
 @props.
 @unless($attributes->has('role'))
+@unless($freeInput)
 A
 A11y:
 AFTER
@@ -1030,6 +1054,7 @@ BooleanProp::from($disabled,
 BooleanProp::from($emptyNavigate,
 BooleanProp::from($external,
 BooleanProp::from($focusableTrigger,
+BooleanProp::from($freeInput,
 BooleanProp::from($hideLabel,
 BooleanProp::from($nothingToChoose,
 BooleanProp::from($required,
@@ -1070,7 +1095,9 @@ Each
 Echoed
 Empty
 Empty-state
+End
 Enter
+Enter,
 Enter.
 Escape
 Every
@@ -1081,6 +1108,8 @@ Floating
 Focus
 Follows
 Font
+For
+Free
 Fully
 GLOBAL
 GROUP
@@ -1091,6 +1120,7 @@ HTML
 HTML,
 Help
 Hidden
+Home
 How
 ID
 INSIDE
@@ -1098,6 +1128,7 @@ IS
 IconSprite
 Icons
 If
+Implies
 In
 Included
 Inherited
@@ -1151,6 +1182,8 @@ On
 One
 Only
 Opacity
+OpenStreetMap
+OpenStreetMap.
 Option-row
 OptionMedia
 Options
@@ -1164,7 +1197,6 @@ PRESENCE,
 PREVIOUS
 Params:
 Pass
-Positioned
 Present
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -1263,6 +1295,7 @@ Without
 ['@focus',
 ['always',
 ['count'
+['data'
 ['de'
 ['default',
 ['inverted',
@@ -1282,6 +1315,7 @@ Without
 ['x-on:mouseenter',
 ['xs',
 []));
+[]);
 [],
 [];
 \Illuminate\Support\HtmlString('');
@@ -1433,6 +1467,7 @@ _place()
 `data-wk-ref-scope`
 `data-wk-select-empty`
 `data-wk-server-options`.
+`data`
 `delayHide`
 `delayHide`.
 `delayShow`
@@ -1517,6 +1552,7 @@ _place()
 `runIf()`.
 `search-change`
 `searchable`
+`searchable`.
 `selectOnlyKeydown()`:
 `select`
 `select`:
@@ -1558,6 +1594,8 @@ _place()
 `wire:navigate`,
 `wire:navigate`.
 `wire:show`
+`wirekit:combobox-choose`
+`wirekit:combobox-choose`.
 `wirekit:field-help`
 `wirekit:field-help`.
 `wk-`
@@ -1609,6 +1647,7 @@ actual
 actually
 additive
 address
+address,
 adds
 affordance,
 affordance.
@@ -1752,7 +1791,9 @@ attributes.
 auto-derived
 auto-injection
 auto-invokes
+autocomplete:
 autocomplete="off"
+autocomplete="{{
 automatic
 avatar
 avatar's
@@ -1786,6 +1827,7 @@ below).
 below,
 below.
 below;
+beneath
 beside
 between
 bg-[var(--color-wk-bg-muted)]
@@ -1833,6 +1875,7 @@ built-in
 bullet
 but
 button
+button's
 button's.
 button,
 button.
@@ -1877,7 +1920,7 @@ check
 checked
 checks
 chevron
-chevron.
+chevron,
 chevrons
 child
 child,
@@ -1901,7 +1944,6 @@ claim
 clamp
 class
 class="-my-1
-class="absolute
 class="aspect-[4/3]
 class="block
 class="block"
@@ -2020,6 +2062,7 @@ context.
 continues
 contract
 contrast
+contributors"
 control
 control's
 control),
@@ -2069,9 +2112,12 @@ dark:
 data
 data,
 data-*,
+data-wk-combobox-arrow
+data-wk-combobox-attribution
 data-wk-combobox-clear
 data-wk-combobox-clearable
 data-wk-combobox-empty
+data-wk-combobox-search
 data-wk-field-help>
 data-wk-field-label
 data-wk-flag
@@ -2190,6 +2236,7 @@ ease-in
 ease-out
 edge
 edge.
+editable
 editor's
 effect:
 effective
@@ -2222,6 +2269,7 @@ empty.
 empty:
 emptyId:
 end
+end-2
 end-3
 end-8
 ends
@@ -2238,6 +2286,7 @@ escaping
 evaluated
 even
 event
+event's
 events
 ever
 every
@@ -2293,18 +2342,22 @@ fetch
 fetched
 field
 field's
+field's,
 field),
 field,
 field.
 field.blade.php
 field:
+field;
 fieldMedia"
 fields
 fields);
+fill
 fill-rule="evenodd"
 fill="currentColor"
 fill="none"
 filled
+filled($attributes->get('autocomplete'))
 filled($emptyAction)
 filled($help)
 filled($helpName
@@ -2363,6 +2416,7 @@ font
 font-[number:var(--font-wk-heading-weight)]
 footer
 for
+for,
 for.
 for:
 for>
@@ -2371,17 +2425,21 @@ forced
 forced-colors
 foreach
 form
+form,
 form="{{
 formatting.
 found
 four
 fragment
 frame:
+free
 free:
+freeInput:
 freezes
 fresh
 from
 full
+full.
 fully
 function
 function-valued
@@ -2413,6 +2471,7 @@ greater
 grid
 group
 group's
+grouped
 grp.options"
 guard
 guarded
@@ -2425,6 +2484,7 @@ hairline
 half
 half-typed
 halves
+hand
 hand,
 hand-build
 hand-written
@@ -2442,6 +2502,7 @@ happens,
 hard
 hardcoded
 has
+has.
 hatch
 have
 header
@@ -2533,6 +2594,7 @@ included.
 includes
 including
 incoming
+indentation,
 index
 indexes
 indicator
@@ -2560,6 +2622,7 @@ inputId:
 inserts
 inside
 inside;
+instance.
 instanceof
 instead
 instead,
@@ -2578,6 +2641,7 @@ is
 is,
 is.
 is_array($opt)
+is_array($opt['data'])
 isolate`
 isset($after)
 isset($content)
@@ -2638,6 +2702,7 @@ later
 later,
 layer
 layer's
+layer.
 layout
 layout-neutral
 layout.
@@ -2654,6 +2719,7 @@ leaves.
 leaving
 left
 legacy
+legend
 legitimately
 length
 length,
@@ -2661,6 +2727,7 @@ length.
 let
 lets
 letters
+license
 light
 like
 limit.
@@ -2767,9 +2834,14 @@ morph
 morphs:
 most
 mouse
+mouse,
+mouse.
+mouseenter
+mouseenter:
 move
 move,
 move.
+moved
 moves
 moving
 ms-0.5"
@@ -2844,6 +2916,7 @@ normalizes
 not
 not-allowed
 not:
+note
 nothing
 nothing.
 nothing:
@@ -2946,6 +3019,7 @@ output
 output.
 outside
 over
+over:
 overflow
 overflow-auto',
 overflow-hidden
@@ -3029,6 +3103,7 @@ pointer,
 pointer-events
 pointer.
 pointer`).
+pointermove,
 pointing
 points
 polite
@@ -3045,6 +3120,7 @@ preflight
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -3074,6 +3150,7 @@ proxy
 pt-[var(--padding-wk-y-sm)]
 publishing
 pull
+purpose
 purpose,
 purpose:
 put
@@ -3094,6 +3171,7 @@ re-thrown
 reach
 reach.
 reachable
+reached,
 reaches
 read
 read.
@@ -3155,6 +3233,7 @@ reported,
 reports
 repository
 request
+require:
 required
 required,
 required:
@@ -3170,6 +3249,7 @@ resolves
 resolving
 rest
 restart
+resting
 restores
 rests
 restyle.
@@ -3295,6 +3375,7 @@ selection');
 selection's
 selects,
 send
+send:
 sends
 sent
 sent.
@@ -3361,6 +3442,7 @@ slot:
 small
 smaller
 so
+so,
 so:
 some
 somebody
@@ -3368,6 +3450,7 @@ something
 soon
 sorts
 source
+source,
 space
 space-y-1.5
 span
@@ -3409,6 +3492,7 @@ states:
 status,
 stay
 stays
+stays,
 stem
 step
 still
@@ -3442,16 +3526,20 @@ sub-options
 submission.
 submit
 submits
+submits.
 submitted
 subtree
 subtree,
 such
+suggestion
 suggestions
+suggestions,
 supersedes
 supplies
 supported
 supposed
 surface
+surface,
 surface.
 surfaces
 surrounding
@@ -3483,6 +3571,7 @@ tall
 taller
 target
 target,
+target.
 target="_blank"
 target="_blank".
 tech
@@ -3513,6 +3602,7 @@ text-[length:var(--text-wk-xs)]
 text-level
 text-start
 text.
+text:
 than
 that
 the
@@ -3596,6 +3686,7 @@ transition-transform
 transitions
 translated
 travel
+travels
 treat
 treats
 tree,
@@ -3618,6 +3709,7 @@ trim(strip_tags((string)
 trip
 true
 true"
+true'
 true)
 true))
 true),
@@ -3839,7 +3931,7 @@ x-if="opt.media">
 x-if="showsInitials({{
 x-if="{{
 x-model="query"
-x-modelable="selected"
+x-modelable="{{
 x-on:click="$dispatch('wirekit:field-help',
 x-on:error="markMediaBroken({{
 x-on:focusin="focusin($event)"
@@ -3852,18 +3944,21 @@ x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
 x-on:pointerdown="pointerdown($event)"
 x-on:pointerleave="pointerleave($event)"
+x-on:pointermove.passive="hoverOption(opt,
 x-on:pointerup="pointerup($event)"
 x-ref="cbxEmpty"
 x-ref="cbxInput"
 x-ref="cbxList"
 x-ref="tooltip"
 x-ref="trigger"
+x-show="false"
+x-show="filtered.length
 x-show="isOpen
 x-show="isOpen"
 x-show="requiredMessage
 x-show="searchNote()
-x-show="selected"
 x-show="selectedText
+x-show="{{
 x-teleport="#wk-overlay-root">
 x-teleport>`,
 x-text="announcement"></div>
@@ -3918,6 +4013,7 @@ zoom,
 }}.media
 }}.src"
 }}.src">
+}}</li>
 }}</p>
 }}</span>
 }}</x-slot:after></x-wirekit::label>

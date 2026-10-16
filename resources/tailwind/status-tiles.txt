@@ -16,7 +16,7 @@ $alignClasses
 $alignClasses,
 $as
 $as);
-$attributes->class([$classes]);
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
 $attributes->except('class')
 $attributes->except('class')->class(['flex
 $attributes->getAttributes());

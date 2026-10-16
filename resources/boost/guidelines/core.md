@@ -20,6 +20,12 @@ chart is a class component and takes a hyphen: `<x-wirekit-chart>`.
 - Lay out with `stack`, `row` and `grid` and their `gap` prop. Components carry no outer margin,
   so do not add `space-y-*` or `mb-*` around them.
 - `card` has no padding of its own. Put its content in `card.body`, `card.header` or `card.footer`.
+- A `card` with `collapsible` folds under its own head, drawn from its `heading`, `description`
+  and `hints` slot; a `card.header` inside it would fold away with the body. To open it after a
+  Livewire response, give it a reason in `open-when` rather than toggling `open`: `open` is read
+  on the first render only.
+- After a save the server refused, `$this->dispatch('wirekit:focus-invalid')` takes the focus to
+  the first rejected field and opens the card, wizard step or accordion item around it.
 - An icon is `<x-wirekit::icon name="…" size="…" />`. A `button` takes one through its `iconLeft`
   or `iconRight` slot; it has no `icon` prop.
 - Form fields bind with `wire:model` and show a validation message through their `error` prop.

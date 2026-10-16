@@ -132,7 +132,7 @@
 
         {{-- Node label text, on one line like every row of the tree. A name the line cuts is whole
              in its title, so a reader with a pointer can read the rest. --}}
-        <span class="truncate" title="{{ $label }}">{{ $label }}</span>
+        <span data-wk-tree-label class="truncate" title="{{ $label }}">{{ $label }}</span>
     </div>
 
     {{-- Nested children group --}}

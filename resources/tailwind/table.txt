@@ -49,10 +49,10 @@ $attributes).
 $attributes);
 $attributes->class([$classes,
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
 $attributes->class(['relative
 $attributes->class(['w-px
 $attributes->class([\Pushery\WireKit\WireKit::resolveClasses('table.reorder-head',
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel');
 $attributes->except('x-ref');
 $attributes->except(['stickyHeader',
@@ -819,6 +819,7 @@ $wrapWords
 (declarative
 (default)
 (dist/wirekit.css),
+(dist/wirekit.css,
 (e.g.
 (function_exists('logger'))
 (function_exists('svg')
@@ -2511,7 +2512,6 @@ control)
 control,
 controls
 controls.
-convention).
 copies
 copy
 corner
@@ -2803,7 +2803,6 @@ etc.)
 etc.),
 evaluated
 evaluates,
-even
 evens
 event
 events
@@ -2965,7 +2964,6 @@ freezes
 fresh
 from
 frozen
-frozen-column
 full
 full-width
 fully
@@ -3137,6 +3135,7 @@ hover:text-[color:var(--color-wk-text-muted)]',
 hover:underline
 hoverable
 hoverable:
+hovered
 how
 however
 href
@@ -4237,7 +4236,6 @@ soft
 soft()
 soft-wrapping
 soft-wrapping.
-solid
 some
 somebody
 something
@@ -4403,6 +4401,7 @@ table.th
 table:
 table[data-wk-compact]
 tables
+tables).
 tabnabbing
 tabs
 tag
@@ -4504,6 +4503,7 @@ those
 three
 threshold
 through
+through.
 throw
 throw,
 throwing
@@ -4753,6 +4753,7 @@ way
 way.
 ways
 we
+wears
 weight
 weight,
 well

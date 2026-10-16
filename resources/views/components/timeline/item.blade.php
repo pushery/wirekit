@@ -47,10 +47,10 @@
 
     // Dot color per intent — matches component color tokens
     $dotColor = match ($effectiveIntent) {
-        'success' => 'var(--color-wk-success)',
-        'warning' => 'var(--color-wk-warning)',
-        'danger' => 'var(--color-wk-danger)',
-        default => 'var(--color-wk-accent)',
+        'success' => 'var(--color-wk-success-text)',
+        'warning' => 'var(--color-wk-warning-text)',
+        'danger' => 'var(--color-wk-danger-text)',
+        default => 'var(--color-wk-accent-text)',
     };
 
     // The spoken outcome, for every intent that HAS one.
@@ -87,10 +87,10 @@
             aria-hidden="true"
         >
             @if($icon)
-                <x-wirekit::icon :name="$icon" size="xs" class="text-[color:var(--color-wk-accent-fg)]" />
+                <x-wirekit::icon :name="$icon" size="xs" class="text-[color:var(--color-wk-bg)]" />
             @else
                 {{-- Default inner dot --}}
-                <div style="height: 0.5rem; width: 0.5rem; border-radius: 9999px; background: var(--color-wk-accent-fg);"></div>
+                <div style="height: 0.5rem; width: 0.5rem; border-radius: 9999px; background: var(--color-wk-bg);"></div>
             @endif
         </div>
 

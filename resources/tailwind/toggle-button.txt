@@ -35,8 +35,8 @@ $as);
 $attributes
 $attributes,
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel');
 $attributes->except('x-ref')->merge(array_filter([
 $attributes->except(['aria-label',

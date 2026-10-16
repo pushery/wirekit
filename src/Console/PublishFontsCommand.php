@@ -86,7 +86,7 @@ class PublishFontsCommand extends Command
             }
 
             $this->warn('No font families are configured.');
-            $this->line('  config/wirekit.php → fonts.sans / fonts.serif / fonts.mono');
+            $this->line('  config/wirekit.php → fonts.sans / fonts.serif / fonts.mono / fonts.publish');
             $this->line('  Or publish everything: php artisan wirekit:publish-fonts --all');
 
             // Not a failure: "no bundled fonts" is a legitimate setup — an app may
@@ -144,7 +144,9 @@ class PublishFontsCommand extends Command
     }
 
     /**
-     * The presets named by `fonts.sans` / `fonts.serif` / `fonts.mono`.
+     * The presets named by `fonts.sans` / `fonts.serif` / `fonts.mono`, and by `fonts.publish`,
+     * the families a page picks at runtime through the props of `<x-wirekit::fonts>`. A family
+     * named twice is published once.
      *
      * A configured key that names no bundled preset is reported rather than
      * skipped: silently publishing nothing is how a page ends up in system fonts
@@ -179,7 +181,34 @@ class PublishFontsCommand extends Command
             $presets[] = $preset;
         }
 
-        return $presets;
+        foreach ((array) config('wirekit.fonts.publish', []) as $key) {
+            if (! is_string($key) || $key === '') {
+                continue;
+            }
+
+            $preset = FontRegistry::get($key);
+
+            if ($preset === null) {
+                $this->unresolvable[] = 'fonts.publish';
+                $this->warn("config fonts.publish names '{$key}', which is not a bundled family — skipped.");
+                $this->line('  Available: '.implode(', ', array_map(
+                    static fn ($p) => $p->key,
+                    FontRegistry::all()
+                )));
+
+                continue;
+            }
+
+            $presets[] = $preset;
+        }
+
+        $byKey = [];
+
+        foreach ($presets as $preset) {
+            $byKey[$preset->key] ??= $preset;
+        }
+
+        return array_values($byKey);
     }
 
     /**

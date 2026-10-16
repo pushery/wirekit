@@ -25,10 +25,6 @@
     $classes = WireKit::resolveClasses('unsaved-hint', 'base', implode(' ', [
         'inline-flex items-center',
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[length:var(--text-wk-sm)]',
-        // The sentence and its symbol take the color of the frames they explain: an unsaved
-        // value is a warning, and --color-wk-border-unsaved is the warning text color.
-        'text-[color:var(--color-wk-border-unsaved)]',
     ]), $scope);
 @endphp
 
@@ -37,13 +33,16 @@
      again. While nothing is unsaved the stylesheet takes it out of the flow and its sentence out
      of the accessibility tree (dist/wirekit.css, "The sentence of <x-wirekit::unsaved-hint>").
      Outside a scope it stays hidden. A role the caller passes replaces `status` rather than
-     standing beside it. --}}
-<span {{ $attributes->except('role')->class([$classes]) }} data-wk-unsaved-hint data-wk-unsaved-confirm="{{ $question }}" role="{{ $attributes->get('role', 'status') }}">
-    <span data-wk-unsaved-text class="inline-flex items-center gap-1.5">
-        {{-- The warning symbol `alert` and `callout` draw, filled in the sentence's color. --}}
-        <svg aria-hidden="true" class="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
-        @if($slot->hasActualContent()){{ $slot }}@else{{ $text }}@endif
-    </span>
+     standing beside it.
+
+     It also names the words `x-wk-unsaved` writes beside the label of an unsaved field, in the
+     reader's language, as `data-wk-unsaved-words`; one the caller passes takes their place. --}}
+<span {{ $attributes->except('role')->merge(['data-wk-unsaved-words' => __('wirekit::Unsaved change')])->class([$classes]) }} data-wk-unsaved-hint data-wk-unsaved-confirm="{{ $question }}" role="{{ $attributes->get('role', 'status') }}">
+    {{-- A soft badge in the warning color, without a symbol. The color of the unsaved state stands
+         here, beside the button, and a field takes only a light line and the words beside its
+         label, so nothing unsaved looks refused. It wraps: the sentence may be one of the
+         developer's own, and on a phone a long one would otherwise run out of its row. --}}
+    <x-wirekit::badge intent="warning" surface="soft" size="sm" wrap data-wk-unsaved-text>@if($slot->hasActualContent()){{ $slot }}@else{{ $text }}@endif</x-wirekit::badge>
 </span>
 {{-- The dialog the question before a `wire:navigate` visit is asked in, as a template:
      utils/unsaved.js puts it into the page the first time a scope asks, writes the scope's

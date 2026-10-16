@@ -40,12 +40,12 @@ $wrapperClasses])
 'size',
 'sm'
 'success'
-'text-[color:var(--color-wk-accent)]',
-'text-[color:var(--color-wk-danger)]',
-'text-[color:var(--color-wk-info-tone)]',
-'text-[color:var(--color-wk-success)]',
+'text-[color:var(--color-wk-accent-text)]',
+'text-[color:var(--color-wk-danger-text)]',
+'text-[color:var(--color-wk-info-text)]',
+'text-[color:var(--color-wk-success-text)]',
 'text-[color:var(--color-wk-text-muted)]',
-'text-[color:var(--color-wk-warning)]',
+'text-[color:var(--color-wk-warning-text)]',
 'warning'
 'xl'
 'xl']);

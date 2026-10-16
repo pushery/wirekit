@@ -120,6 +120,12 @@
     // carries its own padding and ends up indented twice, sitting visibly right of
     // the items it belongs with. Set `false` when the zone's content brings its own.
     'zoneInset' => true,
+    // Keep the current entry with the address in a sidebar Livewire keeps across `wire:navigate`
+    // visits with `@persist`, which it does not render again: after each visit the entry whose
+    // link matches the page takes the current state and `aria-current`, in the browser
+    // (`x-wk-current`, utils/current.js). `sidebar.item` reads it from here. Navigation mode only:
+    // a picked value is not a page.
+    'trackCurrent' => false,
     'scope' => null,
 ])
 
@@ -137,6 +143,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false);
     $zoneInset = BooleanProp::from($zoneInset, true);
+    $trackCurrent = BooleanProp::from($trackCurrent, false);
 
     $persistDriver = WireKit::validateProp('sidebar', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
@@ -180,6 +187,9 @@
     // paints nothing and therefore sits on whatever chrome is behind it — from a CARD, which
     // brings its own surface and must keep its own tokens with it.
     $navLabelAttrs += ['data-variant' => $variant];
+
+    // The current entry follows the address after a visit, in the same merge for the same reason.
+    $navLabelAttrs += $trackCurrent && $mode !== 'selection' ? ['x-wk-current' => ''] : [];
 
     // Sidebar root: a semantic <nav> landmark that holds grouped navigation
     // items. Uniform `p-[var(--padding-wk-y-sm)]` (= 0.375rem all four

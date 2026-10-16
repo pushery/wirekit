@@ -11,7 +11,7 @@ $accessibleName
 $active
 $attributes
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel')->class(['wk-touch-row',
 $attributes->except(['interactive']);
 $attributes->get('aria-hidden');
@@ -76,6 +76,8 @@ $slot
 $svgHtml
 $svgHtml,
 $targetAttr
+$trackCurrent
+$trackCurrent)
 $validated
 &&
 &&`
@@ -146,6 +148,7 @@ $validated
 'size',
 'sm'
 'text-[length:var(--text-wk-xs)]',
+'trackCurrent'
 'transition-colors
 'true'
 'true';
@@ -180,6 +183,7 @@ $validated
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
+(`x-wk-current`,
 (accent
 (array
 (button
@@ -244,6 +248,7 @@ $validated
 @endphp
 @endunless
 @if
+@if(!
 @if($active)
 @if($badge
 @if($computedRel)
@@ -270,6 +275,7 @@ BladeUI\Icons\Svg
 BooleanProp::from($active,
 BooleanProp::from($interactive,
 BooleanProp::from($mobileOnly,
+BooleanProp::from($trackCurrent,
 CSP
 CSS
 CallerRef::onRoot()
@@ -284,6 +290,7 @@ Drop
 EMPTY
 ENT_QUOTES).'"',
 EVERY
+Each
 Echoed
 Every
 FILTER_VALIDATE_BOOLEAN);
@@ -303,14 +310,17 @@ Interactive
 It
 Js::from's
 Js::from:
+Keep
 Keyed
 Let
+Livewire
 Logger
 MOST
 Marks
 Merged
 NOT
 Normalized
+Not
 Nothing
 ONE
 ONLY
@@ -388,14 +398,17 @@ __toString
 `<span>`
 `@aware`
 `@class`
+`@persist`,
 `@props`
 `Svg
 `active`
+`aria-current`,
 `aria-hidden="true"`
 `aria-label=""`
 `aria-label`
 `aria-labelledby`
 `class`
+`data-active`
 `fab.action`
 `h-12
 `h-4`
@@ -412,6 +425,7 @@ __toString
 `role="img"`.
 `shrink`
 `true
+`wire:navigate`
 `x-ref`
 `{{
 a
@@ -423,6 +437,7 @@ absent,
 accepts
 accessibility
 accessible
+across
 action
 action;
 active
@@ -430,7 +445,9 @@ active:
 active;
 actual
 add
+address
 after
+again:
 against
 alias
 all
@@ -519,6 +536,7 @@ bound
 bound,
 branch's
 break
+browser
 bug
 build
 but
@@ -652,6 +670,7 @@ empty
 empty-state
 entirely
 entry
+entry's
 entry's.
 escaped
 escaping
@@ -836,6 +855,7 @@ map.
 marker
 marks
 match.
+matches
 matching
 may
 mean
@@ -936,6 +956,7 @@ per-set
 person
 personalization
 phone
+picks.
 pinned
 place
 placeholder
@@ -1161,6 +1182,7 @@ user
 uses
 usually
 utility
+utils/current.js).
 valid
 validateProp
 value
@@ -1170,6 +1192,8 @@ variant
 via
 view's
 viewport
+visit
+visits
 w-12',
 w-12`
 w-3',
@@ -1186,6 +1210,7 @@ way
 ways
 we
 weight)
+well.
 what
 when
 when:
@@ -1209,6 +1234,7 @@ would
 wrapper:
 written
 x-data="{
+x-wk-current
 yet.
 you
 z-[var(--z-wk-sticky)]',

@@ -117,6 +117,7 @@ $wkRequiredMarker
 ''
 '')
 ''))
+'')));
 '').'
 '');
 '',
@@ -242,6 +243,7 @@ $wkRequiredMarker
 ($fieldGroup?->isInvalid($errors
 ($groupError
 ($groupOwnsBagEntry
+($helpName
 ($label
 ($nameAttr
 ($size)
@@ -810,6 +812,7 @@ bound
 box
 box,
 brand
+breaks
 brings
 broken.
 browser
@@ -818,6 +821,7 @@ bubbling,
 bug
 but
 button
+button's
 button's.
 button,
 button:
@@ -1037,6 +1041,7 @@ escapes
 escaping
 evaluated
 event
+event's
 events
 every
 exactly
@@ -1225,6 +1230,7 @@ in-data-[wk-arrow-focus]:has-[:focus]:ring-[var(--color-wk-ring)]'
 in.
 in:
 included.
+indentation,
 inert
 init
 initialized.
@@ -1302,6 +1308,7 @@ leaves
 leaving
 left
 left/top
+legend
 legitimately
 length,
 let
@@ -1309,6 +1316,7 @@ lets
 light
 like
 line
+lines
 linked
 list
 listener
@@ -1533,6 +1541,7 @@ preferred
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 present
 presentational
 preset
@@ -1671,6 +1680,7 @@ set's
 set:
 sets
 settles
+several
 shadow.
 shape
 shared
@@ -1782,6 +1792,7 @@ text-[color:var(--color-wk-text)]
 text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-text-subtle)]
 text-level
+text:
 textarea,
 than
 that

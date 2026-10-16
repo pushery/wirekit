@@ -38,9 +38,9 @@ $as
 $as);
 $attributes
 $attributes->class([$classes])
-$attributes->class([$classes]);
-$attributes->class([$iconClasses]);
 $attributes->class([$wrapperClasses])
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel');
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');

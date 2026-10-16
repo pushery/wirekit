@@ -6,8 +6,8 @@
     'scope' => null,
 ])
 
-{{-- The bar's density: one attribute on `navbar` sets every entry. --}}
-@aware(['density' => 'default'])
+{{-- The bar's density and its `track-current`: one attribute on `navbar` sets every entry. --}}
+@aware(['density' => 'default', 'trackCurrent' => false])
 
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -26,7 +26,7 @@
     $active = BooleanProp::from($active, false);
 
     // `@aware` leaves its key in the attribute bag, where it would render as a stray attribute.
-    $attributes = $attributes->except(['density']);
+    $attributes = $attributes->except(['density', 'trackCurrent', 'track-current']);
     $compact = $density === 'compact';
 
     // Navbar item — navigation link with active state indicator.
@@ -44,11 +44,17 @@
 
     // Compact entries you are not on step back to the muted color and come forward on hover, so
     // in a dense row the current one is the only entry at full strength.
-    $colorClasses = match (true) {
-        $active => 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]',
-        $compact => 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
-        default => 'text-[color:var(--color-wk-text)]',
-    };
+    $currentColor = 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]';
+    $idleColor = $compact
+        ? 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]'
+        : 'text-[color:var(--color-wk-text)]';
+    $colorClasses = $active ? $currentColor : $idleColor;
+
+    // Under the bar's `track-current` the entry carries what `x-wk-current` moves after a visit:
+    // the classes only a current entry has and those only an idle one has (Support\CurrentState).
+    $trackAttributes = BooleanProp::from($trackCurrent, false)
+        ? \Pushery\WireKit\Support\CurrentState::attributes($currentColor, $idleColor)
+        : [];
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See sidebar/item.blade.php for the rationale on except('rel') + explicit
@@ -67,7 +73,7 @@
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-touch-row', $classes, $colorClasses]) }}
+    {{ $attributes->except('rel')->merge($trackAttributes)->class(['wk-touch-row', $classes, $colorClasses]) }}
 >
     {{ $slot }}
     @if($opensNewTab)

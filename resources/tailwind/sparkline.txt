@@ -11,12 +11,13 @@ $alpineComponent
 $attributes->except(['aria-label',
 $attributes->get('style',
 $attributes->getAttributes());
-$attributes->has('aria-label'))
+$attributes->has('aria-label')
 $attributes->has('aria-label')`,
 $attributes->only(['aria-label',
 $callerReplayable
 $callerStyle
 $chartAriaAttributes
+$chartAriaAttributes->merge(['aria-hidden'
 $chartAriaLabel
 $chartAriaLabel])
 $chartAttributes
@@ -24,6 +25,8 @@ $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart',
 $chartAttributes->except(['data-replayable']);
 $chartAttributes->except(['data-wk-chart']);
 $chartAttributes->get('data-replayable');
+$chartIsNamedOrHidden
+$chartIsNamedOrHidden)
 $chartLibrary
 $data
 $data),
@@ -154,6 +157,7 @@ $wrapperTag
 'tension'
 'tooltip'
 'trend'
+'true']);
 'up'
 'up';
 'var(--color-wk-danger)',
@@ -177,6 +181,7 @@ $wrapperTag
 ($resolvedMountElement
 ($resolvedTrend)
 ($sparklineIsDecorative
+($sparklineIsDecorative)
 ($trendProp,
 ($v)
 ($value)
@@ -365,6 +370,7 @@ Empty
 English
 Explicit
 Extract
+FILTER_VALIDATE_BOOLEAN);
 FILTER_VALIDATE_BOOLEAN,
 Firefox
 Forwarded
@@ -390,6 +396,7 @@ Monthly
 NAME
 NOT
 No
+Nor
 Normalized
 OUTSIDE
 On
@@ -479,8 +486,10 @@ __('wirekit::Data
 `__()`
 `aria-hidden-focus`
 `aria-hidden="true"`
+`aria-hidden="true"`,
 `aria-hidden`
 `aria-label`
+`aria-labelledby`
 `aria-prohibited-attr`)
 `chart-mixed`
 `chart.sparkline.enabled:
@@ -552,6 +561,7 @@ against
 aim
 align-middle'
 all
+all.
 alone
 alone,
 already
@@ -567,6 +577,7 @@ announces
 announcing
 anonymous
 anonymously
+another
 any
 any)
 appears
@@ -780,6 +791,7 @@ decision
 declaration
 declarations
 declare
+decoration
 decoration,
 decorative
 default
@@ -829,6 +841,7 @@ dots
 down.
 drawing
 drawn
+draws,
 drifts
 drop
 duplicate
@@ -882,9 +895,12 @@ fatal
 feature
 fetch
 figure
+filled($attributes->get('aria-labelledby'))
 filled($value),
 filter_var(
+filter_var($attributes->get('aria-hidden'),
 filtered
+fire
 fires
 fires.
 firing
@@ -940,6 +956,7 @@ grid
 grid,
 grid;
 guard
+had
 half
 handle
 hands
@@ -1031,6 +1048,7 @@ later
 layout
 lazy-loader
 lead
+learns
 leaves
 left
 left:
@@ -1063,6 +1081,7 @@ live
 lives
 load
 load-bearing
+log
 logger()->warning(
 looking.
 made.
@@ -1273,6 +1292,7 @@ relative;";
 relying
 rename
 render
+render,
 rendered
 rendering
 renders
@@ -1308,6 +1328,7 @@ same
 sat
 saved;
 say
+say:
 says
 scanned
 scanner
@@ -1398,6 +1419,7 @@ style="{{
 stylesheet
 styling
 subtree
+such
 summarizes
 supplies
 supply
@@ -1458,6 +1480,7 @@ tiny
 to
 to.
 token.
+too.
 tooltip
 top).
 trace;
@@ -1528,6 +1551,7 @@ want
 warning
 was
 way
+way,
 way.
 we
 well

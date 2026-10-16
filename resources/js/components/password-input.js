@@ -12,7 +12,7 @@
  *                                            translated — the template resolves them,
  *                                            because this file has no locale
  */
-import { strengthBarColor } from '../utils/strength.js';
+import { strengthBarColor, strengthBarStyle } from '../utils/strength.js';
 
 export default function wirekitPasswordInput(config = {}) {
     return {
@@ -126,13 +126,9 @@ export default function wirekitPasswordInput(config = {}) {
             return strengthBarColor(index, this.strength, 4);
         },
 
-        /**
-         * The style of bar `index`, as an object: Alpine sets it property by property, where a
-         * string would be written with `setAttribute()`, which a `style-src` without
-         * `'unsafe-inline'` refuses.
-         */
+        /** The style of bar `index`, its fill and, while it is unlit, its edge; see utils/strength.js. */
         barStyle(index) {
-            return { backgroundColor: this.barColor(index) };
+            return strengthBarStyle(index, this.strength, 4);
         },
     };
 }

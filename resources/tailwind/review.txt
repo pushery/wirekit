@@ -41,8 +41,8 @@ $as
 $as);
 $attributes
 $attributes->class([$classes])
-$attributes->class([$iconClasses]);
 $attributes->class(['relative
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('autofocus');
 $attributes->except('class')->class([$classes])
 $attributes->except('form');
@@ -57,11 +57,13 @@ $attributes->get('aria-labelledby');
 $attributes->get('class',
 $attributes->get('name'),
 $attributes->get('role');
+$attributes->get('style',
 $attributes->get('x-ref',
 $attributes->getAttributes());
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
 $attributes->merge($depthStyle
+$attributes->merge(['style'
 $attributes->whereStartsWith('wire:model')
 $attributes]
 $author
@@ -210,6 +212,7 @@ $rating,
 $ratingSeed
 $readonly
 $readonly;
+$recolored
 $replied
 $replied->toIso8601String()
 $reply
@@ -295,14 +298,19 @@ $written->toIso8601String()
 ''"
 '')
 ''))
+'')));
 '')).'
 ''));
+''),
 '').'
 '').($disabled
 '',
 '';
 ',
+'--color-wk-warning')
+'--color-wk-warning:');
 '--wk-fit-floor:
+'--wk-rating-fill:
 '-1'
 '-1'"
 '.
@@ -310,6 +318,7 @@ $written->toIso8601String()
 '.$callerDescribedBy);
 '.$fitFloor.';'
 '.$max.($clearable
+'.$wrapperClasses,
 '.($helpId
 '.($requiredMessageClass
 '.($requiredMessageId
@@ -378,23 +387,24 @@ $written->toIso8601String()
 'bg-[var(--color-wk-accent)]
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-accent-fg)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg)]',
 'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-danger)]
-'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
+'bg-[var(--color-wk-danger-text)]',
 'bg-[var(--color-wk-info-fg)]',
+'bg-[var(--color-wk-info-text)]',
 'bg-[var(--color-wk-info-tone)]
-'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]
-'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-success-fg)]',
+'bg-[var(--color-wk-success-text)]',
 'bg-[var(--color-wk-text)]
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-tooltip-bg)]',
 'bg-[var(--color-wk-warning)]
-'bg-[var(--color-wk-warning)]',
 'bg-[var(--color-wk-warning-fg)]',
+'bg-[var(--color-wk-warning-text)]',
 'bg-transparent
 'bind'
 'block',
@@ -564,8 +574,8 @@ $written->toIso8601String()
 'text-[color:var(--color-wk-text)]';
 'text-[color:var(--color-wk-text-subtle)]
 'text-[color:var(--color-wk-tooltip-text)]',
-'text-[color:var(--color-wk-warning)]
 'text-[color:var(--color-wk-warning-text)]',
+'text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 'text-[length:var(--text-wk-2xl,1.5rem)]',
 'text-[length:var(--text-wk-3xl,1.875rem)]',
 'text-[length:var(--text-wk-4xl,2.25rem)]',
@@ -629,6 +639,7 @@ $written->toIso8601String()
 ($callerLabelledBy
 ($clamped
 ($dismissLabel
+($helpName
 ($hint
 ($intent)
 ($isInformative
@@ -636,6 +647,7 @@ $written->toIso8601String()
 ($name)])
 ($optimistic
 ($read
+($recolored)
 ($resolvedAriaHidden
 ($shouldSetHidden)
 ($size
@@ -799,6 +811,7 @@ $written->toIso8601String()
 2-2V5a2
 2.09C13.09
 2.1.1).
+2.13:1.
 2.2
 2.25
 2.5.8).
@@ -835,6 +848,7 @@ $written->toIso8601String()
 3.81
 30%,
 300),
+3:1
 3a2
 3c1.74
 3rem,
@@ -1408,6 +1422,7 @@ __toString
 `$id`
 `$refs`
 `$this->validate()`
+`--color-wk-warning`
 `--font-wk-body-weight`
 `--text-wk-fit-floor`
 `.number`
@@ -1905,6 +1920,7 @@ circle:
 clamped
 clamps
 class
+class,
 class="-my-1
 class="cursor-default">
 class="flex
@@ -1950,6 +1966,7 @@ collapses
 color
 color-mix
 color-mix(in
+color:
 colored
 colors
 colors,
@@ -2158,6 +2175,7 @@ double
 double-announce
 down
 drawer
+drawing
 drawn
 draws
 drift
@@ -2227,6 +2245,7 @@ evaluated
 evaluates
 even
 event
+event's
 event,
 event.
 event:
@@ -2288,8 +2307,8 @@ field:
 fields
 files
 fill
-fill-[var(--color-wk-warning)]
-fill-[var(--color-wk-warning)]'
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
+fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]'
 fill-none
 fill-none'
 fill-none'"
@@ -2421,6 +2440,7 @@ glyph.
 go
 goes
 grammar.
+graphic,
 gray
 greater
 grid
@@ -2534,6 +2554,7 @@ in_array('sr-only',
 included.
 including
 indent
+indentation,
 indented
 indicator
 inert
@@ -2570,6 +2591,7 @@ int
 intact
 integers.
 intent
+intent's
 intent)
 intent.
 intent:
@@ -2661,6 +2683,7 @@ leaves
 leaving
 left
 left.
+legend
 legitimately
 length
 length,
@@ -2992,6 +3015,7 @@ per-surface
 permanent
 permanently,
 personalization
+personalized
 phase,
 phrasing
 pick
@@ -3129,6 +3153,8 @@ reason:
 receive
 receiver,
 receives
+recolored
+recolored.
 record
 records
 rectangle.
@@ -3291,7 +3317,9 @@ server's
 server-side
 set
 sets
+setting
 settles
+several
 shadow
 shadow.
 shape
@@ -3402,11 +3430,13 @@ stays
 stem
 stepping
 still
+stood
 stop
 stop,
 stop:
 stops
 storage/logs/laravel.log.
+str_contains((string)
 straight
 strategy:
 stray
@@ -3514,12 +3544,13 @@ text-[color:var(--color-wk-text)]',
 text-[color:var(--color-wk-text-muted)]">{{
 text-[color:var(--color-wk-text-muted)]';
 text-[color:var(--color-wk-text-subtle)]
-text-[color:var(--color-wk-warning)]
 text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
+text-[color:var(--wk-rating-fill,var(--color-wk-warning-text))]
 text-[length:var(--text-wk-sm)]
 text-level
 text.
+text:
 text;
 than
 that
@@ -3582,6 +3613,7 @@ toggletip
 token
 token,
 tokens
+tone,
 too,
 took
 tooltip
@@ -3694,6 +3726,7 @@ value="{{
 values
 vanished
 var(--color-wk-text)
+var(--color-wk-warning);']);
 var(--shadow-wk-badge,
 variable
 variant

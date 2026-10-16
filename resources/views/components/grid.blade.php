@@ -286,7 +286,7 @@
 @php
     // Merged rather than printed, so a developer's own `style` on the call site
     // survives instead of being replaced — the same contract `class` has here.
-    $attrs = $attributes->class([$classes]);
+    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
 
     if ($trackStyle !== null) {
         $attrs = $attrs->merge(['style' => $trackStyle]);

@@ -13,7 +13,7 @@ $alpineComponent
 $attributes->except(['aria-label',
 $attributes->get('style',
 $attributes->getAttributes());
-$attributes->has('aria-label'))
+$attributes->has('aria-label')
 $attributes->has('aria-label')`,
 $attributes->only(['aria-label',
 $callerReplayable
@@ -26,6 +26,8 @@ $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart',
 $chartAttributes->except(['data-replayable']);
 $chartAttributes->except(['data-wk-chart']);
 $chartAttributes->get('data-replayable');
+$chartIsNamedOrHidden
+$chartIsNamedOrHidden)
 $chartLibrary
 $dataset)
 $datasets
@@ -288,6 +290,7 @@ Empty
 English
 Explicit
 Extract
+FILTER_VALIDATE_BOOLEAN);
 Forwarded
 Fully
 Further
@@ -307,6 +310,7 @@ Multi-axis:
 NAME
 NOT
 No
+Nor
 Normalized
 Not
 OUTSIDE
@@ -375,6 +379,8 @@ __('wirekit::Data
 `[data-wk-chart]`
 `__('wirekit::Chart')`
 `__()`
+`aria-hidden="true"`,
+`aria-labelledby`
 `aria-prohibited-attr`)
 `categorical`;
 `chart-mixed`
@@ -442,6 +448,7 @@ affecting
 after
 against
 aim
+all.
 alone,
 already
 already-
@@ -457,6 +464,7 @@ announces
 announcing
 anonymous
 anonymously
+another
 any
 any)
 appears
@@ -645,6 +653,7 @@ declarations
 declare
 declared
 declared,
+decorative
 default
 default,
 defer
@@ -685,6 +694,7 @@ down
 down.
 drawing
 drawn
+draws,
 drifts
 drop
 duplicate
@@ -737,8 +747,11 @@ fetch
 field:
 fields
 figure
+filled($attributes->get('aria-labelledby'))
 filled($value),
+filter_var($attributes->get('aria-hidden'),
 filtered
+fire
 fires
 firing
 first
@@ -931,6 +944,7 @@ multi-type
 must
 n/a
 name
+name,
 name.
 named
 names
@@ -1105,6 +1119,7 @@ same
 saved;
 say
 say.
+say:
 says
 scale
 scanned
@@ -1153,6 +1168,7 @@ source
 space,
 spaces
 spans,
+sparkline
 specific
 spelled
 sr-only
@@ -1182,6 +1198,7 @@ style="{{
 stylesheet
 styling
 subtree
+such
 summarizes
 supplies
 supply

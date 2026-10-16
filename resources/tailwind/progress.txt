@@ -69,13 +69,13 @@ $wrapperClasses
 'animation',
 'aria-label');
 'aria-labelledby']);
-'bg-[var(--color-wk-accent)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg-muted)]',
-'bg-[var(--color-wk-danger)]',
-'bg-[var(--color-wk-info-tone)]',
-'bg-[var(--color-wk-success)]',
+'bg-[var(--color-wk-danger-text)]',
+'bg-[var(--color-wk-info-text)]',
+'bg-[var(--color-wk-success-text)]',
 'bg-[var(--color-wk-text-muted)]',
-'bg-[var(--color-wk-warning)]',
+'bg-[var(--color-wk-warning-text)]',
 'circle',
 'danger'
 'danger',
@@ -87,6 +87,7 @@ $wrapperClasses
 'info'
 'info',
 'inline-flex
+'inset-ring-[length:max(1px,var(--border-wk-width))]
 'intent'
 'intent',
 'label'
@@ -142,6 +143,7 @@ $wrapperClasses
 (0..max).
 (A
 (Component
+(WCAG
 (`--text-wk-2xs`
 (a
 (anything
@@ -186,6 +188,8 @@ $wrapperClasses
 0;
 0`
 1.
+1.09:1
+1.4.11).
 100
 100"
 100",
@@ -374,6 +378,7 @@ alias
 alias).
 alias.
 aliases
+alone
 already
 always
 an
@@ -440,6 +445,7 @@ below,
 beside
 binding
 block,
+border
 bound
 branch
 breaking
@@ -505,6 +511,7 @@ core
 could
 count.
 counts
+covers
 cx="18"
 cy="18"
 danger
@@ -543,6 +550,7 @@ element,
 else
 else,
 empty
+ends:
 enough
 enum;
 evaluated
@@ -560,6 +568,7 @@ fallback
 falls
 false);
 false,
+far
 feature
 file
 fill
@@ -605,6 +614,7 @@ here.
 hit
 holds
 house
+how
 hue
 id
 id)
@@ -623,6 +633,7 @@ indicators.
 info
 inline
 inset-0
+inset-ring-[var(--color-wk-border-strong)]',
 inset-y-0
 inside
 instead
@@ -655,6 +666,7 @@ length
 less
 lg
 light
+light,
 like
 linear
 links
@@ -667,6 +679,7 @@ lives
 low-emphasis
 made
 markers
+marks
 match
 matches
 max
@@ -745,6 +758,7 @@ override
 own
 own,
 package,
+page,
 palette
 palette:
 partial
@@ -790,6 +804,7 @@ re-renders,
 re-renders:
 re-resolve
 reach
+reached
 read
 readable
 reader
@@ -828,6 +843,7 @@ rule
 rule)
 rule),
 rung
+runs.
 same
 scale
 scale:
@@ -841,6 +857,7 @@ set
 set.
 sets
 settled
+shadow,
 shape
 share
 shimmer
@@ -871,6 +888,7 @@ static
 stay
 stays
 still
+stood
 stop
 streamed
 streaming).
@@ -883,6 +901,7 @@ stroke-linecap="round"
 stroke-width="3"
 stroke="var(--color-wk-bg-muted)"
 stroke="{{
+strong
 style
 style,
 style="transition:

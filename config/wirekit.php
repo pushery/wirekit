@@ -646,6 +646,12 @@ return [
 
         'display' => 'swap',
 
+        // Families a page picks at runtime, per shop or per tenant, through the `sans`, `serif`
+        // and `mono` props of `<x-wirekit::fonts>`. `wirekit:publish-fonts` publishes them beside
+        // the three above and `--prune` keeps them, so such a page loads a static file with its
+        // preload rather than the package route. Keys as `php artisan wirekit:fonts` lists them.
+        'publish' => [],
+
         /*
         |----------------------------------------------------------------------
         | Metric-matched fallbacks for YOUR fonts
@@ -838,6 +844,34 @@ return [
 
     'assets' => [
         'middleware' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Compact Classes
+    |--------------------------------------------------------------------------
+    |
+    | Every component writes its look as Tailwind utilities, and on a page of
+    | many components those class names are most of what the page weighs. A
+    | Livewire component sends them again with every update.
+    |
+    | Turned on, the kit's views write each utility under a short name, and
+    | @wirekitStyles links `wirekit-compact.css`, which declares every short
+    | class with exactly the rules of its utility, in the same order. The page
+    | looks the same and carries less than half of the class bytes.
+    |
+    | A class you put on a component keeps its name. While this is on, a
+    | selector of your own that looks for one of the kit's utilities on its
+    | elements finds nothing, and a utility of yours on a component element
+    | wins over the kit's where both set the same property.
+    |
+    | The setting is read once per request and per queued job, so a middleware
+    | may turn it on before the page renders.
+    |
+    */
+
+    'styles' => [
+        'compact' => EnvValue::get('WIREKIT_COMPACT_CLASSES', false),
     ],
 
     /*

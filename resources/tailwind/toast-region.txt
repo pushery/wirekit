@@ -104,14 +104,14 @@ $variantMap
 'text-[color-mix(in_srgb,var(--color-wk-info-fg)_80%,transparent)]',
 'text-[color:var(--color-wk-accent-fg)]
 'text-[color:var(--color-wk-accent-fg)]',
-'text-[color:var(--color-wk-danger)]',
+'text-[color:var(--color-wk-danger-text)]',
 'text-[color:var(--color-wk-info-fg)]',
 'text-[color:var(--color-wk-info-text)]',
-'text-[color:var(--color-wk-success)]',
+'text-[color:var(--color-wk-success-text)]',
 'text-[color:var(--color-wk-text)]',
 'text-[color:var(--color-wk-text-muted)]
 'text-[color:var(--color-wk-text-muted)]',
-'text-[color:var(--color-wk-warning)]',
+'text-[color:var(--color-wk-warning-text)]',
 'text-[length:var(--text-wk-sm)]',
 'toast',
 'top'

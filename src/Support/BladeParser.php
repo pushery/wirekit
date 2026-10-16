@@ -126,10 +126,7 @@ final class BladeParser
         $contents = self::withoutPhpComments($contents);
 
         // Collected as flag-less maps: the KEY is the name, and the value is
-        // never read. Storing `true` in them invited a mutation that flips it to
-        // `false` and changes nothing — a mutant no honest test can kill, since
-        // there is no behavior to assert. `null` says the same thing about the
-        // value while leaving nothing to flip.
+        // never read, so it is `null` rather than a flag nothing looks at.
         $issetNames = [];
         $bareNames = [];
 

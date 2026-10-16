@@ -35,6 +35,11 @@
     // and draws the entries you are not on in the muted text color. `navbar.item` reads it from
     // here, so one attribute on the bar sets every entry.
     'density' => 'default',
+    // Keep the current entry with the address in a bar Livewire keeps across `wire:navigate`
+    // visits with `@persist`, which it does not render again: after each visit the entry whose
+    // link matches the page takes the current state and `aria-current="page"`, in the browser
+    // (`x-wk-current`, utils/current.js). `navbar.item` reads it from here.
+    'trackCurrent' => false,
     'scope' => null,
 ])
 
@@ -55,6 +60,7 @@
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sticky = BooleanProp::from($sticky, false);
+    $trackCurrent = BooleanProp::from($trackCurrent, false);
     $forceMobile = BooleanProp::from($forceMobile, false);
     $container = BooleanProp::from($container, false);
 
@@ -81,7 +87,8 @@
     // A transparent bar takes the background color out of the resolved base block instead of
     // setting `bg-transparent` beside it: two background colors on one element are decided by
     // the stylesheet's order, and this pair only came out right because `bg-transparent` sorts
-    // after `bg-[var(…)]`. A personalized base block loses its background color here too.
+    // after the arbitrary-value background class. A personalized base block loses its
+    // background color here too.
     if ($variant === 'transparent') {
         $navClasses = \Pushery\WireKit\Support\UtilityClasses::without(
             $navClasses,
@@ -231,6 +238,7 @@
     aria-label="{{ __('wirekit::Main navigation') }}"
     @endunless
     @if($sticky) data-wk-scroll-inset="top" @endif
+    @if($trackCurrent) x-wk-current @endif
     {{ $attributes->class([$navClasses, $variantClasses, $stickyClasses]) }}
 >
     <div class="{{ $containerClasses }}">

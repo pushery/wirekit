@@ -801,8 +801,12 @@
                     :class="idx === highlight ? {{ \Pushery\WireKit\Support\AlpinePayload::string($optionHighlightedClasses) }} : ''"
                     {{-- Pointing at a row makes it the active one, so a pointer
                          and the arrow keys leave the highlight in the same
-                         place instead of each keeping their own idea of it. --}}
-                    @mouseenter="hoverOption(idx)"
+                         place instead of each keeping their own idea of it.
+                         pointermove, not mouseenter: a list that opens or scrolls
+                         under a resting pointer fires mouseenter on the row beneath
+                         it, and that row would take the highlight, and Enter, from
+                         a reader who never moved the mouse. --}}
+                    x-on:pointermove.passive="hoverOption(idx)"
                     {{-- nextWith() returns a NEW array. toggleValue() splices in place,
                          and an in-place mutation gives the layer nothing to
                          snapshot — the rollback would restore the array it had

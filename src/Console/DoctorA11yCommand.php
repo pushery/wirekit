@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\Theming\ModeTokens;
 use Pushery\WireKit\Theming\WcagContrast;
 
 /**
@@ -45,7 +46,11 @@ use Pushery\WireKit\Theming\WcagContrast;
  *      counted toward the verdict or exit code. This matches
  *      docs/theming.md "Intentional trade-offs" and keeps WireKit's own
  *      decorative border (intentionally ~1.3-2.5:1) auditing clean while
- *      a sub-3:1 CONTROL border never passes silently.
+ *      a sub-3:1 CONTROL border never passes silently. The line of an
+ *      unsaved field (`--color-wk-border-unsaved`) is advisory too, for
+ *      another reason: it is a hint beside the words at the field's label,
+ *      which carry the state (WCAG 1.4.1), so its light default sits under
+ *      3:1 by design.
  */
 class DoctorA11yCommand extends Command
 {
@@ -275,8 +280,8 @@ class DoctorA11yCommand extends Command
             $vendorCss = dirname(__DIR__, 2).'/dist/wirekit.css';
         }
 
-        $vendorTokens = $this->parseTokens(is_file($vendorCss) ? (string) file_get_contents($vendorCss) : '');
-        $appTokens = $this->parseTokens(is_file($appCss) ? (string) file_get_contents($appCss) : '');
+        $vendorTokens = ModeTokens::parse(is_file($vendorCss) ? (string) file_get_contents($vendorCss) : '');
+        $appTokens = ModeTokens::parse(is_file($appCss) ? (string) file_get_contents($appCss) : '');
 
         // Effective token tables: developer override wins, vendor fills the gap.
         $light = array_merge($vendorTokens['light'] ?? [], $appTokens['light'] ?? []);
@@ -316,9 +321,12 @@ class DoctorA11yCommand extends Command
             ['name' => 'focus ring on ring-offset', 'fg' => '--color-wk-ring', 'bg' => '--color-wk-ring-offset', 'threshold' => 'ui'],
             ['name' => 'border-error on bg', 'fg' => '--color-wk-border-error', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
             ['name' => 'border-success on bg', 'fg' => '--color-wk-border-success', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
-            // The frame of a field that is not saved yet (x-wk-unsaved): a state, so 3:1,
-            // against the field fill it sits on.
-            ['name' => 'border-unsaved on bg-input', 'fg' => '--color-wk-border-unsaved', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui'],
+            // The line of a field that is not saved yet (x-wk-unsaved). It is not the only sign
+            // of the state: the words beside the field's label say it (WCAG 1.4.1), so the light
+            // default sits under 3:1 by design, and the row is advisory: its ratio is printed and
+            // never counted. A theme that wants a line at 3:1 sets the token to the warning text
+            // color, and the ratio here shows that it did.
+            ['name' => 'border-unsaved on bg-input', 'fg' => '--color-wk-border-unsaved', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui', 'advisory' => true, 'note' => 'a hint beside words, WCAG 1.4.1'],
             // border-strong is the COMMUNICATING form-control border, and WCAG 1.4.11
             // requires >= 3:1 for it.
             // It is NOT decorative — it is the resting + hover edge of input / select
@@ -402,15 +410,16 @@ class DoctorA11yCommand extends Command
                     continue;
                 }
 
-                // Decorative resting borders are WCAG 1.4.11 exempt — print the
-                // ratio for visibility but never let it drive the verdict or the
-                // exit code (the exit logic below reads fail/warn totals only).
+                // Decorative resting borders are WCAG 1.4.11 exempt, and the unsaved line is a
+                // hint beside words — print the ratio for visibility but never let it drive the
+                // verdict or the exit code (the exit logic below reads fail/warn totals only).
                 if ($pair['advisory'] ?? false) {
                     $totals['exempt']++;
                     $this->line(sprintf(
-                        '    <fg=blue>INFO</> %-44s   %.2f:1  (decorative, WCAG 1.4.11 exempt)',
+                        '    <fg=blue>INFO</> %-44s   %.2f:1  (%s)',
                         $pair['name'],
                         $ratio,
+                        $pair['note'] ?? 'decorative, WCAG 1.4.11 exempt',
                     ));
 
                     continue;
@@ -436,7 +445,7 @@ class DoctorA11yCommand extends Command
         }
 
         $this->line(sprintf(
-            'Theme contrast totals: %d PASS / %d WARN / %d FAIL / %d SKIP / %d EXEMPT (decorative).',
+            'Theme contrast totals: %d PASS / %d WARN / %d FAIL / %d SKIP / %d EXEMPT (advisory).',
             $totals['pass'],
             $totals['warn'],
             $totals['fail'],
@@ -454,223 +463,6 @@ class DoctorA11yCommand extends Command
             // FAILURE for invalid input too, never Symfony's INVALID (2).
             default => $this->reportUnknownFailOn($failOn),
         };
-    }
-
-    /**
-     * Parse `--color-wk-*` declarations under `:root` and `.dark`
-     * blocks (including the `:where(...)` wrapped forms). Resolves
-     * simple `var(--other)` aliases by chaining through the same
-     * token table.
-     *
-     * @return array{light: array<string, string>, dark: array<string, string>}
-     */
-    private function parseTokens(string $css): array
-    {
-        if ($css === '') {
-            return ['light' => [], 'dark' => []];
-        }
-        $css = (string) preg_replace('!/\*.*?\*/!s', '', $css);
-
-        // Which presentation each block actually describes, before any of it is read as a
-        // token table. See splitByPresentation() for the at-rule case this handles.
-        $byPresentation = self::splitByPresentation($css);
-
-        $extract = function (string $selector, string $source): array {
-            $escaped = preg_quote($selector, '/');
-
-            // The selector may sit in a list. A theme writes `:root, .light` for a token that
-            // changes with the mode, as the theming guide asks. A rule read as absent is
-            // indistinguishable from an empty one here, so every pairing would come back
-            // "token unresolved" rather than wrong.
-            //
-            // `[^{};]*` and not `[^{}]*`: a selector list cannot contain a semicolon, and
-            // without that exclusion a `.dark` inside a DECLARATION (`:where(.dark, .dark *)`)
-            // runs across the gap to the next rule and captures a block it does not belong to.
-            $pattern = '/(?<![\w-])(?::where\(\s*)?'.$escaped.'(?:\s*\))?(?:\s*,[^{};]*)?\s*\{([^}]*)\}/u';
-            preg_match_all($pattern, $source, $matches);
-            $tokens = [];
-            foreach ($matches[1] ?? [] as $body) {
-                // Capture EVERY custom property (not just --color-wk-*) so that
-                // a hue-driven token like `oklch(L C var(--theme-hue))` can have
-                // its `--theme-hue` reference substituted before parsing.
-                // The pairings still only evaluate --color-wk-* pairs; the extra
-                // entries are var()-resolution sources.
-                if (preg_match_all('/(--[\w-]+)\s*:\s*([^;]+);/', $body, $declMatches, PREG_SET_ORDER)) {
-                    foreach ($declMatches as $entry) {
-                        $tokens[$entry[1]] = trim($entry[2]);
-                    }
-                }
-            }
-
-            return $tokens;
-        };
-
-        $light = $extract(':root', $byPresentation['screen']);
-
-        // A theme can express dark two ways, and both are legitimate: the `.dark` class the
-        // kit's own toggler writes, and `@media (prefers-color-scheme: dark)` for a theme
-        // that follows the system with no toggle of its own. A `:root` block is a `:root`
-        // block wherever it sits, so without this split a theme written the second way would
-        // have its light mode audited against its dark colors, the worse direction of the
-        // two: light is the mode people spot-check.
-        //
-        // The class wins where both declare the same token. It is the documented switch,
-        // and it is what is actually on the element when the toggler has run.
-        $dark = array_merge(
-            $extract(':root', $byPresentation['dark']),
-            $extract('.dark', $byPresentation['dark']),
-            $extract('.dark', $byPresentation['screen']),
-        );
-
-        // Resolve var(--other-token) aliases within the same block.
-        // Bounded recursion: max 5 hops per token to avoid cycles.
-        $resolve = function (array $tokens): array {
-            foreach ($tokens as $name => $value) {
-                $hops = 0;
-                while (preg_match('/^\s*var\(\s*(--[\w-]+)\s*(?:,[^)]*)?\)\s*$/', $value, $m) === 1 && $hops < 5) {
-                    $alias = $m[1];
-                    if (! isset($tokens[$alias])) {
-                        break;
-                    }
-                    $value = $tokens[$alias];
-                    $hops++;
-                }
-                $tokens[$name] = $value;
-            }
-
-            return $tokens;
-        };
-
-        return [
-            'light' => $resolve($light),
-            'dark' => $resolve($dark),
-        ];
-    }
-
-    /**
-     * The stylesheet split by the presentation each block actually applies to.
-     *
-     * An at-rule is invisible to a selector pattern. The extractor above finds `:root` and
-     * `.dark` wherever they stand; an `@media` wrapper is just text in between. So a print
-     * sheet written exactly as it should be --
-     *
-     *     @media print {
-     *         :root,
-     *         .dark { --color-wk-bg: #fff; --color-wk-text: #000; }
-     *     }
-     *
-     * -- would read as a description of the screen, and as the last `.dark` match in the file
-     * it would replace the entire dark table: text on bg would come back at 21.00:1, pure black
-     * on pure white, whatever the real dark surface measures.
-     *
-     * An unrecognized prelude stays where it is. Dropping a block this classifier does
-     * not understand would narrow the audit silently, and a narrower audit reports fewer
-     * findings -- which reads exactly like a cleaner theme.
-     *
-     * @return array{screen: string, dark: string}
-     */
-    private static function splitByPresentation(string $css): array
-    {
-        $screen = '';
-        $dark = '';
-        $offset = 0;
-
-        while (($at = strpos($css, '@media', $offset)) !== false) {
-            $braceAt = strpos($css, '{', $at);
-
-            if ($braceAt === false) {
-                break;
-            }
-
-            $end = self::matchingBrace($css, $braceAt);
-
-            if ($end === null) {
-                break;
-            }
-
-            $screen .= substr($css, $offset, $at - $offset);
-
-            $prelude = substr($css, $at + 6, $braceAt - $at - 6);
-            $body = substr($css, $braceAt + 1, $end - $braceAt - 1);
-
-            match (self::presentationOf($prelude)) {
-                // Flattened rather than kept wrapped, which is equivalent here: the
-                // extractor reads declaration blocks and never the at-rule around them.
-                'screen' => $screen .= $body,
-                'dark' => $dark .= $body,
-                // Paper, speech and the alternative-preference themes describe something
-                // this audit does not claim to measure.
-                default => null,
-            };
-
-            $offset = $end + 1;
-        }
-
-        $screen .= substr($css, $offset);
-
-        return ['screen' => $screen, 'dark' => $dark];
-    }
-
-    /**
-     * Which of the audited presentations an `@media` prelude describes.
-     *
-     * Deliberately a short list of things that are definitely NOT the default screen,
-     * rather than an attempt at a media-query parser: the cost of the two directions is not
-     * symmetric. Misreading a block as screen puts a wrong number in a report somebody can
-     * check against their own page; dropping one they meant makes a finding disappear.
-     */
-    private static function presentationOf(string $prelude): string
-    {
-        $prelude = strtolower(trim($prelude));
-
-        // `not print` is every medium EXCEPT paper, so the word alone decides nothing. A
-        // negated query is left where it is rather than guessed at.
-        if (preg_match('/(?<![\w-])not(?![\w-])/', $prelude) === 1) {
-            return 'screen';
-        }
-
-        if (preg_match('/prefers-color-scheme\s*:\s*dark/', $prelude) === 1) {
-            return 'dark';
-        }
-
-        // The media TYPE, which is a bare word rather than a feature in parentheses.
-        if (preg_match('/(^|[\s,(])(print|speech)(?![\w-])/', $prelude) === 1) {
-            return 'drop';
-        }
-
-        // Alternative themes a user preference switches on. Each is a real surface and each
-        // deserves its own audit; what none of them is, is the default one.
-        if (preg_match('/prefers-contrast|forced-colors|inverted-colors/', $prelude) === 1) {
-            return 'drop';
-        }
-
-        return 'screen';
-    }
-
-    /**
-     * The index of the `}` closing the `{` at $open, or null when the file is unbalanced.
-     *
-     * An unbalanced stylesheet ends the walk rather than guessing, so a truncated file is
-     * read as far as it is trustworthy and no further.
-     */
-    private static function matchingBrace(string $css, int $open): ?int
-    {
-        $depth = 0;
-        $length = strlen($css);
-
-        for ($i = $open; $i < $length; $i++) {
-            if ($css[$i] === '{') {
-                $depth++;
-            } elseif ($css[$i] === '}') {
-                $depth--;
-
-                if ($depth === 0) {
-                    return $i;
-                }
-            }
-        }
-
-        return null;
     }
 
     /**

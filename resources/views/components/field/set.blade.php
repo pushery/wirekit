@@ -35,6 +35,10 @@
     // Render the group error as a polite live region. Precedence: this prop, then the
     // surrounding form's announce-errors, then config('wirekit.a11y.announce_error').
     'announceError' => null,
+    // One explanation for the whole group: a question mark beside the legend, the same help a field
+    // shows beside its label, and the text as the group's description. The controls inside then
+    // need no help of their own. Read only where the set has a legend to stand beside.
+    'help' => null,
     'scope' => null,
 ])
 
@@ -112,9 +116,43 @@
     // `filled()` rather than a bare truthiness test: `legend="0"` is a caption a caller
     // asked for, and `@if($legend)` would drop it silently.
     $hasLegend = $legendIsSlot ? $legend->hasActualContent() : filled($legend);
+
+    // The help of the group. Its question mark stands in the legend, beside the text, and a
+    // button there would join the legend's text in the group's name ("Roles Help for Roles"),
+    // so the fieldset takes its name from the text alone through `aria-labelledby`, unless the
+    // caller names it. The hidden copy of the help describes the fieldset, after its message.
+    $hasHelp = $hasLegend && filled($help);
+    // A mark after the legend and its help, in their row: a badge that says the group's setting is
+    // not decided yet, as a field takes one after its label. It stands in the legend as well, since
+    // a wrapper around the legend would take the legend's first-child place, so the group takes its
+    // name from the text alone here too. A slot of morph markers alone is no mark.
+    $hasLabelAfter = $hasLegend && isset($labelAfter) && $labelAfter instanceof \Illuminate\View\ComponentSlot && $labelAfter->hasActualContent();
+    $legendRow = $hasHelp || $hasLabelAfter;
+    $legendText = $hasLegend ? trim(html_entity_decode(strip_tags((string) $legend), ENT_QUOTES | ENT_HTML5)) : '';
+    $setId = $legendRow
+        ? \Pushery\WireKit\Support\DomId::distinct(WireKit::stableId('wk-field-set', $group->key ?? ($legendText !== '' ? $legendText : null)))
+        : null;
+    $legendTextId = $setId !== null ? $setId.'-legend' : null;
+    $helpId = $hasHelp && $setId !== null ? $setId.'-help' : null;
+    $namedByCaller = $attributes->has('aria-labelledby') || $attributes->has('aria-label');
+    $fieldsetDescribedBy = $helpId !== null ? trim(($fieldsetDescribedBy ?? '').' '.$helpId) : $fieldsetDescribedBy;
+    // A visually hidden legend shows no question mark: a button nobody can see must not take a
+    // tab stop, and the description still reaches a screen reader.
+    $helpButton = ! ($legendIsSlot && in_array('sr-only', preg_split('/\s+/', (string) $legend->attributes->get('class', '')) ?: [], true));
+    // Text, question mark and mark stand in one row, centered on each other, inside the legend.
+    // With a mark the row wraps between the text with its help and the mark, as a label row does,
+    // so the question mark never leaves the text it explains.
+    $legendRowClasses = match (true) {
+        $hasLabelAfter => 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]',
+        $hasHelp => 'flex items-center gap-[var(--gap-wk-xs)]',
+        default => '',
+    };
+    // The slot's own attributes stay on the legend; the prop form starts from an empty bag.
+    $legendAttributes = ($legendIsSlot ? $legend->attributes : new \Illuminate\View\ComponentAttributeBag)
+        ->class(array_values(array_filter([$legendClasses, $legendRowClasses], filled(...))));
 @endphp
 
-<fieldset @if($group->key !== null) name="{{ $group->key }}" @endif @if($fieldsetDescribedBy !== null) aria-describedby="{{ $fieldsetDescribedBy }}" @endif {{ $attributes->class([$classes]) }}>
+<fieldset @if($group->key !== null) name="{{ $group->key }}" @endif @if($legendRow && ! $namedByCaller) aria-labelledby="{{ $legendTextId }}" @endif @if($fieldsetDescribedBy !== null) aria-describedby="{{ $fieldsetDescribedBy }}" @endif {{ $attributes->class([$classes]) }}>
     {{-- A <legend> is the group's caption only while it is the fieldset's first
          child. One level down it is an ordinary inline box: the <fieldset> then has no
          accessible name, and a screen reader announces nothing before the controls —
@@ -126,11 +164,14 @@
          That is what a <x-wirekit::field.legend> written into the DEFAULT slot below
          hits: the spacing <div> demotes it to a grandchild. Rich captions therefore go
          through <x-slot:legend> and land HERE, ahead of that <div>. --}}
+    {{-- The legend is the label of the group, so on a touch surface it is as tall as a field's
+         label: `data-wk-field-label` sits on the legend itself, or on its text where the legend is
+         a row that also holds a question mark or a mark. --}}
     @if($hasLegend)
-        @if($legendIsSlot)
-            <legend {{ $legend->attributes->class([$legendClasses]) }}>{{ $legend }}</legend>
+        @if($legendRow)
+            <legend data-wk-label-row {{ $legendAttributes }}>@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif<span id="{{ $legendTextId }}" data-wk-field-label>{{ $legend }}</span>@if($hasHelp)@include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $legendText, 'helpId' => $helpId, 'helpButton' => $helpButton, 'helpField' => (string) ($group->key ?? '')])@endif @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif</legend>
         @else
-            <legend class="{{ $legendClasses }}">{{ $legend }}</legend>
+            <legend data-wk-field-label {{ $legendAttributes }}>{{ $legend }}</legend>
         @endif
     @endif
     @if($groupMessage !== null)

@@ -9,6 +9,7 @@
 "+7").
 "+N"
 "--shimmer-wk-duration:
+".($total
 "5
 "Build
 "Cancel"
@@ -30,6 +31,7 @@
 "false").
 "false",
 "heroicon-m-inbox"
+"outline:
 "settled"
 "streaming"
 "trigger"
@@ -50,11 +52,11 @@ $as,
 $attributes
 $attributes->class([$classes,
 $attributes->class([$classes])
-$attributes->class([$classes]);
-$attributes->class([$iconClasses]);
 $attributes->class([$wrapperClasses])
 $attributes->class(['relative
 $attributes->class(['wk-collapsible',
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
+$attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except($as
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
@@ -137,6 +139,7 @@ $footer
 $fromInitials
 $fromInitialsStyle
 $gap
+$gap)."px
 $groupClasses
 $href
 $iconClasses
@@ -197,6 +200,7 @@ $resolved);
 $resolvedAriaHidden
 $ringColor
 $ringWidth
+$ringWidth)."px
 $ringWidth;
 $role
 $role,
@@ -357,6 +361,7 @@ $x)`
 'assistant',
 'avatar'
 'away'
+'bar',
 'base'
 'base',
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]
@@ -372,6 +377,7 @@ $x)`
 'bg-[var(--color-wk-accent)]
 'bg-[var(--color-wk-accent)]',
 'bg-[var(--color-wk-accent-fg)]',
+'bg-[var(--color-wk-accent-text)]',
 'bg-[var(--color-wk-bg)]',
 'bg-[var(--color-wk-bg-elevated)]
 'bg-[var(--color-wk-bg-elevated)]',
@@ -380,20 +386,20 @@ $x)`
 'bg-[var(--color-wk-bg-soft)]',
 'bg-[var(--color-wk-bg-subtle)]
 'bg-[var(--color-wk-danger)]
-'bg-[var(--color-wk-danger)]',
 'bg-[var(--color-wk-danger-fg)]',
+'bg-[var(--color-wk-danger-text)]',
 'bg-[var(--color-wk-info-fg)]',
+'bg-[var(--color-wk-info-text)]',
 'bg-[var(--color-wk-info-tone)]
-'bg-[var(--color-wk-info-tone)]',
 'bg-[var(--color-wk-success)]
-'bg-[var(--color-wk-success)]',
 'bg-[var(--color-wk-success-fg)]',
+'bg-[var(--color-wk-success-text)]',
 'bg-[var(--color-wk-text)]
 'bg-[var(--color-wk-text-muted)]',
 'bg-[var(--color-wk-tooltip-bg)]',
 'bg-[var(--color-wk-warning)]
-'bg-[var(--color-wk-warning)]',
 'bg-[var(--color-wk-warning-fg)]',
+'bg-[var(--color-wk-warning-text)]',
 'bg-transparent
 'border-[color-mix(in_srgb,var(--color-wk-accent)_25%,transparent)]',
 'border-[color-mix(in_srgb,var(--color-wk-danger)_25%,transparent)]',
@@ -454,6 +460,7 @@ $x)`
 'external'
 'false'
 'false'"
+'filled'
 'findable'
 'fixed
 'fixed'
@@ -478,6 +485,8 @@ $x)`
 'h-6
 'h-7
 'h-8
+'half',
+'hollow',
 'hover'
 'hover',
 'hover:bg-[var(--color-wk-bg-active)]
@@ -643,10 +652,10 @@ $x)`
 'underline',
 'user'
 'user',
-'var(--color-wk-danger)',
-'var(--color-wk-success)',
+'var(--color-wk-danger-text)',
+'var(--color-wk-success-text)',
 'var(--color-wk-text-muted)',
-'var(--color-wk-warning)',
+'var(--color-wk-warning-text)',
 'variant'
 'variant',
 'w-16
@@ -858,16 +867,21 @@ $x)`
 0.5rem
 0.5rem,
 0.75rem
+0a5
 0h-5.25M21
 0s",
 1
 1.34-8
+1.4.1):
 1.4.13
 1.4.13.
 1.5,
 1.79
 1.79-4
+10
+10"
 100),
+10z"
 12c2.21
 12s".
 16px
@@ -902,6 +916,7 @@ $x)`
 44x44
 4v2h16v-2c0-2.66-5.33-4-8-4z"
 4zm0
+5
 5.25
 500s
 6),
@@ -941,6 +956,7 @@ $x)`
 </ol>
 </span>
 </svg>
+</svg></span>
 </template>
 </x-slot:trigger>
 </x-wirekit::collapsible>
@@ -954,6 +970,7 @@ $x)`
 <body>.
 <button
 <button>
+<circle
 <div
 <div>
 <img
@@ -963,6 +980,7 @@ $x)`
 <pre>
 <pre>,
 <pre><code>
+<rect
 <span
 <span>
 <svg
@@ -988,11 +1006,17 @@ $x)`
 =>
 >
 ></span>
+><svg
 >{{
 ?
 ?:
 ??
+@break
+@case('away')
+@case('busy')
+@case('offline')
 @class([
+@default
 @else
 @elseif($initials)
 @endforeach
@@ -1001,6 +1025,7 @@ $x)`
 @endif>+{{
 @endisset
 @endphp
+@endswitch
 @endunless
 @foreach($citationList
 @if
@@ -1046,6 +1071,7 @@ $x)`
 @php
 @props([
 @props.
+@switch($status)
 @tailwindcss/typography
 @unless($attributes->has('aria-label')
 @unless($attributes->has('role'))
@@ -1164,6 +1190,7 @@ Filtering
 Findable:
 Fixed
 Floating
+Fluent.
 Focusable,
 Font
 Footer
@@ -1337,6 +1364,7 @@ Tailwind
 Tailwind's
 Tailwind-typography
 Takes
+Teams
 Teleported
 Teleporting
 Text
@@ -1873,6 +1901,7 @@ aria-hidden="'.htmlspecialchars($resolvedAriaHidden,
 aria-hidden="..."
 aria-hidden="false".
 aria-hidden="true"
+aria-hidden="true">
 aria-hidden="true"><path
 aria-hidden="{{
 aria-label
@@ -1934,6 +1963,8 @@ avatar.
 avatars
 avatars.
 avoids
+away
+away,
 axe-core's
 axis
 axis,
@@ -1954,6 +1985,7 @@ bag
 bag.
 baked
 bakes
+bar,
 bare
 bare-word
 base
@@ -2069,6 +2101,8 @@ build
 built
 bump:
 bundle
+busy
+busy,
 but
 button
 button's
@@ -2309,10 +2343,14 @@ cursor
 cursor-pointer
 custom
 cut
+cx="5"
+cy="5"
 d="M12
 d="M13.5
+d="M5
 d="m19.5
 dark
+dashed
 data
 data-container
 data-density="{{
@@ -2340,6 +2378,7 @@ data-wk-popover
 data-wk-prose-skip
 data-wk-prose-skip>
 data-wk-sr-host
+data-wk-status-shape="{{
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
@@ -2438,13 +2477,18 @@ documented
 does
 does,
 does.
+does:
 doesn't
 done
 done.
 dot
+dot,
+dotted
 double
 double-ring
+doubled
 down
+draw;
 drawer
 drawn
 draws
@@ -2582,6 +2626,7 @@ fill
 fill,
 fill="currentColor"
 fill="none"
+fill="var(--color-wk-bg-elevated)"
 filled
 filled-background
 fills
@@ -2747,6 +2792,7 @@ h2,
 had
 had.
 half
+half-filled
 halves
 hand,
 hand-build
@@ -2782,6 +2828,7 @@ heading
 headings,
 height
 height,
+height="1.8"
 heights
 helper
 helpers.
@@ -2811,6 +2858,7 @@ hold
 holding
 holds
 hole
+hollow
 horizontal
 host
 hover
@@ -3236,6 +3284,9 @@ off-screen
 offender
 offering
 offers
+offline
+offline.
+offset
 offset:
 often
 ol,
@@ -3255,6 +3306,8 @@ one-time
 one.
 one:
 one;
+online
+online,
 only
 only):
 only.
@@ -3289,6 +3342,9 @@ out,
 out.
 outer
 outline
+outline's
+outline-offset:
+outlines,
 output
 output.
 outside
@@ -3376,6 +3432,7 @@ personalization
 phase,
 phrasing
 pick
+picture.
 pill
 pill,
 pills.
@@ -3478,6 +3535,8 @@ py-[var(--space-wk-sm,0.5rem)]"
 qualified:
 quiet
 quiet,
+r="4.25"
+r="5"
 racing
 radius
 radius,
@@ -3650,6 +3709,7 @@ runs
 runs,
 runtime
 runtime:
+rx="0.9"
 s',
 safe.
 safe:
@@ -3713,6 +3773,7 @@ shadow.
 shadows:
 shape
 shape,
+shapes
 share
 shared
 shift.
@@ -3780,6 +3841,7 @@ soft
 soft).
 soft-chip
 soft-tone
+solid
 some
 somebody
 something
@@ -3857,6 +3919,7 @@ strip
 strips
 stroke-linecap="round"
 stroke-linejoin="round"
+stroke-width="1.5"
 stroke-width="2"
 stroke="currentColor"
 stronger
@@ -4035,6 +4098,7 @@ tokenizers
 tokens
 tokens.
 told
+tone,
 too
 too,
 too.
@@ -4212,6 +4276,7 @@ w-6',
 w-72
 w-8',
 w-full
+w-full"
 w-max
 w-max',
 walk
@@ -4252,6 +4317,7 @@ width
 width)
 width).
 width,
+width="5.5"
 widths
 win.
 window
@@ -4340,7 +4406,9 @@ x-transition:leave-start="opacity-100
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 x-wk-findable.collapse="isOpen"
+x="2.25"
 xmlns="http://www.w3.org/2000/svg"
+y="4.1"
 yet.
 you
 yourself)
@@ -4353,9 +4421,13 @@ zoom,
 {!!
 {$duration};"
 {$gap}px
+{$gap}px",
 {$palette['bg']};
 {$palette['fg']};";
-{$ringColor}";
+{$ringColor}",
+{$ringColor},
+{$ringColor};
+{$ringWidth}px
 {$total}px
 {{
 {{--

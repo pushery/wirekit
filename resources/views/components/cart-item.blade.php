@@ -162,6 +162,11 @@
     // id, because `uniqid()` would differ between two renders of the same page.
     $itemKey = $attributes->get('id') ?: 'wk-cart-item-'.substr(md5((string) ($name ?? '')), 0, 8);
 
+    // The row's DOM id is that key the first time it appears on the page and `-2`, `-3` after, so
+    // a second cart with the same line (a mini cart beside the cart page) keeps its own ids. The
+    // events still carry the key itself: it names the line for the application.
+    $rowId = \Pushery\WireKit\Support\DomId::distinct($itemKey);
+
     // A caller's binding belongs on the quantity field and nowhere else, in every form it takes.
     // A fixed list of keys forwarded `wire:model` and `wire:model.live` and left `.blur` and
     // `.live.debounce…` on the row alone, where `blur` never arrives; and the row rendered the
@@ -215,7 +220,7 @@
 <li data-wk-prose-skip
     data-wk-cart-item
     data-wk-cart-item-layout="compact"
-    id="{{ $itemKey }}"
+    id="{{ $rowId }}"
     {{ $rowAttributes->class([$compactClasses]) }}
 >
     @if($hasMedia || $image)
@@ -302,7 +307,7 @@
 @else
 <li data-wk-prose-skip
     data-wk-cart-item
-    id="{{ $itemKey }}"
+    id="{{ $rowId }}"
     {{ $rowAttributes->class([$classes]) }}
 >
     @if($hasMedia || $image)

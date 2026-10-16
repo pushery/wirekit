@@ -147,9 +147,11 @@ $triggerIsButton
 $triggerName
 $unavailable
 &&
+'
 ''
 '')
 ''))
+'')));
 '')),
 ''));
 '');
@@ -294,6 +296,7 @@ $unavailable
 ("Help
 ($callerLabelledBy
 ($fill
+($helpName
 ($hint
 ($label
 ($optionLabel
@@ -911,12 +914,14 @@ box
 box,
 brand
 break;
+breaks
 browser
 bubble's
 bubbling,
 bug
 but
 button
+button's
 button's.
 button,
 button:
@@ -1135,6 +1140,7 @@ escapes.
 escaping
 evaluated
 event
+event's
 events
 every
 exactly
@@ -1303,6 +1309,7 @@ in.
 in_array('sr-only',
 in_array((string)
 included.
+indentation,
 indicator
 inert
 init
@@ -1374,6 +1381,7 @@ leave
 leaves
 leaving
 left
+legend
 legitimately
 length,
 let
@@ -1382,6 +1390,7 @@ light
 like
 line
 line.
+lines
 linked
 list
 list.
@@ -1603,6 +1612,7 @@ precedence:
 preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i',
 preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/',
 preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
+preg_replace('/\s+/u',
 preg_split('/\s+/',
 present
 presentational
@@ -1720,6 +1730,7 @@ server-side
 set
 sets
 settles
+several
 shadow.
 shape
 shape,
@@ -1836,6 +1847,7 @@ text-[color:var(--color-wk-text-muted)]',
 text-[color:var(--color-wk-text-subtle)]
 text-center
 text-level
+text:
 than
 that
 the

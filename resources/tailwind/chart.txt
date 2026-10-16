@@ -11,7 +11,7 @@ $adapterScripts
 $alpineComponent
 $attributes->except(['aria-label',
 $attributes->get('style',
-$attributes->has('aria-label'))
+$attributes->has('aria-label')
 $callerReplayable
 $callerStyle
 $chartAriaLabel
@@ -21,6 +21,8 @@ $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart',
 $chartAttributes->except(['data-replayable']);
 $chartAttributes->except(['data-wk-chart']);
 $chartAttributes->get('data-replayable');
+$chartIsNamedOrHidden
+$chartIsNamedOrHidden)
 $chartLibrary
 $defaultDisplay
 $defaultStyle
@@ -215,6 +217,7 @@ ENTIRE
 English
 Every
 Extract
+FILTER_VALIDATE_BOOLEAN);
 HTML5's
 In
 Inline
@@ -229,6 +232,7 @@ Monthly
 NAME
 NOT
 No
+Nor
 Nothing
 OUTSIDE
 OWN.
@@ -278,8 +282,10 @@ __('wirekit::Data
 `APP_DEBUG`,
 `[data-wk-chart]`
 `__()`
+`aria-hidden="true"`,
 `aria-label`
 `aria-label`,
+`aria-labelledby`
 `chart-mixed`
 `data-navigate-once`
 `data-replayable="true"`
@@ -345,6 +351,7 @@ against
 aim
 align-items:
 all,
+all.
 all:
 alone,
 already
@@ -358,6 +365,7 @@ announces
 announcing
 anonymous
 anonymously
+another
 any
 any)
 appears
@@ -526,6 +534,7 @@ data.
 dataset
 debug
 declarations
+decorative
 default
 default,
 defer
@@ -565,6 +574,7 @@ don't
 down.
 drawing
 drawn
+draws,
 drifts
 drop
 duplicate
@@ -610,7 +620,10 @@ false;`;
 fatal
 fetch
 figure
+filled($attributes->get('aria-labelledby'))
+filter_var($attributes->get('aria-hidden'),
 find
+fire
 fires
 firing
 first
@@ -781,6 +794,7 @@ n/a
 name
 name,
 name.
+named
 names
 naming
 navigates
@@ -936,6 +950,7 @@ runs
 same
 saved;
 say
+say:
 says
 scanned
 scanner
@@ -979,6 +994,7 @@ somewhere.
 source
 spaces
 spans,
+sparkline
 spelled
 sr-only
 src="{{
@@ -1010,6 +1026,7 @@ styles
 stylesheet
 styling
 subtree
+such
 summarizes
 supplies
 supply

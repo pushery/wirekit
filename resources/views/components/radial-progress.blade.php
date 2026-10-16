@@ -68,17 +68,17 @@
         $effectiveIntent = 'warning';
     }
 
-    // The exact map progress uses, so a dashboard reads the same in both shapes.
-    // info takes --color-wk-info-tone; neutral takes the muted text token for a low-emphasis
-    // ring. Full literal token per arm — the drift auditor
+    // The exact map progress uses, so a dashboard reads the same in both shapes. The fill is a
+    // graphic that carries the value, so every intent takes its text tone, which holds 3:1 on
+    // the page; neutral takes the muted text token for a low-emphasis ring. Full literal token per arm — the drift auditor
     // reads these statically and cannot follow an interpolated name.
     $fillToken = match ($effectiveIntent) {
-        'success' => 'var(--color-wk-success)',
-        'warning' => 'var(--color-wk-warning)',
-        'danger' => 'var(--color-wk-danger)',
+        'success' => 'var(--color-wk-success-text)',
+        'warning' => 'var(--color-wk-warning-text)',
+        'danger' => 'var(--color-wk-danger-text)',
         'neutral' => 'var(--color-wk-text-muted)',
-        'info' => 'var(--color-wk-info-tone)',
-        default => 'var(--color-wk-accent)', // primary + accent
+        'info' => 'var(--color-wk-info-text)',
+        default => 'var(--color-wk-accent-text)', // primary + accent
     };
 
     $sizeClass = match ($size) {
