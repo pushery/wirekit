@@ -69,6 +69,7 @@ $helpName
 $helpName])
 $helpText
 $hideLabel
+$hideLabel"
 $hint
 $hint))
 $id
@@ -906,6 +907,7 @@ assistive
 association
 assume
 asterisk
+asterisk:
 at
 at,
 attribute
@@ -1183,6 +1185,7 @@ does:
 dot
 drag-select
 drawer
+draws
 dropped
 duration-100"
 duration-75"
@@ -1235,6 +1238,7 @@ explanation
 explicit
 explicitly
 expression
+eye,
 factory,
 fade="…">`,
 failed.
@@ -1242,7 +1246,6 @@ failure
 falls
 false
 false)
-false)"
 false);
 false,
 false;
@@ -1781,6 +1784,7 @@ reaches
 read
 reader
 reader,
+reader.
 reading
 reads
 real

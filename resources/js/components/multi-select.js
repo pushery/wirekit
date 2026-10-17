@@ -898,8 +898,15 @@ export default function wirekitMultiSelect(config = {}) {
 
         /**
          * Backspace on empty filter removes the last selected value.
+         *
+         * Only a press that begins on the empty filter does: a Backspace held to delete the
+         * text repeats past its end, and every repeat would take a value with it.
          */
         onBackspace(event) {
+            if (event.repeat) {
+                return;
+            }
+
             if (event.target.value === '' && this.selected.length > 0) {
                 this.selected.pop();
             }

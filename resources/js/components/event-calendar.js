@@ -18,6 +18,20 @@ function parseDay(value) {
 }
 
 /**
+ * `value` as a calendar day, or `fallback` where it names none. An Invalid Date would throw in
+ * every key of the grid (`toISOString()`) and in the month's name (`Intl.DateTimeFormat`).
+ *
+ * @param {string|number|Date} value
+ * @param {Date} fallback
+ * @returns {Date}
+ */
+function dayOr(value, fallback) {
+    const day = parseDay(value);
+
+    return Number.isNaN(day.getTime()) ? fallback : day;
+}
+
+/**
  * WireKit Event Calendar Alpine component.
  *
  * A read-focused scheduling calendar with three views — month (a 7xN day grid
@@ -148,7 +162,7 @@ export default function wirekitEventCalendar(config = {}) {
         _stopServerSync: null,
         view: config.view || 'month',
         weekStartsOn: Number.isInteger(config.weekStartsOn) ? config.weekStartsOn : 1,
-        focusedDate: config.date ? parseDay(config.date) : new Date(),
+        focusedDate: config.date ? dayOr(config.date, new Date()) : new Date(),
         now: new Date(),
         _clock: null,
 
@@ -216,7 +230,7 @@ export default function wirekitEventCalendar(config = {}) {
             }
 
             if (config.date === undefined && attribute(DATE_ATTRIBUTE)) {
-                this.focusedDate = parseDay(attribute(DATE_ATTRIBUTE));
+                this.focusedDate = dayOr(attribute(DATE_ATTRIBUTE), this.focusedDate);
             }
 
             // What the server changes reaches the calendar, and what the reader did meanwhile
@@ -245,7 +259,7 @@ export default function wirekitEventCalendar(config = {}) {
                 }, VIEW_ATTRIBUTE),
                 observeServerValue(root, (date) => {
                     if (date) {
-                        this.focusedDate = parseDay(date);
+                        this.focusedDate = dayOr(date, this.focusedDate);
                     }
                 }, DATE_ATTRIBUTE),
             ];

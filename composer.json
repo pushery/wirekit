@@ -36,7 +36,6 @@
   "require-dev": {
     "bacon/bacon-qr-code": "^3.1",
     "blade-ui-kit/blade-heroicons": "^2.7",
-    "brianium/paratest": "<7.26.1",
     "codeat3/blade-phosphor-icons": "^2.4",
     "ergebnis/phpstan-rules": "2.14.0",
     "larastan/larastan": "3.13.0",

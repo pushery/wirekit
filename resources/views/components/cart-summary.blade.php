@@ -38,11 +38,26 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\NumericProp;
     use Pushery\WireKit\WireKit;
 
     // Blade hands `minor-units="false"` through as the STRING "false", which is truthy —
     // so `minor-units="false"` does not silently read amounts as cents.
     $minorUnits = BooleanProp::from($minorUnits, false);
+
+    // An empty string is no amount yet, the value of a field nobody has filled, and hides its row
+    // as null does rather than standing empty beside its label.
+    [$subtotal, $discount, $shipping, $tax, $total] = array_map(
+        static fn ($amount) => $amount === '' ? null : $amount,
+        [$subtotal, $discount, $shipping, $tax, $total],
+    );
+
+    // "Free" is a statement about money, so it is made only for a shipping cost that is a number
+    // and zero. A value that is no number goes on to `price`, which reports it while developing and
+    // leaves it out in production: read as a number it would be 0, and the summary would promise
+    // free shipping for "on request".
+    $shippingFigure = NumericProp::orNull($shipping);
+    $freeShipping = $shippingFigure !== null && (float) $shippingFigure === 0.0;
 
     // Clamped rather than trusted: an invalid level must never reach the tag, because
     // `<h9>` is not a heading to any reader and the failure is silent.
@@ -113,7 +128,7 @@
                 <span data-wk-cart-summary-shipping>
                     @if($shippingNote !== null)
                         {{ $shippingNote }}
-                    @elseif((float) $shipping === 0.0)
+                    @elseif($freeShipping)
                         {{ __('wirekit::Free') }}
                     @else
                         <x-wirekit::price :amount="$shipping" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" size="sm" />

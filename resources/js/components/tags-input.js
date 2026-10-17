@@ -346,8 +346,15 @@ export default function wirekitTagsInput(config = {}) {
 
         /**
          * Backspace on empty input removes the last tag.
+         *
+         * Only a press that begins on the empty field does: a Backspace held to delete the text
+         * repeats past its end, and every repeat would take a tag with it.
          */
         onBackspace(event) {
+            if (event.repeat) {
+                return;
+            }
+
             if (event.target.value === '' && this.tags.length > 0) {
                 const removed = this.tags.pop();
                 this._commit();

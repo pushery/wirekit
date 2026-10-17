@@ -17,7 +17,7 @@ $family
 $family));
 $file
 $fontConfig
-$fontConfig[$wkCategory]
+$fontConfig[$wkSlot]
 $fontConfig['mono']
 $fontConfig['sans']
 $fontConfig['serif']
@@ -67,14 +67,18 @@ $value
 $value)
 $version
 $warnMissing
-$wkCategory
+$wkAllowed
+$wkAllowed,
+$wkCategories
+$wkCategories[$wkSlot],
 $wkCategory)
-$wkCategory,
 $wkKey
 $wkKey)
 $wkKey,
 $wkKey;
 $wkNonce
+$wkSlot
+$wkSlot,
 &&
 ''
 '')
@@ -90,13 +94,14 @@ $wkNonce
 'overrides'
 'sans'
 'serif'
+'serif'],
 'size-adjust'
 'src'
 'ui-serif,
 'unsafe-inline'
 '{{
 (!
-($fontConfig[$wkCategory]
+($fontConfig[$wkSlot]
 ($fontConfig['fallbacks']
 ($fontConfig['mono']
 ($fontConfig['sans']
@@ -108,16 +113,17 @@ $wkNonce
 ($safeFamily
 ($spec['local']
 ($v):
+($wkCategories[$wkSlot]
 ('{{
 ((array)
 (?FontPreset
 (FontPreset
-(FontRegistry::get($wkKey)?->category
 (['sans'
 (`/wirekit/fonts/...`),
 (`Inter-Regular.woff2`,
 (array)
 (file_exists($published))
+(in_array(FontRegistry::get($wkKey)?->category,
 (null
 (preg_match("/src:\s*url\(['\"]?([^'\")]+\.woff2)['\"]?\)/",
 (silent
@@ -131,6 +137,7 @@ $wkNonce
 --font-wk-serif:
 --force
 --}}
+...array_keys(FontRegistry::category($wkCategory))];
 /*
 //
 1)
@@ -250,6 +257,11 @@ WireKit:
 WireKit::cspNonce().
 Without
 [
+['mono']];
+['sans'
+['sans',
+['serif'],
+[...$wkAllowed,
 [])
 []);
 [];
@@ -264,6 +276,7 @@ __DIR__.'/../../fonts/'.$preset->cssFile;
 `&#039;`
 `--font-wk-mono`
 `--font-wk-sans`
+`--font-wk-sans`,
 `--font-wk-serif`.
 `.mono`:
 `.serif`
@@ -277,6 +290,9 @@ __DIR__.'/../../fonts/'.$preset->cssFile;
 `composer
 `crossorigin`
 `dist/wirekit.css`
+`mono`
+`sans`
+`serif`
 `size-adjust`
 `src:
 `src`
@@ -295,7 +311,6 @@ action
 activated
 actually
 after
-against
 alive
 all,
 already
@@ -315,7 +330,6 @@ are
 argument
 array
 array_filter([
-array_keys(FontRegistry::category($wkCategory)),
 array_map(static
 array_values(array_filter(array_map(
 artisan
@@ -334,6 +348,7 @@ back
 baked
 bandwidth
 be
+be:
 because
 before
 being
@@ -345,7 +360,6 @@ block,
 block.
 body
 bool
-boot:
 box
 brace
 break
@@ -371,7 +385,6 @@ category
 category,
 category.
 changes
-checked
 choice
 choice:
 classic
@@ -522,6 +535,7 @@ head
 header
 header.
 here,
+here.
 here:
 however
 href="{{
@@ -564,6 +578,7 @@ keeps
 key
 key,
 key:
+kind
 last
 later
 layout
@@ -752,6 +767,7 @@ served
 server
 serving
 serving:
+set
 setup
 shape
 shift
@@ -790,6 +806,8 @@ suffix
 surface
 swap
 system
+take
+takes
 tells
 tenant
 text
@@ -823,6 +841,7 @@ trim((string)
 trip,
 trips
 true
+true))
 trusting
 turn
 two

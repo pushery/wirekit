@@ -9,8 +9,10 @@
 "4
 "4".
 "4,0".
+"4,5"
 "4.0"
 "4.2
+"4.50"
 "5
 "A".
 "AL",
@@ -155,8 +157,6 @@ $optimisticConfig
 $ownName
 $ownName);
 $palette
-$rating
-$rating;
 $ratingSeed
 $ratingValue
 $readonly
@@ -370,6 +370,7 @@ $wrapperClasses
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-xs)]',
 'rating'
+'rating');
 'rating',
 'rating-');
 'readonly'
@@ -408,6 +409,7 @@ $wrapperClasses
 'statusVariant',
 'surface'
 'surface',
+'testimonial',
 'text'
 'text-[color:var(--color-wk-danger-text)]',
 'text-[color:var(--color-wk-success-text)]',
@@ -425,6 +427,7 @@ $wrapperClasses
 'transparent',
 'true'
 'value'
+'value')
 'var(--color-wk-danger-text)',
 'var(--color-wk-success-text)',
 'var(--color-wk-text-muted)',
@@ -457,6 +460,7 @@ $wrapperClasses
 '{
 (!hovered
 ("4
+("4,5"
 ("CTO,
 ("Fast
 ("Help
@@ -468,7 +472,6 @@ $wrapperClasses
 ($logoAspect
 ($name)])
 ($optimistic
-($rating
 ($recolored)
 ($shape)
 ($size)
@@ -643,6 +646,7 @@ $wrapperClasses
 3a2
 3c1.74
 4
+4).
 4-1.79
 4-4s-1.79-4-4-4-4
 4-star
@@ -981,6 +985,7 @@ Outside
 Overlap
 Overlapping
 Override
+PHP
 POSITION,
 PRESENCE,
 Params:
@@ -1113,6 +1118,8 @@ Written
 \Pushery\WireKit\Support\Initials::from($author);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\NumericModel::number($attributes);
+\Pushery\WireKit\Support\NumericProp::orNullReported($rating,
+\Pushery\WireKit\Support\NumericProp::orNullReported($value,
 \Pushery\WireKit\Support\NumericProp::positive(
 \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max',
 \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
@@ -1331,6 +1338,7 @@ an
 ancestor
 ancestor,
 and
+and,
 annotate.
 announce
 announce-error
@@ -1681,6 +1689,7 @@ could
 counter.
 counterpart,
 counterpart:
+counts
 crc32-palette
 credibility
 crossed
@@ -1725,6 +1734,7 @@ data-wk-tooltip-surface="elevated"
 dead.
 debug
 decided
+decimal
 decision
 declaration
 declared,
@@ -1762,6 +1772,7 @@ deselected
 design
 designed
 deterministic
+develop
 developer
 developer's
 difference.
@@ -1808,6 +1819,7 @@ double-announce
 double-ring
 doubled
 down
+draw
 draw;
 drawer
 drawing
@@ -1954,6 +1966,7 @@ flex-wrap
 flight
 flight,
 flips
+float,
 floor
 floor($numericValue);
 flow.
@@ -2165,6 +2178,7 @@ inside;
 instead
 instead,
 int
+int,
 integers.
 intent's
 interact
@@ -2416,6 +2430,8 @@ null.
 null;
 null])
 number
+number,
+numeric
 object,
 object-cover"
 observeServerValue
@@ -2590,6 +2606,7 @@ press
 prod).
 produced
 product
+production,
 project
 prominent
 promises
@@ -2699,6 +2716,7 @@ repeat
 repeating
 replacement
 replaces
+reported
 reports
 request
 required
@@ -2920,6 +2938,7 @@ stop
 stop,
 stop:
 stops
+stores.
 str_contains((string)
 strategy:
 stray
@@ -3233,6 +3252,7 @@ wire:model.
 with
 with:
 without
+word
 word)
 words
 words;

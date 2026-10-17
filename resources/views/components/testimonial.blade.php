@@ -43,7 +43,9 @@
     // cannot be built from a runtime value.
     $wkLogoStyle = ($logoAspect ? 'aspect-ratio: '.e($logoAspect).'; ' : '').'min-width: var(--size-wk-xs);';
 
-    $ratingValue = ($rating === null || $rating === '') ? null : (float) $rating;
+    // A score that is no number is reported and shows no stars, rather than the number PHP reads
+    // from it ("4,5" would be 4).
+    $ratingValue = \Pushery\WireKit\Support\NumericProp::orNullReported($rating, 'testimonial', 'rating');
 
     // Derive initials from the author name so an avatar-less testimonial still
     // shows a person, not a blank disc: "Ada Lovelace" -> "AL", "Ada" -> "A".

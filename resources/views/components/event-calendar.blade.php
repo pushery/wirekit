@@ -70,6 +70,11 @@
 
     $view = WireKit::validateProp('event-calendar', 'view', $view, ['month', 'week', 'agenda']);
 
+    // The day the calendar opens on, read as the instant it names (Support\Moment) and written as a
+    // calendar day. A date object of any class would print as "Y-m-d H:i:s", a form the ECMAScript
+    // spec does not promise to parse, and a string that names no date is reported and opens on today.
+    $openDay = \Pushery\WireKit\Support\Moment::of($date, component: 'event-calendar', prop: 'date')?->format('Y-m-d');
+
     // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
     // `day-detail="false"` would otherwise switch the detail ON. Normalized the way every
     // other boolean prop here is.
@@ -232,7 +237,7 @@
     data-wk-events="{{ \Pushery\WireKit\Support\AlpinePayload::json($eventsArr) }}"
     data-wk-day-markers="{{ \Pushery\WireKit\Support\AlpinePayload::json($markersArr) }}"
     data-wk-view="{{ $view }}"
-    @if($date) data-wk-date="{{ $date }}" @endif
+    @if($openDay !== null) data-wk-date="{{ $openDay }}" @endif
     x-data="wirekitEventCalendar({ weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusTexts: {{ $eventCalendarFilterStatus }}, moreNames: {{ $eventCalendarMoreNames }}, moreWords: {{ $eventCalendarMoreWords }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }}, tipDelayHide: {{ (int) config('wirekit.components.tooltip.delay-hide', 100) }} })"
     @unless($attributes->has('role')) role="group" @endunless
     aria-label="{{ $ariaLabel }}"

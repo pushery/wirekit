@@ -1885,6 +1885,12 @@
             "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::shimmer duration=\"3s\">Deliberating…</x-wirekit::shimmer>\n    <x-wirekit::shimmer duration=\"1s\">Working fast…</x-wirekit::shimmer>\n</x-wirekit::stack>"
         }
     ],
+    "shortcuts": [
+        {
+            "title": "Shortcuts on a page",
+            "code": "{{-- In the layout, once --}}\n<x-wirekit::shortcuts />\n\n{{-- On the page --}}\n<x-wirekit::input label=\"Search\" name=\"q\" x-wk-shortcut.focus=\"/\" />\n<x-wirekit::button x-wk-shortcut=\"cmd+s\" wire:click=\"save\">Save</x-wirekit::button>\n<a href=\"/orders\" x-wk-shortcut=\"g o\">Orders</a>\n<x-wirekit::shortcuts.trigger intent=\"neutral\" surface=\"outline\" />"
+        }
+    ],
     "sidebar": [
         {
             "title": "Sidebar with Groups",
@@ -2429,6 +2435,20 @@
         {
             "title": "Tour Setup",
             "code": "<div data-tour-demo=\"header\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Dashboard</div>\n<div data-tour-demo=\"create\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">+ Create</div>\n<div data-tour-demo=\"settings\" style=\"background: var(--color-wk-bg-muted); padding: 0.5rem 1.25rem; border-radius: var(--radius-wk-sm); color: var(--color-wk-text-muted); font-size: 0.875rem;\">Settings</div>\n<x-wirekit::button x-on:click=\"$dispatch('wirekit-tour-start-onboarding')\" intent=\"neutral\" surface=\"outline\" size=\"sm\">Start Tour</x-wirekit::button>\n<x-wirekit::tour name=\"onboarding\">\n<x-wirekit::tour.step :index=\"0\" target=\"[data-tour-demo='header']\" placement=\"bottom\">\n<x-slot:title>Welcome</x-slot:title>\nThis is the dashboard. Here you can manage all your projects.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"1\" target=\"[data-tour-demo='create']\" placement=\"bottom-start\">\n<x-slot:title>Create a Project</x-slot:title>\nClick here to create your first project.\n</x-wirekit::tour.step>\n<x-wirekit::tour.step :index=\"2\" target=\"[data-tour-demo='settings']\" placement=\"bottom-end\">\n<x-slot:title>Settings</x-slot:title>\nCustomize your workspace in the settings panel.\n</x-wirekit::tour.step>\n</x-wirekit::tour>"
+        }
+    ],
+    "translatable-input": [
+        {
+            "title": "Three languages",
+            "code": "<x-wirekit::translatable-input\n    label=\"Product name\"\n    :locales=\"['de' => 'Deutsch', 'en' => 'English', 'fr' => 'Français']\"\n    wire:model=\"name\"\n/>"
+        },
+        {
+            "title": "Nine languages, one at a time",
+            "code": "<x-wirekit::translatable-input\n    style=\"max-width: 36rem;\"\n    label=\"Category\"\n    :locales=\"['de' => 'Deutsch', 'en' => 'English', 'fr' => 'Français', 'it' => 'Italiano', 'es' => 'Español', 'nl' => 'Nederlands', 'pl' => 'Polski', 'sv' => 'Svenska', 'da' => 'Dansk']\"\n    :value=\"['de' => 'Schreibwaren', 'en' => 'Stationery', 'fr' => 'Papeterie', 'nl' => 'Kantoorartikelen']\"\n/>"
+        },
+        {
+            "title": "Error state",
+            "code": "<x-wirekit::translatable-input\n    style=\"max-width: 28rem;\"\n    label=\"Product name\"\n    :locales=\"['de' => 'Deutsch', 'en' => 'English', 'fr' => 'Français']\"\n    :value=\"['de' => '', 'en' => '', 'fr' => '']\"\n    error=\"Give the name in at least one language.\"\n    required\n/>"
         }
     ],
     "tree-view": [

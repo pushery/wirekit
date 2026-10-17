@@ -231,6 +231,12 @@
     // Fallback to star if icon name is unknown
     $shape = $iconShapes[$icon] ?? $iconShapes['star'];
 
+    // A value is a number as PHP reads one: an int, a float, or a numeric string such as the "4.50" a
+    // decimal cast stores. Read as a number, "4,5" would draw 4 stars and a word none, so anything
+    // else is reported while you develop and, in production, counts as no rating rather than a wrong
+    // one.
+    $value = \Pushery\WireKit\Support\NumericProp::orNullReported($value, 'rating', 'value') ?? 0;
+
     // Support fractional values for readonly display (e.g. 3.78 average).
     // Interactive mode always clamps to integers.
     $numericValue = max(0, min((float) $value, (float) $max));

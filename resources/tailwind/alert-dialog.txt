@@ -144,6 +144,7 @@ $helpName
 $helpName])
 $helpText
 $hideLabel
+$hideLabel"
 $hint
 $hint))
 $href
@@ -989,7 +990,7 @@ $wrapLabel
 :max
 :remaining,
 :remaining.
-:required="$required"
+:required="$required
 :text="$clearText"
 :text="$helpText"
 :user-invalid
@@ -1824,6 +1825,7 @@ __('wirekit::To
 `prop="false"`
 `px`
 `rejected`,
+`required`
 `reserve-message`
 `resources/views/**/*.blade.php`
 `role="link"`
@@ -2084,6 +2086,7 @@ assertion
 assistive
 assistive,
 association
+asterisk:
 at
 at,
 attaches
@@ -2842,6 +2845,7 @@ explicitly
 expression
 expressions.
 extra
+eye,
 factory
 factory,
 fade="…">`,
@@ -3921,6 +3925,7 @@ read-only
 readable
 reader
 reader,
+reader.
 reader:
 readers
 readers.

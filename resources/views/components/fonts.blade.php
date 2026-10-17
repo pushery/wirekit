@@ -29,19 +29,30 @@
 
     $fontConfig = config('wirekit.fonts', []);
 
-    // A family named on this call wins over the configured one for this page only. The key is
-    // checked against its category, as the config is at boot: a typo is reported where the
-    // developer is, and in production the page keeps the configured family.
-    foreach (['sans' => $sans, 'serif' => $serif, 'mono' => $mono] as $wkCategory => $wkKey) {
+    // A family named on this call wins over the configured one for this page only. A typo or a
+    // family of the wrong kind is reported where the developer is, and in production the page keeps
+    // the configured family.
+    //
+    // `sans` is the body font, `--font-wk-sans`, which the text of every component reads, so it
+    // takes a serif family as well, as the configured one may be: a shop whose text is set in a
+    // serif names it here. `serif` and `mono` take their own category.
+    $wkCategories = ['sans' => ['sans', 'serif'], 'serif' => ['serif'], 'mono' => ['mono']];
+
+    foreach (['sans' => $sans, 'serif' => $serif, 'mono' => $mono] as $wkSlot => $wkKey) {
         if (! filled($wkKey)) {
             continue;
         }
 
-        // The fallback is the configured family, so a key that names nothing changes nothing.
-        $wkKey = \Pushery\WireKit\Support\StrictnessGate::enforce('fonts', $wkCategory, (string) $wkKey, array_keys(FontRegistry::category($wkCategory)), (string) ($fontConfig[$wkCategory] ?? ''));
+        $wkAllowed = [];
+        foreach ($wkCategories[$wkSlot] as $wkCategory) {
+            $wkAllowed = [...$wkAllowed, ...array_keys(FontRegistry::category($wkCategory))];
+        }
 
-        if (FontRegistry::get($wkKey)?->category === $wkCategory) {
-            $fontConfig[$wkCategory] = $wkKey;
+        // The fallback is the configured family, so a key that names nothing changes nothing.
+        $wkKey = \Pushery\WireKit\Support\StrictnessGate::enforce('fonts', $wkSlot, (string) $wkKey, $wkAllowed, (string) ($fontConfig[$wkSlot] ?? ''));
+
+        if (in_array(FontRegistry::get($wkKey)?->category, $wkCategories[$wkSlot], true)) {
+            $fontConfig[$wkSlot] = $wkKey;
         }
     }
 

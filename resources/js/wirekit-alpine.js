@@ -43,6 +43,7 @@ import { registerCounterDirective } from './utils/counter.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
+import { registerShortcutDirective } from './utils/shortcuts.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
@@ -59,6 +60,7 @@ import wirekitSubmenu from './components/submenu.js';
 import wirekitTooltip from './components/tooltip.js';
 import wirekitModal from './components/modal.js';
 import wirekitModalTrigger from './components/modal-trigger.js';
+import wirekitShortcuts from './components/shortcuts.js';
 import wirekitDrawer from './components/drawer.js';
 import wirekitToast from './components/toast.js';
 import wirekitTreeView from './components/tree-view.js';
@@ -112,6 +114,7 @@ import wirekitCombobox from './components/combobox.js';
 import wirekitDismissible from './components/dismissible.js';
 import wirekitRating from './components/rating.js';
 import wirekitStrengthMeter from './components/strength-meter.js';
+import wirekitTranslatableInput from './components/translatable-input.js';
 import wirekitReaction from './components/reaction.js';
 import wirekitRangeSlider from './components/range-slider.js';
 import wirekitPopover from './components/popover.js';
@@ -258,6 +261,8 @@ if (hostAlpine) {
     registerUnsavedDirective(target);
     // A navigation Livewire keeps across a visit marks the page it arrived at. See utils/current.js.
     registerCurrentDirective(target);
+    // Keyboard shortcuts on the elements they act on, by area. See utils/shortcuts.js.
+    registerShortcutDirective(target);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(target);
     // A fitted text whose words a script writes keeps its copies in step. See utils/fit-text.js.
@@ -282,6 +287,7 @@ if (hostAlpine) {
     target.data('wirekitTooltip', wirekitTooltip);
     target.data('wirekitModal', wirekitModal);
     target.data('wirekitModalTrigger', wirekitModalTrigger);
+    target.data('wirekitShortcuts', wirekitShortcuts);
     target.data('wirekitDrawer', wirekitDrawer);
     target.data('wirekitToast', wirekitToast);
     target.data('wirekitTreeView', wirekitTreeView);
@@ -333,6 +339,7 @@ if (hostAlpine) {
     target.data('wirekitMultiSelect', wirekitMultiSelect);
     target.data('wirekitRating', wirekitRating);
     target.data('wirekitStrengthMeter', wirekitStrengthMeter);
+    target.data('wirekitTranslatableInput', wirekitTranslatableInput);
     target.data('wirekitReaction', wirekitReaction);
     target.data('wirekitCombobox', wirekitCombobox);
     target.data('wirekitDismissible', wirekitDismissible);

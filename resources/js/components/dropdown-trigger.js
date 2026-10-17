@@ -25,14 +25,22 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  */
 export default function wirekitDropdownTrigger(config = {}) {
     return {
+        // Puts the trigger's ARIA back after a Livewire morph takes it off; released in destroy().
+        _stopTriggerAria: null,
+
         init() {
-            applyTriggerAria(this.$el, this.$watch.bind(this), {
+            this._stopTriggerAria = applyTriggerAria(this.$el, this.$watch.bind(this), {
                 haspopup: 'menu',
                 controls: this.$wkAncestorData('[data-wk-panel-id]', 'wkPanelId') || null,
                 labelFallback: config.labelFallback || null,
                 missingTriggerWarning: '[wirekit] dropdown.trigger: slot has no focusable element (button/link). '
                     + 'Keyboard users cannot open the dropdown. Wrap the trigger content in a <button>.',
             });
+        },
+
+        destroy() {
+            this._stopTriggerAria?.();
+            this._stopTriggerAria = null;
         },
     };
 }

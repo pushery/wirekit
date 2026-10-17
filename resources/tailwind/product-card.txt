@@ -7,12 +7,16 @@
 "+12%"
 "1/1",
 "12%+"
+"19,99"
+"19.99"
 "4
 "4".
 "4,0".
+"4,5"
 "4.0"
 "4.2
 "4.5
+"4.50"
 "4/3",
 "Add
 "Average
@@ -136,6 +140,7 @@ $cleaned
 $cleaned);
 $clearable
 $compareAt
+$compareAt;
 $computedRel
 $content
 $content))
@@ -148,6 +153,7 @@ $delayHide
 $delayShow
 $delta
 $delta,
+$delta;
 $deltaClasses
 $deltaIntent
 $depthStyle
@@ -177,6 +183,11 @@ $fetchpriority
 $fetchpriority,
 $fetchpriorityValue
 $fieldAutofocus
+$figure
+$figure($amount,
+$figure($base,
+$figure($delta,
+$figure($unitPrice,
 $figureClasses
 $finalRel
 $fit,
@@ -335,8 +346,8 @@ $precision;
 $price
 $price;
 $priceNote
-$rating
-$rating;
+$prop):
+$prop,
 $ratingSeed
 $ratingValue
 $ratio
@@ -441,6 +452,7 @@ $unitPrice;
 $validated
 $value
 $value,
+$value;
 $variantClasses
 $variantClasses,
 $width
@@ -531,6 +543,7 @@ $wrapperClasses
 'after'
 'alt'
 'amount'
+'amount');
 'announce-errors']);
 'announceError'
 'args'
@@ -546,6 +559,7 @@ $wrapperClasses
 'availability'
 'availability',
 'base'
+'base');
 'base',
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]',
@@ -616,6 +630,7 @@ $wrapperClasses
 'delayHide'
 'delayShow'
 'delta'
+'delta');
 'deltaFormat'
 'describes'
 'description'
@@ -803,12 +818,14 @@ $wrapperClasses
 'primary'
 'primary'),
 'primary',
+'product-card',
 'px-[calc(var(--padding-wk-x-lg)*1.25)]',
 'px-[var(--padding-wk-x-lg)]',
 'px-[var(--padding-wk-x-md)]',
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-xs)]',
 'rating'
+'rating');
 'rating',
 'rating-');
 'ratio'
@@ -887,7 +904,9 @@ $wrapperClasses
 'type'
 'unitMeasure'
 'unitPrice'
+'unitPrice');
 'value'
+'value')
 'var(--size-wk-lg)',
 'var(--size-wk-md)',
 'var(--size-wk-md-compact)',
@@ -934,6 +953,7 @@ $wrapperClasses
 ("16/9",
 ("4
 ("4")
+("4,5"
 ("Blue,
 ("Fast
 ("Help
@@ -966,7 +986,6 @@ $wrapperClasses
 ($optimistic
 ($orientation
 ($precision
-($rating
 ($recolored)
 ($relAttr
 ($resolvedAriaHidden
@@ -981,6 +1000,7 @@ $wrapperClasses
 ($svgHtml
 ($triggerIsButton)
 ($unitPrice
+($value
 ($value):
 ($wrapLabel
 ('xs').
@@ -1061,13 +1081,16 @@ $wrapperClasses
 (implicit
 (inert
 (int)
+(is_int($value)
 (is_string($key)
+(is_string($value)
 (it
 (its
 (less).
 (letterbox,
 (logical
 (matches
+(mixed
 (modern
 (more),
 (none)
@@ -1156,6 +1179,9 @@ $wrapperClasses
 0-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17
 0-2.584ZM12
 0-20z',
+0.
+0.00
+0.00,
 0.045
 0.0–0.99
 0.875
@@ -1204,7 +1230,9 @@ $wrapperClasses
 17.77l-6.18
 18
 18a.75.75
+19.00
 19.58
+19.99',
 1;
 1px
 2
@@ -1272,6 +1300,7 @@ $wrapperClasses
 3rem,
 4
 4%,
+4).
 4,
 4-star
 4.1.2)
@@ -1461,6 +1490,7 @@ $wrapperClasses
 @for($i
 @foreach($pictureSources
 @if
+@if($amount
 @if($announceBusy)
 @if($announceError)
 @if($callerDescribedBy
@@ -2079,6 +2109,8 @@ Written
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\ListProp::renumbered($sources);
 \Pushery\WireKit\Support\NumericModel::number($attributes);
+\Pushery\WireKit\Support\NumericProp::orNullReported($rating,
+\Pushery\WireKit\Support\NumericProp::orNullReported($value,
 \Pushery\WireKit\Support\NumericProp::positive(
 \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max',
 \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
@@ -2203,6 +2235,7 @@ __toString
 `alt=""`
 `alt`
 `alt`,
+`amount`,
 `anywhere`
 `args`
 `aria-busy="true"`
@@ -2347,6 +2380,7 @@ __toString
 `position:
 `priceNote`
 `price`
+`price`,
 `prop="false"`
 `px`
 `rating`,
@@ -2515,6 +2549,7 @@ ambiguity
 among
 amount
 amount's
+amount,
 amount:
 amounts
 amounts.
@@ -2546,6 +2581,7 @@ answer,
 answers
 anticipate
 any
+anything
 anyway.
 anywhere
 anywhere,
@@ -3128,6 +3164,7 @@ could
 count
 counterpart,
 counterpart:
+counts
 cover:
 coverage
 covered
@@ -3209,6 +3246,7 @@ debug
 decide
 decided
 decided,
+decimal
 decimals
 decimals,
 decision
@@ -3277,6 +3315,7 @@ designed
 desk
 desktop
 dev
+develop
 developer
 developer's
 developer-side
@@ -3326,6 +3365,7 @@ dist/wirekit.css
 div
 div,
 div:
+division
 do
 do,
 do:
@@ -3551,6 +3591,7 @@ filled($source['srcset']
 filled($stackBelow)
 filled()
 filled-background
+filled.
 fills
 filter
 filter_var($maxPrecision,
@@ -3600,6 +3641,7 @@ flight,
 flight.
 flip
 flips
+float,
 floating
 floor
 floor's
@@ -3715,6 +3757,7 @@ genuinely
 gesture
 get
 get_debug_type($maxPrecision),
+get_debug_type($value),
 gets
 ghost()
 give
@@ -3783,6 +3826,7 @@ hard-disabled
 hardcoded
 harder
 has
+has.
 hasActionForComponent()
 hatch
 have
@@ -3961,6 +4005,7 @@ instead.
 instead:
 instead;
 int
+int,
 int.
 intact
 integers.
@@ -3992,6 +4037,7 @@ into
 intrinsic
 introduced
 introduces
+int|float|string|false|null
 invalid
 invented,
 inverted
@@ -4006,8 +4052,12 @@ is.
 is:
 is_array($source)
 is_array($sources)
+is_float($value)
+is_numeric(trim($value))))
 is_scalar($maxPrecision)
+is_scalar($value)
 is_string($callerLabelledBy)
+is_string($value)
 isn't
 isolate`
 isset($after)
@@ -4421,6 +4471,7 @@ number,
 number.
 numbers
 numbers.
+numeric
 object,
 object-fit
 object-fit)
@@ -4497,6 +4548,7 @@ ours
 out
 out,
 out.
+out:
 outer
 outermost
 outline
@@ -4713,6 +4765,7 @@ product
 product.
 product:
 product;
+production,
 products
 prohibits
 project
@@ -4881,6 +4934,7 @@ replaces
 replay-button
 repo's
 reported
+reported,
 reports
 reports,
 repository.
@@ -4905,6 +4959,7 @@ resolves
 respect
 responsive
 rest
+rest.
 rested
 restored
 rests
@@ -5253,6 +5308,7 @@ stop,
 stop:
 stops
 storage/logs/laravel.log.
+stores.
 story
 story:
 str_contains($relAttr,
@@ -5273,6 +5329,7 @@ strike,
 striking
 string
 string,
+string:
 stringly
 stringly-false
 strings
@@ -5470,6 +5527,7 @@ through
 through,
 throw
 throw,
+throw.
 throwing
 throws
 throws.
@@ -5556,6 +5614,7 @@ trigger's
 trigger,
 trim($describedBy.'
 trim($relAttr.'
+trim($value)
 trim('flex
 trim('text-[length:var(--text-wk-sm)]
 trim(($error
@@ -5913,6 +5972,7 @@ xl
 xmlns="http://www.w3.org/2000/svg"
 yet.
 yields
+you
 z-10
 z-10';
 z-index

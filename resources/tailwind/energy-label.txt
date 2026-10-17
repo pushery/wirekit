@@ -47,7 +47,8 @@ $relAttr
 $relAttr;
 $rootClasses
 $scale
-$scale)),
+$scale);
+$scaleKey
 $scales
 $scales[$scale]
 $scope);
@@ -75,7 +76,9 @@ $variantClasses,
 '',
 '';
 ',
+'-'],
 '.WireKit::resolveClasses('energy-label',
+'/[\x{2010}-\x{2015}\x{2212}\x{FE58}\x{FE63}\x{FF0D}]/u'],
 '<span
 '<svg
 'A',
@@ -181,6 +184,7 @@ $variantClasses,
 ($relAttr
 ($size
 (1
+(A–G)
 (Support\UrlProp).
 (WireKit::validateProp('energy-label',
 (WireKit::validateProp('link',
@@ -320,6 +324,7 @@ UNBOUND
 URL
 URL,
 Unconditional,
+Unicode,
 Where
 Whether
 Whitespace
@@ -329,6 +334,7 @@ WireKit::validateProp('energy-label',
 WireKit::validateProp('link',
 Without
 [
+['',
 ['A',
 ['A+',
 ['A++',
@@ -411,6 +417,7 @@ all
 all:
 alone,
 already
+also
 always
 an
 anchor
@@ -430,6 +437,7 @@ array_flip($classes)[$efficiency]
 array_keys($scales),
 arrow
 arrow,
+arrow.
 arrow:
 as
 as,
@@ -518,6 +526,7 @@ costs
 could
 d="M13.5
 d="M3
+dash
 data
 data,
 data-wk-direction="{{
@@ -559,6 +568,7 @@ email
 emits
 emitted
 empty
+en
 ends.
 energy
 energy-label,
@@ -626,11 +636,13 @@ hardcoded
 has
 have
 here
+here,
 hint
 hint)
 hover
 how
 href="{{
+hyphen
 icon
 if
 image
@@ -689,6 +701,7 @@ list:
 live
 lives
 longer
+looks
 loss
 makes
 map
@@ -774,12 +787,14 @@ points.
 points="0,0
 preferences
 preflight
+preg_replace(['/\s+/u',
 prescribe.
 preserveAspectRatio="none"
 preset.
 price
 price,
 primitive.
+prints
 prod).
 product
 product's
@@ -884,6 +899,7 @@ stroke-linejoin="round"
 stroke-width="1"
 stroke-width="2"
 stroke="currentColor"
+strtoupper($scaleKey),
 strtoupper(trim((string)
 stylesheet
 sub-component
@@ -914,6 +930,7 @@ that
 the
 their
 theirs
+them
 then
 there
 therefore

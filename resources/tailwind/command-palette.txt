@@ -157,6 +157,7 @@ $helpName
 $helpName])
 $helpText
 $hideLabel
+$hideLabel"
 $hint
 $hint))
 $hotkey
@@ -1036,7 +1037,7 @@ $wrapLabel
 :placeholder="filled($placeholder)
 :remaining,
 :remaining.
-:required="$required"
+:required="$required
 :text="$clearText"
 :text="$helpText"
 :user-invalid
@@ -1845,6 +1846,7 @@ __('wirekit::Search…')"
 `prop="false"`
 `px`
 `rejected`,
+`required`
 `reserve-message`
 `resolveClasses('kbd',
 `resources/views/**/*.blade.php`
@@ -2099,6 +2101,7 @@ assertion
 assistive
 assistive,
 association
+asterisk:
 at
 at,
 attribute
@@ -2826,6 +2829,7 @@ explicitly
 expression
 expressions.
 extra
+eye,
 factory
 factory).
 factory,
@@ -3962,6 +3966,7 @@ readable
 reader
 reader's
 reader,
+reader.
 reader:
 readers
 readers.

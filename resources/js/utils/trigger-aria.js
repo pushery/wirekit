@@ -36,6 +36,8 @@
  * @param {?string}  [options.labelFallback]  accessible name to apply ONLY when
  *        the trigger has none of its own. An icon-only trigger is otherwise
  *        announced as an unnamed button.
+ * @returns {Function} stops putting the attributes back; the caller keeps it under a `_` name and
+ *        calls it from `destroy()`
  */
 export function applyTriggerAria(el, watch, options = {}) {
     const interactive = el ? el.querySelector('button, [role=button], a') : null;
@@ -46,34 +48,59 @@ export function applyTriggerAria(el, watch, options = {}) {
             console.warn(options.missingTriggerWarning);
         }
 
-        return;
-    }
-
-    interactive.setAttribute('aria-haspopup', options.haspopup || 'dialog');
-    interactive.setAttribute('aria-expanded', 'false');
-
-    if (options.controls) {
-        interactive.setAttribute('aria-controls', options.controls);
+        return () => {};
     }
 
     // Only when the trigger has NO name of its own. `textContent` is the right
     // test rather than visible text: it includes sr-only nodes, which are
     // exactly how a well-built icon-only control is usually named.
-    if (options.labelFallback) {
-        const named = interactive.hasAttribute('aria-label')
-            || interactive.hasAttribute('aria-labelledby')
-            || (interactive.textContent || '').trim().length > 0;
+    const unnamed = () => ! interactive.hasAttribute('aria-labelledby') && (interactive.textContent || '').trim().length === 0;
+    const needsLabel = Boolean(options.labelFallback) && ! interactive.hasAttribute('aria-label') && unnamed();
+    let expanded = 'false';
 
-        if (! named) {
-            interactive.setAttribute('aria-label', options.labelFallback);
+    // What the trigger carries, written again whenever something took it off.
+    const wanted = () => {
+        const attributes = { 'aria-haspopup': options.haspopup || 'dialog', 'aria-expanded': expanded };
+
+        if (options.controls) {
+            attributes['aria-controls'] = options.controls;
         }
-    }
+
+        if (needsLabel && unnamed()) {
+            attributes['aria-label'] = options.labelFallback;
+        }
+
+        return attributes;
+    };
+
+    const apply = () => {
+        for (const [name, value] of Object.entries(wanted())) {
+            if (interactive.getAttribute(name) !== value) {
+                interactive.setAttribute(name, value);
+            }
+        }
+    };
+
+    apply();
 
     if (typeof watch === 'function') {
         watch('isOpen', (value) => {
-            interactive.setAttribute('aria-expanded', value ? 'true' : 'false');
+            expanded = value ? 'true' : 'false';
+            apply();
         });
     }
+
+    // The trigger is the caller's markup, so no binding can hold these: a Livewire morph compares
+    // the page with a clone of the new markup that Alpine builds without this script, and takes
+    // off every attribute the clone lacks. The observer puts them back in the same task.
+    if (typeof MutationObserver === 'undefined') {
+        return () => {};
+    }
+
+    const observer = new MutationObserver(apply);
+    observer.observe(interactive, { attributes: true, attributeFilter: ['aria-haspopup', 'aria-expanded', 'aria-controls', 'aria-label'] });
+
+    return () => observer.disconnect();
 }
 
 export default applyTriggerAria;

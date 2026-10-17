@@ -53,6 +53,11 @@ use JsonException;
  * an attribute value. Replaced rather than removed, so two words a stray control
  * character separated do not quietly become one.
  *
+ * Invalid UTF-8 becomes U+FFFD the same way: text from a Latin-1 column, or from
+ * a `substr()` that cut a character in half. Blade's `{{ }}` writes the same
+ * character for it, and so does `structured-data`; refused, it would end the
+ * page the same text renders on.
+ *
  * **The quotes are HTML's problem, not JavaScript's.** The result contains `"`,
  * which would end the attribute it sits in — so it MUST be echoed through
  * Blade's `{{ }}`, which escapes it to `&quot;`. The browser decodes that back
@@ -128,7 +133,7 @@ final class AlpinePayload
     {
         $literal = json_encode(
             $value,
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE
         );
 
         // Most payloads carry neither an escape nor an ampersand, and then there is nothing to
@@ -193,7 +198,7 @@ final class AlpinePayload
     {
         $json = json_encode(
             $value,
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE
         );
 
         if (! str_contains($json, '&')) {

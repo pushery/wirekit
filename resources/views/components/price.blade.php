@@ -46,8 +46,39 @@
 
     $locale = $locale ?? app()->getLocale();
 
+    // A figure is a number as PHP reads one: an int, a float, or a numeric string such as the
+    // "19.99" a decimal cast stores. Anything else cannot be the price. Read as a number, "19,99"
+    // would show 19.00 and a word 0.00, and with minor units the division would throw. A wrong
+    // price is worse than none, so such a value is reported while you develop and, in production,
+    // the part it stands for is left out: the whole price for `amount`, only itself for the rest.
+    $figure = static function (mixed $value, string $prop): int|float|string|false|null {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_int($value) || is_float($value) || (is_string($value) && is_numeric(trim($value)))) {
+            return is_string($value) ? trim($value) : $value;
+        }
+
+        StrictnessGate::reject('price', $prop, is_scalar($value) ? (string) $value : get_debug_type($value), 'a number such as 19.99', '');
+
+        return false;
+    };
+
+    // An amount that is refused leaves the whole price out. So does no amount at all, null or an
+    // empty string: a price on request has no number, and 0.00 would say it costs nothing. That one
+    // is not reported, because a missing price is a state a catalog has. A 0 stays a 0.
+    $amount = $figure($amount, 'amount');
+    $amount = $amount === false ? null : $amount;
+    $base = $figure($base, 'base');
+    $base = $base === false ? null : $base;
+    $unitPrice = $figure($unitPrice, 'unitPrice');
+    $unitPrice = $unitPrice === false ? null : $unitPrice;
+    $delta = $figure($delta, 'delta');
+    $delta = $delta === false ? null : $delta;
+
     // Convert minor units (cents) to major units
-    $displayAmount = $minorUnits ? $amount / 100 : $amount;
+    $displayAmount = $minorUnits && $amount !== null ? $amount / 100 : $amount;
     $displayBase = ($base !== null && $minorUnits) ? $base / 100 : $base;
     $displayUnitPrice = ($unitPrice !== null && $minorUnits) ? $unitPrice / 100 : $unitPrice;
 
@@ -178,6 +209,7 @@
     };
 @endphp
 
+@if($amount !== null)
 <span data-wk-sr-host {{ $attributes->class([$baseClasses]) }}>
     @if($fitted !== null)
         {{ $fitted }}
@@ -244,3 +276,4 @@
         </span>
     @endif
 </span>
+@endif

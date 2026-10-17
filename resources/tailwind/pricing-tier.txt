@@ -4,6 +4,8 @@
 "(€8.99
 "+12%"
 "12%+"
+"19,99"
+"19.99"
 "Build
 "Failed"
 "Hoverable"
@@ -65,6 +67,7 @@ $delayHide
 $delayShow
 $delta
 $delta,
+$delta;
 $deltaClasses
 $deltaIntent
 $depthStyle
@@ -88,6 +91,11 @@ $featuredClasses
 $featuredClasses,
 $featuredLabel
 $features
+$figure
+$figure($amount,
+$figure($base,
+$figure($delta,
+$figure($unitPrice,
 $fitFloor
 $fitParts
 $fitParts)),
@@ -106,6 +114,7 @@ $iconClasses
 $intent,
 $intentClasses
 $intentClasses,
+$intervalAmount
 $intervalAmount)
 $intervalKey
 $intervalKey)
@@ -150,9 +159,12 @@ $placeholderAttributes
 $placeholderAttributes['role']
 $precision
 $precision;
+$price
 $priceLabel
 $priceLabelTextClass
 $prices
+$prop):
+$prop,
 $resolved
 $resolved);
 $resolvedAriaHidden
@@ -203,7 +215,9 @@ $unitMeasure)
 $unitPrice
 $unitPrice;
 $validated
+$value
 $value,
+$value;
 $wrap
 %`
 &&
@@ -241,10 +255,12 @@ $wrap
 'accent'
 'accent',
 'amount'
+'amount');
 'annual'
 'aria-label');
 'as'
 'base'
+'base');
 'base',
 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]',
@@ -295,6 +311,7 @@ $wrap
 'delayHide'
 'delayShow'
 'delta'
+'delta');
 'deltaFormat'
 'describes'
 'description'
@@ -425,6 +442,7 @@ $wrap
 'true']);
 'unitMeasure'
 'unitPrice'
+'unitPrice');
 'w-max',
 'warning'
 'warning',
@@ -474,6 +492,7 @@ $wrap
 ($svgHtml
 ($triggerIsButton)
 ($unitPrice
+($value
 ($value):
 ('xs').
 (1.5rem)
@@ -516,8 +535,11 @@ $wrap
 (icon
 (inert
 (int)
+(is_int($value)
+(is_string($value)
 (lg
 (matches
+(mixed
 (not
 (or
 (paths,
@@ -555,6 +577,9 @@ $wrap
 0
 0);
 0,
+0.
+0.00
+0.00,
 0.045
 1
 1.4.1).
@@ -563,6 +588,8 @@ $wrap
 100
 100),
 16px
+19.00
+19.99',
 1;
 1px
 1rem),
@@ -635,6 +662,7 @@ $wrap
 ?
 ??
 @else
+@elseif($price
 @elseif(is_array($prices)
 @endforeach
 @endif
@@ -645,6 +673,7 @@ $wrap
 @endunless
 @foreach($prices
 @if
+@if($amount
 @if($description)
 @if($disabled)
 @if($dismissible)
@@ -655,6 +684,7 @@ $wrap
 @if($formattedDelta
 @if($formattedUnitPrice
 @if($from)<span
+@if($intervalAmount
 @if($intervalPeriod)
 @if($isFeatured)
 @if($leadingIcon)
@@ -818,6 +848,7 @@ Outside
 PAngV
 PAngV)
 PERFECTLY
+PHP
 Per-interval
 Pick
 Price
@@ -830,6 +861,7 @@ Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 RRP
 Raw
+Read
 Reapply
 Render
 Rendered
@@ -985,6 +1017,7 @@ __toString
 `Illegal
 `Svg
 `_x_dataStack`,
+`amount`,
 `aria-describedby`
 `aria-describedby`:
 `aria-hidden="true"`
@@ -1123,6 +1156,7 @@ ancestor
 ancestor,
 anchored
 and
+and,
 annotate.
 announce
 announced
@@ -1450,6 +1484,7 @@ de-emphasis
 dead.
 debug
 decided
+decimal
 decimals
 decimals,
 decision,
@@ -1483,6 +1518,7 @@ descendant
 descendants
 description
 dev
+develop
 developer
 developer's
 dialect
@@ -1503,6 +1539,7 @@ dispatches
 display,
 div
 div:
+division
 do
 docs
 document
@@ -1636,6 +1673,7 @@ flex
 flex-1">
 flex-col',
 flips
+float,
 floor
 flow.
 fn
@@ -1691,8 +1729,10 @@ gap-x-1',
 gap-x-1.5',
 gate
 gate,
+gave.
 get
 get_debug_type($maxPrecision),
+get_debug_type($value),
 gets
 give
 gives
@@ -1733,6 +1773,7 @@ hard
 hard-codes
 harder
 has
+has.
 hatch
 have
 have)
@@ -1812,6 +1853,7 @@ installed.'
 instead
 instead,
 instead.
+int,
 int.
 intact
 intent
@@ -1828,6 +1870,7 @@ interval
 interval.
 intl
 into
+int|float|string|false|null
 invalid
 inventing
 inverted
@@ -1837,7 +1880,11 @@ is
 is.
 is:
 is_array($periods)
+is_float($value)
+is_numeric(trim($value))))
 is_scalar($maxPrecision)
+is_scalar($value)
+is_string($value)
 isn't
 isolate`
 isset($content)
@@ -2054,6 +2101,7 @@ null;
 number
 number,
 number.
+numeric
 object,
 occurrence
 odd
@@ -2102,6 +2150,7 @@ out
 out,
 out-shout
 out.
+out:
 outline
 output
 outside
@@ -2223,6 +2272,7 @@ prod).
 product.
 product:
 product;
+production,
 prohibits
 project
 prop
@@ -2301,6 +2351,7 @@ replacement
 replaces
 replay-button
 reported
+reported,
 request
 requested
 require
@@ -2312,6 +2363,7 @@ resolves
 respect
 responsive
 rest
+rest.
 rests
 restyles
 result
@@ -2451,6 +2503,7 @@ still
 stop
 stops
 storage/logs/laravel.log.
+stores.
 strategy:
 strictness
 strike
@@ -2459,6 +2512,7 @@ strike,
 string
 string,
 string.
+string:
 stringly
 stringly-false
 strings
@@ -2566,6 +2620,7 @@ three
 through
 throw
 throw,
+throw.
 throws
 tick
 tidy
@@ -2621,6 +2676,7 @@ tree:
 trigger
 trigger's
 trigger,
+trim($value)
 trim((string)
 trim(html_entity_decode(strip_tags((string)
 trim(strip_tags((string)
@@ -2754,6 +2810,7 @@ working
 works
 works).
 works.
+worse
 worse,
 would
 wrap
@@ -2797,6 +2854,7 @@ x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 yet.
+you
 zero
 zeros
 zoom,

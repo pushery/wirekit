@@ -1775,6 +1775,7 @@ _place()
 `text`'s
 `this.$refs.tooltip`
 `this`,
+`top-1/2`
 `transition-colors`
 `trigger`
 `trigger`,
@@ -2142,6 +2143,7 @@ catalog,
 catch.
 cell
 center
+centered
 certifies
 change
 change).
@@ -2189,6 +2191,7 @@ class="min-w-0
 class="mt-[var(--padding-wk-y-xs)]
 class="pointer-events-none
 class="px-[var(--padding-wk-x-md)]
+class="relative">
 class="relative"><span
 class="rounded-[var(--radius-wk-sm)]
 class="shrink-0"
@@ -2820,6 +2823,7 @@ highlighted.
 hint
 hint's
 hint)
+hint,
 hint.
 hit),
 hit,
@@ -3074,6 +3078,7 @@ looking
 looks
 loses
 loss
+lower
 lowers
 made,
 make
@@ -3108,6 +3113,7 @@ meaning:
 means,
 meant
 measurements
+measures
 mechanism
 media
 medium

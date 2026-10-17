@@ -25,6 +25,7 @@ import { registerCounterDirective } from './utils/counter.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
+import { registerShortcutDirective } from './utils/shortcuts.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
@@ -40,6 +41,7 @@ import wirekitSubmenu from './components/submenu.js';
 import wirekitTooltip from './components/tooltip.js';
 import wirekitModal from './components/modal.js';
 import wirekitModalTrigger from './components/modal-trigger.js';
+import wirekitShortcuts from './components/shortcuts.js';
 import wirekitDrawer from './components/drawer.js';
 import wirekitToast from './components/toast.js';
 import wirekitTreeView from './components/tree-view.js';
@@ -93,6 +95,7 @@ import wirekitCombobox from './components/combobox.js';
 import wirekitDismissible from './components/dismissible.js';
 import wirekitRating from './components/rating.js';
 import wirekitStrengthMeter from './components/strength-meter.js';
+import wirekitTranslatableInput from './components/translatable-input.js';
 import wirekitReaction from './components/reaction.js';
 import wirekitRangeSlider from './components/range-slider.js';
 import wirekitPopover from './components/popover.js';
@@ -200,6 +203,8 @@ export function installRuntime(Alpine) {
     registerUnsavedDirective(Alpine);
     // A navigation Livewire keeps across a visit marks the page it arrived at. See utils/current.js.
     registerCurrentDirective(Alpine);
+    // Keyboard shortcuts on the elements they act on, by area. See utils/shortcuts.js.
+    registerShortcutDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
     // A fitted text whose words a script writes keeps its copies in step. See utils/fit-text.js.
@@ -257,6 +262,7 @@ export default function (Alpine) {
     Alpine.data('wirekitTooltip', wirekitTooltip);
     Alpine.data('wirekitModal', wirekitModal);
     Alpine.data('wirekitModalTrigger', wirekitModalTrigger);
+    Alpine.data('wirekitShortcuts', wirekitShortcuts);
     Alpine.data('wirekitDrawer', wirekitDrawer);
     Alpine.data('wirekitToast', wirekitToast);
     Alpine.data('wirekitTreeView', wirekitTreeView);
@@ -308,6 +314,7 @@ export default function (Alpine) {
     Alpine.data('wirekitMultiSelect', wirekitMultiSelect);
     Alpine.data('wirekitRating', wirekitRating);
     Alpine.data('wirekitStrengthMeter', wirekitStrengthMeter);
+    Alpine.data('wirekitTranslatableInput', wirekitTranslatableInput);
     Alpine.data('wirekitReaction', wirekitReaction);
     Alpine.data('wirekitCombobox', wirekitCombobox);
     Alpine.data('wirekitDismissible', wirekitDismissible);
@@ -360,6 +367,7 @@ export {
     wirekitTooltip,
     wirekitModal,
     wirekitModalTrigger,
+    wirekitShortcuts,
     wirekitDrawer,
     wirekitToast,
     wirekitTreeView,
@@ -413,6 +421,7 @@ export {
     wirekitDismissible,
     wirekitRating,
     wirekitStrengthMeter,
+    wirekitTranslatableInput,
     wirekitReaction,
     wirekitRangeSlider,
     wirekitPopover,

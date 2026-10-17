@@ -55,7 +55,8 @@ export default function wirekitHoverCard(config = {}) {
     return withOpenAlias({
         /** Move the popup ARIA onto the trigger's focusable child. */
         initTriggerAria() {
-            applyTriggerAria(this.$el, this.$watch.bind(this), {});
+            this._stopTriggerAria?.();
+            this._stopTriggerAria = applyTriggerAria(this.$el, this.$watch.bind(this), {});
         },
 
         isOpen: false,
@@ -68,6 +69,8 @@ export default function wirekitHoverCard(config = {}) {
 
         // SPA cleanup handler
         _navCleanup: null,
+        // Puts the trigger's ARIA back after a Livewire morph takes it off; released in destroy().
+        _stopTriggerAria: null,
         // Cross-close channel — see utils/overlay-coordination.js. Two open
         // sibling hover cards overlap, which a reader sees and no test does.
         _coordination: null,
@@ -97,6 +100,8 @@ export default function wirekitHoverCard(config = {}) {
         destroy() {
             this._coordination?.stop();
             this._coordination = null;
+            this._stopTriggerAria?.();
+            this._stopTriggerAria = null;
 
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);

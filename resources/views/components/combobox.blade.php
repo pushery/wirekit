@@ -622,6 +622,11 @@
         <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
     @endif
 
+    {{-- The field, the value it sends and what is drawn on it stand in a box of their own, so
+         `top-1/2` on the medium, the clear button and the chevron measures the field alone. The root
+         goes on to hold the hint, the error and the empty state, and centered on the root they would
+         stand lower by half of whatever is written under the field. --}}
+    <div class="relative">
     {{-- Hidden input holding the selected *value* for form submission. With free input the text field
          below carries the name itself, since its text is the value. --}}
     @if($name && ! $freeInput)
@@ -849,6 +854,7 @@
         </svg>
     </span>
     @endif
+    </div>
 
     {{-- Listbox — filtered options rendered via x-for. Each option gets a
          unique id + role=option so AT can announce them as the user navigates. --}}

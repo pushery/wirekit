@@ -7,8 +7,10 @@
 "4
 "4".
 "4,0".
+"4,5"
 "4.0"
 "4.2
+"4.50"
 "Average
 "Build
 "Could
@@ -187,8 +189,8 @@ $mergedAttributes->merge($placeholderAttributes)
 $mergedAttributes->merge(['aria-hidden'
 $metaClasses
 $moment
-$moment($date);
-$moment($replyDate);
+$moment($date,
+$moment($replyDate,
 $name
 $name);
 $name)`.
@@ -208,7 +210,8 @@ $pillRadius
 $pillRadius,
 $placeholderAttributes
 $placeholderAttributes['role']
-$rating,
+$prop))
+$prop):
 $ratingSeed
 $readonly
 $readonly;
@@ -431,6 +434,7 @@ $written->toIso8601String()
 'danger'
 'danger',
 'date'
+'date');
 'debug'
 'delayHide'
 'delayShow'
@@ -529,16 +533,19 @@ $written->toIso8601String()
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-xs)]',
 'rating'
+'rating')
 'rating',
 'rating-');
 'readonly'
 'reject',
 'replyAuthor'
 'replyDate'
+'replyDate');
 'required'
 'requiredDisabled'
 'reverted'
 'review');
+'review',
 'review-');
 'rounded-[var(--radius-wk-full)]',
 'rounded-[var(--radius-wk-full)]';
@@ -605,6 +612,7 @@ $written->toIso8601String()
 'true';
 'true']);
 'value'
+'value')
 'verified'
 'viewBox'
 'w-max',
@@ -632,6 +640,7 @@ $written->toIso8601String()
 (!
 (!hovered
 ("4
+("4,5"
 ("Fast
 ("Help
 ($break
@@ -678,6 +687,7 @@ $written->toIso8601String()
 (WCAG
 (WireKit::validateProp('heading',
 (\BladeUI\Icons\Exceptions\SvgNotFound
+(\Pushery\WireKit\Support\NumericProp::orNullReported($rating,
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
 (`.wk-scroll-fade…:focus-within
@@ -754,6 +764,7 @@ $written->toIso8601String()
 />
 0
 0"
+0),
 0);
 0,
 0-1.5.75.75
@@ -854,6 +865,7 @@ $written->toIso8601String()
 3rem,
 4
 4%,
+4).
 4-star
 4.1.
 4.2
@@ -1189,7 +1201,7 @@ MOST
 Markup
 Mirrors
 Moment::in($read,
-Moment::of($value))
+Moment::of($value,
 Multi-line
 NESTS
 NO
@@ -1219,6 +1231,7 @@ Optional
 Outside
 Overlapping
 PERFECTLY
+PHP
 POSITION,
 PRESENCE,
 Params:
@@ -1390,6 +1403,7 @@ Y');
 \Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\NumericModel::number($attributes);
+\Pushery\WireKit\Support\NumericProp::orNullReported($value,
 \Pushery\WireKit\Support\NumericProp::positive(
 \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max',
 \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
@@ -1637,6 +1651,7 @@ ancestor
 ancestor,
 anchored
 and
+and,
 annotate.
 announce
 announce-error
@@ -1983,6 +1998,7 @@ component
 component's
 component,
 component.
+component:
 components
 components.
 components;
@@ -2082,6 +2098,7 @@ datetime="{{
 dead.
 debug
 decided
+decimal
 decision
 decision,
 decision:
@@ -2128,6 +2145,7 @@ design
 designed
 designers
 dev
+develop
 developer
 developer's
 dialect
@@ -2174,6 +2192,7 @@ dot
 double
 double-announce
 down
+draw
 drawer
 drawing
 drawn
@@ -2351,6 +2370,7 @@ flex-wrap
 flight
 flight,
 flips
+float,
 floor
 floor($numericValue);
 flow.
@@ -2588,6 +2608,7 @@ instead
 instead,
 instead.
 int
+int,
 intact
 integers.
 intent
@@ -2889,6 +2910,8 @@ null;
 null])
 null])),
 number
+number,
+numeric
 object,
 observeServerValue
 observed
@@ -3078,10 +3101,12 @@ pricing-card
 problem
 prod).
 product
+production,
 project
 promises
 prop
 prop's
+prop:
 properties
 property
 property,
@@ -3436,6 +3461,7 @@ stop,
 stop:
 stops
 storage/logs/laravel.log.
+stores.
 str_contains((string)
 straight
 strategy:
@@ -3816,6 +3842,7 @@ with
 with:
 within
 without
+word
 word)
 word.
 word:
@@ -3887,6 +3914,7 @@ x-transition:leave="transition
 x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet.
+you
 zero
 zero,
 zone
