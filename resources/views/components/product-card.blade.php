@@ -80,6 +80,12 @@
 
     $isOut = $availability === 'out-of-stock';
 
+    // An empty string is no amount, as null is: the value of a field nobody has filled. Left as it
+    // is, it would reach `price`, and with a compare-at price the card would announce a sale
+    // without a price.
+    $price = $price === '' ? null : $price;
+    $compareAt = $compareAt === '' ? null : $compareAt;
+
     // On sale only when the old price is genuinely higher. A compare-at that is
     // equal or lower is not a discount, and striking it through would be a claim
     // the numbers do not support.
@@ -87,7 +93,9 @@
         && $compareAt !== null
         && (float) $compareAt > (float) $price;
 
-    $ratingValue = ($rating === null || $rating === '') ? null : (float) $rating;
+    // A score that is no number is reported and shows no stars, rather than the number PHP reads
+    // from it ("4,5" would be 4).
+    $ratingValue = \Pushery\WireKit\Support\NumericProp::orNullReported($rating, 'product-card', 'rating');
 
     // The badges stand over the picture's corners. A card without a picture has no area for them
     // to stand over, so there they form a row of their own above the name, which they would

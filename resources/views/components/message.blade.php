@@ -90,8 +90,9 @@
 
     // Format timestamp
     // A date object of any class is read as the instant it holds (Support\Moment), and written in
-    // the reader's zone when `timezone` names one.
-    $carbonTimestamp = Moment::of($timestamp);
+    // the reader's zone when `timezone` names one. A string that names no date is reported and
+    // shows no time, as a missing one does.
+    $carbonTimestamp = Moment::of($timestamp, component: 'message', prop: 'timestamp');
     $formattedTime = '';
     if ($carbonTimestamp !== null) {
         $carbonTimestamp = Moment::in($carbonTimestamp, $timezone, 'message');
@@ -185,8 +186,9 @@
     // "Read at 9:15 AM" — the WHEN behind the rung. Same locale-aware format as
     // the message timestamp; an explicit timeFormat overrides.
     $statusTimeText = '';
-    if ($statusValue !== null && $statusTime !== null && $statusTime !== '') {
-        $statusCarbon = Moment::in(Moment::of($statusTime), $timezone, 'message');
+    $statusRead = $statusValue !== null ? Moment::of($statusTime, component: 'message', prop: 'statusTime') : null;
+    if ($statusRead !== null) {
+        $statusCarbon = Moment::in($statusRead, $timezone, 'message');
         $statusTimeText = $timeFormat !== null
             ? $statusCarbon->format($timeFormat)
             : $statusCarbon->isoFormat('LT');

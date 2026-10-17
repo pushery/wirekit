@@ -65,4 +65,20 @@ final class NumericProp
 
         return is_float($number) && is_nan($number) ? null : $number;
     }
+
+    /**
+     * A number, or null when the value is none, as orNull(), and a value that is given but is no
+     * number is reported through the strictness gate as well. Read as a number, "4,5" would be 4
+     * and a word 0, so a component that shows the figure would show a wrong one without a trace.
+     */
+    public static function orNullReported(mixed $value, string $component, string $prop): int|float|null
+    {
+        $number = self::orNull($value);
+
+        if ($number === null && ! blank($value)) {
+            StrictnessGate::reject($component, $prop, is_scalar($value) ? (string) $value : get_debug_type($value), 'a number such as 4.5', '');
+        }
+
+        return $number;
+    }
 }

@@ -182,6 +182,7 @@ $helpName
 $helpName])
 $helpText
 $hideLabel
+$hideLabel"
 $hint
 $hint))
 $href
@@ -1234,7 +1235,7 @@ $wrapLabel
 :name="$trailingIcon"
 :remaining,
 :remaining.
-:required="$required"
+:required="$required
 :scope="$scope">
 :text="$clearText"
 :text="$helpText"
@@ -2194,6 +2195,7 @@ __toString
 `prop="false"`
 `px`
 `rejected`,
+`required`
 `reserve-message`
 `resources/views/**/*.blade.php`
 `role="img"`.
@@ -2485,6 +2487,7 @@ assertion
 assistive
 assistive,
 association
+asterisk:
 at
 at,
 attaches
@@ -3358,6 +3361,7 @@ expression
 expressions.
 external-link
 extra
+eye,
 eyebrow).
 factory
 factory,
@@ -4591,6 +4595,7 @@ readable
 reader
 reader's
 reader,
+reader.
 reader:
 readers
 readers.

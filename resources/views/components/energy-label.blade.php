@@ -48,7 +48,11 @@
     // A scale or a class the label does not have is reported, and the arrow is then left out
     // rather than drawn with a stand-in: an arrow that names a class the product does not have
     // tells a buyer something false about it.
-    $scale = StrictnessGate::enforce('energy-label', 'scale', strtoupper(trim((string) $scale)), array_keys($scales), '');
+    // A scale is named by its two ends. The dash between them is often the en dash a label prints
+    // (A–G) or another dash from Unicode, and each of them reads as the hyphen here, as does a space
+    // around it: a value that looks right then also draws its arrow.
+    $scaleKey = (string) preg_replace(['/\s+/u', '/[\x{2010}-\x{2015}\x{2212}\x{FE58}\x{FE63}\x{FF0D}]/u'], ['', '-'], (string) $scale);
+    $scale = StrictnessGate::enforce('energy-label', 'scale', strtoupper($scaleKey), array_keys($scales), '');
     $classes = $scales[$scale] ?? [];
     $efficiency = $classes === []
         ? ''

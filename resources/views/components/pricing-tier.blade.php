@@ -127,14 +127,18 @@
                     class="flex items-baseline gap-[var(--space-wk-xs)]"
                     data-wk-pricing-interval="{{ $intervalKey }}"
                 >
-                    <x-wirekit::price :amount="$intervalAmount" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" :size="$priceSize" />
-                    @php($intervalPeriod = is_array($periods) ? ($periods[$intervalKey] ?? $period) : $period)
-                    @if($intervalPeriod)
-                        <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">/{{ $intervalPeriod }}</span>
+                    @if($intervalAmount !== null && $intervalAmount !== '')
+                        <x-wirekit::price :amount="$intervalAmount" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" :size="$priceSize" />
+                        @php($intervalPeriod = is_array($periods) ? ($periods[$intervalKey] ?? $period) : $period)
+                        @if($intervalPeriod)
+                            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">/{{ $intervalPeriod }}</span>
+                        @endif
                     @endif
                 </span>
             @endforeach
-        @else
+        @elseif($price !== null && $price !== '')
+            {{-- Without an amount there is no price, and a period after nothing would read as one:
+                 `price` draws nothing for a missing amount rather than a 0 nobody gave. --}}
             <x-wirekit::price :amount="$price" :currency="$currency" :minor-units="$minorUnits" :locale="$locale" :size="$priceSize" />
             @if($period)
                 <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">/{{ $period }}</span>

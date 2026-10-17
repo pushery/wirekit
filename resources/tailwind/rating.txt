@@ -5,8 +5,10 @@
 "4
 "4".
 "4,0".
+"4,5"
 "4.0"
 "4.2
+"4.50"
 "Average
 "Could
 "Hoverable"
@@ -295,6 +297,7 @@ $wrapperClasses
 'tracking-[var(--font-wk-letter-spacing)]',
 'true'
 'value'
+'value')
 'viewBox'
 'w-max',
 'wk-tooltip-');
@@ -721,6 +724,7 @@ One
 Only
 Outside
 Overlapping
+PHP
 POSITION,
 PRESENCE,
 Params:
@@ -824,6 +828,7 @@ Written
 \Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\NumericModel::number($attributes);
+\Pushery\WireKit\Support\NumericProp::orNullReported($value,
 \Pushery\WireKit\Support\NumericProp::positive(
 \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max',
 \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
@@ -1005,6 +1010,7 @@ an
 ancestor
 ancestor,
 and
+and,
 annotate.
 announce
 announce-error
@@ -1020,6 +1026,7 @@ another.
 answer
 anticipate
 any
+anything
 apart;
 app
 appear
@@ -1283,6 +1290,7 @@ costs
 could
 counterpart,
 counterpart:
+counts
 crossed
 current
 cursor-help"
@@ -1313,6 +1321,7 @@ data-wk-tooltip-surface="elevated"
 dead.
 debug
 decided
+decimal
 decision
 declared,
 deduped
@@ -1341,6 +1350,7 @@ description.
 deselected
 design
 designed
+develop
 developer
 difference.
 different
@@ -1377,6 +1387,7 @@ doing.
 dot
 double-announce
 down
+draw
 drawer
 drawing
 draws
@@ -1406,6 +1417,7 @@ element.
 elements
 elements,
 elevated
+else
 elsewhere)
 embeds
 emit
@@ -1505,6 +1517,7 @@ flex-wrap
 flight
 flight,
 flips
+float,
 floor
 floor($numericValue);
 flow.
@@ -1670,6 +1683,7 @@ inside
 instead
 instead,
 int
+int,
 integers.
 intent's
 interact
@@ -1896,6 +1910,8 @@ null,
 null;
 null])
 number
+number,
+numeric
 object,
 observeServerValue
 observed
@@ -2044,6 +2060,7 @@ preset:
 press
 prod).
 product
+production,
 project
 promises
 prop
@@ -2128,6 +2145,7 @@ renders.
 repeat
 repeating
 replacement
+reported
 reports
 request
 required
@@ -2308,6 +2326,7 @@ stop
 stop,
 stop:
 stops
+stores.
 str_contains((string)
 strategy:
 stray
@@ -2570,6 +2589,7 @@ wire:model.
 with
 with:
 without
+word
 word)
 words
 words;
@@ -2627,6 +2647,7 @@ x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
+you
 zero
 zero,
 zoom,

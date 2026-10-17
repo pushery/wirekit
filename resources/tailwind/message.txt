@@ -190,6 +190,7 @@ $statusHasTime
 $statusIcon
 $statusLabel
 $statusLabel)
+$statusRead
 $statusRingStyle
 $statusRingStyle.';'
 $statusSize
@@ -197,7 +198,6 @@ $statusSize,
 $statusText
 $statusText.'
 $statusText;
-$statusTime
 $statusTimeText
 $statusValue
 $statusVariant
@@ -394,6 +394,7 @@ $wrap
 'md'),
 'md',
 'message');
+'message',
 'message-'
 'message-'.md5($authorName.$timestamp)
 'min-h-5
@@ -467,6 +468,7 @@ $wrap
 'status'
 'status',
 'statusTime'
+'statusTime')
 'statusVariant'
 'statusVariant',
 'success'
@@ -489,6 +491,7 @@ $wrap
 'text-[length:var(--text-wk-sm)]',
 'timeFormat'
 'timestamp'
+'timestamp');
 'timezone'
 'tooltip'
 'top'),
@@ -558,7 +561,7 @@ $wrap
 ($status
 ($status)
 ($statusClass)
-($statusValue
+($statusRead
 ($statusValue)
 ($surface)
 ($svgHtml
@@ -942,8 +945,9 @@ MORPH
 MOST
 Message
 Moment::in($carbonTimestamp,
-Moment::in(Moment::of($statusTime),
-Moment::of($timestamp);
+Moment::in($statusRead,
+Moment::of($statusTime,
+Moment::of($timestamp,
 Multi-line
 NOT
 No
@@ -1602,6 +1606,7 @@ compiles
 component
 component's
 component,
+component:
 components
 composer
 computed
@@ -2496,6 +2501,7 @@ project
 prominent
 prop
 prop's
+prop:
 props
 provide
 provides

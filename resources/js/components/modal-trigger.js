@@ -46,12 +46,22 @@ export default function wirekitModalTrigger(config = {}) {
         _panel: typeof config.panel === 'string' && ! /\s/.test(config.panel) ? config.panel : '',
         _stackHandler: null,
 
+        // The three values as state as well, which the trigger's view binds. A Livewire morph
+        // compares the page with a clone of the new markup and takes off every attribute the
+        // clone lacks; Alpine builds that clone without running `init()`, but it does evaluate a
+        // binding, with this scope's data. Written only by `setAttribute`, the three would be gone
+        // after the first update of the Livewire component around the trigger.
+        ariaHaspopup: null,
+        ariaExpanded: null,
+        ariaControls: null,
+
         init() {
             // A trigger that names nothing opens nothing, so it claims no popup either.
             if (this._name === '') {
                 return;
             }
 
+            this.ariaHaspopup = 'dialog';
             this.$el.setAttribute('aria-haspopup', 'dialog');
 
             this._stackHandler = () => this.syncExpanded();
@@ -75,11 +85,14 @@ export default function wirekitModalTrigger(config = {}) {
         syncExpanded() {
             const open = isNamedOverlayOpen(this._showEvent, this._name);
 
-            this.$el.setAttribute('aria-expanded', open ? 'true' : 'false');
+            this.ariaExpanded = open ? 'true' : 'false';
+            this.$el.setAttribute('aria-expanded', this.ariaExpanded);
 
             if (open && this._panel !== '' && document.getElementById(this._panel)) {
+                this.ariaControls = this._panel;
                 this.$el.setAttribute('aria-controls', this._panel);
             } else {
+                this.ariaControls = null;
                 this.$el.removeAttribute('aria-controls');
             }
         },

@@ -7,8 +7,10 @@
 "4
 "4".
 "4,0".
+"4,5"
 "4.0"
 "4.2
+"4.50"
 "Average
 "Could
 "Hoverable"
@@ -425,6 +427,7 @@ $wrapperClasses
 'true';
 'true']);
 'value'
+'value')
 'viewBox'
 'w-max',
 'wk-tooltip-');
@@ -954,6 +957,7 @@ Operating
 Outside
 Overlapping
 PERFECTLY
+PHP
 POSITION,
 PRESENCE,
 Params:
@@ -1092,6 +1096,7 @@ Written
 \Pushery\WireKit\Support\FormOwner::of($attributes);
 \Pushery\WireKit\Support\ListProp::renumbered($optimisticArgs),
 \Pushery\WireKit\Support\NumericModel::number($attributes);
+\Pushery\WireKit\Support\NumericProp::orNullReported($value,
 \Pushery\WireKit\Support\NumericProp::positive(
 \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max',
 \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
@@ -1305,6 +1310,7 @@ ancestor
 ancestor,
 anchored
 and
+and,
 annotate.
 announce
 announce-error
@@ -1320,6 +1326,7 @@ another.
 answer
 anticipate
 any
+anything
 apart;
 app
 app(IconResolver::class)->resolve($name);
@@ -1690,6 +1697,7 @@ data-wk-tooltip-surface="elevated"
 dead.
 debug
 decided
+decimal
 decision
 decision,
 decision:
@@ -1731,6 +1739,7 @@ deselected
 design
 designed
 dev
+develop
 developer
 developer's
 did
@@ -1773,6 +1782,7 @@ dot
 double-announce
 down
 down.
+draw
 drawer
 drawing
 drawn
@@ -1921,6 +1931,7 @@ flex-wrap
 flight
 flight,
 flips
+float,
 floor
 floor($numericValue);
 flow.
@@ -2133,6 +2144,7 @@ instanceof
 instead
 instead,
 int
+int,
 intact
 integers.
 intent's
@@ -2410,6 +2422,8 @@ null,
 null;
 null])
 number
+number,
+numeric
 object,
 observeServerValue
 observed
@@ -2583,6 +2597,7 @@ press
 problem
 prod).
 product
+production,
 project
 promises
 prop
@@ -2902,6 +2917,7 @@ stop,
 stop:
 stops
 storage/logs/laravel.log.
+stores.
 str_contains((string)
 strategy:
 stray
@@ -3223,6 +3239,7 @@ with
 with:
 without
 wk-focus-ring
+word
 word)
 words
 words;
@@ -3282,6 +3299,7 @@ x-wk-ref="{{
 xmlns="http://www.w3.org/2000/svg"
 yet')
 yet.
+you
 zero
 zero,
 zoom,

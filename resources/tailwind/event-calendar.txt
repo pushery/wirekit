@@ -8,6 +8,7 @@
 "Ganztägig"
 "Showing
 "Week
+"Y-m-d
 "cut
 "hide".
 "moving
@@ -25,7 +26,6 @@ $attributes->only('class')->class([$base])
 $base
 $categoryHidden
 $categoryShown
-$date
 $dayDetail
 $dayDetail;
 $dayMarkers,
@@ -60,6 +60,7 @@ $markerChip
 $markerClasses
 $markersArr
 $navBtn
+$openDay
 $scope);
 $selectableDays
 $view
@@ -121,6 +122,7 @@ $weekStartsOn
 'class'])
 'danger'
 'date'
+'date')?->format('Y-m-d');
 'day-number',
 'day-number-outside',
 'day-number-selected',
@@ -128,6 +130,7 @@ $weekStartsOn
 'dayDetail'
 'dayMarkers'
 'end',
+'event-calendar',
 'event-calendar-');
 'events'
 'false'
@@ -188,6 +191,7 @@ $weekStartsOn
 (60rem
 (PHP
 (Support\CallerListeners).
+(Support\Moment)
 (WCAG
 (YYYY-MM-DD)
 (_measureAgendaTime
@@ -375,9 +379,9 @@ $weekStartsOn
 @focusin="tipShow($event)"
 @focusout="tipHide($event)"
 @for
-@if($date)
 @if($dayDetail)
 @if($filterable)
+@if($openDay
 @if($selectableDays)
 @if(filled($weekLabel))
 @keydown.arrow-down.prevent="viewMove(1)"
@@ -434,6 +438,7 @@ Defined
 Delegated
 Dev-only
 Dropping
+ECMAScript
 Each
 English
 Event
@@ -443,6 +448,7 @@ FOREGROUND
 Forced
 Fully
 German
+H:i:s",
 HERE
 Header:
 Heading
@@ -569,6 +575,7 @@ With
 \Pushery\WireKit\Support\ListProp::only($event['attendees'],
 \Pushery\WireKit\Support\ListProp::renumbered(
 \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
+\Pushery\WireKit\Support\Moment::of($date,
 \Pushery\WireKit\Support\PluralPhrases::from('wirekit:::count
 \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar',
 ])
@@ -672,6 +679,7 @@ announcement.
 announces
 announcing
 another
+any
 anybody
 anyway.
 app
@@ -905,6 +913,7 @@ compiles
 component
 component's
 component,
+component:
 config('wirekit.components.event-calendar.view',
 config('wirekit.components.event-calendar.week-starts-on',
 config('wirekit.components.tooltip.delay-hide',
@@ -1222,6 +1231,7 @@ inset
 inset-ring-[length:max(1px,var(--border-wk-width))]
 inset-ring-[var(--color-wk-text-muted)]'
 inside
+instant
 instead
 instead.
 instead:
@@ -1389,10 +1399,12 @@ note
 nothing
 nothing.
 now,
+null)
 null,
 number
 number's
 number,
+object
 object-cover"></template>
 of
 off
@@ -1453,6 +1465,7 @@ pairings,
 panel
 paper
 parentheses.
+parse,
 part
 part:
 passed:
@@ -1483,12 +1496,15 @@ position,
 pr-1
 present
 pressed
+print
 prints
 prints.
 prod).
 produce
 produced
+promise
 prop
+prop:
 props
 pt-2):
 purely
@@ -1654,6 +1670,7 @@ space-y-[var(--space-wk-sm)]',
 spacing
 spacing.
 span
+spec
 spelling,
 spells
 spine:
@@ -1672,6 +1689,7 @@ stood
 stop
 strength
 strictness
+string
 string,
 strip
 stripe
@@ -1789,6 +1807,7 @@ to,
 to.
 today
 today)
+today.
 toggle
 token,
 tokens

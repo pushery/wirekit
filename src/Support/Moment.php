@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Support;
 
 use Carbon\CarbonImmutable;
+use Carbon\Exceptions\InvalidFormatException;
 use DateTimeInterface;
 use DateTimeZone;
 use Exception;
@@ -28,9 +29,18 @@ final class Moment
      *
      * A number is a Unix timestamp. A string is read by Carbon, in `$readIn` when it names no zone
      * of its own, and in the application's zone when `$readIn` is null.
+     *
+     * A string Carbon cannot read, such as "TBD" or "Oktober 2026", is reported as an invalid
+     * `$prop` of `$component` when a component is named, and is then no instant, as a missing date
+     * is: one date that is no date must not end the page it stands on. Without a component the
+     * exception reaches the caller.
      */
-    public static function of(DateTimeInterface|string|int|float|null $value, ?string $readIn = null): ?CarbonImmutable
-    {
+    public static function of(
+        DateTimeInterface|string|int|float|null $value,
+        ?string $readIn = null,
+        ?string $component = null,
+        string $prop = 'date',
+    ): ?CarbonImmutable {
         if ($value === null || $value === '') {
             return null;
         }
@@ -43,7 +53,39 @@ final class Moment
             return CarbonImmutable::createFromTimestamp((int) $value);
         }
 
-        return CarbonImmutable::parse($value, $readIn);
+        if ($component === null) {
+            return CarbonImmutable::parse($value, $readIn);
+        }
+
+        try {
+            return CarbonImmutable::parse($value, $readIn);
+        } catch (InvalidFormatException) {
+            StrictnessGate::reject($component, $prop, $value, 'a date such as "2026-10-16 14:30"', '');
+
+            return null;
+        }
+    }
+
+    /**
+     * The name of the zone `$timezone` names, or `$fallback` for null, an empty string and a name
+     * PHP does not know, which is reported the way any invalid prop of `$component` is.
+     *
+     * For a zone a date is READ in: Carbon refuses an unknown one with an exception, before
+     * `in()` could report it.
+     */
+    public static function zoneOr(?string $timezone, string $fallback, string $component): string
+    {
+        if ($timezone === null || $timezone === '') {
+            return $fallback;
+        }
+
+        try {
+            return (new DateTimeZone($timezone))->getName();
+        } catch (Exception) {
+            StrictnessGate::reject($component, 'timezone', $timezone, 'a time zone name such as "Europe/Berlin"', $fallback);
+
+            return $fallback;
+        }
     }
 
     /**

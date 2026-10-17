@@ -220,6 +220,7 @@ $helpName
 $helpName])
 $helpText
 $hideLabel
+$hideLabel"
 $hint
 $hint))
 $hintId
@@ -2783,6 +2784,7 @@ association
 assume
 asterisk
 asterisk.
+asterisk:
 at
 at,
 attribute
@@ -5048,6 +5050,7 @@ readable,
 reader
 reader's
 reader,
+reader.
 reader:
 readers
 readers.

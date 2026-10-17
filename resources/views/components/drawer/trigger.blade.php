@@ -59,12 +59,18 @@
 <x-wirekit::link
     :href="$href"
     x-data="wirekitModalTrigger({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($for) }}, overlay: 'drawer', panel: {{ \Pushery\WireKit\Support\AlpinePayload::string($dialogId) }} })"
+    x-bind:aria-haspopup="ariaHaspopup"
+    x-bind:aria-expanded="ariaExpanded"
+    x-bind:aria-controls="ariaControls"
     x-on:click="openNamedOverlay($event)"
     {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
 >{{ $slot }}</x-wirekit::link>
 @else
 <x-wirekit::button
     x-data="wirekitModalTrigger({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($for) }}, overlay: 'drawer', panel: {{ \Pushery\WireKit\Support\AlpinePayload::string($dialogId) }} })"
+    x-bind:aria-haspopup="ariaHaspopup"
+    x-bind:aria-expanded="ariaExpanded"
+    x-bind:aria-controls="ariaControls"
     x-on:click="openNamedOverlay($event)"
     {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
 >{{ $slot }}</x-wirekit::button>

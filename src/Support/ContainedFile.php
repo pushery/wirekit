@@ -21,6 +21,12 @@ final class ContainedFile
      */
     public static function resolve(string $root, string $relative): ?string
     {
+        // A NUL byte names no file, and `realpath()` throws on one rather than returning false.
+        // The font route decodes its path from the request, so `%00` would otherwise answer 500.
+        if (str_contains($root, "\0") || str_contains($relative, "\0")) {
+            return null;
+        }
+
         $base = realpath($root);
         $file = realpath($root.DIRECTORY_SEPARATOR.$relative);
 

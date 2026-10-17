@@ -24,7 +24,8 @@ export default function wirekitPopover(config = {}) {
     return withOpenAlias({
         /** Move the popup ARIA onto the trigger's focusable child. */
         initTriggerAria() {
-            applyTriggerAria(this.$el, this.$watch.bind(this), { missingTriggerWarning: '[wirekit] popover: trigger slot has no focusable element (button/link). Keyboard users cannot open the popover. Wrap the trigger content in a <button>.' });
+            this._stopTriggerAria?.();
+            this._stopTriggerAria = applyTriggerAria(this.$el, this.$watch.bind(this), { missingTriggerWarning: '[wirekit] popover: trigger slot has no focusable element (button/link). Keyboard users cannot open the popover. Wrap the trigger content in a <button>.' });
         },
 
         isOpen: false,
@@ -32,6 +33,8 @@ export default function wirekitPopover(config = {}) {
         _offset: config.offset ?? 8,
         _trap: null,
         _navCleanup: null,
+        // Puts the trigger's ARIA back after a Livewire morph takes it off; released in destroy().
+        _stopTriggerAria: null,
         // Cross-close channel — see utils/overlay-coordination.js. Two open
         // sibling popovers overlap, which a reader sees and no test does.
         _coordination: null,
@@ -74,6 +77,8 @@ export default function wirekitPopover(config = {}) {
         destroy() {
             this._coordination?.stop();
             this._coordination = null;
+            this._stopTriggerAria?.();
+            this._stopTriggerAria = null;
 
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);

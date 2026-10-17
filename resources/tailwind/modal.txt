@@ -180,6 +180,7 @@ $helpName
 $helpName])
 $helpText
 $hideLabel
+$hideLabel"
 $hint
 $hint))
 $href
@@ -1176,7 +1177,7 @@ $wrapLabel
 :max
 :remaining,
 :remaining.
-:required="$required"
+:required="$required
 :scope="$scope">
 :text="$clearText"
 :text="$helpText"
@@ -2193,6 +2194,7 @@ __('wirekit::To
 `rejected`,
 `rel`
 `rel`.
+`required`
 `reserve-message`
 `resources/views/**/*.blade.php`
 `role="dialog"`,
@@ -2504,6 +2506,7 @@ assertion
 assistive
 assistive,
 association
+asterisk:
 at
 at,
 at?
@@ -3396,6 +3399,7 @@ expression
 expressions.
 extend
 extra
+eye,
 fact
 factory
 factory,
@@ -4659,6 +4663,7 @@ readable
 reader
 reader's
 reader,
+reader.
 reader:
 readers
 readers.
@@ -5734,6 +5739,9 @@ wrong.
 wrote
 x
 x-bind:aria-busy="isPending"
+x-bind:aria-controls="ariaControls"
+x-bind:aria-expanded="ariaExpanded"
+x-bind:aria-haspopup="ariaHaspopup"
 x-bind:id="$id('alert-confirm-reason')"
 x-bind:id="$wkAncestorData('[data-wk-desc-id]',
 x-bind:id="$wkAncestorData('[data-wk-title-id]',

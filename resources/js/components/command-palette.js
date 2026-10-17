@@ -166,7 +166,12 @@ export default function wirekitCommandPalette(config = {}) {
                         }
 
                         e.preventDefault();
-                        this.toggle();
+
+                        // A held hotkey repeats its keydown; the palette toggles once per press,
+                        // and the repeats are only taken from the browser.
+                        if (! e.repeat) {
+                            this.toggle();
+                        }
                     }
                 };
 

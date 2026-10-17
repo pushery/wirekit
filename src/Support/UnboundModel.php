@@ -75,6 +75,7 @@ final class UnboundModel
         'reveal',
         'scope-switcher',
         'segmented-control',
+        'shortcuts',
         'status-matrix',
         'stream',
         'tabs',

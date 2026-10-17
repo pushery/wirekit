@@ -64,8 +64,9 @@
 
     // Resolve the target to the instant it names; a date object of any class keeps its zone
     // (Support\Moment). A null `until` degrades to "now" so a missing deadline reads as
-    // immediately overdue rather than throwing.
-    $target = Moment::of($until) ?? CarbonImmutable::now();
+    // immediately overdue rather than throwing, and so does a string that names no date, once it
+    // is reported.
+    $target = Moment::of($until, component: 'countdown', prop: 'until') ?? CarbonImmutable::now();
     $shownTarget = Moment::in($target, $timezone, 'countdown');
     $targetMs = $target->getTimestampMs();
     $targetIso = $shownTarget->toIso8601String();

@@ -418,7 +418,9 @@
 
 <div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        {{-- A visually hidden label draws no asterisk: the mark is for the eye, which does not see
+             this label, and the field's own `required` says it to a screen reader. --}}
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required && ! $hideLabel" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($inAlignedRow)
         {{-- An empty label track, held so that the control stays on the middle one. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>

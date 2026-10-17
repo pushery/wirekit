@@ -10,6 +10,8 @@
 "1/1",
 "10,00
 "12%+"
+"19,99"
+"19.99"
 "4/3",
 "Copy
 "Decrease
@@ -121,6 +123,7 @@ $cleaned
 $cleaned);
 $compactClasses
 $compareAt
+$compareAt;
 $computedRel
 $content
 $content))
@@ -136,6 +139,7 @@ $delayHide
 $delayShow
 $delta
 $delta,
+$delta;
 $deltaClasses
 $deltaIntent
 $describedBy
@@ -159,6 +163,11 @@ $fetchpriority
 $fetchpriority,
 $fetchpriorityValue
 $fieldLocked
+$figure
+$figure($amount,
+$figure($base,
+$figure($delta,
+$figure($unitPrice,
 $figureClasses
 $finalRel
 $fit,
@@ -238,6 +247,8 @@ $label
 $labelAfter
 $layout,
 $layoutValue
+$lineTotal
+$lineTotal;
 $linkDisabled
 $linkDisabled)
 $linkDisabledClasses
@@ -296,6 +307,8 @@ $precision;
 $prefix
 $price
 $price;
+$prop):
+$prop,
 $quantity
 $quantity,
 $quantityText
@@ -407,7 +420,9 @@ $unitMeasure)
 $unitPrice
 $unitPrice;
 $validated
+$value
 $value,
+$value;
 $variantClasses
 $variantClasses,
 $width
@@ -472,6 +487,7 @@ $wrapLabel
 'action'
 'alt'
 'amount'
+'amount');
 'announce-errors']);
 'announceError'
 'args'
@@ -481,6 +497,7 @@ $wrapLabel
 'as'
 'auto'.
 'base'
+'base');
 'base',
 'bg-[var(--color-wk-bg-input)]',
 'bg-[var(--color-wk-bg-subtle)]',
@@ -528,6 +545,7 @@ $wrapLabel
 'delayHide'
 'delayShow'
 'delta'
+'delta');
 'deltaFormat'
 'describes'
 'disableOnLoading'
@@ -783,6 +801,7 @@ $wrapLabel
 'unit'
 'unitMeasure'
 'unitPrice'
+'unitPrice');
 'value',
 'value'`
 'var(--size-wk-lg)',
@@ -867,6 +886,7 @@ $wrapLabel
 ($svgHtml
 ($triggerIsButton)
 ($unitPrice
+($value
 ($value):
 ($wrapLabel
 ('xs').
@@ -933,13 +953,16 @@ $wrapLabel
 (function_exists('svg')
 (implicit
 (int)
+(is_int($value)
 (is_string($key)
+(is_string($value)
 (it
 (its
 (kept
 (letterbox,
 (level
 (logical
+(mixed
 (modern
 (none)
 (not
@@ -1011,6 +1034,9 @@ $wrapLabel
 0,
 0-1.5.75.75
 0-2.584ZM12
+0.
+0.00
+0.00,
 0.045
 0.875
 018-8V0C5.373
@@ -1050,6 +1076,8 @@ $wrapLabel
 17.385
 18
 18a.75.75
+19.00
+19.99',
 1;
 1px
 2,
@@ -1265,6 +1293,7 @@ $wrapLabel
 @endunless
 @foreach($pictureSources
 @if
+@if($amount
 @if($announceBusy)
 @if($announceError)
 @if($boundModel)
@@ -1612,6 +1641,7 @@ REQUIRED
 RRP
 RTL-safe
 Raising
+Read
 Reapply
 Recommended
 Removed
@@ -1943,6 +1973,7 @@ __toString
 `alt=""`
 `alt`
 `alt`,
+`amount`,
 `anywhere`
 `args`
 `aria-busy="true"`
@@ -2926,6 +2957,7 @@ decide
 decided
 decided,
 decides
+decimal
 decimals
 decimals,
 decision
@@ -2989,6 +3021,7 @@ desktop
 destroyed.
 detection:
 dev
+develop
 developer
 developer's
 developer-side
@@ -3034,6 +3067,7 @@ dist/wirekit.css
 distribute,
 distributes
 div
+division
 do
 do,
 do.
@@ -3121,6 +3155,7 @@ emitted
 empty
 empty,
 empty-state
+empty.
 empty:
 enabled
 enabled,
@@ -3242,6 +3277,7 @@ filled($removeIcon)
 filled($source['srcset']
 filled($stackBelow)
 filled()
+filled.
 filter_var($maxPrecision,
 finds
 fine
@@ -3286,6 +3322,7 @@ flight)
 flight.
 flip
 flips
+float,
 floating
 floor
 floor's
@@ -3393,6 +3430,7 @@ generic
 gesture
 get
 get_debug_type($maxPrecision),
+get_debug_type($value),
 gets
 gets,
 getters
@@ -3457,6 +3495,7 @@ hard-disabled
 hardcoded
 harder
 has
+has.
 hasActionForComponent()
 hatch
 have
@@ -3625,6 +3664,7 @@ instead,
 instead.
 instead:
 instead;
+int,
 int.
 intact
 integration
@@ -3642,6 +3682,7 @@ into
 intrinsic
 introduced
 introduces
+int|float|string|false|null
 invalid
 invented,
 inverted
@@ -3656,8 +3697,12 @@ is.
 is:
 is_array($source)
 is_array($sources)
+is_float($value)
+is_numeric(trim($value))))
 is_scalar($maxPrecision)
+is_scalar($value)
 is_string($label)
+is_string($value)
 isn't
 isolate`
 isset($after)
@@ -4060,11 +4105,13 @@ null;
 null])
 number
 number).
+number,
 number-input
 number.
 number:
 numbers
 numbers,
+numeric
 object
 object,
 object-fit
@@ -4337,6 +4384,7 @@ product,
 product.
 product:
 product;
+production,
 prohibits
 project
 promise.
@@ -4477,6 +4525,7 @@ replacement
 replaces
 repo's
 reported
+reported,
 reports
 repository.
 request
@@ -4500,6 +4549,7 @@ resources/js/components/number-input.js.
 respect
 responsive
 rest
+rest.
 resting
 restored
 rests
@@ -4826,6 +4876,7 @@ stop,
 stop.
 stops
 storage/logs/laravel.log.
+stores.
 str_contains($relAttr,
 str_contains($targetAttr,
 str_starts_with($key,
@@ -4841,6 +4892,7 @@ strike).
 strike,
 string
 string,
+string:
 strings
 strip
 stroke-width="2"
@@ -5016,6 +5068,7 @@ threshold
 through
 throw
 throw,
+throw.
 throwing
 throws
 throws.
@@ -5103,6 +5156,7 @@ trim($describedBy.'
 trim($id.'-adjusted
 trim($label)
 trim($relAttr.'
+trim($value)
 trim('flex
 trim(($hint
 trim((string)
@@ -5433,6 +5487,7 @@ xmlns="http://www.w3.org/2000/svg"
 yet.
 yet:
 yields
+you
 z-index
 zero
 zero,

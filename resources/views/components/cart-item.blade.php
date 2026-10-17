@@ -104,6 +104,11 @@
     $size = WireKit::validateProp('cart-item', 'size', $size, ['sm', 'md', 'lg']);
     $removable = BooleanProp::from($removable, true);
     $minorUnits = BooleanProp::from($minorUnits, false);
+    // An empty string is no amount, as null is: the value of a field nobody has filled. Left as it
+    // is, it would reach `price` and its row would stand empty.
+    $price = $price === '' ? null : $price;
+    $compareAt = $compareAt === '' ? null : $compareAt;
+    $lineTotal = $lineTotal === '' ? null : $lineTotal;
     $readonly = BooleanProp::from($readonly, false);
     $removesAtZero = BooleanProp::from($removesAtZero, false);
     // A line whose quantity can be changed ignores it: its field is its quantity.

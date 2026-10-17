@@ -41,16 +41,19 @@
     $verified = BooleanProp::from($verified, false);
 
     $max = max(1, min(10, (int) $max));
-    $score = max(0.0, min((float) $rating, (float) $max));
+    // A score that is no number is reported and counts as none, rather than the number PHP reads
+    // from it ("4,5" would be 4).
+    $score = max(0.0, min((float) (\Pushery\WireKit\Support\NumericProp::orNullReported($rating, 'review', 'rating') ?? 0), (float) $max));
     $level = (int) WireKit::validateProp('review', 'level', (string) $level, ['2', '3', '4', '5', '6']);
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id'), 'review-'); // page-unique DOM id; see Support\DomId
 
     // A date of any class is read as the instant it holds (Support\Moment), in the zone asked for,
-    // and written as the locale writes a date: "Sep 28, 2026", "28. Sept. 2026".
-    $moment = static fn (mixed $value): ?CarbonImmutable => ($read = Moment::of($value)) === null ? null : Moment::in($read, $timezone, 'review');
-    $written = $moment($date);
-    $replied = $moment($replyDate);
+    // and written as the locale writes a date: "Sep 28, 2026", "28. Sept. 2026". A string that
+    // names no date is reported and shows no date, as a missing one does.
+    $moment = static fn (mixed $value, string $prop): ?CarbonImmutable => ($read = Moment::of($value, component: 'review', prop: $prop)) === null ? null : Moment::in($read, $timezone, 'review');
+    $written = $moment($date, 'date');
+    $replied = $moment($replyDate, 'replyDate');
     $dateText = static fn (CarbonImmutable $value): string => LocalizedDate::bySkeleton($value, 'yMMMd', 'M j, Y');
 
     $hasReply = isset($reply) && $reply->hasActualContent();

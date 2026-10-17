@@ -28,9 +28,12 @@
     // The date and the reference day in the reader's zone (Support\Moment). A date object of any
     // class is read as the instant it holds and is not itself changed; a string that names no zone
     // of its own is read in this one.
-    $tz = $timezone ?? config('app.timezone', 'UTC');
-    $carbonDate = Moment::in(Moment::of($date, $tz) ?? CarbonImmutable::now($tz), $tz, 'date-separator');
-    $reference = Moment::in(Moment::of($now, $tz) ?? CarbonImmutable::now($tz), $tz, 'date-separator');
+    // A zone PHP does not know is reported and the application's is used: Carbon refuses it while
+    // READING a date, before `Moment::in()` could report it. A string that names no date is
+    // reported and read as a missing one.
+    $tz = Moment::zoneOr($timezone, (string) (config('app.timezone') ?: 'UTC'), 'date-separator');
+    $carbonDate = Moment::in(Moment::of($date, $tz, 'date-separator', 'date') ?? CarbonImmutable::now($tz), $tz, 'date-separator');
+    $reference = Moment::in(Moment::of($now, $tz, 'date-separator', 'now') ?? CarbonImmutable::now($tz), $tz, 'date-separator');
 
     // Human-friendly relative label
     if ($format !== null) {
