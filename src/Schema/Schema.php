@@ -397,7 +397,7 @@ final class Schema
      * ])
      * ```
      *
-     * @param  list<array<string, mixed>>  $nodes
+     * @param  list<array<string, mixed>|null>  $nodes  a node built only on a condition may be `null`, and is left out
      * @return array<string, mixed>
      */
     public static function graph(array $nodes): array

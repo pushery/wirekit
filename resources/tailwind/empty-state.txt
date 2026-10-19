@@ -114,6 +114,7 @@ $variantValue
 'level',
 'lg'
 'md'
+'mt-2'
 'muted'
 'muted']),
 'name'
@@ -185,6 +186,7 @@ $variantValue
 1–6
 2,
 20px,
+24px
 3,
 3;
 3rem,
@@ -192,6 +194,7 @@ $variantValue
 5,
 500s
 6],
+8px
 :
 :name="$icon"
 </div>
@@ -211,6 +214,7 @@ $variantValue
 =>
 ?
 ??
+@class(['mt-6'
 @else
 @elseif($icon)
 @endif
@@ -346,6 +350,7 @@ __toString
 `shrink`
 a
 a11y
+above,
 above.
 absent,
 accessibility
@@ -359,6 +364,7 @@ alias
 all,
 allowed
 alone,
+alone.
 already
 an
 anchored
@@ -394,6 +400,7 @@ because
 becomes
 before
 behavior.
+belongs
 below,
 below.
 bg-[var(--color-wk-bg-muted)]
@@ -404,6 +411,7 @@ blade-icons,
 blade-ui-kit/blade-heroicons.
 blade-ui-kit/blade-icons
 blade-ui-kit/blade-icons.
+blank($description)])>
 block,
 block.
 bootstrapped
@@ -420,7 +428,7 @@ bug
 build
 but
 button
-button)
+button).
 buttons).
 buttons,
 by
@@ -446,9 +454,9 @@ chose
 chrome
 chrome:
 class
+class="max-w-md
 class="mb-1
 class="mb-4
-class="mt-2">
 classes
 close
 close-icons,
@@ -506,6 +514,7 @@ dropdown
 dropdowns
 early
 early.
+edge
 effect.
 either
 element
@@ -516,6 +525,7 @@ embedded
 emit
 empty
 empty-state
+ends
 entry
 every
 exhausting
@@ -529,6 +539,7 @@ false)
 false),
 feature
 files
+filled($description),
 finds
 first
 first-allowed
@@ -650,7 +661,6 @@ map.
 marks
 match
 matching
-max-w-md
 may
 meant
 merge
@@ -819,11 +829,13 @@ somebody
 sorts
 source
 source-baked
+space
 space).
 space.
 span
 spelling
 standalone
+starts:
 stat
 state
 static
@@ -938,6 +950,7 @@ width.
 win.
 wins
 with
+without
 word,
 words
 works,

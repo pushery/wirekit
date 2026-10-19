@@ -109,6 +109,9 @@ final class LucidePreset implements IconPreset
             'settings' => 'lucide-settings',
             'gear' => 'lucide-settings',
             'dashboard' => 'lucide-layout-dashboard',
+            // A page's arrangement: a frame with a header and a side column. `layout` draws the
+            // same glyph under the name Lucide retired.
+            'layout' => 'lucide-panels-top-left',
             'billing' => 'lucide-credit-card',
             'credit-card' => 'lucide-credit-card',
 
@@ -197,6 +200,10 @@ final class LucidePreset implements IconPreset
             'chevron-up-down' => 'lucide-chevrons-up-down',
             'more-vertical' => 'lucide-ellipsis-vertical',
             'arrows-left-right' => 'lucide-arrow-left-right',
+            // Every part of a page opened or closed at once: arrows leaving the fold line, and
+            // arrows meeting it.
+            'expand-all' => 'lucide-unfold-vertical',
+            'collapse-all' => 'lucide-fold-vertical',
             'hash' => 'lucide-hash',
             'shield-warning' => 'lucide-shield-alert',
             'prohibit' => 'lucide-ban',
@@ -280,6 +287,9 @@ final class LucidePreset implements IconPreset
             'finger-print' => 'lucide-fingerprint',
             'fire' => 'lucide-flame',
             'heart' => 'lucide-heart',
+            // Lucide draws every glyph in outline and has no filled heart or star, so the filled and
+            // the outline name draw one glyph here.
+            'heart-outline' => 'lucide-heart',
             'link' => 'lucide-link',
             'attach' => 'lucide-paperclip',
             'live' => 'lucide-radio',

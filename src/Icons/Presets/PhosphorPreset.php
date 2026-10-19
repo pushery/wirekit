@@ -112,6 +112,7 @@ final class PhosphorPreset implements IconPreset
             'settings' => 'phosphor-gear',
             'gear' => 'phosphor-gear',
             'dashboard' => 'phosphor-squares-four',
+            'layout' => 'phosphor-layout',
             'billing' => 'phosphor-credit-card',
             'credit-card' => 'phosphor-credit-card',
 
@@ -214,6 +215,10 @@ final class PhosphorPreset implements IconPreset
             'chevron-up-down' => 'phosphor-caret-up-down',
             'more-vertical' => 'phosphor-dots-three-vertical',
             'arrows-left-right' => 'phosphor-arrows-left-right',
+            // Every part of a page opened or closed at once: arrows leaving the line, and arrows
+            // meeting it.
+            'expand-all' => 'phosphor-arrows-out-line-vertical',
+            'collapse-all' => 'phosphor-arrows-in-line-vertical',
             'hash' => 'phosphor-hash',
             'shield-warning' => 'phosphor-shield-warning',
             'prohibit' => 'phosphor-prohibit',
@@ -295,7 +300,10 @@ final class PhosphorPreset implements IconPreset
             'command-line' => 'phosphor-terminal',
             'finger-print' => 'phosphor-fingerprint',
             'fire' => 'phosphor-fire',
-            'heart' => 'phosphor-heart',
+            // The heart and the star are filled, as in every set that has both, so the pair with
+            // their `-outline` names can show a state: saved and not yet, starred and not yet.
+            'heart' => 'phosphor-heart-fill',
+            'heart-outline' => 'phosphor-heart',
             'link' => 'phosphor-link',
             'attach' => 'phosphor-paperclip',
             'live' => 'phosphor-radio',
@@ -321,7 +329,7 @@ final class PhosphorPreset implements IconPreset
             'security' => 'phosphor-shield',
             'speed' => 'phosphor-gauge',
             'squares-2x2' => 'phosphor-squares-four',
-            'star' => 'phosphor-star',
+            'star' => 'phosphor-star-fill',
             'star-outline' => 'phosphor-star',
             'swatch' => 'phosphor-swatches',
             'unlock' => 'phosphor-lock-open',

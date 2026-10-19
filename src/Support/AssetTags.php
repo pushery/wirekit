@@ -189,6 +189,22 @@ final class AssetTags
     }
 
     /**
+     * The compact sheet's tag while compact classes are on, and nothing while they are off.
+     *
+     * For an application that bundles `wirekit.css` into its own build instead of linking it with
+     * `@wirekitStyles`: the views write short names only while the switch is on, so the sheet that
+     * declares them has to follow the switch, which a build cannot.
+     *
+     * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
+     */
+    public static function compactStyleTag(string $nonceAttr = ''): string
+    {
+        return CompactClasses::enabled()
+            ? '<link rel="stylesheet"'.$nonceAttr.' href="'.self::source('wirekit-compact.css').'">'."\n"
+            : '';
+    }
+
+    /**
      * Is the published copy something other than what this package ships?
      *
      * Compared by content, not by modification time. A modification time answers "which

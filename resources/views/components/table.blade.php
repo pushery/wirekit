@@ -24,6 +24,9 @@
     'stickyHeaderMax' => config('wirekit.components.table.sticky-header-max', '24rem'),
     'stickyColumn' => false, // freeze the FIRST column while the rest scroll horizontally
     'stickyColumnBelow' => null, // sm | md | lg | xl | 2xl — freeze it only below that breakpoint
+    // sm | md | lg | xl | 2xl — below that breakpoint every body row stands as a card and every
+    // cell as a line that names its column, so a wide table does not scroll sideways on a phone.
+    'stackBelow' => null,
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // Accessible name for the responsive scroll wrapper, and the switch that makes it a
     // LANDMARK. The wrapper is keyboard-reachable either way (WCAG 2.1.1 — `tabindex="0"` is
@@ -98,6 +101,15 @@
         default => 'min-w-full w-max',
     };
     $alpineSort = BooleanProp::from($alpineSort, false);
+
+    // `stackBelow` stacks the rows below a breakpoint (dist/wirekit.css, the stacked rows). An
+    // unknown value is reported through the strictness gate and, where the gate does not throw,
+    // leaves the table as a table.
+    $stackBelow = filled($stackBelow) ? (string) $stackBelow : null;
+    if ($stackBelow !== null && ! in_array($stackBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
+        WireKit::validateProp('table', 'stackBelow', $stackBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
+        $stackBelow = null;
+    }
 
     // Base table classes — full width, collapse borders, use design tokens for typography
     $classes = WireKit::resolveClasses('table', 'base', implode(' ', [
@@ -319,6 +331,16 @@
         @php
             $plainHtmlWarning = '[wirekit] table: plain thead/tbody/tr/th/td detected in slot — these inherit no styling (padding, row dividers, stripe, hover). Wrap your rows in the table.head / table.body / table.row / table.th / table.td sub-components. See https://docs.wirekit.app/components/table for the canonical composition.';
         @endphp
+        {{-- A stacked table changes the display of its elements, and some browsers then stop
+             exposing them as a table, so the roles are written out. `x-wk-table-labels` names each
+             cell's column from the header above it; a table outside every Alpine scope gets one
+             of its own for it, since a directive outside every scope is never installed. --}}
+        @if($stackBelow !== null)
+            data-wk-table-stack="{{ $stackBelow }}"
+            role="table"
+            x-wk-table-labels
+            @if(! $alpineSort && ! $hasPlainHtmlDescendants && ! $responsive) x-data @endif
+        @endif
         @if($alpineSort)
             x-data="wirekitTableSort({ warning: {{ $hasPlainHtmlDescendants ? \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) : 'null' }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_', '-', app()->getLocale())) }} })"
         @elseif($hasPlainHtmlDescendants)

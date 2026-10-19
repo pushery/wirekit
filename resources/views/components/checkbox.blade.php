@@ -291,7 +291,9 @@
     ]);
 @endphp
 
-<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+{{-- `data-wk-choice` marks a checkbox whose label is a row, which the stylesheet reads in a field
+     set: on a touch surface two such rows need no gap between them. --}}
+<div {{ $outerAttributes }} @if($rowMarkers !== '') data-wk-choice @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     {{-- With help, the label shares a row with its button, which may not sit inside the
          label: it would become part of the control's name. --}}
     @if($helpId || $labelAfterGiven)

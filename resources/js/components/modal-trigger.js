@@ -1,4 +1,4 @@
-import { isNamedOverlayOpen } from '../utils/overlay.js';
+import { dispatchFromTrigger, isNamedOverlayOpen } from '../utils/overlay.js';
 
 /**
  * Opens a NAMED overlay from a trigger that is nowhere near it.
@@ -139,7 +139,9 @@ export default function wirekitModalTrigger(config = {}) {
 
             const init = { detail: { name: this._name }, bubbles: true };
 
-            window.dispatchEvent(drawer
+            // The trigger goes along as the opener: WebKit does not focus a button on a click or a
+            // tap, so the overlay could not tell where to take the focus back to.
+            dispatchFromTrigger(this.$el, drawer
                 ? new CustomEvent('wirekit-drawer-show', init)
                 : new CustomEvent('wirekit-modal-show', init));
         },

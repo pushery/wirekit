@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Pushery\WireKit\WireKit;
+
 /**
  * The one place a tab bar's appearance is decided.
  *
@@ -44,6 +46,54 @@ final class TablistStyles
             $variant === 'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
             default => 'inline-flex items-center gap-2 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] max-w-full overflow-x-auto overflow-y-hidden',
         };
+    }
+
+    /**
+     * Classes that let a horizontal bar wrap its tabs onto further lines instead of scrolling.
+     *
+     * `true` wraps at every width; a breakpoint wraps from that width up, so a phone keeps the
+     * bar that scrolls. Each tab keeps its label on one line and wraps as a whole, and the bar
+     * still scrolls a single tab wider than itself. A vertical bar stacks its tabs already and
+     * takes nothing. Every class is a literal, so Tailwind finds it.
+     *
+     * Outside the bar's class seam on purpose: a scope that replaces the `tablist` block keeps
+     * the wrap the call site asked for.
+     */
+    public static function wrap(bool|string $wrap, bool $vertical): string
+    {
+        if ($vertical) {
+            return '';
+        }
+
+        return match ($wrap) {
+            true => 'flex-wrap',
+            'sm' => 'sm:flex-wrap',
+            'md' => 'md:flex-wrap',
+            'lg' => 'lg:flex-wrap',
+            'xl' => 'xl:flex-wrap',
+            default => '',
+        };
+    }
+
+    /**
+     * Read the `wrap` prop of `tabs` and `tabs.list`: off, at every width, or from a breakpoint.
+     *
+     * A bare `wrap` arrives as `true` and an unbound `wrap="false"` as a string, so both
+     * spellings of the booleans are read as booleans; anything else names a breakpoint.
+     *
+     * @param  string  $component  the component whose prop it is, for the error message
+     */
+    public static function wrapValue(bool|int|string|null $wrap, string $component): bool|string
+    {
+        if ($wrap === null || $wrap === false || $wrap === 0 || $wrap === 'false' || $wrap === '0') {
+            return false;
+        }
+
+        if ($wrap === true || $wrap === 1 || $wrap === 'true' || $wrap === '1' || $wrap === '') {
+            return true;
+        }
+
+        return WireKit::validateProp($component, 'wrap', (string) $wrap, ['sm', 'md', 'lg', 'xl']);
     }
 
     /**

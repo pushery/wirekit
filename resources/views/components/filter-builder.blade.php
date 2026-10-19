@@ -332,8 +332,8 @@
                     </div>
                 </label>
 
-                {{-- Value editor (typed by field) --}}
-                <label class="block">
+                {{-- Value editor (typed by field). An operator that takes no value hides it. --}}
+                <label class="block" x-show="draftTakesValue()">
                     <span class="{{ $controlLabel }}">{{ __('wirekit::Value') }}</span>
                     <template x-if="draftValueType() === 'select'">
                         <div class="relative">

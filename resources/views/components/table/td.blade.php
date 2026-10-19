@@ -20,7 +20,15 @@
     // anonymous: an unnamed container would also become the measuring context for every
     // `@`-variant a caller nests inside the table, and silently retarget it.
     'hideBelowContainer' => null,
+    // The name of the cell's column where the table stacks its rows (`stack-below` on the table).
+    // Unset, the header above the column names it.
+    'label' => null,
     'scope' => null,
+])
+
+{{-- The table's `stack-below`: a table that stacks its rows writes its roles out. --}}
+@aware([
+    'stackBelow' => null,
 ])
 
 @php
@@ -30,6 +38,9 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('table.td', $attributes->getAttributes());
 
     use Pushery\WireKit\WireKit;
+
+    // `@aware` leaves the key in the bag, so a tag that also wrote it would render it as an attribute.
+    $attributes = $attributes->except(['stackBelow', 'stack-below']);
 
     // An unknown value is reported through the strictness gate and, where the gate does not throw,
     // aligns left.
@@ -116,6 +127,14 @@
     ]), $scope);
 @endphp
 
-<td data-wk-prose-skip data-wk-table-td {{ $attributes->class([$classes]) }}>
+<td data-wk-prose-skip data-wk-table-td
+    {{-- Stacked, a cell aligned to the end is the row's actions and stands as the card's footer,
+         and a label of the cell's own wins over its column's. --}}
+    @if(filled($stackBelow))
+        role="cell"
+        @if($align === 'right') data-wk-cell-align="right" @endif
+        @if(filled($label)) data-label="{{ $label }}" data-wk-label-own @endif
+    @endif
+    {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </td>

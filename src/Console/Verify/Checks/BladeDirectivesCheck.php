@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console\Verify\Checks;
 
 use Pushery\WireKit\Console\Verify\VerifyCheck;
+use Pushery\WireKit\Support\AppCss;
 use Pushery\WireKit\Support\BladeParser;
+use Pushery\WireKit\Support\CompactClasses;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -54,6 +56,7 @@ final class BladeDirectivesCheck extends VerifyCheck
         }
 
         $foundStyles = false;
+        $foundCompactSheet = false;
         $foundScripts = false;
         $orderOk = true;
         $orderFailedFile = null;
@@ -68,6 +71,11 @@ final class BladeDirectivesCheck extends VerifyCheck
 
             if (str_contains($content, '@wirekitStyles')) {
                 $foundStyles = true;
+            }
+
+            // The compact sheet on its own: the directive, or a tag of the application's own.
+            if (str_contains($content, '@wirekitCompactStyles') || str_contains($content, 'wirekit-compact.css')) {
+                $foundCompactSheet = true;
             }
 
             if (str_contains($content, '@wirekitScripts')) {
@@ -108,6 +116,19 @@ final class BladeDirectivesCheck extends VerifyCheck
             $this->line('  Or: @import \'../../vendor/pushery/wirekit/dist/wirekit.css\' in resources/css/app.css');
         }
 
+        // With compact classes on, the views write short names that only `wirekit-compact.css`
+        // declares. @wirekitStyles links it; an application that bundles `wirekit.css` itself has
+        // to load it too, or every element of the kit loses its styling without an error.
+        if (! $foundStyles && $hasImportPath && CompactClasses::enabled()) {
+            if ($foundCompactSheet || $this->hasCompactCssImportInAppCss()) {
+                $this->reportPass('Compact classes are on, and their sheet is loaded beside the imported wirekit.css');
+            } else {
+                $this->reportWarn('Compact classes are on, and no stylesheet that declares them is loaded: the kit\'s elements are unstyled');
+                $this->line('  Fix: Add @wirekitCompactStyles in <head> of your layout, before your own stylesheet');
+                $this->line('  Or: turn compact classes off (wirekit.styles.compact, WIREKIT_COMPACT_CLASSES)');
+            }
+        }
+
         if ($foundScripts) {
             $this->reportPass('@wirekitScripts directive found');
         } else {
@@ -124,6 +145,15 @@ final class BladeDirectivesCheck extends VerifyCheck
         } elseif ($foundScripts) {
             $this->reportPass('@wirekitScripts is before @livewireScripts (or no explicit @livewireScripts)');
         }
+    }
+
+    /** Whether app.css imports the compact sheet itself, outside its comments. */
+    private function hasCompactCssImportInAppCss(): bool
+    {
+        $appCss = resource_path('css/app.css');
+
+        return file_exists($appCss)
+            && preg_match('/@import\b[^;]*wirekit-compact\.css/', AppCss::withoutComments((string) file_get_contents($appCss))) === 1;
     }
 
     /**

@@ -419,6 +419,21 @@ class WireKitServiceProvider extends ServiceProvider
             ?>';
         });
 
+        // @wirekitCompactStyles — the compact sheet alone, for an application that bundles
+        // `wirekit.css` itself. It links `wirekit-compact.css` while compact classes are on and
+        // writes nothing while they are off, so the sheet follows the switch the views follow,
+        // which an import in a build cannot. Takes the same optional CSP nonce as @wirekitStyles.
+        Blade::directive('wirekitCompactStyles', function ($expression) {
+            $expression = trim($expression);
+            $nonceExpr = $expression === '' ? "''" : $expression;
+
+            return '<?php
+                $__wk_nonce = '.$nonceExpr.';
+                $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
+                echo \Pushery\WireKit\WireKitServiceProvider::compactStyleTag($__wk_nonceAttr);
+            ?>';
+        });
+
         // @wirekitThemeScript — the no-FOUC head script.
         //
         // Applies the stored theme BEFORE the first paint. It has to be a plain, classic script at the
@@ -690,6 +705,12 @@ class WireKitServiceProvider extends ServiceProvider
     public static function styleTag(string $file, string $nonceAttr = ''): string
     {
         return AssetTags::styleTag($file, $nonceAttr);
+    }
+
+    /** The compact sheet's tag while compact classes are on; see {@see AssetTags::compactStyleTag()}. */
+    public static function compactStyleTag(string $nonceAttr = ''): string
+    {
+        return AssetTags::compactStyleTag($nonceAttr);
     }
 
     /** Whether the published copy differs from the package's; see {@see AssetTags::publishedIsStale()}. */

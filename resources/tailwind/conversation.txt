@@ -53,7 +53,6 @@ $footer
 $forceLoading
 $forceLoading;
 $hasWireAction
-$hasWireAction;
 $heightClasses
 $heightClasses,
 $href
@@ -573,6 +572,7 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 REPLACES
 RTL-safe
+Read
 Recommended
 Removed
 Render
@@ -673,6 +673,7 @@ __('wirekit::Jump
 __('wirekit::Loading')
 `$loading`;
 `$size`
+`$wire.save()`,
 `--wk-touch-min`
 `.attr`
 `.wk-button-group[data-stack-below="…"]`
@@ -687,6 +688,7 @@ __('wirekit::Loading')
 `<body>`
 `<body>`.
 `<button>`,
+`<form
 `<x-slot:iconLeft>`
 `<x-slot:iconRight>`.
 `@`-variant
@@ -783,6 +785,7 @@ __('wirekit::Loading')
 `whitespace-normal`
 `whitespace-nowrap`
 `wire:*`
+`wire:`
 `wire:loading.attr`
 `wire:loading`
 `wk-field`
@@ -1024,6 +1027,7 @@ call
 caller
 caller's
 callout/alert).
+calls
 can
 candidate
 candidates
@@ -1032,6 +1036,7 @@ canonical
 cap
 card
 carries
+carries:
 carry
 carrying
 carve-out:
@@ -1178,6 +1183,7 @@ decided
 decided,
 declaration
 declarative
+declarative,
 declared
 declares
 decode:
@@ -1339,6 +1345,7 @@ flashes
 flex
 flex-col
 flex-nowrap
+flex-wrap
 flexes
 flight
 flight)
@@ -1577,6 +1584,7 @@ lets
 letters,
 lg
 lg"
+lg:flex-wrap
 lift
 lifts
 light
@@ -1637,6 +1645,7 @@ max-w-full
 max-xl:[--wk-touch-min:0px]',
 may
 md
+md:flex-wrap
 mean
 meaningful
 meaningless.
@@ -1806,6 +1815,7 @@ padding.
 page
 page:
 pagination
+paint,
 paints
 pairing
 pane
@@ -2019,6 +2029,7 @@ sees
 select
 selected
 semantically
+sent
 sentence.
 separately
 set
@@ -2079,6 +2090,7 @@ slots.
 slots:
 slow
 sm
+sm:flex-wrap
 small
 smaller
 smallest
@@ -2157,6 +2169,7 @@ stylesheet's
 styling
 stylistic
 sub-component,
+submit
 submitting,
 subtle:
 success-hover
@@ -2418,6 +2431,7 @@ wire:loading.class="opacity-[var(--opacity-wk-disabled)]
 wire:loading>
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 with
@@ -2452,6 +2466,7 @@ x-text="unread"
 x-transition.opacity
 x-wk-announce-busy
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yields
 z-index

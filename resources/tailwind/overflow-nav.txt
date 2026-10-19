@@ -137,7 +137,6 @@ $focusableTrigger
 $forceLoading
 $forceLoading;
 $hasWireAction
-$hasWireAction;
 $heightClasses
 $heightClasses,
 $href
@@ -1224,6 +1223,7 @@ Pushery\WireKit\WireKit;
 REPLACES
 RESOLVED
 RTL-safe
+Read
 Reapply
 Recommended
 Removed
@@ -1435,6 +1435,7 @@ __toString
 `$refs`
 `$size`
 `$truncate`:
+`$wire.save()`,
 `'0'`
 `'menu'`,
 `'row'`
@@ -1464,6 +1465,7 @@ __toString
 `<button>`
 `<button>`,
 `<div>`
+`<form
 `<nav>`
 `<p>`
 `<span>`
@@ -1675,6 +1677,7 @@ __toString
 `wide`
 `window.open`,
 `wire:*`
+`wire:`
 `wire:click`
 `wire:id`,
 `wire:key`,
@@ -2050,6 +2053,7 @@ card's
 card,
 card.
 carries
+carries:
 carry
 carry,
 carrying
@@ -2278,6 +2282,7 @@ decision,
 decision:
 declaration
 declarative
+declarative,
 declared
 declares
 declaring
@@ -2939,6 +2944,7 @@ letter
 letters.
 lg
 lg"
+lg:flex-wrap
 library
 lift
 lifts
@@ -3042,6 +3048,7 @@ max-w-full'])
 max-xl:[--wk-touch-min:0px]',
 may
 md
+md:flex-wrap
 mean
 meaningful
 means
@@ -3297,6 +3304,7 @@ page;
 pages
 pages).
 pagination
+paint,
 painted
 paints
 pair
@@ -3639,6 +3647,7 @@ self-stretch
 semantic
 semicolon:
 sensible
+sent
 sentence.
 separately
 server
@@ -3715,6 +3724,7 @@ slots.
 slots:
 slow
 sm
+sm:flex-wrap
 small
 smaller
 smallest
@@ -3818,6 +3828,7 @@ styling
 stylistic
 sub-component
 sub-component,
+submit
 submitting,
 subtle
 subtle:
@@ -4231,6 +4242,7 @@ wire:loading.class="opacity-[var(--opacity-wk-disabled)]
 wire:loading>
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 wires
@@ -4314,6 +4326,7 @@ x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 x-wk-announce-busy
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yet.
 yields

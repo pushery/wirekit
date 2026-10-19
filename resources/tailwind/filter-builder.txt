@@ -488,6 +488,7 @@ chip.
 chipText()
 chipText(filter))"
 chips
+class="block"
 class="block">
 class="fixed
 class="flex
@@ -603,6 +604,7 @@ far-right
 field
 field's
 field)
+field).
 fields"
 fields:
 fill
@@ -666,6 +668,7 @@ here
 here,
 hidden-input
 hide
+hides
 highest
 hold.
 holding
@@ -1091,6 +1094,7 @@ x-ref="model"
 x-ref="panel"
 x-ref="search"
 x-ref="trigger"
+x-show="draftTakesValue()">
 x-show="filters.length
 x-show="isOpen"
 x-teleport="#wk-overlay-root">

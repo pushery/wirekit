@@ -276,6 +276,38 @@ export function registerShortcut(entry) {
     return () => entries.delete(entry);
 }
 
+/**
+ * Register a shortcut that works out what it does, rather than clicking or focusing one element:
+ * `j` for the next link in a list, `e` to fold the group around the current one. Exposed as
+ * `window.wirekitShortcut` by every bundle that carries `x-wk-shortcut`.
+ *
+ * It follows the rules every shortcut follows: a widget that takes the key keeps it, a field
+ * keeps its typing, the reader's switch turns a single key off, and an open modal dialog stands
+ * for its own area. With `el` the shortcut belongs to the area that element sits in and applies
+ * while it renders; without, it is the page's, or every area's with `global`. The overview names
+ * it by `label`.
+ *
+ * @param {{ keys: string, label?: string, run: function(KeyboardEvent): void, el?: Element|null, global?: boolean }} options
+ * @returns {() => void} unregisters it; options that name no shortcut or no `run` register nothing
+ */
+export function defineShortcut(options) {
+    const parsed = parseShortcut(String(options?.keys ?? ''));
+
+    if (! parsed || typeof options.run !== 'function') {
+        return () => {};
+    }
+
+    installShortcuts();
+
+    return registerShortcut({
+        el: options.el ?? null,
+        parsed,
+        global: options.global === true,
+        label: String(options.label ?? ''),
+        run: options.run,
+    });
+}
+
 /** Every registered entry, for the overview and for tests. */
 export function registeredShortcuts() {
     return Array.from(entries);

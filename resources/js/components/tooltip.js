@@ -21,6 +21,12 @@ const SURROUNDING_CONTROL = [
     '[role="checkbox"]', '[role="radio"]', '[role="switch"]',
 ].join(', ');
 
+// Every cut text a tooltip repeats carries this mark (resources/views/components/text.blade.php).
+const CUT_TEXT = '[data-wk-cut-tip]';
+
+/** A text's words as they read on the line: the spaces and line breaks of the markup collapsed. */
+const wordsOf = (element) => (element?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
 // A widget that keeps the keyboard focus to itself and moves it with the arrow keys. A tab stop of
 // a cut text's own inside one would be a stop the widget does not expect.
 const COMPOSITE_WIDGET = [
@@ -76,11 +82,17 @@ export default function wirekitTooltip(config = {}) {
         _standsAlone: false,
 
         // The control the text stands in, its listeners, and the observers of the cut; all released
-        // in destroy().
+        // in destroy(). `_surroundingAround` is the element the text stands in, which for a label
+        // is the label rather than the control it names.
         _surroundingControl: null,
+        _surroundingAround: null,
         _surroundingFocusIn: null,
         _surroundingFocusOut: null,
         _cutObservers: [],
+
+        // The words of every cut text in the control, while this text speaks for all of them on a
+        // focus of the control. See `_focusFromTheControl()`.
+        _controlWords: null,
 
         init() {
             this._moveDescriptionToTheFocusableTrigger();
@@ -192,8 +204,12 @@ export default function wirekitTooltip(config = {}) {
 
             if (control) {
                 this._surroundingControl = control;
-                this._surroundingFocusIn = (event) => this.focusin(event);
-                this._surroundingFocusOut = () => this.focusout();
+                this._surroundingAround = around;
+                this._surroundingFocusIn = (event) => this._focusFromTheControl(event);
+                this._surroundingFocusOut = () => {
+                    this._controlWords = null;
+                    this.focusout();
+                };
                 control.addEventListener('focusin', this._surroundingFocusIn);
                 control.addEventListener('focusout', this._surroundingFocusOut);
             }
@@ -225,6 +241,40 @@ export default function wirekitTooltip(config = {}) {
 
             document.fonts?.ready?.then(measure);
             measure();
+        },
+
+        /**
+         * Keyboard focus on the control the text stands in.
+         *
+         * A control can hold more than one cut text, a list entry with a name and a code under it
+         * for one. Every text listens to the same control, and each opened its own panel above its
+         * own line, so a focus stacked the panels over each other. Now the first text in the
+         * control that is cut speaks for all of them: its panel carries the words of every cut text
+         * there, joined by a middle dot, and the others stay closed. The pointer still shows the
+         * tooltip of the text it is on.
+         */
+        _focusFromTheControl(event) {
+            const cut = this._cutTextsInTheControl();
+
+            if (cut.length > 1 && cut[0] !== this.$root) {
+                return;
+            }
+
+            this._controlWords = cut.length > 1 ? cut.map(wordsOf).join(' · ') : null;
+            this.focusin(event);
+        },
+
+        /** The texts in this text's control that are cut right now, in the order of the page. */
+        _cutTextsInTheControl() {
+            const around = this._surroundingAround;
+
+            if (!around || typeof around.querySelectorAll !== 'function') {
+                return [];
+            }
+
+            return [...around.querySelectorAll(CUT_TEXT)].filter((element) =>
+                element.parentElement?.closest?.(SURROUNDING_CONTROL) === around
+                && element.scrollWidth > element.clientWidth);
         },
 
         /**
@@ -271,7 +321,7 @@ export default function wirekitTooltip(config = {}) {
                 return;
             }
 
-            const text = (this.$root?.textContent ?? '').replace(/\s+/g, ' ').trim();
+            const text = this._controlWords ?? wordsOf(this.$root);
             if (panel.textContent !== text) {
                 panel.textContent = text;
             }
@@ -290,6 +340,7 @@ export default function wirekitTooltip(config = {}) {
                 this._surroundingControl.removeEventListener('focusin', this._surroundingFocusIn);
                 this._surroundingControl.removeEventListener('focusout', this._surroundingFocusOut);
                 this._surroundingControl = null;
+                this._surroundingAround = null;
             }
 
             if (this._navCleanup) {

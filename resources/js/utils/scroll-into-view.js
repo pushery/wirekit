@@ -40,22 +40,73 @@ export const SETTLE_AFTER_MS = 800;
 /** Node.DOCUMENT_POSITION_PRECEDING, spelled out so the module reads the same outside a browser. */
 const PRECEDING = 2;
 
+/** The overflow values that make an element a scroll container, which `scroll-padding` applies to. */
+const SCROLLS = ['auto', 'scroll', 'hidden'];
+
+/**
+ * The `scroll-padding` of a scroll container, in pixels on each side.
+ *
+ * The kit writes it itself: a header pinned to the top of a scrolling area reports its band as
+ * that area's `scroll-padding-top` (utils/scroll-inset.js), a bar pinned to the bottom its band as
+ * `scroll-padding-bottom`, and the browser keeps a scrolled element clear of both. A percentage is
+ * of the container's scrollport; a value the style does not carry, or `auto`, counts as none.
+ *
+ * @param {CSSStyleDeclaration|undefined} style
+ * @param {number} width
+ * @param {number} height
+ * @returns {{top: number, left: number, bottom: number, right: number}}
+ */
+function scrollPadding(style, width, height) {
+    const read = (value, size) => {
+        if (typeof value !== 'string' || value === '' || value === 'auto') {
+            return 0;
+        }
+
+        const number = parseFloat(value);
+
+        if (! Number.isFinite(number)) {
+            return 0;
+        }
+
+        return value.endsWith('%') ? (number / 100) * size : number;
+    };
+
+    return {
+        top: read(style?.scrollPaddingTop, height),
+        bottom: read(style?.scrollPaddingBottom, height),
+        left: read(style?.scrollPaddingLeft, width),
+        right: read(style?.scrollPaddingRight, width),
+    };
+}
+
 /**
  * The part of the window the element can be seen in: the viewport, narrowed by the box inside the
  * borders of every ancestor that clips what overflows it. In an application shell the main area
  * scrolls under a fixed header, and a region whose top stands between the top of the window and
  * the top of that area is cut off by it, while the window alone would count it as in view.
  *
+ * The `scroll-padding` of every scroll container on the way, the viewport's included, narrows the
+ * area as well. A region standing in the band a pinned header reports that way is covered by the
+ * header, though it is inside its area's box: counted as in view, it took the focus where nothing
+ * of it could be seen (WCAG 2.4.11), and a scroll would have placed it under the band.
+ *
  * @param {HTMLElement} el
  * @returns {{top: number, left: number, bottom: number, right: number}}
  */
 function visibleArea(el) {
-    const area = {
-        top: 0,
-        left: 0,
-        bottom: window.innerHeight || document.documentElement.clientHeight,
-        right: window.innerWidth || document.documentElement.clientWidth,
-    };
+    const height = window.innerHeight || document.documentElement.clientHeight;
+    const width = window.innerWidth || document.documentElement.clientWidth;
+    const area = { top: 0, left: 0, bottom: height, right: width };
+
+    // The root element's scroll padding is the viewport's.
+    if (typeof window.getComputedStyle === 'function' && document.documentElement) {
+        const pad = scrollPadding(window.getComputedStyle(document.documentElement), width, height);
+
+        area.top += pad.top;
+        area.left += pad.left;
+        area.bottom -= pad.bottom;
+        area.right -= pad.right;
+    }
 
     // The body and the root element hand their overflow to the viewport, which the area starts as.
     for (let node = el.parentElement; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
@@ -72,10 +123,16 @@ function visibleArea(el) {
         const top = box.top + node.clientTop;
         const left = box.left + node.clientLeft;
 
-        area.top = Math.max(area.top, top);
-        area.left = Math.max(area.left, left);
-        area.bottom = Math.min(area.bottom, top + node.clientHeight);
-        area.right = Math.min(area.right, left + node.clientWidth);
+        // `clip` on both axes clips without scrolling, and an element that does not scroll has no
+        // scroll padding to keep.
+        const pad = SCROLLS.includes(style.overflowY) || SCROLLS.includes(style.overflowX)
+            ? scrollPadding(style, node.clientWidth, node.clientHeight)
+            : { top: 0, left: 0, bottom: 0, right: 0 };
+
+        area.top = Math.max(area.top, top + pad.top);
+        area.left = Math.max(area.left, left + pad.left);
+        area.bottom = Math.min(area.bottom, top + node.clientHeight - pad.bottom);
+        area.right = Math.min(area.right, left + node.clientWidth - pad.right);
     }
 
     return area;

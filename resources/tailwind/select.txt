@@ -534,7 +534,6 @@ $wkField->follow($id);
 :required="(bool)
 :text="$helpText"
 </a>.
-</button>
 </div>
 </label>
 </optgroup>
@@ -546,7 +545,6 @@ $wkField->follow($id);
 </{{
 <a>
 <body>
-<button
 <div
 <label
 <label>
@@ -881,7 +879,9 @@ __('wirekit::Saving'),
 `-2`,
 `.number`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<select>`
@@ -980,6 +980,7 @@ __('wirekit::Saving'),
 `selected`
 `size`
 `sm`,
+`span`
 `span`:
 `swapElements`
 `tagName()`
@@ -1191,6 +1192,7 @@ branch.
 brand
 break
 breaks
+brings
 browser
 browser's
 browser's,
@@ -1403,6 +1405,7 @@ dim
 disabled
 disabled'
 disabled,
+disabled>`
 disabled{{
 disables
 disagreeing
@@ -1521,6 +1524,7 @@ field),
 field,
 field:
 fields
+fields.
 fill-rule="evenodd"
 fill="currentColor"
 fill="none"
@@ -1810,6 +1814,7 @@ live
 lives
 long
 longer
+look
 looks
 loss
 made
@@ -2116,6 +2121,7 @@ reading
 reads
 real
 reason
+reason.
 reason:
 receive
 receiver,
@@ -2168,6 +2174,7 @@ result
 right
 right-0
 ring
+role,
 role:
 role="button"
 role="tooltip"
@@ -2458,7 +2465,6 @@ two
 two,
 two.
 type-cast
-type="button"
 type="{{
 typed
 unable
@@ -2595,8 +2601,10 @@ x-on:change="commitFromControl()"
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

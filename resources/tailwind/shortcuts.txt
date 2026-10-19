@@ -21,6 +21,7 @@
 "Save",
 "Saving…")
 "Send
+"Set
 "Type
 "Username
 "View
@@ -197,7 +198,6 @@ $hasTrailing
 $hasTrailing,
 $hasTrailing;
 $hasWireAction
-$hasWireAction;
 $heading
 $headingClasses
 $headingText
@@ -241,6 +241,7 @@ $id.'-error'
 $id.'-format-hint'
 $id.'-help'
 $id.'-hint'
+$id.'-own',
 $id.'-success'
 $inAlignedRow
 $inputClasses
@@ -319,8 +320,11 @@ $overlayCloseHandler
 $overlayCloseSlot
 $overlayCloseSlot);
 $overlayCloseWrapsAControl
+$own
+$ownModel
 $ownName
 $ownName);
+$ownSwitchAttributes
 $panelClasses
 $part
 $part):
@@ -430,6 +434,7 @@ $underlineClasses
 $underlineClasses,
 $useWrapper
 $value
+$value):
 $variant,
 $variantClasses
 $variantClasses,
@@ -511,6 +516,7 @@ $wrapperClasses
 'args'
 'aria-'))
 'aria-busy'
+'aria-controls'
 'aria-describedby'])->class(['peer',
 'aria-label'));
 'aria-label');
@@ -552,6 +558,7 @@ $wrapperClasses
 'cancel'`,
 'cancel'`.
 'cancelByReader()'
+'checked'
 'clearLabel'
 'clearable'
 'close'
@@ -575,6 +582,7 @@ $wrapperClasses
 'danger']))
 'data-wk-alert-dialog-title'))
 'data-wk-modal-header');
+'data-wk-own-for'
 'datetime-local'],
 'debug'
 'default'
@@ -687,6 +695,7 @@ $wrapperClasses
 'iconOnly'
 'iconOnlyBelow'
 'iconOnlyBelow',
+'id'
 'initialFocus'
 'inline-flex
 'input-');
@@ -793,6 +802,10 @@ $wrapperClasses
 'overflow-hidden',
 'overflow-x-hidden
 'overflow-y-auto',
+'own'
+'ownLabel'
+'ownModel'
+'ownName'
 'p-[var(--padding-wk-x-lg)]',
 'p-[var(--padding-wk-y-xl)]',
 'page'
@@ -927,6 +940,7 @@ $wrapperClasses
 'w-full
 'w-max',
 'wire:'))
+'wire:model.live'
 'wirekit-shortcuts';
 'wk-alert-dialog-desc-'
 'wk-alert-dialog-desc-');
@@ -1002,6 +1016,7 @@ $wrapperClasses
 ($name)])
 ($optimistic
 ($orientation
+($own
 ($relAttr
 ($reserveMessage
 ($resolvedAriaLabel
@@ -1086,6 +1101,7 @@ $wrapperClasses
 (kept
 (left)
 (logical
+(mixed
 (no
 (not
 (null
@@ -1356,12 +1372,14 @@ $wrapperClasses
 :aria-label
 :aria-label="copied
 :aria-modal="isTopmost
+:attributes="$ownSwitchAttributes"
 :class="$hideLabel
 :confirm-discard="false"
 :count
 :count,
 :describedby="false"
 :describes="false"
+:disabled="$disabled"
 :disabled="$insertDisabled"
 :field',
 :fieldDate.'))
@@ -1379,6 +1397,7 @@ $wrapperClasses
 :key="item.id">
 :key="position">
 :label',
+:label="$ownLabel
 :label="__('wirekit::Confirmation
 :label="__('wirekit::Single-key
 :lock-scroll="$lockScroll"
@@ -1555,6 +1574,7 @@ $wrapperClasses
 @if($opensNewTab)
 @if($optimisticConfig)
 @if($overlayCloseWrapsAControl)
+@if($own
 @if($placeholder
 @if($prefix)
 @if($readonly)
@@ -1662,6 +1682,7 @@ BooleanProp::from($iconOnly,
 BooleanProp::from($loading,
 BooleanProp::from($lockScroll,
 BooleanProp::from($mono,
+BooleanProp::from($own,
 BooleanProp::from($readonly,
 BooleanProp::from($required,
 BooleanProp::from($reserveMessage,
@@ -1760,6 +1781,7 @@ FOCUSABLE,
 False
 Fast
 Floating
+Following
 Font
 Footer
 For
@@ -2129,6 +2151,7 @@ Your
 [overflow-wrap:anywhere]'
 \Illuminate\Support\HtmlString('');
 \Illuminate\View\ComponentAttributeBag(array_diff_key($ariaAttributes,
+\Illuminate\View\ComponentAttributeBag(array_filter([
 \InvalidArgumentException('wirekit::button:
 \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase)
 \Pushery\WireKit\Support\AlpinePayload::from($copyText)
@@ -2233,6 +2256,7 @@ __('wirekit::Loading')
 __('wirekit::No
 __('wirekit::On
 __('wirekit::Saving'),
+__('wirekit::Set
 __('wirekit::Show
 __('wirekit::Single-key
 __('wirekit::Stay')
@@ -2248,6 +2272,7 @@ __('wirekit::then')
 `$loading`;
 `$refs`
 `$size`
+`$wire.save()`,
 `(string)
 `--font-wk-body-weight`
 `--text-wk-sm`
@@ -2275,7 +2300,10 @@ __('wirekit::then')
 `<body>`.
 `<button>`
 `<button>`,
+`<button>`:
 `<div>`
+`<fieldset
+`<form
 `<h9>`
 `<label
 `<label>`
@@ -2513,6 +2541,7 @@ __('wirekit::then')
 `outlined`
 `overflow-hidden`
 `overflow:
+`own-model`
 `parentNode`
 `peer
 `pointer-events-none`
@@ -2539,6 +2568,7 @@ __('wirekit::then')
 `size`
 `sm`
 `sm`,
+`span`
 `span`:
 `sr-only`
 `src/VariantResolver.php`,
@@ -2582,6 +2612,7 @@ __('wirekit::then')
 `window.open`,
 `window.opener`;
 `wire:*`
+`wire:`
 `wire:click`,
 `wire:id`,
 `wire:key`,
@@ -2592,6 +2623,7 @@ __('wirekit::then')
 `wirekit:field-help`.
 `wirekit:modal-dismissed`).
 `wirekit:shortcuts-single-keys-changed`
+`wirekitOwnValue`
 `wk-`
 `wk-choice-frame`
 `wk-field-affordance`
@@ -2746,6 +2778,7 @@ anchored
 anchors
 and
 and,
+anew
 animated
 animations
 annotate.
@@ -3016,6 +3049,7 @@ border:
 borders
 both
 both,
+both.
 bottom
 bottom;
 bound
@@ -3112,6 +3146,7 @@ caret
 carried
 carries
 carries.
+carries:
 carry
 carrying
 carve-out:
@@ -3526,6 +3561,7 @@ decision
 decision.
 declaration
 declarative
+declarative,
 declare
 declared
 declares
@@ -3567,6 +3603,7 @@ dense.
 depend
 depending
 depends
+derived
 derives
 descendant
 descendants
@@ -3621,6 +3658,7 @@ disabled,
 disabled:cursor-not-allowed
 disabled:cursor-not-allowed',
 disabled:opacity-[var(--opacity-wk-disabled)]
+disabled>`
 disables
 disabling.
 disagree
@@ -3864,6 +3902,8 @@ field.set's
 field:
 field;
 fields
+fields,
+fields.
 fifth
 file
 file-upload
@@ -3888,6 +3928,8 @@ filled($label)
 filled($name)
 filled($offLabel);
 filled($onLabel)
+filled($ownModel)
+filled($ownName)
 filled($stackBelow)
 filled($tokenValue)
 filled()
@@ -4496,6 +4538,7 @@ level.
 levels
 lg
 lg"
+lg:flex-wrap
 library's
 library.
 lift
@@ -4534,6 +4577,7 @@ literal;
 literally
 literals
 live
+live,
 lives
 load-bearing
 load.
@@ -4543,6 +4587,8 @@ loading-target="redeliver".
 loadingTarget
 locale:
 location
+lock
+lock.
 lockScroll:
 locks
 log
@@ -4603,6 +4649,7 @@ maxlength,
 maxlength;
 may
 md
+md:flex-wrap
 mean
 meaningful
 means
@@ -4701,6 +4748,8 @@ multi-select.
 multiply
 must
 muted
+my
+myself".
 n/a
 name
 name)
@@ -4797,6 +4846,7 @@ null
 null">
 null)
 null))
+null));
 null);
 null,
 null.
@@ -4815,6 +4865,7 @@ occurrence
 of
 off
 off"
+off,
 off-intent="danger"`.
 offer
 offering
@@ -4955,6 +5006,7 @@ page:
 pages
 pagination
 paint
+paint,
 paints
 pair
 pair.
@@ -5135,6 +5187,7 @@ purpose,
 pushed
 pushing
 put
+put,
 puts
 px-1
 px-1.5
@@ -5183,6 +5236,8 @@ reaching
 reacts
 read
 read-only
+read-only:
+read-only;
 readable
 readable.
 reader
@@ -5398,6 +5453,7 @@ save
 save"
 save.
 saving
+saving.
 say
 say.
 say:
@@ -5596,6 +5652,7 @@ slots.
 slots:
 slow
 sm
+sm:flex-wrap
 small
 smaller
 smallest
@@ -5788,6 +5845,7 @@ swapping
 swaps
 sweep
 switch
+switch's
 switch,
 switch.
 switches
@@ -6033,6 +6091,7 @@ trim(strip_tags((string)
 trimmed,
 trio
 trip,
+trip;
 true
 true)
 true))
@@ -6049,6 +6108,7 @@ truthy,
 truthy.
 turn
 turned
+turning
 turns
 twice
 twice.
@@ -6114,6 +6174,7 @@ untouched.
 unvalidated
 up
 up.
+update.
 updates
 upright
 upstream
@@ -6146,6 +6207,7 @@ validation,
 validator
 validator:
 value
+value')"
 value,
 value.
 value:
@@ -6291,6 +6353,7 @@ wire:model
 wire:model)
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 wired
@@ -6342,6 +6405,7 @@ wraps.
 write
 write.
 writes
+writes,
 writes.
 writing
 written
@@ -6371,6 +6435,7 @@ x-data="wirekitInput"
 x-data="wirekitModal({
 x-data="wirekitModalTrigger({
 x-data="wirekitOptimistic({{
+x-data="wirekitOwnValue()"
 x-data="wirekitShortcuts({{
 x-data="wirekitTooltip({
 x-effect="syncConfirmControlState($el,
@@ -6383,6 +6448,7 @@ x-if
 x-if="confirmationPhrase
 x-model
 x-model="typed"
+x-on:change="follow()"
 x-on:change="run($event.target.value)"
 x-on:change="switchSingleKeys($event.target.checked)"
 x-on:change="toggle()"
@@ -6398,17 +6464,19 @@ x-on:click="dismissOverlay()"
 x-on:click="dismissOverlay()",
 x-on:click="handleBackdropClick()"
 x-on:click="openNamedOverlay($event)"
-x-on:click="show()"
-x-on:click="show()">
+x-on:click="show($event)"
+x-on:click="show($event)">
 x-on:click="{{
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:keydown.enter.capture="blockUnlessConfirmed($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.enter="confirmed()"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.escape.window="onWindowEscape($event)"
 x-on:keydown.space.capture="blockUnlessConfirmed($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:keydown.space="confirmed()"
 x-on:mouseenter="mouseenter()"
@@ -6456,6 +6524,7 @@ x-wk-counter
 x-wk-insert-token
 x-wk-ref="{{
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 year']`.
 yes

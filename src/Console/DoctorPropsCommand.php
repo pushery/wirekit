@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Str;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\AttributeTarget;
 use Pushery\WireKit\Support\BladeParser;
@@ -14,7 +16,10 @@ use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Support\SuggestSimilar;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
+use ReflectionParameter;
 use Symfony\Component\Console\Formatter\OutputFormatter;
+use Throwable;
 
 /**
  * Find misspelled props before a page renders.
@@ -560,13 +565,54 @@ class DoctorPropsCommand extends Command
                 continue;
             }
 
+            // A class component declares its props in its constructor, and Laravel takes them out
+            // of the attribute bag before the template renders: they never reach the target.
             $wrappers[$name] = [
                 'target' => $targets[0],
-                'own' => array_column(PropsParser::parseSource($contents), 'name'),
+                'own' => array_values(array_unique([
+                    ...array_column(PropsParser::parseSource($contents), 'name'),
+                    ...$this->classComponentProps($name),
+                ])),
             ];
         }
 
         return $wrappers;
+    }
+
+    /**
+     * The constructor parameters of the class Blade takes for an application component, by the
+     * name of its tag: a class registered under that name, or the one Laravel guesses from it
+     * (`button.main` is `App\View\Components\Button\Main`). An anonymous component has none.
+     *
+     * @return list<string>
+     */
+    private function classComponentProps(string $name): array
+    {
+        $class = Blade::getClassComponentAliases()[$name] ?? null;
+
+        if (! is_string($class)) {
+            try {
+                $namespace = app()->getNamespace();
+            } catch (Throwable) {
+                $namespace = 'App\\';
+            }
+
+            $class = $namespace.'View\\Components\\'.implode('\\', array_map(
+                static fn (string $part): string => Str::studly($part),
+                explode('.', $name),
+            ));
+        }
+
+        if (! class_exists($class)) {
+            return [];
+        }
+
+        $constructor = (new ReflectionClass($class))->getConstructor();
+
+        return $constructor === null ? [] : array_map(
+            static fn (ReflectionParameter $parameter): string => $parameter->getName(),
+            $constructor->getParameters(),
+        );
     }
 
     /**

@@ -1447,7 +1447,9 @@ __toString
 `:value`
 `:value`.
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<h2
 `<label>`,
 `<p>`
@@ -1566,6 +1568,7 @@ __toString
 `shrink`
 `sm`
 `soft`
+`span`
 `span`:
 `surface="outline"`,
 `swapElements`
@@ -1861,6 +1864,7 @@ brand
 break
 break="anywhere"
 breaks
+brings
 browser
 browser's
 bubble's
@@ -2161,6 +2165,7 @@ disable,
 disabled
 disabled:
 disabled;
+disabled>`
 disables
 disagree
 disappearing,
@@ -2324,6 +2329,7 @@ field,
 field.
 field:
 fields
+fields.
 files
 fill
 fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
@@ -2738,6 +2744,7 @@ localized
 log
 logger()->warning(
 long
+look
 look.
 looks
 looks.
@@ -3887,8 +3894,10 @@ x-on:click="dismiss()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

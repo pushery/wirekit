@@ -50,7 +50,6 @@ $finalRel
 $forceLoading
 $forceLoading;
 $hasWireAction
-$hasWireAction;
 $height
 $heightClasses
 $heightClasses,
@@ -588,6 +587,7 @@ ANY
 ARIA
 Accessible
 All
+Alpine
 Always
 An
 And
@@ -704,6 +704,7 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 REPLACES
 RTL-safe
+Read
 Recommended
 Removed
 Render
@@ -836,6 +837,7 @@ _intentColor,
 `$listLabel`
 `$loading`;
 `$size`
+`$wire.save()`,
 `--wk-touch-min`
 `-1`
 `.absolute`
@@ -853,6 +855,7 @@ _intentColor,
 `<body>`
 `<body>`.
 `<button>`,
+`<form
 `<x-slot:iconLeft>`
 `<x-slot:iconRight>`.
 `@`-variant
@@ -957,6 +960,7 @@ _intentColor,
 `whitespace-normal`
 `whitespace-nowrap`
 `wire:*`
+`wire:`
 `wire:loading.attr`
 `wire:loading`
 `wk-field`
@@ -1212,6 +1216,7 @@ caller
 caller's
 caller-supplied
 callout/alert).
+calls
 can
 candidate
 candidates
@@ -1223,6 +1228,7 @@ capture-phase
 card
 card,
 carries
+carries:
 carry
 carrying
 carve-out:
@@ -1402,6 +1408,7 @@ decided
 decided,
 declaration
 declarative
+declarative,
 declared
 declares
 decoration:
@@ -1585,6 +1592,7 @@ flex-ROW
 flex-col
 flex-col').'
 flex-nowrap
+flex-wrap
 flexes
 flight
 flight)
@@ -1845,6 +1853,7 @@ less
 lets
 lg
 lg"
+lg:flex-wrap
 library
 lift
 lifts
@@ -1940,6 +1949,7 @@ max-w-full
 max-xl:[--wk-touch-min:0px]',
 may
 md
+md:flex-wrap
 mean
 meaningful
 means
@@ -2112,6 +2122,7 @@ page.
 page:
 pagination
 paginator.
+paint,
 painting
 paints
 pairing
@@ -2373,6 +2384,7 @@ select
 selected
 selecting
 selector
+sent
 sent.
 sentence.
 separately
@@ -2444,6 +2456,7 @@ sm:border-l-[length:var(--border-wk-width)]
 sm:border-t-0
 sm:flex-row'
 sm:flex-row`)
+sm:flex-wrap
 sm:shrink-0
 sm:w-[16rem]
 small
@@ -2536,6 +2549,7 @@ stylesheet's
 styling
 stylistic
 sub-component,
+submit
 submitting,
 subtle:
 success-hover
@@ -2824,6 +2838,7 @@ wire:loading.class="opacity-[var(--opacity-wk-disabled)]
 wire:loading>
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 wiring
@@ -2867,6 +2882,7 @@ x-text="m.label"></span>
 x-text="markerCount"></span>)
 x-wk-announce-busy
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yields
 your

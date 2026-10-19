@@ -13,6 +13,7 @@
 "Discount"
 "Free
 "Free"
+"Label:
 "Mietpreisbremse"
 "Payment
 "Previous
@@ -76,7 +77,12 @@ $formattedUnitPrice
 $freeShipping
 $from
 $headingClasses
+$inlineKeepsBreaks
+$inlineValue
+$inlineValue),
 $isGridPair
+$isInline
+$isInline)
 $isStacked
 $isSummary
 $isVertical
@@ -121,6 +127,7 @@ $sizeClasses
 $sizeClasses);
 $sizeClasses.'
 $slot
+$slot)
 $slot->hasActualContent()
 $suffix
 $tax,
@@ -144,6 +151,7 @@ $wrapperStyle])->class([$itemClasses])
 '
 ''
 '')
+'').'overflow-wrap:
 '');
 '',
 '';
@@ -151,6 +159,8 @@ $wrapperStyle])->class([$itemClasses])
 ',
 '--wk-fit-floor:
 '.$fitFloor.';'
+'.($inlineKeepsBreaks
+'<');
 '<bdi
 '<del
 '<span
@@ -192,6 +202,8 @@ $wrapperStyle])->class([$itemClasses])
 'heading',
 'horizontal'),
 'horizontal',
+'inline'
+'inline';
 'inline-flex
 'item',
 'label'
@@ -242,6 +254,7 @@ $wrapperStyle])->class([$itemClasses])
 'text-[color:var(--color-wk-text-muted)]',
 'text-[length:var(--text-wk-lg)]',
 'text-[length:var(--text-wk-md)]',
+'text-[length:var(--text-wk-sm)]'
 'text-[length:var(--text-wk-sm)]',
 'text-[length:var(--text-wk-xl)]',
 'text-[length:var(--text-wk-xs)]',
@@ -257,6 +270,7 @@ $wrapperStyle])->class([$itemClasses])
 'vertical';
 'vertical']),
 'w-full',
+'white-space:
 'width:
 'wk-data-list-item',
 'xl'
@@ -425,6 +439,7 @@ $wrapperStyle])->class([$itemClasses])
 @else
 @elseif($freeShipping)
 @elseif($isVertical)
+@elseif($label)
 @endif
 @endif<bdi
 @endphp
@@ -437,8 +452,8 @@ $wrapperStyle])->class([$itemClasses])
 @if($formattedDelta
 @if($formattedUnitPrice
 @if($from)<span
+@if($isInline)
 @if($label
-@if($label)
 @if($shippingNote
 @if($subtotal
 @if($tax
@@ -520,6 +535,8 @@ Never
 Normalized
 NumericProp::orNull($shipping);
 ONE
+On
+Only
 PAngV
 PAngV)
 PHP
@@ -572,6 +589,7 @@ WireKit::resolveClasses('price',
 WireKit::validateProp('divider',
 With
 Without
+Written
 [
 [$formattedBase,
 [$subtotal,
@@ -583,6 +601,7 @@ Without
 ['xs',
 [])->class([$classes])
 [];
+\Illuminate\Support\HtmlString($inlineValue)
 \Illuminate\Support\HtmlString(implode('
 \Illuminate\View\ComponentAttributeBag(array_filter([
 \Pushery\WireKit\Support\FitText::box(
@@ -636,6 +655,7 @@ __('wirekit::from')
 `generic`,
 `grid`
 `horizontal`
+`inline`
 `label`)
 `layout`,
 `line-through`
@@ -645,6 +665,7 @@ __('wirekit::from')
 `minor-units="false"`
 `no-underline`
 `null`
+`pre-line`
 `price`
 `price`,
 `prop="false"`
@@ -660,6 +681,7 @@ __('wirekit::from')
 `tabular-nums`
 `text-decoration`
 `value`
+`white-space:
 `wk-data-list-item`
 `{{
 a
@@ -724,6 +746,7 @@ arrangement
 array_filter(
 array_map(
 arrowing
+article's
 as
 as,
 assistive
@@ -759,6 +782,9 @@ between
 bleeding
 block
 block,
+block;
+block;',
+blocks,
 blocks.
 body
 bool
@@ -777,6 +803,7 @@ bound
 box
 box,
 breakpoint,
+breaks
 bridge.
 broken
 build
@@ -823,10 +850,13 @@ class="sr-only">'.e(__('wirekit::Previous
 class="sr-only">{{
 class="text-[color:var(--color-wk-text)]">
 class="text-[color:var(--color-wk-text)]">'.e($formattedAmount).'</bdi>';
+class="text-[color:var(--color-wk-text)]">{{
 class="text-[color:var(--color-wk-text-muted)]
+class="text-[color:var(--color-wk-text-muted)]">{{
 class="text-[length:var(--text-wk-sm)]
 class="{{
 classes
+colon
 color
 color-only
 column
@@ -839,6 +869,7 @@ comment
 comments,
 common
 commoner
+compact
 compare-at
 compiles
 component
@@ -870,6 +901,7 @@ copies
 cost
 costs
 could
+count.
 covers
 currency
 currency's
@@ -944,6 +976,7 @@ element,
 element.
 elements
 else
+else,
 embeds).
 emits
 emitted
@@ -952,7 +985,11 @@ emphasized
 empty
 empty.
 end
+engraving
 entirely.
+entries
+entry
+entry,
 environments
 equal
 ever
@@ -979,6 +1016,7 @@ false,
 false;
 far
 feature
+few
 fewer
 field
 field,
@@ -1010,6 +1048,7 @@ font-[number:var(--font-wk-heading-weight)]',
 font.
 for
 forces
+form
 formats
 formatted
 formatter
@@ -1058,6 +1097,7 @@ has.
 hasActualContent()
 have
 heading
+heading:
 helper
 here
 here,
@@ -1075,9 +1115,12 @@ in
 in,
 in.
 inaudible.
+indentation
 independently
 inherit
 inline
+inline;
+inline;',
 inside
 instead
 insurance
@@ -1123,6 +1166,7 @@ knows
 l,
 label
 label)
+label,
 label.
 label/value
 label="OR"
@@ -1133,6 +1177,7 @@ language,
 later
 layout
 layout="summary">
+lays
 leave
 leaves
 left
@@ -1149,6 +1194,10 @@ line,
 line-through;
 line.
 line:
+lines
+lines,
+lines.
+link,
 list
 list,
 lists
@@ -1172,8 +1221,10 @@ make
 makes
 many
 maps
+margin:
 markers
 markup
+markup,
 match
 matches
 max-content
@@ -1211,6 +1262,7 @@ m³,
 n/a
 name
 name.
+name:
 named
 narrow
 native
@@ -1226,6 +1278,7 @@ nobody
 none
 none,
 none.
+nor
 not
 not.
 not:
@@ -1284,6 +1337,7 @@ own,
 own.
 owns
 package.
+padding
 padding,
 padding:
 page
@@ -1313,12 +1367,16 @@ phone.
 phrase
 piece
 pin
+place,
 plain
 plus
 point
 positive
+pre-line;
+pre-line`
 prefix
 prefix,
+preg_replace('/<!--.*?-->/s',
 presentational
 preset
 preview
@@ -1407,6 +1465,7 @@ rule
 rule,
 rules
 rules,
+rules.
 same
 say
 says
@@ -1475,6 +1534,7 @@ size="lg"
 size="sm"
 sized
 slot
+slot's
 slot,
 smaller
 so
@@ -1497,6 +1557,7 @@ stays
 step,
 still
 stores.
+str_contains((string)
 straight
 strand
 stray
@@ -1529,15 +1590,18 @@ swap
 swapped
 swapped,
 symmetric
+table
 tabular
 tabular-nums;',
 tag
 tag,
+tags
 takes
 tax
 teaches,
 tech
 tells
+template
 text
 text,
 text-[color:var(--color-wk-text)]">
@@ -1558,6 +1622,7 @@ the
 their
 them
 them.
+them:
 there
 they
 thing
@@ -1583,6 +1648,8 @@ tracks
 trailing
 treatment.
 trim($value)
+trim((string)
+trimmed:
 true
 true`
 trusted:
@@ -1591,6 +1658,7 @@ twice.
 two
 two,
 two:
+typed
 unchanged.
 under
 unit
@@ -1609,6 +1677,7 @@ utility
 v4
 validate
 value
+value",
 value,
 value.
 value:
@@ -1653,6 +1722,7 @@ width
 wins
 wins:
 with
+with,
 without
 word
 words.
@@ -1686,7 +1756,9 @@ zeros
 }}">
 }}">{{
 }})
+}}:</dt>
 }}</bdi>
+}}</dd>
 }}</h{{
 }}</span>
 }}>

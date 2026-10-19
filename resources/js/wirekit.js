@@ -16,10 +16,11 @@ import { registerScrollIntoViewDirective } from './utils/scroll-into-view.js';
 import { registerStuckDirective } from './utils/stuck.js';
 import { registerAnnounceBusyDirective } from './utils/busy-announcer.js';
 import { registerCounterDirective } from './utils/counter.js';
+import { registerTableLabelsDirective } from './utils/table-labels.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
-import { registerShortcutDirective } from './utils/shortcuts.js';
+import { defineShortcut, registerShortcutDirective } from './utils/shortcuts.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
@@ -36,6 +37,9 @@ import wirekitTooltip from './components/tooltip.js';
 import wirekitModal from './components/modal.js';
 import wirekitModalTrigger from './components/modal-trigger.js';
 import wirekitShortcuts from './components/shortcuts.js';
+import wirekitLiveList from './components/live-list.js';
+import wirekitOwnValue from './components/own-value.js';
+import wirekitCardStack from './components/card-stack.js';
 import wirekitDrawer from './components/drawer.js';
 import wirekitToast from './components/toast.js';
 import wirekitTreeView from './components/tree-view.js';
@@ -188,6 +192,8 @@ function registerComponents() {
     registerAnnounceBusyDirective(Alpine);
     // A field's character count, counted in the browser. See utils/counter.js.
     registerCounterDirective(Alpine);
+    // The cells of a table that stacks its rows, named by their columns. See utils/table-labels.js.
+    registerTableLabelsDirective(Alpine);
     // The tokens a button puts into an input, without a request. See utils/insert-token.js.
     registerInsertTokenDirective(Alpine);
     // A form that holds what its server does not have yet says so. See utils/unsaved.js.
@@ -221,6 +227,9 @@ function registerComponents() {
     Alpine.data('wirekitModal', wirekitModal);
     Alpine.data('wirekitModalTrigger', wirekitModalTrigger);
     Alpine.data('wirekitShortcuts', wirekitShortcuts);
+    Alpine.data('wirekitLiveList', wirekitLiveList);
+    Alpine.data('wirekitOwnValue', wirekitOwnValue);
+    Alpine.data('wirekitCardStack', wirekitCardStack);
     Alpine.data('wirekitDrawer', wirekitDrawer);
     Alpine.data('wirekitToast', wirekitToast);
     Alpine.data('wirekitTreeView', wirekitTreeView);
@@ -341,3 +350,8 @@ if (window.Alpine?.version) {
 // Assigned unconditionally so it is available whether Alpine starts before or after this
 // bundle loads.
 window.wirekitPosition = position;
+
+// A shortcut that works out what it does, such as `j` for the next link of a list, has no element
+// for `x-wk-shortcut` to click: a page registers it here and gets its unregister back. Assigned
+// when the bundle runs, so it is there before any component starts. See utils/shortcuts.js.
+window.wirekitShortcut = defineShortcut;

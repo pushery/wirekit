@@ -55,6 +55,7 @@ $attributes->class([\Pushery\WireKit\WireKit::resolveClasses('table.reorder-head
 $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
 $attributes->except('rel');
 $attributes->except('x-ref');
+$attributes->except(['stackBelow',
 $attributes->except(['stickyHeader',
 $attributes->get('aria-hidden');
 $attributes->get('aria-labelledby');
@@ -143,7 +144,6 @@ $hasDetails
 $hasPlainHtmlDescendants
 $hasPlainHtmlDescendants)
 $hasWireAction
-$hasWireAction;
 $headerScope
 $heightClasses
 $heightClasses,
@@ -252,6 +252,7 @@ $sizeMap[$validated];
 $slot
 $slot)
 $slot))
+$slot)))
 $slot->hasActualContent()
 $slot;
 $slotHtml
@@ -449,6 +450,7 @@ $wrapWords
 'col';
 'colgroup',
 'column'
+'columnheader'
 'compact'
 'count'
 'cursor-grab
@@ -627,6 +629,7 @@ $wrapWords
 'reorder')
 'responsive'
 'right'
+'right')
 'right'])
 'rounded-[var(--radius-wk-lg)]',
 'rounded-[var(--radius-wk-md)]',
@@ -634,7 +637,9 @@ $wrapWords
 'row'
 'row',
 'row';
+'rowgroup'
 'rowgroup'],
+'rowheader'
 'scope'
 'select-none
 'shadow-[var(--shadow-wk-md)]',
@@ -648,9 +653,10 @@ $wrapWords
 'sortAction'
 'sortDirection'
 'sortable'
+'stack-below']);
 'stackBelow'
 'stackBelow',
-'sticky-header']);
+'sticky-header',
 'stickyColumn'
 'stickyColumnBelow'
 'stickyColumnBelow',
@@ -806,6 +812,7 @@ $wrapWords
 (`loading`
 (`overflow-x-auto`,
 (`p-0
+(`stack-below`
 (`wk-scroll-shadow-start`
 (`z-10`)
 (a
@@ -1101,6 +1108,7 @@ $wrapWords
 @foreach($tableAttrs
 @if
 @if(!
+@if($align
 @if($alpineSort)
 @if($announceBusy)
 @if($callerRef
@@ -1123,6 +1131,7 @@ $wrapWords
 @if($responsive)
 @if($sortAction)
 @if($sortable
+@if($stackBelow
 @if($stackBelow)
 @if($stickyHeaderStyle)
 @if($surface
@@ -1132,6 +1141,8 @@ $wrapWords
 @if($triggerIsButton)
 @if(filled($attributes->get('wire:key')))
 @if(filled($detailsFor))
+@if(filled($label))
+@if(filled($stackBelow))
 @if(filled($tableLabel))
 @if(isset($content))
 @include
@@ -1381,6 +1392,7 @@ REPLACES
 ROW
 RTL-safe
 Reachability
+Read
 Reapply
 Recommended
 Removed
@@ -1429,6 +1441,7 @@ Space
 Spelled
 Spelling
 Stable
+Stacked,
 Sticky
 Strip
 Striped
@@ -1471,6 +1484,7 @@ UNBOUND
 UNKEYED
 URL
 USER
+Unset,
 Upstream
 Use
 Uses
@@ -1623,6 +1637,7 @@ __toString
 `$size`
 `$sortAction`
 `$sortable`
+`$wire.save()`,
 `--wk-touch-min`
 `-end`)
 `-mb-px`
@@ -1655,6 +1670,7 @@ __toString
 `<button>`
 `<button>`,
 `<div>`
+`<form
 `<p>`
 `<span>`
 `<tbody`,
@@ -1858,6 +1874,7 @@ __toString
 `span`:
 `sr-only`
 `src/VariantResolver.php`,
+`stack-below`:
 `stackBelow`
 `sticky-header`,
 `stickyColumnBelow`
@@ -1893,6 +1910,7 @@ __toString
 `whitespace-nowrap`
 `window.open`,
 `wire:*`
+`wire:`
 `wire:click`),
 `wire:id`,
 `wire:key`,
@@ -1923,6 +1941,7 @@ __toString
 `x-show`
 `x-show`,
 `x-wk-ref`
+`x-wk-table-labels`
 `xs`
 `xs`,
 `xs`.
@@ -1955,6 +1974,7 @@ across
 action
 action,
 action.
+actions
 actions.
 activated
 activates
@@ -2267,6 +2287,7 @@ breakpoints
 breaks
 brighter,
 browser
+browsers
 bubble's
 budget,
 bug
@@ -2317,6 +2338,7 @@ card's
 card,
 caret
 carries
+carries:
 carry
 carrying
 carve-out:
@@ -2426,6 +2448,8 @@ colors,
 colspan="{{
 column
 column's
+column's.
+column,
 column-header
 column.
 column:
@@ -2557,12 +2581,15 @@ danger-fg
 danger-filled
 danger:
 data
+data-label="{{
 data-orientation
 data-orientation="{{
 data-stack-below="{{
 data-wk-busy-spinner
 data-wk-busy-text="{{
+data-wk-cell-align="right"
 data-wk-hoverable
+data-wk-label-own
 data-wk-print-expand
 data-wk-prose-skip
 data-wk-ref-scope
@@ -2586,10 +2613,12 @@ data-wk-table-reorder
 data-wk-table-row
 data-wk-table-row>
 data-wk-table-scroller
+data-wk-table-stack="{{
 data-wk-table-td
 data-wk-table-td>
 data-wk-table-th
 data-wk-table-th>
+data-wk-th-label="{{
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
@@ -2605,6 +2634,7 @@ decision:
 declaration
 declaration,
 declarative
+declarative,
 declare.
 declared
 declared,
@@ -2669,6 +2699,7 @@ difference
 different
 digit,
 direction
+directive
 disable
 disable,
 disable.
@@ -2827,6 +2858,7 @@ explicit
 explicitly
 expose
 exposed
+exposing
 expression
 expressions.
 extra
@@ -2911,6 +2943,7 @@ flat,
 flex
 flex-col
 flex-nowrap
+flex-wrap
 flexes
 flight
 flight)
@@ -2944,6 +2977,7 @@ follows
 font
 font-[number:var(--font-wk-body-weight)]
 footer
+footer,
 for
 for.
 for:
@@ -3215,6 +3249,7 @@ inset
 inset.
 inside
 installed
+installed.
 installed.'
 instead
 instead,
@@ -3345,6 +3380,7 @@ lets
 letter
 lg
 lg"
+lg:flex-wrap
 lg:nth-last-2:border-b-0',
 lg:w-full',
 lift
@@ -3444,6 +3480,7 @@ max-xl:[--wk-touch-min:0px]',
 maximum
 may
 md
+md:flex-wrap
 md:nth-last-2:border-b-0',
 md:w-full',
 mean
@@ -3709,6 +3746,7 @@ page.
 page:
 pages
 pagination
+paint,
 painted
 paints
 pair
@@ -3819,6 +3857,7 @@ preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s',
 preg_replace('/<table\b[^>]*>(?:(?!<table\b).)*?<\/table>/is',
 preg_replace('/\s*aria-hidden="[^"]*"/i',
 preg_replace('/\s+/',
+preg_replace('/\s+/u',
 preg_replace_callback(
 present
 presentational
@@ -4022,12 +4061,18 @@ role
 role,
 role:
 role="button"
+role="cell"
 role="group"
 role="img"
 role="img".
 role="link"
 role="region"
+role="row"
+role="rowgroup"
+role="table"
 role="tooltip"
+role="{{
+roles
 roll
 room
 room.
@@ -4054,6 +4099,7 @@ row-header
 row.
 row:
 rows
+rows).
 rows,
 rows.
 rule
@@ -4134,6 +4180,7 @@ selects,
 self-stretch
 semantic
 sensible
+sent
 sentence.
 sentinel:
 sentinels
@@ -4223,6 +4270,7 @@ slots.
 slots:
 slow
 sm
+sm:flex-wrap
 sm:nth-last-2:border-b-0',
 sm:w-full',
 small
@@ -4281,6 +4329,7 @@ squared
 squares
 srgb,
 stack
+stacked
 stacking-context
 stacks
 stacks:
@@ -4327,6 +4376,7 @@ string,
 string.
 strings
 strip
+strip_tags((string)
 stripe
 stripe,
 stripe.
@@ -4352,6 +4402,7 @@ sub-components
 sub-components.
 subject
 subject.
+submit
 submitting,
 subtle
 subtle:
@@ -4390,6 +4441,7 @@ table
 table"
 table's
 table's,
+table).
 table,
 table.
 table.blade.php).
@@ -4821,6 +4873,7 @@ wire:poll
 wire:sort
 wire:sort:handle
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 wirekit
@@ -4872,6 +4925,7 @@ wrong.
 wrote
 x
 x-cloak
+x-data
 x-data.
 x-data="wirekitDevWarning({
 x-data="wirekitStickyPanelShadows()"
@@ -4912,7 +4966,9 @@ x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 x-wk-announce-busy
 x-wk-ref="{{
+x-wk-table-labels
 xl
+xl:flex-wrap
 xl:nth-last-2:border-b-0',
 xl:w-full',
 xmlns="http://www.w3.org/2000/svg"

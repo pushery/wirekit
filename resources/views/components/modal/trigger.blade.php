@@ -93,7 +93,7 @@
 @else
 {{-- Modal trigger — opens the parent modal when clicked --}}
 <div
-    x-on:click="show()"
+    x-on:click="show($event)"
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

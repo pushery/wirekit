@@ -109,6 +109,7 @@ final class TablerPreset implements IconPreset
             'settings' => 'tabler-settings',
             'gear' => 'tabler-settings',
             'dashboard' => 'tabler-layout-dashboard',
+            'layout' => 'tabler-layout',
             'billing' => 'tabler-credit-card',
             'credit-card' => 'tabler-credit-card',
 
@@ -199,6 +200,10 @@ final class TablerPreset implements IconPreset
             'chevron-up-down' => 'tabler-caret-up-down',
             'more-vertical' => 'tabler-dots-vertical',
             'arrows-left-right' => 'tabler-arrows-left-right',
+            // Every part of a page opened or closed at once. Tabler's fold is arrows meeting a
+            // line and it ships no unfold, so expanding takes its arrows leaving a line.
+            'expand-all' => 'tabler-separator-horizontal',
+            'collapse-all' => 'tabler-fold',
             'hash' => 'tabler-hash',
             'shield-warning' => 'tabler-shield-exclamation',
             'prohibit' => 'tabler-ban',
@@ -282,7 +287,10 @@ final class TablerPreset implements IconPreset
             'command-line' => 'tabler-terminal',
             'finger-print' => 'tabler-fingerprint',
             'fire' => 'tabler-flame',
-            'heart' => 'tabler-heart',
+            // The heart and the star are filled, as in every set that has both, so the pair with
+            // their `-outline` names can show a state: saved and not yet, starred and not yet.
+            'heart' => 'tabler-heart-filled',
+            'heart-outline' => 'tabler-heart',
             'link' => 'tabler-link',
             'attach' => 'tabler-paperclip',
             'live' => 'tabler-radio',
@@ -308,7 +316,7 @@ final class TablerPreset implements IconPreset
             'security' => 'tabler-shield',
             'speed' => 'tabler-gauge',
             'squares-2x2' => 'tabler-layout-grid',
-            'star' => 'tabler-star',
+            'star' => 'tabler-star-filled',
             'star-outline' => 'tabler-star',
             'swatch' => 'tabler-palette',
             'unlock' => 'tabler-lock-open',

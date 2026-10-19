@@ -35,6 +35,9 @@
     'label' => null,
     'variant' => 'underline',
     'orientation' => 'horizontal',
+    // Wrap the tabs onto further lines instead of scrolling, at every width or from a
+    // breakpoint up, as on `tabs`.
+    'wrap' => false,
     'scope' => null,
 ])
 
@@ -58,6 +61,8 @@
     }
 
     $listClasses = WireKit::resolveClasses('tabs', 'tablist', TablistStyles::list($variant, $isVertical), $scope);
+    // Beside the class seam, so a scope that replaces the bar keeps the wrap asked for here.
+    $wrapClasses = TablistStyles::wrap(TablistStyles::wrapValue($wrap, 'tabs.list'), $isVertical);
 
     // A bar with no selected tab has no tab stop, and that is the whole widget gone.
     //
@@ -142,7 +147,7 @@
     @endif
     x-on:keydown.home.prevent="moveFocus('first')"
     x-on:keydown.end.prevent="moveFocus('last')"
-    {{ $attributes->class([$listClasses]) }}
+    {{ $attributes->class([$listClasses, $wrapClasses]) }}
 >
     {!! $slotHtml !!}
 </div>

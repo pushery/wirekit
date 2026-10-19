@@ -72,6 +72,11 @@
     'variant' => 'header', // header | cell
 ])
 
+{{-- The table's `stack-below`: a table that stacks its rows writes its roles out. --}}
+@aware([
+    'stackBelow' => null,
+])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -80,6 +85,9 @@
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // `@aware` leaves the key in the bag, so a tag that also wrote it would render it as an attribute.
+    $attributes = $attributes->except(['stackBelow', 'stack-below']);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
@@ -308,6 +316,12 @@
 <th data-wk-prose-skip
     scope="{{ $headerScope }}"
     data-wk-table-th
+    {{-- Stacked, each cell of the column is named by this header, by its words as the page
+         shows them, without the state a sort button adds for a screen reader alone. --}}
+    @if(filled($stackBelow))
+        role="{{ $headerScope === 'row' || $headerScope === 'rowgroup' ? 'rowheader' : 'columnheader' }}"
+        data-wk-th-label="{{ trim((string) preg_replace('/\s+/u', ' ', strip_tags((string) $slot))) }}"
+    @endif
     @if($column) data-wk-sort-column="{{ $column }}" @endif
     @if($sortable && $column)
         {{-- Alpine sort mode: bind aria-sort to parent wirekitTableSort state. The click

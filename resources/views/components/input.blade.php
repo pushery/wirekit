@@ -87,6 +87,17 @@
     'readonly' => false,
     'autocomplete' => null,
     'placeholder' => null,
+    // A value derived from other fields, such as a code from a name, that a switch below the field
+    // opens for a value of the reader's own. `false` follows the derived value, read-only; `true`
+    // holds the reader's own. Unset, the field has no switch.
+    'own' => null,
+    // The switch's label, saying what turning it on does: "Set the code myself".
+    'ownLabel' => null,
+    // The Livewire property the switch writes, live, so the server derives the value again when
+    // it is turned off, and the lock follows without saving.
+    'ownModel' => null,
+    // The switch's name in a form without Livewire.
+    'ownName' => null,
 ])
 
 @aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null])
@@ -129,6 +140,12 @@
     $required = BooleanProp::from($required, false);
     $disabled = BooleanProp::from($disabled, false);
     $readonly = BooleanProp::from($readonly, false);
+    // Following a derived value, the field is read-only: a reader can still reach and read it, and
+    // a form still sends it, where a disabled field would be skipped by both.
+    $own = $own === null ? null : BooleanProp::from($own, false);
+    if ($own === false) {
+        $readonly = true;
+    }
 
     // `tokens`, each token once, with what it stands for or null. A token that is empty inserts
     // nothing, so it gets no button.
@@ -688,6 +705,33 @@
                 class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] empty:-mt-1.5"
             ></p>
         </div>
+    @endif
+
+    @if($own !== null)
+        {{-- The switch opens the field for a value of the reader's own and locks it to the derived
+             value again. `wirekitOwnValue` sets the lock in the browser at once, so a plain form
+             needs no round trip; with `own-model` the switch sends its state live as well, and the
+             server derives the value anew and renders the same lock. Its id stays put, so the
+             focus stays on it through the update. --}}
+        @php
+            $ownSwitchAttributes = new \Illuminate\View\ComponentAttributeBag(array_filter([
+                'id' => $id.'-own',
+                'name' => filled($ownName) ? (string) $ownName : null,
+                'checked' => $own ?: null,
+                'aria-controls' => $id,
+                'data-wk-own-for' => $id,
+                'wire:model.live' => filled($ownModel) ? (string) $ownModel : null,
+            ], static fn (mixed $value): bool => $value !== null));
+        @endphp
+        <x-wirekit::toggle
+            size="sm"
+            :label="$ownLabel ?? __('wirekit::Set my own value')"
+            :disabled="$disabled"
+            :scope="$scope"
+            x-data="wirekitOwnValue()"
+            x-on:change="follow()"
+            :attributes="$ownSwitchAttributes"
+        />
     @endif
 
     @if($optimisticConfig)

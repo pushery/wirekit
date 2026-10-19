@@ -224,6 +224,8 @@ final class SandboxSchemaRegistry
         ]);
 
         self::register('code', [
+            // No default: an unset break keeps `break-word`, as the component does.
+            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
             'body' => ['type' => 'string', 'default' => '$value'],
         ]);
 

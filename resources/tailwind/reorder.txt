@@ -88,7 +88,6 @@ $forceLoading
 $forceLoading;
 $handleClasses
 $hasWireAction
-$hasWireAction;
 $heightClasses
 $heightClasses,
 $href
@@ -835,6 +834,7 @@ Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 REPLACES
 RTL-safe
+Read
 Reapply
 Recommended
 Removed
@@ -992,6 +992,7 @@ __toString
 `$refs`
 `$reorderComponent`:
 `$size`
+`$wire.save()`,
 `--wk-touch-min`
 `.attr`
 `.wk-button-group[data-stack-below="…"]`
@@ -1008,6 +1009,7 @@ __toString
 `<button>`
 `<button>`,
 `<div>`
+`<form
 `<p>`
 `<span>`
 `<template
@@ -1163,6 +1165,7 @@ __toString
 `whitespace-nowrap`
 `window.open`,
 `wire:*`
+`wire:`
 `wire:id`,
 `wire:key`,
 `wire:loading.attr`
@@ -1496,6 +1499,7 @@ card
 card's
 card,
 carries
+carries:
 carry
 carrying
 carve-out:
@@ -1685,6 +1689,7 @@ decision,
 decision:
 declaration
 declarative
+declarative,
 declared
 declares
 declaring
@@ -1913,6 +1918,7 @@ flashes
 flex
 flex-col
 flex-nowrap
+flex-wrap
 flexes
 flight
 flight)
@@ -2240,6 +2246,7 @@ let
 lets
 lg
 lg"
+lg:flex-wrap
 lift
 lifts
 light
@@ -2316,6 +2323,7 @@ max-w-full
 max-xl:[--wk-touch-min:0px]',
 may
 md
+md:flex-wrap
 mean
 meaningful
 means
@@ -2519,6 +2527,7 @@ page.
 page:
 pages
 pagination
+paint,
 paints
 pair
 pairing
@@ -2806,6 +2815,7 @@ selected
 selects,
 semantic
 sensible
+sent
 sentence.
 separately
 server
@@ -2871,6 +2881,7 @@ slots.
 slots:
 slow
 sm
+sm:flex-wrap
 small
 smaller
 smallest
@@ -2957,6 +2968,7 @@ styling
 stylistic
 sub-component
 sub-component,
+submit
 submitting,
 subtle:
 subtree
@@ -3313,6 +3325,7 @@ wire:poll
 wire:sort
 wire:sort:handle
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 with
@@ -3374,6 +3387,7 @@ x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 x-wk-announce-busy
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yet.
 yields

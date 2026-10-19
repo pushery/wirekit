@@ -167,7 +167,7 @@
          a caller cannot reach it with a class. On its own `contents` changes nothing a page shows;
          `class="contents"` on the component root is what hands the trigger to the container. --}}
     @isset($trigger)
-        <div class="contents" x-on:click="show()">
+        <div class="contents" x-on:click="show($event)">
             {{ $trigger }}
         </div>
     @endisset

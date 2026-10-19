@@ -20,6 +20,11 @@
     'detailsFor' => null,
 ])
 
+{{-- The table's `stack-below`: a table that stacks its rows writes its roles out. --}}
+@aware([
+    'stackBelow' => null,
+])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -27,6 +32,9 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('table.row', $attributes->getAttributes());
 
     use Pushery\WireKit\WireKit;
+
+    // `@aware` leaves the key in the bag, so a tag that also wrote it would render it as an attribute.
+    $attributes = $attributes->except(['stackBelow', 'stack-below']);
 
     $hasDetails = isset($details) && trim((string) $details) !== '';
 
@@ -139,7 +147,7 @@
     ]), $scope);
 @endphp
 
-<tr data-wk-table-row {{ $attributes->class([$classes, $detailsBorderFix]) }}>
+<tr data-wk-table-row @if(filled($stackBelow)) role="row" @endif {{ $attributes->class([$classes, $detailsBorderFix]) }}>
     {{ $slot }}
 </tr>
 

@@ -15,6 +15,7 @@ $attributes->getAttributes());
 $attributes->has('aria-labelledby'))
 $attributes->merge
 $brand
+$brand,
 $classes
 $classes,
 $colorClasses
@@ -86,6 +87,7 @@ $variantClasses,
 'compact']);
 'container'
 'container',
+'data-wk-brand-truncate')
 'default'),
 'default',
 'density'
@@ -136,6 +138,7 @@ $variantClasses,
 'scroll',
 'scroll';
 'scroll']);
+'shrink-0'
 'sm'
 'sticky
 'sticky'
@@ -262,6 +265,7 @@ AND
 Actions
 Alpine
 An
+Any
 Auto-inject
 BELOW
 Blade
@@ -294,6 +298,7 @@ Harmless
 Hiding
 How
 INSIDE
+It
 Keep
 Livewire
 Logo
@@ -402,6 +407,7 @@ __('wirekit::Toggle
 `sm/md/lg/xl/2xl/full`.
 `track-current`
 `track-current`:
+`truncate`
 `wire:navigate`
 `wk-navbar-mobile`
 `wk-navbar-scroll`
@@ -506,11 +512,13 @@ bottom
 bound,
 box
 brand
+brand's
 brand-bar
 brand:
 breakpoint
 breakpoint,
 breakpoint.
+breaks
 brings
 browser
 browser,
@@ -534,7 +542,6 @@ child,
 class
 class.
 class="flex
-class="shrink-0
 class="sr-only">{{
 class="w-6
 class="wk-touch-target
@@ -572,6 +579,7 @@ copy,
 copy.
 correct
 correct.
+counts
 current
 cursor-pointer
 d="M3.75
@@ -659,6 +667,7 @@ fix
 fixed
 flags
 flex
+flex-1
 flex-1',
 flex-1`
 flex-col
@@ -770,12 +779,14 @@ layer,
 layout
 leave
 leaves
+leaves.
 less
 lets
 like
 line
 line;
 lines
+lines,
 link
 links,
 list
@@ -801,6 +812,7 @@ markup.
 match
 matches
 matters,
+max-w-max'
 max-width
 may
 md:flex-1
@@ -830,6 +842,7 @@ mx-auto',
 n/a
 name
 names
+narrow
 narrower
 narrowest
 nav
@@ -908,10 +921,12 @@ parsed
 passed
 passes
 passthrough
+past
 pb-[var(--padding-wk-y-md)]',
 per
 personalization
 personalized
+place
 plain
 plus
 point,
@@ -1019,12 +1034,14 @@ so
 someone
 sorts
 source
+space
 space.
 spaces,
 spare.
 spelling,
 spine
 spine.
+spreads
 stack
 stack,
 stand
@@ -1038,6 +1055,7 @@ sticky.
 still
 str_contains($relAttr,
 str_contains($targetAttr,
+str_contains((string)
 stray
 strength.
 string
@@ -1132,6 +1150,7 @@ visits
 want
 wants
 was
+way
 way.
 ways
 we

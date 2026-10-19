@@ -26,7 +26,8 @@ use LogicException;
  * the page, or toward it where the label would not read on it otherwise. The text color starts
  * at the fill and moves away from the page in steps of 1% until it reads on every surface. Every
  * check runs on the value as it is written out, through `WcagContrast`, so the promise holds for
- * the string a developer puts into a stylesheet.
+ * the string a developer puts into a stylesheet: an `oklch()` value, or a `#rrggbb` color where
+ * the tokens are asked for as hex.
  */
 final class AccentLadder
 {
@@ -95,18 +96,26 @@ final class AccentLadder
      * and `alert` use, are added in any case, because they depend on the accent that is being
      * derived.
      *
+     * `$hex` writes every token as a `#rrggbb` color instead of an `oklch()` value, for a store or a
+     * validator that takes hex only. Every ratio then holds for the hex values as written, and a
+     * fill given as a hex color comes back as that hex color unless it is lifted.
+     *
+     * `$lift` set to false keeps a dark fill on a dark page as it was given: for a color chosen for
+     * the dark mode on purpose, where the lift would change it. No ratio depends on the lift, which
+     * only keeps a fill derived for both modes from sinking into a dark page.
+     *
      * @param  list<string>  $surfaces
      * @return array{'--color-wk-accent': string, '--color-wk-accent-hover': string, '--color-wk-accent-content': string, '--color-wk-accent-fg': string}
      *
      * @throws InvalidArgumentException when the color or a surface cannot be read, or is translucent
      */
-    public static function for(string $color, bool $dark = false, array $surfaces = []): array
+    public static function for(string $color, bool $dark = false, array $surfaces = [], bool $hex = false, bool $lift = true): array
     {
         if ($surfaces === []) {
-            return self::onTheme($color, $dark, []);
+            return self::onTheme($color, $dark, [], $hex, $lift);
         }
 
-        return self::derive($color, $dark, static fn (string $accent): array => self::ownSurfaces($surfaces, $accent));
+        return self::derive($color, $dark, static fn (string $accent): array => self::ownSurfaces($surfaces, $accent), $hex, $lift);
     }
 
     /**
@@ -125,7 +134,7 @@ final class AccentLadder
      *
      * @throws InvalidArgumentException when the color or a token cannot be read, or is translucent
      */
-    public static function onTheme(string $color, bool $dark, array $tokens): array
+    public static function onTheme(string $color, bool $dark, array $tokens, bool $hex = false, bool $lift = true): array
     {
         $theme = array_intersect_key($tokens, self::THEME['light']) + self::THEME[$dark ? 'dark' : 'light'];
 
@@ -135,7 +144,7 @@ final class AccentLadder
             }
         }
 
-        return self::derive($color, $dark, static fn (string $accent): array => self::themeSurfaces($theme, $accent));
+        return self::derive($color, $dark, static fn (string $accent): array => self::themeSurfaces($theme, $accent), $hex, $lift);
     }
 
     /**
@@ -145,7 +154,7 @@ final class AccentLadder
      * @param  callable(string): list<string>  $backgrounds
      * @return array{'--color-wk-accent': string, '--color-wk-accent-hover': string, '--color-wk-accent-content': string, '--color-wk-accent-fg': string}
      */
-    private static function derive(string $color, bool $dark, callable $backgrounds): array
+    private static function derive(string $color, bool $dark, callable $backgrounds, bool $hex, bool $lift): array
     {
         $brand = Oklch::fromCss($color);
 
@@ -154,25 +163,58 @@ final class AccentLadder
         }
 
         // The fill: the brand as given, lifted on a dark page where it would sink into it.
-        $fill = $dark && $brand[0] < self::DARK_FILL_LIGHTNESS
+        $lifted = $lift && $dark && $brand[0] < self::DARK_FILL_LIGHTNESS;
+        $fill = $lifted
             ? Oklch::toGamut([self::DARK_FILL_LIGHTNESS, $brand[1], $brand[2]])
             : Oklch::toGamut($brand);
-        $accent = Oklch::toCss($fill);
+        $accent = ($hex && ! $lifted ? self::hexAsGiven($color) : null) ?? self::write($fill, $hex);
 
-        $label = self::label($accent);
+        $label = self::label($accent, $hex);
 
         return [
             '--color-wk-accent' => $accent,
-            '--color-wk-accent-hover' => self::hover($fill, $label, $dark),
-            '--color-wk-accent-content' => self::content($fill, $backgrounds($accent), $dark),
+            '--color-wk-accent-hover' => self::hover($fill, $label, $dark, $hex),
+            '--color-wk-accent-content' => self::content($fill, $backgrounds($accent), $dark, $hex),
             '--color-wk-accent-fg' => $label,
         ];
     }
 
+    /**
+     * The color as the tokens are written: an `oklch()` value, or a `#rrggbb` color.
+     *
+     * Both are written from the unrounded color. Read back from the `oklch()` string, whose
+     * numbers are rounded, a hex color can land one step off in a channel.
+     *
+     * @param  array{0: float, 1: float, 2: float}  $lch
+     */
+    private static function write(array $lch, bool $hex): string
+    {
+        return $hex ? Oklch::toHex($lch) : Oklch::toCss($lch);
+    }
+
+    /** A color given in hex as `#rrggbb` in lower case, or null for any other form. */
+    private static function hexAsGiven(string $color): ?string
+    {
+        if (preg_match('/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i', trim($color), $match) !== 1) {
+            return null;
+        }
+
+        // A translucent color was refused before this point, so a fourth or eighth digit is opaque.
+        $digits = strtolower($match[1]);
+
+        return '#'.(strlen($digits) <= 4
+            ? $digits[0].$digits[0].$digits[1].$digits[1].$digits[2].$digits[2]
+            : substr($digits, 0, 6));
+    }
+
     /** The first label, of the theme's two and then of white and black, that reads on the fill. */
-    private static function label(string $accent): string
+    private static function label(string $accent, bool $hex): string
     {
         foreach (self::LABELS as $pair) {
+            if ($hex) {
+                $pair = array_map(static fn (string $label): string => Oklch::toHex(Oklch::fromCss($label) ?? [0.0, 0.0, 0.0]), $pair);
+            }
+
             $best = (self::ratio($pair[0], $accent) >= self::ratio($pair[1], $accent)) ? $pair[0] : $pair[1];
 
             if (self::ratio($best, $accent) >= self::TEXT_CONTRAST) {
@@ -194,7 +236,7 @@ final class AccentLadder
      *
      * @param  array{0: float, 1: float, 2: float}  $fill
      */
-    private static function hover(array $fill, string $label, bool $dark): string
+    private static function hover(array $fill, string $label, bool $dark, bool $hex): string
     {
         $away = $dark ? self::HOVER_STEP : -self::HOVER_STEP;
 
@@ -205,7 +247,7 @@ final class AccentLadder
                 continue;
             }
 
-            $hover = Oklch::toCss([$lightness, $fill[1], $fill[2]]);
+            $hover = self::write([$lightness, $fill[1], $fill[2]], $hex);
 
             if (self::ratio($label, $hover) >= self::TEXT_CONTRAST) {
                 return $hover;
@@ -221,12 +263,12 @@ final class AccentLadder
      * @param  array{0: float, 1: float, 2: float}  $fill
      * @param  list<string>  $backgrounds
      */
-    private static function content(array $fill, array $backgrounds, bool $dark): string
+    private static function content(array $fill, array $backgrounds, bool $dark, bool $hex): string
     {
         $lightness = $fill[0];
 
         while (true) {
-            $candidate = Oklch::toCss([$lightness, $fill[1], $fill[2]]);
+            $candidate = self::write([$lightness, $fill[1], $fill[2]], $hex);
 
             if (self::readsOnAll($candidate, $backgrounds)) {
                 return $candidate;

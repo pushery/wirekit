@@ -701,7 +701,9 @@ __('wirekit::Set
 `.live`
 `.number`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -779,6 +781,7 @@ __('wirekit::Set
 `required`
 `rounded-l-`
 `space-y-1.5`
+`span`
 `span`:
 `swapElements`
 `tabindex="-1"`
@@ -964,6 +967,7 @@ box
 box,
 brand
 breaks
+brings
 broken
 browse
 browser
@@ -1160,6 +1164,7 @@ different
 disabled
 disabled,
 disabled:cursor-not-allowed',
+disabled>`
 disables
 disagree
 disappearing,
@@ -1262,6 +1267,7 @@ field,
 field.
 field:
 fields
+fields.
 fill-rule="evenodd"
 fill="currentColor"
 fill="currentColor"><path
@@ -1523,6 +1529,7 @@ lives
 locked"
 logically
 long
+look
 looked
 looks
 lost.
@@ -1824,6 +1831,7 @@ reading
 reads
 real
 reason
+reason.
 reason:
 receive
 receiver,
@@ -1870,6 +1878,7 @@ right.
 ring
 ring.
 rises
+role,
 role:
 role="button"
 role="status"
@@ -2237,6 +2246,7 @@ whether
 which
 while
 whitespace,
+who
 whoever
 whole
 whose
@@ -2290,8 +2300,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:input="onTyped($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

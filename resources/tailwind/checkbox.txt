@@ -383,7 +383,6 @@ $wkRequiredMarker
 :indeterminate
 :label',
 :text="$helpText"
-</button>
 </div>
 </label>
 </span>
@@ -392,7 +391,6 @@ $wkRequiredMarker
 </x-wirekit::tooltip>
 </{{
 <body>
-<button
 <div
 <input
 <input>
@@ -432,6 +430,7 @@ $wkRequiredMarker
 @if($labelAfterGiven)</span>@if($hasLabelAfter)@include('wirekit::components.partials.label-after',
 @if($labelLang
 @if($optimisticConfig)
+@if($rowMarkers
 @if($slot->hasActualContent())
 @if($surface
 @if($triggerDescribes)
@@ -654,7 +653,9 @@ __('wirekit::Saving'),
 `.wk-choice-frame
 `:group-error="false"`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<input>`,
 `<label>`,
 `<p>`
@@ -678,6 +679,7 @@ __('wirekit::Saving'),
 `clearTimeout`
 `cloneNode(true)`,
 `covers()`
+`data-wk-choice`
 `delayHide`
 `delayHide`.
 `delayShow`
@@ -721,6 +723,7 @@ __('wirekit::Saving'),
 `required`
 `resolveClasses`
 `size`
+`span`
 `span`:
 `sr-only`
 `swapElements`
@@ -1062,6 +1065,7 @@ d="M2.25
 d="M5
 dark.
 dash
+data-wk-choice
 data-wk-field-help>
 data-wk-indeterminate="{{
 data-wk-label-after
@@ -1097,6 +1101,7 @@ detection:
 developer
 different
 disabled
+disabled>`
 disables
 disappearing,
 dismiss
@@ -1179,6 +1184,7 @@ field.set's
 field:
 fields
 fields'
+fields.
 fill
 fill-rule="evenodd"
 fill.
@@ -1442,6 +1448,7 @@ live
 lives
 lone
 long
+look
 looks
 lose
 make
@@ -1713,6 +1720,7 @@ reading
 reads
 real
 reason
+reason.
 reason:
 receive
 receiver,
@@ -1754,6 +1762,7 @@ rides
 right
 right-aligned
 ring
+role,
 role:
 role="button"
 role="tooltip"
@@ -1772,6 +1781,7 @@ row's
 row,
 row.
 row:
+rows
 rule
 run
 runs
@@ -1809,6 +1819,7 @@ server
 server-side
 serves
 set
+set:
 sets
 settles
 several
@@ -2026,7 +2037,6 @@ twice
 twice.
 two
 two.
-type="button"
 type="checkbox"
 unaffected
 unaffected.
@@ -2138,8 +2148,10 @@ x-on:change="commitFromControl()"
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

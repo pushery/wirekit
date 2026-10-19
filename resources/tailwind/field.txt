@@ -351,7 +351,6 @@ $wrapperClasses
 :scope="$scope"
 :scope="$scope">
 :text="$helpText"
-</button>
 </div>
 </fieldset>
 </label>
@@ -364,7 +363,6 @@ $wrapperClasses
 </x-wirekit::tooltip>
 </{{
 <body>
-<button
 <button>
 <div
 <div>
@@ -658,7 +656,9 @@ __('wirekit::Help')
 `--font-wk-body-weight`
 `//`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<span>`
@@ -690,6 +690,7 @@ __('wirekit::Help')
 `compileString`
 `data-list`
 `data-wk-field-label`
+`data-wk-field-set-controls`.
 `data-wk-field`
 `delayHide`
 `delayHide`.
@@ -743,6 +744,7 @@ __('wirekit::Help')
 `roles`.
 `select-none`
 `sm`
+`span`
 `span`:
 `swapElements`
 `tagName()`
@@ -822,6 +824,7 @@ answered
 answers
 anticipate
 any
+apart
 appear
 appears
 applies
@@ -926,6 +929,7 @@ brand
 breadcrumb
 break
 breaks
+brings
 bubble's
 bubbling,
 bug
@@ -968,6 +972,7 @@ changes
 changes,
 check
 checkbox
+checkboxes
 checkboxes,
 checks
 child
@@ -1079,6 +1084,7 @@ data-wk-field-label
 data-wk-field-label>{{
 data-wk-field-part="label"
 data-wk-field-part="message"
+data-wk-field-set-controls
 data-wk-label-after
 data-wk-label-row
 data-wk-prose-skip
@@ -1118,6 +1124,8 @@ developer
 dies
 different
 disabled
+disabled>`
+disables
 disappearing,
 dismiss
 dismissible
@@ -1141,6 +1149,7 @@ drifts
 drive
 drop
 dropped
+drops
 duration-100"
 duration-75"
 duration-[var(--transition-wk-duration)]
@@ -1217,6 +1226,7 @@ field.
 field.set:
 field:
 fields
+fields.
 fieldset
 fieldset's
 fieldset,
@@ -1791,6 +1801,7 @@ reads
 reads.
 real
 reason
+reason.
 reason:
 reasons
 rebuilding
@@ -1837,6 +1848,7 @@ return
 rich
 right,
 role",
+role,
 role:
 role="button"
 role="tooltip"
@@ -1852,6 +1864,7 @@ row,
 row.
 row:
 rows
+rows,
 rule
 run
 running
@@ -1963,6 +1976,7 @@ string
 string,
 string.
 strips
+stylesheet
 stylesheet's
 stylesheet).
 sub-component
@@ -2095,7 +2109,6 @@ two
 two,
 two-line
 two.
-type="button"
 typed
 typography
 unaffected
@@ -2161,6 +2174,7 @@ whether
 which
 while
 whitespace,
+who
 whoever
 whole
 whole.
@@ -2205,8 +2219,10 @@ x-data="wirekitTooltip({
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

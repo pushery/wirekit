@@ -19,6 +19,10 @@
     // match lands in. Off by default: an inactive tab is often a view of its own, and a search
     // that changes the reader's view unasked is a surprise. Only where the engine supports it.
     'findable' => config('wirekit.components.tabs.findable', false),
+    // A horizontal bar too long for its row wraps its tabs onto further lines instead of
+    // scrolling: `wrap` at every width, or `wrap="md"` (or `sm`, `lg`, `xl`) from that width up,
+    // so a phone keeps the bar that scrolls. The arrow keys move along the tabs in either form.
+    'wrap' => false,
     'scope' => null,
 ])
 
@@ -137,6 +141,8 @@
     // behavior must not carry two class ladders — they drift a border-radius apart over
     // a few releases and nothing goes red while they do.
     $tablistClasses = WireKit::resolveClasses('tabs', 'tablist', \Pushery\WireKit\Support\TablistStyles::list($variant, $isVertical), $scope);
+    // Beside the class seam, so a scope that replaces the bar keeps the wrap asked for here.
+    $wrapClasses = \Pushery\WireKit\Support\TablistStyles::wrap(\Pushery\WireKit\Support\TablistStyles::wrapValue($wrap, 'tabs'), $isVertical);
     $tabClasses = WireKit::resolveClasses('tabs', 'tab', \Pushery\WireKit\Support\TablistStyles::tab($variant, $isVertical), $scope);
     $tabActiveClasses = \Pushery\WireKit\Support\TablistStyles::tabActive($variant);
     $tabInactiveClasses = \Pushery\WireKit\Support\TablistStyles::tabInactive();
@@ -218,7 +224,7 @@
     {{-- Tablist — the row (or column, when vertical) of tab buttons.
          role="tablist" groups the tab buttons as a single keyboard navigation unit. Without
          tabs the row carries no role: a tablist that owns no tab reads out as an empty control. --}}
-    <div @if($tabs !== []) role="tablist" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} aria-orientation="{{ $orientationValue }}" @endif class="{{ $tablistClasses }}">
+    <div @if($tabs !== []) role="tablist" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} aria-orientation="{{ $orientationValue }}" @endif class="{{ $tablistClasses }}{{ $wrapClasses !== '' ? ' '.$wrapClasses : '' }}">
         @foreach($tabs as $key => $tab)
             <button
                 type="button"
