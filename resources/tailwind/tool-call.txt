@@ -56,6 +56,9 @@ $badgeText])
 $baseClasses
 $borderWidthClass
 $borderWidthClass,
+$break,
+$breakClasses
+$breakClasses,
 $callerAriaHidden
 $callerAriaHidden;
 $callerAriaLabel
@@ -215,10 +218,17 @@ $wrapperClasses
 'Run:
 'UTF-8')));
 '[WireKit]
+'[overflow-wrap:anywhere]',
 '[overflow-wrap:break-word]',
+'[overflow-wrap:normal]
+'[word-break:break-all]',
 'accent'
 'accent',
 'active'
+'all'
+'all']))
+'anywhere'
+'anywhere',
 'arguments'
 'aria-label');
 'as'
@@ -268,6 +278,8 @@ $wrapperClasses
 'border-[var(--color-wk-border)]',
 'border-[var(--color-wk-border-subtle)]',
 'box-shadow:
+'break'
+'break',
 'check'
 'clock'
 'content',
@@ -343,6 +355,7 @@ $wrapperClasses
 'neutral'),
 'neutral',
 'neutral']),
+'normal'
 'offset'
 'opacity-70
 'open'
@@ -446,6 +459,7 @@ $wrapperClasses
 ("Generating
 ($active
 ($argumentsText
+($break
 ($callerAriaHidden
 ($callerLabelledBy
 ($dismissLabel
@@ -952,6 +966,7 @@ WireKit::resolveClasses('tool-call',
 WireKit::resolveClasses('tooltip',
 WireKit::tagName('tooltip',
 WireKit::validateProp('badge',
+WireKit::validateProp('code',
 WireKit::validateProp('icon',
 WireKit::validateProp('shimmer',
 WireKit::validateProp('tool-call',
@@ -968,6 +983,7 @@ Written
 ['inverted',
 ['label'
 ['name'
+['normal',
 ['outlined'
 ['pending',
 ['primary',
@@ -980,6 +996,7 @@ Written
 ['x-on:mouseenter',
 [])->class([$baseClasses,
 [overflow-wrap:anywhere]'
+[word-break:normal]',
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
@@ -1046,6 +1063,7 @@ __toString
 `\/`
 `_x_dataStack`,
 `active="false"`
+`anywhere`,
 `app/Providers/AppServiceProvider.php`
 `app/Providers/Ap…`.
 `aria-busy`
@@ -1060,6 +1078,7 @@ __toString
 `as="span"`
 `auto`,
 `break-word`
+`break`
 `card`
 `class`
 `clearTimeout`
@@ -1088,6 +1107,7 @@ __toString
 `h-5`
 `h-7`
 `hasActualContent()`,
+`heading`,
 `heroicon-m-inbox`
 `hidden="until-found"`
 `icon`
@@ -1137,6 +1157,7 @@ __toString
 `tabindex="0"`
 `tabindex`
 `tagName()`
+`text`
 `this.$refs.tooltip`
 `title`
 `true`
@@ -1235,6 +1256,7 @@ anticipate
 any
 anything
 anything.
+anywhere
 apart
 apart.
 app
@@ -1345,6 +1367,7 @@ below,
 below.
 below:
 below;
+beside
 between
 bg
 bg).
@@ -1399,6 +1422,7 @@ box:
 branch's
 brand
 break
+break-word,
 breaks
 breathed
 broken
@@ -1615,6 +1639,7 @@ data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
 dead.
 debug
+decide
 decided
 decision,
 decision:
@@ -2300,6 +2325,7 @@ non-null
 none
 none,
 nor
+normal
 not
 not:
 nothing
@@ -2969,6 +2995,7 @@ top
 touch
 touch,
 touches
+toward
 towards
 track
 trailing
@@ -3025,6 +3052,7 @@ unaffected
 unaffected.
 unavailable,
 unbound
+unbroken
 uncaught
 unchanged.
 unclipped
@@ -3057,6 +3085,7 @@ valid
 validateProp
 value
 value,
+values
 vanished
 var(--color-wk-text)
 var(--shadow-wk-badge,
@@ -3231,4 +3260,5 @@ zoom,
 }}>{{
 ~0.9rem
 —
+→
 ≥4.5:1

@@ -190,8 +190,10 @@
         @endphp
     @endif
 
-    {{-- Grouped controls. The space-y gap keeps the fields evenly spaced. --}}
-    <div class="space-y-3">
+    {{-- Grouped controls. The space-y gap keeps the fields evenly spaced. On a touch surface two
+         checkboxes or radios in a row stand apart by the height of their own rows, and the
+         stylesheet drops the gap between them through `data-wk-field-set-controls`. --}}
+    <div data-wk-field-set-controls class="space-y-3">
         {{ $slot }}
     </div>
 </fieldset>

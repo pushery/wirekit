@@ -43,6 +43,7 @@ class WireKit
      * @var array<string, string>
      */
     public const COMPONENTS_WITHOUT_CLASS_BLOCKS = [
+        'card-stack' => 'it renders `stack` with its own `scope`, which resolves the classes, around wrappers that generate no box; personalize `stack` or a scope of it instead.',
         'faq-item' => 'it renders `accordion.item`, which resolves the classes; personalize `accordion.item` instead.',
         'fit-text' => 'its markup is the measurement the stylesheet reads and carries no class of its own; style the text through the element around it, or with a `class` on the component.',
         'fonts' => 'it renders `<link>` and `<style>` tags and no styled element.',

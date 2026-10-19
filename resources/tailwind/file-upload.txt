@@ -700,7 +700,9 @@ __('wirekit::TB')])
 `.value`
 `:name`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<input
 `<label>`,
 `<p>`
@@ -796,6 +798,7 @@ __('wirekit::TB')])
 `relative`
 `required`
 `size="sm"`
+`span`
 `span`:
 `sr-only`
 `swapElements`
@@ -992,6 +995,7 @@ box,
 box.
 brand
 breaks
+brings
 browse",
 browse');
 browser
@@ -1213,6 +1217,7 @@ differs.
 dims
 directly
 disabled
+disabled>`
 disables
 disappearing,
 disc
@@ -1340,6 +1345,7 @@ field,
 field.blade.php
 field:
 fields
+fields.
 file
 file's
 file,
@@ -1614,6 +1620,7 @@ lives
 locale:
 long
 long.
+look
 looked
 looks
 lower
@@ -1914,6 +1921,7 @@ reads
 reads:
 real
 reason
+reason.
 reason:
 reason;
 receive
@@ -1965,6 +1973,7 @@ returns
 reword.
 right
 ring
+role,
 role:
 role="button"
 role="list"
@@ -2371,8 +2380,10 @@ x-for="(file,
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

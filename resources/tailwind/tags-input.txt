@@ -716,7 +716,9 @@ __('wirekit::Saving'),
 `:count`
 `:value="['Laravel',
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label
 `<label>`,
 `<p>`
@@ -815,6 +817,7 @@ __('wirekit::Saving'),
 `role="group"`
 `skills[]`,
 `skills`
+`span`
 `span`:
 `swapElements`
 `tagAnnouncement`,
@@ -1020,6 +1023,7 @@ breakable
 breaks
 breathing
 bridge
+brings
 browser
 browser's
 bubble's
@@ -1228,6 +1232,7 @@ disabled
 disabled:cursor-not-allowed
 disabled:cursor-not-allowed"
 disabled;
+disabled>`
 disables
 disappearing,
 dismiss
@@ -1344,6 +1349,7 @@ field,
 field.
 field:
 fields
+fields.
 fill-rule="evenodd"
 fill.
 fill="currentColor"
@@ -1983,6 +1989,7 @@ reverse,
 right,
 ring
 role
+role,
 role:
 role="button"
 role="group"
@@ -2349,6 +2356,7 @@ which
 while
 whitespace,
 whitespace.
+who
 whole
 whose
 why
@@ -2407,8 +2415,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

@@ -541,7 +541,6 @@ $wrapperClasses
 :style="bubbleShiftStyle()"
 :style="bubbleStyle()"
 :text="$helpText"
-</button>
 </div>
 </span>
 </svg>
@@ -549,7 +548,6 @@ $wrapperClasses
 </x-wirekit::tooltip>
 </{{
 <body>
-<button
 <div
 <input
 <input>
@@ -916,7 +914,9 @@ __('wirekit::Slider');
 `:error`
 `:value="current"`.
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<input
 `<label>`,
 `<p>`
@@ -1012,6 +1012,7 @@ __('wirekit::Slider');
 `position:
 `prop="false"`
 `required`
+`span`
 `span`:
 `sr-only`
 `swapElements`
@@ -1247,6 +1248,7 @@ box:
 branch
 brand
 breaks
+brings
 browser
 bubble
 bubble's
@@ -1483,6 +1485,7 @@ directive
 directly
 directory
 disabled
+disabled>`
 disables
 disappearing,
 discrete
@@ -1610,6 +1613,7 @@ field,
 field.
 field:
 fields
+fields.
 file,
 fill)
 fill-rule="evenodd"
@@ -1923,6 +1927,7 @@ lives
 long
 longer
 longest
+look
 looked
 looks
 lose
@@ -2328,6 +2333,7 @@ returns
 reverse,
 right
 right-aligns
+role,
 role:
 role="button"
 role="tooltip"
@@ -2676,7 +2682,6 @@ two
 two-and-a-half
 two.
 type.
-type="button"
 type="range"
 type="range">.
 type="range">`,
@@ -2770,6 +2775,7 @@ while
 whitespace-nowrap
 whitespace-nowrap"
 whitespace-nowrap">{{
+who
 whole
 whose
 why
@@ -2833,8 +2839,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:click="focusControl($el)"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:keydown="mark()"
 x-on:mouseenter="mouseenter()"

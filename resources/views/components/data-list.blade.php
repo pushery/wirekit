@@ -66,13 +66,17 @@
         // `summary`; this is literally the swapped column declaration.
         'detail' => 'display: grid; grid-template-columns: max-content 1fr; '
             .'gap: var(--gap-wk-xs, 0.25rem) var(--gap-wk-md, 0.75rem); align-items: baseline;',
+        // `inline` is the compact form for a few entries in a narrow place, a table cell under an
+        // article's name: one line per entry, "Label: value", with no padding and no rules. The
+        // entries are blocks, so the list needs no layout of its own.
+        'inline' => 'display: block;',
         default => '', // horizontal uses border on items
     };
 
     $classes = WireKit::resolveClasses('data-list', 'base', implode(' ', [
         'w-full',
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[length:var(--text-wk-md)]',
+        $layout === 'inline' ? 'text-[length:var(--text-wk-sm)]' : 'text-[length:var(--text-wk-md)]',
     ]), $scope);
 @endphp
 

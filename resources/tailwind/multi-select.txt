@@ -1048,7 +1048,9 @@ _place()
 `-input`
 `:class="…"`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label
 `<label>`
 `<label>`,
@@ -1193,6 +1195,7 @@ _place()
 `selected`.
 `skills[]`,
 `skills`
+`span`
 `span`:
 `swapElements`
 `tagName()`
@@ -1443,6 +1446,7 @@ brand
 break
 breaks
 bridge
+brings
 browser
 browser's
 browser,
@@ -1707,6 +1711,7 @@ different
 direction
 disabled
 disabled;
+disabled>`
 disables
 disagrees
 disappearing,
@@ -1838,6 +1843,7 @@ field.
 field:
 fieldId:
 fields
+fields.
 fieldset
 fill-rule="evenodd"
 fill="currentColor"
@@ -2681,6 +2687,7 @@ returns
 rich
 right
 right,
+role,
 role:
 role="button"
 role="combobox"
@@ -3252,8 +3259,10 @@ x-on:error="markMediaBroken({{
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

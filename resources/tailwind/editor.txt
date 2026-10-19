@@ -1047,7 +1047,9 @@ __('wirekit::Saving'),
 `--font-wk-body-weight`
 `:toolbar="false"`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -1143,6 +1145,7 @@ __('wirekit::Saving'),
 `role="toolbar"`
 `run()`,
 `run`
+`span`
 `span`:
 `swapElements`
 `tabindex="0"`
@@ -1360,6 +1363,7 @@ box,
 branch
 brand
 breaks
+brings
 browser
 browser's
 browser,
@@ -1611,6 +1615,7 @@ disabled:
 disabled:cursor-not-allowed
 disabled:pointer-events-none',
 disabled;
+disabled>`
 disables
 disappearing,
 disarm,
@@ -1755,6 +1760,7 @@ field,
 field.
 field:
 fields
+fields.
 fifth
 file
 fill
@@ -2078,6 +2084,7 @@ lives
 lives,
 locale,
 long
+look
 looked
 looks
 lookups
@@ -2392,6 +2399,7 @@ reads
 reads:
 real
 reason
+reason.
 reason:
 rebuilt
 receive
@@ -2448,6 +2456,7 @@ right
 right'),
 ring
 ring's.
+role,
 role:
 role="button"
 role="toolbar"
@@ -2881,6 +2890,7 @@ whether
 which
 while
 whitespace,
+who
 whole
 whose
 why
@@ -2947,9 +2957,11 @@ x-on:invalid="onRequiredInvalid($event)"
 x-on:keydown.arrow-left.prevent="focusToolbarCommand($event,
 x-on:keydown.arrow-right.prevent="focusToolbarCommand($event,
 x-on:keydown.end.prevent="focusToolbarCommand($event,
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
 x-on:keydown.home.prevent="focusToolbarCommand($event,
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mousedown.prevent=""
 x-on:mouseenter="mouseenter()"

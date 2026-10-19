@@ -40,10 +40,11 @@ import { registerScrollIntoViewDirective } from './utils/scroll-into-view.js';
 import { registerStuckDirective } from './utils/stuck.js';
 import { registerAnnounceBusyDirective } from './utils/busy-announcer.js';
 import { registerCounterDirective } from './utils/counter.js';
+import { registerTableLabelsDirective } from './utils/table-labels.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
-import { registerShortcutDirective } from './utils/shortcuts.js';
+import { defineShortcut, registerShortcutDirective } from './utils/shortcuts.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
@@ -61,6 +62,9 @@ import wirekitTooltip from './components/tooltip.js';
 import wirekitModal from './components/modal.js';
 import wirekitModalTrigger from './components/modal-trigger.js';
 import wirekitShortcuts from './components/shortcuts.js';
+import wirekitLiveList from './components/live-list.js';
+import wirekitOwnValue from './components/own-value.js';
+import wirekitCardStack from './components/card-stack.js';
 import wirekitDrawer from './components/drawer.js';
 import wirekitToast from './components/toast.js';
 import wirekitTreeView from './components/tree-view.js';
@@ -193,6 +197,10 @@ const target = hostAlpine ?? Alpine;
 // a broken one when it is not.
 installOverlayRoot();
 
+// A shortcut that works out what it does registers here, as on the full bundle. See
+// utils/shortcuts.js.
+window.wirekitShortcut = defineShortcut;
+
     // Alpine's collapse plugin, registered before any component.
     //
     // The disclosure components ask for `x-collapse` (`grep -rl x-collapse
@@ -255,6 +263,8 @@ if (hostAlpine) {
     registerAnnounceBusyDirective(target);
     // A field's character count, counted in the browser. See utils/counter.js.
     registerCounterDirective(target);
+    // The cells of a table that stacks its rows, named by their columns. See utils/table-labels.js.
+    registerTableLabelsDirective(target);
     // The tokens a button puts into an input, without a request. See utils/insert-token.js.
     registerInsertTokenDirective(target);
     // A form that holds what its server does not have yet says so. See utils/unsaved.js.
@@ -288,6 +298,9 @@ if (hostAlpine) {
     target.data('wirekitModal', wirekitModal);
     target.data('wirekitModalTrigger', wirekitModalTrigger);
     target.data('wirekitShortcuts', wirekitShortcuts);
+    target.data('wirekitLiveList', wirekitLiveList);
+    target.data('wirekitOwnValue', wirekitOwnValue);
+    target.data('wirekitCardStack', wirekitCardStack);
     target.data('wirekitDrawer', wirekitDrawer);
     target.data('wirekitToast', wirekitToast);
     target.data('wirekitTreeView', wirekitTreeView);

@@ -81,7 +81,6 @@ $gap,
 $gapClasses
 $gapClasses,
 $hasWireAction
-$hasWireAction;
 $heightClasses
 $heightClasses,
 $href
@@ -850,6 +849,7 @@ Pushery\WireKit\Support\ListProp;
 Pushery\WireKit\WireKit;
 REPLACES
 RTL-safe
+Read
 Recommended
 Removed
 Render
@@ -998,6 +998,7 @@ __('wirekit::This
 `"responsive"`.
 `$loading`;
 `$size`
+`$wire.save()`,
 `'flex-wrap
 `--gap-wk-*`
 `--gap-wk-md`
@@ -1021,6 +1022,7 @@ __('wirekit::This
 `<body>`.
 `<button>`
 `<button>`,
+`<form
 `<x-slot:iconLeft>`
 `<x-slot:iconRight>`.
 `=`
@@ -1161,6 +1163,7 @@ __('wirekit::This
 `whitespace-normal`
 `whitespace-nowrap`
 `wire:*`
+`wire:`
 `wire:click`
 `wire:click`,
 `wire:loading.attr`
@@ -1469,6 +1472,7 @@ call
 caller
 caller's
 callout/alert).
+calls
 can
 candidate
 candidates
@@ -1477,6 +1481,7 @@ canonical
 caption
 card
 carries
+carries:
 carry
 carry.
 carrying
@@ -1671,6 +1676,7 @@ decides
 decimal
 declaration
 declarative
+declarative,
 declare.
 declared
 declares
@@ -1873,6 +1879,7 @@ flex-col
 flex-nowrap
 flex-row
 flex-row',
+flex-wrap
 flexes
 flight
 flight)
@@ -2178,6 +2185,7 @@ lets
 letters
 lg
 lg"
+lg:flex-wrap
 lift
 lifts
 light
@@ -2262,6 +2270,7 @@ may
 md
 md:flex-'.$x`
 md:flex-nowrap',
+md:flex-wrap
 mean
 meaningful
 means
@@ -2479,6 +2488,7 @@ page.
 page:
 pagination
 paint
+paint,
 paint.
 painted
 paints
@@ -2808,6 +2818,7 @@ slots.
 slots:
 slow
 sm
+sm:flex-wrap
 small
 smaller
 smallest
@@ -3222,6 +3233,7 @@ wire:loading.class="opacity-[var(--opacity-wk-disabled)]
 wire:loading>
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 with
@@ -3273,6 +3285,7 @@ x-show="{{
 x-text="announcement"></div>
 x-wk-announce-busy
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yes:
 yesterday"

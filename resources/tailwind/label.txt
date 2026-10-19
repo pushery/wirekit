@@ -197,7 +197,6 @@ $triggerName
 :focusable-trigger="false"
 :label',
 :text="$helpText"
-</button>
 </div>
 </label>
 </span>
@@ -206,7 +205,6 @@ $triggerName
 </x-wirekit::tooltip>
 </{{
 <body>
-<button
 <div
 <label
 <label>
@@ -372,7 +370,9 @@ __('wirekit::Help')
 `$refs`
 `--font-wk-body-weight`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -421,6 +421,7 @@ __('wirekit::Help')
 `pointer-events-none`
 `position:
 `prop="false"`
+`span`
 `span`:
 `swapElements`
 `tagName()`
@@ -537,6 +538,7 @@ box
 box,
 brand
 breaks
+brings
 bubble's
 bubbling,
 bug
@@ -663,6 +665,8 @@ design
 developer
 different
 disabled
+disabled>`
+disables
 disappearing,
 dismiss
 dismissible
@@ -726,6 +730,7 @@ field),
 field,
 field:
 fields
+fields.
 fill-rule="evenodd"
 fill="currentColor"
 filled
@@ -755,6 +760,7 @@ follows
 for
 forced
 forced-colors
+form
 formatting.
 four
 fragment
@@ -906,6 +912,7 @@ lists
 live
 lives
 long
+look
 looks
 make
 makes
@@ -1107,6 +1114,7 @@ reading
 reads
 real
 reason
+reason.
 reason:
 receive
 receiver,
@@ -1132,6 +1140,7 @@ rest
 rests
 restyles
 result
+role,
 role:
 role="button"
 role="tooltip"
@@ -1303,7 +1312,6 @@ twice.
 two
 two,
 two.
-type="button"
 unaffected
 unaffected.
 unavailable,
@@ -1355,6 +1363,7 @@ whether
 which
 while
 whitespace,
+who
 whole
 whose
 widening
@@ -1388,8 +1397,10 @@ x-data="wirekitTooltip({
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

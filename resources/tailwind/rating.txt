@@ -861,7 +861,9 @@ __('wirekit::Saving'),
 `:value`
 `:value`.
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -948,6 +950,7 @@ __('wirekit::Saving'),
 `run()`.
 `segmented-control`
 `sm`
+`span`
 `span`:
 `swapElements`
 `tagName()`
@@ -1147,6 +1150,7 @@ box,
 branch
 brand
 breaks
+brings
 browser
 browser's
 bubble's
@@ -1360,6 +1364,7 @@ disable,
 disabled
 disabled:
 disabled;
+disabled>`
 disables
 disagree
 disappearing,
@@ -1485,6 +1490,7 @@ field,
 field.
 field:
 fields
+fields.
 fill
 fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]
 fill-[var(--wk-rating-fill,var(--color-wk-warning-text))]'
@@ -1778,6 +1784,7 @@ live
 lives
 localized
 long
+look
 looks
 looks.
 loop
@@ -2166,6 +2173,7 @@ rewrites
 rewrites,
 rides
 right
+role,
 role:
 role="button"
 role="img"
@@ -2565,6 +2573,7 @@ which
 whichever
 while
 whitespace,
+who
 whole
 whose
 why
@@ -2623,8 +2632,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

@@ -1135,7 +1135,9 @@ __toString
 `:value`
 `:value`.
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<span>`
@@ -1240,6 +1242,7 @@ __toString
 `segmented-control`
 `shrink`
 `sm`
+`span`
 `span`:
 `swapElements`
 `tagName()`
@@ -1479,6 +1482,7 @@ branch's
 brand
 break
 breaks
+brings
 browser
 browser's
 bubble's
@@ -1751,6 +1755,7 @@ disable,
 disabled
 disabled:
 disabled;
+disabled>`
 disables
 disagree
 disappearing,
@@ -1893,6 +1898,7 @@ field,
 field.
 field:
 fields
+fields.
 files
 fill
 fill,
@@ -2267,6 +2273,7 @@ localized
 log
 logger()->warning(
 long
+look
 looks
 looks.
 loop
@@ -3273,8 +3280,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

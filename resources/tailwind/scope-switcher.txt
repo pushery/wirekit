@@ -106,7 +106,6 @@ $groupSlug
 $grouped
 $grouped[$row['group']
 $hasWireAction
-$hasWireAction;
 $heightClasses
 $heightClasses,
 $href
@@ -1171,6 +1170,7 @@ __('wirekit::Switch
 __toString
 `$loading`;
 `$size`
+`$wire.save()`,
 `--wk-touch-min`
 `.attr`
 `.wk-button-group[data-stack-below="…"]`
@@ -1185,6 +1185,7 @@ __toString
 `<body>`
 `<body>`.
 `<button>`,
+`<form
 `<span>`
 `<x-slot:iconLeft>`
 `<x-slot:iconRight>`.
@@ -1326,6 +1327,7 @@ __toString
 `whitespace-normal`
 `whitespace-nowrap`
 `wire:*`
+`wire:`
 `wire:loading.attr`
 `wire:loading`
 `wk-field`
@@ -1669,6 +1671,7 @@ caller
 caller's
 caller,
 callout/alert).
+calls
 can
 can't
 can.
@@ -1680,6 +1683,7 @@ caps
 card
 caret
 carries
+carries:
 carry
 carry,
 carrying
@@ -1908,6 +1912,7 @@ decision,
 decision:
 declaration
 declarative
+declarative,
 declared
 declares
 declaring
@@ -2131,6 +2136,7 @@ flex
 flex-col
 flex-col"
 flex-nowrap
+flex-wrap
 flexes
 flick
 flight
@@ -2479,6 +2485,7 @@ letter
 letter.
 lg
 lg"
+lg:flex-wrap
 lift
 lifts
 light
@@ -2567,6 +2574,7 @@ max-xl:[--wk-touch-min:0px]',
 may
 mb_strtolower(trim($value));
 md
+md:flex-wrap
 mean
 meaning
 meaning:
@@ -2796,6 +2804,7 @@ page.
 page:
 pages
 pagination
+paint,
 painted
 paints
 pair
@@ -3132,6 +3141,7 @@ selected"
 selector
 semantic
 sensible
+sent
 sentence.
 separately
 separator,
@@ -3218,6 +3228,7 @@ slots:
 slow
 slugs
 sm
+sm:flex-wrap
 small
 smaller
 smallest
@@ -3317,6 +3328,7 @@ stylesheet's
 styling
 stylistic
 sub-component,
+submit
 submitting,
 subtle:
 success,
@@ -3675,6 +3687,7 @@ wire:navigate
 wire:navigate.hover
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 with
@@ -3746,6 +3759,7 @@ x-transition:leave="transition
 x-wk-announce-busy
 x-wk-ime
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yet.
 yields

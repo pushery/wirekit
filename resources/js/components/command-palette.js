@@ -592,6 +592,10 @@ export default function wirekitCommandPalette(config = {}) {
                     event.preventDefault();
                 }
 
+                // A query still waiting for its 300 ms goes out first: a host that keeps only the
+                // answer to its newest request would otherwise drop the one to Enter when the
+                // late query arrived after it.
+                this._flushQuery();
                 this.emitSubmit();
 
                 return;
@@ -866,6 +870,28 @@ export default function wirekitCommandPalette(config = {}) {
             // Typing in the field reports through the field's own debounce, so text handed over
             // a moment earlier is not reported on its own, half-typed.
             clearTimeout(this._takeTimer);
+            this._takeTimer = null;
+        },
+
+        /**
+         * The field's report, 300 ms after the last keystroke: the query, unless Enter sent it
+         * already. A host then hears the query and then the submit, and no query for the same
+         * text after the submit.
+         */
+        emitTypedQuery() {
+            if (this._emittedSeq !== this._inputSeq) {
+                this.emitQuery();
+            }
+        },
+
+        /** Send an input the host has not been sent yet, typed or taken over, now. */
+        _flushQuery() {
+            clearTimeout(this._takeTimer);
+            this._takeTimer = null;
+
+            if (this._emittedSeq !== this._inputSeq) {
+                this.emitQuery();
+            }
         },
 
         /**
@@ -890,9 +916,10 @@ export default function wirekitCommandPalette(config = {}) {
             this.query = query;
             this.markQueryChanged();
 
-            clearTimeout(this._takeTimer);
             // A palette closed in the meantime has nobody waiting for the answer.
             this._takeTimer = setTimeout(() => {
+                this._takeTimer = null;
+
                 if (this.isOpen) {
                     this.emitQuery();
                 }

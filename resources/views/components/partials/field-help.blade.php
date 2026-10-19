@@ -15,6 +15,9 @@
      from the button, bubbling, with the field's name and label: a page that explains a field at
      greater length, in a modal of its own, listens for it. Without a listener nothing happens,
      and the tooltip shows on hover and focus either way.
+     The button is a `span` with the role, not a `<button>`: a `<fieldset disabled>` disables every
+     form control inside it, and a reader who may only look at a form still needs the explanation
+     of its fields. The keyboard model a `<button>` brings is written out below for that reason.
 
      Beside the `<label>`, never inside it. A named control inside a label becomes part of the
      name of the field the label names, and the field would be announced as "Type Help for
@@ -31,10 +34,13 @@
 @endphp
 @if($helpButton ?? true)
     <x-wirekit::tooltip as="span" :text="$helpText" :focusable-trigger="false" class="shrink-0" data-wk-field-help>
-        <button
-            type="button"
+        <span
+            role="button"
+            tabindex="0"
             aria-label="{{ filled($helpName ?? null) ? __('wirekit::Help for :label', ['label' => $helpName]) : __('wirekit::Help') }}"
             x-on:click="$dispatch('wirekit:field-help', { name: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpField ?? '') }}, label: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpName ?? '') }} })"
+            x-on:keydown.enter.prevent="$el.click()"
+            x-on:keydown.space.prevent="$el.click()"
             {{-- 24px, the WCAG 2.2 target size, and a negative block margin of 4px on each side,
                  so the row it shares with the label is exactly as tall as a label without it:
                  fields side by side keep their controls on one line whether or not they have
@@ -50,7 +56,7 @@
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 0 1-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 0 1-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 0 1-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584ZM12 18a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"/>
             </svg>
-        </button>
+        </span>
     </x-wirekit::tooltip>
 @endif
 @if(filled($helpId ?? null))

@@ -255,6 +255,13 @@
         }
     }
 
+    // A server search draws its list with the grouped template whatever this render carries. Its
+    // options change with every render, and the template is chosen here: a render that brought a
+    // group or took it away swapped one template for the other under a list Alpine had built from
+    // the first, and the hits of the next search were not drawn. The grouped template draws an
+    // ungrouped list as one group without a heading.
+    $groupedList = $hasGroups || $server;
+
     // Icons in options are drawn once, as symbols, and each row points at one. The rows are
     // stamped out by Alpine and cannot render a Blade icon themselves; IconSprite has the
     // measurements behind choosing this over the alternatives.
@@ -914,7 +921,7 @@
         x-show="isOpen && filtered.length > 0"
         x-cloak
     >
-        @if($hasGroups)
+        @if($groupedList)
         {{-- Grouped options: each group is role="group" with an aria-label; the
              visible heading is decorative (aria-hidden) since the group's
              aria-label supplies its name. The inner list is role="none" so the

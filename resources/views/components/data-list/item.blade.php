@@ -44,7 +44,11 @@
     // than an inline border-bottom — so the LAST row omits the rule and does
     // not double against the container's own bottom border. The rest of the
     // layout stays inline for preview-iframe / SSR robustness.
-    $itemClasses = WireKit::resolveClasses('data-list', 'item', implode(' ', [
+    // `inline` lays its entries as lines of text, so an entry carries neither the padding nor the
+    // separator of a row.
+    $isInline = $layout === 'inline';
+
+    $itemClasses = $isInline ? '' : WireKit::resolveClasses('data-list', 'item', implode(' ', [
         'wk-data-list-item',
         'py-[var(--padding-wk-y-sm)]',
     ]), $scope);
@@ -76,6 +80,7 @@
     $isStacked = $layout === 'stacked';
 
     $wrapperStyle = match (true) {
+        $isInline => 'display: block; overflow-wrap: anywhere;',
         $isGridPair => 'display: contents;',
         $isStacked => 'display: flex; flex-direction: column; gap: var(--gap-wk-xs, 0.25rem);',
         default => 'display: flex; align-items: flex-start; justify-content: space-between; gap: var(--gap-wk-lg, 1rem);',
@@ -86,6 +91,7 @@
     // FIRST track and shunt every following row one cell out of alignment —
     // silent, and visible only once a real list happens to contain one.
     $labelStyle = match (true) {
+        $isInline => 'display: inline;',
         $isGridPair => 'grid-column: 1; min-width: 0; overflow-wrap: anywhere;',
         $isStacked => 'min-width: 0; overflow-wrap: anywhere;',
         default => 'width: 33%; flex-shrink: 1; min-width: 0; overflow-wrap: anywhere;',
@@ -95,7 +101,17 @@
     // layout is: the `tabular-nums` utility only exists if the developer's
     // Tailwind build happened to scan this vendor view. It affects digit glyphs
     // only, so a summary row carrying text rather than an amount is unchanged.
+    // The inline value keeps the line breaks it was typed with, an engraving of two lines, and
+    // breaks anywhere a long token needs it. Only text keeps them: a slot that carries markup, a
+    // badge or a link, lays out as it does anywhere else, because under `pre-line` the line breaks
+    // of its rendered template would show as empty lines. Livewire's morph markers are comments,
+    // not markup, so a conditional around the text does not count.
+    $inlineValue = $isInline && $slot->hasActualContent() ? trim((string) $slot) : null;
+    $inlineKeepsBreaks = $inlineValue === null
+        || ! str_contains((string) preg_replace('/<!--.*?-->/s', '', $inlineValue), '<');
+
     $valueStyle = match (true) {
+        $isInline => 'display: inline; margin: 0; '.($inlineKeepsBreaks ? 'white-space: pre-line; ' : '').'overflow-wrap: anywhere;',
         $isSummary => 'grid-column: 2; min-width: 0; text-align: right; overflow-wrap: anywhere; '
             .'font-variant-numeric: tabular-nums;',
         $layout === 'detail' => 'grid-column: 2; min-width: 0; overflow-wrap: anywhere;',
@@ -112,7 +128,11 @@
          wrap inside their track on narrow viewports instead of
          bleeding past their cell and pushing the parent's scrollWidth
          past the viewport. --}}
-    @if($label)
+    @if($label && $isInline)
+        {{-- On one line with its value, and without the weight of a heading: the colon reads as part
+             of the label, the way a line of text says it. --}}
+        <dt style="{{ $labelStyle }}" class="text-[color:var(--color-wk-text-muted)]">{{ $label }}:</dt>
+    @elseif($label)
         <dt style="{{ $labelStyle }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
             {{ $label }}
         </dt>
@@ -127,7 +147,13 @@
          when both are given, because it can carry markup and the prop cannot.
          overflow-wrap: anywhere covers the symmetric case where the VALUE is a
          long single token (URL, compound German noun, file path). --}}
-    <dd style="{{ $valueStyle }}" class="text-[color:var(--color-wk-text)]">
-        {{ $slot->hasActualContent() ? $slot : $value }}
-    </dd>
+    @if($isInline)
+        {{-- Written against both tags and trimmed: under `white-space: pre-line` the line breaks of
+             the template and of the slot's own indentation would show as empty lines. --}}
+        <dd style="{{ $valueStyle }}" class="text-[color:var(--color-wk-text)]">{{ $inlineValue !== null ? new \Illuminate\Support\HtmlString($inlineValue) : $value }}</dd>
+    @else
+        <dd style="{{ $valueStyle }}" class="text-[color:var(--color-wk-text)]">
+            {{ $slot->hasActualContent() ? $slot : $value }}
+        </dd>
+    @endif
 </div>

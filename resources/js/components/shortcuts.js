@@ -97,7 +97,9 @@ export default function wirekitShortcuts(config = {}) {
 
                 const area = areaOf(entry);
                 const group = area === 'global' ? 'global' : (area === 'page' ? 'page' : 'dialog');
-                const label = entry.el ? shortcutLabel(entry.el) : String(entry.label ?? '');
+                // A name given with the shortcut first: one that works out what it does may sit
+                // on an element named for something else, such as the list it moves through.
+                const label = String(entry.label ?? '') || (entry.el ? shortcutLabel(entry.el) : '');
 
                 if (label === '') {
                     continue;

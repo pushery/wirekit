@@ -411,7 +411,6 @@ $unavailable
 :size="$size"
 :text="$helpText"
 :unavailable="!
-</button>
 </div>
 </label>
 </span>
@@ -420,7 +419,6 @@ $unavailable
 </x-wirekit::tooltip>
 </{{
 <body>
-<button
 <div
 <img
 <img>
@@ -681,7 +679,9 @@ __('wirekit::Help')
 `:focus-visible`,
 `;`:
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -749,6 +749,7 @@ __('wirekit::Help')
 `prop="false"`
 `showLabel`.
 `sm`
+`span`
 `span`:
 `square`.
 `src`
@@ -915,6 +916,7 @@ box,
 brand
 break;
 breaks
+brings
 browser
 bubble's
 bubbling,
@@ -1089,6 +1091,8 @@ design
 developer
 different
 disabled
+disabled>`
+disables
 disappearing,
 dismiss
 dismissible
@@ -1168,6 +1172,7 @@ field,
 field.
 field:
 fields
+fields.
 fill
 fill-rule="evenodd"
 fill.
@@ -1402,6 +1407,7 @@ lives
 loaded
 loading="lazy"
 long
+look
 looks
 made,
 make
@@ -1651,6 +1657,7 @@ reading
 reads
 real
 reason
+reason.
 reason:
 receive
 receiver,
@@ -1684,6 +1691,7 @@ restyles
 result
 rgb(),
 ring
+role,
 role:
 role="button"
 role="tooltip"
@@ -1918,7 +1926,6 @@ twice.
 two
 two,
 two.
-type="button"
 type="checkbox"
 type="radio"
 unaffected
@@ -2020,8 +2027,10 @@ x-data="wirekitTooltip({
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

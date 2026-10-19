@@ -226,6 +226,9 @@ function releaseTouchSurfaces(root) {
 /** Set once, so a page with twenty dialogs says this once rather than twenty times. */
 let stylesheetWarningShown = false;
 
+/** Set while a check waits for the page to finish loading, so early overlays queue one check. */
+let stylesheetCheckDeferred = false;
+
 /**
  * Say so when this package's stylesheet is not loaded.
  *
@@ -248,9 +251,37 @@ let stylesheetWarningShown = false;
  * The probe is the geometry itself rather than a marker class, because the geometry
  * is the thing that has to work: a stylesheet that loaded but was overridden fails
  * here too, and should.
+ *
+ * A stylesheet that is still loading is not a missing one, so the verdict waits for the
+ * page's `load` while the document is still loading. WebKit runs a deferred script as soon
+ * as it has arrived, without waiting for the stylesheets before it, where Blink waits as
+ * the HTML standard asks, and before its stylesheet applies the probe reads `static`. By
+ * `load` every stylesheet has either applied or failed, so a stylesheet that failed is the
+ * only one reported.
  */
 function warnIfStylesheetMissing(root) {
     if (stylesheetWarningShown || typeof getComputedStyle !== 'function') {
+        return;
+    }
+
+    const loading = document.readyState === 'loading' || document.readyState === 'interactive';
+
+    if (loading && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        if (! stylesheetCheckDeferred) {
+            stylesheetCheckDeferred = true;
+
+            window.addEventListener('load', () => {
+                stylesheetCheckDeferred = false;
+
+                // The container of the moment: a navigation before `load` replaces it.
+                const current = document.getElementById(OVERLAY_ROOT_ID);
+
+                if (current) {
+                    warnIfStylesheetMissing(current);
+                }
+            }, { once: true });
+        }
+
         return;
     }
 

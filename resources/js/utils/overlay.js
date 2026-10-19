@@ -377,6 +377,57 @@ export function releasePageInert(keep = []) {
     pageInertApplied = new Set();
 }
 
+// The trigger whose show event is being dispatched right now, see `dispatchFromTrigger()`.
+let triggerOfShow = null;
+
+/**
+ * Send a show event on behalf of a trigger, which the overlay that opens then takes as its opener.
+ *
+ * The trigger goes beside the event rather than in its detail: the detail travels wherever the
+ * event does, into the payload of a Livewire listener among others, and an element does not
+ * serialize. The overlay's listener runs while the event is being dispatched, so it finds the
+ * trigger here, and a show event sent from anywhere else finds none.
+ *
+ * @param {HTMLElement|null} trigger
+ * @param {Event} event
+ */
+export function dispatchFromTrigger(trigger, event) {
+    const previous = triggerOfShow;
+    triggerOfShow = trigger ?? null;
+
+    try {
+        window.dispatchEvent(event);
+    } finally {
+        triggerOfShow = previous;
+    }
+}
+
+/** What a click or a tap lands on in a trigger: the control under the pointer in a wrapper. */
+const OPENER_CONTROL = 'a[href], button, input, select, textarea, summary, [tabindex]';
+
+/**
+ * The element an overlay is opened from: the one a trigger handed over, the control a click on a
+ * wrapper around it landed on, or else whatever holds the focus.
+ *
+ * @param {HTMLElement|Event|null} from
+ * @returns {Element|null}
+ */
+function openerOf(from) {
+    const focused = typeof document !== 'undefined' ? document.activeElement : null;
+
+    if (from && typeof from.focus === 'function') {
+        return from.isConnected ? from : focused;
+    }
+
+    const control = typeof from?.target?.closest === 'function' ? from.target.closest(OPENER_CONTROL) : null;
+
+    if (control && control.isConnected && (from.currentTarget?.contains?.(control) ?? true)) {
+        return control;
+    }
+
+    return focused;
+}
+
 /**
  * Create shared overlay behavior for Modal and Drawer Alpine components.
  *
@@ -481,6 +532,12 @@ export function createOverlay({
     // still whole can name it.
     let openerChain = [];
 
+    // The element the overlay was opened from: the trigger, where it names itself, else whatever
+    // held the focus. WebKit does not focus a button on a click or a tap, so after one the focus
+    // sits on <body>, and so does focus-trap's own record of the element focused before the trap
+    // opened. A trigger that hands itself over is right in every engine.
+    let openedFrom = null;
+
     /**
      * Whether the close in progress is a DISMISSAL: Cancel, Escape, or a click on the backdrop of a
      * dismissible overlay. Set by those paths just before they close, and cleared on the next open.
@@ -507,10 +564,14 @@ export function createOverlay({
      * vanish a moment later. What separates the two is how the dialog closed, not whether the
      * trigger exists.
      *
-     * @param {HTMLElement|undefined} opener - element focused before the trap opened
+     * @param {HTMLElement|undefined} focusedBefore - element focused before the trap opened
      * @returns {HTMLElement}
      */
-    const resolveReturnFocus = (opener) => {
+    const resolveReturnFocus = (focusedBefore) => {
+        const opener = openedFrom && openedFrom !== document.body && openedFrom.isConnected
+            ? openedFrom
+            : focusedBefore;
+
         if (dismissing && opener && opener.isConnected) {
             return opener;
         }
@@ -590,7 +651,7 @@ export function createOverlay({
             // Store named handler references so they can be removed on cleanup
             this._showHandler = (e) => {
                 if (e.detail?.name === name) {
-                    this.show();
+                    this.show(triggerOfShow);
                 }
             };
 
@@ -692,17 +753,24 @@ export function createOverlay({
         /**
          * Show the overlay — activate focus trap and scroll lock.
          * Resolves $refs.panel lazily to avoid stale element references.
+         *
+         * `from` names where the overlay was opened from: the trigger element itself, or the click
+         * on a wrapper around one, whose control under the pointer is then the opener. Without it,
+         * the opener is whatever holds the focus.
+         *
+         * @param {HTMLElement|Event|null} [from]
          */
-        show() {
+        show(from = null) {
             if (this.isOpen) return;
             this.isOpen = true;
             dismissing = false;
+            openedFrom = openerOf(from);
 
             // Snapshot the opener's ancestor chain while it is still attached —
             // see openerChain above. Taken before anything renders, so the DOM is
             // exactly the one the reader triggered from.
             openerChain = [];
-            let node = document.activeElement;
+            let node = openedFrom;
             while (node && node !== document.body) {
                 openerChain.push(node);
                 node = node.parentElement;

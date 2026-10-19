@@ -202,6 +202,7 @@ $wkMobileStyle
 @if($name)
 @if($opensNewTab)
 @if($slot->hasActualContent())
+@if($truncate)
 @php
 @props([
 @props.
@@ -392,6 +393,7 @@ aria-hidden="true"
 aria-hidden="true")
 aria-label
 aria-label="{{
+around
 arrive
 as
 ask
@@ -482,6 +484,7 @@ counts
 custom
 dark
 data,
+data-wk-brand-truncate
 data-wk-prose-skip
 debug
 decided
@@ -699,6 +702,7 @@ named
 named:
 names
 narrow
+navbar
 navigation
 navigation,
 needs
@@ -845,6 +849,7 @@ size
 size.
 size:
 slot
+slot:
 sm+
 so
 something
@@ -955,8 +960,10 @@ visible
 vs
 was
 way
+way,
 way.
 way:
+well.
 whatever
 when
 where

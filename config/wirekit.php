@@ -738,6 +738,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Sign-in buttons
+    |--------------------------------------------------------------------------
+    |
+    | The logo a `sign-in-button` shows for each service, as a URL or a path
+    | the page can load, such as '/images/sign-in/google.svg'. WireKit ships
+    | none: Apple, Google, Meta and PayPal each ask for their own artwork from
+    | their own brand pages, under their own terms, and Amazon for its own
+    | button images. For Amazon the file is the whole button. A button whose
+    | service has no logo here shows its words alone.
+    |
+    */
+
+    'sign_in' => [
+        'logos' => [
+            'google' => null,
+            'apple' => null,
+            'facebook' => null,
+            'paypal' => null,
+            'amazon' => null,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | JavaScript Bundle
     |--------------------------------------------------------------------------
     |

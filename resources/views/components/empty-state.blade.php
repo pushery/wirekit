@@ -94,14 +94,16 @@
     @if($description)
         {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p.
              `anywhere` for the reason the title has it; a description whose words fit keeps its width. --}}
-        <div data-wk-prose-skip class="mb-4 max-w-md [overflow-wrap:anywhere] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+        <div data-wk-prose-skip class="max-w-md [overflow-wrap:anywhere] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $description }}
         </div>
     @endif
 
-    {{-- Default slot holds the call-to-action (e.g. button) --}}
+    {{-- Default slot holds the call-to-action (e.g. button). The space before it belongs to it, not
+         to the text above, so a state without an action ends as close to its edge as its icon starts:
+         24px after a description and 8px after a title alone. --}}
     @if($slot->hasActualContent())
-        <div class="mt-2">
+        <div @class(['mt-6' => filled($description), 'mt-2' => blank($description)])>
             {{ $slot }}
         </div>
     @endif

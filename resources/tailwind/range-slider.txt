@@ -506,7 +506,6 @@ ${minPercent}%`
 :value="maxVal"
 :value="minVal"
 <
-</button>
 </div>
 </label>
 </span>
@@ -516,7 +515,6 @@ ${minPercent}%`
 </{{
 <=
 <body>
-<button
 <div
 <div>
 <div>.
@@ -907,8 +905,10 @@ _ready
 `:max-value`
 `:style`
 `<button>`
+`<button>`:
 `<div>`
 `<div>`,
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -1010,6 +1010,7 @@ _ready
 `role="slider"`
 `role="slider"`:
 `run()`.
+`span`
 `span`:
 `stepMin`
 `style="overflow:
@@ -1468,6 +1469,7 @@ dims
 direction
 directive
 disabled
+disabled>`
 disables
 disagree.
 disappearing,
@@ -1608,6 +1610,7 @@ field.
 field:
 fields
 fields,
+fields.
 fieldset
 fight
 fill
@@ -2291,6 +2294,7 @@ reads:
 real
 reappear,
 reason
+reason.
 reason:
 receive
 receive.
@@ -2343,6 +2347,7 @@ reverse-diff
 right
 right,
 role
+role,
 role-less
 role:
 role="button"
@@ -2694,7 +2699,6 @@ two
 two,
 two-way
 two.
-type="button"
 type="hidden"
 unaffected
 unaffected.
@@ -2856,8 +2860,10 @@ x-effect="remeasureOnValueChange()"
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

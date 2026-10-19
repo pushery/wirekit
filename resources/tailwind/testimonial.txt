@@ -1165,7 +1165,9 @@ __('wirekit::Saving'),
 `:value`
 `:value`.
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -1264,6 +1266,7 @@ __('wirekit::Saving'),
 `size`
 `size`,
 `sm`
+`span`
 `span`:
 `src`),
 `statusVariant="Dot"`
@@ -1511,6 +1514,7 @@ brand
 brand's
 break
 breaks
+brings
 browse
 browser
 browser's
@@ -1784,6 +1788,7 @@ disable,
 disabled
 disabled:
 disabled;
+disabled>`
 disables
 disagree
 disappearing,
@@ -1927,6 +1932,7 @@ field,
 field.
 field:
 fields
+fields.
 figcaption
 figcaption,
 figure
@@ -2741,6 +2747,7 @@ right-0',
 ring
 ring-[var(--color-wk-bg-elevated)]',
 role
+role,
 role:
 role="button"
 role="group"
@@ -3224,6 +3231,7 @@ whichever
 while
 white
 whitespace,
+who
 whole
 whole.
 whose
@@ -3288,8 +3296,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:invalid="onRequiredInvalid($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

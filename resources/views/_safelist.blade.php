@@ -219,6 +219,7 @@
     duration-[var(--transition-wk-duration)]
     flex
     flex-col
+    flex-wrap
     focus-visible:outline-hidden
     focus-visible:ring-[length:var(--ring-wk-width)]
     focus-visible:ring-[var(--color-wk-ring)]
@@ -233,7 +234,9 @@
     justify-start
     last:border-b-0
     last:border-e-0
+    lg:flex-wrap
     max-w-full
+    md:flex-wrap
     overflow-hidden
     overflow-x-auto
     overflow-y-hidden
@@ -243,11 +246,13 @@
     rounded-[var(--radius-wk-md)]
     shadow-[var(--shadow-wk-sm)]
     shrink-0
+    sm:flex-wrap
     text-[color:var(--color-wk-accent-fg)]
     text-[color:var(--color-wk-text)]
     text-[color:var(--color-wk-text-muted)]
     text-[length:var(--text-wk-sm)]
     transition-colors
     whitespace-nowrap
+    xl:flex-wrap
 
 --}}

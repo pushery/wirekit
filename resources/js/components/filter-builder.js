@@ -211,6 +211,16 @@ export default function wirekitFilterBuilder(config = {}) {
             const found = this.operatorsFor(key).find((o) => o.op === op);
             return found ? found.label : op;
         },
+        // Whether an operator compares against a value. One a field brings with `valueless: true`
+        // is a predicate of its own, such as "has a value" or "is empty": it takes no value, its
+        // filter carries `value: null`, and its chip names the field and the operator alone.
+        takesValue(key, op) {
+            const found = this.operatorsFor(key).find((o) => o.op === op);
+            return ! (found && found.valueless === true);
+        },
+        draftTakesValue() {
+            return this.takesValue(this.draft.field, this.draft.op);
+        },
 
         // Human-readable value for a chip — maps option values to labels, and
         // renders booleans / arrays sensibly.
@@ -226,7 +236,9 @@ export default function wirekitFilterBuilder(config = {}) {
             return String(v ?? '');
         },
         chipText(filter) {
-            return `${this.fieldLabel(filter.field)} ${this.opLabel(filter.field, filter.op)} ${this.displayValue(filter)}`;
+            const said = `${this.fieldLabel(filter.field)} ${this.opLabel(filter.field, filter.op)}`;
+
+            return this.takesValue(filter.field, filter.op) ? `${said} ${this.displayValue(filter)}` : said;
         },
 
         // ── Lifecycle ────────────────────────────────────────────────────
@@ -478,9 +490,11 @@ export default function wirekitFilterBuilder(config = {}) {
         },
 
         // Apply is disabled until the draft is complete (a value is required for
-        // every type except bool, whose value is always set).
+        // every type except bool, whose value is always set, and for an operator that
+        // takes none).
         canApply() {
             if (!this.draft.field || !this.draft.op) return false;
+            if (! this.draftTakesValue()) return true;
             if (this.draftValueType() === 'bool') return true;
             const v = this.draft.value;
             if (Array.isArray(v)) return v.length > 0;
@@ -503,7 +517,11 @@ export default function wirekitFilterBuilder(config = {}) {
 
         apply() {
             if (!this.canApply()) return;
-            const entry = { field: this.draft.field, op: this.draft.op, value: this._coerceValue(this.draft.field, this.draft.value) };
+            const entry = {
+                field: this.draft.field,
+                op: this.draft.op,
+                value: this.draftTakesValue() ? this._coerceValue(this.draft.field, this.draft.value) : null,
+            };
             if (this.editIndex === null) {
                 this.filters.push(entry);
             } else {

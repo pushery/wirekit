@@ -210,6 +210,9 @@
 @endphp
 
 <{{ $isLink ? 'a' : 'span' }} data-wk-prose-skip
+    {{-- A navbar reads the mark off its brand slot: around a brand that gives way, its wrapper
+         gives way as well. --}}
+    @if($truncate) data-wk-brand-truncate @endif
     @if($isLink) href="{{ $href }}" @endif
     @if($logoOnlyNeedsLabel) aria-label="{{ __('wirekit::Home') }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif

@@ -5,6 +5,11 @@
     'scope' => null,
 ])
 
+{{-- The table's `stack-below`: a table that stacks its rows writes its roles out. --}}
+@aware([
+    'stackBelow' => null,
+])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -13,6 +18,9 @@
 
     use Pushery\WireKit\WireKit;
 
+    // `@aware` leaves the key in the bag, so a tag that also wrote it would render it as an attribute.
+    $attributes = $attributes->except(['stackBelow', 'stack-below']);
+
     // Tbody dividers — separates rows visually
     $classes = WireKit::resolveClasses('table.body', 'base', implode(' ', [
         'divide-y-[length:var(--border-wk-width)]',
@@ -20,6 +28,6 @@
     ]), $scope);
 @endphp
 
-<tbody data-wk-table-body {{ $attributes->class([$classes]) }}>
+<tbody data-wk-table-body @if(filled($stackBelow)) role="rowgroup" @endif {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </tbody>

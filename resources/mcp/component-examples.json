@@ -325,6 +325,12 @@
             "code": "<x-wirekit::callout intent=\"info\">\n    <x-slot:title>New feature</x-slot:title>\n    We've added dark mode support. Toggle it from your account settings.\n</x-wirekit::callout>"
         }
     ],
+    "card-stack": [
+        {
+            "title": "The cards of a product in a remembered order",
+            "code": "<x-wirekit::card-stack :order=\"['prices', 'details', 'stock']\">\n    <x-slot:details>\n        <x-wirekit::card>\n            <x-wirekit::card.body>\n                <x-wirekit::heading :level=\"3\" size=\"sm\">Details</x-wirekit::heading>\n                <x-wirekit::text size=\"sm\" intent=\"muted\">Name, brand and category.</x-wirekit::text>\n            </x-wirekit::card.body>\n        </x-wirekit::card>\n    </x-slot:details>\n    <x-slot:prices>\n        <x-wirekit::card>\n            <x-wirekit::card.body>\n                <x-wirekit::heading :level=\"3\" size=\"sm\">Prices</x-wirekit::heading>\n                <x-wirekit::text size=\"sm\" intent=\"muted\">The price in each channel.</x-wirekit::text>\n            </x-wirekit::card.body>\n        </x-wirekit::card>\n    </x-slot:prices>\n    <x-slot:stock>\n        <x-wirekit::card>\n            <x-wirekit::card.body>\n                <x-wirekit::heading :level=\"3\" size=\"sm\">Stock</x-wirekit::heading>\n                <x-wirekit::text size=\"sm\" intent=\"muted\">What each warehouse holds.</x-wirekit::text>\n            </x-wirekit::card.body>\n        </x-wirekit::card>\n    </x-slot:stock>\n</x-wirekit::card-stack>"
+        }
+    ],
     "card": [
         {
             "title": "Simple card",
@@ -493,6 +499,10 @@
         {
             "title": "Inline code in a heading",
             "code": "<x-wirekit::heading level=\"3\" size=\"lg\">\n    Configure <x-wirekit::code>config/wirekit.php</x-wirekit::code>\n</x-wirekit::heading>"
+        },
+        {
+            "title": "A channel name in a narrow row",
+            "code": "<x-wirekit::container max=\"sm\">\n    <x-wirekit::row gap=\"sm\">\n        <x-wirekit::badge>Slack</x-wirekit::badge>\n        <x-wirekit::code break=\"anywhere\">#releases_and_incident_announcements_for_every_region</x-wirekit::code>\n    </x-wirekit::row>\n</x-wirekit::container>"
         }
     ],
     "collapsible": [
@@ -1203,6 +1213,12 @@
             "code": "<x-wirekit::list type=\"none\">\n    <x-wirekit::list.item>Clean item one</x-wirekit::list.item>\n    <x-wirekit::list.item>Clean item two</x-wirekit::list.item>\n    <x-wirekit::list.item>Clean item three</x-wirekit::list.item>\n</x-wirekit::list>"
         }
     ],
+    "live-list": [
+        {
+            "title": "An inbox with a new conversation",
+            "code": "<x-wirekit::live-list>\n    <x-wirekit::stack gap=\"xs\">\n        <x-wirekit::card data-wk-live-row data-wk-live-fresh>\n            <x-wirekit::card.body>\n                <x-wirekit::text weight=\"medium\">Refund for order 1042</x-wirekit::text>\n                <x-wirekit::text size=\"sm\" intent=\"muted\">Arrived a moment ago</x-wirekit::text>\n            </x-wirekit::card.body>\n        </x-wirekit::card>\n        <x-wirekit::card data-wk-live-row>\n            <x-wirekit::card.body>\n                <x-wirekit::text weight=\"medium\">Invoice address change</x-wirekit::text>\n                <x-wirekit::text size=\"sm\" intent=\"muted\">12 minutes ago</x-wirekit::text>\n            </x-wirekit::card.body>\n        </x-wirekit::card>\n        <x-wirekit::card data-wk-live-row>\n            <x-wirekit::card.body>\n                <x-wirekit::text weight=\"medium\">Delivery to a pick-up point</x-wirekit::text>\n                <x-wirekit::text size=\"sm\" intent=\"muted\">1 hour ago</x-wirekit::text>\n            </x-wirekit::card.body>\n        </x-wirekit::card>\n    </x-wirekit::stack>\n</x-wirekit::live-list>"
+        }
+    ],
     "logo-cloud": [
         {
             "title": "Logo cloud with a lead-in",
@@ -1905,6 +1921,20 @@
             "code": "<x-wirekit::sidebar style=\"width: 16rem;\">\n    <x-wirekit::sidebar.item href=\"#\" :active=\"true\">\n        <x-slot:icon>\n            <x-wirekit::icon name=\"dashboard\" />\n        </x-slot:icon>\n        Dashboard\n    </x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">\n        <x-slot:icon>\n            <x-wirekit::icon name=\"user\" />\n        </x-slot:icon>\n        Team\n    </x-wirekit::sidebar.item>\n    <x-wirekit::sidebar.item href=\"#\">\n        <x-slot:icon>\n            <x-wirekit::icon name=\"settings\" />\n        </x-slot:icon>\n        Settings\n    </x-wirekit::sidebar.item>\n</x-wirekit::sidebar>"
         }
     ],
+    "sign-in-button": [
+        {
+            "title": "The services in a stack",
+            "code": "<x-wirekit::stack gap=\"sm\" style=\"max-width: 20rem\">\n    <x-wirekit::sign-in-button service=\"google\" href=\"/auth/google/redirect\" />\n    <x-wirekit::sign-in-button service=\"apple\" href=\"/auth/apple/redirect\" />\n    <x-wirekit::sign-in-button service=\"facebook\" href=\"/auth/facebook/redirect\" />\n    <x-wirekit::sign-in-button service=\"paypal\" href=\"/auth/paypal/redirect\" />\n</x-wirekit::stack>"
+        },
+        {
+            "title": "Signing in and signing up",
+            "code": "<x-wirekit::stack gap=\"sm\" style=\"max-width: 20rem\">\n    <x-wirekit::sign-in-button service=\"google\" action=\"sign-in\" href=\"/auth/google/redirect\" />\n    <x-wirekit::sign-in-button service=\"apple\" action=\"sign-up\" href=\"/auth/apple/redirect\" />\n    <x-wirekit::sign-in-button service=\"paypal\" action=\"sign-in\" href=\"/auth/paypal/redirect\" />\n</x-wirekit::stack>"
+        },
+        {
+            "title": "Each service's looks",
+            "code": "<x-wirekit::grid cols=\"1 sm:2\" gap=\"sm\">\n    <x-wirekit::sign-in-button service=\"google\" variant=\"light\" href=\"/auth/google/redirect\" />\n    <x-wirekit::sign-in-button service=\"google\" variant=\"neutral\" href=\"/auth/google/redirect\" />\n    <x-wirekit::sign-in-button service=\"apple\" variant=\"black\" href=\"/auth/apple/redirect\" />\n    <x-wirekit::sign-in-button service=\"apple\" variant=\"outline\" href=\"/auth/apple/redirect\" />\n    <x-wirekit::sign-in-button service=\"facebook\" variant=\"white\" href=\"/auth/facebook/redirect\" />\n    <x-wirekit::sign-in-button service=\"paypal\" variant=\"blue\" href=\"/auth/paypal/redirect\" />\n    <x-wirekit::sign-in-button service=\"paypal\" variant=\"gray\" href=\"/auth/paypal/redirect\" />\n</x-wirekit::grid>"
+        }
+    ],
     "skeleton": [
         {
             "title": "Text skeleton — 3 lines",
@@ -2215,12 +2245,12 @@
             "code": "<x-wirekit::tabs :items=\"['general' => 'General', 'security' => 'Security', 'notifications' => 'Notifications']\" default=\"general\">\n    <x-slot:general>General settings for your account.</x-slot:general>\n    <x-slot:security>Security and password options.</x-slot:security>\n    <x-slot:notifications>Manage your notification preferences.</x-slot:notifications>\n</x-wirekit::tabs>"
         },
         {
-            "title": "Underline Variant",
-            "code": "<x-wirekit::tabs :items=\"['one' => 'Overview', 'two' => 'Activity']\" default=\"one\">\n    <x-slot:one>Overview content.</x-slot:one>\n    <x-slot:two>Activity content.</x-slot:two>\n</x-wirekit::tabs>"
+            "title": "Ten sections that wrap from the md width up",
+            "code": "<x-wirekit::container max=\"md\">\n    <x-wirekit::tabs\n        variant=\"pills\"\n        wrap=\"md\"\n        label=\"Product sections\"\n        :items=\"[\n            'details' => 'Details',\n            'translations' => 'Translations',\n            'variants' => 'Variants',\n            'prices' => 'Prices',\n            'stock' => 'Stock',\n            'suppliers' => 'Suppliers',\n            'images' => 'Images & categories',\n            'channels' => 'Channels',\n            'relations' => 'Relations',\n            'sales' => 'Sales',\n        ]\"\n        default=\"details\"\n    >\n        <x-slot:details>The product's details.</x-slot:details>\n        <x-slot:translations>Its translations.</x-slot:translations>\n        <x-slot:variants>Its variants.</x-slot:variants>\n        <x-slot:prices>Its prices.</x-slot:prices>\n        <x-slot:stock>Its stock.</x-slot:stock>\n        <x-slot:suppliers>Its suppliers.</x-slot:suppliers>\n        <x-slot:images>Its images and categories.</x-slot:images>\n        <x-slot:channels>Its channels.</x-slot:channels>\n        <x-slot:relations>Its relations.</x-slot:relations>\n        <x-slot:sales>Its sales.</x-slot:sales>\n    </x-wirekit::tabs>\n</x-wirekit::container>"
         },
         {
-            "title": "Underline tabs — click any tab to move the active indicator",
-            "code": "<x-wirekit::tabs\n    :items=\"['profile' => 'Profile', 'workspace' => 'Workspace', 'integrations' => 'Integrations', 'billing' => 'Billing']\"\n    default=\"profile\"\n    label=\"Account sections\"\n>\n    <x-slot:profile>Profile section — name, avatar, locale, timezone.</x-slot:profile>\n    <x-slot:workspace>Workspace section — team members, invitation link, default project.</x-slot:workspace>\n    <x-slot:integrations>Integrations section — connected providers, webhook endpoints, API keys.</x-slot:integrations>\n    <x-slot:billing>Billing section — current plan, payment method, invoices, seat usage.</x-slot:billing>\n</x-wirekit::tabs>"
+            "title": "Underline Variant",
+            "code": "<x-wirekit::tabs :items=\"['one' => 'Overview', 'two' => 'Activity']\" default=\"one\">\n    <x-slot:one>Overview content.</x-slot:one>\n    <x-slot:two>Activity content.</x-slot:two>\n</x-wirekit::tabs>"
         }
     ],
     "tags-input": [

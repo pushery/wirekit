@@ -549,7 +549,12 @@
             break;
         }
     }
-    $declarativeLoading = $loading && ! $hasWireAction;
+    // `loadingTarget` names a Livewire action, so it is the Livewire path whatever the tag
+    // carries: a button whose click runs through Alpine and calls `$wire.save()`, or the submit
+    // button of a `<form wire:submit>`, has no `wire:` attribute of its own. Read as declarative,
+    // it rendered disabled from the first paint, and a form with it as its default button could
+    // not be sent at all.
+    $declarativeLoading = $loading && ! $hasWireAction && $loadingTarget === null;
 
     // `forceLoading=true` renders the
     // spinner unconditionally — useful for static button demos and for

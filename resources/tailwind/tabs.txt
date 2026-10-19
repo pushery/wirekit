@@ -29,7 +29,7 @@ $at);
 $at,
 $at;
 $attributes
-$attributes->class([$listClasses])
+$attributes->class([$listClasses,
 $attributes->class([$rootClasses])
 $attributes->class(['relative
 $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
@@ -89,6 +89,7 @@ $isInformative
 $isInformative;
 $isVertical
 $isVertical),
+$isVertical);
 $item)
 $item['badge']
 $item['badgeIntent']
@@ -208,6 +209,8 @@ $watch
 $window
 $wireModelWarning
 $wrap
+$wrapClasses
+$wrapClasses])
 ${$key}
 &&
 '
@@ -221,6 +224,7 @@ ${$key}
 '-1'
 '-1'"
 '.
+'.$wrapClasses
 '/<svg\b([^>]*)>/i',
 '/<svg\b/',
 '/^(?:h|size)-/'))
@@ -400,6 +404,8 @@ ${$key}
 'tabindex="0"'))
 'tabindex="0"',
 'tablist',
+'tabs'),
+'tabs.list'),
 'text'
 'text-[color:var(--color-wk-accent-content)]',
 'text-[color:var(--color-wk-accent-fg)]',
@@ -941,6 +947,7 @@ TablistStyles::list($variant,
 TablistStyles::tab($variant,
 TablistStyles::tabActive($variant)
 TablistStyles::tabInactive();
+TablistStyles::wrap(TablistStyles::wrapValue($wrap,
 Tabs
 Tailwind
 Tailwind's
@@ -1003,6 +1010,7 @@ WireKit::warnUnknownProps('tabs.tab',
 WireKit::warnUnknownProps('tooltip',
 With
 Without
+Wrap
 Written
 [
 [$callerLabelledBy,
@@ -1050,6 +1058,7 @@ Written
 \Pushery\WireKit\Support\TablistStyles::tab($variant,
 \Pushery\WireKit\Support\TablistStyles::tabActive($variant);
 \Pushery\WireKit\Support\TablistStyles::tabInactive();
+\Pushery\WireKit\Support\TablistStyles::wrap(\Pushery\WireKit\Support\TablistStyles::wrapValue($wrap,
 \Pushery\WireKit\WireKit::stableId('wk-tabs',
 \Pushery\WireKit\WireKit::warnUnknownProps('icon',
 \Pushery\WireKit\WireKit::warnUnknownProps('tabs',
@@ -1162,6 +1171,7 @@ __toString
 `isolation:
 `key`.
 `keydownEscape()`
+`lg`,
 `mask-image`,
 `max-w-full
 `min-h-*`
@@ -1194,6 +1204,7 @@ __toString
 `role="tab"`
 `selected`
 `shrink`
+`sm`,
 `soft`
 `span`:
 `src/VariantResolver.php`,
@@ -1205,6 +1216,7 @@ __toString
 `tabs.list`
 `tabs.tab`
 `tabs/tab.blade.php`
+`tabs`.
 `tagName()`
 `this.$refs.tooltip`
 `true`
@@ -1219,6 +1231,7 @@ __toString
 `wirekit:tab-changed`
 `wk-tooltip-panel`
 `wrap="false"`
+`wrap="md"`
 `wrap`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-data`
@@ -1229,6 +1242,7 @@ __toString
 `x-ref`
 `x-show="open"`
 `x-show`
+`xl`)
 `{{
 `{{--
 a
@@ -1512,6 +1526,7 @@ branch's
 brand
 break
 break;
+breakpoint
 brighter,
 browser
 browser's
@@ -1960,6 +1975,7 @@ flattened
 flattens
 flex
 flex-col
+flex-wrap
 flips
 flow.
 fn
@@ -1988,6 +2004,7 @@ forcing
 foreach
 foreground
 foreground.
+form.
 forms
 found.`
 four
@@ -2005,6 +2022,7 @@ function).
 function-valued
 function;
 function_exists('svg'))
+further
 future
 gap
 gap-1
@@ -2072,6 +2090,7 @@ helper
 helps
 here
 here,
+here.
 here:
 hero,
 hidden
@@ -2272,6 +2291,7 @@ left
 legitimately
 let
 lets
+lg:flex-wrap
 lift
 lifted
 light
@@ -2334,6 +2354,7 @@ matters,
 max-w-full
 maximum
 may
+md:flex-wrap
 mean
 meaning
 means
@@ -2582,6 +2603,7 @@ personalization
 phantom
 phase
 phase,
+phone
 phrasing
 picked
 picks
@@ -2817,6 +2839,10 @@ scroll-area
 scroll-region
 scrollable
 scrollbar
+scrolling,
+scrolling:
+scrolls.
+seam,
 search
 second
 see
@@ -2894,6 +2920,7 @@ slot
 slot.
 slot:
 slots
+sm:flex-wrap
 small
 smaller
 so
@@ -3125,6 +3152,7 @@ tokens
 tokens.
 told
 tone,
+too
 too,
 tooltip
 tooltip's
@@ -3207,6 +3235,7 @@ until
 until-found
 untouched.
 up
+up,
 up.
 upstream
 usable
@@ -3299,6 +3328,7 @@ wider
 widget
 width
 width)
+width,
 width.
 win.
 window
@@ -3331,6 +3361,7 @@ wrapper
 wrapper)
 wrapper,
 wrapping
+wraps
 writes
 writing
 written
@@ -3377,6 +3408,7 @@ x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
 x-wk-findable="active
+xl:flex-wrap
 yet.
 yields
 zero
@@ -3406,6 +3438,7 @@ zoom,
 }}</x-wirekit::badge>
 }}>
 }}`
+}}{{
 —
 …
 →

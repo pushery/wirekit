@@ -401,7 +401,6 @@ $wrapperClasses
 :focusable-trigger="false"
 :label',
 :text="$helpText"
-</button>
 </div>
 </label>
 </span>
@@ -411,7 +410,6 @@ $wrapperClasses
 </{{
 <body>
 <body>.
-<button
 <div
 <input
 <label
@@ -678,7 +676,9 @@ __('wirekit::Saving'),
 `.wk-choice-frame
 `:group-error="false"`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label
 `<label>`,
 `<p>`
@@ -749,6 +749,7 @@ __('wirekit::Saving'),
 `prop="false"`
 `required`
 `sm`,
+`span`
 `span`:
 `start-0.5`,
 `start`
@@ -1118,6 +1119,7 @@ direction
 direction;
 directions
 disabled
+disabled>`
 disables
 disappearing,
 discipline
@@ -1203,6 +1205,7 @@ field.set
 field.set's
 field:
 fields
+fields.
 fill
 fill-rule="evenodd"
 fill="currentColor"
@@ -1443,6 +1446,7 @@ lives
 load-bearing
 logged
 long
+look
 looks
 make
 makes
@@ -1692,6 +1696,7 @@ reading
 reads
 real
 reason
+reason.
 reason:
 receive
 receiver,
@@ -1732,6 +1737,7 @@ rests
 restyles
 rides
 right,
+role,
 role:
 role="button"
 role="switch"
@@ -1998,7 +2004,6 @@ twice
 twice.
 two
 two.
-type="button"
 type="checkbox"
 ucfirst(str_replace(['-',
 unaffected
@@ -2109,8 +2114,10 @@ x-on:change="toggle()"
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

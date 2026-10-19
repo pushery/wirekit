@@ -120,7 +120,6 @@ $fixedReasonRef
 $forceLoading
 $forceLoading;
 $hasWireAction
-$hasWireAction;
 $heightClasses
 $heightClasses,
 $hideLabel
@@ -1212,6 +1211,7 @@ RING
 RING,
 RTL-safe
 Radio
+Read
 Reapply
 Recommended
 Removed
@@ -1451,6 +1451,7 @@ _getItems()
 `$activeClasses`
 `$loading`;
 `$size`
+`$wire.save()`,
 `&&`,
 `'false'`,
 `--radius-wk-nav-item`
@@ -1470,6 +1471,7 @@ _getItems()
 `<body>`
 `<body>`.
 `<button>`,
+`<form
 `<select>`
 `<span>`
 `<x-slot:iconLeft>`
@@ -1676,6 +1678,7 @@ _getItems()
 `window.open`,
 `window`
 `wire:*`
+`wire:`
 `wire:id`,
 `wire:key`,
 `wire:loading.attr`
@@ -2093,6 +2096,7 @@ caller's
 caller,
 caller-provided
 callout/alert).
+calls
 can
 can.
 candidate
@@ -2107,6 +2111,7 @@ card
 caret
 carried
 carries
+carries:
 carries;
 carry
 carrying
@@ -2398,6 +2403,7 @@ decisions.
 declaration
 declarations
 declarative
+declarative,
 declared
 declares
 declaring
@@ -2703,6 +2709,7 @@ flat).
 flex
 flex-col
 flex-nowrap
+flex-wrap
 flexes
 flight
 flight)
@@ -3130,6 +3137,7 @@ lets
 level
 lg
 lg"
+lg:flex-wrap
 library
 lift
 lifts
@@ -3230,6 +3238,7 @@ max-w-full
 max-xl:[--wk-touch-min:0px]',
 may
 md
+md:flex-wrap
 mean
 meaning
 meaningful
@@ -3513,6 +3522,7 @@ page:
 pages
 pagination
 paint
+paint,
 painted
 paints
 pair
@@ -3929,6 +3939,7 @@ self-toggling
 semantic
 semantics.
 sensible
+sent
 sentence
 sentence.
 separate
@@ -4037,6 +4048,7 @@ slots:
 slow
 sm
 sm).
+sm:flex-wrap
 small
 smaller
 smallest
@@ -4159,6 +4171,7 @@ submenu
 submenu's
 submenu.
 submenus
+submit
 submitting,
 substitutes:
 subtle
@@ -4600,6 +4613,7 @@ wire:loading.class="opacity-[var(--opacity-wk-disabled)]
 wire:loading>
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 wiring
@@ -4700,6 +4714,7 @@ x-transition:enter-start="opacity-0
 x-transition:enter="transition
 x-wk-announce-busy
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yet.
 yields

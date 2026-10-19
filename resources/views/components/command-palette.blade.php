@@ -234,10 +234,12 @@
                                  server-side search. Kept as an event rather than a raw wire:model to
                                  avoid double-binding the internal x-model.
 
-                                 emitQuery() dispatches from the component ROOT, not from this input:
-                                 this input is teleported into <body>, so an event fired here would
-                                 never pass the root element and a listener placed on the component
-                                 would never hear it. Wire it up on the component:
+                                 emitTypedQuery() reports nothing Enter has sent already, so a host
+                                 hears the query before the submit and not after it. It reports
+                                 through emitQuery(), which dispatches from the component ROOT, not
+                                 from this input: this input is teleported into <body>, so an event
+                                 fired here would never pass the root element and a listener placed
+                                 on the component would never hear it. Wire it up on the component:
 
                                    <x-wirekit::command-palette
                                        x-on:wirekit-command-palette-query="search($event.detail.query)" />
@@ -247,7 +249,7 @@
                                    <x-wirekit::command-palette
                                        wire:wirekit-command-palette-query="search($event.detail.query)" /> --}}
                             x-on:input="markQueryChanged()"
-                            x-on:input.debounce.300ms="emitQuery()"
+                            x-on:input.debounce.300ms="emitTypedQuery()"
                         />
                     </div>
 

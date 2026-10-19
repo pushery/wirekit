@@ -254,7 +254,12 @@
              `gap-[var(--gap-wk-sm)]` rather than a margin on either child, so a brand that is
              a single logo carries no stray space. --}}
         @isset($brand)
-            <div class="shrink-0 flex items-center gap-[var(--gap-wk-sm)]">
+            {{-- A brand with `truncate` gives way in a narrow bar, and the wrapper with it. It
+                 counts as nothing when the row breaks into lines, so the menu button and the
+                 actions keep their place beside it, and it grows back up to the brand's own
+                 width, never past it, so the row spreads the space it leaves. Any other brand
+                 keeps its width. --}}
+            <div class="{{ str_contains((string) $brand, 'data-wk-brand-truncate') ? 'min-w-0 flex-1 max-w-max' : 'shrink-0' }} flex items-center gap-[var(--gap-wk-sm)]">
                 {{ $brand }}
             </div>
         @endisset

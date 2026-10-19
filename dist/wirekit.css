@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.68.0 — MIT License
+ * WireKit CSS v2.69.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -220,6 +220,34 @@
     --color-wk-chart-8: oklch(76% 0.095 332);
     --color-wk-chart-8-edge: oklch(66% 0.11 332);
     --color-wk-chart-label: oklch(20.5% 0 0);
+    /* A neutral tone for what a chart draws beside its subject: the line of a comparison period,
+       the share of tax beside the net amount, the rest of a list. It carries no hue, so it stands
+       apart from every series and means nothing; its edge holds 3:1 on the page and the label
+       reads on its fill, as on the series'. */
+    --color-wk-chart-neutral: oklch(88% 0 0);
+    --color-wk-chart-neutral-edge: oklch(62% 0 0);
+    /* The colors each service prescribes for its sign-in button (sign-in-button), from its own
+       guidelines: Google's three themes, Apple's black and white, Meta's blue, PayPal's blue and
+       gray. They do not follow a preset's palette, because the services do not allow that. The
+       Google and Apple names without a theme are the ones that follow the page's mode. */
+    --color-wk-sign-in-black: #000;
+    --color-wk-sign-in-white: #fff;
+    --color-wk-sign-in-google-light-fill: #fff;
+    --color-wk-sign-in-google-light-stroke: #747775;
+    --color-wk-sign-in-google-light-text: #1f1f1f;
+    --color-wk-sign-in-google-dark-fill: #131314;
+    --color-wk-sign-in-google-dark-stroke: #8e918f;
+    --color-wk-sign-in-google-dark-text: #e3e3e3;
+    --color-wk-sign-in-google-neutral-fill: #f2f2f2;
+    --color-wk-sign-in-google-neutral-text: #1f1f1f;
+    --color-wk-sign-in-google-fill: var(--color-wk-sign-in-google-light-fill);
+    --color-wk-sign-in-google-stroke: var(--color-wk-sign-in-google-light-stroke);
+    --color-wk-sign-in-google-text: var(--color-wk-sign-in-google-light-text);
+    --color-wk-sign-in-apple-fill: var(--color-wk-sign-in-black);
+    --color-wk-sign-in-apple-text: var(--color-wk-sign-in-white);
+    --color-wk-sign-in-facebook-blue: #1877f2;
+    --color-wk-sign-in-paypal-blue: #0070ba;
+    --color-wk-sign-in-paypal-gray: #eee;
     /* A sequential scale in seven steps from faint to strong, in the first series' blue, and a
        diverging one from blue through a neutral middle to orange, a pair every color vision
        keeps apart: for a heatmap's ranges, a choropleth, a deviation from a target. */
@@ -1127,6 +1155,14 @@
     --color-wk-chart-8: oklch(68% 0.095 332);
     --color-wk-chart-8-edge: oklch(76% 0.095 332);
     --color-wk-chart-label: oklch(20.5% 0 0);
+    --color-wk-chart-neutral: oklch(80% 0 0);
+    --color-wk-chart-neutral-edge: oklch(88% 0 0);
+    /* Google's dark theme and Apple's white button, which its guidelines give a dark page. */
+    --color-wk-sign-in-google-fill: var(--color-wk-sign-in-google-dark-fill);
+    --color-wk-sign-in-google-stroke: var(--color-wk-sign-in-google-dark-stroke);
+    --color-wk-sign-in-google-text: var(--color-wk-sign-in-google-dark-text);
+    --color-wk-sign-in-apple-fill: var(--color-wk-sign-in-white);
+    --color-wk-sign-in-apple-text: var(--color-wk-sign-in-black);
     --color-wk-chart-seq-1: oklch(30% 0.04 248);
     --color-wk-chart-seq-2: oklch(37.5% 0.052 248);
     --color-wk-chart-seq-3: oklch(45% 0.064 248);
@@ -1257,6 +1293,13 @@
     --color-wk-chart-8: oklch(76% 0.095 332);
     --color-wk-chart-8-edge: oklch(66% 0.11 332);
     --color-wk-chart-label: oklch(20.5% 0 0);
+    --color-wk-chart-neutral: oklch(88% 0 0);
+    --color-wk-chart-neutral-edge: oklch(62% 0 0);
+    --color-wk-sign-in-google-fill: var(--color-wk-sign-in-google-light-fill);
+    --color-wk-sign-in-google-stroke: var(--color-wk-sign-in-google-light-stroke);
+    --color-wk-sign-in-google-text: var(--color-wk-sign-in-google-light-text);
+    --color-wk-sign-in-apple-fill: var(--color-wk-sign-in-black);
+    --color-wk-sign-in-apple-text: var(--color-wk-sign-in-white);
     --color-wk-chart-seq-1: oklch(96% 0.025 248);
     --color-wk-chart-seq-2: oklch(88.5% 0.041 248);
     --color-wk-chart-seq-3: oklch(81% 0.057 248);
@@ -2398,6 +2441,14 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
         min-width: 0;
     }
 
+    /* Two such rows one under the other in a field set already stand apart by the room the floor
+       leaves above and below a line, so the gap the set keeps between its controls drops away
+       between them: with it, the texts of two radios stood half as far apart again as the rows
+       alone put them. The gap stays around every other control of the set. */
+    [data-wk-field-set-controls] > [data-wk-choice]:has(+ [data-wk-choice]) {
+        margin-block-end: 0;
+    }
+
     /* Welded into a button group, the buttons touch: each 44px patch would reach into its
        neighbor and take the taps on its edge. There the buttons keep the height floor instead
        and draw no patch, whatever they asked for. Unlayered, so this outranks the button's own
@@ -2713,6 +2764,10 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
     min-width: 0;
 }
 
+:where([data-wk-touch]) [data-wk-field-set-controls] > [data-wk-choice]:has(+ [data-wk-choice]) {
+    margin-block-end: 0;
+}
+
 :where([data-wk-touch]) [data-wk-button-group] > :is(button, a).wk-button {
     --wk-touch-min: initial;
 }
@@ -2818,7 +2873,7 @@ input.wk-field[data-wk-clearable]::-webkit-search-cancel-button {
    The padding centers a one-line label in the touch target, and a label that wraps keeps it
    around its lines. A label or a row that is visually hidden (`sr-only`) stays as small as it
    is. Unlayered, as the rest of this sheet, so it wins over the button's own 24px utilities. */
-:where([data-wk-touch]) [data-wk-field-help] button {
+:where([data-wk-touch]) [data-wk-field-help] [role="button"] {
     min-width: var(--size-wk-touch-target);
     min-height: var(--size-wk-touch-target);
 }
@@ -9712,6 +9767,379 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* Hiding them keeps blog-to-PDF / browser-print clean — readers don't   */
 /* want a fixed bar overprinted on the first page nor a sidebar of ticks */
 /* taking up margin space on every printed page.                         */
+/* ─── Stacked table rows ───────────────────────────────────────────────────────────────── */
+/* `stack-below` on table: below its breakpoint every row of the body and the foot is a card, and
+   every cell a line that starts with the name of its column, from `data-label`. A cell aligned to
+   the end holds the row's actions and stands as the card's footer. The head stays in the document
+   for a screen reader and leaves the eye; the table keeps its roles, which it writes out, since a
+   table whose display changes stops being one to some browsers. */
+
+@media (width < 40rem) {
+    table[data-wk-table-stack="sm"] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    table[data-wk-table-stack="sm"] > thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-wk-sm);
+    }
+
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr {
+        display: block;
+        border: var(--border-wk-width) solid var(--color-wk-border);
+        border-radius: var(--radius-wk-md);
+        padding-block: var(--padding-wk-y-sm);
+    }
+
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th) {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        column-gap: var(--gap-wk-md);
+        align-items: baseline;
+        text-align: start;
+        /* A value that is one long word, an address or an identifier, breaks inside its column
+           rather than running past the card. */
+        overflow-wrap: anywhere;
+    }
+
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+        content: attr(data-label);
+        color: var(--color-wk-text-muted);
+        font-size: var(--text-wk-sm);
+        font-weight: var(--font-wk-heading-weight);
+    }
+
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"] {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--gap-wk-sm);
+        margin-block-start: var(--padding-wk-y-sm);
+        border-block-start: var(--border-wk-width) solid var(--color-wk-border-subtle);
+    }
+
+    table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"]::before {
+        content: none;
+    }
+
+    /* Where generated content takes an alternative text, the label is the eye's alone: a screen
+       reader already hears the column's header with each cell, through the roles the table writes. */
+    @supports (content: "x" / "") {
+        table[data-wk-table-stack="sm"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+            content: attr(data-label) / "";
+        }
+    }
+}
+
+@media (width < 48rem) {
+    table[data-wk-table-stack="md"] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    table[data-wk-table-stack="md"] > thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-wk-sm);
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr {
+        display: block;
+        border: var(--border-wk-width) solid var(--color-wk-border);
+        border-radius: var(--radius-wk-md);
+        padding-block: var(--padding-wk-y-sm);
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th) {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        column-gap: var(--gap-wk-md);
+        align-items: baseline;
+        text-align: start;
+        /* A value that is one long word, an address or an identifier, breaks inside its column
+           rather than running past the card. */
+        overflow-wrap: anywhere;
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+        content: attr(data-label);
+        color: var(--color-wk-text-muted);
+        font-size: var(--text-wk-sm);
+        font-weight: var(--font-wk-heading-weight);
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"] {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--gap-wk-sm);
+        margin-block-start: var(--padding-wk-y-sm);
+        border-block-start: var(--border-wk-width) solid var(--color-wk-border-subtle);
+    }
+
+    table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"]::before {
+        content: none;
+    }
+
+    /* Where generated content takes an alternative text, the label is the eye's alone: a screen
+       reader already hears the column's header with each cell, through the roles the table writes. */
+    @supports (content: "x" / "") {
+        table[data-wk-table-stack="md"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+            content: attr(data-label) / "";
+        }
+    }
+}
+
+@media (width < 64rem) {
+    table[data-wk-table-stack="lg"] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    table[data-wk-table-stack="lg"] > thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-wk-sm);
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr {
+        display: block;
+        border: var(--border-wk-width) solid var(--color-wk-border);
+        border-radius: var(--radius-wk-md);
+        padding-block: var(--padding-wk-y-sm);
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th) {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        column-gap: var(--gap-wk-md);
+        align-items: baseline;
+        text-align: start;
+        /* A value that is one long word, an address or an identifier, breaks inside its column
+           rather than running past the card. */
+        overflow-wrap: anywhere;
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+        content: attr(data-label);
+        color: var(--color-wk-text-muted);
+        font-size: var(--text-wk-sm);
+        font-weight: var(--font-wk-heading-weight);
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"] {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--gap-wk-sm);
+        margin-block-start: var(--padding-wk-y-sm);
+        border-block-start: var(--border-wk-width) solid var(--color-wk-border-subtle);
+    }
+
+    table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"]::before {
+        content: none;
+    }
+
+    /* Where generated content takes an alternative text, the label is the eye's alone: a screen
+       reader already hears the column's header with each cell, through the roles the table writes. */
+    @supports (content: "x" / "") {
+        table[data-wk-table-stack="lg"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+            content: attr(data-label) / "";
+        }
+    }
+}
+
+@media (width < 80rem) {
+    table[data-wk-table-stack="xl"] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    table[data-wk-table-stack="xl"] > thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-wk-sm);
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr {
+        display: block;
+        border: var(--border-wk-width) solid var(--color-wk-border);
+        border-radius: var(--radius-wk-md);
+        padding-block: var(--padding-wk-y-sm);
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        column-gap: var(--gap-wk-md);
+        align-items: baseline;
+        text-align: start;
+        /* A value that is one long word, an address or an identifier, breaks inside its column
+           rather than running past the card. */
+        overflow-wrap: anywhere;
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+        content: attr(data-label);
+        color: var(--color-wk-text-muted);
+        font-size: var(--text-wk-sm);
+        font-weight: var(--font-wk-heading-weight);
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"] {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--gap-wk-sm);
+        margin-block-start: var(--padding-wk-y-sm);
+        border-block-start: var(--border-wk-width) solid var(--color-wk-border-subtle);
+    }
+
+    table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"]::before {
+        content: none;
+    }
+
+    /* Where generated content takes an alternative text, the label is the eye's alone: a screen
+       reader already hears the column's header with each cell, through the roles the table writes. */
+    @supports (content: "x" / "") {
+        table[data-wk-table-stack="xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+            content: attr(data-label) / "";
+        }
+    }
+}
+
+@media (width < 96rem) {
+    table[data-wk-table-stack="2xl"] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    table[data-wk-table-stack="2xl"] > thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-wk-sm);
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr {
+        display: block;
+        border: var(--border-wk-width) solid var(--color-wk-border);
+        border-radius: var(--radius-wk-md);
+        padding-block: var(--padding-wk-y-sm);
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th) {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        column-gap: var(--gap-wk-md);
+        align-items: baseline;
+        text-align: start;
+        /* A value that is one long word, an address or an identifier, breaks inside its column
+           rather than running past the card. */
+        overflow-wrap: anywhere;
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th):not([data-label]) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+        content: attr(data-label);
+        color: var(--color-wk-text-muted);
+        font-size: var(--text-wk-sm);
+        font-weight: var(--font-wk-heading-weight);
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"] {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--gap-wk-sm);
+        margin-block-start: var(--padding-wk-y-sm);
+        border-block-start: var(--border-wk-width) solid var(--color-wk-border-subtle);
+    }
+
+    table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > [data-wk-cell-align="right"]::before {
+        content: none;
+    }
+
+    /* Where generated content takes an alternative text, the label is the eye's alone: a screen
+       reader already hears the column's header with each cell, through the roles the table writes. */
+    @supports (content: "x" / "") {
+        table[data-wk-table-stack="2xl"] > :is(tbody, tfoot) > tr > :is(td, th)[data-label]:not([data-wk-cell-align="right"])::before {
+            content: attr(data-label) / "";
+        }
+    }
+}
+
+
 @media print {
     /* ------------------------------------------------------------ */
     /* 1 — Chrome that has no meaning on paper.                      */

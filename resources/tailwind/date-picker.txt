@@ -443,7 +443,6 @@ $wkField->takeLabel($dateId)
 :min="{{
 :required="$required"
 :text="$helpText"
-</button>
 </div>
 </label>
 </span>
@@ -452,7 +451,6 @@ $wkField->takeLabel($dateId)
 </x-wirekit::tooltip>
 </{{
 <body>
-<button
 <div
 <input
 <label
@@ -751,7 +749,9 @@ __('wirekit::Saving'),
 `03.04.2026`
 `04/03/2026`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<input
 `<input>`
 `<label>`,
@@ -836,6 +836,7 @@ __('wirekit::Saving'),
 `prop="false"`
 `range`
 `space-y-1.5`
+`span`
 `span`:
 `style`,
 `swapElements`
@@ -1025,6 +1026,7 @@ box,
 brackets,
 brand
 breaks
+brings
 browser
 browser,
 bubble's
@@ -1220,6 +1222,7 @@ developer
 dies
 different
 disabled
+disabled>`
 disables
 disagree:
 disappearing,
@@ -1590,6 +1593,7 @@ locale:
 localized
 long
 longer
+look
 looks
 loses
 made
@@ -1886,6 +1890,7 @@ reads
 reads,
 real
 reason
+reason.
 reason:
 receive
 receiver,
@@ -1926,6 +1931,7 @@ result
 rewritten
 right
 role
+role,
 role:
 role="button"
 role="tooltip"
@@ -2191,7 +2197,6 @@ two
 two,
 two.
 type
-type="button"
 type="date"
 type="date">
 type="date">,
@@ -2335,8 +2340,10 @@ x-on:change="s
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

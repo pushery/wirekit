@@ -645,7 +645,9 @@ _focusAt()
 `:error`
 `:value`
 `<button>`
+`<button>`:
 `<div>`
+`<fieldset
 `<label>`,
 `<p>`
 `<template
@@ -739,6 +741,7 @@ _focusAt()
 `selected`,
 `selected`.
 `sm`
+`span`
 `span`:
 `swapElements`
 `table`
@@ -939,6 +942,7 @@ branches
 brand
 break
 breaks
+brings
 bubble's
 bubbling,
 bug
@@ -1129,6 +1133,8 @@ dims
 direction
 disabled
 disabled:
+disabled>`
+disables
 disagrees
 disappearing,
 disappears
@@ -1229,6 +1235,7 @@ field,
 field.
 field:
 fields
+fields.
 file,
 fill-rule="evenodd"
 fill.
@@ -1494,6 +1501,7 @@ live
 live.
 lives
 long
+look
 looks
 lookup
 loop
@@ -1809,6 +1817,7 @@ reading
 reads
 real
 reason
+reason.
 reason:
 reasoning
 receive
@@ -2288,8 +2297,10 @@ x-data="wirekitTooltip({
 x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"

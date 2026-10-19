@@ -132,6 +132,9 @@ final class HeroiconsPreset implements IconPreset
             'settings' => 'heroicon-m-cog-6-tooth',
             'gear' => 'heroicon-m-cog-6-tooth',
             'dashboard' => 'heroicon-m-squares-2x2',
+            // A page's arrangement, which cards it shows and where. Heroicons has no layout
+            // glyph of its own; the group of rectangles is that arrangement.
+            'layout' => 'heroicon-m-rectangle-group',
             'billing' => 'heroicon-m-credit-card',
             'credit-card' => 'heroicon-m-credit-card',
 
@@ -222,6 +225,11 @@ final class HeroiconsPreset implements IconPreset
             'chevron-up-down' => 'heroicon-m-chevron-up-down',
             'more-vertical' => 'heroicon-m-ellipsis-vertical',
             'arrows-left-right' => 'heroicon-m-arrows-right-left',
+            // Every part of a page opened or closed at once, as a page's "Expand all" and
+            // "Collapse all" do. Heroicons has no fold glyph; its arrows pointing out and in are
+            // the pair it draws for opening and closing.
+            'expand-all' => 'heroicon-m-arrows-pointing-out',
+            'collapse-all' => 'heroicon-m-arrows-pointing-in',
             'hash' => 'heroicon-m-hashtag',
             'shield-warning' => 'heroicon-m-shield-exclamation',
             'prohibit' => 'heroicon-m-no-symbol', // Heroicons names the concept after the sign, not the act.
@@ -320,6 +328,7 @@ final class HeroiconsPreset implements IconPreset
             'finger-print' => 'heroicon-m-finger-print',
             'fire' => 'heroicon-m-fire',
             'heart' => 'heroicon-m-heart',
+            'heart-outline' => 'heroicon-o-heart', // the outline glyph: the concept is the outline
             'link' => 'heroicon-m-link',
             // A paperclip, not a chain link: without a word for an attachment, an "Attach
             // file" button reaches for whatever is near, an external-link box included.

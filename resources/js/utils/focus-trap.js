@@ -490,12 +490,31 @@ export function createFocusTrap(container, {
     // Cancel button), or focus-trap's own default where there is none. Once a trap above has paused
     // this one, the element focus stood on comes first, while it is still on the page; focus-trap
     // checks it can take focus and falls back to the same default otherwise.
+    //
+    // Then the reader's own focus. focus-trap places the initial focus a task after activation, and
+    // an overlay activates its trap a frame or more after it opens, so a reader who has clicked or
+    // tabbed into the panel by then would lose that field to the caller's choice, and whatever they
+    // type next with it. Without a caller's choice focus-trap keeps such a focus itself; with one,
+    // only this check does. The element returned is the one that holds focus, inside a shadow root
+    // too, so focus-trap finds it already focused and leaves it, text and caret as they are.
     opts.initialFocus = () => {
         const resume = resumeAt;
         resumeAt = null;
 
         if (resume && resume.isConnected) {
             return resume;
+        }
+
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+
+        if (active && active !== container && [container, ...entry.extras].some((root) => root?.contains?.(active))) {
+            let focused = active;
+
+            while (focused.shadowRoot?.activeElement) {
+                focused = focused.shadowRoot.activeElement;
+            }
+
+            return focused;
         }
 
         return typeof initialFocus === 'function' ? initialFocus() : initialFocus;

@@ -196,7 +196,6 @@ $hasAfter
 $hasError
 $hasMedia
 $hasWireAction
-$hasWireAction;
 $height
 $heightClasses
 $heightClasses,
@@ -1903,6 +1902,7 @@ __toString
 `$radiusLeft`
 `$refs`
 `$size`
+`$wire.save()`,
 `+`
 `--font-wk-body-weight`
 `--size-wk-lg`
@@ -1935,7 +1935,10 @@ __toString
 `<body>`.
 `<button>`
 `<button>`,
+`<button>`:
 `<div>`
+`<fieldset
+`<form
 `<label>`,
 `<p>`
 `<picture>`
@@ -2152,6 +2155,7 @@ __toString
 `sizes`,
 `sm`
 `space-y-1.5`
+`span`
 `span`:
 `sr-only`
 `src/VariantResolver.php`,
@@ -2193,6 +2197,7 @@ __toString
 `width`
 `window.open`,
 `wire:*`
+`wire:`
 `wire:id`,
 `wire:key`,
 `wire:loading.attr`
@@ -2633,6 +2638,7 @@ caller
 caller's
 caller's.
 callout/alert).
+calls
 calls.
 came
 can
@@ -2649,6 +2655,7 @@ card's
 card,
 carried
 carries
+carries:
 carry
 carrying
 cart
@@ -2966,6 +2973,7 @@ decision.
 decision:
 declaration
 declarative
+declarative,
 declare
 declared
 declares
@@ -3048,6 +3056,7 @@ disabled,
 disabled:cursor-not-allowed
 disabled:cursor-not-allowed',
 disabled:opacity-[var(--opacity-wk-disabled)]
+disabled>`
 disables
 disabling.
 disagree
@@ -3255,6 +3264,7 @@ field,
 field.
 field:
 fields
+fields.
 figure
 file
 file's
@@ -3811,6 +3821,7 @@ lets
 level
 lg
 lg"
+lg:flex-wrap
 library
 lift
 lifts
@@ -3925,6 +3936,7 @@ max="{{
 maxPrecision:
 may
 md
+md:flex-wrap
 mean
 meaning
 meaningful
@@ -4226,6 +4238,7 @@ page:
 pages
 pagination
 paint
+paint,
 paint;
 painted
 paints
@@ -4773,6 +4786,7 @@ slots.
 slots:
 slow
 sm
+sm:flex-wrap
 small
 smaller
 smallest
@@ -5395,6 +5409,7 @@ wire:loading.class="opacity-[var(--opacity-wk-disabled)]
 wire:loading>
 wire:poll
 wire:submit
+wire:submit>`,
 wire:target
 wire:target="{{
 with
@@ -5458,8 +5473,10 @@ x-on:click="$dispatch('wirekit:field-help',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:input="onTyped($event)"
+x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
+x-on:keydown.space.prevent="$el.click()"
 x-on:keydown.space="activate($event)"
 x-on:mouseenter="mouseenter()"
 x-on:mouseleave="mouseleave()"
@@ -5483,6 +5500,7 @@ x-transition:leave="transition
 x-wk-announce-busy
 x-wk-ref="{{
 xl
+xl:flex-wrap
 xmlns="http://www.w3.org/2000/svg"
 yet.
 yet:

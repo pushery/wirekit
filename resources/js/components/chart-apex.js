@@ -2171,7 +2171,12 @@ window.ApexCharts = ApexCharts;</pre>
          * showing. Read off the element, an index is an attribute and arrives as a string; taken from
          * the tooltip, it arrives as a number; where there is neither, it is null. A pie, a donut, a
          * radial bar and a polar area report series 0 and their slice as the point, so their
-         * addresses come from the grid's one row. Where ApexCharts names no point, nothing is followed.
+         * addresses come from the grid's one row. The series the shape under the pointer names comes
+         * first: over a column on a category axis ApexCharts names the series its shared tooltip
+         * took up, which in a chart that mixes lines and columns is the first one, or none. Without
+         * a series anywhere, the point takes the one dataset with an address there; a point that
+         * several datasets give an address stays where it is. Where ApexCharts names no point,
+         * nothing is followed.
          * The handlers do nothing until a point has an address, so a Livewire update that brings the
          * first one needs no rebuild, and a handler the page set for every chart through
          * `window.Apex` still runs.
@@ -2187,11 +2192,47 @@ window.ApexCharts = ApexCharts;</pre>
 
                 return Number.isInteger(index) && index >= 0 ? index : null;
             };
-            const linkOf = (context) => {
+            // The series of the shape under the pointer, read off the shape. A bar names its series
+            // as `index` and its point as `j` but carries no `i`, so the events take the series
+            // from the shared tooltip, and over a bar on a category axis that is not the bar's: the
+            // first series of a chart that mixes lines and columns, or none at all. A marker, a
+            // treemap cell and a heatmap cell name their series as `index` too, and the group
+            // around a shape names it as `data:realIndex`.
+            const seriesOfShape = (event) => {
+                const shape = event?.target;
+
+                if (! shape || typeof shape.getAttribute !== 'function') {
+                    return null;
+                }
+
+                const own = indexOf(shape.getAttribute('index'));
+
+                return own ?? indexOf(shape.closest?.('.apexcharts-series')?.getAttribute('data:realIndex'));
+            };
+
+            // The one dataset with an address at this point, or null when none or several have one.
+            const onlyLinkedAt = (point) => {
+                const linked = (this._links ?? []).flatMap((row, dataset) => (pointLink(this._links, dataset, point) ? [dataset] : []));
+
+                return linked.length === 1 ? linked[0] : null;
+            };
+
+            const linkOf = (context, event = null) => {
                 const series = this._rawConfig?.series;
                 const slices = Array.isArray(series) && series.every((value) => typeof value === 'number');
+                const point = indexOf(context?.dataPointIndex);
 
-                return pointLink(this._links, slices ? 0 : indexOf(context?.seriesIndex), indexOf(context?.dataPointIndex));
+                if (slices) {
+                    return pointLink(this._links, 0, point);
+                }
+
+                if (point === null) {
+                    return null;
+                }
+
+                const dataset = seriesOfShape(event) ?? indexOf(context?.seriesIndex) ?? onlyLinkedAt(point);
+
+                return pointLink(this._links, dataset, point);
             };
 
             options.chart = Object.assign({}, options.chart);
@@ -2212,7 +2253,7 @@ window.ApexCharts = ApexCharts;</pre>
             };
 
             listen('click', (event, context) => {
-                const url = this._links ? linkOf(context) : null;
+                const url = this._links ? linkOf(context, event) : null;
 
                 if (url) {
                     followPointLink(url, event);
@@ -2220,7 +2261,7 @@ window.ApexCharts = ApexCharts;</pre>
             });
             listen('mouseMove', (event, context) => {
                 if (this._links) {
-                    mount.style.cursor = linkOf(context) ? 'pointer' : '';
+                    mount.style.cursor = linkOf(context, event) ? 'pointer' : '';
                 }
             });
             listen('mouseLeave', () => {
