@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console\Verify\Checks;
 
 use Pushery\WireKit\Console\Verify\VerifyCheck;
+use Pushery\WireKit\Support\TailwindSources;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -168,7 +169,7 @@ final class BuiltCssHasWireKitUtilitiesCheck extends VerifyCheck
         clearstatcache(true, $root);
         $times = [@filemtime($root), @filectime($root)];
 
-        foreach (glob($root.'/resources/tailwind/*.txt') ?: [] as $file) {
+        foreach (glob($root.'/'.TailwindSources::DIRECTORY.'/*.txt/'.TailwindSources::FILE) ?: [] as $file) {
             $times[] = @filemtime($file);
         }
 

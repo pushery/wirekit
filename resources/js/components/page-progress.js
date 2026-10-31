@@ -34,6 +34,7 @@
  * @param {number} config.ceiling    the percentage the easing approaches while waiting
  */
 import { pauseWhileHidden } from '../utils/page-visibility.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 export default function wirekitPageProgress(config = {}) {
     return {
@@ -222,7 +223,7 @@ export default function wirekitPageProgress(config = {}) {
                 this.pct = 8;
 
                 this._startTick();
-            }, this._showAfter);
+            }, timerDelay(this._showAfter));
         },
 
         end() {

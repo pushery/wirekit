@@ -15,14 +15,20 @@
     // `disabled` — declared for the reason `required` is: undeclared, it would land on the
     // wrapper div, where HTML gives it no meaning, and the field it names would stay in use.
     'disabled' => false,
+    // Read-only as a native field is: the chosen values stay on the page and are sent with the
+    // form, the list still opens to show the options, and nothing picks or removes one.
+    // Undeclared, the attribute landed on the wrapper, where it stops nothing.
+    'readonly' => false,
     // Livewire method to call optimistically. It receives the FULL new
     // selection as an array. The pill appears immediately and is removed again
     // if the call fails. Absent -> the plain multi-select.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -63,7 +69,7 @@
     'ariaLabel' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -80,12 +86,13 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `required="false"` would read as TRUE and mark the field required anyway.
-    $required = BooleanProp::from($required, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $server = BooleanProp::from($server, false);
-    $truncated = BooleanProp::from($truncated, false);
-    $searchMinLength = max(1, (int) $searchMinLength);
-    $searchDebounce = max(0, (int) $searchDebounce);
+    $required = BooleanProp::from($required, false, 'multi-select', 'required');
+    $disabled = BooleanProp::from($disabled, false, 'multi-select', 'disabled');
+    $readonly = BooleanProp::from($readonly, false, 'multi-select', 'readonly');
+    $server = BooleanProp::from($server, false, 'multi-select', 'server');
+    $truncated = BooleanProp::from($truncated, false, 'multi-select', 'truncated');
+    $searchMinLength = max(1, \Pushery\WireKit\Support\NumericProp::int($searchMinLength, 0, 'multi-select', 'searchMinLength'));
+    $searchDebounce = max(0, \Pushery\WireKit\Support\NumericProp::int($searchDebounce, 0, 'multi-select', 'searchDebounce'));
     $listLayout = WireKit::validateProp('multi-select', 'layout', (string) $layout, ['dropdown', 'list']) === 'list';
 
 
@@ -105,7 +112,12 @@
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'multi-select-'); // page-unique DOM id; see Support\DomId
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
 
     // A caller's `id` goes on the text field, the element a `<label for>` elsewhere on the
     // page and a link to `#id` reach. Without one the field takes the component's id with
@@ -123,19 +135,20 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // When a parent <x-wirekit::field label="..."> wraps this component, the
     // field-emitted <label for="$id"> doesn't reach the internal combobox
     // <input id="$id-input">, so screen readers + axe's label rule report
     // an unlabeled form element. We synthesize an aria-label fallback —
     // explicit `ariaLabel` prop wins, then the field's `label` prop (passed
-    // down via attributes scan), then the `name`/`placeholder` as last resort.
+    // down via attributes scan), then the `placeholder` and the `name` as last resort. A blank
+    // candidate names nothing and hands on to the next, down to the default placeholder.
     // A caller's `aria-labelledby` names the control and wins over the component's own name, as
     // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
     $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
-    $resolvedAriaLabel = $ariaLabel ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $label ?? $placeholder ?? $name;
+    $resolvedAriaLabel = \Pushery\WireKit\Support\BlankName::first($ariaLabel, \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), $label, $placeholder, $name, config('wirekit.components.multi-select.placeholder'), __('wirekit::Select…'));
 
     // On the text field the last two fallbacks step aside for a caller's `id`: the id is there
     // so a label of the caller's can reach the field, and an aria-label would win over that
@@ -144,14 +157,17 @@
     // the result group by reference, where the fallbacks above would name them after the
     // placeholder (Support\FieldControl). Not when this component is named by its own label or
     // an aria-label, which win as they do anywhere else.
-    $fieldLabelId = $ariaLabel === null && \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') === null && ! filled($label) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+    $fieldLabelId = \Pushery\WireKit\Support\BlankName::first($ariaLabel, \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), $label) === null && $wkField instanceof \Pushery\WireKit\Support\FieldControl
         ? $wkField->takeLabel($fieldId)
         : null;
 
-    $fieldAriaLabel = $callerLabelledBy !== null ? null : $ariaLabel ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $label ?? ($callerId || $fieldLabelId !== null ? null : ($placeholder ?? $name));
+    $fieldAriaLabel = $callerLabelledBy !== null ? null : (\Pushery\WireKit\Support\BlankName::first($ariaLabel, \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), $label) ?? ($callerId || $fieldLabelId !== null ? null : \Pushery\WireKit\Support\BlankName::first($placeholder, $name, config('wirekit.components.multi-select.placeholder'), __('wirekit::Select…'))));
 
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // One placement vocabulary for every overlay that opens against a trigger.
     $placement = WireKit::validateProp('multi-select', 'placement', (string) $placement, \Pushery\WireKit\Support\FloatingPlacement::ALL);
@@ -295,8 +311,8 @@
     ]), $scope);
 
     // Both plural forms of the heading over the choice travel to the browser, which counts it.
-    $selectedOne = trans_choice('wirekit::{1} :count selected|[2,*] :count selected', 1, ['count' => '__COUNT__']);
-    $selectedMany = trans_choice('wirekit::{1} :count selected|[2,*] :count selected', 2, ['count' => '__COUNT__']);
+    $selectedOne = \Pushery\WireKit\Support\Plural::choice('wirekit::{1} :count selected|[2,*] :count selected', 1, ['count' => '__COUNT__']);
+    $selectedMany = \Pushery\WireKit\Support\Plural::choice('wirekit::{1} :count selected|[2,*] :count selected', 2, ['count' => '__COUNT__']);
     $listConfig = $listLayout
         ? ', selectedOne: '.\Pushery\WireKit\Support\AlpinePayload::string($selectedOne).', selectedMany: '.\Pushery\WireKit\Support\AlpinePayload::string($selectedMany)
         : '';
@@ -309,6 +325,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // A required multi-select that a submit found empty says so under the field
     // (partials/required-message), unless the server's own message already stands there.
@@ -334,7 +357,7 @@
     // numeric string key into an integer, so deciding by the key's type would read `[31 => 'Rain
     // jacket']` and every `pluck('name', 'id')` as a list and submit the NAMES — the pills would
     // look right and `wire:model` would receive labels instead of ids.
-    $options = \Pushery\WireKit\Support\ListProp::records($options);
+    $options = \Pushery\WireKit\Support\ListProp::records($options, 'multi-select', 'options');
     $optionsAreAList = array_is_list(collect($options)->all());
     $encodedOptions = collect($options)->map(function ($option, $key) use ($optionsAreAList) {
         if (is_array($option)) {
@@ -383,6 +406,9 @@
     // A Collection is read as the list it holds; `is_array()` would take it for no
     // pre-selection and render the field empty.
     $value = \Pushery\WireKit\Support\ListProp::from($value);
+    // An entry that is a list itself, as `old()` gives one after a request that sent `name[][]`,
+    // is reported and left out (Support\FieldValue).
+    $value = is_array($value) ? \Pushery\WireKit\Support\FieldValue::items($value, 'multi-select') : $value;
     $selectedValues = is_array($value)
         ? array_values(array_map(fn ($v) => (string) $v, $value))
         : (is_string($value) && $value !== ''
@@ -400,7 +426,7 @@
             .', searchTexts: '.\Pushery\WireKit\Support\AlpinePayload::from([
                 'searching' => __('wirekit::Searching…'),
                 'prompt' => __('wirekit::Type to search'),
-                'tooShort' => trans_choice('wirekit::{1} Type at least :count character|[2,*] Type at least :count characters', $searchMinLength, ['count' => $searchMinLength]),
+                'tooShort' => \Pushery\WireKit\Support\Plural::choice('wirekit::{1} Type at least :count character|[2,*] Type at least :count characters', $searchMinLength, ['count' => $searchMinLength]),
                 'truncated' => __('wirekit::More results. Keep typing to narrow them.'),
                 'empty' => __('wirekit::No results'),
                 'failed' => __('wirekit::Search failed. Try again.'),
@@ -450,15 +476,15 @@
     $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
     $attributes = $attributes->except('form');
     // What acts only on the field the reader types into goes to the search field: on the wrapper
-    // `autofocus` focuses nothing and the on-screen keyboard reads none of the rest
-    // (Support\FieldAttributes). The search text is not the value, so neither `pattern` nor
-    // `maxlength` goes there.
-    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus']);
+    // `autofocus` focuses nothing, `tabindex` leaves the field's tab stop as it is and the
+    // on-screen keyboard reads none of the rest (Support\FieldAttributes). The search text is not
+    // the value, so neither `pattern` nor `maxlength` goes there.
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus', 'tabindex']);
 @endphp
 
 <div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- `x-modelable` is what makes `wire:model` work here, and without it the control
@@ -478,7 +504,10 @@
          not decode: `Grüße` would arrive in the listbox as `Gru00fce`, with nothing thrown.
          `Support/AlpinePayload.php` names the versions. --}}
     <div
-        {{ $attributes->except(['aria-describedby', 'aria-labelledby', 'autocomplete'])->class(['relative']) }}
+        {{ \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes->except(['aria-describedby', 'aria-labelledby', 'autocomplete']))->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['relative'])) }}
+        {{-- `focus` fires here as the reader enters the control as a whole; the model events fire its
+             `blur` on this root when they leave (utils/focus-unit.js). --}}
+        x-wk-focus-unit.focus-only
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         x-modelable="selected"
         {{-- The value and the options travel on attributes of their own, so `x-data` renders the
@@ -486,11 +515,11 @@
              to the new expression and initialize it again, emptying the selection. The factory
              reads both once and follows Livewire's later renders of them. In server mode the
              options are the search results on `data-wk-server-options`. --}}
-        x-data="wirekitMultiSelect({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, fieldId: {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
+        x-data="wirekitMultiSelect({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, readonly: {{ $readonly ? 'true' : 'false' }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, fieldId: {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }}{{ $listConfig }} })"
         @if($listLayout) data-wk-multi-select-layout="list" @endif
         data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json($selectedValues) }}"
         @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @else data-wk-options="{{ \Pushery\WireKit\Support\AlpinePayload::json($encodedOptions) }}" @endif
-        @click.away="dropdownOpen = false"
+        @click.away="closeOutside($event)"
         @keydown.escape="escapeDropdown($event)"
     >
         @if($optimisticConfig)
@@ -499,17 +528,27 @@
             <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
         @endif
 
+        {{-- The selection the page was loaded with, for a page without a script. The fields below
+             come from a template, which renders nothing until Alpine starts, so a form sent
+             without a script carried no selection at all, and a server stored it empty. A browser
+             running scripts never reads `noscript`, so there only the template's fields go into
+             the form. `hidden` keeps the element out of the layout without a script as well; a
+             field is sent whatever it shows. --}}
+        @if($selectedValues !== [])
+            <noscript hidden>@foreach($selectedValues as $selectedValue)<input type="hidden" @if($name !== '') name="{{ \Illuminate\Support\Str::finish((string) $name, '[]') }}" @endif value="{{ $selectedValue }}" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />@endforeach</noscript>
+        @endif
+
         {{-- Hidden inputs for form submission --}}
         <template x-for="(val, i) in selected" :key="i">
             {{-- A disabled field is left out of the form data, as a native one is. --}}
             {{-- The name ends in `[]` once, whether the caller wrote `skills` or `skills[]`, the way a
                  native multiple select is written. Twice, PHP reads a list of one-item lists. --}}
-            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" :value="val" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
+            <input type="hidden" @if($name !== '') :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" @endif :value="val" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
         </template>
         {{-- The browser validates no hidden field, and an empty selection has none at all, so a
              required multi-select stops an empty submit through a stand-in of its own. --}}
         @if($required)
-            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled || $readonly])
         @endif
 
         @if($listLayout)
@@ -523,11 +562,12 @@
                      off for. --}}
                 autocomplete="off"
                 @if($disabled) disabled @endif
+                @if($readonly) readonly aria-readonly="true" @endif
                 x-model="filter"
                 {{ $fieldAttributes }}
                 @input="onListInput()"
                 aria-controls="{{ $id }}-results"
-                @if($required) aria-required="true" @endif
+                @if($required || $fieldRequired) aria-required="true" @endif
                 @if($hasError)
                     aria-invalid="true"
                 @elseif($requiredMessageId)
@@ -535,7 +575,7 @@
                 @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldAriaLabel !== null) aria-label="{{ $fieldAriaLabel }}" @endif
-                placeholder="{{ $placeholder }}"
+                placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}"
                 {{-- `wk-field` is outside `resolveClasses()` so a personalization cannot take it off:
                      it holds the font-size floor that keeps iOS from zooming the page on focus. --}}
                 class="wk-field {{ $listSearchClasses }} {{ $stateClasses }}"
@@ -560,6 +600,9 @@
                                     class="peer sr-only"
                                     data-wk-multi-select-option
                                     @if($disabled) disabled @endif
+                                    {{-- A checkbox takes no `readonly`: the press is refused before the
+                                         browser checks the box, on a click and on Space alike. --}}
+                                    @if($readonly) x-on:click.prevent="" aria-readonly="true" @endif
                                     :value="opt.value"
                                     :checked="isChosen(opt.value)"
                                     @change="{{ $optimisticConfig ? 'run(nextWith(opt.value))' : 'toggleFromList(opt.value)' }}"
@@ -584,7 +627,7 @@
                     <p data-wk-prose-skip
                         x-show="listOptions.length > 0 && searchNote() !== ''"
                         x-text="searchNote()"
-                        class="{{ $emptyRowClasses }}"
+                        class="{{ $emptyRowClasses }} empty:hidden"
                     ></p>
                 @endif
             </div>
@@ -600,6 +643,7 @@
                             {{-- runListRemoval() under the optimistic layer, for the same reason as
                                  the pills' runRemoval(): the removal is a server mutation like a pick,
                                  and focus still moves to the button that takes this one's place. --}}
+                            @unless($readonly)
                             <button
                                 type="button"
                                 data-wk-multi-select-remove
@@ -610,6 +654,7 @@
                             >
                                 <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                             </button>
+                            @endunless
                         </li>
                     </template>
                 </ul>
@@ -641,20 +686,27 @@
                         </template>
                     @endif
                     <span x-text="pillLabel(val)"@if($optionsCarryLang) :lang="getLang(val)"@endif></span>
+                    @unless($readonly)
                     <button
                         type="button"
                         {{-- runRemoval(), not deselect(), under the optimistic layer: removing
                              a pill is the same server mutation as picking one, so it goes through
                              run(nextWith(val)) and is undone the same way. Both put focus on the
-                             pill that takes this one's place. --}}
+                             pill that takes this one's place.
+
+                             24px square, the WCAG 2.2 target size, with the glyph in its middle:
+                             the pill stands among other pills and beside the field, so spacing
+                             cannot make up for a smaller box. The negative block margin hands the
+                             3px it gains on each side back, and the pill keeps its height. --}}
                         data-wk-pill-remove
                         @click="{{ $optimisticConfig ? 'runRemoval(val)' : 'deselect(val)' }}"
                         @if($disabled) disabled @endif
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
-                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                        class="-my-[3px] inline-flex size-[var(--size-wk-target-min)] shrink-0 items-center justify-center rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                     </button>
+                    @endunless
                 </span>
             </template>
 
@@ -669,6 +721,7 @@
                      off for. --}}
                 autocomplete="off"
                 @if($disabled) disabled @endif
+                @if($readonly) readonly aria-readonly="true" @endif
                 x-model="filter"
                 {{ $fieldAttributes }}
                 {{-- Opens the list, except for the focus the component places after the last
@@ -701,7 +754,7 @@
                 @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(enterNext())' : 'onEnter()' }}"
                 :aria-activedescendant="activeDescendantId"
                 role="combobox"
-                @if($required) aria-required="true" @endif
+                @if($required || $fieldRequired) aria-required="true" @endif
                 aria-haspopup="listbox"
                 aria-expanded="false"
                 :aria-expanded="dropdownOpen ? 'true' : 'false'"
@@ -717,7 +770,7 @@
                 {{-- satisfied even when the parent <x-wirekit::field label="..."> --}}
                 {{-- doesn't reach this internal combobox input.                 --}}
                 @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldAriaLabel !== null) aria-label="{{ $fieldAriaLabel }}" @endif
-                :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string($placeholder) }} : ''"
+                :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($placeholder)) }} : ''"
                 {{-- `w-0`: the input grows into the row through `flex-1`, and asks for no more than its
                      minimum. Without it WebKit takes a text input's default width as its minimum, and
                      a framed field 258px wide would stand 13px past its container. --}}
@@ -810,9 +863,10 @@
                     {{-- nextWith() returns a NEW array. toggleValue() splices in place,
                          and an in-place mutation gives the layer nothing to
                          snapshot — the rollback would restore the array it had
-                         just changed. `locked` first: a row is no native control, so a
-                         fieldset disabled while the list is open does not stop the click. --}}
-                    @click="{{ $optimisticConfig ? 'locked || run(nextWith(opt.value))' : 'locked || toggleValue(opt.value)' }}"
+                         just changed. `frozen` first: a read-only field changes nothing, and a
+                         row is no native control, so a fieldset disabled while the list is open
+                         does not stop the click. --}}
+                    @click="{{ $optimisticConfig ? 'frozen || run(nextWith(opt.value))' : 'frozen || toggleValue(opt.value)' }}"
                     @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                     @if($optionUses['descriptions'])
                         :aria-labelledby="optionId(idx) + '-label'"
@@ -859,13 +913,15 @@
 
             @if($server)
                 {{-- Under results: a newer search still out, or results the application cut at
-                     its limit. The same kind of row as the empty state, for the same reason. --}}
+                     its limit. The same kind of row as the empty state, for the same reason.
+                     `empty:hidden` keeps an option without text out of sight and out of the tree
+                     between the effects of `x-show` and `x-text`. --}}
                 <p data-wk-prose-skip
                     role="option"
                     aria-disabled="true"
                     x-show="filteredOptions.length > 0 && searchNote() !== ''"
                     x-text="searchNote()"
-                    class="{{ $emptyRowClasses }}"
+                    class="{{ $emptyRowClasses }} empty:hidden"
                 ></p>
             @endif
         </div>

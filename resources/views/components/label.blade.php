@@ -26,7 +26,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $required = BooleanProp::from($required, false);
+    $required = BooleanProp::from($required, false, 'label', 'required');
 
     // Label classes: all values reference design tokens — no hardcoded colors or sizes
     $classes = WireKit::resolveClasses('label', 'base', implode(' ', [
@@ -58,7 +58,7 @@
             </label>
             @if(filled($help))
                 @include('wirekit::components.partials.field-help', [
-                    'helpText' => (string) $help,
+                    'helpText' => $help,
                     'helpName' => trim(html_entity_decode(strip_tags((string) $slot), ENT_QUOTES | ENT_HTML5)),
                     'helpId' => $helpId,
                     'helpButton' => ! in_array('sr-only', preg_split('/\s+/', (string) $attributes->get('class', '')) ?: [], true),
@@ -77,7 +77,7 @@
             {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
         </label>
         @include('wirekit::components.partials.field-help', [
-            'helpText' => (string) $help,
+            'helpText' => $help,
             'helpName' => trim(html_entity_decode(strip_tags((string) $slot), ENT_QUOTES | ENT_HTML5)),
             'helpId' => $helpId,
             'helpButton' => ! in_array('sr-only', preg_split('/\s+/', (string) $attributes->get('class', '')) ?: [], true),
@@ -85,12 +85,11 @@
         ])
     </div>
 @else
-<label data-wk-field-label {{ $attributes->class([$classes]) }}>
+<label data-wk-field-label {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{-- Required indicator uses danger-text variable (auto dark mode, no dark: needed).
          Dense, on one line with the slot, and that is not formatting. A newline between
          the slot and this span is HTML whitespace, which collapses to a space and lands on
          top of `ms-0.5`, so the gap would be visibly wider than in the components that
          write it dense. --}}
     {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
-</label>
-@endif
+</label>@endif

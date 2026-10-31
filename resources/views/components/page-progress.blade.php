@@ -63,6 +63,11 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // An inline position wins over every class of the caller's, one under a breakpoint included:
+    // where the caller's class reaches for a position, it is left out here and comes back as its
+    // utility.
+    [$barStyle, $barStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'position: fixed; inset-block-start: var(--wk-strip-inset, 0px); inset-inline: 0; z-index: var(--z-wk-tooltip); pointer-events: none; height: '.$heightToken.';');
 @endphp
 
 {{-- `aria-hidden` is a decision, not an omission. The bar carries no text, a
@@ -71,8 +76,8 @@
      every keystroke would be noise in the one channel that cannot be skimmed. --}}
 <div
     x-data="wirekitPageProgress({
-        showAfter: {{ (int) $showAfter }},
-        ceiling: {{ (int) $ceiling }},
+        showAfter: {{ \Pushery\WireKit\Support\NumericProp::int($showAfter, 0, 'page-progress', 'showAfter') }},
+        ceiling: {{ \Pushery\WireKit\Support\NumericProp::int($ceiling, 0, 'page-progress', 'ceiling') }},
     })"
     aria-hidden="true"
     {{-- The positioning is inline as well as in the class list, for the same reason the
@@ -92,8 +97,8 @@
          strip above the page is browser chrome, and the bar reports the application's request,
          so it runs along the top of the application — directly under the strip, not across it. --}}
     {{ $attributes->except('aria-hidden')
-        ->merge(['style' => 'position: fixed; inset-block-start: var(--wk-strip-inset, 0px); inset-inline: 0; z-index: var(--z-wk-tooltip); pointer-events: none; height: '.$heightToken.';'])
-        ->class([$rootClass]) }}
+        ->merge(['style' => $barStyle])
+        ->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, $barStyleClasses => $barStyleClasses !== ''])) }}
 >
     {{-- The anchor is declared twice and mirrored once, and both halves are load-bearing.
          A bar that grows from the start edge is direction-encoded: under `dir="rtl"` the

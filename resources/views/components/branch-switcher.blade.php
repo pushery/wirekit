@@ -27,18 +27,20 @@
     // view's imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('branch-switcher', $attributes->getAttributes());
 
-    $loop = BooleanProp::from($loop, false);
+    $loop = BooleanProp::from($loop, false, 'branch-switcher', 'loop');
 
-    $total = max(0, (int) $count);
+    $total = max(0, \Pushery\WireKit\Support\NumericProp::int($count, 0, 'branch-switcher', 'count'));
     // Clamped, not refused. A regenerate that drops a variant while the reader is on it is an
     // ordinary race, and throwing there would take down the whole turn over a stale index.
-    $active = $total === 0 ? 0 : max(1, min($total, (int) $current));
+    $active = $total === 0 ? 0 : max(1, min($total, \Pushery\WireKit\Support\NumericProp::int($current, 0, 'branch-switcher', 'current')));
 
     $groupLabel = filled($label) ? $label : __('wirekit::Response variants');
 
+    // The index is not in the config. It travels on `data-wk-server-value`, so the expression is
+    // the same for every variant: a Livewire morph that changed it would start the switcher again,
+    // and the answer to a `wire:model.live` step would send the index of the request back.
     $config = AlpinePayload::from([
         'total' => $total,
-        'current' => $active,
         'loop' => $loop,
         // `resources/js` has no translator, so the copy is translated here and handed down.
         // The placeholders travel untranslated on purpose: the factory fills them, and a
@@ -68,6 +70,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `x-model` on this root is read in the scope around it, where the caller's names
+    // are: on the root it would find this component's own names first (CallerModel).
+    $attributes = \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes);
 @endphp
 
 @if($total > 0)
@@ -75,13 +80,14 @@
          the 1-based index rather than any inner control. A `wire:model` on the tag therefore
          means what a reader of the call site expects it to mean. --}}
     <div
+        data-wk-server-value="{{ $active }}"
         x-data="wirekitBranchSwitcher({{ $config }})"
         x-modelable="current"
         {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
         data-wk-branch-switcher
         @unless($attributes->has('role')) role="group" @endunless
         @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $groupLabel }}" @endunless
-        {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->class([$navClasses]) }} data-wk-sr-host
+        {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$navClasses])) }} data-wk-sr-host
     >
         <button
             type="button"

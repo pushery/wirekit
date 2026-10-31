@@ -32,7 +32,7 @@
     // reason the coverage guard did not see it. It defaults ON, and both reads below are
     // truth tests — the shimmer class and the duration custom property — so the animation
     // the call site asked to stop kept running.
-    $active = BooleanProp::from($active, true);
+    $active = BooleanProp::from($active, true, 'shimmer', 'active');
 
     // A shimmer wraps text, so only a small allowlist of text tags is sensible.
     // Validate up front so an invalid value resolves to a real allowed tag
@@ -49,9 +49,10 @@
     $classes = WireKit::resolveClasses('shimmer', 'base', $active ? 'wk-text-shimmer' : '', $scope);
 
     // Per-instance duration override via the design-token custom property.
+    $duration = \Pushery\WireKit\Support\CssValue::prop($duration, 'shimmer', 'duration');
     $style = ($active && $duration) ? "--shimmer-wk-duration: {$duration};" : null;
 
-    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
+    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])));
     if ($style !== null) {
         $attrs = $attrs->merge(['style' => $style]);
     }

@@ -11,13 +11,14 @@
 
      This script runs while the parser is still working, before anything is painted. It sits
      immediately after the section's panel and reaches it through
-     `document.currentScript.previousElementSibling`, so it needs no id. It changes two things:
+     `document.currentScript.previousElementSibling`, so it needs no id. It changes three things:
      whether the panel carries `x-cloak`, the attribute that keeps it hidden until Alpine starts,
-     and whether the section's arrow is turned. Alpine removes `x-cloak` when it starts, and
-     `x-show` and the arrow's binding take over from the same stored value, so neither disagrees
-     with it for a frame. The arrow is the first `[data-wk-disclosure-arrow]` in the section,
-     which is its own: the header comes before the panel, and a nested section's arrow is inside
-     the panel.
+     whether the section's arrow is turned, and the `aria-expanded` of the trigger that names the
+     panel in `aria-controls`. Alpine removes `x-cloak` when it starts, and `x-show` and the
+     bindings of the arrow and the trigger take over from the same stored value, so none of them
+     disagrees with it for a frame. The arrow is the first `[data-wk-disclosure-arrow]` in the
+     section, which is its own: the header comes before the panel, and a nested section's arrow is
+     inside the panel.
 
      Every value arrives as a data attribute on this tag and the body is a constant, for the
      reason `nav-persist-seed` gives: a script body is not escaped the way an attribute is.
@@ -54,5 +55,10 @@
 
     var arrow = panel.parentElement && panel.parentElement.querySelector('[data-wk-disclosure-arrow]');
     if (arrow) { arrow.classList.toggle('rotate-90', on); }
+
+    var trigger = panel.id && panel.parentElement && window.CSS && window.CSS.escape
+        ? panel.parentElement.querySelector('[aria-controls="' + window.CSS.escape(panel.id) + '"]')
+        : null;
+    if (trigger) { trigger.setAttribute('aria-expanded', on ? 'true' : 'false'); }
 })();
 </script>

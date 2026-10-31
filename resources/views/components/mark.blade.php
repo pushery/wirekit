@@ -31,4 +31,4 @@
     ]), $scope);
 @endphp
 
-<mark {{ $attributes->class([$classes]) }}>{{ $slot }}</mark>
+<mark {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $slot }}</mark>

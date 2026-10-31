@@ -52,6 +52,25 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('pagination', $attributes->getAttributes());
 
+    // A paginator is an object with the page links every Laravel paginator has, a page or a cursor
+    // one. Anything else given here is reported and renders nothing, as none does: a collection
+    // from all() rather than paginate() would otherwise show no pages without a word, and a number
+    // or a list would end the page in method_exists() below. None, false and an empty text are
+    // none, without a report.
+    if ($paginator !== null && $paginator !== false && $paginator !== ''
+        && ! (is_object($paginator) && method_exists($paginator, 'nextPageUrl') && method_exists($paginator, 'previousPageUrl'))) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('pagination', 'paginator', is_string($paginator) || is_int($paginator) || is_float($paginator) ? \Pushery\WireKit\Support\NumericProp::text($paginator) : get_debug_type($paginator), 'a paginator, such as the result of paginate()', '');
+        $paginator = null;
+    }
+
+    // An unknown `variant` is reported (Support\StrictnessGate) and renders as `full`; a bound
+    // `null` or empty string is `full` without a word.
+    $variant = \Pushery\WireKit\WireKit::validateProp('pagination', 'variant', \Pushery\WireKit\Support\NumericProp::text($variant ?: 'full'), ['full', 'simple', 'mini']);
+
+    // An unknown `justify` is reported (Support\StrictnessGate) and renders as `between`; a bound
+    // `null` or empty string is `between` without a word.
+    $justify = \Pushery\WireKit\WireKit::validateProp('pagination', 'justify', \Pushery\WireKit\Support\NumericProp::text($justify ?: 'between'), ['between', 'center', 'end', 'start']);
+
     // The page sizes on offer, as positive integers, ascending. A string is read for its numbers, so
     // `per-page-options="10,25,50,100"` works as well as a bound array. The paginator's own size joins
     // them when it is missing, or the select would show a size the list is not using.
@@ -74,6 +93,11 @@
 
     $offersPerPage = $perPageChoices !== [];
 
+    // A caller's `wire:model` binds the page size, which takes a choice of sizes to offer.
+    if (blank($perPageOptions)) {
+        \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('pagination', $attributes->getAttributes(), 'without `per-page-options`');
+    }
+
     // Bail early if the paginator is missing, or there is nothing to page through and nothing to
     // choose. A list that fits one page stays when a choice of size is on offer and it has rows.
     $hasRows = $paginator && (method_exists($paginator, 'total')
@@ -81,7 +105,7 @@
         : (method_exists($paginator, 'isNotEmpty') && $paginator->isNotEmpty()));
 
     // An unbound `summary-on-single-page="false"` arrives as the string "false", which is truthy.
-    $summaryOnSinglePage = BooleanProp::from($summaryOnSinglePage, false);
+    $summaryOnSinglePage = BooleanProp::from($summaryOnSinglePage, false, 'pagination', 'summaryOnSinglePage');
 
     // The summary alone: one page, no choice of size, rows, and a paginator that knows its total.
     $summaryAlone = $summaryOnSinglePage && $hasRows && ! $offersPerPage
@@ -246,7 +270,7 @@
     $scrollHandler = null;
     $landedHandler = null;
 
-    $livewire = BooleanProp::from($livewire, false);
+    $livewire = BooleanProp::from($livewire, false, 'pagination', 'livewire');
 
     if ($livewire) {
         $pagesByCursor = method_exists($paginator, 'getCursorName');
@@ -357,12 +381,16 @@
      placeholder values, so the translator moves the placeholders freely
      and the styling travels with them. {!! !!} is required for that, and
      is safe here: every value is an integer straight off the paginator,
-     never developer input, and each is escaped before being wrapped. --}}
+     written as text and escaped before being wrapped. --}}
 @php
     $summary = null;
 
     if (method_exists($paginator, 'total')) {
-        $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e((string) $value).'</span>';
+        // Each number is written the way the application writes one: through its own formatter where
+        // it gave one (`WireKit::formatNumbersUsing()`), else grouped the locale's way, `10.514` in
+        // German. Escaped after formatting, since a formatter of the application's own is code the
+        // view does not know.
+        $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e(\Pushery\WireKit\Support\LocalizedNumber::integer($value)).'</span>';
 
         // The markup is substituted AFTER translation, never passed through
         // it. Laravel's translator also honors :Placeholder and :PLACEHOLDER
@@ -376,7 +404,7 @@
         //
         // The total chooses the form, since the noun follows it: a list of one
         // reads "Showing 1 to 1 of 1 result".
-        $summary = trans_choice('wirekit::Showing :first to :last of :total results', $paginator->total(), [
+        $summary = \Pushery\WireKit\Support\Plural::choice('wirekit::Showing :first to :last of :total results', $paginator->total(), [
             'first' => 'WKPAGEFIRST',
             'last' => 'WKPAGELAST',
             'total' => 'WKPAGETOTAL',
@@ -397,7 +425,7 @@
 @if($summaryAlone)
     {{-- Everything fits one page, no page size is on offer, and the count was asked for: the
          summary alone. Not a navigation landmark, because there is nothing here to navigate. --}}
-    <div {{ $attributes->class([$navClasses]) }}>
+    <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$navClasses])) }}>
         <div class="text-[color:var(--color-wk-text-muted)]">
             {!! $summary !!}
         </div>
@@ -405,7 +433,7 @@
     @php return; @endphp
 @endif
 
-<nav @unless($attributes->has('role')) role="navigation" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $navLabel }}" @endunless {{ $attributes->class([$navClasses]) }}>
+<nav @unless($attributes->has('role')) role="navigation" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $navLabel }}" @endunless {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$navClasses])) }}>
 
     @if($singlePage)
         {{-- Everything fits one page, and a choice of page size is on offer: the summary and the

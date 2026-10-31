@@ -9,7 +9,7 @@
  * server, and the field showed a value the component did not hold.
  */
 
-import { belongsThroughTeleports } from './teleport.js';
+import { watchFocusUnit } from './focus-unit.js';
 
 /**
  * Fire `change` and `blur` on a component's model elements at the moments a native field does.
@@ -49,19 +49,13 @@ import { belongsThroughTeleports } from './teleport.js';
 export function watchModelEvents(root, models, options = {}) {
     const doc = root?.ownerDocument;
     const committed = new WeakMap();
-    let inside = false;
     let disposed = false;
-    // Whether the latest press landed inside. A press on a part that takes no focus, such as an
-    // option of a teleported list, moves focus to nowhere, and that is not the reader leaving.
-    let pressedInside = false;
 
     const elements = () => {
         const found = models();
 
         return (Array.isArray(found) ? found : [found]).filter((el) => el && typeof el.dispatchEvent === 'function');
     };
-
-    const belongs = (node) => Boolean(node) && belongsThroughTeleports(node, root);
 
     const valueOf = (el) => (typeof options.detail === 'function' ? JSON.stringify(options.detail(el)) : el.value);
 
@@ -97,8 +91,6 @@ export function watchModelEvents(root, models, options = {}) {
     };
 
     const leave = (blurredByBrowser = null) => {
-        inside = false;
-
         if (typeof options.beforeLeave === 'function') {
             options.beforeLeave();
         }
@@ -112,43 +104,6 @@ export function watchModelEvents(root, models, options = {}) {
         }
     };
 
-    const onEnterOrLeave = (event) => {
-        if (disposed) {
-            return;
-        }
-
-        pressedInside = event.type === 'pointerdown' && belongs(event.target);
-
-        if (belongs(event.target)) {
-            if (! inside) {
-                inside = true;
-                remember();
-            }
-
-            return;
-        }
-
-        // Focus or a press arrived outside while the component still counted as focused: the reader
-        // pressed elsewhere, or the element that held focus was removed, which fires no `focusout`.
-        if (inside) {
-            leave();
-        }
-    };
-
-    const onFocusOut = (event) => {
-        if (disposed || ! inside || ! belongs(event.target) || belongs(event.relatedTarget)) {
-            return;
-        }
-
-        // Focus going nowhere after a press inside: the next press or focus decides.
-        if (! event.relatedTarget && pressedInside) {
-            return;
-        }
-
-        // The browser has just blurred this element itself if it is one of the model elements.
-        leave(elements().includes(event.target) ? event.target : null);
-    };
-
     // A native `change` on a model element the reader typed into is that element's commit.
     const onNativeChange = (event) => {
         if (! disposed && event.isTrusted && elements().includes(event.target)) {
@@ -158,10 +113,13 @@ export function watchModelEvents(root, models, options = {}) {
 
     remember();
 
+    const stopFollowing = watchFocusUnit(root, {
+        enter: () => remember(),
+        // The browser has just blurred the element that lost focus itself if it is a model element.
+        leave: (focusOut) => leave(focusOut && elements().includes(focusOut.target) ? focusOut.target : null),
+    });
+
     if (doc) {
-        doc.addEventListener('focusin', onEnterOrLeave, true);
-        doc.addEventListener('pointerdown', onEnterOrLeave, true);
-        doc.addEventListener('focusout', onFocusOut, true);
         doc.addEventListener('change', onNativeChange, true);
     }
 
@@ -169,11 +127,9 @@ export function watchModelEvents(root, models, options = {}) {
         commit,
         dispose() {
             disposed = true;
+            stopFollowing();
 
             if (doc) {
-                doc.removeEventListener('focusin', onEnterOrLeave, true);
-                doc.removeEventListener('pointerdown', onEnterOrLeave, true);
-                doc.removeEventListener('focusout', onFocusOut, true);
                 doc.removeEventListener('change', onNativeChange, true);
             }
         },

@@ -166,6 +166,7 @@ final class SandboxSchemaRegistry
             'surface' => ['type' => 'string', 'default' => 'soft', 'allowed_values' => ['soft', 'solid', 'outline']],
             'dismissible' => ['type' => 'bool', 'default' => false],
             'wrap' => ['type' => 'bool', 'default' => false],
+            'truncate' => ['type' => 'bool', 'default' => false],
             // See note on button.body — same slot-content convention.
             'body' => ['type' => 'string', 'default' => 'Badge'],
         ]);
@@ -189,12 +190,16 @@ final class SandboxSchemaRegistry
             'stripe' => ['type' => 'bool', 'default' => false],
             // No default: without a title the callout draws no heading, which is what it does.
             'title' => ['type' => 'string'],
+            // No default: an unset level keeps the title a `div`, out of the outline, as the callout does.
+            'level' => ['type' => 'int', 'allowed_values' => [1, 2, 3, 4, 5, 6]],
             'body' => ['type' => 'string', 'default' => 'Callout body'],
         ]);
 
         self::register('alert', [
             'intent' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
             'title' => ['type' => 'string', 'default' => 'Heads up'],
+            // No default: an unset level keeps the title a `div`, as the alert does.
+            'level' => ['type' => 'int', 'allowed_values' => [1, 2, 3, 4, 5, 6]],
             'body' => ['type' => 'string', 'default' => 'Alert body'],
             'dismissible' => ['type' => 'bool', 'default' => false],
             'icon' => ['type' => 'bool', 'default' => true],
@@ -213,6 +218,8 @@ final class SandboxSchemaRegistry
         // accepts all four spellings; the editor offers the canonical one.
         self::register('card', [
             'surface' => ['type' => 'string', 'default' => 'outline', 'allowed_values' => ['outline', 'elevated', 'flat']],
+            // The color role of the border alone; `neutral` is the border every card has without it.
+            'intent' => ['type' => 'string', 'default' => 'neutral', 'allowed_values' => ['neutral', 'info', 'success', 'warning', 'danger']],
             // A card that folds draws its head from the heading, so the heading is offered with it.
             'collapsible' => ['type' => 'bool', 'default' => false],
             'heading' => ['type' => 'string', 'default' => 'Payment methods'],
@@ -272,6 +279,8 @@ final class SandboxSchemaRegistry
             // No default: an unset fit keeps the heading at its size. Offered as on and off; a
             // floor of its own is a length, which the endpoint does not take as free input.
             'fit' => ['type' => 'bool'],
+            // No default: without help the heading draws no question mark.
+            'help' => ['type' => 'string'],
             'body' => ['type' => 'string', 'default' => 'Heading'],
         ]);
 
@@ -319,6 +328,8 @@ final class SandboxSchemaRegistry
             'size' => ['type' => 'string', 'allowed_values' => ['xs', 'sm', 'base', 'lg', 'xl']],
             'external' => ['type' => 'bool', 'default' => false],
             'announceNewTab' => ['type' => 'bool', 'default' => true],
+            // Changes the render once `href` is cleared, which is the case it is for.
+            'plainWithoutHref' => ['type' => 'bool', 'default' => false],
             'underline' => ['type' => 'string', 'default' => 'always', 'allowed_values' => ['always', 'hover', 'none']],
             'body' => ['type' => 'string', 'default' => 'Link'],
         ]);

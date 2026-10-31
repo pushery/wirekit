@@ -577,7 +577,13 @@ final class ClassInventory
          * holds that very pair in its own text, and a body that stopped there would cut the
          * class in half and report it and every class after it in the call as untraceable.
          */
-        if (preg_match_all('/(?:@class|->class)\(\s*\[/u', $contents, $opens, PREG_OFFSET_CAPTURE) === false) {
+        /*
+         * `->class(UtilityClasses::yieldToCaller($attributes, [...]))` hands `->class()` the same
+         * list: the call leaves out the component's own display or position where the caller's
+         * class sets one and returns every other class as written, so the list is read as the list.
+         * The bag it reads is a variable or a slot's own, written `SlotAttributes::of($slot)`.
+         */
+        if (preg_match_all('/(?:@class|->class)\(\s*(?:[^()\[\]\'"]*::yieldToCaller\(\s*(?:\$\w+|[\\\\\w]+::of\(\s*\$\w+\s*\))\s*,\s*)?\[/u', $contents, $opens, PREG_OFFSET_CAPTURE) === false) {
             return;
         }
 
@@ -1399,7 +1405,7 @@ final class ClassInventory
          * as a fact about the compiler when it is a fact about this tokenizer, and the table's
          * named container and its `@max-*` column variants would each need one.
          */
-        $isContainerVariant = preg_match('/^@(?:container$|[a-z0-9-]*[\/:])/', $masked) === 1;
+        $isContainerVariant = preg_match('/(?:^|:)@(?:container$|[a-z0-9-]*[\/:])/', $masked) === 1;
 
         /*
          * The utility form drops the `@` AND the `/name`, because neither is part of the SHAPE
@@ -1411,14 +1417,14 @@ final class ClassInventory
          * Gated on `$isContainerVariant`, so an ordinary `/name` elsewhere is untouched —
          * `group-data-[labels=below]/wk-rail:not-sr-only` keeps its peer name, which its own
          * variant needs.
+         *
+         * A container variant may follow another one, as a window width that gates a table width
+         * does (`xl:@max-5xl/wk-table:hidden`), so every segment of the chain that opens with `@`
+         * is read the same way.
          */
         $utilityForm = $isContainerVariant
-            ? preg_replace('/^@([a-z0-9-]*)\/[a-z0-9_-]+/', '$1', $masked) ?? $masked
+            ? preg_replace(['/(^|:)@([a-z0-9-]*)\/[a-z0-9_-]+/', '/(^|:)@/'], ['$1$2', '$1'], $masked) ?? $masked
             : $masked;
-
-        if ($isContainerVariant && str_starts_with($utilityForm, '@')) {
-            $utilityForm = substr($utilityForm, 1);
-        }
 
         if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&+]+$/', $utilityForm) !== 1) {
             return false;
@@ -1567,8 +1573,13 @@ final class ClassInventory
 
             $hasArbitraryBracket = str_contains($utilityForm, '[') && str_contains($utilityForm, ']');
             // Allow optional digit prefix on the first segment so digit-leading
-            // breakpoint variants like `2xl:grid-cols-12` pass strict mode.
-            $isHyphenated = preg_match('/^\d?[a-z][a-z0-9]*(?::[a-z0-9-]+)*-[a-z0-9]/', $utilityForm) === 1;
+            // breakpoint variants like `2xl:grid-cols-12` pass strict mode. A leading `-` is the
+            // sign of a negative utility (`-ms-0.5`, `-mb-px`, `-translate-x-1/2`), which the
+            // shape check above admits as well, so a class reads alike from a PHP string and from
+            // a `class=` attribute. The value after its roots is a number, `px` or `full`: a word
+            // that only starts with a dash, the `-format-hint` an id is joined to, is no class.
+            $isHyphenated = preg_match('/^\d?[a-z][a-z0-9]*(?::[a-z0-9-]+)*-[a-z0-9]/', $utilityForm) === 1
+                || preg_match('/^-(?:[a-z]+-)+(?:\d|px$|full$)/', $utilityForm) === 1;
 
             if (! $hasArbitraryBracket && ! $isHyphenated) {
                 return false;

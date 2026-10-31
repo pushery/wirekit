@@ -35,7 +35,7 @@
     // Column ladder. Full literal class strings (never interpolated) so the
     // Tailwind scanner sees every one of them. One plan per row on a phone in
     // every case — plan cards do not survive being halved on a 390px screen.
-    $columnClasses = match ((string) $columns) {
+    $columnClasses = match (\Pushery\WireKit\Support\NumericProp::text($columns)) {
         '1' => 'grid-cols-1',
         '2' => 'grid-cols-1 md:grid-cols-2',
         '4' => 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
@@ -53,9 +53,14 @@
 
     // Normalize the intervals map and pick the one selected on first paint. It may arrive as a
     // Collection, which is what `pluck('label', 'key')` gives.
-    $intervals = \Pushery\WireKit\Support\ListProp::from($intervals);
+    $intervals = \Pushery\WireKit\Support\ListProp::from($intervals, 'pricing-table', 'intervals');
     $intervalMap = is_array($intervals) && $intervals !== [] ? $intervals : null;
     $defaultInterval = $intervalMap !== null ? (string) array_key_first($intervalMap) : null;
+
+    // A caller's `wire:model` binds the billing interval, which only a table with `intervals` has.
+    if ($intervalMap === null) {
+        \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('pricing-table', $attributes->getAttributes(), 'without `intervals`');
+    }
 
     // What the table is priced at right now. `interval` is the server's answer and
     // wins; the first key is only the opening position. Getting the precedence
@@ -175,9 +180,9 @@
 
     <ul data-wk-prose-skip
         @unless($attributes->has('role')) role="list" @endunless
-        @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
+        @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
         data-wk-pricing-table
-        {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->whereDoesntStartWith('wire:model')->class([$classes]) }}
+        {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->whereDoesntStartWith('wire:model')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     >
         {{ $slot }}
     </ul>
@@ -185,9 +190,9 @@
 @else
 <ul data-wk-prose-skip
     @unless($attributes->has('role')) role="list" @endunless
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
     data-wk-pricing-table
-    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
+    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </ul>

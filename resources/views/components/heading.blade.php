@@ -13,6 +13,9 @@
     'fit' => null,
     'as' => null,
     'scope' => null,
+    // The help of a page or a section: the question mark a `label` shows beside a field, beside
+    // the heading, with the text in a tooltip and `wirekit:field-help` on a click.
+    'help' => null,
 ])
 
 @php
@@ -27,7 +30,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $accent = BooleanProp::from($accent, false);
+    $accent = BooleanProp::from($accent, false, 'heading', 'accent');
     $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'heading');
 
     // Determine the HTML heading level (h1–h6).
@@ -38,7 +41,7 @@
     // `<h2 onmouseover=alert(1) …>`, the same attribute injection `as` is guarded against.
     // An int clamped to the documented 1–6 cannot carry an attribute and cannot name an
     // element that does not exist.
-    $headingLevel = min(6, max(1, (int) ($level ?? 2)));
+    $headingLevel = min(6, max(1, \Pushery\WireKit\Support\NumericProp::int($level ?? 2, 0, 'heading', 'level')));
     // `as` is rendered straight into the opening tag, so anything with a space or an
     // `=` in it would become an attribute — `as="div onmouseover=alert(1)"` would ship a
     // working event handler. tagName() admits a tag name and nothing else; it is the same call
@@ -109,9 +112,36 @@
         $slot,
         new \Illuminate\View\ComponentAttributeBag(array_filter(['style' => $fitFloor !== '' ? '--wk-fit-floor: '.$fitFloor.';' : null])),
     );
+
+    // The help stands beside the heading element, never inside it, so the heading's name stays
+    // its text. The question mark is named by that text, and the event names the heading's `id`.
+    // A heading hidden with `sr-only` shows no button: a button nobody can see must not take a
+    // tab stop (partials/field-help).
+    $hasHelp = filled($help);
+    $helpCallerClasses = preg_split('/\s+/', (string) $attributes->get('class', '')) ?: [];
+    // A heading written as a phrasing element, `as="span"` in a sentence, keeps the row it shares
+    // with its help a span: a `div` there closes the paragraph around it, and the rest of the
+    // sentence stands in a paragraph of its own.
+    $phrasing = in_array(strtolower($tag), ['a', 'abbr', 'b', 'bdi', 'bdo', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'ins', 'kbd', 'label', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var'], true);
+    $rowTag = $phrasing ? 'span' : 'div';
 @endphp
 
 {{-- The slot sits against both tags. A line break and an indent around it are part of the
      element's content, and a caller who keeps a user's own line breaks with `white-space`
      set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one. --}}
-<{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $fitted ?? $slot }}</{{ $tag }}>
+@if($hasHelp)
+    {{-- The heading and its help share a row, and the caller's classes go on the row, as they do
+         for a label with help: they place the heading, and the help belongs in the same place.
+         A fitted heading takes the rest of the row, since the box it fits its text in takes the
+         heading's width; any other stands as wide as its text, with the help after it. --}}
+    <{{ $rowTag }} data-wk-prose-skip data-wk-heading-row class="{{ trim(($rowTag === 'span' ? 'inline-flex' : 'flex').' items-center gap-[var(--gap-wk-xs)] '.$attributes->get('class', '')) }}">
+        <{{ $tag }} data-wk-prose-skip {{ $attributes->except('class')->class([$classes, 'min-w-0', 'flex-1' => $fitted !== null]) }}>{{ $fitted ?? $slot }}</{{ $tag }}>
+        @include('wirekit::components.partials.field-help', [
+            'helpText' => $help,
+            'helpName' => \Pushery\WireKit\Support\SlotContent::plain($slot),
+            'helpId' => null,
+            'helpButton' => ! in_array('sr-only', $helpCallerClasses, true),
+            'helpField' => (string) $attributes->get('id', ''),
+        ])
+    </{{ $rowTag }}>@else
+<{{ $tag }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $fitted ?? $slot }}</{{ $tag }}>@endif

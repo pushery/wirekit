@@ -35,17 +35,21 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkFieldSet' => null])
+@aware(['announceErrors' => null, 'wkFieldSet' => null, 'wkField' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+
+    // A list where the control takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and read as no value (Support\FieldValue).
+    $value = \Pushery\WireKit\Support\FieldValue::one($value, 'radio');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set', 'wkField', 'wk-field']);
 @endphp
 
 
@@ -59,11 +63,18 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+    // A list where the field takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and left off the field (Support\FieldValue).
+    $attributes = \Pushery\WireKit\Support\FieldValue::withoutLists($attributes, 'radio', ['checked']);
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('radio', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('radio', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // A radio gives its value as text, and Livewire takes the server's echo of an `int` or `float`
     // property for a change and writes it over a newer choice: a binding to one gets `.number`
@@ -78,7 +89,7 @@
     // `lang` names the language of the label's words, a language picker's "Deutsch" or "Français",
     // so it goes on the <label>, which holds the text and the field alike. On the field alone the
     // text kept the page's language and a screen reader said it in the page's voice (WCAG 3.1.2).
-    $labelLang = $attributes->get('lang');
+    $labelLang = \Pushery\WireKit\Support\LanguageTag::of($attributes->get('lang'));
     $attributes = $attributes->except('lang');
 
     // Size scale (aligned with toggle/checkbox): the circle + its inner accent dot
@@ -90,6 +101,18 @@
         'sm' => ['box' => 'w-4 h-4', 'dot' => 'w-1.5 h-1.5'],
         'lg' => ['box' => 'w-6 h-6', 'dot' => 'w-2.5 h-2.5'],
         default => ['box' => 'w-5 h-5', 'dot' => 'w-2 h-2'],
+    };
+
+    // Where the circle stands beside the first line of its text: their middles meet, whichever of the
+    // two is taller. The line is `leading-tight` of `--text-wk-md`, the size of the text block
+    // below, so the circle steps down by half of what that line exceeds it, and the text by half of
+    // what the circle exceeds its own line (`1lh`). A longer text keeps its first line beside the circle,
+    // and content in the slot that keeps to the line's height, a swatch in an inline row before a
+    // name for one, stands centered with it.
+    $alignment = match ($size) {
+        'sm' => ['box' => 'mt-[max(0px,calc((var(--text-wk-md)_*_1.25_-_1rem)_/_2))]', 'text' => 'pt-[max(0px,calc((1rem_-_1lh)_/_2))]'],
+        'lg' => ['box' => 'mt-[max(0px,calc((var(--text-wk-md)_*_1.25_-_1.5rem)_/_2))]', 'text' => 'pt-[max(0px,calc((1.5rem_-_1lh)_/_2))]'],
+        default => ['box' => 'mt-[max(0px,calc((var(--text-wk-md)_*_1.25_-_1.25rem)_/_2))]', 'text' => 'pt-[max(0px,calc((1.25rem_-_1lh)_/_2))]'],
     };
 
     $variantValue = match ($variant) {
@@ -120,17 +143,23 @@
     $textClasses = WireKit::resolveClasses(
         'radio',
         'text',
-        'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5',
+        'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight '.$alignment['text'],
         $scope,
     );
 
-    // On a touch surface the default label is a row: a tap on its text selects the radio, so it
-    // takes the 44px floor of every interactive row (`wk-touch-row`), and `wk-choice-row` keeps a
-    // one-line row in the middle of it. Both sit outside the class seam, so a personalization of
-    // `radio.label` keeps them. A radio without a visible text is its circle alone, which answers
-    // a finger through the hit area of `wk-touch-target`.
+    // A card's description under its name, and what stands at the end of its row (see $nameId
+    // below), each under a block of its own.
+    $descriptionClasses = WireKit::resolveClasses('radio', 'description', 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]', $scope);
+    $trailingClasses = WireKit::resolveClasses('radio', 'trailing', 'ms-auto shrink-0 self-center', $scope);
+
+    // The default label is a row: a tap on its text selects the radio. `wk-choice-row` gives it a hit
+    // area above and below its text under a coarse pointer, which moves nothing, so a phone keeps the
+    // spacing a desk has, and on a `data-wk-touch` surface it makes the label a row of the touch
+    // target with one line in the middle. It sits outside the class seam, so a personalization of
+    // `radio.label` keeps it. A radio without a visible text is its circle alone, which answers a
+    // finger through the hit area of `wk-touch-target`.
     // The condition is the one the text below renders under.
-    $rowMarkers = $variantValue !== 'card' && $label ? 'wk-touch-row wk-choice-row ' : '';
+    $rowMarkers = $variantValue !== 'card' && $label ? 'wk-choice-row ' : '';
 
     // Auto-generate ID: a radio set shares one `name` by definition, so the default
     // folds the value in — that part was always right and is unchanged.
@@ -148,24 +177,35 @@
     // one here would register a value that is unique by construction and never
     // collides, filling the registry for nothing.
     $nameAttr = $attributes->get('name');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($nameAttr, $attributes);
     $defaultId = $nameAttr && $value !== null
         ? $nameAttr . '-' . \Illuminate\Support\Str::slug((string) $value)
         : $nameAttr;
+    // An empty `name` renders none: the radio is not meant to be submitted, and HTML does not allow
+    // an empty name. The bag is spread on the input, so the empty value leaves it here.
+    if ($nameAttr === '') {
+        $attributes = $attributes->except('name');
+    }
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $defaultId, 'radio-');
+
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
     // The field.set around this radio, when there is one. A radio set shares one name, so a
     // bag entry under it belongs to the set: rendered by every radio it repeats once per option.
     $fieldGroup = $wkFieldSet instanceof \Pushery\WireKit\Support\FieldGroup ? $wkFieldSet : null;
-    $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($nameAttr) ?? false);
+    $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($errorName) ?? false);
 
     // Error detection: explicit prop OR Laravel validation bag (grouped by name)
-    $hasError = $error || (! $groupOwnsBagEntry && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $nameAttr));
-    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : \Pushery\WireKit\Support\FieldError::first($errors ?? null, $nameAttr));
+    $errorMessage = \Pushery\WireKit\Support\FieldError::message($groupOwnsBagEntry ? null : ($errors ?? null), $errorName, $error);
+    $hasError = $errorMessage !== null;
     // Whether this radio answers for the group's message. A group error can be true of SOME of
     // its controls; announced on one that cannot resolve it, the reader hears "invalid" and a
     // sentence that selecting it will not satisfy. `covers()` is not gated on this, so a
     // declining control does not start printing the group's message under itself.
-    $groupError = BooleanProp::from($groupError, true);
+    $groupError = BooleanProp::from($groupError, true, 'radio', 'groupError');
     $isInvalid = $hasError || ($groupError && ($fieldGroup?->isInvalid($errors ?? null) ?? false));
 
     // One description list for the control: its own message, the group's, then a caller's
@@ -189,7 +229,33 @@
     // filled or not: a mark that comes and goes between two renders then leaves the markup around
     // the control as it was.
     $labelAfterGiven = isset($labelAfter);
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, (bool) $attributes->get('required', false));
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
+
+    // A card holds what describes its option inside its frame: the hint under the name, and
+    // `trailing` at the end of the row, for a logo, an image or a price. The frame is the <label>,
+    // whose whole text would be the radio's name, so with either of them the radio takes its name
+    // from the label's text alone, through `aria-labelledby`, unless the caller names it.
+    $cardHint = $variantValue === 'card' && filled($hint);
+    $hasTrailing = isset($trailing) && $trailing->hasActualContent();
+    if ($hasTrailing && $variantValue !== 'card') {
+        \Pushery\WireKit\Support\StrictnessGate::reject('radio', 'trailing', 'a slot outside a card', 'the slot on a radio with variant="card"', 'not rendered');
+        $hasTrailing = false;
+    }
+    $nameId = ($cardHint || $hasTrailing) && filled($label) && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')
+        ? $id.'-label'
+        : null;
+    // The description stands in the card in every state, so it describes the option beside an
+    // error as well, after it.
+    if ($cardHint && $hasError) {
+        $describedBy = trim(($describedBy ?? '').' '.$id.'-hint');
+    }
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
     // The hit-area reserve, on the BOX rather than the label: the label is the box PLUS
@@ -203,6 +269,7 @@
     $boxClasses = ($variantValue === 'card' ? '' : 'wk-touch-target ').WireKit::resolveClasses('radio', 'base', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0',
         $sizing['box'],
+        $alignment['box'],
         'rounded-full',
         'border-[length:var(--border-wk-width)]',
         // One border color for the state, chosen here rather than appended afterwards: an error
@@ -239,7 +306,8 @@
 @endphp
 
 {{-- `data-wk-choice` marks a radio whose label is a row, which the stylesheet reads in a field
-     set: on a touch surface two such rows need no gap between them. --}}
+     set: under a coarse pointer the hit areas of two such rows meet halfway between them, and on a
+     touch surface the two rows need no gap. --}}
 <div {{ $outerAttributes }} @if($rowMarkers !== '') data-wk-choice @endif class="space-y-1.5 min-w-0">
     {{-- With help, the label shares a row with its button, which may not sit inside the
          label: it would become part of the control's name. --}}
@@ -253,11 +321,13 @@
             id="{{ $id }}"
             @if($value !== null) value="{{ $value }}" @endif
             @if($isInvalid) aria-invalid="true" @endif
+            @if($nameId !== null) aria-labelledby="{{ $nameId }}" @endif
             @if($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
+            @if($fieldRequired) aria-required="true" @endif
             {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                  caller's own class became a second class attribute and the browser kept only
                  this one. --}}
-            {{ $attributes->except('type')->except(['id', 'aria-describedby'])->class(['peer', 'sr-only']) }}
+            {{ $attributes->except('type')->except(['id', 'aria-describedby'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['peer', 'sr-only'])) }}
         />
 
         {{-- Visual circle — sibling of .peer, consumes peer-checked border. The
@@ -276,28 +346,41 @@
             <span class="wk-radio-dot hidden group-has-[:checked]:block pointer-events-none {{ $sizing['dot'] }} rounded-full bg-[var(--color-wk-accent)]"></span>
         </span>
 
-        @if($label)
 @php
     // Read, not consumed: a declared `required` prop would take the attribute out of the bag,
     // and the bag is what delivers it to the native control. A bare `required` arrives as
     // `true`.
     $wkRequiredMarker = (bool) $attributes->get('required', false);
 @endphp
-            <span class="wk-choice-text {{ $textClasses }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+        {{-- A card with a description holds the name above it in one column. Each branch holds its
+             whole element: one that opened the column and left it to a later branch to close would
+             leave Livewire's markers of the first block inside the column. --}}
+        @if($cardHint)
+        <span class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
+            @if($label)
+                <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            @endif
+            <span data-wk-choice-description id="{{ $id }}-hint" class="{{ $descriptionClasses }}">{{ $hint }}</span>
+        </span>
+        @elseif($label)
+            <span class="wk-choice-text {{ $textClasses }}"@if($nameId !== null) id="{{ $nameId }}"@endif>{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+        @endif
+        @if($hasTrailing)
+            <span data-wk-choice-trailing class="{{ $trailingClasses }}">{{ $trailing }}</span>
         @endif
     </label>
     @if($helpId || $labelAfterGiven)
         @if($helpId)
-            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => true, 'helpField' => (string) ($nameAttr ?? $id)])
+            @include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => $helpLabel, 'helpId' => $helpId, 'helpButton' => true, 'helpField' => (string) ($nameAttr ?? $id)])
         @endif
         @if($labelAfterGiven)</span>@if($hasLabelAfter)@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif @endif
     </div>
     @endif
 
-    {{-- Error message or hint text --}}
+    {{-- Error message or hint text. A card's hint stands inside the card, as its description. --}}
     @if($hasError && $errorMessage)
         <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
-    @elseif($hint)
+    @elseif($hint && ! $cardHint)
         <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

@@ -55,6 +55,8 @@
         'fade-left'  => 'slide-left-in',
         'fade-right' => 'slide-right-in',
     ];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $preset = \Pushery\WireKit\Support\NumericProp::key($preset);
     $preset = $presetAliases[$preset] ?? $preset;
 
     // Normalize: 'fade' → 'fade-in' (default direction)
@@ -88,6 +90,8 @@
     // `<`, and Alpine's CSP tokenizer drops that backslash and keeps the letters, so
     // the value would arrive as `u003C`. Blade's `{{ }}` already escapes `<` on the way
     // into the attribute, which is what makes the flag unnecessary as well as harmful.
+    // The threshold is read as PHP casts it, so a text with a unit keeps the number it starts with, and reported.
+    \Pushery\WireKit\Support\NumericProp::check($threshold, 'reveal', 'threshold');
     $optionsJson = \Pushery\WireKit\Support\AlpinePayload::from([
         'trigger' => $validatedTrigger,
         'once' => (bool) $once,
@@ -109,7 +113,7 @@
         in_array($delay, ['none', 'sm', 'md', 'lg', 'xl'], true) => "var(--motion-wk-delay-{$delay})",
         // An unknown value is reported, and then delayed like the first allowed token rather
         // than written into the style as its bare name.
-        default => 'var(--motion-wk-delay-'.WireKit::validateProp('reveal', 'delay', (string) $delay, ['none', 'sm', 'md', 'lg', 'xl']).')',
+        default => 'var(--motion-wk-delay-'.WireKit::validateProp('reveal', 'delay', \Pushery\WireKit\Support\NumericProp::text($delay), ['none', 'sm', 'md', 'lg', 'xl']).')',
     };
 
     // Compose caller's `style=…` with our internal `animation-delay` into
@@ -142,7 +146,7 @@
 @endphp
 
 <div
-    {{ $attributes->except('style')->class([$baseClasses])->merge(['data-replayable' => 'true']) }}
+    {{ $attributes->except('style')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses]))->merge(['data-replayable' => 'true']) }}
     x-data="wirekitAnimate({{ \Pushery\WireKit\Support\AlpinePayload::string($validatedPreset) }}, {{ $optionsJson }})"
     @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >

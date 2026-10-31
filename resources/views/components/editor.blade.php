@@ -18,11 +18,13 @@
     'required' => false,
     // The Livewire method to call when you leave the editor. A refusal KEEPS
     // what you wrote — see the note above.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -32,6 +34,11 @@
     'value' => null,
     'format' => config('wirekit.components.editor.format', 'html'),   // html | json
     'extensions' => null,        // array of editor extension NAMES (hint for window.wirekitEditor)
+    // The engine this field opens in, by name: its factory is `window.wirekitEditors[engine]`.
+    // An application with several schemas registers one factory per name, and a field that
+    // names its engine never takes another's, which after `wire:navigate` could be whichever
+    // bundle ran last. Without a name the field takes `window.wirekitEditor`.
+    'engine' => null,
     'toolbar' => config('wirekit.components.editor.toolbar', 'basic'), // false | 'basic' | 'full' | 'custom'
     'placeholder' => null,
     'maxLength' => null,
@@ -60,7 +67,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -68,10 +75,16 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
-    $editable = BooleanProp::from($editable, true) && ! $disabled;
-    $autofocus = BooleanProp::from($autofocus, false);
-    $required = BooleanProp::from($required, false);
+    $disabled = BooleanProp::from($disabled, false, 'editor', 'disabled');
+    $editable = BooleanProp::from($editable, true, 'editor', 'editable') && ! $disabled;
+    $autofocus = BooleanProp::from($autofocus, false, 'editor', 'autofocus');
+    $required = BooleanProp::from($required, false, 'editor', 'required');
+
+    // An editor that cannot be edited has no form field, so a caller's `wire:model` has nothing
+    // to bind.
+    if (! $editable) {
+        \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('editor', $attributes->getAttributes(), 'while it cannot be edited', 'Such an editor shows the document given as `value`.');
+    }
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -109,12 +122,12 @@
     // It has to happen BEFORE `$rest` is derived below: the wrapper echoes `$rest`,
     // not `$attributes`, so a strip applied afterwards would leave the key in the
     // very bag that reaches the element.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // Inside a labeled field the field's label names the editor, by reference as this
     // component's own label does (Support\FieldControl): it gets no `for`, the surface takes its
     // id as `ariaLabelledby`, and the factory wires a click on it to focus the surface.
-    $fieldLabelId = ! $label && ! filled($callerLabel) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+    $fieldLabelId = blank($label) && ! filled($callerLabel) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
         ? $wkField->takeLabel(null)
         : null;
 
@@ -146,9 +159,13 @@
         'wk-editor-'
     );
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     // Error detection: explicit prop OR Laravel validation bag.
-    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
-    $errorMessage = $error ?? ($name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // First-paint content (format=html only), rebuilt rather than echoed. The browser parses
     // this copy in the live document before the engine mounts, so the engine's schema never
@@ -170,6 +187,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $hintId : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // A required editor that a submit found empty says so under it (partials/required-message),
     // unless the server's own message already stands there. A read-only editor sends nothing.
@@ -195,6 +219,10 @@
     [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, \Pushery\WireKit\Support\FieldAttributes::KEYBOARD);
     $maxLength ??= $attributes->get('maxlength');
     $attributes = $attributes->except('maxlength');
+    // A soft limit is a count above zero, and anything else sets none: a condition that reads NAN
+    // or INF as it came is a warning on PHP 8.5.
+    $maxLength = \Pushery\WireKit\Support\NumericProp::intOrNull($maxLength, 'editor', 'maxLength');
+    $maxLength = $maxLength !== null && $maxLength > 0 ? $maxLength : null;
 
     $wireModel = $attributes->whereStartsWith('wire:model');
     $rest = $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model');
@@ -227,7 +255,8 @@
     // decoded would change what it says, text `&lt;img` becoming an element or an escaped quote
     // ending a JSON string. The field is written with double encoding whatever echo format the
     // application chose, and the browser hands back exactly these bytes. A document given as an
-    // array becomes JSON text through the JSON encoder.
+    // array becomes JSON text through the JSON encoder. An editor that cannot be edited has no
+    // form field, and its root carries the document instead, written the same way.
     $editorFieldText = is_string($value)
         ? $value
         : ($value !== null ? \Pushery\WireKit\Support\AlpinePayload::json($value) : '');
@@ -240,7 +269,9 @@
         'format' => $formatValue,
         'editable' => (bool) $editable,
         'extensions' => $extensions ?? config('wirekit.components.editor.extensions', []),
-        'placeholder' => $placeholder,
+        'engine' => is_string($engine) && trim($engine) !== '' ? trim($engine) : null,
+        // Text the engine writes into an empty document, so markup is read as its text.
+        'placeholder' => $placeholder instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($placeholder) : $placeholder,
         'maxLength' => $maxLength,
         // A VISIBLE label does not name this field, and assuming it did shipped an
         // unnamed textbox to everyone with a real engine. `<x-wirekit::label for>`
@@ -265,13 +296,13 @@
         // engine builds inside the host, without one the host is hidden. On the host,
         // `aria-label="Release notes"` would leave a textbox announced as "Rich text
         // editor" on a page whose visible label says "Release notes".
-        'ariaLabel' => $callerLabelledBy !== null || $label || $fieldLabelId !== null ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
+        'ariaLabel' => $callerLabelledBy !== null || filled($label) || $fieldLabelId !== null ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
         // The same holds one attribute over: `aria-required` goes to the textbox, because a
         // generic element may not carry it, and on the host the textbox would never be
         // announced as required.
-        'ariaRequired' => (bool) $required,
+        'ariaRequired' => $required || $fieldRequired,
         // The message of an empty required editor stands under the frame, outside this
         // component's scope, so the factory finds it by id and writes it.
         'requiredMessageId' => $requiredMessageId,
@@ -283,7 +314,7 @@
         // the number with the application's locale, as the data table's selection does.
         'remainingPhrases' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count character remaining|[2,*] :count characters remaining'),
         'overPhrases' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count character over the limit|[2,*] :count characters over the limit'),
-        'locale' => str_replace('_', '-', app()->getLocale()),
+        'locale' => \Pushery\WireKit\Support\IcuLocale::tag(),
     ];
     // Only when set, so the payload of every editor in use stays as it was.
     if ($disabled) {
@@ -329,9 +360,17 @@
         ],
     ]);
 
+
+    // One value for the style, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $maxHeight = \Pushery\WireKit\Support\CssValue::prop($maxHeight, 'editor', 'maxHeight');
+    // With the optimistic layer the root stands inside the layer's own root, where `.parent` would
+    // find the layer's names: the caller's `x-model` reaches the root as `x-wk-model`, read above
+    // the outer element, which marks the boundary (CallerModel::onField()).
+    $modelScope = $optimisticConfig && \Pushery\WireKit\Support\CallerModel::binds($rest);
+    $rootModel = $modelScope ? \Pushery\WireKit\Support\CallerModel::onField($rest) : \Pushery\WireKit\Support\CallerModel::aroundRoot($rest);
 @endphp
 
-<div {{ $outerAttributes }} class="relative w-full space-y-1.5" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="relative w-full space-y-1.5" @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif>
     @if($label)
         {{-- No `for`: the element it could name is the content host, a div no label can name,
              and the surface a reader types into is built in the browser. The label names that
@@ -361,12 +400,18 @@
              value turned `undefined` on every keystroke. `wire:model` is unaffected: it is
              routed to the form field below. --}}
         x-modelable="content"
+        {{-- The document for the engine where there is no form field to read it from, so a
+             read-only or disabled editor mounts with its document, not an empty one. --}}
+        @unless($editable) data-wk-editor-document="{!! e($editorFieldText) !!}" @endunless
         @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
-        {{ $rest->class(['w-full', $wrapperClasses]) }}
+        {{ $rootModel->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-full', $wrapperClasses])) }}
+        {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+             listener written on the tag hears one field (utils/focus-unit.js). --}}
+        x-wk-focus-unit
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
         {{-- Toolbar: auto-rendered preset, OR the custom slot when toolbar="custom". --}}
-        @if($editable && $toolbarValue === 'custom' && isset($toolbar) && $toolbar instanceof \Illuminate\View\ComponentSlot)
+        @if($editable && $toolbarValue === 'custom' && $toolbar instanceof \Illuminate\View\ComponentSlot && \Pushery\WireKit\Support\SlotContent::given($toolbar))
             <div x-ref="toolbar">{{ $toolbar }}</div>
         @elseif($editable && $toolbarValue !== false && ! empty($presetCommands))
             <x-wirekit::editor.toolbar :commands="$presetCommands" x-ref="toolbar" />
@@ -399,7 +444,7 @@
                  engine the textbox is the surface the engine builds inside it, and that surface
                  takes both from `ariaLabel` and `ariaRequired` in the config above; without one
                  the host is hidden and the form field below is the control. --}}
-            class="flex flex-col {{ $disabled ? 'cursor-not-allowed' : 'cursor-text' }} [contain:inline-size] {{ $minHeight }} overflow-y-auto wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]"
+            class="flex flex-col {{ $disabled ? 'cursor-not-allowed' : 'cursor-text' }} [contain:inline-size] {{ $minHeight }} relative overflow-y-auto wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]"
             @if($maxHeight) style="max-height: {{ $maxHeight }};" @endif
         ><div data-wk-editor-seed class="wk-editor-content">{!! $initialHtml !!}</div></div>
 
@@ -418,7 +463,7 @@
                 {{-- The caller's own name first. This is the control a reader without the
                      editor engine actually types into, so a name that stops at the
                      wrapper never reaches them. --}}
-                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $label ?? $callerLabel ?? ($fieldLabelId !== null ? $wkField->labelText() : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))) }}" @endif
+                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ \Pushery\WireKit\Support\BlankName::first($label, $callerLabel, $fieldLabelId !== null ? $wkField->labelText() : null, filled($name) ? Str::headline((string) $name) : null, __('wirekit::Rich text editor')) }}" @endif
                 {{-- The invalid state and its description, SERVER-SIDE. Both were passed
                      only into the Tiptap x-data payload, which editor.js applies to the
                      contenteditable at mount — so the document the server sent carried no
@@ -436,7 +481,7 @@
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 {{-- `aria-required`, never the native attribute: while the engine runs this
                      field is hidden, and a hidden required control stops the form submitting. --}}
-                @if($required) aria-required="true" @endif
+                @if($required || $fieldRequired) aria-required="true" @endif
                 @if($autofocus) data-autofocus @endif
                 @if($formOwner) form="{{ $formOwner }}" @endif
                 {{ $fieldAttributes }}
@@ -454,7 +499,7 @@
             @endif
         @endif
 
-        @if(($maxLength && $editable) || isset($bottomBar))
+        @if(($maxLength && $editable) || \Pushery\WireKit\Support\SlotContent::given($bottomBar ?? null))
             <div class="flex items-center justify-between gap-3 border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
                 <div>{{ $bottomBar ?? '' }}</div>
                 @if($maxLength && $editable)

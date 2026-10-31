@@ -18,12 +18,18 @@
  * the properties of the one above it, so `from: 'percent'` resolves against the
  * caller's own state without this component knowing anything about it.
  */
+import { formatDecimal } from '../utils/locale-number.js';
+
 export default function wirekitProgress(config = {}) {
     return {
         // The PROPERTY NAME to read from the surrounding scope, not the value.
         _from: typeof config.from === 'string' && config.from !== '' ? config.from : 'value',
 
         _max: Number.isFinite(Number(config.max)) && Number(config.max) > 0 ? Number(config.max) : 100,
+
+        // The readout in the application's locale, grouped, or in its own marks where it has them.
+        _locale: typeof config.locale === 'string' && config.locale !== '' ? config.locale : 'en',
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
 
         /**
          * The caller's current value, or null while there is not one yet.
@@ -109,7 +115,9 @@ export default function wirekitProgress(config = {}) {
         valueText() {
             const c = this._clamped();
 
-            return c === null ? '' : `${c} / ${this._max}`;
+            const number = (value) => formatDecimal(value, this._locale, 6, 0, this._separators ?? true);
+
+            return c === null ? '' : `${number(c)} / ${number(this._max)}`;
         },
     };
 }

@@ -8,6 +8,10 @@
 
      Params: $attributes, $slot, $size, $scope, $hasIcon, $activeIntent, $labelsChange, $isPressed,
      $swapsIcons, $onIcon, $offIcon, $icon, $iconSize, $onLabel, $offLabel. --}}
+@php
+    // A toggle is a button by nature, and a caller's `type` would stand beside the one below.
+    $attributes = $attributes->except('type');
+@endphp
 <x-wirekit::button
     type="button"
     intent="neutral"

@@ -221,7 +221,7 @@ export default function wirekitAppShell(config = {}) {
                 // drawer whose links have not rendered yet still has to take focus, or the
                 // reader is left outside a dialog that covers the page.
                 initialFocus: () => panel.querySelector?.(
-                    'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+                    'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
                 ) || panel,
                 escapeDeactivates: true,
                 // The backdrop's own click handler closes the drawer, so outside clicks

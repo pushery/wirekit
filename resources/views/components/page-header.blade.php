@@ -66,8 +66,8 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `heading-focusable="false"` would mean the opposite of what the call site reads as.
-    $headingFocusable = BooleanProp::from($headingFocusable, false);
-    $sticky = BooleanProp::from($sticky, false);
+    $headingFocusable = BooleanProp::from($headingFocusable, false, 'page-header', 'headingFocusable');
+    $sticky = BooleanProp::from($sticky, false, 'page-header', 'sticky');
 
     // A sticky header is an Alpine root of its own, for the directive that marks its resting state,
     // and a caller's `x-model` on it would take the value of a field in its actions slot.
@@ -193,7 +193,7 @@
     // Actions beside a title with no description sit centered on the title and add nothing to
     // the header's height (`.wk-page-header-actions-frame` in the stylesheet says how). With a
     // description the column is the taller part anyway, and the actions keep to its top.
-    $actionsBesideTitle = isset($actions) && ! $hasDescription;
+    $actionsBesideTitle = \Pushery\WireKit\Support\SlotContent::given($actions ?? null) && ! $hasDescription;
 
     $columnClasses = WireKit::resolveClasses('page-header', 'column', implode(' ', array_filter([
         // `min-w-0` is not decoration: a flex child defaults to `min-width: auto`, so a long
@@ -225,7 +225,7 @@
     ]), $scope);
 @endphp
 
-<div data-wk-prose-skip @if($sticky) x-data x-wk-stuck data-wk-scroll-inset="top" @endif {{ $attributes->class([$classes, $stickyClasses]) }}>
+<div data-wk-prose-skip @if($sticky) x-data x-wk-stuck data-wk-scroll-inset="top" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $stickyClasses])) }}>
     <div class="{{ $columnClasses }}">
         {{-- With meta, the heading and the meta share a row that wraps. Without it the heading is
              the column's first child. --}}
@@ -261,7 +261,7 @@
         @endif
     </div>
 
-    @isset($actions)
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         @if($actionsBesideTitle)
             {{-- The frame grows to fill its line, which is how the stylesheet tells beside the
                  title from wrapped below it. The row keeps its name and its block, so a call site
@@ -272,5 +272,5 @@
         @else
             <div data-wk-page-header-actions class="{{ $actionsClasses }}">{{ $actions }}</div>
         @endif
-    @endisset
+    @endif
 </div>

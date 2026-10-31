@@ -16,10 +16,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('action-bar', $attributes->getAttributes());
 
+    // An unknown `mode` is reported (Support\StrictnessGate) and renders as `floating`; a bound
+    // `null` or empty string is `floating` without a word.
+    $mode = \Pushery\WireKit\WireKit::validateProp('action-bar', 'mode', \Pushery\WireKit\Support\NumericProp::text($mode ?: 'floating'), ['floating', 'static']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $visible = BooleanProp::from($visible, false);
+    $visible = BooleanProp::from($visible, false, 'action-bar', 'visible');
 
     // Action Bar — the bar of bulk actions shown when items are selected.
     // Uses role="group" + an aria-live announcement for screen readers.
@@ -77,6 +81,20 @@
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
+
+    // The count of what the bar acts on, "3 selected": shown first in the bar and said by its live
+    // region. A slot that renders nothing counts as none, so the region keeps its own sentence.
+    $hasSummary = isset($summary) && trim(strip_tags((string) $summary)) !== '';
+    $summaryClasses = WireKit::resolveClasses('action-bar', 'summary', implode(' ', [
+        'text-[length:var(--text-wk-sm)]',
+        'text-[color:var(--color-wk-text-muted)]',
+        'whitespace-nowrap',
+    ]), $scope);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole bar.
+    // The announcer stands beside the bar, outside the part that hides, so with any of them a
+    // `contents` wrapper holds both and takes them (Support\OuterAttributes).
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 @endphp
 
 {{-- The live region sits OUTSIDE the bar, and that is the whole point.
@@ -88,15 +106,19 @@
 
      Out here it is always in the tree, always empty until the bar is shown, and the flip is
      the text change a live region reacts to. --}}
-<div aria-live="polite" class="sr-only" data-wk-announcer>
-    @if($visible) {{ __('wirekit::Bulk actions available') }} @endif
+@if($outerAttributes->isNotEmpty())<div class="contents" {{ $outerAttributes }}>@endif
+{{-- With a `summary`, the region says it instead of the bar's presence: "3 selected", then "4
+     selected" as the count changes, each change being a change of the region's text. Atomic, so the
+     number is said with the words it belongs to. --}}
+<div aria-live="polite" aria-atomic="true" class="sr-only" data-wk-announcer>
+    @if($visible) {{ $hasSummary ? $summary : __('wirekit::Bulk actions available') }} @endif
 </div>
 
 <div
     @unless($attributes->has('role')) role="group" @endunless
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Bulk actions') }}" @endunless
     @if($isFloating) data-wk-scroll-inset="bottom" @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- Why the announcement is translated, and when it fires.
          The text is translated for the same reason the label above it is: this is read
@@ -110,5 +132,11 @@
          present from first paint and never changes, so nothing is announced and the
          announcement is the caller's to make; the docs page says so at the tip that
          introduces that mode. --}}
+    {{-- The count as a reader sees it. Hidden from screen readers: the region before the bar says
+         it, and a second copy would be read twice on the way through the page. --}}
+    @if($hasSummary)
+        <span aria-hidden="true" data-wk-action-bar-summary class="{{ $summaryClasses }}">{{ $summary }}</span>
+    @endif
     {{ $slot }}
 </div>
+@if($outerAttributes->isNotEmpty())</div>@endif

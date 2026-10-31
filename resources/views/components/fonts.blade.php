@@ -84,6 +84,15 @@
     $warnMissing = fn (?FontPreset $preset) => $preset
         && ! file_exists(public_path($preset->publishedCssPath()));
 
+    // The log line beside that comment, written here because this is where a page asks for the
+    // font: a process that only boots the application renders no page and needs none. Once per
+    // preset and hour, see WireKitServiceProvider::warnUnpublishedFont().
+    foreach (['sans' => $sansPreset, 'serif' => $serifPreset, 'mono' => $monoPreset] as $wkSlot => $wkPreset) {
+        if ($warnMissing($wkPreset)) {
+            \Pushery\WireKit\WireKitServiceProvider::warnUnpublishedFont($wkSlot, (string) $fontConfig[$wkSlot]);
+        }
+    }
+
     // The configured font-display, and whether the published copy actually
     // carries it. A plain `vendor:publish` copies the stylesheet verbatim, so it
     // keeps the `swap` the package ships however the config reads — and nothing
@@ -160,8 +169,10 @@
             return asset($preset->publishedCssPath()).'?v='.filemtime($published);
         }
 
-        $source = __DIR__.'/../../fonts/'.$preset->cssFile;
-        $version = is_file($source) ? filemtime($source) : time();
+        // The bundled file's own mtime. A key that changed per render would give every page a
+        // new URL, and the year-long cache of the route would never be reused.
+        $source = $preset->sourceCssPath();
+        $version = is_file($source) ? filemtime($source) : 0;
 
         return url('wirekit/fonts/'.$preset->cssFile).'?v='.$version.'-'.$fontDisplay;
     };
@@ -315,6 +326,10 @@
 <style @if($wkNonce)nonce="{{ $wkNonce }}"@endif>
     :root {
         @if($sansPreset)--font-wk-sans: {!! $sansPreset->fontFamily() !!};@endif
+        {{-- The icon nudge `dist/wirekit.css` ships is measured for Inter. Another sans sets its
+             letters at another height, so its icons go back to the center of the line, as
+             `wirekit:install --font` and the theme presets with a font of their own do. --}}
+        @if($sansPreset && $sansPreset->key !== 'inter')--font-wk-icon-nudge: 0px;@endif
         {{-- Serif is the exception, and it is a fact about the stylesheet rather
              than a choice: `dist/wirekit.css` declares `--font-wk-sans` and
              `--font-wk-mono` and NOT `--font-wk-serif`. Omitting the other two

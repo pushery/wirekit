@@ -23,20 +23,20 @@
         {{-- No `aria-current`, and that is the point of the mode rather than an omission.
              A page you are on and a value you have picked are two different claims; a row
              that made both would be wrong about one of them. --}}
-        {{ $attributes->except(['rel', 'href'])->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $isSelected]) }}
+        {{ $attributes->except(['rel', 'href'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $isSelected])) }}
     >
 @elseif($itemTag === 'button')
 <button data-wk-prose-skip
     type="{{ $buttonType }}"
     @if($active) aria-current="{{ $ariaCurrent }}" @endif
-    {{ $attributes->except(['rel', 'target', 'type'])->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active, ...$buttonClasses]) }}
+    {{ $attributes->except(['rel', 'target', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active, ...$buttonClasses])) }}
 >
 @else
 <a data-wk-prose-skip
     href="{{ $href }}"
     @if($active) aria-current="{{ $ariaCurrent }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->merge($trackAttributes)->class(['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active]) }}
+    {{ $attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-sidebar-item', 'wk-touch-row', $classes, $activeClasses => $active])) }}
 >
 @endif
     @if($icon)
@@ -45,10 +45,12 @@
              with dropdown.item / context-menu.item / command-palette.item. A
              <x-slot:icon> or inline markup (a non-string ComponentSlot, which
              is Htmlable) renders verbatim, preserving the documented slot
-             contract — so both `icon="cube"` and `<x-slot:icon>` now work. --}}
-        <span class="shrink-0" aria-hidden="true">
-            @if(is_string($icon) && ! str_contains($icon, '<') && function_exists('svg'))
-                {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => $iconClasses]) }}
+             contract — so both `icon="cube"` and `<x-slot:icon>` now work.
+             `data-wk-icon-nudge` moves either of them up onto the label's letters while the
+             label shows (the rule beside `wk-rail-hide` in the stylesheet). --}}
+        <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
+            @if(is_string($icon) && ! str_contains($icon, '<'))
+                {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses]) }}
             @else
                 {{ $icon }}
             @endif
@@ -80,7 +82,8 @@
          outright. Note this differs from hiding the counter and announcing it
          separately; adopting `badge` over a hand-rolled counter changes what
          assistive technology reads out. Documented on the component page. --}}
-    @if(filled($badge))
+    @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
+    @if($badgeText !== null)
         <span class="shrink-0 ml-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]
             group-data-[collapsed]/wk-sidebar:absolute
             group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]
@@ -88,7 +91,7 @@
             group-data-[collapsed]/wk-sidebar:ml-0
             group-data-[collapsed]/wk-sidebar:p-0
             group-data-[collapsed]/wk-sidebar:h-2
-            group-data-[collapsed]/wk-sidebar:w-2"><span class="wk-rail-hide">{{ $badge }}</span></span>
+            group-data-[collapsed]/wk-sidebar:w-2"><span class="wk-rail-hide">{{ $badgeText }}</span></span>
     @endif
     @if($opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>

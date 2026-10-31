@@ -32,14 +32,19 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('skeleton', $attributes->getAttributes());
 
-    // A count of lines, whatever the attribute or the data carried: a text would throw in the
-    // loop below, which draws the lines.
-    $lines = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($lines, 3));
+    // An unknown `type` is reported (Support\StrictnessGate) and renders the caller's own shape,
+    // the slot, as `custom` does and as a bound `null` or empty string always has.
+    $type = \Pushery\WireKit\WireKit::validateProp('skeleton', 'type', \Pushery\WireKit\Support\NumericProp::text($type ?: 'custom'), ['custom', 'text', 'avatar', 'card']);
+
+    // A count of lines, whatever the attribute or the data carried, and at most a hundred: a text
+    // would throw in the loop below, which draws the lines, and a line per unit of a count without
+    // a ceiling runs the request out of memory.
+    $lines = max(0, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::from($lines, 3, 'skeleton', 'lines'), 100, 'skeleton', 'lines'));
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $shimmer = BooleanProp::from($shimmer, true);
+    $shimmer = BooleanProp::from($shimmer, true, 'skeleton', 'shimmer');
 
     // Shared shimmer base: .wk-skeleton applies bg color + shimmer keyframes (see dist/wirekit.css).
     // role="status" + aria-label announce loading state to screen readers.
@@ -107,7 +112,7 @@
          container whose content is still missing, which is the developer's
          element; leaving the attribute off is also what lets them put it there
          and have the shimmer's own pause rule see it. --}}
-    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: '.($intrinsicSize).';'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
+    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: '.($intrinsicSize).';'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'wk-skeleton-skip-offscreen'])) }}
 >
     @if($type === 'text')
         {{-- Text: N lines of decreasing/varied width for realistic placeholder.

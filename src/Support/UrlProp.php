@@ -29,6 +29,10 @@ final class UrlProp
 {
     /**
      * The URL with Blade's escape undone, or null for no URL.
+     *
+     * A URL that is empty or white space alone is none, as an empty text prop is: written into a
+     * link, it leads to the page the link stands on, where the component without a URL draws a
+     * button, a text or an entry without a target. `0` is a URL.
      */
     public static function text(string|Stringable|BackedEnum|null $url): ?string
     {
@@ -39,7 +43,29 @@ final class UrlProp
         // A backed enum is its value, as it is to Blade's own echo.
         $text = (string) ($url instanceof BackedEnum ? $url->value : $url);
 
+        if (trim($text, " \t\n\r\0\x0B\f") === '') {
+            return null;
+        }
+
         // Every one of the five references begins with an ampersand.
         return str_contains($text, '&') ? htmlspecialchars_decode($text, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401) : $text;
+    }
+
+    /**
+     * The address of an image, read as text() reads a URL, or null for none.
+     *
+     * An image prop that is null, a boolean, empty or white space has no address. Written as it
+     * came, it is an `<img>` with an empty `src`, which shows the sign of a broken image where the
+     * component has a state without one: an avatar's initials, a brand's name.
+     */
+    public static function source(string|Stringable|BackedEnum|bool|null $url): ?string
+    {
+        if ($url === null || is_bool($url)) {
+            return null;
+        }
+
+        $address = trim((string) self::text($url));
+
+        return $address === '' ? null : $address;
     }
 }

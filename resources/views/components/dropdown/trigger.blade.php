@@ -17,6 +17,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.trigger', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
     // Resolved here rather than in @props, because a literal there is frozen for every
     // locale: this string becomes the accessible NAME of every icon-only dropdown trigger
     // (it is written onto the inner control by trigger-aria.js), so a non-English
@@ -64,7 +71,7 @@
          of — so under a strict policy the trigger got no ARIA at all. It still
          opened, and announced itself as a button that leads nowhere. --}}
     x-data="wirekitDropdownTrigger({ labelFallback: {{ \Pushery\WireKit\Support\AlpinePayload::from($ariaLabelFallback) }} })"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

@@ -7,6 +7,8 @@
 import { createOverlay } from '../utils/overlay.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { firstControl } from '../utils/first-control.js';
+import { armDialogConfirm } from '../utils/dialog-confirm.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 /**
  * @param {Object} config - Modal configuration from Blade
@@ -15,6 +17,8 @@ import { firstControl } from '../utils/first-control.js';
  * @param {boolean} [config.lockScroll=true] - Whether opening locks the page's scroll
  * @param {string|null} [config.discardQuestion=null] - Asked before the reader closes a dialog
  *   whose fields they changed (utils/discard-guard.js)
+ * @param {boolean} [config.confirmShortcut=true] - Whether ⌘↵ / Ctrl+Enter presses the control
+ *   marked `data-wk-dialog-primary` while the modal is open (utils/dialog-confirm.js)
  */
 export default function wirekitModal(config = {}) {
     const overlay = createOverlay({
@@ -35,11 +39,32 @@ export default function wirekitModal(config = {}) {
     return withOpenAlias({
         ...overlay,
 
+        /**
+         * ⌘↵ / Ctrl+Enter presses the primary control while the modal is open. A modal has no
+         * confirm of its own, so only a control the page marks with `data-wk-dialog-primary`
+         * counts; without one the shortcut is not registered.
+         */
+        confirmShortcut: config.confirmShortcut !== false,
+        _disarmConfirmShortcut: null,
+
+        _syncConfirmShortcut(open) {
+            if (this._disarmConfirmShortcut) {
+                this._disarmConfirmShortcut();
+                this._disarmConfirmShortcut = null;
+            }
+
+            if (open && this.confirmShortcut) {
+                this._disarmConfirmShortcut = armDialogConfirm(this.$refs.panel);
+            }
+        },
+
         init() {
             this.initOverlay();
+            watchCurrent(this, 'isOpen', (open) => this._syncConfirmShortcut(open));
         },
 
         destroy() {
+            this._syncConfirmShortcut(false);
             this.destroyOverlay();
         },
     });

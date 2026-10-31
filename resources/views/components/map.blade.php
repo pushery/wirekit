@@ -54,11 +54,26 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $list = BooleanProp::from($list, true);
+    $list = BooleanProp::from($list, true, 'map', 'list');
 
     $provider = WireKit::validateProp('map', 'provider', $provider, ['maplibre', 'leaflet']);
     $highlight = WireKit::validateProp('map', 'highlight', $highlight, ['ring', 'fill']);
     $highlightColor = WireKit::validateProp('map', 'highlightColor', $highlightColor, ['accent', 'success', 'warning', 'danger', 'neutral']);
+
+    // A map that sets no style takes its engine's from the config, so one setting keeps every map
+    // of an application on its own tile server. The configured credit belongs to the configured
+    // tiles and comes only with them: a map with a `style-url` of its own shows its own
+    // `attribution` and no other.
+    if (blank($styleUrl)) {
+        $styleUrl = $provider === 'leaflet'
+            ? config('wirekit.components.map.leaflet.style-url')
+            : config('wirekit.components.map.maplibre.style-url');
+
+        if ($provider === 'leaflet' && filled($styleUrl)) {
+            $attribution ??= config('wirekit.components.map.leaflet.attribution');
+        }
+    }
+
     // Counted, not random. The map mounts a JS instance against this id, and with a random
     // one every Livewire round trip would produce an id the mounted map no longer matches —
     // the pan and zoom the reader had set would be discarded by an update elsewhere on the
@@ -75,11 +90,15 @@
     // Plain lists, whatever the caller passed: an array, a Collection, a lazy one or a paginator.
     // Each marker carries the keys the map reads and no other, because the list is written into
     // the page: a marker built from a model would otherwise put each of its attributes there.
-    $centerArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($center);
+    $centerArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($center, 'map', 'center');
     $markersArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
         $markers,
         ['id', 'lat', 'lng', 'label', 'body', 'image', 'tooltip', 'intent'],
+        'map', 'markers',
     ));
+    // A marker's id comes back from the script with a click, so one beyond what a script's
+    // number holds exactly travels as its digits (Support\ExactIds).
+    $markersArr = \Pushery\WireKit\Support\ExactIds::in($markersArr, 'id');
 
     // Marker dot intents (PHP literals → Tailwind-compiled + drift-traced). The
     // list pairs the dot color with the text label, so color is never the sole
@@ -121,14 +140,17 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // One value for the style, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $height = \Pushery\WireKit\Support\CssValue::prop($height, 'map', 'height', '24rem');
 @endphp
 
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
-    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ (int) $zoom }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}, reducedData: {{ \Pushery\WireKit\Support\AlpinePayload::string($reducedData) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution) }}@endif, markerLabel: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map marker')) }} })"
+    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ \Pushery\WireKit\Support\NumericProp::int($zoom, 0, 'map', 'zoom') }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}, reducedData: {{ \Pushery\WireKit\Support\AlpinePayload::string($reducedData) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution instanceof \Illuminate\Contracts\Support\Htmlable ? $attribution->toHtml() : $attribution) }}@endif, markerLabel: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map marker')) }} })"
     @unless($attributes->has('role')) role="group" @endunless
-    aria-label="{{ $ariaLabel }}"
+    aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) }}"
     {{-- NO flex gap between canvas and list: the list's own divider border (a top
          border when stacked, a left border when side by side) IS the separator. A
          flex gap here adds a dead strip of page background between the map and the
@@ -136,7 +158,7 @@
          flush inside the rounded, clipped card, split only by that border. (Plain
          prose, no bare utility tokens: Tailwind scans Blade comments too, so a
          literal class name here would emit a dead selector and trip the drift audit.) --}}
-    data-wk-sr-host {{ $attributes->only('class')->class([$base.' '.($showList ? 'flex flex-col sm:flex-row' : 'flex flex-col').' border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden']) }}
+    data-wk-sr-host {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base.' '.($showList ? 'flex flex-col sm:flex-row' : 'flex flex-col').' border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden'])) }}
 >
     {{-- Map canvas — the library draws here. Falls back to a placeholder + the
          list when no peer library is loaded (progressive enhancement). --}}
@@ -175,7 +197,10 @@
              height, so `h-full` resolves there. The explicit min-height keeps
              clientHeight ≥ the wrapper height under EITHER computed position AND
              EITHER flex direction, so MapLibre never hits the 300px fallback. --}}
-        <div x-ref="canvas" class="absolute inset-0 h-full w-full" style="min-height: {{ $height }};" role="application" aria-label="{{ __('wirekit:::label (interactive)', ['label' => $ariaLabel]) }}" tabindex="0"></div>
+        {{-- The mount is a tab stop, and its focus indication is an outline set one ring width
+             inward, as on context-menu's wrapper: the map's panes cover an inset ring, and the
+             clipped frame cuts an outer one off. --}}
+        <div x-ref="canvas" class="absolute inset-0 h-full w-full focus-visible:outline-[length:var(--ring-wk-width)] focus-visible:-outline-offset-[var(--ring-wk-width)] focus-visible:outline-[color:var(--color-wk-ring)]" style="min-height: {{ $height }};" role="application" aria-label="{{ __('wirekit:::label (interactive)', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel)]) }}" tabindex="0"></div>
         <div x-show="!available" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-1 p-[var(--padding-wk-x-md)] text-center pointer-events-none">
             <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5l6 2.5m-6-2.5V3.5m6 19l5.5-2.5V2.5L15 5m0 17.5V5m0 0L9 3.5"/><circle cx="12" cy="9" r="2.5"/></svg>
             <p data-wk-prose-skip x-show="!dataDeferred" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Interactive map needs a map library — the locations are listed alongside.') }}</p>
@@ -211,7 +236,7 @@
          list takes a line below the canvas and the canvas keeps its size. Hidden again once the
          focus leaves. --}}
     {{-- Paper does not scroll: on paper the list prints every place. --}}
-    <div data-wk-print-expand @if(filled($listLabel)) role="region" aria-label="{{ $listLabel }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only focus-within:not-sr-only focus-within:border-t-[length:var(--border-wk-width)] focus-within:border-[var(--color-wk-border)]' }}">
+    <div data-wk-print-expand @if(filled($listLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($listLabel) }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'relative w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only focus-within:not-sr-only focus-within:border-t-[length:var(--border-wk-width)] focus-within:border-[var(--color-wk-border)]' }}">
         {{-- The heading stays at the top of the list while it scrolls, and tells the list how
              much of the top it covers, so a place that takes the focus on the way up rests
              below it (WCAG 2.4.11). --}}

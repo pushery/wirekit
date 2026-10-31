@@ -20,11 +20,16 @@
              component supports. The tooltip shows the same name to a reader who sees no
              word on the button and describes nothing, so the slot stays the only name. --}}
         <x-wirekit::tooltip as="span" :text="$removeName" :focusable-trigger="false" :describes="false">
+            {{-- Beside the stepper of a compact line, 4px after its +, the control takes the touch
+                 target as its own size, as the stepper does: the 44px patch of a 32px button
+                 reaches 6px past it, into the edge of the +, and painted later it would take the
+                 taps meant for the +. After the line total of the other layout it stands alone. --}}
             <x-wirekit::button
                 intent="neutral"
                 surface="ghost"
                 :size="$size === 'lg' ? 'md' : 'sm'"
                 icon-only
+                :touch-floor="$removeInRow"
                 {{-- `AlpinePayload::from()`, not `Js::from()`. Under the CSP build the
                      latter emits `JSON.parse(…)` for anything non-scalar and `\u` escapes for
                      anything non-ASCII — the evaluator cannot resolve the call, and the

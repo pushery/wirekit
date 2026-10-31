@@ -37,6 +37,8 @@
         'system' => 'var(--color-wk-text-muted)',
         'user' => 'var(--color-wk-accent)',
     ], (array) config('wirekit.components.activity-row.kinds', []));
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $kind = \Pushery\WireKit\Support\NumericProp::key($kind);
     $dotColor = $kinds[$kind] ?? 'var(--color-wk-text-muted)';
 
     // The kind's spoken name — the text the dot's color stands in for (WCAG 1.4.1). A caller's
@@ -63,9 +65,22 @@
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-sm)]',
     ]), $scope);
+
+    // A date object as the timestamp is written as the page's language writes how long ago it was,
+    // as the prop describes it, in a `<time>` that carries the moment itself. Echoed as it is, a
+    // Carbon reads `2026-10-25 12:00:00` in no language, and PHP's own `DateTime` has no string
+    // form at all. Text stays the text it is.
+    $timestampMachine = null;
+
+    if ($timestamp instanceof \DateTimeInterface) {
+        $timestampMachine = \Pushery\WireKit\Support\MachineTime::attribute($timestamp, 'activity-row', 'timestamp');
+        $timestamp = \Carbon\CarbonImmutable::instance($timestamp)
+            ->locale(str_replace('-', '_', \Pushery\WireKit\Support\IcuLocale::usable()))
+            ->diffForHumans();
+    }
 @endphp
 
-<div data-wk-sr-host {{ $attributes->class([$classes]) }}>
+<div data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{-- Leading kind dot. Decorative (aria-hidden) — the kind is conveyed
          textually by the sr-only span below, so the activity is
          distinguishable without color perception (WCAG 1.4.1). --}}
@@ -81,17 +96,24 @@
                 @if($actor)<span class="font-[number:var(--font-wk-heading-weight)]">{{ $actor }}</span> @endif{{ $slot }}
             </span>
             @if($timestamp)
-                <span class="shrink-0 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
-                    {{ $timestamp }}
-                </span>
+                @if($timestampMachine !== null)
+                    <time datetime="{{ $timestampMachine }}" class="shrink-0 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
+                        {{ $timestamp }}
+                    </time>
+                @else
+                    <span class="shrink-0 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
+                        {{ $timestamp }}
+                    </span>
+                @endif
             @endif
         </div>
 
-        @isset($badge)
-            <div class="mt-1 flex flex-wrap items-center gap-1">
-                {{ $badge }}
+        @php($badgeText = isset($badge) ? \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge) : null)
+        @if($badgeText !== null)
+            <div data-wk-activity-row-badges class="mt-1 flex flex-wrap items-center gap-1">
+                {{ $badgeText }}
             </div>
-        @endisset
+        @endif
 
         {{-- Accessible kind label — the textual equivalent of the dot color. --}}
         <span class="sr-only">{{ $kindText }}</span>
@@ -99,10 +121,10 @@
         {{-- Block content under the line: a list of changed fields, a quoted comment. The default
              slot sits in an inline <span> beside the actor and cannot hold a block, so this is a
              <div> in the content column, flush with the text above it. --}}
-        @isset($detail)
+        @if(\Pushery\WireKit\Support\SlotContent::given($detail ?? null))
             <div class="mt-1 min-w-0">
                 {{ $detail }}
             </div>
-        @endisset
+        @endif
     </div>
 </div>

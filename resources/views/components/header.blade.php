@@ -20,8 +20,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sticky = BooleanProp::from($sticky, false);
-    $container = BooleanProp::from($container, false);
+    $sticky = BooleanProp::from($sticky, false, 'header', 'sticky');
+    $container = BooleanProp::from($container, false, 'header', 'container');
 
     // Header — top-level page header for app-shell layouts.
     //
@@ -74,9 +74,14 @@
     // auto margins. The flex + width / max-width / margin properties are
     // inlined for the same reason as the outer header.
     $innerStyle = 'display: flex; flex-wrap: wrap; align-items: center; width: 100%; max-width: var(--size-wk-container-2xl, 96rem); margin-left: auto; margin-right: auto; gap: var(--gap-wk-md);';
+
+    // An inline display wins over every class of the caller's, one under a breakpoint included:
+    // where the caller's class reaches for a display, it is left out here and comes back as its
+    // utility.
+    [$headerStyle, $headerStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, $headerStyle);
 @endphp
 
-<header @if($sticky) data-wk-scroll-inset="top" @endif {{ $attributes->merge($headerStyle ? ['style' => $headerStyle] : [])->class([$classes, $stickyClasses]) }}>
+<header @if($sticky) data-wk-scroll-inset="top" @endif {{ $attributes->merge($headerStyle ? ['style' => $headerStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $stickyClasses, $headerStyleClasses => $headerStyleClasses !== ''])) }}>
     @if($container)
         <div class="flex flex-wrap items-center w-full max-w-[var(--size-wk-container-2xl,96rem)] mx-auto gap-[var(--gap-wk-md)]" style="{{ $innerStyle }}">
             {{ $slot }}

@@ -18,10 +18,12 @@
  *   - _typeAheadTimer (setTimeout) — the handle that forgets what was typed. Cleared in
  *     destroy(), and null-guarded where it is cleared, because a timeout that fires into
  *     a torn-down component is the null-callback class this codebase has been bitten by.
+ *   - _stopKeepingTabStop — the observer that puts the tab stop back after a Livewire update
+ *     (utils/roving-focus.js). Released in destroy().
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treeview/
  */
-import { typeAheadIndex } from '../utils/roving-focus.js';
+import { keepTabStop, setTabStop, typeAheadIndex } from '../utils/roving-focus.js';
 
 export default function wirekitTreeView() {
     return {
@@ -29,6 +31,11 @@ export default function wirekitTreeView() {
         // what forgets it.
         _typeAheadBuffer: '',
         _typeAheadTimer: null,
+        // Up while an arrow key clicks a branch row open or shut, so that click selects nothing.
+        _keyToggle: false,
+        // The row that holds the tab stop, once this tree has given it one.
+        _tabStop: null,
+        _stopKeepingTabStop: null,
         /**
          * Give the tree its single tab stop.
          *
@@ -36,9 +43,14 @@ export default function wirekitTreeView() {
          * child node's own `x-show`, and children initialize AFTER this container. Reading
          * visibility before that tick would hand the tab stop to a row that is about to
          * disappear, which is a tab stop the reader can neither see nor leave sensibly.
+         *
+         * The rows render `tabindex="-1"` on the server, so a Livewire update would take the
+         * stop off the row that holds it, and a tree without a `selected` node would have none.
+         * It is kept on that row; a row the update removed hands it to a new entry point.
          */
         init() {
             this.$nextTick(() => this.seedTabStop());
+            this._stopKeepingTabStop = keepTabStop(this.$el, '[data-wk-tree-node]', () => this._tabStop, () => this.seedTabStop());
         },
 
         /**
@@ -53,6 +65,9 @@ export default function wirekitTreeView() {
                 clearTimeout(this._typeAheadTimer);
                 this._typeAheadTimer = null;
             }
+
+            this._stopKeepingTabStop?.();
+            this._stopKeepingTabStop = null;
         },
 
         /**
@@ -77,9 +92,8 @@ export default function wirekitTreeView() {
          * Move the tab stop to `node`, taking it off every other row.
          */
         _setTabStop(node) {
-            this.$el.querySelectorAll('[data-wk-tree-node]').forEach((other) => {
-                other.setAttribute('tabindex', other === node ? '0' : '-1');
-            });
+            this._tabStop = node;
+            setTabStop(this.$el, '[data-wk-tree-node]', node);
         },
 
         /**
@@ -172,8 +186,7 @@ export default function wirekitTreeView() {
 
             const isExpanded = treeitem.getAttribute('aria-expanded');
             if (isExpanded === 'false') {
-                // Expand the node by clicking the label
-                focused.click();
+                this._toggleFromKey(focused);
             } else if (isExpanded === 'true') {
                 // Move focus to first child node
                 const childNode = this._ownedGroup(treeitem)?.querySelector('[data-wk-tree-node]');
@@ -193,8 +206,7 @@ export default function wirekitTreeView() {
 
             const isExpanded = treeitem.getAttribute('aria-expanded');
             if (isExpanded === 'true') {
-                // Collapse the node by clicking the label
-                focused.click();
+                this._toggleFromKey(focused);
             } else {
                 // Move focus to the parent branch's own row. The group holding this node
                 // sits beside that row inside the parent `<li>`, so the step out is one
@@ -273,6 +285,22 @@ export default function wirekitTreeView() {
         },
 
         /**
+         * Open or close a branch from an arrow key. The row's own click handler toggles it, so the
+         * key clicks the row as a pointer would; but an arrow moves through the tree and activates
+         * nothing, so its click must not reach `selectClicked()`, or a page that opens a record on
+         * `tree-node-select` would open one whenever a reader unfolds a branch. The click runs
+         * synchronously, so the flag is down again before anything else can click.
+         */
+        _toggleFromKey(row) {
+            this._keyToggle = true;
+            try {
+                row.click();
+            } finally {
+                this._keyToggle = false;
+            }
+        },
+
+        /**
          * Activate the currently focused node.
          *
          * One path for both gestures: `click()` bubbles to the tree root, whose handler
@@ -295,6 +323,8 @@ export default function wirekitTreeView() {
          * click on a row, on its chevron, or on its label all resolve to the same node.
          */
         selectClicked(event) {
+            if (this._keyToggle) return;
+
             const treeitem = event.target.closest('[role="treeitem"]');
             if (!treeitem) return;
 
@@ -304,8 +334,12 @@ export default function wirekitTreeView() {
                 treeitem.focus();
             }
 
+            // `value` is the key the node was given, or null without one: two nodes can read the
+            // same, and a label can change with the record behind it, so a listener finds the
+            // record by its key.
             this.$dispatch('tree-node-select', {
                 label: treeitem.querySelector('[data-wk-tree-label]')?.textContent?.trim(),
+                value: treeitem.getAttribute('data-wk-tree-value'),
             });
         },
     };

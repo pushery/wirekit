@@ -48,6 +48,18 @@ final class FontPreset
     }
 
     /**
+     * Absolute path to the CSS file this package bundles for the preset, the file the package
+     * route serves while the family is unpublished.
+     *
+     * Resolved here rather than in a view: a view runs from its compiled copy in the view cache,
+     * so a path built from the view's own directory names a file that does not exist.
+     */
+    public function sourceCssPath(): string
+    {
+        return dirname(__DIR__, 2).'/resources/fonts/'.$this->cssFile;
+    }
+
+    /**
      * Path to the published CSS file in the user's public directory.
      *
      * The directory structure after vendor:publish mirrors the package structure:

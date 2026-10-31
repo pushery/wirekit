@@ -25,11 +25,13 @@
     // checked state before the server agrees. A refusal puts the old state back.
     // Adds a `display: contents` wrapper — see the note above for why that is
     // safe inside a menu.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'checked' => false,
     'disabled' => false,
     'shortcut' => null, // keyboard-shortcut hint at the inline-end
@@ -42,14 +44,22 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.checkbox-item', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $checked = BooleanProp::from($checked, false);
-    $disabled = BooleanProp::from($disabled, false);
+    $checked = BooleanProp::from($checked, false, 'dropdown.checkbox-item', 'checked');
+    $disabled = BooleanProp::from($disabled, false, 'dropdown.checkbox-item', 'disabled');
 
     // The layer holds the value: without `optimistic` this item keeps its own
     // `x-data="{ on }"`. With it, the
@@ -110,6 +120,9 @@
     // an unknown name to undefined rather than erroring: the checkmark would
     // simply never appear, on a control whose entire job is showing that state.
     $stateExpr = $optimisticConfig === null ? 'on' : 'value';
+    // The keys of the shortcut hint, one text or a list (Support\KeyShortcuts::hintKeys()),
+    // drawn as one line, a space between the keys.
+    $shortcutText = implode(' ', \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut));
 @endphp
 
 @if($optimisticConfig)
@@ -135,7 +148,7 @@
     @endif
     aria-checked="{{ $checkedBool ? 'true' : 'false' }}"
     @if($disabled) aria-disabled="true" @endif
-    {{ $attributes->class(['wk-touch-row', $classes, $disabledClasses]) }}
+    {{ $attributes->except(['role', 'tabindex', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $disabledClasses])) }}
 >
     {{-- Checkbox box — a bordered square that is ALWAYS visible (mirrors the
          radio-item's always-visible circle), filled with the accent + a
@@ -154,8 +167,8 @@
 
     {{ $slot }}
 
-    @if($shortcut)
-        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcut }}</span>
+    @if($shortcutText !== '')
+        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcutText }}</span>
     @endif
 </button>
 @if($optimisticConfig)

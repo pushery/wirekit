@@ -30,7 +30,8 @@
 
     $shape = WireKit::validateProp('flag', 'shape', (string) $shape, ['rect', 'square', 'circle']);
     $size = WireKit::validateProp('flag', 'size', (string) $size, ['xs', 'sm', 'md', 'lg', 'xl']);
-    $alt = (string) ($alt ?? '');
+    // Written into `alt` and `aria-label`, so markup is read as its text.
+    $alt = $alt instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($alt) : (string) ($alt ?? '');
 
     $format = $shape === 'rect' ? '4x3' : '1x1';
 
@@ -87,14 +88,12 @@
         @unless($attributes->has('loading')) loading="lazy" @endunless
         @unless($attributes->has('decoding')) decoding="async" @endunless
         data-wk-flag
-        {{ $attributes->except(['width', 'height'])->class([$classes]) }}
-    />
-@else
+        {{ $attributes->except(['width', 'height'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
+    />@else
     {{-- The same box as the flag it stands in for, so a row of countries keeps its alignment
          when one flag is missing. It is decorative unless the flag was given a name. --}}
     <span
         @if ($alt !== '') role="img" aria-label="{{ $alt }}" @else aria-hidden="true" @endif
         data-wk-flag
-        {{ $attributes->class([$classes, 'bg-[var(--color-wk-bg-muted)]']) }}
-    ></span>
-@endif
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'bg-[var(--color-wk-bg-muted)]'])) }}
+    ></span>@endif

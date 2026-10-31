@@ -43,7 +43,7 @@
 
     // Blade hands `minor-units="false"` through as the STRING "false", which is truthy —
     // so `minor-units="false"` does not silently read amounts as cents.
-    $minorUnits = BooleanProp::from($minorUnits, false);
+    $minorUnits = BooleanProp::from($minorUnits, false, 'cart-summary', 'minorUnits');
 
     // An empty string is no amount yet, the value of a field nobody has filled, and hides its row
     // as null does rather than standing empty beside its label.
@@ -55,13 +55,13 @@
     // "Free" is a statement about money, so it is made only for a shipping cost that is a number
     // and zero. A value that is no number goes on to `price`, which reports it while developing and
     // leaves it out in production: read as a number it would be 0, and the summary would promise
-    // free shipping for "on request".
+    // free shipping for "on request". The report is `price`'s, so this read names no prop.
     $shippingFigure = NumericProp::orNull($shipping);
     $freeShipping = $shippingFigure !== null && (float) $shippingFigure === 0.0;
 
     // Clamped rather than trusted: an invalid level must never reach the tag, because
     // `<h9>` is not a heading to any reader and the failure is silent.
-    $levelValue = (int) $level;
+    $levelValue = \Pushery\WireKit\Support\NumericProp::int($level, 0, 'cart-summary', 'level');
     $levelValue = $levelValue >= 1 && $levelValue <= 6 ? $levelValue : 2;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list auto-derived from
@@ -98,8 +98,8 @@
 
 <section
     data-wk-cart-summary
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
-    {{ $attributes->class([$classes]) }}
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     <h{{ $levelValue }} data-wk-prose-skip class="{{ $headingClasses }}">{{ $label }}</h{{ $levelValue }}>
 
@@ -146,7 +146,10 @@
         @endif
 
         {{-- Rows the application adds — a gift card, a second tax rate, a deposit. They sit
-             BEFORE the rule, because the rule is what separates the parts from the whole. --}}
+             BEFORE the rule, because the rule is what separates the parts from the whole. Each is a
+             `data-list.item`, rendered before this list and so without it above, and it takes the
+             summary layout from this component (Support\AwareProp), so it stands in the same columns
+             as the rows above without an attribute of its own. --}}
         {{ $slot }}
     </x-wirekit::data-list>
 

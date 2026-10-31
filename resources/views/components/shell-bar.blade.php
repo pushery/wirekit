@@ -75,6 +75,12 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('shell-bar', $attributes->getAttributes());
 
+    // `true`, `false` or `top`. Another word is reported (Support\StrictnessGate) and draws the
+    // rule below, as `true` does; a word such as `yes` or `0` reads as the switch it names.
+    if (is_string($rule) && trim($rule) !== '' && \Pushery\WireKit\Support\BooleanProp::orNull($rule) === null) {
+        $rule = \Pushery\WireKit\WireKit::validateProp('shell-bar', 'rule', $rule, ['true', 'false', 'top']);
+    }
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `rule="false"` would otherwise KEEP the rule. Normalize against each prop's
     // own default so a cast never engages a mode that was meant off.
@@ -87,8 +93,8 @@
     // only answers whether there is a rule at all.
     $ruleOnTop = $rule === 'top';
     $hasRule = $ruleOnTop || BooleanProp::from($rule, true);
-    $sticky = BooleanProp::from($sticky, false);
-    $bleed = BooleanProp::from($bleed, false);
+    $sticky = BooleanProp::from($sticky, false, 'shell-bar', 'sticky');
+    $bleed = BooleanProp::from($bleed, false, 'shell-bar', 'bleed');
 
     $paddingClasses = match (WireKit::validateProp('shell-bar', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl'])) {
         'none' => '',
@@ -177,7 +183,7 @@
          the stylesheet cannot tell them apart from position alone: in a collapsible column the
          foot zone is not the last child — the fold control is. --}}
     @if($ruleOnTop) data-wk-rule-top @endif
-    {{ $attributes->class([$classes, $paddingClasses, $alignClasses, $ruleClasses, $stickyClasses, $bleedClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $paddingClasses, $alignClasses, $ruleClasses, $stickyClasses, $bleedClasses])) }}
 >
     {{-- min-w-0 is load-bearing: a flex item's automatic minimum size is its content, so a
          long title would push the `end` cluster off the bar instead of truncating. With it,
@@ -201,7 +207,7 @@
          wheel, and by Tab, which scrolls each item into view as it takes focus. That last one
          is why this is not a trade against the keyboard: where the strip holds links, they are
          the tab stops; where it holds text, `label` gives the region its own. --}}
-    @isset($start)
+    @if(\Pushery\WireKit\Support\SlotContent::given($start ?? null))
         {{-- The pinned leading cluster, and it exists because the cluster beside it scrolls.
              A hamburger, a back arrow or a workspace mark has to stay put — put one in the
              default slot and it scrolls away with the tabs the moment the bar overflows,
@@ -215,10 +221,10 @@
              `gap` on both sides of it. The heading beside it then carries a phantom indent
              that nothing in the markup accounts for: one gap's width to the right of the
              text beneath it. --}}
-        <div {{ \Pushery\WireKit\Support\SlotAttributes::of($start)->class('flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]') }}>
+        <div {{ \Pushery\WireKit\Support\SlotAttributes::of($start)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller(\Pushery\WireKit\Support\SlotAttributes::of($start), 'flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]')) }}>
             {{ $start }}
         </div>
-    @endisset
+    @endif
     <div
         {{-- The KEYBOARD half is unconditional. Behind a `label` check it would tie a
              WCAG 2.1.1 obligation to a cosmetic prop: the strip always carries
@@ -255,19 +261,19 @@
              comments before it looks, so it answers the question being asked. --}}
         @if(filled($label) && $slot->hasActualContent())
             role="group"
-            aria-label="{{ $label }}"
+            aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}"
         @endif
         tabindex="{{ $slot->hasActualContent() ? '0' : '-1' }}"
         @class([
-            'wk-shell-bar-strip flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',
-            // `overflow-x: auto` clips the block axis too, and a link fills the strip's height, so its
+            'wk-shell-bar-strip relative flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',
+            // `overflow-x: auto` clips the block axis too, and a link fills the height of the strip, so its
             // focus ring would lie outside the strip above and below it, and at the far edge of the first
             // and the last link. Padding as wide as the farthest a ring reaches (its width plus its
-            // offset, which a button's ring has), given back by the negative margin, keeps every
+            // offset, which the ring of a button has), given back by the negative margin, keeps every
             // control where it was and shows its whole ring; the scroll padding stops a control the
             // focus scrolls into view that far short of the edge.
             '-m-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]' => $paddingClasses !== '',
-            // The bar's own inline padding is what absorbs the margin at the strip's two ends. A bar
+            // The inline padding of the bar itself absorbs the margin at the two ends of the strip. A bar
             // without padding has none, so there the strip keeps the room above and below only and
             // ends where the bar ends, rather than reaching past both of its edges.
             '-my-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]' => $paddingClasses === '',
@@ -276,7 +282,7 @@
             // dead CSS, and keeping the two together means one condition to read.
             'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $slot->hasActualContent(),
             // Grows to fill, so a child that asks for the full width gets it — a workspace
-            // brand in a rail's head is the case. NOT applied under `align="center"`, where
+            // brand in the head of a rail is the case. NOT applied under `align="center"`, where
             // the whole point is that the cluster is narrower than the bar and sits in the
             // middle of it. Under `start` and `between` it changes nothing visible: a cluster
             // already pinned to the leading edge looks the same whether or not it grows, and
@@ -284,23 +290,23 @@
             'flex-1' => $align !== 'center',
             // One ring color, not a second one reaching for `--color-wk-rail-ring`: two
             // arbitrary-value ring utilities on one element are the same specificity, so
-            // which one won would come down to the order the developer's build emits them
-            // in, and the focus ring would change color between projects. `.wk-rail`
+            // which one won would come down to the order in which the build of an application emits
+            // them, and the focus ring would change color between projects. `.wk-rail`
             // re-points `--color-wk-ring` to `--color-wk-rail-ring` for its whole subtree,
-            // so the single ring above resolves to the rail's color inside a rail and to
+            // so the single ring above resolves to the color of the rail inside a rail and to
             // the page ring everywhere else.
         ])
     >
         {{ $slot }}
     </div>
-    @isset($end)
+    @if(\Pushery\WireKit\Support\SlotContent::given($end ?? null))
         {{-- The trailing cluster. `shrink-0` so actions keep their size and the
              title gives way first — the opposite is a bar whose buttons squash
              into unreadable slivers while a heading nobody needs in full stays
              intact. Its attributes reach the wrapper for the same reason the leading
              cluster's do — the two halves of one bar should not answer differently. --}}
-        <div {{ \Pushery\WireKit\Support\SlotAttributes::of($end)->class('flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]') }}>
+        <div {{ \Pushery\WireKit\Support\SlotAttributes::of($end)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller(\Pushery\WireKit\Support\SlotAttributes::of($end), 'flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]')) }}>
             {{ $end }}
         </div>
-    @endisset
+    @endif
 </div>

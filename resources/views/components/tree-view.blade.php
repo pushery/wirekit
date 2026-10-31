@@ -46,7 +46,7 @@
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
-    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
 @endphp
 
 {{-- No x-cloak needed — tree has no hidden/shown toggle; Alpine only handles keyboard nav --}}
@@ -59,13 +59,13 @@
          The caller's own name wins in either form; the catalog default is a floor rather than
          a preference. Unlike a landmark, a tree has no uniqueness rule, so a shared default
          name costs nothing that an unnamed tree does not cost more. --}}
-    @if(filled($label))
-        aria-label="{{ $label }}"
+    @if(filled($label) && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby'))
+        aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}"
     @elseif(! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby'))
         aria-label="{{ __('wirekit::Tree') }}"
     @endif
     x-data="wirekitTreeView()"
-    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
+    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     {{-- Roving tabindex: the factory's init seeds one tab stop, and this keeps it under
          whichever row focus reached last — by arrow key, by mouse, or by a developer's own
          .focus(). focusin bubbles, so one binding on the tree covers every node. --}}

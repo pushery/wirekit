@@ -28,6 +28,13 @@
     // a new tab when it does not: there the automatic announcement is wrong half the time, and
     // the call site states what the reader gets instead.
     'announceNewTab' => true,
+    // Words that are a link only for a reader who may follow it: an order or a customer named
+    // on another screen, whose own page answers "not found" to a reader without the right.
+    // Without an `href`, `true` draws the slot as text, a `<span>` that keeps the caller's
+    // attributes and the size, and has neither the link's color, underline, pointer and focus
+    // ring nor the attributes only an anchor reads. `false` keeps the `<a>` without an `href`
+    // this component has always drawn, which a script can give its address later.
+    'plainWithoutHref' => false,
     'underline' => 'always',
     'as' => 'a',
     'scope' => null,
@@ -47,8 +54,9 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $external = BooleanProp::from($external, false);
-    $announceNewTab = BooleanProp::from($announceNewTab, true);
+    $external = BooleanProp::from($external, false, 'link', 'external');
+    $announceNewTab = BooleanProp::from($announceNewTab, true, 'link', 'announceNewTab');
+    $plainWithoutHref = BooleanProp::from($plainWithoutHref, false, 'link', 'plainWithoutHref');
 
     $variantClasses = match (WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted'])) {
         'default' => 'text-[color:var(--color-wk-accent-text)]',
@@ -126,6 +134,31 @@
     // `as` is interpolated straight into the opening tag, and Blade's escaping does
     // not stop a space or an `=` — so an unvalidated value renders as an attribute.
     $as = \Pushery\WireKit\WireKit::tagName('link', (string) $as);
+
+    // Only an anchor has an address to lose: `as="button"` is an action and never had one.
+    $plainWords = $plainWithoutHref && $href === null && strtolower($as) === 'a';
+    $plainClasses = '';
+    $plainAttributes = $attributes;
+
+    if ($plainWords) {
+        // The words keep their size and their breaking, which shape the line they stand in, and
+        // nothing that marks a link. A block of its own, so a personalization of the link's look
+        // leaves them alone, and one of `plain` reaches them.
+        $plainClasses = WireKit::resolveClasses('link', 'plain', implode(' ', array_filter([
+            '[overflow-wrap:break-word]',
+            $sizeClasses,
+        ])), $scope);
+
+        // What only an anchor reads goes with the anchor: its own attributes, and the two
+        // Livewire directives that read its `href`. A name goes too, unless the caller gave the
+        // words a role: ARIA prohibits naming an element that has none (axe `aria-prohibited-attr`).
+        $plainAttributes = $attributes
+            ->except([
+                'target', 'rel', 'download', 'hreflang', 'ping', 'referrerpolicy', 'type',
+                ...($attributes->has('role') ? [] : ['aria-label', 'aria-labelledby', 'aria-roledescription']),
+            ])
+            ->whereDoesntStartWith(['wire:navigate', 'wire:current']);
+    }
 @endphp
 
 @php
@@ -137,10 +170,15 @@
         ? '<svg class="inline-block h-3.5 w-3.5 ms-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>'
         : '';
     $newTabHint = $opensNewTab && $announceNewTab ? '<span class="relative"><span class="sr-only">'.e(__('wirekit::(opens in new tab)')).'</span></span>' : '';
+
+    // Each branch ends on its closing tag with `@else` or `@endif` right after it, for the same
+    // reason: a line break between them would be text after every link this component renders.
 @endphp
 
+@if($plainWords)
+<span {{ $plainAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$plainClasses])) }}>{{ $slot }}</span>@else
 <{{ $as }} data-wk-prose-skip
-    @if($href) href="{{ $href }}" @endif
+    @if($href !== null) href="{{ $href }}" @endif
     @if($external) target="_blank" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{-- `type` on a button, and ONLY on a button.
@@ -156,5 +194,5 @@
          `type="submit"`. Reading the bag and excluding `type` from it emits exactly one
          attribute, and the caller's value wins when they gave one. --}}
     @if($as === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
-    {{ $attributes->except($as === 'button' ? ['rel', 'type'] : ['rel'])->class([$classes]) }}
->{{ $slot }}{!! $extLink !!}{!! $newTabHint !!}</{{ $as }}>
+    {{ $attributes->except($as === 'button' ? ['rel', 'type'] : ['rel'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
+>{{ $slot }}{!! $extLink !!}{!! $newTabHint !!}</{{ $as }}>@endif

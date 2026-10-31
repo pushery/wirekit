@@ -70,10 +70,13 @@ final class DomId
      */
     public static function unique(?string $preferred, string $fallbackPrefix): string
     {
+        // An id holds no whitespace (valid()), so a name such as `first name` makes `first-name`.
+        $preferred = self::valid($preferred);
+
         // No id and no name → count instead of randomize. Unique by construction
         // either way; only the counted one survives a re-render, which is what a
         // `label[for]` and a Livewire morph both need.
-        if ($preferred === null || $preferred === '') {
+        if ($preferred === null) {
             $seen = self::$counters[$fallbackPrefix] ?? 0;
             self::$counters[$fallbackPrefix] = $seen + 1;
 
@@ -108,6 +111,8 @@ final class DomId
      */
     public static function distinct(string $id): string
     {
+        $id = self::valid($id) ?? $id;
+
         if (! BooleanProp::from(config('wirekit.a11y.dedupe_ids', true), true)) {
             return $id;
         }
@@ -116,6 +121,23 @@ final class DomId
         self::$wholeIds[$id] = $seen + 1;
 
         return $seen === 0 ? $id : $id.'-'.($seen + 1);
+    }
+
+    /**
+     * An id without whitespace, or null for none. HTML forbids ASCII whitespace in an id, and a list
+     * of ids such as `aria-describedby` splits on it: a field named `first name` would be described
+     * by `first` and `name-hint`, ids no element carries. Each run of it becomes a hyphen, and an id
+     * that is empty or whitespace alone is none.
+     */
+    public static function valid(?string $id): ?string
+    {
+        if ($id === null) {
+            return null;
+        }
+
+        $valid = (string) preg_replace('/[\t\n\f\r ]+/', '-', trim($id, "\t\n\f\r "));
+
+        return $valid === '' ? null : $valid;
     }
 
     /** Reset the per-request registry (called after each request + by WireKit::flush()). */

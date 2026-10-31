@@ -1,3 +1,5 @@
+import { formatCount } from './locale-number.js';
+
 /**
  * Pick a translated plural form in the browser, for a value that changes there.
  *
@@ -22,6 +24,16 @@
  * Laravel's exact-value syntax survives this: `{0} no reactions` renders at
  * sample 0, and an exact match is tried before any category is considered.
  *
+ * A map may name the language its forms follow under `rule`, where that is not
+ * the page's: the package's English line on a page in a language the package
+ * ships no catalog for has the forms of English, and a Russian rule would give
+ * 21 the singular. The rule chooses the form only; where the number is written
+ * as the page writes one, `pluralizeGrouped()`, the page's locale writes it.
+ *
+ * The number goes in as digits. A sentence a screen reader speaks reads a bare
+ * `12500` right in every voice, where `12.500` can come out as twelve point five
+ * hundred; text a reader sees takes `pluralizeGrouped()`.
+ *
  * @param {Object} phrases  sample count (as a key) -> template containing `:count`
  * @param {number} count    the number to render
  * @param {string} locale   BCP-47 tag; the application's locale, not the browser's
@@ -29,6 +41,21 @@
  */
 export function pluralize(phrases, count, locale) {
     return pluralTemplate(phrases, count, locale).replace(':count', String(count));
+}
+
+/**
+ * `pluralize()` for text a reader sees: the count grouped as the page writes one,
+ * "12.500 Zeilen ausgewählt" on a German page, in the application's own marks
+ * where it has them, as the server writes a count beside it.
+ *
+ * @param {Object} phrases  sample count (as a key) -> template containing `:count`
+ * @param {number} count    the number to render
+ * @param {string} locale   BCP-47 tag; the application's locale, not the browser's
+ * @param {{group: string, decimal: string}|null} [marks] the application's own marks, where it has them
+ * @returns {string}
+ */
+export function pluralizeGrouped(phrases, count, locale, marks = null) {
+    return pluralTemplate(phrases, count, locale).replace(':count', formatCount(count, locale, marks));
 }
 
 /**
@@ -58,16 +85,17 @@ export function pluralTemplate(phrases, count, locale) {
         return phrases[String(count)];
     }
 
-    const keys = Object.keys(phrases);
+    const keys = Object.keys(phrases).filter((key) => key !== 'rule');
 
     if (keys.length === 0) {
         return ':count';
     }
 
+    const rule = typeof phrases.rule === 'string' && phrases.rule !== '' ? phrases.rule : locale;
     let rules;
 
     try {
-        rules = new Intl.PluralRules(locale || 'en');
+        rules = new Intl.PluralRules(rule || 'en');
     } catch {
         // An unusable locale tag must not take the announcement down with it.
         rules = new Intl.PluralRules('en');

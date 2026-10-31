@@ -1,4 +1,6 @@
 import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.js';
+import { namesSomething, sameName } from '../utils/same-name.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 /**
  * App rail — the expanded/collapsed state of the module rail.
@@ -204,7 +206,7 @@ export default function wirekitAppRail(config = {}) {
                 // that is nearly all of them. With an id it addresses only that rail,
                 // so a shell that renders two can drive each separately.
                 const target = event?.detail?.id;
-                if (target && target !== this.$el?.id) {
+                if (namesSomething(target) && ! sameName(target, this.$el?.id)) {
                     return;
                 }
 
@@ -293,7 +295,7 @@ export default function wirekitAppRail(config = {}) {
 
                 this._wideFallback = setTimeout(() => {
                     this.wide = this.expanded;
-                }, longest + 80);
+                }, timerDelay(longest + 80));
             } else {
                 // Leaving is instant, and that is the half that was always right.
                 clearTimeout(this._wideFallback);

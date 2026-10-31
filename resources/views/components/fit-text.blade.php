@@ -27,7 +27,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $wrap = BooleanProp::from($wrap, true);
+    $wrap = BooleanProp::from($wrap, true, 'fit-text', 'wrap');
 
     // The floor goes into a style attribute, so only a length gets there; anything else is
     // reported, and the token's floor applies.

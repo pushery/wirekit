@@ -1,7 +1,10 @@
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { sanitizeMinimapHtml } from '../utils/sanitize-minimap-html.js';
 import { accessibleText } from '../utils/accessible-text.js';
+import { cutGraphemes } from '../utils/graphemes.js';
 import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
+import { sameName } from '../utils/same-name.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 /**
  * Reading-minimap — every-item density overview + literal page-preview
@@ -264,7 +267,7 @@ export default (options = {}) => ({
         matches.forEach((el) => {
             const rect = el.getBoundingClientRect();
             const top = rect.top - hostRect.top + hostScrollTop;
-            const label = el.dataset?.minimapLabel || accessibleText(el).slice(0, 80);
+            const label = el.dataset?.minimapLabel || cutGraphemes(accessibleText(el), 80);
             // heightFraction — only used in stripe-mode `itemStyle="block"`.
             // The Blade template reads it inline to render each stripe as a
             // skeleton-style rectangle whose height matches the source
@@ -869,7 +872,7 @@ export default (options = {}) => ({
             if (e.key === this._bookmarkKey) this._readBookmark();
         };
         this._bookmarkEventHandler = (e) => {
-            if (e.detail?.key === this._bookmarkKey) this._readBookmark();
+            if (sameName(e.detail?.key, this._bookmarkKey)) this._readBookmark();
         };
         window.addEventListener('storage', this._bookmarkStorageHandler);
         window.addEventListener('wirekit:reading-bookmark:saved', this._bookmarkEventHandler);
@@ -946,7 +949,7 @@ export default (options = {}) => ({
                 if (!collapsed) lastPx = px;
                 return {
                     id: h.id,
-                    label: accessibleText(h).slice(0, 18) + (accessibleText(h).length > 18 ? '…' : ''),
+                    label: cutGraphemes(accessibleText(h), 18, '…'),
                     fraction,
                     collapsed,
                 };
@@ -1149,7 +1152,7 @@ export default (options = {}) => ({
             if (this._idleTimer) clearTimeout(this._idleTimer);
             this._idleTimer = setTimeout(() => {
                 this.idle = true;
-            }, delay);
+            }, timerDelay(delay));
         };
         this._idleResetHandler = () => {
             if (this.idle) this.idle = false;

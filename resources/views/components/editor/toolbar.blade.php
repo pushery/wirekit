@@ -72,6 +72,10 @@
         'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed disabled:pointer-events-none',
     ]);
 
+    // A Collection is read as its list, and a text, a number or a switch as no commands, reported
+    // (Support\ListProp).
+    $commands = \Pushery\WireKit\Support\ListProp::renumbered($commands, 'editor.toolbar', 'commands');
+
     // History buttons whose availability gates :disabled. The reactive guards
     // (canUndo()/canRedo()) live in the wirekitEditor Alpine component.
     $historyGuard = ['undo' => 'canUndo()', 'redo' => 'canRedo()'];
@@ -113,12 +117,12 @@
      cmd() and isActive() in. --}}
 <div
     role="toolbar"
-    aria-label="{{ __('wirekit::Editor commands') }}"
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Editor commands') }}" @endunless
     x-on:keydown.arrow-right.prevent="focusToolbarCommand($event, 'next')"
     x-on:keydown.arrow-left.prevent="focusToolbarCommand($event, 'prev')"
     x-on:keydown.home.prevent="focusToolbarCommand($event, 'first')"
     x-on:keydown.end.prevent="focusToolbarCommand($event, 'last')"
-    {{ $attributes->class([$toolbarClasses]) }}
+    {{ $attributes->except('role')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$toolbarClasses])) }}
 >
     @foreach($commands as $commandKey => $command)
         @if($command === '|')
@@ -155,6 +159,8 @@
                              replaced stood at 2.85:1 there. `inset-ring` keeps the focus ring outside: it writes its
                              own shadow rather than the ring's. The floor holds the edge under a
                              theme whose border width is 0px. --}}
+                        {{-- Not pressed until the editor exists and reads the selection. --}}
+                        aria-pressed="false"
                         :aria-pressed="{{ $active }} ? 'true' : 'false'"
                         :class="{{ $active }} ? 'bg-[var(--color-wk-bg-active)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : ''"
                     @endif

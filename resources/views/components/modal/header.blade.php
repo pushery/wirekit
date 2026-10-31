@@ -17,7 +17,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $close = BooleanProp::from($close, true);
+    $close = BooleanProp::from($close, true, 'modal.header', 'close');
 
     // Header classes — top section with title text and bottom border.
     // When the auto close-X is active, the header becomes a flex row so the
@@ -55,8 +55,16 @@
     // glyph is inset by the same distance from both edges. A negative margin into the end
     // padding would read right only while the button was vertically centered; anchored to
     // the top, it would put the glyph closer to the side than to the top.
+    // The title's first line stands on the middle of the close button. The button is the taller of
+    // the two at a one-line title, so the title moves down by half the difference between the
+    // button and its own line height (`1lh`); a line taller than the button moves the button down
+    // instead. A title of several lines keeps the button in the top corner, on the middle of the
+    // first line.
+    $titleClasses = $close ? 'min-w-0 flex-1 pt-[max(0px,calc((var(--size-wk-sm)_-_1lh)/2))]' : 'min-w-0 flex-1';
+
     $closeClasses = WireKit::resolveClasses('modal.header', 'close', implode(' ', [
         'relative shrink-0',
+        'mt-[max(0px,calc((1lh_-_var(--size-wk-sm))/2))]',
         'inline-flex items-center justify-center',
         'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)]',
         "before:absolute before:left-1/2 before:top-1/2 before:h-[var(--size-wk-touch-target)] before:w-[var(--size-wk-touch-target)] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']",
@@ -88,14 +96,14 @@
      render time — but the parent has to know whether a header exists at all, or it
      would point aria-labelledby at an id nothing carries and leave the dialog
      nameless with no error. --}}
-<div data-wk-modal-header {{ $attributes->class([$classes]) }}>
+<div data-wk-modal-header {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{-- Title wrapper — bears the aria-labelledby target ID. The id is read
          from the parent panel's data-wk-title-id to complete the dialog's
          aria-labelledby chain. min-w-0 + flex-1 allow long titles to wrap
          without pushing the close button off the right edge. --}}
     <div
         x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
-        class="min-w-0 flex-1"
+        class="{{ $titleClasses }}"
     >
         {{ $slot }}
     </div>

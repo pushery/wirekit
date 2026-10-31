@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Support;
 
 use JsonException;
+use JsonSerializable;
+use UnitEnum;
 
 /**
  * A PHP value, encoded so an Alpine directive can read it under a strict
@@ -123,6 +125,9 @@ final class AlpinePayload
     /** The named references that decode to a quote, a backslash or a control character. */
     private const NAMES_A_JSON_STRING_CANNOT_HOLD = ['quot', 'QUOT', 'bsol', 'Tab', 'NewLine'];
 
+    /** The flags both encoders write with; the class comment gives the reason for each. */
+    private const FLAGS = JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE;
+
     /**
      * `mixed`, because encoding any value a component hands an Alpine directive is the whole
      * job: a string, a number, a list, a map. What JSON cannot represent throws.
@@ -131,10 +136,7 @@ final class AlpinePayload
      */
     public static function from(mixed $value): string
     {
-        $literal = json_encode(
-            $value,
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE
-        );
+        $literal = self::encode($value);
 
         // Most payloads carry neither an escape nor an ampersand, and then there is nothing to
         // rewrite.
@@ -196,10 +198,7 @@ final class AlpinePayload
      */
     public static function json(mixed $value): string
     {
-        $json = json_encode(
-            $value,
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE
-        );
+        $json = self::encode($value);
 
         if (! str_contains($json, '&')) {
             return $json;
@@ -244,6 +243,68 @@ final class AlpinePayload
     public static function string(mixed $value): string
     {
         return self::from((string) $value);
+    }
+
+    /**
+     * The value as JSON, with the flags both encoders share.
+     *
+     * JSON has no NaN and no infinity, and an application's numbers can hold one: a rate of change
+     * divided with `fdiv()` by a base of zero, or the mean of nothing. Such a number is written as
+     * `null`, as JavaScript's own `JSON.stringify()` writes it, which a chart draws as a gap and a
+     * script reads as no value. Only an encode that failed on one is repeated with them replaced,
+     * so a payload without such a number is written by the first encode alone, and any other
+     * failure throws.
+     *
+     * `mixed`, for the reason the two encoders take it: the value is whatever the component carries.
+     *
+     * @throws JsonException when the value cannot be represented as JSON
+     */
+    private static function encode(mixed $value): string
+    {
+        try {
+            return json_encode($value, self::FLAGS);
+        } catch (JsonException $failure) {
+            if ($failure->getCode() !== JSON_ERROR_INF_OR_NAN) {
+                throw $failure;
+            }
+
+            return json_encode(self::finite($value), self::FLAGS);
+        }
+    }
+
+    /**
+     * The value with each number that is not finite as `null`, through lists, maps, what a
+     * `JsonSerializable` gives, and the public properties of any other object, which is what
+     * `json_encode()` writes of one. An enum stays as it is.
+     *
+     * Public for `tool-call`, which writes its arguments as JSON for a reader rather than a
+     * script, so that one such number there is written the way it is everywhere else. This class
+     * and `tool-call` call it only after `json_encode()` failed on such a number, and the encoder
+     * reports that failure only for a value it can otherwise write: a resource anywhere in the
+     * value is reported as an unsupported type instead, so none reaches this walk.
+     *
+     * @param  array<array-key, mixed>|object|string|int|float|bool|null  $value
+     * @return array<array-key, mixed>|object|string|int|float|bool|null
+     */
+    public static function finite(array|object|string|int|float|bool|null $value): array|object|string|int|float|bool|null
+    {
+        if (is_float($value)) {
+            return is_finite($value) ? $value : null;
+        }
+
+        if (is_array($value)) {
+            return array_map(self::finite(...), $value);
+        }
+
+        if ($value instanceof JsonSerializable) {
+            return self::finite($value->jsonSerialize());
+        }
+
+        if (is_object($value) && ! $value instanceof UnitEnum) {
+            return (object) array_map(self::finite(...), get_object_vars($value));
+        }
+
+        return $value;
     }
 
     /**

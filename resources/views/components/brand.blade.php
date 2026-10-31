@@ -73,12 +73,21 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('brand', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
     // `aspect-ratio` when the caller declared one, and a square floor either way. Both are
     // inline rather than utility classes: the ratio is caller data, and a Tailwind class
     // cannot be built from a runtime value.
+    // One value for each `aspect-ratio`, or none: a text that carries a declaration of its own
+    // would style the mark with it (Support\CssValue), and is reported.
+    $logoAspect = \Pushery\WireKit\Support\CssValue::prop($logoAspect, 'brand', 'logoAspect');
+    $mobileLogoAspect = \Pushery\WireKit\Support\CssValue::prop($mobileLogoAspect, 'brand', 'mobileLogoAspect');
     $wkLogoAspect = $logoAspect ? 'aspect-ratio: '.e($logoAspect).'; ' : '';
     $wkMobileAspect = ($mobileLogoAspect ?: $logoAspect)
         ? 'aspect-ratio: '.e($mobileLogoAspect ?: $logoAspect).'; '
@@ -133,7 +142,7 @@
     // on specificity (0,2,0) against `.{prose-class} a` (0,1,1).
     // Read like every boolean prop, so an unbound `truncate="false"` is false. The mark keeps its
     // size either way: in a shrinking root it is the name that gives, never the logo.
-    $truncate = BooleanProp::from($truncate, false);
+    $truncate = BooleanProp::from($truncate, false, 'brand', 'truncate');
     $wkLogoShrinkClass = $truncate ? 'shrink-0 ' : '';
 
     $classes = WireKit::resolveClasses('brand', 'base', implode(' ', [
@@ -169,6 +178,16 @@
     // default). Empty `name` + empty slot = logo-only; presence of either
     // means an accessible name is already provided by the visible text.
     $hasVisibleName = $name !== null || $slot->hasActualContent();
+
+    // An empty logo address, or one of white space, is no logo, so the brand is drawn without it
+    // rather than with the sign of a broken image (Support\UrlProp::source()). A logo slot is the
+    // caller's markup and stays as it is.
+    if (! $logo instanceof \Illuminate\View\ComponentSlot) {
+        $logo = \Pushery\WireKit\Support\UrlProp::source($logo);
+    }
+    $mobileLogo = \Pushery\WireKit\Support\UrlProp::source($mobileLogo);
+    $darkLogo = \Pushery\WireKit\Support\UrlProp::source($darkLogo);
+
     // Only a LINK needs a name. Without one the mark is presentation inside something that is
     // named already, and a generic element does not take a name anyway.
     $logoOnlyNeedsLabel = $isLink && $logo && ! $hasVisibleName && ! $attributes->has('aria-label');
@@ -216,7 +235,7 @@
     @if($isLink) href="{{ $href }}" @endif
     @if($logoOnlyNeedsLabel) aria-label="{{ __('wirekit::Home') }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes]) }}
+    {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     @if($logo instanceof \Illuminate\View\ComponentSlot)
         {{-- A NAMED slot `<x-slot:logo>...</x-slot:logo>` was passed

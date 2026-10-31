@@ -12,7 +12,8 @@
  *   - `data-wk-flash-key`: a value that changes with every change to report, a counter or a time.
  *     A new key plays the flash again, whatever the tone was before.
  *   - `data-wk-flash-leave`: the row is on its way out. It is drawn once more, flashes, and is
- *     taken out of the page when the flash ends.
+ *     taken out of the page when the flash ends. The attribute arriving plays the flash by itself,
+ *     so a removal needs no new key.
  *
  * Why an attribute plus an observer, the reasoning `x-wk-indeterminate` gives: the value comes
  * from the server, a Livewire render writes it onto the element that is already there, and Alpine
@@ -112,6 +113,7 @@ export function playFlash(el) {
 export function registerFlashDirective(Alpine) {
     Alpine.directive('wk-flash', (el, directive, { cleanup }) => {
         let lastKey = el.getAttribute(WK_FLASH_KEY_ATTRIBUTE);
+        let wasLeaving = el.hasAttribute(WK_FLASH_LEAVE_ATTRIBUTE);
 
         if (lastKey !== null && lastKey !== '') {
             playFlash(el);
@@ -123,12 +125,19 @@ export function registerFlashDirective(Alpine) {
 
         const observer = new MutationObserver(() => {
             const key = el.getAttribute(WK_FLASH_KEY_ATTRIBUTE);
+            const leaving = el.hasAttribute(WK_FLASH_LEAVE_ATTRIBUTE);
+            const newKey = key !== null && key !== '' && key !== lastKey;
 
-            // A new key is a new change. The tone alone changing without a new key reports nothing.
-            if (key !== null && key !== '' && key !== lastKey) {
-                lastKey = key;
+            // A new key is a new change, and so is the row starting to leave, with or without a
+            // new key: the render that removes a row marks it as leaving, and a removal that
+            // needed a key of its own besides would leave the row standing, unflashed, until the
+            // next render took it out. The tone alone changing reports nothing.
+            if (newKey || (leaving && ! wasLeaving)) {
+                if (newKey) lastKey = key;
                 playFlash(el);
             }
+
+            wasLeaving = leaving;
         });
 
         observer.observe(el, { attributes: true, attributeFilter: [WK_FLASH_KEY_ATTRIBUTE, WK_FLASH_LEAVE_ATTRIBUTE] });

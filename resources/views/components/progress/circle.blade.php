@@ -27,21 +27,30 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('progress.circle', $attributes->getAttributes());
 
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('progress.circle', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg', 'xl']);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $showValue = BooleanProp::from($showValue, false);
+    $showValue = BooleanProp::from($showValue, false, 'progress.circle', 'showValue');
 
     // A max that holds no positive number means "out of 100", as on radial-progress: a text
     // would throw in the arithmetic below, and zero or less would put aria-valuemax under
     // aria-valuemin.
-    $max = \Pushery\WireKit\Support\NumericProp::positive($max, 100);
+    $max = \Pushery\WireKit\Support\NumericProp::positive($max, 100, 'progress.circle', 'max');
+    // A maximum no integer holds is the default as well, so the circle and its `aria-valuemax`,
+    // which casts, agree.
+    $max = \Pushery\WireKit\Support\NumericProp::cast($max) === null ? 100 : $max;
 
     // Determine if indeterminate (no value provided)
     $isIndeterminate = $value === null;
+    // The value is read as PHP casts it, so a text with a unit keeps the number it starts with, and reported.
+    \Pushery\WireKit\Support\NumericProp::check($value, 'progress.circle', 'value');
     $clamped = $isIndeterminate ? 0 : max(0, min((float) $value, (float) $max));
     $percent = $max > 0 ? ($clamped / $max) * 100 : 0;
 
@@ -113,7 +122,7 @@
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp
 
-<div {{ $attributes->class([$wrapperClasses]) }}>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}>
     {{-- SVG circular progress indicator --}}
     <div class="relative {{ $dimensions }}">
         {{-- An accessible name is MANDATORY on anything carrying role="progressbar"
@@ -187,7 +196,7 @@
         {{-- Center value text (only when showValue and determinate) --}}
         @if($showValue && ! $isIndeterminate)
             <div class="absolute inset-0 flex items-center justify-center {{ $textSize }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums" aria-hidden="true">
-                {{ (int) $percent }}%
+                {{ \Pushery\WireKit\Support\LocalizedNumber::percent((float) (int) $percent, 0) }}
             </div>
         @endif
     </div>

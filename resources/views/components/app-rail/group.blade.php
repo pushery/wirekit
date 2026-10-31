@@ -24,7 +24,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('app-rail.group', $attributes->getAttributes());
 
-    $separated = BooleanProp::from($separated, false);
+    $separated = BooleanProp::from($separated, false, 'app-rail.group', 'separated');
 
     // One id for the heading, so the group can be named BY it rather than beside it.
     //
@@ -82,10 +82,10 @@
      knowledge of which mode the rail is in, which this component does not have. --}}
 <div
     @if(filled($label))
-        role="group"
-        aria-labelledby="{{ $labelId }}"
+        @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="group" @endunless
+        @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-labelledby="{{ $labelId }}" @endunless
     @endif
-    {{ $attributes->class([$classes, $separatorClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $separatorClasses])) }}
 >
     @if(filled($label))
         <div id="{{ $labelId }}" class="{{ $labelClasses }}">{{ $label }}</div>

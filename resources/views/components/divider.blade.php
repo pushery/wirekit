@@ -48,15 +48,15 @@
          one, so nothing emits the attribute twice. --}}
     <div
         @unless($attributes->has('role')) role="separator" @endunless
-        @if(! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endif
-        {{ $attributes->class([
+        @if(! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
             WireKit::resolveClasses('divider', 'base', implode(' ', [
                 'flex items-center',
                 'text-[length:var(--text-wk-sm)]',
                 'text-[color:var(--color-wk-text-muted)]',
                 'font-[family-name:var(--font-wk-sans)]',
             ]), $scope),
-        ]) }}
+        ])) }}
     >
         <span @class(['grow border-t', $borderColor])></span>
         <span class="shrink-0 px-[var(--space-wk-sm,0.5rem)]">{{ $label }}</span>
@@ -67,22 +67,22 @@
     <div
         @unless($attributes->has('role')) role="separator" @endunless
         aria-orientation="vertical"
-        {{ $attributes->class([
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
             WireKit::resolveClasses('divider', 'base', implode(' ', [
                 'self-stretch border-l',
                 $borderColor,
             ]), $scope),
-        ]) }}
+        ])) }}
     ></div>
 @else
     {{-- Horizontal divider (no label) --}}
     <hr data-wk-prose-skip
         @unless($attributes->has('role')) role="separator" @endunless
-        {{ $attributes->class([
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
             WireKit::resolveClasses('divider', 'base', implode(' ', [
                 'border-t border-b-0 border-l-0 border-r-0',
                 $borderColor,
             ]), $scope),
-        ]) }}
+        ])) }}
     />
 @endif

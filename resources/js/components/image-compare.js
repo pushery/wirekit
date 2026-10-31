@@ -1,4 +1,6 @@
+import { controlIsDisabled } from '../utils/fieldset-disabled.js';
 import { onFormReset } from '../utils/form-reset.js';
+import { observeServerValue, ownValues, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { watchCurrent } from '../utils/watch-current.js';
 
 /**
@@ -17,13 +19,19 @@ const DIRECT_DRAG_SLOP = 10;
  * Config is passed as an object through the Blade template's x-data attribute.
  *
  * @param {Object} config
- * @param {number} [config.value=50]             - Initial handle position (0-100)
+ * @param {number} [config.value]                - Initial handle position (0-100); without it, the
+ *                                                 root's `data-wk-server-value`, and 50 without that
  * @param {"horizontal"|"vertical"} [config.orientation="horizontal"] - Slider axis
  * @param {string|null} [config.wireModel=null]  - Livewire property name (for $wire.set)
  * @param {boolean} [config.wireLive=false]      - Whether wire:model has .live modifier
  */
 export default function wirekitImageCompare(config = {}) {
-    const start = Math.max(0, Math.min(100, Number(config.value ?? 50)));
+    // A handle position as a percentage, 0 to 100, and 50 without one.
+    const percent = (value) => Math.max(0, Math.min(100, Number(value ?? 50)));
+    const start = percent(config.value);
+    // The positions this slider hands to its property, so the answer to one is not taken for a
+    // position the server set (utils/server-value.js).
+    const own = ownValues();
 
     return {
         // Public state ───────────────────────────────────────────────
@@ -46,15 +54,66 @@ export default function wirekitImageCompare(config = {}) {
         // Puts the starting position back when the form is reset (utils/form-reset.js); the
         // hidden input follows its binding. Released in destroy().
         _stopFormReset: null,
+        _stopServerValue: null,
+        // The position a form reset returns to: the one the page started with, or the one the
+        // server rendered last.
+        _resetValue: start,
+        // A position the server set, which its property already holds.
+        _fromServer: null,
 
         init() {
+            // The position is not in `x-data`, so that the expression stays the same for every
+            // position: a Livewire morph that changed it would start the slider again, put the
+            // handle back where the request left it and end a drag under the reader's finger.
+            // `$root` is checked rather than assumed, as a unit harness hands a bare stub.
+            if (config.value === undefined && typeof this.$root?.getAttribute === 'function') {
+                const seed = this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE);
+
+                if (seed !== null && seed !== '' && ! Number.isNaN(Number(seed))) {
+                    this.value = percent(seed);
+                    this._resetValue = this.value;
+                }
+            }
+
             this._stopFormReset = onFormReset(this.$root, () => this.$refs?.hiddenInput, () => this._restore());
+
+            // A position the server sets reaches the handle, and becomes what a form reset returns
+            // to. The position on screen needs nothing, and neither does the answer to a move of the
+            // reader's: with `.live` the reader can be a drag further when it arrives, and Livewire
+            // leaves its property alone then too.
+            this._stopServerValue = observeServerValue(this.$root, (raw) => {
+                if (raw === '' || Number.isNaN(Number(raw))) {
+                    return;
+                }
+
+                const next = percent(raw);
+                this._resetValue = next;
+
+                const answered = this._wireModel !== null && own.answers(next);
+
+                if (answered || next === this.value) {
+                    return;
+                }
+
+                this._fromServer = next;
+                this.value = next;
+            });
 
             // If wire:model is present, entangle the Alpine value with the
             // Livewire property. Deferred mode (default) skips per-step network
             // round-trips; only the final value is pushed when drag ends.
             if (this._wireModel && this.$wire) {
                 watchCurrent(this, 'value', (v) => {
+                    // A position the server set is the property's already. Read once: the reader
+                    // can move the handle before this runs, and then the move is theirs.
+                    const fromServer = this._fromServer;
+                    this._fromServer = null;
+
+                    if (v === fromServer) {
+                        return;
+                    }
+
+                    own.note(v);
                     // Third arg `live` controls whether Livewire immediately
                     // issues a network roundtrip. For deferred bindings we pass
                     // false and let a blur/commit drive the sync.
@@ -65,11 +124,25 @@ export default function wirekitImageCompare(config = {}) {
 
         /** The starting position again after a form reset. */
         _restore() {
-            this.value = start;
+            this.value = this._resetValue;
+        },
+
+        /**
+         * Whether the handle is disabled, by the `disabled` prop or by a fieldset around it.
+         *
+         * Both are native buttons, so a disabled one leaves the tab order and takes no click. A
+         * press is another matter: whether a `pointerdown` still reaches a disabled button is up
+         * to the engine. So every gesture asks here first, and a locked slider stays where it is
+         * in all of them, a fieldset locked after the page loaded included.
+         */
+        _locked() {
+            return controlIsDisabled(this._sliderHandle(null));
         },
 
         // Step keyboard-driven value changes ──────────────────────────
         stepBy(delta) {
+            if (this._locked()) return;
+
             const next = Math.max(0, Math.min(100, this.value + delta));
             if (next !== this.value) {
                 this.value = next;
@@ -78,6 +151,10 @@ export default function wirekitImageCompare(config = {}) {
         },
 
         setValue(v) {
+            // Every key and every pointer position lands here, a drag that a fieldset locks
+            // halfway through included.
+            if (this._locked()) return;
+
             const next = Math.max(0, Math.min(100, Math.round(Number(v))));
             if (Number.isNaN(next)) return;
             if (next !== this.value) {
@@ -90,7 +167,7 @@ export default function wirekitImageCompare(config = {}) {
         // A click dispatched while a drag still runs is ignored. The click a press
         // produces comes after its pointerup has ended the drag, and lands here.
         onTrackClick(event) {
-            if (this._dragging) return;
+            if (this._dragging || this._locked()) return;
             this._setFromPointer(event);
         },
 
@@ -99,6 +176,9 @@ export default function wirekitImageCompare(config = {}) {
         // leaves the component bounds.
         startDrag(event) {
             event.preventDefault();
+
+            // A locked slider starts no drag, and no listener goes onto `document` for it.
+            if (this._locked()) return;
 
             // A finger or a pen may be starting a scroll. The figure's `touch-action` leaves
             // the page every swipe across the slider's axis, and the browser takes such a
@@ -260,6 +340,8 @@ export default function wirekitImageCompare(config = {}) {
         destroy() {
             this._stopFormReset?.();
             this._stopFormReset = null;
+            this._stopServerValue?.();
+            this._stopServerValue = null;
             this._releaseDragListeners();
             this._dragging = false;
         },

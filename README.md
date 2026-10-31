@@ -99,8 +99,8 @@ A wide catalog of components organized by category. Browse, search, and try ever
 
 | Category | Examples |
 |----------|----------|
-| **Forms** | button, input, select, textarea, editor, combobox, multi-select, date-picker, slider, color-picker, otp-input, filter-builder, … |
-| **Display** | badge, card, avatar, alert, callout, countdown, image, image-gallery, image-compare, kanban, stage-card, activity-row, … |
+| **Forms** | button, input, select, textarea, editor, combobox, multi-select, date-picker, datetime-picker, slider, color-picker, otp-input, filter-builder, … |
+| **Display** | badge, card, avatar, alert, callout, countdown, image, image-gallery, image-compare, image-hotspots, video, kanban, stage-card, activity-row, … |
 | **Data Display** | table, data-table, status-matrix, status-tiles, notification-center, pagination, stat, stats, progress, radial-progress, usage-meter, skeleton, spinner, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, lightbox, command-palette, alert-dialog, … |
 | **Navigation** | tabs, breadcrumb, scope-switcher, accordion, collapsible, sidebar, app-rail, navbar, brand-bar, menubar, navigation-menu, stepper, wizard, … |

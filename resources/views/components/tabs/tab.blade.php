@@ -37,6 +37,11 @@
     use Pushery\WireKit\Support\TablistStyles;
     use Pushery\WireKit\WireKit;
 
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $variant = \Pushery\WireKit\Support\AwareProp::read('variant', ['tabs.list', 'tabs'], 'underline');
+    $orientation = \Pushery\WireKit\Support\AwareProp::read('orientation', ['tabs.list', 'tabs'], 'horizontal');
+
     // `@aware` reads a value from the parent but — unlike `@props` — does NOT remove
     // that key from the attribute bag. Written on the tag as well, it would survive into
     // `{{ $attributes }}` and render as a stray HTML attribute. Blade accepts both
@@ -46,8 +51,12 @@
     // Assigned back onto the prop itself rather than into a new name. The coverage
     // guard reads the assignment target, and it is right to: a normalized copy under a
     // different name leaves the raw prop in scope, where the next edit reaches for it.
-    $selected = BooleanProp::from($selected, false);
-    $disabled = BooleanProp::from($disabled, false);
+    $selected = BooleanProp::from($selected, false, 'tabs.tab', 'selected');
+    $disabled = BooleanProp::from($disabled, false, 'tabs.tab', 'disabled');
+
+    // Before the bag of the tab is taken from it below, so `autofocus="false"` and the like
+    // leave that bag too: HTML reads such a flag by presence (Support\BooleanProp).
+    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
     // A disabled tab stays discoverable, and that costs the component the suppression.
     //
@@ -70,8 +79,6 @@
             || preg_match('/^(?:wire:|x-on:|@|on)(?:click|mousedown|mouseup|keydown|keyup|keypress)\b/i', $key) !== 1)
         : $attributes;
 
-    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
-
     WireKit::warnUnknownProps('tabs.tab', $attributes->getAttributes());
 
     $isVertical = $orientation === 'vertical';
@@ -88,7 +95,7 @@
          order, and the arrow keys reach the rest. --}}
     tabindex="{{ $selected ? '0' : '-1' }}"
     @if($disabled) aria-disabled="true" @endif
-    {{ $tabAttributes->class(['wk-tab', 'wk-touch-row', $tabClasses, $stateClasses]) }}
+    {{ $tabAttributes->except(['role', 'tabindex', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-tab', 'wk-touch-row', $tabClasses, $stateClasses])) }}
 >
     @if($icon)
         <x-wirekit::icon :name="$icon" size="sm" />
@@ -96,7 +103,8 @@
 
     <span>{{ $slot }}</span>
 
-    @if($badge !== null && $badge !== '')
-        <x-wirekit::badge size="sm" :intent="$badgeIntent">{{ $badge }}</x-wirekit::badge>
+    @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
+    @if($badgeText !== null)
+        <x-wirekit::badge size="sm" :intent="$badgeIntent">{{ $badgeText }}</x-wirekit::badge>
     @endif
 </button>

@@ -39,6 +39,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $labels = \Pushery\WireKit\Support\AwareProp::read('labels', ['app-rail'], 'tooltip');
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
@@ -149,7 +153,7 @@
 <{{ $tag }} data-wk-prose-skip
     @if($href !== null) href="{{ $href }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes, $interactiveClasses]) }}
+    {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $interactiveClasses])) }}
 >
     {{-- The mark. `shrink-0` so a long name can never squeeze it.
          NOT aria-hidden: this is a slot, and what a developer puts in it is theirs. Hiding it
@@ -157,7 +161,7 @@
          something — and the guard that caught this exists because that mistake is invisible
          until somebody who needs it reports it. A decorative avatar in here announces nothing
          on its own anyway; one that does is the developer's decision to make. --}}
-    @isset($expanded)
+    @if(\Pushery\WireKit\Support\SlotContent::given($expanded ?? null))
         {{-- Two forms, swapped by the same live conjunction the name uses. The rule is in the
              shipped stylesheet, for the reason stated there: a bare Tailwind class exists only
              where a developer's build scanned this package. --}}
@@ -165,7 +169,7 @@
         <span data-wk-rail-brand-mark-wide class="min-w-0 shrink-0">{{ $expanded }}</span>
     @else
         <span class="shrink-0">{{ $slot }}</span>
-    @endisset
+    @endif
 
     @if(filled($name))
         {{-- Visually hidden while the rail is narrow, never absent: the name is what

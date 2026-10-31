@@ -1,4 +1,6 @@
 import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.js';
+import { namesSomething, sameName } from '../utils/same-name.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 /**
  * Sidebar rail — the folded/expanded state of the sidebar itself.
@@ -144,7 +146,7 @@ export default function wirekitSidebarRail(config = {}) {
                 // id it addresses only that nav, so a page with two of them can drive
                 // each separately instead of flipping both.
                 const target = event?.detail?.id;
-                if (target && target !== this.$el?.id) {
+                if (namesSomething(target) && ! sameName(target, this.$el?.id)) {
                     return;
                 }
 
@@ -266,7 +268,7 @@ export default function wirekitSidebarRail(config = {}) {
                 this._settleFallback = setTimeout(() => {
                     this.settling = false;
                     this._markArrival();
-                }, longest + 80);
+                }, timerDelay(longest + 80));
             }
 
             writePersistedFlag(this._persistKey, this._chosen, this._persistDriver);

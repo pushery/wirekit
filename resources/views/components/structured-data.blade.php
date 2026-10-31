@@ -35,7 +35,9 @@
     // usage) is passed through untouched. Data with none of '@context' / '@type'
     // / '@graph' is left alone — that is not a schema.org document and stamping a
     // context onto it would be a lie.
-    $payload = $data;
+    // A text, JSON already encoded say, a number or a switch is no document: it is reported, and
+    // an empty one is written in its place. An object goes on to `json_encode()` as it came.
+    $payload = is_scalar($data) ? \Pushery\WireKit\Support\ListProp::from($data, 'structured-data', 'data') : $data;
     if (is_array($payload)
         && ! array_key_exists('@context', $payload)
         && (array_key_exists('@type', $payload) || array_key_exists('@graph', $payload))) {

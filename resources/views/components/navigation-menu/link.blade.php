@@ -10,12 +10,22 @@
 @aware(['trackCurrent' => false])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $trackCurrent = \Pushery\WireKit\Support\AwareProp::read('trackCurrent', ['navigation-menu'], false);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu.link', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
-    $href = \Pushery\WireKit\Support\UrlProp::text($href);
+    // An empty address, one of white space or `false` is none, so the item keeps its own `#`.
+    $href = \Pushery\WireKit\Support\UrlProp::text($href) ?? '#';
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -23,7 +33,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $active = BooleanProp::from($active, false);
+    $active = BooleanProp::from($active, false, 'navigation-menu.link', 'active');
 
     // `@aware` leaves its key in the attribute bag, where it would render as a stray attribute.
     $attributes = $attributes->except(['trackCurrent', 'track-current']);
@@ -68,7 +78,7 @@
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->merge($trackAttributes)->class(['wk-touch-row', $classes, $colorClasses]) }}
+    {{ $attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $colorClasses])) }}
 >
     {{-- One flex item for the whole label, so text and an inline mark beside it flow as they
          would in a block, and the row centers it when the touch floor makes the row taller. --}}

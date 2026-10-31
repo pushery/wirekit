@@ -22,6 +22,9 @@
  * Lifecycle resources held on `this`:
  *   - _scrollHandler (scroll + resize listener) — removed in destroy(). Only
  *     registered when something actually depends on scroll position.
+ *   - _articleChanges (a MutationObserver on the article) and _refreshRaf (the
+ *     frame it schedules) — disconnected and canceled in destroy(), and
+ *     null-guarded in the callback and in the frame.
  *
  * @param {Object} config
  * @param {string} config.target             selector of the article to measure
@@ -32,6 +35,16 @@
  * @param {number} config.paragraphMinWords  shortest paragraph worth annotating
  * @param {string} config.paragraphTemplate  annotation copy, with an {n} placeholder
  */
+/** The class of the spans this component puts into the article. */
+const ANNOTATION = 'wk-reading-meta-paragraph';
+
+/** Whether a mutation happened inside one of this component's spans: its label, written on scroll. */
+function insideAnAnnotation(record) {
+    const target = record.target?.nodeType === 1 ? record.target : record.target?.parentElement;
+
+    return Boolean(target?.closest?.(`.${ANNOTATION}`));
+}
+
 export default function wirekitReadingMeta(config = {}) {
     return {
         totalMinutes: 0,
@@ -48,6 +61,8 @@ export default function wirekitReadingMeta(config = {}) {
 
         _scrollHandler: null,
         _ticking: false,
+        _articleChanges: null,
+        _refreshRaf: 0,
 
         // [{ el, paragraph, wordCount }] — populated in perParagraph mode.
         _paragraphData: [],
@@ -67,6 +82,8 @@ export default function wirekitReadingMeta(config = {}) {
                 this._injectParagraphAnnotations(el);
             }
 
+            this._followTheArticle(el);
+
             // Only listen when something depends on scroll position. A static
             // estimate costs no listener at all.
             if (this._showRemaining || this._perParagraph) {
@@ -82,6 +99,16 @@ export default function wirekitReadingMeta(config = {}) {
                 window.removeEventListener('scroll', this._scrollHandler);
                 window.removeEventListener('resize', this._scrollHandler);
                 this._scrollHandler = null;
+            }
+
+            if (this._articleChanges) {
+                this._articleChanges.disconnect();
+                this._articleChanges = null;
+            }
+
+            if (this._refreshRaf) {
+                cancelAnimationFrame(this._refreshRaf);
+                this._refreshRaf = 0;
             }
 
             // The annotations go into somebody ELSE's article, so nothing else can clean
@@ -107,6 +134,64 @@ export default function wirekitReadingMeta(config = {}) {
         },
 
         /**
+         * Count again, and annotate again, when the article changes under the estimate, at most
+         * once a frame, as the spine and the table of contents collect their headings again.
+         *
+         * A Livewire update that renders the article takes off the annotations this component
+         * put into it, since the server's markup does not carry them, and one that changes a
+         * paragraph changes the count. The annotations going in are changes as well, which is
+         * why the frame decides by what it finds rather than by what changed: once every
+         * annotation is in place and the count holds, it does nothing. The label a scroll writes
+         * into an annotation is not a reason to look.
+         */
+        _followTheArticle(el) {
+            if (typeof MutationObserver !== 'function') {
+                return;
+            }
+
+            this._articleChanges = new MutationObserver((records) => {
+                // A change the browser queued before destroy() can arrive after it.
+                if (! this._articleChanges || this._refreshRaf || records.every(insideAnAnnotation)) {
+                    return;
+                }
+
+                this._refreshRaf = requestAnimationFrame(() => {
+                    this._refreshRaf = 0;
+
+                    if (this._articleChanges) {
+                        this._refresh();
+                    }
+                });
+            });
+            this._articleChanges.observe(el, { childList: true, subtree: true, characterData: true });
+        },
+
+        _refresh() {
+            const el = document.querySelector(this._target);
+
+            if (! el) {
+                return;
+            }
+
+            const words = this.countWords(el);
+            const counted = words !== this.wordCount;
+            const annotationGone = this._paragraphData.some(({ el: annotation }) => ! annotation.isConnected);
+
+            if (counted) {
+                this.wordCount = words;
+                this.totalMinutes = Math.max(1, Math.ceil(words / this._wpm));
+            }
+
+            if (this._perParagraph && (counted || annotationGone)) {
+                this._injectParagraphAnnotations(el);
+            }
+
+            if (counted && this._showRemaining) {
+                this.remainingMinutes = this._minutesBelowTheFold(el);
+            }
+        },
+
+        /**
          * Words in an article, with the parts nobody reads at prose speed taken
          * out first.
          *
@@ -116,7 +201,8 @@ export default function wirekitReadingMeta(config = {}) {
         countWords(el) {
             const clone = el.cloneNode(true);
 
-            clone.querySelectorAll('pre, code, figure, figcaption, img, picture, svg, [data-language]')
+            // The annotations as well: they are this component's words, not the article's.
+            clone.querySelectorAll(`pre, code, figure, figcaption, img, picture, svg, [data-language], .${ANNOTATION}`)
                 .forEach((n) => n.remove());
 
             const text = (clone.textContent || '').trim();
@@ -192,7 +278,7 @@ export default function wirekitReadingMeta(config = {}) {
                 }
 
                 const annotation = document.createElement('span');
-                annotation.className = 'wk-reading-meta-paragraph';
+                annotation.className = ANNOTATION;
                 annotation.setAttribute('aria-hidden', 'true');
                 annotation.dataset.minutes = '';
 

@@ -34,7 +34,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('tire-label', $attributes->getAttributes());
 
-    $newTab = BooleanProp::from($newTab, false);
+    $newTab = BooleanProp::from($newTab, false, 'tire-label', 'newTab');
 
     // The three parameters of the label in its order, each with its scale, best class first. A
     // class the scale does not have is reported, and that arrow is left out rather than drawn with
@@ -68,13 +68,14 @@
         StrictnessGate::reject('tire-label', 'classes', '', 'a class for fuel, wet-grip or noise', '');
     }
 
-    // Decibels are a whole number on the label; anything else is reported and left out.
+    // Decibels are a whole number on the label; anything else is reported and left out, INF and
+    // NAN included, which no integer holds.
     if (blank($noiseDb)) {
         $noiseDb = null;
-    } elseif (is_numeric($noiseDb) && (float) $noiseDb > 0) {
-        $noiseDb = (int) round((float) $noiseDb);
+    } elseif (is_numeric($noiseDb) && (float) $noiseDb > 0 && ($decibels = \Pushery\WireKit\Support\NumericProp::intOrNull(round((float) $noiseDb))) !== null) {
+        $noiseDb = $decibels;
     } else {
-        StrictnessGate::reject('tire-label', 'noise-db', is_scalar($noiseDb) ? (string) $noiseDb : get_debug_type($noiseDb), 'a number of decibels', '');
+        StrictnessGate::reject('tire-label', 'noise-db', is_scalar($noiseDb) ? \Pushery\WireKit\Support\NumericProp::text($noiseDb) : get_debug_type($noiseDb), 'a number of decibels', '');
         $noiseDb = null;
     }
 
@@ -121,7 +122,7 @@
 @endphp
 
 @if($parameters !== [])
-<span data-wk-prose-skip data-wk-tire-label {{ $attributes->class([$rootClasses]) }}>
+<span data-wk-prose-skip data-wk-tire-label data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}>
     @foreach($parameters as $parameter => $arrow)
         @php($tireImage = ['tireParameter' => $parameter, 'tireClasses' => $arrow['classes'], 'tireClass' => $arrow['class'], 'tireStep' => $arrow['step'], 'tireSize' => $sizeClasses, 'tireDecibels' => $parameter === 'noise' ? $noiseDb : null])
         @if(filled($href))

@@ -60,6 +60,7 @@ final class UnboundModel
         'filter-builder',
         'hover-card',
         'image-compare',
+        'image-hotspots',
         'inline-edit',
         'lightbox',
         'live-list',
@@ -83,6 +84,7 @@ final class UnboundModel
         'tabs',
         'tooltip',
         'tree-view',
+        'video',
         'wizard',
     ];
 

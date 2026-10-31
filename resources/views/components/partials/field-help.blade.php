@@ -10,6 +10,8 @@
        $helpButton  false where the label is visually hidden: a button nobody can see must
                     not take a tab stop, and the description still reaches a screen reader
        $helpField   the field's name, or its id where it has none; may be empty
+       $helpStopsClick  true where the help stands in something that acts on a click itself, a
+                    table head that sorts: the click opens the help and goes no further
 
      A click on the button, which Enter and Space make as well, dispatches `wirekit:field-help`
      from the button, bubbling, with the field's name and label: a page that explains a field at
@@ -38,7 +40,11 @@
             role="button"
             tabindex="0"
             aria-label="{{ filled($helpName ?? null) ? __('wirekit::Help for :label', ['label' => $helpName]) : __('wirekit::Help') }}"
-            x-on:click="$dispatch('wirekit:field-help', { name: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpField ?? '') }}, label: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpName ?? '') }} })"
+            @if($helpStopsClick ?? false)
+                x-on:click.stop="$dispatch('wirekit:field-help', { name: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpField ?? '') }}, label: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpName ?? '') }} })"
+            @else
+                x-on:click="$dispatch('wirekit:field-help', { name: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpField ?? '') }}, label: {{ \Pushery\WireKit\Support\AlpinePayload::string($helpName ?? '') }} })"
+            @endif
             x-on:keydown.enter.prevent="$el.click()"
             x-on:keydown.space.prevent="$el.click()"
             {{-- 24px, the WCAG 2.2 target size, and a negative block margin of 4px on each side,

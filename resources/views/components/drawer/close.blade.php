@@ -13,11 +13,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('drawer.close', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\Support\BooleanProp;
 
     // Blade compiles an unbound attribute to a string, and 'false' is truthy, so `dismiss="false"`
     // would otherwise make a Cancel of a close.
-    $dismiss = BooleanProp::from($dismiss, false);
+    $dismiss = BooleanProp::from($dismiss, false, 'drawer.close', 'dismiss');
 @endphp
 
 {{-- Drawer close button — delegates to shared overlay-close partial --}}

@@ -22,7 +22,7 @@
 
     // Blade compiles an unbound attribute to a string, and 'false' is truthy, so
     // `track-current="false"` would otherwise turn the tracking on.
-    $trackCurrent = BooleanProp::from($trackCurrent, false);
+    $trackCurrent = BooleanProp::from($trackCurrent, false, 'navigation-menu', 'trackCurrent');
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -37,6 +37,12 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // A caller who binds the name with Alpine names the menu in the browser, so the view binds
+    // none beside it: a second `x-bind:aria-label` is a duplicate attribute, which the parser
+    // drops, and the one it would drop is the caller's, written after ours.
+    $callerBindsName = collect(['x-bind:aria-label', ':aria-label', 'x-bind:aria-labelledby', ':aria-labelledby'])
+        ->contains(fn (string $name): bool => $attributes->has($name));
 @endphp
 
 {{-- `wk-navigation-menu` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-`
@@ -61,8 +67,11 @@
     {{-- Escape closes a flyout a pointer opened wherever the focus is (WCAG 1.4.13): neither the
          bar's listener nor the panel's hears a key pressed on <body>. --}}
     x-on:keydown.escape.window.capture="escapeAnywhere($event)"
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Main navigation') }}" @endunless
-    {{ $attributes->class(['wk-navigation-menu', $classes]) }}
+    {{-- Named by default, it takes `data-wk-nested-name` as well: inside a navigation landmark of the
+         same name, such as a navbar, the factory gives the menu that name instead, so the two
+         landmarks are told apart. Bound, so a Livewire morph keeps it. --}}
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Main navigation') }}" @unless($callerBindsName) data-wk-nested-name="{{ __('wirekit::Main menu') }}" x-bind:aria-label="landmarkName" @endunless @endunless
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-navigation-menu', $classes])) }}
 >
     {{ $slot }}
 </nav>

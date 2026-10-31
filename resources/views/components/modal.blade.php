@@ -12,6 +12,10 @@
     // reader's language otherwise.
     'confirmDiscard' => config('wirekit.components.modal.confirm-discard', true),
     'discardQuestion' => null,
+    // Whether ⌘↵ or Ctrl+Enter presses the dialog's primary control while it is open, from a field
+    // as well. A modal has no confirm of its own: the control a page marks with
+    // `data-wk-dialog-primary` is the one, and without a mark nothing is pressed.
+    'confirmShortcut' => config('wirekit.components.modal.confirm-shortcut', true),
     // Whether opening locks the page's scroll. False for an overlay that lives inside a page
     // region, such as a preview, where the page around it has to keep scrolling.
     'lockScroll' => true,
@@ -39,19 +43,24 @@
     //
     // Normalized against the prop's own default so a cast never turns dismissal off on
     // a modal that never asked for it.
-    $dismissible = BooleanProp::from($dismissible, true);
-    $confirmDiscard = BooleanProp::from($confirmDiscard, true);
-    $lockScroll = BooleanProp::from($lockScroll, true);
+    $dismissible = BooleanProp::from($dismissible, true, 'modal', 'dismissible');
+    $confirmDiscard = BooleanProp::from($confirmDiscard, true, 'modal', 'confirmDiscard');
+    $confirmShortcut = BooleanProp::from($confirmShortcut, true, 'modal', 'confirmShortcut');
+    $lockScroll = BooleanProp::from($lockScroll, true, 'modal', 'lockScroll');
 
     // Only a dialog the reader can close asks before it closes.
     $discardQuestionText = $dismissible && $confirmDiscard
-        ? (filled($discardQuestion) ? (string) $discardQuestion : __('wirekit::Discard your changes?'))
+        ? (filled($discardQuestion) ? $discardQuestion : __('wirekit::Discard your changes?'))
         : null;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('modal', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('modal', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg', 'xl', 'full']);
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -85,7 +94,7 @@
     // instruction; both win over the header because if someone named the dialog
     // explicitly, that is the name they meant.
     $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
-    $resolvedAriaLabel = $callerAriaLabel ?? $ariaLabel;
+    $resolvedAriaLabel = \Pushery\WireKit\Support\BlankName::first($callerAriaLabel, $ariaLabel);
 
     // Is there a header to point at? The header's own id is bound by Alpine at
     // runtime and so is invisible here; the marker attribute is what makes the
@@ -108,10 +117,13 @@
     $ariaAttributes = collect($attributes->getAttributes())
         ->filter(fn ($value, string $key): bool => str_starts_with($key, 'aria-'))
         ->all();
+    // The caller's description joins the one `describedby` names in one attribute: written as two,
+    // the parser would keep the first and drop the caller's.
+    $dialogDescribedBy = trim(((string) $describedby).' '.trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-describedby')));
     $attributes = $attributes->except(array_keys($ariaAttributes));
     // Written through a bag of their own: a bag holds each value as the caller's markup, escaped
     // once, and writes it as it holds it, where `{{ }}` would escape it a second time.
-    $dialogAriaAttributes = new \Illuminate\View\ComponentAttributeBag(array_diff_key($ariaAttributes, ['aria-label' => true]));
+    $dialogAriaAttributes = new \Illuminate\View\ComponentAttributeBag(array_diff_key($ariaAttributes, ['aria-label' => true, 'aria-describedby' => true]));
 
     // Backdrop classes — semi-transparent overlay behind the dialog
     $backdropClasses = 'wk-overlay-fixed wk-overlay-layer-modal '.WireKit::resolveClasses('modal', 'backdrop', implode(' ', [
@@ -186,7 +198,7 @@
     // an item with a gap of its own beside it, so it generates no box. With a trigger it keeps its
     // box, and the trigger its place: its own width in a grid cell, the margin a
     // stack gives its children. `class="contents"` on the component hands the trigger over.
-    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
+    $rootAttributes = \Pushery\WireKit\Support\SlotContent::given($trigger ?? null) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
 @endphp
 
 {{-- Modal component — teleported to the overlay root for proper stacking context.
@@ -203,7 +215,7 @@
      the listener of a modal another overlay covers. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
-    x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText) : 'null' }} })"
+    x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($discardQuestionText)) : 'null' }}, confirmShortcut: {{ $confirmShortcut ? 'true' : 'false' }} })"
     @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
     {{ $rootAttributes }}
 >
@@ -212,11 +224,11 @@
          keep a button in the slot at its own width inside a container that stretches its
          children, where a caller cannot reach it with a class. On its own `contents` changes nothing a page shows;
          `class="contents"` on the component root is what hands the trigger to the container. --}}
-    @isset($trigger)
+    @if(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
         <div class="contents" x-on:click="show($event)">
             {{ $trigger }}
         </div>
-    @endisset
+    @endif
 
     {{-- Modal overlay and dialog — rendered when open --}}
     <template x-teleport="#wk-overlay-root">
@@ -269,7 +281,7 @@
                              the first. --}}
                         aria-labelledby="{{ $titleId }}"
                     @endif
-                    @if($describedby) aria-describedby="{{ $describedby }}" @endif
+                    @if($dialogDescribedBy !== '') aria-describedby="{{ $dialogDescribedBy }}" @endif
                     {{-- aria-* the caller passed, on the dialog rather than the roleless wrapper.
                          aria-label is excluded: it is resolved above so an explicit name
                          and the header can never both be emitted. --}}

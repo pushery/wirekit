@@ -38,13 +38,13 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
-    $verified = BooleanProp::from($verified, false);
+    $verified = BooleanProp::from($verified, false, 'review', 'verified');
 
-    $max = max(1, min(10, (int) $max));
+    $max = max(1, min(10, \Pushery\WireKit\Support\NumericProp::int($max, 0, 'review', 'max')));
     // A score that is no number is reported and counts as none, rather than the number PHP reads
     // from it ("4,5" would be 4).
     $score = max(0.0, min((float) (\Pushery\WireKit\Support\NumericProp::orNullReported($rating, 'review', 'rating') ?? 0), (float) $max));
-    $level = (int) WireKit::validateProp('review', 'level', (string) $level, ['2', '3', '4', '5', '6']);
+    $level = (int) WireKit::validateProp('review', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['2', '3', '4', '5', '6']);
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id'), 'review-'); // page-unique DOM id; see Support\DomId
 
@@ -70,7 +70,7 @@
     $metaClasses = 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]';
 @endphp
 
-<article data-wk-review {{ $attributes->except('id')->class([$classes]) }} id="{{ $id }}" @if($labelledBy && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-labelledby="{{ $labelledBy }}" @endif>
+<article data-wk-review {{ $attributes->except('id')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} id="{{ $id }}" @if($labelledBy && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-labelledby="{{ $labelledBy }}" @endif>
     <x-wirekit::rating :value="$score" :max="$max" readonly size="sm" />
 
     @if(filled($title))
@@ -109,7 +109,7 @@
         </article>
     @endif
 
-    @isset($actions)
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <div data-wk-review-actions class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">{{ $actions }}</div>
-    @endisset
+    @endif
 </article>

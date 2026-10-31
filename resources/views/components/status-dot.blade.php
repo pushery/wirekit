@@ -28,14 +28,17 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so `tooltip="false"`
     // would otherwise keep the tooltip. Normalized against each prop's own default.
-    $tooltip = BooleanProp::from($tooltip, true);
-    $focusable = BooleanProp::from($focusable, true);
+    $tooltip = BooleanProp::from($tooltip, true, 'status-dot', 'tooltip');
+    $focusable = BooleanProp::from($focusable, true, 'status-dot', 'focusable');
 
     // Dev-only: flags an unknown prop in debug, silent in production.
     WireKit::warnUnknownProps('status-dot', $attributes->getAttributes());
 
     $intent = WireKit::validateProp('status-dot', 'intent', (string) $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']);
     $size = WireKit::validateProp('status-dot', 'size', (string) $size, ['sm', 'md', 'lg']);
+    // Checked here, under this component's name, so a word the tooltip cannot place is reported
+    // where it was written (Support\FloatingPlacement); the tooltip gets the word it can place.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('status-dot', 'placement', (string) ($placement ?: 'top'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'top');
 
     // The dot is a graphical object that carries information, so it needs 3:1 against the page
     // (WCAG 1.4.11). The fill of `warning` stays under that on a light page, so every intent takes
@@ -105,8 +108,8 @@
             data-wk-status-dot
             data-intent="{{ $intent }}"
             @unless($attributes->has('role')) role="img" @endunless
-            @unless($callerNamed) aria-label="{{ $label }}" @endunless
-            {{ $attributes->class(['wk-status-dot', $classes]) }}
+            @unless($callerNamed) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
+            {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-status-dot', $classes])) }}
         ></span>
     </x-wirekit::tooltip>
 @else
@@ -115,10 +118,9 @@
         data-intent="{{ $intent }}"
         @if($named)
             @unless($attributes->has('role')) role="img" @endunless
-            @if(! $callerNamed) aria-label="{{ $label }}" @endif
+            @if(! $callerNamed) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
         @else
             aria-hidden="true"
         @endif
-        {{ $attributes->class(['wk-status-dot', $classes]) }}
-    ></span>
-@endif
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-status-dot', $classes])) }}
+    ></span>@endif

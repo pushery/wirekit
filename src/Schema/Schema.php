@@ -201,10 +201,14 @@ final class Schema
     }
 
     /**
-     * A breadcrumb trail. Pass a name => url map, in order; a step with no page of its own
-     * takes `null`.
+     * A breadcrumb trail, in order. Accepts either a name => url map or a list of
+     * ['name' => …, 'url' => …] steps; a step with no page of its own takes `null`.
      *
-     * @param  array<string, string|null>  $items
+     * Two steps with the same name need the list: a map keeps each name once, at the place of
+     * the first and with the address of the last, so a category and a product that share a name
+     * would leave the trail one step short.
+     *
+     * @param  array<string, string|null>|list<array{name: string, url?: string|null}>  $items
      * @param  array<string, mixed>  $extra
      * @return array<string, mixed>
      */
@@ -212,8 +216,10 @@ final class Schema
     {
         $steps = [];
 
-        foreach ($items as $name => $url) {
-            $steps[] = ['name' => (string) $name, 'url' => $url];
+        foreach ($items as $key => $value) {
+            $steps[] = is_array($value)
+                ? ['name' => $value['name'] ?? '', 'url' => $value['url'] ?? null]
+                : ['name' => (string) $key, 'url' => $value];
         }
 
         return self::node('BreadcrumbList', ['itemListElement' => self::breadcrumbItems($steps)], $extra);

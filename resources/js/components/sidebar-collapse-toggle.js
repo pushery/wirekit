@@ -1,3 +1,5 @@
+import { sameName } from '../utils/same-name.js';
+
 /**
  * Sidebar collapse toggle — a button outside the sidebar that folds it.
  *
@@ -25,7 +27,7 @@ export default function wirekitSidebarCollapseToggle(config = {}) {
                 // Addressed, only the named sidebar's announcement counts: on a page with two, the
                 // other one's state is not this button's. Unaddressed, it follows whichever sidebar
                 // speaks, which on a page with one sidebar is that one.
-                if (this._target !== null && detail.id !== this._target) {
+                if (this._target !== null && ! sameName(detail.id, this._target)) {
                     return;
                 }
 

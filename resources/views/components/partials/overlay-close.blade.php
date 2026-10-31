@@ -9,6 +9,10 @@
     use Pushery\WireKit\WireKit;
 
     $classes = WireKit::resolveClasses("{$component}.close", 'base', '', $scope ?? null);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
 @endphp
 
 @php
@@ -40,14 +44,15 @@
          merely bubbles. --}}
     <div
         x-on:click="{{ $overlayCloseHandler }}"
-        {{ $attributes->class([$classes]) }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     >
         {{ $slot }}
     </div>
 @else
     {{-- Nothing in the slot can be activated, so THIS is the control. A native button gets
-         Enter and Space with no key handler, a focus ring from the surrounding styles, and
-         the right role — none of which a `<div>` with a click listener has. --}}
+         Enter and Space with no key handler and the right role, none of which a `<div>` with a
+         click listener has. It draws the kit's focus ring, which follows the ring tokens, rather
+         than the browser's, which follows none. --}}
     <button
         type="button"
         x-on:click="{{ $overlayCloseHandler }}"
@@ -60,7 +65,7 @@
 
              Same fix and same reason as link.blade.php, where three auth screens shipped
              a button-shaped action whose only remaining affordance was its underline. --}}
-        {{ $attributes->class(['cursor-pointer', $classes]) }}
+        {{ $attributes->except('type')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['cursor-pointer', 'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]', $classes])) }}
     >
         {{ $slot }}
     </button>

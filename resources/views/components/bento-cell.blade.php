@@ -32,8 +32,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $emphasis = BooleanProp::from($emphasis, false);
-    $bleed = BooleanProp::from($bleed, false);
+    $emphasis = BooleanProp::from($emphasis, false, 'bento-cell', 'emphasis');
+    $bleed = BooleanProp::from($bleed, false, 'bento-cell', 'bleed');
 
     // Match on the RESULT, not the raw prop: where the strictness gate does not throw,
     // validateProp returns the first allowed value — '1x1' here, which is both
@@ -69,6 +69,6 @@
      cramped grid only squeezes its neighbors into unreadable slivers, which is the
      failure the span-collapse exists to prevent. The span re-engages once the grid
      itself is wide enough (@2xl/bento), where there are columns to claim. --}}
-<div data-wk-bento-cell data-span="{{ $span }}" {{ $attributes->class([$classes]) }}>
+<div data-wk-bento-cell data-span="{{ $span }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </div>

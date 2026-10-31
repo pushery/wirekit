@@ -21,6 +21,7 @@
 import { pluralize } from '../utils/plural.js';
 import { pageScrollBehavior } from '../utils/motion.js';
 import { foldForSearch } from '../utils/search-fold.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 /** What separates the words of a row: space, dot, hyphen, underscore and slash. */
 const WORD_BREAK = /[\s.\-_/]+/;
@@ -521,9 +522,19 @@ export default function wirekitScopeSwitcher(config = {}) {
             this.setActive(current ? current.key : (this._items[0]?.key ?? null), false);
         },
 
-        /** The id `aria-activedescendant` points at, or empty when nothing is active. */
+        /**
+         * The id `aria-activedescendant` points at, or empty when nothing is active. Read off the
+         * active row, because the server writes the key into the id in the form an id can hold:
+         * the key `new york` is the row `…-option-new-york`.
+         */
         activeId() {
-            return this.activeKey === null ? '' : `${this.idPrefix}-option-${this.activeKey}`;
+            if (this.activeKey === null) {
+                return '';
+            }
+
+            const item = this._items.find((i) => i.key === this.activeKey);
+
+            return item && item.el.id ? item.el.id : '';
         },
 
         _announce() {
@@ -534,7 +545,7 @@ export default function wirekitScopeSwitcher(config = {}) {
             this._announceTimer = setTimeout(() => {
                 this.announcement = this.visibleCount;
                 this._announceTimer = null;
-            }, this.announceDelay);
+            }, timerDelay(this.announceDelay));
         },
 
         /** Mirrors visibleCount, but only after the pause — this is what the region reads. */

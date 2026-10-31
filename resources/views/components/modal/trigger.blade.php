@@ -50,7 +50,9 @@
     // WHICH primitive is not a detail: the position this exists for is a word inside a consent
     // sentence, and a button-styled box in the middle of a sentence is the wrong shape. So an
     // address gives an inline `link`, and no address gives a standalone `button`.
-    $delegate = filled($href) ? 'link' : 'button';
+    // An empty address, one of white space or `false` is none (Support\UrlProp), so it gives a
+    // `button` as no address does.
+    $delegate = (is_string($href) || $href instanceof \Stringable || $href instanceof \BackedEnum) && \Pushery\WireKit\Support\UrlProp::text($href) !== null ? 'link' : 'button';
 
     // The look the caller gave, for the primitive that takes it: a button takes all three, a link
     // only its size. Handed on through the bag the primitive reads its props from, and only what was
@@ -78,7 +80,7 @@
     x-bind:aria-expanded="ariaExpanded"
     x-bind:aria-controls="ariaControls"
     x-on:click="openNamedOverlay($event)"
-    {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
+    {{ $attributes->except(['for', 'href'])->merge($look)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >{{ $slot }}</x-wirekit::link>
 @else
 <x-wirekit::button
@@ -87,14 +89,14 @@
     x-bind:aria-expanded="ariaExpanded"
     x-bind:aria-controls="ariaControls"
     x-on:click="openNamedOverlay($event)"
-    {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
+    {{ $attributes->except(['for', 'href'])->merge($look)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >{{ $slot }}</x-wirekit::button>
 @endif
 @else
 {{-- Modal trigger — opens the parent modal when clicked --}}
 <div
     x-on:click="show($event)"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

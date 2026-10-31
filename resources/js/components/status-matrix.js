@@ -25,9 +25,14 @@
  *     document-scoped focus listeners this component otherwise has none of.
  *   - _stopFormReset — the listener that puts the starting cells back when the form is reset
  *     (utils/form-reset.js).
+ *   - _stopServerValue — the observer on the cells the server renders on the root
+ *     (utils/server-value.js).
+ *   - _stopKeepingTabStop — the observer that puts the tab stop back on the cell that held it
+ *     after a Livewire update (utils/roving-focus.js).
  *
  * @param {Object} config
- * @param {Object} config.cells - initial value map { "rowKey:colKey": value }
+ * @param {Object} [config.cells] - initial value map { "rowKey:colKey": value }; without it, the
+ *   root's `data-wk-server-value`
  * @param {string} config.cellType - tristate | toggle | status | heat
  * @param {boolean} config.editable - whether interactive cell types mutate
  * @param {Object} [config.stateLabels] - translated tristate state words, keyed
@@ -37,18 +42,81 @@
  *   PluralPhrases; the unsaved-changes counter's translated plural forms.
  * @param {string} [config.locale] - the application's locale, for Intl.PluralRules.
  */
-import { pluralize } from '../utils/plural.js';
+import { pluralizeGrouped } from '../utils/plural.js';
+import { keepTabStop } from '../utils/roving-focus.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { watchModelEvents } from '../utils/model-events.js';
+import { hasModelBinding, jsonValue, observeServerValue, ownValues, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+
+/** Whether two cell maps hold the same value in every cell, a missing cell counting as none. */
+function sameCells(a, b) {
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+
+    return [...keys].every((k) => (a[k] ?? null) === (b[k] ?? null));
+}
 
 export default function wirekitStatusMatrix(config = {}) {
+    // The cell maps this matrix hands to its model, so the answer to one is not taken for cells
+    // the server set (utils/server-value.js).
+    const own = ownValues(sameCells);
+
     return {
         _modelEvents: null,
         _stopFormReset: null,
+        _stopServerValue: null,
+        _stopKeepingTabStop: null,
+        // The cell the arrows moved the tab stop to, null while the server's (0,0) holds it.
+        _tabStop: null,
 
         init() {
+            // The cells are not in `x-data`, so that the expression stays the same for every map: a
+            // Livewire morph that changed it would start the matrix again, and the answer to a
+            // `wire:model.live` edit would put back the cells of the request. `$root` is checked
+            // rather than assumed, as a unit harness hands a bare stub.
+            if (config.cells === undefined && typeof this.$root?.getAttribute === 'function') {
+                const seed = jsonValue(this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE));
+
+                if (seed && typeof seed === 'object' && ! Array.isArray(seed)) {
+                    this.cells = { ...seed };
+                    this._baseline = { ...seed };
+                }
+            }
+
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.model);
             this._stopFormReset = onFormReset(this.$root, () => this.$refs?.model, () => this._restore());
+
+            // The cells the server renders are the saved ones, which the changed ring measures
+            // against. They reach the grid as well, unless the grid already shows them or they
+            // answer an edit of the reader's: with `.live` the reader can be an edit further when
+            // the answer arrives, and Livewire leaves its property alone then too.
+            this._stopServerValue = observeServerValue(this.$root, (raw) => {
+                const value = jsonValue(raw);
+
+                if (! value || typeof value !== 'object' || Array.isArray(value)) {
+                    return;
+                }
+
+                this._baseline = { ...value };
+
+                const answered = hasModelBinding(this.$refs?.model) && own.answers(value);
+
+                if (answered || sameCells(value, this.cells)) {
+                    return;
+                }
+
+                this.cells = { ...value };
+
+                if (this.$refs?.model) {
+                    this.$refs.model.value = this.cellsJson();
+                }
+            });
+
+            // Every cell renders its tabindex on the server, (0,0) the `0`, so a Livewire update
+            // would send the stop back to the corner. It stays on the cell that held it; a cell the
+            // update removed leaves the server's in place.
+            this._stopKeepingTabStop = keepTabStop(this.$root, '[data-r][data-c]', () => this._tabStop, () => {
+                this._tabStop = null;
+            });
         },
 
         destroy() {
@@ -56,6 +124,10 @@ export default function wirekitStatusMatrix(config = {}) {
             this._modelEvents = null;
             this._stopFormReset?.();
             this._stopFormReset = null;
+            this._stopServerValue?.();
+            this._stopServerValue = null;
+            this._stopKeepingTabStop?.();
+            this._stopKeepingTabStop = null;
         },
 
         /**
@@ -102,6 +174,8 @@ export default function wirekitStatusMatrix(config = {}) {
         ),
         _changePhrases: config.changePhrases || {},
         _locale: config.locale || 'en',
+        // The application's own marks, where it has them: the count of changes is text a reader sees.
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
 
         // Snapshot for the diff highlight; cloned so later edits don't mutate it.
         _baseline: config.cells && typeof config.cells === 'object' ? { ...config.cells } : {},
@@ -167,7 +241,7 @@ export default function wirekitStatusMatrix(config = {}) {
         // English and German and are not enough for Polish, which is why the
         // server sends every form rather than a singular and a plural.
         get changedLabel() {
-            return pluralize(this._changePhrases, this.changedCount, this._locale);
+            return pluralizeGrouped(this._changePhrases, this.changedCount, this._locale, this._separators);
         },
 
         // ── Heat scaling ─────────────────────────────────────────────────
@@ -255,17 +329,22 @@ export default function wirekitStatusMatrix(config = {}) {
          * stops in a grid the reader is told has one.
          */
         _moveTabStopTo(el) {
+            this._tabStop = el;
+
             const previous = this.$root.querySelector('[data-r][data-c][tabindex="0"]');
 
             if (previous && previous !== el) {
                 previous.setAttribute('tabindex', '-1');
             }
 
-            el.setAttribute('tabindex', '0');
+            if (el.getAttribute?.('tabindex') !== '0') {
+                el.setAttribute('tabindex', '0');
+            }
         },
 
         _emit() {
             this.$dispatch('cell-change', { cells: this.cells });
+            own.note({ ...this.cells });
             if (this.$refs.model) {
                 this.$refs.model.value = JSON.stringify(this.cells);
                 this.$refs.model.dispatchEvent(new Event('input', { bubbles: true }));

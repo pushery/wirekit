@@ -13,6 +13,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('modal.body', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\WireKit;
 
     // Body classes — the one region of the dialog that scrolls.
@@ -27,7 +32,7 @@
     // would make every instance the same one. modal.js keeps initial focus off this wrapper
     // whenever the dialog holds a control.
     $classes = 'wk-scrollbar '.WireKit::resolveClasses('modal.body', 'base', implode(' ', [
-        'min-h-0 overflow-y-auto',
+        'relative min-h-0 overflow-y-auto',
         // One token on all four sides, and the header's. Wider side padding would start the content
         // further in than the title above it and sit it further from the sides than from the
         // bottom; equal padding on one token keeps a single edge down the panel, and a theme
@@ -41,6 +46,6 @@
 @endphp
 
 {{-- Modal body — the scrolling region between header and footer --}}
-<div data-wk-modal-body tabindex="0" {{ $attributes->class([$classes]) }}>
+<div data-wk-modal-body @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'tabindex')) tabindex="0" @endunless {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </div>

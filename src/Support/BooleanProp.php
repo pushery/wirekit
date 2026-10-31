@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Illuminate\Support\Str;
+
 /**
  * Reads a Blade component prop that is meant as a boolean.
  *
@@ -39,8 +41,13 @@ final class BooleanProp
      *
      * A bare attribute (`<x-wirekit::faq schema>`) is compiled by Blade as the
      * bound expression `true`, so it arrives as PHP `true` and keeps meaning "on".
+     *
+     * Given the names of the component and the prop, a text that says neither on nor off is
+     * reported through the strictness gate as well, and still reads as on: without the report,
+     * the typing error `wrap="flase"` would switch on, silently, what its caller wrote as off.
+     * The prop's own name is a spelling of on, `disabled="disabled"` as HTML writes it.
      */
-    public static function from(mixed $value, bool $default = false): bool
+    public static function from(mixed $value, bool $default = false, ?string $component = null, ?string $prop = null): bool
     {
         if ($value === null) {
             return $default;
@@ -63,9 +70,21 @@ final class BooleanProp
             if (trim($value) === '') {
                 return false;
             }
+
+            if ($component !== null && $prop !== null && ! self::namesItself(trim($value), $prop)) {
+                StrictnessGate::reject($component, $prop, trim($value), 'on or off: true, false, 1, 0, on, off, yes, no or the name of the prop', 'true');
+            }
         }
 
         return (bool) $value;
+    }
+
+    /** Whether the text is the prop's own name, in either spelling Blade takes it in. */
+    private static function namesItself(string $text, string $prop): bool
+    {
+        $text = strtolower($text);
+
+        return $text === strtolower($prop) || $text === Str::kebab($prop);
     }
 
     /**

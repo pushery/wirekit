@@ -17,6 +17,11 @@
     // It was a slot only, and `title="…"` on the tag then landed on the wrapper as an HTML
     // attribute: a tooltip, with no heading drawn. `alert` takes it both ways, and so does this.
     'title' => null,
+    // The title as a heading of this level, 1 to 6: a reader moving from heading to heading finds
+    // it, and the headings in the text count from it. It keeps the callout's own size and line
+    // height. Null keeps the title a `div`, out of the page's outline; an unknown level is reported
+    // and keeps the `div` too, rather than placing the title at a level nobody chose.
+    'level' => null,
     'scope' => null,
 ])
 
@@ -27,15 +32,22 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $icon = BooleanProp::from($icon, true);
-    $bordered = BooleanProp::from($bordered, true);
-    $stripe = BooleanProp::from($stripe, false);
+    $icon = BooleanProp::from($icon, true, 'callout', 'icon');
+    $bordered = BooleanProp::from($bordered, true, 'callout', 'bordered');
+    $stripe = BooleanProp::from($stripe, false, 'callout', 'stripe');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('callout', $attributes->getAttributes());
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'callout');
+
+    // The title's element: a heading of the level given, else the `div` it was (see `level`).
+    $titleLevel = filled($level) && in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : null;
+    if (filled($level) && $titleLevel === null) {
+        WireKit::validateProp('callout', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
+    }
+    $titleTag = $titleLevel !== null ? 'h'.$titleLevel : 'div';
 
     // `intent` is the canonical name for this axis; `variant` is the
     // back-compat alias. When both are given the canonical one decides.
@@ -142,7 +154,7 @@
      So: no landmark, no live region. The heading and the text are read in document order,
      the icon is aria-hidden, and the intent is carried by the words rather than by a role
      a screen reader would have to interrupt for. --}}
-<div {{ $attributes->merge(['data-intent' => $variantValue])->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+<div {{ $attributes->merge(['data-intent' => $variantValue])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden'])) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     @if($stripe)
         {{-- Opt-in accent stripe: a one-sided colored bar, OFF by default. The
              plain callout is the alert-style 4-sided tinted border; the bar is
@@ -167,14 +179,15 @@
         {{-- A slot is asked for its actual content, because the markers Livewire writes
              around an `@if` inside it are not a heading; a prop is a string. --}}
         @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
-            <div class="font-[number:var(--font-wk-heading-weight)] mb-1 text-[color:var(--color-wk-text)]">{{ $title }}</div>
+            {{-- The marker stands first whatever the tag renders: prose styles a heading, and on a div it costs nothing. --}}
+            <{{ $titleTag }} data-wk-prose-skip class="font-[number:var(--font-wk-heading-weight)] mb-1 text-[color:var(--color-wk-text)]">{{ $title }}</{{ $titleTag }}>
         @endif
         <div class="text-[color:var(--color-wk-text-muted)]">{{ $slot }}</div>
-        @isset($actions)
+        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             {{-- flex-wrap so a callout with two buttons (or a long single
                  button label) wraps to a second row on a phone instead of
                  overflowing the callout body. --}}
             <div class="mt-3 flex flex-wrap items-center gap-2">{{ $actions }}</div>
-        @endisset
+        @endif
     </div>
 </div>

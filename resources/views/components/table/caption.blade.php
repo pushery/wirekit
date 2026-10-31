@@ -13,16 +13,20 @@
 
     use Pushery\WireKit\WireKit;
 
-    // Caption styling — muted text below the table, aligned start
+    // Caption styling — muted text below the table, aligned start. At most as wide as the frame
+    // around the table, `@container/wk-table`: a table that scrolls sideways is wider than what
+    // shows of it, and a caption as wide as the table would break its sentences at that width and
+    // be cut mid-word by the scroll area. A table that fits keeps a caption as wide as itself.
     $classes = WireKit::resolveClasses('table.caption', 'base', implode(' ', [
         'caption-bottom',
         'mt-2',
+        'max-w-[100cqi]',
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'text-left',
     ]), $scope);
 @endphp
 
-<caption {{ $attributes->class([$classes]) }}>
+<caption {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </caption>

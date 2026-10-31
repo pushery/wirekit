@@ -8,8 +8,8 @@
      Two call sites, one button — the alternative was eighty lines of markup duplicated,
      which is how two spellings of the same control drift apart.
 
-     Reads `$collapsed` and `$collapseBtnClasses` from the including scope, the same way
-     `sidebar-zones` reads `$header` and `$footer`. --}}
+     Reads `$collapsed`, `$collapseBtnClasses` and `$collapsePlacementClasses` from the including
+     scope, the same way `sidebar-zones` reads `$header` and `$footer`. --}}
         {{-- The control says what it does on hover, not only to a screen reader.
              Reported for every view that has one: the chevron alone is a guess until
              you click it, and the name that answers the question was already here in
@@ -22,7 +22,7 @@
              The text is bound rather than passed, because it changes with the state
              and `text` renders once. The binding resolves against the column's own
              Alpine scope, which this partial already reads for `:aria-expanded`. --}}
-        <x-wirekit::tooltip :focusable-trigger="false">
+        <x-wirekit::tooltip :focusable-trigger="false" :class="$collapsePlacementClasses ?? ''">
             <x-slot:content>
                 <span x-text="collapsed
                     ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand sidebar')) }}

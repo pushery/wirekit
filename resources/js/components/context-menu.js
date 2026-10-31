@@ -35,7 +35,7 @@ const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
  * three. `[tabindex="-1"]` is excluded, which is exactly why the menu items themselves
  * never show up here: they are reached with the arrow keys, never with Tab.
  */
-const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /*
  * Takes no configuration: the template calls `wirekitContextMenu()` with no arguments, so a
@@ -97,6 +97,7 @@ export default function wirekitContextMenu() {
             // instance can skip closing itself.
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:context-menu-open',
+                root: this.$root,
                 onOther: () => this._forceClose(),
             });
 
@@ -461,7 +462,8 @@ export default function wirekitContextMenu() {
          * Handle keyboard navigation within the context menu.
          */
         handleKeydown(event) {
-            if (!this.isOpen) return;
+            // A key an element inside the menu already answered is spent, as in dropdown.js.
+            if (!this.isOpen || event.defaultPrevented) return;
 
             const items = this._getItems();
             if (!items.length) return;

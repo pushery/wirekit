@@ -20,11 +20,13 @@
     // The Livewire method to call when the code is COMPLETE — not per keystroke.
     // A refusal keeps what was entered; see the note above. Null leaves the
     // component exactly as it has always rendered.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -110,9 +112,14 @@
     // and submittable, announced as editable, and the `disabled:` variants below could
     // never fire.
     'disabled' => false,
+    // Read-only as a native field is: every box keeps its tab stop and the code is sent, and
+    // nothing changes it, not a key, a paste or a code the platform fills in. Declared for the
+    // reason `disabled` is: the attribute bag never reaches the boxes, and undeclared the
+    // attribute landed on the wrapper, where it is no valid attribute and stops nothing.
+    'readonly' => false,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -120,22 +127,24 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $masked = BooleanProp::from($masked, false);
-    $autofocus = BooleanProp::from($autofocus, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $required = BooleanProp::from($required, false);
+    $masked = BooleanProp::from($masked, false, 'otp-input', 'masked');
+    $autofocus = BooleanProp::from($autofocus, false, 'otp-input', 'autofocus');
+    $disabled = BooleanProp::from($disabled, false, 'otp-input', 'disabled');
+    $readonly = BooleanProp::from($readonly, false, 'otp-input', 'readonly');
+    $required = BooleanProp::from($required, false, 'otp-input', 'required');
 
     // The length stands in the x-data object as a bare number, so it is read as one first: text
     // written there unquoted would run as an expression. One that holds no number takes the
-    // configured length, and the field always has at least one cell.
-    $length = max(1, (int) \Pushery\WireKit\Support\NumericProp::positive($length, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.otp-input.length', 6), 6)));
+    // configured length, and the field always has at least one cell and at most a hundred: a cell
+    // per unit of a length without a ceiling runs the request out of memory.
+    $length = max(1, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::positive($length, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.otp-input.length', 6), 6), 'otp-input', 'length'), 100, 'otp-input', 'length'));
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // ── Alphabet: one prop, every constraint derived from it ──────────────
     //
@@ -158,7 +167,7 @@
     // the values are instead of rendering one box per group or one group of all of
     // them. `2` upward: a group of one is every box on its own, which is what the
     // ungrouped row already does at a narrow width.
-    $group = $group === null || $group === '' ? null : (string) $group;
+    $group = $group === null || $group === '' ? null : \Pushery\WireKit\Support\NumericProp::text($group);
 
     if ($group !== null) {
         // `StrictnessGate::enforce()` directly, not through `WireKit::validateProp()`, and the
@@ -263,11 +272,14 @@
         )))
         : $alphabetChars;
 
+    // Browsers compile `pattern` with the `v` flag, under which `(`, `)`, `[`, `{`, `}`, `/` and
+    // `|` are syntax inside a class as well, so the class escapes them beside `\`, `]`, `^` and
+    // `-`. Each is a valid escape under the `u` flag too, which older browsers use.
     $alphabetPattern = count($alphabetChars) === 10 && $alphabetIsNumeric
         ? '[0-9]'
         : '['.str_replace(
-            ['\\', ']', '^', '-'],
-            ['\\\\', '\\]', '\\^', '\\-'],
+            ['\\', ']', '^', '-', '(', ')', '[', '{', '}', '/', '|'],
+            ['\\\\', '\\]', '\\^', '\\-', '\\(', '\\)', '\\[', '\\{', '\\}', '\\/', '\\|'],
             implode('', $alphabetPatternChars)
         ).']';
 @endphp
@@ -283,6 +295,9 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+    // A list where the field takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and left off the field (Support\FieldValue).
+    $attributes = \Pushery\WireKit\Support\FieldValue::withoutLists($attributes, 'otp-input');
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -297,13 +312,21 @@
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'otp-'); // page-unique DOM id; see Support\DomId
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
     // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
     $attributes = $attributes->except('id');
 
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // One box per size: width, height, the digit's text size and the corner. `md` is the
     // default.
@@ -362,6 +385,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // A required code that a submit found empty says so under the boxes (partials/required-message),
     // unless the server's own message already stands there. The group and the first box name it.
@@ -413,6 +443,13 @@
     // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
     $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // Inside a labeled field the field's label stands where this component's own would: it points
+    // at the first box, which carries its words in its name, and it names the group by reference
+    // (Support\FieldControl).
+    $fieldLabelId = blank($label) && blank(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) && $callerLabelledBy === null && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel($id.'-digit-0')
+        : null;
+    $boxLabel = $label ?: ($fieldLabelId !== null ? $wkField->labelText() : null);
     // A caller's `form` goes to the field this component submits, and only there: on the
     // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
     $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
@@ -442,13 +479,17 @@
     \Pushery\WireKit\Support\UnboundModel::drop('otp-input', $attributes);
     // `enterkeyhint` belongs to the boxes as well: the on-screen keyboard reads it on the field it
     // types into (Support\FieldAttributes). What else the keyboard reads there follows the alphabet.
-    [$boxAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, ['enterkeyhint']);
+    // So does `tabindex`: the boxes are the tab stops, and on the wrapper it took none of them out.
+    [$boxAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, ['enterkeyhint', 'tabindex']);
     $wrapperAttributes = $attributes
         ->except(['name', 'dusk', 'aria-label', 'aria-labelledby', 'aria-describedby', 'autocomplete', ...array_keys($groupListeners->getAttributes())])
         ->whereDoesntStartWith(['wire:model', 'data-']);
 @endphp
 
-<div {{ $outerAttributes }} data-wk-sr-host {{ $wrapperAttributes->class([$wrapperClasses]) }}
+<div {{ $outerAttributes }} data-wk-sr-host {{ $wrapperAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
+    {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+         listener written on the tag hears one field (utils/focus-unit.js). --}}
+    x-wk-focus-unit
     @if($callerRef !== '') data-wk-ref-scope @endif
     @if($optimisticConfig)
         x-data="wirekitOptimistic({{ $optimisticConfig }})"
@@ -460,20 +501,24 @@
     @if($label)
         {{-- `-digit-0`, not `-0`. See the digit id below for why the segment is
              there; this must move with it or every otp-input loses its label. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id . '-digit-0'" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id . '-digit-0'" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- Hidden input holds the combined OTP value for form submission / wire:model.
          Native `disabled`, so a disabled code is omitted from the submitted form the
          way every other disabled control is — the value the reader could not enter
-         must not be posted on their behalf. --}}
-    <input type="hidden" id="{{ $id }}" name="{{ $name }}" @disabled($disabled) {{ $attributes->whereStartsWith('wire:model') }} @if($formOwner) form="{{ $formOwner }}" @endif />
+         must not be posted on their behalf. It waits for the script as well: only the
+         script joins the boxes into it, so until Alpine starts it stays out of the form
+         and the boxes are sent instead. The field stands beside the boxes' root rather
+         than in it, so its own `x-data` is what lets Alpine evaluate the binding on a
+         page that is no Livewire component. --}}
+    <input type="hidden" id="{{ $id }}" data-wk-otp-field @if($name !== '') name="{{ $name }}" @endif disabled x-data x-bind:disabled="{{ $disabled ? 'true' : 'false' }}" {{ $attributes->whereStartsWith('wire:model') }} @if($formOwner) form="{{ $formOwner }}" @endif />
 
     {{-- The `wirekitOtpInput` factory, registered by the WireKit bundle.
          Handles auto-advance on digit input, backspace to previous,
          arrow key navigation, and paste distribution across fields. --}}
     <div
-        x-data="wirekitOtpInput({ length: {{ $length }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, alphabet: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars) }}, caseFold: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
+        x-data="wirekitOtpInput({ length: {{ $length }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, alphabet: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars) }}, caseFold: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold) }}, readonly: {{ $readonly ? 'true' : 'false' }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
         {{-- flex-wrap because every digit box carries a hard width (`--size-wk-md`, 40px at the
              default size) and is an <input>, whose automatic minimum size resolves to that
              definite width —
@@ -495,8 +540,7 @@
              that finds its fields by `dusk` could not find this one at all. --}}
         {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }} {{ $groupListeners }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-        @if($required) aria-required="true" @endif
-        @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ $label ?? \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? __('wirekit::One-time code') }}" @endif
+        @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @else aria-label="{{ \Pushery\WireKit\Support\BlankName::first($label, \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), __('wirekit::One-time code')) }}" @endif
         {{-- On the GROUP as well as on every box: a reader who lands on the group
              before reaching a digit has to hear that the code is not enterable. --}}
         @if($disabled) aria-disabled="true" @endif
@@ -527,7 +571,11 @@
                      case: mobile keyboards otherwise start lowercase and browsers
                      underline the "misspelled" code. --}}
                 inputmode="{{ $alphabetIsNumeric ? 'numeric' : 'text' }}"
-                pattern="{{ $alphabetPattern }}"
+                {{-- One character per box, except the first, which takes up to the whole code:
+                     without a script nothing spreads a code an autofill puts there, and a
+                     one-character pattern would stop the form from being sent. The script keeps
+                     one character in it, so the wider pattern changes nothing while it runs. --}}
+                pattern="{{ $i === 0 && $length > 1 ? $alphabetPattern.'{1,'.$length.'}' : $alphabetPattern }}"
                 {{ $boxAttributes }}
                 @unless($alphabetIsNumeric)
                     autocapitalize="characters"
@@ -555,9 +603,12 @@
                      what is on screen, "Verification code", reaches the field
                      (WCAG 2.5.3). The other boxes are named by their place alone,
                      under the group's name. --}}
-                aria-label="{{ $i === 0 && $label
-                    ? __('wirekit:::label, digit :position of :total', ['label' => $label, 'position' => $i + 1, 'total' => $length])
+                aria-label="{{ $i === 0 && $boxLabel
+                    ? __('wirekit:::label, digit :position of :total', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($boxLabel), 'position' => $i + 1, 'total' => $length])
                     : __('wirekit::Digit :position of :total', ['position' => $i + 1, 'total' => $length]) }}"
+                {{-- On every box, as `aria-invalid` is: ARIA does not allow `aria-required`
+                     on the group, and a box is what a reader lands on. --}}
+                @if($required || $fieldRequired) aria-required="true" @endif
                 @if($hasError)
                     aria-invalid="true"
                 @elseif($requiredMessageId)
@@ -585,6 +636,15 @@
                      (range-slider DOES guard its handlers: its thumbs are
                      `div[role="slider"]`, which the attribute cannot switch off.) --}}
                 @disabled($disabled)
+                @if($readonly) readonly @endif
+                {{-- Without a script the boxes are what the form sends, one entry of `name[]` each
+                     in the order they stand, because joining them into the code takes the script;
+                     `implode('', (array) $request->input(…))` reads either shape. Alpine takes the
+                     names away when it starts, so with a script the form sends the code under
+                     `name` alone, from the hidden field above. --}}
+                @if($name !== '') name="{{ $name }}[]" @endif
+                x-bind:name="null"
+                @if($formOwner) form="{{ $formOwner }}" @endif
                 class="wk-field {{ $digitClasses }} {{ $stateClasses }}"
                 x-ref="digit{{ $i }}"
                 {{-- Selects the cell on focus, so a filled cell overwrites like an empty
@@ -605,7 +665,7 @@
              sits before it, and the browser validates no hidden field, so a required code stops an
              empty submit through a stand-in of its own. Its message takes a line of its own. --}}
         @if($required)
-            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled || $readonly])
         @endif
         @if($requiredMessageId)
             @include('wirekit::components.partials.required-message', ['requiredMessageId' => $requiredMessageId, 'requiredMessageClass' => 'basis-full'])

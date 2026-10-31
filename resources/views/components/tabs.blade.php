@@ -1,6 +1,18 @@
 {{-- optimistic-ui: n/a — client-only
      Its state is which tab is active. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
+@php
+    // A panel arrives as a slot named after its tab's key, and Blade sets each slot as a variable
+    // of that name before the props below are read, where it takes the place of the attribute: a
+    // tab keyed `active` or `items` would replace that prop with its panel. The panels are read
+    // from `$__laravel_slots` (Support\KeyedSlot), so the slot variables are let go first.
+    foreach (array_keys($__laravel_slots ?? []) as $__wkSlotName) {
+        if (is_string($__wkSlotName) && ! in_array($__wkSlotName, ['__default', 'slot', 'attributes', '__laravel_slots'], true)) {
+            unset($$__wkSlotName);
+        }
+    }
+    unset($__wkSlotName);
+@endphp
 @props([
     'items' => [],
     // Which tab opens on first paint. Initial only — Alpine reads a seed once, so
@@ -31,7 +43,7 @@
     use Pushery\WireKit\WireKit;
 
     // `findable="false"` on an unbound tag is the string "false", which is truthy.
-    $findable = BooleanProp::from($findable, false);
+    $findable = BooleanProp::from($findable, false, 'tabs', 'findable');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -60,7 +72,7 @@
     // The items may arrive as a Collection. One that was filtered keeps the keys it had, so a
     // list of tab records is also recognized by its records: every entry an array with a `key`.
     $tabs = [];
-    $items = \Pushery\WireKit\Support\ListProp::records($items);
+    $items = \Pushery\WireKit\Support\ListProp::records($items, 'tabs', 'items');
     $itemsAreRecords = is_array($items) && $items !== []
         && array_all($items, static fn ($item): bool => is_array($item) && isset($item['key']));
     if (is_array($items) && (array_is_list($items) || $itemsAreRecords)) {
@@ -79,6 +91,11 @@
             $tabs[$key] = ['label' => $val, 'icon' => null, 'badge' => null, 'badgeIntent' => null];
         }
     }
+
+    // A tab named by an enum, as a model attribute cast to one hands it over, is the tab of its
+    // value (Support\FieldValue).
+    $active = \Pushery\WireKit\Support\FieldValue::one($active, 'tabs', 'active');
+    $default = \Pushery\WireKit\Support\FieldValue::one($default, 'tabs', 'default');
 
     // Resolve the initial active tab: explicit default, otherwise first key
     $activeTab = $active ?? $default ?? (array_key_first($tabs) ?? '');
@@ -115,6 +132,20 @@
         \Pushery\WireKit\WireKit::stableId('wk-tabs', implode('-', array_keys($tabs))),
         'wk-tabs-'
     );
+
+    // The ids of each tab and its panel, made once, so that both loops below name the same pair.
+    // An id holds no whitespace (Support\DomId::valid()): the key `new york` makes
+    // `…-tab-new-york`, and a given id `my tabs` the prefix `my-tabs`, while the root keeps the id
+    // as written. Two keys that read alike then (`a b`, `a-b`) keep apart through
+    // DomId::distinct(), which leaves an id that is new to the page as it is.
+    $idPrefix = \Pushery\WireKit\Support\DomId::valid((string) $uid) ?? (string) $uid;
+    $pairIds = [];
+    foreach (array_keys($tabs) as $key) {
+        $pairIds[$key] = [
+            'tab' => \Pushery\WireKit\Support\DomId::distinct($idPrefix.'-tab-'.$key),
+            'panel' => \Pushery\WireKit\Support\DomId::distinct($idPrefix.'-panel-'.$key),
+        ];
+    }
 
     // Tablist container — horizontal row of tab buttons. Variant controls bottom
     // border (underline), background pill track (pills), or bordered segments.
@@ -175,7 +206,7 @@
     $warnWireModelInDebug = $hasWireModel && config('app.debug');
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
-    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
     // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
@@ -219,7 +250,7 @@
              than the component's own state. --}}
         data-wk-server-value="{{ $activeTab }}"
     @endif
-    {{ $attributes->class([$rootClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}
 >
     {{-- Tablist — the row (or column, when vertical) of tab buttons.
          role="tablist" groups the tab buttons as a single keyboard navigation unit. Without
@@ -229,11 +260,16 @@
             <button
                 type="button"
                 role="tab"
-                id="{{ $uid }}-tab-{{ $key }}"
-                aria-controls="{{ $uid }}-panel-{{ $key }}"
-                :aria-selected="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? 'true' : 'false'"
-                :tabindex="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? '0' : '-1'"
-                @click="active = {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
+                id="{{ $pairIds[$key]['tab'] }}"
+                aria-controls="{{ $pairIds[$key]['panel'] }}"
+                {{-- Before the script, the tab of the panel the server renders open: the seed. --}}
+                aria-selected="{{ (string) $key === (string) $seedTab ? 'true' : 'false' }}"
+                {{-- Every comparison and every write takes the key as text, the form the seed and
+                     the server's attribute arrive in: a key PHP holds as a number, an id or a
+                     year, is the text of its digits on both sides. --}}
+                :aria-selected="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }} ? 'true' : 'false'"
+                :tabindex="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }} ? '0' : '-1'"
+                @click="active = {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}"
                 @if($isVertical)
                     @keydown.arrow-down.prevent="focusTab('next')"
                     @keydown.arrow-up.prevent="focusTab('prev')"
@@ -243,15 +279,16 @@
                 @endif
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
-                :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? {{ \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses) }}"
+                :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }} ? {{ \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses) }}"
                 class="wk-tab wk-touch-row {{ $tabClasses }}"
             >
                 @if($tab['icon'])
                     <x-wirekit::icon :name="$tab['icon']" size="sm" />
                 @endif
                 <span>{{ $tab['label'] }}</span>
-                @if($tab['badge'] !== null && $tab['badge'] !== '')
-                    <x-wirekit::badge size="sm" :intent="$tab['badgeIntent']">{{ $tab['badge'] }}</x-wirekit::badge>
+                @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($tab['badge']))
+                @if($badgeText !== null)
+                    <x-wirekit::badge size="sm" :intent="$tab['badgeIntent']">{{ $badgeText }}</x-wirekit::badge>
                 @endif
             </button>
         @endforeach
@@ -262,36 +299,39 @@
          active panel is visible; others stay in the DOM but are hidden via x-show. --}}
     <div class="{{ $panelClasses }}">
         @foreach($tabs as $key => $tab)
-            @if($findable)
-            {{-- FINDABLE PANEL. An inactive one is `hidden="until-found"` where the engine supports
+            {{-- One panel element in both modes, its attributes branched inside the tag. An `@if`
+                 around an opening tag alone gets Livewire's block markers on both sides of it, the
+                 start beside the panel and the end inside it, and a morph that adds, drops or
+                 reorders panels then finds no end to the block and throws.
+
+                 FINDABLE PANEL. An inactive one is `hidden="until-found"` where the engine supports
                  it, and a match activates its tab through `x-on:beforematch`, so `aria-selected`
                  and the roving tab stop follow. The tab stop is BOUND: an element that is itself
                  until-found still takes focus, by script and by Tab, in Chromium and WebKit, so
-                 an inactive panel carries no `tabindex` at all. See utils/findable.js. --}}
+                 an inactive panel carries no `tabindex` at all. See utils/findable.js. The panel of
+                 the seed tab is drawn open and says so with `data-wk-rendered-open`: the server can
+                 name another tab, which the start then shows, and without the mark the seed's panel
+                 would read as one found before the script ran, and take the tab back.
+
+                 Otherwise every panel is a tab stop, shown by `x-show`. --}}
             <div
                 role="tabpanel"
-                id="{{ $uid }}-panel-{{ $key }}"
-                aria-labelledby="{{ $uid }}-tab-{{ $key }}"
-                @if((string) $key === (string) $seedTab) tabindex="0" @else hidden="until-found" @endif
+                id="{{ $pairIds[$key]['panel'] }}"
+                aria-labelledby="{{ $pairIds[$key]['tab'] }}"
+                @if(! $findable) tabindex="0" @elseif((string) $key === (string) $seedTab) tabindex="0" data-wk-rendered-open @else hidden="until-found" @endif
                 class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                :tabindex="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? '0' : null"
-                x-wk-findable="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
-                x-on:beforematch="active = {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
+                @if($findable)
+                    :tabindex="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }} ? '0' : null"
+                    x-wk-findable="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}"
+                    x-on:beforematch="active = {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}"
+                @else
+                    x-show="active === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $key) }}"
+                    x-cloak
+                @endif
             >
-            @else
-            <div
-                role="tabpanel"
-                id="{{ $uid }}-panel-{{ $key }}"
-                aria-labelledby="{{ $uid }}-tab-{{ $key }}"
-                tabindex="0"
-                class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                x-show="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
-                x-cloak
-            >
-            @endif
-                {{-- Dynamic slot lookup: render the named slot whose name matches
-                     the item key. Falls back to empty string if no slot was provided. --}}
-                {{ ${$key} ?? '' }}
+                {{-- The slot the item key names, as written or, for a hyphenated key, in the camel
+                     form Blade gives `<x-slot:api-keys>`. Empty when no slot names it. --}}
+                {{ \Pushery\WireKit\Support\KeyedSlot::find($__laravel_slots ?? [], $key) ?? '' }}
             </div>
         @endforeach
     </div>

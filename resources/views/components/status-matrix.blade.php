@@ -49,19 +49,24 @@
     // The DISPLAY name, resolved once. The raw `$ariaLabel` stays the record of whether the
     // caller supplied one, which is what the region's role is gated on below; this variable is
     // what every element that must always be named actually renders.
-    $ariaLabelResolved = filled($ariaLabel) ? $ariaLabel : __('wirekit::Status matrix');
+    $ariaLabelResolved = filled($ariaLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) : __('wirekit::Status matrix');
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $editable = BooleanProp::from($editable, false);
+    $editable = BooleanProp::from($editable, false, 'status-matrix', 'editable');
     // Same contract, different spelling of the default: a `config()` fallback declares a
     // boolean as surely as a literal does. `legend` defaults ON, so `legend="false"` is a
     // switch a developer sets deliberately — and the legend it asked to drop stayed drawn.
-    $legend = BooleanProp::from($legend, true);
+    $legend = BooleanProp::from($legend, true, 'status-matrix', 'legend');
 
     $cellType = WireKit::validateProp('status-matrix', 'cellType', $cellType, ['tristate', 'toggle', 'status', 'heat']);
     $isEditable = filter_var($editable, FILTER_VALIDATE_BOOLEAN) && in_array($cellType, ['tristate', 'toggle'], true);
+
+    // A caller's `wire:model` binds the edited cells, which only an editable matrix has.
+    if (! $isEditable) {
+        \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('status-matrix', $attributes->getAttributes(), 'unless it is `editable` with the `tristate` or `toggle` cell type');
+    }
 
     // Is this matrix a COMPOSITE WIDGET, or a data table?
     //
@@ -105,15 +110,15 @@
     $name = $name ?? $attributes->get('name');
 
     // Normalize axes to plain arrays of {key,label}.
-    $toAxis = function ($items) {
-        $items = (array) \Pushery\WireKit\Support\ListProp::from($items);
+    $toAxis = function ($items, string $prop) {
+        $items = (array) \Pushery\WireKit\Support\ListProp::from($items, 'status-matrix', $prop);
         return array_values(array_map(function ($it) {
             $it = (array) \Pushery\WireKit\Support\ListProp::from($it);
             return ['key' => (string) ($it['key'] ?? $it['label'] ?? ''), 'label' => (string) ($it['label'] ?? $it['key'] ?? '')];
         }, $items));
     };
-    $rowList = $toAxis($rows);
-    $colList = $toAxis($columns);
+    $rowList = $toAxis($rows, 'rows');
+    $colList = $toAxis($columns, 'columns');
 
     // The grid role needs CELLS as well as an editable cell type. Gated on the type alone,
     // an empty `rows`/`columns` set still produced a `role="grid"` with no gridcell in it —
@@ -124,7 +129,7 @@
     $isCompositeGrid = $isCompositeGrid && $rowList !== [] && $colList !== [];
 
     // Normalize cells into a flat ["row:col" => value] lookup (accepts nested too).
-    $cellsArr = (array) \Pushery\WireKit\Support\ListProp::from($cells);
+    $cellsArr = (array) \Pushery\WireKit\Support\ListProp::from($cells, 'status-matrix', 'cells');
     $flatCells = [];
     foreach ($cellsArr as $k => $v) {
         $v = \Pushery\WireKit\Support\ListProp::from($v);
@@ -219,7 +224,7 @@
     );
 
     // BCP-47 for `Intl.PluralRules` — the APPLICATION's locale, not the browser's.
-    $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
+    $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag());
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
@@ -231,13 +236,21 @@
     // where it would name nothing a reader lands on.
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
     $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+
+    // One value for the style, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $heatFrom = \Pushery\WireKit\Support\CssValue::prop($heatFrom, 'status-matrix', 'heatFrom', 'var(--color-wk-warning)');
+    $heatTo = \Pushery\WireKit\Support\CssValue::prop($heatTo, 'status-matrix', 'heatTo', 'var(--color-wk-danger)');
 @endphp
 
+{{-- The cells travel on `data-wk-server-value`, not in `x-data`, so the expression is the same
+     for every map: a Livewire morph that changed it would start the matrix again, and the answer
+     to a `wire:model.live` edit would put back the cells of the request. --}}
 <div
     {{ $attributes->except(['id', 'name', 'class', 'aria-labelledby'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitStatusMatrix({ cells: {{ \Pushery\WireKit\Support\AlpinePayload::from($flatCells) }}, cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }}, stateLabels: {{ $stateLabels }}, changePhrases: {{ $changePhrases }}, locale: {{ $pluralLocale }} })"
-    {{ $attributes->only('class')->class([$base]) }}
+    data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json((object) $flatCells) }}"
+    x-data="wirekitStatusMatrix({ cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ \Pushery\WireKit\Support\NumericProp::from($heatMin, 0, 'status-matrix', 'heatMin') }}, heatMax: {{ \Pushery\WireKit\Support\NumericProp::from($heatMax, 0, 'status-matrix', 'heatMax') }}, stateLabels: {{ $stateLabels }}, changePhrases: {{ $changePhrases }}, locale: {{ $pluralLocale }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
+    {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base])) }}
 >
     @if($isEditable)
         {{-- JSON bridge for wire:model / form submission of the edited cell map. --}}
@@ -252,9 +265,9 @@
          unconditional). It becomes a LANDMARK only when the caller named the matrix; the inner
          table is the role=grid composite and keeps its name either way. --}}
     <div
-        @if($callerLabelledBy) role="region" aria-labelledby="{{ $callerLabelledBy }}" @elseif(filled($ariaLabel)) role="region" aria-label="{{ $ariaLabel }}" @endif
+        @if($callerLabelledBy) role="region" aria-labelledby="{{ $callerLabelledBy }}" @elseif(filled($ariaLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) }}" @endif
         tabindex="0"
-        class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+        class="relative w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
         {{-- The role is a promise of a keyboard model — see `$isCompositeGrid` above.
              Named either way: `aria-label` names a plain <table> exactly as it named
@@ -266,11 +279,11 @@
                  which is the same judgment one step earlier. The `empty` slot replaces the
                  sentence; see data-table for why it replaces rather than accompanies it. --}}
             <div class="flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
-                @isset($empty)
+                @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
                     {{ $empty }}
                 @else
                     <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
-                @endisset
+                @endif
             </div>
         @else
         <table data-wk-prose-skip @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}"@else aria-label="{{ $ariaLabelResolved }}"@endif>
@@ -325,8 +338,8 @@
                                             {{-- Shape differentiates the three states (colorblind-safe);
                                                  color is redundant reinforcement; the text state lives
                                                  in aria-label. --}}
-                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'allow'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-success)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
-                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'deny'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-danger)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'allow'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-success-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'deny'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-danger-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
                                             <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'inherit'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg>
                                         </button>
                                         @break
@@ -337,6 +350,8 @@
                                             data-r="{{ $ri }}" data-c="{{ $ci }}"
                                             tabindex="{{ $tabindex }}"
                                             role="switch"
+                                            {{-- The cell as the server holds it, read as toggleOn() reads it. --}}
+                                            aria-checked="{{ ($val === true || $val === 'on') ? 'true' : 'false' }}"
                                             :aria-checked="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'true' : 'false'"
                                             {{-- See the tristate cell above: navigation is unconditional, and a
                                                  non-editable switch says so instead of accepting an Enter that
@@ -396,8 +411,8 @@
         <div class="mt-2 flex flex-wrap items-center gap-[var(--space-wk-md)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
             @switch($cellType)
                 @case('tristate')
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-success)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg> {{ __('wirekit::Allowed') }}</span>
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-danger)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg> {{ __('wirekit::Denied') }}</span>
+                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-success-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg> {{ __('wirekit::Allowed') }}</span>
+                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-danger-text)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg> {{ __('wirekit::Denied') }}</span>
                     <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg> {{ __('wirekit::Inherited') }}</span>
                     @break
                 @case('heat')
@@ -416,10 +431,16 @@
                      order for every language. `changedLabel` picks the translated form in the
                      browser, where the count lives. --}}
                 {{-- A live region, because this number is the one piece of state the matrix holds that a
-                     reader cannot reconstruct from anywhere else on the page. It changed on screen
-                     and was announced to nobody. `polite`, not `assertive`: it follows an edit the
-                     reader just made, so it belongs after whatever the edit itself said. --}}
-                <span x-show="changedCount > 0" x-cloak role="status" aria-live="polite" x-text="changedLabel" class="text-[color:var(--color-wk-warning-text)]"></span>
+                     reader cannot reconstruct from anywhere else on the page. `polite`, not
+                     `assertive`: it follows an edit the reader just made, so it belongs after
+                     whatever the edit itself said.
+
+                     Two elements. The count for the eye shows only while something is unsaved,
+                     and a region shown together with its text is announced unreliably, so the
+                     first change would go unheard. The region is in the tree from the first
+                     render, empty, and only its text changes. --}}
+                <span x-show="changedCount > 0" x-cloak aria-hidden="true" x-text="changedLabel" class="text-[color:var(--color-wk-warning-text)]"></span>
+                <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-wk-announcer x-text="changedCount > 0 ? changedLabel : ''"></span>
             @endif
         </div>
     @endif

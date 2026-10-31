@@ -23,9 +23,16 @@
 {{-- The table's `stack-below`: a table that stacks its rows writes its roles out. --}}
 @aware([
     'stackBelow' => null,
+    'stackBelowContainer' => null,
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $stackBelow = \Pushery\WireKit\Support\AwareProp::read('stackBelow', ['table'], null);
+    // A table that stacks by its own width writes the same roles out as one that stacks by the window's.
+    $stackBelow = filled($stackBelow) ? $stackBelow : \Pushery\WireKit\Support\AwareProp::read('stackBelowContainer', ['table'], null);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
@@ -34,9 +41,9 @@
     use Pushery\WireKit\WireKit;
 
     // `@aware` leaves the key in the bag, so a tag that also wrote it would render it as an attribute.
-    $attributes = $attributes->except(['stackBelow', 'stack-below']);
+    $attributes = $attributes->except(['stackBelow', 'stack-below', 'stackBelowContainer', 'stack-below-container']);
 
-    $hasDetails = isset($details) && trim((string) $details) !== '';
+    $hasDetails = \Pushery\WireKit\Support\SlotContent::given($details ?? null) && trim((string) $details) !== '';
 
     $detailsBelowContainer = filled($detailsBelowContainer) ? (string) $detailsBelowContainer : null;
     if ($detailsBelowContainer !== null && ! in_array($detailsBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'], true)) {
@@ -130,12 +137,15 @@
     $classes = WireKit::resolveClasses('table.row', 'base', implode(' ', [
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
+        // Each switch is read at the nearest table, through child combinators: a table in one of
+        // this table's cells is a descendant of it as well, and keeps its own switches. The parser
+        // always puts a row in a section and a cell in a row, so the path is exact.
         // Striped: every odd RECORD row in a data-wk-striped table gets a subtle tint
-        '[table[data-wk-striped]_&:nth-child(odd_of_[data-wk-table-row])]:bg-[var(--color-wk-bg-subtle)]',
+        '[table[data-wk-striped]>*>&:nth-child(odd_of_[data-wk-table-row])]:bg-[var(--color-wk-bg-subtle)]',
         // Hoverable: any row inside a data-wk-hoverable table reacts to hover
-        '[table[data-wk-hoverable]_&:hover]:bg-[var(--color-wk-bg-active)]',
+        '[table[data-wk-hoverable]>*>&:hover]:bg-[var(--color-wk-bg-active)]',
         // Striped + hoverable: hover must override the stripe on odd rows (higher specificity)
-        '[table[data-wk-striped][data-wk-hoverable]_&:nth-child(odd_of_[data-wk-table-row]):hover]:bg-[var(--color-wk-bg-active)]',
+        '[table[data-wk-striped][data-wk-hoverable]>*>&:nth-child(odd_of_[data-wk-table-row]):hover]:bg-[var(--color-wk-bg-active)]',
     ]), $scope);
 
     // The details row takes the tint of the record it belongs to, or it reads as a separate
@@ -143,11 +153,16 @@
     // record before it is what decides, and only that record's parity is knowable here.
     $detailsClasses = WireKit::resolveClasses('table.row', 'details', implode(' ', [
         $detailsHiddenFrom,
-        '[table[data-wk-striped]_[data-wk-table-row]:nth-child(odd_of_[data-wk-table-row])+&]:bg-[var(--color-wk-bg-subtle)]',
+        '[table[data-wk-striped]>*>[data-wk-table-row]:nth-child(odd_of_[data-wk-table-row])+&]:bg-[var(--color-wk-bg-subtle)]',
     ]), $scope);
+
+    // The span reaches the cell as PHP casts it, and a text that holds no number is reported.
+    // A span no integer holds is written as none.
+    \Pushery\WireKit\Support\NumericProp::check($detailsColspan, 'table.row', 'detailsColspan', whole: true);
+    $detailsColspan = $detailsColspan === null ? null : \Pushery\WireKit\Support\NumericProp::cast($detailsColspan);
 @endphp
 
-<tr data-wk-table-row @if(filled($stackBelow)) role="row" @endif {{ $attributes->class([$classes, $detailsBorderFix]) }}>
+<tr data-wk-table-row @if(filled($stackBelow)) role="row" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $detailsBorderFix])) }}>
     {{ $slot }}
 </tr>
 
@@ -175,7 +190,7 @@
         <td
             data-wk-prose-skip
             data-wk-table-details-cell
-            @if($detailsColspan !== null) colspan="{{ (int) $detailsColspan }}" @endif
+            @if($detailsColspan !== null) colspan="{{ $detailsColspan }}" @endif
             @if(filled($detailsFor)) headers="{{ $detailsFor }}" @endif
             class="px-[var(--padding-wk-x-md)] pb-[var(--padding-wk-y-md)] pt-0 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]"
         >{{ $details }}</td>

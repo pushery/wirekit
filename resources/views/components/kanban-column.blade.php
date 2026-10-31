@@ -36,13 +36,13 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sortable = BooleanProp::from($sortable, false);
+    $sortable = BooleanProp::from($sortable, false, 'kanban-column', 'sortable');
 
     // The Reorder button says which column it puts in reorder mode when that is the only column
     // it affects, so a board of four sortable columns does not offer four buttons called
     // "Reorder". On a connected board one press reaches every column, and the same action keeps
     // the same name. The visible word stays first in the name (WCAG 2.5.3).
-    $reorderColumn = trim(strip_tags((string) $label));
+    $reorderColumn = \Pushery\WireKit\Support\SlotContent::textOf($label);
     $reorderLabel = $reorderColumn !== '' && ! BooleanProp::from($crossColumn, false)
         ? __('wirekit::Reorder :title', ['title' => $reorderColumn])
         : null;
@@ -53,6 +53,10 @@
     };
 
     $isOverLimit = $limit !== null && $count !== null && $count > $limit;
+
+    // Whether a limit is shown beside the count: a number other than zero, read as a number so
+    // that NAN, which PHP 8.5 warns about when it is read as true or false, is none.
+    $showsLimit = (bool) \Pushery\WireKit\Support\NumericProp::orNull($limit, 'kanban-column', 'limit');
 
     // Header accent color based on intent
     $headerAccentClass = match ($intentValue) {
@@ -87,7 +91,7 @@
     // no id of ours, so the column names itself from its `label` prop instead. Neither is
     // emitted without a label — an attribute that claims a name and delivers a blank one
     // is worse than no attribute at all.
-    $hasCustomHeader = isset($header);
+    $hasCustomHeader = \Pushery\WireKit\Support\SlotContent::given($header ?? null);
     $isNamed = filled($label);
 
     $baseClasses = WireKit::resolveClasses('kanban-column', 'base', implode(' ', [
@@ -110,7 +114,7 @@
     @unless($attributes->has('role')) role="listitem" @endunless
     @if($isNamed)
         @if($hasCustomHeader)
-            @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
+            @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
         @else
             @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $domId }}-label" @endunless
         @endif
@@ -124,7 +128,7 @@
             data-sortable-column
         @endif
     @endif
-    {{ $attributes->class([$baseClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
 >
     {{-- Column header. Same flag the naming above branches on, so the two can never
          disagree about which header rendered — which is precisely how the reference and
@@ -152,7 +156,7 @@
                 </span>
                 @if($count !== null)
                     <x-wirekit::badge size="sm" :intent="$isOverLimit ? 'danger' : 'neutral'">
-                        {{ $count }}@if($limit)/{{ $limit }}@endif
+                        {{ \Pushery\WireKit\Support\LocalizedNumber::count($count) }}@if($showsLimit)/{{ \Pushery\WireKit\Support\LocalizedNumber::count($limit) }}@endif
                     </x-wirekit::badge>
                 @endif
             </span>
@@ -184,8 +188,8 @@
          the reach of its offset. --}}
     <div
         tabindex="0"
-        @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
-        class="wk-scrollbar flex flex-col gap-[var(--space-wk-sm,0.5rem)] px-[var(--space-wk-sm,0.5rem)] pb-[var(--space-wk-sm,0.5rem)] -mt-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] pt-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] overflow-y-auto min-h-[120px] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
+        @if(filled($label)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
+        class="wk-scrollbar relative flex flex-col gap-[var(--space-wk-sm,0.5rem)] px-[var(--space-wk-sm,0.5rem)] pb-[var(--space-wk-sm,0.5rem)] -mt-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] pt-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] overflow-y-auto min-h-[120px] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
         @if($sortable)
             data-sortable-items
             {{-- `sortable` wires the behavior here, keyboard path included,
@@ -236,10 +240,18 @@
         @endif
     >
         {{ $slot }}
+        @if($sortable)
+            {{-- The live region the keyboard path speaks into, rendered here rather than made by
+                 the script: a Livewire update keeps what the server renders, and `wire:ignore`
+                 keeps it from emptying the region while a screen reader still reads it. A region
+                 the script made went with the update, and the next sentence landed in a new one,
+                 which is not spoken. --}}
+            <div data-wk-sortable-announcer class="sr-only" aria-live="polite" aria-atomic="true" wire:ignore></div>
+        @endif
     </div>
 
     {{-- Footer slot --}}
-    @if(isset($footer))
+    @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
         <div class="px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] border-t border-[var(--color-wk-border-subtle)]">
             {{ $footer }}
         </div>

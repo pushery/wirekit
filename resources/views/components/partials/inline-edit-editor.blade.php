@@ -34,6 +34,13 @@
      left to its default would be named after its id, a field a surrounding form submits
      under a name the page never chose.
 
+     It is disabled while the editor is closed (`x-bind:disabled="!editing"`). The editor stays
+     in the page under `x-show`, and a form validates every field it owns, shown or not: an
+     empty `required` buffer, or a number off its `step`, would stop the form around the
+     component from submitting, and the browser cannot focus a hidden field to say why. A
+     disabled field takes no part in that check. A control in the `editor` slot is the
+     developer's, and so is its state while the editor is closed.
+
      Why the control is wrapped in `flex-1 min-w-0` rather than carrying it:
      `w-full` on the control alone reads as "fills the row" and does not, so
      clicking a value would visibly shrink its own field.
@@ -75,10 +82,13 @@
          The library already has this mode, which is why nothing is built here. The
          numeric value still works as a minimum, so a developer who wants a fixed
          height passes `rows="3"` and gets a fixed three-row box. --}}
+    {{-- `list` ties a one-line field to the suggestions of a datalist, and `min`, `max` and `step` bound
+         a number; a textarea takes none of them. --}}
     <x-wirekit::textarea
-        :attributes="$fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([])"
+        :attributes="($fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([]))->except(['list', 'min', 'max', 'step'])"
         :required="$required ?? false"
         :disabled="$disabled ?? false"
+        x-bind:disabled="!editing"
         name=""
         :id="$id"
         :size="$size"
@@ -104,6 +114,7 @@
     <x-wirekit::select
         :required="$required ?? false"
         :disabled="$disabled ?? false"
+        x-bind:disabled="!editing"
         name=""
         :id="$id"
         :size="$size"
@@ -129,6 +140,7 @@
         :attributes="$fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([])"
         :required="$required ?? false"
         :disabled="$disabled ?? false"
+        x-bind:disabled="!editing"
         name=""
         :id="$id"
         :size="$size"
@@ -144,10 +156,12 @@
         class="w-full"
     />
 @else
+    {{-- `min`, `max` and `step` bound a number, and a text field takes none of them. --}}
     <x-wirekit::input
-        :attributes="$fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([])"
+        :attributes="($fieldAttributes ?? new \Illuminate\View\ComponentAttributeBag([]))->except(['min', 'max', 'step'])"
         :required="$required ?? false"
         :disabled="$disabled ?? false"
+        x-bind:disabled="!editing"
         name=""
         :id="$id"
         :size="$size"

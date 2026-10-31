@@ -22,7 +22,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $center = BooleanProp::from($center, true);
+    $center = BooleanProp::from($center, true, 'container', 'center');
 
     $maxClasses = match (WireKit::validateProp('container', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full'])) {
         'sm' => 'max-w-[var(--size-wk-container-sm,40rem)]',
@@ -60,6 +60,6 @@
     $as = \Pushery\WireKit\WireKit::tagName('container', (string) $as);
 @endphp
 
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </{{ $as }}>

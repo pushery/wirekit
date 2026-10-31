@@ -28,6 +28,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\AlpinePayload;
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
@@ -44,14 +45,14 @@
     // A failure opens; everything else stays closed unless the caller says otherwise. Written
     // as an explicit null check rather than `??`, because `open="false"` on an unbound tag is
     // the string "false" and `??` would never see it.
-    $open = $open === null ? $isFailed : BooleanProp::from($open, false);
+    $open = $open === null ? $isFailed : BooleanProp::from($open, false, 'tool-call', 'open');
 
     /*
      * The label carries the state in WORDS, not only in color. WCAG 1.4.1: a reader who cannot
      * tell the intents apart still has to be able to tell a finished call from a failed one.
      * The duration replaces the word once the call has settled and the application supplies it.
      */
-    $secondsValue = is_numeric($seconds) ? (int) $seconds : null;
+    $secondsValue = \Pushery\WireKit\Support\NumericProp::intOrNull($seconds, 'tool-call', 'seconds');
 
     $statusLabel = match (true) {
         $isRunning => __('wirekit::Running…'),
@@ -72,15 +73,31 @@
     // The arguments as text. An array is encoded with the flags that make JSON readable to a
     // person — a tool call's arguments are read, not parsed, and `/` escaped as `\/` in a URL
     // argument is the single most common thing a reader stumbles over.
+    //
+    // One value JSON cannot hold must not take the other arguments with it. A byte that is not
+    // UTF-8 is written as U+FFFD, as Blade writes it in arguments given as a string, and a number
+    // that is not finite as `null`, as `JSON.stringify()` writes it. What JSON cannot hold even
+    // then, such as nesting past the depth limit, renders no arguments block, and debug mode
+    // says why.
+    $argumentsFlags = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
+
     $argumentsText = match (true) {
         $arguments === null => null,
         is_string($arguments) => trim($arguments),
-        default => json_encode($arguments, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        default => json_encode($arguments, $argumentsFlags),
     };
+
+    if ($argumentsText === false && json_last_error() === JSON_ERROR_INF_OR_NAN) {
+        $argumentsText = json_encode(AlpinePayload::finite($arguments), $argumentsFlags);
+    }
+
+    if ($argumentsText === false && config('app.debug')) {
+        logger()->warning('WireKit [tool-call]: the arguments could not be encoded as JSON ('.json_last_error_msg().'), so no arguments block was rendered.');
+    }
 
     $argumentsText = ($argumentsText === '' || $argumentsText === false) ? null : $argumentsText;
 
-    $toolName = is_string($name) ? trim($name) : '';
+    $toolName = is_string($name) || $name instanceof \Stringable ? \Pushery\WireKit\Support\SlotContent::textOf($name) : '';
 
     // What the status region says once the call has settled: the tool AND its state, because a
     // reader who hears "Done" on its own cannot tell which of five calls it was. A block without a
@@ -122,7 +139,7 @@
     data-wk-tool-call
     data-status="{{ $status }}"
     @if($isRunning) aria-busy="true" @endif
-    data-wk-sr-host {{ $attributes->except('aria-busy')->class([$rootClasses]) }}
+    data-wk-sr-host {{ $attributes->except('aria-busy')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}
     @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     <div class="flex flex-wrap items-center gap-[var(--gap-wk-sm)]">

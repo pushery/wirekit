@@ -72,9 +72,11 @@
     data-wk-fab
     data-position="{{ $position }}"
     {{-- Fixed at the bottom: the page keeps an element that takes the focus out from under it
-         (WCAG 2.4.11, resources/js/utils/scroll-inset.js). --}}
+         (WCAG 2.4.11, resources/js/utils/scroll-inset.js). It stands on `--wk-fab-lift`, so the
+         band a page may lift it by leaves it out (`--wk-scroll-inset-below-fab`). --}}
     data-wk-scroll-inset="bottom"
-    {{ $attributes->class([$classes]) }}
+    data-wk-fab-lifted
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- flex-col-reverse above means the actions render BEFORE the trigger in the
          DOM but appear above it. That is deliberate: the trigger stays the first
@@ -84,13 +86,13 @@
         type="button"
         x-ref="trigger"
         x-on:click="toggle()"
+        aria-expanded="false"
         :aria-expanded="isOpen ? 'true' : 'false'"
-        {{-- `true`, not `menu`. `aria-haspopup="menu"` promises the APG menu keyboard model —
-             one tab stop on the menu, arrow keys between items, Escape and a focus exit that
-             close it — and this panel implements none of that: its actions are ordinary links
-             and buttons, each with its own tab stop. Announcing a model a reader then cannot
-             use is the same defect the comment below warns about, one level up. --}}
-        aria-haspopup="true"
+        {{-- No `aria-haspopup`. Its value names the role of the popup, and ARIA reads `true` as
+             `menu`, which promises the menu keyboard model: one tab stop on the menu, arrow keys
+             between items, Escape and a focus exit that close it. This panel is a group of
+             ordinary links and buttons, each with its own tab stop, so the trigger is a
+             disclosure button, and `aria-expanded` says whether the group shows. --}}
         {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }}
         data-wk-fab-trigger
         {{-- The box reads --size-wk-fab rather than a literal, for the reason `fab.button`
@@ -126,7 +128,7 @@
                 :data-shown="isOpen ? 'false' : 'true'"
             >
                 {{ $trigger ?? '' }}
-                @unless(isset($trigger))
+                @unless(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>

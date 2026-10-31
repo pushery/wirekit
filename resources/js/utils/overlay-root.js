@@ -118,6 +118,7 @@ export function overlayRoot() {
         // the stylesheet wrong too.
         warnIfStylesheetMissing(root);
         inheritTouchSurfaces(root);
+        inheritOriginContext(root);
 
         return root;
     }
@@ -138,6 +139,7 @@ export function overlayRoot() {
 
     warnIfStylesheetMissing(root);
     inheritTouchSurfaces(root);
+    inheritOriginContext(root);
 
     return root;
 }
@@ -220,6 +222,144 @@ function releaseTouchSurfaces(root) {
 
     if (root) {
         root._wkTouchSurfaces = null;
+    }
+}
+
+/** The classes that switch the mode of a subtree: `dark`, and its mirror `light`. */
+const MODE_CLASSES = ['dark', 'light'];
+
+/** The attributes a panel takes from the place it was teleported out of, as that place's text does. */
+const ORIGIN_ATTRIBUTES = ['lang', 'dir'];
+
+/**
+ * Give a panel teleported out of its place what that place gives everything in it: the mode of a
+ * light or a dark island, and the language and the direction of the text around it.
+ *
+ * `.dark` switches the tokens of any subtree that carries it, and `light` is its mirror (the
+ * theming guide, "A light island in a dark page"); `lang` and `dir` hold for the descendants of
+ * the element that carries them. A panel teleported here stands outside all of them: the menu of
+ * a button in a light island on a dark page opened dark, and the entries of a menu in a section
+ * with `lang="de"` on an English page were read as English, as were their quotation marks and
+ * line breaks.
+ *
+ * So a panel takes the class of the nearest island around the `<template>` it came from, and the
+ * `lang` and `dir` of the nearest element there that sets them, unless that element holds this
+ * container as well, as `<html>` or `<body>` do, where the panel inherits them anyway. A panel
+ * teleported from inside another panel reads them through that panel, which is marked by the time
+ * it arrives. What the panel's own markup carries stays its own, and the container removes only
+ * what it wrote itself, so a value another script writes, such as the language a tooltip names for
+ * a cut text, stays.
+ *
+ * Everything is read again whenever the panel's classes, its style or one of the two attributes
+ * change, which is when it opens or closes, so a panel follows an island that switched its mode in
+ * between. The same reading puts the values back after a Livewire morph, which compares an open
+ * panel with a fresh clone of its template, a clone without them, and removes them from the live
+ * panel as it removes the touch attribute above.
+ */
+function inheritOriginContext(root) {
+    if (root._wkOriginContext || typeof MutationObserver === 'undefined') {
+        return;
+    }
+
+    // The nearest element around the origin that matches, unless it holds the container too.
+    const around = (origin, selector) => {
+        const scope = origin && typeof origin.closest === 'function' ? origin.closest(selector) : null;
+
+        return scope && ! scope.contains(root) ? scope : null;
+    };
+
+    const sync = (panel) => {
+        const origin = panel._x_teleportBack;
+        const own = panel._wkOwnContext;
+        const written = panel._wkWrittenContext;
+
+        if (! own.mode) {
+            const island = around(origin, '.dark, .light');
+            const mode = island ? (island.classList.contains('dark') ? 'dark' : 'light') : null;
+
+            if (written.mode && written.mode !== mode) {
+                panel.classList.remove(written.mode);
+            }
+
+            written.mode = mode;
+
+            if (mode && ! panel.classList.contains(mode)) {
+                panel.classList.add(mode);
+            }
+        }
+
+        for (const name of ORIGIN_ATTRIBUTES) {
+            if (own[name]) {
+                continue;
+            }
+
+            const value = around(origin, `[${name}]`)?.getAttribute(name) ?? null;
+
+            if (value !== null) {
+                if (panel.getAttribute(name) !== value) {
+                    panel.setAttribute(name, value);
+                }
+
+                written[name] = value;
+            } else if (written[name] !== null) {
+                if (panel.getAttribute(name) === written[name]) {
+                    panel.removeAttribute(name);
+                }
+
+                written[name] = null;
+            }
+        }
+    };
+
+    const keeper = new MutationObserver((records) => {
+        for (const record of records) {
+            if (record.target._wkOwnContext) {
+                sync(record.target);
+            }
+        }
+    });
+
+    const mark = (node) => {
+        if (! node || node.nodeType !== 1 || ! node._x_teleportBack || node._wkOwnContext) {
+            return;
+        }
+
+        node._wkOwnContext = {
+            mode: MODE_CLASSES.some((name) => node.classList.contains(name)),
+            lang: node.hasAttribute('lang'),
+            dir: node.hasAttribute('dir'),
+        };
+        node._wkWrittenContext = { mode: null, lang: null, dir: null };
+
+        sync(node);
+        keeper.observe(node, { attributes: true, attributeFilter: ['class', 'style', ...ORIGIN_ATTRIBUTES] });
+    };
+
+    [...root.children].forEach(mark);
+
+    const arrivals = new MutationObserver((records) => {
+        for (const record of records) {
+            record.addedNodes.forEach(mark);
+        }
+    });
+
+    arrivals.observe(root, { childList: true });
+
+    // Kept on the container, so the navigation that discards it can stop both.
+    root._wkOriginContext = {
+        disconnect() {
+            arrivals.disconnect();
+            keeper.disconnect();
+        },
+    };
+}
+
+/** Stop watching a container that leaves the page with the body a navigation replaced. */
+function releaseOriginContext(root) {
+    root?._wkOriginContext?.disconnect();
+
+    if (root) {
+        root._wkOriginContext = null;
     }
 }
 
@@ -366,6 +506,7 @@ function bindNavigationListeners() {
 
             onSwap(() => {
                 releaseTouchSurfaces(previous);
+                releaseOriginContext(previous);
                 overlayRoot();
             });
         }

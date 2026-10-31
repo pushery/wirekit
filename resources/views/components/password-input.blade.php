@@ -21,11 +21,13 @@
     // before the server has agreed to it. A refusal KEEPS what was typed — see
     // the note above. Null leaves the component exactly as it has always
     // rendered.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -56,7 +58,7 @@
 
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -64,16 +66,16 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $toggle = BooleanProp::from($toggle, true);
-    $strengthMeter = BooleanProp::from($strengthMeter, false);
-    $hideLabel = BooleanProp::from($hideLabel, false);
+    $toggle = BooleanProp::from($toggle, true, 'password-input', 'toggle');
+    $strengthMeter = BooleanProp::from($strengthMeter, false, 'password-input', 'strengthMeter');
+    $hideLabel = BooleanProp::from($hideLabel, false, 'password-input', 'hideLabel');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -87,12 +89,15 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+    // A list where the field takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and left off the field (Support\FieldValue).
+    $attributes = \Pushery\WireKit\Support\FieldValue::withoutLists($attributes, 'password-input');
 
     // The show-password button says which field it reveals, the way the clear button of an input
     // does, so a form with a password and its confirmation does not offer two buttons called
     // "Show password". A field named by the caller's `aria-label` is named all the same, and a
     // field with neither keeps the bare wording.
-    $toggleField = trim(strip_tags((string) $label));
+    $toggleField = \Pushery\WireKit\Support\SlotContent::textOf($label);
     if ($toggleField === '') {
         $toggleField = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'));
     }
@@ -108,15 +113,29 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('password-input', $attributes->getAttributes());
 
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('password-input', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
+
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
     // Support\OuterAttributes.
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'password-input-'); // page-unique DOM id; see Support\DomId
+    // Inside a field the label points at the id this control got: a second field with the same
+    // name on the page gets `-2`, and pointed at the name its label named the first control.
+    if ($wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $wkField->follow($id);
+    }
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
@@ -135,9 +154,19 @@
     // through the field's own binding.
     $rootModel = $strengthMeter ? $attributes->whereStartsWith('x-model') : new \Illuminate\View\ComponentAttributeBag([]);
     $attributes = $attributes->except(array_keys($rootModel->getAttributes()));
+    // On the root it is read in the scope around it, where the caller's names are (CallerModel).
+    $rootModel = \Pushery\WireKit\Support\CallerModel::aroundRoot($rootModel);
+    // Without the meter the caller's `x-model` stays on the field, inside this root, where `.parent`
+    // would still find this component's names: as `x-wk-model` it is read above the root, which
+    // marks the boundary (CallerModel::onField()).
+    $attributes = \Pushery\WireKit\Support\CallerModel::onField($attributes);
+    $modelScope = \Pushery\WireKit\Support\CallerModel::binds($attributes);
 
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // Base input classes — same as standard input
     $inputClasses = WireKit::resolveClasses('password-input', 'base', implode(' ', [
@@ -202,6 +231,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, (bool) $attributes->get('required', false));
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // The four rungs of the meter, resolved server-side so they are translatable
@@ -260,7 +296,7 @@
      method is not an expression Alpine's CSP parser accepts, and under a strict
      policy the element would get an EMPTY scope, leaving the show/hide button and
      the whole meter dead with no error to say why. --}}
-<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
+<div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($rootModel->getAttributes() !== []) x-modelable="password" {{ $rootModel }} @endif x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
@@ -277,7 +313,7 @@
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     <div class="relative">
@@ -296,10 +332,13 @@
                 autocomplete="{{ $autocomplete }}"
             @endif
             id="{{ $id }}"
-            name="{{ $name }}"
+            @if($name !== '') name="{{ $name }}" @endif
+            {{-- The factory reads the field after a form reset, which `x-model` never hears of. --}}
+            x-ref="field"
             @if($strengthMeter) x-model="password" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($fieldRequired) aria-required="true" @endif
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
                 {{-- `change`, not `input`: typing fires input per keystroke, and
@@ -308,7 +347,7 @@
             @endif
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('type')->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', $inputClasses, $stateClasses, $sizeClasses])) }}
         />
 
         {{-- Toggle visibility button --}}

@@ -32,11 +32,15 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $showValue = BooleanProp::from($showValue, false);
+    $showValue = BooleanProp::from($showValue, false, 'progress', 'showValue');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('progress', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('progress', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // `intent` is the canonical color-axis name (matches the house vocabulary
     // used by badge / button / alert). `variant` is kept as a back-compat
@@ -52,10 +56,12 @@
     // A max that holds no positive number means "out of 100", as on radial-progress: a text
     // would throw in the arithmetic below, and zero or less would put aria-valuemax under
     // aria-valuemin.
-    $max = \Pushery\WireKit\Support\NumericProp::positive($max, 100);
+    $max = \Pushery\WireKit\Support\NumericProp::positive($max, 100, 'progress', 'max');
 
     // Clamp the value to [0, max] and compute percentage for fill width
     $isIndeterminate = $value === null;
+    // The value is read as PHP casts it, so a text with a unit keeps the number it starts with, and reported.
+    \Pushery\WireKit\Support\NumericProp::check($value, 'progress', 'value');
     $clamped = $isIndeterminate ? 0 : max(0, min((float) $value, (float) $max));
     $percent = $max > 0 ? ($clamped / $max) * 100 : 0;
 
@@ -136,9 +142,9 @@
          and the readout empty while the width and `aria-valuenow` are right.
          The arithmetic lives in the factory, where the fill, `aria-valuenow` and the
          readout share one clamped number; every binding below only names a method. --}}
-    <div x-data="wirekitProgress({ from: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueExpression) }}, max: {{ $max + 0 }}, determinate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate) }}, indeterminate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate) }} })" {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>
+    <div x-data="wirekitProgress({ from: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueExpression) }}, max: {{ $max + 0 }}, determinate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate) }}, indeterminate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-full font-[family-name:var(--font-wk-sans)]'])) }}>
 @else
-<div {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-full font-[family-name:var(--font-wk-sans)]'])) }}>
 @endif
     @if($label || $showValue)
         <div class="mb-1 flex items-center justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
@@ -153,9 +159,9 @@
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums">
                     {{-- Not `(int)`. The BAR is drawn from the exact value, so truncating here
                          made the number disagree with the thing beside it: 4.7 of 5 drew a
-                         94% bar and read "4 / 5". `+ 0` drops a trailing `.0`, so a whole
-                         value still reads as a whole one. --}}
-                    {{ $clamped + 0 }} / {{ $max + 0 }}
+                         94% bar and read "4 / 5". Written in the locale, grouped as a count is, and
+                         a whole value without a trailing `,0`. --}}
+                    {{ \Pushery\WireKit\Support\LocalizedNumber::format((float) $clamped, maxPrecision: 6) }} / {{ \Pushery\WireKit\Support\LocalizedNumber::format((float) $max, maxPrecision: 6) }}
                 </span>
             @endif
         </div>

@@ -16,4 +16,4 @@
     $classes = WireKit::resolveClasses('spacer', 'base', 'grow', $scope);
 @endphp
 
-<div {{ $attributes->except('aria-hidden')->class([$classes]) }} aria-hidden="true"></div>
+<div {{ $attributes->except('aria-hidden')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} aria-hidden="true"></div>

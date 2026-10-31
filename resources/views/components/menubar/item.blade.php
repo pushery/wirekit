@@ -13,6 +13,15 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('menubar.item', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -22,8 +31,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $danger = BooleanProp::from($danger, false);
-    $disabled = BooleanProp::from($disabled, false);
+    $danger = BooleanProp::from($danger, false, 'menubar.item', 'danger');
+    $disabled = BooleanProp::from($disabled, false, 'menubar.item', 'disabled');
 
     // Menubar item — same visual pattern as dropdown items with optional shortcut badge.
     $classes = WireKit::resolveClasses('menubar.item', 'base', implode(' ', [
@@ -53,13 +62,13 @@
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
         : '';
 
-    $tag = $href ? 'a' : 'button';
+    $tag = $href !== null ? 'a' : 'button';
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See dropdown/item.blade.php for rationale on except('rel') + explicit
     // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -68,7 +77,7 @@
 @endphp
 
 <{{ $tag }} data-wk-prose-skip
-    @if($href) href="{{ $href }}" @endif
+    @if($href !== null) href="{{ $href }}" @endif
     @if($tag === 'button') type="button" @endif
     role="menuitem"
     tabindex="-1"
@@ -79,13 +88,18 @@
          document instead of continuing from the menubar. --}}
     x-on:click="closeAndFocusTrigger()"
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-touch-row', $classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->except($tag === 'button' ? ['rel', 'role', 'tabindex', 'type'] : ['rel', 'role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $colorClasses, $disabledClasses])) }}
 >
     <span>{{ $slot }}</span>
 
-    @if($shortcut)
+    @php
+        // The keys a shortcut holds, one or a list (Support\KeyShortcuts::hintKeys()); a key of white
+        // space alone holds none, so a blank shortcut draws neither a cap nor the row around it.
+        $shortcutKeys = \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut);
+    @endphp
+    @if($shortcutKeys !== [])
         <span class="flex items-center gap-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
-            @foreach((array) $shortcut as $key)
+            @foreach($shortcutKeys as $key)
                 {{-- The component, not a copy of it — see command-palette/item for what the
                      hand-rolled chip was dropping. --}}
                 <x-wirekit::kbd size="sm">{{ $key }}</x-wirekit::kbd>

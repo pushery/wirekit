@@ -26,6 +26,19 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('popover', $attributes->getAttributes());
 
+    // A popover opens from its trigger, and without one there is nothing to open it from.
+    // Asked through the defined variables rather than isset(), which the slot reader of the
+    // component manifest takes for a slot that may be left out. A null trigger is a value the
+    // application shares with every view under this name, which this view is handed as none.
+    if (! array_key_exists('trigger', get_defined_vars()) || $trigger === null) {
+        throw new \InvalidArgumentException('<x-wirekit::popover> requires a `trigger` slot (e.g. <x-slot:trigger><x-wirekit::button>Details</x-wirekit::button></x-slot:trigger>).');
+    }
+
+    // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
+    // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
+    // No placement at all, `null` or empty, is the default, as the script reads it.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('popover', 'placement', (string) ($placement ?: 'bottom'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'bottom');
+
     // Popover — click-triggered floating panel with focus trap.
     // Unlike Tooltip (hover) or HoverCard (hover + rich), Popover opens on click
     // and traps focus inside the panel. Uses role="dialog" for a11y.
@@ -60,7 +73,7 @@
     // resolved list rather than the default one keeps the promise when a personalization
     // replaced the list wholesale, because a caller asking for an unpadded panel means it
     // whatever the theme did. A padding under a variant stays: it is the theme's.
-    $padded = BooleanProp::from($padded, true);
+    $padded = BooleanProp::from($padded, true, 'popover', 'padded');
 
     if (! $padded) {
         $panelClasses = UtilityClasses::without($panelClasses, UtilityClasses::PADDING);
@@ -74,8 +87,8 @@
 @endphp
 
 <div
-    x-data="wirekitPopover({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
-    {{ $attributes->class([$wrapperClasses]) }}
+    x-data="wirekitPopover({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 8, 'popover', 'offset') }} })"
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
 >
     {{-- Trigger — clicking toggles the popover.
 
@@ -128,7 +141,7 @@
              reachable, so a screen reader keeps offering content its own virtual cursor can
              no longer get back out of. The two halves have to agree. --}}
         aria-modal="true"
-        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label ?? __('wirekit::Popover')) }}
+        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, \Pushery\WireKit\Support\BlankName::first($label, __('wirekit::Popover'))) }}
         class="{{ $panelClasses }}"
         x-cloak
     >

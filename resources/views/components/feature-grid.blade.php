@@ -40,8 +40,10 @@
         '2xl:4' => '2xl:grid-cols-4', '2xl:5' => '2xl:grid-cols-5', '2xl:6' => '2xl:grid-cols-6',
     ];
 
-    $colsClasses = collect(preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols)))
-        ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('feature-grid', 'cols', $token, array_keys($colsMap)))
+    $colsClasses = collect(preg_split('/\s+/', trim(is_numeric($cols) ? \Pushery\WireKit\Support\NumericProp::text($cols) : $cols)))
+        // A token outside the map is reported, and its fallback is a key of the map, which is looked
+        // up like any other token rather than written as a class of its own.
+        ->map(fn (string $token) => $colsMap[$token] ?? $colsMap[WireKit::validateProp('feature-grid', 'cols', $token, array_keys($colsMap))])
         ->implode(' ');
 
     $scale = WireKit::validateProp('feature-grid', 'scale', (string) $scale, ['space', 'gap']);
@@ -100,7 +102,7 @@
 @endphp
 
 <div
-    {{ $attributes->except('style')->class([$classes]) }}
+    {{ $attributes->except('style')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >
     {{ $slot }}

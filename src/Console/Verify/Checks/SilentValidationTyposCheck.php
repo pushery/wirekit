@@ -108,24 +108,29 @@ final class SilentValidationTyposCheck extends VerifyCheck
             }
         }
 
-        // Resolve the log file path — Laravel's default 'single' channel
-        // writes to storage/logs/laravel.log. The 'daily' channel rotates
-        // per day (laravel-YYYY-MM-DD.log); scan today's file.
-        $logDir = storage_path('logs');
-        if (! is_dir($logDir)) {
-            $this->reportInfo(
-                'silent-typo log scan skipped — storage/logs directory missing (fresh install? skipped log writes?).'
-            );
+        // Where the channels write, read from the logging config rather than assumed: `single`
+        // writes the file its `path` names, `daily` rotates beside its `path` into
+        // `<name>-YYYY-MM-DD.<extension>`, the way Monolog's RotatingFileHandler names a day.
+        // An application that moves the daily files into a folder of their own, as Forge's
+        // logrotate rule over storage/logs/*.log asks for, is read there.
+        $defaultPath = storage_path('logs/laravel.log');
+        $singlePath = $this->configuredPath('logging.channels.single.path', $defaultPath);
+        $dailyPath = $this->configuredPath('logging.channels.daily.path', $defaultPath);
+
+        if (! is_dir(dirname($singlePath)) && ! is_dir(dirname($dailyPath))) {
+            $this->reportInfo(sprintf(
+                'silent-typo log scan skipped — the log directory %s is missing (fresh install? skipped log writes?).',
+                $this->shown(dirname($singlePath))
+            ));
 
             return;
         }
 
         $logFiles = [];
-        $singlePath = $logDir.'/laravel.log';
         if (is_file($singlePath) && is_readable($singlePath)) {
             $logFiles[] = $singlePath;
         }
-        $dailyPattern = $logDir.'/laravel-*.log';
+        $dailyPattern = $this->dailyPattern($dailyPath);
         $dailyFiles = glob($dailyPattern) ?: [];
         // Sort by mtime — race-safe via @suppression so a sibling worker
         // deleting a daily-rotated log between glob() and filemtime()
@@ -135,16 +140,18 @@ final class SilentValidationTyposCheck extends VerifyCheck
         foreach (array_slice($dailyFiles, -3) as $daily) {
             // Re-verify readability AT read-time (the file may have
             // vanished between glob() and now under parallel test runs).
-            if (is_file($daily) && is_readable($daily)) {
+            if (is_file($daily) && is_readable($daily) && ! in_array($daily, $logFiles, true)) {
                 $logFiles[] = $daily;
             }
         }
 
         if ($logFiles === []) {
-            $this->reportInfo(
-                'silent-typo log scan skipped — no readable log files found at storage/logs/laravel*.log. '.
-                'If your app writes logs elsewhere, this check is a no-op (expected behavior).'
-            );
+            $this->reportInfo(sprintf(
+                'silent-typo log scan skipped — no readable log files found at %s or %s. '.
+                'If your app writes logs elsewhere, this check is a no-op (expected behavior).',
+                $this->shown($singlePath),
+                $this->shown($dailyPattern)
+            ));
 
             return;
         }
@@ -234,5 +241,30 @@ final class SilentValidationTyposCheck extends VerifyCheck
             $exampleLines,
             WireKit::DOCS_URL,
         ));
+    }
+
+    /** A channel's configured path, or the default when the config holds no text. */
+    private function configuredPath(string $key, string $default): string
+    {
+        $path = config($key);
+
+        return is_string($path) && trim($path) !== '' ? $path : $default;
+    }
+
+    /** The files a daily channel writes beside its `path`: `<name>-*.<extension>`. */
+    private function dailyPattern(string $path): string
+    {
+        $info = pathinfo($path);
+        $extension = isset($info['extension']) && $info['extension'] !== '' ? '.'.$info['extension'] : '';
+
+        return ($info['dirname'] ?? '.').'/'.($info['filename'] ?? 'laravel').'-*'.$extension;
+    }
+
+    /** A path as the report shows it: relative to the application where it lies inside it. */
+    private function shown(string $path): string
+    {
+        $base = rtrim(base_path(), '/').'/';
+
+        return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
     }
 }

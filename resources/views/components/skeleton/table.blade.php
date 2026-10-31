@@ -15,10 +15,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('skeleton.table', $attributes->getAttributes());
 
-    // Counts of rows and columns, whatever the attribute or the data carried: a text would throw
-    // below, and as the bound of the column loop it compares as text and never ends.
-    $rows = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($rows, 5));
-    $cols = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($cols, 4));
+    // An unknown `animation` is reported (Support\StrictnessGate) and renders as `shimmer`; a bound
+    // `null` or empty string is `shimmer` without a word.
+    $animation = \Pushery\WireKit\WireKit::validateProp('skeleton.table', 'animation', \Pushery\WireKit\Support\NumericProp::text($animation ?: 'shimmer'), ['shimmer', 'pulse', 'none']);
+
+    // Counts of rows and columns, whatever the attribute or the data carried, and at most a hundred
+    // each: a text would throw below, and as the bound of the column loop it compares as text and
+    // never ends, and a cell per unit of a count without a ceiling runs the request out of memory.
+    $rows = max(0, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::from($rows, 5, 'skeleton.table', 'rows'), 100, 'skeleton.table', 'rows'));
+    $cols = max(0, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::from($cols, 4, 'skeleton.table', 'cols'), 100, 'skeleton.table', 'cols'));
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -26,7 +31,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $shimmer = BooleanProp::from($shimmer, true);
+    $shimmer = BooleanProp::from($shimmer, true, 'skeleton.table', 'shimmer');
 
     $baseShimmer = 'wk-skeleton';
     // Animation: shimmer (default) | pulse | none. Legacy `shimmer=false` → pulse.
@@ -54,8 +59,8 @@
      as a custom property so it stays tunable per variant. --}}
     <div data-wk-sr-host
     role="status"
-    aria-live="polite"
-    aria-label="{{ __('wirekit::Loading') }}"
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-live')) aria-live="polite" @endunless
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless
     {{-- No aria-busy here, deliberately. This element IS the live region, and
          WAI-ARIA defines aria-busy on a live region as "wait before exposing
          this to the user" — set to true and never flipped back, it tells
@@ -65,7 +70,7 @@
          container whose content is still missing, which is the developer's
          element; leaving the attribute off is also what lets them put it there
          and have the shimmer's own pause rule see it. --}}
-    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto '.($intrinsicHeight).';'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
+    {{ $attributes->except('role')->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto '.($intrinsicHeight).';'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'wk-skeleton-skip-offscreen'])) }}
 >
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         {{-- Header row — slightly taller, full-width --}}

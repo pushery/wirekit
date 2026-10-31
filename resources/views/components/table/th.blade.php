@@ -40,6 +40,11 @@
     // anonymous: an unnamed container would also become the measuring context for every
     // `@`-variant a caller nests inside the table, and silently retarget it.
     'hideBelowContainer' => null,
+    // The window width from which `hideBelowContainer` applies: sm | md | lg | xl | 2xl. Below it the
+    // column keeps its place, and the table scrolls in its own frame. A list that may scroll on a
+    // phone but not on a desk takes `hide-below-container="5xl"` with this at `xl`: the column gives
+    // way only in a window of 80rem and up. `table.stand-in` shows what stands in for it, there.
+    'hideBelowContainerFrom' => null,
     // Let a long header break instead of holding its column as wide as the longest word.
     //
     // A column header is `whitespace-nowrap` by default, and that is right for the usual
@@ -70,30 +75,62 @@
     // value of its row, a product name or a budget, and reads as one with `cell`. It changes the
     // type alone: the scope, the alignment and the responsive hiding stay what the other props say.
     'variant' => 'header', // header | cell
+    // The help of a column: the question mark a `label` shows beside a field, beside the head, with
+    // this text in its tooltip. It stands beside a sort button and never inside it, so its click
+    // opens the help without sorting, and the button's name stays the head.
+    'help' => null,
+    // The id of a hidden copy of `help`, which a field in each row of the column lists in its
+    // `aria-describedby`. Without it the help is the tooltip alone.
+    'helpId' => null,
 ])
 
 {{-- The table's `stack-below`: a table that stacks its rows writes its roles out. --}}
 @aware([
     'stackBelow' => null,
+    'stackBelowContainer' => null,
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $stackBelow = \Pushery\WireKit\Support\AwareProp::read('stackBelow', ['table'], null);
+    // A table that stacks by its own width writes the same roles out as one that stacks by the window's.
+    $stackBelow = filled($stackBelow) ? $stackBelow : \Pushery\WireKit\Support\AwareProp::read('stackBelowContainer', ['table'], null);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('table.th', $attributes->getAttributes());
 
+    // An unknown `headerScope` is reported (Support\StrictnessGate) and renders as `col`; a bound
+    // `null` or empty string is `col` without a word.
+    $headerScope = \Pushery\WireKit\WireKit::validateProp('table.th', 'headerScope', \Pushery\WireKit\Support\NumericProp::text($headerScope ?: 'col'), ['col', 'row', 'colgroup', 'rowgroup']);
+
+    // No `sortDirection`, or one of these. An unknown one is reported (Support\StrictnessGate) and
+    // leaves the sortDirection unset, as no `sortDirection` does, rather than taking the first of
+    // the list.
+    $sortDirection = filled($sortDirection) ? \Pushery\WireKit\Support\NumericProp::text($sortDirection) : null;
+    if ($sortDirection !== null && \Pushery\WireKit\WireKit::validateProp('table.th', 'sortDirection', $sortDirection, ['asc', 'desc']) !== $sortDirection) {
+        $sortDirection = null;
+    }
+
+    // `true`, `false` or `words`. Another word is reported (Support\StrictnessGate) and wraps as
+    // `true` does; a word such as `yes` or `0` reads as the switch it names.
+    if (is_string($wrap) && trim($wrap) !== '' && \Pushery\WireKit\Support\BooleanProp::orNull($wrap) === null) {
+        $wrap = \Pushery\WireKit\WireKit::validateProp('table.th', 'wrap', $wrap, ['true', 'false', 'words']);
+    }
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // `@aware` leaves the key in the bag, so a tag that also wrote it would render it as an attribute.
-    $attributes = $attributes->except(['stackBelow', 'stack-below']);
+    $attributes = $attributes->except(['stackBelow', 'stack-below', 'stackBelowContainer', 'stack-below-container']);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sortable = BooleanProp::from($sortable, false);
-    $sideways = BooleanProp::from($sideways, false);
+    $sortable = BooleanProp::from($sortable, false, 'table.th', 'sortable');
+    $sideways = BooleanProp::from($sideways, false, 'table.th', 'sideways');
 
     // Alignment maps to text-* utilities. An unknown value is reported through the strictness gate
     // and, where the gate does not throw, aligns left.
@@ -140,9 +177,33 @@
         ? new \Illuminate\Support\HtmlString('<span class="wk-sideways">'.$slot.'</span>')
         : $slot;
 
-    // Sanitize the <th scope> to the valid HTML set; anything else falls back to col.
-    // Resolved BEFORE the class builder so a row-header can drop the column-header look.
-    $headerScope = in_array($headerScope, ['col', 'row', 'colgroup', 'rowgroup'], true) ? $headerScope : 'col';
+    // The column's help, named by the head as the page shows it. Its click goes no further than
+    // the help: a head that sorts on a click of its own, a `wire:click` on the cell, would sort
+    // otherwise. A click reports the column as the field it explains.
+    $helpPartial = filled($help) ? [
+        'helpText' => $help,
+        'helpName' => \Pushery\WireKit\Support\SlotContent::plain($slot),
+        'helpId' => filled($helpId) ? (string) $helpId : null,
+        'helpField' => (string) ($column ?? ''),
+        'helpStopsClick' => true,
+    ] : null;
+
+    // A sort button fills its cell, so its box is the cell. With help, the button and the help are
+    // two boxes on one line, placed by the cell's text-align like any head: the button takes the
+    // start padding, the help stands one gap after it, as beside a field's label, and the cell
+    // keeps its end padding past the help. On paper the button gives up its box and the print
+    // rules pad the cell on both sides, which draws the same head. A turned head keeps its
+    // full-width button and takes the help under it, across the cell where its label stands.
+    $helpBeside = $helpPartial !== null && ! $sideways;
+    $sortButtonBox = $helpBeside ? 'inline-flex align-middle' : 'flex w-full';
+    $helpBesideBox = 'inline-flex align-middle ps-[var(--gap-wk-xs)]';
+    $helpItems = match ($align) {
+        'center' => 'items-center',
+        'right' => 'items-end',
+        default => 'items-start',
+    };
+
+    // Read BEFORE the class builder so a row header can drop the column-header look.
     $isRowHeader = $headerScope === 'row';
 
     // A ROW header labels its own data row (WCAG 1.3.1) and reads as a heading
@@ -197,7 +258,7 @@
     // collapse it under the floor the relocation exists to reach.
     $padOnButton = $sortable && ($column !== null || $sortAction !== null);
     $cellPadding = $padOnButton
-        ? ''
+        ? ($helpBeside ? 'pe-[var(--padding-wk-x-md)]' : '')
         : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]';
 
     // `hideBelow` takes a column off a narrow screen. The classes are written out per breakpoint
@@ -233,7 +294,21 @@
         WireKit::validateProp('table.th', 'hideBelowContainer', $hideBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']);
         $hideBelowContainer = null;
     }
-    $hideClasses = trim($hideClasses.' '.(match ($hideBelowContainer) {
+    /*
+     * From a window width up only: the container question asked behind a viewport one, every pair
+     * written out for the same reason. Without `hideBelowContainer` there is nothing to ask it of,
+     * and the prop is reported.
+     */
+    $hideBelowContainerFrom = filled($hideBelowContainerFrom) ? (string) $hideBelowContainerFrom : null;
+    if ($hideBelowContainerFrom !== null && ! in_array($hideBelowContainerFrom, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
+        WireKit::validateProp('table.th', 'hideBelowContainerFrom', $hideBelowContainerFrom, ['sm', 'md', 'lg', 'xl', '2xl']);
+        $hideBelowContainerFrom = null;
+    }
+    if ($hideBelowContainerFrom !== null && $hideBelowContainer === null) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('table.th', 'hideBelowContainerFrom', $hideBelowContainerFrom, 'a header with hideBelowContainer', '');
+        $hideBelowContainerFrom = null;
+    }
+    $hideClasses = trim($hideClasses.' '.($hideBelowContainerFrom === null ? match ($hideBelowContainer) {
         'sm' => '@max-sm/wk-table:hidden',
         'md' => '@max-md/wk-table:hidden',
         'lg' => '@max-lg/wk-table:hidden',
@@ -242,6 +317,48 @@
         '3xl' => '@max-3xl/wk-table:hidden',
         '4xl' => '@max-4xl/wk-table:hidden',
         '5xl' => '@max-5xl/wk-table:hidden',
+        default => '',
+    } : match ($hideBelowContainerFrom.' '.$hideBelowContainer) {
+        'sm sm' => 'sm:@max-sm/wk-table:hidden',
+        'sm md' => 'sm:@max-md/wk-table:hidden',
+        'sm lg' => 'sm:@max-lg/wk-table:hidden',
+        'sm xl' => 'sm:@max-xl/wk-table:hidden',
+        'sm 2xl' => 'sm:@max-2xl/wk-table:hidden',
+        'sm 3xl' => 'sm:@max-3xl/wk-table:hidden',
+        'sm 4xl' => 'sm:@max-4xl/wk-table:hidden',
+        'sm 5xl' => 'sm:@max-5xl/wk-table:hidden',
+        'md sm' => 'md:@max-sm/wk-table:hidden',
+        'md md' => 'md:@max-md/wk-table:hidden',
+        'md lg' => 'md:@max-lg/wk-table:hidden',
+        'md xl' => 'md:@max-xl/wk-table:hidden',
+        'md 2xl' => 'md:@max-2xl/wk-table:hidden',
+        'md 3xl' => 'md:@max-3xl/wk-table:hidden',
+        'md 4xl' => 'md:@max-4xl/wk-table:hidden',
+        'md 5xl' => 'md:@max-5xl/wk-table:hidden',
+        'lg sm' => 'lg:@max-sm/wk-table:hidden',
+        'lg md' => 'lg:@max-md/wk-table:hidden',
+        'lg lg' => 'lg:@max-lg/wk-table:hidden',
+        'lg xl' => 'lg:@max-xl/wk-table:hidden',
+        'lg 2xl' => 'lg:@max-2xl/wk-table:hidden',
+        'lg 3xl' => 'lg:@max-3xl/wk-table:hidden',
+        'lg 4xl' => 'lg:@max-4xl/wk-table:hidden',
+        'lg 5xl' => 'lg:@max-5xl/wk-table:hidden',
+        'xl sm' => 'xl:@max-sm/wk-table:hidden',
+        'xl md' => 'xl:@max-md/wk-table:hidden',
+        'xl lg' => 'xl:@max-lg/wk-table:hidden',
+        'xl xl' => 'xl:@max-xl/wk-table:hidden',
+        'xl 2xl' => 'xl:@max-2xl/wk-table:hidden',
+        'xl 3xl' => 'xl:@max-3xl/wk-table:hidden',
+        'xl 4xl' => 'xl:@max-4xl/wk-table:hidden',
+        'xl 5xl' => 'xl:@max-5xl/wk-table:hidden',
+        '2xl sm' => '2xl:@max-sm/wk-table:hidden',
+        '2xl md' => '2xl:@max-md/wk-table:hidden',
+        '2xl lg' => '2xl:@max-lg/wk-table:hidden',
+        '2xl xl' => '2xl:@max-xl/wk-table:hidden',
+        '2xl 2xl' => '2xl:@max-2xl/wk-table:hidden',
+        '2xl 3xl' => '2xl:@max-3xl/wk-table:hidden',
+        '2xl 4xl' => '2xl:@max-4xl/wk-table:hidden',
+        '2xl 5xl' => '2xl:@max-5xl/wk-table:hidden',
         default => '',
     }));
 
@@ -253,28 +370,31 @@
         $scopeText,
         $alignClass,
         $hideClasses,
+        // Each switch is read at the nearest table, through child combinators: a table in one of
+        // this table's cells is a descendant of it as well, and keeps its own switches. The parser
+        // always puts a row in a section and a cell in a row, so the path is exact.
         // Compact variant: reduce vertical padding
-        $padOnButton ? '' : '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
+        $padOnButton ? '' : '[table[data-wk-compact]>*>tr>&]:py-[var(--padding-wk-y-sm)]',
         // Sticky first column: freeze the leading header cell. It needs its own
         // background (it would otherwise show scrolling body cells through it) and
         // a z-index ABOVE the sticky header (z-10) so the top-left corner stays on top.
-        '[table[data-wk-sticky-column]_&:first-child]:sticky',
+        '[table[data-wk-sticky-column]>*>tr>&:first-child]:sticky',
         // LOGICAL, not the physical `left` inset. Writing direction does not move a physical edge:
         // under `dir="rtl"` the first column renders on the right, and `left: 0` pinned it to the
         // far END of the row while the scrolling columns ran under it. An LTR screenshot of that
         // looks exactly like a correct one. Named as the CSS property rather than the utility on
         // purpose: Tailwind reads comments too, so a utility spelled here is compiled into the sheet.
-        '[table[data-wk-sticky-column]_&:first-child]:start-0',
-        '[table[data-wk-sticky-column]_&:first-child]:z-20',
-        '[table[data-wk-sticky-column]_&:first-child]:bg-[var(--color-wk-bg-subtle)]',
+        '[table[data-wk-sticky-column]>*>tr>&:first-child]:start-0',
+        '[table[data-wk-sticky-column]>*>tr>&:first-child]:z-20',
+        '[table[data-wk-sticky-column]>*>tr>&:first-child]:bg-[var(--color-wk-bg-subtle)]',
         // The frozen column is capped, or a sticky-column table, which takes its max-content
         // width to overflow at all, holds a long label on one line and the column takes most of
         // a phone. A max-width on a table cell bounds its column in automatic layout
         // in every engine, and spare width is still handed out, so a table with room wraps
         // nothing. The column header has to be allowed to wrap as well: its nowrap would keep
         // the column exactly as wide as its label, cap or not.
-        '[table[data-wk-sticky-column]_&:first-child]:max-w-[var(--size-wk-table-sticky-column-max)]',
-        '[table[data-wk-sticky-column]_&:first-child]:whitespace-normal',
+        '[table[data-wk-sticky-column]>*>tr>&:first-child]:max-w-[var(--size-wk-table-sticky-column-max)]',
+        '[table[data-wk-sticky-column]>*>tr>&:first-child]:whitespace-normal',
         // Sortable headers get the hover color; the pointer cursor goes wherever the
         // click target actually is. `$padOnButton` rather than `$sortAction` alone: with a
         // button present the button is the target and carries its own cursor-pointer, and
@@ -320,7 +440,13 @@
          shows them, without the state a sort button adds for a screen reader alone. --}}
     @if(filled($stackBelow))
         role="{{ $headerScope === 'row' || $headerScope === 'rowgroup' ? 'rowheader' : 'columnheader' }}"
-        data-wk-th-label="{{ trim((string) preg_replace('/\s+/u', ' ', strip_tags((string) $slot))) }}"
+        data-wk-th-label="{{ \Pushery\WireKit\Support\SlotContent::plain($slot) }}"
+    @endif
+    {{-- A head names the cells of its column, and with help inside it its name from content would
+         end in the help button's name, which a screen reader then reads with every cell. Named by
+         its words instead, unless the caller names it. --}}
+    @if($helpPartial !== null && $helpPartial['helpName'] !== '' && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby'))
+        aria-label="{{ $helpPartial['helpName'] }}"
     @endif
     @if($column) data-wk-sort-column="{{ $column }}" @endif
     @if($sortable && $column)
@@ -332,7 +458,7 @@
     @elseif($ariaSort)
         aria-sort="{{ $ariaSort }}"
     @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     @if($sortable && $column)
         {{-- Alpine sort mode. The click sits on a real <button>, the same shape the
@@ -350,13 +476,13 @@
         <button
             type="button"
             @click="sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
-            class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer wk-table-sort"
+            class="{{ $sortButtonBox }} {{ $sortLayout }} {{ $helpBeside ? 'ps-[var(--padding-wk-x-md)]' : 'px-[var(--padding-wk-x-md)]' }} py-[var(--padding-wk-y-md)] [table[data-wk-compact]>*>tr>th>&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer wk-table-sort"
         >
             {{ $label }}
-            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
-            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
+            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
+            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc'" x-cloak aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
             <svg x-show="!getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})" aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2L3 5h6L6 2zM6 10L3 7h6L6 10z"/></svg>
-        </button>
+        </button>@if($helpBeside)<span class="{{ $helpBesideBox }}">@include('wirekit::components.partials.field-help', $helpPartial)</span>@elseif($helpPartial !== null)<span class="flex {{ $justifyClass }} px-[var(--padding-wk-x-md)] pb-[var(--padding-wk-y-md)]">@include('wirekit::components.partials.field-help', $helpPartial)</span>@endif
     @elseif($sortable)
         {{-- Livewire sort mode. With `sortAction`, the label + indicator sit in a
              keyboard-operable <button wire:click> (WCAG 2.1.1 — the cursor-pointer
@@ -385,17 +511,27 @@
             <button
                 type="button"
                 wire:click="{{ $sortAction }}"
-                class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer wk-table-sort"
+                class="{{ $sortButtonBox }} {{ $sortLayout }} {{ $helpBeside ? 'ps-[var(--padding-wk-x-md)]' : 'px-[var(--padding-wk-x-md)]' }} py-[var(--padding-wk-y-md)] [table[data-wk-compact]>*>tr>th>&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer wk-table-sort"
             >
                 {{ $label }}
                 {!! $sortIndicator !!}
-            </button>
+            </button>@if($helpBeside)<span class="{{ $helpBesideBox }}">@include('wirekit::components.partials.field-help', $helpPartial)</span>@elseif($helpPartial !== null)<span class="flex {{ $justifyClass }} px-[var(--padding-wk-x-md)] pb-[var(--padding-wk-y-md)]">@include('wirekit::components.partials.field-help', $helpPartial)</span>@endif
         @else
             <span class="{{ $sideways ? 'inline-flex flex-col items-center gap-1' : 'inline-flex items-center gap-1' }}">
                 {{ $label }}
                 {!! $sortIndicator !!}
+                @if($helpPartial !== null)
+                    @include('wirekit::components.partials.field-help', $helpPartial)
+                @endif
             </span>
         @endif
+    @elseif($helpPartial !== null)
+        {{-- The head and its help as one unit, which the cell's text-align places; a turned head
+             takes the help under its label. --}}
+        <span class="inline-flex gap-[var(--gap-wk-xs)] {{ $sideways ? 'flex-col align-bottom '.$helpItems : 'items-center align-middle' }}">
+            {{ $label }}
+            @include('wirekit::components.partials.field-help', $helpPartial)
+        </span>
     @else
         {{ $label }}
     @endif

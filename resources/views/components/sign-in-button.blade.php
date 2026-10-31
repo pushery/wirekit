@@ -2,7 +2,8 @@
      A link the browser follows to the service, or a button whose action the application owns;
      there is no result to show before it. --}}
 @props([
-    // The service: `google`, `apple`, `facebook`, `paypal` or `amazon`.
+    // The service: `google`, `apple`, `facebook`, `paypal` or `amazon`, or `passkey` for the
+    // browser's own sign-in with a passkey.
     'service' => null,
     // Where the sign-in with the service starts, the route that redirects to it. Without it the
     // component is a button, for a `wire:click` of the application's own.
@@ -15,7 +16,9 @@
     // PayPal: `blue`, `gray`. `auto` follows the page's mode. Amazon's image is its only look.
     'variant' => null,
     // The service's logo, a URL. Unset, `wirekit.sign_in.logos.<service>` from the config. For
-    // Amazon, the whole button image.
+    // Amazon, the whole button image. Apple's logo takes the color of the button's words, so it can
+    // be given as `['white' => …, 'black' => …]`, and an image as one file per pixel density,
+    // `['1x' => …, '2x' => …]`.
     'logo' => null,
     // The words on the button, in place of the ones `action` gives.
     'label' => null,
@@ -35,8 +38,14 @@
     // this component's @props.
     \Pushery\WireKit\WireKit::warnUnknownProps('sign-in-button', $attributes->getAttributes());
 
-    // Each service with the name its guidelines write in the label.
-    $wkServiceNames = ['google' => 'Google', 'apple' => 'Apple', 'facebook' => 'Facebook', 'paypal' => 'PayPal', 'amazon' => 'Amazon'];
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // Each service with the name its guidelines write in the label. A passkey is no service: its
+    // button starts a ceremony in the browser, so it has words of its own and no look of a brand.
+    $wkServiceNames = ['google' => 'Google', 'apple' => 'Apple', 'facebook' => 'Facebook', 'paypal' => 'PayPal', 'amazon' => 'Amazon', 'passkey' => 'Passkey'];
     $service = WireKit::validateProp('sign-in-button', 'service', strtolower(trim((string) $service)), array_keys($wkServiceNames));
     $wkName = $wkServiceNames[$service];
 
@@ -64,8 +73,11 @@
     // The words each service's guidelines give. Amazon's button image says "Login with Amazon"
     // whatever the action, so its label, which a screen reader reads for the image, does too.
     $wkLabel = match (true) {
-        filled($label) => (string) $label,
+        filled($label) => \Pushery\WireKit\Support\SlotContent::textOf($label),
         $service === 'amazon' => __('wirekit::Login with Amazon'),
+        $service === 'passkey' && $action === 'sign-in' => __('wirekit::Sign in with a passkey'),
+        $service === 'passkey' && $action === 'sign-up' => __('wirekit::Sign up with a passkey'),
+        $service === 'passkey' => __('wirekit::Continue with a passkey'),
         $action === 'sign-in' && in_array($service, ['facebook', 'paypal'], true) => __('wirekit::Log in with :service', ['service' => $wkName]),
         $action === 'sign-in' => __('wirekit::Sign in with :service', ['service' => $wkName]),
         $action === 'sign-up' && in_array($service, ['google', 'apple'], true) => __('wirekit::Sign up with :service', ['service' => $wkName]),
@@ -74,14 +86,73 @@
 
     // Echoed into the tag, a URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
-    $logo = \Pushery\WireKit\Support\UrlProp::text($logo ?? config('wirekit.sign_in.logos.'.$service));
 
-    $pill = BooleanProp::from($pill, false);
-    $block = BooleanProp::from($block, true);
+    // One file of the logo: a URL, or one file per pixel density, which the browser picks from
+    // through `srcset` and shows at the size of the `1x` file. A file given as `2x` alone is
+    // declared as such, so it shows at half its own size as well. In `srcset` whitespace ends a URL,
+    // so a space in a file name is written as `%20` there; `src` takes the URL as it comes.
+    // Anything else is no file.
+    $wkFile = static function (mixed $given): ?array {
+        $url = static fn (mixed $value): ?string => is_string($value) || $value instanceof \Stringable || $value instanceof \BackedEnum
+            ? \Pushery\WireKit\Support\UrlProp::text($value)
+            : null;
+        $candidate = static fn (string $file, string $density): string => preg_replace_callback('/[\t\n\f\r ]/', static fn (array $space): string => rawurlencode($space[0]), $file).' '.$density;
+
+        if (! is_array($given)) {
+            $src = $url($given);
+
+            return $src === null ? null : ['src' => $src, 'srcset' => null];
+        }
+
+        $one = $url($given['1x'] ?? null);
+        $two = $url($given['2x'] ?? null);
+
+        // A list that names no file, by position or under keys of its own, is reported: the button
+        // would show its words alone without a word why. An empty list is no logo, as `null` is.
+        if ($one === null && $two === null) {
+            if ($given !== []) {
+                \Pushery\WireKit\Support\StrictnessGate::reject(
+                    'sign-in-button',
+                    'logo',
+                    '['.implode(', ', array_map(strval(...), array_keys($given))).']',
+                    "a URL, ['1x' => …, '2x' => …], or for Apple ['white' => …, 'black' => …]",
+                    'no logo',
+                );
+            }
+
+            return null;
+        }
+
+        if ($one === null) {
+            return ['src' => $two, 'srcset' => $candidate($two, '2x')];
+        }
+
+        return ['src' => $one, 'srcset' => $two === null ? null : $candidate($one, '1x').', '.$candidate($two, '2x')];
+    };
+
+    // Apple asks for its logo in the color of the button's words, white on the black button and
+    // black on the white one and on `outline` (Human Interface Guidelines, Sign in with Apple). Given
+    // as one file per color, the button carries each color given, and the stylesheet shows the one
+    // its look asks for: with `auto`, which takes the page's mode, the one that mode asks for. Under
+    // forced colors the button stands on the reader's own fill, and the stylesheet shows the color
+    // that reads on it instead. A single file holds for every look.
+    // A Collection or another Arrayable is read as the array it holds; a URL stays a URL.
+    $wkGiven = \Pushery\WireKit\Support\ListProp::from($logo ?? config('wirekit.sign_in.logos.'.$service));
+    $wkByColor = $service === 'apple' && is_array($wkGiven) && (array_key_exists('white', $wkGiven) || array_key_exists('black', $wkGiven));
+    $wkLogos = $wkByColor
+        ? array_filter(['white' => $wkFile($wkGiven['white'] ?? null), 'black' => $wkFile($wkGiven['black'] ?? null)])
+        : array_filter(['' => $wkFile($wkGiven)]);
+    // The file drawn first, which for Amazon is the whole button.
+    $wkFirstLogo = $wkLogos === [] ? null : reset($wkLogos);
+
+    $pill = BooleanProp::from($pill, false, 'sign-in-button', 'pill');
+    $block = BooleanProp::from($block, true, 'sign-in-button', 'block');
 
     // Amazon allows its own button images only, so with one the image is the button, at its own
-    // size: stretched, its artwork would no longer be Amazon's.
-    $wkImageButton = $service === 'amazon' && $logo !== null;
+    // size: stretched, its artwork would no longer be Amazon's. Amazon gives each button in one size
+    // and twice that, so the larger file through `srcset` keeps it sharp on a dense screen at the
+    // size of the smaller one.
+    $wkImageButton = $service === 'amazon' && $wkFirstLogo !== null;
 
     // Each look's colors, from the tokens the services prescribe. Whole class strings: Tailwind
     // reads this file as text. Amazon without its image takes Facebook's white, a neutral button.
@@ -98,6 +169,8 @@
         'paypal-blue' => 'bg-[var(--color-wk-sign-in-paypal-blue)] text-[color:var(--color-wk-sign-in-white)] border-[var(--color-wk-sign-in-paypal-blue)]',
         'paypal-gray' => 'bg-[var(--color-wk-sign-in-paypal-gray)] text-[color:var(--color-wk-sign-in-black)] border-[var(--color-wk-sign-in-paypal-gray)]',
         'image' => '',
+        // No brand sets a passkey's colors, so its button takes the page's, in either mode.
+        'passkey-' => 'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] border-[var(--color-wk-border-strong)]',
         default => 'bg-[var(--color-wk-sign-in-white)] text-[color:var(--color-wk-sign-in-black)] border-[var(--color-wk-border-strong)]',
     };
 
@@ -116,7 +189,10 @@
         ? 'h-[var(--size-wk-md)] w-auto shrink-0'
         : 'h-[calc(var(--size-wk-md)*0.5)] w-auto shrink-0';
 
-    $wkClasses = WireKit::resolveClasses('sign-in-button', 'base', implode(' ', array_filter([
+    // `wk-touch-row` gives a drawn button the touch height on a touch screen, and stands outside
+    // the block so a theme that replaces the block keeps it. A service's image keeps the size the
+    // service draws it at.
+    $wkClasses = ($wkImageButton ? '' : 'wk-touch-row ').WireKit::resolveClasses('sign-in-button', 'base', implode(' ', array_filter([
         'items-center justify-center no-underline select-none cursor-pointer',
         $wkImageButton ? '' : 'inline-flex border font-medium leading-none whitespace-nowrap',
         $wkImageButton ? '' : ($pill ? 'rounded-full' : 'rounded-[var(--radius-wk-md)]'),
@@ -132,6 +208,12 @@
 
     $wkTag = $href !== null ? 'a' : 'button';
 
+    // A button's type is the caller's when it is one a button has, so a form that starts the
+    // sign-in with a POST request submits through it; otherwise it stays a plain button. It is
+    // taken out of the attributes below, since a second `type` would lose to the first.
+    $wkCallerType = $attributes->get('type');
+    $wkButtonType = in_array($wkCallerType, ['submit', 'reset', 'button'], true) ? $wkCallerType : 'button';
+
     // A link the caller opens in a new tab gets `noopener noreferrer`, and the reader is told it
     // opens one. Rendered here rather than merged: a merge treats a caller's `rel` as the default
     // and would drop the protection.
@@ -143,20 +225,21 @@
 @endphp
 
 <{{ $wkTag }} data-wk-prose-skip
-    @if($href !== null) href="{{ $href }}" @else type="button" @endif
+    @if($href !== null) href="{{ $href }}" @else type="{{ $wkButtonType }}" @endif
     data-wk-sign-in="{{ $service }}"
     @if($variant !== null && ! $wkImageButton) data-wk-variant="{{ $variant }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$wkClasses]) }}
+    {{ $attributes->except($href !== null ? ['rel'] : ['rel', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wkClasses])) }}
 >
     @if($wkImageButton)
         {{-- The service's image is the button, and its words are the image's text. --}}
-        <img data-wk-prose-skip src="{{ $logo }}" alt="{{ $wkLabel }}" class="block h-auto max-w-full" />
+        <img data-wk-prose-skip src="{{ $wkFirstLogo['src'] }}" alt="{{ $wkLabel }}" class="block h-auto max-w-full" @if($wkFirstLogo['srcset'] !== null) srcset="{{ $wkFirstLogo['srcset'] }}" @endif />
     @else
-        @if($logo !== null)
-            {{-- The logo is the service's mark beside its name in the words, so it is not read twice. --}}
-            <img data-wk-prose-skip src="{{ $logo }}" alt="" aria-hidden="true" class="{{ $wkLogoClasses }}" />
-        @endif
+        {{-- The logo is the service's mark beside its name in the words, so it is not read twice. A
+             logo in one color says which (`data-wk-sign-in-logo`), which the stylesheet reads. --}}
+        @foreach($wkLogos as $wkTone => $wkLogo)
+            <img data-wk-prose-skip src="{{ $wkLogo['src'] }}" alt="" aria-hidden="true" class="{{ $wkLogoClasses }}" @if($wkTone !== '') data-wk-sign-in-logo="{{ $wkTone }}" @endif @if($wkLogo['srcset'] !== null) srcset="{{ $wkLogo['srcset'] }}" @endif />
+        @endforeach
         <span>{{ $wkLabel }}</span>
     @endif
     @if($opensNewTab)

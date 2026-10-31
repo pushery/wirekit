@@ -19,7 +19,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $inline = BooleanProp::from($inline, false);
+    $inline = BooleanProp::from($inline, false, 'center', 'inline');
 
     // Default to `flex w-full` so the Center fills its parent and the
     // centering is actually visible (without `w-full`, a bare block-level
@@ -37,6 +37,6 @@
     $as = \Pushery\WireKit\WireKit::tagName('center', (string) $as);
 @endphp
 
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </{{ $as }}>

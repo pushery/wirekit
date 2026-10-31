@@ -50,6 +50,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-spine', $attributes->getAttributes());
 
+    // An unknown value of one of these props is reported (Support\StrictnessGate) and renders as
+    // the default; a bound `null` or empty string is the default without a word.
+    $position = \Pushery\WireKit\WireKit::validateProp('reading-spine', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'right'), ['right', 'left']);
+    $hideBelow = \Pushery\WireKit\WireKit::validateProp('reading-spine', 'hideBelow', \Pushery\WireKit\Support\NumericProp::text($hideBelow ?: 'md'), ['md', 'sm', 'lg', 'xl', 'none']);
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@mouseenter', '@mouseleave', '@focusin', '@focusout', 'x-on:keydown.escape.window.capture']);
@@ -57,10 +67,10 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $numbered = BooleanProp::from($numbered, false);
-    $fillSections = BooleanProp::from($fillSections, false);
-    $sectionEvents = BooleanProp::from($sectionEvents, true);
-    $backToTop = BooleanProp::from($backToTop, false);
+    $numbered = BooleanProp::from($numbered, false, 'reading-spine', 'numbered');
+    $fillSections = BooleanProp::from($fillSections, false, 'reading-spine', 'fillSections');
+    $sectionEvents = BooleanProp::from($sectionEvents, true, 'reading-spine', 'sectionEvents');
+    $backToTop = BooleanProp::from($backToTop, false, 'reading-spine', 'backToTop');
 
     // Reading-spine — sidebar mini-TOC that auto-builds from page headings,
     // tracks the active section as the page scrolls, and expands on hover
@@ -124,7 +134,7 @@
     // `0` is deliberately valid without a unit; it is the whole point of the prop.
     $edgeOffsetStyle = null;
     if ($edgeOffset !== null && $edgeOffset !== '') {
-        $edgeOffsetValue = trim((string) $edgeOffset);
+        $edgeOffsetValue = trim(\Pushery\WireKit\Support\NumericProp::text($edgeOffset));
 
         if (preg_match('/^-?(\d*\.?\d+)(px|rem|em|%|vw|vh|ch)?$/', $edgeOffsetValue)) {
             // The declaration closes with its own semicolon: a caller's `style` is appended
@@ -343,7 +353,7 @@
     {{-- The rail's root does not scroll and takes no focus: its `<nav>` scrolls, a named
          landmark whose links take the focus, and a stop on the root would come before them with
          nothing to do. --}}
-    {{ $attributes->class([$rootClass])->merge(array_filter(['aria-label' => $rail ? null : __('wirekit::Page contents'), 'tabindex' => $rail ? null : '0', 'style' => $rail ? null : $edgeOffsetStyle], fn ($value) => $value !== null)) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass]))->merge(array_filter(['aria-label' => $rail ? null : __('wirekit::Page contents'), 'tabindex' => $rail ? null : '0', 'style' => $rail ? null : $edgeOffsetStyle], fn ($value) => $value !== null)) }}
 >
     @if ($rail)
     {{-- On a phone, a rail you show there is a disclosure: this button carries the label and opens
@@ -351,6 +361,7 @@
          open). From md the button is hidden and the outline always stands. --}}
     <button type="button"
         class="wk-reading-spine__toggle wk-touch-row md:hidden flex w-full items-center justify-between gap-[var(--gap-wk-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] ps-[var(--reading-spine-padding-x)] py-[var(--padding-wk-y-sm)] font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-xs)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+        aria-expanded="false"
         x-bind:aria-expanded="railOpen ? 'true' : 'false'"
         aria-controls="{{ $railFrameId }}"
         @click="toggleRail()"
@@ -376,7 +387,7 @@
 
     {{-- Optional developer-supplied filter input slot. Two-way-binds to
          `filter` Alpine state via `x-model` on the developer's input. --}}
-    @if (isset($filter))
+    @if (\Pushery\WireKit\Support\SlotContent::given($filter ?? null))
         <div class="wk-reading-spine__filter px-2 pb-2 border-b border-[var(--color-wk-border)]">
             {{ $filter }}
         </div>

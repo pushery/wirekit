@@ -18,11 +18,13 @@
     // The Livewire method to call when the button should show its new pressed
     // state before the server has agreed to it. A refusal puts the old state
     // back — see the note above about the wrapper this adds.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // The two-state truth. In the controlled default, bind it to your own state —
     // the pressed state of a formatting control lives in the document, not in the
     // button. It also seeds the initial state in self-toggle mode.
@@ -65,6 +67,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('toggle-button', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
@@ -72,8 +79,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $pressed = BooleanProp::from($pressed, false);
-    $selfToggle = BooleanProp::from($selfToggle, false);
+    $pressed = BooleanProp::from($pressed, false, 'toggle-button', 'pressed');
+    $selfToggle = BooleanProp::from($selfToggle, false, 'toggle-button', 'selfToggle');
 
     $isPressed = filter_var($pressed, FILTER_VALIDATE_BOOLEAN);
     $selfTogglesLocally = filter_var($selfToggle, FILTER_VALIDATE_BOOLEAN);
@@ -124,7 +131,7 @@
     // a control described by its own name is read twice.
     $tooltipIsName = filled($tooltip) && ! $hasVisibleLabel && ! $callerNamed;
     if ($tooltipIsName) {
-        $attributes = $attributes->merge(['aria-label' => $tooltip]);
+        $attributes = $attributes->merge(['aria-label' => \Pushery\WireKit\Support\SlotContent::textOf($tooltip)]);
     }
 
     if ($hasIcon && ! $hasVisibleLabel && ! $callerNamed && blank($tooltip)) {
@@ -196,9 +203,15 @@
         ]);
     } elseif ($hasModel || $selfTogglesLocally) {
         // A model binding flips locally like self-toggle does, and `x-modelable` hands the local
-        // state to the `x-model` that `wire:model` compiles to, on this same element.
-        $attributes = $attributes->merge(array_filter([
-            'x-data' => '{ pressed: '.($isPressed ? 'true' : 'false').' }',
+        // state to the `x-model` that `wire:model` compiles to, on this same element. The state
+        // travels on `data-wk-server-value`, so `x-data` is the same either way: a Livewire morph
+        // that changed it would start the scope again, and the answer to a `wire:model.live`
+        // click would undo a second click made before it arrived (resources/js/components/toggle-button.js).
+        // The caller's `x-model` stands on the element that carries this `x-data`, so it is read
+        // in the scope around it, where the caller's names are (CallerModel).
+        $attributes = \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes)->merge(array_filter([
+            'data-wk-server-value' => $isPressed ? 'true' : 'false',
+            'x-data' => 'wirekitToggleButton()',
             'x-modelable' => $hasModel ? 'pressed' : null,
             'x-on:click' => 'pressed = !pressed',
             'x-bind:'.$stateAttribute => $stateBinding('pressed'),
@@ -248,17 +261,24 @@
      and NOT <x-wirekit::segmented-control> (a group of mutually exclusive
      options). It is a single control that stays pressed — the bold/italic/mute
      shape. --}}
-@if($optimisticConfig)
 {{-- `display: contents` so the announcer gets a sibling without the button
      leaving its layout position — the mechanism the other optimistic components
      use too. See the note at the top for
-     what it costs a caller's selectors. --}}
-<div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents" @if($layerShows) class="contents" @endif @if($refScope === 'layer') data-wk-ref-scope @endif {{ $outerAttributes }}>
-@endif
+     what it costs a caller's selectors. The layer and the tooltip root in a span, the
+     kind of element a button is, so a toggle button still stands in a sentence: a block
+     element there would close the paragraph around it. Nothing inside the layer is
+     whitespace, since under `display: contents` it would be text in that sentence, which
+     is why these notes stand here and not beside the lines they are about.
+
+     The button is the focusable trigger, so the tooltip adds no tab stop of its own. When the
+     tooltip text is the name, it does not also describe the button.
+
+     The announcer is rendered unconditionally and starts empty: a live region that arrives
+     together with its text is a new node, and nothing is announced at all. --}}
+@if($optimisticConfig)
+<span x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents" @if($layerShows) class="contents" @endif @if($refScope === 'layer') data-wk-ref-scope @endif {{ $outerAttributes }}>@endif
 @if(filled($tooltip))
-{{-- The button is the focusable trigger, so the tooltip adds no tab stop of its own. When the
-     tooltip text is the name, it does not also describe the button. --}}
-<x-wirekit::tooltip :text="$tooltip" :focusable-trigger="false" :describes="! $tooltipIsName" :data-wk-ref-scope="$refScope === 'tooltip' ? true : null" :attributes="$tooltipOuterAttributes">
+<x-wirekit::tooltip :text="$tooltip" :focusable-trigger="false" :describes="! $tooltipIsName" :data-wk-ref-scope="$refScope === 'tooltip' ? true : null" :attributes="$tooltipOuterAttributes" as="span">
     @include('wirekit::components.partials.toggle-button-control', [
     'attributes' => $attributes,
     'slot' => $slot,
@@ -278,7 +298,7 @@
 ])
 </x-wirekit::tooltip>
 @else
-    @include('wirekit::components.partials.toggle-button-control', [
+@include('wirekit::components.partials.toggle-button-control', [
     'attributes' => $attributes,
     'slot' => $slot,
     'size' => $size,
@@ -297,8 +317,4 @@
 ])
 @endif
 @if($optimisticConfig)
-    {{-- Rendered unconditionally and starting empty: a live region that arrives
-         together with its text is a new node, and nothing is announced at all. --}}
-    <div class="sr-only" data-wk-optimistic-announcer data-wk-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
-</div>
-@endif
+<span class="sr-only" data-wk-optimistic-announcer data-wk-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></span></span>@endif

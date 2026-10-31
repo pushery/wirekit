@@ -10,6 +10,8 @@
     // List of images: each an array with 'src' (required), 'alt' (required for a
     // content image), and optional 'caption' and 'full'. A plain string is treated
     // as a src with an empty alt (decorative) — pass the array form for real content.
+    // 'altLang' and 'captionLang' name the language of either text where it differs from the
+    // page's, in the grid and in the lightbox; a 'caption' may be an Htmlable.
     //
     // 'full' is the address the LIGHTBOX loads, and it defaults to 'src'. A grid tile is a
     // few hundred pixels wide with ten of them on a page; the zoom view is the whole screen.
@@ -64,8 +66,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $lightbox = BooleanProp::from($lightbox, true);
-    $zoomable = BooleanProp::from($zoomable, false);
+    $lightbox = BooleanProp::from($lightbox, true, 'image-gallery', 'lightbox');
+    $zoomable = BooleanProp::from($zoomable, false, 'image-gallery', 'zoomable');
 
     // Normalize each entry to ['src', 'alt', 'caption', 'full'].
     //
@@ -78,20 +80,39 @@
     // Absent — or present and empty — it falls back to `src`. `??` alone would NOT do that: an
     // entry carrying `'full' => ''`
     // is a developer's own empty variable, and honoring it would point the lightbox at nothing.
+    //
+    // An entry without an address of its own takes its zoom as the thumbnail, and one with neither
+    // is left out: written as it came, it is a tile and a slide with the sign of a broken image.
+    // Empty, `false` and white space are no address (Support\UrlProp::source()).
+    $address = static fn ($value): ?string => is_string($value) || $value instanceof \Stringable || is_bool($value) ? \Pushery\WireKit\Support\UrlProp::source($value) : null;
     $items = [];
-    foreach (\Pushery\WireKit\Support\ListProp::records($images) as $img) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($images, 'image-gallery', 'images') as $img) {
         if (is_array($img)) {
-            $src = (string) ($img['src'] ?? '');
-            $full = trim((string) ($img['full'] ?? ''));
+            $full = $address($img['full'] ?? null);
+            $src = $address($img['src'] ?? null) ?? $full;
+            if ($src === null) {
+                continue;
+            }
+            $full ??= $src;
 
             $items[] = [
                 'src' => $src,
                 'alt' => (string) ($img['alt'] ?? ''),
-                'caption' => isset($img['caption']) ? (string) $img['caption'] : null,
-                'full' => $full === '' ? $src : $full,
+                // An Htmlable stays one, so the grid writes its markup rather than escaping it.
+                'caption' => isset($img['caption'])
+                    ? ($img['caption'] instanceof \Illuminate\Contracts\Support\Htmlable ? $img['caption'] : (string) $img['caption'])
+                    : null,
+                'full' => $full,
+                'altLang' => \Pushery\WireKit\Support\LanguageTag::of($img['altLang'] ?? null),
+                'captionLang' => \Pushery\WireKit\Support\LanguageTag::of($img['captionLang'] ?? null),
             ];
         } else {
-            $items[] = ['src' => (string) $img, 'alt' => '', 'caption' => null, 'full' => (string) $img];
+            $plain = $address($img);
+            if ($plain === null) {
+                continue;
+            }
+
+            $items[] = ['src' => $plain, 'alt' => '', 'caption' => null, 'full' => $plain, 'altLang' => null, 'captionLang' => null];
         }
     }
 
@@ -144,12 +165,12 @@
          with nothing in it, which reads as a broken layout rather than as "no images yet". The
          `empty` slot replaces the sentence entirely — see data-table, where the reasoning for
          that shape was first written down. --}}
-    <div id="{{ $rootId }}" {{ $attributes->except('id')->class([$wrapperClasses, 'flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
-        @isset($empty)
+    <div id="{{ $rootId }}" {{ $attributes->except('id')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center'])) }}>
+        @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
             {{ $empty }}
         @else
             <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
-        @endisset
+        @endif
     </div>
 @elseif($lightbox && $count > 0)
     {{-- The gallery IS a lightbox instance: the thumbnail buttons live in the
@@ -157,7 +178,7 @@
          openAt(i) directly. The dialog / focus-trap / keyboard / captions all
          come from the shared <x-wirekit::lightbox> component — the gallery
          carries no overlay markup of its own. --}}
-    <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" :slide-overlay="$slideOverlay" :zoomable="$zoomable" :max-zoom="$maxZoom" {{ $attributes->class([$wrapperClasses]) }}>
+    <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" :slide-overlay="$slideOverlay" :zoomable="$zoomable" :max-zoom="$maxZoom" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}>
         <x-wirekit::grid :cols="$columns" :gap="$gap" :role="$gridNamed ? 'group' : null" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null">
             @foreach($items as $i => $item)
                 {{-- Each thumbnail is a real button so the lightbox is
@@ -172,7 +193,8 @@
                         aria-label="{{ __('wirekit::View image :n', ['n' => $i + 1]) }}{{ $item['alt'] !== '' ? ': '.$item['alt'] : '' }}"
                         class="group block w-full cursor-zoom-in appearance-none border-0 bg-transparent p-0 rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
-                        <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :ratio="$ratio" :fit="$fit" rounded />
+                        {{-- A span: a button takes text-level content alone, and a figure is none. --}}
+                        <x-wirekit::image as="span" :src="$item['src']" :alt="$item['alt']" :alt-lang="$item['altLang']" :ratio="$ratio" :fit="$fit" rounded />
                     </button>
                     @if(is_callable($itemOverlay))
                         {{-- per-item overlay, a sibling of (not nested in) the
@@ -185,17 +207,17 @@
         </x-wirekit::grid>
     </x-wirekit::lightbox>
 @else
-    <div id="{{ $rootId }}" {{ $attributes->except('id')->class([$wrapperClasses]) }}>
+    <div id="{{ $rootId }}" {{ $attributes->except('id')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}>
         <x-wirekit::grid :cols="$columns" :gap="$gap" :role="$gridNamed ? 'group' : null" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null">
             @foreach($items as $i => $item)
                 @if(is_callable($itemOverlay))
                     {{-- static grid also supports the per-item overlay. --}}
                     <div class="relative">
-                        <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :caption="$item['caption']" :ratio="$ratio" :fit="$fit" rounded />
+                        <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :alt-lang="$item['altLang']" :caption="$item['caption']" :caption-lang="$item['captionLang']" :ratio="$ratio" :fit="$fit" rounded />
                         <div class="pointer-events-none absolute inset-0">{{ $itemOverlay($item, $i) }}</div>
                     </div>
                 @else
-                    <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :caption="$item['caption']" :ratio="$ratio" :fit="$fit" rounded />
+                    <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :alt-lang="$item['altLang']" :caption="$item['caption']" :caption-lang="$item['captionLang']" :ratio="$ratio" :fit="$fit" rounded />
                 @endif
             @endforeach
         </x-wirekit::grid>

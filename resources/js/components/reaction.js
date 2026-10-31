@@ -25,7 +25,9 @@
  * @param {string}  config.emoji    read before the count, e.g. "👍, 5 people reacted"
  * @param {Object}  config.phrases  sample count -> template, from PluralPhrases
  * @param {string}  config.locale   the application's locale
+ * @param {{group: string, decimal: string}|null} config.separators  the application's own marks, if any
  */
+import { formatCount } from '../utils/locale-number.js';
 import { pluralize } from '../utils/plural.js';
 
 export default function wirekitReaction(config = {}) {
@@ -38,9 +40,16 @@ export default function wirekitReaction(config = {}) {
         _emoji: config.emoji || '',
         _phrases: config.phrases || {},
         _locale: config.locale || 'en',
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
 
         get count() {
             return this._base + (this.active ? 1 : 0);
+        },
+
+        // The count as the reader sees it: grouped in the application's locale, or in its own
+        // marks where it has them, as the server writes it for the first paint.
+        get countText() {
+            return formatCount(this.count, this._locale, this._separators);
         },
 
         get label() {

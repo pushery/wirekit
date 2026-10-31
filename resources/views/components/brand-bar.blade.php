@@ -32,6 +32,8 @@
     // `--size-wk-container-*` tokens as the container component so
     // brand-bar + body align on the same vertical content-edge spine.
     'max' => null,
+    // The line beside the brand, as a prop or as the `tagline` slot; the slot wins when both are given.
+    'tagline' => null,
     'scope' => null,
 ])
 
@@ -44,11 +46,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('brand-bar', $attributes->getAttributes());
 
+    // An unknown `divider` is reported (Support\StrictnessGate) and renders as `bottom`; a bound
+    // `null` or empty string is `bottom` without a word.
+    $divider = \Pushery\WireKit\WireKit::validateProp('brand-bar', 'divider', \Pushery\WireKit\Support\NumericProp::text($divider ?: 'bottom'), ['bottom', 'none']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sticky = BooleanProp::from($sticky, false);
-    $container = BooleanProp::from($container, false);
+    $sticky = BooleanProp::from($sticky, false, 'brand-bar', 'sticky');
+    $container = BooleanProp::from($container, false, 'brand-bar', 'container');
 
     $max ??= config('wirekit.components.brand-bar.max', 'xl');
 
@@ -110,11 +116,11 @@
     $as = \Pushery\WireKit\WireKit::tagName('brand-bar', (string) $as);
 @endphp
 
-<{{ $as }} data-wk-prose-skip @if($sticky) data-wk-scroll-inset="top" @endif {{ $attributes->class([$rootClass]) }}>
+<{{ $as }} data-wk-prose-skip @if($sticky) data-wk-scroll-inset="top" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass])) }}>
     @if($isContainerWrapped)<div class="{{ $innerWrapperClass }}">@endif
     @isset($brand){{ $brand }}@endisset
-    @isset($tagline)<span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $tagline }}</span>@endisset
+    @if($tagline instanceof \Illuminate\View\ComponentSlot ? $tagline->hasActualContent() : filled($tagline))<span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $tagline }}</span>@endif
     {{ $slot }}
-    @isset($actions)<div class="ml-auto flex flex-row items-center gap-[var(--space-wk-sm)]">{{ $actions }}</div>@endisset
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))<div class="ml-auto flex flex-row items-center gap-[var(--space-wk-sm)]">{{ $actions }}</div>@endif
     @if($isContainerWrapped)</div>@endif
 </{{ $as }}>

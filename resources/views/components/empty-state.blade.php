@@ -29,6 +29,8 @@
     // `outlined` is read as `outline`, so either spelling of the pair works, as on the other
     // components that take it.
     $variantAliases = ['outlined' => 'outline'];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $variant = \Pushery\WireKit\Support\NumericProp::key($variant);
     $variant = $variantAliases[$variant] ?? $variant;
 
     $variantValue = match ($variant) {
@@ -40,9 +42,9 @@
     // with a did-you-mean, and where the gate does not throw it renders the h3
     // default — we never emit h1 as a side-effect of validateProp's first-allowed
     // fallback, which would break the outline worse than the default.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('empty-state', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('empty-state', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 
     // Container chrome per variant. `default` adds nothing (back-compat); the others
@@ -70,7 +72,7 @@
     $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent();
 @endphp
 
-<div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     {{-- Icon: iconSlot (if provided) takes priority; else string $icon prop. --}}
     @if($hasIconSlot)
         <div class="mb-4 flex h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">

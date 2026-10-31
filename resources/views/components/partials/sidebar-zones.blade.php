@@ -21,7 +21,7 @@
      second stop that announces nothing new. Same shape as the reading table of
      contents, whose scrolling list sits directly inside its labeled nav. --}}
 @if($hasZones)
-    @isset($header)
+    @if(\Pushery\WireKit\Support\SlotContent::given($header ?? null))
         {{-- shrink-0: the head must keep its height when the list is long. Without
              it a flex item is allowed to compress, and a brand row silently loses
              pixels as the navigation grows.
@@ -45,7 +45,7 @@
         ])>
             {{ $header }}
         </div>
-    @endisset
+    @endif
 
     {{-- min-h-0 is the whole trick, and leaving it out is the mistake this zone
          exists to prevent: a flex item's automatic minimum size is its content, so
@@ -84,7 +84,7 @@
         <div
             x-ref="scroller"
             data-wk-sidebar-scroller
-            class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] wk-scrollbar"
+            class="relative min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] wk-scrollbar"
         >
             {{-- `-mb-px` cancels the sentinel's OWN height. It has to stay one pixel tall
                  for the observer to report it reliably — a zero-height target is not
@@ -109,13 +109,13 @@
          has something to attach to without reaching for a class name. --}}
     <div
         data-wk-sidebar-scroller
-        class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] wk-scrollbar"
+        class="relative min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] -mx-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] px-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] wk-scrollbar"
     >
         <div class="flex flex-col gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
     </div>
     @endif
 
-    @isset($footer)
+    @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
         {{-- Same alignment as the head, for the same reason: an account row is
              the bottom of the same column and belongs on the same vertical line
              as the items above it. --}}
@@ -153,7 +153,7 @@
                 @include('wirekit::components.partials.sidebar-collapse-toggle')
             @endif
         </div>
-    @endisset
+    @endif
 @else
     {{-- No zones: the column has no flex gap of its own (it would also space the
          zones and push the first row down), so the rhythm is stated here instead of

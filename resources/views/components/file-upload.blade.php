@@ -15,6 +15,10 @@
     'name' => null,
     'id' => null,
     'multiple' => config('wirekit.components.file-upload.multiple', false),
+    // With `multiple` and `wire:model`, each file of a selection goes up in a request of its own,
+    // so one over a server's or a proxy's limit fails alone. Off by default: the property then
+    // updates once per file, and an `updated` hook runs once per file.
+    'uploadSeparately' => config('wirekit.components.file-upload.upload-separately', false),
     'accept' => config('wirekit.components.file-upload.accept', null),
     // `capture` is its OWN attribute, not a token inside `accept`:
     // `accept="image/*;capture=camera"` is a legacy Android spelling that no current browser
@@ -50,7 +54,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -60,23 +64,27 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('file-upload', $attributes->getAttributes());
 
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('file-upload', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
+    $disabled = BooleanProp::from($disabled, false, 'file-upload', 'disabled');
     // Same contract, different spelling of the default: a `config()` fallback declares a
     // boolean as surely as a literal does. This one decides both the `multiple` attribute on
     // the input and whether the field posts as `name[]`, so an unbound `multiple="false"`
     // changed the shape of the submitted payload as well as the picker.
-    $multiple = BooleanProp::from($multiple, false);
-    $required = BooleanProp::from($required, false);
+    $multiple = BooleanProp::from($multiple, false, 'file-upload', 'multiple');
+    $required = BooleanProp::from($required, false, 'file-upload', 'required');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -99,6 +107,8 @@
     // when a save sets it back to empty, and it seeds the id below.
     $boundModel = $attributes->whereStartsWith('wire:model')->first();
     $boundModel = is_string($boundModel) && $boundModel !== '' ? $boundModel : null;
+    // Only a bound selection of several files has anything to upload separately.
+    $uploadSeparately = BooleanProp::from($uploadSeparately, false, 'file-upload', 'uploadSeparately') && $multiple && $boundModel !== null;
 
     // The id has to be the same on every render. Livewire's morph recognizes an element by it,
     // so an id drawn fresh per render made each round trip REPLACE the input — and Livewire
@@ -107,17 +117,21 @@
     // no name (`wk-upload-photos`), counted per render order when there is neither. A second
     // upload with the same name or property on the page gets `-2`, so its label and its hint do
     // not point at the first one's input (DomId::distinct keeps the first verbatim).
-    $uploadId = $id ?? \Pushery\WireKit\Support\DomId::distinct($name ? 'wk-upload-' . $name : WireKit::stableId('wk-upload', $boundModel));
+    $uploadId = \Pushery\WireKit\Support\DomId::valid(is_scalar($id) ? (string) $id : null) ?? \Pushery\WireKit\Support\DomId::distinct($name ? 'wk-upload-' . $name : WireKit::stableId('wk-upload', $boundModel));
     $errorId = $uploadId . '-error';
     $hintId = $uploadId . '-hint';
+
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
     // Laravel errors bag check, guarded on the name exactly as field.blade.php
     // does. `MessageBag::has(null)` falls through to `any()`, so an unguarded
     // read makes a file-upload with no `name` report itself invalid the moment
     // ANY unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
-    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
-    $errorMessage = $error ?? ($hasError && $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -142,6 +156,13 @@
     $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
     // The field's help, after its own messages: what the field is for (partials/field-help).
     $helpId = filled($help) ? $uploadId.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $uploadId, $hint ? $hintId : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // The HTML spec's two values. `camera` and `camcorder` were an Android-era spelling
@@ -163,8 +184,8 @@
     // compact control is not one. Hiding it visually keeps the name — `sr-only`
     // clips, it does not remove the node from the accessibility tree, so the
     // <label> still names the input.
-    $labelText = $label ?? __('wirekit::Drop files here or click to browse');
-    $labelIsVisible = $variantValue !== 'compact' || $label !== null;
+    $labelText = filled($label) ? $label : __('wirekit::Drop files here or click to browse');
+    $labelIsVisible = $variantValue !== 'compact' || filled($label);
 
     // Inside a labeled field the field's label names the file input by `for`, beside the
     // drop zone's own label (Support\FieldControl), and comes first in its name. A `label` here
@@ -290,6 +311,8 @@
     // Assembled from a `:name` placeholder because a sentence concatenated in
     // JavaScript cannot be translated and word order is not the same in every language.
     $removedMessage = __('wirekit::Removed :name');
+    $failedLabel = __('wirekit::Upload failed');
+    $failedMessage = __('wirekit:::name failed to upload');
 
     // A caller's `x-ref` belongs to the caller's component. The caller's attributes land on our
     // root, and a root registers a ref on itself, where the caller's `$refs` never reads it.
@@ -306,9 +329,10 @@
     // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
     $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
     $attributes = $attributes->except('form');
-    // A caller's `autofocus` goes to the file field, the element the keyboard reaches: on the
-    // wrapper it focuses nothing (Support\FieldAttributes).
-    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, ['autofocus']);
+    // A caller's `autofocus` and `tabindex` go to the file field, the element the keyboard reaches:
+    // on the wrapper the one focuses nothing and the other leaves the field's tab stop as it is
+    // (Support\FieldAttributes).
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, ['autofocus', 'tabindex']);
 @endphp
 
 {{-- Alpine: tracks drag-over state + an array of selected file metadata for preview.
@@ -319,7 +343,7 @@
          four statements and a `const`, which Alpine's CSP build does not parse —
          under a strict Content-Security-Policy dropping a file did nothing while
          clicking the label still worked. --}}
-    x-data="wirekitFileUpload({ locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_', '-', app()->getLocale())) }}, removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, sizeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from([__('wirekit::B'), __('wirekit::KB'), __('wirekit::MB'), __('wirekit::GB'), __('wirekit::TB')]) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
+    x-data="wirekitFileUpload({ locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\IcuLocale::tag()) }}, removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\SlotContent::textOf($removeLabel)) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, sizeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from([__('wirekit::B'), __('wirekit::KB'), __('wirekit::MB'), __('wirekit::GB'), __('wirekit::TB')]) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }}, uploadSeparately: {{ $uploadSeparately ? 'true' : 'false' }}, failedLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $failedLabel) }}, failedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $failedMessage) }} })"
     {{-- `wire:model` is peeled off here and re-attached to the file input below.
          Livewire decides what a model binding MEANS by reading the element's
          type: on a `<input type="file">` it takes the upload path, and on
@@ -331,10 +355,13 @@
          would hand back exactly the line the variant exists to give up, so it
          becomes an inline column that hugs its content — the file list, hint and
          error still stack beneath the control, just no wider than they need. --}}
-    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([
+    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
         'w-full' => $variantValue !== 'compact',
         'inline-flex max-w-full flex-col items-start align-middle' => $variantValue === 'compact',
-    ]) }}
+    ])) }}
+    {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+         listener written on the tag hears one field (utils/focus-unit.js). --}}
+    x-wk-focus-unit
     @if($callerRef !== '') data-wk-ref-scope x-wk-ref="{{ $callerRef }}" @endif
 >
     {{-- The removal's own live region. Unconditional and starting EMPTY, for the reason
@@ -369,8 +396,9 @@
              the <label> must still name the input, and a control whose only
              content is an aria-hidden icon has no accessible name at all. Left
              out only when a field's label names the input already. --}}
+        {{-- A compact label that the row cuts is whole in its title, as plain text. --}}
         @if($labelIsVisible || $fieldLabelId === null)
-            <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}">{{ $labelText }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+            <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}" @if($labelIsVisible && $variantValue === 'compact') title="{{ \Pushery\WireKit\Support\SlotContent::plain(is_scalar($labelText) ? (string) $labelText : $labelText) }}" @endif>{{ $labelText }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
 
         {{-- Hidden native input — click on label triggers it, drag-drop replaces files. --}}
@@ -383,7 +411,7 @@
             @if($multiple) multiple @endif
             {{-- Native, on the file input itself: it is a real form control, so the browser's
                  own constraint validation is the strongest carrier available. --}}
-            @if($required) required aria-required="true" @endif
+            @if($required) required aria-required="true" @elseif($fieldRequired) aria-required="true" @endif
             @if($accept) accept="{{ $accept }}" @endif
             @if($captureValue) capture="{{ $captureValue }}" @endif
             @if($disabled) disabled @endif
@@ -402,7 +430,7 @@
     </label>
     @if($helpId)
         <span class="absolute top-[var(--padding-wk-y-md)] end-[var(--padding-wk-x-xs)]">
-            @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) ($label ?? ''), 'helpId' => $helpId, 'helpField' => (string) ($name ?? $uploadId)])
+            @include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => (string) ($label ?? ''), 'helpId' => $helpId, 'helpField' => (string) ($name ?? $uploadId)])
         </span>
     </div>
     @endif
@@ -430,6 +458,9 @@
                 </span>
                 {{-- File size — fixed width so it doesn't shift when remove button appears --}}
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums shrink-0" x-text="formatBytes(file.size)"></span>
+                {{-- A file of a selection uploaded file by file (`upload-separately`) that failed
+                     says so in its own row, so the reader knows which one to pick again. --}}
+                <span class="shrink-0 text-[color:var(--color-wk-danger-text)]" x-show="file.state === 'failed'" x-cloak data-wk-file-failed x-text="failedLabel"></span>
                 {{-- Remove button — chip-style X aligned with <x-wirekit::tags-input>:
                      always visible, subtle rounded background on hover, danger text on hover. --}}
                 {{-- The visible chip stays small (p-0.5 + a 14px X), but a centered

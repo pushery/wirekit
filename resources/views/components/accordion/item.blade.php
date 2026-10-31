@@ -3,6 +3,14 @@
 @props([
     'id' => null,
     'title' => '',
+    // The language of `title` where it differs from the page's, written on the title alone, so the
+    // panel keeps the page's language.
+    'titleLang' => null,
+    // Starts open, and is rendered open, so nothing moves when the script starts. In single mode
+    // the first item with `open` is the one that stays open. Unset, it follows
+    // `components.accordion.item.open` in multiple mode; in single mode, where one panel is open at
+    // a time, a default cannot say which, so only an item that names `open` starts open.
+    'open' => null,
     'scope' => null,
 ])
 
@@ -24,22 +32,41 @@
     'findable' => config('wirekit.components.accordion.findable', true),
     // Whether this panel animates its height. Set on the accordion, read here through @aware.
     'animate' => config('wirekit.components.accordion.animate', true),
+    // One panel at a time or several, set on the accordion: a default for `open` applies to several only.
+    'mode' => config('wirekit.components.accordion.mode', 'single'),
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $variant = \Pushery\WireKit\Support\AwareProp::read('variant', ['accordion', 'faq'], config('wirekit.components.accordion.variant', 'bordered'));
+    $size = \Pushery\WireKit\Support\AwareProp::read('size', ['accordion', 'faq'], config('wirekit.components.accordion.size', 'md'));
+    $level = \Pushery\WireKit\Support\AwareProp::read('level', ['accordion', 'faq'], 3);
+    $findable = \Pushery\WireKit\Support\AwareProp::read('findable', ['accordion', 'faq'], config('wirekit.components.accordion.findable', true));
+    $animate = \Pushery\WireKit\Support\AwareProp::read('animate', ['accordion', 'faq'], config('wirekit.components.accordion.animate', true));
+    $mode = \Pushery\WireKit\Support\AwareProp::read('mode', ['accordion'], config('wirekit.components.accordion.mode', 'single'));
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('accordion.item', $attributes->getAttributes());
+
+    // The language of the title as HTML reads it: `pt_BR` is the tag `pt-BR`, and a blank one is none.
+    $titleLang = \Pushery\WireKit\Support\LanguageTag::of($titleLang);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['variant', 'size', 'level', 'findable', 'animate']);
+    $attributes = $attributes->except(['variant', 'size', 'level', 'findable', 'animate', 'mode']);
     $findable = \Pushery\WireKit\Support\BooleanProp::from($findable, true);
     $animate = \Pushery\WireKit\Support\BooleanProp::from($animate, true);
+    // `open="false"` on an unbound tag is the string "false", which is truthy. Unset, the default
+    // from the configuration opens the item in multiple mode only.
+    $open = $open === null
+        ? $mode === 'multiple' && \Pushery\WireKit\Support\BooleanProp::from(config('wirekit.components.accordion.item.open', false))
+        : \Pushery\WireKit\Support\BooleanProp::from($open, false, 'accordion.item', 'open');
 @endphp
 
 
@@ -121,13 +148,15 @@
     // `level` must never turn a row's trigger into the page's <h1>, which is a
     // worse outline than the one the default gives. Same shape, and the same
     // reason, as the empty-state title.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('accordion', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('accordion', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 @endphp
 
-<div {{ $attributes->class([$wrapperClasses]) }}>
+{{-- The item's id on its own element, so a link to `#…` reaches the item; the accordion opens it.
+     `data-wk-accordion-open` tells the accordion which items start open (resources/js/components/accordion.js). --}}
+<div id="{{ $itemId }}" data-wk-accordion-item{{ $open ? ' data-wk-accordion-open' : '' }} {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}>
     {{-- Header button: delegates to toggle() defined on the parent accordion's x-data scope.
          Alpine resolves methods via scope chain — no $root prefix needed. --}}
     <h{{ $levelValue }} data-wk-prose-skip>
@@ -135,6 +164,7 @@
             type="button"
             id="{{ $buttonId }}"
             aria-controls="{{ $panelId }}"
+            aria-expanded="{{ $open ? 'true' : 'false' }}"
             :aria-expanded="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) ? 'true' : 'false'"
             @click="toggle({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}, $el)"
             {{-- wk-accordion-trigger is a marker, carried outside the class seam so an
@@ -150,7 +180,7 @@
             {{-- Title takes the remaining row width and wraps; min-w-0 unlocks
                  text wrapping inside a flex child (default min-content prevents
                  break inside long unbroken words). --}}
-            <span class="flex-1 min-w-0">{{ $title !== '' ? $title : ($header ?? '') }}</span>
+            <span class="flex-1 min-w-0" @if(filled($titleLang) && $title !== '') lang="{{ $titleLang }}" @endif>{{ $title !== '' ? $title : ($header ?? '') }}</span>
             <svg
                 class="{{ $chevronClasses }}"
                 :class="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) ? 'rotate-180' : ''"
@@ -187,7 +217,9 @@
         x-wk-findable="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
         @endif
         x-on:beforematch="reveal({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
-        hidden="until-found"
+        {{-- Drawn open, it says so: in single mode the start closes the second item asking for
+             it, and without `hidden` the panel would read as one found before the script ran. --}}
+        @if($open) data-wk-rendered-open @else hidden="until-found" @endif
     >
         <div class="{{ $panelClasses }}">
             {{ $slot }}
@@ -205,7 +237,8 @@
              only works with `x-show` — and this branch IS `x-show`, so here the plugin is the
              right tool and the same prop reaches both paths rather than one of them. --}}
         @if($animate) x-collapse @endif
-        x-cloak
+        {{-- A closed panel stays hidden until the script starts; an open one paints with the page. --}}
+        @unless($open) x-cloak @endunless
         class="{{ $panelClasses }}"
     >
         {{ $slot }}

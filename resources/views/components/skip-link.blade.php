@@ -18,6 +18,11 @@
 
     WireKit::warnUnknownProps('skip-link', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // Visually-hidden by default; on `:focus-visible` the anchor pops out
     // as a high-contrast accent pill in the top-left of the viewport.
     // Tailwind utility list:
@@ -58,6 +63,6 @@
     ]), $scope);
 @endphp
 
-<a data-wk-prose-skip data-wk-skip-link href="#{{ $target }}" {{ $attributes->class([$classes]) }}>
+<a data-wk-prose-skip data-wk-skip-link href="#{{ $target }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot->hasActualContent() ? $slot : $label }}
 </a>

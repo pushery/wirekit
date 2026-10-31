@@ -24,9 +24,27 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('alert-dialog.confirm', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click.capture', 'x-on:keydown.enter.capture', 'x-on:keydown.space.capture', 'x-on:click', 'x-on:keydown.enter', 'x-on:keydown.space']);
+
     use Pushery\WireKit\WireKit;
 
     $classes = WireKit::resolveClasses('alert-dialog.confirm', 'base', '', $scope);
+
+    // A caller's name for the control, `aria-label` or `aria-labelledby`, belongs on the button this
+    // view renders; on the wrapper, a `div` with no role, it names nothing (Support\CallerName). A
+    // control of the caller's own in the slot is the caller's to name, and the bag stays as it is.
+    $callerLabelledBy = null;
+    $callerLabel = null;
+    $callerDescribedBy = null;
+
+    if (! $slot->hasActualContent() || preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) !== 1) {
+        [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+        // A caller's `aria-describedby` goes with the name: a description is announced only for the
+        // element that carries it.
+        [$callerDescribedBy, $attributes] = \Pushery\WireKit\Support\CallerName::description($attributes);
+    }
 @endphp
 
 {{-- data-wk-alert-confirm is the counterpart to data-wk-alert-cancel. The dialog does not
@@ -83,7 +101,7 @@
     x-on:keydown.enter="confirmed()"
     x-on:keydown.space="confirmed()"
     x-effect="syncConfirmControlState($el, $id('alert-confirm-reason'))"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- The reason, in a region that EXISTS from the first render and whose CONTENT
          changes. It was written the obvious way first — wrapped in `x-if` so it appeared
@@ -99,7 +117,7 @@
     ></span>
 
     @if(! $slot->hasActualContent())
-        <x-wirekit::button intent="danger" surface="filled">{{ __('wirekit::Confirm') }}</x-wirekit::button>
+        <x-wirekit::button intent="danger" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Confirm') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
         {{-- The caller supplied their own control. Matched on the RENDERED markup,
              because that is what a slot holds: by the time it is cast to a string
@@ -115,6 +133,6 @@
     @else
         {{-- Plain text slot — wrap it so keyboard and screen-reader semantics stay
              correct rather than shipping a bare span somebody has to click. --}}
-        <x-wirekit::button intent="danger" surface="filled">{{ $slot }}</x-wirekit::button>
+        <x-wirekit::button intent="danger" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
     @endif
 </div>

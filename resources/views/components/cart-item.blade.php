@@ -8,6 +8,12 @@
     // rather than a slot: ten controls that all announce "Remove" cannot be told apart by anyone
     // using voice control, and a slot cannot be read into an aria-label.
     'name' => null,
+    // The name as a link to its product, in either layout. The controls of the line still say
+    // the name in theirs.
+    'href' => null,
+    // The language of the name, where it is not the page's, such as a product sold under its name
+    // in another language. It goes on the name alone, so a screen reader says it in that voice.
+    'nameLang' => null,
     // Thumbnail. `imageAlt` defaults to empty on purpose — the name is already in the row as
     // text, so a repeated alt reads the product twice. Pass one only when the image carries
     // information the name does not.
@@ -45,6 +51,10 @@
     'size' => config('wirekit.components.cart-item.size', 'lg'),
     // A unit suffix for the stepper — "kg", "pair", "m". `number-input` already has `suffix`.
     'unit' => null,
+    // The name a form sends the quantity under, for a cart that works without script:
+    // `lines[42][quantity]`. Without one the field carries no name, because a field named after its
+    // id would be sent under a name the page never chose and no application could match to a line.
+    'quantityName' => null,
     // Whether the built-in remove control renders. The `remove` slot overrides it entirely.
     'removable' => true,
     // The glyph of the built-in remove control, an icon alias of the preset: `close` draws a
@@ -102,22 +112,27 @@
     use Pushery\WireKit\WireKit;
 
     $size = WireKit::validateProp('cart-item', 'size', $size, ['sm', 'md', 'lg']);
-    $removable = BooleanProp::from($removable, true);
-    $minorUnits = BooleanProp::from($minorUnits, false);
+    $removable = BooleanProp::from($removable, true, 'cart-item', 'removable');
+    $minorUnits = BooleanProp::from($minorUnits, false, 'cart-item', 'minorUnits');
     // An empty string is no amount, as null is: the value of a field nobody has filled. Left as it
     // is, it would reach `price` and its row would stand empty.
     $price = $price === '' ? null : $price;
     $compareAt = $compareAt === '' ? null : $compareAt;
     $lineTotal = $lineTotal === '' ? null : $lineTotal;
-    $readonly = BooleanProp::from($readonly, false);
-    $removesAtZero = BooleanProp::from($removesAtZero, false);
+    $readonly = BooleanProp::from($readonly, false, 'cart-item', 'readonly');
+    $removesAtZero = BooleanProp::from($removesAtZero, false, 'cart-item', 'removesAtZero');
     // A line whose quantity can be changed ignores it: its field is its quantity.
-    $hideQuantity = BooleanProp::from($hideQuantity, false) && $readonly;
+    $hideQuantity = BooleanProp::from($hideQuantity, false, 'cart-item', 'hideQuantity') && $readonly;
     $layoutValue = WireKit::validateProp('cart-item', 'layout', $layout, ['default', 'compact']);
     $stepperValue = WireKit::validateProp('cart-item', 'stepper', $stepper, ['field', 'buttons']);
     $totalSizeValue = $totalSize === null
         ? config('wirekit.components.price.size', 'md')
         : WireKit::validateProp('cart-item', 'totalSize', $totalSize, ['xs', 'sm', 'md', 'lg', 'xl']);
+
+    // A readonly line has no quantity field, so a caller's `wire:model` has nothing to bind.
+    if ($readonly) {
+        \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('cart-item', $attributes->getAttributes(), 'while `readonly`', 'A readonly line shows its `quantity`.');
+    }
 
     // The total's `fit`, in the form `price` reads: null for none, true for the token's floor, or the
     // floor itself.
@@ -130,6 +145,22 @@
     // automatic placeholder, as on `product-card`: a line that has no picture and no slot has no
     // column.
     $hasMedia = isset($media) && $media->hasActualContent();
+    // An empty image address, or one of white space, is no image, so the line has no empty frame
+    // where a thumbnail would stand (Support\UrlProp::source()).
+    $image = \Pushery\WireKit\Support\UrlProp::source($image);
+
+    // Bounds the wrong way round would disable both buttons; read as written they say "between
+    // these two", so they change places, as two days do in a calendar.
+    [$min, $max] = \Pushery\WireKit\Support\NumericProp::ordered(\Pushery\WireKit\Support\NumericProp::orNull($min, 'cart-item', 'min'), \Pushery\WireKit\Support\NumericProp::orNull($max, 'cart-item', 'max'));
+
+    // A list or an object holds no quantity, and the casts below end the page on an object: it
+    // reads as the default. A text keeps the reading the casts give it, and the field below takes
+    // the quantity as it came.
+    if ($quantity instanceof \Stringable) {
+        $quantity = (string) $quantity;
+    } elseif ($quantity !== null && ! is_scalar($quantity)) {
+        $quantity = 1;
+    }
 
     // The bounds of the press buttons. A − at `min` would ask for a quantity the line refuses, so
     // it is disabled there, as the number field's is. A caller whose − on the last piece takes the
@@ -147,20 +178,26 @@
 
     // The names of the icon buttons. Each is the button's accessible name, in its slot, and the
     // text of its tooltip, so a reader who sees no word on the button can still read what it does.
-    $removeName = $name ? __('wirekit::Remove :name', ['name' => $name]) : __('wirekit::Remove');
+    // A name given as markup is read as its text there.
+    $nameText = \Pushery\WireKit\Support\SlotContent::textOf($name);
+    $removeName = $name ? __('wirekit::Remove :name', ['name' => $nameText]) : __('wirekit::Remove');
     $decrementName = $decrementRemoves
         ? $removeName
-        : ($name ? __('wirekit::Decrease the quantity of :name', ['name' => $name]) : __('wirekit::Decrease :field', ['field' => __('wirekit::Quantity')]));
-    $incrementName = $name ? __('wirekit::Increase the quantity of :name', ['name' => $name]) : __('wirekit::Increase :field', ['field' => __('wirekit::Quantity')]);
+        : ($name ? __('wirekit::Decrease the quantity of :name', ['name' => $nameText]) : __('wirekit::Decrease :field', ['field' => __('wirekit::Quantity')]));
+    $incrementName = $name ? __('wirekit::Increase the quantity of :name', ['name' => $nameText]) : __('wirekit::Increase :field', ['field' => __('wirekit::Quantity')]);
 
     // One live region per row: the line total, except where a press moves the quantity itself,
     // which is then the region (partials/cart-item-quantity).
     $totalLive = $readonly || $stepperValue !== 'buttons';
 
     // The quantity as a reader sees it: in the locale's own digits and separators, "0,532 kg"
-    // for a weighed article in German, with a no-break space so the unit never wraps away.
-    $quantityText = LocalizedNumber::format((float) $quantity, maxPrecision: 3, locale: $locale)
-        .(filled($unit) ? "\u{00A0}".$unit : '');
+    // for a weighed article in German, with a no-break space so the unit never wraps away. Both
+    // places show it on the page, so a unit given as markup, a square meter with its superscript,
+    // stays markup there.
+    $quantityNumber = LocalizedNumber::format((float) $quantity, maxPrecision: 3, locale: $locale);
+    $quantityText = $unit instanceof \Illuminate\Contracts\Support\Htmlable && filled($unit)
+        ? new \Illuminate\Support\HtmlString(e($quantityNumber)."\u{00A0}".$unit->toHtml())
+        : $quantityNumber.(filled($unit) ? "\u{00A0}".$unit : '');
 
     // A stable identity for the row, so the remove dispatch says WHICH line and a Livewire
     // re-render keeps the quantity field's DOM. Derived from the name when the caller gives no
@@ -183,7 +220,10 @@
 
     // A sale is a compare-at that is actually higher. Passing a lower or equal one through would
     // draw a strike over a number that never came down, which reads as a discount that is not
-    // one. Same guard `product-card` applies, and the two must not disagree.
+    // one. Same guard `product-card` applies, and the two must not disagree. A compare-at reaches
+    // `price` only on a sale, and a text casts to 0, which is never one, so a text that holds no
+    // number is reported here.
+    \Pushery\WireKit\Support\NumericProp::check($compareAt, 'cart-item', 'compareAt');
     $onSale = $compareAt !== null && $price !== null && (float) $compareAt > (float) $price;
 
     $classes = WireKit::resolveClasses('cart-item', 'base', implode(' ', [
@@ -212,6 +252,20 @@
         'text-[length:var(--text-wk-md)]',
     ]), $scope);
 
+    // A name with `href` is a link, drawn as the name it was, with a link's underline on hover and
+    // the focus ring every control of the kit draws. An empty address, one of white space or `false`
+    // is none (Support\UrlProp), so the name is no link to the page it stands on.
+    $nameHref = is_string($href) || $href instanceof \Stringable || $href instanceof \BackedEnum ? \Pushery\WireKit\Support\UrlProp::text($href) : null;
+    $nameLangValue = \Pushery\WireKit\Support\LanguageTag::of($nameLang);
+    $nameLinkClasses = $nameHref !== null ? WireKit::resolveClasses('cart-item', 'name-link', implode(' ', [
+        'hover:underline underline-offset-2',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]',
+    ]), $scope) : '';
+
+    // The name of the compact line, which `text` cuts at the end of its line. Beside a fitted total
+    // it grows from a basis of eight characters and barely shrinks (the row below says why).
+    $compactNameClasses = \Illuminate\Support\Arr::toCssClasses([$nameClasses, $nameLinkClasses => $nameHref !== null, 'min-w-0', 'flex-[1_0.0001_8ch]' => $totalFit !== null]);
+
     $metaClasses = WireKit::resolveClasses('cart-item', 'meta', implode(' ', [
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
@@ -220,13 +274,15 @@
 
 @if($layoutValue === 'compact')
 {{-- Two rows for a narrow column: the name beside what the line costs, then what it is and how
-     many on one row. The name stays on one line and ends in an ellipsis; its full text is still
-     the element's text, so a screen reader reads all of it, and `title` shows it to a pointer. --}}
+     many on one row. The name and the variant stay on one line and end in an ellipsis; the full
+     text is still the element's text, so a screen reader reads all of it, and while it is cut the
+     kit's tooltip shows it on hover, on keyboard focus and on a tap, where a `title` would show it
+     to a mouse alone. --}}
 <li data-wk-prose-skip
     data-wk-cart-item
     data-wk-cart-item-layout="compact"
     id="{{ $rowId }}"
-    {{ $rowAttributes->class([$compactClasses]) }}
+    {{ $rowAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$compactClasses])) }}
 >
     @if($hasMedia || $image)
         {{-- The height of a control, so the thumbnail follows the size scale with the stepper. --}}
@@ -234,7 +290,7 @@
             @if($hasMedia)
                 {{ $media }}
             @else
-                <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded="md" />
+                <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded />
             @endif
         </div>
     @endif
@@ -245,7 +301,7 @@
                  basis of eight characters and barely shrinks, so a narrow row first shrinks the
                  total down to its floor, which is as narrow as it gets, and only then the name. --}}
             @if($name)
-                <span @class([$nameClasses, 'min-w-0 truncate', 'flex-[1_0.0001_8ch]' => $totalFit !== null]) title="{{ $name }}">{{ $name }}</span>
+                <x-wirekit::text :as="$nameHref !== null ? 'a' : 'span'" :href="$nameHref" :lang="$nameLangValue" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" data-wk-cart-item-name class="{{ $compactNameClasses }}">{{ $name }}</x-wirekit::text>
             @endif
 
             @if($lineTotal !== null)
@@ -271,7 +327,7 @@
         <div class="flex flex-wrap items-center justify-between gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]">
             <div class="flex min-w-0 flex-auto flex-col {{ $metaClasses }}">
                 @if($slot->hasActualContent())
-                    <span class="truncate contain-inline-size">{{ $slot }}</span>
+                    <x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="contain-inline-size">{{ $slot }}</x-wirekit::text>
                 @endif
 
                 @if($price !== null)
@@ -300,7 +356,7 @@
 
                 {{-- The slot is named here, where the partial is included, so the catalog reads it
                      as this component's. The partial shares the scope either way. --}}
-                @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null])
+                @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null, 'removeInRow' => true])
             </div>
         </div>
 
@@ -313,21 +369,25 @@
 <li data-wk-prose-skip
     data-wk-cart-item
     id="{{ $rowId }}"
-    {{ $rowAttributes->class([$classes]) }}
+    {{ $rowAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     @if($hasMedia || $image)
         <div data-wk-cart-item-media class="shrink-0 w-16">
             @if($hasMedia)
                 {{ $media }}
             @else
-                <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded="md" />
+                <x-wirekit::image :src="$image" :alt="$imageAlt" ratio="1/1" fit="cover" rounded />
             @endif
         </div>
     @endif
 
     <div class="flex min-w-0 flex-1 flex-col gap-[var(--gap-wk-xs)]">
         @if($name)
-            <span class="{{ $nameClasses }}">{{ $name }}</span>
+            @if($nameHref !== null)
+                <a data-wk-prose-skip href="{{ $nameHref }}" data-wk-cart-item-name @if($nameLangValue !== null) lang="{{ $nameLangValue }}" @endif class="{{ $nameClasses }} {{ $nameLinkClasses }}">{{ $name }}</a>
+            @else
+                <span data-wk-cart-item-name @if($nameLangValue !== null) lang="{{ $nameLangValue }}" @endif class="{{ $nameClasses }}">{{ $name }}</span>
+            @endif
         @endif
 
         {{-- The variant line — "Size M · Blue". A slot rather than a prop because it is display
@@ -399,7 +459,7 @@
         @endif
 
         {{-- Named here for the catalog, as in the compact layout above. --}}
-        @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null])
+        @include('wirekit::components.partials.cart-item-remove', ['remove' => isset($remove) ? $remove : null, 'removeInRow' => false])
     </div>
 </li>
 @endif

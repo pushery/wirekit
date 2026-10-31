@@ -21,4 +21,4 @@
 @endphp
 
 {{-- Visual separator between dropdown item groups --}}
-<div role="separator" {{ $attributes->class([$classes]) }}></div>
+<div role="separator" {{ $attributes->except('role')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}></div>

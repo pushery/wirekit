@@ -14,6 +14,14 @@
 
     use Pushery\WireKit\WireKit;
 
+    // A group shows while one of its entries does: on its own level, and on a page the palette
+    // filters, while an entry matches the search. A caller's own `x-show` still applies.
+    $callerShow = \Pushery\WireKit\Support\AttributeText::get($attributes, 'x-show');
+    $show = is_string($callerShow) && trim($callerShow) !== ''
+        ? 'groupShows($el) && ('.$callerShow.')'
+        : 'groupShows($el)';
+    $attributes = $attributes->except(['x-show']);
+
     // Command group — optional heading + grouped items.
     $headingClasses = WireKit::resolveClasses('command-palette.group', 'heading', implode(' ', [
         'px-[var(--padding-wk-x-md)]',
@@ -25,7 +33,7 @@
     ]), $scope);
 @endphp
 
-<div role="group" @if($heading) aria-label="{{ $heading }}" @endif {{ $attributes }}>
+<div role="group" x-show="{{ $show }}" @if($heading && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($heading) }}" @endif {{ $attributes->except('role') }}>
     @if($heading)
         <div class="{{ $headingClasses }}" aria-hidden="true">{{ $heading }}</div>
     @endif

@@ -34,7 +34,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('energy-label', $attributes->getAttributes());
 
-    $newTab = BooleanProp::from($newTab, false);
+    $newTab = BooleanProp::from($newTab, false, 'energy-label', 'newTab');
 
     // The seven-class scales, best class first, each named by its two ends. The seven colors run
     // from the best class to the worst, so a class takes the color of its place on its scale.
@@ -91,7 +91,7 @@
 
 @if($step !== null)
 @php($energyImage = ['energyClasses' => $classes, 'energyClass' => $efficiency, 'energyStep' => $step, 'energyDirection' => $direction, 'energySize' => $sizeClasses])
-<span data-wk-prose-skip data-wk-energy-label {{ $attributes->class([$rootClasses]) }}>
+<span data-wk-prose-skip data-wk-energy-label data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}>
     @if(filled($href))
         {{-- The arrow links to the label, which the acts let a shop show this way. --}}
         <x-wirekit::link :href="$href" underline="none" :target="$target" class="{{ $arrowLinkClasses }}">@include('wirekit::components.partials.energy-label-image', $energyImage)<span class="sr-only">{{ $statement }} {{ __('wirekit::Show the energy label') }}</span></x-wirekit::link>

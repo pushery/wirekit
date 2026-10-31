@@ -17,6 +17,7 @@
 import { focusClicked } from '../utils/focus-clicked.js';
 import { prefersReducedMotion, scrollBehavior, watchReducedMotion } from '../utils/motion.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
+import { intervalDelay } from '../utils/timer-delay.js';
 export default function wirekitCarousel(config = {}) {
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
@@ -41,7 +42,10 @@ export default function wirekitCarousel(config = {}) {
         _motionPaused: false,
 
         init() {
-            this._slides = Array.from(this.$el.querySelectorAll('[data-wk-carousel-slide]'));
+            // Only this carousel's slides: one standing in a slide has slides of its own, which are
+            // descendants here as well and would count among these, dots and End included.
+            this._slides = Array.from(this.$el.querySelectorAll('[data-wk-carousel-slide]'))
+                .filter((slide) => (slide.closest?.('[data-wk-carousel]') ?? this.$el) === this.$el);
             this.total = this._slides.length;
 
             this._watchSlides();
@@ -319,7 +323,7 @@ export default function wirekitCarousel(config = {}) {
             this._stopTimer();
             if (this._hoverPaused || this.total <= 1) return;
 
-            this._timer = setInterval(() => this.next(), this.interval);
+            this._timer = setInterval(() => this.next(), intervalDelay(this.interval, 5000));
         },
 
         _stopTimer() {

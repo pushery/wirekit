@@ -47,7 +47,7 @@
     // applied in the markup and change nothing a screen reader says.
     // `accessibleLabel` still wins over both; this only decides what happens
     // when a caller reaches for the attribute instead of the prop.
-    $resolvedLabel = $accessibleLabel ?: (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: __('wirekit::QR code'));
+    $resolvedLabel = ($accessibleLabel ? \Pushery\WireKit\Support\SlotContent::textOf($accessibleLabel) : null) ?: (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: __('wirekit::QR code'));
     $attributes = $attributes->except('aria-label');
 
     $hasQrLibrary = class_exists('\BaconQrCode\Renderer\ImageRenderer');
@@ -64,6 +64,13 @@
     $fgRgba = $hexColor('color', (string) $color, '#000000');
     $bgRgba = $hexColor('background', (string) $background, '#ffffff');
     $errorCorrection = WireKit::validateProp('qr-code', 'errorCorrection', strtoupper((string) $errorCorrection), ['L', 'M', 'Q', 'H']);
+    // The quiet zone reaches the library as PHP casts it, and a text that holds no number is
+    // reported here for the same reason.
+    \Pushery\WireKit\Support\NumericProp::check($margin, 'qr-code', 'margin', whole: true);
+    // A size or a quiet zone no integer holds is the prop's default, where the cast would warn
+    // or give an unrelated number.
+    $sizePx = \Pushery\WireKit\Support\NumericProp::cast($size) ?? 200;
+    $quietZone = \Pushery\WireKit\Support\NumericProp::cast($margin) ?? 4;
 
     if ($hasQrLibrary && $value) {
         try {
@@ -87,8 +94,8 @@
             $fill = \BaconQrCode\Renderer\RendererStyle\Fill::uniformColor($bgColor, $fgColor);
 
             $style = new \BaconQrCode\Renderer\RendererStyle\RendererStyle(
-                (int) $size,
-                (int) $margin,
+                $sizePx,
+                $quietZone,
                 null,  // default square module shape
                 null,  // default square eye shape
                 $fill,
@@ -129,7 +136,7 @@
     <div
         @unless($attributes->has('role')) role="img" @endunless
         aria-label="{{ $resolvedLabel }}"
-        {{ $attributes->class([$classes]) }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     >
         {!! $svgContent !!}
     </div>
@@ -138,7 +145,7 @@
     <div
         @unless($attributes->has('role')) role="img" @endunless
         aria-label="{{ $resolvedLabel }}"
-        {{ $attributes->merge(['style' => 'width: '.((int) $size).'px; height: '.((int) $size).'px;'])->class([$classes]) }}
+        {{ $attributes->merge(['style' => 'width: '.(\Pushery\WireKit\Support\NumericProp::int($size, 0, 'qr-code', 'size')).'px; height: '.(\Pushery\WireKit\Support\NumericProp::int($size, 0, 'qr-code', 'size')).'px;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     >
         <div aria-hidden="true" class="flex items-center justify-center w-full h-full bg-[var(--color-wk-bg-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             <span>{{ __('wirekit::QR code') }}</span>

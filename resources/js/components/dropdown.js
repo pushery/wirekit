@@ -33,6 +33,8 @@ export default function wirekitDropdown(config = {}) {
         // attaches ancestor-scroll + resize listeners; they MUST be torn down on every
         // close path or they leak.
         _stopAutoUpdate: null,
+        // Puts the panel's id back after a morph's patch takes it off (see _keepPanelId()).
+        _panelIdObserver: null,
 
         // Type-ahead state. The buffer is what the reader has typed so far; the timer is
         // what forgets it. Both are torn down in close() and destroy(), so no pending
@@ -53,8 +55,10 @@ export default function wirekitDropdown(config = {}) {
             // assertion.
             //
             // Assigning it imperatively removes the last scope-dependent expression from
-            // the teleported node: it runs on init, re-runs when the morph re-initializes
-            // this component, and cannot be re-evaluated in a scope it does not belong to.
+            // the teleported node, which cannot be re-evaluated in a scope it does not
+            // belong to. A morph still patches the panel against its template, and the
+            // template carries no id, so the update takes the id off; `_keepPanelId()`
+            // puts it back.
             // AFTER the tick, not during init(). Alpine walks a component's
             // children only once the parent's init() has returned, and the panel
             // lives inside a child `<template x-teleport>` — so at init() time
@@ -68,7 +72,10 @@ export default function wirekitDropdown(config = {}) {
             // swap it for a scopeless clone. With the key, both sides of the
             // morph agree and the node is patched rather than replaced. Each half
             // needs the other.
-            this.$nextTick(() => this._applyPanelId());
+            this.$nextTick(() => {
+                this._applyPanelId();
+                this._keepPanelId();
+            });
 
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => { this.isOpen = false; };
@@ -81,6 +88,7 @@ export default function wirekitDropdown(config = {}) {
             // console error — so nothing reports it.
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:dropdown-open',
+                root: this.$root,
                 onOther: () => this.close(),
             });
         },
@@ -95,9 +103,29 @@ export default function wirekitDropdown(config = {}) {
             const panel = this.$refs.panel;
             const id = (this.$el && this.$el.dataset && this.$el.dataset.wkPanelId) || this.panelId;
 
-            if (panel && id) {
+            // Only where it differs: the observer that puts it back sees this write as well.
+            if (panel && id && panel.id !== id) {
                 panel.id = id;
             }
+        },
+
+        /**
+         * Put the panel's id back when a Livewire update takes it off.
+         *
+         * The morph patches the teleported panel against a copy of its template, and the
+         * template carries no id, since the id is written above and not in the markup. Every
+         * update of a component around the dropdown removed it, and the trigger's
+         * `aria-controls` named an element that was not in the document.
+         */
+        _keepPanelId() {
+            const panel = this.$refs.panel;
+
+            if (! panel || typeof MutationObserver !== 'function' || this._panelIdObserver) {
+                return;
+            }
+
+            this._panelIdObserver = new MutationObserver(() => this._applyPanelId());
+            this._panelIdObserver.observe(panel, { attributes: true, attributeFilter: ['id'] });
         },
 
         /**
@@ -126,6 +154,8 @@ export default function wirekitDropdown(config = {}) {
             }
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
+            this._panelIdObserver?.disconnect();
+            this._panelIdObserver = null;
         },
 
         /**
@@ -270,7 +300,10 @@ export default function wirekitDropdown(config = {}) {
          * Implements WAI-ARIA menu keyboard pattern.
          */
         handleKeydown(e) {
-            if (!this.isOpen) return;
+            // A key an element inside the menu already answered is spent: the Escape that
+            // dismissed the tooltip over a cut label leaves the menu open, as it leaves a dialog
+            // open (utils/focus-trap.js, escapeUnlessHandled()), and the focus stays put.
+            if (!this.isOpen || e.defaultPrevented) return;
 
             const items = this._getItems();
             if (!items.length) return;

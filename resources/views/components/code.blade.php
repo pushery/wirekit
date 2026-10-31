@@ -41,4 +41,4 @@
     ]), $scope);
 @endphp
 
-<code data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</code>
+<code data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $slot }}</code>

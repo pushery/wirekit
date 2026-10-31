@@ -19,6 +19,10 @@
     // `name` submits nothing, so a caller writing `name="reveal"` got a figure with
     // a name attribute and a POST body without the field.
     'name' => null,
+    // Locks the slider as `disabled` locks a native field: the handle and the track take no
+    // press and no key and leave the tab order, and the hidden input is not submitted. A
+    // disabled fieldset around the component locks it the same way.
+    'disabled' => false,
     'beforeLabel' => __('wirekit::Before'),
     'afterLabel' => __('wirekit::After'),
     'labels' => true,
@@ -37,6 +41,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('image-compare', $attributes->getAttributes());
 
+    // `before` and `after` take no default: a compare without them has nothing to compare. Given as
+    // null, an image draws as none, which the view below handles.
+    if (! array_key_exists('before', get_defined_vars()) || ! array_key_exists('after', get_defined_vars())) {
+        throw new \InvalidArgumentException('<x-wirekit::image-compare> requires a `before` and an `after` image (e.g. before="/photos/kitchen-before.jpg" after="/photos/kitchen-after.jpg").');
+    }
+
+    // An unknown `orientation` is reported (Support\StrictnessGate) and renders as `horizontal`; a
+    // bound `null` or empty string is `horizontal` without a word.
+    $orientation = \Pushery\WireKit\WireKit::validateProp('image-compare', 'orientation', \Pushery\WireKit\Support\NumericProp::text($orientation ?: 'horizontal'), ['horizontal', 'vertical']);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:slide']);
@@ -44,16 +58,35 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $labels = BooleanProp::from($labels, true);
-    $decorative = BooleanProp::from($decorative, false);
+    $labels = BooleanProp::from($labels, true, 'image-compare', 'labels');
+    $decorative = BooleanProp::from($decorative, false, 'image-compare', 'decorative');
+    $disabled = BooleanProp::from($disabled, false, 'image-compare', 'disabled');
 
     $isVertical = $orientation === 'vertical';
-    $clampedValue = max(0, min(100, (int) $value));
+    $clampedValue = max(0, min(100, \Pushery\WireKit\Support\NumericProp::int($value, 0)));
 
     // Accessibility: decorative images get forced-empty alts and role=presentation
     // on the outer figure. The interactive slider handle keeps role="slider".
-    $effectiveBeforeAlt = $decorative ? '' : $beforeAlt;
-    $effectiveAfterAlt = $decorative ? '' : $afterAlt;
+    // The two alts and the slider's name are attribute values, so one given as markup gives them
+    // its text: an Htmlable is written as it is, and the quote in its tags would end the attribute.
+    // The labels over the images show on the page and keep their markup.
+    $effectiveBeforeAlt = $decorative ? '' : \Pushery\WireKit\Support\SlotContent::textOf($beforeAlt);
+    $effectiveAfterAlt = $decorative ? '' : \Pushery\WireKit\Support\SlotContent::textOf($afterAlt);
+    $ariaLabel = \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel);
+
+    // The two images are the component, so an address that is empty, `false` or white space is
+    // reported (Support\StrictnessGate), and that image is drawn without an address rather than
+    // with an empty `src`, which shows the sign of a broken image (Support\UrlProp::source()).
+    $compareImage = static function ($given, string $prop): ?string {
+        $address = is_string($given) || $given instanceof \Stringable || is_bool($given) ? \Pushery\WireKit\Support\UrlProp::source($given) : null;
+        if ($address === null) {
+            \Pushery\WireKit\Support\StrictnessGate::reject('image-compare', $prop, is_bool($given) ? ($given ? 'true' : 'false') : (is_scalar($given) || $given instanceof \Stringable ? (string) $given : get_debug_type($given)), 'the address of an image', '');
+        }
+
+        return $address;
+    };
+    $before = $compareImage($before, 'before');
+    $after = $compareImage($after, 'after');
 
     // Detect wire:model directly from the attribute bag without requiring
     // Livewire's `wire()` macro to be registered. We walk all attributes and
@@ -80,6 +113,11 @@
     if ($wireModelValue !== null && preg_match('/^[A-Za-z0-9_.\-]+$/', (string) $wireModelValue) === 1) {
         $wireModelSafe = (string) $wireModelValue;
     }
+
+    // One value for the ratio, as on `image` and `aspect-ratio`: it goes into the figure's style,
+    // where escaping does not stop a `;`, so a value that carries a declaration of its own is
+    // reported and the figure fills its box as without a ratio (Support\CssValue).
+    $ratio = \Pushery\WireKit\Support\CssValue::prop($ratio, 'image-compare', 'ratio');
 
     // Class blocks — all themable via WireKit::personalize() + scope.
     // `h-full` (fill the developer-provided box) applies ONLY when no ratio is
@@ -108,6 +146,9 @@
         'w-[var(--wk-image-compare-handle-size,2.5rem)] h-[var(--wk-image-compare-handle-size,2.5rem)]',
         'grid place-items-center',
         'cursor-grab active:cursor-grabbing',
+        // `:disabled` holds for the `disabled` prop and for a disabled fieldset around the
+        // component alike, so the handle looks locked in both.
+        'disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)]',
         'focus-visible:outline-hidden',
         // The handle sits on the photo, and a one-color ring vanishes wherever the photo has its
         // color. The offset puts a band of the page's own color between the handle and the ring,
@@ -134,7 +175,7 @@
         'shadow-[var(--shadow-wk-sm)]',
     ]), $scope);
 
-    $trackClasses = 'absolute inset-0 z-10 bg-transparent '.
+    $trackClasses = 'absolute inset-0 z-10 bg-transparent disabled:cursor-default '.
         ($isVertical ? 'cursor-row-resize' : 'cursor-col-resize');
 
     // Built here rather than written as a second style= on the <figure>. Two style
@@ -157,10 +198,13 @@
 @endphp
 
 <figure
-    {{ $attributes->except('aria-labelledby')->merge(['style' => $figureStyle])->class([$wrapperClasses]) }}
+    {{ $attributes->except('aria-labelledby')->merge(['style' => $figureStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
     @if($decorative) role="presentation" @endif
+    {{-- The position travels on `data-wk-server-value`, not in `x-data`, so the expression is the
+         same for every position: a Livewire morph that changed it would start the slider again,
+         put the handle back where the request left it and end a `wire:model.live` drag. --}}
+    data-wk-server-value="{{ $clampedValue }}"
     x-data="wirekitImageCompare({
-        value: {{ $clampedValue }},
         orientation: {{ \Pushery\WireKit\Support\AlpinePayload::string($isVertical ? 'vertical' : 'horizontal') }}@if($wireModelSafe !== null),
         wireModel: {{ \Pushery\WireKit\Support\AlpinePayload::string($wireModelSafe) }},
         wireLive: {{ $isLiveModel ? 'true' : 'false' }}
@@ -184,13 +228,14 @@
         x-ref="hiddenInput"
         @if($name !== null) name="{{ $name }}" @endif
         @if($formOwner) form="{{ $formOwner }}" @endif
+        @if($disabled) disabled @endif
         value="{{ $clampedValue }}"
         :value="value"
     />
 
     {{-- Before image (bottom layer, fully visible under the after image). --}}
     <img data-wk-prose-skip
-        src="{{ $before }}"
+        @if($before !== null) src="{{ $before }}" @endif
         alt="{{ $effectiveBeforeAlt }}"
         loading="{{ $loading }}"
         class="{{ $imgClasses }}"
@@ -215,7 +260,7 @@
         label anchors, and each label would float over the wrong image.
     --}}
     <img data-wk-prose-skip
-        src="{{ $after }}"
+        @if($after !== null) src="{{ $after }}" @endif
         alt="{{ $effectiveAfterAlt }}"
         loading="{{ $loading }}"
         class="{{ $imgClasses }}"
@@ -250,6 +295,7 @@
         class="{{ $trackClasses }}"
         tabindex="-1"
         aria-hidden="true"
+        @if($disabled) disabled @endif
     ></button>
 
     {{-- Divider line — visual separator between before/after halves. --}}
@@ -271,6 +317,7 @@
         aria-valuemin="0"
         aria-valuemax="100"
         aria-orientation="{{ $isVertical ? 'vertical' : 'horizontal' }}"
+        @if($disabled) disabled @endif
         @pointerdown.stop="startDrag($event)"
         {{-- Left decreases and Right increases on BOTH axes, which is what the APG slider
              pattern asks for and what a swallowed key cannot deliver: `.prevent` fires

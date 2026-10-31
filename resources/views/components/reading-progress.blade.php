@@ -32,10 +32,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-progress', $attributes->getAttributes());
 
+    // An unknown value of one of these props is reported (Support\StrictnessGate) and renders as
+    // the default; a bound `null` or empty string is the default without a word.
+    $height = \Pushery\WireKit\WireKit::validateProp('reading-progress', 'height', \Pushery\WireKit\Support\NumericProp::text($height ?: 'md'), ['md', 'sm', 'lg']);
+    $position = \Pushery\WireKit\WireKit::validateProp('reading-progress', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'top'), ['top', 'bottom']);
+    $indicator = \Pushery\WireKit\WireKit::validateProp('reading-progress', 'indicator', \Pushery\WireKit\Support\NumericProp::text($indicator ?: 'bar'), ['bar', 'dot']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $milestones = BooleanProp::from($milestones, false);
+    $milestones = BooleanProp::from($milestones, false, 'reading-progress', 'milestones');
 
     // Reading-progress — a viewport-pinned indicator that fills 0 → 100% as the
     // reader scrolls. Two surfaces share one component: `indicator="bar"` (default,
@@ -166,7 +172,7 @@
     // Segments prop — a numeric array of fractional positions (0..1) where chapter
     // boundaries land. Renders as 1px-tall dividers via background-gradient stops.
     // CSS-only — no extra DOM nodes per segment.
-    $segments = \Pushery\WireKit\Support\ListProp::from($segments);
+    $segments = \Pushery\WireKit\Support\ListProp::from($segments, 'reading-progress', 'segments');
     $segmentsArray = is_array($segments) ? array_values(array_filter($segments, fn ($v) => is_numeric($v) && $v >= 0 && $v <= 1)) : null;
 
     $segmentsStyle = '';
@@ -205,6 +211,12 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // An inline position wins over every class of the caller's, one under a breakpoint included:
+    // where the caller's class reaches for a position, it is left out here and comes back as its
+    // utility.
+    [$dotStyle, $dotStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'position: '.($positionMode).'; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);');
+    [$barStyle, $barStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'position: '.($positionMode).'; '.$edgeStyle.'; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : ''));
 @endphp
 
 @if ($indicator === 'dot')
@@ -221,15 +233,16 @@
         x-data="wirekitReadingProgress({
             target: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $target) }},
             boundarySelector: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $boundarySelector) }},
-            showAfter: {{ (int) $showAfter }},
+            showAfter: {{ \Pushery\WireKit\Support\NumericProp::int($showAfter, 0, 'reading-progress', 'showAfter') }},
             milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
         })"
         @unless($attributes->has('role')) role="progressbar" @endunless
         aria-valuemin="0"
         aria-valuemax="100"
+        aria-valuenow="0"
         x-bind:aria-valuenow="roundedProgress()"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
-        {{ $attributes->merge(['style' => 'position: '.($positionMode).'; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);'])->class([$rootClass, 'wk-reading-progress--dot'])->merge(['aria-label' => __('wirekit::Reading progress')]) }}
+        {{ $attributes->merge(['style' => $dotStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, 'wk-reading-progress--dot', $dotStyleClasses => $dotStyleClasses !== '']))->merge(['aria-label' => __('wirekit::Reading progress')]) }}
         {{-- Inline-style the positioning + sizing so the dot pins to the
              viewport corner even in environments where no Tailwind
              build generated the arbitrary-value classes from
@@ -277,15 +290,16 @@
         x-data="wirekitReadingProgress({
             target: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $target) }},
             boundarySelector: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $boundarySelector) }},
-            showAfter: {{ (int) $showAfter }},
+            showAfter: {{ \Pushery\WireKit\Support\NumericProp::int($showAfter, 0, 'reading-progress', 'showAfter') }},
             milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
         })"
         @unless($attributes->has('role')) role="progressbar" @endunless
         aria-valuemin="0"
         aria-valuemax="100"
+        aria-valuenow="0"
         x-bind:aria-valuenow="roundedProgress()"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
-        {{ $attributes->merge(['style' => 'position: '.($positionMode).'; '.$edgeStyle.'; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : '')])->class([$rootClass])->merge(['aria-label' => __('wirekit::Reading progress')]) }}
+        {{ $attributes->merge(['style' => $barStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, $barStyleClasses => $barStyleClasses !== '']))->merge(['aria-label' => __('wirekit::Reading progress')]) }}
         {{-- `max-width: none` defeats developer-side typography CSS that
              caps the width of a prose wrapper's direct children (a
              `.prose > * { max-width: … }` rule in a custom prose

@@ -44,7 +44,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $edited = BooleanProp::from($edited, false);
+    $edited = BooleanProp::from($edited, false, 'message', 'edited');
 
     $sideValue = match ($side) {
         'left', 'right' => $side,
@@ -78,8 +78,10 @@
     // Parse author data. A Collection or a model is read as the record it holds: cast to a
     // string it would be its JSON, and every attribute of it would be written into the name.
     $author = \Pushery\WireKit\Support\ListProp::from($author);
-    $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;
+    $authorName = is_array($author) ? ($author['name'] ?? '') : \Pushery\WireKit\Support\SlotContent::textOf($author);
     $authorAvatar = is_array($author) ? ($author['avatar'] ?? null) : null;
+    // An empty picture address, `false` or one of white space is no picture (Support\UrlProp::source()).
+    $authorAvatar = is_string($authorAvatar) || $authorAvatar instanceof \Stringable || is_bool($authorAvatar) ? \Pushery\WireKit\Support\UrlProp::source($authorAvatar) : null;
     $authorRole = is_array($author) ? ($author['role'] ?? null) : null;
     // Without a picture the avatar shows the sender's initials; without those it would fall back
     // to the silhouette, and every sender who has no picture would look the same. `initials` in
@@ -205,9 +207,12 @@
     // `aria-labelledby` and the header's id would then name different things every tick,
     // both well-formed, and the article would lose its accessible name. Two messages from
     // the same sender at the same time are told apart by DomId: the first keeps the hash and the
-    // second gets `-2`, so each article is named by its own header.
+    // second gets `-2`, so each article is named by its own header. A date object is read as
+    // `Y-m-d H:i:s`, the text a Carbon date writes of itself: a `DateTime` has no text of its own.
     $messageId = \Pushery\WireKit\Support\DomId::unique(
-        $timestamp !== null ? 'message-'.md5($authorName.$timestamp) : null,
+        $timestamp !== null
+            ? 'message-'.md5($authorName.($timestamp instanceof \DateTimeInterface ? $timestamp->format('Y-m-d H:i:s') : $timestamp))
+            : null,
         'message-'
     );
 @endphp
@@ -222,7 +227,7 @@
     @unless($attributes->has('role')) role="article" @endunless
     data-wk-message
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $messageId }}-header" @endunless
-    data-wk-sr-host {{ $attributes->class([$baseClasses]) }}
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
 >
     {{-- Avatar --}}
     @if($authorAvatar || $authorName)
@@ -241,7 +246,10 @@
     <div class="flex flex-col {{ $textAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
         {{-- Header: name + timestamp --}}
         <span id="{{ $messageId }}-header" class="flex items-center gap-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)]">
-            <span data-wk-message-author class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
+            {{-- A name too long for the line is cut, and `title` shows it whole, as the head of a
+                 message group shows its sender. Not the tooltip of a cut text: in a group this name
+                 is visually hidden, and that tooltip would give it a tab stop nobody can see. --}}
+            <span data-wk-message-author @if(filled($authorName)) title="{{ $authorName }}" @endif class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
                 {{ $authorName }}
             </span>
             @if($authorRole)
@@ -318,14 +326,14 @@
         @endif
 
         {{-- Reactions slot --}}
-        @if(isset($reactions))
+        @if(\Pushery\WireKit\Support\SlotContent::given($reactions ?? null))
             <div class="flex flex-wrap gap-1 mt-[var(--space-wk-xs,0.25rem)]">
                 {{ $reactions }}
             </div>
         @endif
 
         {{-- Attachments slot --}}
-        @if(isset($attachments))
+        @if(\Pushery\WireKit\Support\SlotContent::given($attachments ?? null))
             <div class="flex flex-wrap gap-[var(--space-wk-sm,0.5rem)] mt-[var(--space-wk-xs,0.25rem)]">
                 {{ $attachments }}
             </div>
@@ -334,7 +342,7 @@
 
     {{-- Actions slot (dropdown menu). Revealed on hover OR keyboard focus by
          default; actions-reveal="always" keeps it visible (touch surfaces). --}}
-    @if(isset($actions))
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <div class="shrink-0 {{ $actionsRevealClasses }}">
             {{ $actions }}
         </div>

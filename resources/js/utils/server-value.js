@@ -1,3 +1,5 @@
+import { watchCurrent } from './watch-current.js';
+
 /**
  * Notice when the server changed a value the component is showing.
  *
@@ -94,4 +96,107 @@ export function jsonValue(raw) {
     } catch {
         return undefined;
     }
+}
+
+/**
+ * Tell the answer to a component's own change from a value the server set.
+ *
+ * With `wire:model.live` every change is a request, and its answer renders the value the request
+ * carried. A reader who changed the value again before the answer arrived is ahead of it, and
+ * taking it would undo the newer change: a tag added meanwhile goes, a handle jumps back. Livewire
+ * leaves its own property alone in that case, since the server returned what it was sent. A
+ * component whose value reaches the server through a field it writes itself does the same with
+ * this: it notes each value it hands to its model, and a server value equal to one of them answers
+ * that change. Requests are answered in the order they were sent, so the values noted before it
+ * are answered as well. A value the component never handed over is the server's own.
+ *
+ * @param {Function} same  whether two values are one value, as the component compares them
+ * @returns {{ note: Function, answers: Function }}
+ */
+export function ownValues(same = (a, b) => a === b) {
+    let noted = [];
+
+    return {
+        /** The component handed `value` to its model. */
+        note(value) {
+            noted.push(value);
+
+            // A drag hands over a value per frame, and the answers to all but the last few arrive
+            // long before it ends. Bounded, so a model that never answers cannot grow it for good.
+            if (noted.length > 256) {
+                noted.shift();
+            }
+        },
+
+        /**
+         * Whether `value`, just rendered by the server, answers a value the component handed
+         * over. That value and the ones noted before it are forgotten, and every one of them when
+         * the value is the server's own.
+         */
+        answers(value) {
+            const at = noted.findIndex((handed) => same(handed, value));
+
+            if (at === -1) {
+                noted = [];
+
+                return false;
+            }
+
+            noted = noted.slice(at + 1);
+
+            return true;
+        },
+    };
+}
+
+/**
+ * Whether a field carries a caller's model binding: `wire:model`, `x-model`, or `x-wk-model`, the
+ * caller's `x-model` on a field inside a root of the component's own (utils/caller-model.js), with
+ * any modifier. The attributes stay on the element after Livewire and Alpine have read them.
+ *
+ * @param {Element|null|undefined} el
+ * @returns {boolean}
+ */
+export function hasModelBinding(el) {
+    if (! el || ! el.attributes) {
+        return false;
+    }
+
+    return Array.from(el.attributes).some((attribute) => /^(wire:model|x-model|x-wk-model)(\.|$)/.test(String(attribute?.name ?? '')));
+}
+
+/**
+ * Follow the value an Alpine page's model writes into a field, for a component that keeps a copy of
+ * it for its own display.
+ *
+ * A `wire:model` comes back with the server's render, through the value the root carries
+ * (observeServerValue()), where the answer to a pick of the reader's own is told apart from a newer
+ * pick (ownValues()). An `x-model` of a page in the browser only sets the field's `value` property,
+ * without an event and without a render, so the copy would keep the value from before. `apply` gets
+ * the model's value once the field's binding exists, and again whenever the page writes it. A field
+ * that also carries a `wire:model` is left to the render, so a script that sets its property through
+ * `$wire` without a request shows in the display with the next render.
+ *
+ * Called after the field's own directives have run, from `$nextTick()` in init(): the binding is
+ * made on the field after its component's root has started. The watch ends with the component, and
+ * goes quiet once Alpine initializes the component again (watchCurrent()).
+ *
+ * @param {{ $watch?: Function }} component - the Alpine component that keeps the copy
+ * @param {Element|null|undefined} field - the field the page's model binds
+ * @param {(value: unknown) => void} apply
+ * @returns {boolean} whether there was a page's model to follow
+ */
+export function followPageModel(component, field, apply) {
+    const model = field?._x_model;
+    const names = Array.from(field?.attributes ?? []).map((attribute) => String(attribute?.name ?? ''));
+    const bindsThePage = names.some((name) => /^(x-model|x-wk-model)(\.|$)/.test(name)) && ! names.some((name) => /^wire:model(\.|$)/.test(name));
+
+    if (! bindsThePage || typeof model?.get !== 'function' || typeof component?.$watch !== 'function') {
+        return false;
+    }
+
+    apply(model.get());
+    watchCurrent(component, () => model.get(), (value) => apply(value));
+
+    return true;
 }

@@ -6,6 +6,8 @@
     'icon' => null,
     'expanded' => false,
     'selected' => false,
+    // The node's key, handed to `tree-node-select` beside its label.
+    'value' => null,
     'scope' => null,
 ])
 
@@ -15,6 +17,9 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('tree-view.node', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
@@ -22,8 +27,18 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $expanded = BooleanProp::from($expanded, false);
-    $selected = BooleanProp::from($selected, false);
+    $expanded = BooleanProp::from($expanded, false, 'tree-view.node', 'expanded');
+    $selected = BooleanProp::from($selected, false, 'tree-view.node', 'selected');
+
+    // The key `tree-node-select` carries, written as the text an attribute holds: two nodes can
+    // read the same, and a label can change with the record behind it. An enum case gives its
+    // value; a bool says nothing a listener could find a record by, so it is not a key.
+    $nodeValue = match (true) {
+        $value instanceof \BackedEnum => (string) $value->value,
+        is_int($value), is_float($value), is_string($value), $value instanceof \Stringable => (string) $value,
+        default => null,
+    };
+    $nodeValue = $nodeValue === '' ? null : $nodeValue;
 
     // Tree node: each item is a treeitem with optional nested group.
     // Indentation is handled by nested <ul> elements — browser + screen reader
@@ -83,11 +98,9 @@
 
 <li data-wk-prose-skip
     role="none"
-    {{ $attributes->class([$nodeClasses]) }}
-    {{-- The toggle lives in resources/js/components/tree-view-node.js: it flips
-         the flag AND writes aria-expanded onto the treeitem row inside this
-         <li>, which is two statements — one more than Alpine's CSP build
-         parses. --}}
+    {{ $attributes->except('role')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$nodeClasses])) }}
+    {{-- The toggle lives in resources/js/components/tree-view-node.js and flips
+         the flag; the treeitem row below binds aria-expanded to it. --}}
     x-data="wirekitTreeViewNode({ expanded: {{ $expanded ? 'true' : 'false' }} })"
 >
     {{-- Label row — click toggles expansion for branch nodes.
@@ -103,10 +116,16 @@
     <div
         class="wk-touch-row {{ $labelClasses }}"
         role="treeitem"
-        @if($hasChildren) aria-expanded="{{ $expanded ? 'true' : 'false' }}" aria-owns="{{ $groupId }}" @endif
+        {{-- The static value is the state before Alpine starts. The binding is the state after
+             it, and it is what a Livewire update keeps: the morph compares the row with a clone
+             of the server's markup, which Alpine evaluates against this node's live data, so a
+             branch the reader closed stays announced as closed. A value written by a script
+             instead was replaced by the server's on the next update. --}}
+        @if($hasChildren) aria-expanded="{{ $expanded ? 'true' : 'false' }}" x-bind:aria-expanded="nodeExpanded ? 'true' : 'false'" aria-owns="{{ $groupId }}" @endif
         @if($selected) aria-selected="true" @endif
         tabindex="{{ $selected ? '0' : '-1' }}"
         data-wk-tree-node
+        @if($nodeValue !== null) data-wk-tree-value="{{ $nodeValue }}" @endif
         @if(!$hasChildren) style="margin-left: 1.25rem;" @endif
         @if($hasChildren)
             @click="toggle()"
@@ -132,7 +151,7 @@
 
         {{-- Node label text, on one line like every row of the tree. A name the line cuts is whole
              in its title, so a reader with a pointer can read the rest. --}}
-        <span data-wk-tree-label class="truncate" title="{{ $label }}">{{ $label }}</span>
+        <span data-wk-tree-label class="truncate" title="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}">{{ $label }}</span>
     </div>
 
     {{-- Nested children group --}}
@@ -141,6 +160,8 @@
             role="group"
             id="{{ $groupId }}"
             x-show="nodeExpanded"
+            {{-- Hidden from the first paint while collapsed, rather than once Alpine has read the state. --}}
+            @unless($expanded) x-cloak @endunless
             x-collapse
             class="list-none m-0 pl-4"
             style="list-style: none; margin: 0; padding-left: 1rem;"

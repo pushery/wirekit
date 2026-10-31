@@ -15,11 +15,13 @@
     // The Livewire method to call when the value should be shown before the
     // server has agreed to it. A refusal KEEPS what is there — see the note
     // above for why that holds for the steppers too.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -31,6 +33,11 @@
     // stays in the DOM, so the name survives. Mirrors input / select / textarea /
     // combobox.
     'hideLabel' => false,
+    // The names of the − and + buttons, for a field around them that words them better than
+    // "Decrease" and "Increase" with the label, as a cart line says "Decrease the quantity of …".
+    // Without them the buttons are named from the label.
+    'decreaseLabel' => null,
+    'increaseLabel' => null,
     'hint' => null,
     // Explained in a tooltip from a question mark beside the label, and read as the
     // field's description (partials/field-help).
@@ -45,7 +52,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -55,7 +62,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -69,6 +76,9 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+    // A list where the field takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and left off the field (Support\FieldValue).
+    $attributes = \Pushery\WireKit\Support\FieldValue::withoutLists($attributes, 'number-input');
 
     // The steppers change the field's value, so they are out of use while the field is:
     // disabled, or read-only, where the native spinner does not step either. Rendered for the
@@ -77,21 +87,35 @@
 
     // Same trap one level in: an UNBOUND `hideLabel="false"` reaches here as the
     // truthy string 'false' and would hide the label the call site asked to show.
-    $hideLabel = BooleanProp::from($hideLabel, false);
+    $hideLabel = BooleanProp::from($hideLabel, false, 'number-input', 'hideLabel');
 
     // The bounds, the step and the start value stand in the x-data object as bare numbers, so each
     // is read as a number first. A value from a request, such as `old('qty')`, is text, and text
     // written there unquoted would run as an expression; one that holds no number takes the
     // default, as on slider.
-    $min = \Pushery\WireKit\Support\NumericProp::orNull($min);
-    $max = \Pushery\WireKit\Support\NumericProp::orNull($max);
-    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.number-input.step', 1), 1));
+    $min = \Pushery\WireKit\Support\NumericProp::orNull($min, 'number-input', 'min');
+    $max = \Pushery\WireKit\Support\NumericProp::orNull($max, 'number-input', 'max');
+    // Bounds the wrong way round would leave the control no travel; read as written they say
+    // "between these two", so they change places, as two days do in a calendar.
+    [$min, $max] = \Pushery\WireKit\Support\NumericProp::ordered($min, $max);
+    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.number-input.step', 1), 1), 'number-input', 'step');
     $startValue = \Pushery\WireKit\Support\NumericProp::from($attributes->get('value'), $min ?? 0);
+
+    // A value that is no finite number cannot be written as an attribute: PHP 8.5 warns when NAN or
+    // INF is cast to text, and Laravel turns the warning into an exception. The field shows none, as
+    // it does for any text a number field drops, and the steppers start from the default above.
+    if (is_float($attributes->get('value')) && ! is_finite($attributes->get('value'))) {
+        $attributes = $attributes->except('value');
+    }
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('number-input', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('number-input', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // A number field gives its value as text, and Livewire takes the server's echo of an `int` or
     // `float` property for a change and writes it over a newer value: a binding to one gets
@@ -109,11 +133,21 @@
 
     // Auto-generate ID from name attribute
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'number-input-'); // page-unique DOM id; see Support\DomId
+    // Inside a field the label points at the id this control got: a second field with the same
+    // name on the page gets `-2`, and pointed at the name its label named the first control.
+    if ($wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $wkField->follow($id);
+    }
     // An empty `name` renders none: the field is not meant to be submitted, as inline-edit's own
     // control is not. HTML does not allow an empty name, and a form skips a field without one.
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
@@ -125,9 +159,12 @@
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // Base input classes — same foundation as standard input
     $inputClasses = WireKit::resolveClasses('number-input', 'base', implode(' ', [
@@ -253,6 +290,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, (bool) $attributes->get('required', false));
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // ── A caller's model on the field ────────────────────────────────────
@@ -267,6 +311,12 @@
     // The model stays on the input rather than moving to the wrapper: Livewire debounces
     // `.live` only on a real input, and a `.blur` bound to a wrapper never fires.
     $boundModel = $attributes->whereStartsWith(['wire:model', 'x-model'])->isNotEmpty();
+
+    // Inside this root `.parent` would still find this component's names, so the caller's `x-model`
+    // reaches the field as `x-wk-model`, read above the root, which marks the boundary
+    // (CallerModel::onField()).
+    $attributes = \Pushery\WireKit\Support\CallerModel::onField($attributes);
+    $modelScope = \Pushery\WireKit\Support\CallerModel::binds($attributes);
 
     // Stepper accessible names — scoped to the field whenever it has a label.
     //
@@ -284,16 +334,17 @@
     // field first. Without a label there is nothing to scope to, and the bare
     // wording stands. A field named by the caller's `aria-label` instead of `label` is
     // named all the same, and its buttons take that name.
-    $stepperField = is_string($label) ? trim($label) : '';
+    // The text of the label, markup read as its text: it goes into the stepper buttons' names.
+    $stepperField = is_string($label) || $label instanceof \Stringable ? \Pushery\WireKit\Support\SlotContent::textOf($label) : '';
     if ($stepperField === '') {
         $stepperField = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'));
     }
-    $decreaseLabel = $stepperField !== ''
+    $decreaseLabel = filled($decreaseLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($decreaseLabel) : ($stepperField !== ''
         ? __('wirekit::Decrease :field', ['field' => $stepperField])
-        : __('wirekit::Decrease');
-    $increaseLabel = $stepperField !== ''
+        : __('wirekit::Decrease'));
+    $increaseLabel = filled($increaseLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($increaseLabel) : ($stepperField !== ''
         ? __('wirekit::Increase :field', ['field' => $stepperField])
-        : __('wirekit::Increase');
+        : __('wirekit::Increase'));
     // `bind` rather than `value`: the property already exists on the component
     // this layer nests inside — number-input is the case the factory's own
     // comment names, where declaring `value` here would shadow the parent's.
@@ -326,11 +377,17 @@
      the live regions, stays inside the field. Those parts are positioned
      absolutely, and without a positioned ancestor they sit against the page:
      outside any scroll container the field is placed in, and past its edge they
-     widen the page, which a phone then scrolls sideways. --}}
+     widen the page, which a phone then scrolls sideways.
+
+     The start value travels on `data-wk-server-value`, not in `x-data`, so the expression is the
+     same for every value. A Livewire morph that changed it would start the component again, and
+     the answer to a `wire:model.live` change would take away the sentence about a corrected
+     value as it appeared. --}}
 <div {{ $outerAttributes }}
     class="relative space-y-1.5 min-w-0"
-    @if($callerRef !== '') data-wk-ref-scope @endif
-    x-data="wirekitNumberInput({ value: {{ $startValue }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }} })"
+    @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif
+    data-wk-server-value="{{ $startValue }}"
+    x-data="wirekitNumberInput({ min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }}, adjusted: {{ \Pushery\WireKit\Support\AlpinePayload::from(['highest' => __('wirekit::Set to :value, the highest value allowed.'), 'lowest' => __('wirekit::Set to :value, the lowest value allowed.'), 'changed' => __('wirekit::Set to :value.')]) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
 >
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value: a nested Alpine
@@ -346,7 +403,7 @@
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- The field row and, once leaving the field changed a typed value, the sentence saying so
@@ -415,9 +472,10 @@
             step="{{ $step }}"
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($fieldRequired) aria-required="true" @endif
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('type')->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', $inputClasses, $stateClasses, $sizeClasses])) }}
         />
 
         {{-- Increase button — disabled at max boundary --}}

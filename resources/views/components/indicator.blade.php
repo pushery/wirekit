@@ -30,9 +30,12 @@
     $classes = WireKit::resolveClasses('indicator', 'base', 'relative inline-flex w-fit', $scope);
 
     // Per-instance nudge via the token custom property.
-    $style = $offset !== null && $offset !== '' ? "--indicator-wk-offset: {$offset};" : null;
+    $offset = \Pushery\WireKit\Support\CssValue::prop($offset, 'indicator', 'offset');
+    $style = $offset !== null ? "--indicator-wk-offset: {$offset};" : null;
 
-    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
+    // The own display and position are left out before the classes take their short names: a
+    // short name reads as neither.
+    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])));
     if ($style !== null) {
         $attrs = $attrs->merge(['style' => $style]);
     }
@@ -50,11 +53,12 @@
 <span data-wk-indicator data-position="{{ $positionValue }}" {{ $attrs }}>
     {{ $slot }}
 
-    @isset($badge)
+    @php($badgeText = isset($badge) ? \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge) : null)
+    @if($badgeText !== null)
         {{-- The badge sits OUTSIDE the target's flow, so it never resizes it.
              Whatever is placed here carries its own meaning: a count must name
              itself ("3 unread"), and a purely decorative dot must be
              aria-hidden with the meaning stated elsewhere. --}}
-        <span data-wk-indicator-badge>{{ $badge }}</span>
-    @endisset
+        <span data-wk-indicator-badge>{{ $badgeText }}</span>
+    @endif
 </span>

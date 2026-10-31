@@ -19,7 +19,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $over = BooleanProp::from($over, false);
+    $over = BooleanProp::from($over, false, 'usage-meter.gate', 'over');
 
     // A plan-paywall gate: when the usage limit is reached, the wrapped action
     // (default slot) is dimmed + made inert, an explanatory reason is shown, and
@@ -30,7 +30,7 @@
     $classes = WireKit::resolveClasses('usage-meter', 'gate', 'w-full', $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }} @if($isOver) data-over-limit="true" @endif>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($isOver) data-over-limit="true" @endif>
     @if($isOver)
         {{-- Gated: the action is visible but inert (aria-disabled + inert so it is
              skipped by AT and unclickable). Dimmed via the muted opacity token. --}}
@@ -44,9 +44,9 @@
             @if($reason)
                 <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $reason }}</span>
             @endif
-            @isset($action)
+            @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
                 <span>{{ $action }}</span>
-            @endisset
+            @endif
         </div>
     @else
         {{-- Under limit — render the action untouched. --}}

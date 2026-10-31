@@ -21,7 +21,7 @@
     // this component's @props.
     WireKit::warnUnknownProps('live-list', $attributes->getAttributes());
 
-    $live = BooleanProp::from($live, false);
+    $live = BooleanProp::from($live, false, 'live-list', 'live');
 
     $aboveLabel = __('wirekit::New entries above');
     $belowLabel = __('wirekit::New entries below');
@@ -39,9 +39,16 @@
     data-wk-live-list
     data-wk-live="{{ $live ? 'true' : 'false' }}"
     x-data="wirekitLiveList({{ \Pushery\WireKit\Support\AlpinePayload::from(['aboveSaid' => $aboveLabel, 'belowSaid' => $belowLabel]) }})"
-    {{ $attributes->class(['relative']) }}
+    x-bind:style="insetStyle"
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['relative'])) }}
 >
-    <div data-wk-live-hint="above" x-show="hasAbove" x-cloak class="{{ $hintClasses }} top-[var(--space-wk-sm)] items-start">
+    {{-- Below whatever pins itself to the top of the list's scroller: the scroll padding the script
+         reads there, which for the page holds a strip of announcement-banner and every pinned bar
+         of the kit, or an application's own fixed bar through `--wk-live-list-top`, which takes
+         its place, as page-header's `--wk-page-header-top` does. The stylesheet computes that inset
+         on the list as `--wk-live-list-inset`, and the script reads the same value: a fresh row
+         under the strip or the bar is out of sight. --}}
+    <div data-wk-live-hint="above" x-show="hasAbove" x-cloak class="{{ $hintClasses }} top-[calc(var(--wk-live-list-inset,0px)_+_var(--space-wk-sm))] items-start">
         <x-wirekit::button type="button" size="sm" intent="primary" class="pointer-events-auto" x-on:click="revealAbove()">{{ $aboveLabel }}</x-wirekit::button>
     </div>
     <div x-ref="rows">{{ $slot }}</div>

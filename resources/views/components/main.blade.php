@@ -26,7 +26,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $container = BooleanProp::from($container, false);
+    $container = BooleanProp::from($container, false, 'main', 'container');
 
     // warn on unknown prop keys in dev.
     WireKit::warnUnknownProps('main', $attributes->getAttributes());
@@ -38,7 +38,7 @@
     $classes = 'wk-scrollbar '.WireKit::resolveClasses('main', 'base', implode(' ', [
         'wk-main',
         'flex-1',
-        'overflow-y-auto',
+        'relative overflow-y-auto',
     ]), $scope);
 
     // Horizontal padding uses the same `--padding-wk-x-{size}` tokens as
@@ -76,7 +76,7 @@
 <main
     data-wk-print-expand
     @if($id !== null) id="{{ $id }}" tabindex="-1" @endif
-    {{ $attributes->class([$classes, $paddingClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $paddingClasses])) }}
 >
     @if($container || $maxClass !== null)
         <div class="{{ $maxClass ?? 'max-w-[var(--size-wk-container-2xl,96rem)]' }} mx-auto w-full">

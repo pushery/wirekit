@@ -49,6 +49,14 @@
     // typography wrappers
     // (`.prose`, `.docs-prose`, etc.) which otherwise inject vertical
     // margin into <ol>/<ul>/<li> and compound across nesting depth.
+    // A list without markers is still a list, but WebKit does not treat it as one: VoiceOver on
+    // iPhone and iPad reads a `ul` or `ol` whose markers are removed as plain text, without
+    // "list" and without the number of items. `role="list"` keeps the semantics there and
+    // changes nothing in the engines that keep them anyway. A role on the tag replaces it.
+    $listRole = $type === 'none'
+        && in_array(strtolower($tag), ['ul', 'ol'], true)
+        && ! $attributes->has('role');
+
     $spacingClasses = match (WireKit::validateProp('list', 'spacing', $spacing, ['none', 'sm', 'md'])) {
         'none' => 'wk-list-spacing-none',
         'sm' => 'wk-list-spacing-sm',
@@ -82,7 +90,7 @@
     // components would draw it.
     $rows = [];
 
-    $items = \Pushery\WireKit\Support\ListProp::records($items);
+    $items = \Pushery\WireKit\Support\ListProp::records($items, 'list', 'items');
 
     foreach (is_iterable($items) ? $items : [] as $row) {
         $row = is_array($row) ? $row : ['text' => $row];
@@ -127,7 +135,7 @@
     }
 @endphp
 
-<{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<{{ $tag }} data-wk-prose-skip @if($listRole) role="list" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     @foreach($rows as $row)
         <li data-wk-prose-skip class="{{ $rowClasses }}">@if($row['href'] !== null)<a data-wk-prose-skip href="{{ $row['href'] }}" class="{{ $rowLinkClasses }}">{{ $row['text'] }}</a>@else{{ $row['text'] }}@endif @if($row['meta'] !== null)<span class="{{ $rowMetaClasses }}">{{ $row['meta'] }}</span>@endif</li>
     @endforeach

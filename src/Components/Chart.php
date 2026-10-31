@@ -7,12 +7,19 @@ namespace Pushery\WireKit\Components;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\View\Component;
 use Illuminate\View\View;
+use Pushery\WireKit\Charts\ChartDataTable;
+use Pushery\WireKit\Charts\ChartDates;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Charts\ChartPointLinks;
 use Pushery\WireKit\Charts\ChartTooltipExtras;
 use Pushery\WireKit\Charts\TypeNotSupportedException;
 use Pushery\WireKit\Contracts\ChartAdapter;
+use Pushery\WireKit\Support\BooleanProp;
+use Pushery\WireKit\Support\IcuLocale;
 use Pushery\WireKit\Support\ListProp;
+use Pushery\WireKit\Support\LocalizedNumber;
+use Pushery\WireKit\Support\PropText;
+use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\WireKit;
 use RuntimeException;
 
@@ -103,6 +110,37 @@ final class Chart extends Component
     public array $pointLinks = [];
 
     /**
+     * How the chart offers its data as a table under it: `disclosure`, behind a summary every
+     * reader can open, or `screen-reader`, out of sight and read after the chart's name. Null for
+     * none, and in an inline chart, which stands in a sentence, where a table cannot.
+     */
+    public ?string $tableMode = null;
+
+    /**
+     * The table the view renders for `tableMode`: one row per label, one column per dataset.
+     * See `ChartDataTable`.
+     *
+     * @var array{columns: list<string>, rows: list<array{label: string, cells: list<string>}>}
+     */
+    public array $tableModel = ['columns' => [], 'rows' => []];
+
+    /**
+     * The tag's values with every enum read as its value or name before the constructor takes
+     * them, as every other component reads its props (Support\PropText): the parameters are typed
+     * for text, and an enum there would be an error before the component runs. A boolean on a text
+     * prop reads as none, which a parameter typed for text and numbers would take as `0`. A list
+     * or an object a parameter's type refuses is reported and left out, so the parameter takes its
+     * default.
+     *
+     * @param  array<array-key, mixed>  $data
+     * @return static
+     */
+    public static function resolve($data)
+    {
+        return parent::resolve(PropText::forConstructor($data, 'chart', self::class));
+    }
+
+    /**
      * @param  string  $type  Chart type — validated against the active adapter's supportedTypes().
      * @param  array<int, string>|Arrayable<int, string>  $labels  X-axis / segment labels, as an
      *                                                             array or a Collection.
@@ -152,6 +190,10 @@ final class Chart extends Component
      *                                                                              tooltip names for each point, without a series of their own:
      *                                                                              `['label' => 'Receipts', 'data' => [12, 30]]`, or a list of
      *                                                                              them, each with an optional `decimals`, `prefix` and `suffix`.
+     * @param  bool|string|null  $table  The chart's data as a table under it, for a reader the
+     *                                   drawing does not reach: `disclosure` (also `true`) behind a
+     *                                   summary every reader can open, or `screen-reader`, out of
+     *                                   sight. Null or false for none.
      * @param  string|null  $palette  The colors the series take: `semantic` (the accent, the state
      *                                colors and three further accents) or `categorical` (eight pastels
      *                                from the `--color-wk-chart-*` tokens, each a fill and an edge).
@@ -192,10 +234,17 @@ final class Chart extends Component
         public int|string|null $valueDecimals = null,
         public ?string $valuePrefix = null,
         public ?string $valueSuffix = null,
+        // Whether the values a chart writes group their thousands, the locale's way (ApexCharts):
+        // `278.984,46` in German. On unless set to false. A plain attribute arrives as a string,
+        // so `value-grouping="false"` is read as false.
+        public bool|string|null $valueGrouping = null,
         // Further values the tooltip names for each point, without a series of their own: one
         // extra as `['label' => …, 'data' => […]]`, or a list of them. See ChartTooltipExtras.
         array|Arrayable $tooltipExtras = [],
         public ?string $palette = null,
+        // The data as a table under the chart: `disclosure`, `screen-reader`, or none. See
+        // ChartDataTable.
+        bool|string|null $table = null,
     ) {
         // Labels are a list whatever keys they arrive with: a Collection that was filtered or
         // sorted keeps its keys, and with those the config would carry an object where both
@@ -213,6 +262,10 @@ final class Chart extends Component
             $palette ?? (is_string($configured) ? $configured : get_debug_type($configured)),
             ['semantic', 'categorical'],
         );
+
+        // The script caps a streamed series only for `strict`, so any other word would let it grow
+        // without a bound. An unknown mode is reported and caps, as `strict` does.
+        $this->wireStreamMode = WireKit::validateProp('chart', 'wireStreamMode', $wireStreamMode !== '' ? $wireStreamMode : 'strict', ['strict', 'stream']);
 
         // Where the data points lead, taken out of the data before an adapter reads it: `urls` on a
         // dataset and `url` on a point are keys no chart library knows.
@@ -259,6 +312,18 @@ final class Chart extends Component
             throw TypeNotSupportedException::for($adapter, $type);
         }
 
+        // Merge default options with user options (user options win).
+        $mergedOptions = array_replace_recursive(
+            $adapter->defaultOptions($type),
+            $options,
+        );
+
+        // On a date axis each date is written in the form the axis reads as the time it names, a
+        // date object included (ChartDates). The axis and its zone come from the merged options.
+        $dateZone = ChartPointLinks::dateZone($adapter->name(), $mergedOptions);
+        $rangePairs = ChartPointLinks::rangePairs($adapter->name(), $type, $datasets);
+        [$labels, $datasets] = ChartDates::onAxis($labels, $datasets, $dateZone, $type, $rangePairs);
+
         // Normalize data via adapter.
         $normalized = $adapter->normalizeData($type, $labels, $datasets);
 
@@ -276,12 +341,6 @@ final class Chart extends Component
             $normalized['wkLinks'] = $pointLinkGrid;
         }
 
-        // Merge default options with user options (user options win).
-        $mergedOptions = array_replace_recursive(
-            $adapter->defaultOptions($type),
-            $options,
-        );
-
         // The list names each point as the chart shows it, a date as its axis writes one, which
         // the merged options decide.
         if ($pointLinkGrid !== []) {
@@ -292,8 +351,29 @@ final class Chart extends Component
                 is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null,
                 $valuePrefix,
                 $valueSuffix,
-                ChartPointLinks::rangePairs($adapter->name(), $type, $datasets),
-                ChartPointLinks::dateZone($adapter->name(), $mergedOptions),
+                $rangePairs,
+                $dateZone,
+            );
+        }
+
+        // The data as a table, one row per label, for a reader the drawing does not reach. An inline
+        // chart stands in a sentence, where a table cannot, so it reports the prop instead.
+        $this->tableMode = self::tableModeFrom($table);
+
+        if ($this->tableMode !== null && $inline) {
+            StrictnessGate::reject('chart', 'table', $this->tableMode, 'a chart that is not inline', '');
+            $this->tableMode = null;
+        }
+
+        if ($this->tableMode !== null) {
+            $this->tableModel = ChartDataTable::from(
+                $labels,
+                $datasets,
+                is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null,
+                $valuePrefix,
+                $valueSuffix,
+                $rangePairs,
+                $dateZone,
             );
         }
 
@@ -321,10 +401,11 @@ final class Chart extends Component
         // the sentinel is gone, and we skip the injection.
         if (($mergedOptions['tooltip']['custom'] ?? null) === 'WIREKIT_DEFAULT_TOOLTIP') {
             // The application's locale for the dates the renderer formats, in the BCP-47
-            // spelling Intl reads (Laravel writes `pt_BR`). Without it the renderer falls back
-            // to the reader's browser, which is not the language of the page around the chart.
-            // A locale the developer set on the tooltip stays theirs.
-            $mergedOptions['tooltip']['wkLocale'] ??= str_replace('_', '-', app()->getLocale());
+            // spelling Intl takes (Laravel writes `pt_BR`, a server locale can carry a charset
+            // such as `en_US.UTF-8`). Without it the renderer falls back to the reader's
+            // browser, which is not the language of the page around the chart. A locale the
+            // developer set on the tooltip stays theirs.
+            $mergedOptions['tooltip']['wkLocale'] ??= IcuLocale::tag();
 
             // The rows the renderer adds for a candlestick, a boxplot and a bubble carry names no
             // series does, so they are written here, in the application's language. The quartile
@@ -356,6 +437,20 @@ final class Chart extends Component
                 $mergedOptions['tooltip']['wkValuePrefix'] = $valuePrefix;
                 $mergedOptions['tooltip']['wkValueSuffix'] = $valueSuffix;
             }
+
+            // The values are grouped in the browser by default, so only a chart that turns it off
+            // says so. An application that writes its numbers its own way hands the chart the
+            // grouping and decimal marks its formatter writes, which the browser's locale data
+            // does not know (an account's settings rather than the language of the request).
+            if (BooleanProp::from($this->valueGrouping, true) === false) {
+                $mergedOptions['tooltip']['wkValueGrouping'] = false;
+            }
+
+            $separators = LocalizedNumber::separators();
+
+            if ($separators !== null) {
+                $mergedOptions['tooltip']['wkNumberSeparators'] ??= $separators;
+            }
         }
 
         $this->chartConfig = array_merge($normalized, ['options' => $mergedOptions]);
@@ -377,6 +472,34 @@ final class Chart extends Component
             $adapter->scripts(),
             static fn (string $src): bool => trim($src) !== '',
         ));
+    }
+
+    /**
+     * The way `table` asks for the table: a switch reads as on (`disclosure`) or off, a word
+     * names its way, and an unknown word is reported.
+     */
+    private static function tableModeFrom(bool|string|null $value): ?string
+    {
+        if ($value === null || $value === false) {
+            return null;
+        }
+
+        if ($value === true) {
+            return 'disclosure';
+        }
+
+        $value = trim($value);
+        $switch = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+
+        if ($switch !== null) {
+            return $switch ? 'disclosure' : null;
+        }
+
+        if ($value === '') {
+            return null;
+        }
+
+        return WireKit::validateProp('chart', 'table', $value, ['disclosure', 'screen-reader']);
     }
 
     /**

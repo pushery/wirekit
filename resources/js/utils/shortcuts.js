@@ -11,6 +11,7 @@
  * is typed, and the reader can switch the single-key shortcuts off (WCAG 2.1.4).
  */
 
+import { controlIsDisabled } from './fieldset-disabled.js';
 import { typesText } from './typing-target.js';
 
 /** The browser's memory of the reader's choice, used when the application supplies none. */
@@ -216,8 +217,12 @@ export function ariaKeyShortcuts(parsed) {
     const key = step.key === ' ' ? 'Space' : (step.key.length === 1 ? step.key.toUpperCase() : step.key);
     const rest = [step.ctrl ? 'Control' : null, step.alt ? 'Alt' : null, step.shift ? 'Shift' : null].filter(Boolean);
 
+    // A shortcut that names Control beside `cmd` needs Control either way, so it has the one form,
+    // as KeyShortcuts::aria() writes it.
     if (step.cmd) {
-        return [['Control', ...rest, key].join('+'), ['Meta', ...rest, key].join('+')].join(' ');
+        return step.ctrl
+            ? ['Meta', ...rest, key].join('+')
+            : [['Control', ...rest, key].join('+'), ['Meta', ...rest, key].join('+')].join(' ');
     }
 
     return [...rest, key].join('+');
@@ -225,36 +230,46 @@ export function ariaKeyShortcuts(parsed) {
 
 /**
  * The keys of a shortcut as a reader sees them, one list per step: ⌘ ⌥ ⇧ on a Mac, Ctrl Alt Shift
- * elsewhere.
+ * elsewhere. `names` gives the words among them in the reader's language (`Ctrl` is `Strg` on a
+ * German keyboard), as `KeyShortcuts::keyNames()` translates them; a word it lacks stays English.
+ * `KeyShortcuts::display()` draws a shortcut on the server by the same rules.
  *
  * @param {ReturnType<typeof parseShortcut>} parsed
  * @param {boolean} mac
+ * @param {Object<string, string>} [names]
  * @returns {string[][]}
  */
-export function displayKeys(parsed, mac) {
+export function displayKeys(parsed, mac, names = {}) {
     if (! parsed) {
         return [];
     }
 
+    const word = (key) => (typeof names?.[key] === 'string' && names[key] !== '' ? names[key] : key);
+
     return parsed.steps.map((step) => {
         const keys = [];
 
-        if (step.cmd) keys.push(mac ? '⌘' : 'Ctrl');
-        if (step.ctrl && ! step.cmd) keys.push(mac ? '⌃' : 'Ctrl');
-        if (step.alt) keys.push(mac ? '⌥' : 'Alt');
-        if (step.shift) keys.push(mac ? '⇧' : 'Shift');
+        if (step.cmd) keys.push(mac ? '⌘' : word('Ctrl'));
+        // On a Mac Control is a key of its own beside ⌘; elsewhere `cmd` is Ctrl already.
+        if (step.ctrl && (mac || ! step.cmd)) keys.push(mac ? '⌃' : word('Ctrl'));
+        if (step.alt) keys.push(mac ? '⌥' : word('Alt'));
+        if (step.shift) keys.push(mac ? '⇧' : word('Shift'));
 
         const shown = SHOWN_KEYS.get(step.key);
 
-        keys.push(shown ? shown[mac ? 0 : 1] : (step.key.length === 1 ? step.key.toUpperCase() : step.key));
+        keys.push(shown ? word(shown[mac ? 0 : 1]) : (step.key.length === 1 ? step.key.toUpperCase() : step.key));
 
         return keys;
     });
 }
 
-/** Whether the reader is on a Mac, read from what the browser says about the platform. */
+/**
+ * Whether the reader is on a Mac, read from what the browser says about the platform: its client
+ * hint where it gives one, else `navigator.platform`, which an iPad in desktop mode reports as
+ * `MacIntel`. A hint may be empty where the platform is unknown, and then the older answer counts.
+ */
 export function isMacPlatform(nav = typeof navigator !== 'undefined' ? navigator : null) {
-    const platform = String(nav?.userAgentData?.platform ?? nav?.platform ?? '');
+    const platform = String(nav?.userAgentData?.platform || nav?.platform || '');
 
     return /mac|iphone|ipad|ipod/i.test(platform);
 }
@@ -365,6 +380,10 @@ function isRendered(el) {
     return typeof el.getClientRects === 'function' && el.getClientRects().length > 0 && ! el.closest('[inert]');
 }
 
+/**
+ * Whether the element of a shortcut can act. A control a disabled fieldset disables keeps its own
+ * `disabled` false, so `:disabled` is asked as well (utils/fieldset-disabled.js).
+ */
 function isUsable(entry) {
     if (! entry.el) {
         return true;
@@ -372,7 +391,7 @@ function isUsable(entry) {
 
     const el = entry.el;
 
-    return el.isConnected !== false && isRendered(el) && ! el.disabled && el.getAttribute('aria-disabled') !== 'true';
+    return el.isConnected !== false && isRendered(el) && ! controlIsDisabled(el) && el.getAttribute('aria-disabled') !== 'true';
 }
 
 /**
@@ -385,6 +404,14 @@ export function singleKeysEnabled(doc = typeof document !== 'undefined' ? docume
         return false;
     }
 
+    return readerSingleKeysEnabled(doc);
+}
+
+/**
+ * The reader's own choice for single-key shortcuts, whatever the screen says: the application's
+ * choice on the overview, and without one the browser's memory.
+ */
+export function readerSingleKeysEnabled(doc = typeof document !== 'undefined' ? document : null) {
     const choice = doc ? doc.querySelector('[data-wk-shortcuts][data-wk-single-keys-choice]') : null;
 
     if (choice) {
@@ -534,6 +561,20 @@ function fire(entry, event) {
 }
 
 /**
+ * Warn in development when an element's shortcut is one the grammar does not read. It binds
+ * nothing, and without a word a typo such as `cmd+shfit+s` reads as a shortcut that works.
+ */
+function warnOnUnread(expression, el) {
+    const text = String(expression ?? '').trim();
+
+    if (text === '' || typeof document === 'undefined' || ! document.querySelector('[data-wk-shortcuts][data-wk-shortcuts-debug]')) {
+        return;
+    }
+
+    console.warn(`[wirekit::shortcuts] "${text}" is no shortcut, so nothing is bound: modifiers (cmd, ctrl, alt, shift) joined to one key with +, the steps of a sequence apart by a space.`, el);
+}
+
+/**
  * Warn in development when an area gets the same shortcut twice, or a single key that also starts a
  * sequence there: in both cases one of them never fires.
  */
@@ -627,12 +668,49 @@ function applyAriaKeyShortcuts(el, parsed) {
     }
 }
 
+const KEY_DISPLAY_FLAG = '__wirekitKeyDisplayMarked';
+
 /**
- * Register the `x-wk-shortcut` directive.
+ * Say on the root what the drawn keys of a shortcut depend on, for the stylesheet. `<x-wirekit::kbd
+ * shortcut="…">` draws the keys of both kinds of platform, and `data-wk-platform` (`mac` or
+ * `other`) says which one shows. `data-wk-single-keys-off` stands while the reader has switched
+ * single-key shortcuts off, which hides the drawn keys of one; a screen that turns them off says
+ * so itself, and the stylesheet reads that with `:has()`.
+ *
+ * Marked again when the reader flips the switch, and after `wire:navigate` brings in a new page.
+ */
+export function markKeyDisplay(doc = typeof document !== 'undefined' ? document : null) {
+    const root = doc?.documentElement;
+
+    if (! root || typeof root.setAttribute !== 'function' || typeof root.toggleAttribute !== 'function') {
+        return;
+    }
+
+    const mark = () => {
+        root.setAttribute('data-wk-platform', isMacPlatform() ? 'mac' : 'other');
+        root.toggleAttribute('data-wk-single-keys-off', ! readerSingleKeysEnabled(doc));
+    };
+
+    mark();
+
+    if (typeof window === 'undefined' || window[KEY_DISPLAY_FLAG]) {
+        return;
+    }
+
+    window[KEY_DISPLAY_FLAG] = true;
+    window.addEventListener(SINGLE_KEYS_EVENT, mark);
+    doc.addEventListener('livewire:navigated', mark);
+}
+
+/**
+ * Register the `x-wk-shortcut` directive, and mark the root for the keys the page draws (see
+ * `markKeyDisplay()`), which every bundle carrying the directive draws as well.
  *
  * @param {object} Alpine
  */
 export function registerShortcutDirective(Alpine) {
+    markKeyDisplay();
+
     const skipDuringClone = typeof Alpine.skipDuringClone === 'function' ? Alpine.skipDuringClone : (callback) => callback;
 
     // A Livewire morph compares the page with a clone of the new markup that Alpine initializes
@@ -645,6 +723,8 @@ export function registerShortcutDirective(Alpine) {
         const parsed = parseShortcut(expression);
 
         if (! parsed) {
+            warnOnUnread(expression, el);
+
             return;
         }
 

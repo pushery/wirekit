@@ -27,7 +27,7 @@
     // reader sees are the value the application gets back.
     $items = [];
 
-    foreach (\Pushery\WireKit\Support\ListProp::records($replies) as $reply) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($replies, 'quick-replies', 'replies') as $reply) {
         $entry = is_array($reply) ? $reply : ['label' => $reply];
         $itemLabel = (string) ($entry['label'] ?? '');
 
@@ -94,7 +94,7 @@
              the FIRST of two identical attributes, so hardcoding it would silently
              discard theirs. --}}
         @unless($attributes->has('x-data')) x-data @endunless
-        {{ $attributes->class([$classes]) }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     >
         @foreach ($items as $index => $item)
             <button

@@ -17,6 +17,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('attachment-group', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     $orientationValue = in_array($orientation, ['row', 'stack'], true)
         ? $orientation
         : WireKit::validateProp('attachment-group', 'orientation', $orientation, ['row', 'stack']);
@@ -33,7 +38,7 @@
     // an allowlist entry instead — same reason scroll-area resolves its
     // overflow classes this way.
     $orientationClasses = match ($orientationValue) {
-        'row' => 'wk-scrollbar snap-x snap-mandatory overflow-x-auto overflow-y-hidden focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]',
+        'row' => 'wk-scrollbar relative snap-x snap-mandatory overflow-x-auto overflow-y-hidden focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]',
         default => 'flex-col',
     };
 
@@ -45,7 +50,7 @@
 
 <div
     @unless($attributes->has('role')) role="group" @endunless
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
     {{-- The condition lives in the VALUE, not around the attribute. A `tabindex` behind
          `@if` reads as a keyboard model and is not one: the guard that holds this contract
          strips Blade conditionals before it looks at the wiring, so it was passing this
@@ -59,7 +64,7 @@
     {{-- A sheet does not scroll sideways: on paper a row of attachments flows onto the next
          line. --}}
     @if($isRow) data-wk-print-wrap @endif
-    {{ $attributes->except('tabindex')->class([$classes]) }}
+    {{ $attributes->except('tabindex')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

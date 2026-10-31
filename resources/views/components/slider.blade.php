@@ -30,11 +30,13 @@
     // before the server has agreed to it. The value is sent when the gesture
     // ends — see the note above. Null leaves the component exactly as it has
     // always rendered.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'name' => null,
     'id' => null,
     'label' => null,
@@ -75,7 +77,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -85,7 +87,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // A range field gives its value as text, and Livewire takes the server's echo of an `int` or
     // `float` property for a change and writes it over a newer value: a binding to one gets
@@ -95,9 +97,12 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     /*
      * The Laravel validation bag, which this control never consulted. Every other form
-     * control resolves `error` from `$error ?? FieldError::first($errors, $name)`, so after a failed
+     * control resolves `error` from `FieldError::message($errors, $name, $error)`, so after a failed
      * `$this->validate()` each of them showed its message and this one showed nothing — in
      * the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
@@ -107,23 +112,24 @@
      * render `aria-invalid="true"` because some other field failed validation, and announce
      * an error message about that field. The sibling controls write it the same way.
      */
-    $error ??= $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null;
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
+    $error = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
     // Whether a message line renders below the control: the error, or the hint when there is none.
     $hasMessage = (bool) $error || (bool) $hint;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $showValue = BooleanProp::from($showValue, false);
+    $showValue = BooleanProp::from($showValue, false, 'slider', 'showValue');
     $valueBelow = match ($valuePosition) {
         'end' => false,
         'below' => true,
         default => \Pushery\WireKit\WireKit::validateProp('slider', 'valuePosition', (string) $valuePosition, ['end', 'below']) === 'below',
     };
     $valueBelow = $valueBelow && $showValue;
-    $tooltip = BooleanProp::from($tooltip, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $required = BooleanProp::from($required, false);
+    $tooltip = BooleanProp::from($tooltip, false, 'slider', 'tooltip');
+    $disabled = BooleanProp::from($disabled, false, 'slider', 'disabled');
+    $required = BooleanProp::from($required, false, 'slider', 'required');
 
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
@@ -132,6 +138,10 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('slider', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('slider', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -171,13 +181,23 @@
     $helpId = filled($help) && filled($label) ? $sliderId.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
     $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $sliderId, $hint ? $sliderId.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // Numbers, whatever the attribute or the data carried: a text would throw in the
     // arithmetic below. A bound or a step that holds no number takes its configured default,
     // and a value with none starts at the minimum.
-    $min = \Pushery\WireKit\Support\NumericProp::from($min, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.min', 0), 0));
-    $max = \Pushery\WireKit\Support\NumericProp::from($max, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.max', 100), 100));
-    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.slider.step', 1), 1));
+    $min = \Pushery\WireKit\Support\NumericProp::from($min, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.min', 0), 0), 'slider', 'min');
+    $max = \Pushery\WireKit\Support\NumericProp::from($max, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.slider.max', 100), 100), 'slider', 'max');
+    // Bounds the wrong way round would leave the control no travel; read as written they say
+    // "between these two", so they change places, as two days do in a calendar.
+    [$min, $max] = \Pushery\WireKit\Support\NumericProp::ordered($min, $max);
+    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.slider.step', 1), 1), 'slider', 'step');
     $value = \Pushery\WireKit\Support\NumericProp::orNull($value);
     $currentValue = $value ?? $min;
 
@@ -190,7 +210,7 @@
     // Initialized beside the marks it describes, so the reader below does not depend on
     // `! empty($normalizedMarks) &&` short-circuiting to avoid an undefined variable.
     // Marks may arrive as a Collection; the shape test below takes an array.
-    $marks = \Pushery\WireKit\Support\ListProp::records($marks);
+    $marks = \Pushery\WireKit\Support\ListProp::records($marks, 'slider', 'marks');
     $marksIsList = true;
     $hasLabeledMarks = false;
     if (! empty($marks)) {
@@ -234,10 +254,10 @@
             && ! collect($marks)->contains(fn ($m) => ! is_numeric($m));
 
         $pairs = $marksIsList
-            ? array_map(fn ($v) => [$v, (string) $v, null], $marks)
+            ? array_map(fn ($v) => [$v, \Pushery\WireKit\Support\LocalizedNumber::scale((float) $v, maxPrecision: 10), null], $marks)
             : array_map(
                 fn ($v, $spec) => is_array($spec)
-                    ? [$v, (string) ($spec['label'] ?? $v), ($spec['description'] ?? null) !== null ? (string) $spec['description'] : null]
+                    ? [$v, isset($spec['label']) ? (string) $spec['label'] : \Pushery\WireKit\Support\LocalizedNumber::scale((float) $v, maxPrecision: 10), ($spec['description'] ?? null) !== null ? (string) $spec['description'] : null]
                     : [$v, (string) $spec, null],
                 array_keys($marks),
                 array_values($marks)
@@ -271,7 +291,7 @@
     $callerBindsValueText = $attributes->has('aria-valuetext')
         || $attributes->has('x-bind:aria-valuetext')
         || $attributes->has(':aria-valuetext');
-    $valueTextMap = \Pushery\WireKit\Support\ListProp::from($valueTextMap);
+    $valueTextMap = \Pushery\WireKit\Support\ListProp::from($valueTextMap, 'slider', 'valueTextMap');
     $explicitValueTextMap = is_array($valueTextMap) && $valueTextMap !== [] ? $valueTextMap : null;
 
     // A marks MAP opts into aria-valuetext ONLY when a label carries meaning beyond the
@@ -391,20 +411,24 @@
      * lines down: Tailwind scans this directory as raw text, so a utility spelled out in a
      * comment would be compiled into a selector no element uses.
      *
-     * `valueText` is `marksMap[current] ?? String(current)`, so the candidate set is exactly
-     * the map's labels plus the numeric ends. The ghost below renders the longest of them
+     * `valueText` is `marksMap[current]`, or else the number as the scale writes it, so the
+     * candidate set is exactly the map's labels plus the numeric ends. The ghost below renders the longest of them
      * invisibly in the same grid cell, which sizes the cell to the real rendered width — in
      * the real font, rather than in `ch` units that assume every glyph is as wide as a zero.
      */
-    $wkStepDecimals = 0;
-    if (is_string($step) || is_numeric($step)) {
-        $wkStepString = rtrim(rtrim(sprintf('%.6F', (float) $step), '0'), '.');
-        $wkStepDecimals = str_contains($wkStepString, '.') ? strlen(explode('.', $wkStepString)[1]) : 0;
-    }
+    // The places a value can carry: as many as the bounds, the step or the starting value have, so
+    // a step of 0.5 from 0.25 writes 0.75. The factory writes `valueText` with as many, in the
+    // locale's decimal mark (Support\LocalizedNumber::scale()), and the ends are measured with them.
+    $wkPlacesOf = static function (int|float|string $number): int {
+        $text = rtrim(rtrim(sprintf('%.10F', (float) $number), '0'), '.');
+
+        return str_contains($text, '.') ? strlen($text) - strpos($text, '.') - 1 : 0;
+    };
+    $valuePlaces = max(array_map($wkPlacesOf, array_values(array_filter([$min, $max, $step, $currentValue], 'is_numeric'))) ?: [0]);
 
     $wkValueTextCandidates = array_map('strval', array_values($valueTextMap));
     foreach ([$min, $max] as $wkEnd) {
-        $wkValueTextCandidates[] = number_format((float) $wkEnd, $wkStepDecimals, '.', '');
+        $wkValueTextCandidates[] = \Pushery\WireKit\Support\LocalizedNumber::scale((float) $wkEnd, precision: $valuePlaces);
     }
 
     $widestValueText = '';
@@ -512,7 +536,12 @@
          (resources/js/components/slider.js). An inline object literal cannot
          carry methods or getters under Alpine's CSP build — it fails to parse,
          the element gets an empty scope, and every directive here goes quiet. --}}
-    x-data="wirekitSlider({ current: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $currentValue) }}, min: {{ $min }}, max: {{ $max }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $valueTextMap) }} })"
+    {{-- The value travels on `data-wk-server-value`, not in `x-data`, so the expression is the
+         same for every value: a Livewire morph that changed it would start the component again,
+         and the answer to a `wire:model.live` drag would put the bubble back where the request
+         left it. --}}
+    data-wk-server-value="{{ $currentValue }}"
+    x-data="wirekitSlider({ min: {{ $min }}, max: {{ $max }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $valueTextMap) }}, places: {{ (int) $valuePlaces }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }} })"
     x-modelable="current"
     x-init="initResync()"
     @if($callerRef !== '') data-wk-ref-scope @endif
@@ -533,8 +562,8 @@
          `el.value` without dispatching, so there a programmatic change from the parent would move
          the thumb and leave `current` behind, with the bubble and the tick marks reading the old
          number. --}}
-    {{ $attributes->whereStartsWith('x-model')->whereDoesntStartWith('x-modelable') }}
-    data-wk-sr-host {{ $attributes->only(['class', 'style'])->class([$wrapperClasses]) }}
+    {{ \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes->whereStartsWith('x-model')->whereDoesntStartWith('x-modelable')) }}
+    data-wk-sr-host {{ $attributes->only(['class', 'style'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
 >
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the mirror: a nested
@@ -558,7 +587,7 @@
         <label data-wk-field-label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</label>
         @if($helpId || $hasLabelAfter)
             @if($helpId)
-                @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $sliderId)])
+                @include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $sliderId)])
             @endif
             @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif
         </div>
@@ -571,13 +600,16 @@
 
     {{-- Track overlay container (tooltip bubble + tick marks). Only rendered when
          needed so the plain slider DOM stays unchanged. --}}
-    @if($hasTrackOverlay)<div class="relative flex-1">@endif
+    {{-- `data-wk-slider-overlay` carries `--wk-slider-run`, the direction the browser runs the
+         range in: under `dir="rtl"` the lowest value sits on the right, and the bubble and the
+         marks below stand from the inline start to follow it. --}}
+    @if($hasTrackOverlay)<div data-wk-slider-overlay class="relative flex-1">@endif
         @if($tooltip)
             {{-- Value bubble that follows the thumb. Decorative — the native input
-                 already exposes the value to AT. The bubble shifts by translateX(-pct%)
+                 already exposes the value to AT. The bubble moves back by its own pct
                  so it stays WITHIN the track at the extremes instead of overhanging:
-                 at 0% it left-aligns with the thumb (extends inward/right), at 100% it
-                 right-aligns (extends inward/left), and centers (-50%) in the middle.
+                 at the lowest value it starts where the thumb starts and extends inward,
+                 at the highest it ends where the thumb ends, and it centers in the middle.
                  (The native thumb has no JS-readable width, so pct doubles as the shift.) --}}
             <div class="pointer-events-none absolute bottom-full z-10 mb-1.5" :style="bubbleStyle()" aria-hidden="true">
                 <span class="wk-tooltip-panel block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="bubbleShiftStyle()" x-text="valueText"></span>
@@ -598,7 +630,7 @@
 
                  aria-required is the honest form: it tells assistive technology the field
                  must be answered, which is true and trivially satisfied here. --}}
-            @if($required) aria-required="true" @endif
+            @if($required || $fieldRequired) aria-required="true" @endif
             {{-- On the input itself: unlike the grouped controls, this IS the single
                  element the message is about. --}}
             @if($error) aria-invalid="true" @endif
@@ -646,7 +678,7 @@
 
         @if(! empty($normalizedMarks))
             {{-- Tick marks under the track. Decorative; the native input announces value/min/max. --}}
-            <div class="pointer-events-none absolute inset-x-0 top-full mt-1" aria-hidden="true">
+            <div data-wk-slider-marks class="pointer-events-none absolute inset-x-0 top-full mt-1" aria-hidden="true">
                 @foreach($normalizedMarks as $mark)
                     {{-- `title` for a pointer. `title` is a hover affordance and there is
                          no hover on touch, so assistive technology gets the same text
@@ -663,17 +695,25 @@
                          Centering every label put the first and the last half a label past the
                          track, and a clipping container cut them off. The tick does not follow its
                          label: it sits at the same share of the mark's width, which lands it back on
-                         the value. --}}
+                         the value.
+                         On a narrow track two neighbors can still run into each other. The factory
+                         measures the labels, moves apart the ones that touch, each one only so far
+                         that its tick stays under it, and hides the ones the row has no room for,
+                         keeping the first and the last (`placeMarkLabels()` in the slider's script).
+                         It moves the label, never the mark, so the tick stays on its value. --}}
+                    {{-- From the inline start, and moved back in the direction the track runs
+                         (`--wk-slider-run`), so under `dir="rtl"` the mark of the lowest value stands
+                         on the right, where the browser draws that value. --}}
                     <div
                         class="absolute flex flex-col items-start{{ $mark['description'] !== null ? ' pointer-events-auto' : '' }}"
-                        style="left: {{ $mark['pct'] }}%; transform: translateX(-{{ $mark['pct'] }}%)"
+                        style="inset-inline-start: {{ $mark['pct'] }}%; transform: translateX(calc(var(--wk-slider-run, 1) * -{{ $mark['pct'] }}%))"
                         @if($mark['description'] !== null)
                             title="{{ $mark['description'] }}"
                         @endif
                     >
-                        <span class="relative h-1 w-px -translate-x-1/2 bg-[var(--color-wk-border)]" style="left: {{ $mark['pct'] }}%"></span>
+                        <span class="relative h-1 w-px translate-x-[calc(var(--wk-slider-run,1)*-50%)] bg-[var(--color-wk-border)]" style="inset-inline-start: {{ $mark['pct'] }}%"></span>
                         @if($mark['label'] !== '')
-                            <span class="mt-0.5 whitespace-nowrap text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
+                            <span data-wk-slider-mark-label="{{ $loop->index }}" x-bind:style="markLabelStyle({{ $loop->index }})" class="mt-0.5 whitespace-nowrap text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
                         @endif
                         {{-- No `sr-only` description span here, and no `aria-describedby`:
                              this whole container is `aria-hidden="true"` — correctly, because

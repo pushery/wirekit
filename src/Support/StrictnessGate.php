@@ -111,6 +111,95 @@ final class StrictnessGate
     ];
 
     /**
+     * The attributes that only a form control takes, and the components that hand a caller's to one.
+     *
+     * `disabled`, `required` and `readonly` are valid HTML, so they pass as attributes rather than
+     * as unknown props. Each does something only on a control: on the `div` that wraps a component's
+     * button or field it is a dead attribute, and the control inside stays enabled, optional or
+     * editable. `autofocus` does something only on an element that can take the focus: a control, a
+     * link, or an element with a `tabindex`. A component listed here gives the caller's attribute to a control of its own, and a
+     * component that declares the attribute as a prop never finds it in the attribute bag. Every
+     * other component reports it through {@see self::controlAttributesWithoutAControl()}.
+     *
+     * @var array<string, list<string>>
+     */
+    public const CONTROL_ATTRIBUTE_TAKERS = [
+        'disabled' => [
+            'bulk-selection.toggle', 'checkbox', 'clipboard-button', 'drawer.close', 'drawer.trigger', 'fab.action', 'fab.button',
+            'field.set', 'filter-builder', 'modal.close', 'number-input', 'password-input', 'product-card',
+            'radio', 'reaction', 'reorder', 'replay-button', 'scroll-to-top', 'select', 'shortcuts.trigger',
+            'sidebar.toggle', 'sign-in-button', 'table.reorder', 'textarea', 'time-picker', 'toggle',
+            'toggle-button',
+        ],
+        'required' => [
+            'bulk-selection.toggle', 'checkbox', 'combobox', 'number-input', 'password-input', 'radio', 'select', 'textarea',
+            'time-picker', 'toggle',
+        ],
+        // A field that takes text, a date, a time or a number: HTML ignores `readonly` on a checkbox,
+        // a radio, a range and a color, so a component that hands it to one of those is not listed.
+        'readonly' => [
+            'combobox', 'date-picker', 'number-input', 'password-input', 'textarea', 'time-picker',
+        ],
+        'autofocus' => [
+            'app-rail.item', 'attachment-group', 'bottom-nav.item', 'brand', 'bulk-selection.toggle',
+            'button', 'checkbox',
+            'clipboard-button', 'color-picker', 'combobox', 'command-palette.item', 'context-menu.item',
+            'context-menu.submenu', 'date-picker', 'drawer.body', 'drawer.close', 'drawer.trigger',
+            'dropdown.checkbox-item', 'dropdown.item', 'dropdown.radio-item', 'dropdown.submenu',
+            'fab.action', 'fab.button', 'file-upload', 'inline-edit', 'input', 'link', 'menubar.item',
+            'menubar.submenu', 'modal.body', 'modal.close', 'multi-select', 'navbar.item',
+            'navigation-menu.link', 'number-input', 'password-input', 'phone', 'radio', 'range-slider',
+            'rating', 'reaction', 'reading-spine', 'replay-button', 'scroll-area', 'scroll-to-top',
+            'segmented-control', 'select', 'shortcuts.trigger', 'sidebar.item', 'sidebar.toggle',
+            'sign-in-button', 'skip-link', 'slider', 'swatch-group', 'tabs.tab', 'tags-input', 'textarea',
+            'time-picker', 'toggle', 'toggle-button', 'tour.step', 'wizard.step',
+        ],
+    ];
+
+    /**
+     * The components that write the caller's attribute bag on a form control.
+     *
+     * Livewire sets an attribute while a request runs through `wire:loading.attr`, on the element
+     * the directive stands on. `wire:loading.attr="disabled"` on a component that writes the bag on
+     * the `div` around its button disables the `div`, which is nothing. These components write the
+     * bag on a control, so the attribute lands where it works; every other one reports it through
+     * {@see self::controlAttributesWithoutAControl()}.
+     *
+     * @var list<string>
+     */
+    public const ATTRIBUTE_BAG_ON_A_CONTROL = [
+        'bulk-selection.toggle', 'button', 'checkbox', 'clipboard-button', 'color-picker', 'combobox', 'command-palette.item',
+        'context-menu.item', 'context-menu.submenu', 'date-picker', 'drawer.close', 'drawer.trigger',
+        'dropdown.checkbox-item', 'dropdown.item', 'dropdown.radio-item', 'dropdown.submenu',
+        'fab.action', 'fab.button', 'field.set', 'input', 'menubar.item', 'menubar.submenu',
+        'modal.close', 'number-input', 'password-input', 'phone', 'radio', 'reaction', 'replay-button',
+        'scroll-to-top', 'select', 'shortcuts.trigger', 'sidebar.toggle', 'sign-in-button', 'slider',
+        'tabs.tab', 'textarea', 'time-picker', 'toggle', 'toggle-button',
+    ];
+
+    /**
+     * The components that bind a caller's `wire:model`.
+     *
+     * Livewire binds `wire:model` to the element it is written on, and that element shows the
+     * property's value only when it is a form field, an element with `x-modelable`, or the root of a
+     * modal, a drawer or an alert dialog, whose script reads it. A component listed here hands the
+     * caller's to one of those in at least one of its modes, or reads the property into its own
+     * script. Every other component writes it on a wrapper or drops it, so no field of it shows the
+     * property's value, and reports it through {@see self::controlAttributesWithoutAControl()}.
+     *
+     * @var list<string>
+     */
+    public const WIRE_MODEL_TAKERS = [
+        'alert-dialog', 'branch-switcher', 'bulk-selection', 'bulk-selection.toggle', 'calendar', 'cart-item', 'checkbox', 'color-picker',
+        'combobox', 'countdown', 'data-table', 'date-picker', 'datetime-picker', 'drawer', 'editor', 'file-upload',
+        'filter-builder', 'image-compare', 'image-editor', 'image-hotspots-editor', 'input', 'modal', 'multi-select', 'notification-center',
+        'number-input', 'otp-input', 'pagination', 'password-input', 'phone', 'pricing-table', 'radio',
+        'range-slider', 'rating', 'segmented-control', 'select', 'slider', 'status-matrix',
+        'strength-meter', 'swatch-group', 'tags-input', 'textarea', 'time-picker', 'toggle',
+        'toggle-button', 'translatable-input',
+    ];
+
+    /**
      * Ecosystem tooling attributes that are written on a component ON PURPOSE so
      * that they reach the rendered HTML.
      *
@@ -242,7 +331,12 @@ final class StrictnessGate
      * Validate a value against an allowed list. Throws (strict + CLI/throw-
      * override) or logs+returns the fallback (lenient OR strict-HTTP).
      *
-     * @param  list<string>  $allowed
+     * An allowed value is read as its text. A list built with `array_keys()` from a map whose keys
+     * are digits, `'1'` to `'12'`, holds integers, and the fallback taken from it has to come back
+     * as the string this returns: as an integer it would end the page with a TypeError in exactly
+     * the lenient mode that promises to log and render instead.
+     *
+     * @param  list<string|int>  $allowed
      * @param  string|null  $fallback  Lenient-mode fallback override; defaults to $allowed[0].
      */
     public static function enforce(
@@ -252,6 +346,8 @@ final class StrictnessGate
         array $allowed,
         ?string $fallback = null,
     ): string {
+        $allowed = array_map(strval(...), $allowed);
+
         if (in_array($value, $allowed, true)) {
             return $value;
         }
@@ -430,7 +526,126 @@ final class StrictnessGate
             logger()->warning($message);
         }
 
+        self::warnControlAttributesWithoutAControl($context, $actual);
+
         self::warnScopeDirectiveCollisions($context, $actual);
+    }
+
+    /**
+     * Warn when a caller writes `disabled`, `required` or `readonly`, has Livewire set one while a
+     * request runs, or binds a property with `wire:model`, on a component that gives it to no form
+     * control.
+     *
+     * @param  array<string, mixed>  $actual  attribute name => value
+     */
+    private static function warnControlAttributesWithoutAControl(string $context, array $actual): void
+    {
+        foreach (self::controlAttributesWithoutAControl($context, $actual) as $attribute) {
+            // A `wire:model` on a wrapper still hears the `input` events that bubble up from a field
+            // inside it, so it is not inert; what it never does is show the property's value.
+            $model = str_starts_with($attribute, 'wire:model');
+
+            logger()->warning(sprintf(
+                'WireKit [%s]: `%s` reaches %s in this component, so %s.%s',
+                $context,
+                $attribute,
+                match ($attribute) {
+                    'autofocus' => 'nothing that can take the focus',
+                    // It may land on a checkbox, a range or a color field, which ignore it.
+                    'readonly' => 'no field that honors it',
+                    default => 'no form control',
+                },
+                $model ? 'no field of it shows the property\'s value' : 'it does nothing',
+                ! $model && str_contains($attribute, 'disabled')
+                    ? ' To disable the controls inside it, put it on a `<fieldset>` around the component.'
+                    : ''
+            ));
+        }
+    }
+
+    /**
+     * The attributes in `$actual` that only a form control takes, or for `wire:model` an element that
+     * holds a value, and that this component gives to none. The verdict behind the warning, with no
+     * logging and no environment gate, so a test can assert on the answer the developer is shown.
+     *
+     * @param  string  $context  the component name, as `ComponentRegistry` knows it
+     * @param  array<string, mixed>  $actual  attribute name => value
+     * @return list<string>
+     */
+    public static function controlAttributesWithoutAControl(string $context, array $actual): array
+    {
+        $without = [];
+
+        foreach (self::CONTROL_ATTRIBUTE_TAKERS as $attribute => $takers) {
+            if (array_key_exists($attribute, $actual) && ! in_array($context, $takers, true)) {
+                $without[] = $attribute;
+            }
+        }
+
+        // `wire:loading.attr`, with any modifiers beside `attr`, sets its value as an attribute on
+        // the element that carries the caller's bag while a request runs.
+        foreach ($actual as $key => $value) {
+            if (! is_string($key) || ! str_starts_with($key, 'wire:loading.') || ! in_array('attr', explode('.', $key), true)) {
+                continue;
+            }
+
+            $value = is_string($value) ? trim($value) : '';
+
+            if (in_array($value, ['disabled', 'required', 'readonly'], true) && ! in_array($context, self::ATTRIBUTE_BAG_ON_A_CONTROL, true)) {
+                $without[] = $key.'="'.$value.'"';
+            }
+        }
+
+        if (! in_array($context, self::WIRE_MODEL_TAKERS, true)) {
+            $without = [...$without, ...self::wireModelBindings($actual)];
+        }
+
+        return $without;
+    }
+
+    /**
+     * The caller's `wire:model` bindings in `$actual`, with any modifiers, each named with the
+     * property it binds so the call site can be found: `wire:model.live="filters"`.
+     *
+     * @param  array<string, mixed>  $actual  attribute name => value
+     * @return list<string>
+     */
+    public static function wireModelBindings(array $actual): array
+    {
+        $bindings = [];
+
+        foreach ($actual as $key => $value) {
+            if (is_string($key) && ($key === 'wire:model' || str_starts_with($key, 'wire:model.'))) {
+                $bindings[] = is_string($value) && trim($value) !== '' ? $key.'="'.trim($value).'"' : $key;
+            }
+        }
+
+        return $bindings;
+    }
+
+    /**
+     * Warn that a caller's `wire:model` binds nothing in the mode this component renders. The
+     * component binds one in another mode, so it is in WIRE_MODEL_TAKERS and the general report
+     * says nothing about it. `$mode` completes "in this component …", such as "without
+     * `selectable`", and `$instead` is a sentence on how the component takes the value in this mode.
+     *
+     * @param  array<string, mixed>  $actual  attribute name => value
+     */
+    public static function warnWireModelInAModeWithoutOne(string $context, array $actual, string $mode, string $instead = ''): void
+    {
+        if (! (bool) config('app.debug') && ! app()->runningInConsole()) {
+            return;
+        }
+
+        foreach (self::wireModelBindings($actual) as $binding) {
+            logger()->warning(sprintf(
+                'WireKit [%s]: `%s` binds nothing in this component %s, so no field of it shows the property\'s value.%s',
+                $context,
+                $binding,
+                $mode,
+                $instead === '' ? '' : ' '.$instead
+            ));
+        }
     }
 
     /**

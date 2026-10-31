@@ -3,10 +3,19 @@
 @aware(['interactive' => false])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $interactive = \Pushery\WireKit\Support\AwareProp::read('interactive', ['bottom-nav'], false);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav.item', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
 
     use Pushery\WireKit\Support\BooleanProp;
     // `@aware` reads a value from the parent component, but — unlike `@props` —
@@ -55,18 +64,22 @@
 
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp). Read
     // here rather than in the block above, which runs before `@props` defines `$href`.
-    $href = \Pushery\WireKit\Support\UrlProp::text($href);
+    // An empty address, one of white space or `false` is none, so the item keeps its own `#`.
+    $href = \Pushery\WireKit\Support\UrlProp::text($href) ?? '#';
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $active = BooleanProp::from($active, false);
+    $active = BooleanProp::from($active, false, 'bottom-nav.item', 'active');
 
     // The accessible name has to carry the badge: "Inbox" and "Inbox, 3" are
     // different claims, and a reader who cannot see the dot deserves the number.
-    $accessibleName = ($badge !== null && $badge !== '')
-        ? trim($label).', '.$badge
-        : $label;
+    // The badge's text, as the pill shows it, or null for none: false, whitespace and nothing
+    // draw no pill and add nothing to the name.
+    $badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge);
+    $accessibleName = $badgeText !== null
+        ? \Pushery\WireKit\Support\SlotContent::textOf($label).', '.\Pushery\WireKit\Support\SlotContent::textOf($badgeText)
+        : \Pushery\WireKit\Support\SlotContent::textOf($label);
 
     // The other half of the target="_blank" rule: rel protects the opener, this
     // warns the person who cannot see the new tab appear. The house pattern puts
@@ -79,7 +92,10 @@
     }
 
     $classes = 'wk-bottom-nav-item '.WireKit::resolveClasses('bottom-nav.item', 'base', implode(' ', [
-        'relative flex flex-1 flex-col items-center justify-center gap-1',
+        // `min-w-0`: a tab takes its share of the bar and cuts a long label, rather than growing to
+        // the label's longest word and pushing the bar past its frame. Under a coarse pointer the
+        // touch row's 44px floor stands above it.
+        'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1',
         // Vertical padding gives the corner badge (-top-1.5 on the icon) room so it
         // does not break through the bar's top border line.
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-lg)]',
@@ -103,6 +119,9 @@
         // directives, and Js::from's \u escaping does not survive the CSP tokenizer —
         // a label with an umlaut would compare against mangled text and never match.
         $key = \Pushery\WireKit\Support\AlpinePayload::from($label);
+        // A caller's own `x-on:click.prevent` would win the merge below and drop the tab's; it
+        // goes in the other spelling, so both run (Support\CallerListeners).
+        $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click.prevent']);
         $attributes = $attributes->merge([
             'x-init' => 'if ('.($active ? 'true' : 'false').' && active === null) active = '.$key,
             'x-on:click.prevent' => 'active = '.$key,
@@ -119,23 +138,29 @@
          content that would otherwise have named the link. With no `label` prop this emitted
          exactly that, so the item became a nameless link rather than falling back to
          anything. Omitted entirely when there is nothing to say. --}}
-    @if(filled($accessibleName)) aria-label="{{ $accessibleName }}" @endif
+    @if(filled($accessibleName) && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ $accessibleName }}" @endif
     data-wk-bottom-nav-item
     data-active="{{ $active ? 'true' : 'false' }}"
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-touch-row', $classes]) }}
+    {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes])) }}
 >
     @if($icon)
         <span class="relative inline-flex" aria-hidden="true">
             <x-wirekit::icon :name="$icon" size="lg" />
-            @if($badge !== null && $badge !== '')
+            @if($badgeText !== null)
                 {{-- aria-hidden via the wrapper: the number is already in the
                      link's accessible name, and announcing it twice is worse
                      than not at all. --}}
-                <span data-wk-bottom-nav-badge class="absolute -end-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-danger)] px-1 text-[length:var(--text-wk-xs)] leading-4 text-[color:var(--color-wk-danger-fg)]">{{ $badge }}</span>
+                <span data-wk-bottom-nav-badge class="absolute -end-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-danger)] px-1 text-[length:var(--text-wk-xs)] leading-4 text-[color:var(--color-wk-danger-fg)]">{{ $badgeText }}</span>
             @endif
         </span>
     @endif
 
-    <span class="truncate">{{ $label }}</span>
+    @if(filled($label))
+        {{-- A label too long for its tab, a long word of another language for one, shows whole in
+             a tooltip on hover, on the link's keyboard focus and on a long press while it is cut. --}}
+        <x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="max-w-full">{{ $label }}</x-wirekit::text>
+    @else
+        <span class="truncate"></span>
+    @endif
 </a>

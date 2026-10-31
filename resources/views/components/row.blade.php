@@ -18,6 +18,10 @@
     // Opt-in, and it has to be: it changes the row's display model and asks the fields
     // inside it to render placeholder parts. Nothing renders differently until asked.
     'alignFields' => false,
+    // With `alignFields` and `wrap`, the narrowest a column of fields gets before the row starts
+    // another band of them: as many columns as fit at this width, each band lined up on its own
+    // controls. A CSS length; 14rem when unset. Without both of those props nothing reads it.
+    'min' => null, // @example "14rem" @example "18rem"
     'justify' => 'start',
     // Which spacing ladder `gap` names a rung on.
     //
@@ -64,6 +68,14 @@
     // `toolbar` wraps unconditionally, so there is no inconsistency to resolve there. `stack` is `flex-col`,
     // where wrapping means additional COLUMNS rather than additional rows, and `badge`'s
     // `wrap` is about a label breaking inside one badge — neither is this concept.
+    //
+    // `true`, `false` or `responsive`, the last in any case. Another word is reported
+    // (Support\StrictnessGate) and wraps as `true` does; a word such as `yes` or `0` reads as the
+    // switch it names.
+    if (is_string($wrap) && trim($wrap) !== '' && BooleanProp::orNull($wrap) === null && strtolower(trim($wrap)) !== 'responsive') {
+        $wrap = WireKit::validateProp('row', 'wrap', $wrap, ['true', 'false', 'responsive']);
+    }
+
     $wrapMode = is_string($wrap) && strtolower(trim($wrap)) === 'responsive'
         ? 'responsive'
         : (BooleanProp::from($wrap, false) ? 'always' : 'never');
@@ -109,7 +121,25 @@
         'evenly' => 'justify-evenly',
     };
 
-    $alignFields = BooleanProp::from($alignFields, false);
+    $alignFields = BooleanProp::from($alignFields, false, 'row', 'alignFields');
+
+    // Aligned AND wrapping: the fields wrap into bands of three shared tracks each, and every band
+    // lines up on its own controls (`.wk-form-row[data-wk-form-row-wrap]` in dist/wirekit.css).
+    // `responsive` is left out on purpose: below the breakpoint an aligned row stacks anyway, and
+    // above it `responsive` holds one line, which is what an aligned row already does.
+    $bandWrap = $alignFields && $wrapMode === 'always';
+
+    // A CSS length, and nothing else, because it is written into a style attribute; the same shape
+    // `grid` accepts for its `min`. Anything else is reported and the row keeps its 14rem.
+    $bandMin = null;
+
+    if ($bandWrap && $min !== null && trim((string) $min) !== '') {
+        if (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|%|vw|vmin|vmax)$/', trim((string) $min)) === 1) {
+            $bandMin = trim((string) $min);
+        } else {
+            WireKit::validateProp('row', 'min', (string) $min, ['a CSS length such as 14rem, 20ch, 280px']);
+        }
+    }
 
     $classes = WireKit::resolveClasses('row', 'base', implode(' ', array_filter([
         // `wk-form-row` replaces the flex model with a shared three-row grid, so the flex
@@ -133,6 +163,6 @@
     $as = \Pushery\WireKit\WireKit::tagName('row', (string) $as);
 @endphp
 
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip @if($bandWrap) data-wk-form-row-wrap @endif {{ $attributes->merge($bandMin !== null ? ['style' => '--wk-form-row-min: '.$bandMin.';'] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </{{ $as }}>

@@ -17,7 +17,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $close = BooleanProp::from($close, true);
+    $close = BooleanProp::from($close, true, 'drawer.header', 'close');
 
     // Header classes — top section with title text and bottom border.
     // When the auto close-X is active, the header becomes a flex row so the
@@ -70,7 +70,7 @@
      with `x-show="dismissible"` so non-dismissible drawers stay escape-free.
      Opt out via `:close="false"` when you want full control over the
      header layout. --}}
-<div {{ $attributes->class([$classes]) }}>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{-- Title wrapper — bears the aria-labelledby target ID. --}}
     <div
         data-wk-drawer-title

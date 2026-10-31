@@ -155,27 +155,12 @@ final class OptionMedia
     }
 
     /**
-     * The first letter of the first and the last word, so "Ada Lovelace" is "AL" and "Ada" is
-     * "A". A word's first LETTER or digit rather than its first character, so "(Ada) Lovelace"
-     * does not become a bracket.
+     * The initials of an option's label, read as every person the kit draws is read
+     * (Support\Initials), and an empty string where that gives none.
      */
     public static function initialsOf(string $label): string
     {
-        $letters = [];
-
-        foreach (preg_split('/\s+/u', trim($label)) ?: [] as $word) {
-            if (preg_match('/[\p{L}\p{N}]/u', $word, $match) === 1) {
-                $letters[] = $match[0];
-            }
-        }
-
-        if ($letters === []) {
-            return '';
-        }
-
-        $picked = count($letters) > 1 ? $letters[0].$letters[count($letters) - 1] : $letters[0];
-
-        return mb_strtoupper($picked);
+        return Initials::from($label) ?? '';
     }
 
     /**

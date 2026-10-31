@@ -42,9 +42,9 @@ final class TablistStyles
             $vertical && $variant === 'bordered' => 'flex flex-col border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden',
             $vertical => 'flex flex-col items-stretch border-e-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
             // Horizontal (default).
-            $variant === 'pills' => 'inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)] max-w-full overflow-x-auto overflow-y-hidden',
-            $variant === 'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
-            default => 'inline-flex items-center gap-2 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] max-w-full overflow-x-auto overflow-y-hidden',
+            $variant === 'pills' => 'relative inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)] max-w-full overflow-x-auto overflow-y-hidden',
+            $variant === 'bordered' => 'relative inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
+            default => 'relative inline-flex items-center gap-2 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] max-w-full overflow-x-auto overflow-y-hidden',
         };
     }
 
@@ -79,12 +79,20 @@ final class TablistStyles
      * Read the `wrap` prop of `tabs` and `tabs.list`: off, at every width, or from a breakpoint.
      *
      * A bare `wrap` arrives as `true` and an unbound `wrap="false"` as a string, so both
-     * spellings of the booleans are read as booleans; anything else names a breakpoint.
+     * spellings of the booleans are read as booleans; anything else names a breakpoint. A list or
+     * an object is neither: it is reported, and the bar keeps to one line.
      *
+     * @param  array<array-key, mixed>|object|bool|int|string|null  $wrap  whatever the tag carried
      * @param  string  $component  the component whose prop it is, for the error message
      */
-    public static function wrapValue(bool|int|string|null $wrap, string $component): bool|string
+    public static function wrapValue(array|object|bool|int|string|null $wrap, string $component): bool|string
     {
+        if (is_array($wrap) || is_object($wrap)) {
+            StrictnessGate::reject($component, 'wrap', is_array($wrap) ? 'array' : class_basename($wrap), 'a switch or a width such as "md", not a list or an object', '');
+
+            return false;
+        }
+
         if ($wrap === null || $wrap === false || $wrap === 0 || $wrap === 'false' || $wrap === '0') {
             return false;
         }

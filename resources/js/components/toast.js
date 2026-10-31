@@ -1,3 +1,5 @@
+import { timerDelay } from '../utils/timer-delay.js';
+
 /**
  * WireKit Toast Alpine Component.
  *
@@ -218,7 +220,7 @@ export default function wirekitToast(config = {}) {
 
             // Auto-dismiss after duration (0 = no auto-dismiss)
             if (duration > 0) {
-                toast._timer = setTimeout(() => this.remove(id), duration);
+                toast._timer = setTimeout(() => this.remove(id), timerDelay(duration));
             }
 
             this.toasts.push(toast);
@@ -477,7 +479,7 @@ export default function wirekitToast(config = {}) {
             if (toast && toast._paused && toast._remaining > 0) {
                 toast._paused = false;
                 toast._started = Date.now();
-                toast._timer = setTimeout(() => this.remove(id), toast._remaining);
+                toast._timer = setTimeout(() => this.remove(id), timerDelay(toast._remaining));
             }
         },
 

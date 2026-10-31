@@ -16,8 +16,10 @@
      the question closes, and the overlay closes as the dismissal the reader started.
 
      A child of the root, not of the panel: the panel's focus trap takes in a teleported panel
-     whose template sits inside it, and the question's has a trap of its own. --}}
-<x-wirekit::alert-dialog data-wk-discard-question :lock-scroll="$lockScroll" :describedby="false" :scope="$scope">
+     whose template sits inside it, and the question's has a trap of its own.
+     Without the confirm shortcut: a chord the reader may still hold from the overlay below must not
+     discard what they typed. --}}
+<x-wirekit::alert-dialog data-wk-discard-question :lock-scroll="$lockScroll" :describedby="false" :confirm-shortcut="false" :scope="$scope">
     <x-wirekit::alert-dialog.title>{{ $question }}</x-wirekit::alert-dialog.title>
     <x-wirekit::alert-dialog.actions>
         <x-wirekit::alert-dialog.cancel>

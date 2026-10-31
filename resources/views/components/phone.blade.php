@@ -31,7 +31,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\AlpinePayload;
@@ -42,21 +42,28 @@
 
     // `@aware` does not take its key out of the attribute bag, so the spelling written on the
     // tag would render as a stray HTML attribute. Both spellings, as in field.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the control —
     // the opposite of what the call site says, with no error either way.
-    $hideLabel = BooleanProp::from($hideLabel, false);
-    $required = BooleanProp::from($required, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $readonly = BooleanProp::from($readonly, false);
+    $hideLabel = BooleanProp::from($hideLabel, false, 'phone', 'hideLabel');
+    $required = BooleanProp::from($required, false, 'phone', 'required');
+    $disabled = BooleanProp::from($disabled, false, 'phone', 'disabled');
+    $readonly = BooleanProp::from($readonly, false, 'phone', 'readonly');
 
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+    // A list where the field takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and left off the field (Support\FieldValue).
+    $attributes = \Pushery\WireKit\Support\FieldValue::withoutLists($attributes, 'phone');
 
     WireKit::warnUnknownProps('phone', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('phone', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -68,17 +75,32 @@
     [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 
     $id = DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'phone-');
+    // Inside a field the label points at the id this control got: a second field with the same
+    // name on the page gets `-2`, and pointed at the name its label named the first control.
+    if ($wkField instanceof \Pushery\WireKit\Support\FieldControl) {
+        $wkField->follow($id);
+    }
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     $attributes = $attributes->except(['id', 'name']);
 
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // The offered set. An unknown code in `countries` is dropped rather than rendered as an
     // empty row: a picker line with no dialing code behind it cannot do anything. A Collection
     // is read as the codes it holds; cast with `(array)`, an object becomes its properties.
+    // A single code written as text, `countries="DE"`, is a list of one through the cast below,
+    // so neither list reports a text.
     $countries = \Pushery\WireKit\Support\ListProp::from($countries);
     $countryOrder = \Pushery\WireKit\Support\ListProp::from($countryOrder);
     $offered = $countries === null
@@ -91,7 +113,7 @@
     // Names and sort order come from the reader's locale through intl, the same source and the
     // same reasoning as the country-picker recipe: a byte-wise sort puts every accented name
     // after Z, so Österreich would follow Zypern in German.
-    $locale = app()->getLocale();
+    $locale = \Pushery\WireKit\Support\IcuLocale::usable();
     $named = [];
 
     foreach ($offered as $code) {
@@ -169,14 +191,25 @@
     $value = (string) ($attributes->get('value') ?? '');
     $attributes = $attributes->except(['value']);
 
+    // Where the field starts, worked out from the value the way the factory works it out when it
+    // starts: a stored E.164 number splits into its country and the digits after the dialing
+    // code, one no offered country dials stays as it is, and anything else leaves the box empty.
+    // The box shows the same before the script runs, and a page whose script never runs sends
+    // the number it shows.
+    $split = DialingCodes::split($value, $start, array_keys($ordered));
+    $startNational = $split['national'] ?? (str_starts_with($value, '+') ? $value : '');
+    $startCountry = $split['country'] ?? $start;
+
     // AlpinePayload rather than json_encode: a plain encode escapes non-ASCII as \uXXXX, and
     // Alpine's CSP tokenizer knows only a handful of escapes — it drops the backslash and keeps
     // the letters, so a country name would arrive mangled with nothing thrown and nothing logged.
     // This payload carries no names, and stays right if it ever does.
+    // The number is not in the config. It travels on `data-wk-server-value`, so the expression is
+    // the same for every number: a Livewire morph that changed it would start the field again, and
+    // the answer to a `wire:model.live` change would put back the digits of the request.
     $config = AlpinePayload::from([
         'country' => $start,
         'regions' => $regions,
-        'value' => $value,
     ]);
 
     // The field SHAPE, spelled out because `wk-field` is a marker rather than a style: it carries
@@ -229,6 +262,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // A caller's `x-ref` belongs to the caller's component. The field sits in a root of ours,
@@ -251,13 +291,13 @@
     // hear "Phone number" twice, with only the role and the value telling the two controls
     // apart, and without a label it would have no name at all.
     $countryName = filled($label)
-        ? __('wirekit:::label, country', ['label' => $label])
+        ? __('wirekit:::label, country', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($label)])
         : __('wirekit::Country');
 @endphp
 
-<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif x-data="wirekitPhone({{ $config }})">
+<div {{ $outerAttributes }} class="space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif data-wk-server-value="{{ $value }}" x-data="wirekitPhone({{ $config }})">
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- TWO controls, ONE value, and that is why this is a group rather than a field with an
@@ -268,7 +308,7 @@
     {{-- The group carries the hint or the error too, as the range slider's does: the country
          control is part of the value and has no description of its own, so a reader who tabs
          back to it hears the message on the way into the group. --}}
-    <div role="group" @if($label) aria-label="{{ $label }}" @endif @if($ownDescribedBy !== '') aria-describedby="{{ $ownDescribedBy }}" @endif class="{{ $groupClasses }}">
+    <div role="group" @if($label) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif @if($ownDescribedBy !== '') aria-describedby="{{ $ownDescribedBy }}" @endif class="{{ $groupClasses }}">
         {{-- The country control is a combobox, which is what buys the flag: an <option> carries
              no image, so a native select could never show one. What it costs is named rather
              than glossed over — the phone's own country wheel, and with it the platform keyboard
@@ -301,22 +341,29 @@
             :class="$selectClasses"
         />
 
+        {{-- Without a script the box is what the form sends, as `name[number]` beside the
+             `name[country]` below, because the E.164 value takes the script to assemble.
+             Alpine takes the name away when it starts, so with a script the form sends E.164
+             alone. Support\DialingCodes::fromField() reads either shape. --}}
         <input
             type="tel"
             id="{{ $id }}"
+            @if($name !== '') name="{{ $name }}[number]" @endif
+            x-bind:name="null"
+            value="{{ $startNational }}"
             x-ref="number"
             x-model="national"
             x-on:input="onInput($refs.bound)"
             @unless($attributes->has('autocomplete')) autocomplete="tel" @endunless
             @unless($attributes->has('inputmode')) inputmode="tel" @endunless
-            @if($placeholder) placeholder="{{ $placeholder }}" @endif
-            @if($required) required aria-required="true" @endif
+            @if($placeholder) placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}" @endif
+            @if($required) required aria-required="true" @elseif($fieldRequired) aria-required="true" @endif
             @disabled($disabled)
             @readonly($readonly)
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-            {{ $attributes->except('type')->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(['wk-field', 'wk-touch-target', $numberClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->whereDoesntStartWith('wire:model')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', 'wk-touch-target', $numberClasses])) }}
         />
 
         {{-- What the server receives: E.164, assembled from the country and the digits. It is a
@@ -330,13 +377,20 @@
              over one element, and the property would receive `0151 2345 6789` where the whole
              component exists to make it `+4915123456789`.
 
-             The STATIC value is not decoration. Without it, a page whose script did not run
-             submits an empty field where the reader can see a number on screen, and nothing
-             reports it. It comes from the same `$value` the factory is initialized with, so the
-             two cannot disagree: before Alpine binds, the field submits what it was loaded with;
-             after, it submits what the reader built. --}}
-        {{-- A disabled field is left out of the form data, as a native one is. --}}
-        <input type="hidden" x-ref="bound" name="{{ $name }}" value="{{ $value }}" x-bind:value="e164" @if($disabled) disabled @endif {{ $attributes->except('type')->whereStartsWith('wire:model') }} @if($formOwner) form="{{ $formOwner }}" @endif />
+             It waits for the script. Until Alpine starts it is `disabled` and out of the form data,
+             so a page whose script never runs sends the two parts a reader can edit rather than
+             the number it was loaded with; the reader's edit would otherwise be lost under it, with
+             nothing to report it. The static value is that loaded number, the same `$value` the
+             factory starts from, for anything that reads the field before Alpine binds it. A
+             disabled field stays disabled, as a native one does. --}}
+        <input type="hidden" x-ref="bound" @if($name !== '') name="{{ $name }}" @endif value="{{ $value }}" x-bind:value="e164" disabled x-bind:disabled="{{ $disabled ? 'true' : 'false' }}" {{ $attributes->except('type')->whereStartsWith('wire:model') }} @if($formOwner) form="{{ $formOwner }}" @endif />
+
+        {{-- The country the number box above belongs to, for a page without a script: the field
+             stands on it and cannot leave it without one. A browser running scripts never reads
+             what `noscript` holds, so there the country goes into the form inside E.164 alone.
+             `hidden` keeps the element out of the row without a script as well, where it would
+             otherwise take a gap beside the box; a field is sent whatever it shows. --}}
+        <noscript hidden><input type="hidden" @if($name !== '') name="{{ $name }}[country]" @endif value="{{ $startCountry }}" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif /></noscript>
     </div>
 
     @if($hasError && $errorMessage)

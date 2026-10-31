@@ -7,7 +7,9 @@
  * `@tiptap/starter-kit`) and exposes a `window.wirekitEditor(config)` factory
  * that returns an `Editor` instance (see the docs page). The legacy factory name
  * `window.tiptapEditor` is still accepted as a deprecated alias — the resolution
- * order lives in `_resolveFactory()`. A factory that is not on the page yet is
+ * order lives in `_resolveFactory()`. An application with several schemas registers
+ * one factory per name in `window.wirekitEditors`, and a field that names its engine
+ * (`config.engine`) takes that one and no other. A factory that is not on the page yet is
  * awaited the way the chart adapters await their library; when none has arrived
  * by the end of the grace period we fall back to a plain <textarea> + a console
  * error, so a form is never silently broken.
@@ -42,6 +44,9 @@ import { hrefScheme } from '../utils/safe-href.js';
 const TOOLBAR_COMMAND = 'button:not([disabled])';
 
 export default function wirekitEditor(config = {}) {
+    // The engine this field names, or null for the one `window.wirekitEditor` holds.
+    const engine = typeof config.engine === 'string' && config.engine.trim() !== '' ? config.engine.trim() : null;
+
     return {
         // The browser prompt a reader answers when inserting a link. Server-translated;
         // English fallback for a directly-constructed factory.
@@ -468,10 +473,11 @@ export default function wirekitEditor(config = {}) {
 
         /**
          * The serialized document the editor starts from. The rendered component writes it into
-         * its form field only, encoded so the browser hands back exactly those bytes whatever echo
+         * its form field, encoded so the browser hands back exactly those bytes whatever echo
          * format the application uses; a copy in the config would be decoded once by the page, and
-         * a decoded reference changes what markup or JSON text says. `config.value` remains for a
-         * factory built by hand without a field.
+         * a decoded reference changes what markup or JSON text says. An editor that cannot be
+         * edited has no form field and carries it in `data-wk-editor-document` on its root, written
+         * the same way. `config.value` remains for a factory built by hand with neither.
          */
         _initialValue() {
             if (this._initialSource !== undefined) {
@@ -480,7 +486,13 @@ export default function wirekitEditor(config = {}) {
 
             const field = this.$refs.input;
 
-            return field && typeof field.value === 'string' ? field.value : String(config.value ?? '');
+            if (field && typeof field.value === 'string') {
+                return field.value;
+            }
+
+            const carried = this.$root?.getAttribute?.('data-wk-editor-document');
+
+            return typeof carried === 'string' ? carried : String(config.value ?? '');
         },
 
         /**
@@ -921,10 +933,19 @@ export default function wirekitEditor(config = {}) {
         // `window` — `wirekitPosition`, `Alpine` in the Alpine build, and the one-shot
         // `__wirekit*` diagnostic flags — but none of them is `wirekitEditor`, so this
         // lookup only ever finds a factory the developer defined.)
-        // Returns the factory function, or null when neither global is callable.
+        // A field that names its engine takes `window.wirekitEditors[engine]` and nothing
+        // else: falling back to `window.wirekitEditor` would open it in whichever engine an
+        // earlier page registered there, which reads the document into its own schema and
+        // drops the rest on the next save. Until the named one is there it waits for it.
+        // Returns the factory function, or null when none is callable.
         _resolveFactory() {
             if (typeof window === 'undefined') {
                 return null;
+            }
+            if (engine !== null) {
+                const named = window.wirekitEditors?.[engine];
+
+                return typeof named === 'function' ? named : null;
             }
             if (typeof window.wirekitEditor === 'function') {
                 return window.wirekitEditor;
@@ -957,7 +978,19 @@ export default function wirekitEditor(config = {}) {
             // textarea-fallback DOM work below still runs for EVERY editor — each
             // instance needs its own field un-hidden — so the dedup wraps the log
             // only, never the fallback itself.
-            if (typeof window !== 'undefined') {
+            if (typeof window !== 'undefined' && engine !== null) {
+                // A named engine that never arrived: the hint names it, once per name.
+                window.__wirekit_editor_engines_missing_warned__ ??= {};
+                if (!window.__wirekit_editor_engines_missing_warned__[engine]) {
+                    window.__wirekit_editor_engines_missing_warned__[engine] = true;
+
+                    console.error(
+                        `[wirekit] editor: no editor factory registered as window.wirekitEditors["${engine}"] — `
+                        + 'falling back to a plain textarea. Register that factory on the pages with this '
+                        + 'field (see https://docs.wirekit.app/components/editor#several-engines).'
+                    );
+                }
+            } else if (typeof window !== 'undefined') {
                 window.__wirekit_editor_missing_warned__ ??= false;
                 if (!window.__wirekit_editor_missing_warned__) {
                     window.__wirekit_editor_missing_warned__ = true;

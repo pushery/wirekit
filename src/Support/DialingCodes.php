@@ -207,9 +207,11 @@ final class DialingCodes
      *
      *   1. Everything that is not a digit is dropped. Readers type spaces, slashes, dashes and
      *      brackets, and none of them survive into E.164.
-     *   2. A leading trunk prefix is removed where the region HAS one — see TRUNK_PREFIXES for
+     *   2. Digits that start with `00`, the international prefix, name their own country, and the
+     *      rest of this list runs for that country. On the North American plan `011` does too.
+     *   3. A leading trunk prefix is removed where the region HAS one — see TRUNK_PREFIXES for
      *      why that is a lookup rather than "strip the zero".
-     *   3. The dialing code goes in front, behind a plus.
+     *   4. The dialing code goes in front, behind a plus.
      *
      * What it does NOT do is decide whether the result is a real, reachable number. It cannot:
      * that needs per-region length and range data this package does not carry. A field that
@@ -234,6 +236,25 @@ final class DialingCodes
             return null;
         }
 
+        // `00` is the international prefix most of the world dials, and no national number starts
+        // with it, so a number typed with it names its own country as a plus does: `0043 1 234567`
+        // in a field that stands on Germany is a number in Austria. The North American plan, the
+        // regions with the code 1, dials abroad with `011`, and none of its national numbers starts
+        // with a zero, so there that prefix names a country too. Either is read with the named
+        // country's own trunk prefix, so `0043 (0)1 234567` comes out the same, and digits that
+        // name no country bind nothing rather than a number in the wrong one.
+        $international = match (true) {
+            str_starts_with($digits, '00') => substr($digits, 2),
+            $code === 1 && str_starts_with($digits, '011') => substr($digits, 3),
+            default => null,
+        };
+
+        if ($international !== null) {
+            $parts = self::split('+'.$international, $country);
+
+            return $parts === null ? null : self::toE164($parts['country'], $parts['national']);
+        }
+
         $trunk = self::trunkPrefix($country);
 
         if ($trunk !== null && str_starts_with($digits, $trunk)) {
@@ -241,5 +262,89 @@ final class DialingCodes
         }
 
         return $digits === '' ? null : '+'.$code.$digits;
+    }
+
+    /**
+     * An E.164 value split into the region it belongs to and the digits after its dialing code,
+     * the way the phone field shows a stored number: `+4915123456789` is Germany and
+     * `15123456789`.
+     *
+     * Dialing codes are one to three digits and several regions share one — the United States,
+     * Canada and the Caribbean are all 1 — so the longest code that matches wins, and among the
+     * regions sharing it `$prefer` is kept when it is one of them, otherwise the first of `$among`.
+     * `$among` narrows the regions considered, in its order; null considers every region this
+     * table carries. The field's script splits a value the same way when it starts.
+     *
+     * Null when the value does not start with a plus, or when no region has its dialing code.
+     *
+     * @param  list<string>|null  $among
+     * @return array{country: string, national: string}|null
+     */
+    public static function split(string $value, ?string $prefer = null, ?array $among = null): ?array
+    {
+        if (! str_starts_with($value, '+')) {
+            return null;
+        }
+
+        $digits = preg_replace('/\\D+/', '', $value) ?? '';
+        $prefer = $prefer === null ? null : strtoupper(trim($prefer));
+        $regions = $among === null
+            ? array_keys(self::CODES)
+            : array_values(array_filter(
+                array_map(static fn (string $region): string => strtoupper(trim($region)), $among),
+                static fn (string $region): bool => isset(self::CODES[$region])
+            ));
+
+        for ($length = 3; $length >= 1; $length--) {
+            if (strlen($digits) < $length) {
+                continue;
+            }
+
+            $code = substr($digits, 0, $length);
+            $matching = array_values(array_filter($regions, static fn (string $region): bool => (string) self::CODES[$region] === $code));
+
+            if ($matching !== []) {
+                return [
+                    'country' => in_array($prefer, $matching, true) ? (string) $prefer : $matching[0],
+                    'national' => substr($digits, $length),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The E.164 value a phone field sent, whether its script ran or not.
+     *
+     * With its script the field sends E.164 under its name, and that comes back as it was sent.
+     * Without it the field cannot assemble one, so it sends the two parts under the same name: the
+     * country it stood on as `name[country]` and the number as typed as `name[number]`. They are
+     * read the way the field reads them while somebody types: a number that starts with a plus, or
+     * with `00` (`011` on the North American plan), names its own country, and any other number is
+     * one of the country beside it.
+     *
+     * Null for an empty field, and for parts no number can be made of.
+     *
+     * @param  string|array<array-key, mixed>|null  $submitted  what the request holds under the field's name
+     */
+    public static function fromField(string|array|null $submitted): ?string
+    {
+        if (! is_array($submitted)) {
+            $submitted = trim((string) $submitted);
+
+            return $submitted === '' ? null : $submitted;
+        }
+
+        $country = is_string($submitted['country'] ?? null) ? $submitted['country'] : '';
+        $number = is_string($submitted['number'] ?? null) ? trim($submitted['number']) : '';
+
+        if (str_starts_with($number, '+')) {
+            $parts = self::split($number, $country);
+
+            return $parts === null ? null : self::toE164($parts['country'], $parts['national']);
+        }
+
+        return self::toE164($country, $number);
     }
 }

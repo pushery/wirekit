@@ -39,16 +39,24 @@
     }
 
     $placement = $placement ?? config('wirekit.components.scope-switcher.placement', 'bottom-start');
+    // Checked here, under this component's name, so a word the popover cannot place is reported
+    // where it was written (Support\FloatingPlacement); the popover gets the word it can place.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('scope-switcher', 'placement', (string) ($placement ?: 'bottom-start'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'bottom-start');
     $width = $width ?? config('wirekit.components.scope-switcher.width', '20rem');
     $listMaxHeight = $listMaxHeight ?? config('wirekit.components.scope-switcher.list_max_height', '22rem');
+    // One value each, so a `;` in them carries no declaration of its own (Support\CssValue).
+    $width = \Pushery\WireKit\Support\CssValue::prop($width, 'scope-switcher', 'width', '20rem');
+    $listMaxHeight = \Pushery\WireKit\Support\CssValue::prop($listMaxHeight, 'scope-switcher', 'listMaxHeight', '22rem');
     $offset = (int) config('wirekit.components.scope-switcher.offset', 8);
     $prefetch = BooleanProp::from(config('wirekit.components.scope-switcher.prefetch_on_hover', true), true);
 
     $id = DomId::unique($name, 'scope-switcher-');
 
-    $labelText = $label !== '' ? $label : __('wirekit::Scope');
+    $labelText = filled($label) ? $label : __('wirekit::Scope');
     $dialogLabel = __('wirekit::Switch :label', ['label' => $labelText]);
     $searchLabel = $searchPlaceholder ?? __('wirekit::Search :label…', ['label' => $labelText]);
+    // The search field's name. A blank placeholder is no name, so the field keeps the default one.
+    $searchName = \Pushery\WireKit\Support\BlankName::first($searchPlaceholder, __('wirekit::Search :label…', ['label' => $labelText]));
     $emptyLabel = $emptyText ?? __('wirekit::No results.');
 
     // Translated plural forms for the result counter, chosen in the browser because the
@@ -56,7 +64,7 @@
     $resultPhrases = \Pushery\WireKit\Support\AlpinePayload::from(
         \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count result|[2,*] :count results')
     );
-    $resultLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
+    $resultLocale = \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag());
 
     // Fold accents ONCE, on the server, so a reader typing `munchen` finds `München`.
     // Per keystroke in the browser this would be the same work repeated for every character
@@ -78,8 +86,14 @@
         if (class_exists(\Normalizer::class)) {
             $decomposed = \Normalizer::normalize($value, \Normalizer::FORM_D);
 
+            // A mark stays where it makes another letter (カ and ガ, कमल and कोमल), the same
+            // scripts as `foldForSearch()` in the browser, which folds the query this text meets.
             if (is_string($decomposed)) {
-                $value = (string) preg_replace('/\p{M}/u', '', $decomposed);
+                $value = (string) preg_replace_callback(
+                    '/(\P{M})(\p{M}+)/u',
+                    static fn (array $mark): string => preg_match('/[\p{Devanagari}\p{Bengali}\p{Gurmukhi}\p{Gujarati}\p{Oriya}\p{Tamil}\p{Telugu}\p{Kannada}\p{Malayalam}\p{Sinhala}\p{Thai}\p{Lao}\p{Tibetan}\p{Myanmar}\p{Khmer}\p{Hiragana}\p{Katakana}]/u', $mark[1]) === 1 ? $mark[0] : $mark[1],
+                    $decomposed,
+                );
             }
         }
 
@@ -89,7 +103,7 @@
     $seen = [];
     $rows = [];
 
-    foreach (\Pushery\WireKit\Support\ListProp::records($items) as $item) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($items, 'scope-switcher', 'items') as $item) {
         if (! is_array($item) || ! isset($item['key'], $item['label'], $item['url'])) {
             throw new InvalidArgumentException(
                 'wirekit::scope-switcher: every item needs at least `key`, `label` and `url`.'
@@ -123,6 +137,10 @@
 
         $rows[] = [
             'key' => $key,
+            // The key in the form an id can hold (DomId::valid()): `new york` makes
+            // `…-option-new-york`, and two keys that read alike then (`a b`, `a-b`) keep apart.
+            // The script reads the id off the row, so the two never have to agree on a spelling.
+            'optionId' => DomId::distinct($id.'-option-'.$key),
             'label' => (string) $item['label'],
             'url' => $rowUrl,
             // Whether Livewire may turn the click into a navigation. Livewire leaves to the browser
@@ -132,7 +150,9 @@
             // focus. A fragment stays with the browser, and with `onItemClick`.
             'navigates' => $rowUrl !== '' && ! str_starts_with($rowUrl, '#'),
             'icon' => $item['icon'] ?? null,
-            'image' => $item['image'] ?? null,
+            // An empty address, or one of white space, is no image, so the row shows its icon or
+            // nothing rather than the sign of a broken image (Support\UrlProp::source()).
+            'image' => is_string($item['image'] ?? null) || ($item['image'] ?? null) instanceof \Stringable ? \Pushery\WireKit\Support\UrlProp::source($item['image']) : null,
             'status' => $status,
             'meta' => $item['meta'] ?? null,
             'group' => $item['group'] ?? null,
@@ -307,7 +327,7 @@
                 aria-expanded="true"
                 aria-controls="{{ $id }}-listbox"
                 x-bind:aria-activedescendant="activeId()"
-                aria-label="{{ $searchLabel }}"
+                aria-label="{{ $searchName }}"
                 placeholder="{{ $searchLabel }}"
                 autocomplete="off"
                 spellcheck="false"
@@ -334,7 +354,7 @@
             tabindex="-1"
             id="{{ $id }}-listbox"
             aria-label="{{ $labelText }}"
-            class="wk-scrollbar overflow-y-auto py-[var(--padding-wk-y-sm)]"
+            class="wk-scrollbar relative overflow-y-auto py-[var(--padding-wk-y-sm)]"
             style="max-height: {{ $listMaxHeight }}; overscroll-behavior: contain;"
         >
             {{-- The observer needs a target with real height — a zero-height element is not
@@ -361,7 +381,7 @@
                     <a data-wk-prose-skip
                         @if($row['url'] !== '') href="{{ $row['url'] }}" @endif
                         role="option"
-                        id="{{ $id }}-option-{{ $row['key'] }}"
+                        id="{{ $row['optionId'] }}"
                         wire:key="{{ $id }}-{{ $row['key'] }}"
                         {{-- Not on the current row, and a preventDefault cannot take its
                              place. Livewire's navigate binds its own click and mousedown
@@ -483,7 +503,7 @@
                          one element are decided by the stylesheet's order, and that put the row's
                          over the accent. Read from the resolved classes, so a personalized item
                          block loses its text color here too. --}}
-                    class="{{ \Pushery\WireKit\Support\UtilityClasses::without($itemClasses, \Pushery\WireKit\Support\UtilityClasses::TEXT_COLOR) }} text-[color:var(--color-wk-accent-content)]"
+                    class="{{ \Pushery\WireKit\Support\UtilityClasses::without($itemClasses, \Pushery\WireKit\Support\UtilityClasses::TEXT_COLOR) }} text-[color:var(--color-wk-accent-content)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)]"
                 >
                     <x-wirekit::icon :name="$create['icon'] ?? 'plus'" aria-hidden="true" />
                     {{ $create['label'] }}

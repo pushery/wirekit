@@ -13,6 +13,7 @@
  *                                            because this file has no locale
  */
 import { strengthBarColor, strengthBarStyle } from '../utils/strength.js';
+import { onFormReset } from '../utils/form-reset.js';
 
 export default function wirekitPasswordInput(config = {}) {
     return {
@@ -30,6 +31,33 @@ export default function wirekitPasswordInput(config = {}) {
         password: '',
 
         strengthMeter: config.strengthMeter === true,
+
+        // The listener that reads the field again after its form is reset (utils/form-reset.js),
+        // released in destroy(). Only with the meter, the one thing that mirrors the field.
+        _stopFormReset: null,
+
+        /**
+         * Follow a form reset. The browser empties the field to its default and fires no
+         * `input`, so `x-model` never hears of it and the meter would go on rating the password
+         * that was typed.
+         */
+        init() {
+            if (this.strengthMeter) {
+                this._stopFormReset = onFormReset(this.$root, () => this.$refs?.field, () => this._restore());
+            }
+        },
+
+        destroy() {
+            this._stopFormReset?.();
+            this._stopFormReset = null;
+        },
+
+        /** What the field holds after a form reset, read back into the meter's copy. */
+        _restore() {
+            const field = this.$refs?.field;
+
+            this.password = field && typeof field.value === 'string' ? field.value : '';
+        },
 
         /**
          * The four rung names, weakest first.

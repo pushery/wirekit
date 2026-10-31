@@ -9,6 +9,9 @@
     // page content, where outer chrome only competes with the section around it.
     'variant' => config('wirekit.components.faq.variant', 'flush'),
     'size' => config('wirekit.components.faq.size', 'lg'),
+    // The heading level of the questions, 1 to 6, passed to every question as `variant` and `size`
+    // are. An FAQ right under the page's h1 takes 2, one under an h3 takes 4.
+    'level' => 3,
     // Let several answers stand open at once. Default is one at a time, which is
     // how people read an FAQ: they are hunting one answer, not comparing.
     //
@@ -47,7 +50,7 @@
     use Pushery\WireKit\WireKit;
 
     // `findable="false"` on an unbound tag is the string "false", which is truthy.
-    $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true));
+    $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true), 'faq', 'findable');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -59,9 +62,9 @@
     // developer reaches for when a page carries a second FAQ and must not emit two
     // competing FAQPage nodes, and the page renders normally either way, so
     // nothing would surface the mistake. Both spellings agree.
-    $schema = BooleanProp::from($schema, true);
-    $multiple = BooleanProp::from($multiple);
-    $plainText = BooleanProp::from($plainText);
+    $schema = BooleanProp::from($schema, true, 'faq', 'schema');
+    $multiple = BooleanProp::from($multiple, false, 'faq', 'multiple');
+    $plainText = BooleanProp::from($plainText, false, 'faq', 'plainText');
 
     // The children have already rendered by the time this body runs, so every
     // faq-item has pushed itself. Draining here — rather than reading — is what
@@ -84,17 +87,18 @@
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
-<div data-wk-faq {{ $attributes->class([$classes]) }}>
+<div data-wk-faq {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     <x-wirekit::accordion
         :variant="$variant"
         :size="$size"
         :mode="$multiple ? 'multiple' : 'single'"
         :findable="$findable"
+        :level="$level"
         {{-- `animate` is not forwarded here. `accordion.item` reads it through `@aware`,
              which walks the ancestor components until it finds the name — and this component
              is one of them, so the value arrives whether the accordion repeats it or not —
              and normalizes it itself, so an unbound `animate="false"` is false there. --}}
-        :aria-label="$callerLabelledBy === null ? ($callerLabel ?? $label) : null"
+        :aria-label="$callerLabelledBy === null ? ($callerLabel ?? ($label !== null ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null)) : null"
         :aria-labelledby="$callerLabelledBy"
     >
         {{ $slot }}

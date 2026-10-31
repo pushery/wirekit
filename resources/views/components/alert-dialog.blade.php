@@ -30,6 +30,11 @@
     // is typed. It fires nothing and closes nothing, so swapping a hand-written
     // `x-on:click="close()"` for it removes the close.
     'closeOnConfirm' => config('wirekit.components.alert-dialog.close-on-confirm', false),
+    // Whether ⌘↵ or Ctrl+Enter presses the confirm control while the dialog is open, from a field as
+    // well: the control a page marks with `data-wk-dialog-primary`, else the one inside
+    // `alert-dialog.confirm`. Focus stays on Cancel, so a plain Enter approves nothing, and a
+    // control held back by an unmet phrase is not pressed.
+    'confirmShortcut' => config('wirekit.components.alert-dialog.confirm-shortcut', true),
     // The exact string a developer must type before `alert-dialog.confirm` will fire —
     // the brake in front of an action nobody can undo. Unset (the default), nothing about
     // this component changes: no field renders and the confirm control is never held back.
@@ -45,10 +50,10 @@
     // the title would have bound at runtime, and a caller `aria-label` never reaches the
     // element that carries the role. WCAG 2.1 4.1.2, Level A.
     'label' => null,
-    // `false` drops `aria-describedby` for an alert-dialog composed without
-    // `alert-dialog.description`, where the attribute otherwise ships a permanently
-    // unresolvable reference. Default `null` keeps the documented behavior, so nothing
-    // that composes the description changes.
+    // Unset, the dialog points `aria-describedby` at its description when its slot holds an
+    // `alert-dialog.description`, the one element that carries the id, and at nothing otherwise.
+    // `false` drops the reference even then; `true` keeps it without one, for a description that
+    // arrives after this render.
     //
     // Read through BooleanProp below: `describedby="false"` compiles to the STRING
     // "false", which is not `false` and is truthy besides, so a bare `!== false` would
@@ -72,18 +77,28 @@
     // the only reason the coverage guard did not see it. All three reads are truth tests
     // (the Alpine seed and the two backdrop handlers), so the string turned every one of
     // them back on and a destructive-confirmation dialog dismissed on a backdrop click.
-    $dismissible = BooleanProp::from($dismissible, false);
-    $lockScroll = BooleanProp::from($lockScroll, true);
+    $dismissible = BooleanProp::from($dismissible, false, 'alert-dialog', 'dismissible');
+    $lockScroll = BooleanProp::from($lockScroll, true, 'alert-dialog', 'lockScroll');
     // Same reason as `dismissible` above: an unbound `close-on-confirm="false"` is the string
     // 'false', which is truthy, so the dialog would have kept closing on confirm for a caller
     // who wrote the opposite.
-    $closeOnConfirm = BooleanProp::from($closeOnConfirm, config('wirekit.components.alert-dialog.close-on-confirm', false));
+    $closeOnConfirm = BooleanProp::from($closeOnConfirm, config('wirekit.components.alert-dialog.close-on-confirm', false), 'alert-dialog', 'closeOnConfirm');
+    $confirmShortcut = BooleanProp::from($confirmShortcut, true, 'alert-dialog', 'confirmShortcut');
+
+    // `close-on-confirm` closes on the confirmation, so the dialog needs a control that is one:
+    // `alert-dialog.confirm`, or a control marked `data-wk-dialog-primary`. With neither, the action
+    // goes, the dialog stays up with `aria-modal`, and the page behind it stays inert.
+    if ($closeOnConfirm && ! str_contains((string) $slot, 'data-wk-alert-confirm') && ! str_contains((string) $slot, 'data-wk-dialog-primary')) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('alert-dialog', 'closeOnConfirm', 'true', 'a confirm control in the dialog: alert-dialog.confirm, or a control marked data-wk-dialog-primary', '');
+    }
 
     // Default TRUE: an unset `describedby` keeps the documented behavior, and only an
     // explicit false in any spelling drops the attribute. `BooleanProp::from` reads the
     // bound `false`, the string "false", "0" and an empty attribute alike — the three
     // spellings the docs advertise, and each of them has to work.
-    $describedbyEnabled = BooleanProp::from($describedby, true);
+    $describedbyEnabled = $describedby === null
+        ? str_contains((string) $slot, 'data-wk-alert-dialog-description')
+        : BooleanProp::from($describedby, true, 'alert-dialog', 'describedby');
 
     // Alert Dialog — specialized confirmation dialog for destructive actions.
     // Uses role="alertdialog" (not "dialog") to signal urgency to screen readers.
@@ -104,13 +119,24 @@
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
+    // The rest of the caller's `aria-*` belongs on the dialog as well: on the roleless wrapper an
+    // `aria-labelledby` names nothing and an `aria-describedby` describes nothing. The caller's
+    // reference names the dialog ahead of every other name, as in the accessible name computation,
+    // and the caller's description joins the dialog's own in one attribute.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && trim($callerLabelledBy) !== '' ? trim($callerLabelledBy) : null;
+    $callerDescribedBy = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-describedby'));
+    $dialogAriaAttributes = $attributes->filter(fn ($value, string $key): bool => str_starts_with($key, 'aria-') && ! in_array($key, ['aria-labelledby', 'aria-describedby'], true));
+    $attributes = $attributes->filter(fn ($value, string $key): bool => ! str_starts_with($key, 'aria-'));
+    $dialogDescribedBy = trim(($describedbyEnabled ? $descId : '').' '.$callerDescribedBy);
+
     // The dialog's name comes from `label`, from `aria-label` or from its title, whose id the
     // panel's aria-labelledby names; only `alert-dialog.title` puts that id on an element. Without
     // any of them the reference points at nothing, which per ARIA leaves the dialog with no name:
     // it is announced as a bare "alert dialog", and no scan of the page can see it. Reported through
     // strict validation, as a modal reports it: an exception in a test or a console run, a log line
     // in a request.
-    if (! filled($label) && ! filled($callerLabel) && ! str_contains((string) $slot, 'data-wk-alert-dialog-title')) {
+    if (! filled($label) && ! filled($callerLabel) && $callerLabelledBy === null && ! str_contains((string) $slot, 'data-wk-alert-dialog-title')) {
         WireKit::validateProp('alert-dialog', 'label', '', [
             'a non-empty label, or an <x-wirekit::alert-dialog.title> to name the dialog',
         ]);
@@ -154,11 +180,11 @@
     // an item with a gap of its own beside it, so it generates no box. With a trigger it keeps its
     // box, and the trigger its place: its own width in a grid cell, the margin a
     // stack gives its children. `class="contents"` on the component hands the trigger over.
-    $rootAttributes = isset($trigger) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
+    $rootAttributes = \Pushery\WireKit\Support\SlotContent::given($trigger ?? null) ? $attributes : $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
 @endphp
 
 <div
-    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
+    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }}, confirmShortcut: {{ $confirmShortcut ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
     {{ $rootAttributes }}
 >
     {{-- Trigger slot — clicking opens the alert dialog.
@@ -166,11 +192,11 @@
          button in the slot at its own width inside a container that stretches its children, and
          a caller cannot reach it with a class. On its own `contents` changes nothing a page shows;
          `class="contents"` on the component root is what hands the trigger to the container. --}}
-    @isset($trigger)
+    @if(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
         <div class="contents" x-on:click="show($event)">
             {{ $trigger }}
         </div>
-    @endisset
+    @endif
 
     {{-- Alert dialog overlay and panel — teleported to the overlay root --}}
     <template x-teleport="#wk-overlay-root">
@@ -209,12 +235,15 @@
                     x-transition:leave-end="opacity-0 scale-95"
                     role="alertdialog"
                     aria-modal="true"
-                    @if($label || $callerLabel)
-                        aria-label="{{ $label ?: $callerLabel }}"
+                    @if($callerLabelledBy !== null)
+                        aria-labelledby="{{ $callerLabelledBy }}"
+                    @elseif($label || $callerLabel)
+                        aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) ?: $callerLabel }}"
                     @else
                         aria-labelledby="{{ $titleId }}"
                     @endif
-                    @if($describedbyEnabled) aria-describedby="{{ $descId }}" @endif
+                    @if($dialogDescribedBy !== '') aria-describedby="{{ $dialogDescribedBy }}" @endif
+                    {{ $dialogAriaAttributes }}
                     class="{{ $panelClasses }}"
                     data-wk-title-id="{{ $titleId }}"
                     data-wk-desc-id="{{ $descId }}"

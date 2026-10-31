@@ -32,6 +32,7 @@
     "soft": {
         "light": {
             "--font-wk-sans": "'DM Sans', ui-sans-serif, system-ui, sans-serif",
+            "--font-wk-icon-nudge": "0px",
             "--font-wk-letter-spacing": "0em",
             "--font-wk-heading-weight": "700",
             "--radius-wk": "0.75rem",
@@ -60,6 +61,7 @@
     "material": {
         "light": {
             "--font-wk-sans": "'Roboto', ui-sans-serif, system-ui, sans-serif",
+            "--font-wk-icon-nudge": "0px",
             "--font-wk-heading-weight": "500",
             "--font-wk-letter-spacing": "0.01em",
             "--radius-wk": "0.75rem",
@@ -91,6 +93,7 @@
     "brutalist": {
         "light": {
             "--font-wk-sans": "'JetBrains Mono', ui-monospace, monospace",
+            "--font-wk-icon-nudge": "0px",
             "--font-wk-mono": "'JetBrains Mono', ui-monospace, monospace",
             "--font-wk-heading-weight": "700",
             "--font-wk-letter-spacing": "0.04em",
@@ -135,6 +138,7 @@
             "--shadow-wk-md": "0 0 8px rgba(0, 255, 65, 0.15)",
             "--shadow-wk-lg": "0 0 16px rgba(0, 255, 65, 0.2)",
             "--font-wk-sans": "'VT323', 'Courier New', monospace",
+            "--font-wk-icon-nudge": "0px",
             "--font-wk-mono": "'VT323', 'Courier New', monospace",
             "--font-wk-heading-weight": "400",
             "--font-wk-body-weight": "400",
@@ -186,6 +190,7 @@
             "--color-wk-warning-bg": "#432f07",
             "--color-wk-info": "#00ddff",
             "--color-wk-overlay": "rgba(0, 0, 0, 0.8)",
+            "--color-wk-overlay-media": "rgba(0, 0, 0, 0.8)",
             "--color-wk-scrollbar-thumb": "#008022",
             "--color-wk-scrollbar-thumb-hover": "#00bb30",
             "--color-wk-scrollbar-track": "transparent"
@@ -195,6 +200,7 @@
     "cupertino": {
         "light": {
             "--font-wk-sans": "-apple-system, BlinkMacSystemFont, 'Inter', ui-sans-serif, system-ui, sans-serif",
+            "--font-wk-icon-nudge": "0px",
             "--radius-wk": "0.875rem",
             "--shadow-wk-sm": "0 1px 4px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.04)",
             "--shadow-wk-md": "0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)",

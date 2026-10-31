@@ -36,7 +36,7 @@
     ]), $scope);
 @endphp
 
-<blockquote data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<blockquote data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
     @if($cite)
         <footer class="mt-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] not-italic">

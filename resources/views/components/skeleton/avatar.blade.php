@@ -13,13 +13,17 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('skeleton.avatar', $attributes->getAttributes());
 
+    // An unknown `animation` is reported (Support\StrictnessGate) and renders as `shimmer`; a bound
+    // `null` or empty string is `shimmer` without a word.
+    $animation = \Pushery\WireKit\WireKit::validateProp('skeleton.avatar', 'animation', \Pushery\WireKit\Support\NumericProp::text($animation ?: 'shimmer'), ['shimmer', 'pulse', 'none']);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $shimmer = BooleanProp::from($shimmer, true);
+    $shimmer = BooleanProp::from($shimmer, true, 'skeleton.avatar', 'shimmer');
 
     // The surface and the radius are two strings because the avatar's circle takes a radius of
     // its own: beside `rounded-[var(--radius-wk-md)]` the stylesheet's order decided, and the
@@ -45,8 +49,8 @@
      hint travels as a custom property so it stays tunable per variant. --}}
 <div data-wk-sr-host
     role="status"
-    aria-live="polite"
-    aria-label="{{ __('wirekit::Loading') }}"
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-live')) aria-live="polite" @endunless
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless
     {{-- No aria-busy here, deliberately. This element IS the live region, and
          WAI-ARIA defines aria-busy on a live region as "wait before exposing
          this to the user" — set to true and never flipped back, it tells
@@ -56,7 +60,7 @@
          container whose content is still missing, which is the developer's
          element; leaving the attribute off is also what lets them put it there
          and have the shimmer's own pause rule see it. --}}
-    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 60px;'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
+    {{ $attributes->except('role')->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 60px;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'wk-skeleton-skip-offscreen'])) }}
 >
     <div class="flex items-center gap-3">
         <div class="{{ $surface }} h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-full)]" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton);"></div>

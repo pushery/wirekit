@@ -114,7 +114,15 @@ export default function wirekitTabs(config = {}) {
             // from the DOM on every keypress rather than held, so a Livewire morph
             // between one arrow key and the next cannot leave focus pointing into a
             // list that no longer exists.
-            moveRovingFocus(this.$root, direction);
+            //
+            // From the component's own list, a direct child of the root in every layout: the root
+            // holds the panels as well, and a tabs in one of them has tabs of its own there, which
+            // the arrows would walk on into. The root stays the fallback for a root without one.
+            const list = typeof this.$root?.querySelector === 'function'
+                ? this.$root.querySelector(':scope > [role="tablist"]')
+                : null;
+
+            moveRovingFocus(list ?? this.$root, direction);
         },
     };
 }

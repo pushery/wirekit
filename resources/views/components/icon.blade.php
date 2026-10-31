@@ -16,8 +16,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('icon', $attributes->getAttributes());
 
-    // Resolve the semantic alias to the actual Blade Icon identifier
-    $resolved = app(IconResolver::class)->resolve($name);
+    // Resolve the semantic alias to the actual Blade Icon identifier. An icon without a name, as a
+    // row of data can hand one over, is reported and resolves to none, which draws the placeholder a
+    // missing icon draws; an empty name draws it without a report.
+    if (! is_string($name)) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('icon', 'name', get_debug_type($name), 'the name of an icon, such as "check"', '');
+    }
+
+    $resolved = is_string($name) ? app(IconResolver::class)->resolve($name) : '';
 
     // Check if blade-icons is installed (provides the svg() helper function).
     // Graceful degradation: if the package is missing, render an empty `<span>`
@@ -60,6 +66,8 @@
     } else {
         // An unknown size is reported through the strictness gate, and where the gate does not
         // throw, validateProp returns the first allowed value ('xs').
+        // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+        $size = \Pushery\WireKit\Support\NumericProp::key($size);
         $validated = isset($sizeMap[$size])
             ? $size
             : WireKit::validateProp('icon', 'size', $size, array_keys($sizeMap));
@@ -106,7 +114,7 @@
         $iconClasses .= ' shrink-0';
     }
 
-    $mergedAttributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$iconClasses]));
+    $mergedAttributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$iconClasses])));
     if ($shouldSetHidden) {
         $mergedAttributes = $mergedAttributes->merge(['aria-hidden' => 'true']);
     }
@@ -201,9 +209,12 @@
             1
         );
     }
+
+    // The directive stands against the echo below: Blade keeps a line break written after an
+    // echo, and after the closing tag it is a space in the text that follows an inline icon,
+    // `Saved ✓ .` rather than `Saved ✓.`.
 @endphp
-{!! $svgHtml !!}
-@else
+{!! $svgHtml !!}@else
     @php
         // The placeholder takes the SVG branch's decision, never a harder one. A decorative icon
         // already carries aria-hidden from the merge above. A named one has to stay in the
@@ -214,6 +225,13 @@
         if ($isInformative && $callerRole === null) {
             $placeholderAttributes['role'] = 'img';
         }
+
+        // The span takes its width and height only as an inline block, and a display written
+        // inline would win over a caller's `block` or `hidden`: it yields to a display the caller's
+        // class sets.
+        [$placeholderStyle, $placeholderDisplay] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'display:inline-block;');
+
+        // The closing tag below stands against the directive: a line break after it would be a
+        // space in the text that follows an inline icon.
     @endphp
-    <span {{ $mergedAttributes->merge($placeholderAttributes) }} style="display:inline-block;"></span>
-@endif
+    <span {{ $mergedAttributes->merge($placeholderAttributes + ($placeholderStyle !== '' ? ['style' => $placeholderStyle] : []))->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$placeholderDisplay => $placeholderDisplay !== '']))) }}></span>@endif

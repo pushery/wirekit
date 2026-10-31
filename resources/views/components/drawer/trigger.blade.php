@@ -18,6 +18,18 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('drawer.trigger', $attributes->getAttributes());
 
+    // The trigger stands on its own Alpine root: a caller's `x-ref` is filed above it.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
     use Pushery\WireKit\WireKit;
 
     $classes = WireKit::resolveClasses('drawer.trigger', 'base', '', $scope);
@@ -36,7 +48,9 @@
     // and the cursor for a control that takes a caller's attributes, in one place for the whole
     // library. An address gives a `link`, which still reaches its page without JavaScript, and no
     // address gives a `button`.
-    $delegate = filled($href) ? 'link' : 'button';
+    // An empty address, one of white space or `false` is none (Support\UrlProp), so it gives a
+    // `button` as no address does.
+    $delegate = (is_string($href) || $href instanceof \Stringable || $href instanceof \BackedEnum) && \Pushery\WireKit\Support\UrlProp::text($href) !== null ? 'link' : 'button';
 
     // The look the caller gave, for the primitive that takes it: a button takes all three, a link
     // only its size. Handed on through the bag the primitive reads its props from, and only what was
@@ -63,7 +77,7 @@
     x-bind:aria-expanded="ariaExpanded"
     x-bind:aria-controls="ariaControls"
     x-on:click="openNamedOverlay($event)"
-    {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
+    {{ $attributes->except(['for', 'href'])->merge($look)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >{{ $slot }}</x-wirekit::link>
 @else
 <x-wirekit::button
@@ -72,6 +86,6 @@
     x-bind:aria-expanded="ariaExpanded"
     x-bind:aria-controls="ariaControls"
     x-on:click="openNamedOverlay($event)"
-    {{ $attributes->except(['for', 'href'])->merge($look)->class([$classes]) }}
+    {{ $attributes->except(['for', 'href'])->merge($look)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >{{ $slot }}</x-wirekit::button>
 @endif

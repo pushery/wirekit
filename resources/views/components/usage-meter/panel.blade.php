@@ -18,7 +18,7 @@
     // A simple vertical stack of <x-wirekit::usage-meter> rows, with an optional
     // multi-column grid on wider viewports. The panel owns layout only — every
     // meter inside keeps its own threshold/intent logic.
-    $cols = (int) WireKit::validateProp('usage-meter', 'columns', (string) $columns, ['1', '2', '3']);
+    $cols = (int) WireKit::validateProp('usage-meter', 'columns', \Pushery\WireKit\Support\NumericProp::text($columns), ['1', '2', '3']);
 
     // The visible heading IS the group's accessible name (via aria-labelledby) —
     // not a duplicate aria-label, which would double-announce the title.
@@ -42,7 +42,7 @@
     );
 @endphp
 
-<div {{ $attributes->class([$classes]) }} @if($title) role="group" aria-labelledby="{{ $titleId }}" @endif>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($title) role="group" aria-labelledby="{{ $titleId }}" @endif>
     @if($title)
         {{-- Panel heading spans every column above the grid; tokens-only typography.
              grid-column is set inline (structural layout, like progress' width %) so

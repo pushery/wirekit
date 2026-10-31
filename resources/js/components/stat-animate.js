@@ -24,15 +24,17 @@
  * The component resolves the machine value, the prefix, the suffix, the decimal
  * count and the locale in PHP, where the application locale is known, and hands
  * them over on `data-target-value`, `data-target-prefix`, `data-target-suffix`,
- * `data-target-decimals` and `data-locale`. `data-target` stays the display
- * string, because that is the documented handle a page uses to find a stat and
- * replay it.
+ * `data-target-decimals` and `data-locale`, and `data-number-group` and
+ * `data-number-decimal` where the application writes its numbers with marks of
+ * its own. `data-target` stays the display string, because that is the documented
+ * handle a page uses to find a stat and replay it.
  *
  * A hand-mounted plugin — the shape in the usage block above — has none of those
  * and falls back to reading the display string with the grammar it is written
  * in: `,` groups, `.` separates decimals, and the browser's own preference
  * formats the result.
  */
+import { formatDecimal } from '../utils/locale-number.js';
 import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
@@ -138,7 +140,14 @@ export default () => ({
         // And the decimal count comes from the display string rather than from
         // the float, because 1250.5 and "1,250.50" are the same number written to
         // two different precisions and the reader chose the second one.
-        const formatValue = (current) => prefix + numberFormat.format(current) + suffix;
+        //
+        // An application that gives WireKit a number format of its own writes the value with its
+        // own grouping and decimal marks, and the server read it with them, so the count is written
+        // with them as well, grouped as the locale groups.
+        const marks = data.numberDecimal !== undefined ? { group: data.numberGroup ?? '', decimal: data.numberDecimal } : null;
+        const formatValue = (current) => prefix
+            + (marks === null ? numberFormat.format(current) : formatDecimal(current, data.locale, decimals, decimals, marks))
+            + suffix;
 
         // Reduced-motion shortcut: snap to target immediately, no animation.
         // Both `animating` and `progress` resolve to settled state for SR/CLS contract.

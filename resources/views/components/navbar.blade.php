@@ -52,6 +52,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navbar', $attributes->getAttributes());
 
+    // An unknown `variant` is reported (Support\StrictnessGate) and renders as `default`; a bound
+    // `null` or empty string is `default` without a word.
+    $variant = \Pushery\WireKit\WireKit::validateProp('navbar', 'variant', \Pushery\WireKit\Support\NumericProp::text($variant ?: 'default'), ['default', 'bordered', 'transparent']);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown.escape']);
@@ -59,10 +63,10 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sticky = BooleanProp::from($sticky, false);
-    $trackCurrent = BooleanProp::from($trackCurrent, false);
-    $forceMobile = BooleanProp::from($forceMobile, false);
-    $container = BooleanProp::from($container, false);
+    $sticky = BooleanProp::from($sticky, false, 'navbar', 'sticky');
+    $trackCurrent = BooleanProp::from($trackCurrent, false, 'navbar', 'trackCurrent');
+    $forceMobile = BooleanProp::from($forceMobile, false, 'navbar', 'forceMobile');
+    $container = BooleanProp::from($container, false, 'navbar', 'container');
 
     $max ??= config('wirekit.components.navbar.max', 'xl');
 
@@ -185,6 +189,14 @@
     $actionsClasses = 'flex items-center gap-[var(--gap-wk-sm)]';
     $hamburgerClasses = $forceMobile ? '' : 'md:hidden';
 
+    // What only the menu carries, after the entries: what a narrow bar gives up beside the menu
+    // button, the links to sign in say, whose counterpart the developer keeps in `actions` for a
+    // wider screen, so each is rendered once. Above the breakpoint the entries stand in the bar
+    // and this stays hidden; under `force-mobile` the menu holds it at every width. A scrolling
+    // row has no menu, so nothing of the slot is rendered there.
+    $hasMenu = ! $scroll && \Pushery\WireKit\Support\SlotContent::given($menu ?? null);
+    $menuClasses = 'flex flex-col items-stretch gap-1'.($forceMobile ? '' : ' md:hidden');
+
     // The `mobile-menu` personalization key survives the merge of the two containers and now
     // resolves the one list. Same override point, same subject — what the disclosure reveals.
     $navListClasses = WireKit::resolveClasses('navbar', 'mobile-menu', $navListClasses, $scope);
@@ -198,7 +210,7 @@
     $scrollListClasses = 'wk-navbar-scroll wk-scroll-fade '.WireKit::resolveClasses('navbar', 'scroll', implode(' ', [
         'flex flex-row flex-nowrap items-center gap-1',
         'min-w-0 flex-1',
-        'overflow-x-auto overscroll-x-contain',
+        'relative overflow-x-auto overscroll-x-contain',
         '[&>*]:shrink-0 [&>*]:whitespace-nowrap',
     ]), $scope);
 
@@ -239,7 +251,7 @@
     @endunless
     @if($sticky) data-wk-scroll-inset="top" @endif
     @if($trackCurrent) x-wk-current @endif
-    {{ $attributes->class([$navClasses, $variantClasses, $stickyClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$navClasses, $variantClasses, $stickyClasses])) }}
 >
     <div class="{{ $containerClasses }}">
         {{-- Brand / Logo slot.
@@ -253,7 +265,7 @@
 
              `gap-[var(--gap-wk-sm)]` rather than a margin on either child, so a brand that is
              a single logo carries no stray space. --}}
-        @isset($brand)
+        @if(\Pushery\WireKit\Support\SlotContent::given($brand ?? null))
             {{-- A brand with `truncate` gives way in a narrow bar, and the wrapper with it. It
                  counts as nothing when the row breaks into lines, so the menu button and the
                  actions keep their place beside it, and it grows back up to the brand's own
@@ -262,7 +274,7 @@
             <div class="{{ str_contains((string) $brand, 'data-wk-brand-truncate') ? 'min-w-0 flex-1 max-w-max' : 'shrink-0' }} flex items-center gap-[var(--gap-wk-sm)]">
                 {{ $brand }}
             </div>
-        @endisset
+        @endif
 
         {{-- The navigation list — one render, revealed by the disclosure below the breakpoint
              and always shown above it.
@@ -296,15 +308,20 @@
             x-cloak
         >
             {{ $slot }}
+            @if($hasMenu)
+                <div data-wk-navbar-menu class="{{ $menuClasses }}">
+                    {{ $menu }}
+                </div>
+            @endif
         </div>
         @endif
 
         {{-- Actions slot — the only render of it, at every width --}}
-        @isset($actions)
+        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             <div class="{{ $actionsClasses }}">
                 {{ $actions }}
             </div>
-        @endisset
+        @endif
 
         {{-- Mobile hamburger button. None for a scrolling row: there is nothing to reveal. --}}
         @unless($scroll)
@@ -312,6 +329,7 @@
             type="button"
             x-ref="wkNavbarToggle"
             x-on:click="mobileOpen = !mobileOpen"
+            aria-expanded="false"
             :aria-expanded="mobileOpen ? 'true' : 'false'"
             aria-controls="{{ $mobileId }}"
             aria-label="{{ __('wirekit::Toggle navigation') }}"

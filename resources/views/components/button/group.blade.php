@@ -22,9 +22,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('button.group', $attributes->getAttributes());
 
-    use Pushery\WireKit\WireKit;
+    // An unknown `orientation` is reported (Support\StrictnessGate) and renders as `horizontal`; a
+    // bound `null` or empty string is `horizontal` without a word.
+    $orientation = \Pushery\WireKit\WireKit::validateProp('button.group', 'orientation', \Pushery\WireKit\Support\NumericProp::text($orientation ?: 'horizontal'), ['horizontal', 'vertical']);
 
-    $orientation = $orientation === 'vertical' ? 'vertical' : 'horizontal';
+    use Pushery\WireKit\WireKit;
 
     // `stackBelow` names the width below which the group becomes a column. Both shapes live in
     // `.wk-button-group[data-stack-below="…"]` in dist/wirekit.css and are declared per breakpoint:
@@ -50,11 +52,11 @@
 @endphp
 
 <div
-    role="group"
-    @if($label) aria-label="{{ $label }}" @endif
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="group" @endunless
+    @if($label && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
     data-orientation="{{ $orientation }}"
     @if($stackBelow) data-stack-below="{{ $stackBelow }}" @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

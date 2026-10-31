@@ -1,5 +1,7 @@
-import { controlIsDisabled } from '../utils/fieldset-disabled.js';
+import { controlIsDisabled, watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
+import { decimalPlaces, scaleText } from '../utils/locale-number.js';
 import { watchModelEvents } from '../utils/model-events.js';
+import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 /**
  * Number input — the stepper's arithmetic.
@@ -31,16 +33,21 @@ import { watchModelEvents } from '../utils/model-events.js';
  * CLEANUP CONTRACT: `_unhookResync` (the Livewire commit hook, bound fields only) is
  * released in destroy(), and so is `_modelEvents`, which fires `blur` on the field for
  * `wire:model.blur` when the reader leaves the component after using only the steppers: the
- * field then never had focus, so its own `blur` never came (utils/model-events.js).
+ * field then never had focus, so its own `blur` never came (utils/model-events.js). So is
+ * `_stopLockWatch`, which follows the field's `disabled` and `readonly` and the fieldsets
+ * around it for the steppers' bindings. And `_stopServerValue`, which follows the start value the
+ * server renders on the root (utils/server-value.js).
  *
  * @param {Object}  config
- * @param {number}  config.value  starting value
+ * @param {number}  [config.value]  starting value; without it, the root's `data-wk-server-value`
  * @param {?number} config.min    lower bound, or null for unbounded
  * @param {?number} config.max    upper bound, or null for unbounded
  * @param {number}  config.step   grid spacing
  * @param {boolean} config.bound  the field carries a caller's model
  * @param {Object}  [config.adjusted]  translated sentences for a value that leaving the field
  *   changed, each taking `:value`: `highest`, `lowest` and `changed`
+ * @param {string}  [config.locale]  the application's locale, BCP-47, for the value in those sentences
+ * @param {{group: string, decimal: string}|null} [config.separators]  the application's own marks
  */
 export default function wirekitNumberInput(config = {}) {
     return {
@@ -55,10 +62,53 @@ export default function wirekitNumberInput(config = {}) {
         // What leaving the field did to a value the reader typed, as a sentence, or ''.
         adjustment: '',
         _adjusted: config.adjusted && typeof config.adjusted === 'object' ? config.adjusted : {},
+        _locale: typeof config.locale === 'string' ? config.locale : null,
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
         _unhookResync: null,
         _modelEvents: null,
+        // Whether the field was locked when last looked at. The lock lives on the field, where
+        // no binding sees it change: `_watchLock()` copies each change here, and `locked` reads
+        // it, so the steppers' bindings run again when a field is locked or freed later.
+        _lockSeen: false,
+        _stopLockWatch: null,
+        _stopServerValue: null,
 
         init() {
+            // The start value is not in `x-data`, so that the expression stays the same for every
+            // value: a Livewire morph that changed it would start the component again, and the
+            // answer to a `.live` change would take away the sentence about a corrected value.
+            // `$root` is checked rather than assumed, as a unit harness hands a bare stub.
+            if (config.value === undefined) {
+                const raw = typeof this.$root?.getAttribute === 'function' ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE) : null;
+                const seed = raw === null || raw === '' ? Number.NaN : Number(raw);
+
+                this.value = Number.isNaN(seed) ? (this.min ?? 0) : seed;
+            }
+
+            // A start value the server changes reaches the steppers. With a caller's model the
+            // model owns the field and holds what the server sent, unless the reader typed since,
+            // so the field is read; without one, the value is the server's to set.
+            this._stopServerValue = observeServerValue(this.$root, (raw) => {
+                const next = raw === '' ? Number.NaN : Number(raw);
+
+                if (Number.isNaN(next)) {
+                    return;
+                }
+
+                if (this.bound) {
+                    this.$nextTick(() => this.syncFromInput());
+
+                    return;
+                }
+
+                if (next !== this.value) {
+                    this.value = next;
+                }
+            });
+
+            // Before the return below: an unbound field is locked and freed the same way.
+            this._stopLockWatch = this._watchLock();
+
             if (!this.bound) {
                 return;
             }
@@ -86,6 +136,41 @@ export default function wirekitNumberInput(config = {}) {
 
             this._modelEvents?.dispose();
             this._modelEvents = null;
+
+            this._stopLockWatch?.();
+            this._stopLockWatch = null;
+
+            this._stopServerValue?.();
+            this._stopServerValue = null;
+        },
+
+        /**
+         * Follow what locks the field after the page loaded: its own `disabled` and `readonly`,
+         * which a binding, `wire:loading.attr` or a Livewire render can set, and the fieldsets
+         * around it (utils/fieldset-disabled.js). Each change is copied to `_lockSeen`. Without
+         * `MutationObserver` the field's own state is read once, at the start.
+         *
+         * @returns {Function} stops following; called from destroy()
+         */
+        _watchLock() {
+            const el = this._input();
+            const look = () => {
+                this._lockSeen = !!el && (controlIsDisabled(el) || el.readOnly === true);
+            };
+            // Reports at once, which is the first look, and again whenever a fieldset changes.
+            const stopFieldsets = watchFieldsetDisabled(this.$root, look);
+
+            if (!el || typeof MutationObserver !== 'function') {
+                return stopFieldsets;
+            }
+
+            const observer = new MutationObserver(look);
+            observer.observe(el, { attributes: true, attributeFilter: ['disabled', 'readonly'] });
+
+            return () => {
+                observer.disconnect();
+                stopFieldsets();
+            };
         },
 
         /**
@@ -191,8 +276,11 @@ export default function wirekitNumberInput(config = {}) {
                 return '';
             }
 
+            // Written as the field shows a number, in the locale's decimal mark and without grouping,
+            // with every place the value has: a bound may carry more places than the step.
+            const value = this._locale === null ? String(next) : scaleText(next, this._locale, decimalPlaces(next), this._separators);
             const fill = (template, fallback) => (typeof template === 'string' && template !== '' ? template : fallback)
-                .replace(':value', String(next));
+                .replace(':value', value);
 
             if (readable && this.max !== null && raw > this.max) {
                 return fill(this._adjusted.highest, 'Set to :value, the highest value allowed.');
@@ -206,15 +294,14 @@ export default function wirekitNumberInput(config = {}) {
         },
 
         /**
-         * Decimal places implied by the step. `5` → 0, `0.1` → 1, `0.01` → 2,
-         * `0.001` → 3. A non-fractional or scientific-notation step yields 0,
-         * which makes round() a no-op — integer steps stay exact.
+         * Decimal places a value of this field can need: the most that the step and the bounds
+         * carry. `5` → 0, `0.1` → 1, `0.01` → 2, and a step below 0.000001, which `String()`
+         * writes with an exponent (`1e-8`), counts its places as well. The grid starts at `min`,
+         * so `min` 0.99 with step 1 needs two places to reach 1.99, and a value clamped to `max`
+         * keeps the places `max` has. Integer steps and bounds stay exact.
          */
         get precision() {
-            const text = String(this.step);
-            const dot = text.indexOf('.');
-
-            return dot === -1 ? 0 : text.length - dot - 1;
+            return decimalPlaces(this.step, this.min ?? 0, this.max ?? 0);
         },
 
         /**
@@ -243,7 +330,10 @@ export default function wirekitNumberInput(config = {}) {
         get locked() {
             const el = this._input();
 
-            return !!el && (controlIsDisabled(el) || el.readOnly);
+            // `_lockSeen` first, so a binding on `locked` depends on it and runs again when
+            // `_watchLock()` sees the lock change; the field itself answers for the moment
+            // between a change and the observer's report.
+            return this._lockSeen || (!!el && (controlIsDisabled(el) || el.readOnly));
         },
 
         /**

@@ -76,6 +76,8 @@
     $toneAliases = [
         'primary' => 'accent',
     ];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $tone = \Pushery\WireKit\Support\NumericProp::key($tone);
     $tone = $toneAliases[$tone] ?? $tone;
 
     $validTone = isset($toneMap[$tone])
@@ -95,6 +97,8 @@
         'lg' => ['w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] rounded-[var(--radius-wk-lg)]', 'lg'],
         'xl' => ['w-16 h-16 rounded-[var(--radius-wk-xl)]', 'xl'],
     ];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $size = \Pushery\WireKit\Support\NumericProp::key($size);
     $validSize = isset($sizeMap[$size])
         ? $size
         : WireKit::validateProp('feature', 'size', $size, array_keys($sizeMap));
@@ -106,13 +110,13 @@
     // did-you-mean, and where the gate does not throw it renders the default level — never
     // h1, which is what validateProp's own first-allowed fallback would produce and which
     // would break the outline worse than the default does.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('feature', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('feature', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 @endphp
 
-<div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     @if($hasIconSlot)
         {{-- Escape hatch: caller supplied their own marker (custom SVG, illustration, badge, …). --}}
         {{ $iconSlot }}

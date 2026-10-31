@@ -17,11 +17,13 @@
     'required' => false,
     // Livewire method to call optimistically. It receives the full range as
     // [min, max]. Absent -> the component renders without an optimistic layer.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'label' => null,
     // `error` is declared like `label`: undeclared, `:error` on this control would land in
     // the attribute bag and render as a stray HTML attribute — a validation message the
@@ -59,7 +61,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -71,7 +73,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -79,8 +81,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `disabled="false"` would mean the opposite of what the call site reads as.
     // Normalized against the prop's own default so a cast never turns the control off.
-    $disabled = BooleanProp::from($disabled, false);
-    $required = BooleanProp::from($required, false);
+    $disabled = BooleanProp::from($disabled, false, 'range-slider', 'disabled');
+    $required = BooleanProp::from($required, false, 'range-slider', 'required');
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
@@ -92,25 +94,37 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('range-slider', $attributes->getAttributes());
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'range-slider-'); // page-unique DOM id; see Support\DomId
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     /*
      * The Laravel validation bag, which this control never consulted. Every other form
-     * control resolves `error` from `$error ?? FieldError::first($errors, $name)`, so after a failed
+     * control resolves `error` from `FieldError::message($errors, $name, $error)`, so after a failed
      * `$this->validate()` each of them showed its message and this one showed nothing — in
      * the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
      */
-    $error ??= \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    // The two handles are validated one by one, as `{name}.min` and `{name}.max` (FieldError::first()).
+    $error = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error, ['min', 'max']);
 
     // Numbers, whatever the attribute or the data carried: a text would throw in the
     // arithmetic below. A bound or a step that holds no number takes its configured default,
     // and a start value with none starts at its end of the range.
-    $min = \Pushery\WireKit\Support\NumericProp::from($min, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.range-slider.min', 0), 0));
-    $max = \Pushery\WireKit\Support\NumericProp::from($max, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.range-slider.max', 100), 100));
-    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.range-slider.step', 1), 1));
+    $min = \Pushery\WireKit\Support\NumericProp::from($min, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.range-slider.min', 0), 0), 'range-slider', 'min');
+    $max = \Pushery\WireKit\Support\NumericProp::from($max, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.range-slider.max', 100), 100), 'range-slider', 'max');
+    // Bounds the wrong way round would leave the control no travel; read as written they say
+    // "between these two", so they change places, as two days do in a calendar.
+    [$min, $max] = \Pushery\WireKit\Support\NumericProp::ordered($min, $max);
+    $step = \Pushery\WireKit\Support\NumericProp::positive($step, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.range-slider.step', 1), 1), 'range-slider', 'step');
     $minValue = \Pushery\WireKit\Support\NumericProp::orNull($minValue);
     $maxValue = \Pushery\WireKit\Support\NumericProp::orNull($maxValue);
 
@@ -131,13 +145,25 @@
     // Spoken-value map, string-keyed so the JS lookup matches (Alpine compares the
     // numeric value against object keys, which are always strings).
     $rangeValueTextMap = [];
-    $valueTextMap = \Pushery\WireKit\Support\ListProp::from($valueTextMap);
+    $valueTextMap = \Pushery\WireKit\Support\ListProp::from($valueTextMap, 'range-slider', 'valueTextMap');
     if (is_array($valueTextMap)) {
         foreach ($valueTextMap as $mValue => $mLabel) {
             $rangeValueTextMap[(string) $mValue] = (string) $mLabel;
         }
     }
     $bindRangeValueText = $rangeValueTextMap !== [];
+
+    // How a value reads where it is written for a reader, as the factory writes it with
+    // `valueTextFor()`: a mapped stop's word, else the number with the locale's decimal mark and as
+    // many places as the slider's own numbers carry (Support\LocalizedNumber::scale()).
+    $placesOf = static function (int|float|string $number): int {
+        $text = rtrim(rtrim(sprintf('%.10F', (float) $number), '0'), '.');
+
+        return str_contains($text, '.') ? strlen($text) - strpos($text, '.') - 1 : 0;
+    };
+    $valuePlaces = max(array_map($placesOf, [$min, $max, $step, $initialMin, $initialMax]));
+    $valueText = static fn (int|float|string $value): string => $rangeValueTextMap[(string) $value]
+        ?? \Pushery\WireKit\Support\LocalizedNumber::scale((float) $value, maxPrecision: $valuePlaces);
 
     // Per-thumb value badge ("bubble") visibility.
     //
@@ -268,17 +294,17 @@
     // Inside a labeled field the field's label names the group by reference, as this
     // component's own label does, and its text goes into the names of both thumbs
     // (Support\FieldControl). It gets no `for`: a thumb is not an element a label can name.
-    $fieldLabelId = $label === null
+    $fieldLabelId = blank($label)
         && ! filled($callerAriaLabel)
         && ! $attributes->has('aria-labelledby')
         && $wkField instanceof \Pushery\WireKit\Support\FieldControl
             ? $wkField->takeLabel(null)
             : null;
-    $groupLabel = $label ?? $callerAriaLabel ?? ($fieldLabelId !== null ? $wkField->labelText() : null);
+    $groupLabel = \Pushery\WireKit\Support\BlankName::first($label, $callerAriaLabel, $fieldLabelId !== null ? $wkField->labelText() : null);
 
     // The visible label a click on which focuses the first thumb, as a click on a label does
     // for a field. Neither this component's own label nor a field's can do it with `for`.
-    $clickLabelId = $label ? $id.'-label' : $fieldLabelId;
+    $clickLabelId = filled($label) ? $id.'-label' : $fieldLabelId;
     // The two thumbs name themselves by gluing a direction word onto the caller's label.
     // Concatenating an English word onto a translated label produces a half-translated
     // name in every locale AND fixes the word ORDER to English — so the direction goes
@@ -307,6 +333,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the thumbs are described by it
+    // as by a hint of the slider's own (Support\FieldControl).
+    $thumbDescribedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $thumbDescribedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $thumbDescribedBy = trim(($thumbDescribedBy ?? '').' '.($helpId ?? ''));
     $thumbDescribedBy = $thumbDescribedBy !== '' ? $thumbDescribedBy : null;
 
@@ -368,7 +401,6 @@
 
 <div
     @unless($attributes->has('role')) role="group" @endunless
-    @if($required) aria-required="true" @endif
     @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $id }}-label" @endunless @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @endif
     {{-- On the GROUP rather than on either thumb: the message is about the range, and a
          thumb-level describedby would read it out on both ends of it. --}}
@@ -379,16 +411,26 @@
     {{-- The dim is a wrapper class rather than a `disabled:` variant, because nothing
          here is a native form control the variant could hang off — the thumbs are
          `div[role="slider"]`, and the two inputs that DO carry `disabled` are hidden. --}}
-    {{ $attributes->class([$wrapperClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : '']) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : ''])) }}
+    {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+         listener written on the tag hears one field (utils/focus-unit.js). --}}
+    x-wk-focus-unit
 >
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- The `wirekitRangeSlider` factory, registered by the WireKit bundle.
          Handles dual-thumb drag, keyboard stepping, and percent calculation. --}}
+    {{-- The range travels on `data-wk-server-value`, not in `x-data`, so the expression is the
+         same for every range: a Livewire morph that changed it would start the slider again, and
+         the answer to a `wire:model.live` drag would put the handles back where the request left
+         them. It is the range as the caller passed it, an end without a value empty: the factory
+         holds it on the track the way the lines above do, and sends an end whose thumb does not
+         show the stored value on the next move. --}}
     <div
-        x-data="wirekitRangeSlider({ min: {{ $min }}, max: {{ $max }}, step: {{ $step }}, minValue: {{ $initialMin }}, maxValue: {{ $initialMax }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $rangeValueTextMap) }}, labelId: {{ \Pushery\WireKit\Support\AlpinePayload::from($clickLabelId) }} })"
+        data-wk-server-value="{{ $minValue ?? '' }}/{{ $maxValue ?? '' }}"
+        x-data="wirekitRangeSlider({ min: {{ $min }}, max: {{ $max }}, step: {{ $step }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $rangeValueTextMap) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }}, labelId: {{ \Pushery\WireKit\Support\AlpinePayload::from($clickLabelId) }} })"
         x-effect="remeasureOnValueChange()"
         class="relative"
         {{-- A disabled fieldset around the slider dims the track and thumbs, the dim the
@@ -417,7 +459,7 @@
              expression that feeds the factory, so they cannot drift. --}}
         <input
             type="hidden"
-            name="{{ $name }}[min]"
+            @if($name !== '') name="{{ $name }}[min]" @endif
             value="{{ $initialMin }}"
             {{-- Native `disabled`, so a disabled range is omitted from the submitted
                  form the way every other disabled control is — the value the user
@@ -430,7 +472,7 @@
         />
         <input
             type="hidden"
-            name="{{ $name }}[max]"
+            @if($name !== '') name="{{ $name }}[max]" @endif
             value="{{ $initialMax }}"
             {{-- Same reason as the min input above. --}}
             @disabled($disabled)
@@ -513,6 +555,9 @@
                 role="slider"
                 aria-label="{{ $minThumbLabel }}"
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
+                {{-- On each thumb, the element a reader lands on: ARIA does not allow
+                     `aria-required` on the group. --}}
+                @if($required || $fieldRequired) aria-required="true" @endif
                 aria-valuenow="{{ $initialMin }}"
                 :aria-valuenow="minVal"
                 @if($bindRangeValueText) :aria-valuetext="valueTextFor(minVal)" @endif
@@ -595,7 +640,7 @@
                         :style="minBadgeStyle()"
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(minVal)"
-                    >{{ $initialMin }}</span>
+                    >{{ $valueText($initialMin) }}</span>
                 @endif
             </div>
 
@@ -613,6 +658,9 @@
                 role="slider"
                 aria-label="{{ $maxThumbLabel }}"
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
+                {{-- On each thumb, the element a reader lands on: ARIA does not allow
+                     `aria-required` on the group. --}}
+                @if($required || $fieldRequired) aria-required="true" @endif
                 aria-valuenow="{{ $initialMax }}"
                 :aria-valuenow="maxVal"
                 @if($bindRangeValueText) :aria-valuetext="valueTextFor(maxVal)" @endif
@@ -650,7 +698,7 @@
                         :style="maxBadgeStyle()"
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(maxVal)"
-                    >{{ $initialMax }}</span>
+                    >{{ $valueText($initialMax) }}</span>
                 @endif
             </div>
 
@@ -709,14 +757,14 @@
              current selection without duplicating the visible bound
              labels (which are constant). --}}
         <div class="mt-3 flex justify-between text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
-            <span>{{ $rangeValueTextMap[(string) $min] ?? $min }}</span>
-            <span>{{ $rangeValueTextMap[(string) $max] ?? $max }}</span>
+            <span>{{ $valueText($min) }}</span>
+            <span>{{ $valueText($max) }}</span>
         </div>
         <div class="sr-only" aria-live="polite">
             {{-- The seed is the sentence the binding writes, from the same catalog entry and with
                  the same text for a marked value, so a reader before Alpine starts, or without
                  JavaScript, hears it in the page's language. --}}
-            <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Range: :from to :to')) }}.replace(':from', valueTextFor(minVal)).replace(':to', valueTextFor(maxVal))">{{ __('wirekit::Range: :from to :to', ['from' => $rangeValueTextMap[(string) $initialMin] ?? $initialMin, 'to' => $rangeValueTextMap[(string) $initialMax] ?? $initialMax]) }}</span>
+            <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Range: :from to :to')) }}.replace(':from', valueTextFor(minVal)).replace(':to', valueTextFor(maxVal))">{{ __('wirekit::Range: :from to :to', ['from' => $valueText($initialMin), 'to' => $valueText($initialMax)]) }}</span>
         </div>
 
         @if($optimisticConfig)

@@ -30,11 +30,13 @@
     // swatch, an arrow-key nudge. A refusal KEEPS the color and says it was not
     // saved: the hex field is typed, and a rollback may never delete what the
     // reader wrote. See the note at the top of this file.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'name' => null,
     'id' => null,
     // `error` and `hint` are declared: undeclared, `:error="$errors->first('brand_color')"`
@@ -79,26 +81,34 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
+    // A list where the control takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and read as no value (Support\FieldValue).
+    $value = \Pushery\WireKit\Support\FieldValue::one($value, 'color-picker');
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $showValue = BooleanProp::from($showValue, true);
-    $disabled = BooleanProp::from($disabled, false);
-    $popover = BooleanProp::from($popover, false);
-    $withAlpha = BooleanProp::from($withAlpha, true);
-    $withEyedropper = BooleanProp::from($withEyedropper, true);
-    $withClear = BooleanProp::from($withClear, false);
-    $withRecents = BooleanProp::from($withRecents, true);
+    $showValue = BooleanProp::from($showValue, true, 'color-picker', 'showValue');
+    $disabled = BooleanProp::from($disabled, false, 'color-picker', 'disabled');
+    $popover = BooleanProp::from($popover, false, 'color-picker', 'popover');
+    $withAlpha = BooleanProp::from($withAlpha, true, 'color-picker', 'withAlpha');
+    $withEyedropper = BooleanProp::from($withEyedropper, true, 'color-picker', 'withEyedropper');
+    $withClear = BooleanProp::from($withClear, false, 'color-picker', 'withClear');
+    $withRecents = BooleanProp::from($withRecents, true, 'color-picker', 'withRecents');
     // Same contract, different spelling of the default: a `config()` fallback is as much a
     // boolean declaration as a literal, and the switch decides whether a touch device gets
     // the native color panel or this one.
-    $nativeOnMobile = BooleanProp::from($nativeOnMobile, false);
-    $required = BooleanProp::from($required, false);
+    $nativeOnMobile = BooleanProp::from($nativeOnMobile, false, 'color-picker', 'nativeOnMobile');
+    $required = BooleanProp::from($required, false, 'color-picker', 'required');
+
+    // In popover mode the caller's bag lands on the element around the trigger, which cannot take
+    // the focus, so a caller's `autofocus` goes to the trigger instead.
+    $triggerAutofocus = $popover && \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
 
     // A required color has no "no color" state, so the popover offers no button that empties
     // it. The popover's own field is a trigger button, where `aria-required` does not apply,
@@ -116,12 +126,16 @@
     // `{{ $attributes }}` and renders as a stray HTML attribute. Blade accepts both
     // spellings, so both are dropped. BEFORE the unknown-prop warning below, as in every
     // sibling control: the key is understood here, and warning about it would be noise.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('color-picker', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('color-picker', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -142,6 +156,10 @@
     // field on the root above `data-wk-ref-scope` (resources/js/utils/caller-ref.js).
     $callerRef = trim((string) $attributes->get('x-ref', ''));
     $attributes = $attributes->except('x-ref');
+    // A caller's `x-model` reaches the field in either mode inside a root of ours, where `.parent`
+    // would still find our names: each field takes it as `x-wk-model`, read above the outer
+    // element, which marks the boundary (CallerModel::onField()).
+    $modelScope = \Pushery\WireKit\Support\CallerModel::binds($attributes);
     // A caller's `form` goes to the field this component submits, and only there: on the
     // wrapper it is not a valid attribute and joins nothing to the form (Support\FormOwner).
     $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
@@ -173,12 +191,16 @@
     // `DomId::unique` counts instead of randomizing, which survives one.
     $pickerId = \Pushery\WireKit\Support\DomId::unique($id ?? ($name ? 'wk-color-'.$name : null), 'wk-color-');
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     // Explicit prop OR the Laravel validation bag, keyed by `name`. The read is
     // guarded on the name being there: `MessageBag::has(null)` falls through to
     // `any()`, so an unnamed picker would paint itself invalid the moment any
     // unrelated field on the page failed validation.
-    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
-    $errorMessage = $error ?? ($name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // The error REPLACES the hint in the single paragraph below, so the description
     // names whichever id is actually on the page. An idref pointing at nothing is not
@@ -193,6 +215,13 @@
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
     $controlDescribedBy = trim(((string) $controlDescribedBy).' '.((string) $attributes->get('aria-describedby', ''))) ?: null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $controlDescribedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $controlDescribedBy, $pickerId, $hint ? $pickerId.'-hint' : null) ?: null;
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
 
     $swatchSize = match ($size) {
         'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)]',
@@ -292,7 +321,7 @@
     // carried more than a color would style the swatch itself. And a value the picker cannot
     // parse would be a swatch whose click picks nothing. Any other entry goes through the
     // strictness gate like every rejected prop value, and draws no swatch.
-    $presetList = \Pushery\WireKit\Support\ListProp::from($presets);
+    $presetList = \Pushery\WireKit\Support\ListProp::from($presets, 'color-picker', 'presets');
     $presetColors = [];
 
     foreach (is_array($presetList) ? $presetList : [] as $preset) {
@@ -319,7 +348,7 @@
      unconditional on purpose: a wrapper that only appears when a message does gives the
      component two DOM shapes, and the one a developer inspects is whichever they hit
      first. --}}
-<div {{ $outerAttributes }} class="relative {{ $fieldClasses }}" @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} class="relative {{ $fieldClasses }}" @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif>
 @if(! $popoverValue)
     {{-- ── Native mode (default). ── Slightly wider swatch↔readout gap than the
          shared wrapper default: the hex pill sits inline next to the swatch, and
@@ -328,14 +357,18 @@
          only gap on this element; the popover branch keeps the base gap. --}}
     {{-- The readout follows a form reset from the field's own default, as the reset changes the
          field without an event. On this element, not the field: a caller's attributes land on the
-         field, and a listener of theirs with the same name would replace this one. --}}
-    <div x-data="{ current: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} }" class="{{ $nativeWrapperClasses }}" x-on:reset.window="current = $event.target === $refs.wkNativeColor.form && !$event.defaultPrevented ? $refs.wkNativeColor.defaultValue : current">
+         field, and a listener of theirs with the same name would replace this one.
+
+         The readout reads the field's color (resources/js/components/native-color.js) rather than
+         taking it from `x-data`, so the expression is the same for every color: a Livewire morph
+         that changed it would start the scope again with the color of the request. --}}
+    <div x-data="wirekitNativeColor()" class="{{ $nativeWrapperClasses }}" x-on:reset.window="current = $event.target === $refs.wkNativeColor.form && !$event.defaultPrevented ? $refs.wkNativeColor.defaultValue : current">
         <label for="{{ $pickerId }}" class="wk-touch-row {{ $swatchClasses }}">
             <input
                 type="color"
                 {{-- aria-required, not the native attribute: HTML's `required` does not apply
                      to a color input, which always carries a value. --}}
-                @if($required) aria-required="true" @endif
+                @if($required || $fieldRequired) aria-required="true" @endif
                 @if($name) name="{{ $name }}" @endif
                 id="{{ $pickerId }}"
                 {{-- The starting color as the field's own default, which a form reset returns
@@ -349,7 +382,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
                 @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
-                {{ $attributes->except('type')->except('aria-describedby')->class([$inputClasses]) }}
+                {{ \Pushery\WireKit\Support\CallerModel::onField($attributes->except('type')->except('aria-describedby'))->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$inputClasses])) }}
                 @if($formOwner) form="{{ $formOwner }}" @endif
             />
             @if($slot->hasActualContent())
@@ -371,7 +404,6 @@
 @else
     @php
         $jsConfig = [
-            'value' => $value,
             'format' => $formatValue,
             'withAlpha' => (bool) $withAlpha,
             'withClear' => (bool) $withClear,
@@ -438,13 +470,20 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     <div
+        {{-- The color travels on `data-wk-server-value`, not in the config, so the expression is the
+             same for every color: a Livewire morph that changed it would start the picker again and
+             close an open panel under a `wire:model.live` drag. --}}
+        data-wk-server-value="{{ $value }}"
         x-data="wirekitColorPicker({{ \Pushery\WireKit\Support\AlpinePayload::from($jsConfig) }})"
         {{-- The caller's attributes land here, on the element that holds everything the
              picker renders, as they land on the field in the native branch: a listener hears
              the input and change events the hidden field below sends, and a test hook finds
              the control inside it. The model bindings go to that field, and a caller's
              `aria-label` names the trigger. --}}
-        {{ $attributes->except(['aria-describedby', 'aria-label', 'aria-labelledby'])->whereDoesntStartWith(['wire:model', 'x-model'])->class(['relative', $wrapperClasses]) }}
+        {{ $attributes->except(['aria-describedby', 'aria-label', 'aria-labelledby', 'autofocus'])->whereDoesntStartWith(['wire:model', 'x-model'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['relative', $wrapperClasses])) }}
+        {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+             listener written on the tag hears one field (utils/focus-unit.js). --}}
+        x-wk-focus-unit
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{-- Resolves because the layer WRAPS this element: `isPending` lives on
              the parent, and a child reads its parent through the scope chain. --}}
@@ -455,7 +494,7 @@
              panel already handles Escape while focus is inside it; this stays as the
              path for an Escape pressed while focus sits elsewhere, and close() is a
              no-op on an already-closed picker. --}}
-        @keydown.escape.window="isOpen && close()"
+        @keydown.escape.window="isOpen && ! $event.defaultPrevented && close()"
     >
         @if($nativeOnMobile)
             {{-- nativeOnMobile trigger: on touch-primary devices (useNative, decided
@@ -471,7 +510,7 @@
                 <label for="{{ $nativeId }}" class="wk-touch-row {{ $swatchClasses }}">
                     <input
                         type="color"
-                        @if($required) aria-required="true" @endif
+                        @if($required || $fieldRequired) aria-required="true" @endif
                         id="{{ $nativeId }}"
                         @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif(filled($callerLabel)) aria-label="{{ $callerLabel }}" @endif
                         :value="hex"
@@ -499,12 +538,14 @@
              name, like any icon-button). Without the slot, the default swatch
              shows the live color over a transparency checker. --}}
         @if($nativeOnMobile)<template x-if="!useNative">@endif
-        @isset($trigger)
+        @if(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
             <button
                 type="button"
                 id="{{ $pickerId }}"
                 x-ref="trigger"
+                @if($triggerAutofocus) autofocus @endif
                 @click="togglePanel()"
+                aria-expanded="false"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif(filled($callerLabel)) aria-label="{{ $callerLabel }}" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }} {{ $pickerId }}" @endif
@@ -520,7 +561,9 @@
                 type="button"
                 id="{{ $pickerId }}"
                 x-ref="trigger"
+                @if($triggerAutofocus) autofocus @endif
                 @click="togglePanel()"
+                aria-expanded="false"
                 :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif($fieldLabelId === null && (filled($callerLabel) || ! filled($id))) aria-label="{{ $triggerLabel }}" @endif
@@ -532,7 +575,7 @@
             >
                 <span class="absolute inset-0" :style="swatchStyle"@if($withClear) x-show="!cleared"@endif></span>
             </button>
-        @endisset
+        @endif
         @if($nativeOnMobile)</template>@endif
 
         @if($showValue)
@@ -543,7 +586,7 @@
         {{-- `wire:model` and `x-model` bind here: this field carries the value, and the picker
              sends `input` and `change` from it on every pick and clear. A disabled picker leaves
              it out of the form data, as a native field is left out. --}}
-        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" @if($disabled) disabled @endif {{ $attributes->except('type')->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }} @if($formOwner) form="{{ $formOwner }}" @endif />
+        <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" @if($disabled) disabled @endif {{ \Pushery\WireKit\Support\CallerModel::onField($attributes->except('type')->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable')) }} @if($formOwner) form="{{ $formOwner }}" @endif />
 
         {{-- Picker panel — teleported out of the document flow + Floating-UI positioned (see
              wirekitColorPicker._anchor) so it escapes any clipping/stacking
@@ -556,7 +599,7 @@
             x-cloak
             x-ref="panel"
             x-transition.opacity
-            @click.outside="close()"
+            @click.outside="closeOutside($event)"
             role="dialog"
             aria-label="{{ __('wirekit::Color picker') }}"
             class="fixed z-[var(--z-wk-dropdown,50)] w-[18rem] space-y-3 overflow-y-auto overscroll-contain rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] p-[var(--padding-wk-x-md)] shadow-[var(--shadow-wk-lg)]"
@@ -684,8 +727,11 @@
                     :aria-label="format + {{ \Pushery\WireKit\Support\AlpinePayload::from(', '.__('wirekit::Cycle color format')) }}"
                     x-text="format"
                 ></button>
+                {{-- `x-wk-ime`: the panel closes on Escape at the window, and the Escape that
+                     abandons an input method's conversion in this field is not one. --}}
                 <input
                     type="text"
+                    x-wk-ime
                     :value="{{ $withClear ? 'popoverValue' : 'formattedValue' }}"
                     @change="onInput($event.target.value)"
                     aria-label="{{ __('wirekit::Color value') }}"
@@ -727,7 +773,7 @@
                          stroke-width 2 on a clean single shape renders crisp at 16px. --}}
                     <svg x-show="copyIdle" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
                     {{-- Copied confirmation — a success-colored checkmark. --}}
-                    <svg x-show="copied" x-cloak class="h-4 w-4 text-[color:var(--color-wk-success)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                    <svg x-show="copied" x-cloak class="h-4 w-4 text-[color:var(--color-wk-success-text)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                     {{-- A refused copy: a warning of a different shape, not only a different color,
                          as on <x-wirekit::clipboard-button>, so it reads without telling red from
                          green, and an alert that says the clipboard is empty. --}}

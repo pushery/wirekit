@@ -27,6 +27,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('context-menu', $attributes->getAttributes());
 
+    // A context menu opens on its trigger, the area the reader opens it from, and without one
+    // there is nothing to open it on.
+    // Asked through the defined variables rather than isset(), which the slot reader of the
+    // component manifest takes for a slot that may be left out. A null trigger is a value the
+    // application shares with every view under this name, which this view is handed as none.
+    if (! array_key_exists('trigger', get_defined_vars()) || $trigger === null) {
+        throw new \InvalidArgumentException('<x-wirekit::context-menu> requires a `trigger` slot, the area the menu opens on (e.g. <x-slot:trigger><div>Right-click here</div></x-slot:trigger>).');
+    }
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:keydown.escape.window']);
@@ -34,7 +43,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $teleport = BooleanProp::from($teleport, true);
+    $teleport = BooleanProp::from($teleport, true, 'context-menu', 'teleport');
 
     // Context Menu — right-click triggered dropdown menu.
     // Positions at cursor coordinates using a virtual Floating UI reference.
@@ -62,7 +71,7 @@
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
-    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
     // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
@@ -84,8 +93,8 @@
          answer every Escape on the page. It cannot double-close either: when focus IS on
          an item the panel handler runs first and flips `open`, and this guard then reads
          false. Same binding, same reason, as dropdown.blade.php. --}}
-    x-on:keydown.escape.window="isOpen && close()"
-    {{ $attributes->class([$wrapperClasses]) }}
+    x-on:keydown.escape.window="isOpen && ! $event.defaultPrevented && close()"
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
 >
     {{-- Trigger — the area that responds to right-click (desktop) and to a
          touch long-press / hold (touch devices, which have no right-click).

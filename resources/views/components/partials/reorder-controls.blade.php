@@ -10,8 +10,8 @@
     use Pushery\WireKit\Support\AlpinePayload;
     use Pushery\WireKit\WireKit;
 
-    $position = max(0, (int) $position);
-    $count = $count === null || $count === '' ? null : max(0, (int) $count);
+    $position = max(0, \Pushery\WireKit\Support\NumericProp::int($position, 0));
+    $count = $count === null || $count === '' ? null : max(0, \Pushery\WireKit\Support\NumericProp::int($count, 0));
 
     // The arrows call the method by name inside an attribute Livewire evaluates, so it has to be
     // a name. Anything else is reported through the strictness gate, and where the gate does not
@@ -42,8 +42,8 @@
     $upCall = $action !== null && ! $isFirst ? $action.'('.$key.', '.($position - 1).')' : null;
     $downCall = $action !== null && ! $isLast ? $action.'('.$key.', '.($position + 1).')' : null;
 
-    $upText = filled($label) ? __('wirekit::Move :item up', ['item' => $label]) : __('wirekit::Move up');
-    $downText = filled($label) ? __('wirekit::Move :item down', ['item' => $label]) : __('wirekit::Move down');
+    $upText = filled($label) ? __('wirekit::Move :item up', ['item' => \Pushery\WireKit\Support\SlotContent::textOf($label)]) : __('wirekit::Move up');
+    $downText = filled($label) ? __('wirekit::Move :item down', ['item' => \Pushery\WireKit\Support\SlotContent::textOf($label)]) : __('wirekit::Move down');
 
     $handleClasses = WireKit::resolveClasses($reorderComponent, 'handle', implode(' ', [
         'inline-flex items-center justify-center',

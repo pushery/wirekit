@@ -31,6 +31,7 @@
 import { observeServerValue } from './server-value.js';
 import { sameValue } from './same-value.js';
 import { afterRenderFrame } from './commit-end.js';
+import { timerDelay } from './timer-delay.js';
 
 export const WK_SERVER_OPTIONS_ATTRIBUTE = 'data-wk-server-options';
 
@@ -259,7 +260,7 @@ export function serverSearchState(config = {}) {
             if (this._searchDebounce === 0) {
                 send();
             } else {
-                this._searchTimer = setTimeout(send, this._searchDebounce);
+                this._searchTimer = setTimeout(send, timerDelay(this._searchDebounce));
             }
         },
 

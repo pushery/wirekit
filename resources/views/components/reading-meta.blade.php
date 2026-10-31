@@ -26,8 +26,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $showRemaining = BooleanProp::from($showRemaining, false);
-    $perParagraph = BooleanProp::from($perParagraph, false);
+    $showRemaining = BooleanProp::from($showRemaining, false, 'reading-meta', 'showRemaining');
+    $perParagraph = BooleanProp::from($perParagraph, false, 'reading-meta', 'perParagraph');
 
     // Reading-meta — small text element showing "~12 min read" (initial) and
     // optionally "~5 min remaining" (after scroll). On mount, measures the
@@ -47,11 +47,11 @@
     // FROM that paragraph onward (re-computed on scroll). Default off; opt-in.
     // aria-hidden — total/remaining display is the canonical SR reading-time.
 
-    $wpmInt = max(50, (int) $wpm);
-    $cjkCpm = max(100, (int) $cjkCharsPerMinute);
+    $wpmInt = max(50, \Pushery\WireKit\Support\NumericProp::int($wpm, 0, 'reading-meta', 'wpm'));
+    $cjkCpm = max(100, \Pushery\WireKit\Support\NumericProp::int($cjkCharsPerMinute, 0, 'reading-meta', 'cjkCharsPerMinute'));
     $showRemainingBool = filter_var($showRemaining, FILTER_VALIDATE_BOOL);
     $perParagraphBool = filter_var($perParagraph, FILTER_VALIDATE_BOOL);
-    $paragraphMinWordsInt = max(1, (int) $paragraphMinWords);
+    $paragraphMinWordsInt = max(1, \Pushery\WireKit\Support\NumericProp::int($paragraphMinWords, 0, 'reading-meta', 'paragraphMinWords'));
 
     // target=null resolves to the family default 'main, article' (first-match
     // wins). Same convention as reading-spine + reading-bookmark.
@@ -87,7 +87,7 @@
          with no unit and no idea what they count. `aria-atomic` makes the region announce
          itself whole, which is "9 min remaining". --}}
     aria-atomic="true"
-    {{ $attributes->merge(['style' => 'font-size: var(--reading-meta-text-size); color: var(--reading-meta-color);'])->class([$rootClass]) }}
+    {{ $attributes->merge(['style' => 'font-size: var(--reading-meta-text-size); color: var(--reading-meta-color);'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass])) }}
 >
     <span class="wk-reading-meta__total">
         ~<span x-text="totalMinutes"></span> {{ $totalLabel }}

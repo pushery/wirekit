@@ -77,7 +77,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $interactive = BooleanProp::from($interactive, false);
+    $interactive = BooleanProp::from($interactive, false, 'profile', 'interactive');
 
     // Closed list rather than an open tag name: the only two shapes this layout is
     // written for are a passive box and a control. Anything else would render, and
@@ -184,14 +184,22 @@
     // The array shape may arrive as a Collection or as a model; both are read as the record.
     $avatar = \Pushery\WireKit\Support\ListProp::from($avatar);
     $avatarSrc = is_array($avatar) ? ($avatar['src'] ?? null) : (is_string($avatar) ? $avatar : null);
+    // An empty address, or one of white space, is no picture, so the profile shows its initials
+    // (Support\UrlProp::source()). An address of another kind is none as well.
+    $avatarSrc = is_string($avatarSrc) || $avatarSrc instanceof \Stringable ? \Pushery\WireKit\Support\UrlProp::source($avatarSrc) : null;
     $avatarInitials = is_array($avatar) ? ($avatar['initials'] ?? null) : null;
     $avatarAlt = is_array($avatar) ? ($avatar['alt'] ?? '') : '';
+
+    // A button's type is the caller's when it is one a button has, so a form can submit through it;
+    // otherwise it stays a plain button. It leaves the attributes below, since a second `type`
+    // would lose to the first.
+    $wkButtonType = in_array($attributes->get('type'), ['submit', 'reset', 'button'], true) ? $attributes->get('type') : 'button';
 @endphp
 
 <{{ $tag }} data-wk-prose-skip
     {{-- Never a submit button. A profile inside a form is a menu trigger, and the
          default type would post the form instead of opening the menu. --}}
-    @if($tag === 'button') type="button" @endif
+    @if($tag === 'button') type="{{ $wkButtonType }}" @endif
     {{-- The synthesized keyboard model is for the DIV branch only. On a real button it
          would be a second Enter/Space activation on top of the browser's own, firing the
          developer's click handler twice. --}}
@@ -223,7 +231,7 @@
     @endif
     {{-- The row's own tab stop is part of its keyboard model, so a caller's copy leaves the
          bag there; on a real button the component writes none and the caller's stays. --}}
-    {{ ($interactive && $tag !== 'button' ? $attributes->except('tabindex') : $attributes)->class(['wk-touch-row' => $control && ! $avatarOnly, 'wk-touch-target' => $avatarOnly, $classes]) }}
+    {{ ($interactive && $tag !== 'button' ? $attributes->except('tabindex') : ($tag === 'button' ? $attributes->except('type') : $attributes))->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row' => $control && ! $avatarOnly, 'wk-touch-target' => $avatarOnly, $classes])) }}
 >
     @if($avatarSrc)
         <img data-wk-prose-skip src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-full object-cover" />
@@ -255,7 +263,7 @@
              auto`, so `truncate` has nothing to shrink against and silently does nothing.
              That pairing is the trap; the class on its own reads as done. A name the line cuts
              is whole in its `title`, so a reader with a pointer can still read it. --}}
-        <span title="{{ $name }}" class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] {{ $toneClasses }} font-[number:var(--font-wk-body-weight)] wk-rail-hide">{{ $name }}</span>
+        <span title="{{ \Pushery\WireKit\Support\SlotContent::textOf($name) }}" class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] {{ $toneClasses }} font-[number:var(--font-wk-body-weight)] wk-rail-hide">{{ $name }}</span>
     @endif
     {{ $slot }}
 </{{ $tag }}>

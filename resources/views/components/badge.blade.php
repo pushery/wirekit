@@ -41,6 +41,10 @@
     // swapped for `min-h-*` + vertical padding so the pill GROWS with the text
     // instead of the second line spilling below the surface.
     'wrap' => false,
+    // Keeps the pill on one line and cuts a long label at `--size-wk-badge-max` with an ellipsis.
+    // The whole label shows in a tooltip while, and only while, it is cut; with `tooltip` it leads
+    // that tooltip's panel instead, so one panel says both.
+    'truncate' => false,
     'scope' => null,
 ])
 
@@ -51,13 +55,21 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $dot = BooleanProp::from($dot, false);
-    $dismissible = BooleanProp::from($dismissible, false);
-    $wrap = BooleanProp::from($wrap, false);
+    $dot = BooleanProp::from($dot, false, 'badge', 'dot');
+    $dismissible = BooleanProp::from($dismissible, false, 'badge', 'dismissible');
+    $wrap = BooleanProp::from($wrap, false, 'badge', 'wrap');
+    $truncate = BooleanProp::from($truncate, false, 'badge', 'truncate');
+
+    // A label the badge cuts stays on one line, so `wrap` beside `truncate` is reported, and the
+    // cut wins.
+    if ($truncate && $wrap) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('badge', 'wrap', 'true', 'no wrap on a badge that truncate cuts', 'false');
+        $wrap = false;
+    }
 
     // The dismiss button's accessible name is the one string this component renders
     // on the developer's behalf, so it comes from the catalog rather than from a
-    // literal in @props. A caller-supplied label still wins untouched. It names the
+    // literal in @props. A caller-supplied label still wins, read as its text. It names the
     // badge it removes, the way a multi-select pill does, so a row of filter chips is
     // not a row of buttons called "Remove"; a badge without text keeps the bare word.
     if ($dismissLabel === null) {
@@ -65,6 +77,8 @@
         $dismissLabel = $badgeText !== ''
             ? __('wirekit::Remove :name', ['name' => $badgeText])
             : __('wirekit::Remove');
+    } else {
+        $dismissLabel = \Pushery\WireKit\Support\SlotContent::textOf($dismissLabel);
     }
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -76,6 +90,8 @@
     // vocabulary — button spells the bordered-only treatment `surface="outline"`, card
     // historically spelled it `variant="outlined"`; neither is a dialect of the other.
     $surfaceAliases = ['outlined' => 'outline'];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $surface = \Pushery\WireKit\Support\NumericProp::key($surface);
     $surface = $surfaceAliases[$surface] ?? $surface;
 
     // Validate surface up front so an unknown value fails loudly (not silently
@@ -94,13 +110,16 @@
     // truthy (Blade passes it as the string "false"). See the stringly-false trap.
     $wrap = filter_var($wrap, FILTER_VALIDATE_BOOLEAN);
 
-    $baseClasses = WireKit::resolveClasses('badge', 'base', implode(' ', [
+    $baseClasses = WireKit::resolveClasses('badge', 'base', implode(' ', array_filter([
         'inline-flex items-center gap-x-1',
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-heading-weight)]',
         // Single-line by default; wrap mode lets long labels break across lines.
         $wrap ? 'whitespace-normal' : 'whitespace-nowrap',
-    ]), $scope);
+        // A badge that cuts its label ends at its widest line. The token is the one width for every
+        // such badge, and a `style` on one badge sets it for that badge alone.
+        $truncate ? 'max-w-[var(--size-wk-badge-max)]' : '',
+    ])), $scope);
 
     $borderWidthClass = $surface === 'outline'
         ? 'border-[length:var(--border-wk-width)]'
@@ -253,9 +272,12 @@
 
     // Trailing close button (dismissible). Inherits the badge text color via
     // currentColor; a focus ring + hover dim make it operable + discoverable.
-    // A small leading margin separates it from the label.
+    // It is a 24px target, the size WCAG 2.5.8 asks for, around its 12px glyph, and its
+    // negative margins hand the 12px back: 3px above and below, so a small badge keeps its
+    // height, and 2px before and 6px after, so the glyph keeps its place, 8px after the label and
+    // the badge's own padding before its end, and the badge keeps its width.
     $dismissBtnClasses = implode(' ', [
-        'shrink-0 ms-1 inline-flex items-center justify-center',
+        'shrink-0 -my-[3px] -ms-0.5 -me-1.5 inline-flex size-[var(--size-wk-target-min)] items-center justify-center',
         'rounded-[var(--radius-wk-full)]',
         'opacity-70 hover:opacity-100',
         'transition-opacity duration-[var(--transition-wk-duration)]',
@@ -273,20 +295,28 @@
      wrap is conditional so a badge WITHOUT a tooltip stays a bare span with
      zero Alpine overhead. The if/else duplicates the span deliberately —
      Blade pairs anonymous component tags at compile time, so the wrapper
-     cannot be split across a runtime conditional. --}}
+     cannot be split across a runtime conditional. The tooltip roots in a
+     span, so a badge that carries one still stands in a sentence: a block
+     element there would close the paragraph around it. --}}
 @if($tooltip)
-    <x-wirekit::tooltip :text="$tooltip" :scope="$scope">
+    <x-wirekit::tooltip :text="$tooltip" :scope="$scope" as="span">
         <span
             @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
-            {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
+            {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses])) }}
         >
             @if($dot)
-                <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
+                <span aria-hidden="true" class="inline-block h-1.5 w-1.5 shrink-0 rounded-full {{ $dotColorClass }}"></span>
             @endif
             @if($leadingIcon)
                 <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" />
             @endif
-            {{ $slot }}
+            @if($truncate)
+                {{-- The tooltip around the badge puts these words above its own while they are cut
+                     (tooltip.js), so a tooltip of the label's own never opens a second panel. --}}
+                <span data-wk-tooltip-cut class="min-w-0 truncate">{{ $slot }}</span>
+            @else
+                {{ $slot }}
+            @endif
             @if($trailingIcon)
                 <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
             @endif
@@ -300,15 +330,21 @@
 @else
     <span
         @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
-        {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
+        {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses])) }}
     >
         @if($dot)
-            <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
+            <span aria-hidden="true" class="inline-block h-1.5 w-1.5 shrink-0 rounded-full {{ $dotColorClass }}"></span>
         @endif
         @if($leadingIcon)
             <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" />
         @endif
-        {{ $slot }}
+        @if($truncate)
+            {{-- The label is the trigger of a tooltip of its own, shown while it is cut, in the
+                 badge's color, size, weight and face. --}}
+            <x-wirekit::text as="span" truncate="tooltip" intent="inherit" size="inherit" weight="inherit" family="inherit" leading="inherit" class="min-w-0">{{ $slot }}</x-wirekit::text>
+        @else
+            {{ $slot }}
+        @endif
         @if($trailingIcon)
             <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" />
         @endif
@@ -317,5 +353,4 @@
                 <x-wirekit::icon name="close" size="xs" aria-hidden="true" />
             </button>
         @endif
-    </span>
-@endif
+    </span>@endif

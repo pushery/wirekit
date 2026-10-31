@@ -44,13 +44,18 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.radio-item', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
+    $disabled = BooleanProp::from($disabled, false, 'dropdown.radio-item', 'disabled');
 
     // A radio menu item (WAI-ARIA menuitemradio). Selection is coordinated by a shared
     // Alpine variable named by `model` on an ancestor x-data — e.g.
@@ -80,7 +85,21 @@
     ]), $scope);
 
     $disabledClasses = $disabled ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none' : '';
+    // `model` is written into the Alpine expressions below, so it has to be the name of an Alpine
+    // property or a path to one: anything else would be code in an attribute. A value that is no
+    // such name is reported and the item renders as one without a model; an empty one is none.
+    $model = is_string($model) ? trim($model) : $model;
+    if ($model === '') {
+        $model = null;
+    } elseif ($model !== null && (! is_string($model) || preg_match('/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/', $model) !== 1)) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('dropdown.radio-item', 'model', \Pushery\WireKit\Support\NumericProp::text($model), 'the name of an Alpine property, such as "sort" or "filters.sort"', '');
+        $model = null;
+    }
+
     $isBound = $model !== null && $value !== null;
+    // The keys of the shortcut hint, one text or a list (Support\KeyShortcuts::hintKeys()),
+    // drawn as one line, a space between the keys.
+    $shortcutText = implode(' ', \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut));
 @endphp
 
 <button
@@ -94,7 +113,7 @@
         aria-checked="false"
     @endif
     @if($disabled) aria-disabled="true" @endif
-    {{ $attributes->class(['wk-touch-row', $classes, $disabledClasses]) }}
+    {{ $attributes->except(['role', 'tabindex', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $disabledClasses])) }}
 >
     {{-- Radio indicator — an ALWAYS-visible ring (so the whole group reads as a
          radio set, not just the selected row, and stays distinct from the
@@ -119,7 +138,7 @@
 
     {{ $slot }}
 
-    @if($shortcut)
-        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcut }}</span>
+    @if($shortcutText !== '')
+        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcutText }}</span>
     @endif
 </button>

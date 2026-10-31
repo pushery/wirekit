@@ -86,6 +86,8 @@ export default function wirekitMap(config = {}) {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
         _loadFailureWarned: null,
+        _tileLoaded: null,
+        _tileFailed: null,
 
         /**
          * A marker's coordinates, to four decimals — roughly 11 meters, which is
@@ -336,9 +338,17 @@ export default function wirekitMap(config = {}) {
                     );
                     // Leaflet reports a tile that failed to load only through
                     // `tileerror` and logs nothing itself, so without this the
-                    // canvas stays blank with no word in the console.
+                    // canvas stays blank with no word in the console. The hint
+                    // waits for `load`, which Leaflet fires once every tile in
+                    // view has settled, loaded or failed: a tile missing at the
+                    // edge of a set that covers one area fails as well, often
+                    // before the others arrive, while the map draws.
                     if (typeof layer.on === 'function') {
-                        layer.on('tileerror', () => this._warnLoadFailure());
+                        layer.on('tileload', () => { this._tileLoaded = true; });
+                        layer.on('tileerror', () => { this._tileFailed = true; });
+                        layer.on('load', () => {
+                            if (this._tileFailed && !this._tileLoaded) this._warnLoadFailure();
+                        });
                     }
                     layer.addTo(map);
                 }
@@ -654,6 +664,8 @@ export default function wirekitMap(config = {}) {
         // HTTP status (0 when no response arrived, as under a CSP block) and the
         // URL. Its other errors, a style that does not validate among them, carry
         // neither, and a hint about the network would send the reader the wrong way.
+        // A tile answered with 404 raises no error at all: MapLibre draws a parent
+        // tile in its place, so a tile set that covers one area never reaches here.
         _reportMapError(event) {
             const error = event ? event.error : undefined;
             if (error === undefined) return;

@@ -8,9 +8,10 @@
      a human phrase — "2 hours ago", "Just now", "10 min ago" — so the element was invalid in
      every single usage, and an invalid `<time>` conveys nothing to anything reading the page.
 
-     The three sibling components that emit `<time>` all derive the attribute from a Carbon
-     instance (`countdown`, `message`, `date-separator`). This one cannot: its prop is display
-     copy, and a phrase like "Just now" has no machine value to derive.
+     The sibling components that emit `<time>` derive the attribute from the instant they are
+     handed (`countdown`, `message`, `review`, `date-separator`). This one mostly cannot: its
+     `time` is display copy, and a phrase like "Just now" has no machine value to derive. A date
+     object handed as `time` is the exception, and it supplies both.
 
      So the attribute arrives on its own, and the element follows it. With a machine-readable
      value the item renders `<time datetime="…">` like its siblings; without one it renders a
@@ -22,6 +23,8 @@
     'icon' => null,
     'variant' => 'default', // back-compat alias of `intent`
     'intent' => null,       // canonical color axis: default | success | warning | danger. null → falls back to `variant`
+    // The event's headline, as a prop or as the `title` slot; the slot wins when both are given.
+    'title' => null,
     'scope' => null,
 ])
 
@@ -75,9 +78,26 @@
         'danger' => __('wirekit::Error'),
         default => null,
     };
+
+    // A date object as the row's time is written as the page's language writes a day with a time
+    // of day, and it is the row's machine-readable value too when `datetime` names none. Echoed as
+    // it is, a Carbon reads `2026-10-25 12:00:00` in no language, and PHP's own `DateTime` has no
+    // string form at all.
+    if ($time instanceof \DateTimeInterface) {
+        if (blank($datetime)) {
+            $datetime = $time;
+        }
+
+        $time = \Pushery\WireKit\Support\LocalizedDate::bySkeleton(\Carbon\CarbonImmutable::instance($time), 'yMMMdjmm', 'M j, Y, g:i A');
+    }
+
+    // The value of `datetime`, as HTML reads the attribute (Support\MachineTime): a date object or
+    // a timestamp with its offset, a string of the attribute's grammar as it stands, and nothing
+    // for a text that names no time, which is reported.
+    $machineTime = \Pushery\WireKit\Support\MachineTime::attribute($datetime, 'timeline.item');
 @endphp
 
-<li data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<li data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{-- Vertical connector line + dot indicator.
          Uses inline styles for flex layout to ensure reliable rendering. --}}
     <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
@@ -119,7 +139,7 @@
             <span class="sr-only">{{ __('wirekit::Status: :status', ['status' => $intentLabel]) }}</span>
         @endif
 
-        @if(isset($title))
+        @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
             <div class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
                 {{ $title }}
             </div>
@@ -132,8 +152,8 @@
                 $timeClasses = 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]';
             @endphp
 
-            @if(filled($datetime))
-                <time datetime="{{ $datetime }}" class="{{ $timeClasses }}">{{ $time }}</time>
+            @if($machineTime !== null)
+                <time datetime="{{ $machineTime }}" class="{{ $timeClasses }}">{{ $time }}</time>
             @else
                 <span class="{{ $timeClasses }}">{{ $time }}</span>
             @endif

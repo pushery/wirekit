@@ -83,8 +83,10 @@ function dayOr(value, fallback) {
 import { position } from '../utils/floating.js';
 import { pluralize, pluralTemplate } from '../utils/plural.js';
 import { isComposing } from '../utils/ime.js';
+import { initialsOf } from '../utils/initials.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { jsonValue, observeServerValue } from '../utils/server-value.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 /** The attributes that carry what the server decides; see init(). */
 const EVENTS_ATTRIBUTE = 'data-wk-events';
@@ -129,6 +131,13 @@ export default function wirekitEventCalendar(config = {}) {
     // languages at once, and no prop could correct it.
     const locale = config.locale || undefined;
 
+    // The names a screen reader hears, and the plural rule of the application's sentences, in the
+    // page's language. A name carries one language, and the words in it ("All day", "with :names",
+    // "more") are the application's, so a calendar shown in another language than the page names
+    // its days and its events in the page's; what it shows in its own says so with `lang`, which
+    // the view sets.
+    const labelLocale = config.labelLocale || locale;
+
     // Built once per instance rather than per read. Every format below depends
     // only on the locale, which does not change for the life of the component —
     // while `weekdayLabels`, `weekDays` and `monthWeeks` are re-read on every
@@ -142,12 +151,15 @@ export default function wirekitEventCalendar(config = {}) {
     const timeFormat = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
     const agendaDayFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'short', day: 'numeric' });
     const fullDateFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+    // The day and the time inside a name, in the page's language (`labelLocale` above).
+    const nameDateFormat = new Intl.DateTimeFormat(labelLocale, { weekday: 'long', month: 'long', day: 'numeric' });
+    const nameTimeFormat = new Intl.DateTimeFormat(labelLocale, { hour: 'numeric', minute: '2-digit' });
     // A timed event that runs into a later day is named by its whole span, both ends with day and
     // time, through `formatRange()` so the locale writes the dash or the words between them.
-    const spanFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const spanFormat = new Intl.DateTimeFormat(labelLocale, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     // Joins attendee names the way the locale joins a list — "A, B, and C", "A, B und C" — so
     // the one word the catalog has to supply is the "with" in front of it.
-    const listFormat = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' });
+    const listFormat = new Intl.ListFormat(labelLocale, { style: 'long', type: 'conjunction' });
 
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
@@ -747,7 +759,7 @@ export default function wirekitEventCalendar(config = {}) {
 
             if (e.allDay) {
                 const last = this._addDays(span.end, -1);
-                const days = this._sameDay(span.start, last) ? fullDateFormat.format(s) : fullDateFormat.formatRange(span.start, last);
+                const days = this._sameDay(span.start, last) ? nameDateFormat.format(s) : nameDateFormat.formatRange(span.start, last);
 
                 return `${e.title}, ${days}, ${this._allDayLabel}`;
             }
@@ -756,19 +768,17 @@ export default function wirekitEventCalendar(config = {}) {
                 return `${e.title}, ${spanFormat.formatRange(span.start, span.end)}`;
             }
 
-            return `${e.title}, ${fullDateFormat.format(s)}, ${timeFormat.format(s)}`;
+            return `${e.title}, ${nameDateFormat.format(s)}, ${nameTimeFormat.format(s)}`;
         },
         // An event's attendees, normalized: a name alone or `{ name, avatar }`, blank names
-        // dropped, initials from the first two words for the disc that has no picture.
+        // dropped, and for the disc that has no picture the initials every component of the kit
+        // gives the same name (utils/initials.js).
         _attendeesOf(e) {
             return (Array.isArray(e.attendees) ? e.attendees : [])
                 .map((a) => (typeof a === 'string' ? { name: a } : (a || {})))
                 .map((a) => ({ name: String(a.name || '').trim(), avatar: a.avatar || null }))
                 .filter((a) => a.name !== '')
-                .map((a) => ({
-                    ...a,
-                    initials: a.name.split(/\s+/).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join(''),
-                }));
+                .map((a) => ({ ...a, initials: initialsOf(a.name) }));
         },
         // At most three faces beside a row: past that, a stack stops saying who and only
         // says "many", which the count beside it says better.
@@ -795,15 +805,15 @@ export default function wirekitEventCalendar(config = {}) {
         // that was formatted there was the one date still spoken in the browser's
         // language after everything else had moved to the application's.
         longDate(date) {
-            return fullDateFormat.format(date);
+            return nameDateFormat.format(date);
         },
         // The name of a day's "+N more" button and the word after its number, each in the form
         // the number takes: "1 more event on …", and in Italian "1 altro" beside "3 altri".
         moreName(day) {
-            return pluralize(this._moreNames, day.overflow, locale).replace(':date', this.longDate(day.date));
+            return pluralize(this._moreNames, day.overflow, labelLocale).replace(':date', this.longDate(day.date));
         },
         moreWord(day) {
-            return pluralize(this._moreWords, day.overflow, locale);
+            return pluralize(this._moreWords, day.overflow, labelLocale);
         },
         // The start time a MONTH pill shows to the right of its title.
         //
@@ -930,6 +940,10 @@ export default function wirekitEventCalendar(config = {}) {
         },
         get selectedDayLabel() {
             return this.selectedDay ? this.selectedDay.label : '';
+        },
+        // The open day's name for the group around it, in the page's language like every name.
+        get selectedDayName() {
+            return this.selectedDay ? nameDateFormat.format(this.selectedDay.date) : '';
         },
 
         // ── Truncated-title tooltip (one shared bubble) ──────────────────
@@ -1069,7 +1083,7 @@ export default function wirekitEventCalendar(config = {}) {
             // that leaves and a scroll close it at once.
             if (e && e.type === 'pointerout') {
                 clearTimeout(this._tipHideTimer);
-                this._tipHideTimer = setTimeout(() => this._tipClose(), this._tipDelayHide);
+                this._tipHideTimer = setTimeout(() => this._tipClose(), timerDelay(this._tipDelayHide));
                 return;
             }
             this._tipClose();

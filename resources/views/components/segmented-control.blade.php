@@ -21,11 +21,13 @@
     // Livewire method to call optimistically. The segment moves immediately and
     // is put back if the call fails. Absent -> the component renders without an
     // optimistic layer.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'options' => [],
     'value' => null,
     'size' => config('wirekit.components.segmented-control.size', 'md'),
@@ -36,18 +38,22 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // A list where the control takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and read as no value (Support\FieldValue).
+    $value = \Pushery\WireKit\Support\FieldValue::one($value, 'segmented-control');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -56,6 +62,10 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('segmented-control', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('segmented-control', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // The hidden input gives the segment as text, and Livewire takes the server's echo of an `int`
     // or `float` property for a change and writes it over a newer choice: a binding to one gets
@@ -79,9 +89,21 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
+    $disabled = BooleanProp::from($disabled, false, 'segmented-control', 'disabled');
+
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'segmented-'); // page-unique DOM id; see Support\DomId
+    // The validation bag, read as every other form control reads it: the caller's own message wins,
+    // and without one the bag answers under the field's name, or the property its `wire:model`
+    // binds. `false` turns it off, and a list of messages shows its first (Support\FieldError).
+    $error = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes), $error);
+    // Inside a labeled field the field's label names the radiogroup by reference: a group is not
+    // an element a label can name with `for` (Support\FieldControl).
+    $fieldLabelId = ! $label && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby') && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel(null)
+        : null;
     // One description list for the control: the component's own id first, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
@@ -89,10 +111,15 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
 
     // Container wrapping the pill-style segments
     //
@@ -108,7 +135,7 @@
     // nothing changes — `inline-flex` still sizes the bar to its content.
     $containerClasses = WireKit::resolveClasses('segmented-control', 'base', implode(' ', [
         'inline-flex',
-        'max-w-full overflow-x-auto overflow-y-hidden scroll-px-1',
+        'relative max-w-full overflow-x-auto overflow-y-hidden scroll-px-1',
         'rounded-[var(--radius-wk-md)]',
         'bg-[var(--color-wk-bg-muted)]',
         'p-0.5',
@@ -183,7 +210,7 @@
 
     // The options usually come from `pluck('label', 'value')`, which is a Collection; the first
     // key below and the loop over them take an array. The keys are the values and stay.
-    $options = \Pushery\WireKit\Support\ListProp::from($options);
+    $options = \Pushery\WireKit\Support\ListProp::from($options, 'segmented-control', 'options');
 
     // An option is a label, or the shape `select` takes for one with more to say:
     // `'de' => ['label' => 'Deutsch', 'lang' => 'de']`. `lang` is the language the label is in,
@@ -192,7 +219,7 @@
     $segments = [];
     foreach ($options as $optValue => $optLabel) {
         $segments[$optValue] = is_array($optLabel)
-            ? ['label' => $optLabel['label'] ?? $optValue, 'lang' => isset($optLabel['lang']) ? (string) $optLabel['lang'] : null]
+            ? ['label' => $optLabel['label'] ?? $optValue, 'lang' => \Pushery\WireKit\Support\LanguageTag::of($optLabel['lang'] ?? null)]
             : ['label' => $optLabel, 'lang' => null];
     }
 
@@ -236,13 +263,16 @@
 
 <div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0">
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     {{-- `name` belongs to the hidden field below, which renders it. On this div it is not a
          valid attribute, and a `[name="…"]` lookup would find the group before the field. --}}
     <div
-        {{ $attributes->except(['aria-describedby', 'name'])->whereDoesntStartWith('wire:model')->class([$containerClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '']) }}
+        {{ $attributes->except(['aria-describedby', 'name'])->whereDoesntStartWith('wire:model')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$containerClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : ''])) }}
+        {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+             listener written on the tag hears one field (utils/focus-unit.js). --}}
+        x-wk-focus-unit
         {{-- Selection, the hidden-input mirror and the whole keyboard model live
              in the factory (resources/js/components/segmented-control.js). The
              handlers cannot be inline: Alpine's CSP build parses neither the
@@ -275,7 +305,7 @@
         @unless($optimisticConfig)
             @unless($attributes->has('role')) role="radiogroup" @endunless
             @if($disabled) aria-disabled="true" @endif
-            @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
+            @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @endif
             {{-- On the GROUP: the message is about the choice, and repeating it on every
                  segment would have it read out once per option. --}}
             @if($error) aria-invalid="true" @endif
@@ -315,7 +345,7 @@
              name a hidden field, and a caller's `id` already sits on the radio group
              through the bag: written here as well, it stood on two elements. --}}
         {{-- A disabled field is left out of the form data, as a native one is. --}}
-        <input type="hidden" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
+        <input type="hidden" @if($name !== '') name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
 
         @if($optimisticConfig)
             {{-- `display: contents` on both wrappers: the segments must keep
@@ -327,7 +357,7 @@
                     role="radiogroup"
                     style="display: contents"
                     @if($disabled) aria-disabled="true" @endif
-                    @if($label) aria-label="{{ $label }}" @endif
+                    @if($label) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @elseif($fieldLabelId) aria-labelledby="{{ $fieldLabelId }}" @endif
                     {{-- The error/hint wiring moves in with the role, and it has to be
                          listed here as well as on the container branch: the `@unless`
                          above drops the whole block when the layer is present, so an
@@ -361,7 +391,7 @@
                      The tabindex line below keeps ONE stop for the group, and the click and
                      key handlers gate on `disabled` so nothing is selectable. --}}
                 aria-disabled="{{ $disabled ? 'true' : 'false' }}"
-                aria-checked="{{ $selected === $optValue ? 'true' : 'false' }}"
+                aria-checked="{{ (string) $selected === (string) $optValue ? 'true' : 'false' }}"
                 {{-- AlpinePayload::from, not a hand-quoted '{{ … }}': an option value
                      carrying an apostrophe ("Rock 'n' Roll") would otherwise
                      close the JS string mid-expression and break every binding
@@ -370,8 +400,8 @@
                 {{-- One tab stop even when disabled: the group has to be REACHABLE to be
                      announced as unavailable. It sits on the selected item, which is where
                      it sits when the group is live. --}}
-                tabindex="{{ $selected === $optValue ? '0' : '-1' }}"
-                @if($fieldAutofocus && $selected === $optValue) autofocus @endif
+                tabindex="{{ (string) $selected === (string) $optValue ? '0' : '-1' }}"
+                @if($fieldAutofocus && (string) $selected === (string) $optValue) autofocus @endif
                 @if(! $disabled)
                     :tabindex="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }} ? '0' : '-1'"
                     {{-- run(), not select(): the layer snapshots, writes `selected`

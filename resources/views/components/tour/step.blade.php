@@ -16,6 +16,8 @@
     // that rule lives in axe's best-practice tag rather than the WCAG tags most suites
     // run — so it is invisible to an axe sweep and visible in Lighthouse.
     'level' => 3,
+    // The step's title, as a prop or as the `title` slot; the slot wins when both are given.
+    'title' => null,
     'scope' => null,
 ])
 
@@ -25,6 +27,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('tour.step', $attributes->getAttributes());
 
+    // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
+    // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
+    // No placement at all, `null` or empty, is the default, as the script reads it.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('tour.step', 'placement', (string) ($placement ?: 'bottom'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'bottom');
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\Support\TourStepCounter;
     use Pushery\WireKit\WireKit;
 
@@ -32,7 +44,7 @@
     // developer didn't supply one. The parent tour component
     // reset the counter to 0; sibling steps each pick the next
     // integer in document-render order.
-    $resolvedIndex = $index ?? TourStepCounter::next();
+    $resolvedIndex = \Pushery\WireKit\Support\NumericProp::intOrNull($index, 'tour.step', 'index') ?? TourStepCounter::next();
 
     // Id for aria-labelledby — links the step dialog to its own heading.
     //
@@ -90,7 +102,10 @@
     // computePosition() resolves, so the panel jumps straight to its final spot.
     $panelClasses = WireKit::resolveClasses('tour.step', 'base', implode(' ', [
         'fixed z-[var(--z-wk-modal)]',
-        'w-80',
+        // As wide as the window allows at 320px, and as tall: `fitViewport` caps the height to the
+        // room beside the target, and the step scrolls its excess instead of standing past the edge.
+        'w-80 max-w-[calc(100vw-1rem)]',
+        'overflow-y-auto overscroll-contain',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
@@ -105,9 +120,9 @@
     // did-you-mean, and where the gate does not throw it renders the default level — never
     // h1, which is what validateProp's own first-allowed fallback would produce and which
     // would break the outline worse than the default does.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('tour.step', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('tour.step', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 @endphp
 
@@ -125,7 +140,7 @@
     aria-modal="true"
     @if($hasCallerName)
         aria-label="{{ $callerAriaLabel }}"
-    @elseif(isset($title))
+    @elseif($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
         aria-labelledby="{{ $titleId }}"
     @else
         aria-label="{{ __('wirekit::Tour step :number', ['number' => $resolvedIndex + 1]) }}"
@@ -134,13 +149,13 @@
          the step's name and body are read before the buttons. `-1` keeps the panel
          out of the page's own tab order — it is a focus destination, not a stop. --}}
     tabindex="-1"
-    {{ $attributes->class([$panelClasses]) }}
+    {{ $attributes->except(['role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$panelClasses])) }}
     x-cloak
 >
     {{-- Step title --}}
-    @isset($title)
+    @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
         <h{{ $levelValue }} data-wk-prose-skip id="{{ $titleId }}" class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] mb-[var(--padding-wk-y-xs)]">{{ $title }}</h{{ $levelValue }}>
-    @endisset
+    @endif
 
     {{-- Step body --}}
     <div class="text-[color:var(--color-wk-text-muted)] mb-[var(--padding-wk-y-md)]">

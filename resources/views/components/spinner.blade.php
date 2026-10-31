@@ -55,6 +55,8 @@
     if ($intent === null || $intent === '') {
         $colorClass = '';
     } else {
+        // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+        $intent = \Pushery\WireKit\Support\NumericProp::key($intent);
         $resolvedIntent = isset($intentColors[$intent])
             ? $intent
             : WireKit::validateProp('spinner', 'intent', $intent, array_keys($intentColors));
@@ -82,7 +84,7 @@
      The rotation is Tailwind's, not one of WireKit's own keyframes, so it is the
      one continuous animation in the library that the stylesheet cannot name by its
      animation. It has to name the element instead. --}}
-<span @unless($attributes->has('role')) role="status" @endunless @unless($attributes->has('aria-live')) aria-live="polite" @endunless {{ $attributes->class(['wk-spinner', $wrapperClasses]) }} data-wk-sr-host>
+<span @unless($attributes->has('role')) role="status" @endunless @unless($attributes->has('aria-live')) aria-live="polite" @endunless {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-spinner', $wrapperClasses])) }} data-wk-sr-host>
     <svg class="animate-spin {{ $sizeClass }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>

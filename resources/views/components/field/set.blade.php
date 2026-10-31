@@ -39,6 +39,19 @@
     // shows beside its label, and the text as the group's description. The controls inside then
     // need no help of their own. Read only where the set has a legend to stand beside.
     'help' => null,
+    // The name of the field the help explains, which its `wirekit:field-help` event carries.
+    // Without it the event names the group's `name`; a set that stands for one field and reads
+    // no error-bag key of its own names that field here.
+    'helpField' => null,
+    // The set stands for ONE field whose parts are its controls, such as a value in every language:
+    // the legend reads as a field's label, at a label's distance from the first control, and the
+    // hint or the error follows the controls, as under a field. A field beside the set then stands
+    // on the height of its first control.
+    'asField' => false,
+    // The group as a whole is required, such as a choice nobody may skip: an asterisk after the
+    // legend, as a required field draws after its label, and the word in the legend, which a
+    // screen reader reads on entering the group. No control in it takes the browser's own check.
+    'required' => false,
     'scope' => null,
 ])
 
@@ -50,6 +63,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('field.set', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\FieldGroup;
     use Pushery\WireKit\WireKit;
@@ -60,6 +78,8 @@
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
+    $asField = BooleanProp::from($asField, false, 'field.set', 'asField');
+    $required = BooleanProp::from($required, false, 'field.set', 'required');
 
     // The group the controls in the slot already answered to. Through the class it arrives as
     // `$wkFieldSet`, and its ids are the ones they point at. A view compiled before the class
@@ -106,6 +126,21 @@
     // hint: one message under the caption, above the controls a reader is about to scan.
     $errorClasses = WireKit::resolveClasses('field.set', 'error', 'mb-3 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]', $scope);
 
+    // A set that stands for one field draws its legend as `label` draws a field's label: with the
+    // label's own classes in this scope, a personalization of `label.base` included, so the legend
+    // keeps reading as the labels beside it, and 6px above the first control, as a field's wrapper
+    // spaces them. Its message stands 6px under the controls, where a field's stands. Blocks of
+    // their own, so a personalization of a group's caption leaves these alone. The default below is
+    // the label's own, repeated, and the two change together. Its `block` stays behind: a legend is
+    // a block of its own, and the row it becomes beside a question mark or a mark is a flex row,
+    // which a second display utility on the same element would undo.
+    if ($asField) {
+        $labelClasses = preg_split('/\s+/', WireKit::resolveClasses('label', 'base', 'block font-[family-name:var(--font-wk-sans)] tracking-[var(--font-wk-letter-spacing)] text-[length:var(--text-wk-md)] font-medium text-[color:var(--color-wk-text)]', $scope), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $legendClasses = WireKit::resolveClasses('field.set', 'field-legend', implode(' ', ['mb-1.5', ...array_diff($labelClasses, ['block'])]), $scope);
+        $hintClasses = WireKit::resolveClasses('field.set', 'field-hint', 'mt-1.5 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]', $scope);
+        $errorClasses = WireKit::resolveClasses('field.set', 'field-error', 'mt-1.5 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]', $scope);
+    }
+
     // How a slot is WRITTEN decides its TYPE (see Support\SlotAttributes): the block
     // form yields a ComponentSlot, the one-line form a plain string. Only the object
     // carries markup that is meant to render as markup, so only it is emitted raw —
@@ -130,7 +165,7 @@
     $legendRow = $hasHelp || $hasLabelAfter;
     $legendText = $hasLegend ? trim(html_entity_decode(strip_tags((string) $legend), ENT_QUOTES | ENT_HTML5)) : '';
     $setId = $legendRow
-        ? \Pushery\WireKit\Support\DomId::distinct(WireKit::stableId('wk-field-set', $group->key ?? ($legendText !== '' ? $legendText : null)))
+        ? \Pushery\WireKit\Support\DomId::distinct(WireKit::stableId('wk-field-set', $group->name ?? ($legendText !== '' ? $legendText : null)))
         : null;
     $legendTextId = $setId !== null ? $setId.'-legend' : null;
     $helpId = $hasHelp && $setId !== null ? $setId.'-help' : null;
@@ -152,7 +187,7 @@
         ->class(array_values(array_filter([$legendClasses, $legendRowClasses], filled(...))));
 @endphp
 
-<fieldset @if($group->key !== null) name="{{ $group->key }}" @endif @if($legendRow && ! $namedByCaller) aria-labelledby="{{ $legendTextId }}" @endif @if($fieldsetDescribedBy !== null) aria-describedby="{{ $fieldsetDescribedBy }}" @endif {{ $attributes->class([$classes]) }}>
+<fieldset @if($group->name !== null) name="{{ $group->name }}" @endif @if($legendRow && ! $namedByCaller) aria-labelledby="{{ $legendTextId }}" @endif @if($fieldsetDescribedBy !== null) aria-describedby="{{ $fieldsetDescribedBy }}" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{-- A <legend> is the group's caption only while it is the fieldset's first
          child. One level down it is an ordinary inline box: the <fieldset> then has no
          accessible name, and a screen reader announces nothing before the controls —
@@ -169,15 +204,21 @@
          a row that also holds a question mark or a mark. --}}
     @if($hasLegend)
         @if($legendRow)
-            <legend data-wk-label-row {{ $legendAttributes }}>@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif<span id="{{ $legendTextId }}" data-wk-field-label>{{ $legend }}</span>@if($hasHelp)@include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => $legendText, 'helpId' => $helpId, 'helpButton' => $helpButton, 'helpField' => (string) ($group->key ?? '')])@endif @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif</legend>
+            <legend data-wk-label-row data-wk-sr-host {{ $legendAttributes }}>@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif<span id="{{ $legendTextId }}" data-wk-field-label>{{ $legend }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endif</span>@if($hasHelp)@include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => $legendText, 'helpId' => $helpId, 'helpButton' => $helpButton, 'helpField' => (string) (filled($helpField) ? $helpField : ($group->name ?? ''))])@endif @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif</legend>
         @else
-            <legend data-wk-field-label {{ $legendAttributes }}>{{ $legend }}</legend>
+            {{-- A required group says so in its caption: the asterisk is drawn and hidden from a
+                 screen reader, as on a field's label, and the word in the legend is read instead.
+                 `data-wk-required-word` keeps the word out of a name the kit shows on screen,
+                 such as the question before leaving. --}}
+            <legend data-wk-field-label data-wk-sr-host {{ $legendAttributes }}>{{ $legend }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span><span class="sr-only" data-wk-required-word> {{ __('wirekit::(required)') }}</span>@endif</legend>
         @endif
     @endif
-    @if($groupMessage !== null)
-        <p data-wk-prose-skip id="{{ $group->errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="{{ $errorClasses }}">{{ $groupMessage }}</p>
-    @elseif($group->hint !== null)
-        <p data-wk-prose-skip id="{{ $group->hintId }}" class="{{ $hintClasses }}">{{ $group->hint }}</p>
+    @if(! $asField)
+        @if($groupMessage !== null)
+            <p data-wk-prose-skip id="{{ $group->errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="{{ $errorClasses }}">{{ $groupMessage }}</p>
+        @elseif($group->hint !== null)
+            <p data-wk-prose-skip id="{{ $group->hintId }}" class="{{ $hintClasses }}">{{ $group->hint }}</p>
+        @endif
     @endif
 
     @if(config('app.debug') && \Pushery\WireKit\Support\FieldGroup::hasLooseLegend((string) $slot))
@@ -190,10 +231,22 @@
         @endphp
     @endif
 
-    {{-- Grouped controls. The space-y gap keeps the fields evenly spaced. On a touch surface two
-         checkboxes or radios in a row stand apart by the height of their own rows, and the
-         stylesheet drops the gap between them through `data-wk-field-set-controls`. --}}
+    {{-- Grouped controls. The space-y gap keeps the fields evenly spaced. Under a coarse pointer
+         the hit areas of two checkboxes or radios in a row each reach half of this gap, so the
+         stylesheet's reach for `data-wk-field-set-controls` changes with it. On a touch surface
+         two such rows stand apart by the height of their own rows, and the stylesheet drops the
+         gap between them. --}}
     <div data-wk-field-set-controls class="space-y-3">
         {{ $slot }}
     </div>
+
+    {{-- The message of a set that stands for one field follows its controls, as a field's follows
+         the field. --}}
+    @if($asField)
+        @if($groupMessage !== null)
+            <p data-wk-prose-skip id="{{ $group->errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="{{ $errorClasses }}">{{ $groupMessage }}</p>
+        @elseif($group->hint !== null)
+            <p data-wk-prose-skip id="{{ $group->hintId }}" class="{{ $hintClasses }}">{{ $group->hint }}</p>
+        @endif
+    @endif
 </fieldset>

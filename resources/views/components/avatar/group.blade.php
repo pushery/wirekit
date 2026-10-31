@@ -21,6 +21,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('avatar.group', $attributes->getAttributes());
 
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('avatar.group', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'xs', 'sm', 'lg', 'xl']);
+
     use Pushery\WireKit\WireKit;
 
     // Overlap + ring live in the .wk-avatar-group CSS class (dist/wirekit.css):
@@ -48,14 +52,14 @@
     ]);
 @endphp
 
-<div role="group" @if($label) aria-label="{{ $label }}" @endif {{ $attributes->merge(['data-size' => $size])->class([$groupClasses]) }}>
+<div @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="group" @endunless @if($label && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif {{ $attributes->merge(['data-size' => $size])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$groupClasses])) }}>
     {{ $slot }}
-    @if($remaining !== null && (int) $remaining > 0)
+    @if(\Pushery\WireKit\Support\NumericProp::int($remaining, 0, 'avatar.group', 'remaining') > 0)
         {{-- Hidden from assistive technology ONLY when something else says the total.
              The reasoning was right and its premise was not: `aria-label` is optional here,
              so an unlabeled group hid the chip AND had no name — the "+3" existed for
              sighted readers alone, and nothing conveyed how many people were not shown.
              With a label the chip is genuinely redundant and stays hidden. --}}
-        <span class="{{ $chipClasses }}" @if(filled($label)) aria-hidden="true" @endif>+{{ (int) $remaining }}</span>
+        <span class="{{ $chipClasses }}" @if(filled($label)) aria-hidden="true" @endif>+{{ \Pushery\WireKit\Support\NumericProp::int($remaining, 0, 'avatar.group', 'remaining') }}</span>
     @endif
 </div>

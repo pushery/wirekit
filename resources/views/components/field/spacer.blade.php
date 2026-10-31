@@ -48,4 +48,4 @@
 {{-- A no-break space, because an ordinary one does not survive: a component slot is trimmed
      when it is collected, and a label left empty has no line to hold the row open. --}}
 @php($wkSpacerBlank = "\u{00A0}")
-<x-wirekit::label aria-hidden="true" {{ $attributes->class([$classes]) }}>{{ $wkSpacerBlank }}</x-wirekit::label>
+<x-wirekit::label aria-hidden="true" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $wkSpacerBlank }}</x-wirekit::label>

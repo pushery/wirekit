@@ -71,13 +71,27 @@ final class ApexChartsAdapter implements ChartAdapter
         $position = 0;
         foreach ($datasets as $dataset) {
             $position++;
+            // Pass through extra keys (color, type per-series for mixed, etc.)
+            $extra = array_diff_key($dataset, array_flip(['label', 'data']));
+
+            // The decimals a series names for its own values reach the renderer as a whole number
+            // in the 0–100 that toFixed() takes, or not at all, so the chart's `valueDecimals`
+            // applies.
+            if (array_key_exists('decimals', $extra)) {
+                $places = is_numeric($extra['decimals']) ? min(100, max(0, (int) $extra['decimals'])) : null;
+                unset($extra['decimals']);
+
+                if ($places !== null) {
+                    $extra['decimals'] = $places;
+                }
+            }
+
             $series[] = array_merge(
                 [
                     'name' => $dataset['label'] ?? __('wirekit::Series :number', ['number' => $position]),
                     'data' => $dataset['data'] ?? [],
                 ],
-                // Pass through extra keys (color, type per-series for mixed, etc.)
-                array_diff_key($dataset, array_flip(['label', 'data'])),
+                $extra,
             );
         }
 

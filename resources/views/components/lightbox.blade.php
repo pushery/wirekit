@@ -7,6 +7,7 @@
     'name' => null,
     // The slides. Each item is an array:
     //   ['src' => …, 'alt' => …, 'caption' => …, 'type' => 'image'|'video'|'embed']
+    // plus 'altLang' and 'captionLang', the language of either text where it differs from the page's.
     // `type` defaults to 'image'. A plain string is treated as a decorative
     // image src.
     'items' => [],
@@ -19,7 +20,7 @@
     // Show each item's caption inside the lightbox.
     'showCaptions' => true,
     // Backdrop color / opacity for THIS instance (any CSS color). Null → the
-    // themeable --color-wk-overlay token.
+    // themeable --color-wk-overlay-media token, the darker backdrop for media.
     'overlay' => null,
     // Per-slide overlay render-callback: a closure `fn($slide, $i)` returning markup to lay
     // OVER the media of slide #$i in the viewer (a label, a watermark, a report control), shown
@@ -48,16 +49,17 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $loop = BooleanProp::from($loop, true);
-    $showCaptions = BooleanProp::from($showCaptions, true);
-    $lockScroll = BooleanProp::from($lockScroll, true);
-    $zoomable = BooleanProp::from($zoomable, false);
+    $loop = BooleanProp::from($loop, true, 'lightbox', 'loop');
+    $showCaptions = BooleanProp::from($showCaptions, true, 'lightbox', 'showCaptions');
+    $lockScroll = BooleanProp::from($lockScroll, true, 'lightbox', 'lockScroll');
+    $zoomable = BooleanProp::from($zoomable, false, 'lightbox', 'zoomable');
 
     // The factory's zoom keys, for a zoomable viewer only: every other lightbox renders exactly the
     // markup it did before the prop existed. The largest scale is a number above 1, as the factory
-    // reads it; anything else is the default. The announcement travels as a template for the
-    // reason the position does, below.
-    $maxZoom = is_numeric($maxZoom) && (float) $maxZoom > 1 ? (float) $maxZoom : 4.0;
+    // reads it; anything else is the default, and a text that holds no number is reported. The
+    // announcement travels as a template for the reason the position does, below.
+    $maxZoom = \Pushery\WireKit\Support\NumericProp::from($maxZoom, 4.0, 'lightbox', 'maxZoom');
+    $maxZoom = $maxZoom > 1 ? (float) $maxZoom : 4.0;
     $zoomConfig = $zoomable
         ? ', zoomable: true, maxZoom: '.\Pushery\WireKit\Support\AlpinePayload::from($maxZoom)
             .', zoomAnnouncement: '.\Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Zoom :percent%'))
@@ -81,7 +83,7 @@
     $safeEmbedSrc = static fn (string $src): string => \Pushery\WireKit\Support\SafeUrl::href($src, \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES);
 
     $slides = [];
-    foreach (\Pushery\WireKit\Support\ListProp::records($items) as $item) {
+    foreach (\Pushery\WireKit\Support\ListProp::records($items, 'lightbox', 'items') as $item) {
         if (is_array($item)) {
             $type = $item['type'] ?? 'image';
             $slides[] = [
@@ -98,12 +100,18 @@
                 'alt' => ($type === 'embed' && trim((string) ($item['alt'] ?? '')) === '')
                     ? __('wirekit::Embedded content')
                     : (string) ($item['alt'] ?? ''),
-                'caption' => isset($item['caption']) ? (string) $item['caption'] : null,
+                // The caption is drawn as text (`x-text`), so an Htmlable gives its text, not its markup.
+                'caption' => isset($item['caption'])
+                    ? ($item['caption'] instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\FitText::plain($item['caption']->toHtml()) : (string) $item['caption'])
+                    : null,
                 'type' => in_array($type, ['image', 'video', 'embed'], true) ? $type : 'image',
                 'poster' => isset($item['poster']) ? (string) $item['poster'] : null,
+                // The language of `alt` and of `caption` where either differs from the page's.
+                'altLang' => \Pushery\WireKit\Support\LanguageTag::of($item['altLang'] ?? null),
+                'captionLang' => \Pushery\WireKit\Support\LanguageTag::of($item['captionLang'] ?? null),
             ];
         } else {
-            $slides[] = ['src' => (string) $item, 'alt' => '', 'caption' => null, 'type' => 'image', 'poster' => null];
+            $slides[] = ['src' => (string) $item, 'alt' => '', 'caption' => null, 'type' => 'image', 'poster' => null, 'altLang' => null, 'captionLang' => null];
         }
     }
 
@@ -119,7 +127,9 @@
     // who passes `name` was already stable — this makes the default stable too.
     $lightboxId = $name ?: \Pushery\WireKit\Support\DomId::unique(null, 'wk-lightbox-');
     $count = count($slides);
-    $backdrop = $overlay ?: 'var(--color-wk-overlay)';
+    // One value for the backdrop's `background`, or the token: a text that carries a declaration
+    // of its own would style the overlay with it (Support\CssValue), and is reported.
+    $backdrop = \Pushery\WireKit\Support\CssValue::prop($overlay, 'lightbox', 'overlay', 'var(--color-wk-overlay-media)');
 
     $wrapperClasses = WireKit::resolveClasses('lightbox', 'base', '', $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
@@ -132,7 +142,7 @@
 
 <div
     x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }}{{ $zoomConfig }} })"
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
 >
     {{-- Optional trigger content (thumbnails / buttons). Anything here can call
          openAt(index) — it shares this component's Alpine scope. External
@@ -224,6 +234,7 @@
                                         <img data-wk-prose-skip
                                             :src="item.src"
                                             :alt="item.alt"
+                                            :lang="item.altLang"
                                             loading="lazy"
                                             decoding="async"
                                             x-init="loaded = $el.complete && $el.naturalWidth > 0"
@@ -267,7 +278,7 @@
 
                     @if($showCaptions)
                         {{-- Caption sits on a semi-transparent dark scrim (the themeable
-                             --color-wk-overlay token, i.e. translucent black) over the dark
+                             --color-wk-overlay-media token, i.e. translucent black) over the dark
                              backdrop, plus a subtle text-shadow — together the white text
                              stays legible even over bright media, where the translucent
                              scrim alone would dip below AA on the light theme. Wraps +
@@ -275,7 +286,8 @@
                         <figcaption
                             x-show="currentCaption"
                             x-text="currentCaption"
-                            class="max-w-3xl wk-lines-balanced rounded-[var(--radius-wk-md)] bg-[var(--color-wk-overlay)] px-[var(--space-wk-sm)] py-[var(--space-wk-xs)] text-center text-[length:var(--text-wk-sm)] leading-relaxed text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]"
+                            :lang="currentCaptionLang"
+                            class="max-w-3xl wk-lines-balanced rounded-[var(--radius-wk-md)] bg-[var(--color-wk-overlay-media)] px-[var(--space-wk-sm)] py-[var(--space-wk-xs)] text-center text-[length:var(--text-wk-sm)] leading-relaxed text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]"
                         ></figcaption>
                     @endif
                 </figure>
@@ -404,9 +416,11 @@
                      the gallery is fully navigable and says nothing about where it now
                      is. Its own always-present region rather than a marker on the slides:
                      a live region added to the page at the moment it has something to say
-                     is frequently never announced at all. --}}
+                     is frequently never announced at all. The slide's own text stands in a
+                     span of its own, which carries its language where it differs from the
+                     page's; the position stays in the page's. --}}
                 <div aria-live="polite" aria-atomic="true" class="sr-only">
-                    <span x-text="announcement"></span>
+                    <span x-text="announcementLead"></span><span x-bind:lang="announcementLang" x-text="announcementLabel"></span>
                 </div>
             </div>
         </template>

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use BackedEnum;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Enumerable;
 use Traversable;
+use UnitEnum;
 
 /**
  * Reads a Blade component prop that is meant as a list: items, steps, levels, selected values.
@@ -20,6 +22,11 @@ use Traversable;
  *
  * Only a list-like object is converted. Every other value, a string, a number, null, comes back
  * exactly as it was passed, so the branches a component already has for those keep working.
+ * A reader given the names of the component and the prop reads a text, a number or a switch as
+ * an empty list instead and reports it through the strictness gate: `options="Red,Green"`
+ * written without its colon, or a JSON column read without its cast, would otherwise end the
+ * page at the first loop over it. An empty text is no value and is not reported. An object is
+ * left as it is, since a component loops over one as well.
  *
  * Keys are a second question. `filter()`, `where()`, `reject()`, `unique()` and `sortBy()` keep
  * the keys of what they return, so a Collection that has been through one of them is a list whose
@@ -43,7 +50,7 @@ final class ListProp
      * walking it yields the items of the page, while `toArray()` yields the pagination metadata
      * with the items nested under `data`.
      */
-    public static function from(mixed $value): mixed
+    public static function from(mixed $value, ?string $component = null, ?string $prop = null): mixed
     {
         if ($value instanceof Enumerable) {
             return $value->all();
@@ -57,35 +64,67 @@ final class ListProp
             return $value->toArray();
         }
 
+        if ($component !== null && $prop !== null && is_scalar($value)) {
+            if (! is_string($value) || trim($value) !== '') {
+                StrictnessGate::reject($component, $prop, is_string($value) ? trim($value) : get_debug_type($value), 'a list, such as an array or a Collection', '[]');
+            }
+
+            return [];
+        }
+
         return $value;
     }
 
     /**
      * The value as `from()` gives it, with each item that is a model, a Collection or another
-     * Arrayable read as the array it holds.
+     * Arrayable read as the array it holds, and each enum in it read as its text.
      *
      * The result of a query is a Collection of models. A view that tests an item with
      * `is_array()` takes a model for a plain text, and cast to a string a model is its JSON: the
      * whole record, where the component meant to print one field of it. A model is read through
-     * `toArray()`, which leaves out what it hides. An item that is no such object, a string, an
-     * array, an enum, a date, is left as it is. Keys are kept; pair it with `renumbered()` where
-     * they mean nothing. `mixed` for the reason `from()` gives.
+     * `toArray()`, which leaves out what it hides.
+     *
+     * An enum is read as `e()` writes it, as the value of a field is (Support\FieldValue): a backed
+     * enum as its value, a pure one as its name. That holds for an item, such as one of
+     * `Status::cases()`, and for an enum anywhere inside an item, such as the `value` of an option
+     * or the options of a group, since the views write them as text and an enum does not cast.
+     * Any other item, a string, an array, a date, is left as it is. Keys are kept; pair it with
+     * `renumbered()` where they mean nothing. `mixed` for the reason `from()` gives.
      */
-    public static function records(mixed $value): mixed
+    public static function records(mixed $value, ?string $component = null, ?string $prop = null): mixed
     {
-        $value = self::from($value);
+        $value = self::from($value, $component, $prop);
 
         if (! is_array($value)) {
             return $value;
         }
 
         foreach ($value as $key => $item) {
-            if (is_object($item)) {
-                $value[$key] = self::from($item);
-            }
+            $value[$key] = self::enumsAsText(is_object($item) ? self::from($item) : $item);
         }
 
         return $value;
+    }
+
+    /**
+     * The item with each enum read as its text, in the arrays inside it as well. `mixed` because
+     * an item is whatever the list held.
+     */
+    private static function enumsAsText(mixed $item): mixed
+    {
+        if ($item instanceof UnitEnum) {
+            return $item instanceof BackedEnum ? $item->value : $item->name;
+        }
+
+        if (is_array($item)) {
+            foreach ($item as $key => $field) {
+                if ($field instanceof UnitEnum || is_array($field)) {
+                    $item[$key] = self::enumsAsText($field);
+                }
+            }
+        }
+
+        return $item;
     }
 
     /**
@@ -104,9 +143,9 @@ final class ListProp
      *
      * @param  list<string>  $keys
      */
-    public static function only(mixed $value, array $keys): mixed
+    public static function only(mixed $value, array $keys, ?string $component = null, ?string $prop = null): mixed
     {
-        $value = self::records($value);
+        $value = self::records($value, $component, $prop);
 
         if (! is_array($value)) {
             return $value;
@@ -130,9 +169,9 @@ final class ListProp
      * the Collection's own, so a sorted list stays sorted. `mixed` for the reason `from()` gives:
      * a value that is not a list is handed back for the component's own handling.
      */
-    public static function renumbered(mixed $value): mixed
+    public static function renumbered(mixed $value, ?string $component = null, ?string $prop = null): mixed
     {
-        $value = self::from($value);
+        $value = self::from($value, $component, $prop);
 
         return is_array($value) ? array_values($value) : $value;
     }
@@ -145,9 +184,9 @@ final class ListProp
      * while the integer keys a filter or a sort leaves behind are renumbered. `mixed` for the
      * reason `from()` gives.
      */
-    public static function renumberedUnlessNamed(mixed $value): mixed
+    public static function renumberedUnlessNamed(mixed $value, ?string $component = null, ?string $prop = null): mixed
     {
-        $value = self::from($value);
+        $value = self::from($value, $component, $prop);
 
         if (! is_array($value)) {
             return $value;

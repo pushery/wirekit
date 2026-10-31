@@ -41,12 +41,25 @@
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $mode = \Pushery\WireKit\Support\AwareProp::read('mode', ['sidebar'], 'navigation');
+    $selected = \Pushery\WireKit\Support\AwareProp::read('selected', ['sidebar'], null);
+    $collapsible = \Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false);
+    $trackCurrent = \Pushery\WireKit\Support\AwareProp::read('trackCurrent', ['sidebar'], false);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.item', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
-    $href = \Pushery\WireKit\Support\UrlProp::text($href);
+    // An empty address, one of white space or `false` is none, so the item keeps its own `#`.
+    $href = \Pushery\WireKit\Support\UrlProp::text($href) ?? '#';
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -122,9 +135,9 @@
         ]
         : [];
 
-    $active = BooleanProp::from($active, false);
+    $active = BooleanProp::from($active, false, 'sidebar.item', 'active');
     $ariaCurrent = \Pushery\WireKit\WireKit::validateProp('sidebar.item', 'current', (string) $current, ['page', 'location', 'true']);
-    $submenu = BooleanProp::from($submenu, false);
+    $submenu = BooleanProp::from($submenu, false, 'sidebar.item', 'submenu');
 
     // A caller may mark the item current with `data-current` in the attribute bag
     // (`true`, `"true"`, `"1"` or `"page"`) instead of `:active`; an explicit `:active`
@@ -272,6 +285,17 @@
             .'a link here would put the row in the tab order and make Enter navigate instead '
             .'of select. Use `value` and your own click handler.';
     }
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole row,
+    // so they go on its outermost element (Support\OuterAttributes). While the sidebar can
+    // collapse, a tooltip wraps the row, and they go on a `contents` wrapper around it.
+    [$outerAttributes, $withoutOuterAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    if ($collapsible) {
+        $attributes = $withoutOuterAttributes;
+    } else {
+        $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
+    }
 @endphp
 
 {{-- The tooltip is the LABEL for a reader holding a pointer, and only then.
@@ -285,11 +309,11 @@
      a second tab stop in front of every navigation entry would be the cure being worse.
 
      `w-full` keeps the wrapper from narrowing the row it wraps. No display class sits beside
-     it: the tooltip keeps its own `inline-block`, and a second one in this attribute would be
-     decided by the stylesheet's order, not by the attribute. --}}
+     it: one in this attribute would replace the tooltip's own `inline-block`. --}}
+@if($outerAttributes->isNotEmpty())<div class="contents" {{ $outerAttributes }}>@endif
 @if($collapsible)
     <x-wirekit::tooltip
-        :text="trim(strip_tags((string) $slot))"
+        :text="\Pushery\WireKit\Support\SlotContent::plain($slot)"
         placement="right"
         focusable-trigger="false"
         class="w-full"
@@ -304,6 +328,7 @@
 @else
     @include('wirekit::components.partials.sidebar-item-link')
 @endif
+@if($outerAttributes->isNotEmpty())</div>@endif
 
 @if(isset($hrefInOptionWarning))
     <div x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($hrefInOptionWarning) }} })" hidden></div>

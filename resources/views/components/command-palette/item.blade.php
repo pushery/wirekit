@@ -5,6 +5,9 @@
     'icon' => null,
     'shortcut' => null,
     'disabled' => false,
+    // The `name` of a `command-palette.page` this entry opens. The entry then shows that page in
+    // the same palette instead of closing it, and draws a chevron. It is a button, not a link.
+    'opens' => null,
     // Stable DOM id for this item. It anchors the combobox's
     // aria-activedescendant, so it must survive a re-render: with server-side
     // search the list is rebuilt on every keystroke, and an id that changes each
@@ -19,6 +22,11 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('command-palette.item', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -28,13 +36,18 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
+    $disabled = BooleanProp::from($disabled, false, 'command-palette.item', 'disabled');
+
+    // An entry that opens a page chooses nothing yet, so it never navigates.
+    $opens = filled($opens) ? trim(\Pushery\WireKit\Support\NumericProp::text($opens)) : null;
+    $opens = $opens === '' ? null : $opens;
 
     // Command item — selectable option in the command palette.
     //
     // The id is DERIVED, in this order: an explicit `id`, then the href (the
     // natural key for a link item), then the item's own text. Only when none of
-    // those exist is there nothing to derive from at all.
+    // those exist is there nothing to derive from at all. An entry that opens a
+    // page is no link, so its href takes no part.
     $wkCmdSlug = static function (string $value): string {
         $slug = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $value) ?? '');
 
@@ -42,7 +55,7 @@
     };
 
     $wkCmdDerivedId = $id
-        ?? ($href !== null && $href !== ''
+        ?? ($href !== null && $href !== '' && $opens === null
             ? 'wk-cmd-item-'.$wkCmdSlug((string) $href)
             : null);
 
@@ -99,13 +112,27 @@
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
         : '';
 
-    $tag = $href ? 'a' : 'button';
+    $tag = $href !== null && $opens === null ? 'a' : 'button';
+
+    // Which level the entry belongs to, and whether a page's search hides it, is the palette's
+    // to say, read from the entry's place in the list (`optionShows`). A binding rather than a
+    // script's write, so a Livewire render keeps it. A caller's own `x-show` still applies.
+    $callerShow = \Pushery\WireKit\Support\AttributeText::get($attributes, 'x-show');
+    $show = is_string($callerShow) && trim($callerShow) !== ''
+        ? 'optionShows($el) && ('.$callerShow.')'
+        : 'optionShows($el)';
+
+    // The digit a page gives the entry is a key the palette binds, so it is stated as
+    // `aria-keyshortcuts`, as every key the kit binds is, beside a shortcut of the caller's own.
+    // The caller's stands written for the first render, and the binding keeps it with the digit.
+    $callerShortcuts = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-keyshortcuts'));
+    $attributes = $attributes->except(['x-show', 'aria-keyshortcuts']);
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See dropdown/item.blade.php for rationale on except('rel') + explicit
     // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $tag === 'a' && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -115,8 +142,10 @@
 
 <{{ $tag }} data-wk-prose-skip
     id="{{ $itemId }}"
-    @if($href) href="{{ $href }}" @endif
+    @if($tag === 'a') href="{{ $href }}" @endif
     @if($tag === 'button') type="button" @endif
+    @if($opens !== null) data-wk-opens="{{ $opens }}" @endif
+    x-show="{{ $show }}"
     role="option"
     {{-- The ARIA state for this role, written statically so it exists before the first
          keystroke. `_paintActive()` in the factory keeps it in step with the highlight —
@@ -124,21 +153,28 @@
          and the styling hook together rather than one of them. --}}
     aria-selected="false"
     tabindex="-1"
+    @if($callerShortcuts !== '') aria-keyshortcuts="{{ $callerShortcuts }}" @endif
+    x-bind:aria-keyshortcuts="keyShortcutsOf($el, {{ \Pushery\WireKit\Support\AlpinePayload::string($callerShortcuts) }})"
     @if($disabled) aria-disabled="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class(['wk-listbox-option', 'wk-touch-row', $classes, $disabledClasses]) }}
+    {{ $attributes->except($tag === 'button' ? ['rel', 'role', 'tabindex', 'type'] : ['rel', 'role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-listbox-option', 'wk-touch-row', $classes, $disabledClasses])) }}
 >
     @if($icon)
         <span class="shrink-0 w-5 h-5 text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
-            @if(function_exists('svg'))
-                {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
-            @endif
+            {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
         </span>
     @endif
 
     {{-- One line; a label the line cuts is whole in its title, as plain text, since the slot may
          carry markup such as a highlighted match. --}}
-    <span class="flex-1 truncate" title="{{ trim(preg_replace('/\s+/', ' ', strip_tags((string) $slot)) ?? '') }}">{{ $slot }}</span>
+    <span data-wk-command-label class="flex-1 truncate" title="{{ \Pushery\WireKit\Support\SlotContent::plain($slot) }}">{{ $slot }}</span>
+
+    {{-- On a page with an empty field, the digit that chooses this entry; the palette counts it
+         from the entry's place on the page. Decorative like the shortcut caps: a screen reader
+         hears the key from the entry's `aria-keyshortcuts`, and the entry's name stays its text. --}}
+    <span x-show="digitOf($el)" x-cloak class="ms-auto flex items-center" aria-hidden="true">
+        <x-wirekit::kbd size="sm" x-text="digitOf($el)" />
+    </span>
 
     @if($shortcut)
         <span class="ml-auto flex items-center gap-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
@@ -150,6 +186,13 @@
                      visible next to the other chips until you put them side by side. --}}
                 <x-wirekit::kbd size="sm">{{ $key }}</x-wirekit::kbd>
             @endforeach
+        </span>
+    @endif
+
+    @if($opens !== null)
+        {{-- Points to the page the entry opens. Decorative: the page announces itself when it opens. --}}
+        <span class="shrink-0 inline-flex text-[color:var(--color-wk-text-muted)] rtl:-scale-x-100" aria-hidden="true">
+            <x-wirekit::icon name="chevron-right" size="sm" />
         </span>
     @endif
 

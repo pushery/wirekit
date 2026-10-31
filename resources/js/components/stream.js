@@ -56,6 +56,8 @@
  *                                         and it lets a static demo show content).
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+import { namesSomething, sameName } from '../utils/same-name.js';
+import { intervalDelay } from '../utils/timer-delay.js';
 export default function wirekitStream(config = {}) {
     return {
         // ── Public reactive state (bind these in Blade) ──
@@ -149,7 +151,7 @@ export default function wirekitStream(config = {}) {
                 this._onHostEvent = (event) => {
                     const detail = (event && event.detail) || {};
 
-                    if (this._name && detail.name && detail.name !== this._name) {
+                    if (namesSomething(this._name) && namesSomething(detail.name) && ! sameName(detail.name, this._name)) {
                         return;
                     }
 
@@ -638,7 +640,7 @@ export default function wirekitStream(config = {}) {
                 }
                 this._push(tokens[i]);
                 i += 1;
-            }, this._simulateSpeed);
+            }, intervalDelay(this._simulateSpeed, 55));
         },
 
         _clearSim() {

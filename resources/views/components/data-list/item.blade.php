@@ -22,6 +22,12 @@
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp). A row in the slot of a cart summary is a row of the summary's own list,
+    // which is not above it yet when the slot renders, so the summary stands for it: the row takes
+    // the `summary` layout without an attribute of its own.
+    $layout = \Pushery\WireKit\Support\AwareProp::read('layout', ['data-list'], config('wirekit.components.data-list.layout', 'horizontal'), implied: ['cart-summary' => 'summary']);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
@@ -53,7 +59,7 @@
         'py-[var(--padding-wk-y-sm)]',
     ]), $scope);
 
-    // In `summary` the grid tracks (`1fr max-content`) are declared on the <dl>,
+    // In `summary` the grid tracks are declared on the <dl>,
     // so the <dt> and <dd> have to BE the grid items. This wrapper drops its own
     // box to let them through. That is also why the summary layout carries no row
     // separator and no item padding: both hang off this box, and a totals block
@@ -118,9 +124,13 @@
         $isStacked => 'min-width: 0; overflow-wrap: anywhere;',
         default => 'flex: 1; min-width: 0; text-align: right; overflow-wrap: anywhere;',
     };
+
+    // An inline display wins over every class of the caller's, `hidden` included: where the
+    // caller's class reaches for one, it is left out here and comes back as its utility.
+    [$wrapperStyle, $wrapperStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, $wrapperStyle);
 @endphp
 
-<div {{ $attributes->merge(['style' => $wrapperStyle])->class([$itemClasses]) }}>
+<div {{ $attributes->merge($wrapperStyle !== '' ? ['style' => $wrapperStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$itemClasses, $wrapperStyleClasses => $wrapperStyleClasses !== ''])) }}>
     {{-- Label: the "key" in the key-value pair. min-width: 0 +
          overflow-wrap: anywhere let long single-word labels (e.g.
          "Berufsunfähigkeitsversicherung", "Mietpreisbremse" — German

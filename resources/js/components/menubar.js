@@ -38,7 +38,7 @@ import { closeOnOutsideRelease } from '../utils/outside-release.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
-import { outOfReachBeside } from '../utils/teleport.js';
+import { belongsThroughTeleports, outOfReachBeside } from '../utils/teleport.js';
 
 /**
  * What the browser would consider a tab stop OUTSIDE this bar.
@@ -49,7 +49,7 @@ import { outOfReachBeside } from '../utils/teleport.js';
  * items themselves never show up here: the bar is one tab stop and its items are
  * reached with the arrow keys.
  */
-const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function wirekitMenubar() {
     return {
@@ -96,8 +96,9 @@ export default function wirekitMenubar() {
             // teleported panel (looked up via the teleport-safe $refs), and
             // only on the release (utils/outside-release.js).
             this._stopOutsideRelease = closeOnOutsideRelease(document, {
+                // The menu through the teleports, so a press in a panel opened from inside it counts too.
                 contains: (node) => this.$root.contains(node)
-                    || Boolean(this.$refs[`panel-${this.activeMenu}`]?.contains(node)),
+                    || Boolean(this.$refs[`panel-${this.activeMenu}`] && belongsThroughTeleports(node, this.$refs[`panel-${this.activeMenu}`])),
                 isOpen: () => Boolean(this.activeMenu),
                 close: () => this.closeAll(),
             });
@@ -105,6 +106,7 @@ export default function wirekitMenubar() {
             // Another menubar opening a menu closes this one's.
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:menubar-open',
+                root: this.$root,
                 onOther: () => this.closeAll(),
             });
         },
