@@ -1,6 +1,6 @@
 {{-- optimistic-ui: supported
      The textbook case, and it needs the accessible name built in the browser:
-     `trans_choice` on the server names the count the SERVER saw, so an
+     a form chosen on the server names the count the SERVER saw, so an
      optimistic flip would show six and announce five, and the rollback would
      restore a number the reader was never told about. So the plural forms and
      the locale travel in, and Intl.PluralRules chooses.
@@ -12,11 +12,13 @@
     // The Livewire method this reaction should call, when it should show the new
     // state before the server has agreed to it. Null leaves the component
     // exactly as it has always rendered: server markup, no Alpine.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'emoji' => null,
     'count' => 0,
     'active' => false,
@@ -33,27 +35,37 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reaction', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $active = BooleanProp::from($active, false);
+    $active = BooleanProp::from($active, false, 'reaction', 'active');
 
     // The names may arrive as a Collection, such as `$post->likers->pluck('name')`.
-    $users = \Pushery\WireKit\Support\ListProp::renumbered($users);
+    $users = \Pushery\WireKit\Support\ListProp::renumbered($users, 'reaction', 'users');
     $userList = is_array($users) ? $users : [];
 
     // The server-side name stays the FIRST paint and the no-JS answer. It is
     // replaced by the client's the moment Alpine runs, and only when this
     // component is optimistic — a reaction that cannot change has no reason to
     // compute its own name.
-    $ariaLabel = $emoji . ', ' . trans_choice('wirekit::{0} no reactions|{1} :count person reacted|[2,*] :count people reacted', $count, ['count' => $count]);
+    // The count as a number. One that is not finite counts as none, since PHP 8.5 warns when one
+    // is cast or written, and a list or an object holds none, which a cast would end the page on.
+    $count = \Pushery\WireKit\Support\NumericProp::from($count, 0, 'reaction', 'count');
+
+    $ariaLabel = $emoji . ', ' . \Pushery\WireKit\Support\Plural::choice('wirekit::{0} no reactions|{1} :count person reacted|[2,*] :count people reacted', $count, ['count' => $count]);
 
     $reactionOptimistic = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'active' => (bool) $active,
-        'count' => (int) $count,
+        'count' => \Pushery\WireKit\Support\NumericProp::int($count, 0, 'reaction', 'count'),
         'emoji' => $emoji,
         'phrases' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{0} no reactions|{1} :count person reacted|[2,*] :count people reacted'),
-        'locale' => str_replace('_', '-', app()->getLocale()),
+        'locale' => \Pushery\WireKit\Support\IcuLocale::tag(),
+        'separators' => \Pushery\WireKit\Support\LocalizedNumber::separators(),
     ]);
 
     $reactionLayer = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
@@ -133,26 +145,25 @@
          aria-label via merge so a caller's aria-label OVERRIDES the default —
          a hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins). --}}
-    {{ $attributes->except('type')->merge(['aria-label' => $ariaLabel])->class(['wk-state-button', 'wk-touch-row', $baseClasses, $stateClasses]) }} data-wk-sr-host
+    {{ $attributes->except(['type', 'aria-pressed'])->merge(['aria-label' => $ariaLabel])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-state-button', 'wk-touch-row', $baseClasses, $stateClasses])) }} data-wk-sr-host
 >
     <span class="[font-variant-emoji:emoji]" aria-hidden="true">{{ $emoji }}</span>
     @if($reactionOptimistic)
         {{-- Shown whenever the live count is above zero, which the server-only
-             variant decides once at render time. --}}
-        <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums" x-show="count > 0" x-text="count">{{ $count > 0 ? $count : '' }}</span>
+             variant decides once at render time. Both write it grouped in the
+             locale, so the first paint and the live count read the same. --}}
+        <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums" x-show="count > 0" x-text="countText">{{ $count > 0 ? \Pushery\WireKit\Support\LocalizedNumber::count($count) : '' }}</span>
     @elseif($count > 0)
-        <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums">{{ $count }}</span>
+        <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums">{{ \Pushery\WireKit\Support\LocalizedNumber::count($count) }}</span>
     @endif
     @if(count($userList) > 0)
         <span id="{{ $reactionUsersId }}" class="sr-only">
             {{ implode(', ', $userList) }}
         </span>
     @endif
-</button>
-@if($reactionOptimistic)
+</button>@if($reactionOptimistic)
     {{-- Pre-existing and empty: a live region that arrives with its text is a
          new node, and nothing is announced at all. --}}
     <span class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></span>
 </span>
-</span>
-@endif
+</span>@endif

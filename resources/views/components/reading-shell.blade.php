@@ -41,7 +41,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $previewMode = BooleanProp::from($previewMode, false);
+    $previewMode = BooleanProp::from($previewMode, false, 'reading-shell', 'previewMode');
 
     // Reading-shell — sugar wrapper composing the reading-* primitives in one
     // tag. The 80% case: pass `bookmarkKey` and let the shell render progress
@@ -117,7 +117,7 @@
     $renderRail = $renderSpine && $layout === 'rail';
 @endphp
 
-<div {{ $attributes->class([WireKit::resolveClasses('reading-shell', 'base', 'wk-reading-shell', $scope)]) }}>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [WireKit::resolveClasses('reading-shell', 'base', 'wk-reading-shell', $scope)])) }}>
     @if ($renderProgress)
         <x-wirekit::reading-progress
             :height="$densityDefaults['progressHeight']"

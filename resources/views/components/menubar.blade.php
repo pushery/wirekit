@@ -31,7 +31,7 @@
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
-    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
 @endphp
 
 <div
@@ -43,7 +43,7 @@
          clicking inside an open panel (it's no longer a DOM descendant) and
          close the menu before the item's click registered. --}}
     @unless($attributes->has('role')) role="menubar" @endunless
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

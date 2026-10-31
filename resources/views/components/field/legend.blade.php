@@ -35,4 +35,4 @@
     $classes = WireKit::resolveClasses('field.legend', 'base', 'mb-3 text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]', $scope);
 @endphp
 
-<legend {{ $attributes->class([$classes]) }}>{{ $slot }}</legend>
+<legend {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $slot }}</legend>

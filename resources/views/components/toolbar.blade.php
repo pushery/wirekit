@@ -21,7 +21,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sticky = BooleanProp::from($sticky, false);
+    $sticky = BooleanProp::from($sticky, false, 'toolbar', 'sticky');
 
     $densityValue = match ($density) {
         'comfortable', 'compact' => $density,
@@ -100,9 +100,9 @@
      and can therefore keep the promise. --}}
 <div
     @unless($attributes->has('role')) role="group" @endunless
-    @if($ariaLabel) aria-label="{{ $ariaLabel }}" @endif
+    @if($ariaLabel) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) }}" @endif
     @if($sticky) data-wk-scroll-inset="top" @endif
-    {{ $attributes->class([$baseClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
 >
     {{-- Leading slot (search, primary controls).
          `flex-1 basis-0 min-w-[min(100%,14rem)]` is the responsive contract:
@@ -113,21 +113,21 @@
          second row. With a real min-width, flex-wrap pushes the filters /
          actions to the next line once they no longer fit beside a usable
          search field. --}}
-    @if(isset($leading))
+    @if(\Pushery\WireKit\Support\SlotContent::given($leading ?? null))
         <div class="flex items-center gap-[var(--space-wk-sm,0.5rem)] flex-1 basis-0 min-w-[min(100%,14rem)]">
             {{ $leading }}
         </div>
     @endif
 
     {{-- Filters slot (badges, selects, chips) --}}
-    @if(isset($filters))
+    @if(\Pushery\WireKit\Support\SlotContent::given($filters ?? null))
         <div class="flex flex-wrap items-center gap-[var(--space-wk-sm,0.5rem)]">
             {{ $filters }}
         </div>
     @endif
 
     {{-- Default/trailing slot (action buttons) --}}
-    @if(isset($trailing))
+    @if(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
         <div class="flex items-center gap-[var(--space-wk-sm,0.5rem)]">
             {{ $trailing }}
         </div>

@@ -12,7 +12,8 @@ namespace Pushery\WireKit\Sandbox;
  *   1. Only props in the schema's `allowed` list pass through.
  *   2. Each prop value's type matches the schema's declared type.
  *   3. String values cap at 10KB (denial-of-service defense).
- *   4. Nested arrays cap at depth 5 (prevent recursion bombs).
+ *   4. Nested arrays cap at depth 5 (prevent recursion bombs), and the
+ *      arrays of one prop hold at most 1 000 elements over all their levels.
  *   5. A value is rejected when the schema declares `allowed_values`
  *      and the value is not one of them — the enum case.
  *   6. A string is rejected when the schema declares `allowed_schemes`
@@ -48,6 +49,9 @@ final class PropsValidator
     private const MAX_STRING_LENGTH = 10_240;
 
     private const MAX_ARRAY_DEPTH = 5;
+
+    /** The elements one prop may hold, counted over every level of its arrays. */
+    private const MAX_ARRAY_ITEMS = 1_000;
 
     /**
      * @param  array<string, SandboxPropSpec>  $schema
@@ -118,6 +122,16 @@ final class PropsValidator
                 && is_string($value)
                 && ! self::schemeIsAllowed($value, $spec['allowed_schemes'])) {
                 $violations[] = "prop '{$name}' URL scheme not allowed";
+
+                continue;
+            }
+
+            // Bounded in its number of elements as well as in its depth: the depth limit alone lets
+            // an array of 100 000 entries through, each of them checked and rendered, with nothing
+            // but the server's request size to stop it. Counted over every level, because a limit
+            // per array would still let 1 000 arrays of 1 000 entries through.
+            if (is_array($value) && self::countItems($value, self::MAX_ARRAY_ITEMS) > self::MAX_ARRAY_ITEMS) {
+                $violations[] = "prop '{$name}' exceeds max array items ".self::MAX_ARRAY_ITEMS;
 
                 continue;
             }
@@ -221,6 +235,33 @@ final class PropsValidator
 
         // Scalars (int/float/bool/null) pass through unchanged
         return $value;
+    }
+
+    /**
+     * The elements of an array over all its levels, counted until the count passes `$limit`.
+     *
+     * Counting stops there, so an oversized payload costs as much as the limit and no more.
+     * Levels below the depth limit are not counted: `sanitize()` refuses them on their depth.
+     *
+     * @param  array<mixed>  $value
+     */
+    private static function countItems(array $value, int $limit, int $depth = 0): int
+    {
+        $count = 0;
+
+        foreach ($value as $item) {
+            $count++;
+
+            if (is_array($item) && $depth < self::MAX_ARRAY_DEPTH) {
+                $count += self::countItems($item, $limit - $count, $depth + 1);
+            }
+
+            if ($count > $limit) {
+                break;
+            }
+        }
+
+        return $count;
     }
 
     /**

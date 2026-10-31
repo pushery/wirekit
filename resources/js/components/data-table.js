@@ -55,7 +55,11 @@ const KNOWN_INTENTS = ['primary', 'accent', 'info', 'success', 'warning', 'dange
 /** Two lists of column keys name the same columns, in whatever order. */
 const sameKeys = (a, b) => a.length === b.length && [...a].sort().join('\u0000') === [...b].sort().join('\u0000');
 
-import { pluralize } from '../utils/plural.js';
+/** Two selections hold the same ids, in whatever order, a number and its text alike. */
+const sameIds = (a, b) => sameKeys(a.map(String), b.map(String));
+
+import { pluralize, pluralizeGrouped } from '../utils/plural.js';
+import { allMatchesNotice, matchCount } from '../utils/all-matches.js';
 import { safeHref } from '../utils/safe-href.js';
 import { sortCollator } from '../utils/sort-collator.js';
 import { foldForSearch } from '../utils/search-fold.js';
@@ -85,6 +89,17 @@ export default function wirekitDataTable(config = {}) {
         sortDir: config.sortDir === 'desc' ? 'desc' : 'asc',
         search: '',
         selected: [],
+        // In server mode: whether every match on every page is selected, which only the
+        // application can act on. Offered once the page is selected and `total` says there are
+        // more; `selection-change` carries it.
+        allMatches: false,
+        // The number of matches on all pages, from the server state; null without one.
+        total: null,
+        // A sentence of the table's own about the selection's reach, such as a filter that cleared
+        // every match; empty until there is one. The count itself is `spokenSelection`.
+        announcement: '',
+        // The filter the server applied at the last render, its search and its `filter`.
+        _filterKey: null,
         density: config.density || 'comfortable',
         hiddenKeys: Array.isArray(config.hidden) ? [...config.hidden] : [],
         emptyText: typeof config.emptyText === 'string' ? config.emptyText : '',
@@ -147,6 +162,15 @@ export default function wirekitDataTable(config = {}) {
                         this._requestsOut++;
                     }
 
+                    // The selection as this request carries it, so the answer can tell a change the
+                    // server made in it from the reader's own since it left.
+                    const sent = { selection: [...this.selected], allMatches: this.allMatches };
+
+                    // Whether this commit renders the table: a commit of the component the table
+                    // belongs to. Another component's commit leaves the table's state as it was.
+                    const owner = typeof this.$root?.closest === 'function' ? this.$root.closest('[wire\\:id]') : null;
+                    const rendersTable = owner !== null && component?.el === owner;
+
                     // Once per commit, whichever signal comes first.
                     let ended = false;
                     const back = () => {
@@ -157,7 +181,7 @@ export default function wirekitDataTable(config = {}) {
                     };
 
                     succeed(() => queueMicrotask(() => {
-                        this._readServerState();
+                        this._readServerState(sent, rendersTable);
                         back();
                     }));
 
@@ -242,12 +266,28 @@ export default function wirekitDataTable(config = {}) {
          * moved on while the round trip was out: a query typed one letter further than the
          * results that just arrived, or a second click on a header. Overwriting that would
          * throw away input, and the reader's own change is already on its way to the server.
+         *
+         * @param {{selection: Array, allMatches: boolean}|null} sent the selection the request carried
+         * @param {boolean} rendered whether the commit was one of the component the table belongs to
          */
-        _readServerState() {
+        _readServerState(sent = null, rendered = false) {
             const carrier = this.$root?.querySelector?.(':scope > template[data-wk-data-table-state]');
             const raw = carrier ? carrier.getAttribute('data-wk-data-table-state') : null;
 
-            if (raw === null || raw === this._serverStateRaw) {
+            if (raw === null) {
+                return;
+            }
+
+            if (raw === this._serverStateRaw) {
+                // The state the last render held. Rows, sort, search and columns are unchanged, but
+                // a request of the table's own component can still have set the selection back to
+                // what that render held: a bulk action that empties a list the reader filled in the
+                // browser renders an empty list once more. Without this read the table would keep a
+                // selection the server has just cleared.
+                if (rendered && sent !== null && this._serverState !== null) {
+                    this._takeSelection(this._serverState, false, sent);
+                }
+
                 return;
             }
 
@@ -266,6 +306,9 @@ export default function wirekitDataTable(config = {}) {
             this.rows = Array.isArray(next.rows) ? next.rows.map((r) => ({ ...r })) : [];
             this.avatarTints = next.avatarTints && typeof next.avatarTints === 'object' ? next.avatarTints : {};
             this._serverBusy = next.loading === true;
+            this.total = matchCount(next.total);
+            this._takeSelection(next, previous === null, sent);
+            this._takeFilter(next, previous === null);
 
             const sortKey = next.sortKey || null;
             const sortDir = next.sortDir === 'desc' ? 'desc' : 'asc';
@@ -404,20 +447,45 @@ export default function wirekitDataTable(config = {}) {
         },
         toggleSelect(row) {
             const id = this.rowId(row);
-            this.selected = this.selected.includes(id)
+            const clearing = this.selected.includes(id);
+            this.selected = clearing
                 ? this.selected.filter((s) => s !== id)
                 : [...this.selected, id];
+
+            // A row the reader clears is no longer one of every match.
+            if (clearing) {
+                this.allMatches = false;
+            }
+
             this._emitSelection();
         },
         get allSelected() {
             const ids = this.displayRows.map((r) => this.rowId(r));
             return ids.length > 0 && ids.every((id) => this.selected.includes(id));
         },
+        // Some rows of the page, not all of them: the header's mixed state describes the rows the
+        // reader sees, so a selection on another page alone leaves it clear.
         get someSelected() {
-            return this.selected.length > 0 && !this.allSelected;
+            return this.displayRows.some((r) => this.selected.includes(this.rowId(r))) && !this.allSelected;
         },
         toggleSelectAll() {
-            this.selected = this.allSelected ? [] : this.displayRows.map((r) => this.rowId(r));
+            const ids = this.displayRows.map((r) => this.rowId(r));
+            const wasAll = this.allSelected;
+
+            if (this.mode === 'server') {
+                // A server table shows one page of its matches, and the rows of the other pages
+                // keep the state the reader gave them: the header selects or clears this page.
+                this.selected = wasAll
+                    ? this.selected.filter((id) => ! ids.includes(id))
+                    : [...this.selected, ...ids.filter((id) => ! this.selected.includes(id))];
+            } else {
+                this.selected = wasAll ? [] : ids;
+            }
+
+            if (wasAll) {
+                this.allMatches = false;
+            }
+
             this._emitSelection();
         },
         clearSelection() {
@@ -432,6 +500,7 @@ export default function wirekitDataTable(config = {}) {
                 && document.activeElement.hasAttribute('data-wk-clear-selection');
 
             this.selected = [];
+            this.allMatches = false;
             this._emitSelection();
 
             if (handOver && this.$root && typeof this.$root.querySelector === 'function') {
@@ -450,6 +519,7 @@ export default function wirekitDataTable(config = {}) {
          */
         _restore() {
             this.selected = [];
+            this.allMatches = false;
 
             if (this.$refs?.selModel) {
                 this.$refs.selModel.value = '[]';
@@ -459,11 +529,178 @@ export default function wirekitDataTable(config = {}) {
         // only exists in the browser, so the plural form is chosen here.
         _selectionPhrases: config.selectionPhrases || {},
         _locale: config.locale || 'en',
+        // The application's own marks, where it has them: the readout is text a reader sees.
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
 
         // The selection readout, plural-correct in the reader's locale. It shipped as a
         // bare English word inside an aria-live region.
         get selectionSummary() {
+            // Every match: the number only the server knows, and that it reaches past the page.
+            if (this.allMatches && this.total !== null) {
+                return pluralizeGrouped(this._allPagesPhrases, this.total, this._locale, this._separators);
+            }
+
+            return pluralizeGrouped(this._selectionPhrases, this.selectedCount, this._locale, this._separators);
+        },
+
+        _allPagesPhrases: config.allPagesPhrases || {},
+        _noticePhrases: {
+            page: config.pagePhrases || {},
+            offer: config.offerPhrases || {},
+            all: config.allPhrases || {},
+            only: typeof config.onlyText === 'string' ? config.onlyText : '',
+        },
+        _filterClearedText: typeof config.filterClearedText === 'string' ? config.filterClearedText : '',
+
+        /**
+         * What the bar's notice says and offers, in server mode only: a client table holds every
+         * row it has, and its page is the whole list.
+         */
+        get notice() {
+            if (this.mode !== 'server') {
+                return null;
+            }
+
+            return allMatchesNotice({
+                pageAll: this.allSelected,
+                allMatches: this.allMatches,
+                pageCount: this.displayRows.length,
+                total: this.total,
+            }, this._noticePhrases, this._locale, this._separators);
+        },
+        get noticeShows() {
+            return this.notice !== null;
+        },
+        get noticeText() {
+            return this.notice?.text ?? '';
+        },
+        get noticeActionText() {
+            return this.notice?.action ?? '';
+        },
+
+        /**
+         * The selection as the status region says it, with bare digits, which every voice reads
+         * right. While the notice shows, its sentence, so the offer of every match is heard where
+         * it is seen; otherwise the count. Empty while nothing is selected, as the bar is hidden.
+         */
+        get spokenSelection() {
+            if (this.selectedCount === 0) {
+                return '';
+            }
+
+            const notice = this.notice;
+
+            if (notice) {
+                return notice.spoken;
+            }
+
+            if (this.allMatches && this.total !== null) {
+                return pluralize(this._allPagesPhrases, this.total, this._locale);
+            }
+
             return pluralize(this._selectionPhrases, this.selectedCount, this._locale);
+        },
+
+        /** The notice's action: every match, or back to the rows the reader selected. */
+        noticeAction() {
+            const notice = this.notice;
+
+            if (! notice) {
+                return;
+            }
+
+            this.allMatches = notice.offers === 'all';
+            this._emitSelection();
+        },
+
+        /**
+         * The filter of a render: another search or another `filter` than the last one clears
+         * every match, which was every match of the filter before. While every match stays
+         * selected, the rows of a page the reader turns to are selected as they arrive.
+         *
+         * @param {Object} next the server state
+         * @param {boolean} first whether this is the first state the table reads
+         */
+        _takeFilter(next, first) {
+            const key = JSON.stringify([typeof next.search === 'string' ? next.search : null, typeof next.filter === 'string' ? next.filter : '']);
+            const changed = ! first && key !== this._filterKey;
+            this._filterKey = key;
+
+            if (this.mode !== 'server' || ! this.allMatches) {
+                return;
+            }
+
+            if (changed) {
+                this.allMatches = false;
+                this._say(this._filterClearedText);
+                this._emitSelection();
+
+                return;
+            }
+
+            const arrived = this.rows.map((r) => this.rowId(r)).filter((id) => ! this.selected.includes(id));
+
+            if (arrived.length > 0) {
+                this.selected = [...this.selected, ...arrived];
+                this._emitSelection();
+            }
+        },
+
+        /**
+         * The selection the application hands over with `selected` and `all-matches`.
+         *
+         * The first render opens with it. After that the selection is the reader's, and the
+         * server's only where a request changed it: the answer to a bulk action that clears the
+         * list is taken, and an answer to a request that left before the reader's latest click
+         * leaves that click alone, since the reader's newer choice is on its way.
+         *
+         * @param {Object} next the server state
+         * @param {boolean} first whether this is the first state the table reads
+         * @param {{selection: Array, allMatches: boolean}|null} sent the selection the request carried
+         */
+        _takeSelection(next, first, sent) {
+            if (! Array.isArray(next.selected)) {
+                return;
+            }
+
+            const server = next.selected;
+            const serverAll = typeof next.allMatches === 'boolean' ? next.allMatches : null;
+
+            if (first) {
+                this.selected = [...server];
+                this.allMatches = serverAll === true;
+
+                return;
+            }
+
+            if (sent === null || ! sameIds(this.selected, sent.selection) || this.allMatches !== sent.allMatches) {
+                return;
+            }
+
+            if (! sameIds(server, sent.selection)) {
+                this.selected = [...server];
+            }
+
+            if (serverAll !== null && serverAll !== sent.allMatches) {
+                this.allMatches = serverAll;
+            }
+        },
+
+        /** Say a sentence in the table's own status region, the same one twice as well. */
+        _say(text) {
+            if (typeof text !== 'string' || text === '') {
+                return;
+            }
+
+            this.announcement = '';
+
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(() => {
+                    this.announcement = text;
+                });
+            } else {
+                this.announcement = text;
+            }
         },
 
         get selectedCount() {
@@ -710,7 +947,7 @@ export default function wirekitDataTable(config = {}) {
         },
 
         _emitSelection() {
-            this.$dispatch('selection-change', { selected: this.selected });
+            this.$dispatch('selection-change', { selected: this.selected, allMatches: this.allMatches });
             if (this.$refs.selModel) {
                 // The field keeps its JSON for a plain form post, and the model gets the list
                 // itself. `wire:model` compiles to Alpine's x-model, which reads `detail` from a

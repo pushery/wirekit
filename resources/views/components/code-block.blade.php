@@ -39,8 +39,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $copy = BooleanProp::from($copy, false);
-    $wrap = BooleanProp::from($wrap, false);
+    $copy = BooleanProp::from($copy, false, 'code-block', 'copy');
+    $wrap = BooleanProp::from($wrap, false, 'code-block', 'wrap');
 
     $wrapperClasses = WireKit::resolveClasses('code-block', 'base', implode(' ', [
         'relative',
@@ -63,7 +63,7 @@
     ]);
 
     $codeClasses = implode(' ', [
-        $wrap ? 'block whitespace-pre-wrap [overflow-wrap:anywhere]' : 'wk-scrollbar block overflow-x-auto',
+        $wrap ? 'block whitespace-pre-wrap [overflow-wrap:anywhere]' : 'wk-scrollbar relative block overflow-x-auto',
         // A tab stop must show that it has focus. The ring is drawn inside the box: the region
         // fills the wrapper edge to edge, and the wrapper clips to its border, so a ring drawn
         // outside would be cut on every side the two share.
@@ -82,7 +82,7 @@
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
-<div {{ $attributes->class([$wrapperClasses]) }} data-wk-code-block>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }} data-wk-code-block>
     @if($filename || $copy)
         {{-- x-data lifted to toolbar so the live-region span can read state (WCAG 2.2 SC 4.1.3).
              srMessage is the SR-only announcement; copied drives the icon swap.
@@ -112,7 +112,7 @@
                 <span
                     class="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-[length:var(--text-wk-xs,0.75rem)] text-[color:var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]"
                     style="direction: rtl; text-align: left; text-overflow: ellipsis;"
-                    title="{{ $filename }}"
+                    title="{{ \Pushery\WireKit\Support\SlotContent::textOf($filename) }}"
                 ><span style="unicode-bidi: plaintext;">{{ $filename }}</span></span>
             @else
                 <span class="flex-1"></span>
@@ -132,7 +132,7 @@
                         </svg>
                     </template>
                     <template x-if="copied">
-                        <svg class="h-4 w-4 text-[color:var(--color-wk-success)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <svg class="h-4 w-4 text-[color:var(--color-wk-success-text)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                         </svg>
                     </template>

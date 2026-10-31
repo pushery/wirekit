@@ -27,10 +27,10 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `indicator="false"` would draw the stepper it was asked to suppress.
-    $indicator = BooleanProp::from($indicator, true);
+    $indicator = BooleanProp::from($indicator, true, 'wizard', 'indicator');
 
     // Steps usually arrive as a Collection, which `is_array()` below would read as no steps.
-    $steps = ListProp::records($steps);
+    $steps = ListProp::records($steps, 'wizard', 'steps');
 
     $stepNames = array_values(array_map(
         fn ($step) => is_array($step) ? ($step['label'] ?? '') : (string) $step,
@@ -38,7 +38,7 @@
     ));
 
     $total = max(1, count($stepNames));
-    $current = max(1, min($total, (int) $current));
+    $current = max(1, min($total, \Pushery\WireKit\Support\NumericProp::int($current, 0, 'wizard', 'current')));
 
     $classes = WireKit::resolveClasses('wizard', 'base', implode(' ', [
         // w-full because the stepper inside already carries it, and a percentage
@@ -87,7 +87,7 @@
     {{-- No `x-init` here: the factory starts itself from its own `init()`, so a caller's
          `x-init` on the tag lands on this root and runs, instead of standing in the tag a second
          time beside ours, where the parser would drop it. --}}
-    data-wk-sr-host {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     @if($indicator && $stepNames !== [])
@@ -118,7 +118,7 @@
         {{ $slot }}
     </div>
 
-    @isset($controls)
+    @if(\Pushery\WireKit\Support\SlotContent::given($controls ?? null))
         {{ $controls }}
     @else
         {{-- Default controls. Ordinary buttons, so the keyboard model is the browser's and
@@ -143,5 +143,5 @@
                 x-bind:hidden="isLast ? true : null"
             >{{ __('wirekit::Next') }}</x-wirekit::button>
         </x-wirekit::row>
-    @endisset
+    @endif
 </div>

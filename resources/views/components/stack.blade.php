@@ -36,7 +36,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $wrap = BooleanProp::from($wrap, false);
+    $wrap = BooleanProp::from($wrap, false, 'stack', 'wrap');
 
     // Resolved before the rungs, so an unknown ladder name is reported as what
     // it is rather than silently falling through to the historical one.
@@ -90,8 +90,15 @@
     // `as` is interpolated straight into the opening tag, and Blade's escaping does
     // not stop a space or an `=` — so an unvalidated value renders as an attribute.
     $as = \Pushery\WireKit\WireKit::tagName('stack', (string) $as);
+
+    // As a `ul` or `ol` the stack is a list whose markers Tailwind's preflight removes, and
+    // WebKit does not treat a list without markers as one: VoiceOver on iPhone and iPad reads
+    // it as plain text, without "list" and without the number of items. `role="list"` keeps
+    // the semantics there and changes nothing in the engines that keep them anyway. A role on
+    // the tag replaces it.
+    $listRole = in_array(strtolower($as), ['ul', 'ol'], true) && ! $attributes->has('role');
 @endphp
 
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip @if($listRole) role="list" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </{{ $as }}>

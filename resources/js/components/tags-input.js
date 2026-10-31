@@ -24,17 +24,22 @@
  *     `x-modelable`, so `wire:model.live.blur` and `.live.change` send when a tag is added or
  *     removed and when the reader leaves (utils/model-events.js). The tags travel as the
  *     event's detail.
+ *   - _stopServerValue — the observer on the tags the server renders on the root
+ *     (utils/server-value.js).
  *
  * @param {Object} config
  * @param {string} config.name - Input name for form submission
  * @param {number|null} config.maxTags - Maximum number of tags allowed
- * @param {Array<string>} config.tags - Pre-existing tags to seed the state
+ * @param {Array<string>} [config.tags] - Pre-existing tags to seed the state; without them, the
+ *   root's `data-wk-server-value`
+ * @param {boolean} [config.readonly] - The set is read-only: no tag is added or removed
  * @param {Object} [config.announcements] - Translated templates: `added`, `removed`,
  *   `duplicate` (all take `:name`) and `limit` (takes `:count`).
  */
 import { onFormReset } from '../utils/form-reset.js';
 import { requiredCheckState } from '../utils/required-check.js';
 import { watchModelEvents } from '../utils/model-events.js';
+import { hasModelBinding, jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 import { isComposing } from '../utils/ime.js';
 
 /**
@@ -98,13 +103,47 @@ export default function wirekitTagsInput(config = {}) {
         // destroy().
         _stopFormReset: null,
         _resetValue: Array.isArray(config.tags) ? Array.from(config.tags).map(String) : [],
+        _stopServerValue: null,
         // `requiredMessage` and `onRequiredInvalid()`: a required tags input stops an empty submit
         // (utils/required-check.js).
         ...requiredCheckState(),
 
         init() {
             const root = this.$root;
+
+            // The tags are not in `x-data`, so that the expression stays the same for every set: a
+            // Livewire morph that changed it would start the component again, and through
+            // `x-modelable` the answer to a `.live` change would send the set of the request back,
+            // without a tag added since. `$root` is checked, as a unit harness hands a bare stub.
+            if (! Array.isArray(config.tags)) {
+                const seed = jsonValue(typeof root?.getAttribute === 'function' ? root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE) : null);
+
+                if (Array.isArray(seed)) {
+                    this.tags = seed.map(String);
+                }
+            }
+
             this._modelEvents = watchModelEvents(root, () => root, { detail: () => [...this.tags] });
+
+            // A set the server renders is what a form reset returns to. With a caller's model it
+            // reaches the chips through the binding, which leaves alone what the server only
+            // returned; without one, it is the server's to set.
+            this._stopServerValue = observeServerValue(root, (raw) => {
+                const value = jsonValue(raw);
+
+                if (! Array.isArray(value)) {
+                    return;
+                }
+
+                const next = value.map(String);
+                this._resetValue = [...next];
+
+                if (hasModelBinding(root) || (next.length === this.tags.length && next.every((tag, i) => tag === this.tags[i]))) {
+                    return;
+                }
+
+                this.tags = next;
+            });
 
             // One hidden field per tag: an empty list has none, which the helper covers with the
             // form it found while there was one.
@@ -117,6 +156,8 @@ export default function wirekitTagsInput(config = {}) {
             this._modelEvents = null;
             this._stopFormReset?.();
             this._stopFormReset = null;
+            this._stopServerValue?.();
+            this._stopServerValue = null;
         },
 
         /** Back to the starting tags after a form reset; the hidden fields follow the list. */
@@ -141,6 +182,9 @@ export default function wirekitTagsInput(config = {}) {
             field?.focus();
         },
         _maxTags: config.maxTags || null,
+        // Read-only, the field carries the native attribute and has no remove buttons; the
+        // handlers below refuse as well, for a key or a call that reaches them anyway.
+        _readonly: config.readonly === true,
 
         /**
          * What a screen reader is told after a change. Empty until one happens.
@@ -165,6 +209,8 @@ export default function wirekitTagsInput(config = {}) {
          * would delete what they wrote to punish them for a condition they cannot see.
          */
         addTag() {
+            if (this._readonly) return;
+
             const input = this.$refs.input;
             const value = input.value.trim();
 
@@ -203,7 +249,7 @@ export default function wirekitTagsInput(config = {}) {
          * composition's end calls this again.
          */
         onInput(event) {
-            if (isComposing(event)) return;
+            if (this._readonly || isComposing(event)) return;
 
             const input = this.$refs.input;
             const value = typeof input?.value === 'string' ? input.value : '';
@@ -260,6 +306,33 @@ export default function wirekitTagsInput(config = {}) {
         },
 
         /**
+         * A list pasted one entry to a line becomes a tag per line, as a list with commas does.
+         *
+         * The field is one line, so the browser cleans a pasted line break away before the text
+         * reaches `onInput()`: Blink and WebKit drop it, which runs the entries together, and
+         * Gecko writes a space. A tab from a row of a spreadsheet stays in the text. A paste that
+         * holds either is therefore taken over here: its line breaks and tabs become commas, the
+         * text goes in where the caret is, over a selection, as a paste puts it, and `onInput()`
+         * makes the tags. Text on one line is left to the browser.
+         */
+        onPaste(event) {
+            const text = event?.clipboardData?.getData?.('text') ?? '';
+            const input = this.$refs.input;
+
+            if (this._readonly || this.atMaxTags || ! input || ! /[\r\n\t]/.test(text)) return;
+
+            event.preventDefault();
+
+            const listed = text.split(/[\r\n\t]+/).map((piece) => piece.trim()).join(', ');
+            const value = typeof input.value === 'string' ? input.value : '';
+            const start = typeof input.selectionStart === 'number' ? input.selectionStart : value.length;
+            const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : start;
+
+            input.value = value.slice(0, start) + listed + value.slice(end);
+            this.onInput(event);
+        },
+
+        /**
          * Remove a tag by index — the chip's own remove button, and nothing else.
          *
          * The removal takes the focused element away with it. Chips are keyed by
@@ -271,6 +344,8 @@ export default function wirekitTagsInput(config = {}) {
          * than left where the DOM happens to leave it.
          */
         removeTag(index) {
+            if (this._readonly) return;
+
             const removed = this.tags[index];
 
             if (removed === undefined) return;
@@ -351,7 +426,7 @@ export default function wirekitTagsInput(config = {}) {
          * repeats past its end, and every repeat would take a tag with it.
          */
         onBackspace(event) {
-            if (event.repeat) {
+            if (this._readonly || event.repeat) {
                 return;
             }
 

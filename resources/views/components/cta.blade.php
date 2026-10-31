@@ -19,6 +19,10 @@
     // that rule lives in axe's best-practice tag rather than the WCAG tags most suites
     // run — so it is invisible to an axe sweep and visible in Lighthouse.
     'level' => 2,
+    // The heading and the text under it, as props or as the `title` and `description` slots; a slot
+    // wins when both are given, and a text that carries markup has to be the slot.
+    'title' => null,
+    'description' => null,
     'scope' => null,
 ])
 
@@ -81,31 +85,31 @@
     // did-you-mean, and where the gate does not throw it renders the default level — never
     // h1, which is what validateProp's own first-allowed fallback would produce and which
     // would break the outline worse than the default does.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 2;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('cta', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 2;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('cta', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 @endphp
 
-<section data-variant="{{ $variant }}" {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<section data-variant="{{ $variant }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $variantClasses])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     <div class="max-w-[var(--size-wk-container-md)] mx-auto">
-        @isset($title)
+        @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
             <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-2xl,1.5rem)] sm:text-[length:var(--font-wk-heading-xl,2.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] mb-[var(--space-wk-md,1rem)]">
                 {{ $title }}
             </h{{ $levelValue }}>
-        @endisset
+        @endif
 
-        @isset($description)
+        @if($description instanceof \Illuminate\View\ComponentSlot ? $description->hasActualContent() : filled($description))
             {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p. --}}
             <div data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 mb-[var(--space-wk-lg,1.5rem)]">
                 {{ $description }}
             </div>
-        @endisset
+        @endif
 
-        @isset($actions)
+        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             <div class="flex flex-wrap gap-[var(--gap-wk-sm)] justify-center">
                 {{ $actions }}
             </div>
-        @endisset
+        @endif
     </div>
 </section>

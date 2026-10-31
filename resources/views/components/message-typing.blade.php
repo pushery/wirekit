@@ -27,7 +27,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $announce = BooleanProp::from($announce, false);
+    $announce = BooleanProp::from($announce, false, 'message-typing', 'announce');
 
     $sideValue = in_array($side, ['left', 'right'], true)
         ? $side
@@ -42,7 +42,7 @@
     $hasAuthor = $author !== null && $author !== '';
     // The row knows only the name, so it draws what `message` draws for a sender without a
     // picture: the initials, in the color that name gets everywhere.
-    $authorInitials = $hasAuthor ? \Pushery\WireKit\Support\Initials::from((string) $author) : null;
+    $authorInitials = $hasAuthor ? \Pushery\WireKit\Support\Initials::from(\Pushery\WireKit\Support\SlotContent::textOf($author)) : null;
 
     $classes = WireKit::resolveClasses('message-typing', 'base', implode(' ', [
         'flex gap-[var(--space-wk-sm,0.5rem)]',
@@ -51,7 +51,7 @@
     ]), $scope);
 
     $announcement = $hasAuthor
-        ? __('wirekit:::author is typing…', ['author' => $author])
+        ? __('wirekit:::author is typing…', ['author' => \Pushery\WireKit\Support\SlotContent::textOf($author)])
         : __('wirekit::Typing…');
 @endphp
 
@@ -59,7 +59,7 @@
     data-wk-message-typing
     data-side="{{ $sideValue }}"
     @if($announce) role="status" aria-live="polite" @endif
-    data-wk-sr-host {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- Avatar — only when we know who is typing. It keeps the indicator in the
          avatar column of the typist's own messages above it. --}}
@@ -74,7 +74,7 @@
          not an anonymous set of dots floating at the thread edge. --}}
     <div class="flex flex-col {{ $columnAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
         @if($hasAuthor)
-            <span title="{{ $author }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
+            <span title="{{ \Pushery\WireKit\Support\SlotContent::textOf($author) }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
                 {{ $author }}
             </span>
         @endif

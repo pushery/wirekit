@@ -14,6 +14,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('data-list', $attributes->getAttributes());
 
+    // An unknown `layout` is reported (Support\StrictnessGate) and renders as `horizontal`; a bound
+    // `null` or empty string is `horizontal` without a word.
+    $layout = \Pushery\WireKit\WireKit::validateProp('data-list', 'layout', \Pushery\WireKit\Support\NumericProp::text($layout ?: 'horizontal'), ['horizontal', 'stacked', 'grid', 'summary', 'detail', 'inline']);
+
     // Data list wraps native <dl> for semantic key-value pairs.
     // Layouts: horizontal (label left, value right), stacked, grid, summary.
     // Inline styles guarantee layout in environments where the developer's
@@ -53,7 +57,17 @@
         // there are deliberately no row separators: a totals block rules the
         // line above the grand total, not every line. `align-items: baseline`
         // seats the smaller label text on the same baseline as the value.
-        'summary' => 'display: grid; grid-template-columns: 1fr max-content; '
+        //
+        // The value's track is `fit-content()`, not `max-content`. A `max-content` track is as
+        // wide as its text unbroken, so one long token, a code or a reference with no space in
+        // it, would take the whole row and leave the label next to nothing. `fit-content()` holds
+        // the track at its content up to 10rem, or up to 40% of the row where that is wider, and a
+        // longer value breaks inside it (`overflow-wrap: anywhere` on the cell). An amount stays
+        // far below the limit, so it keeps its own width and one line. The 10rem floor is for a row
+        // only as wide as its own content, in a popover or a box of `width: fit-content`: there
+        // the 40% is taken of a width the list itself set, and a limit at a share alone would
+        // break a short value that fits.
+        'summary' => 'display: grid; grid-template-columns: 1fr fit-content(max(40%, 10rem)); '
             .'gap: var(--gap-wk-xs, 0.25rem) var(--gap-wk-md, 0.75rem); align-items: baseline;',
         // `detail` is `summary` with the columns swapped, and it is the commoner of the two:
         // "Customer: …", "Payment method: …" — the LABEL is as wide as its own text and the
@@ -63,8 +77,13 @@
         // "Payment method" is handed half the row and the value the other half, so the two
         // stand far apart with the middle of the row empty. Everything else here — the gaps,
         // the baseline seating, the `display: contents` on the items — is identical to
-        // `summary`; this is literally the swapped column declaration.
-        'detail' => 'display: grid; grid-template-columns: max-content 1fr; '
+        // `summary`; this is the swapped column declaration.
+        //
+        // The label's track takes the limit of the value's track in `summary`, for the same
+        // reason: without it, a label with no space in it, a file name, would make the track wider
+        // than a phone and leave the value a few pixels, broken letter by letter. A label within
+        // the limit is as wide as its text; a longer one breaks inside its track.
+        'detail' => 'display: grid; grid-template-columns: fit-content(max(40%, 10rem)) 1fr; '
             .'gap: var(--gap-wk-xs, 0.25rem) var(--gap-wk-md, 0.75rem); align-items: baseline;',
         // `inline` is the compact form for a few entries in a narrow place, a table cell under an
         // article's name: one line per entry, "Label: value", with no padding and no rules. The
@@ -72,6 +91,10 @@
         'inline' => 'display: block;',
         default => '', // horizontal uses border on items
     };
+
+    // An inline display wins over every class of the caller's, `hidden` included: where the
+    // caller's class reaches for one, it is left out here and comes back as its utility.
+    [$layoutStyle, $layoutStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, (string) $layoutStyle);
 
     $classes = WireKit::resolveClasses('data-list', 'base', implode(' ', [
         'w-full',
@@ -83,7 +106,7 @@
 {{-- Native <dl> element — screen readers announce as definition list --}}
 <dl
     data-layout="{{ $layout }}"
-    {{ $attributes->merge($layoutStyle ? ['style' => $layoutStyle] : [])->class([$classes]) }}
+    {{ $attributes->merge($layoutStyle ? ['style' => $layoutStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $layoutStyleClasses => $layoutStyleClasses !== ''])) }}
 >
     {{ $slot }}
 </dl>

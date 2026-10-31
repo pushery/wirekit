@@ -26,6 +26,16 @@
     // with others it must never open for, such as a site search beside demos. Without a
     // `name` it changes nothing.
     'namedOnly' => false,
+    // Take the hotkey from the other palettes on the page that share it, for as long as this one
+    // is on the page: the key then opens and closes this palette, and the others stay quiet until
+    // it leaves, as the palette of a selection leaves with the selection. Without a `hotkey` it
+    // changes nothing.
+    'takesHotkey' => false,
+    // Where the overview of keyboard shortcuts on `?` lists the hotkey, under the palette's
+    // `label`: `global`, under "Everywhere", since the key opens the palette from anywhere, dialogs
+    // included; or `page`, under "On this page", for a palette that belongs to one page. Its key
+    // then does nothing while a modal dialog is open over the page, as a shortcut of the page.
+    'hotkeyArea' => 'global',
     // The dialog's accessible name, announced first when the palette opens. A search
     // is announced as a search this way, and two palettes on one page need not share
     // a name. Empty keeps the translated default.
@@ -41,6 +51,10 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('command-palette', $attributes->getAttributes());
+
+    // An unknown `hotkeyArea` is reported (Support\StrictnessGate) and renders as `global`; a bound
+    // `null` or empty string is `global` without a word.
+    $hotkeyArea = \Pushery\WireKit\WireKit::validateProp('command-palette', 'hotkeyArea', \Pushery\WireKit\Support\NumericProp::text($hotkeyArea ?: 'global'), ['global', 'page']);
 
     // Page-unique, so two palettes on one page do not share it. With a fixed id the second
     // listbox would duplicate the first one's and the second input's `aria-controls` would
@@ -63,9 +77,12 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $teleport = BooleanProp::from($teleport, true);
-    $lockScroll = BooleanProp::from($lockScroll, true);
-    $namedOnly = BooleanProp::from($namedOnly, false);
+    $teleport = BooleanProp::from($teleport, true, 'command-palette', 'teleport');
+    $lockScroll = BooleanProp::from($lockScroll, true, 'command-palette', 'lockScroll');
+    $namedOnly = BooleanProp::from($namedOnly, false, 'command-palette', 'namedOnly');
+    $takesHotkey = BooleanProp::from($takesHotkey, false, 'command-palette', 'takesHotkey');
+    // The dialog's accessible name, which the overview of keyboard shortcuts names the palette by.
+    $dialogLabel = filled($label) ? \Pushery\WireKit\Support\SlotContent::textOf($label) : __('wirekit::Command palette');
 
     // Command Palette — spotlight-style search modal (Cmd/Ctrl+K).
     // Uses combobox + listbox pattern with keyboard navigation.
@@ -96,7 +113,8 @@
         'text-[length:var(--text-wk-lg)]',
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
-        'focus:outline-hidden',
+        // The field takes the kit's ring like every tab stop, inset because the panel clips it.
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
     // The results list takes a seam like the backdrop, the panel and the input.
@@ -110,7 +128,7 @@
     // for a scope that restyles the region wholesale, like its three siblings.
     $listClasses = 'wk-scrollbar '.WireKit::resolveClasses('command-palette', 'list', implode(' ', [
         'max-h-[var(--wk-command-palette-list-max-height,18rem)]',
-        'overflow-y-auto',
+        'relative overflow-y-auto',
         'py-[var(--padding-wk-y-xs)]',
     ]), $scope);
 
@@ -123,6 +141,38 @@
         'py-[var(--padding-wk-y-sm)]',
         'border-b border-[var(--color-wk-border)]',
     ]), $scope);
+
+    // The row above the field while a page is open: Back, and the page's heading.
+    $pageBarClasses = WireKit::resolveClasses('command-palette', 'page-bar', implode(' ', [
+        'flex items-center',
+        'gap-[var(--gap-wk-sm)]',
+        'px-[var(--padding-wk-x-md)]',
+        'pt-[var(--padding-wk-y-sm)]',
+    ]), $scope);
+
+    // The page's name wraps rather than being cut: on a narrow screen a long heading takes a
+    // second line, and the whole of it stays readable.
+    $pageHeadingClasses = WireKit::resolveClasses('command-palette', 'page-heading', implode(' ', [
+        'min-w-0 break-words',
+        'text-[length:var(--text-wk-sm)]',
+        'font-[number:var(--font-wk-heading-weight)]',
+        'text-[color:var(--color-wk-text)]',
+    ]), $scope);
+
+    // Whether an entry can open a page here. The slot is rendered before this view, so a page in it
+    // is already markup; a render that adds one renders the palette, and this, again.
+    $hasPages = str_contains((string) $slot, 'data-wk-command-page=');
+
+    // The empty state is said from the palette's status region, unless its block carries a role
+    // of the caller's own: that role then says it, or with `role="none"` nothing does, for an
+    // application that announces the empty state itself. Rendered before this view, the block
+    // is already markup.
+    $emptyInRegion = \Pushery\WireKit\Support\SlotContent::given($empty ?? null) && ! str_contains((string) $empty, 'data-wk-command-empty-own-role');
+
+    // The announcement of a level names its count, a number that exists in the browser only, so
+    // the plural forms travel there and `Intl.PluralRules` picks one in the application's locale.
+    $entryPhrases = \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{0} no entries|{1} :count entry|[2,*] :count entries');
+    $pluralLocale = \Pushery\WireKit\Support\IcuLocale::tag();
 
     // The `loading` and `error` slots, set like the empty state so the three read as one family.
     $stateClasses = WireKit::resolveClasses('command-palette', 'state', implode(' ', [
@@ -140,11 +190,11 @@
     // The palette is teleported, or fixed where it is not, so it takes no room where it is
     // written. Its root generates no box, which a flex or grid container would otherwise count
     // as an empty item with a gap of its own beside it.
-    $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
+    $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
 @endphp
 
 <div
-    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }}, namedOnly: {{ $namedOnly ? 'true' : 'false' }}, remote: {{ isset($loading) ? 'true' : 'false' }} })"
+    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from(filled($name) ? (string) $name : null) }}, namedOnly: {{ $namedOnly ? 'true' : 'false' }}, takesHotkey: {{ $takesHotkey ? 'true' : 'false' }}, hotkeyArea: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkeyArea) }}, label: {{ \Pushery\WireKit\Support\AlpinePayload::string($dialogLabel) }}, placeholder: {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($placeholder)) }}, entryPhrases: {{ \Pushery\WireKit\Support\AlpinePayload::from($entryPhrases) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::string($pluralLocale) }}, remote: {{ \Pushery\WireKit\Support\SlotContent::given($loading ?? null) ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
     {{-- Overlay markup. Wrapped in `<template x-teleport="#wk-overlay-root">` by default so
@@ -198,19 +248,28 @@
                     x-transition:leave-end="opacity-0 scale-95"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="{{ filled($label) ? $label : __('wirekit::Command palette') }}"
+                    aria-label="{{ $dialogLabel }}"
                     class="{{ $panelClasses }}"
                     @keydown="handleKeydown"
                 >
+                    {{-- The level the reader is on, while a page is open: Back, and the page's
+                         heading. Before the field in the tab order, so Shift+Tab reaches Back; the
+                         field keeps the list keys, and Backspace in it goes back as well. --}}
+                    <div x-show="atPage" x-cloak class="{{ $pageBarClasses }}">
+                        <x-wirekit::button intent="neutral" surface="ghost" size="sm" x-on:click="goBack()">
+                            <x-slot:iconLeft><span class="inline-flex rtl:-scale-x-100" aria-hidden="true"><x-wirekit::icon name="chevron-left" size="sm" /></span></x-slot:iconLeft>
+                            {{ __('wirekit::Back') }}
+                        </x-wirekit::button>
+                        <span class="{{ $pageHeadingClasses }}" x-text="pageHeading"></span>
+                    </div>
+
                     {{-- Search input --}}
                     <div class="flex items-center gap-[var(--gap-wk-sm)]">
                         {{-- Search icon, through the icon system rather than hand-drawn, so it
                              follows the developer's icon preset like every other icon in the
                              package. --}}
                         <div class="pl-[var(--padding-wk-x-lg)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
-                            @if(function_exists('svg'))
-                                {{ svg(\Pushery\WireKit\WireKit::icon('search'), ['class' => 'w-5 h-5']) }}
-                            @endif
+                            {{ \Pushery\WireKit\Support\IconSvg::html('search', ['class' => 'w-5 h-5']) }}
                         </div>
                         <input
                             {{-- Key presses of an input method composing text stop here, before the keys of the panel (utils/ime.js). --}}
@@ -227,7 +286,9 @@
                             aria-controls="{{ $listId }}"
                             :aria-activedescendant="activeDescendant"
                             aria-autocomplete="list"
-                            placeholder="{{ $placeholder }}"
+                            placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}"
+                            {{-- A page may say what its search looks for. --}}
+                            x-bind:placeholder="fieldPlaceholder"
                             class="wk-field {{ $inputClasses }}"
                             autocomplete="off"
                             {{-- Emit the query on every keystroke (debounced) so a host can drive
@@ -256,11 +317,11 @@
                     {{-- Filter row — between the input and the list, in that order for Tab as
                          well: the reader types, then narrows. The list keys stay with the input
                          (see handleKeydown), so a control here keeps its own Enter and arrows. --}}
-                    @isset($filters)
+                    @if(\Pushery\WireKit\Support\SlotContent::given($filters ?? null))
                         <div class="{{ $filtersClasses }}">
                             {{ $filters }}
                         </div>
-                    @endisset
+                    @endif
 
                     {{-- Command list --}}
                     <div
@@ -287,57 +348,68 @@
                         {{ $slot }}
                     </div>
 
-                    {{-- Empty state — a SIBLING of the list, and that is the whole point.
-                         `role="listbox"` owns its children, and they are options; a line of
-                         prose among them is a non-option child of a role that requires them,
-                         which is what axe reports as `aria-required-children`. Rendered in the
-                         default slot, `<x-wirekit::command-palette.empty>` would be exactly that.
-
-                         It would also announce nothing there, being a roleless <div>: the input
-                         keeps `aria-expanded="true"` and reports no active descendant, so a
-                         search that matched nothing would be indistinguishable from a list the
-                         reader had not touched. The sub-component carries `role="status"`
-                         for that half; this slot is the other half.
-
-                         The palette decides WHEN it shows: only while the list holds no option
-                         and no remote request is pending or failed. Rendered whenever the slot
-                         is passed, the message would sit beneath a full list of results. --}}
-                    @isset($empty)
-                        <div x-show="showsEmpty">
-                            {{ $empty }}
-                        </div>
-                    @endisset
-
-                    {{-- Remote source — "not here yet" and "failed" are not "nothing matched".
-                         The host reports which one applies through the
-                         `wirekit:command-palette-state` event (see the factory).
-
-                         ONE region for both, and it is always rendered: a live region that
+                    {{-- ONE status region for everything the palette says beside the list, and it
+                         is rendered whenever there is something to say: a live region that
                          appears together with its text is announced unreliably, while text
                          appearing inside a region that already exists is announced. The slots
                          therefore take plain content — a `role="status"` of their own inside
-                         this one would be announced twice. --}}
-                    @if(isset($loading) || isset($error))
+                         this one would be announced twice.
+
+                         A SIBLING of the list, and that is the whole point. `role="listbox"`
+                         owns its children, and they are options; a line of prose among them is a
+                         non-option child of a role that requires them, which is what axe reports
+                         as `aria-required-children`.
+
+                         Empty state: the input keeps `aria-expanded="true"` and reports no
+                         active descendant, so without this a search that matched nothing would
+                         be indistinguishable from a list the reader had not touched. The palette
+                         decides WHEN it shows: only while the list holds no option and no remote
+                         request is pending or failed. Rendered whenever the slot is passed, the
+                         message would sit beneath a full list of results.
+
+                         Remote source — "not here yet" and "failed" are not "nothing matched".
+                         The host reports which one applies through the
+                         `wirekit:command-palette-state` event (see the factory).
+
+                         A palette with pages says each change of level in the same region, "Set
+                         status, 3 entries": the level's name and its count, visually hidden.
+
+                         An empty block with a role of the caller's own stays outside, where that
+                         role says it, as it did before the palette said it itself. --}}
+                    @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null) && ! $emptyInRegion)
+                        <div x-show="showsEmpty">
+                            {{ $empty }}
+                        </div>
+                    @endif
+                    @if($emptyInRegion || \Pushery\WireKit\Support\SlotContent::given($loading ?? null) || \Pushery\WireKit\Support\SlotContent::given($error ?? null) || $hasPages)
                         <div role="status">
-                            @isset($loading)
+                            @if($emptyInRegion)
+                                <div x-show="showsEmpty">
+                                    {{ $empty }}
+                                </div>
+                            @endif
+                            @if(\Pushery\WireKit\Support\SlotContent::given($loading ?? null))
                                 <div x-show="isLoading" class="{{ $stateClasses }}">
                                     {{ $loading }}
                                 </div>
-                            @endisset
-                            @isset($error)
+                            @endif
+                            @if(\Pushery\WireKit\Support\SlotContent::given($error ?? null))
                                 <div x-show="hasError" class="{{ $stateClasses }}">
                                     {{ $error }}
                                 </div>
-                            @endisset
+                            @endif
+                            @if($hasPages)
+                                <span class="sr-only" x-text="levelAnnouncement"></span>
+                            @endif
                         </div>
                     @endif
 
                     {{-- Optional footer slot --}}
-                    @isset($footer)
+                    @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
                         <div class="border-t border-[var(--color-wk-border)] p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
                             {{ $footer }}
                         </div>
-                    @endisset
+                    @endif
                 </div>
             </div>
         </div>

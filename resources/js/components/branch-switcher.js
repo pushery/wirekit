@@ -20,13 +20,15 @@
  *
  * @param {Object} config
  * @param {number} [config.total]    how many variants exist
- * @param {number} [config.current]  which one is showing, 1-based
+ * @param {number} [config.current]  which one is showing, 1-based; without it, the root's
+ *                                   `data-wk-server-value`
  * @param {boolean} [config.loop]    whether the ends wrap
  * @param {string} [config.countLabel]    ":current of :total", translated in the template
  * @param {string} [config.announcement]  "Showing response :current of :total", likewise
  */
 import { focusClicked } from '../utils/focus-clicked.js';
 import { watchModelEvents } from '../utils/model-events.js';
+import { hasModelBinding, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 export default function wirekitBranchSwitcher(config = {}) {
     return {
@@ -40,20 +42,49 @@ export default function wirekitBranchSwitcher(config = {}) {
         announcement: config.announcement || 'Showing response :current of :total',
         announced: '',
         _modelEvents: null,
+        _stopServerValue: null,
 
         init() {
+            const root = this.$root;
+
+            // The index is not in `x-data`, so that the expression stays the same for every
+            // variant: a Livewire morph that changed it would start the switcher again, and
+            // through `x-modelable` the answer to a `wire:model.live` step would send the index of
+            // the request back, a step behind the reader. `$root` is checked rather than assumed,
+            // as a unit harness hands a bare stub.
+            if (config.current === undefined && typeof root?.getAttribute === 'function') {
+                const seed = Number(root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE));
+
+                if (Number.isInteger(seed) && seed > 0) {
+                    this.current = seed;
+                }
+            }
+
             // Clamped on the way in as well as in the template: a server that regenerates can
             // hand over an index whose variant no longer exists, and an out-of-range current
             // would disable both buttons and strand the reader.
             this.current = this.clamp(this.current);
 
-            const root = this.$root;
             this._modelEvents = watchModelEvents(root, () => root, { detail: () => this.current });
+
+            // An index the server renders reaches the switcher. With a caller's model the binding
+            // carries the server's changes, and leaves alone what the server only returned.
+            this._stopServerValue = observeServerValue(root, (value) => {
+                const next = Number(value);
+
+                if (hasModelBinding(root) || ! Number.isInteger(next) || next < 1) {
+                    return;
+                }
+
+                this.current = this.clamp(next);
+            });
         },
 
         destroy() {
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopServerValue?.();
+            this._stopServerValue = null;
         },
 
         clamp(value) {

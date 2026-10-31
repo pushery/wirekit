@@ -97,18 +97,18 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
-    $loading = BooleanProp::from($loading, false);
-    $disableOnLoading = BooleanProp::from($disableOnLoading, true);
+    $disabled = BooleanProp::from($disabled, false, 'button', 'disabled');
+    $loading = BooleanProp::from($loading, false, 'button', 'loading');
+    $disableOnLoading = BooleanProp::from($disableOnLoading, true, 'button', 'disableOnLoading');
 
     // Blade compiles an UNBOUND attribute to a string, and the string 'false' is truthy — so
     // `wrap-label="false"` would mean the opposite of what the call site reads as, with the
     // page rendering either way and nothing to say so. Normalized against this prop's own
     // default, like every other boolean on this component.
-    $wrapLabel = BooleanProp::from($wrapLabel, false);
-    $touchTextFloor = BooleanProp::from($touchTextFloor, false);
-    $touchFloor = BooleanProp::from($touchFloor, false);
-    $iconOnly = BooleanProp::from($iconOnly, false);
+    $wrapLabel = BooleanProp::from($wrapLabel, false, 'button', 'wrapLabel');
+    $touchTextFloor = BooleanProp::from($touchTextFloor, false, 'button', 'touchTextFloor');
+    $touchFloor = BooleanProp::from($touchFloor, false, 'button', 'touchFloor');
+    $iconOnly = BooleanProp::from($iconOnly, false, 'button', 'iconOnly');
 
     /*
      * The breakpoint name, against the viewport names `table.th hideBelow` takes plus `xs`.
@@ -153,12 +153,17 @@
     // leave without submitting, a re-consent screen for one, a slow connection then gets no
     // feedback at all, neither visual nor assistive, until the answer comes back.
     $loading = $loading || $loadingTarget !== null;
-    $forceLoading = BooleanProp::from($forceLoading, false);
+    $forceLoading = BooleanProp::from($forceLoading, false, 'button', 'forceLoading');
 
     // warn when developers pass an
     // unknown prop (e.g. `variant="ghost"` when the prop is `surface`).
     // Dev-only — silent in prod. See WireKit::warnUnknownProps() docs.
     WireKit::warnUnknownProps('button', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -233,6 +238,8 @@
     // the canonical `outline` so developers who copy from card (which
     // uses `variant="outlined"`) get the same visual on button.
     $surfaceAliases = ['outlined' => 'outline'];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $surface = \Pushery\WireKit\Support\NumericProp::key($surface);
     $surface = $surfaceAliases[$surface] ?? $surface;
 
     // Validate intent + surface (debug mode raises on unknown values).
@@ -518,13 +525,13 @@
     }
 
     // Render as <a> when href is provided, otherwise <button>
-    $tag = $href ? 'a' : 'button';
+    $tag = $href !== null ? 'a' : 'button';
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See dropdown/item.blade.php for rationale on except('rel') + explicit
     // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -626,14 +633,14 @@
 @endphp
 
 <{{ $tag }} data-wk-prose-skip data-wk-sr-host
-    @if($href && ! $linkDisabled) href="{{ $href }}" @endif
+    @if($href !== null && ! $linkDisabled) href="{{ $href }}" @endif
     @if($tag === 'button') type="{{ $type }}" @endif
     @if($linkDisabled) role="link" aria-disabled="true" @endif
     @disabled($tag === 'button' && $isDisabled)
     @if($emitAriaBusy) aria-busy="true" @endif
     @if($announceBusy) x-wk-announce-busy @unless($attributes->has('data-wk-busy-text')) data-wk-busy-text="{{ __('wirekit::Loading') }}" @endunless @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $buttonBag->class([$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $iconOnlyShrinkClasses, $touchClasses, $linkDisabledClasses]) }}
+    {{ $buttonBag->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $iconOnlyShrinkClasses, $touchClasses, $linkDisabledClasses])) }}
     {{-- `disabled` is inert on an anchor, so the link branch gets the treatment
          this component uses for a disabled link instead. `wire:loading.attr`
          adds a `disabled` attribute, which a browser honors on a button and ignores
@@ -661,9 +668,9 @@
     @endif
 
     {{-- Icon slots: use <x-slot:iconLeft> / <x-slot:iconRight> for HTML icons (SVG etc.) --}}
-    @isset($iconLeft)
+    @if(\Pushery\WireKit\Support\SlotContent::given($iconLeft ?? null))
         <span class="shrink-0">{{ $iconLeft }}</span>
-    @endisset
+    @endif
 
     {{-- Hidden, never dropped. An icon-only button whose label was simply not rendered is a
          control a screen reader announces as "button" and nothing else — and it looks finished,
@@ -678,9 +685,9 @@
         {{ $slot }}
     @endif
 
-    @isset($iconRight)
+    @if(\Pushery\WireKit\Support\SlotContent::given($iconRight ?? null))
         <span class="shrink-0">{{ $iconRight }}</span>
-    @endisset
+    @endif
 
     @if($opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>

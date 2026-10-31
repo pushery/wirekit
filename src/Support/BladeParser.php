@@ -130,10 +130,14 @@ final class BladeParser
         $issetNames = [];
         $bareNames = [];
 
-        // Primary signal: isset($name) blocks identify slot-presence checks.
-        if (preg_match_all('/\bisset\s*\(\s*\$([a-zA-Z][a-zA-Z0-9]*)\s*\)/', $contents, $matches)) {
-            foreach ($matches[1] as $name) {
-                $issetNames[$name] = null;
+        // Primary signal: a slot-presence check. That is isset($name), and SlotContent::given($name),
+        // which a view asks instead so that a slot holding nothing but Livewire's morph markers reads
+        // as none, written `given($name ?? null)` where the slot may be unset.
+        if (preg_match_all('/\bisset\s*\(\s*\$([a-zA-Z][a-zA-Z0-9]*)\s*\)|\bSlotContent::given\s*\(\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $contents, $matches)) {
+            foreach ([...$matches[1], ...$matches[2]] as $name) {
+                if ($name !== '') {
+                    $issetNames[$name] = null;
+                }
             }
         }
 

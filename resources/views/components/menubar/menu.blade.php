@@ -20,7 +20,8 @@
     // or one made of symbols, slugs to nothing, and every such menu then shared one empty name,
     // so one click opened them all. Such a name is counted instead, as navigation-menu does:
     // the counter is per request, so stable markup order returns the same name on a re-render.
-    $slug = \Illuminate\Support\Str::slug($label);
+    // A label given as markup names the menu by its text, or its tags would stand in the name.
+    $slug = \Illuminate\Support\Str::slug($label instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($label) : $label);
     $name = $slug !== '' ? $slug : \Pushery\WireKit\Support\DomId::unique(null, 'wk-menubar-menu-');
 
     $triggerClasses = WireKit::resolveClasses('menubar.menu', 'trigger', implode(' ', [
@@ -48,15 +49,25 @@
         // fixed, so this clips nothing beside the panel.
         'overflow-y-auto overscroll-contain',
     ]), $scope);
+
+    // A caller's name for the menu, `aria-label` or `aria-labelledby`, belongs on its trigger; on
+    // the wrapper, a `div` with no role, it names nothing (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    // A caller's `aria-describedby` goes with the name: a description is announced only for the
+    // element that carries it.
+    [$callerDescribedBy, $attributes] = \Pushery\WireKit\Support\CallerName::description($attributes);
 @endphp
 
-<div {{ $attributes->class('relative') }}>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, 'relative')) }}>
     {{-- Menu trigger --}}
     <button
         type="button"
+        {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }}
+        @if($callerDescribedBy !== null) aria-describedby="{{ $callerDescribedBy }}" @endif
         x-on:click="toggleMenu({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         x-on:mouseenter="openMenu({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         x-on:focus="markRovingTrigger({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
+        aria-expanded="false"
         :aria-expanded="activeMenu === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
         {{-- ROVING TABINDEX — the bar is ONE tab stop, not one per menu. Without this
              binding every trigger is a native <button> and therefore its own stop, so a
@@ -113,7 +124,7 @@
                  open one at a time gives a screen-reader user nothing to tell them apart
                  — the trigger that opened it is no longer where the reading cursor is,
                  because the panel teleports out to the overlay root. --}}
-            aria-label="{{ $label }}"
+            @if(\Pushery\WireKit\Support\SlotContent::textOf($label) !== '') aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
             class="{{ $panelClasses }}"
             x-cloak
         >

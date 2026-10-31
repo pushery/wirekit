@@ -14,11 +14,12 @@
     // bottom-corner FAB and is unchanged; `block-start` moves it to the top.
     'placement' => 'block-end',
     // What the button opens, so assistive tech announces it correctly. A
-    // single-action FAB is NOT a menu — the default is 'dialog' (the canonical use
-    // is a feedback / compose modal). Pass 'menu' / 'true' / 'listbox' / 'grid' /
-    // 'tree' as needed, or a falsy value to omit aria-haspopup entirely (a plain
-    // action that navigates or fires an event rather than opening a popup).
-    'haspopup' => 'dialog',
+    // single-action FAB is NOT a menu. Not given, a button opens a dialog (the
+    // canonical use is a feedback / compose modal) and a link with `href`
+    // navigates, so it announces nothing. Pass 'dialog' / 'menu' / 'listbox' /
+    // 'grid' / 'tree' as needed, or a falsy value to omit aria-haspopup entirely
+    // (a plain action that fires an event rather than opening a popup).
+    'haspopup' => null,
     // Render an <a> instead of a <button> when the action is a navigation.
     'href' => null,
     // Optional icon name (resolved via the WireKit icon system). A slot overrides it.
@@ -31,6 +32,11 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('fab.button', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -51,10 +57,10 @@
     // slot usually carries custom icon markup, which is non-empty and has nothing
     // to read, so those buttons would lose their name entirely. What decides is
     // visible TEXT.
-    $slotText = trim(strip_tags((string) $slot));
+    $slotText = \Pushery\WireKit\Support\SlotContent::plain($slot);
     $ariaLabel = match (true) {
         // No words of its own — the canonical icon FAB. The label is the name.
-        $slotText === '' => $label ?? __('wirekit::Action'),
+        $slotText === '' => \Pushery\WireKit\Support\BlankName::first($label, __('wirekit::Action')),
         // Words plus a label that CONTAINS them: allowed by 2.5.3 and useful,
         // since the name may add context as long as it starts from what is written.
         $label !== null && str_contains($label, $slotText) => $label,
@@ -111,17 +117,23 @@
     // silenced with an allowlist entry instead of removed.
     $placementClass = $placement === 'block-start' ? 'wk-fab-block-start' : '';
 
-    $tag = $href ? 'a' : 'button';
+    $tag = $href !== null ? 'a' : 'button';
 
     // A falsy value means "this button does not open a popup" — omit the attribute
-    // rather than emit aria-haspopup="false" (which some ATs still announce).
-    $haspopupValue = BooleanProp::isFalse($haspopup) ? null : $haspopup;
+    // rather than emit aria-haspopup="false" (which some ATs still announce). Any other
+    // value is one of the popups ARIA names, `true` among them, which it reads as `menu`;
+    // anything else is reported and announces a dialog.
+    $haspopupValue = match (true) {
+        $haspopup === null => $href !== null ? null : 'dialog',
+        BooleanProp::isFalse($haspopup) => null,
+        default => WireKit::validateProp('fab.button', 'haspopup', $haspopup, ['dialog', 'menu', 'listbox', 'grid', 'tree', 'true']),
+    };
 
     // Auto-inject rel="noopener noreferrer" when target="_blank" on an <a>, and
     // force-override any caller rel so the tabnabbing guard can't be defeated —
     // same pattern as sidebar.item / link / button.
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -146,20 +158,34 @@
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
+
+    // The named glyph, looked up only when no slot wins over it. Null where nothing can be drawn
+    // (no icon package, or an unknown name in a request): the neutral plus stands in then, so the
+    // button never shows an empty circle.
+    $iconSvg = ! (isset($slot) && $slot->hasActualContent()) && is_string($icon) && $icon !== '' && ! str_contains($icon, '<')
+        ? \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'h-6 w-6'])
+        : null;
+
+    // A button's type is the caller's when it is one a button has, so a form can submit through it;
+    // otherwise it stays a plain button. It leaves the attributes below, since a second `type`
+    // would lose to the first.
+    $wkButtonType = in_array($attributes->get('type'), ['submit', 'reset', 'button'], true) ? $attributes->get('type') : 'button';
 @endphp
 
 <{{ $tag }} data-wk-prose-skip
-    @if($href) href="{{ $href }}" @else type="button" @endif
+    @if($href !== null) href="{{ $href }}" @else type="{{ $wkButtonType }}" @endif
     @if($haspopupValue !== null) aria-haspopup="{{ $haspopupValue }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    @if($ariaLabel !== null) aria-label="{{ $ariaLabel }}" @endif
+    @if($ariaLabel !== null && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ $ariaLabel }}" @endif
     data-wk-fab-button
     data-position="{{ $position }}"
     data-placement="{{ $placement }}"
     {{-- Fixed at the bottom: the page keeps an element that takes the focus out from under it
-         (WCAG 2.4.11, resources/js/utils/scroll-inset.js). --}}
+         (WCAG 2.4.11, resources/js/utils/scroll-inset.js). It stands on `--wk-fab-lift`, so the
+         band a page may lift it by leaves it out (`--wk-scroll-inset-below-fab`). --}}
     data-wk-scroll-inset="bottom"
-    {{ $attributes->except('rel')->class([$classes]) }}
+    data-wk-fab-lifted
+    {{ $attributes->except($href !== null ? ['rel'] : ['rel', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- Icon — decorative ONLY when there is nothing to read. A slot wins; then a
          bare icon name resolves via the WireKit icon system (consistent with
@@ -169,8 +195,8 @@
     <span class="inline-grid place-items-center" @if($slotIsDecorative) aria-hidden="true" @endif>
         @if(isset($slot) && $slot->hasActualContent())
             {{ $slot }}
-        @elseif(is_string($icon) && $icon !== '' && ! str_contains($icon, '<') && function_exists('svg'))
-            {{ svg(WireKit::icon($icon), ['class' => 'h-6 w-6']) }}
+        @elseif($iconSvg !== null)
+            {{ $iconSvg }}
         @else
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

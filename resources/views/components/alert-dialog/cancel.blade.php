@@ -30,9 +30,27 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('alert-dialog.cancel', $attributes->getAttributes());
 
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
     use Pushery\WireKit\WireKit;
 
     $classes = WireKit::resolveClasses('alert-dialog.cancel', 'base', '', $scope);
+
+    // A caller's name for the control, `aria-label` or `aria-labelledby`, belongs on the button this
+    // view renders; on the wrapper, a `div` with no role, it names nothing (Support\CallerName). A
+    // control of the caller's own in the slot is the caller's to name, and the bag stays as it is.
+    $callerLabelledBy = null;
+    $callerLabel = null;
+    $callerDescribedBy = null;
+
+    if (! $slot->hasActualContent() || preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) !== 1) {
+        [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+        // A caller's `aria-describedby` goes with the name: a description is announced only for the
+        // element that carries it.
+        [$callerDescribedBy, $attributes] = \Pushery\WireKit\Support\CallerName::description($attributes);
+    }
 @endphp
 
 {{-- data-wk-alert-cancel is what the dialog looks for to place initial focus on
@@ -42,13 +60,13 @@
 <div
     x-on:click="dismissOverlay()"
     data-wk-alert-cancel
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     @if(! $slot->hasActualContent())
         {{-- Translated through the catalog: a literal `Cancel` would leave a German app
              with a fully translated dialog and an English cancel button, while
              lang/de.json carries "Abbrechen". --}}
-        <x-wirekit::button intent="neutral" surface="filled">{{ __('wirekit::Cancel') }}</x-wirekit::button>
+        <x-wirekit::button intent="neutral" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ __('wirekit::Cancel') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
         {{-- The caller supplied their own control. Matched on the RENDERED markup,
              because that is what a slot holds: by the time it is cast to a string
@@ -66,6 +84,6 @@
     @else
         {{-- Plain text slot — wrap it in the default Cancel button so
              keyboard + screen-reader semantics stay correct. --}}
-        <x-wirekit::button intent="neutral" surface="filled">{{ $slot }}</x-wirekit::button>
+        <x-wirekit::button intent="neutral" surface="filled" :aria-labelledby="$callerLabelledBy" :aria-label="$callerLabelledBy === null ? $callerLabel : null" :aria-describedby="$callerDescribedBy">{{ $slot }}</x-wirekit::button>
     @endif
 </div>

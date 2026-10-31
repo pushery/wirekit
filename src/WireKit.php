@@ -44,6 +44,7 @@ class WireKit
      */
     public const COMPONENTS_WITHOUT_CLASS_BLOCKS = [
         'card-stack' => 'it renders `stack` with its own `scope`, which resolves the classes, around wrappers that generate no box; personalize `stack` or a scope of it instead.',
+        'command-palette.page' => 'it is a group of the palette\'s list and carries no class of its own; its header is the palette\'s `page-heading` block and its entries are `command-palette.item`, so personalize those instead.',
         'faq-item' => 'it renders `accordion.item`, which resolves the classes; personalize `accordion.item` instead.',
         'fit-text' => 'its markup is the measurement the stylesheet reads and carries no class of its own; style the text through the element around it, or with a `class` on the component.',
         'fonts' => 'it renders `<link>` and `<style>` tags and no styled element.',
@@ -704,6 +705,24 @@ class WireKit
         Support\CompactClasses::forget();
         Support\TourStepCounter::reset();
         Support\FaqCollector::reset();
+        Support\LocalizedNumber::formatUsing(null);
+    }
+
+    /**
+     * Give WireKit the application's own way of writing a number, for an application whose numbers
+     * follow an account's settings rather than the language of the request:
+     *
+     *   WireKit::formatNumbersUsing(fn (float $number, ?int $decimals, ?int $maxDecimals): string
+     *       => $preset->format($number, $decimals, $maxDecimals));
+     *
+     * Every number WireKit formats on the server goes through it, and a chart takes its grouping and
+     * decimal marks from it. `null` restores the locale's way, as `Support\LocalizedNumber::formatUsing()` describes.
+     *
+     * @param  (callable(float, ?int, ?int): string)|null  $formatter
+     */
+    public static function formatNumbersUsing(?callable $formatter): void
+    {
+        Support\LocalizedNumber::formatUsing($formatter);
     }
 
     /**

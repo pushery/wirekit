@@ -17,6 +17,8 @@
  *     `wire:model.blur`, which listen on that input alone (utils/model-events.js): `change`
  *     with every filter applied or removed, and `blur` when the reader leaves the builder and
  *     its panel. Disposed in destroy().
+ *   - _stopServerValue — the observer on `data-wk-server-value` (utils/server-value.js) that
+ *     brings a set the server changed to the chips. Disconnected in destroy().
  * Everything else is plain reactive state (`open`) plus Alpine's own
  * `@click.outside` / `@keydown.escape` directives, whose teardown Alpine manages.
  *
@@ -40,7 +42,8 @@
  *
  * @param {Object} config
  * @param {Array}  config.fields - field definitions [{key,label,type,operators?,options?}]
- * @param {Array}  config.value  - initial active filters [{field,op,value}]
+ * @param {Array}  [config.value] - initial active filters [{field,op,value}]. The Blade template
+ *   leaves it out and writes the filters on `data-wk-server-value`, which init() reads and follows.
  * @param {Object} [config.announcements] - Translated templates: `removed` (takes `:name`)
  *   and `cleared`.
  */
@@ -49,13 +52,17 @@ import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { outOfReachBeside } from '../utils/teleport.js';
 import { watchModelEvents } from '../utils/model-events.js';
+import { onFormReset } from '../utils/form-reset.js';
+import { sameValue } from '../utils/same-value.js';
+import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { pressedTrigger } from '../utils/trigger-press.js';
 
 /**
  * What counts as focusable inside the popover. Same selector hover-card and
  * navigation-menu use for their teleported panels — same question, so the same
  * answer rather than a fourth list that drifts from the other three.
  */
-const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Is this element actually rendered, or only present?
@@ -68,6 +75,31 @@ const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]),
  */
 function isRendered(el) {
     return typeof el.getClientRects !== 'function' || el.getClientRects().length > 0;
+}
+
+/**
+ * Whether two filters say the same thing: the same field, the same operator and the same value,
+ * where a value bound to a number and its text count as one (`sameValue`), entry by entry for a
+ * value that is a list.
+ */
+function sameFilter(a, b) {
+    if (! a || ! b || ! sameValue(a.field, b.field) || ! sameValue(a.op, b.op)) {
+        return false;
+    }
+
+    const x = a.value ?? null;
+    const y = b.value ?? null;
+
+    if (Array.isArray(x) || Array.isArray(y)) {
+        return Array.isArray(x) && Array.isArray(y) && x.length === y.length && x.every((v, i) => sameValue(v, y[i]));
+    }
+
+    return sameValue(x, y);
+}
+
+/** Whether two sets hold the same filters in the same order. */
+function sameFilters(a, b) {
+    return a.length === b.length && a.every((filter, i) => sameFilter(filter, b[i]));
 }
 
 export default function wirekitFilterBuilder(config = {}) {
@@ -135,6 +167,14 @@ export default function wirekitFilterBuilder(config = {}) {
         // Active filters. Clone each entry so editing the draft never mutates
         // the seeded array in place before the user applies.
         filters: Array.isArray(config.value) ? config.value.map((f) => ({ ...f })) : [],
+        // The set a form reset returns to: the one the builder started with, copied again on
+        // every reset, so a filter added after one does not move where the next one returns.
+        _resetFilters: Array.isArray(config.value) ? config.value.map((f) => ({ ...f })) : [],
+        // The listener that does so (utils/form-reset.js), released in destroy().
+        _stopFormReset: null,
+        // The observer that follows the filters the server renders; see init(). Disconnected in
+        // destroy().
+        _stopServerValue: null,
 
         /**
          * What a screen reader is told after the set changes. Empty until one happens.
@@ -253,6 +293,57 @@ export default function wirekitFilterBuilder(config = {}) {
         _onResize: null,
         _modelEvents: null,
         init() {
+            // The filters reach this component on an attribute of the root rather than in
+            // `x-data`, so that attribute renders the same on every update. A morph that changed
+            // it would have Alpine reset the component to the new expression and initialize it
+            // again: with `wire:model.live` the answer to a filter the reader applied would close
+            // the panel they had opened since, and drop its draft. A value passed in `config`, as
+            // by a factory built outside Blade, comes first. `$root` is checked rather than
+            // assumed: a test builds this factory with a stub that has no `getAttribute`.
+            if (config.value === undefined && typeof this.$root?.getAttribute === 'function') {
+                const seeded = jsonValue(this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE));
+
+                if (Array.isArray(seeded)) {
+                    this.filters = seeded.map((f) => ({ ...f }));
+                    this._resetFilters = seeded.map((f) => ({ ...f }));
+                }
+            }
+
+            // A set the server changed reaches the chips, and a form reset returns to it, as a
+            // native field returns to the value the server rendered. One that holds the filters on
+            // screen, such as the reader's own change coming back, needs nothing done, so an open
+            // panel and its draft stay as they are.
+            this._stopServerValue = observeServerValue(this.$root, (raw) => {
+                const value = jsonValue(raw);
+
+                if (! Array.isArray(value)) {
+                    return;
+                }
+
+                const next = value.map((f) => ({ ...f }));
+
+                this._resetFilters = value.map((f) => ({ ...f }));
+
+                if (sameFilters(next, this.filters)) {
+                    return;
+                }
+
+                // An open edit stays on its filter wherever the new set holds it, and ends with the
+                // filter: applying it would otherwise replace whichever filter now sits at its index.
+                if (this.isOpen && this.editIndex !== null) {
+                    const at = next.findIndex((f) => sameFilter(f, this.filters[this.editIndex]));
+
+                    if (at === -1) {
+                        this.editIndex = null;
+                        this.close(focusIsWithin(this.$refs.panel));
+                    } else {
+                        this.editIndex = at;
+                    }
+                }
+
+                this.filters = next;
+            });
+
             // Close on page scroll / viewport resize. The popover is teleported +
             // position:fixed, anchored ONCE on open — a page scroll under it
             // strands the panel visually detached from the trigger (same class as
@@ -274,10 +365,18 @@ export default function wirekitFilterBuilder(config = {}) {
             }
 
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.model);
+            // A reset puts every native field of the form back, but the hidden field's value is its
+            // attribute, which a reset leaves alone: without this the builder alone would keep
+            // the filters the reader set while the rest of the form went back.
+            this._stopFormReset = onFormReset(this.$root, () => this.$refs?.model, () => this._restore());
         },
         destroy() {
+            this._stopServerValue?.();
+            this._stopServerValue = null;
             this._modelEvents?.dispose();
             this._modelEvents = null;
+            this._stopFormReset?.();
+            this._stopFormReset = null;
             this._stopRepair?.();
             this._stopRepair = null;
 
@@ -311,6 +410,17 @@ export default function wirekitFilterBuilder(config = {}) {
             this.isOpen = true;
             this._focusFirstControl();
         },
+        /**
+         * The panel's press outside. The panel is teleported out of the root, so `click.outside`
+         * counts the trigger as outside, and the click that opens the panel could close it in
+         * the same click; the trigger's own click toggles it (utils/trigger-press.js).
+         */
+        closeOutside(event) {
+            if (! pressedTrigger(event, this)) {
+                this.close();
+            }
+        },
+
         // restoreFocus=true returns focus to the trigger (escape / cancel /
         // apply); click-outside passes false so we don't yank focus back when
         // the user deliberately clicked elsewhere.
@@ -629,6 +739,23 @@ export default function wirekitFilterBuilder(config = {}) {
             queueMicrotask(() => { this.filterAnnouncement = text; });
         },
 
+        /**
+         * Back to the filters the builder started with, after a form reset, the hidden field
+         * with them. Nothing is announced and no event goes out: the reset is the reader's own
+         * act on the whole form, and the builder only follows it. The last announcement goes, as
+         * it described a change the reset undid, and an edit the panel had begun no longer
+         * points at a filter.
+         */
+        _restore() {
+            this.filters = this._resetFilters.map((f) => ({ ...f }));
+            this.filterAnnouncement = '';
+            this.editIndex = null;
+
+            if (this.$refs?.model) {
+                this.$refs.model.value = JSON.stringify(this.filters);
+            }
+        },
+
         // ── Emission ─────────────────────────────────────────────────────
         _emit() {
             // Primary contract: a bubbling event carrying the normalized array, dispatched
@@ -658,20 +785,21 @@ export default function wirekitFilterBuilder(config = {}) {
             this.$nextTick(async () => {
                 // Anchor the teleported (fixed) panel to the trigger with flip/shift so
                 // it opens in the direction with room and never lands off-frame or behind
-                // sibling content. crossAxisShift keeps it inside the viewport on narrow
-                // screens (mirrors <x-wirekit::popover>). Positions once on open; the
+                // sibling content. The shift runs along the trigger, which keeps the panel
+                // inside the viewport on narrow screens; a shift across it would be vertical
+                // below the trigger and lift the panel over it. Positions once on open; the
                 // click.outside / escape close it.
                 if (this.$refs.trigger && this.$refs.panel) {
                     this._stopRepair?.();
                     this._stopRepair = null;
 
                     const placement = await position(this.$refs.trigger, this.$refs.panel, {
-                        // Capped to the room on a short viewport and scrolled inside, so a phone held
-                        // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                        // Capped to the room on its side of the trigger on a short viewport and
+                        // scrolled inside, so a phone held sideways or a page zoomed to 400% keeps
+                        // every entry reachable (WCAG 1.4.10).
                         fitViewport: true,
                         placement: 'bottom-start',
                         offset: 6,
-                        crossAxisShift: true,
 
                         // Everything this call writes is inline style, and a framework update
                         // patches the panel against its own template, whose `style` attribute

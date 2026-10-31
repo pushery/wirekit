@@ -34,8 +34,10 @@
     // given the same `$author` array without a second shape to remember.
     // A Collection or a model is read as the record it holds, as `message` reads it.
     $author = \Pushery\WireKit\Support\ListProp::from($author);
-    $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;
+    $authorName = is_array($author) ? ($author['name'] ?? '') : \Pushery\WireKit\Support\SlotContent::textOf($author);
     $authorAvatar = is_array($author) ? ($author['avatar'] ?? null) : null;
+    // An empty picture address, `false` or one of white space is no picture (Support\UrlProp::source()).
+    $authorAvatar = is_string($authorAvatar) || $authorAvatar instanceof \Stringable || is_bool($authorAvatar) ? \Pushery\WireKit\Support\UrlProp::source($authorAvatar) : null;
     // The initials `message` shows without a picture, read the same way, so the avatar the
     // run is printed under is the one its messages would have drawn.
     $authorInitials = (is_array($author) ? ($author['initials'] ?? null) : null)
@@ -64,7 +66,7 @@
     @if(filled($authorName))
         @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Messages from :name', ['name' => $authorName]) }}" @endunless
     @endif
-    data-wk-sr-host {{ $attributes->class([$baseClasses]) }}
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
 >
     {{-- The sender, once. --}}
     @if($authorAvatar || $authorName)

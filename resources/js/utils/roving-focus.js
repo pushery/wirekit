@@ -101,3 +101,67 @@ export function typeAheadIndex(labels, buffer, currentIndex) {
 
     return -1;
 }
+
+/**
+ * Make `node` the one item of `root` that Tab reaches, `tabindex="0"`, and every other item `-1`.
+ *
+ * Only an attribute that differs is written. An observer that puts the stop back after a Livewire
+ * update (`keepTabStop()`) sees its own writes as mutations too, and a round that writes nothing
+ * is what ends it.
+ *
+ * @param {Element} root      the container holding the items
+ * @param {string}  selector  what counts as an item
+ * @param {Element|null} node the item that takes the stop
+ */
+export function setTabStop(root, selector, node) {
+    root.querySelectorAll(selector).forEach((item) => {
+        const wanted = item === node ? '0' : '-1';
+
+        if (item.getAttribute('tabindex') !== wanted) {
+            item.setAttribute('tabindex', wanted);
+        }
+    });
+}
+
+/**
+ * Keep a composite widget's tab stop on the item its script moved it to, through a Livewire update.
+ *
+ * Every item renders its `tabindex` on the server, and the morph of an update sets each one back
+ * to the server's value: the stop the reader moved returns to where the page started, and a tree
+ * whose rows all render `-1` has no stop at all, so Tab passes it by. The items are the server's
+ * markup, so no binding can hold the attribute; the observer writes the stop again in the task of
+ * the update. An item that has left the page is reported through `lost`, for the widget to choose
+ * another.
+ *
+ * @param {Element}  root      the container holding the items
+ * @param {string}   selector  what counts as an item
+ * @param {Function} holder    returns the item that holds the stop, or null while the server's stands
+ * @param {Function} [lost]    called when that item is no longer inside `root`
+ * @returns {Function} stops watching; the caller keeps it under a `_` name and calls it from
+ *          `destroy()`
+ */
+export function keepTabStop(root, selector, holder, lost = () => {}) {
+    if (! root || typeof MutationObserver === 'undefined') {
+        return () => {};
+    }
+
+    const observer = new MutationObserver(() => {
+        const node = holder();
+
+        if (! node) {
+            return;
+        }
+
+        if (! node.isConnected || ! root.contains(node)) {
+            lost();
+
+            return;
+        }
+
+        setTabStop(root, selector, node);
+    });
+
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['tabindex'] });
+
+    return () => observer.disconnect();
+}

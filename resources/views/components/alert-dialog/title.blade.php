@@ -29,16 +29,16 @@
     // Heading level (1-6). An invalid value signals in debug and falls back to the default in
     // production — never to h1, which is what validateProp's own first-allowed fallback would
     // produce and which would break the outline worse than the default does.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 2;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('alert-dialog.title', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 2;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('alert-dialog.title', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 @endphp
 
 <h{{ $levelValue }} data-wk-prose-skip
     data-wk-alert-dialog-title
     x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </h{{ $levelValue }}>

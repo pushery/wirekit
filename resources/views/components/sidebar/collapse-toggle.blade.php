@@ -34,6 +34,9 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.collapse-toggle', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
     use Pushery\WireKit\Support\AlpinePayload;
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\PersistedCookie;
@@ -41,7 +44,7 @@
 
     $side = WireKit::validateProp('sidebar.collapse-toggle', 'side', $side, ['start', 'end']);
     $persistDriver = WireKit::validateProp('sidebar.collapse-toggle', 'persistDriver', $persistDriver, ['local', 'cookie']);
-    $always = BooleanProp::from($always, false);
+    $always = BooleanProp::from($always, false, 'sidebar.collapse-toggle', 'always');
     $for = is_string($for) && $for !== '' ? $for : null;
 
     // The first paint, resolved in the sidebar's order: an explicit value, then the stored one the
@@ -51,8 +54,8 @@
         $collapsed = PersistedCookie::flag((string) $persist);
     }
 
-    $defaultCollapsed = BooleanProp::from($defaultCollapsed, false);
-    $collapsed = BooleanProp::from($collapsed, $defaultCollapsed);
+    $defaultCollapsed = BooleanProp::from($defaultCollapsed, false, 'sidebar.collapse-toggle', 'defaultCollapsed');
+    $collapsed = BooleanProp::from($collapsed, $defaultCollapsed, 'sidebar.collapse-toggle', 'collapsed');
 
     $expandName = __('wirekit::Expand sidebar');
     $collapseName = __('wirekit::Collapse sidebar');
@@ -60,6 +63,9 @@
     $placement = is_string($tooltipPlacement) && $tooltipPlacement !== ''
         ? $tooltipPlacement
         : config('wirekit.components.tooltip.placement', 'top');
+    // Checked here, under this component's name, so a word the tooltip cannot place is reported
+    // where it was written (Support\FloatingPlacement); the tooltip gets the word it can place.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('sidebar.collapse-toggle', 'tooltipPlacement', (string) ($placement ?: 'top'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'top');
 
     // The sidebar's own control, class for class, so the two are one button in two places.
     $classes = WireKit::resolveClasses('sidebar.collapse-toggle', 'base', implode(' ', [
@@ -70,6 +76,14 @@
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
     ]), $scope);
+
+    // A caller's name for the control, `aria-label` or `aria-labelledby`, belongs on the button; on
+    // the wrapper, a `div` with no role, it names nothing (Support\CallerName). A caller's label
+    // replaces the one this view keeps in step with the state, which `aria-expanded` says anyway.
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    // A caller's `aria-describedby` goes with the name: a description is announced only for the
+    // element that carries it.
+    [$callerDescribedBy, $attributes] = \Pushery\WireKit\Support\CallerName::description($attributes);
 @endphp
 
 {{-- The scope sits on the wrapper rather than on the button because the name is shown twice: on
@@ -80,7 +94,7 @@
      element only through a `wk-` class on it or an ancestor. --}}
 <div
     x-data="wirekitSidebarCollapseToggle({ id: {{ $for === null ? 'null' : AlpinePayload::from($for) }}, collapsed: {{ $collapsed ? 'true' : 'false' }} })"
-    {{ $attributes->class(['wk-sidebar-collapse-toggle inline-flex', 'max-lg:hidden' => ! $always]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-sidebar-collapse-toggle inline-flex', 'max-lg:hidden' => ! $always])) }}
 >
     {{-- Named on hover as well as to a screen reader, like the sidebar's own control: the glyph
          alone is a guess until it is pressed. The button is already a tab stop, so the tooltip
@@ -97,9 +111,11 @@
                  decorative glyph, and a screen reader, or a server-side accessibility check,
                  would meet a nameless control. Alpine owns both attributes after that. --}}
             aria-expanded="{{ $collapsed ? 'false' : 'true' }}"
-            aria-label="{{ $collapsed ? $expandName : $collapseName }}"
+            aria-label="{{ $callerLabel ?? ($collapsed ? $expandName : $collapseName) }}"
             :aria-expanded="collapsed ? 'false' : 'true'"
-            :aria-label="collapsed ? {{ AlpinePayload::from($expandName) }} : {{ AlpinePayload::from($collapseName) }}"
+            @if($callerLabel === null) :aria-label="collapsed ? {{ AlpinePayload::from($expandName) }} : {{ AlpinePayload::from($collapseName) }}" @endif
+            @if($callerLabelledBy !== null) aria-labelledby="{{ $callerLabelledBy }}" @endif
+            @if($callerDescribedBy !== null) aria-describedby="{{ $callerDescribedBy }}" @endif
             @if($for !== null) aria-controls="{{ $for }}" @endif
             class="wk-touch-row {{ $classes }}"
         >

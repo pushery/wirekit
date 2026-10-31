@@ -14,6 +14,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('resizable', $attributes->getAttributes());
 
+    // An unknown `direction` is reported (Support\StrictnessGate) and renders as `horizontal`; a
+    // bound `null` or empty string is `horizontal` without a word.
+    $direction = \Pushery\WireKit\WireKit::validateProp('resizable', 'direction', \Pushery\WireKit\Support\NumericProp::text($direction ?: 'horizontal'), ['horizontal', 'vertical']);
+
     // Resizable — split panel layout, CSS for the pointer and Alpine for the rest.
     //
     // Dragging a panel edge is delegated to the browser's native CSS `resize`
@@ -50,11 +54,14 @@
     // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+
+    // A caller's `x-ref` on a handle is filed above the group, which is its boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
 @endphp
 <div
     data-wk-resizable
     data-wk-direction="{{ $direction === 'vertical' ? 'vertical' : 'horizontal' }}"
-    {{ $attributes->class([$classes, $directionClass]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $directionClass])) }}
     @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif
 >
     {{ $slot }}

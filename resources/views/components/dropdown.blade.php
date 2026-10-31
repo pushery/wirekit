@@ -37,6 +37,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown', $attributes->getAttributes());
 
+    // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
+    // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
+    // No placement at all, `null` or empty, is the default, as the script reads it.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('dropdown', 'placement', (string) ($placement ?: 'bottom-start'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'bottom-start');
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:keydown.escape.window', 'x-on:click.outside', 'x-on:click']);
@@ -44,12 +49,12 @@
     // STABLE across re-renders, which a random id per render would not be — and the
     // panel is the one place where that costs everything.
     //
-    // The panel teleports out of the document flow, so it lives OUTSIDE the subtree Livewire
-    // morphs. A fresh id per render therefore updates the trigger's aria-controls
-    // and the x-data scope while the panel still in the document carries the id
-    // from the render before it. The two halves stop pointing at each other, and
-    // nothing in the markup looks wrong: both sides are well-formed, they simply
-    // name different things. `progress` derives its id the same way, for the same
+    // The panel teleports out of the document flow and carries no id in its markup: the script
+    // writes it from this value and puts it back when a morph's patch takes it off. A fresh id
+    // per render would update the trigger's aria-controls and the x-data scope while the panel
+    // in the document still carried the id from the render before it. The two halves stop
+    // pointing at each other, and nothing in the markup looks wrong: both sides are
+    // well-formed, they simply name different things. `progress` derives its id the same way, for the same
     // reason: inside a wire:poll region every poll would mint a new id.
     //
     // Not uniqid(): microsecond resolution, so two dropdowns rendered in the same
@@ -62,7 +67,7 @@
     );
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy.
-    $block = BooleanProp::from($block, false);
+    $block = BooleanProp::from($block, false, 'dropdown', 'block');
 
     // Base wrapper classes — relative positioning context for floating panel
     $classes = WireKit::resolveClasses(
@@ -73,7 +78,7 @@
     );
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
-    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
 @endphp
 
 {{-- Alpine dropdown component with Floating UI positioning.
@@ -102,7 +107,7 @@
     // this wrapper, which has no role, ARIA prohibits a name (Support\CallerName). A panel of the
     // caller's own is named by its own `label`, so the explicit form leaves the bag as it is.
     [$callerLabelledBy, $callerLabel] = [null, null];
-    if (isset($trigger)) {
+    if (\Pushery\WireKit\Support\SlotContent::given($trigger ?? null)) {
         [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
     }
 @endphp
@@ -112,9 +117,9 @@
          the scope across that move while `closest()` does not — reading this id off
          `data-wk-panel-id` with an ancestor walk would return null the moment the
          element leaves the component. --}}
-    x-data="wirekitDropdown({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }}, panelId: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} })"
+    x-data="wirekitDropdown({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'dropdown', 'offset') }}, panelId: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} })"
     x-on:keydown="handleKeydown"
-    x-on:keydown.escape.window="isOpen && close()"
+    x-on:keydown.escape.window="isOpen && ! $event.defaultPrevented && close()"
     x-on:click.outside="close()"
     {{-- The same exact-match trap as `_getItems()`: `[role=menuitem]` does not match a
          `menuitemradio` or `menuitemcheckbox` row. A radio menu would still close without the
@@ -124,9 +129,9 @@
          regression, so all three roles are named. --}}
     x-on:click="$event.target.closest('[role=menuitem]:not([aria-disabled=true]), [role=menuitemradio]:not([aria-disabled=true]), [role=menuitemcheckbox]:not([aria-disabled=true])') && close()"
     data-wk-panel-id="{{ $panelId }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
-    @isset($trigger)
+    @if(\Pushery\WireKit\Support\SlotContent::given($trigger ?? null))
         {{-- Quick form: <x-slot:trigger> provided. Auto-wrap trigger +
              default slot in the canonical sub-component shells so the
              developer doesn't repeat the trigger/panel composition.
@@ -171,5 +176,5 @@
             @endphp
         @endif
         {{ $slot }}
-    @endisset
+    @endif
 </div>

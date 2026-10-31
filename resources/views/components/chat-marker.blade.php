@@ -30,8 +30,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $status = BooleanProp::from($status, false);
-    $shimmer = BooleanProp::from($shimmer, false);
+    $status = BooleanProp::from($status, false, 'chat-marker', 'status');
+    $shimmer = BooleanProp::from($shimmer, false, 'chat-marker', 'shimmer');
 
     $variantValue = in_array($variant, ['default', 'border', 'separator'], true)
         ? $variant
@@ -93,7 +93,7 @@
              implies aria-busy with or without `status`. Present whenever there is
              something to say about — a region to settle, or a shimmer to flag. --}}
         @if($status || $shimmer) aria-busy="{{ $shimmer ? 'true' : 'false' }}" @endif
-        {{ $attributes->except('aria-busy')->class([$classes]) }}
+        {{ $attributes->except('aria-busy')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     >
         @if($icon)
             <x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" />

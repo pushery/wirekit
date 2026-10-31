@@ -37,14 +37,44 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('price', $attributes->getAttributes());
 
+    // An unknown `deltaFormat` is reported (Support\StrictnessGate) and renders as `absolute`, as a
+    // bound `null` or empty string always has: only `percent` reads as a percentage.
+    $deltaFormat = \Pushery\WireKit\WireKit::validateProp('price', 'deltaFormat', \Pushery\WireKit\Support\NumericProp::text($deltaFormat ?: 'absolute'), ['absolute', 'percent']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $minorUnits = BooleanProp::from($minorUnits, false);
-    $from = BooleanProp::from($from, false);
+    $minorUnits = BooleanProp::from($minorUnits, false, 'price', 'minorUnits');
+    $from = BooleanProp::from($from, false, 'price', 'from');
     $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'price');
 
-    $locale = $locale ?? app()->getLocale();
+    // An empty locale is none, and the application's counts: ICU's root locale writes "€ 1234.50".
+    $locale = is_string($locale) && trim($locale) !== '' ? trim($locale) : app()->getLocale();
+
+    // A currency is a code of three letters (ISO 4217). An empty one is none, and the
+    // application's counts, as for no currency at all: ICU writes "XXX", the code for no currency,
+    // for an empty one. Any other value is reported. A text then stands where the currency's
+    // symbol would (Support\LocalizedNumber), and a value that is no text reads as none.
+    $currencyDefault = config('wirekit.currency');
+    $currencyDefault = is_string($currencyDefault) && trim($currencyDefault) !== '' ? trim($currencyDefault) : 'USD';
+    $currency = is_string($currency) || is_int($currency) || $currency instanceof \Stringable ? trim((string) $currency) : $currency;
+
+    if ($currency === null || $currency === '' || is_bool($currency)) {
+        $currency = $currencyDefault;
+    } elseif (! is_string($currency)) {
+        $currency = StrictnessGate::reject('price', 'currency', get_debug_type($currency), 'a currency code of three letters such as "EUR"', $currencyDefault);
+    } elseif (preg_match('/^[A-Za-z]{3}$/', $currency) !== 1) {
+        $currency = StrictnessGate::reject('price', 'currency', $currency, 'a currency code of three letters such as "EUR"', $currency);
+    }
+
+    // An amount written in another language than the page's carries it in `lang` (WCAG 3.1.2), as a
+    // calendar's dates do: read by the page's rules, "1.234,50 €" on an English page is another
+    // number. Without `intl` every amount is written the English way (Support\LocalizedNumber), so
+    // English is then the language it carries. Two spellings of one language are one, and the
+    // words around an amount, "from" and "Previous price", are the page's and stay outside it.
+    $languageOf = static fn (string $tag): string => strtolower(explode('-', str_replace('_', '-', $tag), 2)[0]);
+    $writtenIn = extension_loaded('intl') ? \Pushery\WireKit\Support\IcuLocale::tag($locale) : 'en';
+    $amountLang = new \Illuminate\Support\HtmlString($languageOf($writtenIn) !== $languageOf(app()->getLocale()) ? ' lang="'.e($writtenIn).'"' : '');
 
     // A figure is a number as PHP reads one: an int, a float, or a numeric string such as the
     // "19.99" a decimal cast stores. Anything else cannot be the price. Read as a number, "19,99"
@@ -88,10 +118,14 @@
     // A whole number of decimals from 0 to 20, as an attribute writes it ("4") or as a bound int.
     // Anything else is refused like any prop value, and the price keeps its currency's digits.
     if ($maxPrecision !== null && $maxPrecision !== '') {
-        $precision = filter_var($maxPrecision, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 20]]);
+        // NAN is refused before the filter, which writes its value as text and so raises the
+        // warning PHP 8.5 gives for NAN as text.
+        $precision = is_float($maxPrecision) && is_nan($maxPrecision)
+            ? false
+            : filter_var($maxPrecision, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 20]]);
 
         if ($precision === false) {
-            StrictnessGate::reject('price', 'maxPrecision', is_scalar($maxPrecision) ? (string) $maxPrecision : get_debug_type($maxPrecision), 'a whole number of decimals from 0 to 20', '');
+            StrictnessGate::reject('price', 'maxPrecision', is_scalar($maxPrecision) ? \Pushery\WireKit\Support\NumericProp::text($maxPrecision) : get_debug_type($maxPrecision), 'a whole number of decimals from 0 to 20', '');
         }
 
         $maxPrecision = $precision === false ? null : $precision;
@@ -148,9 +182,11 @@
         'xl' => 'text-[length:var(--text-wk-xl)]',
     };
 
-    // Base classes
+    // Base classes. `flex-wrap`: a price wider than its column breaks its line between its parts
+    // instead of running past the column; the word "from" and its amount stand in one group below,
+    // so the break never parts them.
     $baseClasses = WireKit::resolveClasses('price', 'base', implode(' ', [
-        'inline-flex items-baseline gap-x-1.5',
+        'inline-flex flex-wrap items-baseline gap-x-1.5',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
@@ -165,14 +201,14 @@
 
         if ($formattedBase !== null) {
             $fitParts[] = '<del class="font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;">'
-                .'<span class="sr-only">'.e(__('wirekit::Previous price')).'</span><bdi>'.e($formattedBase).'</bdi></del>';
+                .'<span class="sr-only">'.e(__('wirekit::Previous price')).'</span><bdi'.$amountLang.'>'.e($formattedBase).'</bdi></del>';
         }
 
         if ($from) {
             $fitParts[] = '<span class="font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]">'.e(__('wirekit::from')).'</span>';
         }
 
-        $fitParts[] = '<bdi class="text-[color:var(--color-wk-text)]">'.e($formattedAmount).'</bdi>';
+        $fitParts[] = '<bdi'.$amountLang.' class="text-[color:var(--color-wk-text)]">'.e($formattedAmount).'</bdi>';
 
         // What a reader sees, which the copies measure: the screen reader's "Previous price" is not
         // part of the line.
@@ -210,7 +246,7 @@
 @endphp
 
 @if($amount !== null)
-<span data-wk-sr-host {{ $attributes->class([$baseClasses]) }}>
+<span data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}>
     @if($fitted !== null)
         {{ $fitted }}
     @else
@@ -234,17 +270,23 @@
                  announce by default. This prefix is what makes the pair readable as a
                  pair rather than as two unrelated amounts. --}}
             <span class="sr-only">{{ __('wirekit::Previous price') }}</span>
-            <bdi>{{ $formattedBase }}</bdi>
+            <bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedBase }}</bdi>
         </del>
     @endif
 
-    {{-- Primary price, behind the word "from" when it is the lowest of several. The word stands on
-         the amount's own line, so a price without it renders the amount alone, and the word is
+    {{-- Primary price, behind the word "from" when it is the lowest of several. The word and the
+         amount stand in one group that does not wrap, so where the line breaks it breaks before
+         the word, and a price without it renders the amount alone. Each branch opens and closes
+         its own elements, so Livewire's block markers stay around whole elements. The word is
          text a screen reader reads with the amount: "from €19.99", after a struck price
          "Previous price €24.99, from €19.99". --}}
-    @if($from)<span class="{{ $sizeClasses }} text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::from') }}</span> @endif<bdi class="{{ $sizeClasses }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+    @if($from)
+        <span class="inline-flex items-baseline gap-x-1.5"><span class="{{ $sizeClasses }} text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::from') }}</span> <bdi{{ $amountLang }} data-wk-prose-skip class="{{ $sizeClasses }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $formattedAmount }}</bdi></span>
+    @else
+    <bdi{{ $amountLang }} data-wk-prose-skip class="{{ $sizeClasses }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
         {{ $formattedAmount }}
     </bdi>
+    @endif
     @endif
 
     {{-- Delta badge --}}
@@ -254,12 +296,12 @@
              surrounding paragraph, so in a right-to-left line the sign jumps to the other
              end and "+12%" reads as "12%+" — or worse, as a minus in the reader's eye. --}}
         <span class="{{ $deltaClasses }} text-[length:var(--text-wk-xs)]">
-            <bdi>{{ $formattedDelta }}</bdi>
+            <bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedDelta }}</bdi>
         </span>
     @endif
 
     {{-- Suffix slot (e.g. "per month") --}}
-    @if(isset($suffix))
+    @if(\Pushery\WireKit\Support\SlotContent::given($suffix ?? null))
         <span class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
             {{ $suffix }}
         </span>
@@ -272,7 +314,7 @@
          requires would hang on a name nothing guarantees is spoken. --}}
     @if($formattedUnitPrice !== null)
         <span class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
-            (<bdi>{{ $formattedUnitPrice }}</bdi> / {{ $unitMeasure }})
+            (<bdi{{ $amountLang }} data-wk-prose-skip>{{ $formattedUnitPrice }}</bdi> / {{ $unitMeasure }})
         </span>
     @endif
 </span>

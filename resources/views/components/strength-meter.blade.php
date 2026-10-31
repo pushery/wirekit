@@ -28,17 +28,19 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('strength-meter', $attributes->getAttributes());
 
-    $showLevel = BooleanProp::from($showLevel, false);
-    $announce = BooleanProp::from($announce, true);
+    $showLevel = BooleanProp::from($showLevel, false, 'strength-meter', 'showLevel');
+    $announce = BooleanProp::from($announce, true, 'strength-meter', 'announce');
 
-    $max = max(1, (int) $max);
-    $steps = is_numeric($value) ? min(max((int) round((float) $value), 0), $max) : 0;
+    // At least one bar and at most a hundred: a bar per unit of a count without a ceiling runs the
+    // request out of memory.
+    $max = max(1, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::from($max, 0, 'strength-meter', 'max'), 100, 'strength-meter', 'max'));
+    $steps = min(max(\Pushery\WireKit\Support\NumericProp::int(round((float) \Pushery\WireKit\Support\NumericProp::from($value, 0, 'strength-meter', 'value')), 0), 0), $max);
     $label ??= __('wirekit::Strength');
 
     // Translated here, since a word chosen in JavaScript cannot be. Four bars have a word for
     // each step; any other count says where it stands instead of borrowing four words for it.
     // A Collection is read as the list it holds rather than as no words at all.
-    $levels = \Pushery\WireKit\Support\ListProp::from($levels);
+    $levels = \Pushery\WireKit\Support\ListProp::from($levels, 'strength-meter', 'levels');
     if (is_array($levels) && $levels !== []) {
         $levels = array_values(array_map('strval', $levels));
     } elseif ($max === 4) {
@@ -56,7 +58,7 @@
 
     // The status sentence with the meter's name in it, and `:value` left for the factory to
     // fill with the step's word.
-    $template = __('wirekit:::label: :value', ['label' => $label]);
+    $template = __('wirekit:::label: :value', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($label)]);
 
     // The ladder of utils/strength.js, for the bars as the server draws them before Alpine
     // starts: one bar lit is danger up to a quarter of the steps, below the top is warning,
@@ -87,6 +89,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `x-model` on this root is read in the scope around it, where the caller's names
+    // are: on the root it would find this component's own names first (CallerModel).
+    $attributes = \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes);
     // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
@@ -97,7 +102,7 @@
      re-initializes a component whose `x-data` changes. The factory reads the attribute at init
      and follows it after that. --}}
 <div
-    data-wk-sr-host {{ $attributes->class([$classes]) }}
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
     x-data="wirekitStrengthMeter({ max: {{ $max }}, levels: {{ AlpinePayload::from($levels) }}, template: {{ AlpinePayload::string($template) }} })"
     x-modelable="value"
     data-wk-server-value="{{ $steps }}"

@@ -15,9 +15,28 @@ use Pushery\WireKit\Theming\WcagContrast;
 class ThemeCommand extends Command
 {
     protected $signature = 'wirekit:theme {preset : Theme preset name — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino, aurora; downstream packages may register additional presets via ThemePresetRegistry::register()).}
-        {--accent= : A brand color the preset\'s accent is derived from for light and dark, with the contrast of its label and its text held (AccentLadder)}';
+        {--accent= : A brand color the preset\'s accent is derived from for light and dark, with the contrast of its label and its text held (AccentLadder)}
+        {--success= : A brand color the success state is derived from, the way the accent is}
+        {--danger= : A brand color the danger state is derived from, the way the accent is}
+        {--warning= : A brand color the warning state is derived from, the way the accent is}';
 
     protected $description = 'Apply a WireKit theme preset to your app.css';
+
+    /**
+     * The colors the command derives tokens from, in the order their blocks are written.
+     */
+    private const COLORS = ['accent', 'success', 'danger', 'warning'];
+
+    /**
+     * The border token each state's text color is written to as well.
+     *
+     * A field in an error or success state draws its border with the same color its message is
+     * written in, so the two are one value. Warning has no border token of its own.
+     */
+    private const STATE_BORDERS = [
+        'success' => '--color-wk-border-success',
+        'danger' => '--color-wk-border-error',
+    ];
 
     public function handle(): int
     {
@@ -38,15 +57,24 @@ class ThemeCommand extends Command
             return self::FAILURE;
         }
 
-        $accent = $this->option('accent');
-        $accent = is_string($accent) && trim($accent) !== '' ? trim($accent) : null;
+        $colors = [];
 
-        // Read before the file is touched: an accent the ladder cannot use leaves app.css as it was.
-        if ($accent !== null && Oklch::fromCss($accent) === null) {
-            $this->error("Cannot read the accent [{$accent}] as an opaque color.");
-            $this->line('  Pass a hex color, rgb(), hsl() or oklch() without transparency, e.g. --accent="#e11d48".');
+        foreach (self::COLORS as $name) {
+            $color = $this->option($name);
 
-            return self::FAILURE;
+            if (is_string($color) && trim($color) !== '') {
+                $colors[$name] = trim($color);
+            }
+        }
+
+        // Read before the file is touched: a color the ladder cannot use leaves app.css as it was.
+        foreach ($colors as $name => $color) {
+            if (Oklch::fromCss($color) === null) {
+                $this->error("Cannot read the {$name} [{$color}] as an opaque color.");
+                $this->line("  Pass a hex color, rgb(), hsl() or oklch() without transparency, e.g. --{$name}=\"#e11d48\".");
+
+                return self::FAILURE;
+            }
         }
 
         $appCss = resource_path('css/app.css');
@@ -94,7 +122,7 @@ class ThemeCommand extends Command
             return self::FAILURE;
         }
 
-        if (ThemePresetRegistry::isDefault($preset) && $accent === null) {
+        if (ThemePresetRegistry::isDefault($preset) && $colors === []) {
             // `default` is a no-op apart from the block-removal above.
             // Always succeeds — whether or not a preset block existed.
             if ($newContent !== $content) {
@@ -113,16 +141,16 @@ class ThemeCommand extends Command
         $vars = $themeMeta['vars'];
         $darkVars = $themeMeta['dark_vars'];
 
-        // The accent goes after the preset's own variables in each block, so it wins over an accent
-        // the preset sets. It is derived on the surfaces the preset leaves in force: in light mode
-        // the root block over the stylesheet's defaults, in dark mode the dark block, then the root
-        // block, which applies there too, then the defaults.
-        if ($accent !== null) {
+        // The derived tokens go after the preset's own variables in each block, so they win over the
+        // values the preset sets. They are derived on the surfaces the preset leaves in force: in
+        // light mode the root block over the stylesheet's defaults, in dark mode the dark block,
+        // then the root block, which applies there too, then the defaults.
+        if ($colors !== []) {
             $root = self::declarations($vars);
             $dark = self::declarations((string) $darkVars) + $root;
 
-            $vars = ltrim(rtrim($vars)."\n".self::accentBlock($accent, AccentLadder::onTheme($accent, false, self::resolved($root))), "\n");
-            $darkVars = ltrim(rtrim((string) $darkVars)."\n".self::accentBlock($accent, AccentLadder::onTheme($accent, true, self::resolved($dark))), "\n");
+            $vars = ltrim(rtrim($vars)."\n".self::derivedBlocks($colors, false, self::resolved($root)), "\n");
+            $darkVars = ltrim(rtrim((string) $darkVars)."\n".self::derivedBlocks($colors, true, self::resolved($dark)), "\n");
         }
 
         // Emit the LIGHT palette as a plain unlayered `:root {}` block — NOT a
@@ -145,8 +173,8 @@ class ThemeCommand extends Command
         $this->info("Applied theme: {$themeMeta['label']}");
         $this->line('  Theme variables injected into resources/css/app.css');
 
-        if ($accent !== null) {
-            $this->line("  Accent derived from {$accent} for light and dark");
+        foreach ($colors as $name => $color) {
+            $this->line('  '.ucfirst($name)." derived from {$color} for light and dark");
         }
 
         return self::SUCCESS;
@@ -184,13 +212,68 @@ class ThemeCommand extends Command
     }
 
     /**
-     * The four accent tokens as declarations, under a comment that says where they came from.
+     * The tokens derived from each color, a block of declarations per color.
+     *
+     * A state's fill is a surface as well: `callout` and `alert` tint the card with it. So the
+     * fills come first, and every text color is then read on the tints of the states as this
+     * block writes them.
+     *
+     * @param  array<string, string>  $colors  the color given for each name, in the order of COLORS
+     * @param  array<string, string>  $theme  the tokens in force in this mode, their references filled in
+     */
+    private static function derivedBlocks(array $colors, bool $dark, array $theme): string
+    {
+        foreach ($colors as $name => $color) {
+            if ($name !== 'accent') {
+                $theme["--color-wk-{$name}"] = AccentLadder::onTheme($color, $dark, $theme)['--color-wk-accent'];
+            }
+        }
+
+        $blocks = [];
+
+        foreach ($colors as $name => $color) {
+            $blocks[] = self::block($name, $color, self::tokens($name, AccentLadder::onTheme($color, $dark, $theme)));
+        }
+
+        return implode("\n", $blocks);
+    }
+
+    /**
+     * The ladder's four tokens under the names one color stands for. The accent keeps them as they
+     * are; a state takes them as its fill, hover, text and label, and its text color goes to its
+     * border token as well.
+     *
+     * @param  array{'--color-wk-accent': string, '--color-wk-accent-hover': string, '--color-wk-accent-content': string, '--color-wk-accent-fg': string}  $ladder
+     * @return array<string, string>
+     */
+    private static function tokens(string $name, array $ladder): array
+    {
+        if ($name === 'accent') {
+            return $ladder;
+        }
+
+        $tokens = [
+            "--color-wk-{$name}" => $ladder['--color-wk-accent'],
+            "--color-wk-{$name}-hover" => $ladder['--color-wk-accent-hover'],
+            "--color-wk-{$name}-text" => $ladder['--color-wk-accent-content'],
+            "--color-wk-{$name}-fg" => $ladder['--color-wk-accent-fg'],
+        ];
+
+        if (isset(self::STATE_BORDERS[$name])) {
+            $tokens[self::STATE_BORDERS[$name]] = $ladder['--color-wk-accent-content'];
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * Tokens as declarations, under a comment that says where they came from.
      *
      * @param  array<string, string>  $tokens
      */
-    private static function accentBlock(string $accent, array $tokens): string
+    private static function block(string $name, string $color, array $tokens): string
     {
-        $lines = ["    /* Accent derived from {$accent} by AccentLadder */"];
+        $lines = ['    /* '.ucfirst($name)." derived from {$color} by AccentLadder */"];
 
         foreach ($tokens as $token => $value) {
             $lines[] = "    {$token}: {$value};";

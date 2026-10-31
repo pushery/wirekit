@@ -1,8 +1,7 @@
 import { controlIsDisabled } from '../utils/fieldset-disabled.js';
+import { graphemesOf } from '../utils/graphemes.js';
 import { formatDecimal } from '../utils/locale-number.js';
-
-// One segmenter for every name: building one per call would repeat the locale lookup.
-let graphemeSegmenter = null;
+import { sameName } from '../utils/same-name.js';
 
 /**
  * A file name in two parts for a list row that cuts it in the middle: the start gives way, and the
@@ -15,14 +14,7 @@ let graphemeSegmenter = null;
  */
 export function splitFileName(name) {
     const text = String(name ?? '');
-
-    if (graphemeSegmenter === null && typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
-        graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-    }
-
-    const graphemes = graphemeSegmenter
-        ? Array.from(graphemeSegmenter.segment(text), (part) => part.segment)
-        : Array.from(text);
+    const graphemes = graphemesOf(text);
     const dot = graphemes.lastIndexOf('.');
     const keep = (dot > 0 ? graphemes.length - dot : 0) + 8;
 
@@ -62,8 +54,29 @@ export function splitFileName(name) {
  *     a second destroy() cannot call it twice.
  *   - _form + _formResetHandler (a `reset` listener on the input's own form).
  *   - _resetHandler (a window listener for `wirekit:file-upload-reset`).
+ *   - _takeUpload (a `change` listener on the input, in the capture phase, while the input is
+ *     `multiple` and bound).
  * The one thing held outside `this` is the cached root element below, which is released
  * with the component object itself.
+ *
+ * A selection on a `multiple` input bound with `wire:model` replaces the one before it, on the
+ * property as in the list. Livewire's own handler appends every selection to the array the
+ * property holds, so a second selection would add to the first while the list shows only the
+ * second, and the `change` a removal sends would upload the files that stay once more beside
+ * the ones already there, the removed one among them. So the listener takes the `change` before
+ * Livewire's own does and uploads with `append` off.
+ *
+ * With `uploadSeparately`, a selection of several files goes up one file per request, so a
+ * file over a server's or a proxy's limit fails alone. The files go up one after another, and
+ * the first that arrives replaces what the property held while the rest append, so a failure
+ * at the start of a selection leaves no file of the one before. A selection none of whose files
+ * arrives, uploaded either way, empties the property, without a request of its own, so the
+ * property never holds a selection the list no longer shows. Livewire's events keep their
+ * meaning for the whole selection: `livewire-upload-start` once, `livewire-upload-progress`
+ * across all of it with the file and its index in the detail, and once every file has settled
+ * `livewire-upload-finish`, or `livewire-upload-error` naming the files that failed, or
+ * `livewire-upload-cancel` where one was canceled and none failed. Each row says whether its
+ * file failed, and a canceled file leaves the list as it leaves the property.
  *
  * @param {Object} config
  * @param {string} config.removeLabel  accessible name for the per-file remove button
@@ -73,6 +86,13 @@ export function splitFileName(name) {
  *   from its `wire:model` attribute; null when it is bound to nothing
  * @param {string} [config.locale]  the application's locale, BCP-47, for the file sizes
  * @param {string[]} [config.sizeUnits]  the five unit symbols from B to TB, from the catalog
+ * @param {{group: string, decimal: string}|null} [config.separators]  the application's own marks,
+ *   read off `WireKit::formatNumbersUsing()`; null to write the locale's
+ * @param {boolean} [config.uploadSeparately]  upload a selection of several files one file per
+ *   request; the view sets it only with `multiple` and `wire:model`
+ * @param {string} [config.failedLabel]  translated words beside a file whose upload failed
+ * @param {string} [config.failedMessage]  translated sentence spoken when a file fails to upload,
+ *   with `:name` standing in for the file
  */
 export default function wirekitFileUpload(config = {}) {
     // The control's root element, resolved ONCE while something is still attached to
@@ -114,6 +134,9 @@ export default function wirekitFileUpload(config = {}) {
         // The unit symbols, from B to TB, translated by the view: French counts in octets (`Ko`,
         // `Mo`). A factory built without them writes the English symbols.
         _sizeUnits: Array.isArray(config.sizeUnits) && config.sizeUnits.length === 5 ? config.sizeUnits : ['B', 'KB', 'MB', 'GB', 'TB'],
+        // The application's own marks, where it formats numbers itself, so the sizes read as every
+        // number the server writes; null, the locale's.
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
 
         /**
          * The sentence spoken after a removal, as a TEMPLATE handed in from the Blade.
@@ -129,6 +152,17 @@ export default function wirekitFileUpload(config = {}) {
 
         model: typeof config.model === 'string' && config.model !== '' ? config.model : null,
 
+        _uploadsSeparately: config.uploadSeparately === true,
+        failedLabel: config.failedLabel || '',
+        failedMessage: config.failedMessage || '',
+        _takeUpload: null,
+        // Counts the selections this input has uploaded, so a selection uploading one file after
+        // another can tell that a newer one replaced it.
+        _selection: 0,
+        // Set when _emptyAfterNothingArrived() empties the property, so the watch in init()
+        // keeps the rows that hold what became of their files.
+        _emptiedItself: false,
+
         _unwatch: null,
         _form: null,
         _formResetHandler: null,
@@ -141,6 +175,8 @@ export default function wirekitFileUpload(config = {}) {
          * becomes `null` or `''`, or an empty array on a `multiple` input, and this empties
          * the list on the same transitions. Outside a Livewire component `$wire.$watch` is
          * a no-op returning nothing, which is why the result is checked rather than assumed.
+         * The one empty value it lets pass is the component's own, after a selection none of
+         * whose files arrived, so those rows keep the state their files ended in.
          *
          * The event is matched on the input's id, never taken as "every upload on the
          * page": a form with two uploads that resets one would otherwise lose both lists.
@@ -154,8 +190,13 @@ export default function wirekitFileUpload(config = {}) {
                     // disagree: an empty array counts only on a `multiple` input.
                     const empty = value === null || value === ''
                         || (Array.isArray(value) && value.length === 0 && input?.multiple === true);
+                    // The mark is good for the next value heard and no other, so it never keeps a
+                    // later reset from emptying the list.
+                    const emptiedItself = this._emptiedItself;
 
-                    if (empty) {
+                    this._emptiedItself = false;
+
+                    if (empty && ! emptiedItself) {
                         this.reset();
                     }
                 });
@@ -175,11 +216,17 @@ export default function wirekitFileUpload(config = {}) {
                 this._resetHandler = (event) => {
                     const id = event?.detail?.id;
 
-                    if (typeof id === 'string' && input && id === input.id) {
+                    if (input && sameName(id, input.id)) {
                         this.reset();
                     }
                 };
                 window.addEventListener('wirekit:file-upload-reset', this._resetHandler);
+            }
+
+            // In the capture phase, so it runs before Livewire's listener on the same input.
+            if (this.model !== null && input?.multiple === true && typeof input.addEventListener === 'function') {
+                this._takeUpload = (event) => this._uploadSelection(event);
+                input.addEventListener('change', this._takeUpload, true);
             }
         },
 
@@ -201,6 +248,12 @@ export default function wirekitFileUpload(config = {}) {
             }
 
             this._resetHandler = null;
+
+            if (this._takeUpload) {
+                this.$refs?.input?.removeEventListener('change', this._takeUpload, true);
+            }
+
+            this._takeUpload = null;
         },
 
         /**
@@ -234,26 +287,42 @@ export default function wirekitFileUpload(config = {}) {
         },
 
         /**
-         * A size a person can read.
+         * A size a person can read, as `attachment` writes one on the server: bytes whole, then one
+         * decimal below 10 (2.4 MB) and none from 10 (24 MB), the convention file managers use.
+         * Each boundary is judged on the number as it is shown, so 1023.96 KB reads 1.0 MB, not
+         * 1024.0 KB, and 9.96 MB reads 10 MB. Thousands are grouped as the server groups them.
          *
-         * The unit index is clamped at both ends: `Math.log` of a sub-byte value
-         * is negative and would index off the front of the ladder, and anything
-         * past a terabyte would index off the back and render "1.0 undefined".
-         * Neither is reachable through a file picker today, which is exactly why
-         * it would ship unnoticed if it ever became reachable.
+         * The unit index is clamped at the back: anything past a terabyte stays in terabytes
+         * rather than indexing off the ladder and rendering "1.0 undefined". Neither end is
+         * reachable through a file picker today, which is exactly why it would ship unnoticed if
+         * it ever became reachable.
          */
         formatBytes(bytes) {
             const sizes = this._sizeUnits;
+            const grouping = this._separators ?? true;
 
             if (! bytes || bytes < 0) {
                 return `0 ${sizes[0]}`;
             }
 
-            const k = 1024;
-            const i = Math.min(sizes.length - 1, Math.max(0, Math.floor(Math.log(bytes) / Math.log(k))));
+            if (bytes < 1024) {
+                return `${formatDecimal(Math.round(bytes), this._locale, 0, 0, grouping)} ${sizes[0]}`;
+            }
+
+            let value = bytes / 1024;
+            let unit = 1;
+
+            while (Math.round(value) >= 1024 && unit < sizes.length - 1) {
+                value /= 1024;
+                unit++;
+            }
+
+            const shown = Math.round(value * 10) / 10;
 
             // In the application's locale, as the server writes the same sizes elsewhere.
-            return `${formatDecimal(bytes / Math.pow(k, i), this._locale, 1, 1)} ${sizes[i]}`;
+            return shown < 10
+                ? `${formatDecimal(shown, this._locale, 1, 1, grouping)} ${sizes[unit]}`
+                : `${formatDecimal(Math.round(value), this._locale, 0, 0, grouping)} ${sizes[unit]}`;
         },
 
         /**
@@ -289,6 +358,180 @@ export default function wirekitFileUpload(config = {}) {
         },
 
         /**
+         * Upload a selection on a `multiple` input bound with `wire:model` so it replaces the one
+         * before it (see the note at the top). The listener stops the `change` from reaching
+         * Livewire's handler and this view's own, and does the list's part itself. An empty
+         * selection is left to them: Livewire returns early on it, and handleFiles() empties the
+         * property.
+         *
+         * @param {Event} event
+         */
+        _uploadSelection(event) {
+            const input = event?.target;
+            const selection = input && input.files ? Array.from(input.files) : [];
+
+            if (selection.length === 0 || ! this.$wire || typeof this.$wire.uploadMultiple !== 'function') {
+                return;
+            }
+
+            event.stopImmediatePropagation();
+            this._selection += 1;
+            this.handleFiles(input.files);
+
+            const property = this.model;
+            const id = this.$wire.$id;
+            const fire = (name, detail = {}) => input.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: { id, property, ...detail } }));
+
+            if (this._uploadsSeparately && selection.length > 1) {
+                this._uploadEachFile(selection, fire);
+
+                return;
+            }
+
+            // One request for the whole selection, as Livewire's own handler sends it, with its
+            // events, and with `append` off: the files replace what the property held. A request
+            // that fails or is canceled replaces nothing, so the property is emptied, unless a
+            // newer selection has taken the list over in the meantime. The rows of a failed
+            // request stay and say so; a canceled one takes its files out of the list, as it
+            // took them off the property.
+            const selectionId = this._selection;
+            const nothingArrived = (state) => {
+                if (selectionId === this._selection) {
+                    if (state === 'canceled') {
+                        this.reset();
+                    } else {
+                        this.files = this.files.map((row) => ({ ...row, state }));
+                    }
+
+                    this._emptyAfterNothingArrived();
+                }
+            };
+
+            fire('livewire-upload-start');
+            this.$wire.uploadMultiple(
+                property,
+                selection,
+                () => fire('livewire-upload-finish'),
+                () => {
+                    nothingArrived('failed');
+                    fire('livewire-upload-error');
+                },
+                (progress) => fire('livewire-upload-progress', { progress: Number(progress?.detail?.progress) || 0 }),
+                () => {
+                    nothingArrived('canceled');
+                    fire('livewire-upload-cancel');
+                },
+                false,
+            );
+        },
+
+        /**
+         * Upload a selection one file per request, one file after another.
+         *
+         * Each file asks for its upload once the one before it has settled, so it knows whether a
+         * file of this selection has reached the property yet: the first that arrives replaces what
+         * the property held, and every later one appends to it. The next upload is asked for in a
+         * microtask, because Livewire starts what waits in its queue right after it calls back
+         * from an upload that finished or failed, and an upload asked for inside that call would be
+         * started a second time.
+         *
+         * A newer selection, such as the files that stay after a removal, replaces this one while it
+         * uploads. Livewire uploads what it was given in order, so the file in flight still lands
+         * before the newer selection replaces it, but this one asks for no further file: one the
+         * reader removed would otherwise be appended after the replacement. It ends as canceled,
+         * so every start is answered once.
+         *
+         * @param {File[]} selection
+         * @param {function(string, Object=): boolean} fire  dispatches an upload event on the input
+         */
+        _uploadEachFile(selection, fire) {
+            this.files = this.files.map((row) => ({ ...row, state: 'uploading' }));
+
+            const property = this.model;
+            const selectionId = this._selection;
+            const current = () => selectionId === this._selection;
+            const sent = selection.map(() => 0);
+            const failed = [];
+            let canceled = 0;
+            let arrived = 0;
+
+            // Each file ends `uploaded`, `failed` or `canceled`. The rows belong to a newer
+            // selection once one has replaced this, so a late answer leaves them to it.
+            const settle = (file, state) => {
+                if (! current()) {
+                    return;
+                }
+
+                // The row of this file, found by the file itself: one removed meanwhile has none.
+                const at = this._rawFiles.indexOf(file);
+
+                // A canceled file leaves the list, as it never reached the property. A failed one
+                // stays and says so, so the reader knows which file to pick again.
+                if (at !== -1 && state === 'canceled') {
+                    this.files = this.files.filter((_, index) => index !== at);
+                    this._rawFiles = this._rawFiles.filter((_, index) => index !== at);
+                } else if (at !== -1) {
+                    this.files[at].state = state;
+                }
+
+                if (state === 'failed') {
+                    failed.push(file.name);
+                    this.fileAnnouncement = this.failedMessage.replace(':name', file.name);
+                }
+
+                arrived += state === 'uploaded' ? 1 : 0;
+                canceled += state === 'canceled' ? 1 : 0;
+            };
+
+            // The selection ends as Livewire's own upload ends: an error if a file failed, else a
+            // cancel if one was canceled, else finished.
+            const next = (index) => {
+                if (! current()) {
+                    fire('livewire-upload-cancel', { failed: [...failed] });
+
+                    return;
+                }
+
+                if (index === selection.length) {
+                    // No file of it arrived, so none replaced the selection before it.
+                    if (arrived === 0) {
+                        this._emptyAfterNothingArrived();
+                    }
+
+                    fire(failed.length > 0 ? 'livewire-upload-error' : (canceled > 0 ? 'livewire-upload-cancel' : 'livewire-upload-finish'), { failed: [...failed] });
+
+                    return;
+                }
+
+                const file = selection[index];
+                const done = (state) => {
+                    settle(file, state);
+                    queueMicrotask(() => next(index + 1));
+                };
+
+                this.$wire.uploadMultiple(
+                    property,
+                    [file],
+                    () => done('uploaded'),
+                    () => done('failed'),
+                    (progress) => {
+                        sent[index] = Number(progress?.detail?.progress) || 0;
+                        fire('livewire-upload-progress', {
+                            progress: Math.round(sent.reduce((sum, part) => sum + part, 0) / selection.length),
+                            file: file.name,
+                            index,
+                        });
+                    },
+                    () => done('canceled'),
+                    arrived > 0,
+                );
+            };
+
+            fire('livewire-upload-start');
+            next(0);
+        },
+
+        /**
          * Set the bound property to empty: `null` for one file, an empty array for several, the
          * two values Livewire's own reset reads as empty. Live, as the upload that filled it
          * was, so the property is empty on the server when the list is. Outside a Livewire
@@ -300,6 +543,27 @@ export default function wirekitFileUpload(config = {}) {
             }
 
             this.$wire.set(this.model, this.$refs?.input?.multiple === true ? [] : null);
+        },
+
+        /**
+         * Empty the bound property after a selection none of whose files arrived. A selection
+         * replaces the property only with a file that arrives, so the property would still hold
+         * the selection before, which the list no longer shows and a submission would send. Set
+         * without a request of its own (`live` off): the message the failed upload left on the
+         * property stays until the next request, which carries the change.
+         *
+         * Livewire writes the value into the component's reactive data, so the watch in init()
+         * hears it as it hears a reset from the server, and would empty the list with the rows
+         * whose files failed or were canceled. The mark tells it this emptying is the
+         * component's own.
+         */
+        _emptyAfterNothingArrived() {
+            if (this.model === null || ! this.$wire || typeof this.$wire.set !== 'function') {
+                return;
+            }
+
+            this._emptiedItself = true;
+            this.$wire.set(this.model, this.$refs?.input?.multiple === true ? [] : null, false);
         },
 
         /**

@@ -17,8 +17,14 @@ import {
     unlockScroll as unlockPageScroll,
 } from '../utils/overlay.js';
 import { isComposing } from '../utils/ime.js';
+import { pressReaches, registerPaletteHotkey } from '../utils/palette-hotkeys.js';
+import { activeDialog, singleKeysEnabled } from '../utils/shortcuts.js';
 import { typesText } from '../utils/typing-target.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { sameName } from '../utils/same-name.js';
+import { graphemesOf } from '../utils/graphemes.js';
+import { PAGE_ATTRIBUTE, choicesOf, digitOfKey, matchesQuery, onRemotePage, pageOf } from '../utils/command-palette-pages.js';
+import { pluralize } from '../utils/plural.js';
 
 /**
  * @param {Object} config - Command palette configuration from Blade
@@ -29,12 +35,24 @@ import { withOpenAlias } from '../utils/open-alias.js';
  *   palette on the page.
  * @param {boolean} [config.namedOnly=false] - With a name, answer only the events that carry
  *   it, so an event without a name passes this palette by. Without a name it changes nothing.
+ * @param {boolean} [config.takesHotkey=false] - Take the hotkey from the other palettes on the
+ *   page that share it, for as long as this one is on the page (see utils/palette-hotkeys.js).
+ *   Without a hotkey it changes nothing.
+ * @param {'global'|'page'} [config.hotkeyArea='global'] - Where the overview of keyboard
+ *   shortcuts lists the hotkey: everywhere, or on the page, where the key also does nothing while
+ *   a modal dialog is open over the page.
+ * @param {string} [config.label] - The palette's name in that overview, the dialog's own.
  * @param {boolean} [config.lockScroll=true] - Whether to hold the page still while the palette
  *   is open, with the counted lock modal and drawer share. Set to false when the palette is
  *   embedded inside a scoped container (e.g. docs preview card) where a global body-scroll lock
  *   would be disruptive.
  * @param {boolean} [config.remote=false] - The palette has a `loading` slot, so its host reports
  *   its requests: the empty state then waits for the host's answer to the newest input.
+ * @param {string} [config.placeholder] - The field's placeholder on the top level; a page may set
+ *   its own.
+ * @param {Object} [config.entryPhrases] - The translated plural forms of "N entries", sample count
+ *   to text, which the announcement of a level picks from (see utils/plural.js).
+ * @param {string} [config.locale='en'] - The application's locale, for those plural forms.
  */
 export default function wirekitCommandPalette(config = {}) {
     const lockScroll = config.lockScroll !== false;
@@ -51,6 +69,16 @@ export default function wirekitCommandPalette(config = {}) {
     // answer to, so the setting then changes nothing.
     const namedOnly = config.namedOnly === true && name !== null;
 
+    // A palette that takes its hotkey from the others on the page that share it, such as the
+    // palette of a selection over a page's search, which comes and goes with the selection.
+    const takesHotkey = config.takesHotkey === true;
+
+    // Where the overview of keyboard shortcuts on `?` lists the hotkey. A palette of one page,
+    // such as the palette of a selection, sits with the page's shortcuts, and like them its key
+    // does nothing while a modal dialog is open over the page. Any other value keeps the key
+    // working everywhere, dialogs included, which is where the overview then lists it.
+    const hotkeyArea = config.hotkeyArea === 'page' ? 'page' : 'global';
+
     // Whether an event is meant for this palette. Without a `detail.name` it is meant for every
     // palette on the page, which is how these events have always been read, unless this one
     // answers only its name; with one, only for the palette of that name.
@@ -61,7 +89,7 @@ export default function wirekitCommandPalette(config = {}) {
             return ! namedOnly;
         }
 
-        return target === name;
+        return sameName(target, name);
     };
 
     return withOpenAlias({
@@ -103,6 +131,10 @@ export default function wirekitCommandPalette(config = {}) {
         _navCleanup: null,
         _leaveCleanup: null,
         _hotkeyHandler: null,
+        // The palette's entry on the page's register of hotkeys, and the function that takes it
+        // off again. See utils/palette-hotkeys.js.
+        _hotkeyClaim: null,
+        _releaseHotkey: null,
         _showHandler: null,
         // Whether this palette holds one of the page's scroll locks. The lock is the counted
         // one modal and drawer share: the hotkey is registered on `document`, so the palette
@@ -124,6 +156,17 @@ export default function wirekitCommandPalette(config = {}) {
         _typeAhead: null,
         // The visual viewport listener while the palette is open; see _fitListToVisibleViewport().
         _onVisibleViewport: null,
+
+        // The pages the reader has opened, the open one last; empty on the top level. An entry
+        // with `opens` adds one, Back and Backspace in an empty field take the last one off.
+        _pageTrail: [],
+        // What the status region says about the level the reader is on: its name and how many
+        // entries it holds. Empty until the first change of level, so the region exists before
+        // its first sentence, which a screen reader needs to speak it.
+        levelAnnouncement: '',
+        // A remote page whose entries the host has not sent yet: its count is announced once the
+        // host reports or the list changes, not while it still shows nothing.
+        _announcePending: false,
 
         init() {
             // Parse hotkey (e.g. 'cmd+k') and register global listener
@@ -154,24 +197,52 @@ export default function wirekitCommandPalette(config = {}) {
                     return false;
                 };
 
-                this._hotkeyHandler = (e) => {
+                // Whether a press is this palette's hotkey: the key, at least the modifiers it
+                // names, and not a character typed into a field. A character key also waits while
+                // single-key shortcuts are off, by the reader's switch in the overview of keyboard
+                // shortcuts or on a screen that says so, as every other single key does
+                // (WCAG 2.1.4). A palette of the page hears nothing while a modal dialog is open
+                // over the page, unless that is its own.
+                const hears = (e) => {
+                    const doc = typeof document !== 'undefined' ? document : null;
                     const metaMatch = needsMeta ? (e.metaKey || e.ctrlKey) : true;
                     const ctrlMatch = needsCtrl ? e.ctrlKey : true;
                     const altMatch = needsAlt ? e.altKey : true;
                     const shiftMatch = needsShift ? e.shiftKey : true;
 
-                    if (sameKey(e) && metaMatch && ctrlMatch && altMatch && shiftMatch) {
-                        if (printable && typesText(e)) {
-                            return;
-                        }
+                    if (! (sameKey(e) && metaMatch && ctrlMatch && altMatch && shiftMatch) || (printable && (typesText(e) || ! singleKeysEnabled(doc)))) {
+                        return false;
+                    }
 
-                        e.preventDefault();
+                    return hotkeyArea !== 'page' || this.isOpen || activeDialog(doc) === null;
+                };
 
-                        // A held hotkey repeats its keydown; the palette toggles once per press,
-                        // and the repeats are only taken from the browser.
-                        if (! e.repeat) {
-                            this.toggle();
-                        }
+                this._hotkeyClaim = {
+                    hears,
+                    takes: takesHotkey,
+                    isOpen: () => this.isOpen,
+                    name,
+                    namedOnly,
+                    el: this.$el ?? null,
+                    hotkey,
+                    label: typeof config.label === 'string' ? config.label : '',
+                    area: hotkeyArea,
+                };
+                this._releaseHotkey = registerPaletteHotkey(this._hotkeyClaim);
+
+                this._hotkeyHandler = (e) => {
+                    // A press that another palette on the page has taken passes this one by, its
+                    // repeats included: that palette takes it from the browser.
+                    if (! hears(e) || ! pressReaches(e, this._hotkeyClaim)) {
+                        return;
+                    }
+
+                    e.preventDefault();
+
+                    // A held hotkey repeats its keydown; the palette toggles once per press,
+                    // and the repeats are only taken from the browser.
+                    if (! e.repeat) {
+                        this.toggle();
                     }
                 };
 
@@ -259,6 +330,12 @@ export default function wirekitCommandPalette(config = {}) {
                 document.removeEventListener('keydown', this._hotkeyHandler);
                 this._hotkeyHandler = null;
             }
+            // Off the register, so a key this palette took is the others' again.
+            if (this._releaseHotkey) {
+                this._releaseHotkey();
+                this._releaseHotkey = null;
+                this._hotkeyClaim = null;
+            }
             if (this._showHandler) {
                 window.removeEventListener('wirekit-command-palette-show', this._showHandler);
                 this._showHandler = null;
@@ -294,6 +371,9 @@ export default function wirekitCommandPalette(config = {}) {
          */
         show(query = '') {
             if (this.isOpen) return;
+
+            // Every open starts on the top level, whatever page the last one ended on.
+            this._leavePages();
 
             // Read before the panel shows, in the same tick as `isOpen`, so the first frame
             // already knows whether the list is empty. Waiting for the list observer would
@@ -372,6 +452,7 @@ export default function wirekitCommandPalette(config = {}) {
         _closeFromTrap() {
             if (!this.isOpen) return;
             this.isOpen = false;
+            this._leavePages();
             this._trap = null;
             this._stopTypeAhead();
             this._releasePageInert();
@@ -398,8 +479,9 @@ export default function wirekitCommandPalette(config = {}) {
          * The field takes the focus once the panel is shown, a task or more after the open. A
          * reader who presses the hotkey and types at once would type into nothing for that
          * moment: from the page itself the keys would be lost, and from a field of the page they
-         * would land in that field. Printable keys go to the query instead, Backspace takes the last character,
-         * and the query goes out as text handed over does (`_takeQuery`). Keys with Ctrl, Cmd or
+         * would land in that field. Printable keys go to the query instead, Backspace takes the last
+         * character as a reader sees one, a flag or an emoji whole, and the query goes out as text
+         * handed over does (`_takeQuery`). Keys with Ctrl, Cmd or
          * Alt, an input method's composition, and every other key keep their meaning. A field
          * that opens the palette, `command-palette.trigger`, hands its text over itself and is
          * left alone.
@@ -428,7 +510,7 @@ export default function wirekitCommandPalette(config = {}) {
 
                 if (event.key === 'Backspace') {
                     event.preventDefault();
-                    this._takeQuery(this.query.slice(0, -1));
+                    this._takeQuery(graphemesOf(this.query).slice(0, -1).join(''));
                 } else if (typeof event.key === 'string' && [...event.key].length === 1) {
                     event.preventDefault();
                     this._takeQuery(this.query + event.key);
@@ -505,6 +587,7 @@ export default function wirekitCommandPalette(config = {}) {
         close() {
             if (!this.isOpen) return;
             this.isOpen = false;
+            this._leavePages();
             this._stopTypeAhead();
             this._releasePageInert();
 
@@ -522,6 +605,7 @@ export default function wirekitCommandPalette(config = {}) {
          */
         _forceClose() {
             this.isOpen = false;
+            this._leavePages();
             this._stopTypeAhead();
             this._releasePageInert();
 
@@ -535,12 +619,14 @@ export default function wirekitCommandPalette(config = {}) {
         },
 
         /**
-         * Get all visible command items.
+         * The entries the reader can choose on the level that is open: the arrows, Home, End,
+         * the active descendant and the digits all walk this list, so an entry of another level,
+         * hidden while this one shows, is never highlighted.
          */
         _getItems() {
             const panel = this.$refs.list;
             if (!panel) return [];
-            return [...panel.querySelectorAll('[role="option"]:not([aria-disabled="true"])')];
+            return [...panel.querySelectorAll('[role="option"]:not([aria-disabled="true"])')].filter((el) => this._optionVisible(el));
         },
 
         /**
@@ -580,6 +666,27 @@ export default function wirekitCommandPalette(config = {}) {
 
             // Enter while an input method composes text confirms the composition, not a choice.
             if (event.key === 'Enter' && isComposing(event)) return;
+
+            // Backspace in an empty field goes up one level. With text in the field it deletes,
+            // as it does everywhere.
+            if (event.key === 'Backspace' && this.atPage && this.query === '' && ! isComposing(event)) {
+                event.preventDefault();
+                this.goBack();
+
+                return;
+            }
+
+            // On a page with an empty field, 1 to 9 choose the entry that carries the digit, as a
+            // click would. With text in the field a digit is part of the search, and a digit with
+            // no entry behind it is typed like any other.
+            const digit = this._digitKey(event);
+
+            if (digit > 0 && items[digit - 1]) {
+                event.preventDefault();
+                items[digit - 1].click();
+
+                return;
+            }
 
             // Enter with no option highlighted belongs to the host. A search submits its query to
             // a full results page, takes its single hit, or jumps where the query points; the
@@ -670,8 +777,16 @@ export default function wirekitCommandPalette(config = {}) {
          * server-driven search. Re-painting after a mutation puts it back.
          */
         _paintActive(items = this._getItems()) {
-            items.forEach((el, i) => {
-                const active = i === this._activeIndex;
+            const highlighted = items[this._activeIndex] ?? null;
+
+            // Every option of the list, not only those of the open level: an entry highlighted
+            // on a level the reader has left would keep its mark and show it on the way back.
+            const all = typeof this.$refs?.list?.querySelectorAll === 'function'
+                ? [...this.$refs.list.querySelectorAll('[role="option"]')]
+                : items;
+
+            all.forEach((el) => {
+                const active = el === highlighted;
 
                 el.setAttribute('data-active', active ? 'true' : 'false');
                 el.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -733,6 +848,11 @@ export default function wirekitCommandPalette(config = {}) {
 
                 this._syncOptions();
                 this._paintActive();
+
+                // The entries of a remote page have arrived.
+                if (this._announcePending) {
+                    this._announceLevel();
+                }
             });
 
             // childList only, deliberately: _paintActive writes attributes, and
@@ -831,6 +951,15 @@ export default function wirekitCommandPalette(config = {}) {
 
             if (!option || option.getAttribute('aria-disabled') === 'true') return;
 
+            // An entry that opens a page chose nothing yet: the palette shows the page instead.
+            const opens = option.getAttribute('data-wk-opens');
+
+            if (opens) {
+                this.openPage(opens);
+
+                return;
+            }
+
             this.close();
         },
 
@@ -843,7 +972,8 @@ export default function wirekitCommandPalette(config = {}) {
         _syncOptions() {
             const list = this.$refs?.list;
 
-            this._hasOptions = Boolean(list && list.querySelector('[role="option"]'));
+            this._hasOptions = Boolean(list && typeof list.querySelectorAll === 'function'
+                && [...list.querySelectorAll('[role="option"]')].some((el) => this._optionVisible(el)));
         },
 
         /**
@@ -862,6 +992,11 @@ export default function wirekitCommandPalette(config = {}) {
             // newer keystroke still waits for its 300 ms answers the older input, not that one.
             this._answeredSeq = this._emittedSeq;
             this.remoteState = state === 'loading' || state === 'error' ? state : 'idle';
+
+            // The host has answered the page it was asked for, so its count is known now.
+            if (this._announcePending && this.remoteState !== 'loading') {
+                this._announceLevel();
+            }
         },
 
         /** The reader typed: what the list shows answers an older input until the host reports. */
@@ -871,6 +1006,13 @@ export default function wirekitCommandPalette(config = {}) {
             // a moment earlier is not reported on its own, half-typed.
             clearTimeout(this._takeTimer);
             this._takeTimer = null;
+
+            // A page the palette filters itself answers at once: the host is not asked, the
+            // entries that match are the answer, and the highlight goes when they change.
+            if (! this._levelIsRemote) {
+                this._answeredSeq = this._inputSeq;
+                this._refreshLevel();
+            }
         },
 
         /**
@@ -879,7 +1021,7 @@ export default function wirekitCommandPalette(config = {}) {
          * text after the submit.
          */
         emitTypedQuery() {
-            if (this._emittedSeq !== this._inputSeq) {
+            if (this._emittedSeq !== this._inputSeq && this._levelIsRemote) {
                 this.emitQuery();
             }
         },
@@ -889,7 +1031,7 @@ export default function wirekitCommandPalette(config = {}) {
             clearTimeout(this._takeTimer);
             this._takeTimer = null;
 
-            if (this._emittedSeq !== this._inputSeq) {
+            if (this._emittedSeq !== this._inputSeq && this._levelIsRemote) {
                 this.emitQuery();
             }
         },
@@ -920,10 +1062,275 @@ export default function wirekitCommandPalette(config = {}) {
             this._takeTimer = setTimeout(() => {
                 this._takeTimer = null;
 
-                if (this.isOpen) {
+                if (this.isOpen && this._levelIsRemote) {
                     this.emitQuery();
                 }
             }, 300);
+        },
+
+        /**
+         * Open a page: the entries it holds replace the level the reader is on, the field
+         * empties, and the status region names the page and its count.
+         *
+         * @param {string} name the page's `name`
+         * @returns {boolean} whether a page of that name was found and opened
+         */
+        openPage(name) {
+            const wanted = typeof name === 'string' ? name.trim() : '';
+
+            if (wanted === '' || wanted === this.page || ! this._pageElement(wanted)) {
+                return false;
+            }
+
+            this._pageTrail = [...this._pageTrail, wanted];
+            this._enterLevel();
+
+            return true;
+        },
+
+        /**
+         * Go up one level, from a page to the one it was opened from.
+         *
+         * @returns {boolean} whether there was a level to go up to
+         */
+        goBack() {
+            if (this._pageTrail.length === 0) {
+                return false;
+            }
+
+            this._pageTrail = this._pageTrail.slice(0, -1);
+            this._enterLevel();
+
+            return true;
+        },
+
+        /** Back to the top level without a word: the palette closed, or opens anew. */
+        _leavePages() {
+            this._pageTrail = [];
+            this.levelAnnouncement = '';
+            this._announcePending = false;
+        },
+
+        /**
+         * What every change of level does once the trail has moved.
+         *
+         * The field empties, which is an assignment and fires no `input` event, so the level's
+         * search is settled here: a level the host answers is sent its empty query at once, as an
+         * open sends one, so a remote page loads its entries; a page the palette filters has
+         * nothing to wait for. A request still out for the level the reader left answers nobody.
+         */
+        _enterLevel() {
+            this.query = '';
+            this._activeIndex = -1;
+            this.remoteState = 'idle';
+            this._inputSeq += 1;
+            clearTimeout(this._takeTimer);
+            this._takeTimer = null;
+
+            if (this._levelIsRemote) {
+                this.emitQuery();
+            } else {
+                this._emittedSeq = this._inputSeq;
+                this._answeredSeq = this._inputSeq;
+            }
+
+            this._refreshLevel();
+
+            this.$root?.dispatchEvent?.(new CustomEvent('wirekit:command-palette-page', {
+                detail: { page: this.page === '' ? null : this.page, name },
+                bubbles: true,
+                composed: true,
+            }));
+
+            // A remote page has its entries once the host answers; any other level has them now.
+            this._announcePending = this.atPage && this._levelIsRemote && this._remote;
+
+            if (! this._announcePending) {
+                this._announceLevel();
+            }
+
+            // The Back button takes the focus with a click; the keys belong to the field.
+            this._focusField();
+        },
+
+        /** Re-read the level after its entries or its filter changed. */
+        _refreshLevel() {
+            const signature = this._itemsSignature();
+
+            if (signature !== this._lastSignature) {
+                this._lastSignature = signature;
+                this._activeIndex = -1;
+            }
+
+            this._syncOptions();
+            this._paintActive();
+        },
+
+        /** Say the level the reader is on and how many entries it holds. */
+        _announceLevel() {
+            this._announcePending = false;
+
+            const count = this._getItems().length;
+            const phrases = config.entryPhrases && typeof config.entryPhrases === 'object' ? config.entryPhrases : {};
+            // Bare digits: a sentence a screen reader speaks reads `12500` right in every voice,
+            // where a grouped `12.500` can come out as twelve point five hundred.
+            const counted = Object.keys(phrases).length > 0
+                ? pluralize(phrases, count, config.locale || 'en')
+                : String(count);
+            const heading = this.atPage ? this.pageHeading : (typeof config.label === 'string' ? config.label : '');
+
+            this.levelAnnouncement = heading === '' ? counted : `${heading}, ${counted}`;
+        },
+
+        /**
+         * The element of the page of that name, or null.
+         *
+         * @param {string} name
+         * @returns {Element|null}
+         */
+        _pageElement(name) {
+            const list = this.$refs?.list;
+
+            if (name === '' || typeof list?.querySelectorAll !== 'function') {
+                return null;
+            }
+
+            return [...list.querySelectorAll(`[${PAGE_ATTRIBUTE}]`)].find((el) => el.getAttribute(PAGE_ATTRIBUTE) === name) ?? null;
+        },
+
+        /** Whether the page of that name takes its search from the host. */
+        _pageIsRemote(name) {
+            return this._pageElement(name)?.hasAttribute('data-wk-command-remote') === true;
+        },
+
+        /**
+         * Whether an entry belongs to the level that is open and, on a page the palette filters,
+         * matches the field. Reads the entry's own place, so the answer is the same for the copy
+         * Livewire's morph builds from a server render.
+         *
+         * @param {Element} el
+         * @returns {boolean}
+         */
+        _optionVisible(el) {
+            const page = this.page;
+
+            if (pageOf(el) !== page) {
+                return false;
+            }
+
+            return page === '' || onRemotePage(el) || matchesQuery(el, this.query);
+        },
+
+        /**
+         * The digit an entry carries, '1' to '9', or ''. Only on a page and only while the field
+         * is empty; the entries count in the order the page shows them, disabled ones left out.
+         *
+         * @param {Element} el the entry, or an element inside it
+         * @returns {string}
+         */
+        _digitOf(el) {
+            const option = typeof el?.closest === 'function' ? el.closest('[role="option"]') : null;
+            const page = this.page;
+
+            if (! option || page === '' || this.query !== '') {
+                return '';
+            }
+
+            const container = option.closest(`[${PAGE_ATTRIBUTE}]`);
+
+            if (! container || container.getAttribute(PAGE_ATTRIBUTE) !== page) {
+                return '';
+            }
+
+            const index = choicesOf(container, page).indexOf(option);
+
+            return index >= 0 && index < 9 ? String(index + 1) : '';
+        },
+
+        /**
+         * The digit a key press chooses on a page with an empty field, or 0.
+         *
+         * @param {KeyboardEvent} event
+         * @returns {number}
+         */
+        _digitKey(event) {
+            if (! this.atPage || this.query !== '' || event.ctrlKey || event.metaKey || event.altKey || isComposing(event)) {
+                return 0;
+            }
+
+            // The locale's own digits and full-width ones as well, see digitOfKey().
+            return digitOfKey(event.key, config.locale);
+        },
+
+        /**
+         * The bindings the entries, the groups and the pages read in the template. Each reads
+         * `page` and `query`, so Alpine runs it again when either changes.
+         */
+        optionShows(el) {
+            return this._optionVisible(el);
+        },
+
+        groupShows(el) {
+            const options = typeof el?.querySelectorAll === 'function' ? [...el.querySelectorAll('[role="option"]')] : [];
+
+            // A group with nothing in it yet stands on its own level, as an entry would.
+            if (options.length === 0) {
+                return pageOf(el) === this.page;
+            }
+
+            return options.some((option) => this._optionVisible(option));
+        },
+
+        pageShows(name) {
+            return this.page !== '' && this.page === name;
+        },
+
+        digitOf(el) {
+            return this._digitOf(el);
+        },
+
+        /**
+         * What an entry states as `aria-keyshortcuts`: the digit a page gives it, while it has
+         * one, beside a shortcut of the caller's own. Null leaves the attribute out.
+         *
+         * @param {Element} el the entry
+         * @param {string} [own] the caller's `aria-keyshortcuts`
+         * @returns {string|null}
+         */
+        keyShortcutsOf(el, own = '') {
+            const keys = [this._digitOf(el), typeof own === 'string' ? own.trim() : ''].filter((key) => key !== '');
+
+            return keys.length > 0 ? keys.join(' ') : null;
+        },
+
+        /** The open page's name, '' on the top level. */
+        get page() {
+            return this._pageTrail.length > 0 ? this._pageTrail[this._pageTrail.length - 1] : '';
+        },
+
+        get atPage() {
+            return this._pageTrail.length > 0;
+        },
+
+        // Whether the host answers the search of the level that is open: on the top level, as it
+        // always has; on a page, only one marked `remote`.
+        get _levelIsRemote() {
+            return ! this.atPage || this._pageIsRemote(this.page);
+        },
+
+        /** The open page's heading, for the header above the field. */
+        get pageHeading() {
+            const page = this._pageElement(this.page);
+
+            return page?.getAttribute('data-wk-command-heading') ?? '';
+        },
+
+        /** The field's placeholder: the open page's own, or the palette's. */
+        get fieldPlaceholder() {
+            const fallback = typeof config.placeholder === 'string' ? config.placeholder : '';
+            const own = this._pageElement(this.page)?.getAttribute('data-wk-command-placeholder');
+
+            return typeof own === 'string' && own !== '' ? own : fallback;
         },
 
         /**
@@ -996,8 +1403,10 @@ export default function wirekitCommandPalette(config = {}) {
          */
         emitQuery() {
             this._emittedSeq = this._inputSeq;
+            // `page` names the open page, or is null on the top level, so one handler can answer
+            // the top level and every remote page.
             this.$root.dispatchEvent(new CustomEvent('wirekit-command-palette-query', {
-                detail: { query: this.query },
+                detail: { query: this.query, page: this.page === '' ? null : this.page },
                 bubbles: true,
                 composed: true,
             }));
@@ -1011,7 +1420,7 @@ export default function wirekitCommandPalette(config = {}) {
          */
         emitSubmit() {
             this.$root.dispatchEvent(new CustomEvent('wirekit:command-palette-submit', {
-                detail: { query: this.query },
+                detail: { query: this.query, page: this.page === '' ? null : this.page },
                 bubbles: true,
                 composed: true,
             }));

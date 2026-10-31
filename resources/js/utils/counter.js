@@ -18,6 +18,7 @@
  * and `data-wk-counter-locale` the language that picks among them. The limit is read from the
  * field each time, so a `maxlength` that changes after the render counts too.
  */
+import { formatCount } from './locale-number.js';
 import { pluralize } from './plural.js';
 
 /** How long typing has to pause before the count is said. */
@@ -39,20 +40,25 @@ export function characterCount(value) {
  * @param {number} count
  * @param {number|null} max the field's limit, or null without one
  * @param {string|null} format a sentence with `:count`, `:max` and `:remaining`, or null
+ * @param {string} [locale] the application's locale: the numbers are grouped as it groups a count,
+ *                          `1.200 / 5.000` in German. Without one they are written as digits alone.
+ * @param {{group: string, decimal: string}|null} [marks] the application's own marks, where it has them
  * @returns {string}
  */
-export function counterText(count, max, format) {
+export function counterText(count, max, format, locale, marks = null) {
+    const number = (value) => formatCount(value, locale, marks);
+
     if (typeof format === 'string' && format !== '') {
         // `:remaining` first, so a sentence never has the `:max` inside it replaced on its own. It
         // stops at 0: past the limit the counter's color says so, and a negative count reads as
         // a mistake.
         return format
-            .split(':remaining').join(max === null ? '' : String(Math.max(0, max - count)))
-            .split(':count').join(String(count))
-            .split(':max').join(max === null ? '' : String(max));
+            .split(':remaining').join(max === null ? '' : number(Math.max(0, max - count)))
+            .split(':count').join(number(count))
+            .split(':max').join(max === null ? '' : number(max));
     }
 
-    return max === null ? String(count) : `${count} / ${max}`;
+    return max === null ? number(count) : `${number(count)} / ${number(max)}`;
 }
 
 /**
@@ -63,9 +69,10 @@ export function counterText(count, max, format) {
  * @param {string|null} format
  * @param {{count?: Object, remaining?: Object, over?: Object}} phrases plural forms by sample count
  * @param {string} locale
+ * @param {{group: string, decimal: string}|null} [marks] the application's own marks, where it has them
  * @returns {string}
  */
-export function counterAnnouncement(count, max, format, phrases, locale) {
+export function counterAnnouncement(count, max, format, phrases, locale, marks = null) {
     const forms = phrases || {};
 
     // Past the limit the kit's own words, whatever the sentence: a sentence about what is left
@@ -75,7 +82,7 @@ export function counterAnnouncement(count, max, format, phrases, locale) {
     }
 
     if (typeof format === 'string' && format !== '') {
-        return counterText(count, max, format);
+        return counterText(count, max, format, locale, marks);
     }
 
     return max === null
@@ -117,6 +124,14 @@ export function registerCounterDirective(Alpine) {
         const format = el.getAttribute('data-wk-counter-format');
         const locale = el.getAttribute('data-wk-counter-locale') || 'en';
         let phrases = {};
+        let marks = null;
+
+        try {
+            // The application's own marks, written only where it has them.
+            marks = JSON.parse(el.getAttribute('data-wk-counter-separators') || 'null');
+        } catch {
+            marks = null;
+        }
 
         try {
             phrases = JSON.parse(el.getAttribute('data-wk-counter-phrases') || '{}') || {};
@@ -131,7 +146,7 @@ export function registerCounterDirective(Alpine) {
             const count = characterCount(field.value);
             const max = fieldLimit(field);
 
-            text.textContent = counterText(count, max, format);
+            text.textContent = counterText(count, max, format, locale, marks);
 
             if (max !== null && count > max) {
                 el.setAttribute('data-wk-counter-over', '');
@@ -146,7 +161,7 @@ export function registerCounterDirective(Alpine) {
             clearTimeout(timer);
             timer = setTimeout(() => {
                 timer = null;
-                announcer.textContent = counterAnnouncement(characterCount(field.value), fieldLimit(field), format, phrases, locale);
+                announcer.textContent = counterAnnouncement(characterCount(field.value), fieldLimit(field), format, phrases, locale, marks);
             }, COUNTER_ANNOUNCE_DELAY);
         };
 

@@ -27,15 +27,43 @@ final class TailwindSources
     /** Where the generated sources live, relative to the package root. */
     public const DIRECTORY = 'resources/tailwind';
 
+    /**
+     * The file a component's source is, inside the folder `<name>.txt` of its own.
+     *
+     * A source is a folder rather than a file, under the path an application declares. Tailwind
+     * reads the whole folder of a `@source` that lies in a git-ignored directory, as `vendor/`
+     * does in a Laravel application: with Tailwind 4.3.3, one declared source read every source
+     * beside it, and the stylesheet carried the whole catalog. A folder that holds one file has no
+     * neighbors to read, and `@source "…/resources/tailwind/card.txt"` names that folder.
+     */
+    public const FILE = 'classes.txt';
+
+    /**
+     * The source of one component, relative to the package root.
+     */
+    public static function path(string $component): string
+    {
+        return self::DIRECTORY.'/'.$component.'.txt/'.self::FILE;
+    }
+
     /** The template listing the classes built in PHP at runtime, which no template spells out. */
     private const RUNTIME_CLASSES = '_safelist.blade.php';
 
     /**
-     * The classes that build those strings. A template naming one of them resolves classes in
+     * The names of what builds those strings. A template naming one of them resolves classes in
      * PHP, so the closure it belongs to needs the runtime list: `VariantResolver` for intent and
-     * surface, `TablistStyles` for the tab bar.
+     * surface, `TablistStyles` for the tab bar, `spinePadding` for the inline padding of the
+     * content-edge spine.
      */
-    private const RUNTIME_CLASS_EMITTERS = ['VariantResolver', 'TablistStyles'];
+    private const RUNTIME_CLASS_EMITTERS = ['VariantResolver', 'TablistStyles', 'spinePadding'];
+
+    /**
+     * The runtime class list, under the absolute path a closure from templatesOf() carries it.
+     */
+    public static function runtimeClassList(): string
+    {
+        return (string) realpath(self::viewsDirectory().'/'.self::RUNTIME_CLASSES);
+    }
 
     /**
      * The generated source of every registry component, keyed by component name.

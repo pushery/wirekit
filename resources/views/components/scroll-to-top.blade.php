@@ -21,6 +21,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('scroll-to-top', $attributes->getAttributes());
 
+    // An unknown value of one of these props is reported (Support\StrictnessGate) and renders as
+    // the default; a bound `null` or empty string is the default without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('scroll-to-top', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
+    $position = \Pushery\WireKit\WireKit::validateProp('scroll-to-top', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'bottom-right'), ['bottom-right', 'bottom-left', 'top-right', 'top-left']);
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@click']);
@@ -28,8 +38,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $forceVisible = BooleanProp::from($forceVisible, false);
-    $aboveFab = BooleanProp::from($aboveFab, false);
+    $forceVisible = BooleanProp::from($forceVisible, false, 'scroll-to-top', 'forceVisible');
+    $aboveFab = BooleanProp::from($aboveFab, false, 'scroll-to-top', 'aboveFab');
 
     // Scroll-to-top button — appears after scrolling past a configurable
     // viewport multiplier (default: 1.5x viewport height). Uses Alpine.js
@@ -112,6 +122,8 @@
     // floating action button's own, on the same logical side it sits on (`end` and `start`), moved
     // in by half the difference of the two sizes, so this button stands centered on it in either
     // reading direction. One class per side and size, written out for the Tailwind scan.
+    $stackedSize = null;
+
     if ($aboveFab && in_array($position, ['bottom-right', 'bottom-left'], true)) {
         $centeredOnFab = match ($size) {
             'sm' => [
@@ -130,6 +142,14 @@
 
         $positionClasses = 'bottom-[calc(var(--padding-wk-x-lg)_+_var(--wk-fab-lift,0px)_+_var(--size-wk-fab)_+_var(--gap-wk-sm)_+_env(safe-area-inset-bottom,0px))] '
             .($position === 'bottom-left' ? $centeredOnFab[0] : $centeredOnFab[1]);
+
+        // The size this button stands in over the floating action button, which `.wk-fab-clearance`
+        // reads to keep the end of a long page out from under the pair.
+        $stackedSize = match ($size) {
+            'sm' => 'sm',
+            'lg' => 'lg',
+            default => 'md',
+        };
     }
 
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
@@ -149,18 +169,19 @@
     }
 @endphp
 
-@if($showScope)
-<div class="contents" {{ $outerAttributes }}>
-@endif
 {{-- Alpine: listens to scroll events and shows button after threshold.
-     Uses requestAnimationFrame to avoid jank on frequent scroll events. --}}
+     Uses requestAnimationFrame to avoid jank on frequent scroll events. The wrapper is a span,
+     the kind of element a button is, and holds the button alone: under `display: contents` any
+     whitespace inside it would be text in the sentence around it. --}}
+@if($showScope)
+<span class="contents" {{ $outerAttributes }}>@endif
 <button
     type="button"
     {{-- The scroll watching lives in resources/js/components/scroll-to-top.js.
          It cannot live here: three methods and two arrow functions, none of
          which Alpine's CSP build parses — under a strict policy the button
          never appeared, because nothing was listening to make it. --}}
-    x-data="wirekitScrollToTop({ forceVisible: {{ $forceVisible ? 'true' : 'false' }}, threshold: {{ (float) $threshold }} })"
+    x-data="wirekitScrollToTop({ forceVisible: {{ $forceVisible ? 'true' : 'false' }}, threshold: {{ \Pushery\WireKit\Support\NumericProp::from($threshold, 0, 'scroll-to-top', 'threshold') }} })"
     x-show="visible"
     @unless($forceVisible) x-cloak @endunless
     x-transition:enter="transition ease-out duration-200"
@@ -174,19 +195,20 @@
          (WCAG 2.4.11, resources/js/utils/scroll-inset.js). Hidden below its threshold, it
          covers nothing. --}}
     @if(str_starts_with($position, 'top')) data-wk-scroll-inset="top" @else data-wk-scroll-inset="bottom" @endif
+    {{-- Over a floating action button it stands on `--wk-fab-lift` too, and the band a page may
+         lift both by leaves it out. --}}
+    @if($stackedSize !== null) data-wk-above-fab="{{ $stackedSize }}" data-wk-fab-lifted @endif
     {{-- aria-label via merge so a caller can override the default — a
          hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins).
          The default goes through the catalog: this button's only child is an
          aria-hidden glyph, so this string IS its accessible name, and a merge
          default a German app never overrides is announced in English. --}}
-    {{ $attributes->except('type')->merge(['aria-label' => __('wirekit::Scroll to top')])->class([$buttonClasses, $sizeClasses, $positionClasses]) }}
+    {{ $attributes->except('type')->merge(['aria-label' => __('wirekit::Scroll to top')])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$buttonClasses, $sizeClasses, $positionClasses])) }}
 >
     {{-- Chevron up icon — decorative, label is on the button --}}
     <svg aria-hidden="true" class="{{ $iconSize }}" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z" clip-rule="evenodd"/>
     </svg>
-</button>
-@if($showScope)
-</div>
-@endif
+</button>@if($showScope)
+</span>@endif

@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Support\Arrayable;
 use IntlDateFormatter;
 use IntlDatePatternGenerator;
+use Pushery\WireKit\Support\IcuLocale;
 use Pushery\WireKit\Support\LocalizedNumber;
 use Pushery\WireKit\Support\SafeUrl;
 use Stringable;
@@ -156,6 +157,8 @@ final class ChartPointLinks
             $points = is_array($dataset['data'] ?? null) ? array_values($dataset['data']) : [];
             $fallback = __('wirekit::Series :number', ['number' => $d + 1]);
             $series = self::text($dataset['label'] ?? null) ?? (is_string($fallback) ? $fallback : 'Series '.($d + 1));
+            // A series that names its own decimals is written with them, as the tooltip writes it.
+            $places = is_numeric($dataset['decimals'] ?? null) ? min(100, max(0, (int) $dataset['decimals'])) : $decimals;
 
             foreach ($row as $p => $url) {
                 if ($url === null) {
@@ -181,7 +184,7 @@ final class ChartPointLinks
                 $label = ($dateZone !== null && (is_string($x) || is_int($x) || is_float($x)) ? self::date($x, $dateZone) : null)
                     ?? self::text($x)
                     ?? (string) ($p + 1);
-                $value = $prefix.self::value(is_array($point) ? ($point['y'] ?? null) : $point, $decimals).$suffix;
+                $value = $prefix.self::value(is_array($point) ? ($point['y'] ?? null) : $point, $places).$suffix;
 
                 $links[] = [
                     'url' => $url,
@@ -210,8 +213,11 @@ final class ChartPointLinks
         return $safe === '' ? null : $safe;
     }
 
-    /** A label or a name as text, or null when it has none to give; `mixed` as it comes from the data. */
-    private static function text(mixed $value): ?string
+    /**
+     * A label or a name as text, or null when it has none to give; `mixed` as it comes from the data.
+     * ChartDataTable names its rows and columns with it as well.
+     */
+    public static function text(mixed $value): ?string
     {
         if (is_string($value) || is_int($value) || is_float($value) || $value instanceof Stringable) {
             $text = trim((string) $value);
@@ -225,10 +231,11 @@ final class ChartPointLinks
     /**
      * A date of the x axis as the tooltip writes one without a format of its own: the month short,
      * the day in two digits and the year, in the application's language and in the axis's zone.
-     * The time comes in milliseconds, as both libraries take it, or as an ISO 8601 date, which is
-     * read in UTC as a browser reads a date without a time; anything else is no date, and null.
+     * The time comes in milliseconds, as both libraries take it, or as an ISO 8601 date as
+     * ChartDates wrote it: with its zone, or without one where the axis reads it in its own zone,
+     * and so does this. Anything else is no date, and null. ChartDataTable writes its dates with it.
      */
-    private static function date(string|int|float $x, string $zone): ?string
+    public static function date(string|int|float $x, string $zone): ?string
     {
         try {
             if (is_string($x) && ! is_numeric($x)) {
@@ -236,12 +243,12 @@ final class ChartPointLinks
                     return null;
                 }
 
-                $moment = CarbonImmutable::parse($x, 'UTC')->setTimezone($zone);
+                $moment = CarbonImmutable::parse($x, $zone)->setTimezone($zone);
             } else {
                 $moment = CarbonImmutable::createFromTimestampMs((float) $x, $zone);
             }
 
-            $locale = app()->getLocale();
+            $locale = IcuLocale::usable();
 
             // The pattern the browser's `Intl.DateTimeFormat` builds from the same fields, where
             // the intl extension can build it too.
@@ -265,8 +272,9 @@ final class ChartPointLinks
     /**
      * A value as the tooltip writes it: a number in the page's locale, a range as its two ends.
      * `mixed`, here and for each end of a range, because a point holds what the chart's data holds.
+     * ChartDataTable writes its cells with it.
      */
-    private static function value(mixed $value, ?int $decimals): string
+    public static function value(mixed $value, ?int $decimals): string
     {
         if (is_array($value)) {
             return implode(' – ', array_map(fn (mixed $part): string => self::value($part, $decimals), array_values($value)));

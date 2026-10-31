@@ -10,6 +10,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.toggle', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
     use Pushery\WireKit\WireKit;
 
     // Sidebar Toggle — hamburger button that toggles sidebar visibility.
@@ -43,6 +52,7 @@
          handed. Renaming or removing this attribute makes that check blind. --}}
     data-wk-sidebar-toggle
     x-on:click="sidebarOpen = !sidebarOpen"
+    aria-expanded="false"
     :aria-expanded="sidebarOpen ? 'true' : 'false'"
     {{-- Names the drawer this opens. Read through `$data` rather than as a bare
          `drawerId`, because a bare reference throws where the property does not exist —
@@ -51,7 +61,7 @@
          console error that stops the rest of the expression. --}}
     :aria-controls="$data.drawerId || null"
     aria-label="{{ $ariaLabel }}"
-    {{ $attributes->except('aria-label')->class(['wk-touch-target', $classes]) }}
+    {{ $attributes->except(['aria-label', 'aria-expanded', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-target', $classes])) }}
 >
     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />

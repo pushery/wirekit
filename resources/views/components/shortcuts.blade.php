@@ -29,16 +29,17 @@
 
     // Clamped rather than trusted: an invalid level must never reach the tag, because `<h9>` is no
     // heading to any reader and the failure is silent.
-    $levelValue = (int) $level;
+    $levelValue = \Pushery\WireKit\Support\NumericProp::int($level, 0, 'shortcuts', 'level');
     $levelValue = $levelValue >= 1 && $levelValue <= 6 ? $levelValue : 2;
-    $headingText = filled($heading) ? (string) $heading : __('wirekit::Keyboard shortcuts');
+    $headingText = filled($heading) ? $heading : __('wirekit::Keyboard shortcuts');
 
     // One overview per page, under one name: `?`, `shortcuts.trigger` and the open event all reach
     // the dialog by it.
     $name = 'wirekit-shortcuts';
 
-    // Translated here, since a word chosen in JavaScript cannot be: the overview's own entry and
-    // one heading per area.
+    // Translated here, since a word chosen in JavaScript cannot be: the overview's own entry, one
+    // heading per area, and the words among the keys it draws (`Ctrl` is `Strg` in German), the
+    // same ones the `kbd` component draws for its `shortcut`.
     $config = [
         'name' => $name,
         'label' => __('wirekit::Show keyboard shortcuts'),
@@ -47,6 +48,7 @@
             'dialog' => __('wirekit::In this dialog'),
             'page' => __('wirekit::On this page'),
         ],
+        'keyNames' => \Pushery\WireKit\Support\KeyShortcuts::keyNames(),
     ];
 
     $contentClasses = WireKit::resolveClasses('shortcuts', 'content', 'flex flex-col gap-[var(--gap-wk-lg)]', $scope);
@@ -104,7 +106,7 @@
     data-wk-shortcuts
     @if($choice !== null) data-wk-single-keys-choice="{{ $choice ? 'true' : 'false' }}" @endif
     @if(config('app.debug')) data-wk-shortcuts-debug @endif
-    {{ $attributes->class(['contents']) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])) }}
 >
     {{-- The switch is applied as it is flipped, so closing the dialog discards nothing and asks
          nothing. --}}

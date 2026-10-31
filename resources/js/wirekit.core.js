@@ -1,8 +1,11 @@
 /**
  * WireKit Core Bundle (IIFE).
  *
- * Contains the chart and image-compare Alpine components, the `x-wk-indeterminate`,
- * `x-wk-findable` and `x-wk-focus-first` directives the zero-JS form and disclosure primitives need,
+ * Contains the chart and image-compare Alpine components, the scopes of a toggle-button that
+ * flips itself, of the native-color readout beside a color field and of the date-range fields of
+ * a date picker, the `x-wk-indeterminate`,
+ * `x-wk-findable`, `x-wk-focus-first` and `x-wk-focus-unit` directives the zero-JS form and
+ * disclosure primitives need,
  * the `x-wk-ref` directive that files the ref a caller writes on a component under the caller's
  * own component, the `x-wk-fit-text` directive that keeps a fitted text's copies in step with
  * words a script writes, the memory for a field Livewire emptied after a successful action, the
@@ -25,15 +28,21 @@
  */
 import wirekitChartJs from './components/chart.js';
 import wirekitImageCompare from './components/image-compare.js';
+import wirekitDateRange from './components/date-range.js';
+import wirekitNativeColor from './components/native-color.js';
+import wirekitToggleButton from './components/toggle-button.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
+import { registerFocusUnitDirective } from './utils/focus-unit.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import { installFocusInvalid } from './utils/focus-invalid.js';
+import { installSubmitOnce } from './utils/submit-once.js';
 import { registeredNames, reportLateRegistration } from './utils/late-registration.js';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -62,9 +71,15 @@ function registerCoreComponents() {
     registerFitTextDirective(Alpine);
     // A menu a button opens takes the focus to its first entry. See utils/focus-first.js.
     registerFocusFirstDirective(Alpine);
+    // A control made of several parts fires `focus` and `blur` on its root as one field: the two
+    // dates of a range and a row of swatches are form primitives without a script of their own.
+    // See utils/focus-unit.js.
+    registerFocusUnitDirective(Alpine);
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // An alert a Livewire render adds is announced. See utils/alert-arrival.js.
+    installAlertArrival();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
     // See utils/scroll-inset.js.
     installScrollInset();
@@ -73,9 +88,19 @@ function registerCoreComponents() {
     // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
     // See utils/focus-invalid.js.
     installFocusInvalid();
+    // A form with `data-wk-submit-once` sends itself once until the page changes. See
+    // utils/submit-once.js.
+    installSubmitOnce();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);
+    // Three form primitives keep a value of their own beside a field the server renders: the
+    // two dates of a range bound each other, a native color field shows its color as text, and
+    // a toggle button that flips itself holds its pressed state. Each reads it from the page
+    // rather than from `x-data`, which takes a script of its own on this bundle too.
+    Alpine.data('wirekitDateRange', wirekitDateRange);
+    Alpine.data('wirekitNativeColor', wirekitNativeColor);
+    Alpine.data('wirekitToggleButton', wirekitToggleButton);
 
     /*
      * The teleport target, on the bundle that teleports nothing.

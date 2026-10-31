@@ -30,8 +30,10 @@
 import { focusClicked } from '../utils/focus-clicked.js';
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
+import { belongsThroughTeleports } from '../utils/teleport.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
+import { isRendered } from '../utils/rendered.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { watchCurrent } from '../utils/watch-current.js';
 
@@ -40,11 +42,14 @@ import { watchCurrent } from '../utils/watch-current.js';
  * drawer uses — same question, so the same answer rather than a second list
  * that drifts from it.
  */
-const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function wirekitNavigationMenu() {
     return {
         activeItem: null,
+        // The menu's name as a landmark, bound to its `aria-label` where the menu has no name of the
+        // caller's. See init().
+        landmarkName: null,
         _hideTimer: null,
         // Whether the pointer has MOVED over the open panel since it opened (see leavePanel()).
         _pointerMovedInPanel: false,
@@ -64,6 +69,18 @@ export default function wirekitNavigationMenu() {
         _stopRepair: null,
 
         init() {
+            // A menu named by default inside a navigation landmark of the same name, a navbar the
+            // usual one, takes the name it was given for that place. Two nested landmarks of one
+            // name read the same twice in a screen reader's list of them, and axe reports them.
+            const nestedName = this.$el?.getAttribute?.('data-wk-nested-name') ?? null;
+
+            if (nestedName) {
+                const ownName = this.$el.getAttribute('aria-label');
+                const around = this.$el.parentElement?.closest?.('nav, [role="navigation"]') ?? null;
+
+                this.landmarkName = around && around.getAttribute('aria-label') === ownName ? nestedName : ownName;
+            }
+
             // Release the placement observer whenever a panel closes, whichever way it closed.
             // FOUR separate places clear `activeItem` — the SPA cleanup, the delayed close, the
             // immediate close and a switch to another item — so hooking one of them would leave
@@ -117,8 +134,9 @@ export default function wirekitNavigationMenu() {
                 // The flyout panel is teleported to the overlay root, so a tap inside it
                 // is NOT inside the nav root — without the panel here it would close
                 // before an in-panel link/button click registered.
+                // The panel through the teleports, so a press in a panel opened from inside it counts too.
                 contains: (node) => this.$root.contains(node)
-                    || Boolean(this.$refs[`panel-${this.activeItem}`]?.contains(node)),
+                    || Boolean(this.$refs[`panel-${this.activeItem}`] && belongsThroughTeleports(node, this.$refs[`panel-${this.activeItem}`])),
                 isOpen: () => Boolean(this.activeItem),
                 close: () => this.closeAll(),
             });
@@ -126,6 +144,7 @@ export default function wirekitNavigationMenu() {
             // Another navigation menu opening a panel closes this one's.
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:navigation-menu-open',
+                root: this.$root,
                 onOther: () => this.closeAll(),
             });
         },
@@ -204,13 +223,15 @@ export default function wirekitNavigationMenu() {
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, since it
                     // observes boxes rather than the style attribute.
                     repairErasure: true,
-                    // Keep wide mega-menu panels inside the viewport on narrow
-                    // screens — the default main-axis shift can't pull a panel
-                    // back from the edge for a bottom placement's cross axis.
-                    crossAxisShift: true,
-                    // Caps the panel to the window's height, and its scroller below takes the
-                    // rest. Without it a panel taller than a short window (a mega menu at 400%
-                    // zoom) stands past the bottom edge: it is fixed, and a scroll of the page
+                    // The default shift runs along the trigger, which for a bottom placement is
+                    // the horizontal axis: it keeps a wide mega-menu panel inside the viewport on
+                    // a narrow screen. There is no shift across it. Below the trigger that axis is
+                    // the vertical one, and a shift there would lift a tall panel over the trigger,
+                    // which keeps the focus while the panel is open (WCAG 2.4.11).
+                    //
+                    // Caps the panel to the room on its side of the trigger, and its scroller below
+                    // takes the rest. Without it a panel taller than a short window (a mega menu at
+                    // 400% zoom) stands past the bottom edge: it is fixed, and a scroll of the page
                     // closes it, so the entries down there could not be reached at all.
                     fitViewport: true,
                 });
@@ -304,7 +325,13 @@ export default function wirekitNavigationMenu() {
             // teleport-safe ref rather than a descendant query on the nav.
             const panel = this.$refs[`panel-${name}`];
 
-            return panel ? [...panel.querySelectorAll(PANEL_FOCUSABLE)] : [];
+            if (!panel) return [];
+
+            const focusables = [...panel.querySelectorAll(PANEL_FOCUSABLE)];
+
+            // An entry hidden inside a drawn panel cannot take the focus. A panel still on its way
+            // open has no boxes yet, and its entries are taken as they stand.
+            return isRendered(panel) ? focusables.filter(isRendered) : focusables;
         },
 
         /**
@@ -377,7 +404,7 @@ export default function wirekitNavigationMenu() {
             const focused = document.activeElement;
             const panel = this.$refs[`panel-${this.activeItem}`];
 
-            if (focused && (this.$root.contains(focused) || panel?.contains(focused))) return;
+            if (focused && (this.$root.contains(focused) || (panel && belongsThroughTeleports(focused, panel)))) return;
 
             event.preventDefault();
             this.closeAll();
@@ -518,8 +545,9 @@ export default function wirekitNavigationMenu() {
             if (!(next instanceof Node)) return;
             if (this.$root.contains(next)) return;
 
+            // The panel, or a panel opened from inside it.
             const panel = this.$refs[`panel-${name}`];
-            if (panel && panel.contains(next)) return;
+            if (panel && belongsThroughTeleports(next, panel)) return;
 
             this.closeAll();
         },

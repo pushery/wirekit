@@ -30,6 +30,9 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('table.reorder', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
     use Pushery\WireKit\Support\AlpinePayload;
 @endphp
 
@@ -42,8 +45,8 @@
     x-data="wirekitTableReorder({ key: {{ AlpinePayload::string((string) $item) }} })"
     data-wk-table-reorder
     data-wk-reorder-key="{{ (string) $item }}"
-    data-wk-reorder-position="{{ max(0, (int) $position) }}"
-    {{ $attributes->class(['w-px whitespace-nowrap']) }}
+    data-wk-reorder-position="{{ max(0, \Pushery\WireKit\Support\NumericProp::int($position, 0, 'table.reorder', 'position')) }}"
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['w-px whitespace-nowrap'])) }}
 >
     <div class="flex items-center gap-[var(--gap-wk-xs)]">
         @include('wirekit::components.partials.reorder-controls', ['reorderComponent' => 'table.reorder'])

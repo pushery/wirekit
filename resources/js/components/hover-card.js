@@ -34,15 +34,17 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  */
 import { position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
+import { isRendered } from '../utils/rendered.js';
 import { withOpenAlias } from '../utils/open-alias.js';
-import { outOfReachBeside } from '../utils/teleport.js';
+import { belongsThroughTeleports, outOfReachBeside } from '../utils/teleport.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 /**
  * What counts as focusable inside the card. Same selector navigation-menu's
  * flyout panels use — same question, so the same answer rather than a second
  * list that drifts from it.
  */
-const CARD_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const CARD_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * @param {Object} config - Hover card configuration from Blade
@@ -93,6 +95,7 @@ export default function wirekitHoverCard(config = {}) {
             // Opening this one closes every other hover card on the page.
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:hover-card-open',
+                root: this.$root,
                 onOther: () => this._forceClose(),
             });
         },
@@ -115,7 +118,7 @@ export default function wirekitHoverCard(config = {}) {
         mouseenter() {
             clearTimeout(this._hideTimer);
             if (!this.isOpen) {
-                this._showTimer = setTimeout(() => this.show(), this._delayShow);
+                this._showTimer = setTimeout(() => this.show(), timerDelay(this._delayShow));
             }
         },
 
@@ -182,7 +185,7 @@ export default function wirekitHoverCard(config = {}) {
                 if (! this._holdsFocus()) {
                     this.close();
                 }
-            }, this._delayHide);
+            }, timerDelay(this._delayHide));
         },
 
         /**
@@ -201,9 +204,11 @@ export default function wirekitHoverCard(config = {}) {
 
             if (! active) return false;
 
+            // The panel through the teleports, so focus in a panel opened from inside the card,
+            // such as a menu's, holds it too.
             return Boolean(
                 this.$refs.trigger?.contains(active)
-                || this.$refs.panel?.contains(active)
+                || (this.$refs.panel && belongsThroughTeleports(active, this.$refs.panel))
             );
         },
 
@@ -217,7 +222,13 @@ export default function wirekitHoverCard(config = {}) {
         _cardFocusables() {
             const panel = this.$refs.panel;
 
-            return panel ? [...panel.querySelectorAll(CARD_FOCUSABLE)] : [];
+            if (! panel) return [];
+
+            const focusables = [...panel.querySelectorAll(CARD_FOCUSABLE)];
+
+            // An element hidden inside a drawn card cannot take the focus. A card still on its way
+            // open has no boxes yet, and its elements are taken as they stand.
+            return isRendered(panel) ? focusables.filter(isRendered) : focusables;
         },
 
         /**
@@ -233,7 +244,11 @@ export default function wirekitHoverCard(config = {}) {
 
             if (! trigger) return null;
 
-            return trigger.matches(CARD_FOCUSABLE) ? trigger : trigger.querySelector(CARD_FOCUSABLE);
+            if (trigger.matches(CARD_FOCUSABLE)) return trigger;
+
+            const controls = [...trigger.querySelectorAll(CARD_FOCUSABLE)];
+
+            return controls.find(isRendered) ?? controls[0] ?? null;
         },
 
         /**
@@ -330,9 +345,11 @@ export default function wirekitHoverCard(config = {}) {
          * handled. A modal or a drawer around the reader reads Escape later, on the
          * document and on the window, and leaves a marked press alone: the reader asked
          * the card to go, and nothing else. A card only shows for what the reader points
-         * at or stands on, so nothing on screen sits above it to take the key first.
-         * With the focus inside the card, the panel's own handler still runs after this
-         * one and hands the focus back to the trigger.
+         * at or stands on, so the one thing that can sit above it is a panel opened from
+         * inside it, a dropdown's menu: with the focus there the press is that panel's, it
+         * closes first, and the card closes on the next press. With the focus inside the
+         * card, the panel's own handler still runs after this one and hands the focus back
+         * to the trigger.
          *
          * @param {KeyboardEvent} event
          */
@@ -342,8 +359,20 @@ export default function wirekitHoverCard(config = {}) {
 
             if (! this.isOpen) return;
 
+            if (this._focusInAPanelOpenedFromInside()) return;
+
             event?.preventDefault();
             this.close();
+        },
+
+        /** Whether the focus stands in a panel teleported out of the card's own panel. */
+        _focusInAPanelOpenedFromInside() {
+            const active = typeof document !== 'undefined' ? document.activeElement : null;
+            const panel = this.$refs?.panel;
+
+            return Boolean(active && panel && typeof panel.contains === 'function' && ! panel.contains(active)
+                && ! this.$refs?.trigger?.contains?.(active)
+                && belongsThroughTeleports(active, panel));
         },
 
         /**

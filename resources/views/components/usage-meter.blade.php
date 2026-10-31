@@ -26,16 +26,23 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('usage-meter', $attributes->getAttributes());
 
+    // No `period`, or one of these. An unknown one is reported (Support\StrictnessGate) and leaves
+    // the period unset, as no `period` does, rather than taking the first of the list.
+    $period = filled($period) ? \Pushery\WireKit\Support\NumericProp::text($period) : null;
+    if ($period !== null && \Pushery\WireKit\WireKit::validateProp('usage-meter', 'period', $period, ['day', 'week', 'month', 'year']) !== $period) {
+        $period = null;
+    }
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $showValue = BooleanProp::from($showValue, true);
+    $showValue = BooleanProp::from($showValue, true, 'usage-meter', 'showValue');
 
     // The application supplies used/limit; recomputing usage in a view would run a query on
     // every render. limit === null is the "Unlimited" plan tier (no bar, no %).
-    $usedNum = (float) $used;
+    $usedNum = (float) \Pushery\WireKit\Support\NumericProp::from($used, 0, 'usage-meter', 'used');
     $isUnlimited = $limit === null;
-    $limitNum = $isUnlimited ? null : max(0.0, (float) $limit);
+    $limitNum = $isUnlimited ? null : max(0.0, (float) \Pushery\WireKit\Support\NumericProp::from($limit, 0, 'usage-meter', 'limit'));
 
     $ratio = (! $isUnlimited && $limitNum > 0) ? $usedNum / $limitNum : 0.0;
     // Real % can exceed 100 (over-limit) — show it in text; the bar clamps to 100.
@@ -49,6 +56,9 @@
     // which is what `>=` says for every other limit, so 0 / 0 and 3 / 0 are over it too.
     // There is no percentage there, and the bar stays empty in the danger intent.
     $isOver = ! $isUnlimited && $usedNum >= $limitNum;
+    // The two ratios are read as PHP casts it, so a text with a unit keeps the number it starts with, and reported.
+    \Pushery\WireKit\Support\NumericProp::check($danger, 'usage-meter', 'danger');
+    \Pushery\WireKit\Support\NumericProp::check($warn, 'usage-meter', 'warn');
     $isDanger = ! $isOver && ! $isUnlimited && $limitNum > 0 && $ratio >= (float) $danger;
     $isWarn = ! $isOver && ! $isDanger && ! $isUnlimited && $ratio >= (float) $warn;
 
@@ -60,6 +70,14 @@
         $isWarn => 'warning',
         default => 'primary',
     };
+
+    // A date object is the day the meter resets, written in the page's language. Echoed as it is,
+    // a Carbon reads `2026-10-25 12:00:00`, and PHP's own `DateTime` has no string form at all.
+    if ($resetAt instanceof \DateTimeInterface) {
+        $resetAt = __('wirekit::Resets :date', [
+            'date' => \Pushery\WireKit\Support\LocalizedDate::bySkeleton(\Carbon\CarbonImmutable::instance($resetAt), 'yMMMd', 'M j, Y'),
+        ]);
+    }
 
     // Reset hint: explicit resetAt wins; else derive from the period cadence.
     $resetNote = $resetAt ?: match ($period) {
@@ -96,7 +114,7 @@
     );
 @endphp
 
-<div {{ $attributes->class([$classes]) }} @if($isOver) data-over-limit="true" @endif>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($isOver) data-over-limit="true" @endif>
     {{-- Header: label + "X / Y (Z%)" readout (or "Unlimited") --}}
     @if($label || $showValue)
         <div class="mb-1 flex items-baseline justify-between gap-2 text-[length:var(--text-wk-sm)]">
@@ -116,7 +134,7 @@
                     @else
                         {{ $fmt($usedNum) }} / {{ $fmt($limitNum) }}@if($unit) {{ $unit }}@endif
                         @if($rawPercent !== null)
-                            <span class="text-[color:var(--color-wk-text-subtle)]">({{ $rawPercent }}%)</span>
+                            <span class="text-[color:var(--color-wk-text-subtle)]">({{ \Pushery\WireKit\Support\LocalizedNumber::percent((float) $rawPercent, 0) }})</span>
                         @endif
                     @endif
                 </span>
@@ -161,7 +179,7 @@
 
     {{-- Optional upgrade CTA hook (slot). The usage-meter owns the meter + the CTA
          hook only; the upgrade/plan-compare surface is a pricing-table recipe. --}}
-    @isset($action)
+    @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
         <div class="mt-2">{{ $action }}</div>
-    @endisset
+    @endif
 </div>

@@ -7,9 +7,11 @@
 import { placementReference, position } from '../utils/floating.js';
 import { isComposing } from '../utils/ime.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { singleKeysHidden, watchSingleKeysHidden } from '../utils/single-keys-hidden.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 // What a reader can tab to.
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // A control that holds a cut text as part of itself, so a focus on the control is a focus on the
 // text. One control each: a focusable container, such as a scroll region or a listbox that moves an
@@ -23,6 +25,14 @@ const SURROUNDING_CONTROL = [
 
 // Every cut text a tooltip repeats carries this mark (resources/views/components/text.blade.php).
 const CUT_TEXT = '[data-wk-cut-tip]';
+
+// A text in a tooltip's trigger whose words lead the panel while it is cut, as the label of a badge
+// with `truncate`, and the place the panel holds for them (resources/views/components/tooltip.blade.php).
+const CUT_LEAD = '[data-wk-tooltip-cut]';
+const CUT_LEAD_PLACE = '[data-wk-tooltip-cut-words]';
+
+// The trigger of a tooltip, the element around what the caller put in its slot.
+const TRIGGER = '[data-wk-tooltip-trigger]';
 
 /** A text's words as they read on the line: the spaces and line breaks of the markup collapsed. */
 const wordsOf = (element) => (element?.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -72,6 +82,16 @@ export default function wirekitTooltip(config = {}) {
         // Puts the description back on the control after an update; disconnected in destroy().
         _describedByObserver: null,
 
+        // Takes the other platform's keys out of the panel again after an update, and a single-key
+        // shortcut while single keys are hidden; disconnected in destroy().
+        _shownKeysObserver: null,
+
+        // Stops following the switch for single keys; called in destroy().
+        _stopSingleKeysWatch: null,
+
+        // The single-key shortcuts taken out of the panel, each with the comment that holds its place.
+        _keysAway: [],
+
         // `text truncate="tooltip"`: the tooltip repeats the text of the element it sits on, which
         // that element cuts off, and only while it does. See `_watchTheCut()`.
         _whenTruncated: config.whenTruncated === true,
@@ -97,6 +117,9 @@ export default function wirekitTooltip(config = {}) {
         init() {
             this._moveDescriptionToTheFocusableTrigger();
             this._keepTheDescriptionAcrossUpdates();
+            // The panel comes with the template that teleports it, which Alpine sets up after this
+            // init() has run, so its keys are kept from the next tick on.
+            this.$nextTick?.(() => this._keepTheShownKeysOnly());
 
             if (this._whenTruncated) {
                 this._watchTheCut();
@@ -121,6 +144,9 @@ export default function wirekitTooltip(config = {}) {
          * Moved rather than duplicated. Two elements describing themselves with the same id
          * makes a nested pair announce the text twice, and the wrapper's copy is the one with
          * no reader on it.
+         *
+         * A tooltip switched off describes nothing, or a reader would hear a tip nobody sees: the
+         * description this tooltip wrote goes while the switch is on and comes back with it off.
          */
         _moveDescriptionToTheFocusableTrigger() {
             const root = this.$refs?.trigger;
@@ -133,9 +159,17 @@ export default function wirekitTooltip(config = {}) {
                 return;
             }
 
+            const quiet = this._disabled();
+
             // The wrapper itself takes the tab stop under `focusable-trigger`; in that case
-            // it IS the element a reader lands on and the attribute is already right.
+            // it IS the element a reader lands on and keeps the attribute.
             if (root.hasAttribute('tabindex')) {
+                if (quiet) {
+                    root.removeAttribute('aria-describedby');
+                } else if (!root.hasAttribute('aria-describedby')) {
+                    root.setAttribute('aria-describedby', id);
+                }
+
                 return;
             }
 
@@ -145,13 +179,102 @@ export default function wirekitTooltip(config = {}) {
                 return;
             }
 
-            // A caller who described their own control keeps their description — replacing it
-            // would silence something they chose deliberately.
-            if (!focusable.hasAttribute('aria-describedby')) {
+            if (quiet) {
+                if (focusable.getAttribute('aria-describedby') === id) {
+                    focusable.removeAttribute('aria-describedby');
+                }
+            } else if (!focusable.hasAttribute('aria-describedby')) {
+                // A caller who described their own control keeps their description — replacing it
+                // would silence something they chose deliberately.
                 focusable.setAttribute('aria-describedby', id);
             }
 
             root.removeAttribute('aria-describedby');
+        },
+
+        /**
+         * Keep the shortcut in the panel to the keys the stylesheet shows.
+         *
+         * A closed panel is hidden, and a hidden element that `aria-describedby` names counts all of
+         * its text, the keys the stylesheet hides as well (Accessible Name and Description
+         * Computation, step 2A). Two rules hide keys. A shortcut draws the keys of both kinds of
+         * platform, and the stylesheet shows the one the root names in `data-wk-platform`: the keys
+         * of the other platform leave the panel, and leave it again when an update puts them back.
+         * A single-key shortcut is drawn only while single keys work, which the reader's switch and
+         * a screen that turns them off change while the page is open: its keys leave the panel while
+         * they are hidden and come back to their place when they are drawn again. Closed or open,
+         * the tooltip describes its control with the keys it shows. Before the root names a
+         * platform the platform's keys are left as they are.
+         */
+        _keepTheShownKeysOnly() {
+            const panel = this.$refs?.tooltip;
+
+            // A tooltip taken out of the page before the tick takes its panel with it.
+            if (! panel || panel.isConnected === false || typeof panel.querySelector !== 'function') {
+                return;
+            }
+
+            const platform = typeof document === 'undefined' ? null : document.documentElement?.getAttribute?.('data-wk-platform');
+            const variants = (platform === 'mac' || platform === 'other') && panel.querySelector('[data-wk-kbd-platform]') !== null;
+            const single = panel.querySelector('[data-wk-kbd-single]') !== null;
+
+            if (! variants && ! single) {
+                return;
+            }
+
+            const otherPlatform = `[data-wk-kbd-platform="${platform === 'mac' ? 'other' : 'mac'}"]`;
+            // Each round changes nothing the second time, so the observer's own writes end it.
+            const keep = () => {
+                if (variants) {
+                    panel.querySelectorAll(otherPlatform).forEach((el) => el.remove());
+                }
+
+                if (single) {
+                    this._placeSingleKeys(panel, singleKeysHidden());
+                }
+            };
+
+            keep();
+
+            if (typeof MutationObserver === 'function') {
+                this._shownKeysObserver = new MutationObserver(keep);
+                this._shownKeysObserver.observe(panel, { childList: true, subtree: true });
+            }
+
+            if (single) {
+                this._stopSingleKeysWatch = watchSingleKeysHidden(keep);
+            }
+        },
+
+        /**
+         * Take the panel's single-key shortcuts out while the stylesheet hides them, each leaving a
+         * comment in its place, and put them back in those places while it draws them. A shortcut
+         * inside one already taken out goes with it. A place an update has drawn over is dropped:
+         * the update brought the keys back itself, and they leave again if they are still hidden.
+         */
+        _placeSingleKeys(panel, hidden) {
+            if (hidden) {
+                panel.querySelectorAll('[data-wk-kbd-single]').forEach((el) => {
+                    if (! panel.contains(el)) {
+                        return;
+                    }
+
+                    const place = el.ownerDocument.createComment('');
+                    el.replaceWith(place);
+                    this._keysAway.push({ place, el });
+                });
+
+                return;
+            }
+
+            const away = this._keysAway;
+            this._keysAway = [];
+
+            for (const { place, el } of away) {
+                if (panel.contains(place)) {
+                    place.replaceWith(el);
+                }
+            }
         },
 
         /**
@@ -162,7 +285,8 @@ export default function wirekitTooltip(config = {}) {
          * above while the tooltip stays open and focused, so the control a reader is on describes
          * nothing any more. The observer watches that one attribute inside the trigger, and the
          * replaced control too, and makes the move again. The move changes nothing the second time,
-         * so its own writes end the round.
+         * so its own writes end the round. The same observer watches the switch on the root, which
+         * a call site binds (`x-bind:data-wk-tooltip-disabled`), so the description follows it.
          */
         _keepTheDescriptionAcrossUpdates() {
             const root = this.$refs?.trigger;
@@ -177,6 +301,13 @@ export default function wirekitTooltip(config = {}) {
                 childList: true,
                 subtree: true,
             });
+
+            if (this.$root && this.$root !== root) {
+                this._describedByObserver.observe(this.$root, {
+                    attributes: true,
+                    attributeFilter: ['data-wk-tooltip-disabled'],
+                });
+            }
         },
 
         /**
@@ -325,11 +456,62 @@ export default function wirekitTooltip(config = {}) {
             if (panel.textContent !== text) {
                 panel.textContent = text;
             }
+
+            // The panel stands in the overlay root, outside the text, so it names the text's
+            // language itself: glyphs, quotation marks and line breaks follow the closest element
+            // that names one, as they do on the line.
+            if (typeof panel.setAttribute === 'function' && typeof panel.removeAttribute === 'function') {
+                const scope = typeof this.$root?.closest === 'function' ? this.$root.closest('[lang]') : null;
+                const lang = typeof scope?.getAttribute === 'function' ? (scope.getAttribute('lang') ?? '') : '';
+
+                if (lang !== '') {
+                    panel.setAttribute('lang', lang);
+                } else {
+                    panel.removeAttribute('lang');
+                }
+            }
+        },
+
+        /**
+         * Write the words of the cut text in the trigger above the tooltip's own, or nothing while
+         * that text fits. A badge with `truncate` and a tooltip marks its label so: a tooltip of the
+         * label's own would open a second panel over this one. Read from the element each time the
+         * panel shows, so the words are the ones on the line now, in the language they stand in.
+         */
+        _writeTheCutLead() {
+            const place = this.$refs?.tooltip?.querySelector?.(CUT_LEAD_PLACE);
+            if (!place) {
+                return;
+            }
+
+            // The text in this tooltip's own trigger, never one in a tooltip nested inside it, which
+            // leads that tooltip's panel.
+            const trigger = this.$root?.querySelector?.(TRIGGER);
+            const text = [...(this.$root?.querySelectorAll?.(CUT_LEAD) ?? [])]
+                .find((element) => element.closest?.(TRIGGER) === trigger);
+            const words = text && text.scrollWidth > text.clientWidth ? wordsOf(text) : '';
+
+            if (place.textContent !== words) {
+                place.textContent = words;
+            }
+
+            const scope = words !== '' && typeof text.closest === 'function' ? text.closest('[lang]') : null;
+            const lang = typeof scope?.getAttribute === 'function' ? (scope.getAttribute('lang') ?? '') : '';
+
+            if (lang !== '') {
+                place.setAttribute('lang', lang);
+            } else {
+                place.removeAttribute('lang');
+            }
         },
 
         destroy() {
             this._describedByObserver?.disconnect();
             this._describedByObserver = null;
+            this._shownKeysObserver?.disconnect();
+            this._shownKeysObserver = null;
+            this._stopSingleKeysWatch?.();
+            this._stopSingleKeysWatch = null;
 
             for (const observer of this._cutObservers) {
                 observer.disconnect();
@@ -362,7 +544,7 @@ export default function wirekitTooltip(config = {}) {
             // second show timer there would only fire into a `show()` that returns at
             // its first line. Same shape as the hover card, for the same reason.
             if (! this.isOpen) {
-                this._showTimer = setTimeout(() => this.show(), this._delayShow);
+                this._showTimer = setTimeout(() => this.show(), timerDelay(this._delayShow));
             }
         },
 
@@ -377,7 +559,7 @@ export default function wirekitTooltip(config = {}) {
          */
         mouseleave() {
             clearTimeout(this._showTimer);
-            this._hideTimer = setTimeout(() => this.close(), this._delayHide);
+            this._hideTimer = setTimeout(() => this.close(), timerDelay(this._delayHide));
         },
 
         /**
@@ -544,6 +726,9 @@ export default function wirekitTooltip(config = {}) {
                 this._writeTheCutText();
             }
 
+            // A cut text in the trigger leads the panel with its words, before the panel shows.
+            this._writeTheCutLead();
+
             // Color the panel before it is shown, not after.
             //
             // `open = true` flips x-show, which sets display immediately. A copy
@@ -647,6 +832,8 @@ export default function wirekitTooltip(config = {}) {
             if (this._whenTruncated) {
                 this._writeTheCutText();
             }
+
+            this._writeTheCutLead();
         },
 
         /**

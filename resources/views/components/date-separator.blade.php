@@ -78,7 +78,7 @@
     @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
     aria-label="{{ $fullDate }}"
     @endunless
-    {{ $attributes->class([
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
         WireKit::resolveClasses('date-separator', 'base', implode(' ', [
             'flex items-center',
             'text-[length:var(--text-wk-xs)]',
@@ -86,7 +86,7 @@
             'font-[family-name:var(--font-wk-sans)]',
             $stickyClasses,
         ]), $scope),
-    ]) }}
+    ])) }}
 >
     <span aria-hidden="true" class="grow border-t border-[var(--color-wk-border)]"></span>
     <time

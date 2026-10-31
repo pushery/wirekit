@@ -22,6 +22,8 @@
 @php
     use Pushery\WireKit\Support\ListProp;
     use Pushery\WireKit\Support\LocalizedNumber;
+    use Pushery\WireKit\Support\NumericProp;
+    use Pushery\WireKit\Support\Plural;
     use Pushery\WireKit\Support\SafeUrl;
     use Pushery\WireKit\Support\StrictnessGate;
     use Pushery\WireKit\WireKit;
@@ -31,38 +33,41 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('review-summary', $attributes->getAttributes());
 
-    $max = max(1, min(10, (int) $max));
+    $max = max(1, min(10, \Pushery\WireKit\Support\NumericProp::int($max, 0, 'review-summary', 'max')));
 
     // The distribution, one count per step from the top down. A key outside the scale or a count
     // that is not a whole number of zero or more is reported and left out, so a bar never stands
     // for something nobody said.
     $counts = array_fill(1, $max, 0);
-    $given = ListProp::from($distribution);
+    $given = ListProp::from($distribution, 'review-summary', 'distribution');
 
     foreach (is_array($given) ? $given : [] as $stars => $n) {
-        $valid = is_int($stars) && $stars >= 1 && $stars <= $max && is_numeric($n) && (int) $n == $n && (int) $n >= 0;
+        $whole = NumericProp::intOrNull($n);
+        $valid = is_int($stars) && $stars >= 1 && $stars <= $max && $whole !== null && $whole == $n && $whole >= 0;
 
         if (! $valid) {
-            StrictnessGate::reject('review-summary', 'distribution', is_scalar($n) ? $stars.' => '.$n : $stars.' => '.get_debug_type($n), 'stars from 1 to '.$max.' with a whole number of reviews', '');
+            StrictnessGate::reject('review-summary', 'distribution', is_scalar($n) ? $stars.' => '.NumericProp::text($n) : $stars.' => '.get_debug_type($n), 'stars from 1 to '.$max.' with a whole number of reviews', '');
 
             continue;
         }
 
-        $counts[$stars] = (int) $n;
+        $counts[$stars] = $whole;
     }
 
     krsort($counts);
     $sum = array_sum($counts);
-    $total = is_numeric($count) && (int) $count >= 0 ? (int) $count : $sum;
+    $countTotal = NumericProp::intOrNull($count, 'review-summary', 'count');
+    $total = $countTotal !== null && $countTotal >= 0 ? $countTotal : $sum;
 
-    $links = ListProp::from($filters);
+    $links = ListProp::from($filters, 'review-summary', 'filters');
     $links = is_array($links) ? $links : [];
-    $current = is_numeric($current) ? (int) $current : null;
+    $current = NumericProp::intOrNull($current, 'review-summary', 'current');
 
     // The average, or nothing to show while there are no reviews: "0.0 out of 5" would say every
     // reviewer gave nothing.
-    $hasAverage = is_numeric($average) && $total > 0;
-    $score = $hasAverage ? max(0.0, min((float) $average, (float) $max)) : null;
+    $averageNumber = \Pushery\WireKit\Support\NumericProp::orNull($average, 'review-summary', 'average');
+    $hasAverage = $averageNumber !== null && $total > 0;
+    $score = $hasAverage ? max(0.0, min((float) $averageNumber, (float) $max)) : null;
 
     $rows = [];
 
@@ -80,8 +85,8 @@
             'href' => $href !== '' ? $href : null,
             'current' => $current === $stars,
             'sentence' => __('wirekit:::stars: :reviews', [
-                'stars' => trans_choice('wirekit:::count star|:count stars', $stars, ['count' => $stars]),
-                'reviews' => trans_choice('wirekit::{1} :count review|[2,*] :count reviews', $n, ['count' => LocalizedNumber::format((float) $n)]),
+                'stars' => Plural::choice('wirekit:::count star|:count stars', $stars, ['count' => $stars]),
+                'reviews' => Plural::choice('wirekit::{1} :count review|[2,*] :count reviews', $n, ['count' => LocalizedNumber::format((float) $n)]),
             ]),
         ];
     }
@@ -107,14 +112,14 @@
 @endphp
 
 {{-- The rows hold visually hidden text, so the root is positioned to keep it inside (data-wk-sr-host). --}}
-<div data-wk-review-summary data-wk-sr-host {{ $attributes->class([$classes]) }}>
+<div data-wk-review-summary data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     <div data-wk-review-summary-score class="flex flex-wrap items-center gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-xs)]">
         @if($hasAverage)
             {{-- The number repeats the stars' image name, which says it with its scale. --}}
             <span aria-hidden="true" class="text-[length:var(--text-wk-3xl)] font-[number:var(--font-wk-heading-weight)] leading-none tabular-nums">{{ LocalizedNumber::format($score, precision: 1) }}</span>
             <span class="flex flex-col gap-[var(--gap-wk-xs)]">
                 <x-wirekit::rating :value="$score" :max="$max" readonly />
-                <span data-wk-review-summary-count class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ trans_choice('wirekit::{1} :count review|[2,*] :count reviews', $total, ['count' => LocalizedNumber::format((float) $total)]) }}</span>
+                <span data-wk-review-summary-count class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ Plural::choice('wirekit::{1} :count review|[2,*] :count reviews', $total, ['count' => LocalizedNumber::format((float) $total)]) }}</span>
             </span>
         @else
             <span data-wk-review-summary-count class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No reviews yet') }}</span>
@@ -148,11 +153,11 @@
         </ul>
     @endif
 
-    @isset($notice)
+    @if(\Pushery\WireKit\Support\SlotContent::given($notice ?? null))
         <div data-wk-review-summary-notice class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] [overflow-wrap:anywhere]">{{ $notice }}</div>
-    @endisset
+    @endif
 
-    @isset($actions)
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <div data-wk-review-summary-actions class="flex flex-wrap gap-[var(--gap-wk-sm)]">{{ $actions }}</div>
-    @endisset
+    @endif
 </div>

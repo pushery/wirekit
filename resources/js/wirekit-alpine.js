@@ -34,6 +34,7 @@ import { registerScrollToMagic } from './utils/scroll-to.js';
 import { registerPagerFocusMagics } from './utils/pager-focus.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerCallerRefDirective } from './utils/caller-ref.js';
+import { registerCallerModelDirective } from './utils/caller-model.js';
 import { registerImeDirective } from './utils/ime.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerScrollIntoViewDirective } from './utils/scroll-into-view.js';
@@ -41,6 +42,8 @@ import { registerStuckDirective } from './utils/stuck.js';
 import { registerAnnounceBusyDirective } from './utils/busy-announcer.js';
 import { registerCounterDirective } from './utils/counter.js';
 import { registerTableLabelsDirective } from './utils/table-labels.js';
+import { registerDoubleTapDirective } from './utils/double-tap.js';
+import { registerRangeSelectDirective } from './utils/range-select.js';
 import { registerInsertTokenDirective } from './utils/insert-token.js';
 import { registerUnsavedDirective } from './utils/unsaved.js';
 import { registerCurrentDirective } from './utils/current.js';
@@ -48,10 +51,14 @@ import { defineShortcut, registerShortcutDirective } from './utils/shortcuts.js'
 import { registerFindableDirective } from './utils/findable.js';
 import { registerFitTextDirective } from './utils/fit-text.js';
 import { registerFocusFirstDirective } from './utils/focus-first.js';
+import { registerFocusUnitDirective } from './utils/focus-unit.js';
 import { registerClearedFieldMemory } from './utils/cleared-field.js';
+import { installAlertArrival } from './utils/alert-arrival.js';
 import { installArrowFocus } from './utils/arrow-focus.js';
 import { installScrollInset } from './utils/scroll-inset.js';
 import { installFocusInvalid } from './utils/focus-invalid.js';
+import { installSubmitOnce } from './utils/submit-once.js';
+import { installCanceledTransitionHandler } from './utils/canceled-transition.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -103,6 +110,7 @@ import wirekitSortable from './components/sortable.js';
 import wirekitProgress from './components/progress.js';
 import wirekitPageProgress from './components/page-progress.js';
 import wirekitDateFormatHint from './components/date-format-hint.js';
+import wirekitDateRange from './components/date-range.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
 import wirekitTablist from './components/tablist.js';
@@ -125,6 +133,7 @@ import wirekitPopover from './components/popover.js';
 import wirekitScopeSwitcher from './components/scope-switcher.js';
 import wirekitCommandPalette from './components/command-palette.js';
 import wirekitCommandPaletteTrigger from './components/command-palette-trigger.js';
+import wirekitBulkSelection from './components/bulk-selection.js';
 import wirekitContextMenu from './components/context-menu.js';
 import wirekitMenubar from './components/menubar.js';
 import wirekitNavigationMenu from './components/navigation-menu.js';
@@ -133,10 +142,19 @@ import wirekitCarousel from './components/carousel.js';
 import wirekitThemeController from './components/theme-controller.js';
 import wirekitFab from './components/fab.js';
 import wirekitCalendar from './components/calendar.js';
+import wirekitDatetimePicker from './components/datetime-picker.js';
+import wirekitDatetimePickerMoment from './components/datetime-picker-moment.js';
+import wirekitDatetimePickerTime from './components/datetime-picker-time.js';
+import wirekitDatePicker from './components/date-picker.js';
+import wirekitTimePicker from './components/time-picker.js';
 import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
 import wirekitResizableHandle from './components/resizable.js';
 import wirekitImageCompare from './components/image-compare.js';
+import wirekitImageHotspots from './components/image-hotspots.js';
+import wirekitImageHotspotsEditor from './components/image-hotspots-editor.js';
+import wirekitImageEditor from './components/image-editor.js';
+import wirekitVideo from './components/video.js';
 import wirekitLightbox from './components/lightbox.js';
 import wirekitConversation from './components/conversation.js';
 import wirekitAssistantMessage from './components/assistant-message.js';
@@ -147,6 +165,8 @@ import wirekitReadingMinimap from './components/reading-minimap.js';
 import wirekitReadingToc from './components/reading-toc.js';
 import wirekitEditor from './components/editor.js';
 import wirekitColorPicker from './components/color-picker.js';
+import wirekitNativeColor from './components/native-color.js';
+import wirekitToggleButton from './components/toggle-button.js';
 import wirekitFilterBuilder from './components/filter-builder.js';
 import wirekitStatusMatrix from './components/status-matrix.js';
 import wirekitNotificationCenter from './components/notification-center.js';
@@ -251,6 +271,9 @@ if (hostAlpine) {
     // An `x-ref` a caller writes on a component reaches the caller's `$refs`, not a
     // root the component renders. See utils/caller-ref.js.
     registerCallerRefDirective(target);
+    // An `x-model` a caller writes on a component whose field stands inside a root of the
+    // component's own is read in the caller's scope. See utils/caller-model.js.
+    registerCallerModelDirective(target);
     // A key press that belongs to an input method's composition stops at the field. See
     // utils/ime.js.
     registerImeDirective(target);
@@ -265,6 +288,10 @@ if (hostAlpine) {
     registerCounterDirective(target);
     // The cells of a table that stacks its rows, named by their columns. See utils/table-labels.js.
     registerTableLabelsDirective(target);
+    // A range of checkboxes picked with Shift held. See utils/range-select.js.
+    registerRangeSelectDirective(target);
+    // Two taps on one element, as a touch screen and a mouse send them. See utils/double-tap.js.
+    registerDoubleTapDirective(target);
     // The tokens a button puts into an input, without a request. See utils/insert-token.js.
     registerInsertTokenDirective(target);
     // A form that holds what its server does not have yet says so. See utils/unsaved.js.
@@ -279,9 +306,14 @@ if (hostAlpine) {
     registerFitTextDirective(target);
     // A menu a button opens takes the focus to its first entry. See utils/focus-first.js.
     registerFocusFirstDirective(target);
+    // A control made of several parts fires `focus` and `blur` on its root as one field. See
+    // utils/focus-unit.js.
+    registerFocusUnitDirective(target);
     // A field Livewire emptied after a successful action is not the reader's mistake.
     // See utils/cleared-field.js.
     registerClearedFieldMemory();
+    // An alert a Livewire render adds is announced. See utils/alert-arrival.js.
+    installAlertArrival();
     // A surface pinned to an edge keeps a focused element and a fragment's target clear of it.
     // See utils/scroll-inset.js.
     installScrollInset();
@@ -290,6 +322,12 @@ if (hostAlpine) {
     // `wirekit:focus-invalid` takes the focus to the first rejected field, opening what hides it.
     // See utils/focus-invalid.js.
     installFocusInvalid();
+    // A form with `data-wk-submit-once` sends itself once until the page changes. See
+    // utils/submit-once.js.
+    installSubmitOnce();
+    // A panel opened again while it closes reports no unhandled rejection: Alpine handles the
+    // hide it cancels a frame late. See utils/canceled-transition.js.
+    installCanceledTransitionHandler();
 
     target.data('wirekitChartJs', wirekitChartJs);
     target.data('wirekitDropdown', wirekitDropdown);
@@ -339,6 +377,7 @@ if (hostAlpine) {
     target.data('wirekitProgress', wirekitProgress);
     target.data('wirekitPageProgress', wirekitPageProgress);
     target.data('wirekitDateFormatHint', wirekitDateFormatHint);
+    target.data('wirekitDateRange', wirekitDateRange);
     target.data('wirekitReadingProgress', wirekitReadingProgress);
     target.data('wirekitFileUpload', wirekitFileUpload);
     target.data('wirekitTablist', wirekitTablist);
@@ -361,6 +400,7 @@ if (hostAlpine) {
     target.data('wirekitScopeSwitcher', wirekitScopeSwitcher);
     target.data('wirekitCommandPalette', wirekitCommandPalette);
     target.data('wirekitCommandPaletteTrigger', wirekitCommandPaletteTrigger);
+    target.data('wirekitBulkSelection', wirekitBulkSelection);
     target.data('wirekitContextMenu', wirekitContextMenu);
     target.data('wirekitMenubar', wirekitMenubar);
     target.data('wirekitNavigationMenu', wirekitNavigationMenu);
@@ -369,10 +409,19 @@ if (hostAlpine) {
     target.data('wirekitThemeController', wirekitThemeController);
     target.data('wirekitFab', wirekitFab);
     target.data('wirekitCalendar', wirekitCalendar);
+    target.data('wirekitDatetimePicker', wirekitDatetimePicker);
+    target.data('wirekitDatetimePickerMoment', wirekitDatetimePickerMoment);
+    target.data('wirekitDatetimePickerTime', wirekitDatetimePickerTime);
+    target.data('wirekitDatePicker', wirekitDatePicker);
+    target.data('wirekitTimePicker', wirekitTimePicker);
     target.data('wirekitTableSort', wirekitTableSort);
     target.data('wirekitTour', wirekitTour);
     target.data('wirekitResizableHandle', wirekitResizableHandle);
     target.data('wirekitImageCompare', wirekitImageCompare);
+    target.data('wirekitImageHotspots', wirekitImageHotspots);
+    target.data('wirekitImageHotspotsEditor', wirekitImageHotspotsEditor);
+    target.data('wirekitImageEditor', wirekitImageEditor);
+    target.data('wirekitVideo', wirekitVideo);
     target.data('wirekitLightbox', wirekitLightbox);
     target.data('wirekitConversation', wirekitConversation);
     target.data('wirekitAssistantMessage', wirekitAssistantMessage);
@@ -383,6 +432,8 @@ if (hostAlpine) {
     target.data('wirekitReadingToc', wirekitReadingToc);
     target.data('wirekitEditor', wirekitEditor);
     target.data('wirekitColorPicker', wirekitColorPicker);
+    target.data('wirekitNativeColor', wirekitNativeColor);
+    target.data('wirekitToggleButton', wirekitToggleButton);
     target.data('wirekitFilterBuilder', wirekitFilterBuilder);
     target.data('wirekitStatusMatrix', wirekitStatusMatrix);
     target.data('wirekitNotificationCenter', wirekitNotificationCenter);

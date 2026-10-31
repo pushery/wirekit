@@ -1,26 +1,10 @@
 import { devWarn } from '../utils/dev-warning.js';
 import { applyFindableState, supportsUntilFound } from '../utils/findable.js';
+import { fragmentId, onFragmentFollowedAgain } from '../utils/fragment.js';
 import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { withOwnScope } from '../utils/own-scope.js';
 import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.js';
-
-/**
- * The id a fragment names, or an empty string. A fragment is percent-encoded in the address, and an
- * id is compared as written, so `#zahlung%C3%BCbersicht` names the element `zahlungübersicht`.
- */
-function fragmentId(hash) {
-    const raw = String(hash || '').replace(/^#/, '');
-
-    if (raw === '') {
-        return '';
-    }
-
-    try {
-        return decodeURIComponent(raw);
-    } catch {
-        return raw;
-    }
-}
+import { sameName } from '../utils/same-name.js';
 
 /** The attribute the server writes the card's reasons to stand open into, separated by spaces. */
 export const CARD_REASONS_ATTRIBUTE = 'data-wk-card-reasons';
@@ -63,7 +47,7 @@ function addresses(detail, name) {
         return true;
     }
 
-    return name !== null && (detail.name === name || (Array.isArray(detail.names) && detail.names.includes(name)));
+    return name !== null && (sameName(detail.name, name) || (Array.isArray(detail.names) && detail.names.some((each) => sameName(each, name))));
 }
 
 /**
@@ -87,6 +71,9 @@ function addresses(detail, name) {
  *   - _watcher (MutationObserver) — reads the card's reasons and the fields in its region after each
  *     response; disconnected in destroy() and null-guarded in its callback against a call the
  *     browser queued before the teardown.
+ *   - _fragmentAgain (a click listener on `window`, utils/fragment.js) — opens the card when the
+ *     reader follows a link into it a second time, which fires no `hashchange`; stopped in
+ *     destroy().
  *
  * @param {Object}       [config]
  * @param {boolean}      [config.open]     start open, whatever the browser remembers
@@ -102,6 +89,7 @@ export default function wirekitCardDisclosure(config = {}) {
         _name: config.name || null,
         _reasons: [],
         _watcher: null,
+        _fragmentAgain: null,
 
         init() {
             devWarn(config.warning);
@@ -119,12 +107,15 @@ export default function wirekitCardDisclosure(config = {}) {
             }
 
             this.openForFragment();
+            this._fragmentAgain = onFragmentFollowedAgain(() => this.openForFragment());
             this._watch();
         },
 
         destroy() {
             this._watcher?.disconnect();
             this._watcher = null;
+            this._fragmentAgain?.();
+            this._fragmentAgain = null;
         },
 
         /** The part that folds: the ref, or the region found through the DOM from a scope that has no ref. */
@@ -191,13 +182,65 @@ export default function wirekitCardDisclosure(config = {}) {
             this.isOpen = ! this.isOpen;
             writePersistedFlag(this._persist, this.isOpen);
             this.$dispatch('wirekit:card-toggled', { name: this._name, persist: this._persist, open: this.isOpen });
+
+            if (this.isOpen) {
+                this._announceOpen();
+            }
         },
 
         /** Open for the reader, and leave an open card alone. Nothing is remembered. */
         reveal() {
             if (! this.isOpen) {
                 this.isOpen = true;
+                this._announceOpen();
             }
+        },
+
+        /**
+         * Resolves once the part that folds stands at its full height. Opening slides it from
+         * nothing, so an element inside has a box while the page around it is still as short as
+         * with the card closed, and a scroll to it would land short. At once where nothing animates:
+         * a reduced-motion preference, or a card that was open already.
+         */
+        _whenOpened() {
+            const region = this._region();
+            const frame = () => new Promise((resolve) => {
+                if (typeof requestAnimationFrame === 'function') {
+                    requestAnimationFrame(() => resolve());
+                } else {
+                    setTimeout(resolve, 16);
+                }
+            });
+            const running = () => (region && typeof region.getAnimations === 'function' ? region.getAnimations() : []);
+
+            // Two frames, so a slide the state change starts on the next frame is running when read.
+            return new Promise((resolve) => this.$nextTick(resolve))
+                .then(frame)
+                .then(frame)
+                .then(async () => {
+                    for (let round = 0; round < 3; round++) {
+                        const animations = running();
+
+                        if (animations.length === 0) {
+                            return;
+                        }
+
+                        await Promise.all(animations.map((animation) => Promise.resolve(animation.finished).catch(() => null)));
+                    }
+                });
+        },
+
+        /**
+         * `wirekit:card-opened` from the card once it stands open at its full height, so a script
+         * that opened it can bring an element inside into view and land where it means to. Not
+         * sent for a card the reader folded again in the meantime.
+         */
+        _announceOpen() {
+            return this._whenOpened().then(() => {
+                if (this.isOpen) {
+                    this.$dispatch('wirekit:card-opened', { name: this._name });
+                }
+            });
         },
 
         /**
@@ -216,14 +259,26 @@ export default function wirekitCardDisclosure(config = {}) {
             this.reveal();
         },
 
-        /** `wirekit:card-open` dispatched on the card or on any element inside it. */
+        /**
+         * `wirekit:card-open` dispatched on the card or on any element inside it. A card that was
+         * open already answers with `wirekit:card-opened` as well, so whoever asked waits for one
+         * answer either way.
+         */
         openFrom() {
-            this.reveal();
+            this._openAsked();
         },
 
         /** `wirekit:card-open` on `window`: `{ name }`, `{ names: [...] }` or `{ all: true }`. */
         openByName(event) {
             if (addresses(event && event.detail, this._name)) {
+                this._openAsked();
+            }
+        },
+
+        _openAsked() {
+            if (this.isOpen) {
+                this._announceOpen();
+            } else {
                 this.reveal();
             }
         },
@@ -275,7 +330,8 @@ export default function wirekitCardDisclosure(config = {}) {
 
         /**
          * The address names an element inside the card: open it, then bring the element into view,
-         * which the browser could not do while it was hidden. Read on start and on `hashchange`.
+         * which the browser could not do while it was hidden. Read on start, on `hashchange`, and
+         * when the reader follows a link to the same fragment again.
          */
         openForFragment() {
             const id = fragmentId(typeof window === 'undefined' ? '' : window.location.hash);
@@ -291,7 +347,7 @@ export default function wirekitCardDisclosure(config = {}) {
             }
 
             this.reveal();
-            this.$nextTick(() => target.scrollIntoView({ block: 'start', behavior: scrollBehavior(! prefersReducedMotion()) }));
+            this._whenOpened().then(() => target.scrollIntoView({ block: 'start', behavior: scrollBehavior(! prefersReducedMotion()) }));
         },
     });
 }

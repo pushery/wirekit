@@ -4,6 +4,11 @@
     'variant' => config('wirekit.components.alert.variant', 'info'), // back-compat alias of `intent`
     'intent' => null,            // canonical color axis: primary | neutral | info | success | warning | danger. null → falls back to `variant`
     'title' => null,
+    // The title as a heading of this level, 1 to 6: a reader moving from heading to heading finds
+    // it, and the headings in the text count from it. It keeps the alert's own size and line
+    // height. Null keeps the title a `div`, out of the page's outline; an unknown level is reported
+    // and keeps the `div` too, rather than placing the title at a level nobody chose.
+    'level' => null,
     'dismissible' => false,
     'icon' => true,
     // Optional reveal animation. Null = no animation (default).
@@ -18,14 +23,21 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $dismissible = BooleanProp::from($dismissible, false);
-    $icon = BooleanProp::from($icon, true);
+    $dismissible = BooleanProp::from($dismissible, false, 'alert', 'dismissible');
+    $icon = BooleanProp::from($icon, true, 'alert', 'icon');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('alert', $attributes->getAttributes());
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'alert');
+
+    // The title's element: a heading of the level given, else the `div` it was (see `level`).
+    $titleLevel = filled($level) && in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : null;
+    if (filled($level) && $titleLevel === null) {
+        WireKit::validateProp('alert', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
+    }
+    $titleTag = $titleLevel !== null ? 'h'.$titleLevel : 'div';
 
     // `intent` is the canonical name for this axis — it is what button and
     // badge call the same thing, so it is what a developer moving between
@@ -129,7 +141,10 @@
     };
 @endphp
 
-<div
+{{-- `data-wk-alert` and the parts marked `data-wk-alert-text` are what utils/alert-arrival.js reads
+     when a Livewire render adds this alert: a polite region of the page says those words, since an
+     inserted `role="status"` is not announced on its own. --}}
+<div data-wk-alert
     @if($dismissible)
         {{-- No x-cloak: starts visible (shown: true), only hides on user dismiss.
              animateIn is silently skipped on dismissible alerts to avoid
@@ -148,10 +163,10 @@
          occurrence of an attribute, so emitting it before the bag silently beat
          a caller-supplied role while leaving both in the markup. `data-intent`
          names the intent for a rule of the application's own. --}}
-    {{ $attributes->merge(['role' => $role, 'data-intent' => $variantValue])->class([$baseClasses, $variantColors['border'], $variantColors['bg']]) }}
+    {{ $attributes->merge(['role' => $role, 'data-intent' => $variantValue])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantColors['border'], $variantColors['bg']])) }}
 >
     {{-- Visually hidden variant prefix for screen readers ("Warning: ...") --}}
-    <span class="sr-only">{{ $variantLabel }}:</span>
+    <span class="sr-only" data-wk-alert-text>{{ $variantLabel }}:</span>
 
     {{-- — iconSlot named slot wins over variant-derived auto
          icon. The bool $icon prop continues to toggle the auto path off. --}}
@@ -167,12 +182,13 @@
     {{-- Body: title (optional) + message + actions (optional) --}}
     <div class="flex-1 min-w-0">
         @if($title)
-            <div class="font-[number:var(--font-wk-heading-weight)] mb-0.5">{{ $title }}</div>
+            {{-- The marker stands first whatever the tag renders: prose styles a heading, and on a div it costs nothing. --}}
+            <{{ $titleTag }} data-wk-prose-skip data-wk-alert-text class="font-[number:var(--font-wk-heading-weight)] mb-0.5">{{ $title }}</{{ $titleTag }}>
         @endif
-        <div class="text-[color:var(--color-wk-text-muted)]">{{ $slot }}</div>
-        @isset($actions)
+        <div class="text-[color:var(--color-wk-text-muted)]" data-wk-alert-text>{{ $slot }}</div>
+        @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             <div class="mt-2 flex items-center gap-2">{{ $actions }}</div>
-        @endisset
+        @endif
     </div>
 
     {{-- Dismiss button (only when dismissible) — Alpine toggles shown state --}}

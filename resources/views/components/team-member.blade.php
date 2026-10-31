@@ -24,12 +24,16 @@
     // name reads them, so the same name gets the same letters everywhere.
     $derivedInitials = $initials ?? \Pushery\WireKit\Support\Initials::from($name);
 
+    // An empty portrait address, or one of white space, is no portrait, so the avatar draws the
+    // initials in their own color (Support\UrlProp::source()).
+    $avatar = \Pushery\WireKit\Support\UrlProp::source($avatar);
+
     $classes = WireKit::resolveClasses('team-member', 'base', implode(' ', [
         'flex flex-col items-center gap-[var(--gap-wk-sm)] text-center',
     ]), $scope);
 @endphp
 
-<li data-wk-prose-skip data-wk-team-member {{ $attributes->class([$classes]) }}>
+<li data-wk-prose-skip data-wk-team-member {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{-- The portrait is decorative HERE, and only here, because the name it would
          announce is the very next thing in the card. Named, this row read "Ada
          Lovelace, Ada Lovelace, Head of Platform" — once from the avatar and once

@@ -55,7 +55,7 @@
      reachable in the tab order, and it would ship an <input> with a label into every
      dialog that never asked for one. --}}
 <template x-if="confirmationPhrase !== null">
-    <div {{ $attributes->class([$classes]) }}>
+    <div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
         {{-- The phrase itself, visible while it is being typed. Its own element rather
              than part of the label, so it can carry the monospace treatment: a phrase with
              a doubled letter or a trailing space has to be readable character by character.

@@ -18,6 +18,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('replay-button', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
@@ -25,6 +30,17 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // The accessible name. Words in the slot are the name a reader sees, and voice control
+    // reaches the button only by them (WCAG 2.5.3, Label in Name): the label names the button
+    // where the slot shows no words, an icon alone, and where it holds the words it shows. Where
+    // it holds other words, the visible text names the button. A caller's `aria-label` wins.
+    $slotText = \Pushery\WireKit\Support\SlotContent::plain($slot);
+    $ariaLabel = match (true) {
+        $slotText === '' => $label,
+        $label !== null && str_contains((string) $label, $slotText) => $label,
+        default => null,
+    };
 @endphp
 
 {{--
@@ -48,11 +64,12 @@
     Default icon: a circular-arrow glyph (16×16). Developers can override
     by passing slot content.
 --}}
+{{-- The kit's focus ring, which follows the ring tokens; the browser's follows none. --}}
 <button
     {{ $attributes->merge([
         'type' => 'button',
-        'class' => 'wk-replay-button '.\Pushery\WireKit\WireKit::resolveClasses('replay-button', 'base', ''),
-        'aria-label' => $label,
+        'class' => 'wk-replay-button focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] '.\Pushery\WireKit\WireKit::resolveClasses('replay-button', 'base', ''),
+        'aria-label' => $ariaLabel,
     ]) }}
     @if($target)
         data-replay-target-selector="{{ $target }}"

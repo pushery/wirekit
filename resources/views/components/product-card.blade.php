@@ -5,10 +5,11 @@
      Its only interactive element is a link to the product page, and a link
      navigates.
 
-     It does have slots now (`media`, `badge`), and neither changes that: one holds
-     a picture, the other a word. Put a mutating control in either and the
-     classification above stops applying — that would be the caller adding an action
-     the component does not have, not the component growing one.
+     It does have slots now (`media`, `badge`, `options`), and none changes that: one
+     holds a picture, one a word, one links to the product's variants, and a link
+     navigates. Put a mutating control in any of them and the classification above
+     stops applying — that would be the caller adding an action the component does
+     not have, not the component growing one.
 
      The server-built review count that supposedly blocked it was never in the
      way either: nothing here can change that number, so naming it on the server
@@ -73,8 +74,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $minorUnits = BooleanProp::from($minorUnits, false);
-    $from = BooleanProp::from($from, false);
+    $minorUnits = BooleanProp::from($minorUnits, false, 'product-card', 'minorUnits');
+    $from = BooleanProp::from($from, false, 'product-card', 'from');
 
     $availability = WireKit::validateProp('product-card', 'availability', $availability, ['in-stock', 'low-stock', 'out-of-stock']);
 
@@ -88,7 +89,9 @@
 
     // On sale only when the old price is genuinely higher. A compare-at that is
     // equal or lower is not a discount, and striking it through would be a claim
-    // the numbers do not support.
+    // the numbers do not support. A compare-at reaches `price` only on a sale, and a text casts
+    // to 0, which is never one, so a text that holds no number is reported here.
+    \Pushery\WireKit\Support\NumericProp::check($compareAt, 'product-card', 'compareAt');
     $onSale = $price !== null
         && $compareAt !== null
         && (float) $compareAt > (float) $price;
@@ -97,11 +100,23 @@
     // from it ("4,5" would be 4).
     $ratingValue = \Pushery\WireKit\Support\NumericProp::orNullReported($rating, 'product-card', 'rating');
 
+    // The number of reviews as a whole number, or none where the prop holds no number.
+    $reviewTotal = \Pushery\WireKit\Support\NumericProp::intOrNull($reviewCount, 'product-card', 'reviewCount');
+
     // The badges stand over the picture's corners. A card without a picture has no area for them
     // to stand over, so there they form a row of their own above the name, which they would
     // otherwise cover: the sale and a caller's badges at the start, the stock at the end.
-    $hasBadge = $onSale || isset($badge) || $isOut || $availability === 'low-stock';
-    $badgesInFlow = $hasBadge && ! isset($media) && blank($image);
+    // A caller's badges count once the slot holds more than whitespace and comments.
+    $badgeText = isset($badge) ? \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge) : null;
+    $hasBadge = $onSale || $badgeText !== null || $isOut || $availability === 'low-stock';
+    // A media slot that holds nothing but Livewire's markers is none, and the image stands.
+    $hasMedia = \Pushery\WireKit\Support\SlotContent::given($media ?? null);
+    // The values of an axis, such as the product's colors, stand over the price and take its place
+    // at the foot of the card's text.
+    $hasOptions = \Pushery\WireKit\Support\SlotContent::given($options ?? null);
+    // An empty image address, or one of white space, is no image (Support\UrlProp::source()).
+    $image = \Pushery\WireKit\Support\UrlProp::source($image);
+    $badgesInFlow = $hasBadge && ! $hasMedia && $image === null;
     $badgesClass = $badgesInFlow
         ? 'flex flex-col items-start gap-[var(--gap-wk-xs)]'
         : 'absolute start-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10 flex flex-col items-start gap-[var(--gap-wk-xs)]';
@@ -120,9 +135,9 @@
     // did-you-mean, and where the gate does not throw it renders the default level — never
     // h1, which is what validateProp's own first-allowed fallback would produce and which
     // would break the outline worse than the default does.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('product-card', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('product-card', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 @endphp
 
@@ -136,7 +151,7 @@
 <article
     data-wk-product-card
     data-availability="{{ $availability }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     <div @class(['relative', 'flex items-start gap-[var(--gap-wk-xs)] px-[var(--padding-wk-x-md)] pt-[var(--padding-wk-x-md)]' => $badgesInFlow])>
         {{-- The media area takes a URL or a slot, and the slot wins.
@@ -153,7 +168,7 @@
              Deliberately NO automatic placeholder when both are absent. A gray box would then
              appear on every card that legitimately has no picture, and a caller who wants one
              now has the slot to put exactly the box they mean. --}}
-        @if(isset($media))
+        @if($hasMedia)
             {{ $media }}
         @elseif($image)
             <x-wirekit::image
@@ -172,7 +187,7 @@
              The `badge` slot exists because the derived ones answer only two questions — is it
              on sale, is it in stock. "New", "Limited", "Last pair" have no equivalent and no
              way in, and a page that needs one had to drop the component. --}}
-        @if($onSale || isset($badge))
+        @if($onSale || $badgeText !== null)
             <div
                 data-wk-product-card-badges
                 class="{{ $badgesClass }}"
@@ -194,9 +209,9 @@
                     </span>
                 @endif
 
-                @isset($badge)
-                    <span data-wk-product-card-badge>{{ $badge }}</span>
-                @endisset
+                @if($badgeText !== null)
+                    <span data-wk-product-card-badge>{{ $badgeText }}</span>
+                @endif
             </div>
         @endif
 
@@ -215,7 +230,7 @@
 
     <div class="flex flex-1 flex-col gap-[var(--gap-wk-sm)] p-[var(--padding-wk-x-md)]">
         <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
-            @if($href)
+            @if($href !== null)
                 {{-- stretched-link: the whole card is clickable by pointer while
                      the LINK is still just the name. The pointer target and the
                      accessible name do not have to be the same rectangle. --}}
@@ -235,23 +250,43 @@
 
         @if($description)
             {{-- A div: a description slot may hold paragraphs or a list, which a parser moves out of a p.
+                 Two lines at most. A card with a link leads to the whole text; one without carries it in
+                 its title, where the cut lines can be read whole.
                  A link or a button in it stands above the card's link, which covers the card, so it
                  takes its own clicks; the text around it stays part of the card. --}}
-            <div data-wk-product-card-description data-wk-prose-skip class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $description }}</div>
+            <div data-wk-product-card-description data-wk-prose-skip @if($href === null) title="{{ \Pushery\WireKit\Support\SlotContent::plain(is_scalar($description) ? (string) $description : $description) }}" @endif class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $description }}</div>
         @endif
 
         @if($ratingValue !== null)
-            <span class="flex items-center gap-[var(--gap-wk-sm)]">
+            <span @class(['flex items-center gap-[var(--gap-wk-sm)]', 'flex-wrap' => \Pushery\WireKit\Support\SlotContent::given($ratingNote ?? null)])>
                 <x-wirekit::rating :value="$ratingValue" readonly size="sm" data-wk-product-card-rating />
-                @if($reviewCount !== null)
+                @if($reviewTotal !== null)
                     {{-- The count says what the stars are worth. "4.5 stars" from
                          two people and from two thousand are different claims. --}}
                     <span data-wk-product-card-reviews class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
-                        {{ trans_choice('wirekit::{1} :count review|[2,*] :count reviews', (int) $reviewCount, ['count' => $reviewCount]) }}
+                        {{ \Pushery\WireKit\Support\Plural::choice('wirekit::{1} :count review|[2,*] :count reviews', $reviewTotal, ['count' => \Pushery\WireKit\Support\LocalizedNumber::integer($reviewTotal)]) }}
                     </span>
                 @endif
+@if(\Pushery\WireKit\Support\SlotContent::given($ratingNote ?? null))
+                {{-- The `ratingNote` slot stands right after the count, in the same row as the
+                     stars: where a shop says whether and how it checks that its reviews come from
+                     buyers, or a mark that leads straight to where it says so, which a statement on
+                     the product page alone does not replace. A card without stars has nothing for
+                     it to qualify and renders none, and a card without the slot no trace of it. Its
+                     link stands above the card's link, as in the description. --}}
+                <span data-wk-product-card-rating-note class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $ratingNote }}</span>
+@endif
             </span>
         @endif
+
+@if($hasOptions)
+        {{-- The `options` slot stands right over the price: the values of an axis, such as the
+             product's colors, each a link to its variant, and a link to the rest. It takes the free
+             space above it in place of the price, so the price follows it down, and the prices of a
+             row of cards stand on one line whether a card has values or not. Its links stand above
+             the card's link, as in the description. --}}
+        <div data-wk-product-card-options class="mt-auto flex flex-wrap items-center gap-[var(--gap-wk-xs)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $options }}</div>
+@endif
 
         @if($price !== null)
             {{-- price renders the old amount in a real <del> behind a visually hidden
@@ -269,7 +304,7 @@
                  "VAT included, plus shipping" with its link, in the same field of vision and read
                  right after the price. Its directives open at the start of the line, so a card
                  without the slot renders no trace of it. --}}
-            <span data-wk-product-card-price class="mt-auto">
+            <span data-wk-product-card-price @unless($hasOptions) class="mt-auto" @endunless>
                 <x-wirekit::price
                     :amount="$price"
                     :base="$onSale ? $compareAt : null"
@@ -281,7 +316,7 @@
                     :unit-measure="$unitMeasure"
                 />
             </span>
-@if(isset($priceNote))
+@if(\Pushery\WireKit\Support\SlotContent::given($priceNote ?? null))
             {{-- Its link to the shipping costs stands above the card's link, as in the description. --}}
             <div data-wk-product-card-price-note class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $priceNote }}</div>
 @endif
@@ -290,7 +325,7 @@
         {{-- The CTA sits above the stretched link, or the link would swallow every
              click meant for the button. --}}
         <div class="relative z-10 mt-[var(--gap-wk-sm)]">
-            @if(isset($action))
+            @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
                 {{ $action }}
             @else
                 {{-- The product name is APPENDED to the visible label, not substituted into a

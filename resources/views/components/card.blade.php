@@ -5,6 +5,10 @@
     // below is its back-compat alias and keeps working unchanged.
     'surface' => null,
     'variant' => config('wirekit.components.card.variant', 'outlined'),
+    // The color role of the border: neutral (the default) | info | success | warning | danger, in
+    // the tones `callout` draws its own border in, so a card around a warning callout can carry the
+    // same border. Only the border takes it; background and shadow stay those of the surface.
+    'intent' => null,
     'as' => 'div',
     'href' => null,
     // Say at rest that the card leads somewhere: a chevron at the inline end. The pointer cursor and
@@ -66,6 +70,11 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('card', $attributes->getAttributes());
+
+    // An unknown `overflow` is reported (Support\StrictnessGate) and renders as `hidden`; a bound
+    // `null` or empty string is `hidden` without a word.
+    $overflow = \Pushery\WireKit\WireKit::validateProp('card', 'overflow', \Pushery\WireKit\Support\NumericProp::text($overflow ?: 'hidden'), ['hidden', 'visible', 'auto', 'clip']);
+
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -97,7 +106,7 @@
     // `$tag`, because it depends on which element this ends up being.
     $overflowClass = match ($overflow) {
         'visible' => 'overflow-visible',
-        'auto' => 'overflow-auto focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)]',
+        'auto' => 'relative overflow-auto focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)]',
         'clip' => 'overflow-clip',
         default => 'overflow-hidden',
     };
@@ -130,6 +139,8 @@
     $variant = $surface ?? $variant;
 
     $variantAliases = ['outline' => 'outlined'];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $variant = \Pushery\WireKit\Support\NumericProp::key($variant);
     $variant = $variantAliases[$variant] ?? $variant;
 
     // Variant classes: border/shadow combinations for visual weight.
@@ -148,21 +159,39 @@
     // With the seam an application REPLACES the block in its own scope instead of hanging
     // something beside it, which is the one shape that cannot be decided by an ordering
     // nobody controls.
+    //
+    // The border color of an intent takes the place of the surface's own for the same reason: set
+    // beside it, the color that sorts later in the stylesheet would draw, whichever the call site
+    // asked for. Each mix is the one `callout` draws its border with.
+    $intent = \Pushery\WireKit\Support\NumericProp::key($intent);
+    $intentBorder = match ($intent) {
+        // A bound `null` or empty string is the neutral border without a word.
+        null, '', 'neutral' => null,
+        'info' => 'border-[color-mix(in_srgb,var(--color-wk-info-tone)_40%,var(--color-wk-border))]',
+        'success' => 'border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
+        'warning' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
+        'danger' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
+        // An unknown value is reported; what comes back is the first allowed value, and the card
+        // keeps the border of its surface.
+        default => match (WireKit::validateProp('card', 'intent', \Pushery\WireKit\Support\NumericProp::text($intent), ['neutral', 'info', 'success', 'warning', 'danger'])) {
+            'neutral' => null,
+        },
+    };
     $outlinedClasses = implode(' ', [
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border)]',
+        $intentBorder ?? 'border-[var(--color-wk-border)]',
     ]);
     $variantClasses = WireKit::resolveClasses('card', 'variant', match ($variant) {
         'outlined' => $outlinedClasses,
         'elevated' => implode(' ', [
             'shadow-[var(--shadow-wk-md)]',
             'border-[length:var(--border-wk-width)]',
-            'border-transparent',
+            $intentBorder ?? 'border-transparent',
         ]),
         'flat' => implode(' ', [
             'bg-[var(--color-wk-bg-subtle)]',
             'border-[length:var(--border-wk-width)]',
-            'border-transparent',
+            $intentBorder ?? 'border-transparent',
         ]),
         // Named after the prop the CALL SITE used, and listing the values in that prop's own
         // spelling: a developer who wrote `surface` is told about `outline`, which is what
@@ -215,12 +244,12 @@
         }
     }
 
-    $isInteractive = (bool) $href
+    $isInteractive = $href !== null
         || (string) $as === 'button'
         || $attributes->get('role') === 'button'
         || $hasClickBinding;
 
-    $chevron = BooleanProp::from($chevron, false);
+    $chevron = BooleanProp::from($chevron, false, 'card', 'chevron');
 
     // A chevron on a card that does nothing would promise a destination that is not there, so the
     // prop is read only where the card is interactive, and a static card that asks for one is told
@@ -236,8 +265,8 @@
     // a child reads its parent through `@aware`, which walks outward past a card whose tag does not
     // carry the key, and a plain card inside `sidebar collapsible` would read the sidebar's
     // `collapsible` and draw a trigger with no state behind it.
-    $collapsible = BooleanProp::from($collapsible, false);
-    $findable = BooleanProp::from($findable, true);
+    $collapsible = BooleanProp::from($collapsible, false, 'card', 'collapsible');
+    $findable = BooleanProp::from($findable, true, 'card', 'findable');
 
     // A card that links or runs an action is a control already, and a control cannot hold the
     // button of a head. Reported, and drawn without folding.
@@ -266,7 +295,7 @@
     }
 
     $openReasons = array_values(array_unique($openReasons));
-    $openNow = $collapsible && (BooleanProp::from($open, false) || $openReasons !== []);
+    $openNow = $collapsible && (BooleanProp::from($open, false, 'card', 'open') || $openReasons !== []);
 
     // The head is drawn only on a card that folds, so these say nothing on any other card; debug says so.
     if (! $collapsible && (filled($heading) || filled($description) || filled($persist) || $openReasons !== []) && config('app.debug')) {
@@ -280,17 +309,19 @@
         }
 
         // A bad level falls back to 3, never to the page's own heading.
-        $levelValue = in_array((int) $level, [2, 3, 4, 5, 6], true) ? (int) $level : 3;
+        $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 3;
 
-        if ($levelValue !== (int) $level) {
-            WireKit::validateProp('card', 'level', (string) $level, ['2', '3', '4', '5', '6']);
+        if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+            WireKit::validateProp('card', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['2', '3', '4', '5', '6']);
         }
 
         // Stable across a Livewire round trip, and apart on a page with two cards of one name or one
         // heading: from the caller's id, else the name, else the text of the heading.
         $idSeed = filled($name) ? (string) $name : (is_string($heading) ? $heading : null);
+        // A caller's id keeps its place on the root as written; the ids built from it hold no
+        // whitespace (Support\DomId::valid()), or the trigger's `aria-controls` would name two ids.
         $idBase = filled($attributes->get('id'))
-            ? (string) $attributes->get('id')
+            ? (string) \Pushery\WireKit\Support\DomId::valid((string) $attributes->get('id'))
             : \Pushery\WireKit\Support\DomId::distinct(WireKit::stableId('wk-card', $idSeed));
         $triggerId = $idBase.'-trigger';
         $panelId = $idBase.'-panel';
@@ -327,8 +358,9 @@
             'text-[color:var(--color-wk-text-muted)]',
         ]), $scope);
 
+        // On a line of their own the hints are no wider than the head, and their badges wrap.
         $hintsClasses = WireKit::resolveClasses('card', 'hints', implode(' ', [
-            'shrink-0 flex flex-wrap items-center gap-[var(--gap-wk-xs)]',
+            'shrink-0 max-w-full flex flex-wrap items-center gap-[var(--gap-wk-xs)]',
             'font-[number:var(--font-wk-body-weight)]',
             'text-[length:var(--text-wk-sm)]',
         ]), $scope);
@@ -337,6 +369,18 @@
         $contentClasses = WireKit::resolveClasses('card', 'content', implode(' ', [
             'border-t-[length:var(--border-wk-width)]',
             'border-[var(--color-wk-border-subtle)]',
+        ]), $scope);
+
+        // The chevron stands in a circle the size of a small control, so a closed card reads as one
+        // that holds more than its head. The arrow inside turns with the state and takes its color
+        // from the circle.
+        $chevronClasses = WireKit::resolveClasses('card', 'chevron', implode(' ', [
+            'shrink-0 inline-flex items-center justify-center',
+            'size-[var(--size-wk-xs)]',
+            'rounded-full',
+            'border-[length:var(--border-wk-width)]',
+            'border-[var(--color-wk-border-strong)]',
+            'text-[color:var(--color-wk-text-muted)]',
         ]), $scope);
     }
 
@@ -352,7 +396,7 @@
     // the distance moves with the padding scale it matches.
     $cardLayoutClass = match (true) {
         $showChevron => 'flex items-center pe-[var(--padding-wk-x-lg)]',
-        (bool) $href => 'block',
+        $href !== null => 'block',
         default => '',
     };
 
@@ -372,7 +416,7 @@
     ]));
 
     // Render as <a> when href given, otherwise use $as tag (default: div)
-    $tag = $href ? 'a' : $as;
+    $tag = $href !== null ? 'a' : $as;
 
     // The other half of the `overflow="auto"` contract: the tab stop.
     //
@@ -389,7 +433,7 @@
     // `a` is absent from the tag list ON PURPOSE and the `$href` term is not a duplicate of
     // it: an anchor without an `href` is not focusable at all, so `as="a"` on its own still
     // needs the stop.
-    $rootIsNativelyFocusable = (bool) $href
+    $rootIsNativelyFocusable = $href !== null
         || in_array(strtolower((string) $tag), ['button', 'input', 'select', 'textarea'], true);
 
     // Merged through the bag rather than written into the tag, so a caller who manages focus
@@ -405,7 +449,7 @@
     // caller writing rel="prev" silently replaced the computed value and took
     // the protection with it. See dropdown/item.blade.php for the same shape.
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
@@ -463,13 +507,13 @@
              component, which takes down the very element being warned about. --}}
         x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from('[wirekit] card: content sits directly in the card with no card.body — the card root is a padding-free frame, so this content renders flush against the border. Wrap it in card.body (or card.header / card.footer). See https://docs.wirekit.app/components/card.') }} })"
     @endif
-    @if($href) href="{{ $href }}" @endif
+    @if($href !== null) href="{{ $href }}" @endif
     @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{-- Same rule as link: see that component for why the value is read out of the bag
          instead of written before it. --}}
     @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
-    {{ $attributes->except($tag === 'button' ? ['rel', 'type'] : ['rel'])->merge($scrollKeyboardModel)->class([$baseClasses, $variantClasses, $interactiveClasses, 'wk-card-collapsible' => $collapsible]) }}
+    {{ $attributes->except($tag === 'button' ? ['rel', 'type'] : ['rel'])->merge($scrollKeyboardModel)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $variantClasses, $interactiveClasses, 'wk-card-collapsible' => $collapsible])) }}
 >
     @if($collapsible)
         {{-- The head. The trigger stands in a heading of the given level and names the folding part
@@ -478,33 +522,49 @@
              `wk-card-collapsible` marker on the card puts it under the reduced-motion rule. --}}
         <div data-wk-card-head class="{{ $headClasses }}">
             <div class="flex items-center gap-[var(--gap-wk-sm)]">
-                <h{{ $levelValue }} data-wk-prose-skip class="m-0 min-w-0 flex-1">
-                    <button
-                        type="button"
-                        id="{{ $triggerId }}"
-                        aria-controls="{{ $panelId }}"
-                        :aria-expanded="isOpen ? 'true' : 'false'"
-                        @if($hasHints) aria-describedby="{{ $hintsId }}" @endif
-                        x-on:click="toggle()"
-                        class="wk-card-trigger {{ $triggerClasses }}"
-                    >{{ $heading }}</button>
-                </h{{ $levelValue }}>
-                @if($hasHints)
-                    <span id="{{ $hintsId }}" class="{{ $hintsClasses }}">{{ $hints }}</span>
-                @endif
-                <svg
-                    class="wk-card-chevron shrink-0 w-4 h-4 text-[color:var(--color-wk-text-subtle)] transition-transform duration-[var(--transition-wk-duration)]"
-                    :class="isOpen ? 'rotate-180' : ''"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                >
-                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                </svg>
+                {{-- The heading asks for 16rem, and the hints stand beside it while the head has room
+                     and drop under it where it has not, as the buttons of `card.header` do. The break
+                     is the head's own width, not the window's, and the chevron keeps to the end. --}}
+                <div data-wk-card-head-line class="flex min-w-0 flex-1 flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]">
+                    <h{{ $levelValue }} data-wk-prose-skip class="m-0 min-w-0 grow basis-[16rem]">
+                        <button
+                            type="button"
+                            id="{{ $triggerId }}"
+                            aria-controls="{{ $panelId }}"
+                            aria-expanded="{{ $openNow ? 'true' : 'false' }}"
+                            :aria-expanded="isOpen ? 'true' : 'false'"
+                            @if($hasHints) aria-describedby="{{ $hintsId }}" @endif
+                            x-on:click="toggle()"
+                            class="wk-card-trigger {{ $triggerClasses }}"
+                        >{{ $heading }}</button>
+                    </h{{ $levelValue }}>
+                    {{-- The trigger's area lies over the whole head, so a link or a button in the hints
+                         and in the description stands above it and takes its own click, and the text
+                         around it stays part of the head. The lift sits outside the class block, so a
+                         personalization keeps it. --}}
+                    @if($hasHints)
+                        <span id="{{ $hintsId }}" class="{{ $hintsClasses }} [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $hints }}</span>
+                    @endif
+                </div>
+                {{-- The circle and the arrow take no click: the trigger's area lies under them, and a
+                     turned arrow is painted above that area, so it took the click itself and the
+                     card stayed open. `pointer-events-none` and the marker sit outside the class
+                     block, so a personalization keeps both. --}}
+                <span data-wk-card-chevron-frame aria-hidden="true" class="pointer-events-none {{ $chevronClasses }}">
+                    <svg
+                        class="wk-card-chevron shrink-0 w-4 h-4 transition-transform duration-[var(--transition-wk-duration)]"
+                        :class="isOpen ? 'rotate-180' : ''"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                    >
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                    </svg>
+                </span>
             </div>
             @if(filled($description))
-                <div data-wk-card-description class="{{ $descriptionClasses }}">{{ $description }}</div>
+                <div data-wk-card-description class="{{ $descriptionClasses }} [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">{{ $description }}</div>
             @endif
         </div>
         {{-- The part that folds, body and footer together, one box that is never `display:
@@ -520,11 +580,11 @@
                 x-on:beforematch="reveal()"
                 @unless($openNow) hidden="until-found" @endunless
             >
-                <div class="{{ $contentClasses }}">{{ $slot }}</div>
+                <div data-wk-card-content class="{{ $contentClasses }}">{{ $slot }}</div>
             </div>
         @else
             <div id="{{ $panelId }}" x-ref="region" data-wk-card-region x-show="isOpen" x-collapse @unless($openNow) x-cloak @endunless>
-                <div class="{{ $contentClasses }}">{{ $slot }}</div>
+                <div data-wk-card-content class="{{ $contentClasses }}">{{ $slot }}</div>
             </div>
         @endif
     @elseif($showChevron)

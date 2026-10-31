@@ -39,9 +39,9 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — normalize
     // against each prop's own default so a cast never flips a feature that was on.
-    $collapsible = BooleanProp::from($collapsible, false);
-    $open = BooleanProp::from($open, true);
-    $forceOpen = BooleanProp::from($forceOpen, false);
+    $collapsible = BooleanProp::from($collapsible, false, 'sidebar.group', 'collapsible');
+    $open = BooleanProp::from($open, true, 'sidebar.group', 'open');
+    $forceOpen = BooleanProp::from($forceOpen, false, 'sidebar.group', 'forceOpen');
     $open = $open || $forceOpen;
 
     // A group clusters related items under an optional label. The label acts
@@ -83,7 +83,7 @@
     // sidebar.toggle reads it the same way.
     $groupLabel = $attributes->has('aria-labelledby')
         ? null
-        : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: ((string) $label !== '' ? $label : null));
+        : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: (\Pushery\WireKit\Support\SlotContent::textOf($label) !== '' ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null));
 
     // The role is coupled to the NAME: a role that names a boundary and then cannot say
     // what the boundary is for is noise in the accessibility tree of every page that uses
@@ -116,12 +116,15 @@
     // A seed can still repeat on one page: the same label in two sidebars, or in two
     // previews of one documentation page. The deduper keeps the first id as it is and
     // appends `-2` to a repeat, so each trigger names its own region. An id the caller
-    // chose is used as given.
+    // chose is used as given, its whitespace as a hyphen, since `aria-controls` splits on it.
+    //
+    // A label given as markup seeds with its text, or its tags would stand in the id.
+    $labelSeed = $label instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($label) : (string) $label;
     $panelId = $collapsible
-        ? ($attributes->get('id') ?: DomId::unique(WireKit::stableId(
+        ? (DomId::valid($attributes->get('id')) ?? DomId::unique(WireKit::stableId(
             'wk-sidebar-group',
-            (string) $label !== ''
-                ? (string) $label
+            $labelSeed !== ''
+                ? $labelSeed
                 : (is_string($persist) && $persist !== '' ? $persist : null)
         ), 'wk-sidebar-group-')).'-panel'
         : null;
@@ -136,15 +139,16 @@
         @if($groupRole) role="{{ $groupRole }}" @endif
         @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif
         x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, forceOpen: {{ $forceOpen ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
-        {{ $attributes->except(['role', 'aria-label'])->class([$groupClasses]) }}
+        {{ $attributes->except(['role', 'aria-label'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$groupClasses])) }}
     >
         {{-- The trigger and the section's own control sit side by side. The wrapper is
              only emitted when there IS an action, so in a group without one the button
              stays a direct child. --}}
-        @isset($action)<div class="flex items-center gap-[var(--padding-wk-x-xs)]">@endisset
+        @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))<div class="flex items-center gap-[var(--padding-wk-x-xs)]">@endif
         <button
             type="button"
             x-on:click="toggle()"
+            aria-expanded="{{ $open ? 'true' : 'false' }}"
             :aria-expanded="isOpen ? 'true' : 'false'"
             aria-controls="{{ $panelId }}"
             {{-- No visible label to name the button? fall back to a generic name so the
@@ -172,7 +176,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
         </button>
-        @isset($action)<div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $action }}</div></div>@endisset
+        @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))<div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $action }}</div></div>@endif
         {{-- Children — shown/hidden with Alpine when expanded; FORCE-SHOWN as a flat
              icon list in the collapsed rail (the item icons stay reachable), matching
              the static sidebar.group + sidebar.collapsible. The `typeof collapsed`
@@ -191,7 +195,7 @@
         @endif
     </div>
 @else
-    <div @if($groupRole) role="{{ $groupRole }}" @endif @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif {{ $attributes->except(['role', 'aria-label'])->class([$groupClasses]) }}>
+    <div @if($groupRole) role="{{ $groupRole }}" @endif @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif {{ $attributes->except(['role', 'aria-label'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$groupClasses])) }}>
         {{-- The `action` slot is the small control that belongs TO the section — the
              "add a team" plus beside a Teams heading. It is a SIBLING of the label, and
              in the collapsible branch a sibling of the disclosure BUTTON, because an
@@ -204,7 +208,7 @@
              a control has nothing to say to a screen reader when the section it acts on
              is not shown, and a focusable-but-invisible button is a focus trap with no
              visible indicator. --}}
-        @isset($action)
+        @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
             <div class="flex items-center justify-between gap-[var(--padding-wk-x-xs)]">
                 @if($label)
                     <div class="{{ $labelClasses }} min-w-0 break-words wk-rail-hide">{{ $label }}</div>
@@ -215,7 +219,7 @@
             {{-- Visible label; also the accessible name via aria-label above.
                  We render it visually because sighted users benefit from the grouping too. --}}
             <div class="{{ $labelClasses }} wk-rail-hide">{{ $label }}</div>
-        @endisset
+        @endif
         {{ $slot }}
     </div>
 @endif

@@ -41,11 +41,11 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $open = BooleanProp::from($open, false);
+    $open = BooleanProp::from($open, false, 'notification-center', 'open');
     // Same contract, different spelling of the default: a `config()` fallback declares a
     // boolean as surely as a literal does. This one gates the whole filter strip above the
     // list, so the string 'false' rendered a control row the call site had turned off.
-    $filters = BooleanProp::from($filters, false);
+    $filters = BooleanProp::from($filters, false, 'notification-center', 'filters');
 
     $groupBy = WireKit::validateProp('notification-center', 'groupBy', $groupBy, ['none', 'time', 'type']);
     // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
@@ -66,19 +66,26 @@
     $itemsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered(\Pushery\WireKit\Support\ListProp::only(
         $items,
         ['id', 'type', 'title', 'body', 'timeLabel', 'read', 'group', 'href', 'actionLabel'],
+        'notification-center', 'items',
     ));
+    // A notification's id comes back from the script with each event the panel sends, so one
+    // beyond what a script's number holds exactly travels as its digits (Support\ExactIds).
+    $itemsArr = \Pushery\WireKit\Support\ExactIds::in($itemsArr, 'id');
     // Server-side unread count for the no-flash initial badge.
     $serverUnread = collect($itemsArr)->reject(fn ($i) => (bool) (((array) $i)['read'] ?? false))->count();
 
-    $titleId = $id.'-title';
+    // The ids below are built from the id without whitespace (Support\DomId::valid()): a caller's
+    // `team inbox` keeps its place on the root, and each `aria-labelledby` names one id per part.
+    $idBase = (string) \Pushery\WireKit\Support\DomId::valid((string) $id);
+    $titleId = $idBase.'-title';
 
     // The footer link is named by its own text and the panel's title, `See all Notifications`:
     // alone in the footer, `See all` carries no sentence, paragraph, list item or table cell that
     // says where it goes, which is the context WCAG 2.4.4 allows, and a link list read it bare.
     // Its own text comes first, so the words a voice user reads aloud still start the name.
-    $seeAllId = $id.'-see-all';
+    $seeAllId = $idBase.'-see-all';
     // A group's label names the group's list, by an id that is bound per group inside the panel.
-    $groupLabelId = \Pushery\WireKit\Support\AlpinePayload::string($id.'-group-').' + groupIndex';
+    $groupLabelId = \Pushery\WireKit\Support\AlpinePayload::string($idBase.'-group-').' + groupIndex';
 
     // The DISPLAY title, resolved once. The raw `$title` stays the record of whether the caller
     // supplied one — that is what the list's landmark role is gated on — while everything that
@@ -120,7 +127,7 @@
          new expression and initialize it again, closing an open panel each time one arrived.
          The factory reads them once and follows Livewire's later renders of them. --}}
     data-wk-items="{{ \Pushery\WireKit\Support\AlpinePayload::json($itemsArr) }}"
-    x-data="wirekitNotificationCenter({ latestLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::unread. Latest:')) }}, bellNames: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit:::title, :count unread', null, ['title' => $titleResolved])) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale())) }}, otherGroupLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Other')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
+    x-data="wirekitNotificationCenter({ latestLabels: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::unread. Latest:')) }}, bellNames: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit:::title, :count unread', null, ['title' => \Pushery\WireKit\Support\SlotContent::textOf($titleResolved)])) }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }}, otherGroupLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Other')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree).
          Escape is heard on the bell here, in the panel below, and on the window for a
          press from anywhere else. The bell and the panel mark the press they close on,
@@ -128,7 +135,7 @@
          press alone that something else already handled (escapeFlyout()). --}}
     x-on:keydown.escape="escapeFlyout($event)"
     x-on:keydown.escape.window="escapeFlyout($event)"
-    {{ $attributes->only('class')->class([$base]) }}
+    {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base])) }}
 >
     {{-- For a `name` or a `wire:model`: the root leaves the binding off, so without this field
          a binding on the tag would reach no element. --}}
@@ -155,12 +162,15 @@
         type="button"
         x-ref="bell"
         @click="toggle()"
+        {{-- Collapsed until the script runs, `open` or not: the panel is teleported, so before the
+             script it is not in the document. --}}
+        aria-expanded="false"
         :aria-expanded="isOpen"
         aria-haspopup="dialog"
-        aria-label="{{ $titleResolved }}"
+        aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($titleResolved) }}"
         {{-- Only the count is unknown server-side, so the title is in every form the factory
              chooses from, in the form the count takes ("1 non lu", "3 non lus"). --}}
-        :aria-label="unreadCount > 0 ? bellName() : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => $titleResolved])) }}"
+        :aria-label="unreadCount > 0 ? bellName() : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => \Pushery\WireKit\Support\SlotContent::textOf($titleResolved)])) }}"
         class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-active)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
     >
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
@@ -196,7 +206,7 @@
         x-ref="panel"
         tabindex="-1"
         x-transition.origin.top.left
-        x-on:click.outside="close()"
+        x-on:click.outside="closeOutside($event)"
         {{-- Tab containment lives HERE, on the teleported panel: its events bubble
              to <body> and never reach the component root. Both edges are wrong by
              default — the panel is drawn beside the bell and sits at the end of
@@ -250,7 +260,7 @@
         {{-- List — a labeled, keyboard-reachable scroll region (WCAG 2.1.1). --}}
         {{-- Reachability unconditional (WCAG 2.1.1), landmark only when the caller named the
              center: the derived name was the same on every unnamed one. --}}
-        <div data-wk-notification-list @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => $title]) }}" @endif tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <div data-wk-notification-list @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => \Pushery\WireKit\Support\SlotContent::textOf($title)]) }}" @endif tabindex="0" class="relative max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             {{-- Empty state --}}
             <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>

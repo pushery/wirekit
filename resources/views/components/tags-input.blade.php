@@ -21,11 +21,13 @@
     'required' => false,
     // The Livewire method to call when the set changes. A refusal KEEPS the
     // change and says it was not saved — see the note above.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -48,10 +50,14 @@
     // documentation only: the attribute bag never reached the text input, so a call site
     // asking for a disabled field got a fully working one.
     'disabled' => false,
+    // Read-only as a native field is: the tags stay on the page and are sent with the form, and
+    // nothing adds or removes one. Undeclared, the attribute landed on the frame, where it is no
+    // valid attribute and stops nothing.
+    'readonly' => false,
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -71,7 +77,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -88,14 +94,20 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `disabled="false"` would disable the field the call site asked to leave alone.
-    $disabled = BooleanProp::from($disabled, false);
-    $required = BooleanProp::from($required, false);
+    $disabled = BooleanProp::from($disabled, false, 'tags-input', 'disabled');
+    $readonly = BooleanProp::from($readonly, false, 'tags-input', 'readonly');
+    $required = BooleanProp::from($required, false, 'tags-input', 'required');
 
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'tags-'); // page-unique DOM id; see Support\DomId
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
 
     // A caller's `id` goes on the text field, the element a `<label for>` elsewhere on the
     // page and a link to `#id` reach. Without one the field takes the component's id with
@@ -114,8 +126,11 @@
     // hidden inputs. A `name` left on the wrapper <div> names no form control.
     $attributes = $attributes->except(['id', 'name']);
 
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // Normalize the initial value into an array of strings. Accepts a real
     // array (e.g. `:value="['Laravel', 'Livewire']"`) or a comma-separated
@@ -123,6 +138,9 @@
     // developer code. A Collection is read as the list it holds; the branch
     // below would otherwise take it for no value and start the field empty.
     $value = \Pushery\WireKit\Support\ListProp::from($value);
+    // An entry that is a list itself, as `old()` gives one after a request that sent `name[][]`,
+    // is reported and left out (Support\FieldValue).
+    $value = is_array($value) ? \Pushery\WireKit\Support\FieldValue::items($value, 'tags-input') : $value;
     if (is_string($value)) {
         $initialTags = array_values(array_filter(array_map('trim', explode(',', $value)), fn ($t) => $t !== ''));
     } elseif (is_array($value)) {
@@ -189,6 +207,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // A required tags input that a submit found empty says so under the field
     // (partials/required-message), unless the server's own message already stands there.
@@ -211,12 +236,12 @@
      * The limit is known here, so it chooses the form of the full-set sentence ("Maximum of
      * 1 tag reached"), and `:count` stays in it for the factory to fill.
      */
-    $tagLimit = is_numeric($maxTags) ? (int) $maxTags : null;
+    $tagLimit = \Pushery\WireKit\Support\NumericProp::intOrNull($maxTags, 'tags-input', 'maxTags');
     $tagAnnouncements = \Pushery\WireKit\Support\AlpinePayload::from([
         'added' => __('wirekit::Added :name'),
         'removed' => __('wirekit::Removed :name'),
         'duplicate' => __('wirekit::Already in the list: :name'),
-        'limit' => trans_choice('wirekit::Maximum of :count tags reached', $tagLimit ?? 2, ['count' => ':count']),
+        'limit' => \Pushery\WireKit\Support\Plural::choice('wirekit::Maximum of :count tags reached', $tagLimit ?? 2, ['count' => ':count']),
     ]);
 
     // `bind` rather than `value`: `tags` already exists on the component this
@@ -252,19 +277,24 @@
     $formOwner = \Pushery\WireKit\Support\FormOwner::of($attributes);
     $attributes = $attributes->except('form');
     // What acts only on the field the reader types into goes to the text field: on the wrapper
-    // `autofocus` focuses nothing, the on-screen keyboard reads none of the rest, and `maxlength`
-    // limits nothing (Support\FieldAttributes). On the text field `maxlength` is the length of a
-    // tag as it is typed.
-    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus', 'maxlength']);
+    // `autofocus` focuses nothing, `tabindex` leaves the field's tab stop as it is, the on-screen
+    // keyboard reads none of the rest, and `maxlength` limits nothing (Support\FieldAttributes). On
+    // the text field `maxlength` is the length of a tag as it is typed.
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'autofocus', 'maxlength', 'tabindex']);
 @endphp
 
 <div {{ $outerAttributes }} class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif>
     @if($label)
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$fieldId" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @endif
 
     <div
-        x-data="wirekitTagsInput({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, maxTags: {{ $tagLimit ?? 'null' }}, tags: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialTags) }}, announcements: {{ $tagAnnouncements }} })"
+        {{-- The tags travel on `data-wk-server-value`, not in `x-data`, so the expression is the
+             same for every set: a Livewire morph that changed it would start the component again,
+             and through `x-modelable` the answer to a `wire:model.live` change would send the set
+             of the request back, without a tag the reader added since. --}}
+        data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json($initialTags) }}"
+        x-data="wirekitTagsInput({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, maxTags: {{ $tagLimit ?? 'null' }}, announcements: {{ $tagAnnouncements }}, readonly: {{ $readonly ? 'true' : 'false' }} })"
         {{-- The tag set lives only in Alpine and leaves through hidden inputs, which
              emit nothing when a binding writes their value. `x-modelable` is the bridge
              Alpine provides for exactly that, and `wire:model` compiles to `x-model`, so
@@ -276,7 +306,10 @@
              `wire:model`, `data-*` -- arrives here. `aria-describedby` and `aria-label` are
              the exceptions: both belong to the text input, which takes them itself, and
              `aria-label` on this roleless element would be a prohibited attribute. --}}
-        {{ $attributes->except(['aria-describedby', 'aria-label', 'aria-labelledby', 'autocomplete']) }}
+        {{ \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes->except(['aria-describedby', 'aria-label', 'aria-labelledby', 'autocomplete'])) }}
+        {{-- `focus` fires here as the reader enters the control as a whole; the model events fire its
+             `blur` on this root when they leave (utils/focus-unit.js). --}}
+        x-wk-focus-unit.focus-only
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
     >
         {{-- The set's own live region, OUTSIDE the optimistic wrapper below.
@@ -302,17 +335,27 @@
              `display: contents` so the chip row keeps its own layout. --}}
         <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
+        {{-- The tags the page was loaded with, for a page without a script. The fields below come
+             from a template, which renders nothing until Alpine starts, so a form sent without a
+             script carried no tags at all, and a server stored the list empty. A browser running
+             scripts never reads `noscript`, so there only the template's fields go into the form.
+             `hidden` keeps the element out of the layout without a script as well; a field is
+             sent whatever it shows. --}}
+        @if($initialTags !== [])
+            <noscript hidden>@foreach($initialTags as $initialTag)<input type="hidden" @if($name !== '') name="{{ \Illuminate\Support\Str::finish((string) $name, '[]') }}" @endif value="{{ $initialTag }}" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />@endforeach</noscript>
+        @endif
+
         {{-- Hidden inputs for form submission — one per tag --}}
         <template x-for="(tag, i) in tags" :key="i">
             {{-- A disabled field is left out of the form data, as a native one is. --}}
             {{-- The name ends in `[]` once, whether the caller wrote `skills` or `skills[]`, the way a
                  native multiple select is written. Twice, PHP reads a list of one-item lists. --}}
-            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" :value="tag" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
+            <input type="hidden" @if($name !== '') :name="{{ \Pushery\WireKit\Support\AlpinePayload::string(\Illuminate\Support\Str::finish((string) $name, '[]')) }}" @endif :value="tag" @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
         </template>
         {{-- The browser validates no hidden field, and an empty list has none at all, so a required
              tags input stops an empty submit through a stand-in of its own. --}}
         @if($required)
-            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+            @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled || $readonly])
         @endif
 
         {{-- `wk-field-frame`: on a coarse pointer the frame takes the 44px touch floor and the text
@@ -322,8 +365,7 @@
                  lands on the remove button of the fourth chip is told which control it
                  is inside. Only when a label exists: `role="group"` with no accessible
                  name adds a level to walk through and says nothing at the top of it. --}}
-            @if($callerLabelledBy) role="group" aria-labelledby="{{ $callerLabelledBy }}" @elseif($label) role="group" aria-label="{{ $label }}" @elseif($fieldLabelId) role="group" aria-labelledby="{{ $fieldLabelId }}" @endif
-            @if($required) aria-required="true" @endif
+            @if($callerLabelledBy) role="group" aria-labelledby="{{ $callerLabelledBy }}" @elseif($label) role="group" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @elseif($fieldLabelId) role="group" aria-labelledby="{{ $fieldLabelId }}" @endif
             {{-- Inside the layer's scope, which the component's own wrapper is
                  not: the layer nests within it, so `isPending` does not resolve
                  out there. --}}
@@ -341,6 +383,8 @@
                     {{-- `anywhere`, so a tag with no break point, an email address, counts as breakable
                          in its chip's width: the chip shrinks to the row and wraps the tag inside. --}}
                     <span x-text="tag" class="[overflow-wrap:anywhere]"></span>
+                    {{-- No remove button on a read-only set: removing is no action there. --}}
+                    @unless($readonly)
                     <button
                         type="button"
                         {{-- How the component finds the remaining chips after one is
@@ -348,15 +392,19 @@
                              the document, so focus has to be placed on a sibling
                              rather than left to fall back to the page; a marker
                              attribute is what makes that sibling addressable without
-                             the factory knowing anything about these classes. --}}
+                             the factory knowing anything about these classes.
+
+                             24px square, the WCAG 2.2 target size, as on the pills of
+                             multi-select; the negative block margin keeps the chip's height. --}}
                         data-wk-tag-remove
                         @if($disabled) disabled @endif
                         @click="removeTag(i)"
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', tag)"
-                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        class="-my-[3px] inline-flex size-[var(--size-wk-target-min)] shrink-0 items-center justify-center rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                     </button>
+                    @endunless
                 </span>
             </template>
             </span>
@@ -379,26 +427,30 @@
                 x-ref="input"
                 {{-- The browser's own suggestions would open over the field where a tag is typed. --}}
                 autocomplete="off"
-                placeholder="{{ $placeholder }}"
+                placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}"
                 {{ $fieldAttributes }}
                 {{-- When no visible <label> is rendered (no `label` prop), the
                      type-a-tag input would have no accessible name — a
                      placeholder is not a name (WCAG 2.1 AA / axe `label`).
                      Fall back to the placeholder as the aria-label so the
-                     control is always named; when a label IS present the
+                     control is always named, to the default placeholder
+                     where a blank one was given; when a label IS present the
                      <label for> above owns the name and we must NOT override
                      it with aria-label. The same holds for a caller's `id`: it
                      is there so a label of the caller's can reach the field, and
                      an aria-label would win over that label, so the fallback
                      steps aside and the placeholder names the field only when
                      nothing else does. --}}
-                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @elseif(! $label && ! $callerId && ! $fieldLabelId) aria-label="{{ $placeholder }}" @endif
+                @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @elseif(filled(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'))) aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') }}" @elseif(! filled($label) && ! $callerId && ! $fieldLabelId) aria-label="{{ \Pushery\WireKit\Support\BlankName::first($placeholder, config('wirekit.components.tags-input.placeholder'), __('wirekit::Add a tag…')) }}" @endif
                 @if($hasError)
                     aria-invalid="true"
                 @elseif($requiredMessageId)
                     x-bind:aria-invalid="requiredMessage !== '' && requiredValue === '' ? 'true' : null"
                 @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                {{-- On the field a tag is typed into, the element a reader lands on: ARIA does not
+                     allow `aria-required` on the group around the chips, nor on a plain `div`. --}}
+                @if($required || $fieldRequired) aria-required="true" @endif
                 @if($disabled) disabled @endif
                 {{-- A full set is announced as unavailable rather than silently ignoring
                      keys. `aria-disabled` and not `disabled`: a disabled field leaves the
@@ -407,12 +459,16 @@
                      `null` rather than `false`, because an aria attribute set to the string
                      "false" is a statement, and the statement here is that there is none. --}}
                 x-bind:aria-disabled="atMaxTags ? 'true' : null"
-                x-bind:readonly="atMaxTags"
+                {{-- A read-only set is read-only for good. Bound, `readonly` would come off again
+                     whenever the set is not full. --}}
+                @if($readonly) readonly @else x-bind:readonly="atMaxTags" @endif
                 @keydown.enter.prevent="addTag()"
                 @keydown.comma.prevent="addTag()"
                 {{-- A comma that arrives without its key (a paste, an on-screen keyboard) ends a tag too. --}}
                 @input="onInput($event)"
                 @compositionend="onInput($event)"
+                {{-- A list pasted one entry to a line, which the one-line field would run together. --}}
+                @paste="onPaste($event)"
                 @keydown.backspace="onBackspace($event)"
                 @keydown.escape="onEscape($event)"
                 {{-- `w-0`: the input grows into the row through `flex-1`, and asks for no more than its

@@ -19,6 +19,26 @@
 export const WK_REF_SCOPE_ATTRIBUTE = 'data-wk-ref-scope';
 
 /**
+ * The nearest boundary at or above `el`, followed back through `x-teleport`.
+ *
+ * A part rendered in a teleported panel, a dropdown's items among them, stands under the overlay
+ * root and outside the component whose root is its boundary. Alpine records where a teleported
+ * element came from on `_x_teleportBack` and follows it in its own `closestRoot`, so the walk
+ * here does the same; `closest()` alone would miss the boundary and file the part on the
+ * component's root. `x-wk-model` reads a caller's binding above the same boundary
+ * (utils/caller-model.js).
+ */
+export function closestRefScope(el) {
+    for (let node = el; node; node = node._x_teleportBack ?? node.parentElement) {
+        if (node.hasAttribute?.(WK_REF_SCOPE_ATTRIBUTE)) {
+            return node;
+        }
+    }
+
+    return null;
+}
+
+/**
  * Register `el` under `name` on the root above the component that contains it.
  *
  * Returns the function that takes the registration back, or null when there was nothing to
@@ -32,7 +52,7 @@ export function registerCallerRef(Alpine, el, name) {
         return null;
     }
 
-    const scope = el.closest?.(`[${WK_REF_SCOPE_ATTRIBUTE}]`) ?? el;
+    const scope = closestRefScope(el) ?? el;
     const holder = Alpine.closestRoot(scope.parentElement);
 
     if (! holder) {

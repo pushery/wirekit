@@ -36,6 +36,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.panel', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown']);
+
     use Pushery\WireKit\WireKit;
 
     // Panel classes — elevated surface with shadow and border
@@ -65,6 +72,8 @@
     ]), $scope);
 
     // Width handling — 'auto' uses min-width only, 'trigger' matches trigger width
+    // Any other width as one value, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $width = in_array($width, ['auto', 'trigger'], true) ? $width : \Pushery\WireKit\Support\CssValue::prop($width, 'dropdown.panel', 'width', 'auto');
     $widthStyle = match ($width) {
         'auto' => '',
         'trigger' => 'min-width: 100%;',
@@ -140,8 +149,8 @@
     {{-- A static attribute, not an `x-bind`. The note above about `panelId` applies to any
          binding on this element: a Livewire morph re-evaluates it in a scope that no longer
          holds the value, and a JavaScript error during a morph ends the pass silently. --}}
-    @if(filled($label)) aria-label="{{ $label }}" @endif
-    {{ $attributes->merge($widthStyle ? ['style' => $widthStyle] : [])->class([$classes]) }}
+    @if(filled($label) && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
+    {{ $attributes->except('role')->merge($widthStyle ? ['style' => $widthStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

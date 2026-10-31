@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\CachesConfiguration;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Contracts\View\View;
@@ -13,8 +14,11 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\ComponentAttributeBag;
+use Livewire\Mechanisms\HandleComponents\HandleComponents;
+use Livewire\Mechanisms\HandleSynths\HandleSynths;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Fonts\FontCss;
@@ -22,7 +26,9 @@ use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\AssetTags;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
+use Pushery\WireKit\Support\BlankName;
 use Pushery\WireKit\Support\BooleanProp;
+use Pushery\WireKit\Support\CallerAttribute;
 use Pushery\WireKit\Support\CompactClassAttributes;
 use Pushery\WireKit\Support\CompactClasses;
 use Pushery\WireKit\Support\ContainedFile;
@@ -31,13 +37,18 @@ use Pushery\WireKit\Support\FaqCollector;
 use Pushery\WireKit\Support\FlagPackage;
 use Pushery\WireKit\Support\LogThrottle;
 use Pushery\WireKit\Support\PropText;
+use Pushery\WireKit\Support\SharedViewData;
 use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Support\TourStepCounter;
 use Pushery\WireKit\Support\UnboundModel;
 use Pushery\WireKit\Support\ValuelessDirectives;
+use Pushery\WireKit\Values\DateRangeSynth;
 
 class WireKitServiceProvider extends ServiceProvider
 {
+    /** The directory of the anonymous components, as the compiler is given it. */
+    private const COMPONENTS_PATH = __DIR__.'/../resources/views/components';
+
     public function register(): void
     {
         // Merge package config with app config (a developer overrides via
@@ -110,6 +121,39 @@ class WireKitServiceProvider extends ServiceProvider
                 ),
             );
         }
+
+        // ── The component composer runs first ──
+        // boot() registers the composer that reads every component view's data as its caller
+        // wrote it, and Laravel runs the composers of a view pattern by pattern, in the order each
+        // pattern was first registered. A composer another provider registers for `*` before that
+        // would run first, and the component composer would take what it wrote for what the
+        // caller wrote. The patterns are taken here, before any provider boots.
+        $prefix = $this->app['config']->get('wirekit.prefix', 'wirekit');
+        self::reserveComponentComposerPatterns($this->app->make('events'), is_string($prefix) ? $prefix : null);
+    }
+
+    /**
+     * The view patterns the component composer listens on: the views the class components render
+     * under `wirekit::components`, and the anonymous ones under the namespace the compiler derives
+     * from the prefix, as `BladeCompiler::anonymousComponentPath()` derives it.
+     *
+     * @return list<string>
+     */
+    public static function componentComposerPatterns(?string $prefix): array
+    {
+        return ['wirekit::components.*', hash('xxh128', $prefix ?: self::COMPONENTS_PATH).'::*'];
+    }
+
+    /**
+     * Take the component composer's patterns in the event table, each with a listener that does
+     * nothing. The composer boot() registers under the same patterns then runs ahead of every
+     * composer registered for `*` once this has run.
+     */
+    public static function reserveComponentComposerPatterns(Dispatcher $events, ?string $prefix): void
+    {
+        foreach (self::componentComposerPatterns($prefix) as $pattern) {
+            $events->listen('composing: '.$pattern, static function (): void {});
+        }
     }
 
     public function boot(): void
@@ -132,6 +176,20 @@ class WireKitServiceProvider extends ServiceProvider
         };
         $this->app['events']->listen(RequestHandled::class, $resetPerRender);
         $this->app['events']->listen(JobProcessing::class, $resetPerRender);
+
+        // A Livewire property typed with a date range binds with `wire:model` (Values\DateRangeSynth).
+        // Added to Livewire's synthesizers whenever Livewire builds them, so the order in which the
+        // two packages register does not matter. A Livewire without HandleSynths, 4.0 to 4.3.0 among
+        // the versions composer.json allows, keeps its synthesizers on HandleComponents and never
+        // builds HandleSynths, so there the synthesizer goes onto HandleComponents instead.
+        $this->callAfterResolving(HandleSynths::class, static function (HandleSynths $synths): void {
+            $synths->registerSynth(DateRangeSynth::class);
+        });
+        $this->callAfterResolving(HandleComponents::class, static function (HandleComponents $components): void {
+            if (! class_exists(HandleSynths::class) && method_exists($components, 'registerPropertySynthesizer')) {
+                $components->registerPropertySynthesizer(DateRangeSynth::class);
+            }
+        });
 
         // ── Publishable assets (FIRST — must register before anything that could fail) ──
         // Registered early so vendor:publish always works, even if later steps throw.
@@ -293,7 +351,7 @@ class WireKitServiceProvider extends ServiceProvider
         // The framework's helper is that hook PLUS "call it now if the service is already
         // resolved" — the half that was missing.
         $this->callAfterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
-            $componentsPath = __DIR__.'/../resources/views/components';
+            $componentsPath = self::COMPONENTS_PATH;
             $blade->anonymousComponentPath($componentsPath, $prefix);
 
             // The class lists of the kit's own views go through the compact table at render time
@@ -325,19 +383,57 @@ class WireKitServiceProvider extends ServiceProvider
                 }
             }
 
-            // The same composer removes a caller's `x-model` from a component whose own Alpine root
-            // takes the caller's attributes and holds no value to bind (Support\UnboundModel), and
-            // reads every prop the caller wrote on the tag as the text it stands for, so a value
-            // echoed into the tag is escaped once, as a bound one is (Support\PropText).
+            // The same composer drops every attribute the caller bound to `null`, which Blade prints
+            // as nothing, and a name bound to `false` or given as a blank text, from the bag and from
+            // the view's data, where a prop of that name reads it (Support\CallerAttribute). It
+            // removes a caller's `x-model` from a component whose own Alpine root takes the caller's
+            // attributes and holds no value to bind (Support\UnboundModel), reads every prop the
+            // caller wrote on the tag as the text it stands for, so a value echoed into the tag is
+            // escaped once, as a bound one is (Support\PropText), gives a component that names
+            // itself its own name back when it is handed a blank one (Support\BlankName), and gives a
+            // prop the caller left out its default rather than a value the application shares with
+            // every view (Support\SharedViewData).
             $this->app->make('view')->composer($namespaces, static function (View $view): void {
                 PropText::normalize($view);
+                BlankName::normalize($view);
 
                 $attributes = $view->getData()['attributes'] ?? null;
 
                 if ($attributes instanceof ComponentAttributeBag) {
+                    $data = $view->getData();
+
+                    foreach (CallerAttribute::normalize($attributes) as $name => $value) {
+                        $camel = Str::camel((string) $name);
+
+                        // Only the copy the tag made of that attribute: what a class component
+                        // hands its view under the same name is not the caller's attribute.
+                        if (array_key_exists($camel, $data) && $data[$camel] === $value) {
+                            $view->with($camel, null);
+                        }
+                    }
+
                     ValuelessDirectives::normalize($attributes);
                     UnboundModel::dropFromView($view->name(), $attributes);
                 }
+
+                // Last, so a prop the steps above gave as null counts as one the caller wrote.
+                SharedViewData::shadow($view);
+                SharedViewData::remember($view);
+            });
+
+            // A composer the application registers for every view runs after the one above and
+            // writes the view's own data, so the view gets back the data the one above left once
+            // the application's composers ran (Support\SharedViewData::restore()).
+            // Laravel runs the composers of one pattern together, in the order the patterns were
+            // first registered, so this one takes patterns of its own, `**` where the one above has
+            // `*`, which match the same views and are registered after the application booted.
+            $this->app->booted(function () use ($namespaces): void {
+                $this->app->make('view')->composer(
+                    array_map(static fn (string $pattern): string => $pattern.'*', $namespaces),
+                    static function (View $view): void {
+                        SharedViewData::restore($view);
+                    },
+                );
             });
 
             // A few files on that path have a class behind them, under the same tag. The markup and
@@ -565,16 +661,24 @@ class WireKitServiceProvider extends ServiceProvider
             'x-transition:leave-end="opacity-0 scale-95"',
         ]));
 
-        // ── Config Validation ──
-        // Two distinct font-config problems, two distinct severities:
-        //  - UNKNOWN preset key (a typo): FATAL in local so the developer sees it
-        //    immediately; in production the value silently falls back to defaults
-        //    (never fatally break a deployed page over a config typo).
-        //  - KNOWN preset that is not published: WARN in EVERY environment.
-        //    The page still renders, but the developer's chosen font silently fell back
-        //    to system fonts. In production a log line, at most one per preset and hour,
-        //    is how ops learns of it, and the <x-wirekit::fonts> component renders an
-        //    inert HTML comment in every env.
+        $this->validateConfiguredPresets();
+    }
+
+    /**
+     * The configured font and icon presets, checked while the application boots.
+     *
+     * An UNKNOWN font preset key (a typo) is fatal in local, so the developer sees it at once;
+     * in production the value falls back to the defaults, since a config typo must never break
+     * a deployed page.
+     *
+     * A KNOWN preset that is not published is not reported here. Every process boots the
+     * application, a Composer run's `package:discover` among them, which comes before
+     * `wirekit:publish-fonts` in the same run of a deploy and renders no page. It is reported
+     * where a page asks for the font: `<x-wirekit::fonts>` serves it through the package route,
+     * writes an HTML comment, and logs {@see warnUnpublishedFont()}.
+     */
+    protected function validateConfiguredPresets(): void
+    {
         $isLocal = app()->environment('local');
         $fontConfig = config('wirekit.fonts', []);
 
@@ -597,11 +701,6 @@ class WireKitServiceProvider extends ServiceProvider
 
                 continue; // production: unknown key falls back to defaults (unchanged)
             }
-
-            // Known preset but not published → warn in all environments.
-            if (! file_exists(public_path($preset->publishedCssPath()))) {
-                static::warnUnpublishedFont($category, $presetKey);
-            }
         }
 
         if ($isLocal) {
@@ -620,12 +719,17 @@ class WireKitServiceProvider extends ServiceProvider
     public static array $unpublishedFontWarned = [];
 
     /**
-     * Log a warning that a configured, known font preset is not published and text is
-     * therefore falling back to system fonts. {@see LogThrottle} lets it through once per
-     * preset and hour across requests, so a persistent misconfiguration writes one
-     * actionable line rather than one per request.
+     * Log a warning that a known font preset a page asks for was never published, so
+     * `<x-wirekit::fonts>` serves it through PHP on every font request instead of as a static
+     * file. {@see LogThrottle} lets it through once per preset and hour across requests, so a
+     * persistent setup writes one actionable line rather than one per request.
+     *
+     * Internal: public only so the fonts component can reach it, at the moment a page renders
+     * it, which is a PHP visibility necessity rather than an API promise.
+     *
+     * @internal
      */
-    protected static function warnUnpublishedFont(string $category, string $presetKey): void
+    public static function warnUnpublishedFont(string $category, string $presetKey): void
     {
         if (isset(static::$unpublishedFontWarned[$presetKey])) {
             return;
@@ -637,10 +741,11 @@ class WireKitServiceProvider extends ServiceProvider
             return;
         }
 
+        // The words of the comment the component writes into the page beside it.
         Log::warning(
-            "WireKit: font preset '{$presetKey}' ({$category}) is configured but its CSS is not "
-            .'published — text is falling back to system fonts. Run '
-            .'`php artisan vendor:publish --tag=wirekit-fonts` to ship the bundled font.'
+            "WireKit: font preset '{$presetKey}' ({$category}) is served through PHP because it was "
+            .'never published. It works, but a static file is faster. Run '
+            .'`php artisan wirekit:publish-fonts`.'
         );
     }
 

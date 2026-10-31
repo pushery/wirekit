@@ -135,6 +135,8 @@ export default function wirekitOptimistic(config = {}) {
         // The owning component's id, read at init and never re-derived — a
         // teleported panel leaves the component and takes `$el` with it.
         _hostId: null,
+        // The layer's own element, read at init: see init().
+        _root: null,
 
         /**
          * The `wire:id` of the component this control belongs to, teleport or not.
@@ -160,7 +162,7 @@ export default function wirekitOptimistic(config = {}) {
          * naming convention has to be maintained for it to keep working.
          */
         _resolveHostId() {
-            const el = this.$el;
+            const el = this._root ?? this.$el;
 
             if (! el || ! el.closest) {
                 return null;
@@ -245,10 +247,16 @@ export default function wirekitOptimistic(config = {}) {
             // layer. The factory is the one place that knows a subtree is optimistic; a
             // per-template marker is one more place to forget, and a hand-mounted factory
             // would never get one at all.
+            // The root is remembered here, where `$el` is the layer's own element. A method that
+            // runs from an expression in the template, `apply()` from a button's click among
+            // them, sees the `$el` of the element that expression sits on, because Alpine puts
+            // that element's magics first in the scope. The state stamp, the morph guard, the
+            // host lookup and the box check read the root from here.
             // Optional chaining because `$el` is an Alpine magic that a plain unit harness
             // does not provide. Without it `init()` would throw there, and the failure would
             // name setAttribute rather than anything about the layer.
-            this.$el?.setAttribute('data-wk-optimistic', '');
+            this._root = this.$el ?? null;
+            this._root?.setAttribute('data-wk-optimistic', '');
             this._stampState();
 
             // The factory owns the value only in the default binding. With an
@@ -619,7 +627,13 @@ export default function wirekitOptimistic(config = {}) {
          * $wire[action]() and reads the state this call just wrote.
          */
         run(next) {
+            // A checkbox or a radio has changed under the press before `change` reaches this
+            // layer, so the two refusals below put it back on the value the layer still holds.
+            // The binding would not: it runs again only when the value changes, and a refusal
+            // changes nothing. See _resyncChoice().
             if (this._bindMissing) {
+                this._resyncChoice();
+
                 return false;
             }
 
@@ -648,6 +662,8 @@ export default function wirekitOptimistic(config = {}) {
                         + 'is nested inside a Livewire component.'
                     );
                 }
+
+                this._resyncChoice();
 
                 return false;
             }
@@ -883,8 +899,9 @@ export default function wirekitOptimistic(config = {}) {
                 return;
             }
 
-            const box = this.$el && this.$el.getBoundingClientRect
-                ? this.$el.getBoundingClientRect()
+            const host = this._root ?? this.$el;
+            const box = host && host.getBoundingClientRect
+                ? host.getBoundingClientRect()
                 : null;
 
             // A host with a box says it itself. This is the exception, not the path.
@@ -933,7 +950,7 @@ export default function wirekitOptimistic(config = {}) {
          * to forget.
          */
         _stampState() {
-            this.$el?.setAttribute('data-wk-optimistic-state', this.state);
+            (this._root ?? this.$el)?.setAttribute('data-wk-optimistic-state', this.state);
         },
 
         /** Write into the live region. Arbitration is the caller's decision. */
@@ -946,6 +963,20 @@ export default function wirekitOptimistic(config = {}) {
             // changes nothing, so a repeated message would never be spoken.
             this.announcement = '';
             queueMicrotask(() => { this.announcement = text; });
+        },
+
+        /**
+         * Put a checkbox or a radio back on the value this layer holds, after a press it refused
+         * before applying anything. A value control keeps what the reader typed: that is their
+         * work, nothing was sent, and writing the held value over it would destroy it.
+         */
+        _resyncChoice() {
+            const el = this.$refs && this.$refs.control;
+            const type = ((el && el.type) || '').toLowerCase();
+
+            if (type === 'checkbox' || type === 'radio') {
+                this._resyncControl();
+            }
         },
 
         /**
@@ -1047,8 +1078,12 @@ export default function wirekitOptimistic(config = {}) {
                 return;
             }
 
+            // The root, held from here: the hook is installed from `apply()`, where `$el` can be
+            // the element whose expression called it rather than the layer.
+            const root = this._root ?? this.$el;
+
             this._unmorph = window.Livewire.hook('morph.updating', ({ el, skip }) => {
-                if (el === this.$el) {
+                if (el === root) {
                     skip();
                 }
             });

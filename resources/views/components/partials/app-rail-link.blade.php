@@ -34,20 +34,21 @@
     @if($railTag === 'a' && $computedRel) rel="{{ $computedRel }}" @endif
     {{-- A caller's description and the counter's sentence, joined in the including view. --}}
     @if($linkDescribedBy !== '') aria-describedby="{{ $linkDescribedBy }}" @endif
-    {{ $linkAttributes }}
+    {{ $railTag === 'button' ? $linkAttributes->except('type') : $linkAttributes }}
 >
     @if($icon)
         {{-- Decorative: the label below is the accessible name. --}}
         <span class="shrink-0" aria-hidden="true">
-            @if(is_string($icon) && ! str_contains($icon, '<') && function_exists('svg'))
-                {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => $iconClasses]) }}
+            @if(is_string($icon) && ! str_contains($icon, '<'))
+                {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => $iconClasses]) }}
             @else
                 {{ $icon }}
             @endif
         </span>
     @endif
     <span data-wk-rail-label class="{{ $labelClasses }}" @if($truncate) title="{{ $labelText }}" @endif>{{ $labelText }}</span>
-    @if(filled($badge))
+    @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
+    @if($badgeText !== null)
         {{-- Going `absolute` in the icon-only rail is what keeps the lone glyph centered —
              sharing the flex row pushes it visibly off-center, which is what the browser
              test measures. In the wide rail it rejoins the row as a pill. The digits move
@@ -67,7 +68,7 @@
             group-data-[labels=inline]/wk-rail:px-[var(--padding-wk-x-sm)]
             group-data-[labels=inline]/wk-rail:text-[length:var(--text-wk-xs)]
             group-data-[labels=inline]/wk-rail:font-[number:var(--font-wk-heading-weight)]
-            group-data-[labels=inline]/wk-rail:text-[color:var(--color-wk-rail-badge-fg)]"><span class="sr-only group-data-[labels=inline]/wk-rail:not-sr-only">{{ $badge }}</span></span>
+            group-data-[labels=inline]/wk-rail:text-[color:var(--color-wk-rail-badge-fg)]"><span class="sr-only group-data-[labels=inline]/wk-rail:not-sr-only">{{ $badgeText }}</span></span>
     @endif
     {{-- Link branch only. `$opensNewTab` is derived from a `target` attribute, and a
          `<button>` has no target — so on a button this promised a new tab that never

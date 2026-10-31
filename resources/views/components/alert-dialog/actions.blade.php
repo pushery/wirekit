@@ -24,6 +24,6 @@
     ]), $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+<div {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </div>

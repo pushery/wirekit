@@ -13,20 +13,26 @@
      a closed until-found row keeps its box (utils/findable.js).
 
      `$bag` carries only what this component writes itself or forwards as the caller wrote it: the
-     language code, `lang`, the models and the placeholder binding. A text a person typed reaches the
-     field through a bound attribute, which Blade escapes; an attribute bag is printed as it is.
+     language code, `lang`, the models, the attributes that belong to a field and the placeholder
+     binding. A text a person typed reaches the field through a bound attribute, which Blade
+     escapes; an attribute bag is printed as it is. `$rowHint` is the caller's sentence for this
+     language, under its field.
 
      The value as a whole answers through the `field.set` around the rows. Its group, which the
      component reads by `@aware` inside the set's slot and hands on with this include's scope,
      makes a message filed under the value describe every language's field, and each says invalid
-     with it, as the set's checkboxes do. --}}
+     with it, as the set's checkboxes do. With the component's error off (`$errorOff`), the field
+     leaves the bag alone as well, which it reads under its own key otherwise. --}}
 @php
     $wkGroup = ($wkFieldSet ?? null) instanceof \Pushery\WireKit\Support\FieldGroup ? $wkFieldSet : null;
     $wkGroupInvalid = $wkGroup !== null && $wkGroup->isInvalid($errors ?? null);
     $wkGroupIds = $wkGroup === null ? null : ($wkGroupInvalid ? $wkGroup->errorId : ($wkGroup->hint !== null ? $wkGroup->hintId : null));
 
+    // The set's message or hint first, then a description the caller gave the value, as on every
+    // field. `merge()` would keep the caller's list alone, since a value in the bag wins there.
     if ($wkGroupIds !== null) {
-        $bag = $bag->merge(['aria-describedby' => $wkGroupIds]);
+        $callerDescribedBy = trim((string) $bag->get('aria-describedby', ''));
+        $bag = $bag->except('aria-describedby')->merge(['aria-describedby' => trim($wkGroupIds.' '.$callerDescribedBy)]);
     }
 
     // A field with an error of its own says so itself.
@@ -44,7 +50,10 @@
     @endif
 >
     <div class="{{ $rowClasses }}">
-        <span aria-hidden="true" class="{{ $codeClasses }}">{{ strtoupper($code) }}</span>
+        {{-- The code stands where a field's label stands, so it carries what a label would say
+             about its field: the stylesheet marks the code of an unsaved language with a dot, in
+             the rules after "The words beside the label". --}}
+        <span aria-hidden="true" data-wk-translation-code class="{{ $codeClasses }}">{{ strtoupper($code) }}</span>
 
         @if($multiline)
             <x-wirekit::textarea
@@ -52,6 +61,8 @@
                 :name="$field['name']"
                 :label="$languageName"
                 hide-label
+                :hint="$rowHint ?? null"
+                :error="$errorOff ? false : null"
                 :rows="$rows"
                 :size="$size"
                 :placeholder="$placeholderText"
@@ -67,6 +78,8 @@
                 :name="$field['name']"
                 :label="$languageName"
                 hide-label
+                :hint="$rowHint ?? null"
+                :error="$errorOff ? false : null"
                 :size="$size"
                 :value="$field['text']"
                 :placeholder="$placeholderText"

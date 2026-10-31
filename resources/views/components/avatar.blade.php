@@ -34,13 +34,22 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('avatar', $attributes->getAttributes());
-    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
-    $src = \Pushery\WireKit\Support\UrlProp::text($src);
+
+    // No `status`, or one of these. An unknown one is reported (Support\StrictnessGate) and leaves
+    // the status unset, as no `status` does, rather than taking the first of the list.
+    $status = filled($status) ? \Pushery\WireKit\Support\NumericProp::text($status) : null;
+    if ($status !== null && \Pushery\WireKit\WireKit::validateProp('avatar', 'status', $status, ['online', 'busy', 'away', 'offline']) !== $status) {
+        $status = null;
+    }
+
+    // Echoed into the tag or bound, the URL is written escaped once, and an empty one or one of
+    // white space is no picture, so the avatar shows its initials (Support\UrlProp::source()).
+    $src = \Pushery\WireKit\Support\UrlProp::source($src);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $fromInitials = BooleanProp::from($fromInitials, false);
+    $fromInitials = BooleanProp::from($fromInitials, false, 'avatar', 'fromInitials');
 
     // from-initials: deterministic background derived from the initials hash.
     // Only applies to the initials-fallback path (no image). The inline style
@@ -167,10 +176,10 @@
     // color pair into one style attribute.
     $avatarStyle = trim(implode(' ', array_filter([$fromInitialsStyle, $statusRingStyle ? $statusRingStyle.';' : ''])));
 @endphp
-<span {{ $attributes->merge($avatarStyle ? ['style' => $avatarStyle] : [])->class([$baseClasses, $sizeClasses, $shapeClasses]) }}
+<span {{ $attributes->merge($avatarStyle ? ['style' => $avatarStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses, $sizeClasses, $shapeClasses])) }}
 >
     @if($src)
-        <img data-wk-prose-skip src="{{ $src }}" alt="{{ $alt ?? '' }}" class="w-full h-full object-cover" />
+        <img data-wk-prose-skip src="{{ $src }}" alt="{{ \Pushery\WireKit\Support\SlotContent::textOf($alt) }}" class="w-full h-full object-cover" />
     @elseif($initials)
         <span aria-hidden="{{ $alt ? 'true' : 'false' }}">{{ $initials }}</span>
         @if($alt)
@@ -179,7 +188,7 @@
     @else
         <svg
             @if($alt)
-                role="img" aria-label="{{ $alt }}"
+                role="img" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($alt) }}"
             @else
                 aria-hidden="true"
             @endif

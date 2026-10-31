@@ -7,6 +7,7 @@
  * @param {Object} config
  * @param {Array<{value: string, label: string}>} config.options - Available options
  * @param {string} config.name - Input name for form submission
+ * @param {boolean} [config.readonly] - The selection is read-only: the list opens, and nothing picks or removes a value
  * @param {Array<string>} [config.value] - Option keys to pre-select on load
  * @param {string} [config.id] - DOM id stem the option ids are minted from
  * @param {string} [config.fieldId] - the text field's id: the caller's `id` when one was given,
@@ -45,6 +46,14 @@ export default function wirekitMultiSelect(config = {}) {
          */
         get locked() {
             return controlIsDisabled(this.$refs?.filterInput);
+        },
+
+        // Read-only keeps the field focusable and the list open to read, and refuses every change.
+        _readonly: config.readonly === true,
+
+        /** Whether a pick or a removal is refused: the field is read-only, or it takes no input now. */
+        get frozen() {
+            return this._readonly || this.locked;
         },
 
         /** Focus the filter and open the list — one act, so one method. */
@@ -307,6 +316,8 @@ export default function wirekitMultiSelect(config = {}) {
          * they are, so a reader checks several results of one search in a row.
          */
         toggleFromList(value) {
+            if (this._readonly) return;
+
             const idx = this._indexOf(value);
 
             if (idx >= 0) {
@@ -324,6 +335,8 @@ export default function wirekitMultiSelect(config = {}) {
          * to the page with the button that was pressed.
          */
         removeFromList(value) {
+            if (this._readonly) return;
+
             const idx = this._indexOf(value);
 
             if (idx < 0) {
@@ -344,6 +357,8 @@ export default function wirekitMultiSelect(config = {}) {
          * @param {string|number} value - The value whose remove button was pressed.
          */
         runListRemoval(value) {
+            if (this._readonly) return;
+
             const idx = this._indexOf(value);
 
             if (typeof this.run !== 'function' || idx < 0) {
@@ -656,7 +671,8 @@ export default function wirekitMultiSelect(config = {}) {
 
             const option = this.filteredOptions[this.highlight];
 
-            if (! option) {
+            // A read-only field picks nothing, and `runIf()` sends nothing for that.
+            if (! option || this._readonly) {
                 return undefined;
             }
 
@@ -763,6 +779,8 @@ export default function wirekitMultiSelect(config = {}) {
          * of safety that lasts until the next edit.
          */
         toggleValue(value) {
+            if (this._readonly) return;
+
             const idx = this._indexOf(value);
             if (idx >= 0) {
                 this.selected.splice(idx, 1);
@@ -787,6 +805,8 @@ export default function wirekitMultiSelect(config = {}) {
          * shape and same treatment as tags-input's chip removal.
          */
         deselect(value) {
+            if (this._readonly) return;
+
             const idx = this._indexOf(value);
 
             if (idx < 0) return;
@@ -811,6 +831,8 @@ export default function wirekitMultiSelect(config = {}) {
          * @param {string|number} value - The value whose pill was pressed.
          */
         runRemoval(value) {
+            if (this._readonly) return;
+
             const idx = this._indexOf(value);
 
             if (typeof this.run !== 'function' || idx < 0) return;
@@ -903,13 +925,29 @@ export default function wirekitMultiSelect(config = {}) {
          * text repeats past its end, and every repeat would take a value with it.
          */
         onBackspace(event) {
-            if (event.repeat) {
+            if (this._readonly || event.repeat) {
                 return;
             }
 
             if (event.target.value === '' && this.selected.length > 0) {
                 this.selected.pop();
             }
+        },
+
+        /**
+         * The root's press away: closes the panel unless the press landed in it. The panel is
+         * teleported out of the root, and Alpine's `.away` asks only whether the root holds the
+         * target, so a press on a disabled option, a group heading or the panel's edge read as
+         * away and closed it while it chose nothing.
+         */
+        closeOutside(event) {
+            const target = event?.target ?? null;
+
+            if (target !== null && this._panelElement()?.contains?.(target) === true) {
+                return;
+            }
+
+            this.dropdownOpen = false;
         },
 
         /**

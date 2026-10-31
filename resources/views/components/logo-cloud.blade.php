@@ -37,9 +37,9 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $muted = BooleanProp::from($muted, true);
+    $muted = BooleanProp::from($muted, true, 'logo-cloud', 'muted');
 
-    $listLabel = $ariaLabel ?? $label;
+    $listLabel = \Pushery\WireKit\Support\BlankName::first($ariaLabel, $label);
 
     $classes = WireKit::resolveClasses('logo-cloud', 'base', implode(' ', [
         // The marker the dist stylesheet hangs the logo treatment on. Styling the

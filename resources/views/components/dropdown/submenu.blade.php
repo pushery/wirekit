@@ -16,13 +16,28 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.submenu', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
+    // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
+    // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
+    // No placement at all, `null` or empty, is the default, as the script reads it.
+    // The default names a physical side of the trigger, as every placement word does. The
+    // direction ratchet counts the word with the utilities, although it is none.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('dropdown.submenu', 'placement', (string) ($placement ?: 'right-start'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'right-start');
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
+    $disabled = BooleanProp::from($disabled, false, 'dropdown.submenu', 'disabled');
 
     // The panel's accessible name, carried by the trigger's own id.
     //
@@ -92,8 +107,15 @@
         'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-md)]',
-        'overflow-hidden',
+        // fitViewport caps the height to the window; the panel scrolls its excess instead of
+        // clipping it.
+        'overflow-y-auto overscroll-contain',
     ]), $scope);
+
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // submenu, so they go on its outermost element; the rest of the bag stays on the trigger
+    // (Support\OuterAttributes).
+    [$outerAttributes, $attributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
 @endphp
 
 {{-- Nested submenu flyout. The parent item carries aria-haspopup="menu" +
@@ -106,8 +128,8 @@
      stale-open submenu. The parent item's @click.stop keeps a click on the
      parent from bubbling to the dropdown root's auto-close delegated handler
      (which would otherwise dismiss the whole menu). --}}
-<div
-    x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
+<div {{ $outerAttributes }}
+    x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'dropdown.submenu', 'offset') }} })"
     x-effect="isOpen || closeSub()"
     data-wk-submenu
     class="block w-full"
@@ -119,6 +141,7 @@
         role="menuitem"
         tabindex="-1"
         aria-haspopup="menu"
+        aria-expanded="false"
         x-bind:aria-expanded="subOpen ? 'true' : 'false'"
         @if($disabled) aria-disabled="true" @endif
         x-on:click.stop="openSub(true)"
@@ -126,14 +149,12 @@
         x-on:mouseleave="scheduleClose()"
         x-on:keydown="onTriggerKey"
         x-bind:class="subOpen ? 'bg-[var(--color-wk-bg-hover)]' : ''"
-        {{ $attributes->class(['wk-touch-row', $itemClasses, $disabledClasses]) }}
+        {{ $attributes->except(['role', 'tabindex', 'aria-expanded', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $itemClasses, $disabledClasses])) }}
     >
         {{-- Optional leading icon (decorative — the label is the accessible name) --}}
         @if($icon)
             <span class="shrink-0 w-5 h-5" aria-hidden="true">
-                @if(function_exists('svg'))
-                    {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
-                @endif
+                {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
             </span>
         @endif
 

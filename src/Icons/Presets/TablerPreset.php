@@ -256,6 +256,8 @@ final class TablerPreset implements IconPreset
             //
             // Deliberately NOT taken:
             //   a11y — no genuine cognate in all three.
+            //   merge, pin — Heroicons has no genuine cognate. Nothing in it draws two
+            //     paths becoming one, and its only pin is `map-pin`, a place marker.
             //   cursor-arrow-rays — the SPELLING stays out; the concept is `click`
             //     below. A family's name for its own drawing is not a word the
             //     vocabulary can share; the concept behind it is.

@@ -56,8 +56,9 @@ final class AlpineFactories
             foreach (self::filesOf($views, $name) as $file) {
                 $source = BladeParser::blankComments((string) file_get_contents($file));
 
-                // The parentheses are optional: Alpine accepts a bare factory name.
-                preg_match_all('/x-data="\s*\{?\s*(wirekit[A-Z][A-Za-z0-9]*)/', $source, $started);
+                // The parentheses are optional: Alpine accepts a bare factory name. A view that
+                // composes another component hands its x-data over in an attribute array.
+                preg_match_all('/(?:x-data="|\'x-data\'\s*=>\s*\')\s*\{?\s*(wirekit[A-Z][A-Za-z0-9]*)/', $source, $started);
 
                 foreach ($started[1] as $factory) {
                     $found[$factory] = true;

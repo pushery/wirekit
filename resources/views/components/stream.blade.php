@@ -74,10 +74,21 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('stream', $attributes->getAttributes());
 
+    // An unknown `announce` is reported (Support\StrictnessGate) and renders as `result`; a bound
+    // `null` or empty string is `result` without a word.
+    $announce = \Pushery\WireKit\WireKit::validateProp('stream', 'announce', \Pushery\WireKit\Support\NumericProp::text($announce ?: 'result'), ['result', 'status', 'none']);
+
+    // No `source`, or one of these. An unknown one is reported (Support\StrictnessGate) and leaves
+    // the source unset, as no `source` does, rather than taking the first of the list.
+    $source = filled($source) ? \Pushery\WireKit\Support\NumericProp::text($source) : null;
+    if ($source !== null && \Pushery\WireKit\WireKit::validateProp('stream', 'source', $source, ['sse', 'fetch', 'manual']) !== $source) {
+        $source = null;
+    }
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $autoStart = BooleanProp::from($autoStart, true);
+    $autoStart = BooleanProp::from($autoStart, true, 'stream', 'autoStart');
 
     // Stream — a primitive for streaming text output (LLM responses, live logs). The
     // hard parts live in the Alpine component (resources/js/components/stream.js):
@@ -96,12 +107,12 @@
         // the same statement as the default and is treated as one.
         'eventName' => $eventName !== 'message' ? $eventName : null,
         'doneSignal' => $doneSignal,
-        'announce' => in_array($announce, ['status', 'none'], true) ? $announce : 'result',
+        'announce' => $announce,
         'autoStart' => (bool) $autoStart,
         'initialText' => $initialText,
         'simulate' => $simulate,
-        'simulateSpeed' => $simulateSpeed !== null ? (int) $simulateSpeed : null,
-        'source' => in_array($source, ['sse', 'fetch', 'manual'], true) ? $source : null,
+        'simulateSpeed' => \Pushery\WireKit\Support\NumericProp::intOrNull($simulateSpeed, 'stream', 'simulateSpeed'),
+        'source' => $source,
         'method' => $method,
         'body' => $body,
         'headers' => $headers,
@@ -146,7 +157,7 @@
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
-<div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class([$wrapperClasses]) }} data-wk-sr-host @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
+<div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }} data-wk-sr-host @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
     {{-- Single live region: announces that a response is GENERATING (once), then the
          RESULT (once) when it settles. The visible output below is deliberately NOT a
          live region, so a screen reader is not re-read on every token. --}}
@@ -171,7 +182,7 @@
          contract, not decoration, and a headless output that dropped them would
          be a silent accessibility regression in the one component whose whole
          job is text arriving over time. --}}
-    @isset($output)
+    @if(\Pushery\WireKit\Support\SlotContent::given($output ?? null))
         {{ $output }}
     @else
     {{-- In the a11y tree for on-demand reading, but not auto-announced. Wraps +
@@ -187,7 +198,7 @@
             aria-hidden="true"
             class="wk-stream-caret ml-px inline-block h-[1em] w-[0.5ch] translate-y-[0.1em] motion-safe:animate-pulse bg-[var(--color-wk-text-muted)]"
         ></span></div>
-    @endisset
+    @endif
 
     {{-- Terminal failure — a defined state, overridable via the `error` slot.
 
@@ -203,11 +214,11 @@
          there when it matters. --}}
     <div role="alert" class="mt-[var(--gap-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
         <div x-show="isFailed" x-cloak>
-            @isset($error)
+            @if(\Pushery\WireKit\Support\SlotContent::given($error ?? null))
                 {{ $error }}
             @else
                 <span x-text="error"></span>
-            @endisset
+            @endif
         </div>
     </div>
 

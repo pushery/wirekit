@@ -47,28 +47,36 @@ const ROW_NAMES = Object.freeze({
  * is written as it comes. `sets` says whether the chart sets any of them.
  *
  * The tooltip and a treemap's cell labels both write values through this, so a value reads the same
- * in both places.
+ * in both places. A series that names its own decimals (`seriesDecimals`) is written with them in
+ * place of the chart's, inside the chart's prefix and suffix: counts beside a rate read `12` and
+ * `4,53`, where one setting for the chart wrote `12,00`.
  *
  * @param {object} [tooltip] the chart's `tooltip` config
+ * @param {number|null} [places] the decimals of one series, which take the chart's place
  * @returns {{format: (v: *) => *, sets: boolean}}
  */
-export function chartValueFormat(tooltip) {
+export function chartValueFormat(tooltip, places = null) {
     const t = tooltip || {};
     // Clamped to toFixed()'s legal 0–100 range. The PHP adapter already clamps, but
     // Number.prototype.toFixed() throws a RangeError for any out-of-range argument, so no caller can
     // crash a render with a stray decimals value.
-    const decimals = (typeof t.wkValueDecimals === 'number' && Number.isFinite(t.wkValueDecimals))
-        ? Math.min(100, Math.max(0, Math.trunc(t.wkValueDecimals)))
-        : null;
+    const decimals = (typeof places === 'number' && Number.isFinite(places))
+        ? Math.min(100, Math.max(0, Math.trunc(places)))
+        : (typeof t.wkValueDecimals === 'number' && Number.isFinite(t.wkValueDecimals))
+            ? Math.min(100, Math.max(0, Math.trunc(t.wkValueDecimals)))
+            : null;
     const prefix = t.wkValuePrefix || '';
     const suffix = t.wkValueSuffix || '';
     const locale = t.wkLocale || undefined;
+    const grouping = chartValueGrouping(t);
 
     return {
         sets: decimals !== null || prefix !== '' || suffix !== '',
         format: (v) => {
             if (typeof v === 'number' && Number.isFinite(v)) {
-                const n = decimals !== null ? formatDecimal(v, locale, decimals, decimals) : String(v);
+                // Without decimals of its own a value keeps the digits it has, written in the
+                // locale and grouped, so a German page reads `278.984,46` rather than `278984.46`.
+                const n = decimals !== null ? formatDecimal(v, locale, decimals, decimals, grouping) : formatDecimal(v, locale, 20, 0, grouping);
 
                 return `${prefix}${n}${suffix}`;
             }
@@ -79,19 +87,66 @@ export function chartValueFormat(tooltip) {
 }
 
 /**
+ * The decimals a series names for its own values, `decimals` on its dataset, clamped to the 0–100
+ * that toFixed() takes, or null where it names none. The adapter hands it on with the series.
+ *
+ * @param {object} [series] one entry of the chart's `series`
+ * @returns {number|null}
+ */
+export function seriesDecimals(series) {
+    const d = series && typeof series === 'object' ? series.decimals : undefined;
+
+    return (typeof d === 'number' && Number.isFinite(d)) ? Math.min(100, Math.max(0, Math.trunc(d))) : null;
+}
+
+/**
+ * How the values a chart writes group their thousands: the locale's way unless the chart turns it
+ * off (`tooltip.wkValueGrouping: false`), with the marks of the application's own number format
+ * where it gave one (`tooltip.wkNumberSeparators`).
+ *
+ * @param {object} [tooltip] the chart's `tooltip` config
+ * @returns {boolean|{group: string, decimal: string}}
+ */
+export function chartValueGrouping(tooltip) {
+    const t = tooltip || {};
+
+    if (t.wkValueGrouping === false) {
+        return false;
+    }
+
+    const marks = t.wkNumberSeparators;
+
+    return marks && typeof marks === 'object' && typeof marks.group === 'string' && typeof marks.decimal === 'string'
+        ? { group: marks.group, decimal: marks.decimal }
+        : true;
+}
+
+/**
  * The label formatter of a treemap whose cells show their value under their name, which
  * `dataLabels.wkShowValue` asks for. ApexCharts writes a cell's label from what
  * `dataLabels.formatter` returns, and a list of two is two lines. With
  * `plotOptions.treemap.dataLabels.format: 'truncate'` it writes the return as one string, so there
- * the name and the value share a line. The value is written in the chart's own format, as the
- * tooltip writes it, and a cell without a finite value keeps its name alone.
+ * the name and the value share a line. The value is written as the tooltip writes it: in the
+ * chart's own format, with the decimals its series names where it names them (`seriesDecimals`),
+ * and a cell without a finite value keeps its name alone. The series are read where the tooltip
+ * reads them, from the chart ApexCharts hands the formatter, else from those given here.
  *
  * @param {object} [tooltip] the chart's `tooltip` config, which carries the value format
  * @param {boolean} [oneLine] whether the treemap truncates its labels to one line
- * @returns {(text: string, op: {value?: *}) => (string|string[])}
+ * @param {?Array<object>} [series] the chart's series, for a formatter called without the chart
+ * @returns {(text: string, op: {value?: *, seriesIndex?: number, w?: object}) => (string|string[])}
  */
-export function treemapValueLabel(tooltip, oneLine = false) {
-    const { format } = chartValueFormat(tooltip);
+export function treemapValueLabel(tooltip, oneLine = false, series = null) {
+    const formats = new Map();
+    const formatWith = (decimals) => {
+        const key = decimals === null ? 'chart' : decimals;
+
+        if (! formats.has(key)) {
+            formats.set(key, chartValueFormat(tooltip, decimals).format);
+        }
+
+        return formats.get(key);
+    };
 
     return (text, op) => {
         const value = op ? op.value : undefined;
@@ -100,7 +155,9 @@ export function treemapValueLabel(tooltip, oneLine = false) {
             return text;
         }
 
-        const written = String(format(value));
+        const list = Array.isArray(op.w?.config?.series) ? op.w.config.series : series;
+        const decimals = Array.isArray(list) && Number.isInteger(op.seriesIndex) ? seriesDecimals(list[op.seriesIndex]) : null;
+        const written = String(formatWith(decimals)(value));
 
         return oneLine ? `${text} · ${written}` : [text, written];
     };
@@ -170,13 +227,23 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w, extras =
 
     const tcfg = cfg.tooltip || {};
     // The chart's own value format, which a treemap's cell labels share (see `chartValueFormat`).
-    const { format: fmtValue, sets: chartFormatsValues } = chartValueFormat(tcfg);
+    const { format: fmtValue } = chartValueFormat(tcfg);
+    // A series writes its values in that format, or with the decimals it names itself.
+    const seriesFormats = new Map();
+    const formatOf = (sIdx) => {
+        if (! seriesFormats.has(sIdx)) {
+            seriesFormats.set(sIdx, chartValueFormat(tcfg, seriesDecimals(cfg.series && cfg.series[sIdx])));
+        }
 
-    // A value of a series is written with the chart's own `valueDecimals`, `valuePrefix` or
-    // `valueSuffix` where it sets one. Otherwise a formatter of the page writes it, as it does in
-    // ApexCharts' own tooltip: `tooltip.y.formatter` (the series' entry where `tooltip.y` is a
-    // list), else the label formatter of the series' y-axis. The chart's options are JSON, so such a
-    // formatter is one the page set for every chart. What it returns is written as text.
+        return seriesFormats.get(sIdx);
+    };
+
+    // A value of a series is written with the decimals of the series, or the chart's own
+    // `valueDecimals`, `valuePrefix` or `valueSuffix`, where one is set. Otherwise a formatter of
+    // the page writes it, as it does in ApexCharts' own tooltip: `tooltip.y.formatter` (the series'
+    // entry where `tooltip.y` is a list), else the label formatter of the series' y-axis. The
+    // chart's options are JSON, so such a formatter is one the page set for every chart. What it
+    // returns is written as text.
     const yaxes = Array.isArray(cfg.yaxis) ? cfg.yaxis : [cfg.yaxis];
     const pageValueFormatter = (sIdx) => {
         const y = tcfg.y;
@@ -190,14 +257,15 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w, extras =
         return (typeof forAxis === 'function' && ! kitAxisFormatters.has(forAxis)) ? forAxis : null;
     };
     const writeValue = (v, sIdx) => {
-        const formatter = (! chartFormatsValues && typeof v === 'number' && Number.isFinite(v)) ? pageValueFormatter(sIdx) : null;
+        const { format, sets } = formatOf(sIdx);
+        const formatter = (! sets && typeof v === 'number' && Number.isFinite(v)) ? pageValueFormatter(sIdx) : null;
         if (formatter) {
             const written = formatter(v, { series, seriesIndex: sIdx, dataPointIndex, w });
 
             return written === undefined || written === null ? v : written;
         }
 
-        return fmtValue(v);
+        return format(v);
     };
 
     // Resolve x-label (header). Priority: hovered series' data-point `x`
@@ -2164,7 +2232,7 @@ window.ApexCharts = ApexCharts;</pre>
         /**
          * Follow a click on a data point to its address, and show a pointer over a point that has one.
          *
-         * ApexCharts 5, 6 and 7 hand their `click` and `mouseMove` events the same point, in
+         * ApexCharts 5, 6, 7 and 8 hand their `click` and `mouseMove` events the same point, in
          * `seriesIndex` and `dataPointIndex`: the one the element under the pointer names, where it
          * carries its indices (a treemap cell its `i` and `j`, a bar or a slice its `j`), and
          * otherwise the one the tooltip has taken up, such as the point a shared tooltip of a line is
@@ -2427,14 +2495,14 @@ window.ApexCharts = ApexCharts;</pre>
                     : palette.slice(0, Math.max(themedSeries.length, 1)));
 
             // `dataLabels.wkShowValue` on a treemap: each cell that has room shows its value under its
-            // name, in the chart's own value format. A label formatter is JavaScript, which options
+            // name, in the format the tooltip writes it in. A label formatter is JavaScript, which options
             // written in PHP cannot carry, so the key asks the adapter for one. It turns the labels on,
             // and a formatter set in JavaScript wins over it.
             const rawLabels = rawConfig.dataLabels || {};
             const valueLabels = (apexChartType === 'treemap' && rawLabels.wkShowValue === true && typeof rawLabels.formatter !== 'function')
                 ? {
                     enabled: true,
-                    formatter: treemapValueLabel(rawConfig.tooltip, rawConfig?.plotOptions?.treemap?.dataLabels?.format === 'truncate'),
+                    formatter: treemapValueLabel(rawConfig.tooltip, rawConfig?.plotOptions?.treemap?.dataLabels?.format === 'truncate', rawConfig.series),
                 }
                 : {};
 
@@ -2461,7 +2529,7 @@ window.ApexCharts = ApexCharts;</pre>
                 xaxis: this._themeAxis(rawConfig.xaxis, colors, fontFamily),
                 // The application's locale for a decimal tick, handed over on the tooltip by the
                 // PHP side; without it the tick keeps the English spelling.
-                yaxis: this._themeYaxis(rawConfig.yaxis, colors, fontFamily, rawConfig?.tooltip?.wkLocale),
+                yaxis: this._themeYaxis(rawConfig.yaxis, colors, fontFamily, rawConfig?.tooltip?.wkLocale, chartValueGrouping(rawConfig?.tooltip), rawConfig.series),
                 tooltip: Object.assign({}, rawConfig.tooltip, {
                     theme: isDark ? 'dark' : 'light',
                     // Object.assign is shallow — without nesting the style
@@ -2571,11 +2639,30 @@ window.ApexCharts = ApexCharts;</pre>
          * `42 / 58 / 71 / 89` instead of `42.00000000000000 …`. Developer-
          * supplied formatters always win.
          */
-        _themeYaxis(yaxis, colors, fontFamily, locale) {
-            const themeOne = (axis) => {
+        _themeYaxis(yaxis, colors, fontFamily, locale, grouping = true, series = []) {
+            // The series an axis shows: those its `seriesName` names, else on one of several axes the
+            // series in its place, else every series on the one axis. Where all of them name the
+            // same decimals (`seriesDecimals`), the axis writes its ticks with them.
+            const list = Array.isArray(series) ? series : [];
+            const placesOf = (axis, index) => {
+                const names = axis && axis.seriesName !== undefined ? [].concat(axis.seriesName) : [];
+                const shown = names.length > 0
+                    ? list.filter((entry) => entry && names.includes(entry.name))
+                    : (Array.isArray(yaxis) ? list.slice(index, index + 1) : list);
+                const places = shown.map(seriesDecimals);
+
+                return places.length > 0 && places.every((p) => p !== null && p === places[0]) ? places[0] : null;
+            };
+
+            const themeOne = (axis, index = 0) => {
                 const themed = this._themeAxis(axis, colors, fontFamily);
+                const places = placesOf(axis, index);
                 if (! themed.labels) themed.labels = {};
-                if (typeof themed.labels.formatter !== 'function') {
+                // A label formatter the page set for every chart stays in charge: ApexCharts lays
+                // the chart's own axis over the global one (`pageWideApexOption`), so the default
+                // below would hide it, on the axis and in the tooltip, which writes its values
+                // with the axis' formatter.
+                if (typeof themed.labels.formatter !== 'function' && ! pageWideApexOption(['yaxis', 'labels', 'formatter'])) {
                     themed.labels.formatter = (value) => {
                         if (value === null || value === undefined) return '';
                         // A blank tick stays blank. A heatmap's rows sit on a scale of the
@@ -2584,15 +2671,22 @@ window.ApexCharts = ApexCharts;</pre>
                         if (typeof value === 'string' && value.trim() === '') return '';
                         const n = Number(value);
                         if (! Number.isFinite(n)) return String(value);
+                        // A tick the decimals of its series write without rounding takes them, so
+                        // a rate reads `4,50` on its axis as in its tooltip. One they would round,
+                        // a half step on a scale of counts, keeps the form below, so no two ticks
+                        // read alike.
+                        if (places !== null && Math.abs(Number(n.toFixed(places)) - n) < 1e-9) {
+                            return formatDecimal(n, locale, places, places, grouping);
+                        }
                         // Integers (or values that round to an integer) render
                         // without trailing decimals — covers the 99% case of
                         // dataset values like 42, 58, 71. Non-integer floats
                         // get up to two decimals (e.g. 2.4 → "2.4", 0.18 → "0.18").
-                        if (Number.isInteger(n)) return String(n);
+                        // Both grouped as the chart's values are, so an axis reads
+                        // `10.514` beside a tooltip that does.
+                        if (Number.isInteger(n)) return formatDecimal(n, locale, 0, 0, grouping);
                         const rounded = Math.round(n * 100) / 100;
-                        return Number.isInteger(rounded)
-                            ? String(rounded)
-                            : formatDecimal(rounded, locale, 2);
+                        return formatDecimal(rounded, locale, 2, 0, grouping);
                     };
                     kitAxisFormatters.add(themed.labels.formatter);
                 }
@@ -2600,7 +2694,7 @@ window.ApexCharts = ApexCharts;</pre>
             };
 
             if (Array.isArray(yaxis)) {
-                return yaxis.map(themeOne);
+                return yaxis.map((axis, index) => themeOne(axis, index));
             }
             return themeOne(yaxis);
         },

@@ -26,7 +26,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $inline = BooleanProp::from($inline, false);
+    $inline = BooleanProp::from($inline, false, 'sparkline', 'inline');
 
     // Sparkline — small, axis-less line/area chart for inline KPI strips and
     // dashboard cells. Delegates to <x-wirekit-chart type="sparkline"> so both
@@ -45,7 +45,7 @@
     // points are renumbered in the order they are walked: the trend reads the first and the last
     // of them by position, the chart is given one empty label per point, and a Collection that was
     // filtered or sorted, or a series keyed by name, carries other keys than 0 to n-1.
-    $data = \Pushery\WireKit\Support\ListProp::renumbered($data);
+    $data = \Pushery\WireKit\Support\ListProp::renumbered($data, 'sparkline', 'data');
 
     $resolveTrend = static function ($trendProp, array $data): string {
         // Explicit override — only when the prop is one of the canonical values.
@@ -79,7 +79,7 @@
         default => 'var(--color-wk-text-muted)',
     };
 
-    $resolvedHeight = $height ?? ($inline ? '1.25em' : '2.5rem');
+    $resolvedHeight = \Pushery\WireKit\Support\CssValue::prop($height, 'sparkline', 'height', $inline ? '1.25em' : '2.5rem');
 
     // Pass-through to <x-wirekit-chart>. Sparkline type is in both adapters'
     // supportedTypes(); the underlying line chart is rendered with no axes,
@@ -250,13 +250,19 @@
     so HTML5's parser doesn't auto-close a surrounding `<p>` on first descendant
     div. Block mode stays `<div>` for the default dashboard-cell use case.
 --}}
-@php $sparklineTag = $inline ? 'span' : 'div'; @endphp
+@php
+    $sparklineTag = $inline ? 'span' : 'div';
+
+    // An inline display wins over every class of the caller's, `hidden` included: where the
+    // caller's class reaches for one, it is left out here and comes back as its utility.
+    [$sparklineStyle, $sparklineStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, $displayStyle.'height: '.$resolvedHeight.'; '.($inline ? 'width: 4rem;' : 'width: 100%;'));
+@endphp
 {{-- The wrapper's own declarations go into the bag's `style` rather than an attribute of their
      own beside it: a caller's `style` would stand in the tag a second time, and the parser keeps
      the first one, so the height, the width and the overflow clip would be gone. Merged, the
      caller's declarations follow ours. --}}
 <{{ $sparklineTag }} data-wk-prose-skip
-    data-wk-sr-host {{ $sparklineAttributes->class([$rootClass])->merge(['style' => $displayStyle.'height: '.$resolvedHeight.'; '.($inline ? 'width: 4rem;' : 'width: 100%;')]) }}
+    data-wk-sr-host {{ $sparklineAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, $sparklineStyleClasses => $sparklineStyleClasses !== '']))->merge(['style' => $sparklineStyle]) }}
     data-trend="{{ $resolvedTrend }}"
 >
     <x-wirekit-chart

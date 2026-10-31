@@ -14,17 +14,27 @@
 @aware([
     'variant' => config('wirekit.components.faq.variant', 'flush'),
     'size' => config('wirekit.components.faq.size', 'lg'),
+    // The heading level of the questions, set on the surrounding faq; accordion.item checks it.
+    'level' => 3,
     // Set on the surrounding faq: strip markup from the SCHEMA answer text.
     'plainText' => false,
+    // Set on the surrounding faq: several answers may stand open, which the default start needs.
+    'multiple' => false,
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $variant = \Pushery\WireKit\Support\AwareProp::read('variant', ['faq'], config('wirekit.components.faq.variant', 'flush'));
+    $size = \Pushery\WireKit\Support\AwareProp::read('size', ['faq'], config('wirekit.components.faq.size', 'lg'));
+    $level = \Pushery\WireKit\Support\AwareProp::read('level', ['faq'], 3);
+
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['variant', 'size', 'plainText', 'plain-text']);
+    $attributes = $attributes->except(['variant', 'size', 'level', 'plainText', 'plain-text', 'multiple']);
 @endphp
 
 
@@ -32,12 +42,18 @@
     // The question. Rendered as the accordion trigger AND recorded for the
     // FAQPage schema — one string, both jobs, so they cannot disagree.
     'question' => '',
+    // The language of `question` where it differs from the page's, written on the question alone.
+    // The structured data keeps the text as it is.
+    'questionLang' => null,
     // Escape hatch for the rare case where the schema answer must differ from the
     // visible one in CONTENT, not just markup. Prefer `plain-text` on the faq: a
     // hand-written duplicate is copy that can drift away from what the reader
     // sees, which is exactly what deriving the schema from the render prevents.
     'schemaAnswer' => null,
     'id' => null,
+    // Starts open, rendered open by the accordion item. In single mode the first open question stays
+    // open. Unset, it follows the accordion item's default, which applies with `multiple` only.
+    'open' => null,
     'scope' => null,
 ])
 
@@ -48,6 +64,15 @@
     // 'false'. Getting this backwards puts markup into Answer.text, the exact
     // defect plain-text exists to prevent.
     $plainText = BooleanProp::from($plainText);
+
+    // The questions render as the faq's slot, before its view opens the accordion, so no accordion
+    // is above the item while it renders and the item cannot read its mode. Unset, a question
+    // starts as `components.accordion.item.open` says where several answers may stand open, and
+    // closed where one stands open at a time.
+    $multiple = BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('multiple', ['faq'], false));
+    $open = $open === null
+        ? $multiple && BooleanProp::from(config('wirekit.components.accordion.item.open', false))
+        : BooleanProp::from($open, false, 'faq-item', 'open');
 
     use Pushery\WireKit\Support\FaqCollector;
 
@@ -86,10 +111,13 @@
 
 <x-wirekit::accordion.item
     :title="$question"
+    :title-lang="$questionLang"
     :id="$id"
+    :open="$open"
     :scope="$scope"
     :variant="$variant"
     :size="$size"
+    :level="$level"
     data-wk-faq-item
     {{ $attributes }}
 >

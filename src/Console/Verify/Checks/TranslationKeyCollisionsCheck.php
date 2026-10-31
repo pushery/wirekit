@@ -310,12 +310,12 @@ final class TranslationKeyCollisionsCheck extends VerifyCheck
                 // for: written inline, the needle would read to such a scanner as this
                 // command emitting a key of its own.
                 //
-                // ALL THREE call forms, because a key reachable by only one of the other two
+                // EVERY call form a view uses, because a key reachable by only one of the others
                 // would be reported as rendered by nothing — and this check's quiet answer is
-                // the one that reads as good news. `trans_choice()` and `PluralPhrases::from()`
-                // carry the plural strings, which are ordinary catalog keys and collide the
-                // same way.
-                $call = '(?:__|trans_choice|PluralPhrases::from)';
+                // the one that reads as good news. `Plural::choice()`, `trans_choice()` and
+                // `PluralPhrases::from()` carry the plural strings, which are ordinary catalog
+                // keys and collide the same way.
+                $call = '(?:__|trans_choice|Plural::choice|PluralPhrases::from)';
 
                 if (preg_match('/'.$call.'\(\s*'.$this->translationKeyNeedle($key).'/', $body) === 1) {
                     $found[$key] = str_replace($root.'/', '', $file->getPathname());

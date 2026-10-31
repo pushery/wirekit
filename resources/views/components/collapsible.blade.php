@@ -5,7 +5,9 @@
     // Trigger label (string). For rich trigger content, pass a named "trigger" slot
     // instead — both surface as the $trigger variable, so the template renders either.
     'trigger' => null,
-    'open' => false,
+    // Whether the region starts expanded. The default comes from the configuration, so an
+    // application whose boxes start open sets it once rather than at every call.
+    'open' => config('wirekit.components.collapsible.open', false),
     // Closed content stays findable by the browser's find in page, which opens the disclosure a
     // match lands in. Only where the engine supports it; switch it off for a spoiler.
     'findable' => config('wirekit.components.collapsible.findable', true),
@@ -24,8 +26,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $open = BooleanProp::from($open, false);
-    $findable = BooleanProp::from($findable, true);
+    $open = BooleanProp::from($open, BooleanProp::from(config('wirekit.components.collapsible.open', false)), 'collapsible', 'open');
+    $findable = BooleanProp::from($findable, true, 'collapsible', 'findable');
 
     // A standalone single disclosure: one trigger + one collapsible region. Unlike
     // <x-wirekit::accordion> there is no card chrome and no group coordination — it is
@@ -60,7 +62,8 @@
         // aria-controls pointed at whichever a lookup found first, which was the root.
         $attributes->get('id') ? $attributes->get('id').'-panel' : \Pushery\WireKit\WireKit::stableId(
             'wk-collapsible',
-            is_string($trigger) || $trigger instanceof \Stringable ? trim((string) $trigger) : null
+            // A trigger given as markup, or as a slot, seeds with its text.
+            $trigger instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($trigger) : (is_string($trigger) || $trigger instanceof \Stringable ? trim((string) $trigger) : null)
         ),
         'wk-collapsible-'
     );
@@ -104,12 +107,13 @@
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
 @endphp
-<div x-data="wirekitCollapsible({ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} })" {{ $attributes->class(['wk-collapsible', $rootClasses]) }} @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
+<div x-data="wirekitCollapsible({ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} })" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-collapsible', $rootClasses])) }} @if($callerLabelledBy !== null || $callerLabel !== null) @unless($attributes->has('role')) role="group" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }} @endif>
     {{-- Trigger — a real <button> so it is keyboard-operable (Enter/Space) by default.
          aria-expanded announces state; aria-controls links it to the region below. --}}
     <button
         type="button"
         x-on:click="isOpen = !isOpen"
+        aria-expanded="{{ $openBool ? 'true' : 'false' }}"
         :aria-expanded="isOpen ? 'true' : 'false'"
         aria-controls="{{ $uid }}"
         {{-- wk-collapsible-trigger is a marker, carried outside the class seam so an override
@@ -131,8 +135,9 @@
         </svg>
     </button>
 
-    {{-- Collapsible region — smooth height transition via x-collapse. x-cloak hides it
-         until Alpine initializes so a closed disclosure never flashes open on load. --}}
+    {{-- Collapsible region — smooth height transition via x-collapse. x-cloak hides a closed
+         one until Alpine initializes, so it never flashes open on load; an open one paints
+         with the page, as its trigger says. --}}
     @if($findable)
         {{-- Findable: `hidden="until-found"` while closed where the engine supports it, with the
              height animated by `x-wk-findable.collapse` in place of `x-collapse`, which only works
@@ -149,7 +154,7 @@
             </div>
         </div>
     @else
-        <div id="{{ $uid }}" x-show="isOpen" x-collapse x-cloak class="{{ $contentClasses }}">
+        <div id="{{ $uid }}" x-show="isOpen" x-collapse @unless($openBool) x-cloak @endunless class="{{ $contentClasses }}">
             {{ $slot }}
         </div>
     @endif

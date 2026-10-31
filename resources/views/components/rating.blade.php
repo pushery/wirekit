@@ -18,11 +18,13 @@
     // The Livewire method this rating should call, when it should show the new
     // score before the server has agreed to it. Null (the default) renders the plain
     // rating.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'label' => null,
     // `error` is declared, as `label` is: undeclared, `:error` on a rating would land in the
     // attribute bag and render as a stray HTML attribute — a validation message the developer
@@ -71,7 +73,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -81,7 +83,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
@@ -89,18 +91,26 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $readonly = BooleanProp::from($readonly, false);
-    $clearable = BooleanProp::from($clearable, false);
-    $required = BooleanProp::from($required, false);
-    $disabled = BooleanProp::from($disabled, false) && ! $readonly;
+    $readonly = BooleanProp::from($readonly, false, 'rating', 'readonly');
+    $clearable = BooleanProp::from($clearable, false, 'rating', 'clearable');
+    $required = BooleanProp::from($required, false, 'rating', 'required');
+    $disabled = BooleanProp::from($disabled, false, 'rating', 'disabled') && ! $readonly;
 
-    // A whole number of stars, at least one. A max that holds no positive number takes the
-    // configured default: a text would compare as text in the star loop below, which then
-    // never ends.
-    $max = max(1, (int) \Pushery\WireKit\Support\NumericProp::positive(
+    // A readonly rating records a score and puts no form field on the page, so a caller's
+    // `wire:model` has nothing to bind.
+    if ($readonly) {
+        \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('rating', $attributes->getAttributes(), 'while `readonly`', 'A readonly rating shows the score given as `value`.');
+    }
+
+    // A whole number of stars, at least one and at most a hundred. A max that holds no positive
+    // number takes the configured default: a text would compare as text in the star loop below,
+    // which then never ends, and a count without a ceiling draws a star per unit until the request
+    // runs out of memory.
+    $max = max(1, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::positive(
         $max,
         \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.rating.max', 5), 5),
-    ));
+        'rating', 'max',
+    ), 100, 'rating', 'max'));
 
     // The seed carries no key for the feature while it is off. It is an attribute
     // a Livewire morph rewrites, and Alpine re-initializes on the change — so a
@@ -116,6 +126,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('rating', $attributes->getAttributes());
 
+    // An unknown `icon` is reported (Support\StrictnessGate) and renders as `star`; a bound `null`
+    // or empty string is `star` without a word.
+    $icon = \Pushery\WireKit\WireKit::validateProp('rating', 'icon', \Pushery\WireKit\Support\NumericProp::text($icon ?: 'star'), ['star', 'heart', 'circle', 'square', 'diamond', 'thumb']);
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('rating', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
+
     // The hidden input gives the score as text, and Livewire takes the server's echo of an `int`
     // or `float` property for a change and writes it over a newer score: a binding to one gets
     // `.number` and sends a number (Support\NumericModel).
@@ -127,18 +145,26 @@
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'rating-'); // page-unique DOM id; see Support\DomId
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     /*
      * The Laravel validation bag, read as every other form control reads it:
-     * `$error ?? FieldError::first($errors, $name)`. Without it, after a failed
+     * `FieldError::message($errors, $name, $error)`. Without it, after a failed
      * `$this->validate()` every other control would show its message and this one nothing —
      * in the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
      */
-    $error ??= \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    $error = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
     // Strip the caller's `id` AND `name` from the bag: the deduped $id is rendered
     // explicitly as id="{{ $id }}", so leaving it in the bag would emit a second,
     // conflicting id attribute. `name` belongs on the hidden input below, which renders
@@ -155,12 +181,25 @@
     // their `aria-label` does; on the wrapper it would name nothing a reader lands on.
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
     $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
+    // Inside a labeled field the field's label names the radiogroup by reference, as this
+    // component's own label does; a readonly rating is a picture named by its score, and takes
+    // none (Support\FieldControl).
+    $fieldLabelId = ! $readonly && ! filled($label) && blank(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')) && $callerLabelledBy === null && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel(null)
+        : null;
     $describedBy = trim(($error ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.$callerDescribedBy);
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
     $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
     // A required rating that a submit found empty says so under the stars (partials/required-message),
     // unless the server's own message for the field already stands there.
@@ -300,7 +339,10 @@
 @endphp
 
 <div
-    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }} data-wk-sr-host
+    {{ $attributes->except(['aria-label', 'aria-labelledby', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }} data-wk-sr-host
+    {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+         listener written on the tag hears one field (utils/focus-unit.js). --}}
+    x-wk-focus-unit
     @if($callerRef !== '') data-wk-ref-scope x-wk-ref="{{ $callerRef }}" @endif
     {{-- The server's own channel — see segmented-control for why this is a
          plain attribute rather than the hidden input this component binds. --}}
@@ -328,7 +370,7 @@
                 <div data-wk-label-row class="{{ $hasLabelAfter ? 'flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]' : 'flex items-center gap-[var(--gap-wk-xs)]' }}">@if($hasLabelAfter)<span class="inline-flex min-w-0 items-center gap-[var(--gap-wk-xs)]">@endif
                     <span data-wk-field-label class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
                     @if(filled($help))
-                    @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => null, 'helpField' => (string) ($name)])
+                    @include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => (string) $label, 'helpId' => null, 'helpField' => (string) ($name !== '' ? $name : $id)])
                     @endif
                     @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif
                 </div>
@@ -341,7 +383,7 @@
                  would resolve to nothing at all, and the visible text would be an orphan
                  while the group named itself separately. The control here is the GROUP,
                  so the group is named BY this label. --}}
-            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+            <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" id="{{ $id }}-label" :required="$required">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
         @endif
     @endif
 
@@ -371,7 +413,7 @@
              attribute makes the field agree with what is on screen from the
              first paint; `:value` takes over the moment Alpine runs. --}}
         {{-- A disabled field is left out of the form data, as a native one is. --}}
-        <input type="hidden" id="{{ $id }}" name="{{ $name }}" value="{{ $clamped }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
+        <input type="hidden" id="{{ $id }}" @if($name !== '') name="{{ $name }}" @endif value="{{ $clamped }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} @if($disabled) disabled @endif @if($formOwner) form="{{ $formOwner }}" @endif />
         {{-- The browser validates no hidden field, so a required rating stops an empty submit
              through a stand-in of its own. --}}
         @if($required)
@@ -401,11 +443,11 @@
                  the form of the noun it precedes.
 
                  An explicit aria-label still wins: the caller knows their page. --}}
-            @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? trans_choice('wirekit:::value out of :max stars', $max, ['value' => $announcedValue, 'max' => $max]) }}" @endif
+            @if($callerLabelledBy) aria-labelledby="{{ $callerLabelledBy }}" @else aria-label="{{ \Pushery\WireKit\Support\BlankName::first(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), \Pushery\WireKit\Support\Plural::choice('wirekit:::value out of :max stars', $max, ['value' => $announcedValue, 'max' => $max])) }}" @endif
             @if($callerDescribedBy !== '') aria-describedby="{{ $callerDescribedBy }}" @endif
         @else
             role="radiogroup"
-            @if($required) aria-required="true" @endif
+            @if($required || $fieldRequired) aria-required="true" @endif
             {{-- On the group AND on each star, as `segmented-control` does: the group says
                  it is unavailable, and so does the star a reader lands on. --}}
             @if($disabled) aria-disabled="true" @endif
@@ -415,10 +457,12 @@
                  `aria-labelledby` would otherwise silently outrank what they wrote. --}}
             @if($callerLabelledBy)
                 aria-labelledby="{{ $callerLabelledBy }}"
-            @elseif($label && ! \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'))
+            @elseif(filled($label) && blank(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label')))
                 aria-labelledby="{{ $id }}-label"
+            @elseif($fieldLabelId)
+                aria-labelledby="{{ $fieldLabelId }}"
             @else
-                aria-label="{{ \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $label ?? __('wirekit::Rating') }}"
+                aria-label="{{ \Pushery\WireKit\Support\BlankName::first(\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'), $label, __('wirekit::Rating')) }}"
             @endif
             {{-- On the GROUP, not on each star: the message is about the rating, and
                  repeating it on five buttons would read it out five times. --}}
@@ -505,7 +549,9 @@
                          says something about paint rather than about state. The
                          roving `:tabindex` further down already compares for
                          equality, for the same single-select reason. --}}
-                    aria-checked="{{ (int) $value === $i ? 'true' : 'false' }}"
+                    {{-- Read through int(): `(int)` on a value beyond the integer range warns on PHP 8.5. The
+                         value is a number here already, so naming it reports nothing twice. --}}
+                    aria-checked="{{ \Pushery\WireKit\Support\NumericProp::int($value, 0, 'rating', 'value') === $i ? 'true' : 'false' }}"
                     :aria-checked="rating === {{ $i }} ? 'true' : 'false'"
                     {{-- Translated, like every other label on this component. And
                          built on the SERVER on purpose: this names the button's
@@ -513,7 +559,7 @@
                          embeds the current value, where server-side
                          pluralization is exactly what blocks an optimistic
                          update from being announced correctly. --}}
-                    aria-label="{{ trans_choice('wirekit:::count star|:count stars', $i) }}"
+                    aria-label="{{ \Pushery\WireKit\Support\Plural::choice('wirekit:::count star|:count stars', $i) }}"
                     {{-- `aria-disabled`, not the native attribute: a natively disabled star
                          leaves the tab order, and a group whose every star has left it
                          disappears from keyboard navigation. With no handler bound, a click

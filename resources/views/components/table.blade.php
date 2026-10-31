@@ -5,6 +5,11 @@
     'hoverable' => config('wirekit.components.table.hoverable', false),
     'compact' => config('wirekit.components.table.compact', false),
     'responsive' => config('wirekit.components.table.responsive', true),
+    // As wide as its columns, at most as wide as the space, and beyond that as without it. A
+    // responsive table measures its columns against a container, and a container takes no width
+    // from what it holds, so a wrapper that sizes itself by its content (`w-fit`, `inline-block`)
+    // leaves the table no width at all. This is the way to the same layout from inside.
+    'fit' => false,
     'stickyHeader' => false,
     // How tall the scroll-confined body may get before it scrolls. `stickyHeader` needs a
     // bounded height to mean anything at all — the wrapper already carries `overflow-x: auto`,
@@ -27,6 +32,11 @@
     // sm | md | lg | xl | 2xl — below that breakpoint every body row stands as a card and every
     // cell as a line that names its column, so a wide table does not scroll sideways on a phone.
     'stackBelow' => null,
+    // sm | md | lg | xl | 2xl | 3xl | 4xl | 5xl — the same, below a width of the TABLE rather than of
+    // the window, on the container scale of a column's `hideBelowContainer`: beside a sidebar or in
+    // one column of a page the window is the wrong thing to measure. A responsive table only, since
+    // its frame is what is measured.
+    'stackBelowContainer' => null,
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // Accessible name for the responsive scroll wrapper, and the switch that makes it a
     // LANDMARK. The wrapper is keyboard-reachable either way (WCAG 2.1.1 — `tabindex="0"` is
@@ -50,15 +60,16 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $stickyHeader = BooleanProp::from($stickyHeader, false);
+    $stickyHeader = BooleanProp::from($stickyHeader, false, 'table', 'stickyHeader');
     // Same contract for the four whose default is spelled as a `config()` fallback rather
     // than a literal. `responsive` is the sharp one: it defaults ON, so `responsive="false"`
     // is a switch a developer reaches for deliberately, and without the cast the wrapper it
     // is meant to remove would stay.
-    $responsive = BooleanProp::from($responsive, true);
-    $striped = BooleanProp::from($striped, false);
-    $hoverable = BooleanProp::from($hoverable, false);
-    $compact = BooleanProp::from($compact, false);
+    $responsive = BooleanProp::from($responsive, true, 'table', 'responsive');
+    $fit = BooleanProp::from($fit, false, 'table', 'fit');
+    $striped = BooleanProp::from($striped, false, 'table', 'striped');
+    $hoverable = BooleanProp::from($hoverable, false, 'table', 'hoverable');
+    $compact = BooleanProp::from($compact, false, 'table', 'compact');
 
     // The value reaches the element as an inline max-height rather than as a Tailwind class,
     // and that is the whole design of this prop rather than a shortcut. Two reasons, and
@@ -72,11 +83,12 @@
     // and from any comment describing it, and compile it into the stylesheet.
     //
     // An inline height has none of that: it needs no scanner, no safelist entry, and it takes
-    // any CSS length exactly as written — `calc(100vh - 4rem)` included, with no escaping.
+    // any single CSS length, `calc(100vh - 4rem)` included. A text that carries a declaration of
+    // its own is reported and the height is the documented `24rem` (Support\CssValue).
     $stickyHeaderStyle = $stickyHeader
-        ? 'max-height: '.trim((string) $stickyHeaderMax).';'
+        ? 'max-height: '.\Pushery\WireKit\Support\CssValue::prop($stickyHeaderMax, 'table', 'stickyHeaderMax', '24rem').';'
         : null;
-    $stickyColumn = BooleanProp::from($stickyColumn, false);
+    $stickyColumn = BooleanProp::from($stickyColumn, false, 'table', 'stickyColumn');
 
     // `stickyColumnBelow` freezes the first column only below a breakpoint and turns the frozen
     // column on by itself. From that width up the table fills its box again, so a wide screen
@@ -100,7 +112,7 @@
         '2xl' => 'min-w-full w-max 2xl:w-full',
         default => 'min-w-full w-max',
     };
-    $alpineSort = BooleanProp::from($alpineSort, false);
+    $alpineSort = BooleanProp::from($alpineSort, false, 'table', 'alpineSort');
 
     // `stackBelow` stacks the rows below a breakpoint (dist/wirekit.css, the stacked rows). An
     // unknown value is reported through the strictness gate and, where the gate does not throw,
@@ -111,6 +123,42 @@
         $stackBelow = null;
     }
 
+    // `stackBelowContainer` asks the width of the table's frame (`@container/wk-table`), which only
+    // a responsive table has. Without the frame there is nothing to measure, so the prop is reported
+    // and the table stays a table.
+    $stackBelowContainer = filled($stackBelowContainer) ? (string) $stackBelowContainer : null;
+    if ($stackBelowContainer !== null && ! in_array($stackBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'], true)) {
+        WireKit::validateProp('table', 'stackBelowContainer', $stackBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']);
+        $stackBelowContainer = null;
+    }
+    if ($stackBelowContainer !== null && ! $responsive) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('table', 'stackBelowContainer', $stackBelowContainer, 'a responsive table', '');
+        $stackBelowContainer = null;
+    }
+
+    // With `fit` the frame takes the table's width, up to the space's. A stacked table fills the
+    // space again below its breakpoint, where its rows stand as cards. Written out per breakpoint
+    // because Tailwind reads literal class names.
+    $fitFrameWidth = 'w-fit max-w-full'.match ($stackBelow) {
+        'sm' => ' max-sm:w-full',
+        'md' => ' max-md:w-full',
+        'lg' => ' max-lg:w-full',
+        'xl' => ' max-xl:w-full',
+        '2xl' => ' max-2xl:w-full',
+        default => '',
+    }.match ($stackBelowContainer) {
+        // The frame with `fit` sits inside the element that is the container, so it asks that one.
+        'sm' => ' @max-sm/wk-table:w-full',
+        'md' => ' @max-md/wk-table:w-full',
+        'lg' => ' @max-lg/wk-table:w-full',
+        'xl' => ' @max-xl/wk-table:w-full',
+        '2xl' => ' @max-2xl/wk-table:w-full',
+        '3xl' => ' @max-3xl/wk-table:w-full',
+        '4xl' => ' @max-4xl/wk-table:w-full',
+        '5xl' => ' @max-5xl/wk-table:w-full',
+        default => '',
+    };
+
     // Base table classes — full width, collapse borders, use design tokens for typography
     $classes = WireKit::resolveClasses('table', 'base', implode(' ', [
         'wk-table',
@@ -118,7 +166,9 @@
         // frozen column has something to scroll past — `w-full` caps it at 100% and
         // the columns just compress (no horizontal scroll, sticky-column inert). Use
         // the natural content width (min 100%) so a wide table overflows + scrolls.
-        $stickyColumn ? $stickyColumnWidth : 'w-full',
+        // Without the responsive frame there is nothing to shrink to the columns, so `fit` lets
+        // the table take its own width, at most its box's.
+        $stickyColumn ? $stickyColumnWidth : ($fit && ! $responsive ? 'w-auto' : 'w-full'),
         // As a flex item the table would shrink to fit the scroller and never
         // overflow, which removes the scrolling the sentinels are watching for.
         // `flex-shrink` is inert outside a flex container, so it changes nothing in
@@ -263,7 +313,15 @@
      (`z-10`) its top while the rows scroll. An outline set inward is covered by the sticky head
      the same way. The overlay sits above the sticky head at the height the frozen header cell
      already takes over it, and exists only while the scroller has the focus. --}}
-<div class="@container/wk-table relative w-full min-w-0 has-[>[data-wk-table-scroller]:focus-visible]:after:pointer-events-none has-[>[data-wk-table-scroller]:focus-visible]:after:absolute has-[>[data-wk-table-scroller]:focus-visible]:after:inset-0 has-[>[data-wk-table-scroller]:focus-visible]:after:z-20 has-[>[data-wk-table-scroller]:focus-visible]:after:rounded-[inherit] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[length:var(--ring-wk-width)] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-inset has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[var(--color-wk-ring)]" x-data="wirekitStickyPanelShadows()" @if($callerRef !== '') data-wk-ref-scope @endif {{ $outerAttributes }}>
+{{-- With `fit`, the frame below takes its width from the table, which a container cannot: an
+     element with `container-type: inline-size` takes no width from what it holds. So this element
+     is the container a column measures against, as wide as the space just as the frame is without
+     `fit`, and the frame inside it, with the shadows and the focus ring, only as wide as the table.
+     A caller's `wire:key`, `x-show` and transitions belong to the outermost element, here. --}}
+@if($fit)
+<div class="@container/wk-table w-full min-w-0" {{ $outerAttributes }}>
+@endif
+<div data-wk-ref-scope class="{{ $fit ? $fitFrameWidth : '@container/wk-table w-full' }} relative min-w-0 has-[>[data-wk-table-scroller]:focus-visible]:after:pointer-events-none has-[>[data-wk-table-scroller]:focus-visible]:after:absolute has-[>[data-wk-table-scroller]:focus-visible]:after:inset-0 has-[>[data-wk-table-scroller]:focus-visible]:after:z-20 has-[>[data-wk-table-scroller]:focus-visible]:after:rounded-[inherit] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[length:var(--ring-wk-width)] has-[>[data-wk-table-scroller]:focus-visible]:after:ring-inset has-[>[data-wk-table-scroller]:focus-visible]:after:ring-[var(--color-wk-ring)]" x-data="wirekitStickyPanelShadows()" @unless($fit) {{ $outerAttributes }} @endunless>
 <div
     x-ref="scroller"
     {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in
@@ -298,7 +356,7 @@
          because `role="region"` with an empty name is not exposed as a landmark at all — an
          interpolated caller value over a record with no title yields exactly that. --}}
     tabindex="0"
-    @if(filled($tableLabel)) role="region" aria-label="{{ $tableLabel }}" @endif
+    @if(filled($tableLabel)) role="region" aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($tableLabel) }}" @endif
 >
 {{-- One real pixel each, canceled by a negative margin on the side facing the table.
 
@@ -318,7 +376,7 @@
 <div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -me-px"></div>
 @endif
     <table data-wk-prose-skip
-        {{ $attributes->class([$classes]) }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @if(! $responsive) data-wk-ref-scope @endif @endif
         @foreach($tableAttrs as $attr) {{ $attr }} @endforeach
         {{-- Debug-only composition warning. It cannot be an inline console.warn:
@@ -335,14 +393,15 @@
              exposing them as a table, so the roles are written out. `x-wk-table-labels` names each
              cell's column from the header above it; a table outside every Alpine scope gets one
              of its own for it, since a directive outside every scope is never installed. --}}
-        @if($stackBelow !== null)
-            data-wk-table-stack="{{ $stackBelow }}"
+        @if($stackBelow !== null || $stackBelowContainer !== null)
+            @if($stackBelow !== null) data-wk-table-stack="{{ $stackBelow }}" @endif
+            @if($stackBelowContainer !== null) data-wk-table-stack-container="{{ $stackBelowContainer }}" @endif
             role="table"
             x-wk-table-labels
             @if(! $alpineSort && ! $hasPlainHtmlDescendants && ! $responsive) x-data @endif
         @endif
         @if($alpineSort)
-            x-data="wirekitTableSort({ warning: {{ $hasPlainHtmlDescendants ? \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) : 'null' }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_', '-', app()->getLocale())) }} })"
+            x-data="wirekitTableSort({ warning: {{ $hasPlainHtmlDescendants ? \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) : 'null' }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\IcuLocale::tag()) }} })"
         @elseif($hasPlainHtmlDescendants)
             x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) }} })"
         @endif
@@ -360,4 +419,7 @@
 <div aria-hidden="true" x-cloak x-show="startShadow" x-transition.opacity class="wk-scroll-shadow-start"></div>
 <div aria-hidden="true" x-cloak x-show="endShadow" x-transition.opacity class="wk-scroll-shadow-end"></div>
 </div>
+@if($fit)
+</div>
+@endif
 @endif

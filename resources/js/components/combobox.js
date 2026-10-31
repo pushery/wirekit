@@ -51,6 +51,7 @@ import { withOpenAlias } from '../utils/open-alias.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { watchCurrent } from '../utils/watch-current.js';
 import { jsonValue, observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { controlIsDisabled, watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
 
 /** The attribute that carries the options outside server mode; see init(). */
 const OPTIONS_ATTRIBUTE = 'data-wk-options';
@@ -78,6 +79,11 @@ export default function wirekitCombobox(config = {}) {
         // server sent last, as a native field returns to the value the server rendered.
         _stopFormReset: null,
         _resetValue: config.value ?? null,
+        // The fieldsets around the field, whose `disabled` locks it as it locks a native control
+        // (utils/fieldset-disabled.js), released in destroy(). A select-only trigger is a `div`,
+        // which no fieldset disables, so it follows them the way a range slider's thumbs do.
+        fieldsetDisabled: false,
+        _stopFieldsetWatch: null,
         // `requiredMessage` and `onRequiredInvalid()`: a required combobox stops a submit without a
         // choice (utils/required-check.js).
         ...requiredCheckState(),
@@ -198,6 +204,29 @@ export default function wirekitCombobox(config = {}) {
             return this.selected ?? '';
         },
 
+        /**
+         * Whether the field takes no input now: disabled by its own attribute, by a fieldset around
+         * it, or by a state Livewire set after the page loaded, or read-only. Read at the moment of
+         * each choice: the list is teleported out of every fieldset and its options are no native
+         * controls, so a fieldset disabled while the list is open would otherwise leave each of them
+         * choosable. A read-only field keeps the focus and its keys, which a disabled one does not,
+         * so the ways that open the list ask this as well.
+         */
+        get locked() {
+            const field = this.$refs?.cbxInput;
+
+            return this.fieldsetDisabled
+                || controlIsDisabled(field)
+                || field?.getAttribute?.('aria-disabled') === 'true'
+                || field?.readOnly === true
+                || field?.getAttribute?.('aria-readonly') === 'true';
+        },
+
+        /** `aria-disabled` on a select-only trigger that a fieldset locks; null removes the attribute. */
+        get fieldsetAriaDisabled() {
+            return this.fieldsetDisabled ? 'true' : null;
+        },
+
         /** A group's key for x-for; ungrouped options share one stable bucket. */
         groupKey(group) {
             return group && group.label ? group.label : '__wk_ungrouped';
@@ -250,8 +279,9 @@ export default function wirekitCombobox(config = {}) {
 
                 // With free input the suggestions open as they arrive for the reader typing in the
                 // field, and close when there are none; nothing is marked until an arrow key moves.
+                // A field locked while the search ran keeps them shut.
                 if (this._free) {
-                    this.isOpen = options.length > 0 && this._fieldHasFocus();
+                    this.isOpen = options.length > 0 && this._fieldHasFocus() && ! this.locked;
 
                     return;
                 }
@@ -284,6 +314,7 @@ export default function wirekitCombobox(config = {}) {
 
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:combobox-open',
+                root: this.$root,
                 onOther: () => { this.isOpen = false; },
             });
 
@@ -401,6 +432,12 @@ export default function wirekitCombobox(config = {}) {
 
                 return typeof root?.querySelector === 'function' ? root.querySelector('input[type=hidden]') : null;
             }, () => this._restore());
+
+            // A page locks a section for a moment as well, `wire:loading.attr="disabled"` on a
+            // fieldset for the length of a request.
+            this._stopFieldsetWatch = watchFieldsetDisabled(root, (disabled) => {
+                this.fieldsetDisabled = disabled;
+            });
         },
 
         // Panel ids, handed in by the Blade so `_place()` can find the panels
@@ -594,6 +631,24 @@ export default function wirekitCombobox(config = {}) {
             }
         },
 
+        /**
+         * The root's press outside: closes the list unless the press landed in one of the panels
+         * teleported out of the root, the list or the one that says nothing matched. Alpine's
+         * `.outside` asks only whether the root holds the target, and these panels are not in it,
+         * so a press on a disabled option, a group heading, the list's edge or one of its notes
+         * read as outside and closed the list while it chose nothing.
+         */
+        closeOutside(event) {
+            const target = event?.target ?? null;
+            const inPanel = target !== null && [this._listId, this._emptyId]
+                .map((id) => (id && typeof document !== 'undefined' ? document.getElementById(id) : null))
+                .some((panel) => panel?.contains?.(target) === true);
+
+            if (! inPanel) {
+                this.isOpen = false;
+            }
+        },
+
         destroy() {
             this._stopServerValue?.();
             this._stopServerValue = null;
@@ -601,6 +656,8 @@ export default function wirekitCombobox(config = {}) {
             this._stopOptionsSync = null;
             this._stopFormReset?.();
             this._stopFormReset = null;
+            this._stopFieldsetWatch?.();
+            this._stopFieldsetWatch = null;
             this._modelEvents?.dispose();
             this._modelEvents = null;
             this._coordination?.stop();
@@ -673,9 +730,16 @@ export default function wirekitCombobox(config = {}) {
             return this.query === this._seededQuery ? '' : this.query;
         },
 
+        /** The text field opens its list as it takes the focus, unless the field is locked. */
+        openOnFocus() {
+            if (! this.locked) {
+                this.isOpen = true;
+            }
+        },
+
         /** Arrow into the list from the field. With free input only while there are suggestions. */
         openAndMove(delta) {
-            if (this._free && this.filtered.length === 0) {
+            if (this.locked || (this._free && this.filtered.length === 0)) {
                 return;
             }
 
@@ -684,17 +748,29 @@ export default function wirekitCombobox(config = {}) {
         },
 
         openAtFirst() {
+            if (this.locked) {
+                return;
+            }
+
             this.isOpen = true;
             this.highlightFirst();
         },
 
         openAtLast() {
+            if (this.locked) {
+                return;
+            }
+
             this.isOpen = true;
             this.highlightLast();
         },
 
         /** The chevron toggles, and returns focus to the field either way. */
         toggleAndFocus() {
+            if (this.locked) {
+                return;
+            }
+
             this.isOpen = ! this.isOpen;
 
             if (this.$refs.cbxInput) {
@@ -718,7 +794,7 @@ export default function wirekitCombobox(config = {}) {
         // ── Choosing ────────────────────────────────────────────────────────
 
         selectOption(opt) {
-            if (opt.disabled) {
+            if (opt.disabled || this.locked) {
                 return;
             }
 
@@ -848,6 +924,10 @@ export default function wirekitCombobox(config = {}) {
          */
         enterKey() {
             if (! this.isOpen) {
+                if (this.locked) {
+                    return;
+                }
+
                 this._highlightChoice();
                 this.isOpen = true;
 
@@ -934,16 +1014,29 @@ export default function wirekitCombobox(config = {}) {
          * means there was no candidate and no request should go out, while a
          * real value — including a falsy one — is a choice. Without it, Enter
          * on an empty or all-disabled list would send the server a mutation for
-         * a value nobody picked.
+         * a value nobody picked. A locked field chooses nothing either.
          */
         highlightedValue() {
             const option = this.filtered[this.highlight];
 
-            if (! option || option.disabled) {
+            if (! option || option.disabled || this.locked) {
                 return undefined;
             }
 
             return option.value;
+        },
+
+        /**
+         * The value a click on this option chooses, or `undefined` when it chooses nothing, read
+         * by the optimistic layer's `runIf()` the way `highlightedValue()` is read for Enter. A
+         * disabled option and a locked field choose nothing, as they do for Enter.
+         */
+        pickValue(opt) {
+            if (! opt || opt.disabled || this.locked) {
+                return undefined;
+            }
+
+            return opt.value;
         },
 
         /**
@@ -954,6 +1047,11 @@ export default function wirekitCombobox(config = {}) {
             if (this.isOpen) {
                 this.isOpen = false;
 
+                return;
+            }
+
+            // A locked trigger opens nothing, as a disabled native select does not.
+            if (this.locked) {
                 return;
             }
 
@@ -1008,6 +1106,12 @@ export default function wirekitCombobox(config = {}) {
          * otherwise it opens the list or chooses, as a native select does.
          */
         selectOnlyKeydown(event) {
+            // A locked trigger takes no key, as a disabled native select takes none. Nothing is
+            // prevented, so Tab still moves focus on.
+            if (this.locked) {
+                return undefined;
+            }
+
             const { key, altKey, ctrlKey, metaKey } = event;
             const printable = [...key].length === 1 && ! altKey && ! ctrlKey && ! metaKey;
 

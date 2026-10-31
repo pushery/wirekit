@@ -9,6 +9,8 @@
  */
 import { createOverlay } from '../utils/overlay.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { armDialogConfirm } from '../utils/dialog-confirm.js';
+import { watchCurrent } from '../utils/watch-current.js';
 
 /**
  * Focusable descendants, in the order the browser would tab through them.
@@ -29,6 +31,8 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
  *   A dismissal (Cancel, Escape, the backdrop) returns to a surviving trigger first.
  * @param {string} [config.confirmationPhrase] - Exact string the developer must type
  *   before `alert-dialog.confirm` will fire. Absent, nothing is held back.
+ * @param {boolean} [config.confirmShortcut=true] - Whether ⌘↵ / Ctrl+Enter presses the confirm
+ *   control while the dialog is open (utils/dialog-confirm.js)
  */
 export default function wirekitAlertDialog(config = {}) {
     const overlay = createOverlay({
@@ -149,6 +153,10 @@ export default function wirekitAlertDialog(config = {}) {
          * slotted their own; the same lookup covers the default button, a caller's
          * button and a link styled as one.
          *
+         * A Livewire update compares the control with markup that carries neither value and
+         * takes both off, while the effect that calls this waits for the next keystroke. The
+         * wrapper is watched (_watchConfirmControl()), and this runs again on such a change.
+         *
          * @param {Element} wrapper the element carrying `data-wk-alert-confirm`
          * @param {string}  reasonId id of the region holding the reason text
          */
@@ -157,34 +165,53 @@ export default function wirekitAlertDialog(config = {}) {
 
             if (!control) return;
 
-            // A caller's control may already be described by something of their own, so
-            // the reason is ADDED to that rather than replacing it. The baseline is read
-            // once and kept on the element — this runs again on every keystroke, and
-            // reading the attribute back after the first write would capture our own id
-            // as though the caller had put it there. It is a plain expando rather than a
-            // data attribute so nothing of ours shows up in the caller's markup, and
-            // rather than component state so writing it cannot re-trigger the effect
-            // that called us.
-            if (control._wkConfirmDescribedBy === undefined) {
-                control._wkConfirmDescribedBy = control.getAttribute('aria-describedby') ?? '';
-            }
+            this._watchConfirmControl(wrapper, reasonId);
 
-            const base = control._wkConfirmDescribedBy;
+            // A caller's control may already be described by something of their own, so the
+            // reason is ADDED to that rather than replacing it. Their description is what the
+            // control carries but the reason's id, read on every run, so a render that changes
+            // it is followed and our own id is never taken for theirs.
+            const base = String(control.getAttribute('aria-describedby') ?? '')
+                .split(/\s+/)
+                .filter((token) => token !== '' && token !== reasonId)
+                .join(' ');
+            const allowed = this.confirmAllowed;
+            const held = base === '' ? reasonId : `${base} ${reasonId}`;
+            const describedBy = allowed ? base : held;
 
-            if (this.confirmAllowed) {
-                control.removeAttribute('aria-disabled');
-
-                if (base === '') {
-                    control.removeAttribute('aria-describedby');
-                } else {
-                    control.setAttribute('aria-describedby', base);
+            // Only what differs is written: every write is a change the watch hears.
+            if (allowed) {
+                if (control.hasAttribute('aria-disabled')) {
+                    control.removeAttribute('aria-disabled');
                 }
-
-                return;
+            } else if (control.getAttribute('aria-disabled') !== 'true') {
+                control.setAttribute('aria-disabled', 'true');
             }
 
-            control.setAttribute('aria-disabled', 'true');
-            control.setAttribute('aria-describedby', base === '' ? reasonId : `${base} ${reasonId}`);
+            if (describedBy === '') {
+                if (control.hasAttribute('aria-describedby')) {
+                    control.removeAttribute('aria-describedby');
+                }
+            } else if (control.getAttribute('aria-describedby') !== describedBy) {
+                control.setAttribute('aria-describedby', describedBy);
+            }
+        },
+
+        /**
+         * Run the sync again when something else changes the control's state: a Livewire update,
+         * or a render that put another control in the wrapper. Once per wrapper, kept on the
+         * wrapper as a plain expando rather than in component state, so registering it cannot
+         * re-trigger the effect that calls the sync.
+         *
+         * @param {Element} wrapper
+         * @param {string}  reasonId
+         */
+        _watchConfirmControl(wrapper, reasonId) {
+            if (wrapper._wkConfirmWatch || typeof MutationObserver !== 'function') return;
+
+            const watch = new MutationObserver(() => this.syncConfirmControlState(wrapper, reasonId));
+            watch.observe(wrapper, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-disabled', 'aria-describedby'] });
+            wrapper._wkConfirmWatch = watch;
         },
 
         /**
@@ -213,11 +240,82 @@ export default function wirekitAlertDialog(config = {}) {
             setTimeout(() => this.close(), 0);
         },
 
+        /**
+         * ⌘↵ / Ctrl+Enter presses the confirm control while the dialog is open: the control a page
+         * marks with `data-wk-dialog-primary`, else the one inside `alert-dialog.confirm`. Focus
+         * stays on Cancel, so a plain Enter still approves nothing. A control held back by an
+         * unmet phrase is `aria-disabled`, and the shortcut leaves it alone.
+         */
+        confirmShortcut: config.confirmShortcut !== false,
+        _disarmConfirmShortcut: null,
+
+        _syncConfirmShortcut(open) {
+            if (this._disarmConfirmShortcut) {
+                this._disarmConfirmShortcut();
+                this._disarmConfirmShortcut = null;
+            }
+
+            if (open && this.confirmShortcut) {
+                this._disarmConfirmShortcut = armDialogConfirm(this.$refs.panel, { fallback: '[data-wk-alert-confirm]' });
+            }
+        },
+
+        /**
+         * `closeOnConfirm` with a control the page marks `data-wk-dialog-primary` rather than one
+         * inside `alert-dialog.confirm`: its click is the confirmation, and it closes the dialog
+         * the same way. A marked control inside the confirm wrapper is left to the wrapper, which
+         * calls `confirmed()` itself. A disabled control is never clicked.
+         *
+         * The panel hears the click and asks then which control is marked, so a marked control a
+         * Livewire update put in place of the one at the opening closes the dialog as well. It
+         * hears it on the way down, before the control's own handlers, so one that stops the
+         * click's way up still closes the dialog; the close waits a task either way.
+         */
+        _disarmPrimaryClose: null,
+
+        _syncPrimaryClose(open) {
+            if (this._disarmPrimaryClose) {
+                this._disarmPrimaryClose();
+                this._disarmPrimaryClose = null;
+            }
+
+            const panel = open && this.closeOnConfirm ? this.$refs.panel : null;
+
+            if (typeof panel?.addEventListener !== 'function') {
+                return;
+            }
+
+            const onClick = (event) => {
+                const marked = panel.querySelector?.('[data-wk-dialog-primary]');
+
+                if (marked && ! marked.closest('[data-wk-alert-confirm]') && marked.contains(event.target)) {
+                    this.confirmed();
+                }
+            };
+
+            panel.addEventListener('click', onClick, true);
+            this._disarmPrimaryClose = () => panel.removeEventListener('click', onClick, true);
+        },
+
         init() {
             this.initOverlay();
+            watchCurrent(this, 'isOpen', (open) => {
+                this._syncConfirmShortcut(open);
+                this._syncPrimaryClose(open);
+            });
         },
 
         destroy() {
+            this._syncConfirmShortcut(false);
+            this._syncPrimaryClose(false);
+
+            const wrapper = this.$refs?.panel?.querySelector?.('[data-wk-alert-confirm]');
+
+            if (wrapper?._wkConfirmWatch) {
+                wrapper._wkConfirmWatch.disconnect();
+                wrapper._wkConfirmWatch = undefined;
+            }
+
             this.destroyOverlay();
         },
     });

@@ -16,6 +16,7 @@ import { createFocusTrap } from '../utils/focus-trap.js';
 import { holdPageInert, inOverlayRoot, lockScroll, releasePageInert, unlockScroll } from '../utils/overlay.js';
 import { FOCUSABLE } from '../utils/first-control.js';
 import { withOpenAlias } from '../utils/open-alias.js';
+import { sameName } from '../utils/same-name.js';
 import { prefersReducedMotion } from '../utils/motion.js';
 import { FITTED, panBy, settle, zoomTo } from '../utils/zoom-pan.js';
 
@@ -159,6 +160,13 @@ export default function wirekitLightbox(config = {}) {
             return slide && slide.caption ? slide.caption : '';
         },
 
+        /** The language of the current slide's caption where it differs from the page's, else null. */
+        get currentCaptionLang() {
+            const slide = this._slides[this.current];
+
+            return slide && slide.captionLang ? slide.captionLang : null;
+        },
+
         /**
          * The one string a screen reader hears on every slide change.
          *
@@ -177,8 +185,18 @@ export default function wirekitLightbox(config = {}) {
          * to, so joining two finished sentences is safe where joining two fragments
          * would not be — and a reader gets a pause between where they are and what
          * is there.
+         *
+         * The live region holds the two parts apart, `announcementLead` and
+         * `announcementLabel`, so the slide's text can carry its own language
+         * (`announcementLang`): an alternative text in German on an English page is
+         * spoken as German only where something says that it is.
          */
         get announcement() {
+            return `${this.announcementLead}${this.announcementLabel}`;
+        },
+
+        /** The position in the page's language, with the full stop before the slide's text when it has one. */
+        get announcementLead() {
             const template = typeof config.announcement === 'string' && config.announcement !== ''
                 ? config.announcement
                 : 'Slide :current of :total';
@@ -187,10 +205,29 @@ export default function wirekitLightbox(config = {}) {
                 .replace(':current', String(this.current + 1))
                 .replace(':total', String(this.count));
 
-            const slide = this._slides[this.current];
-            const label = slide ? (slide.alt || slide.caption || '') : '';
+            return this.announcementLabel ? `${position}. ` : position;
+        },
 
-            return label ? `${position}. ${label}` : position;
+        /** The slide's own text, its alternative text or else its caption, or '' when it has neither. */
+        get announcementLabel() {
+            const slide = this._slides[this.current];
+
+            return slide ? (slide.alt || slide.caption || '') : '';
+        },
+
+        /** The language of that text where it differs from the page's, else null. */
+        get announcementLang() {
+            const slide = this._slides[this.current];
+
+            if (! slide) {
+                return null;
+            }
+
+            if (slide.alt) {
+                return slide.altLang || null;
+            }
+
+            return slide.caption ? (slide.captionLang || null) : null;
         },
         _trap: null,
         // Whether THIS lightbox is currently holding the shared scroll lock. Not a
@@ -219,7 +256,7 @@ export default function wirekitLightbox(config = {}) {
             // wirekit-lightbox-open { name, index } to open THIS instance.
             this._openHandler = (e) => {
                 const d = e.detail || {};
-                if ((d.name || '') === this._name) {
+                if (sameName(d.name, this._name)) {
                     // `$dispatch` fires from the control itself, so the event's target is the
                     // opener. A dispatch on `window` has none, and the trap's default stands.
                     this._pendingTrigger = focusableFrom(e.target);

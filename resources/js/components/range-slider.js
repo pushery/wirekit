@@ -8,10 +8,14 @@
  * @param {number} config.min - Minimum track value
  * @param {number} config.max - Maximum track value
  * @param {number} config.step - Step increment
- * @param {number} config.minValue - Initial minimum selection
- * @param {number} config.maxValue - Initial maximum selection
+ * @param {number} [config.minValue] - Initial minimum selection; without both, the root's
+ *   `data-wk-server-value` (`min/max`, the stored range as the caller passed it, an end without
+ *   a value empty)
+ * @param {number} [config.maxValue] - Initial maximum selection
  * @param {string} config.name - Input name for form submission
  * @param {string} config.labelId - The visible label, whose click focuses the first thumb
+ * @param {string} [config.locale] - The application's locale, BCP-47, for the values it writes
+ * @param {{group: string, decimal: string}|null} [config.separators] - The application's own marks
  *
  * Lifecycle resources held on `this`:
  *   - _resizes (ResizeObserver) on the track and both badges, disconnected in destroy()
@@ -28,31 +32,15 @@
  *     reset (utils/form-reset.js), released in destroy().
  *   - _stopFieldsetWatch — follows the fieldsets around the slider, whose `disabled` locks it as
  *     it locks a native control (utils/fieldset-disabled.js), released in destroy().
+ *   - _stopServerValue — the observer on the range the server renders on the root
+ *     (utils/server-value.js), released in destroy().
  */
 import { controlIsDisabled, watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
 import { onFormReset } from '../utils/form-reset.js';
 import { frameCoalesce } from '../utils/frame-coalesce.js';
+import { decimalPlaces, scaleText } from '../utils/locale-number.js';
 import { watchModelEvents } from '../utils/model-events.js';
-
-/**
- * The most places after the point that any of `numbers` carries.
- *
- * Binary floating point holds no tenth exactly, so 0.1 + 0.2 is 0.30000000000000004. The numbers
- * a slider is configured with say how many places its values can need, and rounding to that many
- * gives the value a decimal step means. `String()` writes very small numbers with an exponent
- * (`1e-7`), which is counted as places too.
- *
- * @param {...number} numbers
- * @returns {number}
- */
-function decimalPlaces(...numbers) {
-    return Math.max(0, ...numbers.map((number) => {
-        const [mantissa, exponent = '0'] = String(number).toLowerCase().split('e');
-        const fraction = (mantissa.split('.')[1] || '').replace(/0+$/, '');
-
-        return Math.min(100, Math.max(0, fraction.length - Number(exponent)));
-    }));
-}
+import { hasModelBinding, observeServerValue, ownValues, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 /**
  * The two start values, held where the handles can stand: inside the track, in order, and one
@@ -80,8 +68,45 @@ function startValues(config) {
     return [low, high];
 }
 
+/**
+ * A range in the spelling the root carries, `min/max`, read into its two ends, or null. The root
+ * carries the range as the caller passed it: an end without a value is empty there and reads as
+ * `undefined`, which `startValues()` places at its end of the scale.
+ *
+ * @param {?string} raw
+ * @returns {?Array<number|undefined>}
+ */
+function readRange(raw) {
+    const parts = String(raw ?? '').split('/');
+
+    if (parts.length !== 2) {
+        return null;
+    }
+
+    const ends = parts.map((part) => (part.trim() === '' ? undefined : Number(part)));
+
+    return ends.some((end) => Number.isNaN(end)) ? null : ends;
+}
+
+/**
+ * What each end's model holds, as far as the slider knows it: the stored value where the thumb
+ * shows it, and null for an end the caller passed no value for or one the track held inside it.
+ * Such an end is sent on the next move, so that the model takes the range on screen.
+ *
+ * @param {Array<number|undefined>} stored  the range as the caller passed it
+ * @param {Array<number>} held  the same range where the handles stand (`startValues()`)
+ * @returns {Array<?number>}
+ */
+const storedEnds = (stored, held) => held.map((value, end) => (stored[end] === value ? value : null));
+
+/** Whether two ranges are one range. */
+const sameRange = (a, b) => a[0] === b[0] && a[1] === b[1];
+
 export default function wirekitRangeSlider(config = {}) {
     const start = startValues(config);
+    // The ranges this slider hands to its model, so the answer to one is not taken for a range
+    // the server set (utils/server-value.js).
+    const own = ownValues(sameRange);
 
     return {
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
@@ -101,6 +126,14 @@ export default function wirekitRangeSlider(config = {}) {
 
         minVal: start[0],
         maxVal: start[1],
+        // The range a form reset returns to: the one the page started with, or the one the server
+        // rendered last.
+        _resetValue: start,
+        // The value each end's model last received, from this slider or from the server, so that
+        // only an end that moved tells its model (`_dispatchInputEvent()`). Null where the slider
+        // does not know it: an end it was given no value for, or one it held inside the track.
+        _announced: storedEnds([config.minValue, config.maxValue], start),
+        _stopServerValue: null,
         _min: config.min ?? 0,
         _max: config.max ?? 100,
         _step: config.step ?? 1,
@@ -111,6 +144,9 @@ export default function wirekitRangeSlider(config = {}) {
          * of 0.1 lands on 0.3 and not on its binary neighbor.
          */
         _places: decimalPlaces(config.min ?? 0, config.max ?? 100, config.step ?? 1, config.minValue ?? 0, config.maxValue ?? 0),
+        // How a value reads where it is written for a reader: the badges and the live sentence.
+        _locale: typeof config.locale === 'string' && config.locale !== '' ? config.locale : 'en',
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
         _dragging: null,
         /*
          * The three document-level drag listeners, held so a teardown can reach them.
@@ -198,7 +234,9 @@ export default function wirekitRangeSlider(config = {}) {
         valueTextFor(value) {
             const mapped = this.marksMap[String(value)];
 
-            return mapped === undefined || mapped === null ? String(value) : mapped;
+            return mapped === undefined || mapped === null
+                ? scaleText(Number(value), this._locale, this._places, this._separators)
+                : mapped;
         },
 
         /** The merged badge's text, and the live region's sentence. */
@@ -502,8 +540,58 @@ export default function wirekitRangeSlider(config = {}) {
          * changes no size watched here and cannot answer itself.
          */
         init() {
-            // First, because the returns below are about measuring, and a slider bound with
-            // `.change` or `.blur` needs these events wherever it is drawn.
+            // The range is not in `x-data`, so that the expression stays the same for every range:
+            // a Livewire morph that changed it would start the slider again, and the answer to a
+            // `wire:model.live` drag would put the handles back where the request left them.
+            // `$root` is checked rather than assumed, as a unit harness hands a bare stub.
+            if (config.minValue === undefined && config.maxValue === undefined && typeof this.$root?.getAttribute === 'function') {
+                const seed = readRange(this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE));
+
+                if (seed !== null) {
+                    const held = startValues({ ...config, minValue: seed[0], maxValue: seed[1] });
+
+                    this.minVal = held[0];
+                    this.maxVal = held[1];
+                    this._resetValue = held;
+                    this._announced = storedEnds(seed, held);
+                    this._places = decimalPlaces(config.min ?? 0, config.max ?? 100, config.step ?? 1, held[0], held[1]);
+                }
+            }
+
+            // A range the server sets reaches the handles, and becomes what a form reset returns
+            // to. The range on screen needs nothing, and neither does the answer to a move of the
+            // reader's: with `.live` the reader can be a drag further when it arrives, and Livewire
+            // leaves its property alone then too.
+            this._stopServerValue = observeServerValue(this.$root, (raw) => {
+                const read = readRange(raw);
+
+                if (read === null) {
+                    return;
+                }
+
+                const next = startValues({ ...config, minValue: read[0], maxValue: read[1] });
+                this._resetValue = next;
+
+                const bound = hasModelBinding(this.$refs?.minInput) || hasModelBinding(this.$refs?.maxInput);
+
+                if (bound && own.answers(next)) {
+                    return;
+                }
+
+                // The models hold this range already, as the server sent it; an end the track
+                // holds elsewhere is sent on the next move.
+                this._announced = storedEnds(read, next);
+
+                if (sameRange(next, [this.minVal, this.maxVal])) {
+                    return;
+                }
+
+                this.minVal = next[0];
+                this.maxVal = next[1];
+            });
+
+            // Before the returns below, which are about measuring: a slider bound with `.change`
+            // or `.blur` needs these events wherever it is drawn.
             this._modelEvents = watchModelEvents(this.$root, () => [this.$refs?.minInput, this.$refs?.maxInput]);
 
             // Before the returns below too: the label is not about measuring.
@@ -540,8 +628,11 @@ export default function wirekitRangeSlider(config = {}) {
 
         /** Both ends back where the page started them after a form reset; the hidden inputs follow their bindings. */
         _restore() {
-            this.minVal = start[0];
-            this.maxVal = start[1];
+            this.minVal = this._resetValue[0];
+            this.maxVal = this._resetValue[1];
+            // What a model holds after a reset depends on when its binding read its field, so the
+            // next move tells both ends.
+            this._announced = [null, null];
         },
 
         /**
@@ -589,6 +680,8 @@ export default function wirekitRangeSlider(config = {}) {
             this._stopFormReset = null;
             this._stopFieldsetWatch?.();
             this._stopFieldsetWatch = null;
+            this._stopServerValue?.();
+            this._stopServerValue = null;
             this._label?.removeEventListener('click', this._onLabelClick);
             this._label = null;
             this._onLabelClick = null;
@@ -730,14 +823,33 @@ export default function wirekitRangeSlider(config = {}) {
          * values, which is what `wire:model` reads, so the server stayed one step behind every key
          * press and every move of a drag. So the values are written here as well, before the
          * events.
+         *
+         * `input` fires on an end that moved, and on an end whose model may hold another value
+         * than its thumb shows (`_announced` null there), so that the range on screen replaces
+         * the stored one: both ends of a slider started without `min-value` and `max-value`, and
+         * an end the track held inside it. Not on an end whose model holds its value: there
+         * `wire:model` wrote the value again as text where the server had sent a number, so every
+         * key of a bound range changed on the first move, and Livewire sends a nested property
+         * whose every key changed as the whole object. It keeps that object itself as what the
+         * request carried: a step taken while the request was on its way changed it as well, and
+         * the answer then took the step back. With one key sent, what the request carried is a
+         * copy.
          */
         _dispatchInputEvent() {
-            for (const [input, value] of [[this.$refs.minInput, this.minVal], [this.$refs.maxInput, this.maxVal]]) {
+            own.note([this.minVal, this.maxVal]);
+
+            for (const [end, input, value] of [[0, this.$refs.minInput, this.minVal], [1, this.$refs.maxInput, this.maxVal]]) {
                 if (! input) {
                     continue;
                 }
 
                 input.value = String(value);
+
+                if (this._announced[end] === value) {
+                    continue;
+                }
+
+                this._announced[end] = value;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }
         },

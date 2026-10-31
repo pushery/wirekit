@@ -7,11 +7,13 @@
     // The Livewire method this component should call, when it should show the
     // new value before the server has agreed to it. Null leaves the component
     // exactly as it has always rendered.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -62,7 +64,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -70,9 +72,9 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $hideLabel = BooleanProp::from($hideLabel, false);
-    $reserveMessage = BooleanProp::from($reserveMessage, false);
-    $emptyNavigate = BooleanProp::from($emptyNavigate, false);
+    $hideLabel = BooleanProp::from($hideLabel, false, 'select', 'hideLabel');
+    $reserveMessage = BooleanProp::from($reserveMessage, false, 'select', 'reserveMessage');
+    $emptyNavigate = BooleanProp::from($emptyNavigate, false, 'select', 'emptyNavigate');
     // Never for a place on the same page, where Livewire would fetch the page instead of scrolling.
     $emptyNavigates = $emptyNavigate && ! str_starts_with((string) $emptyHref, '#');
 
@@ -81,7 +83,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // In a row that lines its fields up (`row align-fields`), the field takes the row's three
     // tracks itself, label, control and message, as `field` does: a button beside it then
@@ -89,6 +91,17 @@
     // which takes the tracks for the control it wraps.
     $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false)
         && ! ($wkField instanceof \Pushery\WireKit\Support\FieldControl);
+
+    // A select holds one value, so a list is none of its values: `old('country')` gives one when a
+    // request sends `country[]`. It is reported and selects nothing, rather than reach the string
+    // comparison below, where a list does not cast.
+    if (is_array($value)) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('select', 'value', 'array', 'one value; several values are a multi-select', '');
+        $value = null;
+    }
+
+    // An enum, as a model attribute cast to one hands it over, is the option of its value.
+    $value = \Pushery\WireKit\Support\FieldValue::one($value, 'select');
 
     // Compared as strings, deliberately. Option keys arrive from PHP arrays, where
     // `['1' => 'One']` is an INT key, while a `value` written on a tag is always a
@@ -108,6 +121,14 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // A select draws one value in the height of a field, with the chevron of a menu. A native
+    // `multiple` turns it into a list box clipped to that height, under a chevron that opens
+    // nothing, so it is reported with the component that holds several values. The attribute
+    // stays on the element, and a page that styled the list box keeps it.
+    if ($attributes->has('multiple')) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('select', 'multiple', 'true', 'a select without it; several values are a multi-select', 'true');
+    }
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -135,29 +156,38 @@
     // control is not. HTML does not allow an empty name, and a form skips a field without one.
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // Success / valid state — only when there is no error (error wins).
     // Tri-state (null | true | string message): `!== false` alone let the unbound
     // string 'false' (truthy) paint the success state — isFalse recognizes the
     // stringly-false spellings without collapsing a real success message.
     $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
-    $successMessage = is_string($success) ? $success : null;
+    // A message as text or as markup, as `hint` takes it; `true` alone is the state without one.
+    $successMessage = is_string($success) || $success instanceof \Illuminate\Contracts\Support\Htmlable ? $success : null;
 
     // The empty state needs the caller's sentence or the `empty` slot, and a select with
     // nothing to choose: no entry in `options` and no option written into the slot. It takes
     // the hint's place, because a hint says how to choose and there is nothing to choose yet.
     // An error still shows beside it.
-    $optionList = \Pushery\WireKit\Support\ListProp::from($options);
-    $showEmpty = $optionList === [] && ! $slot->hasActualContent() && (filled($emptyText) || isset($empty));
+    $optionList = \Pushery\WireKit\Support\ListProp::from($options, 'select', 'options');
+    $showEmpty = $optionList === [] && ! $slot->hasActualContent() && (filled($emptyText) || \Pushery\WireKit\Support\SlotContent::given($empty ?? null));
     $showHint = $hint && ! $showEmpty;
 
     // One description list for the control: the component's own ids first, then a caller's
@@ -171,6 +201,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, (bool) $attributes->get('required', false));
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Disabled while there is nothing to choose. `merge` keeps a caller's own `disabled`
@@ -271,15 +308,28 @@
         ],
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($id.'-error'),
     ]);
+    // With the optimistic layer a caller's `x-ref` would meet the field's own `x-ref="control"` in
+    // one tag, where the first is kept, and inside the layer's root besides. It moves to `x-wk-ref`,
+    // which registers the field above the boundary the outer element marks
+    // (resources/js/utils/caller-ref.js).
+    $callerRef = $optimisticConfig ? trim((string) $attributes->get('x-ref', '')) : '';
+    if ($callerRef !== '') {
+        $attributes = $attributes->except('x-ref');
+    }
+    // With the optimistic layer the field stands inside a root of ours, where `.parent` would still
+    // find the layer's names: the caller's `x-model` reaches it as `x-wk-model`, read above the
+    // layer's element, which marks the boundary (CallerModel::onField()).
+    $modelScope = $optimisticConfig && \Pushery\WireKit\Support\CallerModel::binds($attributes);
+    $attributes = $modelScope ? \Pushery\WireKit\Support\CallerModel::onField($attributes) : $attributes;
 @endphp
 
-<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
              declaring it would pull `required` OUT of the bag, and the bag is what carries the
              attribute to the native control below. A bare `required` lands in the bag as
              `true`, so this reads it without consuming it. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($inAlignedRow)
         {{-- An empty label track, held so that the control stays on the middle one. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>
@@ -292,12 +342,14 @@
             @if($hasError) aria-invalid="true" @endif
             @if($optimisticConfig)
                 x-ref="control"
+                @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
                 x-bind:aria-busy="isPending"
                 x-on:change="commitFromControl()"
             @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($fieldRequired) aria-required="true" @endif
             {{-- wk-field: lifts font-size to the 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('aria-describedby')->class(['wk-field', $selectClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', $selectClasses, $stateClasses, $sizeClasses])) }}
         >
             @if($placeholder)
                 {{-- The placeholder only pre-selects itself when nothing else is
@@ -334,7 +386,7 @@
                             @php
                                 $sLabel = is_array($subLabel) ? ($subLabel['label'] ?? $subValue) : $subLabel;
                                 $sDisabled = is_array($subLabel) && ! empty($subLabel['disabled']);
-                                $sLang = is_array($subLabel) && isset($subLabel['lang']) ? (string) $subLabel['lang'] : null;
+                                $sLang = is_array($subLabel) ? \Pushery\WireKit\Support\LanguageTag::of($subLabel['lang'] ?? null) : null;
                             @endphp
                             <option value="{{ $subValue }}"@if($sLang !== '' && $sLang !== null) lang="{{ $sLang }}"@endif{{ $sDisabled ? ' disabled' : '' }}{{ $isSelected($subValue) ? ' selected' : '' }}>{{ $sLabel }}</option>
                         @endforeach
@@ -343,7 +395,7 @@
                     @php
                         $oLabel = is_array($optionLabel) ? ($optionLabel['label'] ?? $optionValue) : $optionLabel;
                         $oDisabled = is_array($optionLabel) && ! empty($optionLabel['disabled']);
-                        $oLang = is_array($optionLabel) && isset($optionLabel['lang']) ? (string) $optionLabel['lang'] : null;
+                        $oLang = is_array($optionLabel) ? \Pushery\WireKit\Support\LanguageTag::of($optionLabel['lang'] ?? null) : null;
                     @endphp
                     <option value="{{ $optionValue }}"@if($oLang !== '' && $oLang !== null) lang="{{ $oLang }}"@endif{{ $oDisabled ? ' disabled' : '' }}{{ $isSelected($optionValue) ? ' selected' : '' }}>{{ $oLabel }}</option>
                 @endif

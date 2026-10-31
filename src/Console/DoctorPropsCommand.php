@@ -52,13 +52,24 @@ use Throwable;
  */
 class DoctorPropsCommand extends Command
 {
+    /**
+     * The components that render a native list, and per component the elements a template might
+     * write into it in place of the item, with the item to use instead.
+     *
+     * @var array<string, array{elements: list<string>, item: string}>
+     */
+    private const LIST_ITEM_ELEMENTS = [
+        'data-list' => ['elements' => ['dt', 'dd'], 'item' => 'data-list.item'],
+        'timeline' => ['elements' => ['li'], 'item' => 'timeline.item'],
+    ];
+
     protected $signature = 'wirekit:doctor:props
         {path? : Path to scan (defaults to resources/views in the host app)}
         {--fail-on= : Treat findings as a non-zero exit. One of `error` (default) or `none`.}
         {--require-in-scope : Fail when no scanned template uses a WireKit component. For an application that uses WireKit everywhere, an empty scope means the linter went blind.}
         {--fail-on-legacy-axis : Also exit 1 on an older prop spelling. Off by default, because both spellings are supported API for the whole of v2.}';
 
-    protected $description = 'Static-analysis template linter — finds unknown or misspelled props on WireKit components, HTML attributes the rendered element does not use, slots passed as attributes, slot closing tags Blade does not compile as one, and older prop spellings on the shared semantic axes';
+    protected $description = 'Static-analysis template linter — finds unknown or misspelled props on WireKit components, HTML attributes the rendered element does not use, slots passed as attributes, slot closing tags Blade does not compile as one, elements written into a data-list or timeline where its item belongs, and older prop spellings on the shared semantic axes';
 
     public function handle(): int
     {
@@ -79,7 +90,7 @@ class DoctorPropsCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info("Scanning {$path} for unknown props, slots passed as attributes, swallowed slot closes and older prop spellings...");
+        $this->info("Scanning {$path} for unknown props, slots passed as attributes, swallowed slot closes, list items written as bare elements and older prop spellings...");
         $this->line('');
 
         $findings = [];
@@ -87,6 +98,7 @@ class DoctorPropsCommand extends Command
         $slotAttributeFindings = [];
         $inertAttributeFindings = [];
         $legacyFindings = [];
+        $listChildFindings = [];
         $scanned = 0;
 
         // Per component, the named slots that are not also props: read from the component's
@@ -141,6 +153,10 @@ class DoctorPropsCommand extends Command
                     'snippet' => $glued['snippet'],
                     'swallows' => $glued['swallows'],
                 ];
+            }
+
+            foreach ($this->rawListChildren($contents) as $child) {
+                $listChildFindings[] = ['file' => str_replace(base_path().'/', '', $file)] + $child;
             }
 
             foreach (BladeParser::extractWireKitComponentUsagesFromSource($contents) as $usage) {
@@ -271,7 +287,7 @@ class DoctorPropsCommand extends Command
             }
         }
 
-        if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === [] && $legacyFindings === []) {
+        if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === [] && $listChildFindings === [] && $legacyFindings === []) {
             // Two different clean results, and collapsing them is how the first one
             // hides. Templates exist but none of them use a WireKit component: the
             // run is honest, there was simply nothing in scope — so it succeeds and
@@ -384,6 +400,25 @@ class DoctorPropsCommand extends Command
             $this->line('the component\'s own prop or slot instead.');
         }
 
+        foreach ($listChildFindings as $finding) {
+            $this->line(sprintf(
+                '  <fg=yellow>%s:%d</> — <fg=red>%s</> is written straight into <x-wirekit::%s>: write %s instead',
+                $finding['file'],
+                $finding['line'],
+                OutputFormatter::escape('<'.$finding['element'].'>'),
+                $finding['component'],
+                OutputFormatter::escape('<x-wirekit::'.$finding['item'].'>')
+            ));
+        }
+
+        if ($listChildFindings !== []) {
+            $this->line('');
+            $this->warn(sprintf('%d element(s) written into a list where its item belongs.', count($listChildFindings)));
+            $this->line('The element is a valid child of the list, so the page renders without an error, but it');
+            $this->line('gets none of what the item draws: the layout of the list, the color and weight of a');
+            $this->line('label, the marker of a timeline entry. The item renders the same elements with all of it.');
+        }
+
         foreach ($slotFindings as $finding) {
             // The snippet is markup, and the console formatter reads `<…>` as its own styling
             // tags — printed raw, the very thing being reported would be eaten on its way to
@@ -437,7 +472,7 @@ class DoctorPropsCommand extends Command
             // lives in a branch this run did not take. Without it a reader sees a list of
             // advisories and cannot tell whether the linter got as far as the two checks
             // that actually break a page.
-            if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === []) {
+            if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $inertAttributeFindings === [] && $listChildFindings === []) {
                 $this->info(sprintf(
                     'No unknown props, and no slot closing tag swallowed by the text after it, across %d template(s).',
                     $scanned
@@ -465,6 +500,7 @@ class DoctorPropsCommand extends Command
             || $slotFindings !== []
             || $slotAttributeFindings !== []
             || $inertAttributeFindings !== []
+            || $listChildFindings !== []
             || ($legacyFindings !== [] && $this->option('fail-on-legacy-axis'))
         );
 
@@ -504,6 +540,102 @@ class DoctorPropsCommand extends Command
                     // because that one leaves the slot open whatever else the line holds.
                     'swallows' => preg_match('/<\/\s*x[\-:]slot[^>]*>(?=\w|::)/', $line) !== 1,
                 ];
+            }
+        }
+
+        return $hits;
+    }
+
+    /**
+     * Elements written straight into a component that renders a native list, where its item belongs.
+     *
+     * `data-list` renders a `<dl>` and `timeline` an `<ol>`, so a `<dt>`, `<dd>` or `<li>` placed in
+     * the slot is a valid child of the list in the browser and renders without a word. It gets none
+     * of what the item draws: the list's layout, the label's color and weight, the timeline's marker
+     * and connector. Only the direct children are read; an element inside an item's own slot is that
+     * item's content.
+     *
+     * The walk counts depth over the opening tags `BladeParser::tagsFromSource()` returns and the
+     * closing tags around them, with comments blanked first so that markup in a comment is not
+     * counted. Blade's directives are not elements, so a child inside a `@foreach` is still a
+     * direct child.
+     *
+     * @return list<array{line: int, component: string, element: string, item: string}>
+     */
+    private function rawListChildren(string $contents): array
+    {
+        if (! str_contains($contents, '<x-wirekit::data-list') && ! str_contains($contents, '<x-wirekit::timeline')) {
+            return [];
+        }
+
+        $contents = BladeParser::blankComments($contents);
+
+        /**
+         * Opening tags and closing tags in the order of the source, each with what the walk needs.
+         *
+         * @var list<array{offset: int, close: false, name: string, selfClosing: bool}|array{offset: int, close: true, name: string}> $events
+         */
+        $events = [];
+
+        foreach (BladeParser::tagsFromSource($contents) as $tag) {
+            if ($tag['terminator'] !== '>') {
+                continue;
+            }
+
+            $events[] = [
+                'offset' => $tag['start'],
+                'close' => false,
+                'name' => strtolower($tag['name']),
+                'selfClosing' => str_ends_with(rtrim(substr($contents, $tag['attrStart'], $tag['attrEnd'] - $tag['attrStart'])), '/'),
+            ];
+        }
+
+        preg_match_all('/<\/\s*([a-zA-Z][\w:.-]*)\s*>/', $contents, $closings, PREG_OFFSET_CAPTURE);
+
+        foreach ($closings[1] as $index => [$name]) {
+            $events[] = ['offset' => (int) $closings[0][$index][1], 'close' => true, 'name' => strtolower($name)];
+        }
+
+        usort($events, static fn (array $a, array $b): int => $a['offset'] <=> $b['offset']);
+
+        $void = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'];
+        $hits = [];
+
+        foreach ($events as $position => $event) {
+            $component = $event['close'] || $event['selfClosing'] || ! str_starts_with($event['name'], 'x-wirekit::')
+                ? null
+                : substr($event['name'], strlen('x-wirekit::'));
+
+            if ($component === null || ! isset(self::LIST_ITEM_ELEMENTS[$component])) {
+                continue;
+            }
+
+            $depth = 0;
+
+            foreach (array_slice($events, $position + 1) as $inner) {
+                if ($inner['close']) {
+                    if ($depth === 0) {
+                        // The list's own closing tag, or a stray one: either way the slot ends here.
+                        break;
+                    }
+
+                    $depth--;
+
+                    continue;
+                }
+
+                if ($depth === 0 && in_array($inner['name'], self::LIST_ITEM_ELEMENTS[$component]['elements'], true)) {
+                    $hits[] = [
+                        'line' => substr_count($contents, "\n", 0, $inner['offset']) + 1,
+                        'component' => $component,
+                        'element' => $inner['name'],
+                        'item' => self::LIST_ITEM_ELEMENTS[$component]['item'],
+                    ];
+                }
+
+                if (! $inner['selfClosing'] && ! in_array($inner['name'], $void, true)) {
+                    $depth++;
+                }
             }
         }
 

@@ -11,6 +11,13 @@
  * `--wk-scroll-inset-top` and `--wk-scroll-inset-bottom`, and the stylesheet turns those into
  * `scroll-padding` at zero specificity, so a value the developer sets wins.
  *
+ * A third value leaves out the surfaces that stand on `--wk-fab-lift` themselves, the floating action
+ * button and what stacks over it (`data-wk-fab-lifted`): `--wk-scroll-inset-below-fab`, the band of
+ * the bottom surfaces below the corner buttons. A page lifts the buttons over a floating action bar
+ * with `--wk-fab-lift: var(--wk-scroll-inset-below-fab, 0px)`. The full bottom band counts the
+ * buttons themselves, so taken as their lift it would raise them by their own height on every
+ * measurement.
+ *
  * The page writes on `<html>`. A box that scrolls by itself is marked `data-wk-scroll-inset-box`
  * for the stylesheet, and a render that takes the mark or the values away gets them back. A
  * surface that is not sticky or fixed at the moment, or not displayed, covers nothing.
@@ -18,13 +25,20 @@
  * Installed once per page: a ResizeObserver follows the height of every surface, and one
  * MutationObserver finds surfaces as they come and go, through a Livewire render or
  * `wire:navigate`. With no surface on the page it only watches.
+ *
+ * A lift a page takes from `--wk-scroll-inset-below-fab` moves the corner buttons without changing
+ * their height, so no observer hears of it: a measurement that changes that band measures once more
+ * in the next frame, where the buttons stand at their new height above the edge, and a surface that
+ * slides to its place, as the scroll-to-top button does, is measured again when its transition ends.
+ * The second measurement leaves the band below the buttons as it was, so it asks for no third.
  */
 import { scrollParent } from './stuck.js';
 
 export const WK_SCROLL_INSET_ATTRIBUTE = 'data-wk-scroll-inset';
 export const WK_SCROLL_INSET_BOX_ATTRIBUTE = 'data-wk-scroll-inset-box';
+export const WK_FAB_LIFTED_ATTRIBUTE = 'data-wk-fab-lifted';
 
-const PROPERTIES = { top: '--wk-scroll-inset-top', bottom: '--wk-scroll-inset-bottom' };
+const PROPERTIES = { top: '--wk-scroll-inset-top', bottom: '--wk-scroll-inset-bottom', belowFab: '--wk-scroll-inset-below-fab' };
 
 /**
  * The installation is remembered on `window`, the one scope a second bundle on the page, or a
@@ -77,9 +91,10 @@ export function coveredBand(surface, container, edge = surfaceEdge(surface)) {
 
 /**
  * The largest band on each side of every container that has one; the page is keyed by `<html>`.
+ * `belowFab` is the bottom band without the surfaces that stand on `--wk-fab-lift`.
  *
  * @param {Iterable<Element>} surfaces
- * @returns {Map<Element, {top: number, bottom: number}>}
+ * @returns {Map<Element, {top: number, bottom: number, belowFab: number}>}
  */
 export function containerBands(surfaces) {
     const bands = new Map();
@@ -94,8 +109,13 @@ export function containerBands(surfaces) {
         }
 
         const key = container || document.documentElement;
-        const entry = bands.get(key) || { top: 0, bottom: 0 };
+        const entry = bands.get(key) || { top: 0, bottom: 0, belowFab: 0 };
         entry[edge] = Math.max(entry[edge], band);
+
+        if (edge === 'bottom' && ! surface.hasAttribute(WK_FAB_LIFTED_ATTRIBUTE)) {
+            entry.belowFab = Math.max(entry.belowFab, band);
+        }
+
         bands.set(key, entry);
     }
 
@@ -127,7 +147,7 @@ export function installScrollInset() {
     let frame = 0;
 
     const write = (container, values) => {
-        for (const edge of ['top', 'bottom']) {
+        for (const edge of ['top', 'bottom', 'belowFab']) {
             const property = PROPERTIES[edge];
 
             if (values[edge] !== '') {
@@ -147,6 +167,7 @@ export function installScrollInset() {
     const clear = (container) => {
         container.style.removeProperty(PROPERTIES.top);
         container.style.removeProperty(PROPERTIES.bottom);
+        container.style.removeProperty(PROPERTIES.belowFab);
 
         if (container !== root) {
             container.removeAttribute(WK_SCROLL_INSET_BOX_ATTRIBUTE);
@@ -203,11 +224,28 @@ export function installScrollInset() {
             }
         }
 
+        let lifted = false;
+
         for (const [container, band] of bands) {
-            const values = { top: insetValue(band.top), bottom: insetValue(band.bottom) };
+            const values = { top: insetValue(band.top), bottom: insetValue(band.bottom), belowFab: insetValue(band.belowFab) };
+            const before = written.get(container);
+
+            lifted = lifted || (before === undefined ? values.belowFab !== '' : before.belowFab !== values.belowFab);
             written.set(container, values);
             write(container, values);
             guard(container);
+        }
+
+        if (lifted) {
+            schedule();
+        }
+    };
+
+    const onTransitionEnd = (event) => {
+        const target = event && event.target;
+
+        if (target && typeof target.hasAttribute === 'function' && target.hasAttribute(WK_SCROLL_INSET_ATTRIBUTE)) {
+            schedule();
         }
     };
 
@@ -276,6 +314,7 @@ export function installScrollInset() {
     }
 
     window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('transitionend', onTransitionEnd, true);
 
     window[INSTALLED_FLAG] = {
         uninstall() {
@@ -288,6 +327,7 @@ export function installScrollInset() {
             }
 
             window.removeEventListener('resize', schedule);
+            window.removeEventListener('transitionend', onTransitionEnd, true);
 
             if (frame !== 0 && typeof cancelAnimationFrame === 'function') {
                 cancelAnimationFrame(frame);

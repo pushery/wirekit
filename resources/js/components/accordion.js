@@ -11,13 +11,19 @@
  * for both modes keeps that question answerable without the item knowing which
  * mode it is in.
  *
- * Lifecycle resources held on `this`: NONE. The keydown handler is bound
- * declaratively in the template, so Alpine tears it down with the component.
+ * Lifecycle resources held on `this`:
+ *   - _fragmentAgain (a click listener on `window`, utils/fragment.js) — opens the item a link
+ *     names when the reader follows it a second time, which fires no `hashchange`; stopped in
+ *     destroy().
+ * The keydown and hashchange handlers are bound declaratively in the template, so Alpine tears
+ * them down with the component.
  *
  * @param {Object} config
  * @param {string} [config.mode]  'single' (default) or 'multiple'
  */
 import { focusClicked } from '../utils/focus-clicked.js';
+import { fragmentId, onFragmentFollowedAgain } from '../utils/fragment.js';
+import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
 
 /**
@@ -57,6 +63,44 @@ export default function wirekitAccordion(config = {}) {
     return {
         mode: config.mode === 'multiple' ? 'multiple' : 'single',
         opened: [],
+        _fragmentAgain: null,
+
+        init() {
+            this.openAtStart();
+            this.openForFragment();
+            this._fragmentAgain = onFragmentFollowedAgain(() => this.openForFragment());
+        },
+
+        /**
+         * Open the items the server rendered open, the ones that carry `data-wk-accordion-open`. In
+         * single mode only one can be open, and the first in the document is the one that stays.
+         * Before the items' bindings first run, so an open panel is never closed and opened again.
+         */
+        openAtStart() {
+            const open = this._ownItems().filter((item) => item.hasAttribute('data-wk-accordion-open')).map((item) => item.id);
+
+            if (open.length === 0) {
+                return;
+            }
+
+            this.opened = this.mode === 'single' ? [open[0]] : [...new Set([...this.opened, ...open])];
+        },
+
+        /** This accordion's own items in document order, not those of an accordion nested in it. */
+        _ownItems() {
+            const root = this.$root;
+
+            if (! root || typeof root.querySelectorAll !== 'function') {
+                return [];
+            }
+
+            return [...root.querySelectorAll('[data-wk-accordion-item]')].filter((item) => this._ownItemAround(item) === item);
+        },
+
+        destroy() {
+            this._fragmentAgain?.();
+            this._fragmentAgain = null;
+        },
 
         /**
          * Open or close a panel. `header` is the header a click toggled it from, which takes the
@@ -93,6 +137,59 @@ export default function wirekitAccordion(config = {}) {
 
         isOpen(id) {
             return this.opened.includes(id);
+        },
+
+        /**
+         * Open the item the address names, or the item that holds the element it names, and bring
+         * that element into view. Read on start, on `hashchange`, which the template binds, and when
+         * the reader follows a link to the same fragment again, which fires none.
+         *
+         * An item carries its id on its own element, so a link to `#shipping` reaches it, and the
+         * browser scrolls to its header by itself; it does not open the item, and it cannot scroll
+         * to an element inside a closed panel at all. An item of an accordion nested in this one is
+         * that accordion's to open; this one opens its own item around it, so the path is visible.
+         */
+        openForFragment() {
+            const root = this.$root;
+            const doc = root ? root.ownerDocument : null;
+
+            if (! doc || typeof doc.getElementById !== 'function') {
+                return;
+            }
+
+            // A test harness hands some factories a `window` without a `location`.
+            const id = fragmentId(typeof window !== 'undefined' && window.location ? window.location.hash : '');
+
+            if (id === '') {
+                return;
+            }
+
+            const target = doc.getElementById(id);
+            const item = this._ownItemAround(target);
+
+            if (! item) {
+                return;
+            }
+
+            this.reveal(item.id);
+            this.$nextTick(() => target.scrollIntoView({ block: 'start', behavior: scrollBehavior(! prefersReducedMotion()) }));
+        },
+
+        /** The item of this accordion that is or holds `node`, or null. */
+        _ownItemAround(node) {
+            let item = node && typeof node.closest === 'function' ? node.closest('[data-wk-accordion-item]') : null;
+
+            while (item) {
+                const parent = item.parentElement;
+
+                if (parent && parent.closest('[data-wk-accordion-mode]') === this.$root) {
+                    return item;
+                }
+
+                item = parent ? parent.closest('[data-wk-accordion-item]') : null;
+            }
+
+            return null;
         },
 
         /**

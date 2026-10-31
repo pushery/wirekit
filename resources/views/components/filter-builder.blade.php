@@ -52,7 +52,7 @@
     // prop's default is spelled as a `config()` fallback rather than a literal, which is
     // the only reason the coverage guard did not see it. The single read is a truth test
     // around the free-text search box, so the box the call site removed was still drawn.
-    $searchable = BooleanProp::from($searchable, false);
+    $searchable = BooleanProp::from($searchable, false, 'filter-builder', 'searchable');
 
     // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
     // would mean destroy-and-rebuild, and the Alpine-only state — the open popover and
@@ -95,10 +95,32 @@
         }
 
         return $field;
-    }, (array) \Pushery\WireKit\Support\ListProp::renumbered($fields));
+    }, (array) \Pushery\WireKit\Support\ListProp::renumbered($fields, 'filter-builder', 'fields'));
     $valueArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($value);
 
-    $popoverTitleId = $id.'-popover-title';
+    // The value of a rule on a `date` field is written as the day it names (Support\DateModel). A
+    // date object would reach the script as `json_encode()` writes it, a Carbon date as its instant
+    // in UTC and a plain `DateTime` as an object; the chip would show that text, and the date field
+    // of the popover reads neither. A rule with two ends has each written.
+    $dateFields = [];
+
+    foreach ($fieldsArr as $field) {
+        if (is_array($field) && ($field['type'] ?? null) === 'date' && is_scalar($field['key'] ?? null)) {
+            $dateFields[(string) $field['key']] = true;
+        }
+    }
+
+    foreach ($valueArr as $index => $rule) {
+        if (is_array($rule) && is_scalar($rule['field'] ?? null) && isset($dateFields[(string) $rule['field']]) && array_key_exists('value', $rule)) {
+            $valueArr[$index]['value'] = is_array($rule['value'])
+                ? array_map(static fn ($end) => \Pushery\WireKit\Support\DateModel::written('date', $end), $rule['value'])
+                : \Pushery\WireKit\Support\DateModel::written('date', $rule['value']);
+        }
+    }
+
+    // Built from the id without whitespace (Support\DomId::valid()): a caller's `filters for orders`
+    // keeps its place on the root, and the popover's `aria-labelledby` names one id.
+    $popoverTitleId = \Pushery\WireKit\Support\DomId::valid((string) $id).'-popover-title';
 
     $base = WireKit::resolveClasses('filter-builder', 'base',
         'w-full font-[family-name:var(--font-wk-sans)]',
@@ -177,6 +199,13 @@
     // prohibits a name, and a reader never hears it.
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
+
+    // The wait reaches the search field's modifier as PHP casts it, so `300ms` keeps its 300,
+    // and a text that holds no number is reported. A number no integer holds is no wait, and a
+    // wait is at most 2147483647 ms: Alpine hands the modifier to `setTimeout`, which reads a
+    // longer one as none.
+    \Pushery\WireKit\Support\NumericProp::check($searchDebounce, 'filter-builder', 'searchDebounce', whole: true);
+    $searchDebounceMs = min(\Pushery\WireKit\Support\NumericProp::cast($searchDebounce) ?? 0, 2147483647);
 @endphp
 
 <div
@@ -184,16 +213,21 @@
     {{-- Named by the caller, the builder is a group of its search, its filters and its controls. --}}
     @if(($callerLabelledBy || $callerLabel) && ! $attributes->has('role')) role="group" @endif
     id="{{ $id }}"
-    x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueArr) }}, announcements: {{ $filterAnnouncements }}, words: {{ $filterWords }} })"
+    {{-- The filters travel on an attribute of their own, so `x-data` renders the same on every
+         update: a morph that changed it would have Alpine reset the component to the new
+         expression and initialize it again, closing an open panel. The factory reads them once
+         and follows Livewire's later renders of them. --}}
+    x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, announcements: {{ $filterAnnouncements }}, words: {{ $filterWords }} })"
+    data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json(array_values((array) $valueArr)) }}"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
-    x-on:keydown.escape.window="isOpen && close(true)"
+    x-on:keydown.escape.window="isOpen && ! $event.defaultPrevented && close(true)"
     {{-- The same key on the trigger, heard on the way to the window, and on the
          panel below. An open popover closes there and the press is marked as
          handled, so a modal or a drawer around the builder stays open; the focus
          trap of that overlay reads the key before the window does. --}}
     x-on:keydown.escape="escapePanel($event)"
-    data-wk-sr-host {{ $attributes->only('class')->class([$base]) }}
+    data-wk-sr-host {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base])) }}
 >
     {{-- The set's own live region.
          Unconditional and starting EMPTY, both deliberately: a live region that
@@ -222,10 +256,11 @@
                  the structured filters (keyword search vs. field filters). --}}
             <input
                 type="search"
+                x-wk-ime
                 x-ref="search"
                 placeholder="{{ $searchPlaceholder }}"
                 aria-label="{{ $searchPlaceholder }}"
-                @input{{ (int) $searchDebounce > 0 ? '.debounce.'.((int) $searchDebounce).'ms' : '' }}="$dispatch('search-change', { value: $event.target.value })"
+                @input{{ $searchDebounceMs > 0 ? '.debounce.'.$searchDebounceMs.'ms' : '' }}="$dispatch('search-change', { value: $event.target.value })"
                 class="wk-field {{ $control }} max-w-[16rem]"
             />
         @endif
@@ -251,10 +286,13 @@
                          splice has run. The loop is INDEX-keyed, so Alpine drops the
                          element holding the highest key and rewrites the rest in place:
                          removing the LAST chip destroys this button while it holds focus,
-                         which is why the focus move cannot be left to the browser. --}}
+                         which is why the focus move cannot be left to the browser.
+
+                         24px square, the WCAG 2.2 target size, as on the pills of
+                         multi-select; the negative block margin keeps the chip's height. --}}
                     data-wk-filter-remove
                     :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove filter: :name')) }}.replace(':name', chipText(filter))"
-                    class="p-0.5 rounded-[var(--radius-wk-full)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                    class="-my-[3px] inline-flex size-[var(--size-wk-target-min)] shrink-0 items-center justify-center rounded-[var(--radius-wk-full)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                 >
                     <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                 </button>
@@ -267,6 +305,7 @@
                 type="button"
                 x-ref="trigger"
                 @click="isOpen ? close() : openAdd()"
+                aria-expanded="false"
                 :aria-expanded="isOpen"
                 aria-haspopup="dialog"
                 class="wk-touch-row inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
@@ -285,7 +324,7 @@
                 x-cloak
                 x-ref="panel"
                 x-transition.origin.top.left
-                x-on:click.outside="close()"
+                x-on:click.outside="closeOutside($event)"
                 {{-- The two edges the teleport broke. The panel is drawn beside the
                      trigger and lives at the end of <body>, so forwards off the last
                      control the browser would leave the DOCUMENT, and backwards off
@@ -300,7 +339,7 @@
                 class="fixed z-[var(--z-wk-dropdown)] w-[18rem] max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain p-[var(--padding-wk-x-md)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] space-y-[var(--space-wk-sm)]"
             >
                 <p data-wk-prose-skip id="{{ $popoverTitleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]"
-                   x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from($addLabel) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit filter')) }}"></p>
+                   x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\SlotContent::textOf($addLabel)) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit filter')) }}"></p>
 
                 {{-- Field --}}
                 <label class="block">
@@ -365,10 +404,10 @@
                         </div>
                     </template>
                     <template x-if="draftValueType() === 'number'">
-                        <input type="number" x-model.number="draft.value" class="wk-field {{ $control }}" />
+                        <input type="number" x-wk-ime x-model.number="draft.value" class="wk-field {{ $control }}" />
                     </template>
                     <template x-if="draftValueType() === 'date'">
-                        <input type="date" x-model="draft.value" class="wk-field {{ $control }}" />
+                        <input type="date" x-wk-ime x-model="draft.value" class="wk-field {{ $control }}" />
                     </template>
                     <template x-if="draftValueType() === 'text'">
                         <input type="text" x-wk-ime x-model="draft.value" @keydown.enter.prevent="apply()" class="wk-field {{ $control }}" />
@@ -396,7 +435,7 @@
 
     {{-- Optional result-count / status slot — wrap it in aria-live in your app
          so screen readers hear the count change as filters are applied. --}}
-    @isset($status)
+    @if(\Pushery\WireKit\Support\SlotContent::given($status ?? null))
         <div class="mt-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-live="polite">{{ $status }}</div>
-    @endisset
+    @endif
 </div>

@@ -504,7 +504,11 @@ class DoctorA11yCommand extends Command
         // Match <x-wirekit::button ...><x-wirekit::icon ... /></x-wirekit::button>
         // OR <x-wirekit::button ...><svg ...></svg></x-wirekit::button>
         // where the OUTER button tag does NOT contain aria-label.
-        $pattern = '/<x-wirekit::button(?P<attrs>[^>]*)>\s*(?P<inner><x-wirekit::icon[^>]*\/?>|<svg[^>]*>.*?<\/svg>)\s*<\/x-wirekit::button>/su';
+        //
+        // A tag's attributes run to the first `>` outside a quoted value or a Blade echo: a value
+        // may hold a `>` of its own, as `['row' => $id]` and `$bag->except('x')` do.
+        $attributes = '(?:"[^"]*"|\'[^\']*\'|\{\{.*?\}\}|[^\'">{]|\{(?!\{))*';
+        $pattern = '/<x-wirekit::button(?![\w.-])(?P<attrs>'.$attributes.')>\s*(?P<inner><x-wirekit::icon(?![\w.-])'.$attributes.'>|<svg[^>]*>.*?<\/svg>)\s*<\/x-wirekit::button>/su';
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
             return [];
         }

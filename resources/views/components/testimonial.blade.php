@@ -41,6 +41,9 @@
 
     // Inline rather than a utility class: the ratio is caller data, and a Tailwind class
     // cannot be built from a runtime value.
+    // One value for `aspect-ratio`, or none: a text that carries a declaration of its own would
+    // style the mark with it (Support\CssValue), and is reported.
+    $logoAspect = \Pushery\WireKit\Support\CssValue::prop($logoAspect, 'testimonial', 'logoAspect');
     $wkLogoStyle = ($logoAspect ? 'aspect-ratio: '.e($logoAspect).'; ' : '').'min-width: var(--size-wk-xs);';
 
     // A score that is no number is reported and shows no stars, rather than the number PHP reads
@@ -50,6 +53,11 @@
     // Derive initials from the author name so an avatar-less testimonial still
     // shows a person, not a blank disc: "Ada Lovelace" -> "AL", "Ada" -> "A".
     $derivedInitials = $initials ?? \Pushery\WireKit\Support\Initials::from($author);
+
+    // An empty address, or one of white space, is no portrait and no logo: the author keeps the
+    // initials, and no image of a broken file stands beside the name (Support\UrlProp::source()).
+    $avatar = \Pushery\WireKit\Support\UrlProp::source($avatar);
+    $logo = \Pushery\WireKit\Support\UrlProp::source($logo);
 
     $classes = WireKit::resolveClasses('testimonial', 'base', implode(' ', [
         // A typed token with no break point, an email address or a URL, breaks rather than running
@@ -70,7 +78,7 @@
 
      Deliberately NOT built on the message component — that is a chat bubble
      (author, timestamp, side, reactions). This is a cited quotation. --}}
-<figure data-wk-testimonial {{ $attributes->class([$classes]) }}>
+<figure data-wk-testimonial {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     @if($ratingValue !== null)
         <x-wirekit::rating :value="$ratingValue" readonly size="sm" data-wk-testimonial-rating />
     @endif

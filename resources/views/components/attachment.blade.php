@@ -41,7 +41,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $animate = BooleanProp::from($animate, false);
+    $animate = BooleanProp::from($animate, false, 'attachment', 'animate');
 
     $stateValue = in_array($state, ['idle', 'uploading', 'done', 'error'], true)
         ? $state
@@ -54,9 +54,11 @@
         if ($b === null || $b < 0) {
             return null;
         }
-        // The unit symbols come from the catalog: French counts in octets (`Ko`, `Mo`).
+        // The unit symbols come from the catalog: French counts in octets (`Ko`, `Mo`). Every
+        // number goes through LocalizedNumber, which writes it as the locale or the application's
+        // own formatter does (`WireKit::formatNumbersUsing()`), so one card never mixes two ways.
         if ($b < 1024) {
-            return $b.' '.__('wirekit::B');
+            return LocalizedNumber::format((float) $b, precision: 0).' '.__('wirekit::B');
         }
         $units = [__('wirekit::KB'), __('wirekit::MB'), __('wirekit::GB'), __('wirekit::TB')];
         $value = $b / 1024;
@@ -73,7 +75,7 @@
         // shown as 10 MB rather than 10.0 MB.
         $shown = round($value, 1);
 
-        return ($shown < 10 ? LocalizedNumber::format($shown, precision: 1) : (string) round($value)).' '.$units[$i];
+        return LocalizedNumber::format($shown < 10 ? $shown : round($value), precision: $shown < 10 ? 1 : 0).' '.$units[$i];
     };
 
     // Short, human label. Prefer the file extension (PDF, DOCX) — it is more
@@ -91,9 +93,15 @@
         return mb_strtoupper($sub === '' ? $mime : $sub);
     };
 
-    $sizeText = $formatBytes($bytes !== null ? (int) $bytes : null);
-    $label = $typeLabel($type, (string) $name);
-    $isImage = $thumbnail !== null && $thumbnail !== '';
+    $sizeText = $formatBytes(\Pushery\WireKit\Support\NumericProp::intOrNull($bytes, 'attachment', 'bytes'));
+    // The progress reaches the bar as PHP casts it, so a text with a unit keeps the number it
+    // starts with, and it is reported. A number no integer holds reaches it as 0.
+    \Pushery\WireKit\Support\NumericProp::check($progress, 'attachment', 'progress', whole: true);
+    $label = $typeLabel($type, \Pushery\WireKit\Support\SlotContent::textOf($name));
+    // An empty thumbnail address, `false` or one of white space is no thumbnail, so the file shows
+    // its type rather than the sign of a broken image (Support\UrlProp::source()).
+    $thumbnail = \Pushery\WireKit\Support\UrlProp::source($thumbnail);
+    $isImage = $thumbnail !== null;
 
     // Description line: "PDF · 2.4 MB". Only the parts we actually have.
     $descriptionParts = array_values(array_filter([$label, $sizeText]));
@@ -122,7 +130,7 @@
     ]), $scope);
 
     $isLink = $href !== null && $href !== '';
-    $hasActions = isset($actions);
+    $hasActions = \Pushery\WireKit\Support\SlotContent::given($actions ?? null);
 
     // When the card is a link AND carries an actions slot, the action controls
     // cannot nest inside the anchor: a <button>/<a> inside an <a> is invalid HTML
@@ -156,7 +164,8 @@
 @endphp
 
 @php
-    $accessibleName = $name
+    // A name, an attribute, so markup is read as its text.
+    $accessibleName = \Pushery\WireKit\Support\SlotContent::textOf($name)
         .($descriptionParts ? ', '.implode(', ', $descriptionParts) : '')
         .($stateText ? ', '.$stateText : '');
 
@@ -195,7 +204,7 @@
         @endif
     @endunless
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$rootClasses, $rootRingClass]) }} data-wk-sr-host
+    {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses, $rootRingClass])) }} data-wk-sr-host
 >
     {{-- Link over the media+name only when there are also actions, so the action
          controls can live outside the anchor. Without actions the whole card is
@@ -241,11 +250,11 @@
              file name on screen. --}}
         @if($stateValue === 'uploading' && $progress !== null)
             <x-wirekit::progress
-                :value="(int) $progress"
+                :value="\Pushery\WireKit\Support\NumericProp::cast($progress) ?? 0"
                 size="sm"
                 :animation="$animate ? 'shimmer' : 'none'"
                 class="mt-[var(--space-wk-xs)]"
-                aria-label="{{ __('wirekit::Uploading :name', ['name' => $name]) }}"
+                aria-label="{{ __('wirekit::Uploading :name', ['name' => \Pushery\WireKit\Support\SlotContent::textOf($name)]) }}"
             />
         @endif
     </span>
@@ -254,11 +263,11 @@
         </a>
     @endif
 
-    @isset($actions)
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         <span data-wk-attachment-actions class="flex shrink-0 items-center gap-[var(--gap-wk-sm)]">
             {{ $actions }}
         </span>
-    @endisset
+    @endif
 
     @if($opensNewTab && ! $hintsNewTabInLabel)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>

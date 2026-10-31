@@ -31,6 +31,7 @@
  *   scroll callbacks can fire AFTER destroy() has torn the component down.
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
+import { formatCount } from '../utils/locale-number.js';
 import { pluralize } from '../utils/plural.js';
 import { prefersReducedMotion, scrollBehavior } from '../utils/motion.js';
 import { keepFocusRingsInView } from '../utils/reveal-focus-ring.js';
@@ -56,11 +57,17 @@ export default function wirekitConversation(config = {}) {
         // hand may still pass the one sentence `jumpLabelCount`.
         jumpLabelCounts: config.jumpLabelCounts ?? { 2: config.jumpLabelCount ?? 'Jump to latest, :count new' },
         _locale: config.locale,
+        _separators: config.separators && typeof config.separators === 'object' ? config.separators : null,
 
         // The jump-to-latest control's accessible name: the count of unread messages when there
         // are any, in the form the count takes.
         jumpName() {
             return this.unread > 0 ? pluralize(this.jumpLabelCounts, this.unread, this._locale) : this.jumpLabel;
+        },
+
+        // The count on the control, grouped as the application's locale groups one.
+        get unreadText() {
+            return formatCount(this.unread, this._locale, this._separators);
         },
 
         _mutationObserver: null,
@@ -196,6 +203,21 @@ export default function wirekitConversation(config = {}) {
             });
             this.atBottom = true;
             this.unread = 0;
+        },
+
+        /**
+         * The jump button's press: scroll to the newest message, and when the button holds the
+         * focus, hand it to the transcript. The button hides once the view is at the bottom, and a
+         * focused element that hides drops the focus to the body, so the next Tab would start at
+         * the top of the page. The transcript is focusable and named, and the arrow keys scroll it
+         * from there; `preventScroll` leaves the scroll to the newest message alone.
+         */
+        jumpToLatest(button = null) {
+            this.scrollToBottom();
+
+            if (button !== null && typeof document !== 'undefined' && document.activeElement === button) {
+                this._viewport?.focus({ preventScroll: true });
+            }
         },
 
         /**

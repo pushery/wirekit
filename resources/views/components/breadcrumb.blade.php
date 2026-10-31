@@ -29,10 +29,10 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `schema="false"` would otherwise KEEP emitting. Normalized against the prop's own
     // default so a cast never leaves a second BreadcrumbList competing with the first.
-    $schema = BooleanProp::from($schema, true);
+    $schema = BooleanProp::from($schema, true, 'breadcrumb', 'schema');
 
     // A trail usually arrives as a Collection; `array_key_last()` below takes an array.
-    $items = ListProp::records($items);
+    $items = ListProp::records($items, 'breadcrumb', 'items');
 
     // An application's trail is empty on its home page. An empty list inside the landmark reads
     // out as a breadcrumb with nothing in it, so the list is left out, and the landmark is hidden
@@ -146,7 +146,7 @@
     };
 @endphp
 
-<nav @if($hasItems || isset($actions)) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Breadcrumb') }}" @endunless @else hidden aria-hidden="true" @endif {{ $attributes->class([$navClasses]) }}>
+<nav @if($hasItems || \Pushery\WireKit\Support\SlotContent::given($actions ?? null)) @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Breadcrumb') }}" @endunless @else @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'hidden')) hidden @endunless aria-hidden="true" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$navClasses])) }}>
     @if($hasItems)
     <ol data-wk-prose-skip role="list" class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
@@ -204,7 +204,7 @@
     </ol>
     @endif
 
-    @if(isset($actions))
+    @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
         {{-- Inside the nav landmark, outside the list: the control belongs to the trail, but it
              is not a step in it and must never reach the structured data. --}}
         <div class="{{ $actionsClasses }}">{{ $actions }}</div>

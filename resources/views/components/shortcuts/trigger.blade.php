@@ -13,6 +13,18 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('shortcuts.trigger', $attributes->getAttributes());
 
+    // The trigger stands on its own Alpine root: a caller's `x-ref` is filed above it.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
+
     use Pushery\WireKit\WireKit;
 
     $classes = WireKit::resolveClasses('shortcuts.trigger', 'base', '', $scope);
@@ -39,5 +51,5 @@
     x-bind:aria-expanded="ariaExpanded"
     x-bind:aria-controls="ariaControls"
     x-on:click="$dispatch('wirekit:shortcuts-open')"
-    {{ $attributes->merge($look)->class([$classes]) }}
+    {{ $attributes->merge($look)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >{{ $slot->hasActualContent() ? $slot : __('wirekit::Keyboard shortcuts') }}</x-wirekit::button>

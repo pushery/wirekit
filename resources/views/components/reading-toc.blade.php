@@ -31,10 +31,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-toc', $attributes->getAttributes());
 
+    // An unknown `hideBelow` is reported (Support\StrictnessGate) and renders as `sm`; a bound
+    // `null` or empty string is `sm` without a word.
+    $hideBelow = \Pushery\WireKit\WireKit::validateProp('reading-toc', 'hideBelow', \Pushery\WireKit\Support\NumericProp::text($hideBelow ?: 'sm'), ['sm', 'md', 'lg', 'xl', 'none']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $flush = BooleanProp::from($flush, false);
+    $flush = BooleanProp::from($flush, false, 'reading-toc', 'flush');
 
     // Reading-toc — horizontal sticky-strip TOC variant of the reading family.
     // Same data source as reading-spine (auto-built from page headings); different
@@ -157,7 +161,7 @@
     {{-- The offset goes into the bag's `style` rather than an attribute of its own beside it: a
          caller's `style` would stand in the tag a second time, and the parser keeps the first
          one, so the offset would be gone. Merged, the caller's declarations follow ours. --}}
-    {{ $attributes->class([$rootClass])->merge(['aria-label' => __('wirekit::Page sections'), 'style' => '--reading-toc-offset: '.$offsetCss.';']) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass]))->merge(['aria-label' => __('wirekit::Page sections'), 'style' => '--reading-toc-offset: '.$offsetCss.';']) }}
 >
     {{--
         Inline-style the load-bearing list primitives. The Tailwind utility
@@ -171,7 +175,7 @@
         style for load-bearing layout primitives.
     --}}
     <ol data-wk-prose-skip role="list"
-        class="wk-reading-toc__list wk-scrollbar flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"
+        class="wk-reading-toc__list wk-scrollbar relative flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"
         style="list-style: none; margin: 0; display: flex; flex-direction: row; align-items: center;"
     >
         <template x-for="item in items" :key="item.key">

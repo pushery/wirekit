@@ -24,6 +24,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('ticker', $attributes->getAttributes());
 
+    // An unknown `deltaFormat` is reported (Support\StrictnessGate) and renders as `absolute`, as a
+    // bound `null` or empty string always has: only `percent` reads as a percentage.
+    $deltaFormat = \Pushery\WireKit\WireKit::validateProp('ticker', 'deltaFormat', \Pushery\WireKit\Support\NumericProp::text($deltaFormat ?: 'absolute'), ['absolute', 'percent']);
+
+    // A delta that is no number, NAN or INF, is no change to show: no arm below would hold NAN, and
+    // PHP 8.5 warns when either is written as text.
+    $delta = is_float($delta) && ! is_finite($delta) ? null : $delta;
+
     // Auto-derive intent from delta if not explicitly set
     $resolvedIntent = $intent ?? match (true) {
         $delta === null, $delta == 0 => 'neutral',
@@ -37,13 +45,29 @@
     // signed-string input ("+8.4") would render as "++8.4%" — the component
     // prepends "+" for positives, then interpolates the original string
     // verbatim. Negative inputs keep their leading "-" and skip the strip.
+    //
+    // A delta that is a number is written in the application's locale, as every number WireKit
+    // writes itself: `+8,4 %` in German and `+8.4%` in English, and grouped where it is absolute
+    // (`+1.234,5`). Up to six decimals, trailing zeros dropped, so the figure keeps the precision it
+    // was given. The plus is the component's; a negative number takes the locale's minus. The
+    // magnitude, without either, is what the delta's name says. A delta that is no number is
+    // written as it comes.
     $formattedDelta = null;
+    $deltaMagnitude = null;
     if ($delta !== null) {
         $deltaText = is_string($delta) ? ltrim($delta, '+') : (string) $delta;
-        $sign = is_numeric($deltaText) && (float) $deltaText > 0 ? '+' : '';
-        $formattedDelta = $deltaFormat === 'percent'
-            ? "{$sign}{$deltaText}%"
-            : "{$sign}{$deltaText}";
+
+        if (is_numeric($deltaText)) {
+            $writeDelta = static fn (float $number): string => $deltaFormat === 'percent'
+                ? \Pushery\WireKit\Support\LocalizedNumber::percent($number, 6)
+                : \Pushery\WireKit\Support\LocalizedNumber::format($number, maxPrecision: 6);
+            $deltaNumber = (float) $deltaText;
+            $formattedDelta = ($deltaNumber > 0 ? '+' : '').$writeDelta($deltaNumber);
+            $deltaMagnitude = $writeDelta(abs($deltaNumber));
+        } else {
+            $formattedDelta = $deltaFormat === 'percent' ? "{$deltaText}%" : $deltaText;
+            $deltaMagnitude = abs((float) $deltaText).($deltaFormat === 'percent' ? '%' : '');
+        }
     }
 
     // Delta color classes — use the *-text variants because they are
@@ -79,11 +103,8 @@
     // correctly without knowing what follows it.
     //
     // The magnitude carries its own unit sign, which every screen reader expands in
-    // the reader's own language ("8.4%" → "8,4 Prozent"), so the unit does not need
+    // the reader's own language ("8,4 %" → "8,4 Prozent"), so the unit does not need
     // a key of its own and the number matches the one on screen.
-    $deltaMagnitude = $delta !== null
-        ? abs(is_numeric($delta) ? $delta : (float) ltrim((string) $delta, '+')).($deltaFormat === 'percent' ? '%' : '')
-        : null;
 
     $deltaAriaLabel = match (true) {
         $delta === null => null,
@@ -104,7 +125,7 @@
      assistive technology announces the landmark and then has nothing to say. --}}
 <article
     @if(filled($label)) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-labelledby="{{ $tickerId }}-label" @endunless @endif
-    {{ $attributes->class([$baseClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
 >
     {{-- Label --}}
     <span
@@ -117,7 +138,9 @@
     {{-- Value + delta row --}}
     <span class="flex items-baseline gap-[var(--space-wk-sm,0.5rem)]">
         <span class="{{ $valueSizeClass }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums">
-            {{ $value }}
+            {{-- A value that is not finite is written as PHP writes it, `NAN` or `INF`, without the
+                 warning PHP 8.5 raises when one is cast; every other value as Blade writes it. --}}
+            {{ is_float($value) ? \Pushery\WireKit\Support\NumericProp::text($value) : $value }}
         </span>
         @if($formattedDelta !== null)
             {{-- `role="img"` because the name below has to survive: `aria-label` is
@@ -170,7 +193,7 @@
     @endif
 
     {{-- Footer slot --}}
-    @if(isset($footer))
+    @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
         <span class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
             {{ $footer }}
         </span>

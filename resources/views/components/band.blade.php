@@ -77,6 +77,6 @@
     carry meaning, the caller says so — `as="header"`, `as="footer"`, or an aria-label of their
     own through the attribute bag.
 --}}
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </{{ $as }}>

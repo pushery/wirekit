@@ -11,6 +11,18 @@
      the order on screen, for the keyboard and for a screen reader. A hidden part shows for the
      visit on `wirekit:card-stack-show`, and when a link's fragment leads into it. See
      resources/js/components/card-stack.js. --}}
+@php
+    // A part arrives as a slot of its name, and Blade sets each slot as a variable of that name
+    // before the props below are read, where it takes the place of the attribute: a part named
+    // `order` would replace the order. The parts are read from `$__laravel_slots`
+    // (Support\KeyedSlot), so the slot variables are let go first.
+    foreach (array_keys($__laravel_slots ?? []) as $__wkSlotName) {
+        if (is_string($__wkSlotName) && ! in_array($__wkSlotName, ['__default', 'slot', 'attributes', '__laravel_slots'], true)) {
+            unset($$__wkSlotName);
+        }
+    }
+    unset($__wkSlotName);
+@endphp
 @props([
     // The parts in the order they are drawn: a list of slot names, or of
     // `['key' => name, 'shown' => bool]`. A name without a slot is skipped; a slot the order does
@@ -30,25 +42,33 @@
     WireKit::warnUnknownProps('card-stack', $attributes->getAttributes());
 
     // Every named slot the call site wrote, in the order it wrote them.
+    $slots = $__laravel_slots ?? [];
     $named = array_values(array_filter(
-        array_keys($__laravel_slots ?? []),
+        array_keys($slots),
         static fn ($name): bool => is_string($name) && $name !== '__default',
     ));
 
+    // Each part under the name the order gives it, with the slot it draws: an entry names its slot
+    // as written, or in the camel form Blade gives a hyphenated name written as `<x-slot:api-keys>`.
     $parts = [];
+    $placed = [];
+    // An entry may be a slot key alone, so a single key written as text is an order of one
+    // through the cast, and a text is no error here.
     foreach ((array) (ListProp::from($order) ?? []) as $entry) {
         $key = is_array($entry) ? (string) ($entry['key'] ?? '') : (string) $entry;
+        $slotName = \Pushery\WireKit\Support\KeyedSlot::nameFor($slots, $key);
 
-        if ($key === '' || ! in_array($key, $named, true) || array_key_exists($key, $parts)) {
+        if ($slotName === null || isset($placed[$slotName]) || array_key_exists($key, $parts)) {
             continue;
         }
 
-        $parts[$key] = is_array($entry) ? BooleanProp::from($entry['shown'] ?? true, true) : true;
+        $placed[$slotName] = true;
+        $parts[$key] = ['slot' => $slotName, 'shown' => is_array($entry) ? BooleanProp::from($entry['shown'] ?? true, true) : true];
     }
 
-    foreach ($named as $key) {
-        if (! array_key_exists($key, $parts)) {
-            $parts[$key] = true;
+    foreach ($named as $slotName) {
+        if (! isset($placed[$slotName]) && ! array_key_exists($slotName, $parts)) {
+            $parts[$slotName] = ['slot' => $slotName, 'shown' => true];
         }
     }
 
@@ -77,9 +97,9 @@
     x-on:wirekit:card-stack-show.window="show($event.detail)"
     :attributes="$stackAttributes"
 >
-    @foreach ($parts as $key => $shown)
-        <div data-wk-card-stack-part="{{ $key }}" wire:key="{{ $stackId }}-{{ $key }}" class="contents" @unless ($shown) hidden data-wk-card-stack-hidden @endunless>
-            {{ ${$key} ?? '' }}
+    @foreach ($parts as $key => $part)
+        <div data-wk-card-stack-part="{{ $key }}" wire:key="{{ $stackId }}-{{ $key }}" class="contents" @unless ($part['shown']) hidden data-wk-card-stack-hidden @endunless>
+            {{ $slots[$part['slot']] ?? '' }}
         </div>
     @endforeach
 </x-wirekit::stack>

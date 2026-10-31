@@ -4,16 +4,20 @@
  * The server draws a part the reader hid with `hidden`. Two things show it until the page is left:
  * `wirekit:card-stack-show` on `window` with `{ key }` (and `stack`, the stack's id, where a page
  * holds more than one with that part), and a link whose fragment leads to an element inside it,
- * on arrival and on every `hashchange`. A part shown that way stays shown when a Livewire render
- * draws it hidden again, until the page is left.
+ * on arrival, on every `hashchange`, and when the reader follows the link again, which fires no
+ * `hashchange`. A part shown that way stays shown when a Livewire render draws it hidden again,
+ * until the page is left.
  */
+import { onFragmentFollowedAgain } from '../utils/fragment.js';
 import { pageScrollBehavior } from '../utils/motion.js';
+import { namesSomething, sameName } from '../utils/same-name.js';
 
 export default function wirekitCardStack() {
     return {
         _revealed: null,
         _observer: null,
         _onHash: null,
+        _fragmentAgain: null,
 
         init() {
             this._revealed = new Set();
@@ -24,23 +28,27 @@ export default function wirekitCardStack() {
 
             this._onHash = () => this._revealHash();
             window.addEventListener('hashchange', this._onHash);
+            this._fragmentAgain = onFragmentFollowedAgain(this._onHash);
             this._revealHash();
         },
 
         destroy() {
             this._observer?.disconnect();
             window.removeEventListener('hashchange', this._onHash);
+            this._fragmentAgain?.();
+            this._fragmentAgain = null;
         },
 
         /**
-         * Show a hidden part for the visit.
+         * Show a hidden part for the visit. The key and the stack may come as numbers, as an id
+         * a server dispatches does; a number names the part its digits name.
          *
-         * @param {{ key: string, stack?: string }|string} detail
+         * @param {{ key: string|number, stack?: string|number }|string|number} detail
          */
         show(detail) {
-            const key = typeof detail === 'string' ? detail : detail?.key;
+            const key = detail !== null && typeof detail === 'object' ? detail.key : detail;
 
-            if (typeof detail === 'object' && detail?.stack && detail.stack !== this.$el.id) {
+            if (detail !== null && typeof detail === 'object' && namesSomething(detail.stack) && ! sameName(detail.stack, this.$el.id)) {
                 return;
             }
 
@@ -50,14 +58,14 @@ export default function wirekitCardStack() {
                 return;
             }
 
-            this._revealed.add(key);
+            this._revealed.add(part.getAttribute('data-wk-card-stack-part'));
             part.removeAttribute('hidden');
         },
 
         /** This stack's own wrapper for a part, never one of a stack nested inside it. */
         _part(key) {
             return [...this.$el.querySelectorAll('[data-wk-card-stack-part]')]
-                .find((part) => part.getAttribute('data-wk-card-stack-part') === key && part.closest('[data-wk-card-stack]') === this.$el) ?? null;
+                .find((part) => sameName(key, part.getAttribute('data-wk-card-stack-part')) && part.closest('[data-wk-card-stack]') === this.$el) ?? null;
         },
 
         _keepRevealed() {

@@ -77,13 +77,13 @@
     ]), $scope);
 @endphp
 
-<footer {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<footer {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     <div class="{{ $innerMaxClass }} mx-auto">
-        @isset($columns)
+        @if(\Pushery\WireKit\Support\SlotContent::given($columns ?? null))
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[var(--space-wk-xl)] mb-[var(--space-wk-xl)]">
                 {{ $columns }}
             </div>
-        @endisset
+        @endif
     </div>
 
     {{-- Bottom-strip divider sits OUTSIDE the constrained container so it
@@ -91,20 +91,20 @@
          not the max-w-container-xl content boundary). Real-world footer
          pattern: legal/brand row separated from columns by a line that
          visually crosses the entire footer, not just the inner content. --}}
-    @if(isset($brand) || isset($legal))
+    @if(\Pushery\WireKit\Support\SlotContent::given($brand ?? null) || \Pushery\WireKit\Support\SlotContent::given($legal ?? null))
         <div class="my-[var(--space-wk-lg)] border-t border-[var(--color-wk-border-subtle)]"></div>
 
         <div class="{{ $innerMaxClass }} mx-auto">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-[var(--space-wk-md)]">
-                @isset($brand)
+                @if(\Pushery\WireKit\Support\SlotContent::given($brand ?? null))
                     <div>{{ $brand }}</div>
-                @endisset
+                @endif
 
-                @isset($legal)
+                @if(\Pushery\WireKit\Support\SlotContent::given($legal ?? null))
                     <div class="flex flex-wrap gap-[var(--gap-wk-md)] text-[length:var(--text-wk-xs)]">
                         {{ $legal }}
                     </div>
-                @endisset
+                @endif
             </div>
         </div>
     @endif

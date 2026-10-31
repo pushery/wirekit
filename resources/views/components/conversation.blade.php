@@ -37,12 +37,13 @@
     // `Support/AlpinePayload.php` names the versions.
     $alpineConfig = \Pushery\WireKit\Support\AlpinePayload::from((object) array_filter(
         [
-            'threshold' => $threshold !== null ? (int) $threshold : null,
+            'threshold' => \Pushery\WireKit\Support\NumericProp::intOrNull($threshold, 'conversation', 'threshold'),
             'jumpLabel' => __('wirekit::Jump to latest'),
             // Every form of the name with the count, chosen in the browser where the count lives,
             // with the application's plural rule: "1 nuevo", "3 nuevos".
             'jumpLabelCounts' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::Jump to latest, :count new'),
-            'locale' => str_replace('_', '-', app()->getLocale()),
+            'locale' => \Pushery\WireKit\Support\IcuLocale::tag(),
+            'separators' => \Pushery\WireKit\Support\LocalizedNumber::separators(),
         ],
         static fn ($v): bool => $v !== null,
     ));
@@ -65,7 +66,7 @@
     // < 18.2) simply skip it (unknown-property → ignored) and let the width
     // jump; nothing depends on it.
     $viewportClasses = 'wk-scrollbar '.WireKit::resolveClasses('conversation', 'viewport', implode(' ', [
-        'overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
+        'relative overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
         // A control the focus scrolls into view stops a ring's reach short of the edge, where the
         // viewport would cut the ring off; the viewport's own ring is drawn inside, because it
         // usually fills a pane flush and the pane's own clipping cut an outer one.
@@ -79,11 +80,14 @@
     // A caller's `aria-labelledby` or `aria-label` names the element a reader meets, below; on this
     // wrapper, which has no role, ARIA prohibits a name (Support\CallerName).
     [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+
+    // One value for the style, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $maxHeight = \Pushery\WireKit\Support\CssValue::prop($maxHeight, 'conversation', 'maxHeight', '24rem');
 @endphp
 
 <div
     x-data="wirekitConversation({{ $alpineConfig }})"
-    {{ $attributes->class([$rootClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}
 >
     {{-- `data-wk-print-expand`: paper does not scroll, so on paper this box grows to all it holds. --}}
     <div
@@ -104,9 +108,9 @@
              the reader stays glued to it while it is showing. The top margin
              matches the inter-message rhythm (space-md), so the footer reads as
              the next line in the thread instead of crowding the last message. --}}
-        @isset($footer)
+        @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
             <div data-wk-conversation-footer class="mt-[var(--space-wk-md,1rem)]">{{ $footer }}</div>
-        @endisset
+        @endif
     </div>
 
     {{-- Jump-to-latest. Only offered while the reader is scrolled away, and the
@@ -123,13 +127,13 @@
         x-show="!atBottom"
         x-cloak
         x-transition.opacity
-        @click="scrollToBottom()"
+        @click="jumpToLatest($el)"
         ::aria-label="jumpName()"
         class="absolute bottom-[var(--space-wk-sm)] left-1/2 -translate-x-1/2"
     >
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>
-        <span x-show="unread > 0" x-text="unread" x-cloak></span>
+        <span x-show="unread > 0" x-text="unreadText" x-cloak></span>
     </x-wirekit::button>
 </div>

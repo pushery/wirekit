@@ -65,6 +65,10 @@
     // Where the tooltip opens. `right` is correct for a rail on the inline-start edge;
     // a right-hand rail wants `left`.
     'placement' => 'right',
+    // The keyboard shortcut the module's tooltip draws after its name, ⌘ S on a Mac and Ctrl S
+    // elsewhere. Unset, the tooltip draws the one the module binds with `x-wk-shortcut`; this is
+    // for a shortcut registered another way, and `false` draws none.
+    'shortcut' => null,
     'scope' => null,
 ])
 
@@ -77,16 +81,33 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $labels = \Pushery\WireKit\Support\AwareProp::read('labels', ['app-rail'], 'tooltip');
+    $trackCurrent = \Pushery\WireKit\Support\AwareProp::read('trackCurrent', ['app-rail'], false);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('app-rail.item', $attributes->getAttributes());
-    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
-    $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
-    $active = BooleanProp::from($active, false);
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+    // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
+    // An empty address, one of white space or `false` is none, so the item keeps its own `#`.
+    $href = \Pushery\WireKit\Support\UrlProp::text($href) ?? '#';
+
+    $active = BooleanProp::from($active, false, 'app-rail.item', 'active');
     $ariaCurrent = \Pushery\WireKit\WireKit::validateProp('app-rail.item', 'current', (string) $current, ['page', 'location', 'true']);
-    $truncate = BooleanProp::from($truncate, false);
+    $truncate = BooleanProp::from($truncate, false, 'app-rail.item', 'truncate');
+    // Checked here, under this component's name, so a word the tooltip cannot place is reported
+    // where it was written (Support\FloatingPlacement); the tooltip gets the word it can place.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('app-rail.item', 'placement', (string) ($placement ?: 'right'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'right');
 
     // `@aware` hands back the value the PARENT was called with, before that component's
     // own normalization ran — so `expandable` arrives raw here and gets the same
@@ -107,13 +128,14 @@
         }
     }
 
-    $labelText = $label !== '' ? $label : \Pushery\WireKit\Support\SlotContent::text($slot);
+    // Text, for the tooltip's name line and its `text`, which escape it once themselves.
+    $labelText = $label !== '' ? \Pushery\WireKit\Support\SlotContent::textOf($label) : \Pushery\WireKit\Support\SlotContent::plain($slot);
 
     // The counter's sentences, only beside a counter: without one they describe nothing. A string
     // is one sentence, as it always was; a list is one sentence per waiting item.
     $badgeLabel = \Pushery\WireKit\Support\ListProp::renumbered($badgeLabel);
     $badgeSentences = match (true) {
-        ! filled($badge) => [],
+        \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge) === null => [],
         is_array($badgeLabel) => array_values(array_filter(
             array_map(static fn ($sentence): string => trim((string) $sentence), $badgeLabel),
             static fn (string $sentence): bool => $sentence !== '',
@@ -124,7 +146,7 @@
 
     // The tooltip's lines: as many sentences as the limit allows, then one line saying how many
     // more wait, so a module with many waiting items keeps a tooltip that fits beside the rail.
-    $badgeShown = array_slice($badgeSentences, 0, max(1, (int) $badgeLabelLimit));
+    $badgeShown = array_slice($badgeSentences, 0, max(1, \Pushery\WireKit\Support\NumericProp::int($badgeLabelLimit, 0, 'app-rail.item', 'badgeLabelLimit')));
     $badgeMore = count($badgeSentences) - count($badgeShown);
 
     // The description names every sentence. Several are read as one run of text, so each one
@@ -348,7 +370,18 @@
         ? \Pushery\WireKit\Support\CurrentState::attributes($classes.' '.$activeClasses, $classes)
         : [];
 
-    $linkAttributes = $attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\CompactClasses::list(['wk-rail-item', 'wk-touch-row', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']));
+    // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
+    // item, so they go on its outermost element (Support\OuterAttributes). Where a tooltip wraps
+    // the link, that is a `contents` wrapper around the tooltip; a plain link is outermost itself.
+    [$outerAttributes, $withoutOuterAttributes] = \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+
+    if ($needsTooltip) {
+        $attributes = $withoutOuterAttributes;
+    } else {
+        $outerAttributes = new \Illuminate\View\ComponentAttributeBag([]);
+    }
+
+    $linkAttributes = $attributes->except('rel')->merge($trackAttributes)->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-rail-item', 'wk-touch-row', $classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button'])));
 @endphp
 
 {{-- THREE literal branches, and the shape is forced rather than chosen.
@@ -369,6 +402,7 @@
      decided by the stylesheet's order, not by the attribute. `focusable-trigger="false"`
      because the slot is already an <a> — the default would put a second tab stop in front of
      every module. --}}
+@if($outerAttributes->isNotEmpty())<div class="contents" {{ $outerAttributes }}>@endif
 @if($badgeSentence !== null)
     {{-- The counter's sentence, in a tooltip that never goes quiet: no mode draws it. Where the
          name is a tooltip too, the name is the first line while the names are hidden, and goes
@@ -378,16 +412,27 @@
          description would read a second time, or the sentence, which is the link's description
          already through the element after the link. That element sits outside the link, because
          text inside it would join the link's name. --}}
-    <x-wirekit::tooltip :placement="$placement" focusable-trigger="false" :describes="false" class="w-full">
+    <x-wirekit::tooltip :placement="$placement" focusable-trigger="false" :describes="false" :shortcut="$shortcut" class="w-full">
         <x-slot:content>
             @if($nameTooltip)
                 <span class="block" x-show="! expanded">{{ $labelText }}</span>
             @endif
-            @foreach($badgeShown as $shownSentence)
-                <span class="block">{{ $shownSentence }}</span>
-            @endforeach
+            {{-- Two or more waiting items are a list, a bullet before each, and a sentence that wraps
+                 goes on under its own words rather than under the bullet. One sentence stands
+                 alone, and the line of how many more is no item. --}}
+            @if(count($badgeShown) > 1)
+                <ul data-wk-prose-skip role="list" style="list-style: none; margin: 0; padding: 0;" class="list-none flex flex-col">
+                    @foreach($badgeShown as $shownSentence)
+                        <li data-wk-prose-skip class="flex gap-[var(--gap-wk-xs)]"><span aria-hidden="true">•</span><span>{{ $shownSentence }}</span></li>
+                    @endforeach
+                </ul>
+            @else
+                @foreach($badgeShown as $shownSentence)
+                    <span class="block">{{ $shownSentence }}</span>
+                @endforeach
+            @endif
             @if($badgeMore > 0)
-                <span class="block">{{ trans_choice('wirekit::and :count more', $badgeMore, ['count' => $badgeMore]) }}</span>
+                <span class="block">{{ \Pushery\WireKit\Support\Plural::choice('wirekit::and :count more', $badgeMore, ['count' => $badgeMore]) }}</span>
             @endif
         </x-slot:content>
         @include('wirekit::components.partials.app-rail-link')
@@ -399,7 +444,8 @@
          time. Every rail can show its names at runtime, an expandable one on its toggle and any
          rail in a drawer it has to itself, and `expanded` is in scope because the rail's Alpine
          component wraps this subtree. --}}
-    <x-wirekit::tooltip :text="$labelText" :placement="$placement" focusable-trigger="false" :describes="false" class="w-full" x-bind:data-wk-tooltip-disabled="expanded">@include('wirekit::components.partials.app-rail-link')</x-wirekit::tooltip>
+    <x-wirekit::tooltip :text="$labelText" :placement="$placement" focusable-trigger="false" :describes="false" :shortcut="$shortcut" class="w-full" x-bind:data-wk-tooltip-disabled="expanded">@include('wirekit::components.partials.app-rail-link')</x-wirekit::tooltip>
 @else
     @include('wirekit::components.partials.app-rail-link')
 @endif
+@if($outerAttributes->isNotEmpty())</div>@endif

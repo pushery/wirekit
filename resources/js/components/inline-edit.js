@@ -1,5 +1,7 @@
 import { disabledByFieldset } from '../utils/fieldset-disabled.js';
 import { prefersReducedMotion } from '../utils/motion.js';
+import { namesSomething, sameName } from '../utils/same-name.js';
+import { timerDelay } from '../utils/timer-delay.js';
 
 /**
  * What a reader can type into, and what can take focus at all.
@@ -29,7 +31,7 @@ const hasOwnName = (el) => ['aria-label', 'aria-labelledby'].some((attr) => (el.
  * Resources held: `_previous` (a value snapshot, no listener), `_exclusiveHandler`
  * (window listener for the exclusive-open protocol), `_saveTimeout` (the
  * no-answer fallback), `_focusFrame` (a pending animation frame that places focus
- * once the editor is revealed), `_pointerDownAt` (drag-threshold bookkeeping),
+ * once the editor or the trigger is revealed), `_pointerDownAt` (drag-threshold bookkeeping),
  * `_fieldLabel` (the press and click listeners on a field's label, outside the root).
  * Every one of them is released in destroy(); every callback that touches one
  * null-guards first, because a Livewire morph can tear the host down while a
@@ -40,6 +42,7 @@ const hasOwnName = (el) => ['aria-label', 'aria-labelledby'].some((attr) => (el.
  * @param {string} config.value           Initial value
  * @param {boolean} config.exclusive      Close other open editors when this opens
  * @param {boolean} config.disabled       The field is out of use: nothing opens the editor
+ * @param {boolean} [config.readonly]     The field is read-only: nothing opens the editor, the value stays readable
  * @param {number} config.saveTimeout     ms to wait for a save answer before giving up
  * @param {string} config.fieldLabel      id of a field's label that names this control
  * @param {boolean} config.fieldLabelFocuses  whether a click on it focuses the slot's control
@@ -48,6 +51,10 @@ export default function wirekitInlineEdit(config = {}) {
     return {
         editing: false,
         saving: false,
+        // Up from the moment this editor sends a value until an answer for it arrives, also past
+        // the save timeout, so a late answer still closes the editor that asked. An editor that
+        // sent nothing hears no answer: a page may give one name to several editors.
+        _awaitingAnswer: false,
         draft: '',
 
         /**
@@ -62,6 +69,7 @@ export default function wirekitInlineEdit(config = {}) {
         _focusFrame: null,
         _pointerDownAt: null,
         _fieldLabel: null,
+        _controlWatch: null,
         _onFieldLabelDown: null,
         _onFieldLabelClick: null,
 
@@ -193,6 +201,8 @@ export default function wirekitInlineEdit(config = {}) {
             }
             this._onFieldLabelDown = null;
             this._onFieldLabelClick = null;
+            this._controlWatch?.disconnect();
+            this._controlWatch = null;
         },
 
         // ── Opening ─────────────────────────────────────────────────────────
@@ -202,7 +212,7 @@ export default function wirekitInlineEdit(config = {}) {
             // disables the trigger, the field and both buttons, but not the value, which is no
             // native control: a click there would open an editor whose field and buttons take no
             // input.
-            if (this.editing || this.saving || config.disabled === true || disabledByFieldset(this.$root)) return;
+            if (this.editing || this.saving || config.disabled === true || config.readonly === true || disabledByFieldset(this.$root)) return;
             this._previous = this._snapshot(this.draft);
             this.editing = true;
 
@@ -270,12 +280,29 @@ export default function wirekitInlineEdit(config = {}) {
                 return;
             }
 
-            // Blade cannot add attributes to slot content, so the wiring the
-            // built-in path gets declaratively is applied here instead —
-            // same attributes, one place, so the two paths cannot drift.
-            // On the element that takes focus: that is the one announced.
             const target = this._focusTarget(control);
 
+            this._wireControl(target);
+            this._watchControl();
+
+            target.focus();
+            // Select rather than place a caret: the common intent is to
+            // replace a short value, and a caret at position 0 makes the
+            // user clear it by hand first.
+            target.select?.();
+        },
+
+        /**
+         * Name and describe the control that takes the focus.
+         *
+         * Blade cannot add attributes to slot content, so the wiring the built-in path gets
+         * declaratively is applied here instead: same attributes, one place, so the two paths
+         * cannot drift. On the element that takes focus, which is the one announced. Each is
+         * written only where it is missing, so the watch below hears no write of its own.
+         *
+         * @param {HTMLElement} target
+         */
+        _wireControl(target) {
             if (config.describedBy && !target.getAttribute('aria-describedby')) {
                 target.setAttribute('aria-describedby', config.describedBy);
             }
@@ -286,12 +313,33 @@ export default function wirekitInlineEdit(config = {}) {
             if (config.labelledBy && !hasOwnName(target)) {
                 target.setAttribute('aria-labelledby', config.labelledBy);
             }
+        },
 
-            target.focus();
-            // Select rather than place a caret: the common intent is to
-            // replace a short value, and a caret at position 0 makes the
-            // user clear it by hand first.
-            target.select?.();
+        /**
+         * Wire the control again while the editor is open, when something takes the wiring off.
+         *
+         * A Livewire update while a reader edits, after a refused save or from a `wire:model.live`
+         * on a control of the caller's own, compares that control with markup that carries
+         * neither attribute and takes both off. The control the slot holds is looked up again, so
+         * one a render put in place of the first is wired too. Focus and selection stay as the
+         * reader has them.
+         */
+        _watchControl() {
+            if (this._controlWatch || typeof MutationObserver !== 'function' || !this.$root) return;
+
+            this._controlWatch = new MutationObserver(() => {
+                const control = this.editing ? this._control() : null;
+
+                if (control) {
+                    this._wireControl(this._focusTarget(control));
+                }
+            });
+            this._controlWatch.observe(this.$root, {
+                subtree: true,
+                childList: true,
+                attributes: true,
+                attributeFilter: ['aria-describedby', 'aria-labelledby', 'aria-label'],
+            });
         },
 
         /**
@@ -401,6 +449,7 @@ export default function wirekitInlineEdit(config = {}) {
 
         cancel() {
             if (this.saving) return;
+            this._awaitingAnswer = false;
             this.draft = this._snapshot(this._previous);
             this.editing = false;
             this._focusTrigger();
@@ -426,6 +475,7 @@ export default function wirekitInlineEdit(config = {}) {
             }
 
             this.saving = true;
+            this._awaitingAnswer = true;
 
             this.$dispatch('wirekit:inline-edit-confirmed', {
                 name: config.name,
@@ -444,13 +494,19 @@ export default function wirekitInlineEdit(config = {}) {
                     this._saveTimeout = null;
                     this.saving = false;
                     this.$refs.status && (this.$refs.status.textContent = config.unknownMessage ?? '');
-                }, wait);
+                }, timerDelay(wait));
             }
         },
 
-        /** The developer reports the outcome; it is never inferred. */
+        /**
+         * The developer reports the outcome; it is never inferred. Only the editor that sent the
+         * value takes it: the event names an editor, not one save, and an editor of the same name
+         * that sent nothing, another row of a list or one an error opened, stays as it is.
+         */
         onSaved(event) {
-            if (event?.detail?.name && event.detail.name !== config.name) return;
+            if (namesSomething(event?.detail?.name) && ! sameName(event.detail.name, config.name)) return;
+            if (! this._awaitingAnswer) return;
+            this._awaitingAnswer = false;
             if (this._saveTimeout) {
                 clearTimeout(this._saveTimeout);
                 this._saveTimeout = null;
@@ -462,7 +518,9 @@ export default function wirekitInlineEdit(config = {}) {
         },
 
         onFailed(event) {
-            if (event?.detail?.name && event.detail.name !== config.name) return;
+            if (namesSomething(event?.detail?.name) && ! sameName(event.detail.name, config.name)) return;
+            if (! this._awaitingAnswer) return;
+            this._awaitingAnswer = false;
             if (this._saveTimeout) {
                 clearTimeout(this._saveTimeout);
                 this._saveTimeout = null;
@@ -587,7 +645,43 @@ export default function wirekitInlineEdit(config = {}) {
         },
 
         _focusTrigger() {
-            this.$nextTick(() => this.$refs.trigger?.focus());
+            this.$nextTick(() => this._returnFocus());
+        },
+
+        /**
+         * Hand the focus back to the trigger once it is on screen.
+         *
+         * The race of _placeFocus() on the way back: `x-show` reveals the trigger on an
+         * animation frame, and `$nextTick` waits for none. A focus call on a trigger that is
+         * still `display: none` does nothing, and the field that held the focus is already
+         * gone, so the focus would stay on the body and the next Tab start at the top of the
+         * page. A trigger that is not displayed yet gets the frames that reveal it: a bounded
+         * number, and only while the editor stays closed. After that the attempt is made anyway.
+         */
+        _returnFocus(framesLeft = 10) {
+            if (this.editing) return;
+
+            const trigger = this.$refs?.trigger;
+
+            if (!trigger) return;
+
+            const hidden = typeof trigger.getClientRects === 'function' && trigger.getClientRects().length === 0;
+
+            if (hidden && framesLeft > 0 && typeof requestAnimationFrame === 'function') {
+                // The one pending frame _placeFocus() also uses: a close and an open in quick
+                // succession leave only the frame of the last, and destroy() releases it.
+                if (this._focusFrame && typeof cancelAnimationFrame === 'function') {
+                    cancelAnimationFrame(this._focusFrame);
+                }
+                this._focusFrame = requestAnimationFrame(() => {
+                    this._focusFrame = null;
+                    this._returnFocus(framesLeft - 1);
+                });
+
+                return;
+            }
+
+            trigger.focus();
         },
 
         /** Used by the view to skip the mode-change transition. */

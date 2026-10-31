@@ -80,12 +80,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('app-shell', $attributes->getAttributes());
 
+    // An unknown `headerPlacement` is reported (Support\StrictnessGate) and renders as `shell`; a
+    // bound `null` or empty string is `shell` without a word.
+    $headerPlacement = \Pushery\WireKit\WireKit::validateProp('app-shell', 'headerPlacement', \Pushery\WireKit\Support\NumericProp::text($headerPlacement ?: 'shell'), ['shell', 'content']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `viewport="false"` would otherwise flip the mode on. Normalize against the
     // prop's own default so a cast never engages a mode that was meant off.
-    $viewport = BooleanProp::from($viewport, false);
-    $sidebarInset = BooleanProp::from($sidebarInset, true);
-    $panel = BooleanProp::from($panel, false);
+    $viewport = BooleanProp::from($viewport, false, 'app-shell', 'viewport');
+    $sidebarInset = BooleanProp::from($sidebarInset, true, 'app-shell', 'sidebarInset');
+    $panel = BooleanProp::from($panel, false, 'app-shell', 'panel');
 
     // NO `accent`, for the same reason the sidebar's scale stops there: a toned shell's
     // chrome shows through any flush navigation column standing on it, so that column's
@@ -97,8 +101,6 @@
     // how every reference console is built: the colored surface is the rail, and the chrome
     // around it is neutral or dark.
     $tone = WireKit::validateProp('app-shell', 'tone', $tone, ['default', 'muted', 'inverse']);
-
-    $headerPlacement = in_array($headerPlacement, ['shell', 'content'], true) ? $headerPlacement : 'shell';
 
     // The inset, as two utilities behind a name. Only at lg+:
     // on mobile the sidebar is an off-canvas overlay anchored flush from the top, so
@@ -199,8 +201,8 @@
     // rail's variant is read from the rendered slot because that is the only
     // thing a shell can see of what it was handed.
     $navTakesPanelGutter = $panel
-        && isset($rail)
-        && ! isset($sidebar)
+        && \Pushery\WireKit\Support\SlotContent::given($rail ?? null)
+        && ! \Pushery\WireKit\Support\SlotContent::given($sidebar ?? null)
         && ! str_contains((string) $rail, 'data-variant="panel"');
 
     // A drawer nobody can open.
@@ -219,7 +221,7 @@
     //
     // Debug only, and it never throws: a shell whose navigation is genuinely elsewhere (a
     // bottom bar, a command palette) is a real composition, and a fatal here would break it.
-    if ((bool) config('app.debug') && (isset($sidebar) || isset($rail))) {
+    if ((bool) config('app.debug') && (\Pushery\WireKit\Support\SlotContent::given($sidebar ?? null) || \Pushery\WireKit\Support\SlotContent::given($rail ?? null))) {
         $slotsAsRendered = (string) ($header ?? '')
             .(string) ($slot ?? '')
             .(string) ($sidebar ?? '')
@@ -319,7 +321,7 @@
     @if($tone !== 'default') data-wk-tone="{{ $tone }}" @endif
     @if($panel) data-wk-panel @endif
     @if($navTakesPanelGutter) data-wk-nav-gutter @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     @if($headerPlacement === 'shell')
         @isset($header)
@@ -335,7 +337,7 @@
          ancestor and take its height instead of the shell's. Owning the
          context makes the two coincide everywhere. --}}
     <div data-wk-print-expand class="relative flex flex-1 overflow-hidden">
-        @if(isset($sidebar) || isset($rail))
+        @if(\Pushery\WireKit\Support\SlotContent::given($sidebar ?? null) || \Pushery\WireKit\Support\SlotContent::given($rail ?? null))
             {{-- Mobile backdrop.
 
                  The scrim paints from --color-wk-overlay, like every other backdrop in the
@@ -358,7 +360,7 @@
             ></div>
         @endif
 
-        @isset($rail)
+        @if(\Pushery\WireKit\Support\SlotContent::given($rail ?? null))
             {{-- The console layout: a module rail, then the module's own navigation.
 
                  The two columns travel as ONE off-canvas panel below the breakpoint, and
@@ -390,7 +392,7 @@
                      into it, and the rail has to: alone, it shows its names here, because a strip of
                      unnamed icons on a screen with no hover is no navigation at all. Beside a module
                      column it keeps its narrow form, which is what fits a phone there. --}}
-                @unless(isset($sidebar)) data-wk-rail-only @endunless
+                @unless(\Pushery\WireKit\Support\SlotContent::given($sidebar ?? null)) data-wk-rail-only @endunless
                 {{-- `invisible` when closed does two things at once, as on the single-column
                      form. A drawer parked at -100% is
                      only off-SCREEN while something clips it, and `position: fixed`/absolute
@@ -479,10 +481,10 @@
                      The attribute bag is what makes this a seam rather than a decision imposed
                      on every application: `<x-slot:rail role="complementary" aria-label="…">`
                      restores a real landmark where one is genuinely wanted. --}}
-                <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($rail)->merge(['role' => 'presentation'])->class(['wk-app-shell-rail flex shrink-0']) }}>
+                <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($rail)->merge(['role' => 'presentation'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller(\Pushery\WireKit\Support\SlotAttributes::of($rail), ['wk-app-shell-rail flex shrink-0'])) }}>
                     {{ $rail }}
                 </aside>
-                @isset($sidebar)
+                @if(\Pushery\WireKit\Support\SlotContent::given($sidebar ?? null))
                     {{-- The width below is the DRAWER width; at lg the shared
                          `aside.wk-app-shell-aside` rule in dist/wirekit.css takes over and
                          tracks the inner sidebar's own width, including its collapsed rail.
@@ -491,12 +493,12 @@
                          deliberately as tall as its content and rounded, which is right for
                          a padded column and reads as a floating sheet dropped on the page
                          when it slides in over one. --}}
-                    <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->merge(['role' => 'presentation'])->class(['wk-app-shell-aside max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none w-[var(--size-wk-sidebar-drawer)] shrink-0']) }}>
+                    <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->merge(['role' => 'presentation'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller(\Pushery\WireKit\Support\SlotAttributes::of($sidebar), ['wk-app-shell-aside max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none w-[var(--size-wk-sidebar-drawer)] shrink-0'])) }}>
                         {{ $sidebar }}
                     </aside>
-                @endisset
+                @endif
             </div>
-        @elseif(isset($sidebar))
+        @elseif(\Pushery\WireKit\Support\SlotContent::given($sidebar ?? null))
 
             {{-- Sidebar — `lg:mt-{md}` adds breathing room between the header
                  divider and the sidebar's inner card. Stays unset on mobile
@@ -602,7 +604,7 @@
                      nothing collides, and a lone complementary region beside the content is a
                      reasonable thing for an application to have; a `presentation` default would
                      take that landmark away from every sidebar-only shell. --}}
-                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[translate,transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
+                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller(\Pushery\WireKit\Support\SlotAttributes::of($sidebar), ['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[translate,transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset])) }}
                 x-cloak
             >
                 {{-- The drawer's own close control, for the reasons written on the console drawer

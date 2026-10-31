@@ -25,8 +25,9 @@
  *
  * Lifecycle resources held on `this`:
  *   - _timer (setInterval, every `_tickMs()`: a second, 30 seconds when the smallest
- *     unit shown is minutes, a minute when it is larger) — cleared in destroy(). A visual clock
- *     does not need a server round-trip, so this ticks client-side rather than polling.
+ *     unit shown is minutes, a minute when it is larger) — cleared at the deadline and in
+ *     destroy(). A visual clock does not need a server round-trip, so this ticks
+ *     client-side rather than polling.
  *   - _expiryTimer (setTimeout, fires `sync()` at the deadline) — cleared in destroy().
  *
  * @param {Object} config
@@ -35,13 +36,17 @@
  * @param {Array}   config.activeUnits   units to display, largest first
  * @param {boolean} config.autoMode      drop leading zero-units
  * @param {boolean} config.separators    group digits in the leading unit
+ * @param {{group: string, decimal: string}|null} [config.numberMarks]  the application's own marks for that grouping, if any
  * @param {string}  config.locale        locale for that grouping
  * @param {boolean} config.animate       re-key each value so it can transition
  * @param {string}  config.animateStyle  'box' or 'text' for the segments variant, 'none' when off
  * @param {string}  config.expiredText   what to say once the deadline has passed
  * @param {Object}  config.unitPhrases   unit -> { sample count: template with a :count placeholder },
  *                                       as `PluralPhrases::from()` builds it for `pluralize()`
+ * @param {boolean} config.static        work the time out once, as the page loads, and never tick
  */
+import { focusTargetAround } from '../utils/focus-around.js';
+import { formatDecimal } from '../utils/locale-number.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { pluralize } from '../utils/plural.js';
 import { watchCurrent } from '../utils/watch-current.js';
@@ -60,6 +65,7 @@ export default function wirekitCountdown(config = {}) {
         activeUnits: config.activeUnits || [],
         autoMode: Boolean(config.autoMode),
         separators: Boolean(config.separators),
+        _numberMarks: config.numberMarks && typeof config.numberMarks === 'object' ? config.numberMarks : null,
         locale: config.locale || 'en',
         animate: Boolean(config.animate),
         animateStyle: config.animateStyle || 'none',
@@ -74,6 +80,17 @@ export default function wirekitCountdown(config = {}) {
         calm: ! config.animate,
         _calmTimer: null,
         expiredText: config.expiredText || '',
+
+        /*
+         * The ways to stop the clock (WCAG 2.2.2: a value that updates by itself beside other
+         * content needs one, unless the task needs it to tick). `static` works the time out once,
+         * on the reader's clock as the page loads, and never ticks. `paused` is the reader's: the
+         * button of `pausable`, or a headless display's own control through `togglePause()`,
+         * holds the clock until they resume it. The deadline still turns the countdown to its
+         * expired text, once, through the timer armed for it, and fires the event.
+         */
+        static: Boolean(config.static),
+        paused: false,
 
         unitSuffix: { years: 'y', days: 'd', hours: 'h', minutes: 'm', seconds: 's' },
 
@@ -93,8 +110,11 @@ export default function wirekitCountdown(config = {}) {
         now: Date.now(),
 
         init() {
-            this.now = Date.now();
-            this._startTicking();
+            this._setNow(Date.now());
+
+            if (! this.static) {
+                this._startTicking();
+            }
 
             if (! this.calm) {
                 this._calmTimer = setTimeout(() => {
@@ -113,7 +133,11 @@ export default function wirekitCountdown(config = {}) {
              */
             this._visibility = pauseWhileHidden({
                 onHide: () => this._stopTicking(),
-                onShow: () => this._startTicking(),
+                onShow: () => {
+                    if (! this.static && ! this.paused && ! this.expired) {
+                        this._startTicking();
+                    }
+                },
             });
 
             const sync = () => {
@@ -122,6 +146,10 @@ export default function wirekitCountdown(config = {}) {
                 }
 
                 this.done = true;
+
+                // Past the deadline nothing the tick drives changes any more: `remaining` holds at
+                // zero, and the countdown shows its expired text. So the tick stops here.
+                this._stopTicking();
 
                 if (! this._fired) {
                     this._fired = true;
@@ -153,14 +181,56 @@ export default function wirekitCountdown(config = {}) {
 
         _startTicking() {
             this._stopTicking();
-            this.now = Date.now();
-            this._timer = setInterval(() => { this.now = Date.now(); }, this._tickMs());
+            this._setNow(Date.now());
+            this._timer = setInterval(() => { this._setNow(Date.now()); }, this._tickMs());
         },
 
         _stopTicking() {
             if (this._timer) {
                 clearInterval(this._timer);
                 this._timer = null;
+            }
+        },
+
+        /**
+         * Set the clock. The write that carries it past the deadline hides the button of
+         * `pausable` (`x-show="! expired"`), so when that button holds the focus, the focus
+         * moves on first: to the next control after the countdown, or the last one before it,
+         * as a dismissed alert hands it on. Without that the button takes the focus with it as
+         * it hides, and the browser drops it to the page (WCAG 2.4.3). It happens before the
+         * write because everything the write sets off runs after it: the button has hidden by
+         * the time a `$watch` callback hears of the change.
+         *
+         * @param {number} time a unix timestamp in ms
+         */
+        _setNow(time) {
+            if (! this.expired && this.target - time <= 0) {
+                const button = this.$root?.querySelector?.('[data-wk-countdown-pause]');
+
+                if (button && typeof document !== 'undefined' && document.activeElement === button) {
+                    focusTargetAround(this.$root)?.focus();
+                }
+            }
+
+            this.now = time;
+        },
+
+        /**
+         * Stop the clock where it stands, or start it again from the time it is now. A countdown
+         * that is `static` has no clock to start, and one past its deadline has none left to run,
+         * so `paused` stays as it is there.
+         */
+        togglePause() {
+            if (this.static || this.expired) {
+                return;
+            }
+
+            this.paused = ! this.paused;
+
+            if (this.paused) {
+                this._stopTicking();
+            } else {
+                this._startTicking();
             }
         },
 
@@ -226,13 +296,18 @@ export default function wirekitCountdown(config = {}) {
 
             this._expiryTimer = setTimeout(() => {
                 this._expiryTimer = null;
-                this.now = Date.now();
-                sync();
 
-                // Still short of the deadline: this was a hop, not the arrival.
-                if (! this.expired) {
+                // Still short of the deadline: this was a hop, not the arrival. The clock is left
+                // where it stands, as a countdown that is static or paused promises, and the timer
+                // is armed again.
+                if (this.target - Date.now() > 0) {
                     this._armExpiry(sync);
+
+                    return;
                 }
+
+                this._setNow(Date.now());
+                sync();
             }, delay);
         },
 
@@ -316,9 +391,14 @@ export default function wirekitCountdown(config = {}) {
                 return String(seg.value).padStart(2, '0');
             }
 
-            return this.separators
+            if (! this.separators) {
+                return String(seg.value);
+            }
+
+            // Grouped as the locale groups, with the application's own mark where it has one.
+            return this._numberMarks === null
                 ? new Intl.NumberFormat(this.locale).format(seg.value)
-                : String(seg.value);
+                : formatDecimal(seg.value, this.locale, 0, 0, this._numberMarks);
         },
 
         /**

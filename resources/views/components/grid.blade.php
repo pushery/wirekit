@@ -177,9 +177,9 @@
     // single column the CSP failure already produces. Approximate rather than exact by
     // construction (three equal columns are not `10rem 1fr 8rem`), and vastly better
     // than one.
-    $colsRequested = (string) $cols !== (string) config('wirekit.components.grid.cols', 1);
+    $colsRequested = \Pushery\WireKit\Support\NumericProp::text($cols) !== (string) config('wirekit.components.grid.cols', 1);
 
-    $colsTokens = preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols));
+    $colsTokens = preg_split('/\s+/', trim(is_numeric($cols) ? \Pushery\WireKit\Support\NumericProp::text($cols) : $cols));
 
     if ($responsiveTemplate) {
         // With breakpoints `cols` is not a fallback — it is the ACTIVE value at every
@@ -209,7 +209,9 @@
     $colsClasses = ($trackProp !== null && ! $colsRequested && ! $responsiveTemplate)
         ? ''
         : collect($colsTokens)
-            ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('grid', 'cols', $token, array_keys($colsMap)))
+            // A token outside the map is reported, and its fallback is a key of the map, which is
+            // looked up like any other token rather than written as a class of its own.
+            ->map(fn (string $token) => $colsMap[$token] ?? $colsMap[WireKit::validateProp('grid', 'cols', $token, array_keys($colsMap))])
             ->implode(' ');
 
     // Written out rather than assembled, for the reason `$colsMap` is: Tailwind reads source
@@ -286,7 +288,7 @@
 @php
     // Merged rather than printed, so a developer's own `style` on the call site
     // survives instead of being replaced — the same contract `class` has here.
-    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list([$classes]));
+    $attrs = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])));
 
     if ($trackStyle !== null) {
         $attrs = $attrs->merge(['style' => $trackStyle]);

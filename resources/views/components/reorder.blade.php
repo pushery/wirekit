@@ -46,8 +46,8 @@
     x-data="wirekitTableReorder({ key: {{ AlpinePayload::string((string) $item) }} })"
     data-wk-reorder
     data-wk-reorder-key="{{ (string) $item }}"
-    data-wk-reorder-position="{{ max(0, (int) $position) }}"
-    {{ $attributes->class(['inline-flex shrink-0 items-center gap-[var(--gap-wk-xs)]']) }}
+    data-wk-reorder-position="{{ max(0, \Pushery\WireKit\Support\NumericProp::int($position, 0, 'reorder', 'position')) }}"
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['inline-flex shrink-0 items-center gap-[var(--gap-wk-xs)]'])) }}
 >
     @include('wirekit::components.partials.reorder-controls', ['reorderComponent' => 'reorder'])
 </div>

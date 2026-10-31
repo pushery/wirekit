@@ -32,6 +32,22 @@ use Pushery\WireKit\Support\PropText;
 final class SidebarGroup extends Component
 {
     /**
+     * The tag's values with every enum read as its value or name before the constructor takes
+     * them, as every other component reads its props (Support\PropText): the parameters are typed
+     * for text, and an enum there would be an error before the component runs. A boolean on a text
+     * prop reads as none, which a parameter typed for text and numbers would take as `0`. A list
+     * or an object a parameter's type refuses is reported and left out, so the parameter takes its
+     * default.
+     *
+     * @param  array<array-key, mixed>  $data
+     * @return static
+     */
+    public static function resolve($data)
+    {
+        return parent::resolve(PropText::forConstructor($data, 'sidebar.group', self::class));
+    }
+
+    /**
      * Every scalar a tag can pass, because the view reads the value through BooleanProp: a bare
      * attribute arrives as `true`, a quoted one as a string, and a bound one as whatever the
      * expression gives.

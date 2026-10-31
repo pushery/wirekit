@@ -20,7 +20,12 @@
     // two identical branches under a comment describing a parser, which reads as an
     // unfinished conversion and invites someone to "finish" it into a real difference the
     // property does not want.
-    $aspectValue = $ratio;
+    //
+    // As text, which is all the property needs; a float that is not finite is written as PHP
+    // writes it, without the warning PHP 8.5 raises when NAN is cast, and the browser drops it as
+    // it drops any other value it cannot read.
+    // And as one value only: a `;` in it would carry a declaration of its own (Support\CssValue).
+    $aspectValue = (string) \Pushery\WireKit\Support\CssValue::prop($ratio, 'aspect-ratio', 'ratio', '16/9');
 
     $classes = WireKit::resolveClasses('aspect-ratio', 'base', implode(' ', [
         'relative overflow-hidden',
@@ -36,6 +41,6 @@
      The declaration closes with its own semicolon: some Laravel releases join a
      caller's style to it with a space alone, and the two would read as one
      invalid declaration. Pinned by a guard in the package's own suite. --}}
-<div {{ $attributes->merge(['style' => 'aspect-ratio: '.$aspectValue.';'])->class([$classes]) }}>
+<div {{ $attributes->merge(['style' => 'aspect-ratio: '.$aspectValue.';'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </div>

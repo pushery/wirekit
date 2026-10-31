@@ -57,6 +57,10 @@
     // so a surrounding form submits nothing of it. Declared rather than left to the attribute
     // bag, where it lands on the wrapper div and nothing reads it.
     'disabled' => false,
+    // Read-only: the value stays readable and is not dimmed, and nothing opens the editor. There
+    // is no pencil, since editing is no action here.
+    // Undeclared, the attribute landed on the wrapper div, where it stops nothing.
+    'readonly' => false,
     // NOTE: `loadingTarget`, not `target` — the same distinction the button
     // draws, so a page using both does not have to remember two spellings.
     'loadingTarget' => null,
@@ -81,29 +85,45 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
+    // A list where the control takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and read as no value (Support\FieldValue).
+    $value = \Pushery\WireKit\Support\FieldValue::one($value, 'inline-edit');
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('inline-edit', $attributes->getAttributes());
 
+    // An unknown value of one of these props is reported (Support\StrictnessGate) and renders as
+    // the default; a bound `null` or empty string is the default without a word.
+    $trigger = \Pushery\WireKit\WireKit::validateProp('inline-edit', 'trigger', \Pushery\WireKit\Support\NumericProp::text($trigger ?: 'always'), ['always', 'hover', 'focus-only']);
+    $control = \Pushery\WireKit\WireKit::validateProp('inline-edit', 'control', \Pushery\WireKit\Support\NumericProp::text($control ?: 'text'), ['text', 'textarea', 'number', 'select']);
+    $commitOn = \Pushery\WireKit\WireKit::validateProp('inline-edit', 'commitOn', \Pushery\WireKit\Support\NumericProp::text($commitOn ?: 'explicit'), ['explicit', 'blur']);
+    $size = \Pushery\WireKit\WireKit::validateProp('inline-edit', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
+    $width = \Pushery\WireKit\WireKit::validateProp('inline-edit', 'width', \Pushery\WireKit\Support\NumericProp::text($width ?: 'full'), ['full', 'auto']);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@wirekit:inline-edit-saved.window', '@wirekit:inline-edit-failed.window']);
 
-    $openOnValueClick = BooleanProp::from($openOnValueClick, true);
-    $exclusive = BooleanProp::from($exclusive, true);
-    $actions = BooleanProp::from($actions, true);
+    $openOnValueClick = BooleanProp::from($openOnValueClick, true, 'inline-edit', 'openOnValueClick');
+    $exclusive = BooleanProp::from($exclusive, true, 'inline-edit', 'exclusive');
+    $actions = BooleanProp::from($actions, true, 'inline-edit', 'actions');
     $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
-    $loading = BooleanProp::from($loading, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $required = BooleanProp::from($required, false);
+    $loading = BooleanProp::from($loading, false, 'inline-edit', 'loading');
+    $disabled = BooleanProp::from($disabled, false, 'inline-edit', 'disabled');
+    $readonly = BooleanProp::from($readonly, false, 'inline-edit', 'readonly');
+    $required = BooleanProp::from($required, false, 'inline-edit', 'required');
+
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
     // A validation failure returns as re-rendered HTML with a filled bag, NOT as
     // a transport error — so the bag is where the message actually is. Read the
@@ -114,8 +134,9 @@
     // the bag's FIRST message — so without the guard an inline-edit with no `name`
     // would not merely turn red when an unrelated field failed, it would display
     // that other field's message as its own.
-    $hasError = (bool) $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
-    $errorMessage = $error ?: ($name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -134,20 +155,17 @@
     $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
     $callerLabelledBy = is_string($callerLabelledBy) && filled($callerLabelledBy) ? $callerLabelledBy : null;
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
     // What acts only on the field the reader types into goes to the built-in control: on the
-    // wrapper the on-screen keyboard reads none of it and `maxlength` limits nothing
-    // (Support\FieldAttributes). A control in the `editor` slot takes them from its own tag.
-    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'maxlength']);
+    // wrapper the on-screen keyboard reads none of it, `maxlength` limits nothing and a
+    // `placeholder` shows nowhere (Support\FieldAttributes); `min`, `max` and `step` bound and step
+    // the number control. A control in the `editor` slot takes them from its own tag, and a select
+    // takes none of them.
+    [$fieldAttributes, $attributes] = \Pushery\WireKit\Support\FieldAttributes::split($attributes, [...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD, 'maxlength', 'autocomplete', 'placeholder', 'list', 'min', 'max', 'step']);
     // `autofocus` goes to the edit button, the element the keyboard reaches while the value is shown.
     $fieldAutofocus = \Pushery\WireKit\Support\FieldAttributes::autofocus($attributes);
     $attributes = $attributes->except('autofocus');
-
-    $trigger = in_array($trigger, ['always', 'hover', 'focus-only'], true) ? $trigger : 'always';
-    $control = in_array($control, ['text', 'textarea', 'number', 'select'], true) ? $control : 'text';
-    $size = in_array($size, ['sm', 'md', 'lg'], true) ? $size : 'md';
-    $width = in_array($width, ['auto', 'full'], true) ? $width : 'full';
 
     // Read mode carries the SAME padding, text size and border width as the
     // control it will be replaced by, with the border transparent at rest. The
@@ -182,7 +200,6 @@
     // through a native select's options with the arrow keys, and each step fires
     // a change — so committing on change or blur would save every option they
     // passed over on the way. WCAG failure F36 describes exactly this.
-    $commitOn = in_array($commitOn, ['explicit', 'blur'], true) ? $commitOn : 'explicit';
     $commitOnForced = false;
     if ($control === 'select' && $commitOn !== 'explicit') {
         $commitOn = 'explicit';
@@ -200,7 +217,10 @@
     // The id is NOT derived from `name`. Twenty rows bound to `title` would
     // otherwise emit twenty identical ids, and `label[for]` resolves to the
     // first one — so every label in the list would point at row one.
-    $id = $attributes->get('id') ?: DomId::unique('inline-edit', 'inline-edit-');
+    //
+    // A caller's id loses its whitespace (DomId::valid()), as the control reads it: the label's
+    // `for` has to name the id the control writes, and a list of ids splits on whitespace.
+    $id = DomId::valid($attributes->get('id')) ?? DomId::unique('inline-edit', 'inline-edit-');
 
     // The label's `for` and the control's `id` have to be one string.
     //
@@ -227,15 +247,15 @@
     // naming nothing and focusing nothing on a click. So that label carries an id instead,
     // and the factory hands it to the control when the editor opens, by reference, the way
     // it already hands over the description (`_placeFocus()`).
-    $labelId = $label && isset($editor) ? $id.'-label' : null;
+    $labelId = $label && \Pushery\WireKit\Support\SlotContent::given($editor ?? null) ? $id.'-label' : null;
 
     // Inside a labeled field the field's label names the control (Support\FieldControl): by
     // `for` on the built-in path, by reference on the slot path, as this component's own label
     // does. A WireKit control in the slot renders first and may have taken the label already,
     // and is named by it then. Either way the label sits outside this component's scope, so the
     // factory wires the press on it, and on the slot path the click.
-    $fieldLabelId = ! $label && ! filled($callerAriaLabel) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
-        ? $wkField->takeLabel(isset($editor) ? null : $controlId)
+    $fieldLabelId = blank($label) && ! filled($callerAriaLabel) && $wkField instanceof \Pushery\WireKit\Support\FieldControl
+        ? $wkField->takeLabel(\Pushery\WireKit\Support\SlotContent::given($editor ?? null) ? null : $controlId)
         : null;
     $fieldLabelPressed = $wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField->labelId() : null;
 
@@ -251,6 +271,9 @@
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
     $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hintId, $helpId ?? null);
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? '')) ?: null;
 
     // ── Read mode shows the READABLE value ───────────────────────────────
@@ -261,7 +284,7 @@
     // for a select it is wrong every single time, which is why that one
     // resolves itself instead of waiting for the caller to notice.
     $resolvedDisplay = $displayValue;
-    $options = \Pushery\WireKit\Support\ListProp::from($options);
+    $options = \Pushery\WireKit\Support\ListProp::from($options, 'inline-edit', 'options');
     if ($resolvedDisplay === null && $control === 'select' && $options !== []) {
         $resolvedDisplay = $options[$value] ?? null;
     }
@@ -297,7 +320,7 @@
     }
 
     // The field the trigger names: this component's label, the field's label it took, or the name.
-    $triggerField = $label ?? ($fieldLabelId !== null ? $wkField->labelText() : $name);
+    $triggerField = \Pushery\WireKit\Support\BlankName::first($label, $fieldLabelId !== null ? $wkField->labelText() : null, $name);
     $triggerLabel = $context !== null && $context !== ''
         ? __('wirekit::Edit :field of :context', ['field' => $triggerField, 'context' => $context])
         : __('wirekit::Edit :field', ['field' => $triggerField]);
@@ -348,7 +371,10 @@
 @endphp
 
 <div
-    data-wk-sr-host {{ $attributes->except('aria-describedby')->class([$rootClasses]) }}
+    data-wk-sr-host {{ $attributes->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}
+    {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+         listener written on the tag hears one field (utils/focus-unit.js). --}}
+    x-wk-focus-unit
     x-data="wirekitInlineEdit({
         name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }},
         value: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $value) }},
@@ -357,15 +383,16 @@
         commitOn: {{ \Pushery\WireKit\Support\AlpinePayload::from($commitOn) }},
         loading: {{ \Pushery\WireKit\Support\AlpinePayload::from($loading) }},
         disabled: {{ \Pushery\WireKit\Support\AlpinePayload::from($disabled) }},
+        readonly: {{ \Pushery\WireKit\Support\AlpinePayload::from($readonly) }},
         describedBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($describedBy) }},
-        hasSlotEditor: {{ \Pushery\WireKit\Support\AlpinePayload::from(isset($editor)) }},
-        labelledBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($labelId ?? (isset($editor) ? $fieldLabelId : null)) }},
+        hasSlotEditor: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\SlotContent::given($editor ?? null)) }},
+        labelledBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($labelId ?? (\Pushery\WireKit\Support\SlotContent::given($editor ?? null) ? $fieldLabelId : null)) }},
         fieldLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldLabelPressed) }},
-        fieldLabelFocuses: {{ \Pushery\WireKit\Support\AlpinePayload::from(isset($editor) && $fieldLabelId !== null) }},
+        fieldLabelFocuses: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\SlotContent::given($editor ?? null) && $fieldLabelId !== null) }},
         {{-- The give-up bound and what it says, both read from `config` by the JS.
              Without them the bound would run on its hard-coded fallback and the
              message would resolve to the empty string. --}}
-        saveTimeout: {{ \Pushery\WireKit\Support\AlpinePayload::from((int) $saveTimeout) }},
+        saveTimeout: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\NumericProp::int($saveTimeout, 0, 'inline-edit', 'saveTimeout')) }},
         unknownMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from($resolvedUnknownMessage) }},
         {{-- A server-rendered error re-opens the editor after a morph replaced it. --}}
         hasError: {{ \Pushery\WireKit\Support\AlpinePayload::from($hasError) }},
@@ -398,7 +425,7 @@
         </label>
         @if($helpId || $hasLabelAfter)
             @if($helpId)
-                @include('wirekit::components.partials.field-help', ['helpText' => (string) $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $id)])
+                @include('wirekit::components.partials.field-help', ['helpText' => $help, 'helpName' => (string) $label, 'helpId' => $helpId, 'helpField' => (string) ($name ?? $id)])
             @endif
             @if($hasLabelAfter)</span>@include('wirekit::components.partials.label-after', ['labelAfter' => $labelAfter])@endif
         </div>
@@ -418,8 +445,8 @@
             role="presentation"
             {{-- A minimum width because an empty value is 0px wide: without it
                  the one state that most needs a click target has none. --}}
-            class="{{ $mirrorBox }} {{ $width === 'full' ? 'w-full' : 'min-w-[6rem]' }} @if($openOnValueClick && ! $disabled) cursor-text @endif"
-            @if($openOnValueClick && ! $disabled)
+            class="{{ $mirrorBox }} {{ $width === 'full' ? 'w-full' : 'min-w-[6rem]' }} @if($openOnValueClick && ! $disabled && ! $readonly) cursor-text @endif"
+            @if($openOnValueClick && ! $disabled && ! $readonly)
                 x-on:pointerdown="onValuePointerDown($event)"
                 x-on:click="onValueClick($event)"
             @endif
@@ -437,6 +464,8 @@
             @endif
         </div>
 
+        {{-- No pencil on a read-only field: editing is no action there. --}}
+        @unless($readonly)
         <button
             type="button"
             x-ref="trigger"
@@ -452,6 +481,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
             </svg>
         </button>
+        @endunless
 
         @if($width === 'full' && $actions)
             {{-- Reserves the second action slot that only edit mode fills.
@@ -494,7 +524,7 @@
          that turns out to be tall is the case centering gets wrong. `control` is
          one of text · textarea · number · select — there is no `editor` value in
          it, the slot is its own path. --}}
-    <div x-show="editing" x-cloak class="flex {{ ($control === 'textarea' || ($editor ?? null) !== null) ? 'items-start' : 'items-center' }} gap-[var(--gap-wk-sm)] {{ $width === 'full' ? 'w-full' : '' }}">
+    <div x-show="editing" x-cloak class="flex {{ ($control === 'textarea' || \Pushery\WireKit\Support\SlotContent::given($editor ?? null)) ? 'items-start' : 'items-center' }} gap-[var(--gap-wk-sm)] {{ $width === 'full' ? 'w-full' : '' }}">
         {{-- ONE partial for the built-in types and the developer's own control.
              Two branches here would let the slot path quietly lose a wiring
              detail the enum path sets, and nothing would look different enough
@@ -518,7 +548,7 @@
             :options="$options"
             :action-classes="$actionClasses"
             :rows="$rows"
-            :editor="$editor ?? null"
+            :editor="\Pushery\WireKit\Support\SlotContent::given($editor ?? null) ? $editor : null"
             :disabled="$disabled"
             :field-attributes="$fieldAttributes"
         />

@@ -47,7 +47,7 @@
      Nothing here is interactive: the dots are not close/minimize controls, so
      they are spans, not buttons. Rendering them as buttons would put three
      dead controls in the tab order of every marketing page. --}}
-<div data-wk-mockup data-variant="{{ $variantValue }}" {{ $attributes->class([$classes]) }}>
+<div data-wk-mockup data-variant="{{ $variantValue }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     @if($hasBar)
         <div data-wk-mockup-bar aria-hidden="true">
             <span data-wk-mockup-dots>

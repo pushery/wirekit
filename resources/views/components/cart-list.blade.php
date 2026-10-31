@@ -22,7 +22,7 @@
 
     // A boolean prop is normalized, because Blade hands `divided="false"` through as the string
     // "false", which is truthy; normalized, `divided="false"` on the tag removes the separators.
-    $divided = BooleanProp::from($divided, true);
+    $divided = BooleanProp::from($divided, true, 'cart-list', 'divided');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list auto-derived
     // from this component's @props. Fully qualified: this view's imports may live in a later
@@ -52,9 +52,9 @@ build scanned this view, and the inline rule keeps the cart unmarked in a page w
 stylesheet did not. The tokens resolve from dist/wirekit.css either way. --}}
 <ul data-wk-prose-skip
     @unless($attributes->has('role')) role="list" @endunless
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
     data-wk-cart-list
-    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
+    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </ul>

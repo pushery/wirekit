@@ -36,6 +36,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('scroll-area', $attributes->getAttributes());
 
+    // An unknown `orientation` is reported (Support\StrictnessGate) and renders as `vertical`; a
+    // bound `null` or empty string is `vertical` without a word.
+    $orientation = \Pushery\WireKit\WireKit::validateProp('scroll-area', 'orientation', \Pushery\WireKit\Support\NumericProp::text($orientation ?: 'vertical'), ['vertical', 'horizontal', 'both']);
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // Scroll Area — themed scrollbar container wrapping the existing .wk-scrollbar utility.
     // Provides a component API around the CSS scrollbar utility with configurable orientation.
     $overflowClass = match ($orientation) {
@@ -64,6 +73,7 @@
     $fadeIsAuto = $fadeValue === 'auto';
 
     $classes = 'wk-scrollbar '.($fadeValue ? 'wk-scroll-fade ' : '').WireKit::resolveClasses('scroll-area', 'base', implode(' ', array_filter([
+        'relative',
         $overflowClass,
         'font-[family-name:var(--font-wk-sans)]',
         // A tab stop shows that it has the focus, in the kit's ring and its tokens. Drawn
@@ -73,6 +83,7 @@
     ])), $scope);
 
     // Inline style for max-height — common pattern for scroll containers
+    $maxHeight = \Pushery\WireKit\Support\CssValue::prop($maxHeight, 'scroll-area', 'maxHeight');
     $inlineStyle = $maxHeight ? "max-height: {$maxHeight};" : '';
 
     // A caller's `aria-labelledby` or `aria-label` names the area as `label` does, and makes it the
@@ -94,10 +105,10 @@
 <div
     data-wk-print-expand
     tabindex="0"
-    @if($named) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
+    @if($named) @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="region" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
     @if($fadeValue) data-fade-axis="{{ $fadeAxis }}" @endif
     @if($fadeIsAuto) x-data="wirekitScrollFade" @elseif($fadeValue) data-fade="{{ $fadeValue }}" @endif
-    {{ $attributes->except('tabindex')->merge($inlineStyle ? ['style' => $inlineStyle] : [])->class([$classes]) }}
+    {{ $attributes->except('tabindex')->merge($inlineStyle ? ['style' => $inlineStyle] : [])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

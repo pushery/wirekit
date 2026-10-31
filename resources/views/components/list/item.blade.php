@@ -16,4 +16,4 @@
     $classes = WireKit::resolveClasses('list-item', 'base', '', $scope);
 @endphp
 
-<li data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</li>
+<li data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $slot }}</li>

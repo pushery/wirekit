@@ -365,8 +365,25 @@ return [
         'notification-center' => ['group-by' => 'none', 'filters' => false],
         'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false, 'search-debounce' => 300, 'sticky-column' => false],
         'event-calendar' => ['view' => 'month', 'week-starts-on' => 1],
+        // The first day of the week, 0 (Sunday) to 6 (Saturday); null follows the application's
+        // locale. A calendar's own `week-starts-on` prop wins.
         'calendar' => ['week-starts-on' => 1],
-        'map' => ['provider' => 'maplibre', 'zoom' => 2, 'highlight' => 'ring', 'highlight-color' => 'accent', 'reduced-data' => 'respect'],
+        // What a map loads when it sets no `style-url` of its own: `maplibre.style-url` is the style
+        // a MapLibre map loads, `leaflet.style-url` the tiles a Leaflet map draws, and
+        // `leaflet.attribution` the credit shown beside those tiles. Point them at your own server
+        // and every map of the application loads from it. Left null, a MapLibre map loads
+        // MapLibre's demo style, its tiles and its fonts from demotiles.maplibre.org, which
+        // receives each visitor's IP address, and a Leaflet map draws no tiles. A map that sets
+        // its own `style-url` keeps it and shows only its own `attribution`.
+        'map' => [
+            'provider' => 'maplibre',
+            'zoom' => 2,
+            'highlight' => 'ring',
+            'highlight-color' => 'accent',
+            'reduced-data' => 'respect',
+            'maplibre' => ['style-url' => null],
+            'leaflet' => ['style-url' => null, 'attribution' => null],
+        ],
         'stat' => ['animate' => false],
 
         // Layout primitives. These read a config default but were absent from the
@@ -409,7 +426,7 @@ return [
         'dropdown.checkbox-item' => [],
         'dropdown.radio-item' => [],
         'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100],
-        'modal' => ['size' => 'md', 'dismissible' => true, 'confirm-discard' => true],
+        'modal' => ['size' => 'md', 'dismissible' => true, 'confirm-discard' => true, 'confirm-shortcut' => true],
         'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true, 'confirm-discard' => true],
         // `placeholder` is null rather than a literal so the component keeps resolving
         // its own translated default; the hotkey is app-wide by nature.
@@ -418,10 +435,13 @@ return [
         // Navigation components
         'tabs' => ['variant' => 'underline', 'findable' => false],
         'breadcrumb' => ['separator' => 'chevron'],
-        'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md', 'findable' => true, 'animate' => true],
+        // `item.open`, `collapsible.open` and `sidebar.collapsible.open`: whether a box starts open where the
+        // call does not say. An accordion takes it in `multiple` mode only, since in `single` mode one
+        // panel is open at a time and a default cannot say which.
+        'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md', 'findable' => true, 'animate' => true, 'item' => ['open' => false]],
         'accordion.item' => [],
-        'collapsible' => ['findable' => true],
-        'sidebar' => [],
+        'collapsible' => ['findable' => true, 'open' => false],
+        'sidebar' => ['collapsible' => ['open' => false]],
         'sidebar.group' => [],
         'sidebar.item' => [],
         'stepper' => ['orientation' => 'horizontal'],
@@ -433,7 +453,7 @@ return [
         // by the page. The key shipped for a while and could never have had an effect.
         // `format-hint`: the same as on 'input', for every date picker.
         'date-picker' => ['size' => 'md', 'format-hint' => false],
-        'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null, 'capture' => null],
+        'file-upload' => ['size' => 'md', 'multiple' => false, 'upload-separately' => false, 'accept' => null, 'capture' => null],
         // `placement`: where the options panel opens, any placement `dropdown` takes. `panel-width`:
         // `trigger` matches the field, `auto` fits the widest option, or a CSS length such as 20rem.
         'combobox' => ['size' => 'md', 'placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger', 'search-min-length' => 2, 'search-debounce' => 300],
@@ -473,7 +493,7 @@ return [
             'client_filter_max' => 300,
         ],
         'scroll-to-top' => ['size' => 'md'],
-        'alert-dialog' => ['dismissible' => false, 'close-on-confirm' => false],
+        'alert-dialog' => ['dismissible' => false, 'close-on-confirm' => false, 'confirm-shortcut' => true],
         'toast-region' => ['position' => 'top-right', 'duration' => 5000, 'max' => 5],
 
         // Activity-row kind → dot-color token map. Merged over the
@@ -745,8 +765,15 @@ return [
     | the page can load, such as '/images/sign-in/google.svg'. WireKit ships
     | none: Apple, Google, Meta and PayPal each ask for their own artwork from
     | their own brand pages, under their own terms, and Amazon for its own
-    | button images. For Amazon the file is the whole button. A button whose
-    | service has no logo here shows its words alone.
+    | button images. For Amazon the file is the whole button. The passkey icon
+    | is the FIDO Alliance's, which it gives to sites that sign in with
+    | passkeys under its usage agreement. A button whose service has no logo
+    | here shows its words alone.
+    |
+    | Apple's logo takes the color of the button's words, so it can be given as
+    | ['white' => '…', 'black' => '…']. An image can be given in one file per
+    | pixel density, ['1x' => '…', '2x' => '…'], which Amazon's button needs to
+    | stay sharp at its own size.
     |
     */
 
@@ -757,6 +784,7 @@ return [
             'facebook' => null,
             'paypal' => null,
             'amazon' => null,
+            'passkey' => null,
         ],
     ],
 
@@ -771,8 +799,10 @@ return [
     |          Includes Floating UI + focus-trap, bundled.
     |          Current sizes: docs.wirekit.app/dependencies.
     |
-    | 'core' — The chart and image-compare Alpine components, plus the one
-    |          directive the zero-JS form primitives need.
+    | 'core' — The chart and image-compare Alpine components, the scopes of a
+    |          toggle-button that flips itself, of the native-color readout
+    |          beside a color field and of the date-range fields of a date
+    |          picker, plus the one directive the zero-JS form primitives need.
     |          For projects that only use the form components, charts and the
     |          before/after slider. It installs the overlay root but registers no
     |          overlay component: `x-teleport` throws when its target is missing

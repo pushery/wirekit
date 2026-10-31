@@ -8,6 +8,10 @@
  * Usage: add alpine-sort to <x-wirekit::table> and column="name" to
  * sortable <x-wirekit::table.th> elements.
  *
+ * Lifecycle resources held on `this`: _rowChanges (a MutationObserver on the
+ * table that sorts again after a Livewire update), disconnected in destroy()
+ * and null-guarded in its callback.
+ *
  * @param {Object} config
  * @param {string} [config.warning]  a debug-only composition warning to emit at
  *   init. It arrives here rather than in its own x-init because an element
@@ -26,6 +30,7 @@ export default function wirekitTableSort(config = {}) {
         sortColumn: null,
         sortDirection: null,
         _originalOrder: [],
+        _rowChanges: null,
 
         // The application's locale, so a formatted column can be READ as a number rather
         // than only compared as text. Handed down from the Blade template — this file has
@@ -145,8 +150,47 @@ export default function wirekitTableSort(config = {}) {
             this.$nextTick(() => {
                 const tbody = this.$root.querySelector('tbody');
                 if (tbody) {
-                    this._originalOrder = [...tbody.querySelectorAll('tr')];
+                    this._originalOrder = this._own(tbody.querySelectorAll('tr'));
                 }
+            });
+
+            this._followUpdates();
+        },
+
+        destroy() {
+            this._rowChanges?.disconnect();
+            this._rowChanges = null;
+        },
+
+        /**
+         * Sort again after a Livewire update, while a sort is active.
+         *
+         * The rows are the server's markup, and the morph of an update puts them in the
+         * server's order: it moves keyed rows there and writes the content of unkeyed ones in
+         * place. The header went on announcing the sort over rows that no longer followed it.
+         * The observer runs before the next paint, so the server's order never shows; a value
+         * the update changed is sorted by as well. A sort that already holds moves no row,
+         * which ends the round its own moves start.
+         */
+        _followUpdates() {
+            if (typeof MutationObserver !== 'function') {
+                return;
+            }
+
+            this._rowChanges = new MutationObserver(() => {
+                // A change the browser queued before destroy() can arrive after it.
+                if (! this._rowChanges || ! this.sortColumn || ! this.sortDirection) {
+                    return;
+                }
+
+                this._reorderRows();
+            });
+            this._rowChanges.observe(this.$root, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+                attributes: true,
+                attributeFilter: ['data-wk-sort-value'],
             });
         },
 
@@ -215,23 +259,21 @@ export default function wirekitTableSort(config = {}) {
                  * rows added by that same re-render — keeps its place at the end rather
                  * than being dropped.
                  */
-                const live = new Set(tbody.querySelectorAll('tr'));
+                const current = this._own(tbody.querySelectorAll('tr'));
+                const live = new Set(current);
                 const ordered = this._originalOrder.filter((row) => live.has(row));
 
-                ordered.forEach((row) => {
-                    live.delete(row);
-                    tbody.appendChild(row);
-                });
+                ordered.forEach((row) => live.delete(row));
 
                 // Whatever the snapshot never saw, in the order the table has it.
-                live.forEach((row) => tbody.appendChild(row));
+                this._placeRows(tbody, current, [...ordered, ...live]);
 
                 return;
             }
 
             // Find column index by matching data-wk-sort-column on th elements
             // ($root, not $el — see the tbody lookup above).
-            const ths = this.$root.querySelectorAll('thead th');
+            const ths = this._own(this.$root.querySelectorAll('thead th'));
             let colIndex = -1;
             ths.forEach((th, i) => {
                 if (th.dataset.wkSortColumn === this.sortColumn) {
@@ -241,7 +283,7 @@ export default function wirekitTableSort(config = {}) {
 
             if (colIndex === -1) return;
 
-            const rows = [...tbody.querySelectorAll('tr')];
+            const rows = this._own(tbody.querySelectorAll('tr'));
 
             /*
              * Decorate, sort, undecorate.
@@ -297,8 +339,36 @@ export default function wirekitTableSort(config = {}) {
                 return collator.compare(a.val, b.val) * direction;
             });
 
-            // Move sorted rows into the DOM (appendChild relocates existing nodes)
-            keyed.forEach(({ row }) => tbody.appendChild(row));
+            this._placeRows(tbody, rows, keyed.map(({ row }) => row));
+        },
+
+        /**
+         * The elements that belong to this table, not to a table in one of its cells.
+         *
+         * A table in a cell has a head and rows of its own, which are descendants here as well:
+         * sorted with these, its rows would be appended to this table's body, and a head of its own
+         * that names the same column would decide which cell a row is sorted by.
+         *
+         * @param {Iterable<Element>} elements
+         * @returns {Element[]}
+         */
+        _own(elements) {
+            return [...elements].filter((el) => (el.closest?.('table') ?? this.$root) === this.$root);
+        },
+
+        /**
+         * Put the rows in `wanted` order, unless they already stand that way.
+         *
+         * `appendChild` relocates an existing node, so moving every row always produces
+         * mutations, also when the order was right. The observer that sorts again after an
+         * update sees those as well, and a round that moves nothing is what ends it.
+         */
+        _placeRows(tbody, current, wanted) {
+            if (wanted.length === current.length && wanted.every((row, i) => row === current[i])) {
+                return;
+            }
+
+            wanted.forEach((row) => tbody.appendChild(row));
         },
     };
 }

@@ -84,13 +84,13 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sticky = BooleanProp::from($sticky, false);
-    $persist = BooleanProp::from($persist, true);
-    $strip = BooleanProp::from($strip, false);
+    $sticky = BooleanProp::from($sticky, false, 'announcement-banner', 'sticky');
+    $persist = BooleanProp::from($persist, true, 'announcement-banner', 'persist');
+    $strip = BooleanProp::from($strip, false, 'announcement-banner', 'strip');
 
     // Null keeps the derivation below; anything else is a statement and is normalized like the
     // other booleans, so `dismissible="false"` means false rather than the truthy string.
-    $dismissibleStated = $dismissible === null ? null : BooleanProp::from($dismissible, true);
+    $dismissibleStated = $dismissible === null ? null : BooleanProp::from($dismissible, true, 'announcement-banner', 'dismissible');
 
     $surfaceValue = in_array($surface, ['soft', 'solid'], true)
         ? $surface
@@ -111,7 +111,7 @@
             $hueMode = true;
             $hueValue = rtrim(rtrim(number_format((float) $hue, 2, '.', ''), '0'), '.');
         } else {
-            WireKit::validateProp('announcement-banner', 'hue', (string) $hue, ['a number of degrees from 0 to 360 such as 250, or theme']);
+            WireKit::validateProp('announcement-banner', 'hue', \Pushery\WireKit\Support\NumericProp::text($hue), ['a number of degrees from 0 to 360 such as 250, or theme']);
         }
     }
 
@@ -228,20 +228,20 @@
              a dismissible demo stays gone with no way to bring it back. --}}
         data-replayable="true"
     @endif
-    @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) role="region" {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
+    @if($callerLabelledBy !== null || $callerLabel !== null || filled($label)) @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="region" @endunless {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $label) }} @endif
     data-wk-announcement-banner
     @if($strip) data-wk-viewport-strip @endif
     data-position="{{ $positionValue }}"
     data-intent="{{ $intentValue }}"
-    {{ $hueValue !== null ? $attributes->class([$classes])->merge(['style' => '--wk-banner-hue: '.$hueValue.';']) : $attributes->class([$classes]) }}
+    {{ $hueValue !== null ? $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes]))->merge(['style' => '--wk-banner-hue: '.$hueValue.';']) : $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- In a strip the line is fixed, so text that does not fit is cut on screen — and only
          there: the characters stay in the DOM, so the accessible name is the whole sentence. --}}
     <span data-wk-announcement-content class="min-w-0 {{ $strip ? 'truncate' : '' }}">{{ $slot }}</span>
 
-    @isset($action)
+    @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
         <span data-wk-announcement-action class="shrink-0">{{ $action }}</span>
-    @endisset
+    @endif
 
     @if($isDismissible)
         {{-- A real button with a real name — never a bare glyph. --}}
@@ -252,7 +252,7 @@
             {{-- Composed from the caller's name where there is one, and from the generic word
                  where there is not: a control always needs a name, even when the banner
                  deliberately is not a landmark. --}}
-            aria-label="{{ __('wirekit::Dismiss') }} {{ $callerLabel ?? (filled($label) ? $label : __('wirekit::Announcement')) }}"
+            aria-label="{{ __('wirekit::Dismiss') }} {{ $callerLabel ?? (filled($label) ? \Pushery\WireKit\Support\SlotContent::textOf($label) : __('wirekit::Announcement')) }}"
             class="wk-touch-target ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[color:var(--color-wk-ring)]"
         >
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">

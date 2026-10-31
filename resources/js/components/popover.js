@@ -13,6 +13,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
 import { placementReference, position } from '../utils/floating.js';
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { closeOnOutsideRelease } from '../utils/outside-release.js';
+import { belongsThroughTeleports } from '../utils/teleport.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
@@ -55,6 +56,7 @@ export default function wirekitPopover(config = {}) {
             // Opening this one closes every other popover on the page.
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:popover-open',
+                root: this.$root,
                 onOther: () => this._forceClose(),
             });
 
@@ -67,7 +69,10 @@ export default function wirekitPopover(config = {}) {
             // there; a press that ends inside the panel, or that the browser cancels, takes
             // the trap back, and focus returns into the panel.
             this._stopOutsideRelease = closeOnOutsideRelease(document, {
-                contains: (node) => this.$root.contains(node) || Boolean(this.$refs.panel?.contains(node)),
+                // The panel through the teleports, so a press in a panel opened from inside it, a
+                // combobox's list or a picker's dialog, counts as inside too.
+                contains: (node) => this.$root.contains(node)
+                    || Boolean(this.$refs.panel && belongsThroughTeleports(node, this.$refs.panel)),
                 isOpen: () => this.isOpen,
                 close: () => this.close(),
                 keep: () => this._trap?.unpause(),
@@ -125,7 +130,11 @@ export default function wirekitPopover(config = {}) {
                     // left/right placements — Floating UI's default main-axis
                     // shift can't pull a right-placed panel back from the right
                     // edge (main axis is vertical for left/right placements).
-                    crossAxisShift: true,
+                    // Only there: for a top or bottom placement, including one a
+                    // sideways panel turned to, the cross axis is the vertical one,
+                    // where a shift lifts a tall panel over its trigger, and the main
+                    // axis already keeps it inside the viewport sideways.
+                    crossAxisShift: 'sideways',
                     // Follow the trigger on scroll/resize; torn down in every close path.
                     autoReposition: true,
                     // A framework update patches the teleported panel against its template, whose

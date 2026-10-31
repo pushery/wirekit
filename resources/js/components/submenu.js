@@ -136,6 +136,12 @@ export default function wirekitSubmenu(config = {}) {
                     // item was, while the parent panel follows its own trigger. The same `stop()`
                     // ends both observers.
                     autoReposition: true,
+                    // Capped to the window and scrolled inside: a submenu taller than a short
+                    // window (a page zoomed to 400%, a phone held sideways) stood past the bottom
+                    // edge, fixed, where neither a scroll nor the focus brings its last entries
+                    // into view (WCAG 1.4.10). Beside its item the main axis is the vertical one,
+                    // so the cap is the window's height and the submenu stays beside the item.
+                    fitViewport: true,
                 });
 
                 if (placement && typeof placement.stop === 'function') {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Charts;
 
 use Pushery\WireKit\Contracts\ChartAdapter;
+use Pushery\WireKit\Support\IcuLocale;
 
 /**
  * Chart.js adapter — normalizes WireKit data into Chart.js config format.
@@ -124,9 +125,10 @@ final class ChartJsAdapter implements ChartAdapter
             'maintainAspectRatio' => false,
             // Chart.js formats tick and tooltip numbers with Intl in this locale, and without
             // one it takes the reader's browser: a German page on an English laptop grouped its
-            // numbers the English way. BCP-47 spelling, since Laravel writes `pt_BR`. A locale
-            // in the developer's own options replaces this one.
-            'locale' => str_replace('_', '-', app()->getLocale()),
+            // numbers the English way. BCP-47 spelling, since Laravel writes `pt_BR`, and one
+            // Intl takes: a server locale such as `en_US.UTF-8` reads as `en-US`. A locale in the
+            // developer's own options replaces this one.
+            'locale' => IcuLocale::tag(),
             'plugins' => [
                 'legend' => [
                     'display' => true,

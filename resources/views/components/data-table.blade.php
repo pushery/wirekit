@@ -73,6 +73,20 @@
     // announced through the `aria-live` span rather than through the landmark.
     'bulkActionsLabel' => null,
     'name' => null,                 // hidden-input name mirroring the selected ids
+    // In server mode with `selectable`, the number of matches on all pages. Once the reader has
+    // selected the whole page and there are more, the bar offers every match, and
+    // `selection-change` carries `allMatches`. Read again on every render.
+    'total' => null,
+    // Anything that names the filter the server applied beyond `search`, such as a status. A
+    // render with another value, or another `search`, while every match is selected clears it.
+    'filter' => null,
+    // The selection as the application holds it, beside the `wire:model` that receives it: a list
+    // of row keys. The first render opens with it; after that the table takes it only from a
+    // response that changed it, such as a bulk action that clears the list, and keeps the
+    // reader's own otherwise.
+    'selected' => null,
+    // Every match, as the application holds it, beside `selected`.
+    'allMatches' => null,
     'scope' => null,
 ])
 
@@ -87,6 +101,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('data-table', $attributes->getAttributes());
 
+    // An unknown `sortDir` is reported (Support\StrictnessGate) and renders as `asc`; a bound
+    // `null` or empty string is `asc` without a word.
+    $sortDir = \Pushery\WireKit\WireKit::validateProp('data-table', 'sortDir', \Pushery\WireKit\Support\NumericProp::text($sortDir ?: 'asc'), ['asc', 'desc']);
+
     // The selection readout is a COUNT that only exists in the browser, so the plural form
     // has to be chosen there: the server renders every form and `Intl.PluralRules` picks.
     // A bare English word beside the count, inside an `aria-live` region, would be the one
@@ -96,27 +114,61 @@
     );
 
     // BCP-47 for `Intl.PluralRules` — the APPLICATION's locale, not the browser's.
-    $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
+    $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag());
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $columnManager = BooleanProp::from($columnManager, false);
-    $server = BooleanProp::from($server, false);
+    $columnManager = BooleanProp::from($columnManager, false, 'data-table', 'columnManager');
+    $server = BooleanProp::from($server, false, 'data-table', 'server');
 
     // The initial sort. Two directions exist, and an empty key is no key: a value the factory
     // cannot use must not reach it looking like one.
     $sortKey = filled($sortKey) ? (string) $sortKey : null;
-    $sortDir = $sortDir === 'desc' ? 'desc' : 'asc';
     // Null stays null: "not passed" and "the server applied no filter" are two different things.
     $search = $search === null ? null : (string) $search;
-    $loading = BooleanProp::from($loading, false);
+    // A count of matches: a whole number, at least zero. Anything else offers nothing, NAN and INF
+    // included, which a cast to int warns about.
+    $matchCount = \Pushery\WireKit\Support\NumericProp::orNull($total, 'data-table', 'total');
+    $total = $matchCount !== null && $matchCount >= 0 && $matchCount == floor($matchCount) ? \Pushery\WireKit\Support\NumericProp::intOrNull($matchCount) : null;
+    // Compared as text, so a list, a Collection or a number names a filter as well as a string does.
+    $filter = \Pushery\WireKit\Support\ListProp::from($filter);
+    $filter = is_array($filter) ? (string) json_encode($filter) : \Pushery\WireKit\Support\NumericProp::text($filter ?? '');
+    // A list of row keys, an array or a Collection, or nothing handed over: null leaves the
+    // selection to the reader.
+    $selected = \Pushery\WireKit\Support\ListProp::renumbered($selected);
+    $selected = is_array($selected) ? $selected : null;
+    $allMatches = $allMatches === null ? null : BooleanProp::from($allMatches, false, 'data-table', 'allMatches');
+    $loading = BooleanProp::from($loading, false, 'data-table', 'loading');
     // Same contract for the two whose default is spelled as a `config()` fallback rather
     // than a literal. Both gate whole regions of the table — the checkbox column and the
     // search field — so an unbound `selectable="false"` would render the very column it asks
     // to remove, and the row checkboxes would come with it.
-    $selectable = BooleanProp::from($selectable, false);
-    $stickyColumn = BooleanProp::from($stickyColumn, config('wirekit.components.data-table.sticky-column', false));
+    $selectable = BooleanProp::from($selectable, false, 'data-table', 'selectable');
+
+    // Every match of a server list: the bar's notice, its action and the count that reaches past
+    // the page, plural forms for counts that exist in the browser only. Rendered only where they
+    // can be used, so a client table carries none of them.
+    $allMatchesConfig = $server && $selectable ? ', '.implode(', ', [
+        'pagePhrases: '.\Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} The :count row on this page is selected.|[2,*] The :count rows on this page are selected.')),
+        'offerPhrases: '.\Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} Select the :count match on all pages|[2,*] Select all :count matches on all pages')),
+        'allPhrases: '.\Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} The :count match on all pages is selected.|[2,*] All :count matches on all pages are selected.')),
+        'allPagesPhrases: '.\Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count selected, on all pages|[2,*] :count selected, on all pages')),
+        'onlyText: '.\Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Select only this page')),
+        'filterClearedText: '.\Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::The filter changed, so the selection of all matches was cleared.')),
+    ]) : '';
+    // The notice action's words as the server can know them, so the document names the button
+    // before Alpine runs; the binding takes over after init. The offer of every match is the first
+    // action a reader meets, and without a total the notice never shows.
+    $allMatchesActionText = ! ($server && $selectable) ? '' : ($total !== null
+        ? \Pushery\WireKit\Support\Plural::choice('wirekit::{1} Select the :count match on all pages|[2,*] Select all :count matches on all pages', $total, ['count' => \Pushery\WireKit\Support\LocalizedNumber::integer($total)])
+        : __('wirekit::Select only this page'));
+    $stickyColumn = BooleanProp::from($stickyColumn, config('wirekit.components.data-table.sticky-column', false), 'data-table', 'stickyColumn');
+
+    // A caller's `wire:model` binds the selection, which takes the checkboxes of `selectable`.
+    if (! $selectable) {
+        \Pushery\WireKit\Support\StrictnessGate::warnWireModelInAModeWithoutOne('data-table', $attributes->getAttributes(), 'without `selectable`');
+    }
 
     /*
      * The frozen leading cells.
@@ -194,7 +246,7 @@
     $stickyHeadFirstData = $stickyColumn
         ? $stickyHeadCellBase.($selectable ? ' start-10' : ' start-0').' '.$stickyCellCap
         : 'whitespace-nowrap';
-    $searchable = BooleanProp::from($searchable, false);
+    $searchable = BooleanProp::from($searchable, false, 'data-table', 'searchable');
 
     $density = WireKit::validateProp('data-table', 'density', $density, ['comfortable', 'compact']);
     // Server-driven mode (client | server) — derived from the boolean `server`
@@ -207,17 +259,17 @@
     // why the rows do not travel in it (see the state carrier below the root).
     // A second table with the same name on the page gets `-2`, so its `aria-labelledby` names
     // its own caption and not the first one's (DomId::distinct keeps the first verbatim).
-    $id = $attributes->has('id')
-        ? $attributes->get('id')
-        : \Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('data-table', $name ?? $attributes->get('name')));
+    // A caller's id loses its whitespace, which `aria-labelledby` would split on.
+    $id = \Pushery\WireKit\Support\DomId::valid($attributes->get('id'))
+        ?? \Pushery\WireKit\Support\DomId::distinct(\Pushery\WireKit\WireKit::stableId('data-table', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
     $captionId = $id.'-caption';
 
     // Plain lists for the payload, whatever the caller passed: an array, a Collection, a lazy
     // one, or a paginator, which hands over the items of its page. Cast with `(array)`, such an
     // object would be read as its own properties.
-    $rowsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($rows);
-    $colsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($columns);
+    $rowsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($rows, 'data-table', 'rows');
+    $colsArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($columns, 'data-table', 'columns');
 
     // A column's `align` and `cellType` are fixed lists the table's script reads, where an unknown
     // value aligns left or draws as text. They are reported through the strictness gate like a prop,
@@ -234,6 +286,8 @@
             }
         }
     }
+    // A single column key written as text, `hidden="email"`, is a list of one through the cast,
+    // so a text is no error here.
     $hiddenArr = (array) \Pushery\WireKit\Support\ListProp::renumbered($hidden);
 
     // Avatar tints are resolved HERE, in PHP, and that is the whole reason an
@@ -274,7 +328,7 @@
     // they are, and the docs say so.
     $rowsPayload = $rowsArr;
 
-    if (! isset($rowActions)) {
+    if (! \Pushery\WireKit\Support\SlotContent::given($rowActions ?? null)) {
         $rowFields = [(string) $rowKey];
 
         if (filled($sortKey)) {
@@ -292,6 +346,26 @@
         }
 
         $rowsPayload = \Pushery\WireKit\Support\ListProp::only($rowsArr, array_values(array_unique($rowFields)));
+    }
+
+    // A row's key comes back from the script as the selection, so a key beyond what a script's
+    // number holds exactly travels as its digits (Support\ExactIds). A model among the rows is
+    // read as the array it serializes to for that.
+    $rowsPayload = \Pushery\WireKit\Support\ExactIds::in((array) \Pushery\WireKit\Support\ListProp::records($rowsPayload), (string) $rowKey);
+
+    // A cell shows its value as text, and the script holds what `json_encode()` wrote: a date
+    // object of Carbon as its instant in UTC, the day before for a date east of UTC, and a plain
+    // `DateTime` as an object. A date object in a row is written as PHP prints it, in its own
+    // zone, which also sorts as the dates do. A model arrives as its `toArray()` already, its
+    // dates in the form its `serializeDate()` gives.
+    foreach ($rowsPayload as $index => $row) {
+        if (is_array($row)) {
+            foreach ($row as $field => $value) {
+                if ($value instanceof \DateTimeInterface) {
+                    $rowsPayload[$index][$field] = $value instanceof \Stringable ? (string) $value : $value->format('Y-m-d H:i:s');
+                }
+            }
+        }
     }
 
     // Soft tinted intent pills for `cellType: 'badge'` columns. Defined here (PHP
@@ -389,13 +463,20 @@
     // prohibits a name, and a reader never hears it.
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $callerLabel = is_string($callerLabel) && filled($callerLabel) ? $callerLabel : null;
+
+    // The wait reaches the search field's modifier as PHP casts it, so `300ms` keeps its 300,
+    // and a text that holds no number is reported. A number no integer holds is no wait, and a
+    // wait is at most 2147483647 ms: Alpine hands the modifier to `setTimeout`, which reads a
+    // longer one as none.
+    \Pushery\WireKit\Support\NumericProp::check($searchDebounce, 'data-table', 'searchDebounce', whole: true);
+    $searchDebounceMs = min(\Pushery\WireKit\Support\NumericProp::cast($searchDebounce) ?? 0, 2147483647);
 @endphp
 
 <div
     {{ $attributes->except(['id', 'name', 'class', 'aria-labelledby', 'aria-label'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, loadingText: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading results')) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }} })"
-    {{ $attributes->only('class')->class([$base]) }}
+    x-data="wirekitDataTable({ columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($emptyText)) }}, loadingText: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading results')) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }}, separators: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }}{{ $allMatchesConfig }} })"
+    {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$base])) }}
 >
     {{-- What changes from one render to the next travels HERE, not in `x-data`.
 
@@ -408,7 +489,7 @@
 
          A `<template>` so it has no box at all, and an attribute so Blade's own escaping
          applies. --}}
-    <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::json(['rows' => $rowsPayload, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading, 'hidden' => $hiddenArr]) }}"></template>
+    <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::json(['rows' => $rowsPayload, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading, 'hidden' => $hiddenArr, 'total' => $total, 'filter' => $filter, 'selected' => $selected, 'allMatches' => $allMatches]) }}"></template>
 
     {{-- For a `name` or a `wire:model`: the root leaves the binding off, so without this field
          a binding on the tag would reach no element. --}}
@@ -422,14 +503,14 @@
     @endif
 
     {{-- Toolbar: search + density toggle + column manager + caller actions. --}}
-    @if($searchable || $columnManager || isset($toolbar))
+    @if($searchable || $columnManager || \Pushery\WireKit\Support\SlotContent::given($toolbar ?? null))
         <div class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)]">
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 @if($searchable)
                     <input
                         type="search"
                         x-model="search"
-                        @input{{ (int) $searchDebounce > 0 ? '.debounce.'.((int) $searchDebounce).'ms' : '' }}="onSearch()"
+                        @input{{ $searchDebounceMs > 0 ? '.debounce.'.$searchDebounceMs.'ms' : '' }}="onSearch()"
                         placeholder="{{ $searchPlaceholder }}"
                         aria-label="{{ $searchPlaceholder }}"
                         {{-- Search input is a form control (WCAG 1.4.11): its border
@@ -448,8 +529,8 @@
                      paints neither, so `wk-state-button` is the marker the stylesheet frames it by
                      in that mode. --}}
                 <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="group" aria-label="{{ __('wirekit::Row density') }}">
-                    <button type="button" @click="setDensity('comfortable')" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Comfortable') }}</button>
-                    <button type="button" @click="setDensity('compact')" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Compact') }}</button>
+                    <button type="button" @click="setDensity('comfortable')" aria-pressed="{{ $density === 'comfortable' ? 'true' : 'false' }}" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Comfortable') }}</button>
+                    <button type="button" @click="setDensity('compact')" aria-pressed="{{ $density === 'compact' ? 'true' : 'false' }}" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] inset-ring-[length:max(1px,var(--border-wk-width))] inset-ring-[var(--color-wk-text-muted)]' : 'text-[color:var(--color-wk-text-muted)]'" class="wk-state-button wk-touch-row px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Compact') }}</button>
                 </div>
                 @if($columnManager)
                     {{-- Column manager — a self-contained popover (nested scope; inherits
@@ -479,7 +560,7 @@
                          The scroll region keeps a keyboard model through that group role and
                          its focusable checkboxes, which the factory focuses on open. --}}
                     <div x-data="wirekitDataTableColumnMenu()" @click.outside="isOpen = false" @keydown.escape="escapeMenu($event)" class="relative">
-                        <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="isOpen = !isOpen" :aria-expanded="isOpen" aria-controls="{{ $columnsPanelId }}" class="wk-touch-row {{ $iconBtn }}">
+                        <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="isOpen = !isOpen" aria-expanded="false" :aria-expanded="isOpen" aria-controls="{{ $columnsPanelId }}" class="wk-touch-row {{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
                             {{ __('wirekit::Columns') }}
                         </button>
@@ -505,17 +586,36 @@
          accessible name is not exposed as a landmark at all — the worst of the three
          outcomes, since it reads as named to the markup and as nothing to the reader. --}}
     @if($selectable)
+        {{-- The selection, said whenever it changes, and in server mode the sentences of the
+             table's own: a filter that cleared every match. Outside the bar, which shows only
+             while rows are selected: a region shown together with its text is announced
+             unreliably, so the first selection would go unheard. Both are in the tree from the
+             first render, empty, and only their text changes.
+
+             `aria-atomic="true"`, because each holds ONE sentence that only makes sense whole.
+             Without it a polite region announces the part that changed, and the part that
+             changes here is the number — so going from "3 rows selected" to "4 rows selected"
+             could be read out as "4", with the noun the count belongs to left behind. --}}
+        <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-wk-announcer x-text="spokenSelection"></span>
+        @if($server)
+            <span class="sr-only" role="status" aria-atomic="true" data-wk-announcer x-text="announcement"></span>
+        @endif
         <div x-show="selectedCount > 0" x-cloak @if(filled($bulkActionsLabel)) role="region" aria-label="{{ $bulkActionsLabel }}" @endif class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-muted)] rounded-[var(--radius-wk-md)]">
-            {{-- `aria-atomic="true"`, because the region holds ONE sentence that only makes sense
-                     whole. Without it a polite region announces the part that changed, and the part
-                     that changes here is the number — so going from "3 rows selected" to "4 rows
-                     selected" could be read out as "4", with the noun the count belongs to left
-                     behind. Every other live region in this catalog carries the pair. --}}
-                <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" aria-live="polite" aria-atomic="true" x-text="selectionSummary"></span>
+            {{-- The count for the eye; a screen reader hears it from the region above. --}}
+            <span aria-hidden="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="selectionSummary"></span>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $bulkActions ?? '' }}
                 <button type="button" data-wk-clear-selection @click="clearSelection()" class="wk-touch-row text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">{{ __('wirekit::Clear selection') }}</button>
             </div>
+            @if($server)
+                {{-- Every match of a server list, offered once the page is selected and `total`
+                     says there are more, and the way back to the page once taken. On a line of its
+                     own under the count; the region above says the same sentence. --}}
+                <p data-wk-prose-skip x-show="noticeShows" x-cloak data-wk-all-matches class="basis-full flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
+                    <span x-text="noticeText"></span>
+                    <button type="button" x-on:click="noticeAction()" x-text="noticeActionText" class="wk-touch-row font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent-text)] underline underline-offset-2 rounded-[var(--radius-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">{{ $allMatchesActionText }}</button>
+                </p>
+            @endif
         </div>
     @endif
 
@@ -595,12 +695,15 @@
                             </template>
                         </th>
                     </template>
-                    @isset($rowActions)
+                    @if(\Pushery\WireKit\Support\SlotContent::given($rowActions ?? null))
                         <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">{{ __('wirekit::Actions') }}</span></th>
-                    @endisset
+                    @endif
                 </tr>
             </thead>
-            <tbody>
+            {{-- A click on a row's checkbox with Shift held picks every row from the one clicked
+                 last to this one (`x-wk-range-select`), and each of them reaches `toggleSelect()`
+                 through its own click. The checkbox that picks every row stands in the head. --}}
+            <tbody @if($selectable) x-wk-range-select @endif>
                 <template x-for="row in displayRows" :key="rowId(row)">
                     {{-- `group` so a frozen cell can repeat the row's hover. A sticky cell needs its
                          own opaque background, and `background: inherit` would take the row's
@@ -741,11 +844,11 @@
                                 </template>
                             </td>
                         </template>
-                        @isset($rowActions)
+                        @if(\Pushery\WireKit\Support\SlotContent::given($rowActions ?? null))
                             <td data-wk-prose-skip class="px-[var(--padding-wk-x-md)] text-right" :class="density === 'compact' ? 'py-1' : 'py-[var(--padding-wk-y-sm)]'">
                                 {{ $rowActions }}
                             </td>
-                        @endisset
+                        @endif
                     </tr>
                 </template>
             </tbody>
@@ -764,11 +867,11 @@
              an `<x-wirekit::empty-state>` lands where the sentence does rather than needing
              the caller to re-center it. --}}
         <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
-            @isset($empty)
+            @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
                 {{ $empty }}
             @else
                 <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
-            @endisset
+            @endif
         </div>
 
         {{-- The result-set live region.

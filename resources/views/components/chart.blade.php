@@ -107,6 +107,8 @@
     // (height, width) still apply.
     $wrapperTag = ($inline ?? false) ? 'span' : 'div';
     $defaultDisplay = ($inline ?? false) ? 'inline-block; vertical-align: middle' : 'block';
+    // One value for the height, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $height = \Pushery\WireKit\Support\CssValue::prop($height, 'chart', 'height', '380px');
     $defaultStyle = "width: 100%; min-width: 0; display: {$defaultDisplay}; height: {$height}; overflow: hidden; position: relative;";
     $mergedStyle = trim($defaultStyle.' '.$callerStyle);
     $chartAttributes = $attributes->except(['aria-label', 'style']);
@@ -210,7 +212,7 @@
          style above is the source of truth for either class's behavior;
          these merely keep the rendered class= tidy for any styling that
          developers might want to override on top). --}}
-    {{ $chartAttributes->class([\Pushery\WireKit\WireKit::resolveClasses('chart', 'base', 'relative w-full')]) }}
+    {{ $chartAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [\Pushery\WireKit\WireKit::resolveClasses('chart', 'base', 'relative w-full')])) }}
     style="{{ $mergedStyle }}"
     wire:ignore
     @unless($chartAttributes->has('role')) role="img" @endunless
@@ -266,6 +268,26 @@
             <span data-wk-prose-skip role="listitem"><a data-wk-prose-skip href="{{ $link['url'] }}" @if ($link['navigate']) wire:navigate @endif class="wk-focus-ring rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text)] underline underline-offset-2">{{ $link['text'] }}</a></span>
         @endforeach
     </span>
+@endif
+{{-- The chart's data as a table (`table`, Charts\ChartDataTable), outside the `wire:ignore`
+     above, so a Livewire update reaches it with the data. `disclosure` puts it behind a summary any
+     reader can open, a keyboard included; `screen-reader` keeps it out of sight, read after the
+     chart's name. Its frame scrolls a table with more datasets than the width holds, so it is a tab
+     stop with a ring. --}}
+@if ($tableMode === 'disclosure')
+    {{-- `wire:ignore.self`: the browser sets `open` when a reader opens the summary, the server's
+         markup never carries it, and a morph would take it away on the next update and close the
+         table under the reader. The rows inside still follow the data. --}}
+    <details data-wk-prose-skip data-wk-chart-table wire:ignore.self class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
+        <summary data-wk-prose-skip class="wk-focus-ring w-fit cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]">{{ __('wirekit::Chart data') }}</summary>
+        <div data-wk-prose-skip tabindex="0" class="wk-scrollbar mt-[var(--space-wk-xs)] overflow-x-auto rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+            @include('wirekit::components.partials.chart-data-table', ['wkTable' => $tableModel, 'wkCaption' => $chartAriaLabel])
+        </div>
+    </details>
+@elseif ($tableMode === 'screen-reader')
+    <div data-wk-prose-skip data-wk-chart-table class="sr-only start-0">
+        @include('wirekit::components.partials.chart-data-table', ['wkTable' => $tableModel, 'wkCaption' => $chartAriaLabel])
+    </div>
 @endif
 @if ($needsReplayWrapper)
     </{{ $wrapperTag }}>

@@ -36,6 +36,18 @@ import { frameCoalesce } from '../utils/frame-coalesce.js';
  */
 const CONTROL_STEP_PX = 10;
 
+/**
+ * The size each panel was last given, by whichever handle gave it, as the browser serialized it.
+ * Two handles move the panel between them, and both put it back after a Livewire update: from
+ * one record they put back the same size, where two would undo each other's write without end.
+ *
+ * @type {WeakMap<HTMLElement, [string, string]>}
+ */
+const panelSizes = new WeakMap();
+
+/** The attributes of the handle that the server's markup does not carry, which a morph takes off. */
+const SEPARATOR_ATTRIBUTES = ['role', 'tabindex', 'aria-orientation', 'aria-controls', 'aria-valuemin', 'aria-valuemax', 'aria-valuenow'];
+
 export default function wirekitResizableHandle() {
     return {
         // Runtime state. All read in init() from the closest wrapper +
@@ -87,6 +99,16 @@ export default function wirekitResizableHandle() {
          * reach over the panels beside it.
          */
         _pressOutside: null,
+        /*
+         * What this handle wrote that the server's markup does not carry: the range it last
+         * announced, and the id it gave a panel that had none. A Livewire update compares the
+         * page with the server's markup and takes the attributes off again, and the panels'
+         * sizes with them; the observer in `_keepThroughUpdates` puts them back. Disconnected
+         * in destroy().
+         */
+        _range: null,
+        _panelId: null,
+        _keepThroughUpdates: null,
 
         init() {
             // Locate the wrapper + the panel this handle controls. In the
@@ -127,21 +149,101 @@ export default function wirekitResizableHandle() {
                 );
             }
 
-            // Ensure the panel has a stable id so aria-controls can reference it.
+            // The panel's view writes the id aria-controls names, the same one on every render. A
+            // panel built without the view may have none; it gets one here, which names it as
+            // well, and which a Livewire morph reads as a different key from the server's markup.
             if (!this.panel.id) {
                 this.panel.id = 'wk-resizable-panel-' + Math.random().toString(36).slice(2, 10);
+                this._panelId = this.panel.id;
             }
 
-            // WAI-ARIA Window Splitter attributes. A separator's orientation is
-            // PERPENDICULAR to the layout axis: a horizontally-laid-out split
-            // is divided by a vertical separator, and vice versa.
-            this.$el.setAttribute('role', 'separator');
-            this.$el.setAttribute('aria-orientation', this.direction === 'horizontal' ? 'vertical' : 'horizontal');
-            this.$el.setAttribute('aria-controls', this.panel.id);
-            this.$el.setAttribute('aria-valuemin', String(this.minSize));
-            this.$el.setAttribute('aria-valuemax', String(this.maxSize));
-            this.$el.setAttribute('aria-valuenow', String(Math.round(this.currentSize)));
-            this.$el.setAttribute('tabindex', '0');
+            this._applySeparator();
+            this._keepThroughUpdates = this._watchUpdates();
+        },
+
+        /**
+         * The WAI-ARIA Window Splitter attributes of the handle. A separator's orientation is
+         * PERPENDICULAR to the layout axis: a horizontally-laid-out split is divided by a
+         * vertical separator, and vice versa. The value triple is the range `_announceRange()`
+         * last announced, and the declared one before it.
+         */
+        _separatorAttributes() {
+            return {
+                role: 'separator',
+                tabindex: '0',
+                'aria-orientation': this.direction === 'horizontal' ? 'vertical' : 'horizontal',
+                'aria-controls': this.panel.id,
+                'aria-valuemin': String(Math.round(this._range?.lower ?? this.minSize)),
+                'aria-valuemax': String(Math.round(this._range?.upper ?? this.maxSize)),
+                'aria-valuenow': String(Math.round(this._range?.current ?? this.currentSize)),
+            };
+        },
+
+        /**
+         * Write the separator's attributes onto the handle, each only where it differs: the
+         * observer that puts them back sees these writes as well, and a round that writes
+         * nothing ends it.
+         */
+        _applySeparator() {
+            // The handle, wherever the call came from. `$el` is the element whose directive is
+            // running, and for a step control's click that is the control, not the separator a
+            // reader is on.
+            const handle = this.$root ?? this.$el;
+
+            for (const [name, value] of Object.entries(this._separatorAttributes())) {
+                if (handle.getAttribute?.(name) !== value) {
+                    handle.setAttribute(name, value);
+                }
+            }
+        },
+
+        /**
+         * Put back what a Livewire update took off. The handle and the panels are the server's
+         * markup, which carries none of the separator's attributes, no id where the panel had
+         * none, and only the declared size: the morph of an update removes the first two, and a
+         * reader's split jumped back to its default. Without `MutationObserver` there is nothing
+         * to watch, and nothing to put back.
+         *
+         * @returns {MutationObserver|null}
+         */
+        _watchUpdates() {
+            if (typeof MutationObserver === 'undefined') {
+                return null;
+            }
+
+            const observer = new MutationObserver(() => this._restore());
+
+            observer.observe(this.$root ?? this.$el, { attributes: true, attributeFilter: SEPARATOR_ATTRIBUTES });
+            observer.observe(this.panel, { attributes: true, attributeFilter: ['id', 'style'] });
+
+            if (this.nextPanel) {
+                observer.observe(this.nextPanel, { attributes: true, attributeFilter: ['style'] });
+            }
+
+            return observer;
+        },
+
+        _restore() {
+            if (this._panelId !== null && this.panel.id !== this._panelId) {
+                this.panel.id = this._panelId;
+            }
+
+            for (const panel of [this.panel, this.nextPanel]) {
+                const written = panel ? panelSizes.get(panel) : undefined;
+
+                if (written && panel.style[written[0]] !== written[1]) {
+                    panel.style[written[0]] = written[1];
+                }
+            }
+
+            this._followPanel();
+            this._applySeparator();
+        },
+
+        /** Size a panel along the axis, and keep the size as the browser wrote it. */
+        _sizePanel(panel, axisKey, value) {
+            panel.style[axisKey] = value;
+            panelSizes.set(panel, [axisKey, panel.style[axisKey]]);
         },
 
         onPointerDown(event) {
@@ -321,6 +423,8 @@ export default function wirekitResizableHandle() {
             this._pendingPointer = null;
             this._restoreBodyUserSelect();
             this._releasePressOutside();
+            this._keepThroughUpdates?.disconnect();
+            this._keepThroughUpdates = null;
         },
 
         /**
@@ -358,22 +462,24 @@ export default function wirekitResizableHandle() {
             // WAI-ARIA Window Splitter keyboard bindings. Step size is 1%
             // normally, 10% with Shift for fast travel.
             const step = event.shiftKey ? 10 : 1;
+            // From the size the panel has, which a drag on another handle may have changed.
+            const base = this._liveSize();
             let handled = false;
 
             if (this.direction === 'horizontal') {
                 if (event.key === 'ArrowLeft') {
-                    this._setSize(this.currentSize - step);
+                    this._setSize(base - step);
                     handled = true;
                 } else if (event.key === 'ArrowRight') {
-                    this._setSize(this.currentSize + step);
+                    this._setSize(base + step);
                     handled = true;
                 }
             } else {
                 if (event.key === 'ArrowUp') {
-                    this._setSize(this.currentSize - step);
+                    this._setSize(base - step);
                     handled = true;
                 } else if (event.key === 'ArrowDown') {
-                    this._setSize(this.currentSize + step);
+                    this._setSize(base + step);
                     handled = true;
                 }
             }
@@ -416,7 +522,7 @@ export default function wirekitResizableHandle() {
                 return;
             }
 
-            this._setSize(this.currentSize + (direction * (CONTROL_STEP_PX / length) * 100));
+            this._setSize(this._liveSize() + (direction * (CONTROL_STEP_PX / length) * 100));
         },
 
         /**
@@ -452,45 +558,75 @@ export default function wirekitResizableHandle() {
          */
         _setSize(percent) {
             const axisKey = this.direction === 'horizontal' ? 'width' : 'height';
+            const { pair, pairSum, lower, upper } = this._bounds(axisKey);
+            const clamped = Math.max(lower, Math.min(upper, percent));
 
+            this.currentSize = clamped;
+            this._sizePanel(this.panel, axisKey, clamped + '%');
+
+            if (pair) {
+                this._sizePanel(this.nextPanel, axisKey, (pairSum - clamped) + '%');
+            }
+
+            this._announceRange(lower, upper, clamped);
+        },
+
+        /**
+         * The range `_setSize` keeps the controlled panel in, for the mode this handle is in.
+         *
+         * Pair-drag: the pair sum is the one captured at the start of an active pointer drag,
+         * and the live sizes for a key, a step or any stray call. When the declared mins and
+         * maxes make the range empty, it collapses onto `lower`: the panel's own min wins over
+         * the next panel's max, and the drag refuses to move past the floor.
+         *
+         * Single-panel: the delta flows into the flex:1 last panel, and `_computeDynamicMax()`
+         * reserves its min and every other non-last sibling's current size. When the reserved
+         * space is so large that even the min would overflow, the declared min stands, since the
+         * configuration cannot be met.
+         *
+         * @returns {{pair: boolean, pairSum: number|null, lower: number, upper: number}}
+         */
+        _bounds(axisKey) {
             if (this.nextPanel && !this.nextIsLast) {
-                // Pair-drag mode. Use the captured pair sum during an
-                // active pointer drag; sample live sizes for keyboard
-                // (discrete) adjustments or any stray out-of-drag call.
-                let pairSum;
-                if (this.dragging && Number.isFinite(this.dragPairSum)) {
-                    pairSum = this.dragPairSum;
-                } else {
-                    pairSum = this._readCurrentSize(this.panel, axisKey)
-                        + this._readCurrentSize(this.nextPanel, axisKey);
-                }
+                const pairSum = this.dragging && Number.isFinite(this.dragPairSum)
+                    ? this.dragPairSum
+                    : this._readCurrentSize(this.panel, axisKey) + this._readCurrentSize(this.nextPanel, axisKey);
                 const upper = Math.min(this.maxSize, pairSum - this.nextMinSize);
                 const lower = Math.max(this.minSize, pairSum - this.nextMaxSize);
-                // When the declared mins/maxes make [lower, upper] empty,
-                // fall back to `lower` — the panel's own min wins over
-                // the next panel's max, and the user is notified visually
-                // because the drag refuses to move past the floor.
-                const clamped = Math.max(lower, Math.min(Math.max(lower, upper), percent));
-                this.currentSize = clamped;
-                this.panel.style[axisKey] = clamped + '%';
-                this.nextPanel.style[axisKey] = (pairSum - clamped) + '%';
-                this._announceRange(lower, Math.max(lower, upper), clamped);
+
+                return { pair: true, pairSum, lower, upper: Math.max(lower, upper) };
+            }
+
+            const effectiveMax = Math.min(this.maxSize, this._computeDynamicMax());
+
+            return { pair: false, pairSum: null, lower: this.minSize, upper: Math.max(this.minSize, effectiveMax) };
+        },
+
+        /** The size the controlled panel has now, which another handle may have moved. */
+        _liveSize() {
+            const axisKey = this.direction === 'horizontal' ? 'width' : 'height';
+
+            return this.panel ? this._readCurrentSize(this.panel, axisKey) : this.currentSize;
+        },
+
+        /**
+         * Follow a size another handle gave this handle's panel. In three panels the second
+         * handle sizes the middle one, and a drag on the first handle resizes it as well; the
+         * second handle announced and stepped from the size it wrote last, so its next arrow
+         * put the panel back to that size. Not during this handle's own drag, which writes the
+         * size it reads.
+         */
+        _followPanel() {
+            if (this.dragging || !this.panel) {
                 return;
             }
 
-            // Single-panel fallback: delta flows into the flex:1 last
-            // panel. _computeDynamicMax reserves the last panel's min
-            // and every other non-last sibling's current size.
-            const dynamicMax = this._computeDynamicMax();
-            const effectiveMax = Math.min(this.maxSize, dynamicMax);
-            // If the reserved space is so large that even our min would
-            // overflow, fall back to the declared min (nothing we can do —
-            // the user's config is inherently inconsistent).
-            const upper = Math.max(this.minSize, effectiveMax);
-            const clamped = Math.max(this.minSize, Math.min(upper, percent));
-            this.currentSize = clamped;
-            this.panel.style[axisKey] = clamped + '%';
-            this._announceRange(this.minSize, upper, clamped);
+            const axisKey = this.direction === 'horizontal' ? 'width' : 'height';
+            const current = this._readCurrentSize(this.panel, axisKey);
+            const { lower, upper } = this._bounds(axisKey);
+
+            this.currentSize = current;
+            this._range = { lower, upper, current };
         },
 
         /**
@@ -513,14 +649,8 @@ export default function wirekitResizableHandle() {
          * 30 against a `valuemin` of 30.4 announces a value below its own minimum.
          */
         _announceRange(lower, upper, current) {
-            // The handle, wherever the call came from. `$el` is the element whose directive is
-            // running, and for a step control's click that is the control, not the separator a
-            // reader is on.
-            const handle = this.$root ?? this.$el;
-
-            handle.setAttribute('aria-valuemin', String(Math.round(lower)));
-            handle.setAttribute('aria-valuemax', String(Math.round(upper)));
-            handle.setAttribute('aria-valuenow', String(Math.round(current)));
+            this._range = { lower, upper, current };
+            this._applySeparator();
         },
 
         /**

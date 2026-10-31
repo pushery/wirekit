@@ -53,7 +53,7 @@
         announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Step :current of :total')) }}
     })"
     @keydown.escape.window.capture="escapeTour($event)"
-    {{ $attributes->class([$rootClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}
 >
     {{-- Teleported to the overlay root — escapes any ancestor containing blocks
          (e.g. transform: translateZ(0) in docs PreviewRenderer) so

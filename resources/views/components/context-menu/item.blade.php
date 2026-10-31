@@ -22,6 +22,15 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('context-menu.item', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -31,8 +40,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $danger = BooleanProp::from($danger, false);
-    $disabled = BooleanProp::from($disabled, false);
+    $danger = BooleanProp::from($danger, false, 'context-menu.item', 'danger');
+    $disabled = BooleanProp::from($disabled, false, 'context-menu.item', 'disabled');
 
     // Context menu item — same visual pattern as dropdown items.
     // whitespace-nowrap: menu items must never wrap onto a second line. Without it,
@@ -73,10 +82,10 @@
 
     // `<a>` when a destination is given, `<button>` otherwise — the same rule dropdown.item
     // uses, so a developer moving between the two menus meets one behavior.
-    $tag = $href ? 'a' : 'button';
+    $tag = $href !== null ? 'a' : 'button';
 
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -85,20 +94,18 @@
 @endphp
 
 <{{ $tag }} data-wk-prose-skip
-    @if($href) href="{{ $href }}" @endif
+    @if($href !== null) href="{{ $href }}" @endif
     @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     x-on:click="close()"
-    {{ $attributes->except(['rel', 'type'])->class(['wk-touch-row', $classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->except(['rel', 'type', 'role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $colorClasses, $disabledClasses])) }}
 >
     @if($icon)
         <span class="shrink-0 w-5 h-5" aria-hidden="true">
-            @if(function_exists('svg'))
-                {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
-            @endif
+            {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
         </span>
     @endif
 

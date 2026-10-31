@@ -5,6 +5,10 @@
     'name' => null,
     'position' => config('wirekit.components.drawer.position', 'right'),
     'size' => config('wirekit.components.drawer.size', 'md'),
+    // Below this breakpoint (`sm` to `2xl`) the panel fills the screen, as a phone shows a cart or a
+    // menu: the whole width for a side drawer, the whole height for a top or bottom one, with no
+    // strip of backdrop beside it. Above it the panel keeps its size.
+    'fullBelow' => null,
     'dismissible' => config('wirekit.components.drawer.dismissible', true),
     // Whether the reader is asked before closing the drawer by Escape, a click beside it or its
     // close button while its fields hold changes, as a modal asks. A close the page makes and a
@@ -49,13 +53,13 @@
     // is the direction a developer chooses deliberately — and Escape and the backdrop both
     // kept closing the drawer, which is the whole of what the prop suppresses. Same shape,
     // same fix as the modal beside it.
-    $dismissible = BooleanProp::from($dismissible, true);
-    $confirmDiscard = BooleanProp::from($confirmDiscard, true);
-    $lockScroll = BooleanProp::from($lockScroll, true);
+    $dismissible = BooleanProp::from($dismissible, true, 'drawer', 'dismissible');
+    $confirmDiscard = BooleanProp::from($confirmDiscard, true, 'drawer', 'confirmDiscard');
+    $lockScroll = BooleanProp::from($lockScroll, true, 'drawer', 'lockScroll');
 
     // Only a drawer the reader can close asks before it closes.
     $discardQuestionText = $dismissible && $confirmDiscard
-        ? (filled($discardQuestion) ? (string) $discardQuestion : __('wirekit::Discard your changes?'))
+        ? (filled($discardQuestion) ? $discardQuestion : __('wirekit::Discard your changes?'))
         : null;
 
     // `size` and `position` are resolved by a `match` with a `default` arm below, and a
@@ -81,6 +85,12 @@
         $position = 'right';
     }
 
+    $fullBelow = filled($fullBelow) ? (string) $fullBelow : null;
+    if ($fullBelow !== null && ! in_array($fullBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
+        WireKit::validateProp('drawer', 'fullBelow', $fullBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
+        $fullBelow = null;
+    }
+
     // Title ID for aria-labelledby — links dialog to its header
     // Counted, not random, when there is no name. The same dialog renders the same id on the next
     // round trip, so Livewire's morph keeps the heading instead of replacing it, and a heading
@@ -102,12 +112,23 @@
     $callerLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
     $attributes = $attributes->except(['aria-label']);
 
+    // The rest of the caller's `aria-*` belongs on the dialog as well: on the roleless wrapper an
+    // `aria-labelledby` names nothing and an `aria-describedby` describes nothing. The caller's
+    // reference names the dialog ahead of every other name, as in the accessible name computation,
+    // and the caller's description joins the dialog's own in one attribute.
+    $callerLabelledBy = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-labelledby');
+    $callerLabelledBy = is_string($callerLabelledBy) && trim($callerLabelledBy) !== '' ? trim($callerLabelledBy) : null;
+    $callerDescribedBy = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-describedby'));
+    $dialogAriaAttributes = $attributes->filter(fn ($value, string $key): bool => str_starts_with($key, 'aria-') && ! in_array($key, ['aria-labelledby', 'aria-describedby'], true));
+    $attributes = $attributes->filter(fn ($value, string $key): bool => ! str_starts_with($key, 'aria-'));
+    $dialogDescribedBy = trim(((string) $describedby).' '.$callerDescribedBy);
+
     // The drawer's name comes from `label`, from `aria-label` or from the title in its header, whose
     // id the panel's aria-labelledby names; only `drawer.header` puts that id on an element. Without
     // any of them the reference points at nothing, which per ARIA leaves the dialog with no name.
     // Reported through strict validation, as a modal reports it: an exception in a test or a console
     // run, a log line in a request.
-    if (! filled($label) && ! filled($callerLabel) && ! str_contains((string) $slot, 'data-wk-drawer-title')) {
+    if (! filled($label) && ! filled($callerLabel) && $callerLabelledBy === null && ! str_contains((string) $slot, 'data-wk-drawer-title')) {
         WireKit::validateProp('drawer', 'label', '', [
             'a non-empty label, or an <x-wirekit::drawer.header> to name the dialog',
         ]);
@@ -182,6 +203,18 @@
         ? ' max-w-[calc(100dvw-var(--size-wk-drawer-inset))]'
         : ' max-h-[calc(100dvh-var(--size-wk-drawer-inset))]';
 
+    // `fullBelow` lifts that clamp below its breakpoint. The shipped stylesheet carries the rule
+    // (`wk-drawer-panel-full-below-*`), since the panel's geometry there is unlayered and outranks
+    // any utility a build adds. Written out per breakpoint, as the stylesheet names them.
+    $sizeClass .= match ($fullBelow) {
+        'sm' => ' wk-drawer-panel-full-below-sm',
+        'md' => ' wk-drawer-panel-full-below-md',
+        'lg' => ' wk-drawer-panel-full-below-lg',
+        'xl' => ' wk-drawer-panel-full-below-xl',
+        '2xl' => ' wk-drawer-panel-full-below-2xl',
+        default => '',
+    };
+
     // Slide transition classes — direction depends on position
     $enterStart = match ($position) {
         'left' => '-translate-x-full',
@@ -203,7 +236,7 @@
     // The drawer is teleported, so nothing of it shows where it is written. Its root generates no
     // box, which a flex or grid container would otherwise count as an empty item with a gap of
     // its own beside it.
-    $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(['contents']));
+    $attributes = $attributes->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['contents'])));
 @endphp
 
 {{-- Drawer component — slides in from the edge of the screen.
@@ -220,7 +253,7 @@
      the listener of a drawer another overlay covers. Only registered when the
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
-    x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string($discardQuestionText) : 'null' }} })"
+    x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }}, discardQuestion: {{ $discardQuestionText !== null ? \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\SlotContent::textOf($discardQuestionText)) : 'null' }} })"
     @if($dismissible) x-on:keydown.escape.window="onWindowEscape($event)" @endif
     {{ $attributes }}
 >
@@ -258,12 +291,15 @@
                      nested drawer) pair only marks the topmost as modal. --}}
                 :aria-modal="isTopmost ? 'true' : 'false'"
                 aria-modal="true"
-                @if($label || $callerLabel)
-                    aria-label="{{ $label ?: $callerLabel }}"
+                @if($callerLabelledBy !== null)
+                    aria-labelledby="{{ $callerLabelledBy }}"
+                @elseif($label || $callerLabel)
+                    aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) ?: $callerLabel }}"
                 @else
                     aria-labelledby="{{ $titleId }}"
                 @endif
-                @if($describedby) aria-describedby="{{ $describedby }}" @endif
+                @if($dialogDescribedBy !== '') aria-describedby="{{ $dialogDescribedBy }}" @endif
+                {{ $dialogAriaAttributes }}
                 class="{{ $panelClasses }} {{ $positionClasses }} {{ $sizeClass }}"
                 {{-- A click in the panel is not stopped. The backdrop is a sibling of the panel,
                      not an ancestor, so the click cannot close the drawer, and it has to reach

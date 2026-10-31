@@ -5,7 +5,10 @@
     'danger' => false,
     'disabled' => false,
     'icon' => null,
-    'shortcut' => null, // keyboard-shortcut hint shown at the inline-end (e.g. "⌘K")
+    'shortcut' => null, // keyboard-shortcut hint shown at the inline-end (e.g. "⌘K"), or a list of its keys
+    // A count or a short word at the end of the entry, drawn as the sidebar item draws its
+    // badge, and part of the entry's name: "My drafts 3". Empty draws nothing.
+    'badge' => null,
     // "This is the page you are on." A navigation menu's most common state. Without it the
     // only mark on screen would be the focus ring the menu puts on its first item when it
     // opens, which reads as a selection to everyone who did not put it there.
@@ -33,6 +36,11 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.item', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -42,9 +50,9 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $danger = BooleanProp::from($danger, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $active = BooleanProp::from($active, false);
+    $danger = BooleanProp::from($danger, false, 'dropdown.item', 'danger');
+    $disabled = BooleanProp::from($disabled, false, 'dropdown.item', 'disabled');
+    $active = BooleanProp::from($active, false, 'dropdown.item', 'active');
 
     // Base item classes — full-width flex row with hover state
     $classes = WireKit::resolveClasses('dropdown.item', 'base', implode(' ', [
@@ -101,7 +109,7 @@
         : ($active ? 'font-medium' : '');
 
     // Render as <a> when href is provided, otherwise <button>
-    $tag = $href ? 'a' : 'button';
+    $tag = $href !== null ? 'a' : 'button';
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —
@@ -109,16 +117,20 @@
     // silently leaving the page open to tabnabbing. Hence except('rel')
     // + explicit rel attribute render.
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
+
+    // The keys of the shortcut hint, one text or a list (Support\KeyShortcuts::hintKeys()),
+    // drawn as one line, a space between the keys.
+    $shortcutText = implode(' ', \Pushery\WireKit\Support\KeyShortcuts::hintKeys($shortcut));
 @endphp
 
 <{{ $tag }} data-wk-prose-skip
-    @if($href) href="{{ $href }}" @endif
+    @if($href !== null) href="{{ $href }}" @endif
     {{-- Honor a caller-provided type so a no-href item can drive a form
          (e.g. type="submit" for a CSRF logout inside a wrapping <form>);
          defaults to "button". The bag's `type` is stripped below so it
@@ -131,24 +143,31 @@
          does not — an item without an href is an action, and "page" would be a claim about a
          document that is not being visited. A caller who set `aria-current` themselves keeps
          theirs: this fills a gap rather than overriding an author. --}}
-    @if($active && ! $attributes->has('aria-current')) aria-current="{{ $href ? 'page' : 'true' }}" @endif
+    @if($active && ! $attributes->has('aria-current')) aria-current="{{ $href !== null ? 'page' : 'true' }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except(['rel', 'type'])->class(['wk-touch-row', $classes, $colorClasses, $activeClasses, $disabledClasses]) }}
+    {{ $attributes->except(['rel', 'type', 'role', 'tabindex'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $classes, $colorClasses, $activeClasses, $disabledClasses])) }}
 >
     {{-- Optional icon (resolved via WireKit icon system) --}}
     @if($icon)
         <span class="shrink-0 w-5 h-5" aria-hidden="true">
-            @if(function_exists('svg'))
-                {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
-            @endif
+            {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
         </span>
     @endif
 
     {{ $slot }}
 
-    {{-- Keyboard-shortcut hint, pushed to the inline-end. Decorative. --}}
-    @if($shortcut)
-        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcut }}</span>
+    {{-- The counter, pushed to the inline-end, and read with the entry: it is text in the item,
+         not a hint beside it. --}}
+    @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
+    @if($badgeText !== null)
+        <span class="shrink-0 ms-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] tabular-nums bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]" data-wk-dropdown-item-badge>{{ $badgeText }}</span>
+    @endif
+
+    {{-- Keyboard-shortcut hint, pushed to the inline-end. Decorative. Behind a counter it keeps
+         its place after it: a second auto margin in the row would split the free space with the
+         counter's and stand the counter in the middle. --}}
+    @if($shortcutText !== '')
+        <span @class(['ms-auto' => $badgeText === null, 'ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums']) aria-hidden="true">{{ $shortcutText }}</span>
     @endif
 
     @if($opensNewTab)

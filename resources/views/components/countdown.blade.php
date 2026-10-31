@@ -37,6 +37,18 @@
     //   false / "none" → no motion
     // The inline variant changes its value without motion.
     'animate' => true,
+    // A way to stop the clock, for a countdown that stands beside other content and whose ticking
+    // the reader's task does not need, the end of a sale under a price (WCAG 2.2.2). `pausable`
+    // puts a button after the time that stops it and starts it again. `static` works the time out
+    // once, on the reader's clock as the page loads, and leaves it standing, for a page served from
+    // a cache that cannot work it out on the server. At the deadline either turns to its expired
+    // text, once, and fires its event.
+    'pausable' => false,
+    'static' => false,
+    // The element the countdown roots in. A `span` by default, because everything it renders inside
+    // is text-level, so a countdown can stand in a sentence: a `div` there would end the paragraph
+    // around it. `div` for a headless slot that holds block content.
+    'as' => 'span',
     'scope' => null,
 ])
 
@@ -51,11 +63,24 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('countdown', $attributes->getAttributes());
 
+    // A switch, or `box`, `text` or `none`. Another word is reported (Support\StrictnessGate) and
+    // animates as `box` does.
+    if (is_string($animate) && trim($animate) !== '' && \Pushery\WireKit\Support\BooleanProp::orNull($animate) === null) {
+        $animate = \Pushery\WireKit\WireKit::validateProp('countdown', 'animate', $animate, ['box', 'text', 'none']);
+    }
+
+    // Interpolated into the opening and the closing tag, where Blade's escaping lets a space or an
+    // `=` through: the shape is checked, as for `tooltip` and `card`.
+    $as = \Pushery\WireKit\WireKit::tagName('countdown', (string) $as);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $showSeconds = BooleanProp::from($showSeconds, true);
-    $separators = BooleanProp::from($separators, true);
+    $showSeconds = BooleanProp::from($showSeconds, true, 'countdown', 'showSeconds');
+    $separators = BooleanProp::from($separators, true, 'countdown', 'separators');
+    $static = BooleanProp::from($static, false, 'countdown', 'static');
+    // A clock that stands has nothing to stop.
+    $pausable = BooleanProp::from($pausable, false, 'countdown', 'pausable') && ! $static;
 
     $variantValue = match ($variant) {
         'inline', 'segments' => $variant,
@@ -72,8 +97,9 @@
     $targetIso = $shownTarget->toIso8601String();
     $humanDeadline = $shownTarget->isoFormat('LLL');
 
-    $expiredLabel = $expiredText ?? __('wirekit::Overdue');
-    $warnSeconds = $warnThreshold !== null ? (int) $warnThreshold : null;
+    // The script writes it with `x-text`, so markup is read as its text.
+    $expiredLabel = \Pushery\WireKit\Support\SlotContent::textOf($expiredText ?? __('wirekit::Overdue'));
+    $warnSeconds = \Pushery\WireKit\Support\NumericProp::intOrNull($warnThreshold, 'countdown', 'warnThreshold');
 
     // Resolve the active units, in largest-to-smallest order. 'auto' shows the
     // full ladder (seconds optional) and drops leading zero-units client-side;
@@ -148,7 +174,7 @@
     // `Intl.NumberFormat` and `Intl.PluralRules` do not read it as German-Germany.
     // Keeping the prop-reading line as-is would have fixed the visible half and
     // introduced the other.
-    $countdownLocale = str_replace('_', '-', $locale ?? app()->getLocale());
+    $countdownLocale = \Pushery\WireKit\Support\IcuLocale::tag($locale);
 
     // Resolve the change-animation style. `animate` accepts a bool or one of the
     // strings 'box' / 'text' / 'none'. 'box' (the default when true) pulses the
@@ -186,9 +212,12 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    // A caller's `x-model` on this root is read in the scope around it, where the caller's names
+    // are: on the root it would find this component's own names first (CallerModel).
+    $attributes = \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes);
 @endphp
 
-<div
+<{{ $as }} data-wk-prose-skip
     x-modelable="done"
     {{-- The clock, the unit ladder, the expiry event and the screen-reader text
          live in the factory (resources/js/components/countdown.js). Getters and
@@ -200,6 +229,9 @@
         activeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from($activeUnits) }},
         autoMode: {{ \Pushery\WireKit\Support\AlpinePayload::from($autoMode) }},
         separators: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $separators) }},
+        {{-- The application's own grouping mark for that grouping, where it gives WireKit a
+             number format of its own (WireKit::formatNumbersUsing()); null leaves the locale's. --}}
+        numberMarks: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\LocalizedNumber::separators()) }},
         {{-- Only the segments variant has a change animation. The inline one keeps a stable key,
              so its value updates in place instead of re-mounting on every tick. --}}
         animate: {{ \Pushery\WireKit\Support\AlpinePayload::from($animateOn && $variantValue === 'segments') }},
@@ -209,6 +241,7 @@
         {{-- The APPLICATION's locale, not the browser's. A German page read on an
              English-configured machine must still pluralize German. --}}
         locale: {{ \Pushery\WireKit\Support\AlpinePayload::from($countdownLocale) }},
+        static: {{ \Pushery\WireKit\Support\AlpinePayload::from($static) }},
     })"
     @unless($attributes->has('role')) role="timer" @endunless
     {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
@@ -220,7 +253,7 @@
     :class="expired
         ? 'text-[color:var(--color-wk-danger-text)]'
         : (urgent ? 'text-[color:var(--color-wk-warning-text)]' : 'text-[color:var(--color-wk-text)]')"
-    data-wk-sr-host {{ $attributes->class([$baseClasses]) }}
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
 >
     @if($slot->hasActualContent())
     {{-- Headless mode: the developer's markup renders its own copy around the
@@ -277,4 +310,31 @@
         </span>
     </template>
     @endif
-</div>
+
+    @if($pausable)
+    {{-- The way to stop the clock (WCAG 2.2.2), drawn as the carousel draws the one that stops
+         its slides: a round button whose name says what a press does, "Pause countdown" or
+         "Resume countdown", rather than a pressed state, which would say the same thing twice.
+         Static as well as bound, so the button has a name before Alpine runs. Its own colors,
+         so the urgent and expired tints of the time leave it alone. A headless countdown that
+         draws its own control reads `paused` and calls `togglePause()` instead. It goes with
+         the clock at the deadline: past it there is nothing left to stop, and a button named
+         for stopping the clock would offer an action that does nothing. --}}
+    <button
+        type="button"
+        data-wk-countdown-pause
+        x-on:click="togglePause()"
+        aria-label="{{ __('wirekit::Pause countdown') }}"
+        x-bind:aria-label="paused ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Resume countdown')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause countdown')) }}"
+        x-show="! expired"
+        class="wk-touch-target inline-flex h-[var(--size-wk-target-min)] w-[var(--size-wk-target-min)] shrink-0 cursor-pointer items-center justify-center self-center rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+    >
+        <svg x-show="! paused" class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+        </svg>
+        <svg x-show="paused" x-cloak class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+        </svg>
+    </button>
+    @endif
+</{{ $as }}>

@@ -93,8 +93,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `expandable="false"` would otherwise turn the toggle ON. Normalize against each
     // prop's own default so a cast never engages a mode that was meant off.
-    $expandable = BooleanProp::from($expandable, false);
-    $trackCurrent = BooleanProp::from($trackCurrent, false);
+    $expandable = BooleanProp::from($expandable, false, 'app-rail', 'expandable');
+    $trackCurrent = BooleanProp::from($trackCurrent, false, 'app-rail', 'trackCurrent');
     $persistDriver = WireKit::validateProp('app-rail', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
     // Whether the CALLER set `expanded`, taken before anything below answers it. The factory and
@@ -113,8 +113,8 @@
     // The seeding above only fires when the store HAS something. Where it does not, this is the
     // answer — and it is the prop's whole reason: `false` was not a decision, it was the absence
     // of one.
-    $defaultExpanded = BooleanProp::from($defaultExpanded, false);
-    $expanded = BooleanProp::from($expanded, $defaultExpanded);
+    $defaultExpanded = BooleanProp::from($defaultExpanded, false, 'app-rail', 'defaultExpanded');
+    $expanded = BooleanProp::from($expanded, $defaultExpanded, 'app-rail', 'expanded');
 
     $labels = WireKit::validateProp('app-rail', 'labels', $labels, ['tooltip', 'below', 'inline']);
     $tone = WireKit::validateProp('app-rail', 'tone', $tone, ['default', 'muted', 'inverse', 'accent']);
@@ -147,7 +147,7 @@
 
     $navLabelAttrs = ($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
         ? []
-        : ['aria-label' => $label];
+        : ['aria-label' => $label !== null ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null];
 
     // `h-full` is not cosmetic. The inline-end edge is drawn on THIS element, so a nav
     // sized to its content ends the separator wherever the last module happens to
@@ -210,7 +210,7 @@
     ]), $scope);
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
-    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
 @endphp
 
 <nav
@@ -279,7 +279,7 @@
              (Support\CompactClasses). --}}
         :class="{ [{{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($expandedWidth)) }}]: expanded, [{{ \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($restingWidth)) }}]: ! expanded }"
     @endif
-    {{ $attributes->class([
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
         $classes,
         'group/wk-rail',
         // The width belongs to the static branch only. With `expandable` the same
@@ -302,7 +302,7 @@
         // entry re-keyed the resting width to `$expandable`, which is false there.
         //
         // A persisted rail can still move once, and that is not fixable from the server: the
-        // stored choice lives in the reader's browser and only Alpine can read it.
+        // stored choice lives in the browser of the reader and only Alpine can read it.
         ($expandable && $expanded ? $expandedWidth : $restingWidth) => true,
         // Gated on `data-wk-ready`, which Alpine sets one frame after init. Ungated, a cold
         // load animates the ARRIVAL of the stylesheet rather than any state change: the column
@@ -312,15 +312,15 @@
         // here in the source.
         'data-[wk-ready]:transition-[width]' => $expandable,
         'data-[wk-ready]:duration-[var(--transition-wk-duration)]' => $expandable,
-    ])->merge($navLabelAttrs) }}
+    ]))->merge($navLabelAttrs) }}
 >
-    @isset($brand)
+    @if(\Pushery\WireKit\Support\SlotContent::given($brand ?? null))
         {{-- The rail's segment of the shell's top rule. `shrink-0` so a long module
              list can never steal height from it. --}}
         <div class="shrink-0">
             {{ $brand }}
         </div>
-    @endisset
+    @endif
 
     {{-- The module list. `min-h-0` is the whole trick and leaving it out is the
          mistake this zone exists to prevent: a flex item's automatic minimum size is
@@ -335,12 +335,12 @@
          sidebar's own scroller is exempt under. --}}
     <div
         data-wk-rail-scroller
-        class="wk-scrollbar flex min-h-0 flex-1 flex-col gap-[var(--space-wk-nav-gap)] overflow-y-auto py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))]"
+        class="wk-scrollbar relative flex min-h-0 flex-1 flex-col gap-[var(--space-wk-nav-gap)] overflow-y-auto py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))]"
     >
         {{ $slot }}
     </div>
 
-    @if(isset($footer) || $expandable)
+    @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null) || $expandable)
         {{-- The bottom block: account, help, search — the cluster every one of these rails
              puts there — and, last of all, the expand toggle.
 
@@ -354,7 +354,7 @@
              either exists, so an expandable rail with no footer still has somewhere to put
              it, and a rail with neither has no empty band. --}}
         <div class="wk-shell-foot shrink-0 relative border-t-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border)] py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))] flex flex-col gap-[var(--space-wk-nav-gap)]">
-            @isset($footer)
+            @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
                 {{-- The trailing inset only exists while the rail is wide AND the toggle has
                      moved onto this row — it is the room the toggle occupies, so the two
                      belong to the same condition.
@@ -369,7 +369,7 @@
                 ])>
                     {{ $footer }}
                 </div>
-            @endisset
+            @endif
 
             @if($expandable)
                 <div @class([
@@ -384,14 +384,14 @@
                     // is wide — where a collapse control is expected, and clear of the names.
                     'justify-center group-data-[expanded]/wk-rail:justify-end',
                     // Expanded, it stops being a ROW of its own and sits at the end of the
-                    // last footer row instead. A control that changes the column's width was
+                    // last footer row instead. A control that changes the width of the column was
                     // spending a full navigation row on itself — the most expensive way to
                     // present the least important thing in the column.
                     //
                     // Only when a footer exists: with nothing else in this block, taking the
                     // toggle out of flow leaves the block with no content to give it height,
                     // and the button hangs outside a collapsed band.
-                    'group-data-[expanded]/wk-rail:absolute group-data-[expanded]/wk-rail:bottom-[var(--padding-wk-y-sm)] group-data-[expanded]/wk-rail:end-[var(--padding-wk-y-sm)]' => isset($footer),
+                    'group-data-[expanded]/wk-rail:absolute group-data-[expanded]/wk-rail:bottom-[var(--padding-wk-y-sm)] group-data-[expanded]/wk-rail:end-[var(--padding-wk-y-sm)]' => \Pushery\WireKit\Support\SlotContent::given($footer ?? null),
                 ])>
                     {{-- Same reason as the sidebar's control: the chevron alone is a guess
                          until you click it, and the name that answers it was reachable only

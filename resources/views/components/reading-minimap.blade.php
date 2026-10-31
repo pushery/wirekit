@@ -31,6 +31,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('reading-minimap', $attributes->getAttributes());
 
+    // An unknown `hideBelow` is reported (Support\StrictnessGate) and renders as `lg`; a bound
+    // `null` or empty string is `lg` without a word.
+    $hideBelow = \Pushery\WireKit\WireKit::validateProp('reading-minimap', 'hideBelow', \Pushery\WireKit\Support\NumericProp::text($hideBelow ?: 'lg'), ['lg', 'sm', 'md', 'xl', 'none']);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@mousemove.passive']);
@@ -38,11 +42,11 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $draggable = BooleanProp::from($draggable, true);
-    $hoverPreview = BooleanProp::from($hoverPreview, false);
-    $showBookmarks = BooleanProp::from($showBookmarks, true);
-    $headingAnchors = BooleanProp::from($headingAnchors, false);
-    $autoFadeIdle = BooleanProp::from($autoFadeIdle, true);
+    $draggable = BooleanProp::from($draggable, true, 'reading-minimap', 'draggable');
+    $hoverPreview = BooleanProp::from($hoverPreview, false, 'reading-minimap', 'hoverPreview');
+    $showBookmarks = BooleanProp::from($showBookmarks, true, 'reading-minimap', 'showBookmarks');
+    $headingAnchors = BooleanProp::from($headingAnchors, false, 'reading-minimap', 'headingAnchors');
+    $autoFadeIdle = BooleanProp::from($autoFadeIdle, true, 'reading-minimap', 'autoFadeIdle');
 
     // Reading-minimap — every-item density overview of a scrollable container.
     // Sibling primitive to reading-spine in the reading-* family.
@@ -159,6 +163,9 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // One value for the style, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $width = \Pushery\WireKit\Support\CssValue::prop($width, 'reading-minimap', 'width', '60px');
 @endphp
 
 {{-- The root deliberately carries NO `aria-hidden`. Every purely visual part
@@ -196,7 +203,7 @@
          it and trigger this listener. trackTooltip() short-circuits
          when no tooltipText is set, so the global capture is cheap. --}}
     @mousemove.passive="trackTooltip($event)"
-    {{ $attributes->merge(['style' => 'width: '.($width).';'])->class([$rootClass]) }}
+    {{ $attributes->merge(['style' => 'width: '.($width).';'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass])) }}
 >
     {{-- Rendered-mode canvas — constructed only after the IntersectionObserver
          fires the first intersection callback. `aria-hidden` keeps it out of
@@ -204,11 +211,15 @@
          the wrapper, which translates it to parent-window scroll via the
          Alpine click handler. --}}
     @if ($modeValue === 'rendered')
+        {{-- `wire:ignore`: the canvas inside is the script's alone. A Livewire update that left
+             the article as it was took it out with the rest of what the server's markup does not
+             carry, and only a change in the article builds it again. --}}
         <div
             class="wk-reading-minimap__rendered"
             x-ref="renderedContainer"
             aria-hidden="true"
             data-test="reading-minimap-rendered"
+            wire:ignore
         ></div>
     @endif
 
@@ -332,13 +343,15 @@
     ></div>
 
     {{-- Hover preview popover. Position-fixed; controller
-         writes top/left + data-visible on pointermove. --}}
+         writes top/left + data-visible on pointermove. Its frame, its position and whether it
+         shows are the script's as well, so a Livewire update leaves it alone (`wire:ignore`). --}}
     @if (filter_var($hoverPreview, FILTER_VALIDATE_BOOL))
         <div
             class="wk-reading-minimap__preview"
             x-ref="hoverPreview"
             aria-hidden="true"
             data-test="reading-minimap-preview"
+            wire:ignore
         ></div>
     @endif
 </div>

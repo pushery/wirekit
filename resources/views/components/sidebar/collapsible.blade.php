@@ -4,7 +4,9 @@
 @props([
     'label' => '',
     'icon' => null,
-    'open' => false,
+    // Whether the section starts expanded. The default comes from the configuration
+    // (`components.sidebar.collapsible.open`), so an application whose boxes start open sets it once.
+    'open' => config('wirekit.components.sidebar.collapsible.open', false),
     // Optional localStorage key. When set, the open/closed state survives a reload —
     // same semantics as the sidebar component's own `persist`. Null keeps it ephemeral.
     'persist' => null,
@@ -25,6 +27,9 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.collapsible', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
@@ -32,8 +37,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $open = BooleanProp::from($open, false);
-    $forceOpen = BooleanProp::from($forceOpen, false);
+    $open = BooleanProp::from($open, BooleanProp::from(config('wirekit.components.sidebar.collapsible.open', false)), 'sidebar.collapsible', 'open');
+    $forceOpen = BooleanProp::from($forceOpen, false, 'sidebar.collapsible', 'forceOpen');
     $open = $open || $forceOpen;
 
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
@@ -50,7 +55,7 @@
     // aria-labelledby gets no aria-label from us, so the two never compete for one name.
     $groupLabel = $attributes->has('aria-labelledby')
         ? null
-        : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: ((string) $label !== '' ? $label : null));
+        : (\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?: (\Pushery\WireKit\Support\SlotContent::textOf($label) !== '' ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null));
 
     // The role is coupled to the NAME instead of being emitted unconditionally. A
     // role="group" nothing can name announces a boundary and then cannot say what the
@@ -76,11 +81,14 @@
     // A seed can still repeat on one page: the same label in two sidebars, or in two
     // previews of one documentation page. The deduper keeps the first id as it is and
     // appends `-2` to a repeat, so each trigger names its own region. An id the caller
-    // chose is used as given.
-    $panelId = ($attributes->get('id') ?: DomId::unique(WireKit::stableId(
+    // chose is used as given, its whitespace as a hyphen, since `aria-controls` splits on it.
+    //
+    // A label given as markup seeds with its text, or its tags would stand in the id.
+    $labelSeed = $label instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($label) : (string) $label;
+    $panelId = (DomId::valid($attributes->get('id')) ?? DomId::unique(WireKit::stableId(
         'wk-sidebar-collapsible',
-        (string) $label !== ''
-            ? (string) $label
+        $labelSeed !== ''
+            ? $labelSeed
             : (is_string($icon) && ! str_contains($icon, '<') ? $icon : null)
     ), 'wk-sidebar-collapsible-')).'-panel';
 
@@ -167,6 +175,7 @@
     <button
         type="button"
         x-on:click="toggle()"
+        aria-expanded="{{ $open ? 'true' : 'false' }}"
         :aria-expanded="isOpen ? 'true' : 'false'"
         aria-controls="{{ $panelId }}"
         {{-- With no label the trigger's only contents are the aria-hidden icon and the
@@ -182,10 +191,12 @@
             {{-- Icon — decorative, hidden from AT. A bare name string resolves
                  via the WireKit icon system (consistent with sidebar.item /
                  dropdown.item); a <x-slot:icon> or inline markup (non-string
-                 ComponentSlot, Htmlable) renders verbatim. --}}
-            <span class="shrink-0" aria-hidden="true">
-                @if(is_string($icon) && ! str_contains($icon, '<') && function_exists('svg'))
-                    {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
+                 ComponentSlot, Htmlable) renders verbatim. `data-wk-icon-nudge`
+                 lifts it onto the label's letters, level with the item icons
+                 in the same column. --}}
+            <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
+                @if(is_string($icon) && ! str_contains($icon, '<'))
+                    {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
                 @else
                     {{ $icon }}
                 @endif
@@ -193,7 +204,7 @@
         @endif
         {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
         <span class="min-w-0 flex-1 break-words text-left wk-rail-hide">{{ $label }}</span>
-        @isset($trailing)
+        @if(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
             {{-- Anything the caller wants at the end of the trigger.
                  A group is collapsed to keep the list short — and if it contains items with
                  counters, those counters vanish with it. `persist` makes that permanent:
@@ -212,7 +223,7 @@
                  means "unread" reads differently from one that means "attention", and only
                  one of those is redundant when expanded. --}}
             <span class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $trailing }}</span>
-        @endisset
+        @endif
         {{-- Chevron indicator — rotates when open; hidden in the collapsed rail. --}}
         <svg
             {{-- Turned in the markup when the server renders the section open, so the arrow of an open

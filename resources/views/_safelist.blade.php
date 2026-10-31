@@ -22,8 +22,8 @@
     This file contains every dynamic class VariantResolver may emit, written
     literally so Tailwind's candidate scanner picks them up via the same
     `@source 'vendor/pushery/wirekit/resources/views/**/*.blade.php'` glob the
-    developer already configured. The classes live inside a Blade `{{-- … --}}`
-    comment, so they DO NOT render to HTML — but Tailwind reads the raw file
+    developer already configured. The classes live inside one Blade comment, the
+    one this file is, so they DO NOT render to HTML — but Tailwind reads the raw file
     contents and finds the candidates regardless of Blade syntax.
 
     NO developer-side configuration change is required: every WireKit developer's
@@ -242,6 +242,7 @@
     overflow-y-hidden
     p-1
     p-[var(--padding-wk-x-sm)]
+    relative
     rounded-[var(--radius-wk-lg)]
     rounded-[var(--radius-wk-md)]
     shadow-[var(--shadow-wk-sm)]
@@ -254,5 +255,20 @@
     transition-colors
     whitespace-nowrap
     xl:flex-wrap
+
+    ────────────────────────────────────────────────────────────────────────
+    WireKit::spinePadding — the content-edge spine
+    ────────────────────────────────────────────────────────────────────────
+
+    `WireKit::spinePadding($tier)` returns the inline padding of a spine tier,
+    and the `spine-aware` component takes its padding from it, so these classes
+    are written in PHP. Other views spell some of them as well, which is no
+    guarantee. Listed here, each is generated for every integration, and the
+    source of `spine-aware` carries all four.
+
+    px-[var(--padding-wk-x-lg)]
+    px-[var(--padding-wk-x-md)]
+    px-[var(--padding-wk-x-sm)]
+    px-[var(--padding-wk-x-xl)]
 
 --}}

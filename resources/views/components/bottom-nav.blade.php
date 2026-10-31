@@ -35,9 +35,9 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $mobileOnly = BooleanProp::from($mobileOnly, true);
-    $interactive = BooleanProp::from($interactive, false);
-    $trackCurrent = BooleanProp::from($trackCurrent, false);
+    $mobileOnly = BooleanProp::from($mobileOnly, true, 'bottom-nav', 'mobileOnly');
+    $interactive = BooleanProp::from($interactive, false, 'bottom-nav', 'interactive');
+    $trackCurrent = BooleanProp::from($trackCurrent, false, 'bottom-nav', 'trackCurrent');
 
     $isInteractive = filter_var($interactive, FILTER_VALIDATE_BOOLEAN);
 
@@ -62,12 +62,12 @@
      indicator, the bottom of the viewport is not the bottom of the usable screen,
      and a bar that ignores that puts its labels under the indicator. --}}
 <nav
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
     data-wk-bottom-nav
     data-wk-scroll-inset="bottom"
     @if($isInteractive) x-data="{ active: null }" @endif
     @if(! $isInteractive && $trackCurrent) x-wk-current @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </nav>

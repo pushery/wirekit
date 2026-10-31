@@ -42,6 +42,10 @@
     // `--text-wk-fit-floor` token, a length such as `0.75em` for a floor of its own, null or false for
     // none.
     'fit' => null,
+    // The small text above the title and the title, as props or as the `eyebrow` and `title` slots; a
+    // slot wins when both are given, and a text that carries markup has to be the slot.
+    'eyebrow' => null,
+    'title' => null,
     'scope' => null,
 ])
 
@@ -57,8 +61,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $gradient = BooleanProp::from($gradient, false);
-    $tightOnMobile = BooleanProp::from($tightOnMobile, false);
+    $gradient = BooleanProp::from($gradient, false, 'hero', 'gradient');
+    $tightOnMobile = BooleanProp::from($tightOnMobile, false, 'hero', 'tightOnMobile');
 
     // The title's fitted box. It stands inside the heading, so the heading's size at each breakpoint is
     // the largest the title takes.
@@ -153,6 +157,8 @@
         'centered' => ['max-w-[var(--size-wk-container-md,48rem)] mx-auto', 'w-full mt-[var(--space-wk-xl,2.5rem)]', 'flex-col', 'text-center'],
         'stacked' => ['w-full', 'w-full mt-[var(--space-wk-xl,2.5rem)]', 'flex-col', 'text-center lg:text-left'],
     ];
+    // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+    $layout = \Pushery\WireKit\Support\NumericProp::key($layout);
     $validLayout = isset($layoutMap[$layout])
         ? $layout
         : WireKit::validateProp('hero', 'layout', $layout, array_keys($layoutMap));
@@ -164,6 +170,8 @@
     // balanced layouts with asideWidth set, validateProp emits a debug-mode
     // hint and the prop is silently ignored at render time.
     if ($asideWidth !== null) {
+        // A float beyond the integer range ends a request as an array key on PHP 8.5: read as text.
+        $asideWidth = \Pushery\WireKit\Support\NumericProp::key($asideWidth);
         $asideWidthMap = [
             '1/3' => ['flex-[2]', 'flex-[1]'],
             '2/5' => ['flex-[3]', 'flex-[2]'],
@@ -218,13 +226,13 @@
     // Heading level (1-6). An invalid value is reported through the strictness gate, with a
     // did-you-mean, and where the gate does not throw it renders the default level, which
     // for a hero is h1: it carries the page's main heading.
-    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 1;
-    if ($levelValue !== (int) $level) {
-        WireKit::validateProp('hero', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    $levelValue = in_array(\Pushery\WireKit\Support\NumericProp::int($level, 0), [1, 2, 3, 4, 5, 6], true) ? \Pushery\WireKit\Support\NumericProp::int($level, 0) : 1;
+    if ($levelValue !== \Pushery\WireKit\Support\NumericProp::int($level, 0)) {
+        WireKit::validateProp('hero', 'level', \Pushery\WireKit\Support\NumericProp::text($level), ['1', '2', '3', '4', '5', '6']);
     }
 @endphp
 
-<section data-variant="{{ $variant }}" {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<section data-variant="{{ $variant }}" {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $variantClasses])) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     @if($gradient)
         {{-- Gradient overlay is anchored to the outer <section> so it
              fills the section edge-to-edge (visually clean across the
@@ -251,30 +259,30 @@
                  viewports, overflowing the page. Same shape applied to
                  the aside column below for symmetry. --}}
             <div class="{{ $copyColClasses }} {{ $textAlignClasses }} min-w-0 w-full lg:w-auto">
-                @isset($eyebrow)
+                @if($eyebrow instanceof \Illuminate\View\ComponentSlot ? $eyebrow->hasActualContent() : filled($eyebrow))
                     <div class="mb-[var(--space-wk-md,1rem)]">{{ $eyebrow }}</div>
-                @endisset
+                @endif
 
-                @isset($title)
+                @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
                     <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-3xl,1.875rem)] sm:text-[length:var(--font-wk-heading-2xl,3.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] tracking-tight mb-[var(--space-wk-md,1rem)]">
                         {{ $fitBag !== null ? \Pushery\WireKit\Support\FitText::box($title, $fitBag) : $title }}
                     </h{{ $levelValue }}>
-                @endisset
+                @endif
 
-                @isset($lede)
+                @if(\Pushery\WireKit\Support\SlotContent::given($lede ?? null))
                     <p data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 max-w-[40rem] mb-[var(--space-wk-lg,1.5rem)] {{ $ledeAlignClasses }}">
                         {{ $lede }}
                     </p>
-                @endisset
+                @endif
 
-                @isset($actions)
+                @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
                     <div class="flex flex-wrap gap-[var(--gap-wk-sm)] {{ $actionsAlignClasses }}">
                         {{ $actions }}
                     </div>
-                @endisset
+                @endif
             </div>
 
-            @isset($aside)
+            @if(\Pushery\WireKit\Support\SlotContent::given($aside ?? null))
                 {{-- min-w-0 w-full lg:w-auto — see rationale on the copy
                      column above. The aside is the higher-risk side
                      because developers commonly drop a
@@ -286,7 +294,7 @@
                      handles intra-line horizontal scrolling within the
                      column's now-constrained inline-size. --}}
                 <div class="{{ $asideColClasses }} min-w-0 w-full lg:w-auto">{{ $aside }}</div>
-            @endisset
+            @endif
         </div>
     </div>
 </section>

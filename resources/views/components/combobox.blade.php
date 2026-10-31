@@ -8,11 +8,13 @@
 @props([
     // Livewire method to call optimistically. The choice appears immediately
     // and is put back if the call fails. Absent -> the plain combobox.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -102,15 +104,23 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+
+    // A list where the control takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and read as no value (Support\FieldValue).
+    $value = \Pushery\WireKit\Support\FieldValue::one($value, 'combobox');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('combobox', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('combobox', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -124,25 +134,28 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $disabled = BooleanProp::from($disabled, false);
-    $hideLabel = BooleanProp::from($hideLabel, false);
-    $freeInput = BooleanProp::from($freeInput, false);
+    $disabled = BooleanProp::from($disabled, false, 'combobox', 'disabled');
+    // `readonly` is the field's attribute, not a prop, and it reaches the text field as written. A
+    // read-only field keeps its value and the focus, and nothing opens, chooses or clears it.
+    $readonly = $attributes->has('readonly') && ! BooleanProp::isFalse($attributes->get('readonly'));
+    $hideLabel = BooleanProp::from($hideLabel, false, 'combobox', 'hideLabel');
+    $freeInput = BooleanProp::from($freeInput, false, 'combobox', 'freeInput');
     // Free text needs the text field; a select-only trigger takes no typing.
-    $searchable = BooleanProp::from($searchable, true) || $freeInput;
-    $clearable = BooleanProp::from($clearable, true);
-    $server = BooleanProp::from($server, false) && $searchable;
-    $truncated = BooleanProp::from($truncated, false);
-    $emptyNavigate = BooleanProp::from($emptyNavigate, false);
-    $nothingToChoose = BooleanProp::from($nothingToChoose, false);
-    $searchMinLength = max(1, (int) $searchMinLength);
-    $searchDebounce = max(0, (int) $searchDebounce);
+    $searchable = BooleanProp::from($searchable, true, 'combobox', 'searchable') || $freeInput;
+    $clearable = BooleanProp::from($clearable, true, 'combobox', 'clearable');
+    $server = BooleanProp::from($server, false, 'combobox', 'server') && $searchable;
+    $truncated = BooleanProp::from($truncated, false, 'combobox', 'truncated');
+    $emptyNavigate = BooleanProp::from($emptyNavigate, false, 'combobox', 'emptyNavigate');
+    $nothingToChoose = BooleanProp::from($nothingToChoose, false, 'combobox', 'nothingToChoose');
+    $searchMinLength = max(1, \Pushery\WireKit\Support\NumericProp::int($searchMinLength, 0, 'combobox', 'searchMinLength'));
+    $searchDebounce = max(0, \Pushery\WireKit\Support\NumericProp::int($searchDebounce, 0, 'combobox', 'searchDebounce'));
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -215,7 +228,7 @@
     };
 
     $normalized = [];
-    $options = \Pushery\WireKit\Support\ListProp::records($options);
+    $options = \Pushery\WireKit\Support\ListProp::records($options, 'combobox', 'options');
     $optionsAreAList = array_is_list(collect($options)->all());
     foreach ($options as $key => $opt) {
         $isGroup = is_array($opt) && ! array_key_exists('label', $opt) && ! array_key_exists('value', $opt);
@@ -240,7 +253,7 @@
     // because a hint says how to choose. A link to a fragment of the page never takes
     // `wire:navigate`, which would fetch the page instead of scrolling to it.
     $emptyNavigates = $emptyNavigate && ! str_starts_with((string) $emptyHref, '#');
-    $showEmpty = (filled($emptyText) || isset($empty))
+    $showEmpty = (filled($emptyText) || \Pushery\WireKit\Support\SlotContent::given($empty ?? null))
         && ($nothingToChoose || (! $server && $normalized === []));
 
     if ($showEmpty) {
@@ -293,7 +306,7 @@
             .', searchTexts: '.\Pushery\WireKit\Support\AlpinePayload::from([
                 'searching' => __('wirekit::Searching…'),
                 'prompt' => __('wirekit::Type to search'),
-                'tooShort' => trans_choice('wirekit::{1} Type at least :count character|[2,*] Type at least :count characters', $searchMinLength, ['count' => $searchMinLength]),
+                'tooShort' => \Pushery\WireKit\Support\Plural::choice('wirekit::{1} Type at least :count character|[2,*] Type at least :count characters', $searchMinLength, ['count' => $searchMinLength]),
                 'truncated' => __('wirekit::More results. Keep typing to narrow them.'),
                 'empty' => __('wirekit::No results'),
                 'failed' => __('wirekit::Search failed. Try again.'),
@@ -301,13 +314,17 @@
         $serverOptions = \Pushery\WireKit\Support\AlpinePayload::json(['options' => $normalized, 'truncated' => $truncated]);
     }
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     // The bag read is guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
     // makes a combobox with no `name` report itself invalid the moment ANY
     // unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
-    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
-    $errorMessage = $error ?? ($hasError && $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -320,7 +337,7 @@
     // prop, then a caller-passed aria-label attribute — applied to the VISIBLE
     // role="combobox" input (the labelable control), never the roleless wrapper.
     $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
-    $resolvedAriaLabel = $ariaLabel ?? $callerAriaLabel;
+    $resolvedAriaLabel = $ariaLabel !== null ? \Pushery\WireKit\Support\SlotContent::textOf($ariaLabel) : $callerAriaLabel;
 
     // Inside a labeled field with no name of its own, the field's label names the control: by
     // `for` when it is the search input, by reference when it is the select-only trigger, a div
@@ -347,6 +364,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $comboId.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $comboId, $hint !== null && $hint !== '' ? $hintId : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, (bool) $attributes->get('required', false));
     $describedBy = trim(($describedBy ?? '').' '.($helpId ?? ''));
     // `required` stays in the bag, read rather than consumed (see the label below). It is checked
     // against the CHOICE through a stand-in, not on the search field, where typed text that is no
@@ -439,14 +463,20 @@
     // `aria-disabled`, since a `div` has no `disabled` state for the `disabled:` variant to see.
     $triggerClasses = $inputClasses.' flex items-center text-start cursor-pointer select-none aria-disabled:cursor-not-allowed aria-disabled:opacity-[var(--opacity-wk-disabled)]';
 
-    // What the trigger shows before Alpine starts, from the same option list the factory gets,
-    // so a page that has not booted yet does not show the placeholder over a real choice.
+    // What the field shows before Alpine starts, from the same option list the factory gets, so a
+    // page that has not booted yet does not show the placeholder over a real choice: the chosen
+    // option's text, on the select-only trigger and in the search field alike. With free input the
+    // value is the text itself, and the field is what the form sends.
     $initialText = '';
-    if (! $searchable && $value !== null) {
-        foreach ($normalized as $option) {
-            if ($option['value'] === (string) $value) {
-                $initialText = $option['selectedLabel'] ?? $option['label'];
-                break;
+    if ($value !== null) {
+        if ($freeInput) {
+            $initialText = (string) $value;
+        } else {
+            foreach ($normalized as $option) {
+                if ($option['value'] === (string) $value) {
+                    $initialText = $option['selectedLabel'] ?? $option['label'];
+                    break;
+                }
             }
         }
     }
@@ -510,7 +540,7 @@
     // offer several buttons called "Clear selection". The field's name comes the way the field
     // itself is named: its label, its `aria-label`, then the label of the field around it.
     // Without any of them the bare wording stands.
-    $clearLabelText = trim(strip_tags((string) $label));
+    $clearLabelText = \Pushery\WireKit\Support\SlotContent::textOf($label);
     if ($clearLabelText === '' && filled($resolvedAriaLabel)) {
         $clearLabelText = trim((string) $resolvedAriaLabel);
     }
@@ -599,7 +629,7 @@
     x-data="wirekitCombobox({ listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }}{{ $freeInput ? ', freeInput: true' : '' }}{{ $serverConfig }} })"
     data-wk-server-value="{{ \Pushery\WireKit\Support\AlpinePayload::json($value) }}"
     @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @else data-wk-options="{{ \Pushery\WireKit\Support\AlpinePayload::json($normalized) }}" @endif
-    @click.outside="isOpen = false"
+    @click.outside="closeOutside($event)"
     {{-- The chosen option, exposed by name so a binding on the component tag reaches
          the SELECTION rather than the search field: the bag below is routed to the
          role="combobox" input, which already carries `x-model="query"`, so without this
@@ -612,7 +642,7 @@
          to the bag below it would land on the search input beside its built-in `x-model="query"` --
          two `x-model` attributes on one tag, where the browser keeps the first and the caller's
          is dropped without a word. `x-modelable` is excluded: a caller may not redirect the seam. --}}
-    {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
+    {{ \Pushery\WireKit\Support\CallerModel::aroundRoot($attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable')) }}
     {{-- The roleless wrapper otherwise carries ONLY layout — every caller attribute
          (aria-describedby, data-*, required, …) is routed to the role="combobox" input
          below, never left stranded on this <div>. `autocomplete` is the exception: the
@@ -620,7 +650,7 @@
     {{-- `class` as well as `style`, as `slider` does. The input below excludes `class` from its
          own bag, so without it here `<x-wirekit::combobox class="max-w-[10rem]">` would reach the
          markup nowhere at all and size nothing. --}}
-    {{ $attributes->only(['class', 'style'])->class([$rootClasses]) }}
+    {{ $attributes->only(['class', 'style'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClasses])) }}
 >
     @if($optimisticConfig)
         {{-- `display: contents` — this element's `relative` is the containing
@@ -647,7 +677,7 @@
     {{-- The browser validates no hidden field, so a required combobox checks its choice through a
          stand-in of its own. --}}
     @if($required && ! $freeInput)
-        @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled])
+        @include('wirekit::components.partials.required-check', ['requiredFormOwner' => $formOwner, 'requiredDisabled' => $disabled || $readonly])
     @endif
 
     @if($searchable)
@@ -665,7 +695,10 @@
         aria-controls="{{ $listId }}"
         :aria-activedescendant="isOpen && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
         aria-autocomplete="list"
-        placeholder="{{ $placeholder }}"
+        placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}"
+        {{-- The text the factory seeds `query` with, there before it starts. `x-model` takes the
+             field over once it does. --}}
+        @if($initialText !== '') value="{{ $initialText }}" @endif
         {{-- With free input the caller's token stays, so a browser can fill an address or a name in
              and the purpose of the field can be read (WCAG 1.3.5). The suggestions of this field
              open only while it has some for what was typed, never on focus, where a browser opens
@@ -673,7 +706,7 @@
         autocomplete="{{ $freeInput && filled($attributes->get('autocomplete')) ? $attributes->get('autocomplete') : 'off' }}"
         @if($freeInput && $name) name="{{ $name }}" @endif
         x-model="query"
-        @unless($freeInput) @focus="isOpen = true" @endunless
+        @unless($freeInput) @focus="openOnFocus()" @endunless
         @input="openAndReset()"
         @keydown.arrow-down.prevent="openAndMove(1)"
         @keydown.arrow-up.prevent="moveHighlight(-1)"
@@ -718,13 +751,13 @@
         {{-- `required` is checked against the choice (the stand-in above), so the search field
              carries it as `aria-required` only: as a native attribute, typed text that is no option
              would satisfy it. --}}
-        @if($required && $freeInput) required @elseif($required) aria-required="true" @endif
+        @if($required && $freeInput) required @elseif($required || $fieldRequired) aria-required="true" @endif
         {{ $attributes->except('autocomplete')->except('aria-controls')->except('aria-expanded')->except('type')->except(['aria-label', 'class', 'style', 'aria-describedby', 'required'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $inputClasses }}"
         {{-- The search field: on a touch surface its chevron and its clear button take the touch
              target, and the end padding holds whichever of them it has. --}}
         data-wk-combobox-search
-        @if(! $disabled && $clearable) data-wk-combobox-clearable @endif
+        @if(! $disabled && ! $readonly && $clearable) data-wk-combobox-clearable @endif
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     />
     @else
@@ -754,9 +787,15 @@
         @if($disabled)
             aria-disabled="true"
         @else
+            {{-- A disabled fieldset disables no `div`, so the trigger follows it here: out of the
+                 tab order, announced and styled as disabled, and its click and keys refuse. --}}
+            x-bind:tabindex="fieldsetDisabled ? '-1' : '0'"
+            x-bind:aria-disabled="fieldsetAriaDisabled"
             @click="toggleSelectOnly()"
             @keydown="{{ $optimisticConfig ? 'runIf(selectOnlyKeydown($event))' : 'chooseValue(selectOnlyKeydown($event))' }}"
         @endif
+        {{-- A `div` takes no `readonly`, so the trigger says it, and the script reads it as locked. --}}
+        @if($readonly) aria-readonly="true" @endif
         @if($hasError)
             aria-invalid="true"
         @elseif($requiredMessageId)
@@ -764,11 +803,11 @@
         @endif
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
         {{-- `required` is an input attribute, and a `div` has no validity to carry it. --}}
-        @if($attributes->get('required')) aria-required="true" @endif
+        @if($attributes->get('required') || $fieldRequired) aria-required="true" @endif
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{ $attributes->except('aria-controls')->except('aria-expanded')->except(['aria-label', 'class', 'style', 'aria-describedby', 'required', 'autocomplete', 'placeholder', 'readonly'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $triggerClasses }}"
-        @if(! $disabled && $clearable) data-wk-combobox-clearable @endif
+        @if(! $disabled && ! $readonly && $clearable) data-wk-combobox-clearable @endif
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     >
         {{-- Two spans rather than one binding that swaps the text and its color: the placeholder
@@ -798,7 +837,7 @@
     {{-- Clear button — visible only when a value is selected. It stands before the chevron, from 2rem
          to 3.5rem before the end of the field, and after a searchable field's chevron on a touch
          surface, where both take the touch target. --}}
-    @if(!$disabled && $clearable)
+    @if(! $disabled && ! $readonly && $clearable)
         <button
             type="button"
             data-wk-combobox-clear
@@ -922,18 +961,20 @@
         x-cloak
     >
         @if($groupedList)
-        {{-- Grouped options: each group is role="group" with an aria-label; the
-             visible heading is decorative (aria-hidden) since the group's
-             aria-label supplies its name. The inner list is role="none" so the
-             options remain effective children of the group in the a11y tree.
+        {{-- Grouped options: each group is the inner list, role="group" with an
+             aria-label, inside a list item that is role="none". ARIA in HTML allows
+             `group` on a `ul` and not on an `li`, so the role stands on the list and
+             the item around it carries none. The visible heading is decorative
+             (aria-hidden) since the group's aria-label supplies its name, and the
+             options are the group's children.
              The flat keyboard model is untouched — selection + highlight key off
              opt._idx (each option's index into the flat `filtered` list). --}}
         <template x-for="grp in filteredGroups" :key="groupKey(grp)">
-            <li data-wk-prose-skip role="group" :aria-label="grp.label || {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options')) }}" style="list-style: none;">
+            <li data-wk-prose-skip role="none" style="list-style: none;">
                 <template x-if="grp.label">
                     <div aria-hidden="true" class="px-[var(--padding-wk-x-md)] pt-[var(--padding-wk-y-sm)] pb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="grp.label"></div>
                 </template>
-                <ul data-wk-prose-skip role="none" style="list-style: none; margin: 0; padding: 0;">
+                <ul data-wk-prose-skip role="group" :aria-label="grp.label || {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options')) }}" style="list-style: none; margin: 0; padding: 0;">
                     <template x-for="opt in grp.options" :key="opt.value">
                         <li data-wk-prose-skip
                             role="option"
@@ -950,7 +991,7 @@
                                  mark the stylesheet draws through `wk-listbox-option`. --}}
                             :data-active="opt._idx === highlight ? '' : null"
                             class="wk-listbox-option wk-touch-row {{ $optionRowClasses }}"
-                            @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
+                            @click="{{ $optimisticConfig ? 'runIf(pickValue(opt))' : 'selectOption(opt)' }}"
                             @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                             {{-- pointermove, not mouseenter: a list that opens or scrolls under a resting
                                  pointer fires mouseenter on the row beneath it, and that row would take the
@@ -994,7 +1035,7 @@
                         : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
                 :data-active="idx === highlight ? '' : null"
                 class="wk-listbox-option wk-touch-row {{ $optionRowClasses }}"
-                @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
+                @click="{{ $optimisticConfig ? 'runIf(pickValue(opt))' : 'selectOption(opt)' }}"
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 {{-- pointermove, not mouseenter: see the grouped rows above. --}}
                 x-on:pointermove.passive="hoverOption(opt, idx)"
@@ -1021,13 +1062,15 @@
             {{-- Under results: a newer search still out, or results the application cut at its
                  limit. An option that cannot be chosen, like the multi-select's empty row, since
                  a listbox may hold nothing else; the highlight indexes `filtered` and never
-                 lands here. --}}
+                 lands here. `empty:hidden` keeps the row out of sight and out of the tree while it
+                 has no text: `x-show` and `x-text` are two effects, and between them the row stood
+                 shown and empty, an option without a name. --}}
             <li data-wk-prose-skip
                 role="option"
                 aria-disabled="true"
                 x-show="searchNote() !== ''"
                 x-text="searchNote()"
-                class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]"
+                class="{{ $emptyRowClasses }} empty:hidden text-[color:var(--color-wk-text-muted)]"
                 style="list-style: none;"
             ></li>
         @endif

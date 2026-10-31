@@ -55,16 +55,17 @@
     // in the Tailwind baseline.
     $intentBorderStyle = "border-color: color-mix(in srgb, {$intentToken} 40%, var(--color-wk-border)); background-color: color-mix(in srgb, {$intentToken} 6%, var(--color-wk-bg-elevated));";
 
-    // Clamp the optional progress to [0, 100].
-    $progressValue = $progress === null ? null : max(0, min(100, (int) $progress));
+    // Clamp the optional progress to [0, 100]. A prop that holds no number shows no progress.
+    $progressNumber = \Pushery\WireKit\Support\NumericProp::intOrNull($progress, 'stage-card', 'progress');
+    $progressValue = $progressNumber === null ? null : max(0, min(100, $progressNumber));
 @endphp
 
 {{-- role="group" + aria-label makes a screen reader announce the stage's
      title as the purpose of the grouped items (kanban column / pipeline
      stage / roadmap quarter). --}}
 <div
-    {{ $attributes->merge(['style' => $intentBorderStyle])->class([$classes]) }} data-wk-sr-host
-    @if($label) @unless($attributes->has('role')) role="group" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
+    {{ $attributes->merge(['style' => $intentBorderStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }} data-wk-sr-host
+    @if($label) @unless($attributes->has('role')) role="group" @endunless @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless @endif
 >
     @if($label || $count !== null)
         <div class="flex items-center justify-between gap-2">
@@ -79,15 +80,15 @@
                      the number, because ARIA gives an element without a role no name, and a
                      screen reader reads such a span's content rather than an aria-label on it. --}}
                 <span class="inline-flex items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums">
-                    <span aria-hidden="true">{{ $count }}</span>
-                    <span class="sr-only">{{ trans_choice('wirekit:::count items', (int) $count, ['count' => $count]) }}</span>
+                    <span aria-hidden="true">{{ \Pushery\WireKit\Support\LocalizedNumber::count($count) }}</span>
+                    <span class="sr-only">{{ \Pushery\WireKit\Support\Plural::choice('wirekit:::count items', \Pushery\WireKit\Support\NumericProp::int($count, 0, 'stage-card', 'count'), ['count' => $count]) }}</span>
                 </span>
             @endif
         </div>
     @endif
 
     @if($progressValue !== null)
-        <x-wirekit::progress :value="$progressValue" :intent="$validIntent" size="sm" aria-label="{{ $label ? __('wirekit:::label progress', ['label' => $label]) : __('wirekit::Stage progress') }}" />
+        <x-wirekit::progress :value="$progressValue" :intent="$validIntent" size="sm" aria-label="{{ $label ? __('wirekit:::label progress', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($label)]) : __('wirekit::Stage progress') }}" />
     @endif
 
     @if($slot->hasActualContent())

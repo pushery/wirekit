@@ -191,9 +191,24 @@ export default function wirekitSortable(config = {}) {
             // Livewire morph replaces the lot. Re-wiring on mutation is what
             // keeps a list sortable after its first render; without it the
             // feature works exactly once, which is the kind of defect that gets
-            // reported as "sometimes".
-            this._observer = new MutationObserver(() => this._wire());
-            this._observer.observe(this.$root, { childList: true, subtree: true });
+            // reported as "sometimes". A morph that keeps every card only takes
+            // the attributes _wire() wrote off them, so those are heard as well.
+            this._observer = new MutationObserver(() => {
+                this._wire();
+
+                // The same morph takes the live region off when this factory made it, since the
+                // server's markup does not carry it. A region made together with its sentence is not
+                // spoken (`_resolveAnnouncer()`), so a new one is made now, empty, for the next one.
+                if (this._announcer && ! this._announcer.isConnected) {
+                    this._announcer = this._resolveAnnouncer();
+                }
+            });
+            this._observer.observe(this.$root, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['draggable', 'tabindex', 'role', 'aria-roledescription', 'data-sortable-id'],
+            });
 
             // A card handed over by another list on a connected board arrives through this
             // event, see `_handOver()`. Registered on every list: a list cannot tell whether a
@@ -388,10 +403,17 @@ export default function wirekitSortable(config = {}) {
          * re-announce anything. The `draggable` attribute and the tabindex are
          * both set rather than toggled, and the handlers are delegated to the
          * root — one listener for the list, however long it gets.
+         *
+         * Every attribute here is written only where it is missing. A Livewire
+         * update compares the cards with markup that carries none of them and
+         * takes them off, so the observer in init() hears these attributes too,
+         * and a write of a value already there would be a change it hears again.
          */
         _wire() {
             for (const [index, item] of this._items().entries()) {
-                item.setAttribute('draggable', 'true');
+                if (item.getAttribute('draggable') !== 'true') {
+                    item.setAttribute('draggable', 'true');
+                }
 
                 // Reachable by keyboard at all. A list you can only reorder with
                 // a pointer is one that some people simply cannot reorder.

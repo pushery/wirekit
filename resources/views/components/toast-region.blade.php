@@ -34,6 +34,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('toast-region', $attributes->getAttributes());
 
+    // An unknown `position` is reported (Support\StrictnessGate) and renders as `top-right`; a
+    // bound `null` or empty string is `top-right` without a word.
+    $position = \Pushery\WireKit\WireKit::validateProp('toast-region', 'position', \Pushery\WireKit\Support\NumericProp::text($position ?: 'top-right'), ['top-right', 'top-left', 'top-center', 'bottom-left', 'bottom-center', 'bottom-right']);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['@focusin']);
@@ -41,13 +45,13 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $filled = BooleanProp::from($filled, false);
+    $filled = BooleanProp::from($filled, false, 'toast-region', 'filled');
 
     // Both stand in the x-data object as bare numbers, so each is read as a number first: text
     // written there unquoted would run as an expression. One that holds no number takes the
     // configured default.
-    $max = \Pushery\WireKit\Support\NumericProp::positive($max, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.toast-region.max', 5), 5));
-    $duration = \Pushery\WireKit\Support\NumericProp::from($duration, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.toast-region.duration', 5000), 5000));
+    $max = \Pushery\WireKit\Support\NumericProp::positive($max, \Pushery\WireKit\Support\NumericProp::positive(config('wirekit.components.toast-region.max', 5), 5), 'toast-region', 'max');
+    $duration = \Pushery\WireKit\Support\NumericProp::from($duration, \Pushery\WireKit\Support\NumericProp::from(config('wirekit.components.toast-region.duration', 5000), 5000), 'toast-region', 'duration');
 
     // Position classes — map human-friendly names to fixed positioning
     $positionClasses = match ($position) {
@@ -213,6 +217,11 @@
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
+
+    // A caller's `aria-label` or `aria-labelledby` names the region as `label` does, and makes it a
+    // landmark with it; on the role-less wrapper it would name nothing (Support\CallerName).
+    [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+    $regionName = \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, filled($label) ? $label : null);
 @endphp
 
 {{-- Toast region: fixed container that stacks toast notifications.
@@ -231,13 +240,13 @@
          a toast raised while a dialog is open is still announced, and its controls still
          answer. --}}
     data-wk-toast-region
-    {{ $attributes->merge(['style' => $offsetStyle])->class([$containerClasses, $positionClasses]) }}
-    {{-- `filled()` rather than `??`: an interpolated caller value can arrive empty,
-         and `role="region"` with an empty accessible name is not exposed as a
-         landmark at all — which would leave the worst of the three outcomes.
-         (The helper and this component's `$filled` prop share a spelling and
-         nothing else — PHP keeps function and variable names apart.) --}}
-    @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
+    {{ $attributes->merge(['style' => $offsetStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$containerClasses, $positionClasses])) }}
+    {{-- Only with a name: an interpolated caller value can arrive empty (`filled()` above,
+         and `CallerName` drops a blank one), and `role="region"` with an empty accessible
+         name is not exposed as a landmark at all — which would leave the worst of the
+         three outcomes. (The helper and this component's `$filled` prop share a spelling
+         and nothing else — PHP keeps function and variable names apart.) --}}
+    @if((string) $regionName !== '') @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="region" @endunless {{ $regionName }} @endif
     {{-- Where the reader came FROM. Dismissing the last toast empties the stack,
          and without this focus would drop to <body> — the page's top, not the
          place the reader left. `focusin` bubbles, so one listener on the region

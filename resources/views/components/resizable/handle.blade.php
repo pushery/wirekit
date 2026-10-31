@@ -19,6 +19,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('resizable.handle', $attributes->getAttributes());
 
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:pointerdown', 'x-on:pointermove.passive', 'x-on:pointerup', 'x-on:pointercancel', 'x-on:lostpointercapture', 'x-on:keydown', 'x-on:focus', 'x-on:blur']);
+
     use Pushery\WireKit\WireKit;
 
     // Resizable handle — interactive divider that drives the size of the
@@ -60,8 +67,8 @@
     x-on:keydown="onKeyDown($event)"
     x-on:focus="onFocus()"
     x-on:blur="onBlur()"
-    @if($needsName) aria-label="{{ $label ?? __('wirekit::Resize panel') }}" @endif
-    {{ $attributes->class([$classes]) }}
+    @if($needsName) aria-label="{{ \Pushery\WireKit\Support\BlankName::first($label, __('wirekit::Resize panel')) }}" @endif
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     <span data-wk-resizable-grip aria-hidden="true"></span>
     {{-- Two step controls beside the grip, the way to resize with one pointer and no drag

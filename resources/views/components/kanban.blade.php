@@ -24,8 +24,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $sortable = BooleanProp::from($sortable, false);
-    $crossColumn = BooleanProp::from($crossColumn, false);
+    $sortable = BooleanProp::from($sortable, false, 'kanban', 'sortable');
+    $crossColumn = BooleanProp::from($crossColumn, false, 'kanban', 'crossColumn');
 
     $orientationValue = match ($orientation) {
         'horizontal', 'vertical' => $orientation,
@@ -82,7 +82,7 @@
     {{-- A sheet does not scroll sideways: on paper the columns of a horizontal board flow onto
          the next line. --}}
     @if($orientationValue === 'horizontal') data-wk-print-wrap @endif
-    {{ $attributes->class([$baseClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$baseClasses])) }}
 >
     {{ $slot }}
 </div>

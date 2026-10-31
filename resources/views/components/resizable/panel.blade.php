@@ -28,9 +28,9 @@
     // proportionally when the container resizes (e.g. on viewport changes).
     // NOTE: clamp to integers to avoid sending floats into inline style
     // attributes — Blade's @php doesn't sanitize these for us.
-    $defaultPct = max(0, min(100, (int) $defaultSize));
-    $minPct = max(0, min(100, (int) $minSize));
-    $maxPct = max($minPct, min(100, (int) $maxSize));
+    $defaultPct = max(0, min(100, \Pushery\WireKit\Support\NumericProp::int($defaultSize, 0, 'resizable.panel', 'defaultSize')));
+    $minPct = max(0, min(100, \Pushery\WireKit\Support\NumericProp::int($minSize, 0, 'resizable.panel', 'minSize')));
+    $maxPct = max($minPct, min(100, \Pushery\WireKit\Support\NumericProp::int($maxSize, 0, 'resizable.panel', 'maxSize')));
 
     $style = sprintf(
         '--wk-default-size: %d%%; --wk-min-size: %d%%; --wk-max-size: %d%%;',
@@ -38,14 +38,24 @@
         $minPct,
         $maxPct,
     );
+
+    // The id the handle's `aria-controls` names. Written here, counted rather than random, so a
+    // Livewire update renders the same one: the morph keys an element without `wire:key` by its
+    // id, and an id only the script gave the panel made every update replace it with the server's,
+    // which dropped the reader's size and left the handle naming a panel no longer on the page.
+    // A caller's id without whitespace (Support\DomId::valid()): the handle names it in a list of
+    // ids, which splits on a space.
+    $panelId = \Pushery\WireKit\Support\DomId::valid(filled($attributes->get('id')) ? (string) $attributes->get('id') : null)
+        ?? \Pushery\WireKit\Support\DomId::unique(null, 'wk-resizable-panel-');
 @endphp
 
 <div
+    id="{{ $panelId }}"
     data-wk-resizable-panel
     data-wk-default-size="{{ $defaultPct }}"
     data-wk-min-size="{{ $minPct }}"
     data-wk-max-size="{{ $maxPct }}"
-    {{ $attributes->merge(['style' => $style])->class([$classes]) }}
+    {{ $attributes->except('id')->merge(['style' => $style])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

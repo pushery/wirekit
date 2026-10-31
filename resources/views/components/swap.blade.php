@@ -33,7 +33,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $active = BooleanProp::from($active, false);
+    $active = BooleanProp::from($active, false, 'swap', 'active');
 
     $effect = WireKit::validateProp('swap', 'effect', $effect, ['fade', 'rotate', 'flip']);
 
@@ -70,7 +70,7 @@
     @else
         data-active="{{ $active ? 'true' : 'false' }}"
     @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     <span
         data-wk-swap-on
@@ -92,6 +92,6 @@
         @endif
         class="col-start-1 row-start-1"
     >
-        {{ $off ?? $slot }}
+        {{ \Pushery\WireKit\Support\SlotContent::given($off ?? null) ? $off : $slot }}
     </span>
 </span>

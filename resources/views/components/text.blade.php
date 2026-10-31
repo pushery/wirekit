@@ -55,6 +55,12 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('text', $attributes->getAttributes());
 
+    // `true`, `false` or `tooltip`. Another word is reported (Support\StrictnessGate) and truncates
+    // as `true` does; a word such as `yes` or `0` reads as the switch it names.
+    if (is_string($truncate) && trim($truncate) !== '' && \Pushery\WireKit\Support\BooleanProp::orNull($truncate) === null) {
+        $truncate = \Pushery\WireKit\WireKit::validateProp('text', 'truncate', $truncate, ['true', 'false', 'tooltip']);
+    }
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -65,9 +71,13 @@
     // tooltip.
     $truncateTooltip = $truncate === 'tooltip';
     $truncateLine = $truncateTooltip || BooleanProp::from($truncate, false);
-    $wrap = BooleanProp::from($wrap, true);
-    $tabular = BooleanProp::from($tabular, false);
+    $wrap = BooleanProp::from($wrap, true, 'text', 'wrap');
+    $tabular = BooleanProp::from($tabular, false, 'text', 'tabular');
     $fitFloor = \Pushery\WireKit\Support\FitText::prop($fit, 'text');
+
+    // A number of lines given as a float is read as the text it writes, so NAN and INF are reported
+    // as a text is below, without the warning PHP 8.5 raises when NAN is read as true or false.
+    $lineClamp = is_float($lineClamp) ? \Pushery\WireKit\Support\NumericProp::text($lineClamp) : $lineClamp;
 
     // A cut text keeps its size: the cut was asked for, and it keeps the text inside its box, where a
     // fitted text on one line runs past it below its floor.
@@ -286,7 +296,7 @@
     x-on:pointerup="pointerup($event)"
     x-on:pointerleave="pointerleave($event)"
     x-on:keydown.escape.window.capture="keydownEscape($event)"
-    {{ $attributes->class([$classes, 'focus-visible:outline-hidden focus-visible:rounded-[var(--radius-wk-sm)] focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]']) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'focus-visible:outline-hidden focus-visible:rounded-[var(--radius-wk-sm)] focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'])) }}
 >{{ $slot }}<template x-teleport="#wk-overlay-root">
     <div
         x-ref="tooltip"
@@ -306,7 +316,5 @@
              forced colors the panel's fill is repainted, and the marker gives it an edge. --}}
         class="wk-tooltip-panel {{ $tipClasses }}"
     ></div>
-</template></{{ $as }}>
-@else
-<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $fitted ?? $slot }}</{{ $as }}>
-@endif
+</template></{{ $as }}>@else
+<{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $fitted ?? $slot }}</{{ $as }}>@endif

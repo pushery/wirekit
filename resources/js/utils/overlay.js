@@ -8,6 +8,7 @@ import { createFocusTrap } from './focus-trap.js';
 import { createDiscardGuard } from './discard-guard.js';
 import { isComposing } from './ime.js';
 import { watchCurrent } from './watch-current.js';
+import { sameName } from './same-name.js';
 
 /**
  * Global scroll lock reference counter.
@@ -69,7 +70,7 @@ export function isTopmostOverlay(token) {
  * @returns {boolean}
  */
 export function isNamedOverlayOpen(showEvent, name) {
-    return name !== '' && overlayStack.some((token) => token.showEvent === showEvent && token.name === name);
+    return name !== '' && overlayStack.some((token) => token.showEvent === showEvent && sameName(name, token.name));
 }
 
 /**
@@ -218,7 +219,7 @@ const pageInertKeptElements = new Map();
 // What stays reachable behind a page-level modal overlay: the overlays, the toasts, and the status
 // region a busy control speaks through (utils/busy-announcer.js), so a wait started in a dialog is
 // still heard.
-const PAGE_INERT_KEEP = '#wk-overlay-root, [data-wk-toast-region], [data-wk-busy-announcer]';
+const PAGE_INERT_KEEP = '#wk-overlay-root, [data-wk-toast-region], [data-wk-busy-announcer], [data-wk-alert-announcer]';
 
 // Elements that render nothing a reader can reach; an attribute on them would change nothing.
 const PAGE_INERT_SKIP = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'LINK', 'META', 'NOSCRIPT']);
@@ -650,13 +651,13 @@ export function createOverlay({
 
             // Store named handler references so they can be removed on cleanup
             this._showHandler = (e) => {
-                if (e.detail?.name === name) {
+                if (sameName(e.detail?.name, name)) {
                     this.show(triggerOfShow);
                 }
             };
 
             this._closeHandler = (e) => {
-                if (e.detail?.name === name) {
+                if (sameName(e.detail?.name, name)) {
                     this.close();
                 }
             };

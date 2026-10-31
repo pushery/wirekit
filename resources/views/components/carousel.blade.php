@@ -32,8 +32,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $autoplay = BooleanProp::from($autoplay, false);
-    $loop = BooleanProp::from($loop, true);
+    $autoplay = BooleanProp::from($autoplay, false, 'carousel', 'autoplay');
+    $loop = BooleanProp::from($loop, true, 'carousel', 'loop');
 
     $orientationValue = match ($orientation) {
         'horizontal', 'vertical' => $orientation,
@@ -45,7 +45,7 @@
     // viewport tall, so there is no second slot to share.
     $perViewValue = $isVertical
         ? '1'
-        : WireKit::validateProp('carousel', 'perView', (string) $perView, ['1', '2', '3', '4']);
+        : WireKit::validateProp('carousel', 'perView', \Pushery\WireKit\Support\NumericProp::text($perView), ['1', '2', '3', '4']);
 
     // How many slides share the view is the PARENT's business, but the width lands
     // on each SLIDE. The bridge is the data attribute below plus a rule in
@@ -71,7 +71,7 @@
     // utility — see dist/wirekit.css.
     $viewportClasses = implode(' ', [
         'wk-carousel-viewport',
-        'flex',
+        'relative flex',
         'overflow-hidden',
         'rounded-[var(--radius-wk-lg)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -137,7 +137,7 @@
 <div
     x-data="wirekitCarousel({
         autoplay: {{ $autoplay ? 'true' : 'false' }},
-        interval: {{ (int) $interval }},
+        interval: {{ \Pushery\WireKit\Support\NumericProp::int($interval, 0, 'carousel', 'interval') }},
         loop: {{ $loop ? 'true' : 'false' }},
         vertical: {{ $isVertical ? 'true' : 'false' }},
         announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($announcementTemplate) }}
@@ -152,11 +152,11 @@
          carousels on one page can carry names that tell them apart. --}}
     @unless($attributes->has('role')) role="region" @endunless
     aria-roledescription="{{ __('wirekit::carousel') }}"
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless
     data-wk-carousel
     data-wk-carousel-orientation="{{ $orientationValue }}"
     data-wk-carousel-per-view="{{ $perViewValue }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- Slide stage: the scroll region plus the prev/next arrows. It is `relative`
          so the arrows center on the SLIDES, not on the whole component — the dots
@@ -195,7 +195,7 @@
         x-on:keydown="onViewportKey($event)"
         tabindex="0"
         role="group"
-        aria-label="{{ __('wirekit:::label slides', ['label' => $label]) }}"
+        aria-label="{{ __('wirekit:::label slides', ['label' => \Pushery\WireKit\Support\SlotContent::textOf($label)]) }}"
         data-wk-carousel-viewport
         data-wk-carousel-per-view="{{ $perViewValue }}"
         class="{{ $viewportClasses }}"

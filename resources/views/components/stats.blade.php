@@ -18,6 +18,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('stats', $attributes->getAttributes());
 
+    // No `cols`, or one of these. An unknown one is reported (Support\StrictnessGate) and leaves
+    // the grid to fit its stats, as no `cols` does, rather than taking the first of the list. Read
+    // as text, so a bound `:cols="3"`, which arrives as a number, picks its column count.
+    $cols = filled($cols) ? \Pushery\WireKit\Support\NumericProp::text($cols) : null;
+    if ($cols !== null && \Pushery\WireKit\WireKit::validateProp('stats', 'cols', $cols, ['2', '3', '4', '5']) !== $cols) {
+        $cols = null;
+    }
+
     // Stats grid: responsive columns for <x-wirekit::stat> children.
     // Default: auto-fit grid (each stat ≥ 200px). Override with cols prop.
     $colClasses = match ($cols) {
@@ -61,7 +69,7 @@
 
 {{-- Stats grid: wraps multiple <x-wirekit::stat> children in a responsive grid --}}
 <div
-    {{ $attributes->except('style')->class([$classes, $colClasses]) }}
+    {{ $attributes->except('style')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $colClasses])) }}
     @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >
     {{ $slot }}

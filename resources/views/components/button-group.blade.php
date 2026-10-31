@@ -43,10 +43,10 @@
      two different answers for the same question. --}}
 <div
     @unless($attributes->has('role')) role="group" @endunless
-    @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
+    @if($label) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless @endif
     data-wk-button-group
     data-orientation="{{ $orientationValue }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

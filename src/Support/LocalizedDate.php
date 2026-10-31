@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use IntlCalendar;
 use IntlDateFormatter;
 use IntlDatePatternGenerator;
+use IntlTimeZone;
 
 /**
  * A date whose ORDER follows the locale, not only its words.
@@ -51,11 +54,12 @@ final class LocalizedDate
         ?string $locale = null,
         ?bool $intlAvailable = null,
     ): string {
-        $locale ??= app()->getLocale();
-        $intlAvailable ??= class_exists(IntlDatePatternGenerator::class) && class_exists(IntlDateFormatter::class);
+        $locale = IcuLocale::usable($locale);
+        $intlAvailable ??= class_exists(IntlDatePatternGenerator::class) && class_exists(IntlDateFormatter::class) && class_exists(IntlTimeZone::class);
 
         if (! $intlAvailable) {
-            return $date->translatedFormat($fallbackFormat);
+            // A copy carries the locale, so the caller's date keeps its own.
+            return CarbonImmutable::instance($date)->locale(str_replace('-', '_', $locale))->translatedFormat($fallbackFormat);
         }
 
         $pattern = (new IntlDatePatternGenerator($locale))->getBestPattern($skeleton);
@@ -64,7 +68,7 @@ final class LocalizedDate
             $locale,
             IntlDateFormatter::NONE,
             IntlDateFormatter::NONE,
-            $date->getTimezone()->getName(),
+            self::zoneOf($date),
         );
         $formatter->setPattern($pattern);
 
@@ -74,5 +78,45 @@ final class LocalizedDate
         // returning an empty string: a separator with no date is worse than an
         // English-ordered one, and it would be invisible in a green test run.
         return $formatted === false ? $date->translatedFormat($fallbackFormat) : $formatted;
+    }
+
+    /**
+     * The first day of the week in a locale, 0 for Sunday to 6 for Saturday, from the locale data
+     * ICU carries: Monday in German, Sunday in American English, Saturday in some Arabic locales.
+     * Without `ext-intl` it is Monday, the kit's own default.
+     *
+     * @param  bool|null  $intlAvailable  Test seam, as on bySkeleton().
+     */
+    public static function firstDayOfWeek(?string $locale = null, ?bool $intlAvailable = null): int
+    {
+        $locale = IcuLocale::usable($locale);
+        $intlAvailable ??= class_exists(IntlCalendar::class);
+
+        if (! $intlAvailable) {
+            return 1;
+        }
+
+        $first = IntlCalendar::createInstance(null, str_replace('-', '_', $locale))?->getFirstDayOfWeek();
+
+        // ICU counts Sunday as 1 and Saturday as 7.
+        return is_int($first) && $first >= 1 && $first <= 7 ? $first - 1 : 1;
+    }
+
+    /**
+     * The zone ICU writes `$date` in.
+     *
+     * ICU knows a zone by its identifier, such as `Europe/Berlin` or `UTC`. A date read from a
+     * Unix timestamp or from a string that names an offset or an abbreviation keeps that in PHP
+     * (`+00:00`, `+02:00`, `Z`, `CEST`), and ICU refuses each of them with an exception. Such a
+     * date is written in the offset it has at this instant, which is the same wall-clock time.
+     */
+    private static function zoneOf(CarbonInterface $date): string
+    {
+        $name = $date->getTimezone()->getName();
+        $known = IntlTimeZone::createTimeZone($name);
+
+        return $known === null || $known->getID() === IntlTimeZone::getUnknown()->getID()
+            ? 'GMT'.$date->format('P')
+            : $name;
     }
 }

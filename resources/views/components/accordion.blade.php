@@ -47,17 +47,21 @@
     use Pushery\WireKit\WireKit;
 
     // `findable="false"` on an unbound tag is the string "false", which is truthy.
-    $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true));
-    $animate = BooleanProp::from($animate, config('wirekit.components.accordion.animate', true));
+    $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true), 'accordion', 'findable');
+    $animate = BooleanProp::from($animate, config('wirekit.components.accordion.animate', true), 'accordion', 'animate');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('accordion', $attributes->getAttributes());
 
+    // An unknown `variant` is reported (Support\StrictnessGate) and renders as `bordered`; a bound
+    // `null` or empty string is `bordered` without a word.
+    $variant = \Pushery\WireKit\WireKit::validateProp('accordion', 'variant', \Pushery\WireKit\Support\NumericProp::text($variant ?: 'bordered'), ['bordered', 'flush', 'separated']);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
-    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown']);
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:keydown', 'x-on:hashchange.window']);
 
     // Accordion container — visually a vertically stacked list with dividers.
     // `mode` controls whether multiple panels can be open at once:
@@ -73,7 +77,6 @@
     // Container classes are variant-driven. `bordered` keeps the original card
     // look; `flush` strips the chrome to just row dividers; `separated` turns
     // the container into a gapped stack and lets each item own its card chrome.
-    $variant = in_array($variant, ['bordered', 'flush', 'separated'], true) ? $variant : 'bordered';
     $containerClasses = match ($variant) {
         'flush' => implode(' ', [
             'divide-y-[length:var(--border-wk-width)]',
@@ -142,6 +145,9 @@
          the DOM on every press, so an item added or removed between two presses
          cannot leave focus pointing into a list that no longer exists. --}}
     x-on:keydown="handleKeydown($event)"
+    {{-- A link to an item, or to an element inside one, opens it: on start (the component's
+         init) and whenever the address changes on the page. --}}
+    x-on:hashchange.window="openForFragment()"
     data-wk-accordion-mode="{{ $mode }}"
     {{-- WAI-ARIA 1.2 forbids author naming on an element with an implicit
          role="generic": a bare <div> carrying aria-label is not reliably exposed
@@ -154,7 +160,7 @@
     @if((\Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label') ?? $attributes->get('aria-labelledby')) !== null)
         role="group"
     @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

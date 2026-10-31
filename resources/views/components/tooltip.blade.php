@@ -16,7 +16,10 @@
     'focusableTrigger' => null,
     // `false` when the tooltip text is ALSO the trigger's accessible name, as on an icon-only
     // control named by its tooltip. Describing a control with its own name makes a screen
-    // reader say it twice ("Fast mode, button, Fast mode"), so the pairing is left out.
+    // reader say it twice ("Fast mode, button, Fast mode"), so the pairing is left out. Where
+    // that name is in the slot, as its words or its `aria-label`, the component leaves the
+    // pairing out by itself; this is for a name it cannot read there, such as one given through
+    // `aria-labelledby` or bound by Alpine.
     'describes' => true,
     // Switch the tooltip off without removing it. A tooltip on a control that
     // has become inert — a collapsed sidebar item, a disabled action — has to be
@@ -34,6 +37,11 @@
     // the page color as the text, so it stands out on either theme. `elevated` takes the surface
     // menus and popovers use: the elevated background, the body text and the theme's border.
     'surface' => 'inverted',
+    // A keyboard shortcut drawn after the text, as the `kbd` component draws its `shortcut`: ⌘ S
+    // on a Mac and Ctrl S elsewhere, named in the reader's language. Unset, the tooltip draws the
+    // shortcut the control in its slot carries in `x-wk-shortcut`; `false` draws none. A
+    // single-key shortcut is drawn only while single keys work.
+    'shortcut' => null,
     'scope' => null,
     // What the host AND the trigger wrapper root in. `div` is the default; `as="span"` is
     // what makes this component usable inside a
@@ -62,15 +70,16 @@
     use Pushery\WireKit\WireKit;
 
     // `describes="false"` on an unbound tag is the string "false", which is truthy.
-    $describes = BooleanProp::from($describes, true);
+    $describes = BooleanProp::from($describes, true, 'tooltip', 'describes');
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $disabled = BooleanProp::from($disabled, false, 'tooltip', 'disabled');
+    // Switched off, the tooltip has nothing to show on focus, so it makes no stop of its own.
     $focusableTrigger = $focusableTrigger === null
-        ? ! \Pushery\WireKit\Support\SlotControl::reachable((string) $slot)
-        : BooleanProp::from($focusableTrigger, true);
-    $disabled = BooleanProp::from($disabled, false);
+        ? ! $disabled && ! \Pushery\WireKit\Support\SlotControl::holdsFocus((string) $slot)
+        : BooleanProp::from($focusableTrigger, true, 'tooltip', 'focusableTrigger');
     $surface = WireKit::validateProp('tooltip', 'surface', (string) $surface, ['inverted', 'elevated']);
 
     // `$as` is interpolated into two opening tags below, and Blade's escaping does not make
@@ -83,6 +92,11 @@
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('tooltip', $attributes->getAttributes());
+
+    // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
+    // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
+    // No placement at all, `null` or empty, is the default, as the script reads it.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('tooltip', 'placement', (string) ($placement ?: 'top'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'top');
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -99,22 +113,66 @@
     // toggletip does. A button takes its name from its words; around an icon alone it has none, so
     // the tooltip's own text names it, and the description is left off so it is not read twice. A
     // name of the caller's comes first (Support\CallerName). Around a disabled control, which a
-    // tooltip often explains, the button says it is unavailable, as the control is. A stop the
-    // caller forced around a control the keyboard already reaches gets no role: it would nest one
-    // control in another.
+    // tooltip often explains, the button says it is unavailable, as the control is. A slot that takes
+    // the focus itself, by the Tab key or by the arrow keys of its group, as a toolbar's buttons do,
+    // gets no stop of its own (Support\SlotControl::holdsFocus()), and a stop the caller forces
+    // around it gets no role: it would nest one control in another.
     $triggerName = new \Illuminate\Support\HtmlString('');
-    $triggerDescribes = $describes;
+    // A tooltip switched off describes nothing: a reader would hear a tip nobody sees. A switch
+    // bound at the call site is followed by the script instead.
+    $triggerDescribes = $describes && ! $disabled;
+    $triggerWords = null;
     $slotHtml = (string) $slot;
-    $triggerIsButton = $focusableTrigger && ! \Pushery\WireKit\Support\SlotControl::reachable($slotHtml);
+    // A content slot that holds nothing but Livewire's markers is none, and the text stands.
+    $hasContent = \Pushery\WireKit\Support\SlotContent::given($content ?? null);
+    $triggerIsButton = $focusableTrigger && ! \Pushery\WireKit\Support\SlotControl::holdsFocus($slotHtml);
     $triggerExplainsDisabled = $triggerIsButton && preg_match('/<(?:button|input|select|textarea)\b|<a\b[^>]*\shref=/i', $slotHtml) === 1;
     if ($triggerIsButton) {
         [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
         $slotText = trim(html_entity_decode(strip_tags((string) preg_replace('/<(\w+)\b[^>]*\saria-hidden="true"[^>]*>.*?<\/\1>/s', '', $slotHtml)), ENT_QUOTES | ENT_HTML5));
         $slotNamesItself = $slotText !== '' || preg_match('/\s(aria-label|aria-labelledby|alt)="[^"]+"/', $slotHtml) === 1;
-        $tipText = isset($content) ? trim(strip_tags((string) $content)) : trim((string) $text);
+        $tipText = $hasContent ? \Pushery\WireKit\Support\SlotContent::plain($content) : \Pushery\WireKit\Support\SlotContent::textOf($text);
         $ownName = ! $slotNamesItself && $tipText !== '' ? $tipText : null;
         $triggerName = \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel, $ownName);
         if ($callerLabelledBy === null && $callerLabel === null && $ownName !== null) {
+            $triggerDescribes = false;
+        }
+        // The words the stop is named by, where they are in the markup here.
+        if ($callerLabelledBy === null) {
+            $triggerWords = $callerLabel ?? ($slotText !== '' ? $slotText : null);
+        }
+    }
+
+    // The shortcut drawn after the text: the caller's, or the one the control in the slot binds.
+    $tipShortcut = null;
+
+    if ($shortcut !== false && $shortcut !== 'false') {
+        $tipShortcut = is_string($shortcut) && trim($shortcut) !== ''
+            ? trim($shortcut)
+            : (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/', $slotHtml, $bound) === 1 ? html_entity_decode($bound[1], ENT_QUOTES | ENT_HTML5) : null);
+    }
+
+    $tipShortcutKeys = \Pushery\WireKit\Support\KeyShortcuts::display($tipShortcut);
+
+    // A shortcut the caller names that the grammar does not read is reported, and the panel draws no
+    // keys. One read from the control in the slot is reported by the script that binds it.
+    if (is_string($shortcut) && trim($shortcut) !== '' && $shortcut !== 'false' && $tipShortcutKeys === null) {
+        \Pushery\WireKit\Support\StrictnessGate::reject('tooltip', 'shortcut', trim($shortcut), \Pushery\WireKit\Support\KeyShortcuts::EXPECTED, '');
+    }
+
+    // A text the trigger cuts and marks, as a badge with `truncate` marks its label, leads the panel
+    // with its words while it is cut. The panel holds a place for them only when the slot has one.
+    $tipCutLead = preg_match('/\sdata-wk-tooltip-cut(?=[\s=>\/])/', $slotHtml) === 1;
+
+    // A trigger already named by the tooltip's words would hear them again as its description
+    // ("Bold, button, Bold"): the control in the slot, which the script hands the description to,
+    // or the stop this component makes of the trigger. The pairing is left out then, as `describes`
+    // leaves it out. A shortcut drawn after the words says more than the name, and keeps it.
+    if ($triggerDescribes && $tipShortcutKeys === null) {
+        $triggerWords ??= $focusableTrigger ? null : \Pushery\WireKit\Support\SlotControl::name($slotHtml);
+        $tipWords = $hasContent ? \Pushery\WireKit\Support\SlotContent::plain($content) : \Pushery\WireKit\Support\SlotContent::textOf($text);
+
+        if ($triggerWords !== null && $tipWords !== '' && mb_strtolower(\Illuminate\Support\Str::squish($triggerWords)) === mb_strtolower(\Illuminate\Support\Str::squish($tipWords))) {
             $triggerDescribes = false;
         }
     }
@@ -160,9 +218,9 @@
     @if($surface === 'elevated') data-wk-tooltip-surface="elevated" @endif
     x-data="wirekitTooltip({
         placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }},
-        offset: {{ (int) $offset }},
-        delayShow: {{ (int) $delayShow }},
-        delayHide: {{ (int) $delayHide }}
+        offset: {{ \Pushery\WireKit\Support\NumericProp::int($offset, 0, 'tooltip', 'offset') }},
+        delayShow: {{ \Pushery\WireKit\Support\NumericProp::int($delayShow, 0, 'tooltip', 'delayShow') }},
+        delayHide: {{ \Pushery\WireKit\Support\NumericProp::int($delayHide, 0, 'tooltip', 'delayHide') }}
     })"
     x-on:mouseenter="mouseenter()"
     x-on:mouseleave="mouseleave()"
@@ -187,9 +245,11 @@
          pending show as well as the open panel, and on a tooltip with nothing to
          dismiss it costs four no-op `clearTimeout` calls. --}}
     x-on:keydown.escape.window.capture="keydownEscape($event)"
-    {{ $attributes->class(['relative inline-block']) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['relative inline-block'])) }}
 >
-    {{-- Trigger element — linked to tooltip via aria-describedby --}}
+    {{-- Trigger element — linked to tooltip via aria-describedby. `data-wk-tooltip-trigger` is what
+         the stylesheet stands a control in the slot at the top of the trigger's line by, so the
+         trigger ends where the control ends. --}}
     {{-- The description sits on this WRAPPER, and a wrapper `<div>` is not what a reader
          lands on. With `focusable-trigger` the wrapper takes the tab stop and carries the
          name itself, which works. Without it — the documented shape for wrapping a caller's
@@ -200,7 +260,7 @@
          reader actually arrives, and leaves it here when there is none so the wrapper case
          is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
          markup — this template never sees the element it needs to annotate. --}}
-    <{{ $as }} data-wk-prose-skip x-ref="trigger" @if($triggerDescribes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @if($triggerIsButton) role="button" @if($triggerExplainsDisabled) aria-disabled="true" @endif {{ $triggerName }} x-on:keydown.enter="activate($event)" x-on:keydown.space="activate($event)" @endif class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
+    <{{ $as }} data-wk-prose-skip data-wk-tooltip-trigger x-ref="trigger" @if($triggerDescribes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @if($triggerIsButton) role="button" @if($triggerExplainsDisabled) aria-disabled="true" @endif {{ $triggerName }} x-on:keydown.enter="activate($event)" x-on:keydown.space="activate($event)" @endif class="rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" @endif>
         {{ $slot }}
     </{{ $as }}>
 
@@ -273,11 +333,25 @@
              the resolved classes so a project that restyles the panel keeps its edge there. --}}
         class="wk-tooltip-panel {{ $tooltipClasses }}"
     >
-        {{-- Rich content slot or plain text --}}
-        @if(isset($content))
+        {{-- The words of the cut text in the trigger, on a line of their own above the tooltip's,
+             written by the script while that text is cut and empty while it fits. A screen reader
+             reads them in the trigger already, so the description leaves them out. --}}
+        @if($tipCutLead)
+            <span data-wk-tooltip-cut-words class="block" aria-hidden="true"></span>
+        @endif
+        {{-- Rich content slot or plain text, and the shortcut after it: beside the text, and on a
+             line of its own under content, which is lines itself. A single-key shortcut goes with
+             its line while single keys are off. --}}
+        @if($hasContent)
             {{ $content }}
+            @if($tipShortcutKeys !== null)
+                <span class="block mt-[var(--space-wk-xs)]"@if($tipShortcutKeys['single']) data-wk-kbd-single=""@endif><x-wirekit::kbd :shortcut="$tipShortcut" size="sm" :scope="$scope" /></span>
+            @endif
         @else
             {{ $text }}
+            @if($tipShortcutKeys !== null)
+                <x-wirekit::kbd :shortcut="$tipShortcut" size="sm" class="ms-[var(--space-wk-sm)]" :scope="$scope" />
+            @endif
         @endif
     </div>
     </template>

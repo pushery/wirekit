@@ -48,9 +48,9 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $legend = BooleanProp::from($legend, false);
-    $showStatus = BooleanProp::from($showStatus, false);
-    $wrapMeta = BooleanProp::from($wrapMeta, false);
+    $legend = BooleanProp::from($legend, false, 'status-tiles', 'legend');
+    $showStatus = BooleanProp::from($showStatus, false, 'status-tiles', 'showStatus');
+    $wrapMeta = BooleanProp::from($wrapMeta, false, 'status-tiles', 'wrapMeta');
 
     // One variable rather than the same ternary twice: the two render branches
     // below are copies of each other, and a fix applied to one of them is the
@@ -127,8 +127,9 @@
     // tally each intent for the legend.
     $tiles = [];
     $counts = array_fill_keys($intents, 0);
-    foreach (\Pushery\WireKit\Support\ListProp::from($items) as $item) {
-        $intent = in_array($item['intent'] ?? 'neutral', $intents, true) ? $item['intent'] : 'neutral';
+    foreach (\Pushery\WireKit\Support\ListProp::from($items, 'status-tiles', 'items') as $item) {
+        // A tile without an intent, or with one outside the list, is neutral.
+        $intent = in_array($item['intent'] ?? null, $intents, true) ? $item['intent'] : 'neutral';
         // Tiles come from a database, and a target that could run script draws as a tile
         // without a link, the same as a tile that never had one.
         // Compared with '' rather than tested for truth: `0` is a relative URL.
@@ -173,7 +174,7 @@
     $wrapperClasses = WireKit::resolveClasses('status-tiles', 'base', 'flex flex-col gap-[var(--gap-wk-md)]', $scope);
 @endphp
 
-<div {{ $outerAttributes }} {{ $attributes->only('class')->class([$wrapperClasses]) }} data-wk-sr-host>
+<div {{ $outerAttributes }} {{ $attributes->only('class')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }} data-wk-sr-host>
     @if($legend && count($tiles) > 0)
         {{-- Legend: intent word + count + shaped icon (never color alone). --}}
         <div class="flex flex-wrap gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-xs)]">
@@ -197,11 +198,11 @@
              The container keeps the centering and padding either way, so a slot holding an
              `<x-wirekit::empty-state>` lands where the sentence does. --}}
         <div {{ $attributes->except('class')->class(['flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
-            @isset($empty)
+            @if(\Pushery\WireKit\Support\SlotContent::given($empty ?? null))
                 {{ $empty }}
             @else
                 <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
-            @endisset
+            @endif
         </div>
     @else
         <x-wirekit::grid role="list" :cols="$columns" :gap="$gap" {{ $attributes->except('class') }}>

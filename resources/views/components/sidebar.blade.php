@@ -138,12 +138,23 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar', $attributes->getAttributes());
 
+    // The sidebar holds parts with Alpine roots of their own (`sidebar.collapsible`, the collapse
+    // toggle): its root is the boundary above which a caller's `x-ref` on them is filed.
+    $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes, holdsParts: true);
+
+    // An unknown value of one of these props is reported (Support\StrictnessGate) and renders as
+    // the default; a bound `null` or empty string is the default without a word.
+    $mode = \Pushery\WireKit\WireKit::validateProp('sidebar', 'mode', \Pushery\WireKit\Support\NumericProp::text($mode ?: 'navigation'), ['navigation', 'selection']);
+    $variant = \Pushery\WireKit\WireKit::validateProp('sidebar', 'variant', \Pushery\WireKit\Support\NumericProp::text($variant ?: 'card'), ['card', 'flush']);
+    $toggle = \Pushery\WireKit\WireKit::validateProp('sidebar', 'toggle', \Pushery\WireKit\Support\NumericProp::text($toggle ?: 'end'), ['end', 'start', 'none']);
+    $side = \Pushery\WireKit\WireKit::validateProp('sidebar', 'side', \Pushery\WireKit\Support\NumericProp::text($side ?: 'start'), ['start', 'end']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $collapsible = BooleanProp::from($collapsible, false);
-    $zoneInset = BooleanProp::from($zoneInset, true);
-    $trackCurrent = BooleanProp::from($trackCurrent, false);
+    $collapsible = BooleanProp::from($collapsible, false, 'sidebar', 'collapsible');
+    $zoneInset = BooleanProp::from($zoneInset, true, 'sidebar', 'zoneInset');
+    $trackCurrent = BooleanProp::from($trackCurrent, false, 'sidebar', 'trackCurrent');
 
     $persistDriver = WireKit::validateProp('sidebar', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
@@ -162,8 +173,8 @@
 
     // The seeding above only fires when the store HAS something. Where it does not, this is the
     // answer.
-    $defaultCollapsed = BooleanProp::from($defaultCollapsed, false);
-    $collapsed = BooleanProp::from($collapsed, $defaultCollapsed);
+    $defaultCollapsed = BooleanProp::from($defaultCollapsed, false, 'sidebar', 'defaultCollapsed');
+    $collapsed = BooleanProp::from($collapsed, $defaultCollapsed, 'sidebar', 'collapsed');
 
     // Landmark accessible name. Only emit our default `aria-label` when the
     // developer supplied NEITHER aria-label NOR aria-labelledby directly on the
@@ -173,7 +184,7 @@
     // attribute (id, data-*) intact instead of dropping it.
     $navLabelAttrs = ($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
         ? []
-        : ['aria-label' => $label];
+        : ['aria-label' => $label !== null ? \Pushery\WireKit\Support\SlotContent::textOf($label) : null];
 
     // MERGED into the bag rather than written as a conditional attribute on the tag.
     // `<nav @if(…) data-wk-tone=… @endif {{ $attributes }}>` leaves the spaces around the
@@ -198,7 +209,6 @@
     // and the label text. With asymmetric `px-x-sm py-y-sm` (0.625rem
     // horizontal, 0.375rem vertical) the outer gap would look 67% larger
     // than the inner — visually unbalanced.
-    $variant = in_array($variant, ['card', 'flush'], true) ? $variant : 'card';
 
     // NO `accent` here, and the omission is deliberate rather than an oversight.
     //
@@ -290,10 +300,6 @@
         ...$surface,
     ]), $scope);
 
-    $toggle = in_array($toggle, ['start', 'end', 'none'], true) ? $toggle : 'end';
-
-    $mode = in_array($mode, ['navigation', 'selection'], true) ? $mode : 'navigation';
-
     // Selection mode and the collapse-to-icon rail do not compose, and the refusal is
     // explicit rather than a half-working hybrid. A collapsed rail hides every label, and
     // a listbox whose options have no visible names is a control nobody can use — while
@@ -315,11 +321,16 @@
     // in the component would be a CSS rule against `> button:first-child` — a selector
     // that depends on the vendor's child order and breaks the moment anything is
     // rendered before it.
+    // Where the control stands in the column, on the tooltip around it: the tooltip's root is
+    // the column's child, and placement written on the button inside it reached nothing, so the
+    // button stood at the start in both states, a few pixels off the item icons. Expanded it
+    // lines up with the icons at the inline start, collapsed it centers in the rail as they do.
+    // Inside the footer band the band places it, and these say nothing.
+    $collapsePlacementClasses = \Pushery\WireKit\Support\SlotContent::given($footer ?? null)
+        ? ''
+        : 'self-start group-data-[collapsed]/wk-sidebar:self-center';
+
     $collapseBtnClasses = WireKit::resolveClasses('sidebar', 'toggle', implode(' ', [
-        // Column-scoped placement, and only while the button IS a column child. Inside the
-        // footer band these three say nothing, and `mt-auto` would fight the band's own
-        // vertical centering.
-        isset($footer) ? '' : ($toggle === 'start' ? 'self-start' : 'self-end'),
         // BOTTOM of the column, and never touching the row above it.
         //
         // The documentation tells the reader to click "the chevron toggle at the bottom of
@@ -346,9 +357,11 @@
         // This note does not spell the combined utility: Tailwind scans this file as text, so
         // an example class written in prose becomes a real rule in the compiled sheet with
         // nothing in the markup behind it.
-        isset($footer) ? '' : 'mt-[var(--space-wk-nav-gap)]',
+        \Pushery\WireKit\Support\SlotContent::given($footer ?? null) ? '' : 'mt-[var(--space-wk-nav-gap)]',
         'inline-flex items-center justify-center shrink-0',
-        'p-1 rounded-[var(--radius-wk-sm)]',
+        // The row's own inset across, so the glyph stands in the column of the item icons, in
+        // the footer band as in the column.
+        'py-1 px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-active)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -360,8 +373,6 @@
         // assembled here in PHP, which Tailwind never sees, and they would resolve against
         // the tooltip wrapper beside the button rather than against the band.
         '',
-        // In the collapsed rail the button centers with the icons.
-        isset($footer) ? '' : 'group-data-[collapsed]/wk-sidebar:self-center',
     ]), $scope);
 
     // Three zones — fixed head, scrolling middle, fixed foot — but ONLY when a
@@ -374,8 +385,8 @@
     // foot are pushed out of view and scroll away with the list instead of staying
     // put. The bug looks like the scroll region is missing when in fact it is the
     // whole column that scrolled.
-    $hasZones = isset($header) || isset($footer);
-    $scrollShadows = BooleanProp::from($scrollShadows, true);
+    $hasZones = \Pushery\WireKit\Support\SlotContent::given($header ?? null) || \Pushery\WireKit\Support\SlotContent::given($footer ?? null);
+    $scrollShadows = BooleanProp::from($scrollShadows, true, 'sidebar', 'scrollShadows');
 @endphp
 
 @if(isset($collapsibleSelectionWarning))
@@ -410,7 +421,7 @@
         x-on:keydown.end.prevent="moveToLast()"
         x-on:keydown.enter.prevent="selectActive()"
         x-on:keydown.space.prevent="selectActive()"
-        {{ $attributes->class([$classes, 'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'])->merge($navLabelAttrs) }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]']))->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
     </div>
@@ -473,7 +484,7 @@
              browser, so this static class is the SEED rather than the memory — the nonced
              script emitted after this column reconciles the two before the first paint, so an
              open column never shows collapsed first. --}}
-        {{ $attributes->class([$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]']))->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
         {{-- Without a footer zone the control is still the column's last row. With one it
@@ -481,7 +492,7 @@
              the column's width would otherwise spend a whole navigation row on itself, the
              most expensive way to present the least important thing in the column. The app
              rail places its expander the same way. --}}
-        @if($toggle !== 'none' && ! isset($footer))
+        @if($toggle !== 'none' && ! \Pushery\WireKit\Support\SlotContent::given($footer ?? null))
             {{-- The wrapper claims the leftover height, the padding holds the distance. Two
                  elements because the two jobs are the same CSS property on one — see the note
                  in the class list above. The wrapper paints nothing, so the gap between the
@@ -511,7 +522,7 @@
 @else
     {{-- <nav> carries a default aria-label so AT distinguishes it from the main
          nav; a developer-supplied aria-label / aria-labelledby / `label` prop overrides it. --}}
-    <nav {{ $attributes->class([$classes])->merge($navLabelAttrs) }}>
+    <nav {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes]))->merge($navLabelAttrs) }}>
         @include('wirekit::components.partials.sidebar-zones')
     </nav>
 @endif

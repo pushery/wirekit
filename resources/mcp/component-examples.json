@@ -17,6 +17,10 @@
         {
             "title": "Action Bar (static mode)",
             "code": "<x-wirekit::action-bar mode=\"static\" :visible=\"true\">\n    3 items selected\n    <x-wirekit::button size=\"sm\">Archive</x-wirekit::button>\n    <x-wirekit::button size=\"sm\" intent=\"danger\">Delete</x-wirekit::button>\n</x-wirekit::action-bar>"
+        },
+        {
+            "title": "The count in the summary slot",
+            "code": "<x-wirekit::action-bar mode=\"static\" :visible=\"true\">\n    <x-slot:summary>3 selected</x-slot:summary>\n\n    <x-wirekit::button size=\"sm\">Archive</x-wirekit::button>\n    <x-wirekit::button size=\"sm\" intent=\"danger\">Delete</x-wirekit::button>\n</x-wirekit::action-bar>"
         }
     ],
     "activity-row": [
@@ -269,6 +273,12 @@
             "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"chevron\" />\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"slash\" />\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"arrow\" />\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"dot\" />\n</x-wirekit::stack>"
         }
     ],
+    "bulk-selection": [
+        {
+            "title": "The whole page selected, every match on offer",
+            "code": "<x-wirekit::bulk-selection :total=\"1284\">\n    <x-wirekit::table>\n        <x-wirekit::table.head>\n            <x-wirekit::table.row>\n                <x-wirekit::table.th><x-wirekit::bulk-selection.toggle /></x-wirekit::table.th>\n                <x-wirekit::table.th>Product</x-wirekit::table.th>\n                <x-wirekit::table.th>Status</x-wirekit::table.th>\n            </x-wirekit::table.row>\n        </x-wirekit::table.head>\n        <x-wirekit::table.body>\n            <x-wirekit::table.row>\n                <x-wirekit::table.td><x-wirekit::checkbox label=\"Select Trail runner\" hide-label value=\"1\" /></x-wirekit::table.td>\n                <x-wirekit::table.td>Trail runner</x-wirekit::table.td>\n                <x-wirekit::table.td>Active</x-wirekit::table.td>\n            </x-wirekit::table.row>\n            <x-wirekit::table.row>\n                <x-wirekit::table.td><x-wirekit::checkbox label=\"Select Rain shell\" hide-label value=\"2\" /></x-wirekit::table.td>\n                <x-wirekit::table.td>Rain shell</x-wirekit::table.td>\n                <x-wirekit::table.td>Draft</x-wirekit::table.td>\n            </x-wirekit::table.row>\n            <x-wirekit::table.row>\n                <x-wirekit::table.td><x-wirekit::checkbox label=\"Select Wool socks\" hide-label value=\"3\" /></x-wirekit::table.td>\n                <x-wirekit::table.td>Wool socks</x-wirekit::table.td>\n                <x-wirekit::table.td>Active</x-wirekit::table.td>\n            </x-wirekit::table.row>\n            <x-wirekit::table.row>\n                <x-wirekit::table.td><x-wirekit::checkbox label=\"Select Day pack\" hide-label value=\"4\" /></x-wirekit::table.td>\n                <x-wirekit::table.td>Day pack</x-wirekit::table.td>\n                <x-wirekit::table.td>Archived</x-wirekit::table.td>\n            </x-wirekit::table.row>\n        </x-wirekit::table.body>\n    </x-wirekit::table>\n</x-wirekit::bulk-selection>"
+        }
+    ],
     "button-group": [
         {
             "title": "Attached actions",
@@ -321,8 +331,8 @@
             "code": "<x-wirekit::callout>\n    <x-slot:title>Heads up</x-slot:title>\n    This action cannot be undone. Make sure you have a backup before proceeding.\n</x-wirekit::callout>"
         },
         {
-            "title": "Info callout",
-            "code": "<x-wirekit::callout intent=\"info\">\n    <x-slot:title>New feature</x-slot:title>\n    We've added dark mode support. Toggle it from your account settings.\n</x-wirekit::callout>"
+            "title": "Callout with a title on level 2",
+            "code": "<x-wirekit::callout title=\"Sizes\" :level=\"2\">\n    Measure a garment you own and compare it with the table below.\n</x-wirekit::callout>"
         }
     ],
     "card-stack": [
@@ -338,11 +348,11 @@
         },
         {
             "title": "Card with header, body, and footer",
-            "code": "<x-wirekit::card class=\"max-w-md\">\n    <x-wirekit::card.header>Project Settings</x-wirekit::card.header>\n    <x-wirekit::card.body>\n        Manage your project configuration, team members, and integrations.\n    </x-wirekit::card.body>\n    <x-wirekit::card.footer>\n        <x-wirekit::button size=\"sm\">Save</x-wirekit::button>\n    </x-wirekit::card.footer>\n</x-wirekit::card>"
+            "code": "<x-wirekit::card class=\"max-w-md\">\n    <x-wirekit::card.header><x-wirekit::heading level=\"2\" size=\"lg\">Project Settings</x-wirekit::heading></x-wirekit::card.header>\n    <x-wirekit::card.body>\n        Manage your project configuration, team members, and integrations.\n    </x-wirekit::card.body>\n    <x-wirekit::card.footer>\n        <x-wirekit::button size=\"sm\">Save</x-wirekit::button>\n    </x-wirekit::card.footer>\n</x-wirekit::card>"
         },
         {
-            "title": "Edge-to-edge body",
-            "code": "<x-wirekit::row gap=\"md\" wrap>\n    <x-wirekit::card surface=\"elevated\" style=\"width: 15rem; max-width: 100%\">\n        <x-wirekit::card.body>\n            <x-wirekit::text intent=\"muted\" size=\"sm\">Default body — content sits inside the padding.</x-wirekit::text>\n        </x-wirekit::card.body>\n    </x-wirekit::card>\n    <x-wirekit::card surface=\"elevated\" style=\"width: 15rem; max-width: 100%\">\n        <x-wirekit::card.body :padded=\"false\">\n            <img src=\"/placeholder/240x88\" alt=\"\" width=\"240\" height=\"88\" style=\"width: 100%; height: auto; display: block\" />\n        </x-wirekit::card.body>\n        <x-wirekit::card.body>\n            <x-wirekit::text intent=\"muted\" size=\"sm\">A padded body holds the copy below the flush image.</x-wirekit::text>\n        </x-wirekit::card.body>\n    </x-wirekit::card>\n</x-wirekit::row>"
+            "title": "A card header with buttons and a sentence under the heading",
+            "code": "<x-wirekit::card class=\"max-w-xl\">\n    <x-wirekit::card.header description=\"Who can see the orders of this branch.\">\n        <x-wirekit::heading level=\"2\" size=\"lg\">Team</x-wirekit::heading>\n        <x-slot:actions>\n            <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"outline\">Export</x-wirekit::button>\n            <x-wirekit::button size=\"sm\">Invite</x-wirekit::button>\n        </x-slot:actions>\n    </x-wirekit::card.header>\n    <x-wirekit::card.body>\n        Three members, two of them admins.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
         }
     ],
     "carousel": [
@@ -411,8 +421,8 @@
             "code": "<x-wirekit::chart-mixed\n    :labels=\"['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']\"\n    :datasets=\"[\n        ['type' => 'bar', 'label' => 'Revenue (€K)', 'data' => [42, 48, 51, 78, 89, 104]],\n        ['type' => 'line',   'label' => 'Growth (%)',   'data' => [12, 14, 6, 53, 14, 17]],\n    ]\"\n    :options=\"[\n        'yaxis' => [\n            ['title' => ['text' => 'Revenue (€K)']],\n            ['opposite' => true, 'title' => ['text' => 'Growth (%)']],\n        ],\n    ]\"\n    aria-label=\"Revenue and growth on dual y-axes\"\n/>"
         },
         {
-            "title": "Sales pipeline: leads (bar) + qualified (area) + won (line)",
-            "code": "<x-wirekit::chart-mixed\n    :labels=\"['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']\"\n    :datasets=\"[\n        ['type' => 'bar', 'label' => 'Leads',     'data' => [120, 145, 180, 210, 260, 320]],\n        ['type' => 'area',   'label' => 'Qualified', 'data' => [42, 58, 78, 102, 138, 174]],\n        ['type' => 'line',   'label' => 'Won',       'data' => [8, 12, 18, 22, 28, 38]],\n    ]\"\n    aria-label=\"Sales pipeline mixed chart\"\n/>"
+            "title": "Returned units without decimals beside a rate with two",
+            "code": "<x-wirekit::chart-mixed\n    valueDecimals=\"2\"\n    :labels=\"['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']\"\n    :datasets=\"[\n        ['type' => 'bar', 'label' => 'Returned units', 'data' => [12, 18, 9, 22, 15, 11], 'decimals' => 0],\n        ['type' => 'line', 'label' => 'Return rate (%)', 'data' => [4.53, 5.1, 3.27, 6.84, 4.9, 3.66]],\n    ]\"\n    :options=\"[\n        'yaxis' => [\n            ['title' => ['text' => 'Returned units']],\n            ['opposite' => true, 'title' => ['text' => 'Return rate (%)']],\n        ],\n    ]\"\n    aria-label=\"Returned units and the return rate on dual y-axes\"\n/>"
         }
     ],
     "chart": [
@@ -516,7 +526,7 @@
         },
         {
             "title": "Trigger with an icon",
-            "code": "<x-wirekit::collapsible style=\"width: 24rem; max-width: 100%\">\n    <x-slot:trigger>\n        <x-wirekit::row gap=\"sm\" style=\"align-items: center;\">\n            <x-wirekit::icon name=\"filter\" size=\"sm\" />\n            <x-wirekit::text weight=\"medium\">Advanced options</x-wirekit::text>\n        </x-wirekit::row>\n    </x-slot:trigger>\n    <x-wirekit::stack gap=\"sm\">\n        <x-wirekit::checkbox name=\"opt-cache\" label=\"Enable response caching\" />\n        <x-wirekit::checkbox name=\"opt-minify\" label=\"Minify HTML output\" />\n    </x-wirekit::stack>\n</x-wirekit::collapsible>"
+            "code": "<x-wirekit::collapsible style=\"width: 24rem; max-width: 100%\">\n    <x-slot:trigger>\n        <x-wirekit::row as=\"span\" gap=\"sm\" style=\"align-items: center;\">\n            <x-wirekit::icon name=\"filter\" size=\"sm\" />\n            <x-wirekit::text as=\"span\" weight=\"medium\">Advanced options</x-wirekit::text>\n        </x-wirekit::row>\n    </x-slot:trigger>\n    <x-wirekit::stack gap=\"sm\">\n        <x-wirekit::checkbox name=\"opt-cache\" label=\"Enable response caching\" />\n        <x-wirekit::checkbox name=\"opt-minify\" label=\"Minify HTML output\" />\n    </x-wirekit::stack>\n</x-wirekit::collapsible>"
         }
     ],
     "color-picker": [
@@ -553,8 +563,8 @@
             "code": "{{-- The preview above is boxed into a fixed-height frame and opts out of\n     teleporting so it can render inside the page. Yours needs neither: the\n     defaults teleport the panel to the body and lock background scroll. --}}\n<x-wirekit::command-palette>\n    <x-wirekit::command-palette.group heading=\"Navigation\">\n        <x-wirekit::command-palette.item href=\"/dashboard\" icon=\"user\">Dashboard</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/projects\" icon=\"edit\">Projects</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n    <x-wirekit::command-palette.group heading=\"Settings\">\n        <x-wirekit::command-palette.item href=\"/settings/profile\" icon=\"user\">Profile</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item href=\"/settings/appearance\" icon=\"eye\">Appearance</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.group>\n</x-wirekit::command-palette>\n\n<x-wirekit::button intent=\"neutral\" surface=\"outline\"\n    @click=\"$dispatch('wirekit-command-palette-show')\">\n    Open Command Palette\n</x-wirekit::button>"
         },
         {
-            "title": "A remote search with a filter row, a loading state and an error state",
-            "code": "{{-- 1. The search lives in the factory registered below. The directives only\n        call its methods, so the same markup runs under Alpine's CSP build. --}}\n<div x-data=\"siteSearch\">\n    {{-- 2. The palette announces every keystroke (debounced) with the query event. --}}\n    <x-wirekit::command-palette x-on:wirekit-command-palette-query=\"search($event.detail.query)\">\n        {{-- 3. Render the answer as options. `href=\"#\"` makes each one a real link,\n                the binding sets where it goes, and a stable id keeps the highlight\n                on its row when the list re-renders. --}}\n        <template x-for=\"result in results\" :key=\"result.id\">\n            <x-wirekit::command-palette.item href=\"#\" x-bind:href=\"result.url\" x-bind:id=\"'search-' + result.id\">\n                <span x-text=\"result.title\"></span>\n            </x-wirekit::command-palette.item>\n        </template>\n\n        {{-- 4. The filter row, between the input and the list. --}}\n        <x-slot:filters>\n            <x-wirekit::segmented-control name=\"search-section\" aria-label=\"Search in\" size=\"sm\" value=\"all\"\n                :options=\"['all' => 'All', 'docs' => 'Docs', 'blueprints' => 'Blueprints']\"\n                x-on:input=\"narrow($event.target.value)\" />\n        </x-slot:filters>\n\n        {{-- 5. Plain text: the palette announces both through a region of its own. --}}\n        <x-slot:loading>Searching…</x-slot:loading>\n        <x-slot:error>The search is unavailable right now. Try again in a moment.</x-slot:error>\n\n        <x-slot:empty>\n            <x-wirekit::command-palette.empty>Nothing matches that search.</x-wirekit::command-palette.empty>\n        </x-slot:empty>\n    </x-wirekit::command-palette>\n</div>"
+            "title": "An entry that opens a page of statuses",
+            "code": "{{-- 1. An entry with `opens` names the page it shows. --}}\n<x-wirekit::command-palette name=\"bulk-actions\" label=\"Bulk actions\">\n    <x-wirekit::command-palette.item opens=\"status\">Set status…</x-wirekit::command-palette.item>\n    <x-wirekit::command-palette.item wire:click=\"export\">Export</x-wirekit::command-palette.item>\n\n    {{-- 2. The page holds entries like any other, each with your action on it. --}}\n    <x-wirekit::command-palette.page name=\"status\" heading=\"Set status\" placeholder=\"Search statuses…\">\n        <x-wirekit::command-palette.item wire:click=\"setStatus('active')\">Active</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item wire:click=\"setStatus('draft')\">Draft</x-wirekit::command-palette.item>\n        <x-wirekit::command-palette.item wire:click=\"setStatus('archived')\">Archived</x-wirekit::command-palette.item>\n    </x-wirekit::command-palette.page>\n\n    {{-- 3. Shown while a page's search matches nothing, as on the top level. --}}\n    <x-slot:empty>\n        <x-wirekit::command-palette.empty>Nothing matches that search.</x-wirekit::command-palette.empty>\n    </x-slot:empty>\n</x-wirekit::command-palette>"
         },
         {
             "title": "A search field that opens the palette",
@@ -681,6 +691,20 @@
         {
             "title": "Custom format",
             "code": "<x-wirekit::date-separator :date=\"now()\" format=\"d.m.Y\" />"
+        }
+    ],
+    "datetime-picker": [
+        {
+            "title": "Datetime picker",
+            "code": "<x-wirekit::datetime-picker name=\"meeting\" label=\"Meeting\" />"
+        },
+        {
+            "title": "With a value",
+            "code": "<x-wirekit::datetime-picker name=\"call\" label=\"Call\" value=\"2026-10-27T10:30\" />"
+        },
+        {
+            "title": "Picked, then confirmed",
+            "code": "<x-wirekit::datetime-picker name=\"launch\" label=\"Launch\" with-confirmation />"
         }
     ],
     "divider": [
@@ -1045,6 +1069,16 @@
             "code": "<x-wirekit::image-compare\n    ratio=\"16/9\"\n    class=\"max-w-[40rem]\"\n    before=\"/_assets/sample_1920x1080_0p.jpg\"\n    after=\"/_assets/sample_1280x720_80p.jpg\"\n    before-alt=\"Same photograph at 0% JPEG quality\"\n    after-alt=\"High quality photograph\"\n    before-label=\"Compressed\"\n    after-label=\"High Quality\"\n    :value=\"30\"\n    aria-label=\"Compare image quality with custom labels\"\n/>"
         }
     ],
+    "image-editor": [
+        {
+            "title": "A Crop Over a Room",
+            "code": "<x-wirekit::image-editor\n    src=\"/placeholder/1600x1000?bg=e2e8f0&fg=334155&label=Living+room&gradient=none\"\n    alt=\"A living room with a sofa, a floor lamp and a rug\"\n    width=\"1600\"\n    height=\"1000\"\n    :value=\"['x' => 10, 'y' => 15, 'w' => 60, 'h' => 70]\"\n/>"
+        },
+        {
+            "title": "A Phone's Crop of a Desktop Image",
+            "code": "<x-wirekit::image-editor\n    src=\"/placeholder/1600x1000?bg=fde68a&fg=78350f&label=Look&gradient=none\"\n    alt=\"A living room with a sofa, a floor lamp and a rug\"\n    width=\"1600\"\n    height=\"1000\"\n    ratio=\"9/16\"\n/>"
+        }
+    ],
     "image-gallery": [
         {
             "title": "Gallery with lightbox",
@@ -1057,6 +1091,26 @@
         {
             "title": "Static grid",
             "code": "<x-wirekit::image-gallery\n    :lightbox=\"false\"\n    columns=\"2 md:4\"\n    :images=\"[\n        ['src' => '/placeholder/300x300?bg=334155&fg=ffffff&label=1&gradient=none', 'alt' => 'One', 'caption' => 'One'],\n        ['src' => '/placeholder/300x300?bg=475569&fg=ffffff&label=2&gradient=none', 'alt' => 'Two', 'caption' => 'Two'],\n    ]\"\n/>"
+        }
+    ],
+    "image-hotspots-editor": [
+        {
+            "title": "Two Points on a Room",
+            "code": "<x-wirekit::image-hotspots-editor\n    src=\"/placeholder/1600x1000?bg=e2e8f0&fg=334155&label=Living+room&gradient=none\"\n    alt=\"A living room with a sofa, a floor lamp and a rug\"\n    width=\"1600\"\n    height=\"1000\"\n    :value=\"[\n        ['x' => 24, 'y' => 58, 'label' => 'Sofa Bergen'],\n        ['x' => 71, 'y' => 34, 'label' => 'Floor lamp Arc'],\n    ]\"\n/>"
+        },
+        {
+            "title": "A Desktop and a Phone File",
+            "code": "<x-wirekit::image-hotspots-editor\n    src=\"/placeholder/1600x1000?bg=e2e8f0&fg=334155&label=Desktop&gradient=none\"\n    alt=\"A living room with a sofa, a floor lamp and a rug\"\n    width=\"1600\"\n    height=\"1000\"\n    phone-src=\"/placeholder/900x1200?bg=fde68a&fg=78350f&label=Phone&gradient=none\"\n    phone-width=\"900\"\n    phone-height=\"1200\"\n    :value=\"[\n        ['x' => 24, 'y' => 58, 'label' => 'Sofa Bergen'],\n        ['x' => 71, 'y' => 34, 'phoneX' => 40, 'phoneY' => 20, 'label' => 'Floor lamp Arc'],\n    ]\"\n/>"
+        }
+    ],
+    "image-hotspots": [
+        {
+            "title": "A Room With Three Products",
+            "code": "<x-wirekit::image-hotspots\n    src=\"/placeholder/1600x1000?bg=e2e8f0&fg=334155&label=Living+room&gradient=none\"\n    alt=\"A living room with a sofa, a floor lamp and a rug\"\n    width=\"1600\"\n    height=\"1000\"\n    loading=\"eager\"\n    :markers=\"[\n        ['x' => 24, 'y' => 58, 'label' => 'Sofa Bergen', 'target' => 'sofa-bergen', 'href' => '#sofa-bergen'],\n        ['x' => 71, 'y' => 34, 'label' => 'Floor lamp Arc', 'target' => 'lamp-arc', 'href' => '#lamp-arc'],\n        ['x' => 48, 'y' => 86, 'label' => 'Rug Dune', 'target' => 'rug-dune', 'href' => '#rug-dune'],\n    ]\"\n/>"
+        },
+        {
+            "title": "Markers Without a Strip",
+            "code": "<x-wirekit::image-hotspots\n    src=\"/placeholder/1200x800?bg=fde68a&fg=78350f&label=Workshop&gradient=none\"\n    alt=\"A workbench with a drill, a vice and a lamp\"\n    width=\"1200\"\n    height=\"800\"\n    :strip=\"false\"\n    :markers=\"[\n        ['x' => 30, 'y' => 45, 'label' => 'Cordless drill'],\n        ['x' => 66, 'y' => 62, 'label' => 'Bench vice'],\n    ]\"\n/>"
         }
     ],
     "image": [
@@ -1098,7 +1152,7 @@
         },
         {
             "title": "The four built-in types",
-            "code": "<x-wirekit::stack gap=\"lg\">\n    <x-wirekit::inline-edit\n        name=\"title\"\n        label=\"Title (text)\"\n        value=\"Quarterly report\"\n    />\n\n    {{-- Long enough to actually wrap. The previous value said it \"wraps onto more\n         than one line\" and fitted on one, so the demo contradicted its own copy and\n         a textarea looked indistinguishable from a text input. --}}\n    <x-wirekit::inline-edit\n        name=\"summary\"\n        label=\"Summary (textarea)\"\n        control=\"textarea\"\n        value=\"Multi-line values are what this control is for: release notes, an internal handover, the paragraph nobody wants to retype in a modal. Reading mode keeps the text where it sits on the page, and opening the editor gives you the same box with a real textarea in it — same width, several rows tall, so the wrapping you see while reading is the wrapping you get while typing.\"\n    />\n\n    <x-wirekit::inline-edit\n        name=\"seats\"\n        label=\"Seats (number)\"\n        control=\"number\"\n        value=\"12\"\n        min=\"0\"\n        step=\"1\"\n    />\n\n    <x-wirekit::inline-edit\n        name=\"status\"\n        label=\"Status (select)\"\n        control=\"select\"\n        value=\"review\"\n        display-value=\"In review\"\n        :options=\"['draft' => 'Draft', 'review' => 'In review', 'done' => 'Done']\"\n    />\n</x-wirekit::stack>"
+            "code": "<x-wirekit::stack gap=\"lg\">\n    <x-wirekit::inline-edit\n        name=\"report-title\"\n        label=\"Title (text)\"\n        value=\"Quarterly report\"\n    />\n\n    {{-- Long enough to actually wrap. The previous value said it \"wraps onto more\n         than one line\" and fitted on one, so the demo contradicted its own copy and\n         a textarea looked indistinguishable from a text input. --}}\n    <x-wirekit::inline-edit\n        name=\"summary\"\n        label=\"Summary (textarea)\"\n        control=\"textarea\"\n        value=\"Multi-line values are what this control is for: release notes, an internal handover, the paragraph nobody wants to retype in a modal. Reading mode keeps the text where it sits on the page, and opening the editor gives you the same box with a real textarea in it — same width, several rows tall, so the wrapping you see while reading is the wrapping you get while typing.\"\n    />\n\n    <x-wirekit::inline-edit\n        name=\"seats\"\n        label=\"Seats (number)\"\n        control=\"number\"\n        value=\"12\"\n        min=\"0\"\n        step=\"1\"\n    />\n\n    <x-wirekit::inline-edit\n        name=\"status\"\n        label=\"Status (select)\"\n        control=\"select\"\n        value=\"review\"\n        display-value=\"In review\"\n        :options=\"['draft' => 'Draft', 'review' => 'In review', 'done' => 'Done']\"\n    />\n</x-wirekit::stack>"
         }
     ],
     "input": [
@@ -1139,8 +1193,8 @@
             "code": "<x-wirekit::row gap=\"xs\" align=\"center\">\n    <x-wirekit::kbd>⌘</x-wirekit::kbd>\n    <x-wirekit::kbd>K</x-wirekit::kbd>\n</x-wirekit::row>"
         },
         {
-            "title": "Kbd sizes",
-            "code": "<x-wirekit::row gap=\"md\" align=\"center\">\n    <x-wirekit::kbd size=\"sm\">Esc</x-wirekit::kbd>\n    <x-wirekit::kbd size=\"md\">Enter</x-wirekit::kbd>\n    <x-wirekit::kbd size=\"lg\">Space</x-wirekit::kbd>\n</x-wirekit::row>"
+            "title": "Shortcuts drawn for the reader's platform",
+            "code": "<x-wirekit::row gap=\"md\" align=\"center\" wrap>\n    <x-wirekit::kbd shortcut=\"cmd+s\" />\n    <x-wirekit::kbd shortcut=\"alt+shift+n\" />\n    <x-wirekit::kbd shortcut=\"g d\" />\n</x-wirekit::row>"
         }
     ],
     "label": [
@@ -1188,7 +1242,7 @@
     "liquid-glass": [
         {
             "title": "Glass card",
-            "code": "<x-wirekit::card class=\"wk-glass\">\n    <x-wirekit::card.header>Glass</x-wirekit::card.header>\n    <x-wirekit::card.body>\n        This card uses the <code>wk-glass</code> class.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
+            "code": "<x-wirekit::card class=\"wk-glass\">\n    <x-wirekit::card.header><x-wirekit::heading level=\"2\" size=\"lg\">Glass</x-wirekit::heading></x-wirekit::card.header>\n    <x-wirekit::card.body>\n        This card uses the <code>wk-glass</code> class.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
         },
         {
             "title": "Four levels",
@@ -1196,7 +1250,7 @@
         },
         {
             "title": "Refraction glass card",
-            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::card class=\"wk-glass-refract\">\n    <x-wirekit::card.header>Refraction Glass</x-wirekit::card.header>\n    <x-wirekit::card.body>\n        The background refracts through the card like looking through textured glass. The text on top is untouched.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
+            "code": "{{-- Once per page: the SVG filter the refraction reads. --}}\n<x-wirekit::glass />\n\n<x-wirekit::card class=\"wk-glass-refract\">\n    <x-wirekit::card.header><x-wirekit::heading level=\"2\" size=\"lg\">Refraction Glass</x-wirekit::heading></x-wirekit::card.header>\n    <x-wirekit::card.body>\n        The background refracts through the card like looking through textured glass. The text on top is untouched.\n    </x-wirekit::card.body>\n</x-wirekit::card>"
         }
     ],
     "list": [
@@ -1246,7 +1300,7 @@
         },
         {
             "title": "Store locator on Leaflet + OpenStreetMap tiles",
-            "code": "<x-wirekit::map\n    provider=\"leaflet\"\n    style-url=\"https://tile.openstreetmap.org/{z}/{x}/{y}.png\"\n    attribution=\"© OpenStreetMap contributors\"\n    :center=\"[51.1657, 10.4515]\"\n    :zoom=\"6\"\n    aria-label=\"Store locations across Germany\"\n    list-label=\"Stores\"\n    highlight=\"fill\"\n    highlight-color=\"success\"\n    :markers=\"[\n        ['id' => 'b', 'lat' => 52.5200, 'lng' => 13.4050, 'label' => 'Kaufhaus Brandt — Berlin Mitte · Open', 'body' => 'Mo–Sa 9:00–20:00', 'intent' => 'success'],\n        ['id' => 'm', 'lat' => 48.1351, 'lng' => 11.5820, 'label' => 'Brandt Stachus — Munich · Busy', 'body' => 'Mo–Sa 9:30–20:00', 'intent' => 'warning'],\n        ['id' => 'h', 'lat' => 53.5511, 'lng' => 9.9937, 'label' => 'Brandt Hafencity — Hamburg · Open', 'body' => 'Mo–Sa 10:00–19:00', 'intent' => 'success'],\n        ['id' => 'c', 'lat' => 50.9375, 'lng' => 6.9603, 'label' => 'Brandt Passage — Cologne · Closed today', 'body' => 'Tu–Sa 10:00–18:00', 'intent' => 'danger'],\n    ]\"\n/>"
+            "code": "<x-wirekit::map\n    provider=\"leaflet\"\n    :center=\"[51.1657, 10.4515]\"\n    :zoom=\"6\"\n    aria-label=\"Store locations across Germany\"\n    list-label=\"Stores\"\n    highlight=\"fill\"\n    highlight-color=\"success\"\n    :markers=\"[\n        ['id' => 'b', 'lat' => 52.5200, 'lng' => 13.4050, 'label' => 'Kaufhaus Brandt — Berlin Mitte · Open', 'body' => 'Mo–Sa 9:00–20:00', 'intent' => 'success'],\n        ['id' => 'm', 'lat' => 48.1351, 'lng' => 11.5820, 'label' => 'Brandt Stachus — Munich · Busy', 'body' => 'Mo–Sa 9:30–20:00', 'intent' => 'warning'],\n        ['id' => 'h', 'lat' => 53.5511, 'lng' => 9.9937, 'label' => 'Brandt Hafencity — Hamburg · Open', 'body' => 'Mo–Sa 10:00–19:00', 'intent' => 'success'],\n        ['id' => 'c', 'lat' => 50.9375, 'lng' => 6.9603, 'label' => 'Brandt Passage — Cologne · Closed today', 'body' => 'Tu–Sa 10:00–18:00', 'intent' => 'danger'],\n    ]\"\n/>"
         }
     ],
     "mark": [
@@ -1543,8 +1597,8 @@
             "code": "<x-wirekit::grid cols=\"1 sm:2\" gap=\"lg\">\n    <x-wirekit::product-card name=\"Coffee beans\" href=\"#\" :price=\"17.50\" :compare-at=\"21.00\" currency=\"EUR\" :unit-price=\"17.50\" unit-measure=\"1 kg\">\n        <x-slot:priceNote>Lowest price in the last 30 days: €19.90. VAT included, plus <x-wirekit::link href=\"#\">shipping</x-wirekit::link>.</x-slot:priceNote>\n    </x-wirekit::product-card>\n    <x-wirekit::product-card name=\"Linen shirt\" href=\"#\" :price=\"39.00\" currency=\"EUR\" from>\n        <x-slot:priceNote>VAT included, plus <x-wirekit::link href=\"#\">shipping</x-wirekit::link>.</x-slot:priceNote>\n    </x-wirekit::product-card>\n</x-wirekit::grid>"
         },
         {
-            "title": "A card whose media is drawn, not photographed",
-            "code": "<x-wirekit::product-card name=\"Gift card\" :price=\"5000\" href=\"#\">\n    <x-slot:media>\n        <x-wirekit::aspect-ratio ratio=\"1/1\" style=\"background: var(--color-wk-bg-subtle); display: grid; place-items: center;\">\n            <x-wirekit::text size=\"xl\" weight=\"semibold\" intent=\"muted\">G</x-wirekit::text>\n        </x-wirekit::aspect-ratio>\n    </x-slot:media>\n    <x-slot:badge>\n        <x-wirekit::badge intent=\"info\" surface=\"solid\" size=\"sm\">New</x-wirekit::badge>\n    </x-slot:badge>\n</x-wirekit::product-card>"
+            "title": "Stars with a note on how reviews are checked",
+            "code": "<x-wirekit::grid cols=\"1 sm:2\" gap=\"lg\">\n    <x-wirekit::product-card name=\"Linen shirt\" href=\"#\" :price=\"39.00\" currency=\"EUR\" :rating=\"4.5\" :review-count=\"128\">\n        <x-slot:ratingNote><x-wirekit::link href=\"#reviews-checked\">How we check reviews</x-wirekit::link></x-slot:ratingNote>\n    </x-wirekit::product-card>\n    <x-wirekit::product-card name=\"Wool scarf\" href=\"#\" :price=\"29.00\" currency=\"EUR\" :rating=\"4.8\" :review-count=\"56\">\n        <x-slot:ratingNote>Verified purchases only</x-slot:ratingNote>\n    </x-wirekit::product-card>\n</x-wirekit::grid>"
         }
     ],
     "profile": [
@@ -1642,7 +1696,7 @@
         },
         {
             "title": "Pricing-tier cards",
-            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::radio name=\"tier\" value=\"starter\" variant=\"card\" label=\"Starter — €9/month, 1 project\" checked />\n    <x-wirekit::radio name=\"tier\" value=\"pro\" variant=\"card\" label=\"Pro — €29/month, unlimited projects\" />\n    <x-wirekit::radio name=\"tier\" value=\"team\" variant=\"card\" label=\"Team — €99/month, with SSO\" />\n</x-wirekit::stack>"
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::radio name=\"tier\" value=\"starter\" variant=\"card\" label=\"Starter\" hint=\"One project and email support\" checked>\n        <x-slot:trailing><x-wirekit::text as=\"span\" weight=\"semibold\">€9 a month</x-wirekit::text></x-slot:trailing>\n    </x-wirekit::radio>\n    <x-wirekit::radio name=\"tier\" value=\"pro\" variant=\"card\" label=\"Pro\" hint=\"Unlimited projects and priority support\">\n        <x-slot:trailing><x-wirekit::text as=\"span\" weight=\"semibold\">€29 a month</x-wirekit::text></x-slot:trailing>\n    </x-wirekit::radio>\n    <x-wirekit::radio name=\"tier\" value=\"team\" variant=\"card\" label=\"Team\" hint=\"Everything in Pro, with single sign-on\">\n        <x-slot:trailing><x-wirekit::text as=\"span\" weight=\"semibold\">€99 a month</x-wirekit::text></x-slot:trailing>\n    </x-wirekit::radio>\n</x-wirekit::stack>"
         }
     ],
     "range-slider": [
@@ -2521,6 +2575,20 @@
         {
             "title": "An unlimited plan tier",
             "code": "<x-wirekit::usage-meter label=\"Team members\" :used=\"42\" :limit=\"null\" unit=\"members\" />"
+        }
+    ],
+    "video": [
+        {
+            "title": "A Clip That Plays on a Press",
+            "code": "<x-wirekit::video\n    src=\"/_assets/sample_clip_960x540.mp4\"\n    poster=\"/_assets/sample_1280x720_80p.jpg\"\n    title=\"A short sample clip\"\n/>"
+        },
+        {
+            "title": "A Muted Loop With Its Pause Button",
+            "code": "<x-wirekit::video\n    src=\"/_assets/sample_clip_960x540.mp4\"\n    poster=\"/_assets/sample_1280x720_80p.jpg\"\n    title=\"A short sample clip\"\n    background\n/>"
+        },
+        {
+            "title": "A Wide Box",
+            "code": "<x-wirekit::video\n    src=\"/_assets/sample_clip_960x540.mp4\"\n    poster=\"/_assets/sample_1280x548_80p.jpg\"\n    title=\"A short sample clip\"\n    ratio=\"21/9\"\n/>"
         }
     ],
     "visually-hidden": [

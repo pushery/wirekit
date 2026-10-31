@@ -50,6 +50,11 @@
 
     WireKit::warnUnknownProps('tabs.list', $attributes->getAttributes());
 
+
+    // A caller's `x-ref` is filed above the parent component, whose root is the boundary.
+
+    $attributes = \Pushery\WireKit\Support\CallerRef::forward($attributes);
+
     $isVertical = $orientation === 'vertical';
 
     if (! in_array($variant, ['underline', 'pills', 'bordered'], true)) {
@@ -132,7 +137,7 @@
 <div
     x-data="wirekitTablist()"
     role="tablist"
-    @if($label) aria-label="{{ $label }}" @endif
+    @if($label && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
     aria-orientation="{{ $isVertical ? 'vertical' : 'horizontal' }}"
     {{-- Bound on the LIST rather than on each tab. The event originates at a tab and
          bubbles, so one pair of handlers covers every tab including the ones a later
@@ -147,7 +152,7 @@
     @endif
     x-on:keydown.home.prevent="moveFocus('first')"
     x-on:keydown.end.prevent="moveFocus('last')"
-    {{ $attributes->class([$listClasses, $wrapClasses]) }}
+    {{ $attributes->except('role')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$listClasses, $wrapClasses])) }}
 >
     {!! $slotHtml !!}
 </div>

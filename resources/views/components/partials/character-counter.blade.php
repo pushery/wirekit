@@ -16,15 +16,20 @@
 @php
     $counterValue = (string) ($counterValue ?? '');
     $counterCount = intdiv(strlen(mb_convert_encoding($counterValue, 'UTF-16LE', 'UTF-8')), 2);
-    $counterMax = is_numeric($counterMax ?? null) && (int) $counterMax >= 0 ? (int) $counterMax : null;
+    // A maximum no integer holds is none, where the cast would warn or give an unrelated number.
+    $counterMax = is_numeric($counterMax ?? null) ? \Pushery\WireKit\Support\NumericProp::cast($counterMax) : null;
+    $counterMax = $counterMax !== null && $counterMax >= 0 ? $counterMax : null;
 
+    // The numbers as the page writes a count, `1.200 / 5.000` in German, as `x-wk-counter` writes them.
+    $counterNumber = static fn (int $number): string => \Pushery\WireKit\Support\LocalizedNumber::integer($number);
     $counterText = filled($counterFormat ?? null)
         ? strtr((string) $counterFormat, [
-            ':remaining' => $counterMax === null ? '' : (string) max(0, $counterMax - $counterCount),
-            ':count' => (string) $counterCount,
-            ':max' => $counterMax === null ? '' : (string) $counterMax,
+            ':remaining' => $counterMax === null ? '' : $counterNumber(max(0, $counterMax - $counterCount)),
+            ':count' => $counterNumber($counterCount),
+            ':max' => $counterMax === null ? '' : $counterNumber($counterMax),
         ])
-        : ($counterMax === null ? (string) $counterCount : $counterCount.' / '.$counterMax);
+        : ($counterMax === null ? $counterNumber($counterCount) : $counterNumber($counterCount).' / '.$counterNumber($counterMax));
+    $counterSeparators = \Pushery\WireKit\Support\LocalizedNumber::separators();
 
     $counterPhrases = [
         'count' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count character|[2,*] :count characters'),
@@ -40,7 +45,8 @@
     data-wk-counter-for="{{ $counterFor }}"
     @if(filled($counterFormat ?? null)) data-wk-counter-format="{{ $counterFormat }}" @endif
     data-wk-counter-phrases="{{ \Pushery\WireKit\Support\AlpinePayload::json($counterPhrases) }}"
-    data-wk-counter-locale="{{ str_replace('_', '-', app()->getLocale()) }}"
+    data-wk-counter-locale="{{ \Pushery\WireKit\Support\IcuLocale::tag() }}"
+    @if($counterSeparators !== null) data-wk-counter-separators="{{ \Pushery\WireKit\Support\AlpinePayload::json($counterSeparators) }}" @endif
     @if($counterMax !== null && $counterCount > $counterMax) data-wk-counter-over @endif
     class="ms-auto shrink-0 text-end text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums data-[wk-counter-over]:text-[color:var(--color-wk-danger-text)]"
 >

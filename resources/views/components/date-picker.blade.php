@@ -9,16 +9,19 @@
      two inputs constrain each other — rolling one back can leave the other
      holding a bound that no longer applies. That is a contract question, not a
      prop. Passing `optimistic` together with `range` is ignored rather than
-     half-applied. --}}
+     half-applied, and so is passing it with `popover`, whose value the dialog
+     writes rather than a native field. --}}
 @props([
     // Livewire method to call optimistically. The date appears immediately and
     // is put back if the call fails. Single-date mode only — see the note above.
     // Absent -> the component renders without an optimistic layer.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -66,18 +69,49 @@
     // so a tag written here is compiled into a real invocation, and every render of this
     // component then dies on `Undefined variable $component`.
     'formatHint' => config('wirekit.components.date-picker.format-hint', false),
+    // A trigger that opens a dialog with the calendar component, in place of the native field:
+    // the application's own calendar and date format, with the limits and options below. The
+    // native field keeps the browser's keyboard, picker and date wheel. A boolean, as on the color
+    // picker; the value, the field names and `wire:model` are the same in both forms.
+    'popover' => false,
+    // With `popover`: a button in the trigger that empties the field.
+    'clearable' => false,
+    // With `popover`, the calendar in the dialog; see the calendar component for each. `months`
+    // is 2 for a range and 1 for a single day unless given, and `presets` lists ranges beside it.
+    'presets' => null,
+    'unavailable' => null,
+    'minRange' => null,
+    'maxRange' => null,
+    'months' => null,
+    'openTo' => null,
+    'withToday' => false,
+    'selectableHeader' => false,
+    'weekNumbers' => false,
+    'weekStartsOn' => config('wirekit.components.calendar.week-starts-on', 1),
+    'fixedWeeks' => false,
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null, 'wkField' => null])
+@aware(['announceErrors' => null, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+
+    // A list where the control takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and read as no value (Support\FieldValue). A range takes its two ends
+    // as a list, and an end that is a list itself is left out the same way.
+    $value = BooleanProp::from($range, false, 'date-picker', 'range')
+        ? (is_array($value) ? \Pushery\WireKit\Support\FieldValue::items($value, 'date-picker') : $value)
+        : \Pushery\WireKit\Support\FieldValue::one($value, 'date-picker');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('date-picker', $attributes->getAttributes());
+
+    // An unknown `size` is reported (Support\StrictnessGate) and renders as `md`; a bound `null` or
+    // empty string is `md` without a word.
+    $size = \Pushery\WireKit\WireKit::validateProp('date-picker', 'size', \Pushery\WireKit\Support\NumericProp::text($size ?: 'md'), ['md', 'sm', 'lg']);
 
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
     // component, so they go on the outermost element while the bag lands further in: see
@@ -87,16 +121,22 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $range = BooleanProp::from($range, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $required = BooleanProp::from($required, false);
+    $range = BooleanProp::from($range, false, 'date-picker', 'range');
+    $disabled = BooleanProp::from($disabled, false, 'date-picker', 'disabled');
+    $required = BooleanProp::from($required, false, 'date-picker', 'required');
+    $popover = BooleanProp::from($popover, false, 'date-picker', 'popover');
+    $clearable = BooleanProp::from($clearable, false, 'date-picker', 'clearable');
+    $withToday = BooleanProp::from($withToday, false, 'date-picker', 'withToday');
+    $selectableHeader = BooleanProp::from($selectableHeader, false, 'date-picker', 'selectableHeader');
+    $weekNumbers = BooleanProp::from($weekNumbers, false, 'date-picker', 'weekNumbers');
+    $fixedWeeks = BooleanProp::from($fixedWeeks, false, 'date-picker', 'fixedWeeks');
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -118,6 +158,9 @@
     // popup + keyboard navigation (arrow keys, PageUp/PageDown for months,
     // etc.), and ships localized to the user's OS locale automatically.
     $isRange = filter_var($range, FILTER_VALIDATE_BOOLEAN);
+    // How many months the calendar shows, one to four as it draws them, two for a range without
+    // a number.
+    $months = min(4, max(1, \Pushery\WireKit\Support\NumericProp::int($months, $isRange ? 2 : 1, 'date-picker', 'months')));
 
     // Livewire sends a date object as a full timestamp, which the native field drops, so a binding
     // to one warns in debug mode (Support\DateModel). Each end of a range binds a path of its own.
@@ -125,16 +168,39 @@
 
     // A date object, which is what an Eloquent `date` cast hands over, is written as the day a
     // native date field reads, `YYYY-MM-DD`: cast to a string it would be `Y-m-d H:i:s`, and
-    // encoded as JSON an ISO timestamp, and the field reads either as no value at all. The same
-    // holds for `min`, `max` and both ends of a range.
-    $toDay = static fn ($date) => $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : $date;
+    // encoded as JSON an ISO timestamp, and the field reads either as no value at all. A date and
+    // time written as text is read as its day too (Support\DateModel). The same holds for `min`,
+    // `max` and both ends of a range.
+    $toDay = static fn ($date) => \Pushery\WireKit\Support\DateModel::written('date', $date);
+    // A range object gives its two ends: a Values\DateRange a Livewire property is typed with, or
+    // any other period.
+    if ($isRange && $value instanceof \DatePeriod) {
+        $value = \Pushery\WireKit\Values\DateRange::from($value)->toFields();
+    }
     // The two ends of a range may arrive in a Collection as well.
     if ($value instanceof \Illuminate\Support\Enumerable) {
         $value = $value->all();
     }
-    $value = is_array($value) ? array_map($toDay, $value) : $toDay($value);
-    $min = $toDay($min);
-    $max = $toDay($max);
+    // The preset a range was chosen by stands beside its ends, and is no date to be read as one.
+    $namedPreset = is_array($value) && is_string($value['preset'] ?? null) ? $value['preset'] : null;
+    $value = is_array($value) ? array_map($toDay, \Illuminate\Support\Arr::except($value, 'preset')) : $toDay($value);
+    // The fields take the days the calendar reads (Support\CalendarLimits): a moment as its day,
+    // and `today` and `now` as the day of the application's clock, where a browser passes over a
+    // bound of a date field that is no `YYYY-MM-DD`. A text that names no day limits nothing and
+    // is reported, as an invalid prop is. Two days the wrong way round would leave the field no
+    // valid day; read as written they say "between these two", so they are put in order, as the
+    // calendar puts them.
+    $min = \Pushery\WireKit\Support\CalendarLimits::reportedDay($toDay($min), 'date-picker', 'min');
+    $max = \Pushery\WireKit\Support\CalendarLimits::reportedDay($toDay($max), 'date-picker', 'max');
+
+    if ($min !== null && $max !== null && $min > $max) {
+        [$min, $max] = [$max, $min];
+    }
+
+    // The days the calendar in the dialog closes. An entry that names neither a day nor a time is
+    // reported here, under the picker's name, and the calendar gets only the entries it can read,
+    // so it does not report one a second time (Support\CalendarLimits::reportedUnavailable()).
+    $unavailable = $popover ? \Pushery\WireKit\Support\CalendarLimits::reportedUnavailable($unavailable, 'date-picker') : $unavailable;
 
     // Range value can be an array ['start' => .., 'end' => ..] or a slash string
     // "Y-m-d/Y-m-d" (e.g. "2025-01-20/2025-02-09"). Single mode keeps `value`.
@@ -154,18 +220,23 @@
     // Seeded from the bound property when there is no name, counted when there is neither.
     // A second picker with the same name or property on the page gets `-2`, so its label and
     // its hint do not point at the first one's field (DomId::distinct keeps the first verbatim).
-    $dateId = $id ?? \Pushery\WireKit\Support\DomId::distinct($name ? 'wk-date-' . $name : WireKit::stableId('wk-date', $attributes->whereStartsWith('wire:model')->first()));
+    $dateId = \Pushery\WireKit\Support\DomId::valid(is_scalar($id) ? (string) $id : null) ?? \Pushery\WireKit\Support\DomId::distinct($name ? 'wk-date-' . $name : WireKit::stableId('wk-date', $attributes->whereStartsWith('wire:model')->first()));
     $errorId = $dateId . '-error';
     $hintId = $dateId . '-hint';
     $formatHintId = $dateId.'-format-hint';
+
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
 
     // The bag read is guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
     // makes a date-picker with no `name` report itself invalid the moment ANY
     // unrelated field on the page fails validation — a red border and an
     // `aria-invalid` on a control nobody validated.
-    $hasError = $error || ($name && \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name));
-    $errorMessage = $error ?? ($hasError && $name ? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name) : null);
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf($name, $attributes);
+    // A range is validated end by end, as `{name}.start` and `{name}.end` (FieldError::first()).
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errorName ? ($errors ?? null) : null, $errorName, $error, $range ? ['start', 'end'] : []);
+    $hasError = $errorMessage !== null;
 
     // The paragraph and the idref pointing at it move together. `$hasError` can
     // be true with nothing to say (`error=""` plus a bag hit), and a described-by
@@ -206,7 +277,9 @@
     // document is dropped silently by assistive technology, and the field is then
     // described by less than the markup claims — or, with only a hint set, by
     // nothing at all. Compose from what this render actually emits.
-    $formatHint = BooleanProp::from($formatHint, false);
+    // The dialog writes dates in the application's language, so a popover has no disagreement to
+    // disclose.
+    $formatHint = BooleanProp::from($formatHint, false, 'date-picker', 'formatHint') && ! $popover;
 
     // The format hint joins the description whenever the prop is on, and NOT only when it has
     // something to say — its text is decided in the browser, after this markup is written. An
@@ -226,6 +299,13 @@
     $helpId = filled($help) && filled($label) ? $dateId.'-help' : null;
     // Markup a caller puts after the label and its help, in their row (partials/label-after).
     $hasLabelAfter = isset($labelAfter) && $labelAfter->hasActualContent();
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $dateId, $hint ? $hintId : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) requires every input to
@@ -305,11 +385,26 @@
         //    `aria-labelledby` lands on both ends unchanged and names them alike; a `label`
         //    prop or an `aria-label` is what tells the two apart.
         $callerAriaLabel = \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label');
-        $rangeName = filled($label) ? $label : (filled($callerAriaLabel) ? (string) $callerAriaLabel : ($fieldLabelId !== null ? $wkField->labelText() : $fallbackLabel));
+        $rangeName = filled($label) ? \Pushery\WireKit\Support\SlotContent::textOf($label) : (filled($callerAriaLabel) ? (string) $callerAriaLabel : ($fieldLabelId !== null ? $wkField->labelText() : $fallbackLabel));
 
         if ($attributes->has('aria-labelledby')) {
             $startPairs['aria-labelledby'] = $attributes->get('aria-labelledby');
             $endPairs['aria-labelledby'] = $attributes->get('aria-labelledby');
+        }
+
+        // What acts only on a field goes onto the two dates, as the single date's field takes it:
+        // on the row `form` joins nothing, `readonly` locks nothing, `autocomplete` offers nothing,
+        // `step` sets no grid, `list` suggests no date, and the on-screen keyboard reads none of
+        // it. `autofocus` goes to the start, the field a reader meets first.
+        foreach (['form', 'readonly', 'autocomplete', 'step', 'list', ...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD] as $fieldAttribute) {
+            if ($attributes->has($fieldAttribute)) {
+                $startPairs[$fieldAttribute] = $attributes->get($fieldAttribute);
+                $endPairs[$fieldAttribute] = $attributes->get($fieldAttribute);
+            }
+        }
+
+        if (\Pushery\WireKit\Support\FieldAttributes::autofocus($attributes)) {
+            $startPairs['autofocus'] = true;
         }
 
         $rangeStartAttributes = new \Illuminate\View\ComponentAttributeBag($startPairs);
@@ -321,7 +416,7 @@
         //    ever reached.
         $rangeWrapperAttributes = $attributes
             ->whereDoesntStartWith('wire:model')
-            ->except(['aria-label', 'aria-labelledby', 'aria-describedby']);
+            ->except(['aria-label', 'aria-labelledby', 'aria-describedby', 'form', 'readonly', 'autocomplete', 'step', 'list', 'autofocus', ...\Pushery\WireKit\Support\FieldAttributes::KEYBOARD]);
 
         // 4. An `x-model` on the row would take the value of whichever date sent the last `input`
         //    event, one end of the range and never the range, so it is removed there
@@ -334,7 +429,7 @@
     // Range mode is excluded HERE rather than at the call site, so a developer
     // who passes both gets the component they had rather than a half-applied
     // layer that rolls back one end of a range and not the other.
-    $optimisticConfig = ($optimistic === null || $isRange || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+    $optimisticConfig = ($optimistic === null || $isRange || $disabled || $popover) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         // `value` IS a declared prop here, unlike on time-picker where it passes
         // through the attribute bag — read it from the prop, not from the bag,
         // or the layer mounts empty and the first rollback restores nothing.
@@ -351,15 +446,25 @@
         ],
         'errorRegion' => \Pushery\WireKit\Support\CssIdentifier::idSelector($errorId),
     ]);
+    // With the optimistic layer the field stands inside a root of ours, where `.parent` would still
+    // find the layer's names: the caller's `x-model` reaches it as `x-wk-model`, read above the
+    // layer's element, which marks the boundary (CallerModel::onField()).
+    $modelScope = $optimisticConfig && \Pushery\WireKit\Support\CallerModel::binds($attributes);
+    $attributes = $modelScope ? \Pushery\WireKit\Support\CallerModel::onField($attributes) : $attributes;
 @endphp
 
+@if($popover)
+{{-- The trigger, the hidden fields and the dialog with the calendar, apart from the native field
+     below, which renders as it always has without `popover`. --}}
+@include('wirekit::components.partials.date-picker-popover')
+@else
 {{-- With the format hint on, the element right before an empty hint keeps no space below it. The
      hint is always in the markup, because the field's description names it before the browser
      decides whether it has anything to say, and the stack spaces every child but the last, so the
      gap above an empty hint made the picker taller than one without it. A rule on the element
      before the hint rather than a negative margin on the hint: that element is often the input,
      which is inline-block, and an inline-block's margin does not collapse. --}}
-<div {{ $outerAttributes }} @class(['relative w-full space-y-1.5', '[&>:has(+[data-wk-format-hint]:empty)]:[margin-block-end:0]' => $formatHint]) @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '') data-wk-ref-scope @endif>
+<div {{ $outerAttributes }} @class(['relative w-full space-y-1.5', '[&>:has(+[data-wk-format-hint]:empty)]:[margin-block-end:0]' => $formatHint]) @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif>
     @if($label)
         {{-- The label every field shows, through the label component: its type and weight, the
              help beside it, the mark after it and the required marker. The wrapper's
@@ -380,16 +485,24 @@
              is additive — it doesn't touch the values, so native form submission of
              the {name}[start] / {name}[end] fields is untouched, and `wire:model`
              binds the same two keys as `{property}.start` / `{property}.end` (see
-             the split above). --}}
+             the split above).
+
+             The scope reads the two dates from the fields
+             (resources/js/components/date-range.js) rather than taking them from
+             `x-data`, so the expression is the same for every range: a Livewire morph
+             that changed it would start the scope again with the dates of the request. --}}
         <div
-            x-data="{ s: {{ \Pushery\WireKit\Support\AlpinePayload::from($startValue) }}, e: {{ \Pushery\WireKit\Support\AlpinePayload::from($endValue) }} }"
+            x-data="wirekitDateRange()"
             {{-- min-w-0 on the two fields is what makes this row survive a narrow
                  container. A flex item defaults to `min-width: auto`, so it cannot shrink
                  past its intrinsic content width — and a native date input has a large one
                  (the format text plus the picker button). Two of those plus the separator
                  exceed anything under roughly 330px, and a frame that does not scroll
                  clips the excess: the end date would become unreachable on a phone. --}}
-            {{ $rangeWrapperAttributes->class('flex items-center gap-[var(--padding-wk-x-sm)]') }}
+            {{ $rangeWrapperAttributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, 'flex items-center gap-[var(--padding-wk-x-sm)]')) }}
+            {{-- `focus` and `blur` fire here as the reader enters and leaves the control as a whole, so a
+                 listener written on the tag hears one field (utils/focus-unit.js). --}}
+            x-wk-focus-unit
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         >
             <input
@@ -401,7 +514,7 @@
                 :min="{{ \Pushery\WireKit\Support\AlpinePayload::from($min) }}"
                 :max="e || {{ \Pushery\WireKit\Support\AlpinePayload::from($max) }}"
                 @if($disabled) disabled @endif
-                @if($required) required aria-required="true" @endif
+                @if($required) required aria-required="true" @elseif($fieldRequired) aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @unless($label) aria-label="{{ __('wirekit:::label start', ['label' => $rangeName]) }}" @endunless
@@ -418,7 +531,7 @@
                 :min="s || {{ \Pushery\WireKit\Support\AlpinePayload::from($min) }}"
                 :max="{{ \Pushery\WireKit\Support\AlpinePayload::from($max) }}"
                 @if($disabled) disabled @endif
-                @if($required) required aria-required="true" @endif
+                @if($required) required aria-required="true" @elseif($fieldRequired) aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 aria-label="{{ __('wirekit:::label end', ['label' => $rangeName]) }}"
@@ -434,9 +547,9 @@
             @if($value) value="{{ $value }}" @endif
             @if($min) min="{{ $min }}" @endif
             @if($max) max="{{ $max }}" @endif
-            @if($placeholder) placeholder="{{ $placeholder }}" @endif
+            @if($placeholder) placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}" @endif
             @if($disabled) disabled @endif
-            @if($required) required aria-required="true" @endif
+            @if($required) required aria-required="true" @elseif($fieldRequired) aria-required="true" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($optimisticConfig)
@@ -445,7 +558,7 @@
                 x-on:change="commitFromControl()"
             @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('type')->except('aria-describedby')->class(['wk-field', $inputClasses]) }}
+            {{ $attributes->except('type')->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', $inputClasses])) }}
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         />
     @endif
@@ -463,7 +576,7 @@
             data-wk-format-hint
             id="{{ $formatHintId }}"
             x-data="wirekitDateFormatHint({
-                locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale())) }},
+                locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }},
                 template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
             })"
             x-text="message"
@@ -484,3 +597,4 @@
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
     @endif
 </div>
+@endif

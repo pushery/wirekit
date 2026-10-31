@@ -19,8 +19,18 @@
  *   A panel that needs a tab stop binds it to its open state;
  * - `x-cloak`: `display: none !important` would stop the browser from revealing it at all.
  *
+ * A panel the server writes as a named region (`role="region"` with `aria-labelledby`) is one only
+ * while it is open: closed, the role and its name come off, so the page lists no landmark that
+ * holds nothing to read (applyRegionState()).
+ *
  * `.collapse` animates the height on open and close, and not under reduced motion. On close the
  * attribute is set when the animation ends, so the content does not vanish mid-slide.
+ *
+ * A panel the server draws open carries `data-wk-rendered-open` where the component's start can
+ * close it: the second of two accordion items asking to start open in single mode, or the panel of
+ * the default tab when the server names another one. Without `hidden` it would read like a panel
+ * the reader found before the script started (foundBeforeStart()), and opening it again would undo
+ * the start.
  *
  * Cleanup contract: the attribute observer is released through Alpine's `cleanup()`, and an
  * animation still running when the element goes is canceled with it.
@@ -67,9 +77,49 @@ export function applyFindableState(el, open, supported) {
     }
 }
 
+/**
+ * A closed panel is no landmark. A panel the server wrote as a named region carries the role and
+ * its name only while it is open: a closed until-found panel keeps its box, and an engine that
+ * counts it among the page's landmarks lists a region with nothing in it, under its trigger's
+ * name, beside any other region of that name. Writes only what differs, as applyFindableState().
+ */
+export function applyRegionState(el, open, labelledby) {
+    if (open) {
+        if (el.getAttribute('role') !== 'region') {
+            el.setAttribute('role', 'region');
+        }
+
+        if (labelledby !== null && el.getAttribute('aria-labelledby') !== labelledby) {
+            el.setAttribute('aria-labelledby', labelledby);
+        }
+
+        return;
+    }
+
+    if (el.hasAttribute('role')) {
+        el.removeAttribute('role');
+    }
+
+    if (el.hasAttribute('aria-labelledby')) {
+        el.removeAttribute('aria-labelledby');
+    }
+}
+
 /** Whether a panel is showing: neither the attribute nor `x-show`'s inline `display: none` hides it. */
 export function isShown(el) {
     return ! el.hasAttribute('hidden') && el.style.display !== 'none';
+}
+
+/** The mark of a panel the server drew open, which no find in page has revealed. */
+export const RENDERED_OPEN_ATTRIBUTE = 'data-wk-rendered-open';
+
+/**
+ * Whether the reader found this panel before the script started: the server drew it closed, and a
+ * find-in-page match took the attribute off before anything listened for `beforematch`. A panel
+ * the server drew open has no attribute either, and says so with its mark.
+ */
+export function foundBeforeStart(el, supported) {
+    return Boolean(supported) && ! el.hasAttribute('hidden') && ! el.hasAttribute(RENDERED_OPEN_ATTRIBUTE);
 }
 
 /** The house transition duration in milliseconds, read from the element's own token. */
@@ -93,10 +143,21 @@ export function registerFindableDirective(Alpine) {
         const collapse = modifiers.includes('collapse');
         let open = null;
         let animation = null;
+        // A panel the server wrote as a region, and the name it was given (applyRegionState()).
+        const region = el.getAttribute('role') === 'region';
+        let labelledby = region ? el.getAttribute('aria-labelledby') : null;
+
+        const place = (state) => {
+            applyFindableState(el, state, supported);
+
+            if (region) {
+                applyRegionState(el, state, labelledby);
+            }
+        };
 
         const settle = () => {
             if (animation === null && open !== null) {
-                applyFindableState(el, open, supported);
+                place(open);
             }
         };
 
@@ -113,7 +174,7 @@ export function registerFindableDirective(Alpine) {
             }
 
             if (opening) {
-                applyFindableState(el, true, supported);
+                place(true);
             }
 
             const from = opening ? 0 : el.getBoundingClientRect().height;
@@ -147,7 +208,7 @@ export function registerFindableDirective(Alpine) {
         // A panel the reader found before Alpine started: the server rendered it closed, the
         // browser already took the attribute off, and the state has not heard. The component's
         // own `beforematch` listener is what opens the state, so it gets the event it missed.
-        const foundBeforeInit = supported && ! el.hasAttribute('hidden');
+        const foundBeforeInit = foundBeforeStart(el, supported);
 
         effect(() => {
             read((value) => {
@@ -178,13 +239,21 @@ export function registerFindableDirective(Alpine) {
         cleanup(() => animation?.cancel());
 
         // A Livewire morph writes the server's `hidden` back onto a panel the reader opened, and
-        // nothing about that change reaches Alpine's reactivity. The observer puts the state back.
+        // the server's role and name back onto a region that is closed. Nothing about either change
+        // reaches Alpine's reactivity, so the observer puts the state back, with the name the
+        // server wrote last.
         if (typeof MutationObserver === 'undefined') {
             return;
         }
 
-        const observer = new MutationObserver(() => settle());
-        observer.observe(el, { attributes: true, attributeFilter: ['hidden', 'style'] });
+        const observer = new MutationObserver(() => {
+            if (region && el.hasAttribute('aria-labelledby')) {
+                labelledby = el.getAttribute('aria-labelledby');
+            }
+
+            settle();
+        });
+        observer.observe(el, { attributes: true, attributeFilter: ['hidden', 'style', 'role', 'aria-labelledby'] });
         cleanup(() => observer.disconnect());
     });
 

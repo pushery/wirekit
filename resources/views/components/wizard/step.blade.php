@@ -22,10 +22,19 @@
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $current = \Pushery\WireKit\Support\AwareProp::read('current', ['wizard'], 1);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('wizard.step', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -36,11 +45,11 @@
     // renders as a stray HTML attribute on the element.
     $attributes = $attributes->except(['current']);
 
-    $position = (int) ($index ?? 0);
+    $position = \Pushery\WireKit\Support\NumericProp::int($index, 0, 'wizard.step', 'index');
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `complete="false"` would mean the opposite of what the call site reads as.
-    $isComplete = $complete === null ? null : BooleanProp::from($complete, true);
+    $isComplete = $complete === null ? null : BooleanProp::from($complete, true, 'wizard.step', 'complete');
 
     $classes = WireKit::resolveClasses('wizard.step', 'base', '', $scope);
 
@@ -48,7 +57,7 @@
     // container clamps the high end against the number of steps, which this panel cannot
     // see, so a `current` past the end of the flow paints every panel closed for the one
     // frame it takes Alpine to correct it — the same malformed input that clamp exists for.
-    $initiallyCurrent = max(1, (int) $current);
+    $initiallyCurrent = max(1, \Pushery\WireKit\Support\NumericProp::int($current, 0));
 
     if ($position < 1 && config('app.debug')) {
         $missingIndexWarning = '[wirekit] wizard.step: no `index`. The container finds a step by '
@@ -84,7 +93,7 @@
     tabindex="-1"
     x-show="current === {{ $position }}"
     x-bind:hidden="current === {{ $position }} ? null : true"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->except(['tabindex', 'hidden'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

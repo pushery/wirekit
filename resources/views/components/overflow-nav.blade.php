@@ -40,14 +40,14 @@
 
     \Pushery\WireKit\WireKit::warnUnknownProps('overflow-nav', $attributes->getAttributes());
 
-    $lines = max(1, (int) $lines);
+    $lines = max(1, \Pushery\WireKit\Support\NumericProp::int($lines, 0, 'overflow-nav', 'lines'));
 
     // Each entry as the template needs it. The index is the key the component hides and shows
     // by, so the rows and the menu name the same entry without depending on the label.
     // A Collection is read as the list it holds: cast with `(array)`, an object becomes its
     // properties, and every entry lost its label and its link.
     $entries = [];
-    foreach (array_values((array) \Pushery\WireKit\Support\ListProp::records($items)) as $index => $item) {
+    foreach (array_values((array) \Pushery\WireKit\Support\ListProp::records($items, 'overflow-nav', 'items')) as $index => $item) {
         $item = (array) $item;
         $entries[] = [
             'index' => $index,
@@ -152,7 +152,7 @@
 
     // The menu in the order the caller gives, the rest after it in the order of the rows.
     $menuEntries = $entries;
-    $menuOrder = \Pushery\WireKit\Support\ListProp::from($menuOrder);
+    $menuOrder = \Pushery\WireKit\Support\ListProp::from($menuOrder, 'overflow-nav', 'menuOrder');
     if (is_array($menuOrder) && $menuOrder !== []) {
         $rank = array_flip(array_map('strval', array_values($menuOrder)));
         usort($menuEntries, static fn (array $a, array $b): int => [$rank[$a['key']] ?? PHP_INT_MAX, $a['index']] <=> [$rank[$b['key']] ?? PHP_INT_MAX, $b['index']]);
@@ -226,27 +226,27 @@
     // Both plural forms travel to the browser, which counts the menu. The placeholder is swapped
     // there for the number. A caller's name is chosen from the same way as the kit's: a string
     // that is no translation key is its own message.
-    // The kit's own key is written out where trans_choice() reads it, so a scan of the shipped
+    // The kit's own key is written out where Plural::choice() reads it, so a scan of the shipped
     // keys finds it.
     $moreForm = static fn (int $count): string => filled($moreLabel)
-        ? trans_choice((string) $moreLabel, $count, ['count' => '__COUNT__'])
-        : trans_choice('wirekit:::count more link|:count more links', $count, ['count' => '__COUNT__']);
+        ? \Pushery\WireKit\Support\Plural::choice(\Pushery\WireKit\Support\SlotContent::textOf($moreLabel), $count, ['count' => '__COUNT__'])
+        : \Pushery\WireKit\Support\Plural::choice('wirekit:::count more link|:count more links', $count, ['count' => '__COUNT__']);
     $moreOne = $moreForm(1);
     $moreMany = $moreForm(2);
-    $menuName = filled($menuLabel) ? (string) $menuLabel : __('wirekit::More links');
+    $menuName = filled($menuLabel) ? \Pushery\WireKit\Support\SlotContent::textOf($menuLabel) : __('wirekit::More links');
     // A caller's `x-ref` belongs to the caller's component, and this bag lands on our root,
     // which would keep it: CallerRef::onRoot() hands it to the root above.
     $attributes = \Pushery\WireKit\Support\CallerRef::onRoot($attributes);
 @endphp
 
 <{{ $tag }} data-wk-prose-skip data-wk-overflow-nav
-    @if($named) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endunless @endif
+    @if($named) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endunless @endif
     x-data="wirekitOverflowNav({
         lines: {{ $lines }},
         moreOne: {{ \Pushery\WireKit\Support\AlpinePayload::string($moreOne) }},
         moreMany: {{ \Pushery\WireKit\Support\AlpinePayload::string($moreMany) }}
     })"
-    {{ $attributes->class(['min-w-0'])->merge(['style' => $entryMaxStyle]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['min-w-0']))->merge(['style' => $entryMaxStyle]) }}
 >
     <ul data-wk-prose-skip role="list" x-ref="row" class="{{ $rowClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($entries as $entry)

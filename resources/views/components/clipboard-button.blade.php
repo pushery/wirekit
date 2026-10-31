@@ -24,6 +24,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('clipboard-button', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
     $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:click']);
@@ -31,7 +36,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $iconOnly = BooleanProp::from($iconOnly, false);
+    $iconOnly = BooleanProp::from($iconOnly, false, 'clipboard-button', 'iconOnly');
 
     // Clipboard Button — copies value to clipboard on click.
     // Temporarily swaps label to "Copied" via Alpine, announces via aria-live.
@@ -87,7 +92,7 @@
          nothing. The value goes through AlpinePayload::from rather than addslashes, which
          escapes an apostrophe but leaves a newline or a backslash to end the
          string it sits in. --}}
-    x-data="wirekitClipboardButton({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, duration: {{ (int) $duration }} })"
+    x-data="wirekitClipboardButton({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, duration: {{ \Pushery\WireKit\Support\NumericProp::int($duration, 0, 'clipboard-button', 'duration') }} })"
     x-on:click="copy()"
     {{-- An icon-only button has no text to be named by. Without a fallback, `icon-only`
          without an `aria-label` would be a button a screen reader announces as "button" and
@@ -97,7 +102,7 @@
     @if($iconOnly && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby'))
         aria-label="{{ __('wirekit::Copy to clipboard') }}"
     @endif
-    {{ $attributes->except('type')->class([$iconOnly ? 'wk-touch-target' : 'wk-touch-row', $classes]) }} data-wk-sr-host
+    {{ $attributes->except('type')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$iconOnly ? 'wk-touch-target' : 'wk-touch-row', $classes])) }} data-wk-sr-host
 >
     {{-- Copy icon (shown when not copied). Muted/gray at rest — a copy affordance
          is subtle until it succeeds, then it pops to the success green below. --}}

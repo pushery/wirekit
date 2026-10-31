@@ -112,16 +112,19 @@ class CspAuditCommand extends Command
      * takes the place of `x-show` on a disclosure panel and hands its value to
      * `evaluateLater()`, so under the CSP build it meets the same parser. Its `.collapse`
      * modifier is covered by the modifier part of the name pattern. `x-wk-focus-first` hands
-     * its value to the same evaluator, to know when the menu it sits on opens, and
-     * `x-wk-fit-text` to know the text it writes into a fitted text. The kit's other
-     * directives evaluate nothing and stay off: `x-wk-indeterminate`, `x-wk-flash`, `x-wk-ime`,
-     * `x-wk-unsaved`, which reads its modifiers and takes its value as a scope name, read as
-     * written, and `x-wk-ref`, whose value is a ref name.
+     * its value to the same evaluator, to know when the menu it sits on opens,
+     * `x-wk-fit-text` to know the text it writes into a fitted text, `x-wk-double-tap`
+     * to run on a second tap, as `x-on` runs its value, and `x-wk-model` to read and write the
+     * caller's expression, as `x-model` does. The kit's other directives evaluate
+     * nothing and stay off: `x-wk-indeterminate`, `x-wk-flash`, `x-wk-ime`, `x-wk-unsaved`,
+     * which reads its modifiers and takes its value as a scope name, read as written,
+     * `x-wk-range-select`, which takes no value, `x-wk-focus-unit`, which reads its modifiers
+     * and takes no value, and `x-wk-ref`, whose value is a ref name.
      */
     private const EXPRESSION_ATTRIBUTES = [
         'x-data', 'x-show', 'x-if', 'x-text', 'x-html', 'x-model', 'x-modelable',
         'x-init', 'x-effect', 'x-bind', 'x-on', 'x-intersect', 'x-id',
-        'x-wk-findable', 'x-wk-focus-first', 'x-wk-fit-text',
+        'x-wk-findable', 'x-wk-focus-first', 'x-wk-fit-text', 'x-wk-double-tap', 'x-wk-model',
     ];
 
     /**
@@ -227,6 +230,7 @@ class CspAuditCommand extends Command
         $unchecked = [];
         $warnings = [];
         $unresolved = [];
+        $encoders = [];
         $unregistered = [];
 
         foreach ($found as $i => $entry) {
@@ -312,9 +316,13 @@ class CspAuditCommand extends Command
                     $warnings[] = $entry + ['warning' => $warning];
                 }
 
-                // A PASS earned by a placeholder is recorded as such, because silence here
-                // would read as measurement.
-                if ($entry['unresolved'] !== null) {
+                // An encoder in the attribute is a placement finding rather than a pass on a
+                // placeholder: the attribute's encoder is AlpinePayload, whatever the data holds
+                // (see unresolvedReason()). A PASS earned by any other placeholder is recorded as
+                // such, because silence here would read as measurement.
+                if ($entry['unresolved'] === 'encoder') {
+                    $encoders[] = $entry;
+                } elseif ($entry['unresolved'] !== null) {
                     $unresolved[] = $entry;
                 }
 
@@ -348,6 +356,7 @@ class CspAuditCommand extends Command
         $unchecked = self::oncePerAttribute($unchecked);
         $warnings = self::oncePerAttribute($warnings, 'warning');
         $unresolved = self::oncePerAttribute($unresolved);
+        $encoders = self::oncePerAttribute($encoders);
         $unregistered = self::oncePerAttribute($unregistered, 'name');
         $scanned = count(array_filter($found, static fn (array $entry): bool => $entry['rendering'] === 0));
 
@@ -379,6 +388,10 @@ class CspAuditCommand extends Command
                 'unresolved_expressions' => self::withoutBookkeeping($unresolved),
                 'encoder_in_script' => count($inScript),
                 'encoder_in_script_hits' => $inScript,
+                // The same placement question the other way round: Laravel's encoder in a
+                // directive attribute, where the attribute's own belongs.
+                'encoder_in_attribute' => count($encoders),
+                'encoder_in_attribute_hits' => self::withoutBookkeeping($encoders),
                 // Both halves, because a reader of this payload has the same blind spot a
                 // reader of the report does: zero unregistered names over zero registrations
                 // scanned is not a clean result, it is an unasked question.
@@ -398,10 +411,10 @@ class CspAuditCommand extends Command
                 'unregistered_components' => self::withoutBookkeeping($unregistered),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
 
-            return $offenders === [] && $inScript === [] && $unregistered === [] ? self::SUCCESS : self::FAILURE;
+            return $offenders === [] && $inScript === [] && $unregistered === [] && $encoders === [] ? self::SUCCESS : self::FAILURE;
         }
 
-        return $this->report($scanned, $offenders, $unchecked, $warnings, $unresolved, $inScript, $paths, $unscanned, $unregistered, $registrationScan);
+        return $this->report($scanned, $offenders, $unchecked, $warnings, $unresolved, $inScript, $paths, $unscanned, $unregistered, $registrationScan, $encoders);
     }
 
     /**
@@ -1175,20 +1188,20 @@ class CspAuditCommand extends Command
      * the browser sees. Every other construct leaves a placeholder, and a placeholder is a
      * promise this command cannot keep.
      *
-     * `encoder` is separated from `echo` because its rendered shape is known up to the data.
-     * Laravel's `Js::from()` — which `@js()` calls — wraps its payload in `JSON.parse('…')`
-     * for a non-empty ARRAY or OBJECT, and `JSON` is precisely what Alpine's CSP evaluator
-     * cannot resolve. Every other shape comes back a bare literal, INCLUDING a string of any
-     * length with quotes and non-ASCII in it, alongside numbers, booleans, null, `[]` and
-     * `{}`. It is still not reported as a violation, because this command cannot see which
-     * shape the data will take. Naming it as a probable cause is honest; calling it a finding
-     * would be a guess wearing a verdict's clothes, and one wrong violation costs the next
-     * hundred their credibility.
+     * `encoder` is separated from `echo` because it is a finding of its own, about the template
+     * rather than the data. Laravel's `Js::from()`, which `@js()` calls, is the encoder for a
+     * `<script>` block. It wraps a non-empty ARRAY or OBJECT in `JSON.parse('…')`, and `JSON`
+     * is precisely what Alpine's CSP evaluator cannot resolve; it writes the quotes,
+     * apostrophes, ampersands and angle brackets of a string as `\u` escapes, which a CSP
+     * tokenizer before Alpine 3.17.2 reads back as letters; and it writes a number, a boolean,
+     * null, `[]` and `{}` as bare literals. The encoder for a directive attribute is
+     * AlpinePayload, which writes every one of those shapes as a literal every tokenizer
+     * reads. So the finding needs no sight of the data: the encoder is the wrong one for the
+     * place, and replacing it loses nothing even where the data happened to come out right.
      *
-     * A string is resolvable as it stands, so the advice below must not send its author
-     * from the encoder to hand-written interpolation, trading a safe encoding for one the
-     * next apostrophe breaks: a hint that leads from correct code to unsafe code is worse
-     * than no hint.
+     * The advice must still never send its author from an encoder to hand-written
+     * interpolation, trading a safe encoding for one the next apostrophe breaks: it names the
+     * other encoder.
      */
     private static function unresolvedReason(string $raw): ?string
     {
@@ -1406,8 +1419,9 @@ class CspAuditCommand extends Command
      * @param  array<string, array<int, string>>  $unscanned
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, name: string}>  $unregistered
      * @param  array{names: list<string>, files: list<string>}  $registrationScan
+     * @param  array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null}>  $encoders
      */
-    private function report(int $scanned, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = [], array $unregistered = [], array $registrationScan = ['names' => [], 'files' => []]): int
+    private function report(int $scanned, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = [], array $unregistered = [], array $registrationScan = ['names' => [], 'files' => []], array $encoders = []): int
     {
         // Named rather than implied. "Scanned" reads as "checked, and it works", and
         // the difference between what this measures and what a reader hears is a gap
@@ -1500,52 +1514,18 @@ class CspAuditCommand extends Command
         // These expressions PASSED, and the pass is real as far as it goes — the grammar
         // accepted what was left after Blade came out. What it does not cover is the text
         // that was taken out, and the reader has no way to know that from a PASS alone.
+        // Counted and not listed. An interpolated prop in an `x-data` object is the ordinary way
+        // to write Alpine in Blade, so a template rests on many substitutions, and printing ten
+        // arbitrary `BLADE = BLADE` lines out of them teaches nothing. The count carries the
+        // honest half: a PASS here does not cover the rendered form. An encoder among them is
+        // not here but in its own block below, because that one is a finding.
         if ($unresolved !== []) {
-            $encoders = array_values(array_filter($unresolved, static fn (array $e): bool => $e['unresolved'] === 'encoder'));
-
             $this->line('');
             $this->warn(sprintf('%d expression(s) passed on a substitution rather than a measurement.', count($unresolved)));
             $this->line('');
             $this->line('Blade renders these before Alpine reads them, so this audit stood an identifier');
             $this->line('in for the part it cannot see. The grammar accepted what was left; nothing here');
             $this->line('says the rendered form is accepted, and this is NOT counted as a failure.');
-
-            if ($encoders !== []) {
-                $this->line('');
-                $this->line(sprintf('%d of them call Js::from() or @js(), which is worth checking first:', count($encoders)));
-                $this->line('');
-                $this->line("  That encoder renders JSON.parse('…') for a non-empty ARRAY or OBJECT — and");
-                $this->line('  JSON is the one name Alpine\'s CSP evaluator cannot resolve, so such an');
-                $this->line('  expression parses, runs, and dies silently. If this value is an array or an');
-                $this->line('  object, pass a bare literal instead.');
-                $this->line('');
-                $this->line('  A STRING is not affected, and neither are numbers, booleans, null, [] or {}:');
-                $this->line('  the encoder renders those as literals, quotes and non-ASCII included. Do not');
-                $this->line('  replace one with hand-written interpolation — that trades a safe encoding for');
-                $this->line('  one the next apostrophe breaks. This is a pointer, not a verdict, because this');
-                $this->line('  command cannot see which shape the data will take.');
-            }
-
-            // Only the encoders are listed. An interpolated prop in an `x-data` object is the
-            // ordinary way to write Alpine in Blade, so a template rests on many substitutions,
-            // and printing ten arbitrary `BLADE = BLADE` lines out of them teaches nothing while
-            // making the encoder block, which is the actionable part, scroll off the top.
-            //
-            // The count carries the honest half (a PASS here does not cover the rendered
-            // form); the list carries the part someone can act on. A report that buries the
-            // second in the first is read once.
-            $this->line('');
-
-            foreach (array_slice($encoders, 0, 10) as $entry) {
-                $this->line(sprintf('  %s:%d', $entry['file'], $entry['line']));
-                $this->line(sprintf('    %s="%s"', $entry['attribute'], $entry['expression']));
-                $this->line('');
-            }
-
-            if (count($encoders) > 10) {
-                $this->line(sprintf('  …and %d more encoder call(s).', count($encoders) - 10));
-                $this->line('');
-            }
         }
 
         // Before the verdict, for the same reason `unchecked` is: a PASS read without
@@ -1579,6 +1559,43 @@ class CspAuditCommand extends Command
             $this->line('');
             $this->line("  Alpine.data('reload', () => ({ reload() { window.location.reload() } }))");
             $this->line('  <div x-data="reload" x-on:locale-changed.window="reload">');
+            $this->line('');
+        }
+
+        // A placement finding, the mirror of the one below: Laravel's encoder where the
+        // attribute's belongs. It needs no guess about the data, because the attribute's encoder
+        // writes every shape correctly and Laravel's only some (see unresolvedReason()).
+        if ($encoders !== []) {
+            $this->line('');
+            $this->error(sprintf(
+                '%d Alpine expression(s) hand a value over with Js::from() or @js(), the encoder for a <script> block:',
+                count($encoders),
+            ));
+            $this->line('');
+
+            foreach (array_slice($encoders, 0, 10) as $entry) {
+                $this->line(sprintf('  %s:%d', $entry['file'], $entry['line']));
+                $this->line(sprintf('    %s="%s"', $entry['attribute'], $entry['expression']));
+                $this->line('');
+            }
+
+            if (count($encoders) > 10) {
+                $this->line(sprintf('  …and %d more.', count($encoders) - 10));
+                $this->line('');
+            }
+
+            $this->line('In an attribute it is the wrong encoder. A non-empty ARRAY or OBJECT comes out as');
+            $this->line("JSON.parse('…'), and JSON is the one name Alpine's CSP evaluator cannot resolve,");
+            $this->line('so the expression parses, runs, and dies silently. A STRING comes out with its');
+            $this->line('quotes, apostrophes, ampersands and angle brackets as \u escapes, which a CSP');
+            $this->line('tokenizer before Alpine 3.17.2 reads back as letters. A number, a boolean or null');
+            $this->line('comes out right from both encoders, so moving every call loses nothing:');
+            $this->line('');
+            $this->line('  x-data="panel({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})"');
+            $this->line('');
+            $this->line('AlpinePayload writes every shape as a literal the CSP evaluator reads, and Blade\'s');
+            $this->line('{{ }} escapes it for the attribute. Do not write the literal by hand instead: the');
+            $this->line('next apostrophe in the data ends it.');
             $this->line('');
         }
 
@@ -1718,7 +1735,7 @@ class CspAuditCommand extends Command
             }
         }
 
-        if ($offenders === [] && ($inScript !== [] || $unregistered !== [])) {
+        if ($offenders === [] && ($inScript !== [] || $unregistered !== [] || $encoders !== [])) {
             return self::FAILURE;
         }
 

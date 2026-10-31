@@ -210,6 +210,11 @@ export default function wirekitTour(config = {}) {
                     // this the step would stay where the target was before that scroll, and after
                     // any scroll of the reader's own. The same `stop()` ends both observers.
                     autoReposition: true,
+                    // Capped to the room on its side of the target and scrolled inside: a step
+                    // taller than a short window (a page zoomed to 400%, a phone held sideways)
+                    // stood past the edge, fixed, with its buttons out of reach while the focus
+                    // trap held the reader in it (WCAG 1.4.10).
+                    fitViewport: true,
                 });
 
                 if (placed && typeof placed.stop === 'function') {

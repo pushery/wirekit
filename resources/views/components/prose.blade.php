@@ -57,7 +57,7 @@
     use Pushery\WireKit\WireKit;
 
     // `container="false"` on an unbound tag is the string "false", which is truthy.
-    $container = BooleanProp::from($container, false);
+    $container = BooleanProp::from($container, false, 'prose', 'container');
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -189,6 +189,13 @@
         '[&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:w-full [&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)] [&_table:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-collapse',
         '[&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:text-left [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-b-2 [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)]',
         '[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-b [&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border-subtle)]',
+        // A cell may break a long word anywhere, which lowers its minimum width: a table rendered
+        // without attributes, by a Markdown pipeline that strips them, then fits its column on a
+        // phone instead of pushing the page sideways. `break-word` on the root does not lower the
+        // minimum of a table cell. A scroller around the table was the other way, and a table set
+        // to `display: block` loses its table semantics in some engines and cannot take the tab
+        // stop and name a scrolling region needs. Where the column is wide enough, nothing breaks.
+        '[&_td:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
         // Horizontal rule
         '[&_hr:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:border-[var(--color-wk-border)] [&_hr:not(:where(.not-wk-prose,.not-wk-prose_*:not(.not-wk-prose_.wk-prose_*),.not-wk-prose_.wk-prose_.not-wk-prose_*:not(.not-wk-prose_.wk-prose_.not-wk-prose_.wk-prose_*),[data-wk-prose-skip]))]:my-[var(--padding-wk-y-xl)]',
         // Images
@@ -217,6 +224,6 @@
     };
 @endphp
 
-<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif @if($densityAttr) data-density="{{ $densityAttr }}" @endif @if($presetValue) data-preset="{{ $presetValue }}" @endif @if($container) data-container @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
+<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif @if($densityAttr) data-density="{{ $densityAttr }}" @endif @if($presetValue) data-preset="{{ $presetValue }}" @endif @if($container) data-container @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, $sizeClasses, $variantClasses])) }}>
     {{ $slot }}
 </div>

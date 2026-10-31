@@ -94,7 +94,5 @@
 @endphp
 
 @if($query)
-    <{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{!! $highlighted !!}</{{ $as }}>
-@else
-    <{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</{{ $as }}>
-@endif
+    <{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{!! $highlighted !!}</{{ $as }}>@else
+    <{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $slot }}</{{ $as }}>@endif

@@ -17,12 +17,25 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('hover-card', $attributes->getAttributes());
 
+    // A hover card opens from its trigger, and without one there is nothing to open it from.
+    // Asked through the defined variables rather than isset(), which the slot reader of the
+    // component manifest takes for a slot that may be left out. A null trigger is a value the
+    // application shares with every view under this name, which this view is handed as none.
+    if (! array_key_exists('trigger', get_defined_vars()) || $trigger === null) {
+        throw new \InvalidArgumentException('<x-wirekit::hover-card> requires a `trigger` slot (e.g. <x-slot:trigger><a href="#profile">Ada</a></x-slot:trigger>).');
+    }
+
+    // One of the twelve placements Floating UI takes (Support\FloatingPlacement). A word it does not
+    // know would put the panel on the top-left corner of its trigger: debug refuses it, production logs it and uses the default.
+    // No placement at all, `null` or empty, is the default, as the script reads it.
+    $placement = \Pushery\WireKit\Support\StrictnessGate::enforce('hover-card', 'placement', (string) ($placement ?: 'bottom'), \Pushery\WireKit\Support\FloatingPlacement::ALL, 'bottom');
+
     // The three stand in the x-data object as bare numbers, so each is read as a number first:
     // text written there unquoted would run as an expression. One that holds no number takes the
     // prop's default.
-    $offset = \Pushery\WireKit\Support\NumericProp::from($offset, 8);
-    $delayShow = \Pushery\WireKit\Support\NumericProp::from($delayShow, 300);
-    $delayHide = \Pushery\WireKit\Support\NumericProp::from($delayHide, 200);
+    $offset = \Pushery\WireKit\Support\NumericProp::from($offset, 8, 'hover-card', 'offset');
+    $delayShow = \Pushery\WireKit\Support\NumericProp::from($delayShow, 300, 'hover-card', 'delayShow');
+    $delayHide = \Pushery\WireKit\Support\NumericProp::from($delayHide, 200, 'hover-card', 'delayHide');
 
     // A caller's listener for an event this view listens to on the element the bag lands on
     // goes in the other spelling, so both run (Support\CallerListeners).
@@ -74,7 +87,7 @@
          once while the card is closed, so a page full of these does not do work on
          each keystroke. --}}
     @keydown.escape.window.capture="escapeAnywhere($event)"
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses])) }}
 >
     {{-- Trigger element.
 

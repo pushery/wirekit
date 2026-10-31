@@ -43,6 +43,7 @@ import { safeHref } from '../utils/safe-href.js';
 import { outOfReachBeside } from '../utils/teleport.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { jsonValue, observeServerValue } from '../utils/server-value.js';
+import { pressedTrigger } from '../utils/trigger-press.js';
 
 /** The attribute that carries the notifications; see init(). */
 const ITEMS_ATTRIBUTE = 'data-wk-items';
@@ -54,7 +55,7 @@ const ITEMS_ATTRIBUTE = 'data-wk-items';
  * declare — one selector per component rather than a shared util, because each
  * one pairs it with its own notion of "and actually usable right now" below.
  */
-const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Is this element a tab stop the reader can actually reach right now?
@@ -281,7 +282,10 @@ export default function wirekitNotificationCenter(config = {}) {
                 this.$nextTick(async () => {
                     await this._anchor();
                     // Not when the reader already moved into the panel while it was being positioned.
-                    if (! focusIsWithin(this.$refs.panel)) this.$refs.panel?.focus();
+                    // Every focus in the panel keeps the page still: the panel is fixed to the bell, so a
+                    // scroll the browser makes to show a focused element only moves the bell, and a
+                    // scroll that moves the bell closes the panel (_onScroll).
+                    if (! focusIsWithin(this.$refs.panel)) this.$refs.panel?.focus({ preventScroll: true });
                 });
             }
         },
@@ -305,6 +309,17 @@ export default function wirekitNotificationCenter(config = {}) {
 
             event?.preventDefault();
             this.close(true);
+        },
+
+        /**
+         * The panel's press outside. The panel is teleported out of the root, so `click.outside`
+         * counts the trigger as outside, and the click that opens the panel could close it in
+         * the same click; the trigger's own click toggles it (utils/trigger-press.js).
+         */
+        closeOutside(event) {
+            if (! pressedTrigger(event, this, 'bell')) {
+                this.close();
+            }
         },
 
         close(restoreFocus = false) {
@@ -462,22 +477,24 @@ export default function wirekitNotificationCenter(config = {}) {
 
         // Anchor the teleported (fixed) panel to the bell. Prefers opening toward
         // the inline-end (bottom-start = left-aligned, so the panel extends to the
-        // RIGHT into available space); crossAxisShift pulls it back on-screen when
-        // the right edge would overflow (e.g. a top-right navbar bell). Teleporting
-        // to <body> escapes any clipping/stacking ancestor so the flyout is never
-        // hidden behind sibling content (mirrors <x-wirekit::context-menu>).
+        // RIGHT into available space); the shift along the bell pulls it back
+        // on-screen when the right edge would overflow (e.g. a top-right navbar
+        // bell). There is no shift across it: below the bell that axis is the
+        // vertical one, and a shift there would lift the panel over the bell.
+        // Teleporting to <body> escapes any clipping/stacking ancestor so the
+        // flyout is never hidden behind sibling content.
         async _anchor() {
             if (this.$refs.bell && this.$refs.panel) {
                 this._stopRepair?.();
                 this._stopRepair = null;
 
                 const placement = await position(this.$refs.bell, this.$refs.panel, {
-                    // Capped to the room on a short viewport and scrolled inside, so a phone held
-                    // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                    // Capped to the room on its side of the bell on a short viewport and scrolled
+                    // inside, so a phone held sideways or a page zoomed to 400% keeps every entry
+                    // reachable (WCAG 1.4.10).
                     fitViewport: true,
                     placement: 'bottom-start',
                     offset: 8,
-                    crossAxisShift: true,
 
                     // Everything this call writes is inline style, and a framework update patches
                     // the panel against its own template, whose `style` attribute carries none of
@@ -540,7 +557,7 @@ export default function wirekitNotificationCenter(config = {}) {
                         ?? panel.querySelector('[data-wk-notification-list]');
 
                     if (target && typeof target.focus === 'function') {
-                        target.focus();
+                        target.focus({ preventScroll: true });
                     }
                 };
 
@@ -576,7 +593,7 @@ export default function wirekitNotificationCenter(config = {}) {
                 const sel = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(next) : next;
                 const panel = this.$refs.panel;
                 const radio = panel && panel.querySelector(`[data-filter="${sel}"]`);
-                if (radio) radio.focus();
+                if (radio) radio.focus({ preventScroll: true });
             });
         },
         // Optimistic realtime insert — dedup by id, newest first, unread.

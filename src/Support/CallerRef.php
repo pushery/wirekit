@@ -22,9 +22,32 @@ final class CallerRef
 {
     /**
      * The bag with a caller's `x-ref` moved to `x-wk-ref`, and the element it lands on marked
-     * as its own boundary. A bag without an `x-ref` comes back unchanged.
+     * as its own boundary. A bag without an `x-ref` comes back unchanged, unless the component
+     * holds parts: then its root is a boundary either way, so that the `x-ref` a caller writes
+     * on one of its parts is filed above the component rather than on its own root.
      */
-    public static function onRoot(ComponentAttributeBag $attributes): ComponentAttributeBag
+    public static function onRoot(ComponentAttributeBag $attributes, bool $holdsParts = false): ComponentAttributeBag
+    {
+        $name = trim((string) $attributes->get('x-ref', ''));
+
+        if ($name === '') {
+            return $holdsParts ? $attributes->merge(['data-wk-ref-scope' => true]) : $attributes;
+        }
+
+        return $attributes->except('x-ref')->merge([
+            'x-wk-ref' => $name,
+            'data-wk-ref-scope' => true,
+        ]);
+    }
+
+    /**
+     * The bag of a part with a caller's `x-ref` moved to `x-wk-ref` and no boundary of its own.
+     *
+     * A part stands inside the Alpine root of its parent, and often in one of its own, so the
+     * ref would stay inside the component. The parent marks its root as the boundary
+     * (`onRoot(..., holdsParts: true)`), and the directive files the part above it.
+     */
+    public static function forward(ComponentAttributeBag $attributes): ComponentAttributeBag
     {
         $name = trim((string) $attributes->get('x-ref', ''));
 
@@ -32,9 +55,6 @@ final class CallerRef
             return $attributes;
         }
 
-        return $attributes->except('x-ref')->merge([
-            'x-wk-ref' => $name,
-            'data-wk-ref-scope' => true,
-        ]);
+        return $attributes->except('x-ref')->merge(['x-wk-ref' => $name]);
     }
 }

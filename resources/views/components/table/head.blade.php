@@ -15,9 +15,17 @@
 @aware([
     'stickyHeader' => false,
     'stackBelow' => null,
+    'stackBelowContainer' => null,
 ])
 
 @php
+    // `@aware` takes a key from any ancestor that holds it; these are read from the family only
+    // (Support\AwareProp).
+    $stackBelow = \Pushery\WireKit\Support\AwareProp::read('stackBelow', ['table'], null);
+    // A table that stacks by its own width writes the same roles out as one that stacks by the window's.
+    $stackBelow = filled($stackBelow) ? $stackBelow : \Pushery\WireKit\Support\AwareProp::read('stackBelowContainer', ['table'], null);
+    $stickyHeader = \Pushery\WireKit\Support\AwareProp::read('stickyHeader', ['table'], false);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
@@ -29,7 +37,7 @@
     // attribute. While the head is pinned it tells the table's scroller how much of the top it
     // covers (`data-wk-scroll-inset`), so an element that takes the focus on the way up comes to
     // rest below it rather than under it (WCAG 2.4.11).
-    $attributes = $attributes->except(['stickyHeader', 'sticky-header', 'stackBelow', 'stack-below']);
+    $attributes = $attributes->except(['stickyHeader', 'sticky-header', 'stackBelow', 'stack-below', 'stackBelowContainer', 'stack-below-container']);
     $pinned = \Pushery\WireKit\Support\BooleanProp::from($stickyHeader, false);
 
     // Thead styling — subtle background + bottom border divider
@@ -45,10 +53,11 @@
         $variant === 'filled' ? 'bg-[var(--color-wk-bg-subtle)]' : null,
         'border-b-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
-        '[table[data-wk-sticky-header]_&]:sticky [table[data-wk-sticky-header]_&]:top-0 [table[data-wk-sticky-header]_&]:z-10',
+        // At the nearest table, so the head of a table in one of its cells stays where it is.
+        '[table[data-wk-sticky-header]>&]:sticky [table[data-wk-sticky-header]>&]:top-0 [table[data-wk-sticky-header]>&]:z-10',
     ])), $scope);
 @endphp
 
-<thead data-wk-table-head @if($pinned) data-wk-scroll-inset="top" @endif @if(filled($stackBelow)) role="rowgroup" @endif {{ $attributes->class([$classes]) }}>
+<thead data-wk-table-head @if($pinned) data-wk-scroll-inset="top" @endif @if(filled($stackBelow)) role="rowgroup" @endif {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </thead>

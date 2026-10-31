@@ -52,8 +52,8 @@
          nameless while looking wired. Same gate, same reason, as every named region here.
          A caller-supplied `aria-label` / `aria-labelledby` still wins, so the two spellings
          never collide on one tag. --}}
-    @if(filled($label) && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endif
-    {{ $attributes->class([$classes]) }}
+    @if(filled($label) && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($label) }}" @endif
+    {{ $attributes->except('role')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{ $slot }}
 </div>

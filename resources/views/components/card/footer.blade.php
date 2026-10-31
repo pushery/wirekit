@@ -26,6 +26,8 @@
     ]), $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+{{-- `data-wk-card-footer` lets a folding card drop this line when the footer opens its content,
+     whose own line already stands there. --}}
+<div data-wk-card-footer {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </div>

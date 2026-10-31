@@ -13,6 +13,11 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('drawer.body', $attributes->getAttributes());
 
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
+
     use Pushery\WireKit\WireKit;
 
     // Body classes — the one region of the drawer that scrolls.
@@ -31,7 +36,7 @@
         // bottom; equal padding on one token keeps a single edge down the panel, and a theme
         // cannot pull the sides apart.
         'p-[var(--padding-wk-x-lg)]',
-        'flex-1 overflow-y-auto',
+        'relative flex-1 overflow-y-auto',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
@@ -40,6 +45,6 @@
 @endphp
 
 {{-- Drawer body — the scrolling region between header and footer --}}
-<div data-wk-drawer-body tabindex="0" {{ $attributes->class([$classes]) }}>
+<div data-wk-drawer-body @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'tabindex')) tabindex="0" @endunless {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>
     {{ $slot }}
 </div>

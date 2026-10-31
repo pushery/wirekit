@@ -13,11 +13,13 @@
     // new value before the server has agreed to it. A refusal keeps your value —
     // see the note above. Null leaves the component exactly as it has always
     // rendered.
+    // Needs `wirekit-optimistic.js` on the page beside the bundle, as
+    // docs.wirekit.app/extending/optimistic-ui shows; without it no `wirekitOptimistic` exists.
+    'optimistic' => null,
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer carries that: it spreads `args` into the call.
     'optimisticArgs' => [],
-    'optimistic' => null,
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
@@ -100,7 +102,7 @@
     'ownName' => null,
 ])
 
-@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null])
+@aware(['announceErrors' => null, 'alignFields' => false, 'wkField' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -108,14 +110,14 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $hideLabel = BooleanProp::from($hideLabel, false);
-    $reserveMessage = BooleanProp::from($reserveMessage, false);
-    $clearable = BooleanProp::from($clearable, false);
+    $hideLabel = BooleanProp::from($hideLabel, false, 'input', 'hideLabel');
+    $reserveMessage = BooleanProp::from($reserveMessage, false, 'input', 'reserveMessage');
+    $clearable = BooleanProp::from($clearable, false, 'input', 'clearable');
     // A clear or copy button says which field it acts on, the way a multi-select pill says
     // which choice it removes: a form with several such fields would otherwise offer several
     // buttons called "Clear input". The field's name is its label, the caller's `aria-label`,
     // or the label of the field around it; a field with none of them keeps the bare wording.
-    $labelText = trim(strip_tags((string) $label));
+    $labelText = \Pushery\WireKit\Support\SlotContent::textOf($label);
     if ($labelText === '') {
         $labelText = trim((string) \Pushery\WireKit\Support\AttributeText::get($attributes, 'aria-label'));
     }
@@ -123,26 +125,26 @@
         $labelText = trim($wkField->labelText());
     }
     $clearText = filled($clearLabel)
-        ? (string) $clearLabel
+        ? \Pushery\WireKit\Support\SlotContent::textOf($clearLabel)
         : ($labelText !== '' ? __('wirekit::Clear :label', ['label' => $labelText]) : __('wirekit::Clear input'));
     $copyText = $labelText !== '' ? __('wirekit::Copy :label', ['label' => $labelText]) : __('wirekit::Copy to clipboard');
-    $mono = BooleanProp::from($mono, false);
+    $mono = BooleanProp::from($mono, false, 'input', 'mono');
 
     // The field-value font: mono for codes/measurements, otherwise the sans stack.
     // Used by BOTH the bare input and the wrapped input so the two render alike.
     $fontFamilyClass = $mono
         ? 'font-[family-name:var(--font-wk-mono)]'
         : 'font-[family-name:var(--font-wk-sans)]';
-    $copyable = BooleanProp::from($copyable, false);
+    $copyable = BooleanProp::from($copyable, false, 'input', 'copyable');
     // `counter`: a string that is a sentence is the format; one that only says yes or no is that.
     $counterFormat = is_string($counter) && ! in_array(strtolower(trim($counter)), ['', '0', '1', 'false', 'true'], true) ? $counter : null;
-    $counter = $counterFormat !== null || BooleanProp::from($counter, false);
-    $required = BooleanProp::from($required, false);
-    $disabled = BooleanProp::from($disabled, false);
-    $readonly = BooleanProp::from($readonly, false);
+    $counter = $counterFormat !== null || BooleanProp::from($counter, false, 'input', 'counter');
+    $required = BooleanProp::from($required, false, 'input', 'required');
+    $disabled = BooleanProp::from($disabled, false, 'input', 'disabled');
+    $readonly = BooleanProp::from($readonly, false, 'input', 'readonly');
     // Following a derived value, the field is read-only: a reader can still reach and read it, and
     // a form still sends it, where a disabled field would be skipped by both.
-    $own = $own === null ? null : BooleanProp::from($own, false);
+    $own = $own === null ? null : BooleanProp::from($own, false, 'input', 'own');
     if ($own === false) {
         $readonly = true;
     }
@@ -150,7 +152,7 @@
     // `tokens`, each token once, with what it stands for or null. A token that is empty inserts
     // nothing, so it gets no button.
     $insertTokens = [];
-    $tokensValue = \Pushery\WireKit\Support\ListProp::from($tokens);
+    $tokensValue = \Pushery\WireKit\Support\ListProp::from($tokens, 'input', 'tokens');
     if (is_array($tokensValue)) {
         foreach ($tokensValue as $tokenKey => $tokenValue) {
             [$tokenText, $tokenMeaning] = is_int($tokenKey) ? [(string) $tokenValue, null] : [(string) $tokenKey, filled($tokenValue) ? (string) $tokenValue : null];
@@ -166,7 +168,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields', 'wkField', 'wk-field', 'wkFieldSet', 'wk-field-set']);
 
     // In a row that lines its fields up (`row align-fields`), the field takes the row's three
     // tracks itself, label, control and message, as `field` does: a button beside it then
@@ -187,6 +189,9 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+    // A list where the field takes one value, as `old()` gives one after a request that sent
+    // `name[]`, is reported and left off the field (Support\FieldValue).
+    $attributes = \Pushery\WireKit\Support\FieldValue::withoutLists($attributes, 'input');
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -201,9 +206,12 @@
     }
 
     // A date or time field drops the full timestamp Livewire sends for a date object, so a binding
-    // to one warns in debug mode (Support\DateModel).
+    // to one warns in debug mode (Support\DateModel). A date object or a date and time as text in
+    // `value`, `min` or `max`, as a model's date cast or `old()` hands one over, is written in the
+    // field's own form: the field would drop it, stay empty and send nothing.
     if (isset(\Pushery\WireKit\Support\DateModel::FORMATS[strtolower((string) $type)])) {
         \Pushery\WireKit\Support\DateModel::warn('input', strtolower((string) $type), $attributes);
+        $attributes = \Pushery\WireKit\Support\DateModel::writtenIn($attributes, strtolower((string) $type));
     }
 
     // A caller's `wire:key`, `x-show`, `wire:show` and their transitions are about the whole
@@ -222,15 +230,23 @@
     // control is not. HTML does not allow an empty name, and a form skips a field without one.
     // The bag holds a bound name escaped once; read as the text it stands for, so the field is
     // sent under the name the caller bound (Support\AttributeText).
-    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', $id);
+    // Without a `name` the field is sent under the caller's `id`, and without either it is not
+    // sent at all: an id DomId counted out names nothing a form should carry.
+    $name = \Pushery\WireKit\Support\AttributeText::get($attributes, 'name', filled($attributes->get('id')) ? $id : '');
+    // Without a `name`, the bag files this field's error under the property its `wire:model`
+    // binds (FieldError::nameOf).
+    $errorName = \Pushery\WireKit\Support\FieldError::nameOf(\Pushery\WireKit\Support\AttributeText::get($attributes, 'name'), $attributes) ?? $name;
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
     // below, so leaving either in the bag emits a second, conflicting attribute on the
     // same element, which is invalid HTML the browser accepts silently by keeping the first.
     $attributes = $attributes->except(['id', 'name']);
 
+    // A field around this control with its error off turns it off here too (Support\FieldControl::errorOf()).
+    $error = \Pushery\WireKit\Support\FieldControl::errorOf($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $error);
+
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || \Pushery\WireKit\Support\FieldError::has($errors ?? null, $name);
-    $errorMessage = $error ?? \Pushery\WireKit\Support\FieldError::first($errors ?? null, $name);
+    $errorMessage = \Pushery\WireKit\Support\FieldGroup::entryMessage($wkFieldSet, $errors ?? null, $errorName, $error);
+    $hasError = $errorMessage !== null;
 
     // Success / valid state — only when there is NO error (error wins). A string
     // value renders a green confirmation message below the field; `true` shows the
@@ -239,14 +255,15 @@
     // string 'false' (truthy) paint the success state — isFalse recognizes the
     // stringly-false spellings without collapsing a real success message.
     $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
-    $successMessage = is_string($success) ? $success : null;
+    // A message as text or as markup, as `hint` takes it; `true` alone is the state without one.
+    $successMessage = is_string($success) || $success instanceof \Illuminate\Contracts\Support\Htmlable ? $success : null;
     // One description list for the control: the component's own id first, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
     // The format hint is a description whenever it is on, not only when it has something to say:
     // its text is decided in the browser, after this markup is written, and an element with no
     // text adds nothing to a computed description.
-    $formatHint = BooleanProp::from($formatHint, false);
+    $formatHint = BooleanProp::from($formatHint, false, 'input', 'formatHint');
     $showsFormatHint = $formatHint && in_array($type, ['date', 'datetime-local'], true);
     $describedBy = trim(implode(' ', array_filter([
         $hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')),
@@ -256,6 +273,13 @@
     // The field's help, after its own message: what the field is for. Only beside a label,
     // which is where its hidden copy is rendered.
     $helpId = filled($help) && filled($label) ? $id.'-help' : null;
+    // A `field` around this control renders its hint below it, and the control is described by it
+    // as by a hint of its own (Support\FieldControl).
+    $describedBy = \Pushery\WireKit\Support\FieldControl::describe($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $describedBy, $id, $hint ? $id.'-hint' : null, $helpId ?? null);
+    // A required `field` around this control hides its asterisk from assistive technology, so
+    // the control says it, with `aria-required` and never the browser's own check
+    // (Support\FieldControl::requiredBy()).
+    $fieldRequired = \Pushery\WireKit\Support\FieldControl::requiredBy($wkField instanceof \Pushery\WireKit\Support\FieldControl ? $wkField : null, $required);
     $describedBy = trim($describedBy.' '.($helpId ?? ''));
 
     // A native date, time or date-and-time field takes a grid with its content centered on the
@@ -431,13 +455,18 @@
     if ($callerRef !== '') {
         $attributes = $attributes->except('x-ref');
     }
+    // With the optimistic layer the field stands inside a root of ours, where `.parent` would still
+    // find the layer's names: the caller's `x-model` reaches it as `x-wk-model`, read above the
+    // layer's element, which marks the boundary (CallerModel::onField()).
+    $modelScope = $optimisticConfig && \Pushery\WireKit\Support\CallerModel::binds($attributes);
+    $attributes = $modelScope ? \Pushery\WireKit\Support\CallerModel::onField($attributes) : $attributes;
 @endphp
 
-<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($callerRef !== '') data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div {{ $outerAttributes }} @if($inAlignedRow) data-wk-field @endif class="relative space-y-1.5 min-w-0" @if($callerRef !== '' || $modelScope) data-wk-ref-scope @endif @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         {{-- A visually hidden label draws no asterisk: the mark is for the eye, which does not see
              this label, and the field's own `required` says it to a screen reader. --}}
-        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name" :for="$id" :required="$required && ! $hideLabel" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
+        <x-wirekit::label :help="$help" :help-id="$helpId" :help-field="$name !== '' ? $name : $id" :for="$id" :required="$required && ! $hideLabel" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}<x-slot:after>{{ $labelAfter ?? '' }}</x-slot:after></x-wirekit::label>
     @elseif($inAlignedRow)
         {{-- An empty label track, held so that the control stays on the middle one. --}}
         <span data-wk-field-part="label" aria-hidden="true"></span>
@@ -497,11 +526,11 @@
                 {{-- The kit draws its own clear button, so on a field of type search the browser's
                      is hidden through this marker (dist/wirekit.css) and the field shows one. --}}
                 @if($clearable) data-wk-clearable @endif
-                @if($required) required @endif
+                @if($required) required @elseif($fieldRequired) aria-required="true" @endif
                 @if($disabled) disabled @endif
                 @if($readonly) readonly @endif
                 @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
-                @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
+                @if($placeholder !== null) placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
@@ -512,11 +541,11 @@
                          field. --}}
                     x-on:change="run($event.target.value)"
                 @endif
-                {{ $attributes->except('aria-describedby')->class([
+                {{ $attributes->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [
                     'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
                     'w-full h-full bg-transparent border-none shadow-none',
                     // A flex item keeps the width of its content unless told otherwise, so in a
-                    // frame narrower than that the field would reach past the frame's edge.
+                    // frame narrower than that the field would reach past the edge of the frame.
                     'min-w-0',
                     'block' => ! $isNativeTemporal,
                     'grid items-center' => $isNativeTemporal,
@@ -528,7 +557,7 @@
                     $prefixInputPadClass,
                     'pl-1' => (bool) $prefix || $hasLeading,
                     'pr-1' => (bool) $suffix || $hasAffordances || $hasTrailing,
-                ]) }}
+                ])) }}
             />
 
             @if($suffix)
@@ -608,11 +637,11 @@
             id="{{ $id }}"
             @if($name !== '') name="{{ $name }}" @endif
             type="{{ $type }}"
-            @if($required) required @endif
+            @if($required) required @elseif($fieldRequired) aria-required="true" @endif
             @if($disabled) disabled @endif
             @if($readonly) readonly @endif
             @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
-            @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
+            @if($placeholder !== null) placeholder="{{ \Pushery\WireKit\Support\SlotContent::textOf($placeholder) }}" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
@@ -621,7 +650,7 @@
                 x-on:change="run($event.target.value)"
             @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('aria-describedby')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-field', $inputClasses, $stateClasses, $sizeClasses])) }}
         />
     @endif
 
@@ -698,7 +727,7 @@
                 data-wk-format-hint
                 id="{{ $id }}-format-hint"
                 x-data="wirekitDateFormatHint({
-                    locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale())) }},
+                    locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(\Pushery\WireKit\Support\IcuLocale::tag()) }},
                     template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
                 })"
                 x-text="message"
@@ -725,7 +754,7 @@
         @endphp
         <x-wirekit::toggle
             size="sm"
-            :label="$ownLabel ?? __('wirekit::Set my own value')"
+            :label="\Pushery\WireKit\Support\BlankName::first($ownLabel, __('wirekit::Set my own value'))"
             :disabled="$disabled"
             :scope="$scope"
             x-data="wirekitOwnValue()"

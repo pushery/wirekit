@@ -73,4 +73,4 @@
      fact, and a screen-reader user hears "01" before every heading with no way
      to know it adds nothing. Presentational by omission is the correct shape
      here; a decorative element that stays quiet is not an accessibility gap. --}}
-<span {{ $attributes->class([$classes]) }}>{{ $slot }}</span>
+<span {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $slot }}</span>

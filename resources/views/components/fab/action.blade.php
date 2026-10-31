@@ -17,6 +17,11 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('fab.action', $attributes->getAttributes());
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables and
+    // `autofocus="false"` focuses — the opposite of what the call site says, with no error
+    // either way. Strip such flags when their value reads as false, before the bag is printed.
+    $attributes = \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -25,9 +30,9 @@
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so
     // `hideLabel="false"` would mean the opposite of what the call site reads as.
-    $hideLabel = BooleanProp::from($hideLabel, false);
+    $hideLabel = BooleanProp::from($hideLabel, false, 'fab.action', 'hideLabel');
 
-    $tag = $href ? 'a' : 'button';
+    $tag = $href !== null ? 'a' : 'button';
 
     // An icon-only action with no label has no accessible name at all — a menu
     // item a screen reader can only announce as "button". Nothing downstream can
@@ -56,7 +61,7 @@
     // except('rel'), because $attributes->merge() treats rel as a DEFAULT and a
     // caller-supplied rel would replace the computed value.
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -73,8 +78,13 @@
     // of the two took it so the second cannot fire as well and say it twice.
     $hintsNewTabInLabel = $opensNewTab && $label !== '';
     $accessibleLabel = $hintsNewTabInLabel
-        ? trim($label.' '.__('wirekit::(opens in new tab)'))
-        : $label;
+        ? trim(\Pushery\WireKit\Support\SlotContent::textOf($label).' '.__('wirekit::(opens in new tab)'))
+        : \Pushery\WireKit\Support\SlotContent::textOf($label);
+
+    // A button's type is the caller's when it is one a button has, so a form can submit through it;
+    // otherwise it stays a plain button. It leaves the attributes below, since a second `type`
+    // would lose to the first.
+    $wkButtonType = in_array($attributes->get('type'), ['submit', 'reset', 'button'], true) ? $attributes->get('type') : 'button';
 @endphp
 
 {{-- No role. The parent is a `role="group"` now rather than a `role="menu"`, and a
@@ -87,17 +97,17 @@
      smallest targets on the screen. It reads the token rather than a literal so the
      floor lives in one place; a developer's own buttons sit next to these. --}}
 <{{ $tag }} data-wk-prose-skip
-    @if($href) href="{{ $href }}" @else type="button" @endif
+    @if($href !== null) href="{{ $href }}" @else type="{{ $wkButtonType }}" @endif
     {{-- Only emit the name when there IS one. `aria-label=""` is worse than no
          aria-label at all: it suppresses the fallback to the element's own text
          content, so an action rendering a text slot would lose the name it
          already had. With no label AND no text (the icon-only case) nothing can
          invent one — the strict-mode validation below says so out loud instead of
          shipping a nameless menu item. --}}
-    @if($label !== '') aria-label="{{ $accessibleLabel }}" @endif
+    @if($label !== '' && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') && ! \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ $accessibleLabel }}" @endif
     data-wk-fab-action
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes.' wk-fab-action-labeled']) }}
+    {{ $attributes->except($href !== null ? ['rel'] : ['rel', 'type'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes.' wk-fab-action-labeled'])) }}
 >
     @if($icon)
         <x-wirekit::icon :name="$icon" />

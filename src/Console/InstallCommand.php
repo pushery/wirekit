@@ -1202,7 +1202,7 @@ class InstallCommand extends Command
     {
         $appCss = resource_path('css/app.css');
         $content = (string) file_get_contents($appCss);
-        $block = $this->buildFontOverrideBlock($category, $preset->fontFamily());
+        $block = $this->buildFontOverrideBlock($category, $preset->fontFamily(), $preset->key);
 
         $startMarker = "/* wirekit:font-{$category}:start */";
         $endMarker = "/* wirekit:font-{$category}:end */";
@@ -1306,19 +1306,33 @@ class InstallCommand extends Command
      * Setting both ensures Tailwind utilities and WireKit components stay
      * visually aligned, preventing the footgun where WireKit chrome renders
      * in a different font than the body copy.
+     *
+     * The `:root` rule stands outside every cascade layer. `dist/wirekit.css` declares its
+     * tokens unlayered, and an unlayered declaration beats a layered one whatever the
+     * specificity, so the same rule inside `@layer base` never reached a component: the
+     * chrome kept Inter while the body copy took the new font. `wirekit:verify` reports
+     * exactly that wrapper (Verify\Checks\TokensInWrappersThatCannotWinCheck).
+     *
+     * A sans font other than Inter also gets `--font-wk-icon-nudge: 0px`. The stylesheet's
+     * nudge lifts an icon beside a label onto the label's letters by the amount measured for
+     * Inter, and another font sets its letters at another height, so the icon goes back to
+     * the center of the line, as each theme preset with a font of its own does.
      */
-    private function buildFontOverrideBlock(string $category, string $fontFamily): string
+    private function buildFontOverrideBlock(string $category, string $fontFamily, string $fontKey): string
     {
+        $nudge = $category === 'sans' && $fontKey !== 'inter'
+            ? "\n    /* The icon nudge is tuned for Inter, so this font starts without one. */\n    --font-wk-icon-nudge: 0px;"
+            : '';
+
         return <<<CSS
 /* wirekit:font-{$category}:start */
 @theme {
     --font-{$category}: {$fontFamily};
 }
 
-@layer base {
-    :root {
-        --font-wk-{$category}: {$fontFamily};
-    }
+/* Unlayered, so it wins over the value WireKit's stylesheet declares. */
+:root {
+    --font-wk-{$category}: {$fontFamily};{$nudge}
 }
 /* wirekit:font-{$category}:end */
 CSS;

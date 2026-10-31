@@ -72,15 +72,17 @@ class VerifyInstallationCommand extends Command
      * markup carries the chart tag, and only a real browser shows the empty box.
      *
      * A major is listed once the sample's chart suite passes against it in a real browser,
-     * which it does for 5.16.0, 6.10.0 and 7.1.0. The three differ in the statics the loaded
+     * which it does for 5.16.0, 6.10.0, 7.1.0 and 8.3.1. They differ in the statics the loaded
      * library exposes: 6 adds `_crossfilterFactory` and `_crossfilterGet`, 7 drops both
-     * again, and the adapter references neither, which is why 7 costs it nothing.
+     * again and 8 has neither, and the adapter references neither, which is why 7 and 8 cost
+     * it nothing. 8 lays a chart's own y-axis over the page-wide one, the reverse of 7, so the
+     * adapter leaves a label formatter the page sets for every chart in charge.
      *
      * These are the versions the chart's documentation names as supported.
      *
      * @var list<int>
      */
-    public const APEXCHARTS_TESTED_MAJORS = [5, 6, 7];
+    public const APEXCHARTS_TESTED_MAJORS = [5, 6, 7, 8];
 
     /**
      * Register the `wirekit:doctor` alias on the SAME Symfony command

@@ -55,6 +55,55 @@ export function belongsThroughTeleports(node, container) {
 }
 
 /**
+ * The nearest element around a node, the node included, that matches a selector, counting a
+ * teleported clone as standing where its `<template>` was written. Inside a clone only a match
+ * within it counts; above it the search goes on at the template, through as many teleports as
+ * lie in between.
+ *
+ * @param {Element|null|undefined} node
+ * @param {string} selector
+ * @returns {Element|null}
+ */
+export function closestThroughTeleports(node, selector) {
+    let current = node;
+
+    // A chain of teleports is short. The bound only keeps a malformed chain from looping.
+    for (let hops = 0; current && hops < 32; hops++) {
+        const found = typeof current.closest === 'function' ? current.closest(selector) : null;
+        const root = teleportedRootOf(current);
+
+        if (! root || (found && root.contains(found))) {
+            return found;
+        }
+
+        current = root._x_teleportBack;
+    }
+
+    return null;
+}
+
+/**
+ * The clones teleported out of a container, through as many teleports as lie in between: the
+ * children of the overlay root whose `<template>` stands in it. A walk over the container's
+ * descendants never arrives at them, since the root is the last child of the body.
+ *
+ * @param {Element} container
+ * @param {Document} [doc]
+ * @returns {Element[]}
+ */
+export function teleportedClonesOf(container, doc = globalThis.document) {
+    const overlayRoot = doc?.getElementById?.(OVERLAY_ROOT_ID) ?? null;
+
+    // A container around the overlay root holds the clones among its descendants already.
+    if (! overlayRoot || typeof container?.contains !== 'function' || container.contains(overlayRoot)) {
+        return [];
+    }
+
+    return Array.from(overlayRoot.children ?? [])
+        .filter((clone) => clone._x_teleportBack && belongsThroughTeleports(clone._x_teleportBack, container));
+}
+
+/**
  * A test for the tab stops that a Tab leaving a teleported panel cannot reach from `anchor`,
  * the element the panel is drawn beside.
  *

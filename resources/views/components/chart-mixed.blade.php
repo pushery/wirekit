@@ -23,11 +23,15 @@
     'valueDecimals' => null,
     'valuePrefix' => null,
     'valueSuffix' => null,
+    // Whether the values group their thousands; null leaves the chart's default, which groups.
+    'valueGrouping' => null,
     // Further values the tooltip names for each point, the receipts beside a day's revenue.
     'tooltipExtras' => [],
     // The colors the series take, `semantic` or `categorical`; null leaves it to the chart's
     // config default, as on the chart itself.
     'palette' => null,
+    // The data as a table under the chart, `disclosure` or `screen-reader`, as on the chart itself.
+    'table' => null,
     'scope' => null,
 ])
 
@@ -40,11 +44,16 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('chart-mixed', $attributes->getAttributes());
 
+    // The decimals reach the Chart class's constructor as a whole number or nothing: a NAN handed
+    // on as it came is coerced to a string there, which PHP 8.5 warns about. Chart keeps the
+    // number within 0 to 100.
+    $valueDecimals = \Pushery\WireKit\Support\NumericProp::intOrNull($valueDecimals, 'chart-mixed', 'valueDecimals');
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $inline = BooleanProp::from($inline, false);
-    $replayable = BooleanProp::from($replayable, false);
+    $inline = BooleanProp::from($inline, false, 'chart-mixed', 'inline');
+    $replayable = BooleanProp::from($replayable, false, 'chart-mixed', 'replayable');
 
     // Chart-mixed — multi-type / multi-axis dashboard chart. Each dataset
     // carries its OWN `type` (line/bar/area) plus an optional `yAxisID`
@@ -120,9 +129,16 @@
     // Stripped from the wrapper so the name is not ALSO emitted where it is
     // prohibited; the wrapper keeps every other attribute the caller passed.
     $mixedAttributes = $attributes->except(['aria-label', 'aria-labelledby']);
+
+    // An inline display wins over every class of the caller's, `hidden` included: where the
+    // caller's class reaches for one, it is left out here and comes back as its utility.
+    [$mixedStyle, $mixedStyleClasses] = \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes, 'width: 100%; min-width: 0; display: block;');
+
+    // One value for the style, so a `;` in it carries no declaration of its own (Support\CssValue).
+    $height = \Pushery\WireKit\Support\CssValue::prop($height, 'chart-mixed', 'height', '380px');
 @endphp
 
-<div {{ $mixedAttributes->merge(['style' => 'width: 100%; min-width: 0; display: block;'])->class([$rootClass]) }} >
+<div {{ $mixedAttributes->merge(['style' => $mixedStyle])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass, $mixedStyleClasses => $mixedStyleClasses !== ''])) }} >
     {{--
         Explicit `width: 100%; min-width: 0; display: block;` so the
         wrapper reliably resolves its width inside ANY parent context.
@@ -151,8 +167,10 @@
         :valueDecimals="$valueDecimals"
         :valuePrefix="$valuePrefix"
         :valueSuffix="$valueSuffix"
+        :valueGrouping="$valueGrouping"
         :tooltipExtras="$tooltipExtras"
         :palette="$palette"
+        :table="$table"
         :attributes="$chartAriaAttributes"
     />
 </div>

@@ -33,8 +33,8 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $promptOnReturn = BooleanProp::from($promptOnReturn, true);
-    $previewMode = BooleanProp::from($previewMode, false);
+    $promptOnReturn = BooleanProp::from($promptOnReturn, true, 'reading-bookmark', 'promptOnReturn');
+    $previewMode = BooleanProp::from($previewMode, false, 'reading-bookmark', 'previewMode');
 
     // Reading-bookmark — saves the reader's scroll position to localStorage
     // and surfaces a "Resume reading?" pill on return-visit if they spent
@@ -45,9 +45,9 @@
 
     $previewModeBool = filter_var($previewMode, FILTER_VALIDATE_BOOL);
 
-    // In previewMode, the component renders an inert placeholder — no
-    // localStorage reads/writes, no scroll listener, no resume-prompt
-    // pill. Used inside docs.wirekit.app preview iframes where (a) multiple
+    // In previewMode, the component renders nothing: no localStorage
+    // reads or writes, no scroll listener, no resume-prompt pill. Used
+    // inside docs.wirekit.app preview iframes where (a) multiple
     // bookmarks on one page would all surface their pills simultaneously
     // (one per localStorage key), and (b) the preview iframe is too
     // narrow to demo the production UX anyway.
@@ -104,8 +104,11 @@
         'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]',
     ]), $scope);
 
-    $thresholdFloat = max(0.0, min(1.0, (float) $threshold));
-    $minDwell = max(0, (int) $minDwellSeconds);
+    // The threshold is read as PHP casts it, so a text with a unit keeps the number it starts with, and reported.
+    \Pushery\WireKit\Support\NumericProp::check($threshold, 'reading-bookmark', 'threshold');
+    // As `(float)` reads it, without ending the page on an object.
+    $thresholdFloat = max(0.0, min(1.0, \Pushery\WireKit\Support\NumericProp::castFloat($threshold, 0.1)));
+    $minDwell = max(0, \Pushery\WireKit\Support\NumericProp::int($minDwellSeconds, 0, 'reading-bookmark', 'minDwellSeconds'));
     $promptEnabled = filter_var($promptOnReturn, FILTER_VALIDATE_BOOL);
 
     // target=null resolves to the family default 'main, article' (first-match
@@ -170,7 +173,7 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-2"
-        {{ $attributes->class([$rootClass]) }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$rootClass])) }}
         @if($callerRef !== '') x-wk-ref="{{ $callerRef }}" @endif
         {{-- Fixed at the bottom of the viewport: the page keeps an element that takes the focus out
              from under the pill (WCAG 2.4.11, resources/js/utils/scroll-inset.js). Scoped to a box,

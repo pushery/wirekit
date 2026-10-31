@@ -23,6 +23,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('stepper', $attributes->getAttributes());
 
+    // An unknown `orientation` is reported (Support\StrictnessGate) and renders as `horizontal`; a
+    // bound `null` or empty string is `horizontal` without a word.
+    $orientation = \Pushery\WireKit\WireKit::validateProp('stepper', 'orientation', \Pushery\WireKit\Support\NumericProp::text($orientation ?: 'horizontal'), ['horizontal', 'vertical']);
+
     // A stepper shows progress through a multi-step flow. Each step is either
     // completed (index < current), current (index == current), or upcoming
     // (index > current). The visual treatment and ARIA semantics differ per state.
@@ -46,7 +50,7 @@
     // Steps usually arrive as a Collection; `array_key_last()` below takes an array. They are
     // renumbered, because a step's number and its place in the row are read from its key, and a
     // filtered Collection or steps keyed by name carry other keys than 0 to n-1.
-    $steps = ListProp::renumbered(ListProp::records($steps));
+    $steps = ListProp::renumbered(ListProp::records($steps, 'stepper', 'steps'));
     $count = is_countable($steps) ? count($steps) : 0;
 
     // Outer list — <ol> since steps are ordered. role="list" is redundant but
@@ -128,7 +132,7 @@
      outrank a bare `hidden` without the application's preflight): an empty list reads out as
      progress with nothing in it. It stays in the markup, so the caller's attributes still have
      their element. --}}
-<ol data-wk-prose-skip data-wk-stepper="{{ $isVertical ? 'vertical' : 'horizontal' }}" @unless($attributes->has('role')) role="list" @endunless @if($count > 0) @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ __('wirekit::Progress') }}" @endunless @else hidden aria-hidden="true" @endif {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0; --wk-stepper-count: '.$count.';'])->class([$listClasses]) }}>
+<ol data-wk-prose-skip data-wk-stepper="{{ $isVertical ? 'vertical' : 'horizontal' }}" @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="list" @endunless @if($count > 0) @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Progress') }}" @endunless @else @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'hidden')) hidden @endunless aria-hidden="true" @endif {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0; --wk-stepper-count: '.$count.';'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$listClasses])) }}>
     @foreach($steps as $i => $step)
         @php
             // Normalize: accept a string (label only) or ['label' => .., 'description' => ..].
@@ -276,7 +280,7 @@
                  compact form hides only visually, and `aria-current` on the step. --}}
             @unless($isVertical)
                 <div data-wk-stepper-caption aria-hidden="true">{{ trim($label) !== ''
-                    ? __('wirekit::Step :current of :total: :label', ['current' => $stepNumber, 'total' => $count, 'label' => $label])
+                    ? __('wirekit::Step :current of :total: :label', ['current' => $stepNumber, 'total' => $count, 'label' => \Pushery\WireKit\Support\SlotContent::textOf($label)])
                     : __('wirekit::Step :current of :total', ['current' => $stepNumber, 'total' => $count]) }}</div>
             @endunless
         </li>

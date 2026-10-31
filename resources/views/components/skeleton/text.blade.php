@@ -14,9 +14,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('skeleton.text', $attributes->getAttributes());
 
-    // A count of lines, whatever the attribute or the data carried: a text would throw in the
-    // loop below, which draws the lines.
-    $lines = max(0, (int) \Pushery\WireKit\Support\NumericProp::from($lines, 3));
+    // An unknown `animation` is reported (Support\StrictnessGate) and renders as `shimmer`; a bound
+    // `null` or empty string is `shimmer` without a word.
+    $animation = \Pushery\WireKit\WireKit::validateProp('skeleton.text', 'animation', \Pushery\WireKit\Support\NumericProp::text($animation ?: 'shimmer'), ['shimmer', 'pulse', 'none']);
+
+    // A count of lines, whatever the attribute or the data carried, and at most a hundred: a text
+    // would throw in the loop below, which draws the lines, and a line per unit of a count without
+    // a ceiling runs the request out of memory.
+    $lines = max(0, \Pushery\WireKit\Support\NumericProp::capped(\Pushery\WireKit\Support\NumericProp::from($lines, 3, 'skeleton.text', 'lines'), 100, 'skeleton.text', 'lines'));
 
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
@@ -24,7 +29,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $shimmer = BooleanProp::from($shimmer, true);
+    $shimmer = BooleanProp::from($shimmer, true, 'skeleton.text', 'shimmer');
 
     $baseShimmer = 'wk-skeleton bg-[var(--color-wk-bg-skeleton)] rounded-[var(--radius-wk-md)]';
     // Animation: shimmer (default) | pulse | none. Legacy `shimmer=false` → pulse.
@@ -46,8 +51,8 @@
      as a custom property so it stays tunable per variant. --}}
     <div data-wk-sr-host
     role="status"
-    aria-live="polite"
-    aria-label="{{ __('wirekit::Loading') }}"
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-live')) aria-live="polite" @endunless
+    @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-label') || \Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'aria-labelledby')) aria-label="{{ __('wirekit::Loading') }}" @endunless
     {{-- No aria-busy here, deliberately. This element IS the live region, and
          WAI-ARIA defines aria-busy on a live region as "wait before exposing
          this to the user" — set to true and never flipped back, it tells
@@ -57,7 +62,7 @@
          container whose content is still missing, which is the developer's
          element; leaving the attribute off is also what lets them put it there
          and have the shimmer's own pause rule see it. --}}
-    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 80px;'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
+    {{ $attributes->except('role')->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 80px;'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$wrapperClasses, 'wk-skeleton-skip-offscreen'])) }}
 >
     <div class="space-y-2">
         @for($i = 0; $i < $lines; $i++)

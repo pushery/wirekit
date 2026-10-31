@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console\Verify\Checks;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\View;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Console\Verify\VerifyCheck;
 use Pushery\WireKit\Support\AppCss;
@@ -149,9 +150,13 @@ final class TailwindSourceCheck extends VerifyCheck
      *
      * The narrow form is only as good as the list, and a list goes stale the first time a view
      * starts using a component nobody added: that component's utilities are simply missing, and
-     * nothing fails. So the views are read and held against what the declared sources cover.
-     * A source covers its whole closure, so a component rendered inside a declared one (a button
-     * in a modal) is covered without a line of its own.
+     * nothing fails. So the views are read and held against what the declared sources cover:
+     * the application's, and those of every package that registered views of its own, since a
+     * package's view renders on the application's pages too. A source covers its whole closure,
+     * so a component rendered inside a declared one (a button in a modal) is covered without a
+     * line of its own. A view that calls `WireKit::spinePadding()` counts as using `spine-aware`
+     * unless a declared source carries the runtime class list, which spells what the helper
+     * returns.
      *
      * @param  list<string>  $declared  component names whose source resolved
      * @param  list<string>  $unresolved  `@source` paths that resolve to no file
@@ -177,43 +182,74 @@ final class TailwindSourceCheck extends VerifyCheck
             }
         }
 
+        // Each component with the views that render it: the application's, or a package's by its
+        // directory.
         $used = [];
+        // The views that take an inline padding from `WireKit::spinePadding()`. The helper returns
+        // its classes in PHP, so they are built only from the runtime class list.
+        $spinePadding = [];
 
-        foreach (File::allFiles(resource_path('views')) as $view) {
-            if (! str_ends_with($view->getFilename(), '.blade.php')) {
-                continue;
-            }
+        foreach ($this->viewDirectories() as [$whose, $directory]) {
+            foreach (File::allFiles($directory) as $view) {
+                if (! str_ends_with($view->getFilename(), '.blade.php')) {
+                    continue;
+                }
 
-            foreach (BladeParser::extractWireKitComponentUsagesFromSource($view->getContents()) as $usage) {
-                $component = explode('.', $usage['name'])[0];
+                $contents = $view->getContents();
 
-                if (ComponentRegistry::get($component) !== null) {
-                    $used[$component] = true;
+                foreach (BladeParser::extractWireKitComponentUsagesFromSource($contents) as $usage) {
+                    $component = explode('.', $usage['name'])[0];
+
+                    if (ComponentRegistry::get($component) !== null) {
+                        $used[$component][$whose] = true;
+                    }
+                }
+
+                if (preg_match('/\bspinePadding\s*\(/', $contents) === 1) {
+                    $spinePadding[$whose] = true;
                 }
             }
         }
 
         $missing = [];
 
-        foreach (array_keys($used) as $component) {
+        foreach ($used as $component => $whose) {
             $templates = TailwindSources::templatesOf($component);
 
             if ($templates !== [] && array_diff($templates, array_keys($covered)) !== []) {
-                $missing[] = $component;
+                $missing[$component] = array_map('strval', array_keys($whose));
             }
         }
 
-        sort($missing);
+        // A view calling the helper needs a declared source that carries the runtime class list.
+        // The source of `spine-aware`, whose padding the helper writes, carries it, so that is the
+        // line the report names.
+        if ($spinePadding !== [] && ! isset($covered[TailwindSources::runtimeClassList()]) && ! isset($missing['spine-aware'])) {
+            $missing['spine-aware'] = array_map('strval', array_keys($spinePadding));
+        }
+
+        ksort($missing);
 
         if ($missing !== []) {
+            // A component only a package renders says which package, since nothing in the
+            // application's own views would lead a developer to it.
+            $named = [];
+
+            foreach ($missing as $component => $whose) {
+                $packages = array_values(array_filter($whose, static fn (string $w): bool => $w !== ''));
+                $named[] = in_array('', $whose, true) || $packages === []
+                    ? $component
+                    : sprintf('%s (in %s)', $component, implode(', ', array_map(static fn (string $n): string => "`{$n}`", $packages)));
+            }
+
             $this->reportFail(sprintf(
                 'Tailwind @source misses %d WireKit component(s) your views render: %s',
                 count($missing),
-                implode(', ', $missing),
+                implode(', ', $named),
             ));
             $this->line('  Their utilities are not built, so they render unstyled. Fix: add to your stylesheet:');
 
-            foreach ($missing as $component) {
+            foreach (array_keys($missing) as $component) {
                 $this->line(sprintf('  @source "../../vendor/pushery/wirekit/%s/%s.txt";', TailwindSources::DIRECTORY, $component));
             }
 
@@ -221,11 +257,65 @@ final class TailwindSourceCheck extends VerifyCheck
         }
 
         if ($unresolved === []) {
+            $packages = array_unique(array_filter(array_map('strval', array_merge([], ...array_map('array_keys', array_values($used)))), static fn (string $w): bool => $w !== ''));
+
             $this->reportPass(sprintf(
-                'Tailwind @source covers the %d WireKit component(s) your views render, through %d per-component source(s)',
+                'Tailwind @source covers the %d WireKit component(s) your views render, through %d per-component source(s)%s',
                 count($used),
                 count($declared),
+                $packages === [] ? '' : sprintf(', the views of %d package director%s included', count($packages), count($packages) === 1 ? 'y' : 'ies'),
             ));
         }
+    }
+
+    /**
+     * The view directories whose templates render on the application's pages, each with whose
+     * they are: `''` for the application's own, and for every directory a package registered
+     * (`loadViewsFrom()`, an anonymous component path) the directory, relative to the base path.
+     * A path rather than the namespace, because an anonymous component path is registered under
+     * a hash of its directory, which names no package.
+     *
+     * WireKit's own views are left out by their directory, whatever namespace holds them: a
+     * component they render is in the closure of the one that renders it, which its source
+     * covers already. A directory inside the application's views, a published package's for
+     * one, is read with those. `getHints()` is on `FileViewFinder` and not on the finder
+     * interface, so an application with a finder of its own is read for its own views.
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    private function viewDirectories(): array
+    {
+        $application = realpath(resource_path('views')) ?: resource_path('views');
+        $own = realpath(dirname(__DIR__, 4).'/resources/views') ?: dirname(__DIR__, 4).'/resources/views';
+        $base = rtrim(base_path(), '/').'/';
+        $directories = [['', $application]];
+        $finder = View::getFinder();
+
+        if (! method_exists($finder, 'getHints')) {
+            return $directories;
+        }
+
+        /** @var array<string, array<int, string>|string> $hints */
+        $hints = $finder->getHints();
+        $seen = [];
+
+        foreach ($hints as $paths) {
+            foreach ((array) $paths as $path) {
+                $directory = realpath($path);
+
+                if ($directory === false
+                    || ! is_dir($directory)
+                    || isset($seen[$directory])
+                    || str_starts_with($directory.'/', $application.'/')
+                    || str_starts_with($directory.'/', $own.'/')) {
+                    continue;
+                }
+
+                $seen[$directory] = true;
+                $directories[] = [str_starts_with($directory, $base) ? substr($directory, strlen($base)) : $directory, $directory];
+            }
+        }
+
+        return $directories;
     }
 }

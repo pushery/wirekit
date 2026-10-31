@@ -1,3 +1,5 @@
+import { timerDelay } from '../utils/timer-delay.js';
+
 /**
  * Clipboard button — copies a fixed value and shows a brief confirmation.
  *
@@ -84,7 +86,7 @@ export default function wirekitClipboardButton(config = {}) {
             clearTimeout(this._resetTimer);
             this._resetTimer = setTimeout(() => {
                 this.failed = false;
-            }, this._duration);
+            }, timerDelay(this._duration));
         },
 
         /**
@@ -113,7 +115,7 @@ export default function wirekitClipboardButton(config = {}) {
 
                 this._resetTimer = null;
                 this.copied = false;
-            }, this._duration);
+            }, timerDelay(this._duration));
         },
     };
 }

@@ -49,7 +49,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $streaming = BooleanProp::from($streaming, false);
+    $streaming = BooleanProp::from($streaming, false, 'assistant-message', 'streaming');
 
     /*
      * The disclosure's label follows the stream. While tokens land it says the model is
@@ -59,9 +59,9 @@
      * A non-numeric value is no label at all rather than a cast: `reasoning-seconds="soon"`
      * would otherwise read as "Thought for 0s", which is worse than saying nothing.
      */
-    $citationList = \Pushery\WireKit\Support\CitationList::from($citations);
+    $citationList = \Pushery\WireKit\Support\CitationList::from(\Pushery\WireKit\Support\ListProp::from($citations, 'assistant-message', 'citations'));
 
-    $reasoningSecondsValue = is_numeric($reasoningSeconds) ? (int) $reasoningSeconds : null;
+    $reasoningSecondsValue = \Pushery\WireKit\Support\NumericProp::intOrNull($reasoningSeconds, 'assistant-message', 'reasoningSeconds');
 
     $reasoningLabel = match (true) {
         $streaming => __('wirekit::Thinking…'),
@@ -95,7 +95,7 @@
         ? $announce
         : WireKit::validateProp('assistant-message', 'announce', $announce, ['sentence', 'all', 'off']);
 
-    $speaker = $name ?? match ($roleValue) {
+    $speaker = filled($name) ? $name : match ($roleValue) {
         'user' => __('wirekit::You'),
         'system' => __('wirekit::System'),
         default => __('wirekit::Assistant'),
@@ -154,8 +154,8 @@
     data-wk-assistant-message
     data-role="{{ $roleValue }}"
     role="article"
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $speaker }}" @endunless
-    data-wk-sr-host {{ $attributes->class([$classes]) }}
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\SlotContent::textOf($speaker) }}" @endunless
+    data-wk-sr-host {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- A system turn is not a person, so it gets no avatar. --}}
     @if($roleValue !== 'system')
@@ -181,7 +181,7 @@
              preserve the open state and leave the reasoning hanging open under a finished answer.
              A key that changes makes the morph replace the element instead, so the disclosure
              comes back closed with the summary on it. --}}
-        @isset($reasoning)
+        @if(\Pushery\WireKit\Support\SlotContent::given($reasoning ?? null))
             <div data-wk-assistant-reasoning wire:key="wk-assistant-reasoning-{{ $streaming ? 'streaming' : 'settled' }}">
                 <x-wirekit::collapsible :open="$streaming">
                     <x-slot:trigger>
@@ -190,7 +190,7 @@
                     {{ $reasoning }}
                 </x-wirekit::collapsible>
             </div>
-        @endisset
+        @endif
 
         {{-- The body.
 
@@ -271,21 +271,21 @@
              Actions belong HERE, right under the body they act on — as a top-right
              sibling of the whole turn they floated detached above the message,
              next to the avatar, reading as chrome that belongs to nothing. --}}
-        @if(isset($footer) || isset($actions))
+        @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null) || \Pushery\WireKit\Support\SlotContent::given($actions ?? null))
             <div data-wk-assistant-meta class="flex flex-wrap items-center gap-[var(--space-wk-sm,0.5rem)]">
-                @isset($footer)
+                @if(\Pushery\WireKit\Support\SlotContent::given($footer ?? null))
                     <span data-wk-assistant-footer class="flex flex-wrap items-center gap-[var(--space-wk-xs,0.25rem)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
                         {{ $footer }}
                     </span>
-                @endisset
-                @isset($actions)
+                @endif
+                @if(\Pushery\WireKit\Support\SlotContent::given($actions ?? null))
                     {{-- ms-auto (margin-inline-start) pushes controls to the far
                          edge only when chips share the row; RTL-correct by using
                          the logical-inline margin, not margin-left. --}}
-                    <span data-wk-assistant-actions class="flex items-center gap-[var(--space-wk-xs,0.25rem)] {{ isset($footer) ? 'ms-auto' : '' }}">
+                    <span data-wk-assistant-actions class="flex items-center gap-[var(--space-wk-xs,0.25rem)] {{ \Pushery\WireKit\Support\SlotContent::given($footer ?? null) ? 'ms-auto' : '' }}">
                         {{ $actions }}
                     </span>
-                @endisset
+                @endif
             </div>
         @endif
     </div>

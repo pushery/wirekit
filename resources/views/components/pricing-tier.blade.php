@@ -44,16 +44,20 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('pricing-tier', $attributes->getAttributes());
 
+    // An unknown `priceSize` is reported (Support\StrictnessGate) and renders as `lg`; a bound
+    // `null` or empty string is `lg` without a word.
+    $priceSize = \Pushery\WireKit\WireKit::validateProp('pricing-tier', 'priceSize', \Pushery\WireKit\Support\NumericProp::text($priceSize ?: 'lg'), ['lg', 'xs', 'sm', 'md', 'xl']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $featured = BooleanProp::from($featured, false);
-    $minorUnits = BooleanProp::from($minorUnits, false);
+    $featured = BooleanProp::from($featured, false, 'pricing-tier', 'featured');
+    $minorUnits = BooleanProp::from($minorUnits, false, 'pricing-tier', 'minorUnits');
 
     // The amounts and the periods per billing interval may arrive as Collections; the template
     // below tests both for an array.
-    $prices = \Pushery\WireKit\Support\ListProp::from($prices);
-    $periods = \Pushery\WireKit\Support\ListProp::from($periods);
+    $prices = \Pushery\WireKit\Support\ListProp::from($prices, 'pricing-tier', 'prices');
+    $periods = \Pushery\WireKit\Support\ListProp::from($periods, 'pricing-tier', 'periods');
 
     $isFeatured = filter_var($featured, FILTER_VALIDATE_BOOLEAN);
 
@@ -88,7 +92,7 @@
 <li data-wk-prose-skip
     data-wk-pricing-tier
     @if($isFeatured) data-featured="true" @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     <div class="flex items-center gap-[var(--gap-wk-sm)]">
         <span data-wk-pricing-name class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $name }}</span>
@@ -146,18 +150,18 @@
         @endif
     </div>
 
-    @isset($features)
+    @if(\Pushery\WireKit\Support\SlotContent::given($features ?? null))
         <div data-wk-pricing-features class="mt-[var(--space-wk-md)] flex-1">
             {{ $features }}
         </div>
-    @endisset
+    @endif
 
-    @isset($action)
+    @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))
         {{-- mt-auto pins every plan's CTA to the same baseline, however long the
              feature lists are — a row of buttons at different heights is the
              tell of a hand-built pricing grid. --}}
         <div data-wk-pricing-action class="mt-auto pt-[var(--space-wk-md)]">
             {{ $action }}
         </div>
-    @endisset
+    @endif
 </li>

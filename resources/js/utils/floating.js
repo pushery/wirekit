@@ -121,6 +121,85 @@ export function liftAboveTriggerDialog(reference, floating) {
 }
 
 /**
+ * Is a placement beside its reference rather than above or below it?
+ *
+ * The axes of `shift` turn with it: beside the reference the main axis is the vertical one and the
+ * cross axis the horizontal one, above or below it the other way round.
+ *
+ * @param {string} placement - Floating UI placement (e.g. 'right-start')
+ * @returns {boolean}
+ */
+export function isSideways(placement) {
+    return ['left', 'right'].includes(String(placement).split('-')[0]);
+}
+
+/**
+ * The middleware `position()` places a panel with, without the writes around it.
+ *
+ * Built apart from `position()` so the geometry can be computed against a stand-in platform: the
+ * unit harness proves where a panel lands without a DOM. The options are `position()`'s.
+ *
+ * @param {Object} options
+ * @returns {Array<Object>}
+ */
+export function placementMiddleware({
+    placement = 'bottom-start',
+    offset = 8,
+    crossAxisShift = false,
+    fitViewport = false,
+    minHeight = 48,
+    matchReferenceWidth = false,
+    minReferenceWidth = false,
+} = {}) {
+    // Whether the panel also shifts across the placement, decided for the placement `flip` chose
+    // rather than the one asked for: a sideways panel that turned below its trigger is no longer
+    // sideways.
+    const across = (current) => crossAxisShift === true || (crossAxisShift === 'sideways' && isSideways(current));
+
+    const middleware = [
+        offsetMiddleware(offset),
+        // A panel placed beside its reference that fits on neither side turns to the other axis
+        // and opens below or above it, where the main axis keeps it inside the viewport and
+        // `fitViewport` caps its height. Without this `flip` tries the opposite side only, and then
+        // keeps the side that overflows less: a 288px card beside a trigger on a 375px phone stood
+        // partly outside the window, where neither a scroll nor the focus brings it back. Above or
+        // below a reference the other axis is not offered; a panel there is capped instead.
+        flip(isSideways(placement) ? { padding: 8, fallbackAxisSideDirection: 'end' } : { padding: 8 }),
+        // Without a cross-axis shift and its limiter this is the plain `shift({ padding: 8 })`
+        // that the callers without `crossAxisShift` get.
+        shift((state) => ({
+            crossAxis: across(state.placement),
+            limiter: across(state.placement) ? limitShift() : undefined,
+            padding: 8,
+        })),
+    ];
+
+    if (fitViewport || matchReferenceWidth || minReferenceWidth) {
+        // After flip on purpose: `availableHeight` describes the placement that
+        // was actually chosen. Computed before the flip it would report the room
+        // on the side floating-ui just rejected, and the cap would be wrong in
+        // exactly the situation the cap exists for.
+        middleware.push(size({
+            padding: 8,
+            apply({ availableHeight, availableWidth, rects, elements }) {
+                if (fitViewport) {
+                    elements.floating.style.maxHeight = `${Math.max(availableHeight, minHeight)}px`;
+                }
+
+                if (matchReferenceWidth) {
+                    elements.floating.style.width = `${rects.reference.width}px`;
+                } else if (minReferenceWidth) {
+                    elements.floating.style.minWidth = `${rects.reference.width}px`;
+                    elements.floating.style.maxWidth = `${Math.max(availableWidth, rects.reference.width)}px`;
+                }
+            },
+        }));
+    }
+
+    return middleware;
+}
+
+/**
  * Position a floating element relative to a reference element.
  *
  * @param {HTMLElement} reference - The trigger/anchor element
@@ -128,16 +207,19 @@ export function liftAboveTriggerDialog(reference, floating) {
  * @param {Object} options - Positioning options
  * @param {string} options.placement - Floating UI placement (e.g. 'bottom-start')
  * @param {number} options.offset - Distance in px between reference and floating
- * @param {boolean} options.crossAxisShift - Also shift along the CROSS axis to
- *   keep the panel inside the viewport. Floating UI's default `shift()` only
- *   shifts along the placement's MAIN axis — which for `left`/`right`
+ * @param {boolean|'sideways'} options.crossAxisShift - Also shift along the CROSS
+ *   axis to keep the panel inside the viewport. Floating UI's default `shift()`
+ *   only shifts along the placement's MAIN axis — which for `left`/`right`
  *   placements is the Y (vertical) axis, so a `right`-placed panel that
- *   overflows the RIGHT viewport edge is never pulled back horizontally and
- *   relies solely on `flip` (which also fails when BOTH sides overflow on a
- *   narrow viewport). Opt-in (default `false`), so a dropdown or a tooltip
- *   keeps the plain main-axis shift; popover passes `true` because it is the
- *   overlay that supports explicit left/right placement. A `limitShift()`
- *   limiter prevents the panel from over-shifting off its anchor.
+ *   overflows the RIGHT viewport edge is never pulled back horizontally. For a
+ *   `top`/`bottom` placement the cross axis is the vertical one, and the shift
+ *   lifts a panel taller than the room beside its trigger over the trigger.
+ *   `'sideways'` shifts across only while the placement in use is `left` or
+ *   `right`, which is what an overlay with explicit left/right placements wants;
+ *   `true` shifts across always, for a panel that hangs from a point rather than
+ *   a trigger. Opt-in (default `false`), so a dropdown keeps the plain main-axis
+ *   shift. A `limitShift()` limiter prevents the panel from over-shifting off
+ *   its anchor.
  * @param {boolean} options.fitViewport - Cap the panel's height to the space
  *   actually available and let it scroll instead of overflowing. Without it a
  *   panel taller than the room below its trigger is pinned to the viewport edge
@@ -214,39 +296,15 @@ export async function position(reference, floating, {
     autoReposition = false,
     repairErasure = false,
 } = {}) {
-    const middleware = [
-        offsetMiddleware(offset),
-        flip({ padding: 8 }),
-        // crossAxis:false + no limiter is the plain `shift({ padding: 8 })` that
-        // the callers without `crossAxisShift` (dropdown, tooltip) get.
-        shift({
-            crossAxis: crossAxisShift,
-            limiter: crossAxisShift ? limitShift() : undefined,
-            padding: 8,
-        }),
-    ];
-
-    if (fitViewport || matchReferenceWidth || minReferenceWidth) {
-        // After flip on purpose: `availableHeight` describes the placement that
-        // was actually chosen. Computed before the flip it would report the room
-        // on the side floating-ui just rejected, and the cap would be wrong in
-        // exactly the situation the cap exists for.
-        middleware.push(size({
-            padding: 8,
-            apply({ availableHeight, availableWidth, rects, elements }) {
-                if (fitViewport) {
-                    elements.floating.style.maxHeight = `${Math.max(availableHeight, minHeight)}px`;
-                }
-
-                if (matchReferenceWidth) {
-                    elements.floating.style.width = `${rects.reference.width}px`;
-                } else if (minReferenceWidth) {
-                    elements.floating.style.minWidth = `${rects.reference.width}px`;
-                    elements.floating.style.maxWidth = `${Math.max(availableWidth, rects.reference.width)}px`;
-                }
-            },
-        }));
-    }
+    const middleware = placementMiddleware({
+        placement,
+        offset,
+        crossAxisShift,
+        fitViewport,
+        minHeight,
+        matchReferenceWidth,
+        minReferenceWidth,
+    });
 
     // ONE code path for the initial placement AND every autoUpdate tick, so the
     // first paint and the repositioned geometry never drift — important because the

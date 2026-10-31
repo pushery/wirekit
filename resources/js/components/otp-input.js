@@ -47,6 +47,8 @@ import { watchModelEvents } from '../utils/model-events.js';
  * @param {boolean} config.caseFold  normalize case (true when the alphabet is single-case)
  * @param {string|null} [config.model]  the Livewire property the hidden field is bound to,
  *   read from its `wire:model` attribute; null when it is bound to nothing
+ * @param {boolean} [config.readonly]  the code is read-only: the boxes carry the native attribute,
+ *   and the keys and the paste the factory handles itself change nothing either
  */
 export default function wirekitOtpInput(config = {}) {
     return {
@@ -54,10 +56,13 @@ export default function wirekitOtpInput(config = {}) {
         _name: config.name || 'otp',
         _alphabet: config.alphabet || '0123456789',
         _caseFold: config.caseFold === true,
-        /** Whether the code was already whole on the previous sync — see
-         *  _announceCompletion(). Declared rather than left implicit so the
-         *  scope's shape does not depend on how far the user has typed. */
-        _wasComplete: false,
+        // Read-only stops typing through the native attribute, which the factory's own editing
+        // does not go through: it empties a box on Backspace and Delete and spreads a paste.
+        _readonly: config.readonly === true,
+        /** The whole code announced last, or null — see _announceCompletion().
+         *  Declared rather than left implicit so the scope's shape does not
+         *  depend on how far the user has typed. */
+        _announced: null,
 
         _model: typeof config.model === 'string' && config.model !== '' ? config.model : null,
         _unwatch: null,
@@ -137,7 +142,9 @@ export default function wirekitOtpInput(config = {}) {
 
             this.enteredCode = combined;
             this.requiredMessage = '';
-            this._wasComplete = Array.from(combined).length === this._length;
+            // A value the server set is nothing the reader completed: a whole one counts as
+            // announced, so typing on does not announce it, and an empty one starts over.
+            this._announced = Array.from(combined).length === this._length ? combined : null;
         },
 
         /** What the required check reads: empty exactly while no box holds a character. */
@@ -160,11 +167,20 @@ export default function wirekitOtpInput(config = {}) {
             this.$refs.digit0?.focus();
         },
 
-        /** The hidden field the code is bound through. It sits beside the boxes, outside this root. */
+        /**
+         * The hidden field the code is bound through. It sits beside the boxes, outside this root,
+         * marked by `data-wk-otp-field`, so a field without a `name` is found as well; the name
+         * remains for a factory built by hand around a field of its own.
+         */
         _hiddenField() {
             const parent = this.$root?.parentElement;
 
-            return parent ? parent.querySelector('input[name="' + this._name + '"]') : null;
+            if (! parent) {
+                return null;
+            }
+
+            return parent.querySelector(':scope > input[data-wk-otp-field]')
+                ?? parent.querySelector('input[name="' + this._name + '"]');
         },
 
         /**
@@ -204,7 +220,7 @@ export default function wirekitOtpInput(config = {}) {
                 }
             }
 
-            this._wasComplete = chars.length === this._length;
+            this._announced = chars.length === this._length ? chars.join('') : null;
             this.enteredCode = chars.join('');
 
             if (focusInRow && chars.length < this._length) {
@@ -330,6 +346,10 @@ export default function wirekitOtpInput(config = {}) {
         },
 
         onKeydown(event, index) {
+            if (this._readonly && (event.key === 'Backspace' || event.key === 'Delete')) {
+                return;
+            }
+
             if (event.key === 'Backspace') {
                 // Backspace on an EMPTY box steps back and clears the previous
                 // one — otherwise correcting a typo costs two presses per
@@ -391,6 +411,10 @@ export default function wirekitOtpInput(config = {}) {
 
         onPaste(event) {
             event.preventDefault();
+
+            if (this._readonly) {
+                return;
+            }
 
             this._fill(event.clipboardData ? event.clipboardData.getData('text') : '');
         },
@@ -484,14 +508,19 @@ export default function wirekitOtpInput(config = {}) {
          * for it to auto-submit, which is what a one-time code usually does, and
          * a page that ignores it loses nothing.
          *
-         * Guarded against repeating: backspacing out of a full code and retyping
-         * the last character is one completion, not two, and a component that
-         * announced twice would submit twice.
+         * Bound to the code, not to the moment the boxes fill up: a whole code
+         * that differs from the one announced last is announced, so a code
+         * corrected by overwriting a filled box, as the field recommends, still
+         * submits. The same code is never announced twice in a row, so typing
+         * on in a full field, or clearing a box and typing its character back,
+         * submits nothing again; a component that announced twice would submit
+         * twice. Once every box is empty the next code is a new attempt, even
+         * the same one.
          */
         _announceCompletion(combined) {
             const complete = combined.length === this._length;
 
-            if (complete && ! this._wasComplete) {
+            if (complete && combined !== this._announced) {
                 this.$root.dispatchEvent(new CustomEvent('wirekit:otp-complete', {
                     detail: { value: combined },
                     bubbles: true,
@@ -502,7 +531,11 @@ export default function wirekitOtpInput(config = {}) {
                 this._modelEvents?.commit();
             }
 
-            this._wasComplete = complete;
+            if (complete) {
+                this._announced = combined;
+            } else if (combined === '') {
+                this._announced = null;
+            }
         },
     };
 }

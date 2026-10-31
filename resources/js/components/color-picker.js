@@ -13,10 +13,36 @@ import { createFocusTrap } from '../utils/focus-trap.js';
 import { withOpenAlias } from '../utils/open-alias.js';
 import { watchModelEvents } from '../utils/model-events.js';
 import { watchCurrent } from '../utils/watch-current.js';
+import { controlIsDisabled, watchFieldsetDisabled } from '../utils/fieldset-disabled.js';
+import { followPageModel, hasModelBinding, observeServerValue, ownValues, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { pressedTrigger } from '../utils/trigger-press.js';
+
+/**
+ * A hex value typed without its `#`, `B87334` as design tools and the system pickers copy one, with
+ * the `#` put back; null for anything else. Only the text field reads a value so. A preset or a
+ * stored recent is drawn into a `style`, where a bare hex is no color, and `parseColor()` refuses
+ * it there as the server does.
+ *
+ * @param {unknown} value
+ * @returns {?string}
+ */
+function withHash(value) {
+    const text = typeof value === 'string' ? value.trim() : '';
+
+    return /^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(text) ? '#' + text : null;
+}
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
+/**
+ * @param {Object} config
+ * @param {string} [config.value]  the starting color; without it, the root's `data-wk-server-value`
+ */
 export default function wirekitColorPicker(config = {}) {
+    // The colors this picker hands to its model, so the answer to one is not taken for a color
+    // the server set (utils/server-value.js).
+    const own = ownValues();
+
     return withOpenAlias({
         // Handles set while the component runs, declared so that they are its own: Alpine stores a
         // property no scope declares on the outermost scope around the component.
@@ -45,6 +71,11 @@ export default function wirekitColorPicker(config = {}) {
         // Puts the starting color back when the form is reset (utils/form-reset.js). Released in
         // destroy().
         _stopFormReset: null,
+        // The fieldsets around the picker, whose `disabled` locks it as it locks a native control
+        // (utils/fieldset-disabled.js), released in destroy(). The panel is teleported out of
+        // every fieldset, and its sliders are no native controls, so nothing in it would follow.
+        fieldsetDisabled: false,
+        _stopFieldsetWatch: null,
         // Focus trap over the teleported panel — created when the panel opens,
         // released in EVERY close path (close / _closeFromTrap / destroy). The
         // panel carries role="dialog", so a trap plus a focus return to the
@@ -61,6 +92,18 @@ export default function wirekitColorPicker(config = {}) {
         s: 100,
         v: 100,
         a: 1,
+        // The color as it was last read, a typed or a starting value, with the HSV it was read as
+        // (see _readAs()). Null until one is read and after a clear.
+        _lastRead: null,
+        // The color the page started with, or the one the server rendered last: what a form reset
+        // returns to. Not in `x-data`, so that the expression stays the same for every color: a
+        // Livewire morph that changed it would start the picker again and close an open panel
+        // under a drag (utils/server-value.js).
+        _startValue: config.value,
+        // The value the picker stands for right now, the starting one or the last it handed to its
+        // field, which a server value equal to it leaves alone.
+        _shownValue: null,
+        _stopServerValue: null,
         format: ['hex', 'rgb', 'hsl', 'oklch'].includes(config.format) ? config.format : 'hex',
         withAlpha: config.withAlpha !== false,
         // Opt-in "no color" affordance (popover mode only). `cleared` true means
@@ -99,6 +142,30 @@ export default function wirekitColorPicker(config = {}) {
         get hexError() {
             return this.invalidInput ? this._hexErrorLabel.replace(':example', this.formattedValue) : '';
         },
+
+        /**
+         * Whether the picker takes no input now: disabled by its own attribute, by a fieldset
+         * around it, or by a state Livewire set after the page loaded. Read from the hidden field,
+         * which carries the picker's `disabled` and which a fieldset disables, at each change.
+         */
+        get locked() {
+            return this.fieldsetDisabled || controlIsDisabled(this.$refs?.input);
+        },
+
+        /**
+         * Refuse a change while the picker is locked, and close a panel still open: a locked
+         * picker shows no panel that takes input, as its trigger opens none.
+         */
+        _refused() {
+            if (! this.locked) {
+                return false;
+            }
+
+            this._endDrag();
+            this.close();
+
+            return true;
+        },
         _drag: null,
         _moveHandler: null,
         _upHandler: null,
@@ -106,6 +173,11 @@ export default function wirekitColorPicker(config = {}) {
         hasEyeDropper: typeof window !== 'undefined' && 'EyeDropper' in window,
 
         init() {
+            // `$root` is checked rather than assumed, as a unit harness hands a bare stub.
+            if (this._startValue === undefined && typeof this.$root?.getAttribute === 'function') {
+                this._startValue = this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE) ?? undefined;
+            }
+
             this._applyStart();
             this._loadRecents();
             // Decide native-vs-popover ONCE at mount. `(pointer: coarse)` is the
@@ -140,6 +212,50 @@ export default function wirekitColorPicker(config = {}) {
 
             this._modelEvents = watchModelEvents(this.$root, () => this.$refs?.input);
             this._stopFormReset = onFormReset(this.$root, () => this.$refs?.input, () => this._restore());
+
+            // A color the server sets reaches the plane and the field, with the panel left as it
+            // is. The one the picker shows needs nothing, and neither does the answer to a color of
+            // the reader's: with `.live` the reader can be a drag further when it arrives, and
+            // Livewire leaves its property alone then too.
+            this._stopServerValue = observeServerValue(this.$root, (value) => {
+                this._startValue = value;
+
+                const answered = hasModelBinding(this.$refs?.input) && own.answers(value);
+
+                if (answered || value === this._shownValue) {
+                    return;
+                }
+
+                this._applyStart();
+                this.invalidInput = false;
+
+                if (this.$refs?.input) {
+                    this.$refs.input.value = value;
+                }
+            });
+
+            // A color an Alpine page's model writes into the field reaches the plane, as one the
+            // server renders does (utils/server-value.js).
+            this.$nextTick?.(() => followPageModel(this, this.$refs?.input, (value) => {
+                if (typeof value !== 'string' || value === '' || value === this._shownValue) {
+                    return;
+                }
+
+                this._startValue = value;
+                this._applyStart();
+                this.invalidInput = false;
+            }));
+
+            // A page locks a section for a moment as well, `wire:loading.attr="disabled"` on a
+            // fieldset for the length of a request. A panel open at that moment closes.
+            this._stopFieldsetWatch = watchFieldsetDisabled(this.$root, (disabled) => {
+                this.fieldsetDisabled = disabled;
+
+                if (disabled) {
+                    this._endDrag();
+                    this.close();
+                }
+            });
         },
 
         /** The state of the color the page started with: its HSV and alpha, and whether it is none. */
@@ -148,18 +264,16 @@ export default function wirekitColorPicker(config = {}) {
             this.s = 100;
             this.v = 100;
             this.a = 1;
+            this._lastRead = null;
 
-            const parsed = parseColor(config.value || '#000000');
+            const parsed = parseColor(this._startValue || '#000000');
             if (parsed) {
-                const hsv = rgbToHsv(parsed);
-                this.h = hsv.h;
-                this.s = hsv.s;
-                this.v = hsv.v;
-                this.a = parsed.a ?? 1;
+                this._readAs(parsed);
             }
             // withClear + an empty initial value starts in the cleared ("no
             // color") state instead of defaulting the HSV plane to red.
-            this.cleared = this.withClear && !config.value;
+            this.cleared = this.withClear && !this._startValue;
+            this._shownValue = this._startValue == null ? '' : String(this._startValue);
         },
 
         /**
@@ -175,7 +289,7 @@ export default function wirekitColorPicker(config = {}) {
             this.invalidInput = false;
 
             if (this.$refs?.input) {
-                this.$refs.input.value = config.value == null ? '' : String(config.value);
+                this.$refs.input.value = this._startValue == null ? '' : String(this._startValue);
             }
 
             const native = this.useNative && typeof this.$root?.querySelector === 'function'
@@ -192,6 +306,10 @@ export default function wirekitColorPicker(config = {}) {
             this._modelEvents = null;
             this._stopFormReset?.();
             this._stopFormReset = null;
+            this._stopServerValue?.();
+            this._stopServerValue = null;
+            this._stopFieldsetWatch?.();
+            this._stopFieldsetWatch = null;
             this._endDrag();
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
@@ -224,6 +342,11 @@ export default function wirekitColorPicker(config = {}) {
             if (this.isOpen) {
                 this.close();
 
+                return;
+            }
+
+            // A locked picker opens nothing, as its trigger does not once a fieldset disables it.
+            if (this.locked) {
                 return;
             }
 
@@ -278,6 +401,17 @@ export default function wirekitColorPicker(config = {}) {
                 setReturnFocus: () => this.$refs.trigger ?? false,
             });
             this._trap.activate();
+        },
+
+        /**
+         * The panel's press outside. The panel is teleported out of the root, so `click.outside`
+         * counts the trigger as outside, and the click that opens the panel could close it in
+         * the same click; the trigger's own click toggles it (utils/trigger-press.js).
+         */
+        closeOutside(event) {
+            if (! pressedTrigger(event, this)) {
+                this.close();
+            }
         },
 
         /**
@@ -337,18 +471,20 @@ export default function wirekitColorPicker(config = {}) {
         // house-standard popover gap (offset 8) and escape any clipping/stacking
         // ancestor — same separation as every other WireKit popover, so the panel
         // reads as a positioned surface, not a flush extension of the swatch.
-        // crossAxisShift keeps the 18rem panel on-screen on narrow viewports /
-        // when the swatch is near the right edge.
+        // The shift along the swatch keeps the 18rem panel on-screen on narrow
+        // viewports and when the swatch is near the right edge. There is no shift
+        // across it: below the swatch that axis is the vertical one, and a shift
+        // there would lift the panel over the swatch that shows the value.
         async _anchor() {
             if (this.$refs.trigger && this.$refs.panel) {
                 this._stopAutoUpdate?.();
                 const { stop } = await position(this.$refs.trigger, this.$refs.panel, {
-                    // Capped to the room on a short viewport and scrolled inside, so a phone held
-                    // sideways or a page zoomed to 400% keeps every entry reachable (WCAG 1.4.10).
+                    // Capped to the room on its side of the swatch on a short viewport and scrolled
+                    // inside, so a phone held sideways or a page zoomed to 400% keeps every entry
+                    // reachable (WCAG 1.4.10).
                     fitViewport: true,
                     placement: 'bottom-start',
                     offset: 8,
-                    crossAxisShift: true,
                     // Follow the swatch on scroll/resize; torn down on close/destroy.
                     autoReposition: true,
                     // A framework update patches the teleported panel against its template, whose
@@ -376,6 +512,12 @@ export default function wirekitColorPicker(config = {}) {
         // ── Derived values ────────────────────────────────────────────
 
         get rgb() {
+            const read = this._lastRead;
+
+            if (read && read.h === this.h && read.s === this.s && read.v === this.v) {
+                return read.rgb;
+            }
+
             return hsvToRgb({ h: this.h, s: this.s, v: this.v });
         },
 
@@ -454,6 +596,10 @@ export default function wirekitColorPicker(config = {}) {
         startAlpha(e) { this._startDrag('alpha', e); },
 
         _startDrag(which, e) {
+            if (this._refused()) {
+                return;
+            }
+
             // The gesture starts HERE, at pointerdown — not at the pointerup that
             // commits it. `_apply` below already moves the color, and every frame
             // in between moves it again, so a baseline taken at commit time would
@@ -498,6 +644,11 @@ export default function wirekitColorPicker(config = {}) {
         },
 
         _apply(e) {
+            // Locked mid-drag, the color stays where the lock found it.
+            if (this._refused()) {
+                return;
+            }
+
             const rect = this._rect;
             if (this._drag === 'plane') {
                 this.s = Math.round(clamp((e.clientX - rect.left) / rect.width, 0, 1) * 100);
@@ -513,6 +664,10 @@ export default function wirekitColorPicker(config = {}) {
         // ── Keyboard on plane / sliders (WAI-ARIA slider keys) ────────
 
         nudgePlane(dx, dy) {
+            if (this._refused()) {
+                return;
+            }
+
             this.s = clamp(this.s + dx, 0, 100);
             this.v = clamp(this.v + dy, 0, 100);
             this._sync();
@@ -530,36 +685,53 @@ export default function wirekitColorPicker(config = {}) {
          * already drive, and jumping both at once would move the color somewhere the reader
          * did not ask for.
          */
-        planeHome() { this.s = 0; this._sync(); },
-        planeEnd() { this.s = 100; this._sync(); },
+        planeHome() { if (this._refused()) { return; } this.s = 0; this._sync(); },
+        planeEnd() { if (this._refused()) { return; } this.s = 100; this._sync(); },
 
-        nudgeHue(d) { this.h = clamp(this.h + d, 0, 360); this._sync(); },
-        nudgeAlpha(d) { this.a = +clamp(this.a + d, 0, 1).toFixed(2); this._sync(); },
+        nudgeHue(d) { if (this._refused()) { return; } this.h = clamp(this.h + d, 0, 360); this._sync(); },
+        nudgeAlpha(d) { if (this._refused()) { return; } this.a = +clamp(this.a + d, 0, 1).toFixed(2); this._sync(); },
 
         // Home / End on a slider jump to the ends of its range — part of the
         // pattern the `role="slider"` on these strips announces, so a reader who
         // follows it and gets no response has been told something untrue. They
         // live here rather than as an inline `h = 0; _sync()`: that is two
         // statements, and Alpine's CSP build parses one expression per binding.
-        setHue(v) { this.h = clamp(v, 0, 360); this._sync(); },
-        setAlpha(v) { this.a = +clamp(v, 0, 1).toFixed(2); this._sync(); },
+        setHue(v) { if (this._refused()) { return; } this.h = clamp(v, 0, 360); this._sync(); },
+        setAlpha(v) { if (this._refused()) { return; } this.a = +clamp(v, 0, 1).toFixed(2); this._sync(); },
 
         // ── Text field + format toggle ────────────────────────────────
 
         onInput(value) {
-            const parsed = parseColor(value);
+            if (this._refused()) {
+                return;
+            }
+
+            const parsed = parseColor(withHash(value) ?? value);
             if (!parsed) {
                 this.invalidInput = true;
 
                 return;
             }
             this.invalidInput = false;
+            this._readAs(parsed);
+            this._sync(false);
+        },
+
+        /**
+         * Take a parsed color as the state.
+         *
+         * The plane and the hue strip hold HSV in whole numbers, which reach about one in eight of
+         * the colors a hex value can name: `#b87334` read as HSV comes back as `#b87333`. So the
+         * color is also kept as it was read, and stands for as long as the state is the HSV it was
+         * read as. A move on the plane or the hue strip changes that state, and the HSV speaks.
+         */
+        _readAs(parsed) {
             const hsv = rgbToHsv(parsed);
             this.h = hsv.h;
             this.s = hsv.s;
             this.v = hsv.v;
             this.a = parsed.a ?? 1;
-            this._sync(false);
+            this._lastRead = { h: hsv.h, s: hsv.s, v: hsv.v, rgb: { r: parsed.r, g: parsed.g, b: parsed.b } };
         },
 
         cycleFormat() {
@@ -571,7 +743,7 @@ export default function wirekitColorPicker(config = {}) {
         // ── Actions ───────────────────────────────────────────────────
 
         async eyedropper() {
-            if (!this.hasEyeDropper) { return; }
+            if (!this.hasEyeDropper || this._refused()) { return; }
             try {
                 const result = await new window.EyeDropper().open();
                 this.onInput(result.sRGBHex);
@@ -622,6 +794,10 @@ export default function wirekitColorPicker(config = {}) {
         },
 
         pickColor(value) {
+            if (this._refused()) {
+                return;
+            }
+
             this.onInput(value);
             this._commitRecent();
         },
@@ -633,11 +809,18 @@ export default function wirekitColorPicker(config = {}) {
         // fresh empty `withClear` picker). The next applied color un-clears via
         // _sync(). Popover mode only — see the Blade @props note.
         clear() {
+            if (this._refused()) {
+                return;
+            }
+
             this.cleared = true;
             this.h = 0;
             this.s = 0;
             this.v = 0;
             this.a = 1;
+            this._lastRead = null;
+            this._shownValue = '';
+            own.note('');
             if (this.$refs.input) {
                 this.$refs.input.value = '';
                 this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -664,8 +847,10 @@ export default function wirekitColorPicker(config = {}) {
         _sync(commitRecent = true) {
             // Applying any color leaves the cleared ("no color") state.
             this.cleared = false;
+            this._shownValue = this.formattedValue;
+            own.note(this._shownValue);
             if (this.$refs.input) {
-                this.$refs.input.value = this.formattedValue;
+                this.$refs.input.value = this._shownValue;
                 this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
                 this._fieldChanged();
             }

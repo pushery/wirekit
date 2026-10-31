@@ -40,17 +40,20 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` would otherwise mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $animate = BooleanProp::from($animate, false);
+    $animate = BooleanProp::from($animate, false, 'radial-progress', 'animate');
 
     $size = WireKit::validateProp('radial-progress', 'size', $size, ['md', 'sm', 'lg', 'xl']);
     $intent = WireKit::validateProp('radial-progress', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']);
 
-    $numericMax = (float) $max;
-    // A zero or negative max would make the ratio a division by zero and every
-    // ring render full. Treat it as the caller meaning "out of 100".
-    $numericMax = $numericMax > 0 ? $numericMax : 100.0;
+    // A zero or negative max would make the ratio a division by zero and every ring render full,
+    // and an infinite one an empty ring under an `aria-valuemax` no reader takes. Each reads as the
+    // caller meaning "out of 100", as it does for a progress bar.
+    $numericMax = (float) \Pushery\WireKit\Support\NumericProp::positive($max, 100, 'radial-progress', 'max');
 
-    $numericValue = (float) $value;
+    // Read as PHP casts it, so a text with a unit keeps the number it starts with, and reported.
+    \Pushery\WireKit\Support\NumericProp::check($value, 'radial-progress', 'value');
+    // As `(float)` reads it, `45%` as 45, without ending the page on an object.
+    $numericValue = \Pushery\WireKit\Support\NumericProp::castFloat($value, 0.0);
     // Clamp rather than trust: a value over max would sweep the cone past a full
     // turn and start drawing a second lap over the first.
     $numericValue = max(0.0, min($numericValue, $numericMax));
@@ -61,6 +64,8 @@
     // Thresholds win over the declared intent: a ring that is over its limit but
     // still drawn in the brand color is telling the reader the wrong thing.
     $effectiveIntent = $intent;
+    \Pushery\WireKit\Support\NumericProp::check($danger, 'radial-progress', 'danger');
+    \Pushery\WireKit\Support\NumericProp::check($warn, 'radial-progress', 'warn');
 
     if ($danger !== null && $ratio >= (float) $danger) {
         $effectiveIntent = 'danger';
@@ -103,7 +108,7 @@
 
     // Announce the human-readable form when there is one. Without it a screen
     // reader reads the raw number, which is wrong whenever max is not 100.
-    $announced = $valueText ?? round($percent).'%';
+    $announced = $valueText !== null ? \Pushery\WireKit\Support\SlotContent::textOf($valueText) : \Pushery\WireKit\Support\LocalizedNumber::percent(round($percent), 0);
 @endphp
 
 {{-- The ring is drawn with a conic-gradient masked into an annulus, driven by one
@@ -124,14 +129,14 @@
          without a fallback a developer who omits it would ship a nameless
          progressbar. Fall back to
          a translatable generic name so the role is never anonymous. --}}
-    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ $label ?? __('wirekit::Progress') }}" @endunless
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby')) aria-label="{{ \Pushery\WireKit\Support\BlankName::first($label, __('wirekit::Progress')) }}" @endunless
     {{-- Opt the animated ring INTO the docs.wirekit.app replay button so the sweep
          can be re-watched — a re-mount restarts the animation. No-op in a
          developer app (no such button); it only adds the attribute. --}}
     @if($animate) data-replayable="true" @endif
     data-wk-radial-progress
     data-intent="{{ $effectiveIntent }}"
-    {{ $attributes->merge(['style' => '--wk-radial-value: '.(round($percent, 2)).'; --wk-radial-fill: '.($fillToken).';'])->class([$classes]) }}
+    {{ $attributes->merge(['style' => '--wk-radial-value: '.(round($percent, 2)).'; --wk-radial-fill: '.($fillToken).';'])->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}
 >
     {{-- The center. Empty by default: a bare percentage repeated inside every ring
          is noise the aria-valuetext already carries. --}}

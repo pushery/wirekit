@@ -2,6 +2,9 @@
      Same shape as navbar/item. --}}
 @props([
     'trigger' => null,
+    // The language of `trigger` where it differs from the page's, written on the trigger's text
+    // alone: the panel keeps the page's language, and the id made from the trigger stays as it is.
+    'triggerLang' => null,
     'href' => null,
     'scope' => null,
 ])
@@ -11,6 +14,14 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu.item', $attributes->getAttributes());
+
+    // The language of the trigger's text as HTML reads it: `pt_BR` is the tag `pt-BR`, and a blank
+    // one is none.
+    $triggerLangTag = \Pushery\WireKit\Support\LanguageTag::of(\Pushery\WireKit\Support\SlotContent::textOf($triggerLang));
+
+    // A caller's listener for an event this view listens to on the element the bag lands on
+    // goes in the other spelling, so both run (Support\CallerListeners).
+    $attributes = \Pushery\WireKit\Support\CallerListeners::beside($attributes, ['x-on:mouseenter', 'x-on:mouseleave']);
     // Echoed into the tag or bound, the URL is written escaped once (Support\UrlProp).
     $href = \Pushery\WireKit\Support\UrlProp::text($href);
 
@@ -27,7 +38,8 @@
     // id while the trigger's aria-controls named a new one. DomId's counter is per
     // request and per prefix, so stable markup order returns the same value; a
     // label that slugs to nothing takes the same route.
-    $slug = \Illuminate\Support\Str::slug((string) $trigger);
+    // A trigger given as markup, or as a slot, names the item by its text.
+    $slug = \Illuminate\Support\Str::slug($trigger instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($trigger) : (string) $trigger);
     $name = $slug !== '' ? $slug : \Pushery\WireKit\Support\DomId::unique(null, 'wk-nav-item-');
 
     // The panel's DOM id, so the trigger's aria-controls has something to name.
@@ -81,25 +93,39 @@
     // stop of its own. The negative margin and the padding of one ring keep a focused link's ring
     // whole at the scroller's edge without moving the content.
     $panelScrollClasses = 'wk-scrollbar '.WireKit::resolveClasses('navigation-menu.item', 'panel-scroll', implode(' ', [
-        'min-h-0 overflow-y-auto overscroll-contain',
+        'relative min-h-0 overflow-y-auto overscroll-contain',
         '-m-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))] scroll-p-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]',
     ]), $scope);
 
-    $hasPanel = !$href;
+    $hasPanel = $href === null;
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See dropdown/item.blade.php for rationale on except('rel') + explicit
     // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
+
+    // A caller's name for the item, `aria-label` or `aria-labelledby`, belongs on the trigger of a
+    // flyout; on its wrapper, a `div` with no role, it names nothing (Support\CallerName). A link
+    // item is the anchor itself and keeps the name.
+    $callerLabelledBy = null;
+    $callerLabel = null;
+    $callerDescribedBy = null;
+
+    if ($href === null) {
+        [$callerLabelledBy, $callerLabel, $attributes] = \Pushery\WireKit\Support\CallerName::split($attributes);
+        // A caller's `aria-describedby` goes with the name: a description is announced only for the
+        // element that carries it.
+        [$callerDescribedBy, $attributes] = \Pushery\WireKit\Support\CallerName::description($attributes);
+    }
 @endphp
 
-@if($href)
+@if($href !== null)
     {{-- Simple link item (no flyout). The link text comes from the slot
          (the canonical pattern: `<x-wirekit::navigation-menu.item href="/x">Label</x-wirekit::navigation-menu.item>`)
          OR from the `trigger` prop (legacy / explicit-prop pattern). One
@@ -118,9 +144,9 @@
              No utility class is named in this comment on purpose. Tailwind scans Blade
              comments too, so an illustrative one here would compile into the stylesheet as
              a real rule that nothing emits. --}}
-        {{ $attributes->except('rel')->class(['wk-touch-row', $triggerClasses]) }}
+        {{ $attributes->except('rel')->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, ['wk-touch-row', $triggerClasses])) }}
     >
-        {{ $slot->hasActualContent() ? $slot : $trigger }}
+        @if($slot->hasActualContent()){{ $slot }}@elseif($triggerLangTag !== null)<span lang="{{ $triggerLangTag }}">{{ $trigger }}</span>@else{{ $trigger }}@endif
         @if($opensNewTab)
             <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
         @endif
@@ -130,11 +156,14 @@
     <div
         x-on:mouseenter="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         x-on:mouseleave="scheduleClose()"
-        {{ $attributes->class('relative') }}
+        {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, 'relative')) }}
     >
         <button
             type="button"
+            {{ \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy, $callerLabel) }}
+            @if($callerDescribedBy !== null) aria-describedby="{{ $callerDescribedBy }}" @endif
             x-on:click="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, $el)"
+            aria-expanded="false"
             :aria-expanded="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
             {{-- aria-expanded + aria-controls, and deliberately NO aria-haspopup.
                  This is a disclosure navigation menu: the button reveals a
@@ -148,7 +177,7 @@
             data-wk-nav-trigger="{{ $name }}"
             class="wk-touch-row {{ $triggerClasses }}"
         >
-            {{ $trigger }}
+            @if($triggerLangTag !== null)<span lang="{{ $triggerLangTag }}">{{ $trigger }}</span>@else{{ $trigger }}@endif
             {{-- Chevron indicator --}}
             <svg class="w-4 h-4 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]" :class="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
