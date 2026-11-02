@@ -90,7 +90,7 @@ return [
     'modal' => ['size'],
     'multi-select' => ['layout', 'placement'],
     'navbar' => ['density', 'max', 'mobile', 'variant'],
-    'notification-center' => ['groupBy'],
+    'notification-center' => ['groupBy', 'trigger'],
     'number-input' => ['size'],
     'otp-input' => ['justify', 'size'],
     'page-header' => ['stackBelow'],

@@ -52,7 +52,9 @@
 {{-- The dialog the question before a `wire:navigate` visit is asked in, as a template:
      utils/unsaved.js puts it into the page the first time a scope asks, writes the scope's
      question into its title and opens it. Stay is its Cancel, focused when it opens and the answer
-     Escape gives; Leave dispatches `wirekit:unsaved-leave`, and the visit goes on. A template, not
+     Escape gives; Leave dispatches `wirekit:unsaved-leave`, and the visit goes on. Neither answer
+     is a confirmation the dialog closes on, so an application's default for close-on-confirm does
+     not apply here. A template, not
      the dialog itself, because it may stand wherever the sentence does: in a paragraph, a dialog's
      element would end the paragraph where it stands.
 
@@ -62,7 +64,7 @@
      more there are. An entry closes the dialog, opens the tab, the cards and the `details`
      around its field, and gives the field the focus. --}}
 <template data-wk-unsaved-question>
-    <x-wirekit::alert-dialog :describedby="false" :scope="$scope">
+    <x-wirekit::alert-dialog :describedby="false" :close-on-confirm="false" :scope="$scope">
         <x-wirekit::alert-dialog.title><span data-wk-unsaved-question-text>{{ $question }}</span></x-wirekit::alert-dialog.title>
         <ul data-wk-prose-skip data-wk-unsaved-question-list role="list" hidden style="list-style: none; margin: var(--space-wk-sm, 0.5rem) 0 0; padding: 0;" class="list-none flex flex-col items-start gap-[var(--gap-wk-xs)]"></ul>
         <template data-wk-unsaved-question-item>

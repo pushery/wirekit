@@ -40,6 +40,7 @@ $height,
 $height.
 $i
 $inline
+$labelTipClasses
 $link)
 $link['text']
 $link['url']
@@ -81,6 +82,7 @@ $wrapperTag
 '');
 '';
 '']))
+',
 '.$callerStyle);
 '100%'`
 '380px');
@@ -91,6 +93,7 @@ $wrapperTag
 'aria-labelledby'])->getAttributes(),
 'aria-labelledby']);
 'base',
+'bg-[var(--color-wk-tooltip-bg)]',
 'block'
 'block';
 'canvas'
@@ -104,32 +107,43 @@ $wrapperTag
 'div')
 'div';
 'false'
+'fixed',
+'font-[family-name:var(--font-wk-sans)]',
 'height'
 'height',
 'inline'
 'inline');
 'inline-block'
 'inline-block;
+'label-tip',
 'labels'
 'library'
+'max-w-[var(--size-wk-tooltip-max)]',
 'options'
 'palette'
+'px-[var(--padding-wk-x-sm)]',
+'py-[var(--padding-wk-y-xs)]',
 'relative
 'replayable'
 'replayable');
+'rounded-[var(--radius-wk-sm)]',
 'scope'
 'screen-reader')
+'shadow-[var(--shadow-wk-md)]',
 'span'
 'strict',
 'strict';
 'style']);
 'table'
+'text-[color:var(--color-wk-tooltip-text)]',
+'text-[length:var(--text-wk-sm)]',
 'tooltipExtras'
 'valueDecimals'
 'valueDecimals');
 'valueGrouping'
 'valuePrefix'
 'valueSuffix'
+'w-max',
 'width:
 'wireStream'
 'wireStreamCap'
@@ -139,9 +153,12 @@ $wrapperTag
 'wkCaption'
 'y1'
 'y2',
+'z-[var(--z-wk-tooltip)]',
 (!
 ($datasets
 ($inline
+($labelTipClasses
+($labelTips
 ($link['navigate'])
 ($needsReplayWrapper)
 ($pointLinks
@@ -185,6 +202,7 @@ $wrapperTag
 (string)
 (the
 (tooltips
+(utils/chart-label-tips.js),
 (we
 (where
 (which
@@ -354,6 +372,7 @@ Held
 In
 Inline
 Inner
+Inside
 InvalidArgumentException(
 It
 Its
@@ -375,6 +394,7 @@ OUTSIDE
 OWN
 On
 One
+Only
 Outer
 Outside
 PHP
@@ -412,6 +432,7 @@ WireKit::resolveClasses(
 Without
 Wrapper
 Wrapping
+[
 [$mixedStyle,
 [$rootClass,
 ['ariaLabel'
@@ -431,9 +452,11 @@ Wrapping
 \Pushery\WireKit\Support\NumericProp::intOrNull($valueDecimals,
 \Pushery\WireKit\Support\UtilityClasses::yieldStyleToCaller($attributes,
 \Pushery\WireKit\WireKit::cspNonce()
+\Pushery\WireKit\WireKit::resolveClasses('chart',
 \Pushery\WireKit\WireKit::warnUnknownProps('chart-mixed',
 \RuntimeException(
 ])
+]))
 __('wirekit::Chart
 __('wirekit::Chart'));
 __('wirekit::Data
@@ -465,6 +488,7 @@ __('wirekit::Data
 `disclosure`
 `display:
 `div`,
+`fixed`,
 `generic`,
 `height:
 `hidden`
@@ -473,6 +497,7 @@ __('wirekit::Data
 `inline‑grid`,
 `min-width:
 `open`
+`overflow:
 `point`
 `prop="false"`
 `relative`
@@ -496,6 +521,7 @@ __('wirekit::Data
 `wire:ignore`
 `wire:navigate`
 `wk-*`
+`wk-tooltip-panel`
 `x-data`
 `x-data`,
 `x-ref`
@@ -579,6 +605,7 @@ auto`,
 available
 avoid
 away
+axis
 back
 background
 background).
@@ -599,6 +626,7 @@ below.
 belt-and-
 benefits
 beside
+block
 block,
 block;"></{{
 block;');
@@ -679,17 +707,20 @@ class="w-full
 class="wk-chart-links
 class="wk-focus-ring
 class="wk-scrollbar
+class="wk-tooltip-panel
 classes
 clear,
 clicking
 client-only
 clientHeight
+clip
 close
 coerced
 collapses
 colon)
 color
 colors
+colors.
 column
 come
 comes
@@ -744,6 +775,7 @@ data-wire-stream-cap="{{
 data-wire-stream-event="{{
 data-wire-stream-mode="{{
 data-wk-chart-data="{{
+data-wk-chart-label-tip
 data-wk-chart-table
 data-wk-chart="{{
 data-wk-prose-skip
@@ -804,7 +836,9 @@ down
 down.
 drawing
 drawn
+draws
 draws,
+draws:
 drifts
 drop
 duplicate
@@ -889,12 +923,15 @@ font-[number:var(--font-wk-body-weight)]
 font-[number:var(--font-wk-heading-weight)]
 footer
 for
+forced
 foreach
 format.
 fraction
 frame
 fresh
 from
+full
+full.
 further
 gap-x-[var(--gap-wk-md)]
 gap-x-[var(--gap-wk-md)]"
@@ -906,6 +943,7 @@ get
 gets
 give
 given
+gives
 go
 goes
 gone.
@@ -932,6 +970,7 @@ here",
 here,
 hidden
 hidden;
+hidden`
 hold
 hold.
 holds
@@ -952,6 +991,7 @@ ignored
 image,
 imperative
 implementation
+implode('
 imports
 in
 include
@@ -1002,7 +1042,9 @@ kit
 knows
 label
 label,
+label.
 labels
+labels.
 lands
 later
 layout
@@ -1034,6 +1076,7 @@ live
 load
 locks
 logger()->warning(
+look
 looking.
 made.
 maintainAspectRatio:
@@ -1080,6 +1123,7 @@ n/a
 name
 name,
 name.
+name:
 named
 names
 naming
@@ -1105,6 +1149,7 @@ nothing
 nothing.
 nothing:
 null
+null)
 null,
 null;
 number
@@ -1155,6 +1200,7 @@ page,
 page.
 painted
 pale
+panel
 paragraph
 parent
 parent,
@@ -1181,6 +1227,7 @@ plot
 plus
 point
 point,
+pointer
 pointing
 points
 points')
@@ -1280,6 +1327,7 @@ scope.
 scope="col"
 scope="row"
 screen
+script
 scripts
 scrolls
 second
@@ -1298,6 +1346,9 @@ sets
 shape
 shape)
 shape).
+shortened
+shortened,
+shortens
 should
 shown
 shows
@@ -1418,6 +1469,7 @@ ticker),
 tidy
 time,
 time.
+tip
 to
 to.
 tooltip
@@ -1427,6 +1479,7 @@ travels
 tree
 trim($defaultStyle.'
 trips
+true))
 true;
 truth
 truthy
@@ -1515,9 +1568,11 @@ wrapper
 wrapper's
 wrapper,
 wrapper.
+written
 x-data="{{
 x-on:<event>.window
 x-ref="canvas"
+x-ref="labelTip"
 x-ref="mount"
 yAxisID
 yaxis
@@ -1534,6 +1589,7 @@ zero,
 }}"
 }}">
 }}"></template>
+}}"></{{
 }}"@endif></script>
 }}({{
 }})"

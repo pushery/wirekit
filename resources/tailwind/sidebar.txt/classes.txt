@@ -104,6 +104,7 @@ $display['other']];
 $expandName
 $finalRel
 $focusableTrigger
+$foldable
 $footHostsToggle
 $footer
 $for
@@ -120,6 +121,7 @@ $groupRole
 $guess
 $hasContent
 $hasZones
+$headClasses
 $header
 $headingTriggerClasses
 $href
@@ -161,6 +163,9 @@ $platform
 $relAttr
 $relAttr;
 $rowClasses
+$rowLayout
+$rowLayout,
+$scope)
 $scope);
 $scrollShadows
 $seedClassOff
@@ -358,6 +363,8 @@ $zoneInset
 'focus-visible:ring-[var(--color-wk-ring)]',
 'focusableTrigger'
 'focusableTrigger');
+'foldable'
+'foldable');
 'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-body-weight)]',
@@ -371,6 +378,8 @@ $zoneInset
 'group-data-[collapsed]/wk-sidebar:justify-center',
 'group/wk-sidebar
 'h-full',
+'head',
+'head-heading',
 'heading'
 'heading']);
 'hover:bg-[var(--color-wk-bg-active)]
@@ -536,7 +545,7 @@ $zoneInset
 'wk-shell-foot',
 'wk-sidebar',
 'wk-sidebar-collapsible',
-'wk-sidebar-collapsible-')).'-panel';
+'wk-sidebar-collapsible-')).'-panel'
 'wk-sidebar-group',
 'wk-sidebar-group-')).'-panel'
 'wk-sidebar-option-'
@@ -829,6 +838,7 @@ $zoneInset
 @if($disabled)
 @if($display
 @if($focusableTrigger)
+@if($foldable)
 @if($footHostsToggle)
 @if($for
 @if($groupLabel
@@ -899,6 +909,7 @@ AlpinePayload,
 AlpinePayload::from($collapseName)
 AlpinePayload::from($expandName)
 AlpinePayload::from($for)
+Always
 An
 Anything
 Applied
@@ -925,6 +936,7 @@ BooleanProp::from($defaultCollapsed,
 BooleanProp::from($describes,
 BooleanProp::from($disabled,
 BooleanProp::from($focusableTrigger,
+BooleanProp::from($foldable,
 BooleanProp::from($forceOpen,
 BooleanProp::from($open,
 BooleanProp::from($scrollShadows,
@@ -1525,6 +1537,7 @@ __()
 `fonts.blade.php`
 `footer`
 `footer`,
+`force-open`
 `force-open`,
 `g
 `group-data-[collapsed]/wk-sidebar:*`.
@@ -1691,6 +1704,7 @@ accordion
 account
 across
 across,
+act
 action
 action's
 action,
@@ -1778,6 +1792,7 @@ anything
 anyway
 anyway.
 apart
+apart,
 apart.
 app
 app-rail
@@ -1935,6 +1950,7 @@ block
 block's
 block,
 blocking
+blocks,
 blocks:
 body
 body,
@@ -2103,6 +2119,7 @@ class="relative
 class="rounded-[var(--radius-wk-sm)]
 class="shrink-0
 class="shrink-0"
+class="shrink-0">{{
 class="sr-only">{{
 class="w-3.5
 class="w-full"
@@ -2392,6 +2409,8 @@ disappearing,
 disclose
 disclosed
 disclosure
+disclosure,
+disclosure:
 disclosures,
 dismiss
 dismissible
@@ -2640,6 +2659,7 @@ focused,
 focuses
 fold
 fold.
+fold:
 folded
 folding
 folds
@@ -2736,6 +2756,7 @@ group-data-[collapsed]/wk-sidebar:self-center';
 group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]
 group-data-[collapsed]/wk-sidebar:w-2"><span
 group-data-[settling]/wk-sidebar:hidden"
+group-data-[settling]/wk-sidebar:hidden">
 group-data-[settling]/wk-sidebar:hidden">{{
 group-data-[settling]/wk-sidebar:hidden{{
 group.
@@ -2762,6 +2783,7 @@ half-working
 halve
 halves
 hamburger
+hand
 hand,
 hand-rolled
 handed.
@@ -3492,6 +3514,7 @@ pointer
 pointer,
 pointer-events
 pointer-events-none
+pointer.
 pointing
 points
 points.
@@ -3518,6 +3541,7 @@ presentational
 preserved),
 preserving
 press
+press,
 pressed.
 prevent:
 previews
@@ -3806,6 +3830,7 @@ screen-reader
 screen.
 script
 script's
+script.
 scroll
 scroll-py-[calc(var(--ring-wk-width)_+_var(--ring-wk-offset))]
 scroll.
@@ -3883,6 +3908,7 @@ shape:
 shapes
 share
 shared
+shares,
 shares.
 sharing
 sheet
@@ -3906,6 +3932,7 @@ showing
 shown
 shown,
 shown/hidden
+shown:
 shows
 shrink
 shrink,
@@ -4092,6 +4119,7 @@ subtree,
 subtree.
 such
 sum
+sum.
 summary
 supplied
 supplied.
@@ -4163,6 +4191,7 @@ text-[color:var(--color-wk-text-subtle)]
 text-[length:var(--text-wk-xs)]
 text-left
 text-level
+text-start">{{
 text.
 text:
 than
@@ -4395,6 +4424,7 @@ var
 variable
 variable:
 variant
+variant,
 variants
 vendor
 vendor's
@@ -4427,7 +4457,7 @@ visual
 visually
 w-5"
 w-full
-w-full',
+w-full';
 w-max
 waiting
 walk

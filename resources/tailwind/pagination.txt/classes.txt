@@ -278,6 +278,9 @@ $selectAttributes
 $selectAttributes['wire:change']
 $selectClasses
 $selectClasses,
+$sentinels
+$sentinels)
+$sentinels);
 $shortcut
 $shortcutText
 $shortcutText,
@@ -392,8 +395,8 @@ $wkField->follow($id);
 'Showing'
 'WKPAGEFIRST',
 'WKPAGELAST',
-'WKPAGETOTAL',
 'WKPAGETOTAL'],
+'WKPAGETOTAL'];
 'WireKit
 '[overflow-wrap:break-word]',
 '_blank');
@@ -486,7 +489,6 @@ $wkField->follow($id);
 'external');
 'false'
 'false')
-'first'
 'fixed'
 'fixed',
 'flex
@@ -646,6 +648,7 @@ $wkField->follow($id);
 'subtle'
 'subtle',
 'success'
+'summaryKey'
 'summaryOnSinglePage'
 'summaryOnSinglePage');
 'surface'
@@ -713,6 +716,7 @@ $wkField->follow($id);
 'xs'
 'z-[var(--z-wk-tooltip)]',
 (!
+(":first
 ("Add
 ("Bold,
 ("Fast
@@ -1419,6 +1423,7 @@ Y"
 ['between',
 ['de'
 ['default',
+['first'
 ['full',
 ['inverted',
 ['label'
@@ -1487,6 +1492,7 @@ Y"
 \Pushery\WireKit\Support\NumericProp::text($paginator)
 \Pushery\WireKit\Support\NumericProp::text($variant
 \Pushery\WireKit\Support\OuterAttributes::split($attributes);
+\Pushery\WireKit\Support\Plural::choice($summaryKey,
 \Pushery\WireKit\Support\Plural::choice('wirekit::Showing
 \Pushery\WireKit\Support\SlotContent::given($content
 \Pushery\WireKit\Support\SlotContent::given($empty
@@ -1540,6 +1546,9 @@ __('wirekit::then')
 `.number`
 `.parent`
 `10.514`
+`:first`,
+`:last`
+`:total`,
 `<a>`
 `<button>`
 `<button>`:
@@ -2260,6 +2269,7 @@ declared
 declaring
 decoration.
 default
+default's
 default,
 default.
 default:
@@ -2748,6 +2758,7 @@ is_int($paginator)
 is_string($paginator)
 is_string($shortcut)
 is_string($success)
+is_string($summaryKey)
 isolate`
 isset($after)
 it
@@ -2786,6 +2797,7 @@ keyboard
 keys
 keys.
 kinds
+kit
 kit's
 know
 know.
@@ -2955,6 +2967,8 @@ mode
 mode"),
 mode,
 model
+models").
+model|:first
 moment
 more
 morph
@@ -3417,7 +3431,9 @@ restyles
 result
 result".
 results
+results".
 results',
+results:
 return;
 returns
 returns:
@@ -3653,12 +3669,14 @@ submit
 submitted
 submitted,
 substituted
+substitution.
 subtree
 subtree,
 success
 success,
 such
 summary
+summary,
 summary.
 summary:
 supplier");
@@ -3823,6 +3841,7 @@ trim($describedBy.'
 trim($relAttr.'
 trim($shortcut)
 trim($shortcut),
+trim($summaryKey)
 trim('flex
 trim('text-[length:var(--text-wk-sm)]
 trim((string)
@@ -4032,6 +4051,7 @@ write
 writes
 writing
 written
+written.
 wrong
 wrong.
 x-bind:aria-busy="isPending"

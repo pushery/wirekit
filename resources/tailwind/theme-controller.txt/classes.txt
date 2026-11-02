@@ -4,6 +4,7 @@
 !!}@else
 !==
 !on"
+"Account"
 "Automatic
 "Context
 "Copy
@@ -71,6 +72,7 @@ $attributes->has('aria-busy');
 $attributes->has('aria-current'))
 $attributes->has('aria-label')
 $attributes->has('aria-labelledby'))
+$attributes->has('aria-labelledby');
 $attributes->merge
 $attributes->merge(['rel'
 $attributes]
@@ -132,6 +134,8 @@ $fixedReasonId
 $forceLoading
 $forceLoading;
 $hasWireAction
+$headingClasses
+$headingId
 $heightClasses
 $heightClasses,
 $hideLabel
@@ -167,6 +171,7 @@ $key
 $label
 $label)
 $labelText
+$labelText),
 $linkDisabled
 $linkDisabled)
 $linkDisabledClasses
@@ -189,6 +194,7 @@ $name
 $name,
 $name.'-panel'
 $name];
+$named
 $off
 $on
 $opensNewTab
@@ -399,6 +405,7 @@ $wrapLabel
 'focus:outline-hidden',
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-body-weight)]',
+'font-[number:var(--font-wk-heading-weight)]',
 'font-medium
 'font-medium'
 'forceLoading'
@@ -423,6 +430,7 @@ $wrapLabel
 'h-[var(--size-wk-md-compact)]',
 'h-[var(--size-wk-sm)]
 'h-[var(--size-wk-sm)]',
+'heading',
 'hideLabel'
 'hideLabel');
 'horizontal'
@@ -517,6 +525,7 @@ $wrapLabel
 'px-[var(--padding-wk-x-lg)]',
 'px-[var(--padding-wk-x-md)]
 'px-[var(--padding-wk-x-md)]',
+'px-[var(--padding-wk-x-sm)]
 'px-[var(--padding-wk-x-sm)]',
 'px-[var(--padding-wk-y-xs)]',
 'py-[var(--padding-wk-y-sm)]',
@@ -564,12 +573,14 @@ $wrapLabel
 'text-[color:var(--color-wk-danger-text)]
 'text-[color:var(--color-wk-text)]
 'text-[color:var(--color-wk-text)]',
+'text-[color:var(--color-wk-text-subtle)]',
 'text-[length:var(--text-wk-lg)]
 'text-[length:var(--text-wk-lg)]',
 'text-[length:var(--text-wk-md)]
 'text-[length:var(--text-wk-md)]',
 'text-[length:var(--text-wk-sm)]
 'text-[length:var(--text-wk-sm)]',
+'text-[length:var(--text-wk-xs)]',
 'the
 'theme-controller',
 'touchFloor'
@@ -610,6 +621,7 @@ $wrapLabel
 'wk-button
 'wk-button',
 'wk-button-group',
+'wk-dropdown-group-').'-heading'
 'wk-dropdown-indicator',
 'wk-dropdown-panel-'
 'wk-dropdown-submenu-');
@@ -690,6 +702,7 @@ $wrapLabel
 (`data-wk-theme-fixed`
 (`loading`
 (`p-0
+(`role="presentation"`),
 (`triggerName`).
 (`wk-touch-row`);
 (a
@@ -1023,6 +1036,7 @@ $wrapLabel
 @if($declarativeLoading)
 @if($disabled)
 @if($emitAriaBusy)
+@if($headingId
 @if($href
 @if($icon)
 @if($iconOnly)
@@ -1032,6 +1046,7 @@ $wrapLabel
 @if($linkDisabled)
 @if($loading
 @if($loadingTarget)
+@if($named)
 @if($opensNewTab)
 @if($optimisticConfig)
 @if($shortcutText
@@ -1159,6 +1174,7 @@ Defaults
 Deliberately
 Dev-only
 Disabled
+DomId::unique(WireKit::stableId('wk-dropdown-group',
 Drop
 Dropdown
 Dropped
@@ -1303,6 +1319,8 @@ Pin
 Purely
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\DomId;
+Pushery\WireKit\Support\SlotContent;
 Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
 Quick
@@ -1339,6 +1357,7 @@ Same
 Same,
 Scope
 See
+Seeded
 Selected:
 Selection
 Set
@@ -1348,6 +1367,7 @@ Shared:
 Show
 Silent
 Size
+SlotContent::textOf($label);
 So
 Soft
 Space,
@@ -1437,6 +1457,7 @@ WireKit::resolveClasses(
 WireKit::resolveClasses('button',
 WireKit::resolveClasses('button.group',
 WireKit::resolveClasses('dropdown.checkbox-item',
+WireKit::resolveClasses('dropdown.group',
 WireKit::resolveClasses('dropdown.indicator',
 WireKit::resolveClasses('dropdown.item',
 WireKit::resolveClasses('dropdown.panel',
@@ -1560,6 +1581,7 @@ Written
 \Pushery\WireKit\WireKit::warnUnknownProps('button.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.checkbox-item',
+\Pushery\WireKit\WireKit::warnUnknownProps('dropdown.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.indicator',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.panel',
@@ -1798,6 +1820,7 @@ _getItems()
 `px`
 `radio`,
 `resources/views/**/*.blade.php`
+`role="group"`,
 `role="img"`.
 `role="link"`
 `role="menu"`
@@ -2508,6 +2531,7 @@ control's
 control,
 control.
 controls
+controls,
 controls.
 convention
 conventional
@@ -2530,6 +2554,7 @@ counter's
 counter,
 counterpart,
 counts
+coupled
 coverage
 covered
 covers
@@ -2600,6 +2625,7 @@ declaring
 decoration:
 decorative
 decorative,
+deduper
 default
 default)
 default).
@@ -2793,6 +2819,7 @@ enough
 entire
 entirely.
 entries
+entries,
 entry
 entry's
 entry,
@@ -2833,6 +2860,7 @@ exists,
 exists.
 expanded
 expandos.
+explain.
 explicit
 explicitly
 express.
@@ -2917,6 +2945,7 @@ flat
 flat).
 flex
 flex-col
+flex-col',
 flex-nowrap
 flex-wrap
 flexes
@@ -3031,8 +3060,10 @@ group,
 group-level
 group-rollback
 group.
+group:
 group;
 groups
+groups.
 grown
 guarantee,
 guarantee.
@@ -3080,6 +3111,8 @@ have.
 head
 header
 heading
+heading,
+heading.
 hear
 hears
 height
@@ -3558,6 +3591,7 @@ multiply
 must
 muted
 muted)
+muted,
 mutually
 n/a
 name
@@ -3759,6 +3793,7 @@ page's
 page.
 page:
 pages
+pages.
 pagination
 paint
 paint,
@@ -3800,6 +3835,8 @@ path.
 paths
 pattern's
 pattern,
+pattern:
+pb-[2px]',
 pe-2.5"
 pe-8
 peer,
@@ -3916,6 +3953,7 @@ provides
 proxy
 ps-[var(--padding-wk-x-md)]
 ps-[var(--padding-wk-x-sm)]
+pt-[var(--padding-wk-y-sm)]
 public
 publishes
 pull
@@ -4099,6 +4137,7 @@ role="menu"
 role="menuitem"
 role="menuitemcheckbox"
 role="menuitemradio"
+role="presentation"
 role="separator"
 role="switch"
 role="switch":
@@ -4182,6 +4221,7 @@ scroll
 scrolls
 seam
 second
+section
 see
 see.
 sees
@@ -4267,6 +4307,8 @@ siblings.
 side
 side.
 sidebar
+sidebar.group
+sidebar.group:
 sides
 sideways.
 sight
@@ -4333,6 +4375,7 @@ source-detection
 space
 space).
 space.
+spaced
 span
 spans
 spec
@@ -4694,6 +4737,7 @@ two,
 two-state
 two.
 type
+type-ahead,
 type="button"
 type="checkbox"
 type="submit"
@@ -5025,6 +5069,7 @@ zero
 }}">{{
 }})"
 }},
+}}</div>
 }}</option>
 }}</span>
 }}</x-wirekit::dropdown.item>

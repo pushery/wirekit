@@ -160,7 +160,7 @@
         wire:ignore
         preload="none"
         playsinline
-        @if($background) muted loop @else controls @endif
+        @if($background) muted loop x-on:error="failed()" @else controls @endif
         class="absolute inset-0 size-full {{ $background ? 'object-cover' : 'object-contain' }}"
         x-show="isPlaying() || background"
         @if(! $background) x-cloak @endif

@@ -174,10 +174,12 @@ final class ApexChartsAdapter implements ChartAdapter
         // and broke bar / column / pie rendering (ApexCharts expects
         // `stroke` to be a plain object; an array short-circuits the
         // stroke-config reader so the renderer can't compute fill paths).
-        // Conditional inclusion keeps line/area working while letting
-        // bar-family charts fall back to ApexCharts' own defaults
-        // (which is what bar charts want anyway — no stroke around the
-        // fill rectangles).
+        // Conditional inclusion keeps line/area working. A bar-family
+        // chart reaches the browser without a stroke, and the themer in
+        // `chart-apex.js` gives it one two pixels wide, which ApexCharts
+        // draws in the series' own color: a bar is outlined in its color
+        // at full strength while its fill is drawn at 85%, so the outline
+        // is what holds 3:1 against the page.
         $stroke = $this->defaultStroke($type);
         if (! empty($stroke)) {
             $base['stroke'] = $stroke;
@@ -328,8 +330,9 @@ final class ApexChartsAdapter implements ChartAdapter
     }
 
     /**
-     * Type-specific stroke defaults. Lines/areas get a smooth curve; bars
-     * get no stroke (default). Developer overrides win via array_replace_recursive
+     * Type-specific stroke defaults. Lines/areas get a smooth curve; every
+     * other type gets none from here, and the browser themer outlines a bar
+     * in its own color. Developer overrides win via array_replace_recursive
      * in the Chart component.
      *
      * @return array<string, mixed>

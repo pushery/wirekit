@@ -3,6 +3,7 @@
 !!}</x-wirekit::dropdown.panel>
 !==
 !on"
+"Account"
 "Context
 "ESC
 "Export
@@ -42,6 +43,9 @@ $attributes->get('target',
 $attributes->get('type',
 $attributes->getAttributes());
 $attributes->has('aria-current'))
+$attributes->has('aria-label')
+$attributes->has('aria-labelledby'))
+$attributes->has('aria-labelledby');
 $attributes->merge(['rel'
 $attributes]
 $badgeText
@@ -62,17 +66,22 @@ $disabledClasses
 $disabledClasses]))
 $event.defaultPrevented
 $finalRel
+$headingClasses
+$headingId
 $href
 $isBound
 $itemClasses
 $itemClasses,
 $label
 $label)
+$labelText
+$labelText),
 $model
 $model)
 $model;
 $name
 $name.'-panel'
+$named
 $opensNewTab
 $optimistic
 $optimistic,
@@ -101,6 +110,7 @@ $width
 $widthStyle
 $widthStyle]
 &&
+''
 ''"
 '')
 '');
@@ -167,9 +177,11 @@ $widthStyle]
 'focus-visible:ring-inset',
 'focus:outline-hidden',
 'font-[family-name:var(--font-wk-sans)]',
+'font-[number:var(--font-wk-heading-weight)]',
 'font-medium
 'font-medium'
 'h-4
+'heading',
 'hover:bg-[var(--color-wk-bg-hover)]',
 'href'
 'icon'
@@ -200,6 +212,7 @@ $widthStyle]
 'ps-[var(--padding-wk-x-md)]
 'px-[var(--padding-wk-x-md)]
 'px-[var(--padding-wk-x-md)]',
+'px-[var(--padding-wk-x-sm)]
 'px-[var(--padding-wk-y-xs)]',
 'py-[var(--padding-wk-y-sm)]',
 'py-[var(--padding-wk-y-xs)]',
@@ -222,8 +235,10 @@ $widthStyle]
 'text-[color:var(--color-wk-danger-text)]
 'text-[color:var(--color-wk-text)]
 'text-[color:var(--color-wk-text)]',
+'text-[color:var(--color-wk-text-subtle)]',
 'text-[length:var(--text-wk-md)]
 'text-[length:var(--text-wk-md)]',
+'text-[length:var(--text-wk-xs)]',
 'the
 'transition-colors
 'transition-colors',
@@ -238,6 +253,7 @@ $widthStyle]
 'w-5
 'width'
 'width',
+'wk-dropdown-group-').'-heading'
 'wk-dropdown-indicator',
 'wk-dropdown-panel-'
 'wk-dropdown-submenu-');
@@ -265,6 +281,7 @@ $widthStyle]
 (WireKit
 (\Pushery\WireKit\Support\SlotContent::given($trigger
 (`_applyPanelId`),
+(`role="presentation"`),
 (aria-haspopup,
 (array)
 (bool)
@@ -388,9 +405,11 @@ $widthStyle]
 @if($badgeText
 @if($computedRel)
 @if($disabled)
+@if($headingId
 @if($href
 @if($icon)
 @if($isBound)
+@if($named)
 @if($opensNewTab)
 @if($optimisticConfig)
 @if($shortcutText
@@ -464,6 +483,7 @@ Defaults
 Deliberately
 Dev-only
 Disabled
+DomId::unique(WireKit::stableId('wk-dropdown-group',
 Dropdown
 Dropped
 ENTER
@@ -543,6 +563,8 @@ Pick
 Pin
 Purely
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\DomId;
+Pushery\WireKit\Support\SlotContent;
 Pushery\WireKit\WireKit;
 Quick
 RING
@@ -562,9 +584,11 @@ STATIC
 SWAPS:
 Same,
 See
+Seeded
 Selected:
 Selection
 Set
+SlotContent::textOf($label);
 So
 Static
 Strip
@@ -603,6 +627,7 @@ Width
 WireKit
 WireKit::resolveClasses(
 WireKit::resolveClasses('dropdown.checkbox-item',
+WireKit::resolveClasses('dropdown.group',
 WireKit::resolveClasses('dropdown.indicator',
 WireKit::resolveClasses('dropdown.item',
 WireKit::resolveClasses('dropdown.panel',
@@ -659,6 +684,7 @@ Wrapping
 \Pushery\WireKit\Support\UrlProp::text($href);
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.checkbox-item',
+\Pushery\WireKit\WireKit::warnUnknownProps('dropdown.group',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.indicator',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.item',
 \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.panel',
@@ -755,6 +781,7 @@ _getItems()
 `progress`
 `prop="false"`
 `radio`,
+`role="group"`,
 `role="menu"`
 `role="menuitemcheckbox"`,
 `sm`
@@ -837,6 +864,7 @@ announced
 announcer
 announces
 answer
+answers
 anticipate
 any
 anything
@@ -887,6 +915,7 @@ around
 arrived
 arrives
 arriving
+arrow
 as
 as,
 asked
@@ -956,6 +985,7 @@ both,
 both.
 bound
 bound,
+boundary
 boundary.
 box
 box:
@@ -1031,6 +1061,7 @@ class="w-3
 class="w-3.5
 class="w-4
 class="wk-choice-frame
+class="{{
 classes
 click
 click.
@@ -1096,6 +1127,7 @@ contract
 control
 control's
 controls
+controls,
 convention
 conventional
 coordinated
@@ -1111,6 +1143,7 @@ counter's
 counter,
 counterpart,
 counts
+coupled
 covers
 current
 current"
@@ -1136,6 +1169,7 @@ decisions.
 declaration
 declarations
 declares
+deduper
 default
 default).
 default,
@@ -1247,6 +1281,7 @@ engines.
 enough
 entire
 entries
+entries,
 entry
 entry's
 entry,
@@ -1278,6 +1313,7 @@ exists
 exists.
 expanded
 expandos.
+explain.
 explicit
 expressions
 factory
@@ -1304,6 +1340,7 @@ fills
 filter
 filter_var($checked,
 filtered
+finds
 fired
 firefox
 fires
@@ -1316,6 +1353,7 @@ flags
 flat
 flat).
 flex
+flex-col',
 flight:
 flips
 floating
@@ -1370,7 +1408,9 @@ group,
 group-level
 group-rollback
 group.
+group:
 groups
+groups.
 guards
 gutter"
 h-1.5
@@ -1392,6 +1432,9 @@ happened
 has
 have
 have.
+heading
+heading,
+heading.
 hears
 height
 height;
@@ -1488,6 +1531,7 @@ items.
 its
 itself
 itself,
+itself.
 job
 just
 justify-center
@@ -1555,6 +1599,7 @@ logout
 logs
 long
 longer
+look
 looks
 lost,
 loud
@@ -1634,6 +1679,7 @@ ms-auto
 much
 must
 muted
+muted,
 mutually
 n/a
 name
@@ -1660,6 +1706,7 @@ network
 neutral
 never
 new
+next
 no
 no-href
 nobody
@@ -1756,6 +1803,7 @@ padding":
 padding,
 page
 page.
+pages.
 paint
 painted
 panel
@@ -1786,6 +1834,8 @@ patches
 path
 path.
 pattern,
+pattern:
+pb-[2px]',
 per
 per-render
 per-scope
@@ -1844,6 +1894,7 @@ provided,
 provided.
 proxy
 ps-[var(--padding-wk-x-md)]
+pt-[var(--padding-wk-y-sm)]
 public
 pure-Alpine
 purpose.
@@ -1945,10 +1996,12 @@ ring:
 role
 role,
 role-less
+role="group"
 role="menu"
 role="menuitem"
 role="menuitemcheckbox"
 role="menuitemradio"
+role="presentation"
 role="separator"
 role="{{
 role=\"menu\",
@@ -1997,6 +2050,7 @@ script
 scroll
 scrolls
 second
+section
 see
 segmented-control
 selected
@@ -2051,6 +2105,8 @@ siblings.
 side
 side.
 sidebar
+sidebar.group
+sidebar.group:
 sides
 signal
 silence,
@@ -2072,12 +2128,14 @@ sized
 slot
 slot,
 sm).
+small
 snapshot
 snapshots
 so
 something
 sort:
 space
+spaced
 span
 spec
 speed
@@ -2250,6 +2308,7 @@ two
 two,
 two.
 type
+type-ahead,
 type="button"
 type="submit"
 type="{{
@@ -2427,8 +2486,10 @@ zero
 }`
 }}
 }}"
+}}">{{
 }})"
 }},
+}}</div>
 }}</span>
 }}</x-wirekit::dropdown.trigger>
 }}>

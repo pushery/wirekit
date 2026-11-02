@@ -105,6 +105,7 @@ $column
 $column)
 $compact
 $computedRel
+$config
 $content
 $count
 $count,
@@ -147,10 +148,16 @@ $e)
 $e;
 $el)">
 $emitAriaBusy
+$emptyClasses
+$emptyText
+$emptyText,
+$fieldClasses
 $finalRel
 $fit
 $fitFrameWidth
 $focusableTrigger
+$for
+$for,
 $forceLoading
 $forceLoading;
 $from
@@ -225,6 +232,8 @@ $keyFromScript
 $keyFromScript)<kbd
 $label
 $label,
+$labelText
+$labelText);
 $linkDisabled
 $linkDisabled)
 $linkDisabledClasses
@@ -258,6 +267,7 @@ $placeholderAttributes['role']
 $placeholderDisplay
 $placeholderDisplay]
 $placeholderStyle]
+$placeholderText
 $placement
 $plainHtmlWarning
 $platform
@@ -510,6 +520,7 @@ $wrapWords
 'below',
 'belowContainer'
 'belowContainer',
+'bg-[var(--color-wk-bg-input)]
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-bg-subtle)]'
 'bg-[var(--color-wk-bg-subtle)]',
@@ -584,9 +595,13 @@ $wrapWords
 'elevated'
 'elevated')
 'elevated']);
+'empty'
+'empty',
+'emptyText'
 'false'
 'false')
 'false',
+'field',
 'filled'
 'filled'),
 'fit'
@@ -601,6 +616,7 @@ $wrapWords
 'focus-visible:ring-[var(--color-wk-ring)]',
 'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
 'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
+'focus:outline-hidden
 'focus:outline-hidden',
 'focusableTrigger'
 'focusableTrigger');
@@ -611,6 +627,8 @@ $wrapWords
 'font-[number:var(--font-wk-heading-weight)]
 'font-[number:var(--font-wk-heading-weight)]',
 'font-normal',
+'for'
+'for',
 'forceLoading'
 'forceLoading');
 'from'
@@ -697,6 +715,7 @@ $wrapWords
 'loading'
 'loading');
 'loadingTarget'
+'locale'
 'mac'
 'max-2xl:border-b-0
 'max-2xl:hidden',
@@ -765,6 +784,8 @@ $wrapWords
 'overflow-y-hidden'
 'panel',
 'pe-[var(--padding-wk-x-md)]'
+'phrases'
+'placeholder'
 'placement'
 'placement',
 'position'
@@ -776,6 +797,7 @@ $wrapWords
 'px-[var(--padding-wk-x-md)]
 'px-[var(--padding-wk-x-md)]'
 'px-[var(--padding-wk-x-md)]',
+'px-[var(--padding-wk-x-sm)]
 'px-[var(--padding-wk-x-sm)]',
 'py-[var(--padding-wk-y-xs)]',
 'reorder')
@@ -839,6 +861,7 @@ $wrapWords
 'striped');
 'surface'
 'surface',
+'table'
 'table',
 'table.reorder',
 'table.reorder'])
@@ -873,6 +896,7 @@ $wrapWords
 'touchTextFloor'
 'touchTextFloor');
 'tracking-[var(--font-wk-letter-spacing)]',
+'transition-colors
 'transition-colors',
 'true';
 'true']);
@@ -888,6 +912,7 @@ $wrapWords
 'vertical'
 'vertical')
 'vertical']);
+'w-[16rem]
 'w-auto'
 'w-fit
 'w-full'),
@@ -956,6 +981,7 @@ $wrapWords
 ($detailsBelowContainer)
 ($display
 ($fit
+($for
 ($forceLoading)
 ($from
 ($from)
@@ -1008,6 +1034,7 @@ $wrapWords
 ('xs').
 (($iconOnly
 (.head,
+(3:1),
 (4.05
 (AA)
 (Alpine-sort
@@ -1039,8 +1066,10 @@ $wrapWords
 (`@container/wk-table`
 (`@container/wk-table`)
 (`@container/wk-table`),
+(`aria-controls`).
 (`cmd+s`,
 (`data-wk-scroll-inset`),
+(`data-wk-sr-host`),
 (`data-wk-tooltip-surface`
 (`headerScope="row"`)
 (`loading`
@@ -1169,6 +1198,7 @@ $wrapWords
 1.3.1)
 1.3.1:
 1.324
+1.4.11):
 1.4.13
 1.4.13.
 1.513
@@ -1285,6 +1315,7 @@ $wrapWords
 9z"/></svg>',
 :
 :aria-sort="getSortDirection({{
+:count
 :describes="false">
 :disabled="$isFirst"
 :disabled="$isLast"
@@ -1328,7 +1359,9 @@ $wrapWords
 <caption
 <circle
 <div
+<input
 <kbd
+<p
 <path
 <span
 <span>
@@ -1416,6 +1449,7 @@ $wrapWords
 @if($emitAriaBusy)
 @if($fit)
 @if($focusableTrigger)
+@if($for
 @if($hasContent)
 @if($hasDetails)
 @if($helpButton
@@ -1495,6 +1529,7 @@ Alpine
 Alpine's
 Alpine-sort
 Alpine.
+AlpinePayload::from($config)
 AlpinePayload::from($item);
 AlpinePayload::string((string)
 An
@@ -1523,6 +1558,9 @@ Blade's
 Blade,
 Blade-heroicons'
 BladeUI\Icons\Svg
+BlankName::first($emptyText,
+BlankName::first($label,
+BlankName::first($placeholder,
 Bold"):
 BooleanProp::from($alpineSort,
 BooleanProp::from($compact,
@@ -1630,6 +1668,7 @@ IS
 Icon
 Icon-only
 IconResolver,
+IcuLocale::tag(),
 If
 Ignored
 In
@@ -1714,10 +1753,15 @@ Params:
 Per-intent
 Photo
 Plain-HTML
+PluralPhrases::from('wirekit::{1}
 Positioned,
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\AlpinePayload;
+Pushery\WireKit\Support\BlankName;
 Pushery\WireKit\Support\BooleanProp;
+Pushery\WireKit\Support\IcuLocale;
+Pushery\WireKit\Support\PluralPhrases;
+Pushery\WireKit\Support\SlotContent;
 Pushery\WireKit\Support\StrictnessGate;
 Pushery\WireKit\Support\UtilityClasses;
 Pushery\WireKit\WireKit;
@@ -1766,6 +1810,7 @@ Show
 Shown
 Silent
 Size
+SlotContent::textOf(is_scalar($for)
 So
 Soft
 Solid
@@ -1777,6 +1822,7 @@ Spelling
 Stable
 Stacked,
 Sticky
+StrictnessGate::reject('table.search',
 StrictnessGate::reject('table.stand-in',
 Strip
 Striped
@@ -1864,6 +1910,7 @@ WireKit::resolveClasses('table.caption',
 WireKit::resolveClasses('table.foot',
 WireKit::resolveClasses('table.head',
 WireKit::resolveClasses('table.row',
+WireKit::resolveClasses('table.search',
 WireKit::resolveClasses('table.td',
 WireKit::resolveClasses('table.th',
 WireKit::resolveClasses('tooltip',
@@ -2028,8 +2075,10 @@ X|iPhone|iPad|iPod/',
 \Pushery\WireKit\WireKit::warnUnknownProps('table.reorder',
 \Pushery\WireKit\WireKit::warnUnknownProps('table.reorder-head',
 \Pushery\WireKit\WireKit::warnUnknownProps('table.row',
+\Pushery\WireKit\WireKit::warnUnknownProps('table.search',
 \Pushery\WireKit\WireKit::warnUnknownProps('table.td',
 \Pushery\WireKit\WireKit::warnUnknownProps('table.th',
+\Stringable
 ]
 ])
 ])),
@@ -2043,7 +2092,9 @@ __('wirekit::Help
 __('wirekit::Help')
 __('wirekit::Loading')
 __('wirekit::Move
+__('wirekit::No
 __('wirekit::Order')
+__('wirekit::Search…'));
 __('wirekit::then')
 __toString
 `$as`
@@ -2056,6 +2107,8 @@ __toString
 `$sortAction`
 `$sortable`
 `$wire.save()`,
+`--color-wk-border-strong`
+`--color-wk-border`.
 `--wk-touch-min`
 `-end`)
 `-mb-px`
@@ -2096,6 +2149,7 @@ __toString
 `<label>`,
 `<p>`
 `<span>`
+`<table>`.
 `<tbody`,
 `<td>`.
 `<td`
@@ -2181,6 +2235,7 @@ __toString
 `console`
 `container-type:
 `count`
+`data-table`,
 `data-wk-prose-skip`,
 `data-wk-reorder-position`
 `data-wk-table-scroller`
@@ -2259,6 +2314,7 @@ __toString
 `iconOnly`,
 `icon`
 `icon`.
+`id`
 `inbox`
 `inline-block`)
 `inline-flex`
@@ -2308,6 +2364,7 @@ __toString
 `overflow-y:
 `overflow:
 `parentNode`
+`placeholder`
 `pointer-events-none`
 `pointer:
 `position:
@@ -2389,6 +2446,7 @@ __toString
 `wirekit:field-help`
 `wirekitTableReorder`
 `wk-field`
+`wk-field`,
 `wk-table-sort`
 `wk-tooltip-panel`
 `wk-touch-row`,
@@ -2519,6 +2577,7 @@ announce
 announced
 announced,
 announces
+announces,
 announcing
 anonymous
 anonymous:
@@ -2560,7 +2619,9 @@ area);
 area.
 argument
 arguments
+aria-atomic="true"
 aria-busy="true"
+aria-controls="{{
 aria-describedby
 aria-describedby,
 aria-describedby.
@@ -2579,6 +2640,7 @@ aria-label
 aria-label="{{
 aria-labelledby
 aria-labelledby.';
+aria-live="polite"
 aria-sort
 aria-sort="{{
 arithmetic
@@ -2624,6 +2686,7 @@ auto-invokes
 auto`
 auto`)
 auto`,
+autocomplete="off"
 automated
 automatic
 automatically
@@ -2718,6 +2781,7 @@ blade-icons,
 blade-ui-kit/blade-heroicons.
 blade-ui-kit/blade-icons
 blade-ui-kit/blade-icons.
+blank
 block
 block,
 block:
@@ -2733,6 +2797,7 @@ border-[length:var(--border-wk-width)]
 border-[var(--color-wk-accent)]
 border-[var(--color-wk-border)]
 border-[var(--color-wk-border)]'
+border-[var(--color-wk-border-strong)]
 border-[var(--color-wk-danger)]
 border-[var(--color-wk-info-tone)]
 border-[var(--color-wk-success)]
@@ -2784,6 +2849,7 @@ breaks
 brighter,
 brings
 browser
+browser,
 browsers
 bubble's
 bubbling,
@@ -2909,9 +2975,11 @@ class="relative
 class="rounded-[var(--radius-wk-sm)]
 class="shrink-0"
 class="shrink-0">{{
+class="sr-only"
 class="sr-only">{{
 class="w-4
 class="w-px
+class="wk-field
 class="wk-scroll-shadow-end"></div>
 class="wk-scroll-shadow-start"></div>
 class="wk-sideways">'.$slot.'</span>')
@@ -2981,6 +3049,7 @@ comment,
 comments
 commit
 common
+communicating
 compact-aware
 compete
 compile
@@ -3065,6 +3134,7 @@ cosmetic.
 cost
 costs
 could
+count
 counted
 counterpart,
 counterpart:
@@ -3142,6 +3212,7 @@ data-wk-table-reorder
 data-wk-table-row
 data-wk-table-row>
 data-wk-table-scroller
+data-wk-table-search
 data-wk-table-stack-container="{{
 data-wk-table-stack="{{
 data-wk-table-stand-in
@@ -3229,6 +3300,7 @@ developer
 developer's
 developer-side
 developers
+development
 dictionary
 did
 difference
@@ -3319,6 +3391,7 @@ dynamic
 e.g.
 each
 each,
+ear
 early
 early.
 ease-in
@@ -3418,6 +3491,7 @@ exposing
 expression
 expressions.
 extra
+eye
 eye.
 faces
 facing
@@ -3489,6 +3563,7 @@ filled($variant)
 filled()
 fills
 fills.
+filters
 find
 finds
 finger
@@ -3540,6 +3615,7 @@ focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
+focus-visible:ring-[var(--color-wk-ring)]',
 focus-visible:ring-inset
 focus-within
 focus.
@@ -3565,6 +3641,7 @@ forces
 forcing
 foreach
 form
+forms
 found.`
 four
 four.
@@ -3594,6 +3671,7 @@ gap
 gap-1
 gap-1'
 gap-2
+gap-[var(--gap-wk-sm)]',
 gap-[var(--gap-wk-xs)]
 gap-[var(--gap-wk-xs)]">
 gap-[var(--gap-wk-xs)]"@if($platform
@@ -3704,6 +3782,7 @@ heading
 heading.
 heads
 hear
+hears:
 height
 height,
 height.
@@ -3750,6 +3829,7 @@ hook
 horizontal
 horizontally
 host
+hosts
 hover
 hover).
 hover,
@@ -3768,6 +3848,7 @@ hover:bg-[var(--color-wk-danger-hover)]
 hover:bg-[var(--color-wk-info-hover)]
 hover:bg-[var(--color-wk-success-hover)]
 hover:bg-[var(--color-wk-warning-hover)]
+hover:border-[var(--color-wk-border-strong-hover)]',
 hover:text-[color:var(--color-wk-text)]
 hover:text-[color:var(--color-wk-text)]'
 hover:text-[color:var(--color-wk-text-muted)]
@@ -3865,6 +3946,7 @@ inside.
 installed
 installed.
 installed.'
+instanceof
 instead
 instead,
 instead.
@@ -4099,6 +4181,7 @@ mask
 mask-image:
 masked
 match
+match,
 matches
 matching
 max(0,
@@ -4115,6 +4198,7 @@ max-md:w-full',
 max-sm:[--wk-touch-min:0px]',
 max-sm:w-full',
 max-w-full
+max-w-full',
 max-w-full'.match
 max-width
 max-xl:[--wk-touch-min:0px]',
@@ -4276,6 +4360,7 @@ not,
 not.
 not:
 nothing
+nothing');
 nothing,
 nothing.
 nothing:
@@ -4458,6 +4543,7 @@ path,
 path.
 paths
 pattern.
+pauses.
 paying
 pb-[var(--padding-wk-y-md)]
 pb-[var(--padding-wk-y-md)]">@include('wirekit::components.partials.field-help',
@@ -4497,6 +4583,7 @@ place.
 place:
 placed
 placeholder
+placeholder="{{
 placement
 placement.
 placement:
@@ -4508,6 +4595,7 @@ plain-HTML
 platform
 platform,
 plumbing
+plural
 plus
 point:
 pointer
@@ -4649,6 +4737,7 @@ reader's
 reader,
 reading
 reads
+reads,
 real
 really
 reapply
@@ -4680,6 +4769,7 @@ refuses.
 regardless
 regardless"
 region
+region,
 registered
 registers
 registry
@@ -4715,6 +4805,7 @@ renders.
 reorder')
 reorders
 repeating
+replace
 replaced
 replacement
 replaces
@@ -4751,6 +4842,9 @@ rests
 restyles
 result
 resulting
+results'));
+results'),
+result|[2,*]
 retarget
 retargeted
 return
@@ -4776,6 +4870,7 @@ role="link"
 role="region"
 role="row"
 role="rowgroup"
+role="status"
 role="table"
 role="tooltip"
 role="{{
@@ -4878,6 +4973,9 @@ scrollport
 scrolls
 scrolls.
 seam
+search
+searches
+searches',
 second
 second-last
 section
@@ -4895,6 +4993,7 @@ self-stretch
 semantic
 sensible
 sent
+sentence
 sentence.
 sentences
 sentinel:
@@ -4939,6 +5038,7 @@ short
 shortcut
 shortcut.
 shortcuts
+shortens:
 should
 show
 shown
@@ -5194,6 +5294,7 @@ tabs
 tag
 tag's
 tag),
+tag,
 tag.
 tag:
 tags
@@ -5243,6 +5344,7 @@ text-[color:var(--color-wk-warning-fg)]
 text-[color:var(--color-wk-warning-text)]
 text-[length:var(--text-wk-md)]'
 text-[length:var(--text-wk-sm)]
+text-[length:var(--text-wk-sm)]',
 text-[length:var(--text-wk-sm)]';
 text-align
 text-level
@@ -5410,9 +5512,11 @@ two.
 type
 type.
 type="button"
+type="search"
 type="{{
 typed
 typed:
+typing
 typography
 typography,
 unaffected
@@ -5603,6 +5707,7 @@ wide,
 wide.
 widen
 widening
+widens
 wider
 widget.
 width
@@ -5697,14 +5802,17 @@ x-data.
 x-data="wirekitDevWarning({
 x-data="wirekitStickyPanelShadows()"
 x-data="wirekitTableReorder({
+x-data="wirekitTableSearch({{
 x-data="wirekitTableSort({
 x-data="wirekitTooltip({
+x-model="query"
 x-on:click.stop="$dispatch('wirekit:field-help',
 x-on:click="$dispatch('wirekit:field-help',
 x-on:click="remember('down',
 x-on:click="remember('up',
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
+x-on:input="search()"
 x-on:keydown.enter.prevent="$el.click()"
 x-on:keydown.enter="activate($event)"
 x-on:keydown.escape.window.capture="keydownEscape($event)"
@@ -5724,10 +5832,12 @@ x-show.
 x-show="!getSortDirection({{
 x-show="endShadow"
 x-show="getSortDirection({{
+x-show="isEmpty"
 x-show="isOpen"
 x-show="startShadow"
 x-teleport="#wk-overlay-root">
 x-teleport>`,
+x-text="announcement"></p>
 x-transition.opacity
 x-transition:enter-end="opacity-100"
 x-transition:enter-start="opacity-0"
@@ -5754,6 +5864,7 @@ zero-AREA
 zone.
 zones
 zoom,
+zooming
 {
 {!!
 {{
@@ -5781,6 +5892,7 @@ zoom,
 }}-details"
 }}</kbd>
 }}</kbd>@endif
+}}</p>
 }}</span>
 }}</span></x-wirekit::table.th>
 }}</td>

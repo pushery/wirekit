@@ -18,6 +18,10 @@
     // it a small uppercase tracked section label (matching a collapsible sidebar.group)
     // for designs that treat the group title as a section heading rather than a nav row.
     'variant' => 'default',
+    // False draws the same section without the disclosure: its head is a row to read, its
+    // entries stand indented below it, and nothing folds. `open`, `persist` and `force-open`
+    // have nothing to act on then.
+    'foldable' => true,
     'scope' => null,
 ])
 
@@ -39,6 +43,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, BooleanProp::from(config('wirekit.components.sidebar.collapsible.open', false)), 'sidebar.collapsible', 'open');
     $forceOpen = BooleanProp::from($forceOpen, false, 'sidebar.collapsible', 'forceOpen');
+    $foldable = BooleanProp::from($foldable, true, 'sidebar.collapsible', 'foldable');
     $open = $open || $forceOpen;
 
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
@@ -84,19 +89,28 @@
     // chose is used as given, its whitespace as a hyphen, since `aria-controls` splits on it.
     //
     // A label given as markup seeds with its text, or its tags would stand in the id.
+    //
+    // A section that does not fold has no trigger to name the region, so it takes no id.
     $labelSeed = $label instanceof \Illuminate\Contracts\Support\Htmlable ? \Pushery\WireKit\Support\SlotContent::textOf($label) : (string) $label;
-    $panelId = (DomId::valid($attributes->get('id')) ?? DomId::unique(WireKit::stableId(
-        'wk-sidebar-collapsible',
-        $labelSeed !== ''
-            ? $labelSeed
-            : (is_string($icon) && ! str_contains($icon, '<') ? $icon : null)
-    ), 'wk-sidebar-collapsible-')).'-panel';
+    $panelId = $foldable
+        ? (DomId::valid($attributes->get('id')) ?? DomId::unique(WireKit::stableId(
+            'wk-sidebar-collapsible',
+            $labelSeed !== ''
+                ? $labelSeed
+                : (is_string($icon) && ! str_contains($icon, '<') ? $icon : null)
+        ), 'wk-sidebar-collapsible-')).'-panel'
+        : null;
+
+    // The layout every row of this section shares, the trigger in both variants and the head of a
+    // section that does not fold: an icon and a label one sidebar item's gap apart, as sidebar.item
+    // draws them. One string, so the four rows cannot drift apart.
+    $rowLayout = 'flex items-center gap-[var(--padding-wk-x-sm)] w-full';
 
     // Collapsible sidebar group — a disclosure widget that toggles child items.
     // The default trigger looks like a sidebar item but acts as an expand/collapse
     // toggle. Uses aria-expanded for AT, and indents child content by one level.
     $triggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger', implode(' ', [
-        'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
+        $rowLayout,
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         // Same row-height floor as sidebar.item, and for the same reason: the label carries
@@ -121,7 +135,7 @@
     // drifting on the next release. Mirrors sidebar.group's collapsible-trigger tokens
     // (small uppercase tracked label) while keeping the icon + label + chevron layout.
     $headingTriggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger-heading', implode(' ', [
-        'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
+        $rowLayout,
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] pt-[var(--padding-wk-y-sm)] pb-[2px]',
         'text-[length:var(--text-wk-xs)]',
@@ -139,6 +153,25 @@
     ]), $scope);
 
     $triggerClasses = $variant === 'heading' ? $headingTriggerClasses : $triggerClasses;
+
+    // The head of a section that does not fold: the trigger's layout and type with nothing to
+    // press, so no hover, no focus ring and no pointer. Its own blocks, one per variant, so a
+    // theme that restyles the trigger does not hand a reading row the look of a control.
+    $headClasses = $variant === 'heading'
+        ? WireKit::resolveClasses('sidebar.collapsible', 'head-heading', implode(' ', [
+            $rowLayout,
+            'px-[var(--padding-wk-x-sm)] pt-[var(--padding-wk-y-sm)] pb-[2px]',
+            'text-[length:var(--text-wk-xs)]',
+            'font-[number:var(--font-wk-heading-weight)]',
+            'uppercase tracking-wider',
+            'text-[color:var(--color-wk-text-subtle)]',
+        ]), $scope)
+        : WireKit::resolveClasses('sidebar.collapsible', 'head', implode(' ', [
+            $rowLayout,
+            'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
+            'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
+            'text-[color:var(--color-wk-text-muted)]',
+        ]), $scope);
 
     // Child container — indented to show hierarchy, with a guide line down the indent.
     //
@@ -160,6 +193,7 @@
     ]), $scope);
 @endphp
 
+@if($foldable)
 <div
     x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, forceOpen: {{ $forceOpen ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
     @if($groupRole) role="{{ $groupRole }}" @endif
@@ -254,3 +288,35 @@
         @include('wirekit::components.partials.disclosure-persist-seed', ['seedKey' => $persist, 'seedOn' => $open])
     @endif
 </div>
+@else
+{{-- A section that does not fold: the trigger's row to read and the entries indented below it,
+     with no disclosure, no Alpine state and no seed script. The root keeps the group and its name.
+     In the collapsed icon rail the head hides as the trigger does, and the entries stand as a
+     flat column of icons. --}}
+<div
+    @if($groupRole) role="{{ $groupRole }}" @endif
+    @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif
+    {{ $attributes->except(['role', 'aria-label']) }}
+>
+    <div class="{{ $headClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">
+        @if($icon)
+            <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
+                @if(is_string($icon) && ! str_contains($icon, '<'))
+                    {{ \Pushery\WireKit\Support\IconSvg::html($icon, ['class' => 'w-5 h-5']) }}
+                @else
+                    {{ $icon }}
+                @endif
+            </span>
+        @endif
+        {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
+        <span class="min-w-0 flex-1 break-words text-start">{{ $label }}</span>
+        @if(\Pushery\WireKit\Support\SlotContent::given($trailing ?? null))
+            {{-- Always shown: a section that does not fold never hides the entries it would sum. --}}
+            <span class="shrink-0">{{ $trailing }}</span>
+        @endif
+    </div>
+    <div class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
+        {{ $slot }}
+    </div>
+</div>
+@endif

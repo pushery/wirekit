@@ -138,6 +138,15 @@ export default function wirekitNotificationCenter(config = {}) {
             return pluralize(this._bellNames, this.unreadCount, this._locale);
         },
 
+        /**
+         * Whether the panel is open, under a name of its own. The row trigger stands inside a
+         * tooltip, whose data has an `isOpen` too, and an expression on the row reads the nearest
+         * one: `isOpen` there would be the tooltip's.
+         */
+        get panelOpen() {
+            return this.isOpen;
+        },
+
         groupKey(group) {
             return group && group.label ? group.label : 'all';
         },

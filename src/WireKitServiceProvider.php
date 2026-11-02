@@ -1025,7 +1025,11 @@ class WireKitServiceProvider extends ServiceProvider
             // Recurse only where BOTH sides are associative. A list (icon
             // presets, a locale array) is a value the developer chose wholesale:
             // merging into it would resurrect entries they deliberately removed.
-            if (is_array($value) && is_array($app[$key]) && ! array_is_list($value) && ! array_is_list($app[$key])) {
+            // An empty array on the app's side counts as associative where the
+            // package ships a map there: it is a section published while the
+            // package still shipped it empty, not a choice of no entries.
+            if (is_array($value) && is_array($app[$key]) && ! array_is_list($value)
+                && ($app[$key] === [] || ! array_is_list($app[$key]))) {
                 $app[$key] = $this->mergeConfigArrays($value, $app[$key]);
             }
         }

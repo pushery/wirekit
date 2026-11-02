@@ -40,6 +40,11 @@
     // list still renders nothing, since its own empty state speaks, and a paginator that does
     // not know its total has no summary to give.
     'summaryOnSinglePage' => false,
+    // The sentence of the summary, for a pager over something other than results: a translation key,
+    // or the sentence itself, with `:first`, `:last` and `:total`, its form chosen by the total as the
+    // default's is (":first to :last of :total model|:first to :last of :total models"). Null keeps
+    // "Showing :first to :last of :total results".
+    'summaryKey' => null,
     'scope' => null,
 ])
 
@@ -403,12 +408,14 @@
         // translation uses.
         //
         // The total chooses the form, since the noun follows it: a list of one
-        // reads "Showing 1 to 1 of 1 result".
-        $summary = \Pushery\WireKit\Support\Plural::choice('wirekit::Showing :first to :last of :total results', $paginator->total(), [
-            'first' => 'WKPAGEFIRST',
-            'last' => 'WKPAGELAST',
-            'total' => 'WKPAGETOTAL',
-        ]);
+        // reads "Showing 1 to 1 of 1 result". A pager over something else names it in a sentence of
+        // its own, which goes through the same choice and the same substitution.
+        // The default key stays a literal of its own call, so a scan of the keys the kit emits
+        // finds it as written.
+        $sentinels = ['first' => 'WKPAGEFIRST', 'last' => 'WKPAGELAST', 'total' => 'WKPAGETOTAL'];
+        $summary = is_string($summaryKey) && trim($summaryKey) !== ''
+            ? \Pushery\WireKit\Support\Plural::choice($summaryKey, $paginator->total(), $sentinels)
+            : \Pushery\WireKit\Support\Plural::choice('wirekit::Showing :first to :last of :total results', $paginator->total(), $sentinels);
 
         $summary = str_replace(
             ['WKPAGEFIRST', 'WKPAGELAST', 'WKPAGETOTAL'],

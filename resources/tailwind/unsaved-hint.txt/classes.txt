@@ -1738,6 +1738,7 @@ $wrapperClasses
 :aria-labelledby="$callerLabelledBy"
 :attributes="$ownSwitchAttributes"
 :class="$hideLabel
+:close-on-confirm="false"
 :count
 :count,
 :describedby="false"
@@ -3807,6 +3808,7 @@ clipping,
 clone
 close
 close-icons,
+close-on-confirm
 close.
 close:
 closeOnConfirm:

@@ -117,6 +117,26 @@
     // go through the Component class.
     $resolvedMountElement = $mountElement ?? 'canvas';
 
+    // The tip of a shortened axis label (utils/chart-label-tips.js), with the look of the tooltip's
+    // panel as a block of its own. Only where ApexCharts draws: a chart on a canvas never shortens its
+    // labels. `fixed`, so the `overflow: hidden` of this frame does not clip it.
+    $labelTipClasses = ($resolvedMountElement === 'div' && ($labelTips ?? true))
+        ? \Pushery\WireKit\WireKit::resolveClasses('chart', 'label-tip', implode(' ', [
+            'fixed',
+            'w-max',
+            'z-[var(--z-wk-tooltip)]',
+            'max-w-[var(--size-wk-tooltip-max)]',
+            'px-[var(--padding-wk-x-sm)]',
+            'py-[var(--padding-wk-y-xs)]',
+            'bg-[var(--color-wk-tooltip-bg)]',
+            'text-[color:var(--color-wk-tooltip-text)]',
+            'text-[length:var(--text-wk-sm)]',
+            'font-[family-name:var(--font-wk-sans)]',
+            'rounded-[var(--radius-wk-sm)]',
+            'shadow-[var(--shadow-wk-md)]',
+        ]))
+        : null;
+
     // Wire-streaming attributes — when wireStream is
     // set, the Alpine factory listens for matching x-on:<event>.window events
     // and appends the incoming `point` payload into the chart via the library's
@@ -234,6 +254,13 @@
     --}}
     @if ($resolvedMountElement === 'div')
         <{{ $wrapperTag }} data-wk-prose-skip x-ref="mount" aria-hidden="true" style="width: 100%; height: 100%; display: block;"></{{ $wrapperTag }}>
+        @if ($labelTipClasses !== null)
+            {{-- The full text of an axis label ApexCharts shortened, written by the script while the
+                 pointer is on the label. Inside the chart's image, which assistive technology reads
+                 by its name: the data table carries every label in full. `wk-tooltip-panel` gives it
+                 the edge the stylesheet draws a tooltip with in forced colors. --}}
+            <{{ $wrapperTag }} data-wk-prose-skip x-ref="labelTip" data-wk-chart-label-tip hidden aria-hidden="true" class="wk-tooltip-panel {{ $labelTipClasses }}"></{{ $wrapperTag }}>
+        @endif
     @else
         <canvas x-ref="canvas" aria-hidden="true" style="width: 100%; height: 100%;"></canvas>
     @endif

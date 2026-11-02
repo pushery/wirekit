@@ -6,6 +6,7 @@ import { formatDecimal } from '../utils/locale-number.js';
 import { keepRaw } from '../utils/keep-raw.js';
 import { followPointLink, pointLink, takePointLinks } from '../utils/chart-point-links.js';
 import { takeTooltipExtras, tooltipExtraRows } from '../utils/chart-tooltip-extras.js';
+import { watchLabelTips } from '../utils/chart-label-tips.js';
 
 /**
  * The y-axis label formatters the kit sets itself, on an axis that has none of its own. They are the
@@ -1039,6 +1040,8 @@ export default function wirekitApexChart(config) {
         _motionCleanup: null,
         // Stops the wait for a library that was not on the page at init() — utils/await-peer.js.
         _stopAwaitingLibrary: null,
+        // Stops the tip of a shortened axis label — utils/chart-label-tips.js.
+        _stopLabelTips: null,
         _manualColorIndices: new Set(),
 
         init() {
@@ -1372,6 +1375,11 @@ window.ApexCharts = ApexCharts;</pre>
                 this.chart = keepRaw(new ApexCharts(mount, resolvedThemed));
                 this.chart.render();
                 this._removeHiddenTabStop(mount);
+
+                // A shortened axis label shows its full text in the kit's tip, where the view drew
+                // one (`label-tips`, on by default). Stopped first, for a chart that is built again.
+                this._stopLabelTips?.();
+                this._stopLabelTips = watchLabelTips(mount, this.$refs.labelTip ?? null);
 
                 // A Livewire update renders new labels and series beside the chart, outside its
                 // `wire:ignore`; follow them and update the chart in place.
@@ -2146,6 +2154,9 @@ window.ApexCharts = ApexCharts;</pre>
             // A library that lands after this chart is gone must not build it.
             this._stopAwaitingLibrary?.();
             this._stopAwaitingLibrary = null;
+
+            this._stopLabelTips?.();
+            this._stopLabelTips = null;
 
             this._stopFollowingServerData?.();
             this._stopFollowingServerData = null;

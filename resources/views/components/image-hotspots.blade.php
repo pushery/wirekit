@@ -132,9 +132,12 @@
             'image' => \Pushery\WireKit\Support\SafeUrl::href(UrlProp::text(is_string($marker['image'] ?? null) || ($marker['image'] ?? null) instanceof \Stringable ? $marker['image'] : null), \Pushery\WireKit\Support\SafeUrl::LOAD_SCHEMES) ?: null,
             // The label stands on the side with more room, decided for each image on its own. The
             // sides are physical on purpose: they are sides of the image, which does not mirror
-            // under `dir="rtl"`, and a marker near its right edge has its room on the left.
-            'side' => $x > 60 ? 'md:right-full md:left-auto md:mr-[var(--space-wk-xs)] md:ml-0' : 'md:left-full md:right-auto md:ml-[var(--space-wk-xs)] md:mr-0',
-            'phoneSide' => $phoneX > 60 ? 'max-md:right-full max-md:left-auto max-md:mr-[var(--space-wk-xs)] max-md:ml-0' : 'max-md:left-full max-md:right-auto max-md:ml-[var(--space-wk-xs)] max-md:mr-0',
+            // under `dir="rtl"`, and a marker right of the middle has its room on the left.
+            'side' => $x > 50 ? 'md:right-full md:left-auto md:mr-[var(--space-wk-xs)] md:ml-0' : 'md:left-full md:right-auto md:ml-[var(--space-wk-xs)] md:mr-0',
+            'phoneSide' => $phoneX > 50 ? 'max-md:right-full max-md:left-auto max-md:mr-[var(--space-wk-xs)] max-md:ml-0' : 'max-md:left-full max-md:right-auto max-md:ml-[var(--space-wk-xs)] max-md:mr-0',
+            // That room in percent of the image's width, which the label's width stops at.
+            'room' => $x > 50 ? $x : 100 - $x,
+            'phoneRoom' => $phoneX > 50 ? $phoneX : 100 - $phoneX,
         ];
     }
 
@@ -163,8 +166,15 @@
     // The name beside the marker, shown on hover and focus. It is the button's own text, so it is
     // the button's name whether it shows or not; without the pointer over it, it takes no clicks
     // meant for the image or another marker.
+    //
+    // As wide as its text, and at most as wide as the room between the marker and the image's
+    // edge, in units of the list of markers, which covers the image (`cqi`). A longer name wraps
+    // inside the image. Its box is there while it is transparent, so a name that ran past the edge
+    // would widen the page for a label nobody sees.
     $labelClasses = WireKit::resolveClasses('image-hotspots', 'label', implode(' ', [
-        'absolute top-1/2 -translate-y-1/2 whitespace-nowrap',
+        'absolute top-1/2 -translate-y-1/2 w-max break-words',
+        'md:max-w-[calc(var(--wk-hotspot-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]',
+        'max-md:max-w-[calc(var(--wk-hotspot-phone-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
         'rounded-[var(--radius-wk-md)]',
         'bg-[var(--color-wk-bg-elevated)]',
@@ -217,12 +227,14 @@
         @if($items !== [])
         {{-- `role="list"`: WebKit reads a list without bullets as plain text. A marker's place is
              physical on purpose: its position counts from the image's left edge, and an image
-             does not mirror under `dir="rtl"`. --}}
-        <ul data-wk-prose-skip role="list" aria-label="{{ $label }}" class="absolute inset-0 m-0 p-0 list-none" style="list-style: none; margin: 0; padding: 0;">
+             does not mirror under `dir="rtl"`. The list is the container a label measures its
+             room against: it covers the image and takes its width from it, never from what it
+             holds. Named, so a developer's own container query never stops at it. --}}
+        <ul data-wk-prose-skip role="list" aria-label="{{ $label }}" class="@container/wk-hotspots absolute inset-0 m-0 p-0 list-none" style="list-style: none; margin: 0; padding: 0;">
             @foreach($items as $index => $item)
             <li data-wk-prose-skip
                 class="absolute -translate-x-1/2 -translate-y-1/2 left-[var(--wk-hotspot-x)] top-[var(--wk-hotspot-y)] max-md:left-[var(--wk-hotspot-phone-x)] max-md:top-[var(--wk-hotspot-phone-y)]"
-                style="--wk-hotspot-x: {{ $css($item['x']) }}%; --wk-hotspot-y: {{ $css($item['y']) }}%; --wk-hotspot-phone-x: {{ $css($item['phoneX']) }}%; --wk-hotspot-phone-y: {{ $css($item['phoneY']) }}%"
+                style="--wk-hotspot-x: {{ $css($item['x']) }}%; --wk-hotspot-y: {{ $css($item['y']) }}%; --wk-hotspot-phone-x: {{ $css($item['phoneX']) }}%; --wk-hotspot-phone-y: {{ $css($item['phoneY']) }}%; --wk-hotspot-room: {{ $css($item['room']) }}; --wk-hotspot-phone-room: {{ $css($item['phoneRoom']) }}"
             >
                 <button
                     type="button"

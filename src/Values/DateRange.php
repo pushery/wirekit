@@ -432,8 +432,9 @@ class DateRange extends CarbonPeriodImmutable
     }
 
     /**
-     * A new end; null takes it away. A date or a text is read as withEnd() reads it; anything else
-     * Carbon sets its own way, and the one occurrence that stood in for a missing end gives way.
+     * A new end; null takes it away, however the end is to be counted. A date or a text is read as
+     * withEnd() reads it; anything else Carbon sets its own way, and the one occurrence that stood
+     * in for a missing end gives way.
      *
      * `mixed` for the reason setStartDate() gives.
      */
@@ -443,7 +444,9 @@ class DateRange extends CarbonPeriodImmutable
             return parent::setEndDate($date, $inclusive);
         }
 
-        if ($inclusive === null && ($date === null || $date instanceof DateTimeInterface || is_string($date))) {
+        // Null goes through withEnd() whatever `$inclusive` says. Carbon's way removes the end, and
+        // the occurrence that stands in for one would go with it: a period with nothing to stop it.
+        if ($date === null || ($inclusive === null && ($date instanceof DateTimeInterface || is_string($date)))) {
             return $this->withEnd($date);
         }
 

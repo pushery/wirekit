@@ -22,8 +22,10 @@ $cardClasses
 $cleaned
 $cleaned);
 $css
+$css($item['phoneRoom'])
 $css($item['phoneX'])
 $css($item['phoneY'])
+$css($item['room'])
 $css($item['x'])
 $css($item['y'])
 $e)
@@ -201,9 +203,11 @@ $y,
 'markers.'.$key);
 'markers.'.$key,
 'max-md:left-full
+'max-md:max-w-[calc(var(--wk-hotspot-phone-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]',
 'max-md:right-full
 'md'
 'md:left-full
+'md:max-w-[calc(var(--wk-hotspot-room)*1cqi_-_var(--size-wk-sm)/2_-_var(--space-wk-xs)*2)]',
 'md:right-full
 'name'
 'name',
@@ -212,6 +216,7 @@ $y,
 'p-[var(--padding-wk-x-sm)]',
 'phoneHeight'
 'phoneHeight');
+'phoneRoom'
 'phoneSide'
 'phoneSrc'
 'phoneSrcset'
@@ -224,6 +229,7 @@ $y,
 'plus',
 'px-[var(--padding-wk-x-sm)]
 'relative
+'room'
 'rounded-[var(--radius-wk-md)]',
 'scope'
 'shadow-[var(--shadow-wk-md)]',
@@ -274,6 +280,7 @@ $y,
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
+(`cqi`).
 (array
 (button
 (e.g.
@@ -297,8 +304,10 @@ $y,
 );
 +
 -
+--wk-hotspot-phone-room:
 --wk-hotspot-phone-x:
 --wk-hotspot-phone-y:
+--wk-hotspot-room:
 --wk-hotspot-y:
 --}}
 -translate-x-1/2
@@ -315,6 +324,7 @@ $y,
 0;">
 1
 1.4.11),
+100
 100',
 100)
 100.
@@ -329,8 +339,8 @@ $y,
 4.1.2),
 48rem)"
 48rem:
+50
 500s
-60
 8.5:
 :
 :data-wk-active="isActive({{
@@ -395,6 +405,7 @@ AT
 AlpinePayload::from($item['label'])
 AlpinePayload::from($item['target'])
 An
+As
 Beside
 Blade
 Blade-heroicons'
@@ -425,6 +436,7 @@ Its
 Logger
 MOST
 NOT
+Named,
 No
 Nothing
 NumericProp::from($value,
@@ -575,6 +587,7 @@ a
 a11y
 above.
 absent,
+absolute
 accessibility
 accessible
 action
@@ -583,6 +596,7 @@ add
 address
 after
 against
+against:
 alias
 all,
 allowed
@@ -621,6 +635,7 @@ arrives
 arrives.
 as
 at
+at.
 attempted
 attribute
 attribute's
@@ -643,6 +658,7 @@ below,
 below.
 below:
 beside
+between
 beyond
 blade-heroicons
 blade-icons
@@ -660,6 +676,7 @@ bound
 box
 branch's
 break
+break-words',
 browser
 browser's
 bug
@@ -695,6 +712,7 @@ choice;
 chose
 circle
 class
+class="@container/wk-hotspots
 class="absolute
 class="block
 class="contents">
@@ -731,6 +749,7 @@ continue;
 could
 counts
 covered
+covers
 crop,
 custom
 data
@@ -885,6 +904,7 @@ hidden`
 hides
 historical
 hold.
+holds.
 house's
 hover
 hover:underline
@@ -906,6 +926,7 @@ image');
 image',
 image's
 image,
+image.
 implements
 implode('
 imports
@@ -953,6 +974,7 @@ kill
 label
 label'
 label',
+label's
 labels).
 lands
 last.
@@ -980,6 +1002,7 @@ loads.
 locale.
 log
 logger()->warning(
+longer
 lost
 lost,
 loudly,
@@ -994,6 +1017,7 @@ marker,
 marker.
 marker:
 markers
+markers,
 marks
 markup
 match
@@ -1020,6 +1044,7 @@ measures
 media="(width
 merge
 message
+middle
 min(100,
 min(100.0,
 mirror
@@ -1030,6 +1055,7 @@ modal
 modals,
 models
 more
+most
 mt-[var(--space-wk-sm)]
 n/a
 name
@@ -1037,7 +1063,6 @@ name,
 name.
 named
 named,
-near
 needs
 neighbors,
 neither
@@ -1151,7 +1176,9 @@ provides
 purpose:
 py-[var(--padding-wk-y-xs)]',
 qualified:
+query
 query's
+ran
 range
 rather
 ratio
@@ -1222,6 +1249,7 @@ screen-reader-skipping
 scroll
 see.
 sees
+sees.
 semantic
 sensible
 separator
@@ -1265,6 +1293,7 @@ static
 stay
 still
 stop
+stops
 storage/logs/laravel.log.
 strictness
 string
@@ -1322,6 +1351,7 @@ top-1/2
 top-[var(--wk-hotspot-y)]
 touches
 transitively
+transparent,
 tree.
 tree:
 trim($name)
@@ -1333,6 +1363,7 @@ two
 type="button"
 under
 underline-offset-2
+units
 unknown
 unknown-alias
 unknown.
@@ -1362,11 +1393,13 @@ w-5';
 w-6',
 w-8',
 w-full
+w-max
 warning
 way
 ways
 we
 well.
+what
 whatever
 when
 when:
@@ -1376,10 +1409,12 @@ whether
 which
 while
 whitespace
-whitespace-nowrap',
 who
 whose
+wide
+widen
 width
+width,
 width="{{
 win
 win.
@@ -1414,11 +1449,11 @@ yields
 }}
 }}"
 }}">
-}}%"
 }}%;
 }})"
 }})">{{
 }},
+}};
 }}</a>
 }}</span>
 }}>
