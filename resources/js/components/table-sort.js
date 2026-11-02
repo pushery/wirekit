@@ -2,7 +2,8 @@
  * WireKit Table Sort Alpine Component.
  *
  * Provides client-side sorting for static tables without Livewire.
- * Sorts rows by reading text content or data-wk-sort-value from cells.
+ * Sorts rows by reading text content or data-wk-sort-value from cells. A
+ * record's details row moves with it.
  * Supports numeric and string sorting with locale-aware comparison.
  *
  * Usage: add alpine-sort to <x-wirekit::table> and column="name" to
@@ -288,15 +289,15 @@ export default function wirekitTableSort(config = {}) {
             /*
              * Decorate, sort, undecorate.
              *
-             * Everything the comparator needs is derived ONCE PER ROW here, because a
+             * Everything the comparator needs is derived ONCE PER RECORD here, because a
              * comparator runs O(n log n) times and none of this work depends on the pair
              * being compared. Read inside the comparator, a 500-row table would extract
              * text roughly 4,500 times instead of 500, and since `_toNumber` compiles its
              * regular expressions on every call, it would also build thousands of RegExp
              * objects to answer a question about 500 cells.
              */
-            const keyed = rows.map((row) => {
-                const cell = row.cells[colIndex];
+            const keyed = this._records(rows).map((record) => {
+                const cell = record[0].cells[colIndex];
                 const sortValue = cell?.dataset.wkSortValue;
 
                 // Prefer explicit sort value, fall back to trimmed text content
@@ -311,7 +312,7 @@ export default function wirekitTableSort(config = {}) {
                 // fall through to the locale comparison below (which orders ISO
                 // dates chronologically via numeric:true). The `=== ''` guard
                 // stops Number('') === 0 from treating empty cells as numeric.
-                return { row, val, num: this._toNumber(val, sortValue !== undefined) };
+                return { record, val, num: this._toNumber(val, sortValue !== undefined) };
             });
 
             /*
@@ -339,7 +340,32 @@ export default function wirekitTableSort(config = {}) {
                 return collator.compare(a.val, b.val) * direction;
             });
 
-            this._placeRows(tbody, rows, keyed.map(({ row }) => row));
+            this._placeRows(tbody, rows, keyed.flatMap(({ record }) => record));
+        },
+
+        /**
+         * The rows as records: each row with the details rows that follow it.
+         *
+         * `table.row` draws a record's details row (`data-wk-table-details`) right under it, one
+         * cell across the columns. Sorted as a row of its own it would have no cell in the column,
+         * sort as empty text before every record, and leave each record without its details, or
+         * under another's. So a record moves with the details rows behind it, by its own cell.
+         *
+         * @param {Element[]} rows  the body's own rows, in document order
+         * @returns {Element[][]}
+         */
+        _records(rows) {
+            const records = [];
+
+            for (const row of rows) {
+                if (records.length > 0 && row.hasAttribute?.('data-wk-table-details')) {
+                    records[records.length - 1].push(row);
+                } else {
+                    records.push([row]);
+                }
+            }
+
+            return records;
         },
 
         /**

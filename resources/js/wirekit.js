@@ -122,6 +122,7 @@ import wirekitDatetimePickerMoment from './components/datetime-picker-moment.js'
 import wirekitDatetimePickerTime from './components/datetime-picker-time.js';
 import wirekitDatePicker from './components/date-picker.js';
 import wirekitTimePicker from './components/time-picker.js';
+import wirekitTableSearch from './components/table-search.js';
 import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
 import wirekitResizableHandle from './components/resizable.js';
@@ -334,6 +335,7 @@ function registerComponents() {
     Alpine.data('wirekitMenubar', wirekitMenubar);
     Alpine.data('wirekitNavigationMenu', wirekitNavigationMenu);
     Alpine.data('wirekitAlertDialog', wirekitAlertDialog);
+    Alpine.data('wirekitTableSearch', wirekitTableSearch);
     Alpine.data('wirekitTableSort', wirekitTableSort);
     Alpine.data('wirekitCarousel', wirekitCarousel);
     Alpine.data('wirekitThemeController', wirekitThemeController);

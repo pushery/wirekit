@@ -1549,6 +1549,7 @@ $wrapperClasses
 :aria-modal="isTopmost
 :attributes="$ownSwitchAttributes"
 :class="$hideLabel
+:close-on-confirm="false"
 :confirm-shortcut="false"
 :count
 :count,
@@ -3570,6 +3571,7 @@ clips
 clone
 close
 close-X
+close-on-confirm
 close.
 close:
 closeOnConfirm:
@@ -4062,6 +4064,7 @@ eight
 either
 either,
 either.
+either:
 element
 element's
 element,

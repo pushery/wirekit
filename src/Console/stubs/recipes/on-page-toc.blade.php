@@ -4,32 +4,39 @@
      heading without an id one derived from its text. Set an id yourself where a
      link should survive an edit of the heading's wording. --}}
 <div>
-    {{-- Page-scoped: this bar tracks the whole document, not the article. --}}
-    <x-wirekit::reading-progress />
+    <x-wirekit::container max="2xl" padding="lg">
+        {{-- Page-scoped: this bar tracks the whole document, not the article. --}}
+        <x-wirekit::reading-progress />
 
-    {{-- A sibling of <main>, never a descendant of it. `expand="hover"` keeps the
-         spine narrow at rest and opens it on hover; `expand="always"` suits a
-         dedicated docs layout. For an outline that stays open in a grid column
-         beside the article, see `layout="rail"` in the recipe. --}}
-    <x-wirekit::reading-spine
-        target="main"
-        levels="2,3"
-        expand="hover"
-    />
+        {{-- A sibling of <main>, never a descendant of it. `expand="hover"` keeps the
+             spine narrow at rest and opens it on hover; `expand="always"` suits a
+             dedicated docs layout. For an outline that stays open in a grid column
+             beside the article, see `layout="rail"` in the recipe. --}}
+        <x-wirekit::reading-spine
+            target="main"
+            levels="2,3"
+            expand="hover"
+            style="--reading-spine-width-expanded: 11rem;"
+        />
 
-    <main>
-        <article>
-            <h2 id="introduction">Introduction</h2>
-            <p>Open with what the page is for. The spine highlights this section while it is in view.</p>
+        <main>
+            {{-- prose sets the article's type; wk-reading-content keeps it clear of the
+                 spine from `md` up. --}}
+            <x-wirekit::prose density="compact">
+                <article class="wk-reading-content">
+                    <h2 id="introduction">Introduction</h2>
+                    <p>Open with what the page is for. The spine highlights this section while it is in view.</p>
 
-            <h2 id="setup">Setup</h2>
-            <p>The three primitives compose: a progress bar, a spine, and your own content in a <code>main</code> element.</p>
+                    <h2 id="setup">Setup</h2>
+                    <p>The three primitives compose: a progress bar, a spine, and your own content in a <code>main</code> element.</p>
 
-            <h3 id="prerequisites">Prerequisites</h3>
-            <p>Heading ids are the anchors the spine links to. Most Markdown renderers add them; hand-written Blade does not.</p>
+                    <h3 id="prerequisites">Prerequisites</h3>
+                    <p>Heading ids are the anchors the spine links to. Most Markdown renderers add them; hand-written Blade does not.</p>
 
-            <h2 id="usage">Usage</h2>
-            <p>Replace these sections with your own. Add or remove headings freely — the spine rebuilds from whatever is there.</p>
-        </article>
-    </main>
+                    <h2 id="usage">Usage</h2>
+                    <p>Replace these sections with your own. Add or remove headings freely — the spine rebuilds from whatever is there.</p>
+                </article>
+            </x-wirekit::prose>
+        </main>
+    </x-wirekit::container>
 </div>

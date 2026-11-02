@@ -22,6 +22,10 @@
     'seeAllLabel' => __('wirekit::See all'),
     'emptyText' => __("wirekit::You're all caught up"),
     'name' => null,                 // hidden-input name mirroring the unread count
+    // How the panel is opened: `bell`, the icon button, or `row`, an entry of a navigation with the
+    // bell, the title and the unread count, in the look of a sidebar item, for a center that stands
+    // among the entries of a sidebar.
+    'trigger' => 'bell',
     'scope' => null,
 ])
 
@@ -48,6 +52,12 @@
     $filters = BooleanProp::from($filters, false, 'notification-center', 'filters');
 
     $groupBy = WireKit::validateProp('notification-center', 'groupBy', $groupBy, ['none', 'time', 'type']);
+    $trigger = WireKit::validateProp('notification-center', 'trigger', $trigger, ['bell', 'row']);
+    // Whether the row stands in a sidebar that can collapse to an icon rail, and so in a tooltip
+    // that names the bell there. It is the sidebar's own `collapsible`, read from that family
+    // only (Support\AwareProp): a `sidebar.group` around the row folds its entries, never the rail.
+    $bellInTip = $trigger === 'row'
+        && BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false), false, 'sidebar', 'collapsible');
     // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
     // would mean destroy-and-rebuild, and the Alpine-only state — the open panel, the
     // active filter — would go with it on the next round trip.
@@ -92,7 +102,29 @@
     // must always carry a name renders this.
     $titleResolved = filled($title) ? $title : __('wirekit::Notifications');
 
-    $base = WireKit::resolveClasses('notification-center', 'base', 'relative inline-block font-[family-name:var(--font-wk-sans)]', $scope);
+    $base = $trigger === 'row'
+        // A row takes the width of its column, as the entries around it do.
+        ? WireKit::resolveClasses('notification-center', 'base-row', 'relative block w-full font-[family-name:var(--font-wk-sans)]', $scope)
+        : WireKit::resolveClasses('notification-center', 'base', 'relative inline-block font-[family-name:var(--font-wk-sans)]', $scope);
+
+    // The row trigger in the look of a sidebar item: its height floor, padding, rounding, resting
+    // color, hover and focus ring, and the centering of its lone icon in a collapsed rail.
+    $rowTriggerClasses = WireKit::resolveClasses('notification-center', 'row-trigger', implode(' ', [
+        'relative flex w-full items-center gap-[var(--padding-wk-x-sm)]',
+        'group-data-[collapsed]/wk-sidebar:justify-center',
+        'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
+        'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
+        'rounded-[var(--radius-wk-nav-item)]',
+        'text-[color:var(--color-wk-text-muted)]',
+        'hover:bg-[var(--color-wk-bg-active)]',
+        'hover:text-[color:var(--color-wk-text)]',
+        'focus-visible:outline-hidden',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-[var(--color-wk-ring)]',
+        'transition-colors',
+        'duration-[var(--transition-wk-duration)]',
+        'cursor-pointer',
+    ]), $scope);
 
     $tab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
 
@@ -156,6 +188,28 @@
     <p data-wk-prose-skip class="sr-only" role="status" aria-live="polite" aria-atomic="true"
        x-text="summaryLine"></p>
 
+    @if($trigger === 'row')
+    {{-- In a sidebar that collapses to an icon rail, the row stands in a tooltip with its title,
+         as a sidebar item does: collapsed, the rail shows the bell alone, and the tooltip names it
+         for a reader holding a pointer. It shows while the rail is collapsed and the panel is
+         shut, and a press closes it, so it never covers the panel that opens beside the row.
+         `$data`, not a bare `collapsed`: where no scope defines it, the tooltip stays disabled.
+         `$data.close()` for the same reason: a bare `close` that finds no scope is `window.close`.
+         A sidebar that cannot collapse never hides the title, so its row is not wrapped. --}}
+    @if($bellInTip)
+        <x-wirekit::tooltip
+            :text="\Pushery\WireKit\Support\SlotContent::textOf($titleResolved)"
+            placement="right"
+            focusable-trigger="false"
+            class="w-full"
+            data-wk-ref-scope
+            x-bind:data-wk-tooltip-disabled="! $data.collapsed || panelOpen"
+            x-on:click="$data.close()"
+        >@include('wirekit::components.partials.notification-center-row-trigger')</x-wirekit::tooltip>
+    @else
+        @include('wirekit::components.partials.notification-center-row-trigger')
+    @endif
+    @else
     {{-- Bell trigger. The accessible name carries the live unread count so a
          screen reader announces "Notifications, 3 unread" (not color/dot alone). --}}
     <button
@@ -192,6 +246,7 @@
             class="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-1 inline-flex items-center justify-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-danger)] rounded-[var(--radius-wk-full)]"
         ><span x-text="unreadCount > 99 ? '99+' : unreadCount">{{ $serverUnread }}</span></span>
     </button>
+    @endif
 
     {{-- Panel — teleported out of the document flow + Floating-UI positioned (see
          wirekitNotificationCenter._anchor) so it escapes any clipping/stacking

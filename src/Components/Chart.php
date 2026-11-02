@@ -125,6 +125,12 @@ final class Chart extends Component
     public array $tableModel = ['columns' => [], 'rows' => []];
 
     /**
+     * Whether an axis label ApexCharts shortened shows its full text in a tip under the pointer and on
+     * a touch. On unless `label-tips` is false; a chart drawn on a canvas never shortens its labels.
+     */
+    public bool $labelTips = true;
+
+    /**
      * The tag's values with every enum read as its value or name before the constructor takes
      * them, as every other component reads its props (Support\PropText): the parameters are typed
      * for text, and an enum there would be an error before the component runs. A boolean on a text
@@ -245,7 +251,12 @@ final class Chart extends Component
         // The data as a table under the chart: `disclosure`, `screen-reader`, or none. See
         // ChartDataTable.
         bool|string|null $table = null,
+        // The full text of a shortened axis label in a tip. A plain attribute arrives as a string,
+        // so `label-tips="false"` is read as false.
+        bool|string|null $labelTips = null,
     ) {
+        $this->labelTips = BooleanProp::from($labelTips, true, 'chart', 'labelTips');
+
         // Labels are a list whatever keys they arrive with: a Collection that was filtered or
         // sorted keeps its keys, and with those the config would carry an object where both
         // libraries read an array.

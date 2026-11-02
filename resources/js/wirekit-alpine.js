@@ -147,6 +147,7 @@ import wirekitDatetimePickerMoment from './components/datetime-picker-moment.js'
 import wirekitDatetimePickerTime from './components/datetime-picker-time.js';
 import wirekitDatePicker from './components/date-picker.js';
 import wirekitTimePicker from './components/time-picker.js';
+import wirekitTableSearch from './components/table-search.js';
 import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
 import wirekitResizableHandle from './components/resizable.js';
@@ -414,6 +415,7 @@ if (hostAlpine) {
     target.data('wirekitDatetimePickerTime', wirekitDatetimePickerTime);
     target.data('wirekitDatePicker', wirekitDatePicker);
     target.data('wirekitTimePicker', wirekitTimePicker);
+    target.data('wirekitTableSearch', wirekitTableSearch);
     target.data('wirekitTableSort', wirekitTableSort);
     target.data('wirekitTour', wirekitTour);
     target.data('wirekitResizableHandle', wirekitResizableHandle);

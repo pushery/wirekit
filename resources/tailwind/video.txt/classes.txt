@@ -2593,6 +2593,7 @@ x-data="wirekitVideo({{
 x-on:click="play()"
 x-on:click="requestConsent()">{{
 x-on:click="toggle()"
+x-on:error="failed()"
 x-ref="stage"
 x-ref="video"
 x-show="!

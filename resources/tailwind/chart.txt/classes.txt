@@ -32,6 +32,7 @@ $height"
 $height,
 $height.
 $inline
+$labelTipClasses
 $link)
 $link['text']
 $link['url']
@@ -62,6 +63,7 @@ $wrapperTag
 '
 '');
 '';
+',
 '.$callerStyle);
 '100%'`
 '380px'
@@ -69,6 +71,7 @@ $wrapperTag
 'WireKit:
 'aria-label',
 'base',
+'bg-[var(--color-wk-tooltip-bg)]',
 'block'
 'block';
 'canvas'
@@ -79,20 +82,34 @@ $wrapperTag
 'div'
 'div')
 'div';
+'fixed',
 'flex'
+'font-[family-name:var(--font-wk-sans)]',
 'height',
 'inline-block'
 'inline-block;
 'inline-flex'
+'label-tip',
+'max-w-[var(--size-wk-tooltip-max)]',
+'px-[var(--padding-wk-x-sm)]',
+'py-[var(--padding-wk-y-xs)]',
 'relative
+'rounded-[var(--radius-wk-sm)]',
 'screen-reader')
+'shadow-[var(--shadow-wk-md)]',
 'span'
 'strict';
 'style']);
+'text-[color:var(--color-wk-tooltip-text)]',
+'text-[length:var(--text-wk-sm)]',
+'w-max',
 'wirekit::chart:
 'wkCaption'
+'z-[var(--z-wk-tooltip)]',
 (!
 ($inline
+($labelTipClasses
+($labelTips
 ($link['navigate'])
 ($needsReplayWrapper)
 ($pointLinks
@@ -128,6 +145,7 @@ $wrapperTag
 (string)
 (the
 (tooltips
+(utils/chart-label-tips.js),
 (we
 (where
 (which
@@ -261,6 +279,7 @@ Held
 In
 Inline
 Inner
+Inside
 It
 Its
 January
@@ -278,6 +297,7 @@ Nothing
 OUTSIDE
 OWN.
 One
+Only
 Outer
 Outside
 Pass
@@ -303,6 +323,7 @@ Wire-streaming
 Without
 Wrapper
 Wrapping
+[
 ['ariaLabel'
 ['wkTable'
 [\Pushery\WireKit\WireKit::resolveClasses('chart',
@@ -315,7 +336,9 @@ Wrapping
 \Pushery\WireKit\Support\CallerRef::onRoot($chartAttributes);
 \Pushery\WireKit\Support\CssValue::prop($height,
 \Pushery\WireKit\WireKit::cspNonce()
+\Pushery\WireKit\WireKit::resolveClasses('chart',
 \RuntimeException(
+]))
 __('wirekit::Chart
 __('wirekit::Chart'));
 __('wirekit::Data
@@ -344,6 +367,7 @@ __('wirekit::Data
 `disclosure`
 `display:
 `dist/wirekit.css`
+`fixed`,
 `height:
 `height`
 `init()`
@@ -352,6 +376,7 @@ __('wirekit::Data
 `landmark-unique`
 `min-width:
 `open`
+`overflow:
 `point`
 `relative`
 `replayable`
@@ -373,6 +398,7 @@ __('wirekit::Data
 `wk-*`
 `wk-chart-mixed`,
 `wk-chart`
+`wk-tooltip-panel`
 `x-data`
 `x-data`,
 `x-ref`
@@ -445,6 +471,7 @@ avoid
 avoid.
 away
 axe
+axis
 back
 background
 background).
@@ -463,6 +490,7 @@ below
 below.
 belt-and-
 beside
+block
 block;
 block;"></{{
 block`
@@ -538,17 +566,20 @@ class="wk-chart
 class="wk-chart-links
 class="wk-focus-ring
 class="wk-scrollbar
+class="wk-tooltip-panel
 classes
 clear,
 clicking
 client-only
 clientHeight
+clip
 close
 collapses
 colon)
 color
 color-mix(in
 color:
+colors.
 column
 come
 complete
@@ -601,6 +632,7 @@ data-wire-stream-cap="{{
 data-wire-stream-event="{{
 data-wire-stream-mode="{{
 data-wk-chart-data="{{
+data-wk-chart-label-tip
 data-wk-chart-table
 data-wk-chart="{{
 data-wk-prose-skip
@@ -652,7 +684,9 @@ don't
 down.
 drawing
 drawn
+draws
 draws,
+draws:
 drifts
 drop
 duplicate
@@ -729,10 +763,13 @@ font-family:
 font-size:
 footer
 for
+forced
 fraction
 frame
 fresh
 from
+full
+full.
 further
 gap-x-[var(--gap-wk-md)]
 gap-x-[var(--gap-wk-md)]"
@@ -742,6 +779,7 @@ generic
 get
 gets
 give
+gives
 go
 goes
 gone.
@@ -764,6 +802,7 @@ here",
 here,
 hidden
 hidden;
+hidden`
 hold
 hold.
 holds
@@ -783,6 +822,7 @@ ignored
 image,
 imperative
 implementation
+implode('
 in
 included,
 included;
@@ -823,7 +863,9 @@ kit
 knows
 label
 label,
+label.
 labels
+labels.
 landmark
 landmark.
 lands
@@ -856,6 +898,7 @@ literal
 live
 load
 logger()->warning(
+look
 looking.
 maintainAspectRatio:
 make
@@ -895,6 +938,7 @@ n/a
 name
 name,
 name.
+name:
 named
 names
 naming
@@ -918,6 +962,7 @@ normally
 not
 nothing
 nothing.
+null)
 null;
 null`).
 of
@@ -966,6 +1011,7 @@ page,
 page.
 painted
 pale
+panel
 paragraph
 parent
 parent,
@@ -990,6 +1036,7 @@ placeholder,
 plain
 plot
 point
+pointer
 points
 points')
 position:
@@ -1076,6 +1123,7 @@ scope.
 scope="col"
 scope="row"
 screen
+script
 scripts
 scrollable,
 scrolls
@@ -1093,6 +1141,9 @@ set
 set,
 sets
 shape
+shortened
+shortened,
+shortens
 should
 shows
 sight
@@ -1207,9 +1258,11 @@ throws:
 ticker),
 tidy
 time.
+tip
 to
 to.
 tooltip
+tooltip's
 top).
 translates.
 transparent);
@@ -1217,6 +1270,7 @@ travels
 tree
 trim($defaultStyle.'
 trips
+true))
 true;
 truth
 twice,
@@ -1278,6 +1332,7 @@ when
 where
 which
 whichever
+while
 who
 whole
 whose
@@ -1306,9 +1361,11 @@ wrapper
 wrapper's
 wrapper,
 wrapper.
+written
 x-data="{{
 x-on:<event>.window
 x-ref="canvas"
+x-ref="labelTip"
 x-ref="mount"
 zero,
 {
@@ -1322,6 +1379,7 @@ zero,
 }}"
 }}">
 }}"></template>
+}}"></{{
 }}"@endif></script>
 }}({{
 }})"

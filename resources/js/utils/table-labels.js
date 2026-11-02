@@ -6,8 +6,9 @@
  * name of its column, which the stylesheet reads from the cell's `data-label`. A cell with a label
  * of its own from the server (`label` on `table.td`) keeps it; every other cell takes the label of
  * the header above its column, counting a `colspan`. A header's `data-wk-th-label` is its words as
- * the page shows them, without the state a sort button adds for a screen reader alone. Rows a
- * Livewire update adds are named as they arrive.
+ * the page shows them, without the state a sort button adds for a screen reader alone. The cell of a
+ * details row (`data-wk-table-details-cell`) takes none: it holds what the hidden columns showed,
+ * across them all, and belongs to no column. Rows a Livewire update adds are named as they arrive.
  */
 
 /**
@@ -50,7 +51,9 @@ export function labelCells(table) {
             let column = 0;
 
             for (const cell of row.cells) {
-                if (! cell.hasAttribute('data-wk-label-own')) {
+                if (cell.hasAttribute('data-wk-table-details-cell')) {
+                    cell.removeAttribute('data-label');
+                } else if (! cell.hasAttribute('data-wk-label-own')) {
                     const label = labels[column] ?? '';
 
                     if (label !== '') {

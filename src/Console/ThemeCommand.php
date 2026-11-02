@@ -18,7 +18,8 @@ class ThemeCommand extends Command
         {--accent= : A brand color the preset\'s accent is derived from for light and dark, with the contrast of its label and its text held (AccentLadder)}
         {--success= : A brand color the success state is derived from, the way the accent is}
         {--danger= : A brand color the danger state is derived from, the way the accent is}
-        {--warning= : A brand color the warning state is derived from, the way the accent is}';
+        {--warning= : A brand color the warning state is derived from, the way the accent is}
+        {--keep-fill=* : A color whose fill stays as given in dark mode instead of being lifted to 68% lightness: accent, success, danger or warning, repeated or separated by commas}';
 
     protected $description = 'Apply a WireKit theme preset to your app.css';
 
@@ -75,6 +76,12 @@ class ThemeCommand extends Command
 
                 return self::FAILURE;
             }
+        }
+
+        $kept = $this->keptFills($colors);
+
+        if ($kept === null) {
+            return self::FAILURE;
         }
 
         $appCss = resource_path('css/app.css');
@@ -149,8 +156,8 @@ class ThemeCommand extends Command
             $root = self::declarations($vars);
             $dark = self::declarations((string) $darkVars) + $root;
 
-            $vars = ltrim(rtrim($vars)."\n".self::derivedBlocks($colors, false, self::resolved($root)), "\n");
-            $darkVars = ltrim(rtrim((string) $darkVars)."\n".self::derivedBlocks($colors, true, self::resolved($dark)), "\n");
+            $vars = ltrim(rtrim($vars)."\n".self::derivedBlocks($colors, false, self::resolved($root), $kept), "\n");
+            $darkVars = ltrim(rtrim((string) $darkVars)."\n".self::derivedBlocks($colors, true, self::resolved($dark), $kept), "\n");
         }
 
         // Emit the LIGHT palette as a plain unlayered `:root {}` block — NOT a
@@ -174,10 +181,62 @@ class ThemeCommand extends Command
         $this->line('  Theme variables injected into resources/css/app.css');
 
         foreach ($colors as $name => $color) {
-            $this->line('  '.ucfirst($name)." derived from {$color} for light and dark");
+            $this->line('  '.ucfirst($name)." derived from {$color} for light and dark".(isset($kept[$name]) ? ', its fill kept as given in dark mode' : ''));
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The colors `--keep-fill` names, whose fill stays as given in dark mode, or null once the
+     * reason a name cannot be kept has been printed.
+     *
+     * The lift is chosen per color because a brand rarely wants the same for all of them: a deep
+     * accent still has to stand apart from a dark page, an orange chosen for that page already
+     * does. A name only counts for a color the run derives, since the fill it keeps is that one.
+     *
+     * @param  array<string, string>  $colors  the colors given, by name
+     * @return array<string, true>|null
+     */
+    private function keptFills(array $colors): ?array
+    {
+        $kept = [];
+
+        foreach ((array) $this->option('keep-fill') as $value) {
+            foreach (explode(',', is_string($value) ? $value : '') as $name) {
+                $name = strtolower(trim($name));
+
+                if ($name === '') {
+                    $this->error('--keep-fill names no color.');
+                    $this->line('  Name each color whose fill stays as given in dark mode, e.g. --keep-fill=danger.');
+
+                    return null;
+                }
+
+                if (! in_array($name, self::COLORS, true)) {
+                    $this->error("--keep-fill names no color of the theme: [{$name}].");
+                    $this->line('  Name one of '.implode(', ', self::COLORS).'.');
+
+                    $suggestion = SuggestSimilar::format(SuggestSimilar::byLevenshtein($name, self::COLORS));
+                    if ($suggestion !== null) {
+                        $this->line('  '.$suggestion);
+                    }
+
+                    return null;
+                }
+
+                if (! isset($colors[$name])) {
+                    $this->error("--keep-fill names the {$name}, but no --{$name} color is given.");
+                    $this->line("  The fill it keeps is the one derived from that color, e.g. --{$name}=\"#fe4f3b\" --keep-fill={$name}.");
+
+                    return null;
+                }
+
+                $kept[$name] = true;
+            }
+        }
+
+        return $kept;
     }
 
     /**
@@ -218,21 +277,26 @@ class ThemeCommand extends Command
      * fills come first, and every text color is then read on the tints of the states as this
      * block writes them.
      *
+     * A kept fill is the brand color in dark mode too, and the tints are drawn with it, so the
+     * text colors are read on the fills the block really writes.
+     *
      * @param  array<string, string>  $colors  the color given for each name, in the order of COLORS
      * @param  array<string, string>  $theme  the tokens in force in this mode, their references filled in
+     * @param  array<string, true>  $kept  the colors whose fill stays as given on a dark page
      */
-    private static function derivedBlocks(array $colors, bool $dark, array $theme): string
+    private static function derivedBlocks(array $colors, bool $dark, array $theme, array $kept): string
     {
         foreach ($colors as $name => $color) {
             if ($name !== 'accent') {
-                $theme["--color-wk-{$name}"] = AccentLadder::onTheme($color, $dark, $theme)['--color-wk-accent'];
+                $theme["--color-wk-{$name}"] = AccentLadder::onTheme($color, $dark, $theme, lift: ! isset($kept[$name]))['--color-wk-accent'];
             }
         }
 
         $blocks = [];
 
         foreach ($colors as $name => $color) {
-            $blocks[] = self::block($name, $color, self::tokens($name, AccentLadder::onTheme($color, $dark, $theme)));
+            $ladder = AccentLadder::onTheme($color, $dark, $theme, lift: ! isset($kept[$name]));
+            $blocks[] = self::block($name, $color, self::tokens($name, $ladder), $dark && isset($kept[$name]));
         }
 
         return implode("\n", $blocks);
@@ -267,13 +331,14 @@ class ThemeCommand extends Command
     }
 
     /**
-     * Tokens as declarations, under a comment that says where they came from.
+     * Tokens as declarations, under a comment that says where they came from, and in dark mode
+     * whether the fill is the brand color as given rather than lifted.
      *
      * @param  array<string, string>  $tokens
      */
-    private static function block(string $name, string $color, array $tokens): string
+    private static function block(string $name, string $color, array $tokens, bool $keptFill = false): string
     {
-        $lines = ['    /* '.ucfirst($name)." derived from {$color} by AccentLadder */"];
+        $lines = ['    /* '.ucfirst($name)." derived from {$color} by AccentLadder".($keptFill ? ', its fill kept as given' : '').' */'];
 
         foreach ($tokens as $token => $value) {
             $lines[] = "    {$token}: {$value};";

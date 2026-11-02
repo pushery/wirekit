@@ -236,6 +236,22 @@ export default function wirekitVideo(config = {}) {
             this._loop(video, true);
         },
 
+        /**
+         * The element's `error`. A medium that fails after its play() was answered, such as a
+         * response that breaks off mid-loop, ends the loop the way a refused play() does: the
+         * button offers to play again and the poster stands. The element is paused, since a failed
+         * one can still report that it plays. A file played by a press keeps the browser's own
+         * controls, which show the failure themselves.
+         */
+        failed() {
+            if (! this.looping) {
+                return;
+            }
+
+            this.$refs?.video?.pause?.();
+            this.looping = false;
+        },
+
         /** Create the provider's player, which is the first request to the provider. */
         _embed() {
             const stage = this.$refs.stage;
