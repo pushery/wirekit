@@ -20,7 +20,10 @@
      Without the confirm shortcut: a chord the reader may still hold from the overlay below must not
      discard what they typed. Without close-on-confirm either: the question closes through
      `_discardChanges()`, so an application's default for its own dialogs does not apply here. --}}
-<x-wirekit::alert-dialog data-wk-discard-question :lock-scroll="$lockScroll" :describedby="false" :confirm-shortcut="false" :close-on-confirm="false" :scope="$scope">
+{{-- The overlay's name is shared with this include (`@include` inherits the parent's data),
+     so a named modal's question takes a stable id too. A counted one can collide with the
+     question of a second overlay inside an independently-rendered Livewire component. --}}
+<x-wirekit::alert-dialog data-wk-discard-question :name="filled($name ?? null) ? 'discard-'.$name : null" :lock-scroll="$lockScroll" :describedby="false" :confirm-shortcut="false" :close-on-confirm="false" :scope="$scope">
     <x-wirekit::alert-dialog.title>{{ $question }}</x-wirekit::alert-dialog.title>
     <x-wirekit::alert-dialog.actions>
         <x-wirekit::alert-dialog.cancel>

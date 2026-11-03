@@ -7,6 +7,12 @@
     'offset' => config('wirekit.components.tooltip.offset', 6),
     'delayShow' => config('wirekit.components.tooltip.delay-show', 300),
     'delayHide' => config('wirekit.components.tooltip.delay-hide', 100),
+    // Pin the panel id across renders, as `dropdown`, `modal` and `alert-dialog` allow.
+    // A tooltip inside a persisted or independently-rendered Livewire component would
+    // otherwise take a counted id that can collide with another component's, rendered in
+    // a different request: the two halves of its `aria-describedby` pairing then name
+    // different panels, and the duplicate id is invalid HTML.
+    'name' => null,
     // Whether the trigger is a tab stop of its own, so a tooltip on something that is not a
     // control (an icon, a word) is reachable by keyboard and not by hover alone (WCAG 2.1.1).
     // `null`, the default, reads the slot: a slot that already holds a control is the stop a
@@ -107,7 +113,9 @@
     // two halves of one pairing; a fresh id per render would leave them naming different
     // things, and both stay well-formed so
     // nothing in the markup looks wrong. A screen reader simply stops announcing the tip.
-    $tooltipId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-');
+    $tooltipId = $name !== null
+        ? \Pushery\WireKit\Support\DomId::distinct('wk-tooltip-'.$name)
+        : \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-');
 
     // The stop this component makes of its trigger is a button: activating it shows the tooltip, as a
     // toggletip does. A button takes its name from its words; around an icon alone it has none, so
