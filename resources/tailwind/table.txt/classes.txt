@@ -479,19 +479,7 @@ $wrapWords
 'Run:
 '[WireKit]
 '[table[data-wk-compact]>*>tr>&]:py-[var(--padding-wk-y-sm)]',
-'[table[data-wk-hoverable]>*>&:hover]:bg-[var(--color-wk-bg-active)]',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:bg-[var(--color-wk-bg)]',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:bg-[var(--color-wk-bg-subtle)]',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:max-w-[var(--size-wk-table-sticky-column-max)]',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:start-0',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:sticky',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:whitespace-normal',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:z-20',
-'[table[data-wk-sticky-column]>*>tr>&:first-child]:z-[1]',
 '[table[data-wk-sticky-header]>&]:sticky
-'[table[data-wk-striped]>*>&:nth-child(odd_of_[data-wk-table-row])]:bg-[var(--color-wk-bg-subtle)]',
-'[table[data-wk-striped]>*>[data-wk-table-row]:nth-child(odd_of_[data-wk-table-row])+&]:bg-[var(--color-wk-bg-subtle)]',
-'[table[data-wk-striped][data-wk-hoverable]>*>&:nth-child(odd_of_[data-wk-table-row]):hover]:bg-[var(--color-wk-bg-active)]',
 '[wirekit]
 '_blank');
 'a
@@ -1094,7 +1082,6 @@ $wrapWords
 (e.g.
 (function_exists('logger'))
 (function_exists('svg')
-(higher
 (implicit
 (is_string($key)
 (is_string($shortcut)
@@ -1133,7 +1120,6 @@ $wrapWords
 (true)
 (which
 (wire:click
-(z-10)
 );
 *
 *-bg
@@ -1183,7 +1169,6 @@ $wrapWords
 0.875
 018-8V0C5.373
 0;
-0`
 0a.75.75
 0v-.75c0-1.279
 1
@@ -1211,8 +1196,6 @@ $wrapWords
 10L3
 10z"/></svg>
 10z"/></svg>',
-111
-113.
 12
 12"
 12%,
@@ -1304,7 +1287,6 @@ $wrapWords
 8.5:
 80rem
 8h8L6
-9,
 9.75
 9.75-4.365
 9.75-9.75
@@ -1369,7 +1351,6 @@ $wrapWords
 <svg
 <svg…>)
 <table
-<table>
 <table>;
 <tbody
 <tbody>
@@ -1597,11 +1578,9 @@ CSS
 CSS-pixel
 CSS.
 CallerRef::onRoot()
-Capped
 Caption
 Catching
 Check
-Chrome
 Chromium
 Compact
 Ctrl
@@ -1620,7 +1599,6 @@ Dev-only
 Distinct
 Done
 Drop
-END
 ENT_HTML5)
 ENT_HTML5));
 ENT_QUOTES
@@ -1635,7 +1613,6 @@ Every
 Examples
 FIRST
 Fast
-Firefox
 Flag
 Floating
 For
@@ -1657,7 +1634,6 @@ Hidden
 Hidden,
 Hide
 Holding
-Hoverable:
 Hovers
 How
 Htmlable,
@@ -1684,8 +1660,6 @@ Kept
 LANDMARK.
 LAST
 LINE
-LOGICAL,
-LTR
 Left
 Let
 Letting
@@ -1723,7 +1697,6 @@ Normalized
 Not
 Nothing
 Null
-ON
 ON,
 ONE
 ONLY
@@ -1780,7 +1753,6 @@ Rendered
 Renders
 Resolve
 Rich
-Row
 RuntimeException
 S
 SCOPES
@@ -1796,12 +1768,9 @@ STATIC
 SVG
 SVG:
 SWAPS:
-S`
-Safari
 Same
 Scope
 See
-Selected
 Setting
 Several
 Shared:
@@ -1813,7 +1782,6 @@ Size
 SlotContent::textOf(is_scalar($for)
 So
 Soft
-Solid
 Sort
 Sortable
 Space
@@ -1826,7 +1794,6 @@ StrictnessGate::reject('table.search',
 StrictnessGate::reject('table.stand-in',
 Strip
 Striped
-Striped:
 Support\OuterAttributes).
 SvgNotFound
 SvgNotFound.
@@ -1936,7 +1903,6 @@ With
 Without
 Worse,
 Wrap
-Writing
 Written
 X|iPhone|iPad|iPod/',
 [
@@ -1978,7 +1944,6 @@ X|iPhone|iPad|iPod/',
 []))->class(\Pushery\WireKit\Support\CompactClasses::list(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes,
 [];
 [data-wk-sticky-column].
-[data-wk-table-row]`
 [overflow-wrap:anywhere]'
 [overflow-wrap:anywhere]',
 [table[data-wk-compact]>*>tr>th>&]:py-[var(--padding-wk-y-sm)]
@@ -2231,6 +2196,7 @@ __toString
 `col`;
 `column`
 `column`,
+`compact`
 `config()`
 `console`
 `container-type:
@@ -2247,7 +2213,6 @@ __toString
 `delayShow`
 `describes="false"`
 `describes`
-`dir="rtl"`
 `disableOnLoading`
 `disabled:`
 `disabled="false"`
@@ -2324,8 +2289,6 @@ __toString
 `keydownEscape()`
 `label`
 `landmark-unique`.
-`left:
-`left`
 `lg`,
 `loading-target="submit"`
 `loading=true`
@@ -2346,13 +2309,9 @@ __toString
 `mouseleave`
 `my`
 `nowrap`
-`nth-child`
 `nth-last-2`
 `null`
 `null`,
-`odd
-`odd`,
-`of
 `offset`
 `open`
 `open`,
@@ -2396,6 +2355,7 @@ __toString
 `stack-below`:
 `stackBelowContainer`
 `stackBelow`
+`sticky-column`,
 `sticky-header`,
 `stickyColumnBelow`
 `stickyColumn`
@@ -2520,7 +2480,6 @@ actually
 add
 adds
 adds:
-adjacency
 advertise
 affordance
 after
@@ -2688,7 +2647,6 @@ auto`)
 auto`,
 autocomplete="off"
 automated
-automatic
 automatically
 avatar.group
 avoid.
@@ -2718,12 +2676,9 @@ bag,
 bag.
 baked
 bakes
-band
 bar
 bar's
-bare
 base
-baseline
 baseline.
 be
 be.
@@ -2823,7 +2778,6 @@ boundaries
 boundary
 boundary.
 bounded
-bounds
 box
 box's.
 box,
@@ -2898,7 +2852,6 @@ cannot:
 canonical
 cap
 cap,
-capped,
 caps
 caption
 card
@@ -3041,12 +2994,12 @@ columns.
 combination
 combinations:
 combinator.
+combinators,
 combinators:
 come
 comes
 comment
 comment,
-comments
 commit
 common
 communicating
@@ -3126,7 +3079,6 @@ copies
 copy
 corner
 corner.
-correct
 correct,
 corrections
 correctly,
@@ -3182,7 +3134,6 @@ data-wk-busy-spinner
 data-wk-busy-text="{{
 data-wk-cell-actions
 data-wk-field-help>
-data-wk-hoverable
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -3200,7 +3151,6 @@ data-wk-scroll-inset="top"
 data-wk-sort-column="{{
 data-wk-sr-host
 data-wk-sticky-header,
-data-wk-striped
 data-wk-table-*
 data-wk-table-body
 data-wk-table-body>
@@ -3232,7 +3182,6 @@ debug
 decide
 decided
 decided,
-decides,
 decision,
 decision:
 declaration
@@ -3348,7 +3297,6 @@ does),
 does,
 does.
 does;
-don't
 dot
 dotted-read
 down
@@ -3401,7 +3349,6 @@ echo,
 edge
 edge,
 edge.
-edge:
 edges
 edges,
 edges.
@@ -3441,7 +3388,6 @@ ends
 ends,
 ends.
 engages
-engine,
 enough
 ensures
 entirely,
@@ -3517,7 +3463,6 @@ false,
 false:
 false;
 family
-far
 feature
 feedback
 fell
@@ -3855,8 +3800,6 @@ hover:text-[color:var(--color-wk-text-muted)]
 hover:text-[color:var(--color-wk-text-muted)]',
 hover:underline
 hoverable
-hoverable:
-hovered
 how
 however
 href
@@ -3940,7 +3883,6 @@ inner
 innermost
 inserts
 inset
-inset.
 inside
 inside.
 installed
@@ -3991,7 +3933,6 @@ isn't
 isolate`
 isset($sizeMap[$size])
 it
-it)
 it,
 it.
 it:
@@ -4003,7 +3944,6 @@ items-center
 items-stretch
 its
 itself
-itself),
 itself,
 itself.
 itself;
@@ -4035,7 +3975,6 @@ kinds
 kit
 kit's
 know
-knowable
 knowing
 knows
 label
@@ -4062,11 +4001,11 @@ last.
 last:border-b-0
 last:border-e-0
 later
+layer
 layout
 layout,
 lays
 lazy
-leading
 leads
 least
 least.
@@ -4099,7 +4038,6 @@ lg:w-full',
 lift
 lifts
 light
-lights
 like
 limit
 line
@@ -4200,7 +4138,6 @@ max-sm:w-full',
 max-w-full
 max-w-full',
 max-w-full'.match
-max-width
 max-xl:[--wk-touch-min:0px]',
 max-xl:w-full',
 maximum
@@ -4387,8 +4324,6 @@ numeric
 object,
 observer
 occurrence
-odd
-odd-child
 of
 of,
 off
@@ -4520,7 +4455,6 @@ paper
 paragraph
 paragraph's
 parent
-parity
 parse
 parser
 parses
@@ -4567,7 +4501,6 @@ phone.
 phones
 phrase
 phrasing
-physical
 physical.
 pick
 picked
@@ -4608,7 +4541,6 @@ popover's
 popovers
 position
 position,
-position:
 positioning
 positions
 post-process
@@ -4709,7 +4641,6 @@ racing
 radii
 radius
 raises
-ran
 range
 rather
 rationale
@@ -4754,7 +4685,6 @@ recomputed
 record
 record's
 record,
-record.
 red
 red:
 redone
@@ -4852,7 +4782,6 @@ returns
 reused
 rides
 right
-right,
 right-aligned
 right-to-left
 ring
@@ -4895,6 +4824,7 @@ rounded-[var(--radius-wk-sm)]',
 rounded-full
 row
 row's
+row's.
 row),
 row).
 row,
@@ -4952,7 +4882,6 @@ screen-reader-skipping
 screen.
 screen:
 screens.
-screenshot
 script
 scroll
 scroll,
@@ -4998,7 +4927,6 @@ sentence.
 sentences
 sentinel:
 sentinels
-separate
 separately
 separates
 separator
@@ -5030,7 +4958,6 @@ share,
 shared
 shares
 sharp
-sheet.
 shell
 shipping.
 ships
@@ -5132,10 +5059,8 @@ spacing.
 span
 span,
 spans
-spare
 specific
 specificity
-specificity)
 spell
 spelled
 spelled:
@@ -5226,7 +5151,6 @@ stylesheet).
 stylesheet,
 stylesheet.
 styling
-styling:
 stylistic
 sub-component
 sub-component,
@@ -5244,7 +5168,6 @@ success-hover
 success:
 such
 supplies
-support
 supposed
 surface
 surface,
@@ -5279,7 +5202,6 @@ table's,
 table).
 table,
 table.
-table.blade.php).
 table.body
 table.head
 table.row
@@ -5288,7 +5210,6 @@ table.th
 table:
 table[data-wk-compact]
 tables
-tables).
 tabnabbing
 tabs
 tag
@@ -5309,7 +5230,6 @@ taller
 target
 target's
 target="_blank".
-tbody
 td
 td,
 teaches
@@ -5353,7 +5273,6 @@ text/bg/border
 text:
 th
 th)
-th.
 than
 than.
 that
@@ -5399,7 +5318,6 @@ those
 three
 threshold
 through
-through.
 throw
 throw,
 throwing
@@ -5413,7 +5331,6 @@ timer
 timer,
 timer;
 tint
-tinted
 tip
 tip.
 title
@@ -5448,7 +5365,6 @@ tooltip.
 tooltips
 top
 top-left
-top.
 touch
 touch,
 touch-none',
@@ -5461,6 +5377,7 @@ trade,
 trailing
 trailing-edge
 transformed
+transition
 transition-colors
 transitions
 transitions,
@@ -5668,14 +5585,12 @@ way.
 way:
 ways
 we
-wears
 weight
 weight,
 well
 well,
 well-formed
 well.
-well:
 went
 what
 whatever

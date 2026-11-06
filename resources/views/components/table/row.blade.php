@@ -125,35 +125,16 @@
         ? ''
         : trim($detailsBorderFixContainer.' '.$detailsBorderFixViewport.' '.$detailsBorderFixAlways);
 
-    // Row styling: striped + hoverable modes are driven by parent <table>
-    // data attributes (see table.blade.php). The odd-child rule provides the
-    // stripe color; the hover rule lights the whole row.
-    //
-    // `odd of [data-wk-table-row]` rather than a bare `odd`, because a details row is a
-    // child of the same tbody and a bare `nth-child` counts it. With one details row in the
-    // table every stripe below it lands on the wrong record. The `of S` form counts only
-    // record rows, is a no-op for a table that has none, and sits ON the support baseline
-    // rather than above it: Chrome 111 (the floor itself), Safari 9, Firefox 113.
+    // Striped and hoverable are read by the stylesheet at the nearest table, through child
+    // combinators, as is the tint of a details row behind a striped record, so a row carries
+    // only its own classes however long its table is. Only the transition is the row's.
     $classes = WireKit::resolveClasses('table.row', 'base', implode(' ', [
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        // Each switch is read at the nearest table, through child combinators: a table in one of
-        // this table's cells is a descendant of it as well, and keeps its own switches. The parser
-        // always puts a row in a section and a cell in a row, so the path is exact.
-        // Striped: every odd RECORD row in a data-wk-striped table gets a subtle tint
-        '[table[data-wk-striped]>*>&:nth-child(odd_of_[data-wk-table-row])]:bg-[var(--color-wk-bg-subtle)]',
-        // Hoverable: any row inside a data-wk-hoverable table reacts to hover
-        '[table[data-wk-hoverable]>*>&:hover]:bg-[var(--color-wk-bg-active)]',
-        // Striped + hoverable: hover must override the stripe on odd rows (higher specificity)
-        '[table[data-wk-striped][data-wk-hoverable]>*>&:nth-child(odd_of_[data-wk-table-row]):hover]:bg-[var(--color-wk-bg-active)]',
     ]), $scope);
 
-    // The details row takes the tint of the record it belongs to, or it reads as a separate
-    // band under a tinted row. Selected by adjacency rather than by its own position: the
-    // record before it is what decides, and only that record's parity is knowable here.
     $detailsClasses = WireKit::resolveClasses('table.row', 'details', implode(' ', [
         $detailsHiddenFrom,
-        '[table[data-wk-striped]>*>[data-wk-table-row]:nth-child(odd_of_[data-wk-table-row])+&]:bg-[var(--color-wk-bg-subtle)]',
     ]), $scope);
 
     // The span reaches the cell as PHP casts it, and a text that holds no number is reported.

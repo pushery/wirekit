@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.71.0 — MIT License
+ * WireKit CSS v2.71.1 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -3681,37 +3681,6 @@ input.wk-field::-webkit-search-cancel-button {
     }
 }
 
-/* A table's hovered, frozen and striped cells, from the lowest precedence to the highest: a
-   striped row under the pointer takes the chosen shade, and the row that follows a striped one
-   keeps the stripe under the pointer, both as their paint does. Each is read at the nearest
-   table, as the classes they follow are, so a table in one of the cells keeps its own. */
-
-:where(table[data-wk-hoverable] > * > .\[table\[data-wk-hoverable\]\>\*\>\&\:hover\]\:bg-\[var\(--color-wk-bg-active\)\]:hover) {
-    --color-wk-surface: var(--color-wk-bg-active);
-    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
-}
-
-:where(table[data-wk-sticky-column] > * > tr > .\[table\[data-wk-sticky-column\]\>\*\>tr\>\&\:first-child\]\:bg-\[var\(--color-wk-bg\)\]:first-child) {
-    --color-wk-surface: var(--color-wk-bg);
-    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
-}
-
-:where(
-    table[data-wk-sticky-column] > * > tr > .\[table\[data-wk-sticky-column\]\>\*\>tr\>\&\:first-child\]\:bg-\[var\(--color-wk-bg-subtle\)\]:first-child,
-    table[data-wk-striped] > * > .\[table\[data-wk-striped\]\>\*\>\&\:nth-child\(odd_of_\[data-wk-table-row\]\)\]\:bg-\[var\(--color-wk-bg-subtle\)\]:nth-child(odd of [data-wk-table-row]),
-    table[data-wk-striped] > * > [data-wk-table-row]:nth-child(odd of [data-wk-table-row]) + .\[table\[data-wk-striped\]\>\*\>\[data-wk-table-row\]\:nth-child\(odd_of_\[data-wk-table-row\]\)\+\&\]\:bg-\[var\(--color-wk-bg-subtle\)\]
-) {
-    --color-wk-surface: var(--color-wk-bg-subtle);
-    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
-    --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-subtle));
-    --color-wk-bg-active: color-mix(in srgb, var(--color-wk-text) 8%, var(--color-wk-bg-subtle));
-}
-
-:where(table[data-wk-striped][data-wk-hoverable] > * > .\[table\[data-wk-striped\]\[data-wk-hoverable\]\>\*\>\&\:nth-child\(odd_of_\[data-wk-table-row\]\)\:hover\]\:bg-\[var\(--color-wk-bg-active\)\]:nth-child(odd of [data-wk-table-row]):hover) {
-    --color-wk-surface: var(--color-wk-bg-active);
-    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
-}
-
 /* A surface you name. */
 
 :where([data-wk-surface="page"]) {
@@ -4342,6 +4311,36 @@ input.wk-field::-webkit-search-cancel-button {
 .wk-table[data-wk-compact] > * > tr > td:not([data-wk-table-td]),
 .wk-table[data-wk-compact] > * > tr > th:not([data-wk-table-th]) {
     padding-block: var(--padding-wk-y-sm);
+}
+
+/* The table's own cells and rows read its switches here rather than in classes of their own, so
+   a cell and a row carry only their own classes however long the table is. Each switch is read
+   at the nearest table, through child combinators: a table in one of the cells is a descendant
+   of the outer one as well, and keeps its own switches. A head cell keeps its compact padding in
+   a class, because its sort button can carry the padding instead of the cell. */
+table[data-wk-compact] > * > tr > td[data-wk-table-td] {
+    padding-block: var(--padding-wk-y-sm);
+}
+
+/* A striped table tints every other record row, counted among the record rows alone, so a details
+   row between two records moves no stripe; the details row behind a tinted record wears its tint,
+   or it reads as a band of its own. A hoverable table shades the row under the pointer, a tinted
+   one included. Each states the surface it paints, so a frozen cell and a neutral fill in the row
+   take it, as the row's paint does. */
+table[data-wk-striped] > * > [data-wk-table-row]:nth-child(odd of [data-wk-table-row]),
+table[data-wk-striped] > * > [data-wk-table-row]:nth-child(odd of [data-wk-table-row]) + [data-wk-table-details] {
+    background-color: var(--color-wk-bg-subtle);
+    --color-wk-surface: var(--color-wk-bg-subtle);
+    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
+    --color-wk-bg-hover: color-mix(in srgb, var(--color-wk-text) 4%, var(--color-wk-bg-subtle));
+    --color-wk-bg-active: color-mix(in srgb, var(--color-wk-text) 8%, var(--color-wk-bg-subtle));
+}
+
+table[data-wk-hoverable] > * > [data-wk-table-row]:hover,
+table[data-wk-striped][data-wk-hoverable] > * > [data-wk-table-row]:nth-child(odd of [data-wk-table-row]):hover {
+    background-color: var(--color-wk-bg-active);
+    --color-wk-surface: var(--color-wk-bg-active);
+    --color-wk-bg-soft: color-mix(in srgb, var(--color-wk-text) 6%, var(--color-wk-surface));
 }
 
 /* An edge-to-edge card body (padded=false) drops its own padding, so a raw

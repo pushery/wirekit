@@ -10,6 +10,18 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.71.1] — 2026-11-05
+
+**Patch.** One change, for pages with long tables: a cell and a row no longer repeat the classes of their table's switches, so a Livewire update of such a table sends less markup.
+
+### Changed
+
+- **A [table](https://docs.wirekit.app/components/table)'s cells and rows carry only their own classes, whichever switches the table sets.** The stylesheet reads `striped`, `hoverable`, `compact` and `sticky-column` at the nearest table, as the classes did, so a table in a cell keeps its own. Each cell wrote about 550 characters of classes for them before, in a table that set none of them as well, and a Livewire update sent them again. The tables look as before.
+
+### Components
+
+Every component this release changes, each linked to its page: [Data Table](https://docs.wirekit.app/components/data-table) · [Table](https://docs.wirekit.app/components/table)
+
 ## [2.71.0] — 2026-11-02
 
 **Minor.** A table searches its rows in the browser with `table.search`, a field that keeps the rows matching the query, whatever the accents, beside a sort in the browser or on the server. A shortened chart axis label shows its full text in a tooltip, a sidebar section can stand without folding, a notification center can stand as an entry of a sidebar, a dropdown names a group of its entries with a heading, a pagination summary names what it counts, and `wirekit:theme` keeps a brand color's fill as given in dark mode with `--keep-fill`. A modal, a drawer and an unsaved hint render again under an application default of `close-on-confirm`, a label of image hotspots stays inside a narrow image, so a phone no longer scrolls sideways, a table that sorts in the browser keeps each details row under its record and a stacked one names no column before it, a `DateRange` whose end is taken away with a flag still ends after its start day, an empty section of a published `config/wirekit.php` takes the keys the package ships there, and a muted video loop that fails after it started shows its poster.
