@@ -184,28 +184,9 @@
         'font-[number:var(--font-wk-body-weight)]',
         $alignClass,
         $hideClasses,
-        // Each switch is read at the nearest table, through child combinators: a table in one of
-        // this table's cells is a descendant of it as well, and keeps its own switches. The parser
-        // always puts a row in a section and a cell in a row, so the path is exact.
-        // Compact variant: reduce vertical padding to match th
-        '[table[data-wk-compact]>*>tr>&]:py-[var(--padding-wk-y-sm)]',
-        // Sticky first column: freeze the leading body cell. Solid background so
-        // scrolling cells don't show through. The stylesheet paints it in the surface the
-        // cell stands on, so on a striped or a hovered row it wears the row's color, and it
-        // lets the table's own lines show through its edges (dist/wirekit.css, the frozen
-        // cells of the component's own tables).
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:sticky',
-        // LOGICAL, not the physical `left` inset. Writing direction does not move a physical edge:
-        // under `dir="rtl"` the first column renders on the right, and `left: 0` pinned it to the
-        // far END of the row while the scrolling columns ran under it. An LTR screenshot of that
-        // looks exactly like a correct one. Named as the CSS property rather than the utility on
-        // purpose: Tailwind reads comments too, so a utility spelled here is compiled into the sheet.
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:start-0',
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:z-[1]',
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:bg-[var(--color-wk-bg)]',
-        // Capped with the header cell above it, so a long label wraps rather than taking the
-        // width the other columns scroll in. The reasoning is next to the same line in th.
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:max-w-[var(--size-wk-table-sticky-column-max)]',
+        // The table's switches are not written here. The stylesheet reads `compact` and the frozen
+        // first column at the nearest table, through child combinators, so a table in one of these
+        // cells keeps its own, and a cell carries only its own classes however long its table is.
     ]), $scope);
 @endphp
 

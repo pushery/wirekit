@@ -375,26 +375,9 @@
         // always puts a row in a section and a cell in a row, so the path is exact.
         // Compact variant: reduce vertical padding
         $padOnButton ? '' : '[table[data-wk-compact]>*>tr>&]:py-[var(--padding-wk-y-sm)]',
-        // Sticky first column: freeze the leading header cell. It needs its own
-        // background (it would otherwise show scrolling body cells through it) and
-        // a z-index ABOVE the sticky header (z-10) so the top-left corner stays on top.
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:sticky',
-        // LOGICAL, not the physical `left` inset. Writing direction does not move a physical edge:
-        // under `dir="rtl"` the first column renders on the right, and `left: 0` pinned it to the
-        // far END of the row while the scrolling columns ran under it. An LTR screenshot of that
-        // looks exactly like a correct one. Named as the CSS property rather than the utility on
-        // purpose: Tailwind reads comments too, so a utility spelled here is compiled into the sheet.
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:start-0',
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:z-20',
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:bg-[var(--color-wk-bg-subtle)]',
-        // The frozen column is capped, or a sticky-column table, which takes its max-content
-        // width to overflow at all, holds a long label on one line and the column takes most of
-        // a phone. A max-width on a table cell bounds its column in automatic layout
-        // in every engine, and spare width is still handed out, so a table with room wraps
-        // nothing. The column header has to be allowed to wrap as well: its nowrap would keep
-        // the column exactly as wide as its label, cap or not.
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:max-w-[var(--size-wk-table-sticky-column-max)]',
-        '[table[data-wk-sticky-column]>*>tr>&:first-child]:whitespace-normal',
+        // The frozen first column is not written here: the stylesheet freezes the first cell of
+        // every row of a table with `sticky-column`, gives the head's the layer above the sticky
+        // header and the subtle surface, caps the column and lets its label wrap.
         // Sortable headers get the hover color; the pointer cursor goes wherever the
         // click target actually is. `$padOnButton` rather than `$sortAction` alone: with a
         // button present the button is the target and carries its own cursor-pointer, and

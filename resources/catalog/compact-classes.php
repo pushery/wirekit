@@ -11,7 +11,7 @@ declare(strict_types=1);
  */
 
 return [
-    'sources' => 'e3d4ca60a57f29168a40604ea99b57ad8795cbf4b6def72f68888060adb58ed8',
+    'sources' => 'fd3174727e56ee10baaec8979d4ae4ac65d00645af80e014ad5882c0acd77b94',
     'fields' => ['--text-wk-'],
     'classes' => [
         '@container/bento' => 'wk0',
