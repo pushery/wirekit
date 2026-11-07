@@ -1,0 +1,2 @@
+/*! WireKit per page v2.72.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+import{a as t,b as r,e as s}from"../chunks/chunk-JNEPRQTV.js";import"../chunks/chunk-QIV2U2S4.js";import"../chunks/chunk-B3JGM7ZC.js";function i(){return{pressed:!1,_stopServerValue:null,init(){let e=this.$root;typeof e?.getAttribute=="function"&&(this.pressed=e.getAttribute(t)==="true"),this._stopServerValue=r(e,o=>{s(e)||(this.pressed=o==="true")})},destroy(){this._stopServerValue?.(),this._stopServerValue=null}}}export{i as default};

@@ -213,6 +213,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $emitAriaBusy
 $error
 $error);
@@ -527,10 +530,12 @@ $targetAttr
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -1288,6 +1293,7 @@ $writtenIn
 ($displayUnitPrice
 ($fit)
 ($fitFloor
+($fitted
 ($forceLoading)
 ($formattedBase
 ($from)
@@ -1455,6 +1461,7 @@ $writtenIn
 (oklch
 (only
 (or
+(partials.text-tip-panel).
 (partials/field-help).
 (partials/label-after).
 (partials/required-check),
@@ -1792,7 +1799,6 @@ $writtenIn
 </span>@endif
 </svg>
 </template>
-</template></{{
 </x-wirekit::button>
 </x-wirekit::tooltip>
 </{{
@@ -1856,7 +1862,6 @@ $writtenIn
 ></div>
 ></p>
 >=
->{{
 ?
 ?:
 ??
@@ -1884,6 +1889,7 @@ $writtenIn
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @endunless>
@@ -1966,7 +1972,7 @@ $writtenIn
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(\Pushery\WireKit\Support\SlotContent::given($action
 @if(\Pushery\WireKit\Support\SlotContent::given($iconLeft
 @if(\Pushery\WireKit\Support\SlotContent::given($iconRight
@@ -2505,8 +2511,8 @@ X|iPhone|iPad|iPod/',
 [$baseClasses,
 [$baseClasses]))
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$figureClasses]))
 [$formattedBase,
 [$iconClasses])));
@@ -2551,6 +2557,7 @@ X|iPhone|iPad|iPod/',
 ['star',
 ['style'
 ['tight',
+['tipClasses'
 ['true',
 ['value'
 ['x-on:mouseenter',
@@ -2573,6 +2580,7 @@ X|iPhone|iPad|iPod/',
 \Illuminate\Support\HtmlString($languageOf($writtenIn)
 \Illuminate\Support\HtmlString('');
 \Illuminate\Support\HtmlString(implode('
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter([
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \InvalidArgumentException('wirekit::button:
@@ -3059,6 +3067,7 @@ __toString
 `tagName()`
 `target`
 `text-decoration`
+`text`
 `this.$refs.tooltip`
 `this`,
 `tight`,
@@ -3210,6 +3219,7 @@ along
 alongside
 already
 already,
+already.
 already:
 also
 alt=""
@@ -3735,6 +3745,7 @@ class="wk-product-card-link
 class="wk-tooltip-panel
 class="{{
 classes
+classes,
 classes.
 classes:
 classic
@@ -3787,6 +3798,7 @@ come
 comes
 comment
 comment,
+comments
 comments.
 commit
 common
@@ -3953,7 +3965,6 @@ data-stack-below="{{
 data-wk-badge-dismiss
 data-wk-busy-spinner
 data-wk-busy-text="{{
-data-wk-cut-tip
 data-wk-field-help>
 data-wk-field-label
 data-wk-kbd-guess="{{
@@ -4457,7 +4468,7 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
 focus-visible:ring-[var(--color-wk-ring)]">
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:ring-inset
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
@@ -6092,6 +6103,7 @@ show,
 shown
 shown,
 shows
+shows,
 shows.
 shows;
 shrink
@@ -6439,6 +6451,7 @@ ternary,
 test
 test".
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -7075,15 +7088,13 @@ zoom,
 }}</x-wirekit::text>
 }}</{{
 }}<span
-}}<template
 }}<x-slot:after>{{
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
 }}@if($required)<span
 }}`
+}}{{
 —
 …
 …"

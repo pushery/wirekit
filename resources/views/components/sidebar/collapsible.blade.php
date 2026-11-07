@@ -46,6 +46,13 @@
     $foldable = BooleanProp::from($foldable, true, 'sidebar.collapsible', 'foldable');
     $open = $open || $forceOpen;
 
+    // The folded column's layout is written only where the sidebar can fold, as sidebar.item
+    // decides it: a sidebar that is not `collapsible` never carries `data-collapsed`, and a section
+    // that renders without its sidebar on the stack writes it.
+    $folds = \Pushery\WireKit\Support\AwareProp::within(['sidebar']) !== true
+        || \Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false), false);
+    $foldFlat = $folds ? ' group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0' : '';
+
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
 
     // The `label` names the trigger BUTTON — it is that button's accessible name and
@@ -111,7 +118,7 @@
     // toggle. Uses aria-expanded for AT, and indents child content by one level.
     $triggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger', implode(' ', [
         $rowLayout,
-        'group-data-[collapsed]/wk-sidebar:justify-center',
+        ...($folds ? ['group-data-[collapsed]/wk-sidebar:justify-center'] : []),
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         // Same row-height floor as sidebar.item, and for the same reason: the label carries
         // `sr-only` in the collapsed rail, so without a floor this row is sized by its
@@ -136,7 +143,7 @@
     // (small uppercase tracked label) while keeping the icon + label + chevron layout.
     $headingTriggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger-heading', implode(' ', [
         $rowLayout,
-        'group-data-[collapsed]/wk-sidebar:justify-center',
+        ...($folds ? ['group-data-[collapsed]/wk-sidebar:justify-center'] : []),
         'px-[var(--padding-wk-x-sm)] pt-[var(--padding-wk-y-sm)] pb-[2px]',
         'text-[length:var(--text-wk-xs)]',
         'font-[number:var(--font-wk-heading-weight)]',
@@ -219,7 +226,7 @@
              A caller's `aria-label` cannot serve here: it is read through the bag above
              and names the ROOT, not this button. --}}
         @if((string) $label === '') aria-label="{{ __('wirekit::Section') }}" @endif
-        class="wk-touch-row {{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
+        data-wk-rail-gone class="wk-touch-row {{ $triggerClasses }}"
     >
         @if($icon)
             {{-- Icon — decorative, hidden from AT. A bare name string resolves
@@ -256,7 +263,7 @@
                  quantity is one too many. Deliberately not decided for them: a dot that
                  means "unread" reads differently from one that means "attention", and only
                  one of those is redundant when expanded. --}}
-            <span class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $trailing }}</span>
+            <span data-wk-rail-gone class="shrink-0">{{ $trailing }}</span>
         @endif
         {{-- Chevron indicator — rotates when open; hidden in the collapsed rail. --}}
         <svg
@@ -265,7 +272,7 @@
                  object form of the binding removes a class it did not add, so a section that closes
                  loses the rotation the markup gave it. --}}
             data-wk-disclosure-arrow
-            class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden{{ $open ? ' rotate-90' : '' }}"
+            data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90' : '' }}"
             :class="{ 'rotate-90': isOpen }"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >
@@ -281,7 +288,7 @@
          <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
          `open || collapsed` would throw a ReferenceError there. --}}
     {{-- `x-cloak` only on a section the server renders closed, as in sidebar.group. --}}
-    <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse @unless($open) x-cloak @endunless class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
+    <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse @unless($open) x-cloak @endunless class="{{ $childClasses }}{{ $foldFlat }}">
         {{ $slot }}
     </div>
     @if(is_string($persist) && $persist !== '' && ! $forceOpen)
@@ -298,7 +305,7 @@
     @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif
     {{ $attributes->except(['role', 'aria-label']) }}
 >
-    <div class="{{ $headClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">
+    <div data-wk-rail-gone class="{{ $headClasses }}">
         @if($icon)
             <span class="shrink-0" data-wk-icon-nudge aria-hidden="true">
                 @if(is_string($icon) && ! str_contains($icon, '<'))
@@ -315,7 +322,7 @@
             <span class="shrink-0">{{ $trailing }}</span>
         @endif
     </div>
-    <div class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
+    <div class="{{ $childClasses }}{{ $foldFlat }}">
         {{ $slot }}
     </div>
 </div>

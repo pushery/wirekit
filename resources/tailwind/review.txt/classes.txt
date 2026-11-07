@@ -138,6 +138,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $error
 $error);
 $error)`.
@@ -350,10 +353,12 @@ $text
 $thenClasses
 $timezone,
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -941,6 +946,7 @@ $written->toIso8601String()
 ($dismissLabel
 ($display
 ($fitFloor
+($fitted
 ($helpName
 ($hint
 ($intent)
@@ -1048,6 +1054,7 @@ $written->toIso8601String()
 (more),
 (not
 (or
+(partials.text-tip-panel).
 (partials/field-help).
 (partials/label-after).
 (partials/required-check),
@@ -1291,7 +1298,6 @@ $written->toIso8601String()
 </span>@endif
 </svg>
 </template>
-</template></{{
 </x-wirekit::tooltip>
 </{{
 <=
@@ -1332,7 +1338,6 @@ $written->toIso8601String()
 ></div>
 ></p>
 >=
->{{
 ?
 ?:
 ??
@@ -1353,6 +1358,7 @@ $written->toIso8601String()
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @for($i
@@ -1403,7 +1409,7 @@ $written->toIso8601String()
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if($verified)
 @if($written)
 @if(\Pushery\WireKit\Support\SlotContent::given($actions
@@ -1707,6 +1713,7 @@ Teleporting
 That
 The
 There
+They
 This
 Three
 Throwing
@@ -1768,8 +1775,8 @@ Y');
 [
 [$baseClasses,
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$iconClasses])));
 [$placeholderDisplay
 [$placeholderStyle,
@@ -1801,6 +1808,7 @@ Y');
 ['star',
 ['style'
 ['tight',
+['tipClasses'
 ['true',
 ['value'
 ['x-on:mouseenter',
@@ -1815,6 +1823,7 @@ Y');
 [word-break:normal]',
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from([
@@ -2114,6 +2123,7 @@ __toString
 `surface="outline"`,
 `swapElements`
 `tagName()`
+`text`
 `text`,
 `this.$refs.tooltip`
 `this`,
@@ -2213,6 +2223,7 @@ alone.
 along
 already
 already,
+already.
 already:
 also
 always
@@ -2572,6 +2583,7 @@ class="w-4
 class="wk-tooltip-panel
 class="{{
 classes
+classes,
 classes:
 classic
 clean
@@ -2611,6 +2623,7 @@ column
 come
 comes
 comment
+comments
 compare
 compares
 compete
@@ -2707,7 +2720,6 @@ data
 data,
 data-replayable="true"
 data-wk-badge-dismiss
-data-wk-cut-tip
 data-wk-field-help>
 data-wk-field-label
 data-wk-heading-row
@@ -3071,7 +3083,7 @@ focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
 focus.
@@ -4190,6 +4202,7 @@ show
 shown
 shown,
 shows
+shows,
 shows.
 shows;
 shrink
@@ -4411,6 +4424,7 @@ ternary
 ternary)
 test
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -4879,7 +4893,6 @@ zoom,
 }}</x-wirekit::heading>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}<x-slot:after>{{
 }}>
 }}></span>@endif
@@ -4888,6 +4901,7 @@ zoom,
 }}>{{
 }}@if($required)<span
 }}`
+}}{{
 —
 …
 …"

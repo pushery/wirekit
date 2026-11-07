@@ -99,6 +99,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $ends
 $family,
 $familyClasses
@@ -258,10 +261,12 @@ $tabular
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -732,6 +737,7 @@ $wrapClasses]))
 ($dismissLabel
 ($display
 ($fitFloor
+($fitted
 ($intent)
 ($isInformative
 ($item):
@@ -835,6 +841,7 @@ $wrapClasses]))
 (not
 (only
 (or
+(partials.text-tip-panel).
 (paths,
 (pills),
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
@@ -959,7 +966,6 @@ $wrapClasses]))
 </span>@elseif(\Pushery\WireKit\Support\SlotContent::given($slot)
 </span>@endif
 </template>
-</template></{{
 </x-wirekit::tooltip>
 </{{
 <body>
@@ -984,7 +990,6 @@ $wrapClasses]))
 =>
 >
 ></div>
->{{
 ?
 ?:
 ??
@@ -999,6 +1004,7 @@ $wrapClasses]))
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @foreach($step
@@ -1032,7 +1038,7 @@ $wrapClasses]))
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @keydown.arrow-down.prevent="focusTab('next')"
 @keydown.arrow-left.prevent="focusTab('prev')"
 @keydown.arrow-right.prevent="focusTab('next')"
@@ -1331,6 +1337,7 @@ Teleporting
 That
 The
 There
+They
 This
 Three
 Throwing
@@ -1400,8 +1407,8 @@ X|iPhone|iPad|iPod/',
 [
 [$baseClasses,
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$iconClasses])));
 [$listClasses,
 [$placeholderDisplay
@@ -1430,6 +1437,7 @@ X|iPhone|iPad|iPod/',
 ['style'
 ['tabs.list',
 ['tight',
+['tipClasses'
 ['true',
 ['underline',
 ['wk-tab',
@@ -1447,6 +1455,7 @@ X|iPhone|iPad|iPod/',
 [word-break:normal]',
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($wireModelWarning)
@@ -1737,6 +1746,7 @@ __toString
 `tabs/tab.blade.php`
 `tabs`.
 `tagName()`
+`text`
 `this.$refs.tooltip`
 `tight`,
 `tooltip`
@@ -1847,6 +1857,7 @@ along
 alongside
 already
 already,
+already.
 already:
 also
 always-filled
@@ -2201,6 +2212,7 @@ class="wk-tab
 class="wk-tooltip-panel
 class="{{
 classes
+classes,
 classes.
 classes:
 classic
@@ -2237,6 +2249,7 @@ come
 comes
 comment
 comment,
+comments
 commits
 comparison
 compete
@@ -2340,7 +2353,6 @@ dark
 data
 data-replayable="true"
 data-wk-badge-dismiss
-data-wk-cut-tip
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -2658,7 +2670,7 @@ focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:ring-inset
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
@@ -3317,6 +3329,7 @@ overwritten
 own
 own,
 own.
+own:
 own;
 owning
 owns
@@ -3947,6 +3960,7 @@ term.
 ternary)
 test
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -4380,11 +4394,8 @@ zoom,
 }}</x-wirekit::badge>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
 }}`
 }}{{

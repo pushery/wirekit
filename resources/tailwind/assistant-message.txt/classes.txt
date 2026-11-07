@@ -175,6 +175,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $emitAriaBusy
 $extLink
 $external
@@ -389,10 +392,12 @@ $targetAttr
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -1141,6 +1146,7 @@ $x)`
 ($dismissLabel
 ($display
 ($fitFloor
+($fitted
 ($forceLoading)
 ($fromInitials
 ($iconOnly
@@ -1295,6 +1301,7 @@ $x)`
 (not
 (only
 (or
+(partials.text-tip-panel).
 (paths,
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (preserving
@@ -1532,7 +1539,6 @@ $x)`
 </svg>
 </svg></span>
 </template>
-</template></{{
 </x-slot:trigger>
 </x-wirekit::collapsible>
 </x-wirekit::popover>
@@ -1610,6 +1616,7 @@ $x)`
 @endif
 @endif>
 @endif>+{{
+@endif{{
 @endphp
 @endswitch
 @endunless
@@ -1667,7 +1674,7 @@ $x)`
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(\Pushery\WireKit\Support\NumericProp::int($remaining,
 @if(\Pushery\WireKit\Support\SlotContent::given($actions
 @if(\Pushery\WireKit\Support\SlotContent::given($footer
@@ -2086,6 +2093,7 @@ That
 The
 Theme
 There
+They
 This
 Three
 Through
@@ -2186,6 +2194,7 @@ X|iPhone|iPad|iPod/',
 [$classes,
 [$classes]))
 [$classes])));
+[$classes];
 [$groupClasses]))
 [$iconClasses])));
 [$placeholderDisplay
@@ -2278,6 +2287,7 @@ X|iPhone|iPad|iPod/',
 ['span',
 ['style'
 ['tight',
+['tipClasses'
 ['true',
 ['wk-collapsible',
 ['x-on:mouseenter',
@@ -2296,6 +2306,7 @@ X|iPhone|iPad|iPod/',
 \Illuminate\Contracts\Support\Htmlable
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \InvalidArgumentException('<x-wirekit::popover>
 \InvalidArgumentException('wirekit::button:
@@ -2726,6 +2737,7 @@ __toString
 `tagName()`
 `target="_blank"`
 `target`
+`text`
 `text`'s
 `this.$refs.tooltip`
 `tight`,
@@ -2880,6 +2892,7 @@ alpha),
 alpha;
 already
 already,
+already.
 already:
 also
 alt
@@ -3403,6 +3416,7 @@ class="wk-collapsible-trigger
 class="wk-tooltip-panel
 class="{{
 classes
+classes,
 classes.
 classes:
 classic
@@ -3636,7 +3650,6 @@ data-wk-assistant-reasoning-label>{{
 data-wk-badge-dismiss
 data-wk-busy-spinner
 data-wk-busy-text="{{
-data-wk-cut-tip
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -4077,7 +4090,7 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
 focus-visible:ring-[var(--color-wk-ring)]',
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:ring-inset
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
@@ -5622,6 +5635,7 @@ show
 shown
 shown.
 shows
+shows,
 shrink
 shrink,
 shrink-0
@@ -5829,6 +5843,7 @@ stylesheet's
 stylesheet).
 styling
 stylistic
+sub-component
 sub-component,
 submit
 submitted
@@ -5920,6 +5935,7 @@ test
 test".
 tests
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -6542,13 +6558,12 @@ zoom,
 }}</x-wirekit::shimmer>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}>
 }}></span>@endif
-}}>@else
 }}>@endif
 }}>{{
 }}{!!
+}}{{
 ~0.9rem
 ~65
 ~65ch

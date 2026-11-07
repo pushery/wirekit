@@ -158,7 +158,7 @@
                  has no icon to show at rail width and its children are hidden too, so a
                  focusable-but-invisible sr-only control would be a keyboard focus trap with
                  no visible focus indicator (WCAG 2.4.7). --}}
-            class="wk-touch-row {{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
+            data-wk-rail-gone class="wk-touch-row {{ $triggerClasses }}"
         >
             {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
             <span class="break-words">{{ $label }}</span>
@@ -169,14 +169,14 @@
                      object form of the binding removes a class it did not add, so a section that closes
                      loses the rotation the markup gave it. --}}
                 data-wk-disclosure-arrow
-                class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden{{ $open ? ' rotate-90' : '' }}"
+                data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)]{{ $open ? ' rotate-90' : '' }}"
                 :class="{ 'rotate-90': isOpen }"
                 fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
             >
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
         </button>
-        @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))<div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $action }}</div></div>@endif
+        @if(\Pushery\WireKit\Support\SlotContent::given($action ?? null))<div data-wk-rail-gone class="shrink-0">{{ $action }}</div></div>@endif
         {{-- Children — shown/hidden with Alpine when expanded; FORCE-SHOWN as a flat
              icon list in the collapsed rail (the item icons stay reachable), matching
              the static sidebar.group + sidebar.collapsible. The `typeof collapsed`
@@ -213,7 +213,7 @@
                 @if($label)
                     <div class="{{ $labelClasses }} min-w-0 break-words wk-rail-hide">{{ $label }}</div>
                 @endif
-                <div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $action }}</div>
+                <div data-wk-rail-gone class="shrink-0">{{ $action }}</div>
             </div>
         @elseif($label)
             {{-- Visible label; also the accessible name via aria-label above.

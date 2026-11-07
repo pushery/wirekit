@@ -813,6 +813,13 @@ return [
     |          and a figure written into it would stay behind as the bundle
     |          changes.
     |
+    | 'auto' — The shared runtime and the components a page starts, nothing
+    |          else. Each component is an ES module of its own, and the
+    |          response names the ones the page's markup uses, whether a
+    |          WireKit component wrote them or the page did. Loaded before
+    |          Livewire starts Alpine, as the other bundles are. Where a
+    |          response is not rewritten, the page loads 'full' instead.
+    |
     | 'csp'  — For a Content-Security-Policy without `script-src 'unsafe-eval'`.
     |
     |          Alpine's default build evaluates every directive by constructing
@@ -854,7 +861,7 @@ return [
     */
 
     'scripts' => [
-        'bundle' => 'full', // 'full', 'core' or 'csp'
+        'bundle' => 'full', // 'full', 'core', 'auto' or 'csp'
 
         /*
          * Load the ApexCharts adapter alongside the bundle above.

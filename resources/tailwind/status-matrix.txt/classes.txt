@@ -114,6 +114,9 @@ $e;
 $editable
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $empty
 $emptyText
 $family,
@@ -266,10 +269,12 @@ $tabular
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -742,6 +747,7 @@ $wrap,
 ($dismissLabel
 ($display
 ($fitFloor
+($fitted
 ($heatMin,
 ($intent)
 ($isInformative
@@ -844,6 +850,7 @@ $wrap,
 (or
 (otherwise
 (painted
+(partials.text-tip-panel).
 (paths,
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (preserving
@@ -966,7 +973,6 @@ $wrap,
 </tbody>
 </td>
 </template>
-</template></{{
 </thead>
 </tr>
 </x-wirekit::tooltip>
@@ -1007,7 +1013,6 @@ $wrap,
 =>
 >
 ></div>
->{{
 ?
 ?:
 ??
@@ -1024,6 +1029,7 @@ $wrap,
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endswitch
 @endunless
@@ -1058,7 +1064,7 @@ $wrap,
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if($val
 @if(\Pushery\WireKit\Support\SlotContent::given($empty
 @keydown.enter.prevent="activate({{
@@ -1303,6 +1309,7 @@ Teleporting
 That
 The
 There
+They
 This
 Three
 Throwing
@@ -1358,8 +1365,8 @@ Zero
 [$baseClasses,
 [$base]))
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$iconClasses])));
 [$placeholderDisplay
 [$placeholderStyle,
@@ -1385,6 +1392,7 @@ Zero
 ['soft',
 ['style'
 ['tight',
+['tipClasses'
 ['tristate',
 ['true',
 ['x-on:mouseenter',
@@ -1402,6 +1410,7 @@ Zero
 [{key,label}]
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from(
@@ -1655,6 +1664,7 @@ __toString
 `swapElements`
 `tabindex="0"`
 `tagName()`
+`text`
 `this.$refs.tooltip`
 `tight`,
 `toggle`
@@ -1742,6 +1752,7 @@ alone,
 alone.
 already
 already,
+already.
 already:
 also
 alternative
@@ -2101,6 +2112,7 @@ columns",
 come
 comes
 comment
+comments
 comments,
 compete
 compile
@@ -2190,7 +2202,6 @@ data-table
 data-table,
 data-wk-announcer
 data-wk-badge-dismiss
-data-wk-cut-tip
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -2472,7 +2483,7 @@ focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
 focus.
@@ -3062,6 +3073,7 @@ overview
 own
 own,
 own.
+own:
 own;
 owned
 owns,
@@ -3436,6 +3448,7 @@ show
 show"
 shown
 shows
+shows,
 shrink
 shrink-0
 shrink-0';
@@ -3553,6 +3566,7 @@ style="background:
 stylesheet
 stylesheet's
 stylesheet).
+sub-component
 submission
 submits,
 submitted
@@ -3614,6 +3628,7 @@ template
 ternary)
 test
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -4040,11 +4055,8 @@ zoom,
 }}</x-wirekit::badge>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
 }}{{
 ~18:1

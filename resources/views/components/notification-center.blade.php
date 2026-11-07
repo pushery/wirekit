@@ -58,6 +58,20 @@
     // only (Support\AwareProp): a `sidebar.group` around the row folds its entries, never the rail.
     $bellInTip = $trigger === 'row'
         && BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false), false, 'sidebar', 'collapsible');
+    // The row's layout for the folded column is written only where its sidebar can fold, as a
+    // sidebar item decides it: a row that renders without its sidebar on the stack writes it.
+    $folds = \Pushery\WireKit\Support\AwareProp::within(['sidebar']) !== true
+        || BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false), false);
+    // The dot the row's counter becomes in the folded column (partials.notification-center-row-trigger).
+    $rowCounterFold = $folds ? ' '.implode(' ', [
+        'group-data-[collapsed]/wk-sidebar:absolute',
+        'group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]',
+        'group-data-[collapsed]/wk-sidebar:end-[var(--padding-wk-x-sm)]',
+        'group-data-[collapsed]/wk-sidebar:ms-0',
+        'group-data-[collapsed]/wk-sidebar:p-0',
+        'group-data-[collapsed]/wk-sidebar:h-2',
+        'group-data-[collapsed]/wk-sidebar:w-2',
+    ]) : '';
     // Seeded from `name`: Livewire's morph matches on the id, so a fresh one each render
     // would mean destroy-and-rebuild, and the Alpine-only state — the open panel, the
     // active filter — would go with it on the next round trip.
@@ -111,7 +125,7 @@
     // color, hover and focus ring, and the centering of its lone icon in a collapsed rail.
     $rowTriggerClasses = WireKit::resolveClasses('notification-center', 'row-trigger', implode(' ', [
         'relative flex w-full items-center gap-[var(--padding-wk-x-sm)]',
-        'group-data-[collapsed]/wk-sidebar:justify-center',
+        ...($folds ? ['group-data-[collapsed]/wk-sidebar:justify-center'] : []),
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
         'rounded-[var(--radius-wk-nav-item)]',

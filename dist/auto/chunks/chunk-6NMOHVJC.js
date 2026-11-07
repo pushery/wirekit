@@ -1,0 +1,2 @@
+/*! WireKit per page v2.72.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+function c(n,o,f){if(typeof n!="function")throw new TypeError("safeObserver: first argument must be an observer constructor.");if(typeof o!="function")throw new TypeError("safeObserver: second argument must be a callback function.");let e=!0,t=new n((...r)=>{e&&o(...r)},f),s=()=>{e=!1,t.disconnect()};return{observe:(...r)=>e&&t.observe(...r),unobserve:(...r)=>e&&t.unobserve(...r),disconnect:s,stop:s,isLive:()=>e,raw:t}}export{c as a};

@@ -57,6 +57,9 @@ $display['other']]
 $display['other']];
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $family,
 $familyClasses
 $familyClasses,
@@ -150,10 +153,12 @@ $tag
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -523,6 +528,7 @@ $wrap,
 ($callerLabelledBy
 ($display
 ($fitFloor
+($fitted
 ($helpName
 ($leading
 ($lineClamp
@@ -569,6 +575,7 @@ $wrap,
 (is_string($shortcut)
 (is_string($truncate)
 (not
+(partials.text-tip-panel).
 (partials/field-help).
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (resources/js/components/tooltip.js),
@@ -680,7 +687,6 @@ $wrap,
 </span>@elseif(\Pushery\WireKit\Support\SlotContent::given($slot)
 </svg>
 </template>
-</template></{{
 </x-wirekit::tooltip>
 </{{
 <body>
@@ -709,6 +715,7 @@ $wrap,
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @foreach($step
@@ -732,7 +739,7 @@ $wrap,
 @if($triggerDescribes)
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(\Pushery\WireKit\Support\SlotContent::given($actions
 @if(filled($helpId
 @include('wirekit::components.partials.field-help',
@@ -912,6 +919,7 @@ X|iPhone|iPad|iPod/',
 [$callerLabelledBy,
 [$classes,
 [$classes]))
+[$classes];
 [$rowClasses]))
 [''
 ['1',
@@ -926,6 +934,7 @@ X|iPhone|iPad|iPod/',
 ['sans',
 ['sm',
 ['tight',
+['tipClasses'
 ['true',
 ['x-on:mouseenter',
 ['xs',
@@ -933,6 +942,7 @@ X|iPhone|iPad|iPod/',
 [overflow-wrap:anywhere]';
 [word-break:normal]',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Illuminate\View\ComponentSlot
 \Pushery\WireKit\Support\AlpinePayload::string($helpField
@@ -1127,6 +1137,7 @@ __('wirekit::then')
 `tabindex="-1"`
 `tabindex`
 `tagName()`
+`text`
 `text`,
 `this.$refs.tooltip`
 `tight`,
@@ -1202,6 +1213,7 @@ alone.
 along
 already
 already,
+already.
 already:
 also
 among
@@ -1408,6 +1420,7 @@ class="wk-page-header-actions-frame">
 class="wk-tooltip-panel
 class="{{
 classes
+classes,
 classic
 clears
 click
@@ -1433,6 +1446,7 @@ column,
 come
 comes
 comment
+comments
 compete
 compilable
 compiled
@@ -1490,7 +1504,6 @@ d`),
 danger
 dark.
 data
-data-wk-cut-tip
 data-wk-field-help>
 data-wk-heading-row
 data-wk-kbd-guess="{{
@@ -1722,7 +1735,7 @@ focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
 focus.
@@ -2186,6 +2199,7 @@ overview
 own
 own,
 own.
+own:
 owns,
 padding
 padding,
@@ -2430,6 +2444,7 @@ should
 show
 shown
 shows
+shows,
 shrink,
 sibling
 siblings
@@ -2567,6 +2582,7 @@ template,
 tend
 ternary)
 text
+text's
 text,
 text-[color:var(--color-wk-text-muted)]',
 text-[color:var(--color-wk-text-subtle)]
@@ -2867,11 +2883,11 @@ zoom,
 }}</x-wirekit::heading>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}>
 }}>@else
 }}>@endif
 }}>{{
+}}{{
 —
 …
 …>`,

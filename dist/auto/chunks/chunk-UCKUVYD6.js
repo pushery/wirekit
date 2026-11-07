@@ -1,0 +1,2 @@
+/*! WireKit per page v2.72.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+function s(){return{requiredMessage:"",onRequiredInvalid(t){let e=t?.target;if(!e||typeof t.preventDefault!="function")return;t.preventDefault(),this.requiredMessage=typeof e.validationMessage=="string"?e.validationMessage:"";let i=e.form;(i&&i.elements?Array.from(i.elements).find(r=>r.willValidate&&r.validity&&!r.validity.valid):e)===e&&typeof this._focusRequiredControl=="function"&&this._focusRequiredControl()}}}export{s as a};

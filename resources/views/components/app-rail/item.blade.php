@@ -86,6 +86,29 @@
     $labels = \Pushery\WireKit\Support\AwareProp::read('labels', ['app-rail'], 'tooltip');
     $trackCurrent = \Pushery\WireKit\Support\AwareProp::read('trackCurrent', ['app-rail'], false);
 
+    // The modes as the rail wrote them. `@aware` hands back the value the rail was called with,
+    // and the rail replaces a value it does not know with its first one, so a rejected value
+    // reads here as what `data-labels` and `data-indicator` say.
+    $labels = in_array($labels, ['tooltip', 'below', 'inline'], true) ? $labels : 'tooltip';
+    $indicator = \Pushery\WireKit\Support\AwareProp::read('indicator', ['app-rail'], 'pill');
+    $indicator = in_array($indicator, ['pill', 'edge'], true) ? $indicator : 'pill';
+
+    // An entry writes the classes of the modes its rail can be in, and no others. At runtime
+    // `data-labels` holds the mode the rail was given or `inline`, which every rail switches to
+    // when it shows its names, and `data-indicator` never changes. So `below` is written only for
+    // a rail given `below`, and one indicator's classes only for that indicator, and a rail of
+    // twenty entries does not carry the classes of every mode twenty times, nor send them again
+    // with every Livewire update.
+    //
+    // That takes the rail on the component stack. An entry that renders without it, as one inside
+    // a component Livewire renders on its own does on an update, cannot tell its rail's modes and
+    // writes the classes of all of them.
+    $railKnown = \Pushery\WireKit\Support\AwareProp::within(['app-rail']) === true;
+    $labelsBelow = ! $railKnown || $labels === 'below';
+    $labelsTooltip = ! $railKnown || $labels === 'tooltip';
+    $indicatorPill = ! $railKnown || $indicator === 'pill';
+    $indicatorEdge = ! $railKnown || $indicator === 'edge';
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
@@ -211,16 +234,19 @@
         // axis is vertical. There `justify-center` centers the pair in the row's height,
         // which is a different question and still the right answer. Horizontal centering in
         // that mode comes from `items-center` above, on the cross axis.
-        'group-data-[labels=below]/wk-rail:justify-center',
-        // A caption under the icon. A tighter gap than the row form — a vertical pair
+        //
+        // A caption under the icon also takes a tighter gap than the row form — a vertical pair
         // reads as one unit at a spacing that would look cramped horizontally.
         //
         // The inline padding drops to the xs tier in this mode, and that is what buys the
         // caption its room: at the sm tier the pill would take 20px of a 76px column and clip
         // every name over seven characters. The pill still spans the full column, so
         // nothing about the hover target changes.
-        'group-data-[labels=below]/wk-rail:flex-col group-data-[labels=below]/wk-rail:gap-[2px]',
-        'group-data-[labels=below]/wk-rail:px-[var(--padding-wk-x-xs)]',
+        ...($labelsBelow ? [
+            'group-data-[labels=below]/wk-rail:justify-center',
+            'group-data-[labels=below]/wk-rail:flex-col group-data-[labels=below]/wk-rail:gap-[2px]',
+            'group-data-[labels=below]/wk-rail:px-[var(--padding-wk-x-xs)]',
+        ] : []),
         // The label beside the icon, in the wide rail.
         'group-data-[labels=inline]/wk-rail:justify-start',
         // Resting foreground scoped to NON-active items. Unscoped, this and the active
@@ -239,14 +265,17 @@
     // Two ways to mark the current module, and they are alternatives rather than a base
     // with an addition: `pill` fills the item's box, `edge` draws a bar on the rail's
     // inline-end edge and deliberately leaves the box unfilled. Doing both reads as two
-    // selections.
+    // selections. Each stays scoped to the rail's `data-indicator`, and only the rail's own
+    // indicator is written at all.
     $activeClasses = WireKit::resolveClasses('app-rail.item', 'active', implode(' ', [
         'text-[color:var(--color-wk-rail-active-text)]',
         'font-[number:var(--font-wk-body-weight)]',
-        'group-data-[indicator=pill]/wk-rail:bg-[var(--color-wk-rail-active-bg)]',
-        // The foreground ON the fill, which stops being the same color as the foreground on
-        // the column once the column is colored — see the accent tone in dist/wirekit.css.
-        'group-data-[indicator=pill]/wk-rail:text-[color:var(--color-wk-rail-active-fg)]',
+        ...($indicatorPill ? [
+            'group-data-[indicator=pill]/wk-rail:bg-[var(--color-wk-rail-active-bg)]',
+            // The foreground on the fill, which stops being the same color as the foreground on
+            // the column once the column is colored — see the accent tone in dist/wirekit.css.
+            'group-data-[indicator=pill]/wk-rail:text-[color:var(--color-wk-rail-active-fg)]',
+        ] : []),
         // The edge bar. Inset as a percentage rather than given a height, so it tracks
         // the row in every labeling mode — a fixed height is wrong the moment a caption
         // makes the row taller.
@@ -257,13 +286,15 @@
         // on the outside of a rounded box, where a shape meant to say "this row" stops
         // belonging to the row. Fully rounded, and inset by the hairline that keeps it
         // clear of the row's own corner radius.
-        'group-data-[indicator=edge]/wk-rail:after:absolute',
-        'group-data-[indicator=edge]/wk-rail:after:top-[20%]',
-        'group-data-[indicator=edge]/wk-rail:after:bottom-[20%]',
-        'group-data-[indicator=edge]/wk-rail:after:end-[2px]',
-        'group-data-[indicator=edge]/wk-rail:after:w-[3px]',
-        'group-data-[indicator=edge]/wk-rail:after:rounded-[var(--radius-wk-full)]',
-        'group-data-[indicator=edge]/wk-rail:after:bg-[var(--color-wk-rail-active-text)]',
+        ...($indicatorEdge ? [
+            'group-data-[indicator=edge]/wk-rail:after:absolute',
+            'group-data-[indicator=edge]/wk-rail:after:top-[20%]',
+            'group-data-[indicator=edge]/wk-rail:after:bottom-[20%]',
+            'group-data-[indicator=edge]/wk-rail:after:end-[2px]',
+            'group-data-[indicator=edge]/wk-rail:after:w-[3px]',
+            'group-data-[indicator=edge]/wk-rail:after:rounded-[var(--radius-wk-full)]',
+            'group-data-[indicator=edge]/wk-rail:after:bg-[var(--color-wk-rail-active-text)]',
+        ] : []),
     ]), $scope);
 
     // The glyph follows the token the rail's width is built from, rather than a literal of the
@@ -272,7 +303,7 @@
     // same size, so the labeled rail can carry a larger icon without widening the narrow one.
     $iconClasses = WireKit::resolveClasses('app-rail.item', 'icon', implode(' ', [
         'size-[var(--size-wk-rail-icon)]',
-        'group-data-[labels=below]/wk-rail:size-[var(--size-wk-rail-icon-labeled)]',
+        ...($labelsBelow ? ['group-data-[labels=below]/wk-rail:size-[var(--size-wk-rail-icon-labeled)]'] : []),
     ]), $scope);
 
     // `sr-only` is the RESTING state, never `hidden` — the string is the link's
@@ -303,15 +334,18 @@
         // rail. That reset does not touch
         // `max-width`, so this bound holds in every build. (The reset's class name is not
         // written out here: Tailwind reads this file as text and would compile it bare.)
-        'group-data-[labels=below]/wk-rail:max-w-full',
-        'group-data-[labels=below]/wk-rail:break-words',
+        //
         // A long compound word breaks at a syllable with a hyphen, where the document's `lang`
-        // tells the browser how; `break-words` above stays the fallback for a word it cannot
+        // tells the browser how; `break-words` stays the fallback for a word it cannot
         // hyphenate.
-        'group-data-[labels=below]/wk-rail:hyphens-auto',
-        'group-data-[labels=below]/wk-rail:text-center',
-        'group-data-[labels=below]/wk-rail:text-[length:var(--text-wk-xs)]',
-        'group-data-[labels=below]/wk-rail:leading-tight',
+        ...($labelsBelow ? [
+            'group-data-[labels=below]/wk-rail:max-w-full',
+            'group-data-[labels=below]/wk-rail:break-words',
+            'group-data-[labels=below]/wk-rail:hyphens-auto',
+            'group-data-[labels=below]/wk-rail:text-center',
+            'group-data-[labels=below]/wk-rail:text-[length:var(--text-wk-xs)]',
+            'group-data-[labels=below]/wk-rail:leading-tight',
+        ] : []),
 
         'group-data-[labels=inline]/wk-rail:min-w-0',
         'group-data-[labels=inline]/wk-rail:flex-1',
@@ -323,9 +357,10 @@
         // `tooltip` state never had, without which an ellipsis has no bounded box to appear in.
         // Written out literally because Tailwind reads source text and cannot extract a class
         // name assembled at runtime.
+        // `tooltip` is the mode a rail is given or never holds, so its half waits for that.
         ...($truncate ? [
             'group-data-[wk-names]/wk-rail:min-w-0',
-            'group-data-[labels=tooltip]/wk-rail:flex-1',
+            ...($labelsTooltip ? ['group-data-[labels=tooltip]/wk-rail:flex-1'] : []),
             'group-data-[wk-names]/wk-rail:truncate',
         ] : []),
     ]), $scope);
