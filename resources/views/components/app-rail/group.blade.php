@@ -26,7 +26,13 @@
 
     $separated = BooleanProp::from($separated, false, 'app-rail.group', 'separated');
 
-    // One id for the heading, so the group can be named BY it rather than beside it.
+    // The rail's mode, read as an entry reads it (app-rail.item): at runtime the rail holds the
+    // mode it was given or `inline`, so the heading writes the classes of `below` only in a rail
+    // given `below`, and in every case where the rail is not on the component stack to say so.
+    $labelsBelow = \Pushery\WireKit\Support\AwareProp::within(['app-rail']) !== true
+        || \Pushery\WireKit\Support\AwareProp::read('labels', ['app-rail'], 'tooltip') === 'below';
+
+    // One id for the heading, so the group can be named by it rather than beside it.
     //
     // `DomId::unique` and NOT `Str::random` — the shell records what that costs: a random id
     // is minted afresh on every render, so inside a Livewire morph or a `wire:poll` region
@@ -48,20 +54,22 @@
     // functional section-label treatment the sidebar already uses.
     $labelClasses = WireKit::resolveClasses('app-rail.group', 'label', implode(' ', [
         'sr-only',
-        'group-data-[labels=below]/wk-rail:not-sr-only',
         // Wraps rather than truncating, for the reason the item's label records: a clipped
         // section name names nothing.
-        'group-data-[labels=below]/wk-rail:break-words',
-        'group-data-[labels=below]/wk-rail:text-center',
+        ...($labelsBelow ? [
+            'group-data-[labels=below]/wk-rail:not-sr-only',
+            'group-data-[labels=below]/wk-rail:break-words',
+            'group-data-[labels=below]/wk-rail:text-center',
+            'group-data-[labels=below]/wk-rail:pb-[2px]',
+            'group-data-[labels=below]/wk-rail:text-[length:var(--text-wk-xs)]',
+            'group-data-[labels=below]/wk-rail:uppercase',
+            'group-data-[labels=below]/wk-rail:tracking-wider',
+        ] : []),
         'group-data-[labels=inline]/wk-rail:not-sr-only',
         'group-data-[labels=inline]/wk-rail:px-[var(--padding-wk-x-sm)]',
-        'group-data-[labels=below]/wk-rail:pb-[2px]',
         'group-data-[labels=inline]/wk-rail:pb-[2px]',
-        'group-data-[labels=below]/wk-rail:text-[length:var(--text-wk-xs)]',
         'group-data-[labels=inline]/wk-rail:text-[length:var(--text-wk-xs)]',
-        'group-data-[labels=below]/wk-rail:uppercase',
         'group-data-[labels=inline]/wk-rail:uppercase',
-        'group-data-[labels=below]/wk-rail:tracking-wider',
         'group-data-[labels=inline]/wk-rail:tracking-wider',
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[color:var(--color-wk-rail-muted)]',
@@ -78,8 +86,8 @@
      child is `sr-only`, so the group would announce its name and then contain it.
 
      `aria-labelledby` keeps the property the prop docblock above promises — the heading is
-     the group's accessible name in EVERY mode — while the string exists once. It needs no
-     knowledge of which mode the rail is in, which this component does not have. --}}
+     the group's accessible name in every mode — while the string exists once. It needs no
+     knowledge of which mode the rail is in. --}}
 <div
     @if(filled($label))
         @unless(\Pushery\WireKit\Support\CallerAttribute::writes($attributes, 'role')) role="group" @endunless

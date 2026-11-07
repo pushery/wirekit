@@ -111,6 +111,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $family,
 $familyClasses
 $familyClasses,
@@ -238,10 +241,12 @@ $tag
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -698,6 +703,7 @@ $wrapperClasses
 ($dismissLabel
 ($display
 ($fitFloor
+($fitted
 ($intent)
 ($isInformative
 ($leading
@@ -783,6 +789,7 @@ $wrapperClasses
 (matches
 (not
 (or
+(partials.text-tip-panel).
 (paths,
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (preserving
@@ -933,7 +940,6 @@ $wrapperClasses
 </span>@endif
 </svg>
 </template>
-</template></{{
 </x-wirekit::badge>
 </x-wirekit::collapsible>
 </x-wirekit::tooltip>
@@ -986,6 +992,7 @@ $wrapperClasses
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @foreach($step
@@ -1018,7 +1025,7 @@ $wrapperClasses
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @php
 @props([
 @props.
@@ -1265,6 +1272,7 @@ Teleporting
 That
 The
 There
+They
 This
 Three
 Throwing
@@ -1327,9 +1335,9 @@ X|iPhone|iPad|iPod/',
 [
 [$baseClasses,
 [$callerLabelledBy,
-[$classes,
 [$classes]))
 [$classes])));
+[$classes];
 [$iconClasses])));
 [$placeholderDisplay
 [$placeholderStyle,
@@ -1358,6 +1366,7 @@ X|iPhone|iPad|iPod/',
 ['span',
 ['style'
 ['tight',
+['tipClasses'
 ['tool'
 ['true',
 ['wk-collapsible',
@@ -1372,6 +1381,7 @@ X|iPhone|iPad|iPod/',
 \Illuminate\Contracts\Support\Htmlable
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($openBool)
@@ -1711,6 +1721,7 @@ alone,
 alone.
 already
 already,
+already.
 already:
 also
 always
@@ -2046,6 +2057,7 @@ class="wk-tooltip-panel
 class="wk-touch-target
 class="{{
 classes
+classes,
 classes:
 classic
 cleanly
@@ -2179,7 +2191,6 @@ data-replayable="true"
 data-status="{{
 data-wk-badge-dismiss
 data-wk-code-block>
-data-wk-cut-tip
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -2489,7 +2500,7 @@ focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]"
 focus-visible:ring-[var(--color-wk-ring)]',
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:ring-inset
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
@@ -3507,6 +3518,7 @@ should
 show
 shown
 shows
+shows,
 shrink
 shrink-0
 shrink-0';
@@ -3634,6 +3646,7 @@ stylesheet
 stylesheet's
 stylesheet).
 stylesheets
+sub-component
 subtle
 subtree
 subtree,
@@ -3691,6 +3704,7 @@ ternary)
 test
 tests
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -4104,12 +4118,10 @@ zoom,
 }}</x-wirekit::shimmer>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
+}}{{
 ~0.9rem
 —
 …

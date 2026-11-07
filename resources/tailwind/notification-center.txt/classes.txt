@@ -53,6 +53,7 @@ $display['other']];
 $emptyText
 $filters
 $focusableTrigger
+$folds
 $formOwner
 $groupBy
 $groupBy,
@@ -80,6 +81,7 @@ $placement
 $platform
 $row
 $rowClasses
+$rowCounterFold
 $rowTriggerClasses
 $scope)
 $scope);
@@ -128,12 +130,14 @@ $triggerName
 $triggerWords
 $variants
 &&
+'
 ''
 '')
 '');
 '',
 '';
 ',
+'.implode('
 '99+'
 'actionLabel'],
 'all'
@@ -188,7 +192,13 @@ $variants
 'font-[number:var(--font-wk-heading-weight)]'"
 'font-normal',
 'group',
-'group-data-[collapsed]/wk-sidebar:justify-center',
+'group-data-[collapsed]/wk-sidebar:absolute',
+'group-data-[collapsed]/wk-sidebar:end-[var(--padding-wk-x-sm)]',
+'group-data-[collapsed]/wk-sidebar:h-2',
+'group-data-[collapsed]/wk-sidebar:ms-0',
+'group-data-[collapsed]/wk-sidebar:p-0',
+'group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]',
+'group-data-[collapsed]/wk-sidebar:w-2',
 'groupBy'
 'groupBy',
 'hover:bg-[var(--color-wk-bg-active)]',
@@ -331,6 +341,7 @@ $variants
 (not
 (on
 (open/close,
+(partials.notification-center-row-trigger).
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (resources/js/utils/caller-ref.js).
 (rightward)
@@ -347,6 +358,7 @@ $variants
 -1"
 -right-0.5
 -top-0.5
+...($folds
 /
 //
 />
@@ -666,6 +678,7 @@ X|iPhone|iPad|iPod/',
 [$rowClasses]))
 [''
 ['bell',
+['group-data-[collapsed]/wk-sidebar:justify-center']
 ['id',
 ['inverted',
 ['mac'
@@ -676,6 +689,7 @@ X|iPhone|iPad|iPod/',
 ['title'
 ['x-on:keydown.escape',
 ['x-on:mouseenter',
+[]),
 [],
 [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
 \Illuminate\Support\HtmlString('');
@@ -690,6 +704,7 @@ X|iPhone|iPad|iPod/',
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent)
 \Pushery\WireKit\Support\AttributeText::get($attributes,
+\Pushery\WireKit\Support\AwareProp::within(['sidebar'])
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
 \Pushery\WireKit\Support\CallerName::split($attributes);
@@ -1117,6 +1132,7 @@ color,
 color/dot
 colors
 colors,
+column
 column,
 come
 comes
@@ -1157,6 +1173,7 @@ could
 count
 count,
 count-only
+counter
 counterpart,
 counterpart:
 covers
@@ -1196,6 +1213,7 @@ data-wk-tooltip-surface="elevated"
 data-wk-tooltip-trigger
 dead.
 debug
+decides
 declares
 decorative
 default
@@ -1303,6 +1321,7 @@ fallback
 false
 false))->count();
 false),
+false);
 false,
 false;
 family
@@ -1351,6 +1370,8 @@ focus-within
 focusable
 focusable-trigger="false"
 focused,
+fold,
+folded
 folds
 followed
 follows
@@ -1403,13 +1424,6 @@ grid
 group
 group's
 group,
-group-data-[collapsed]/wk-sidebar:absolute
-group-data-[collapsed]/wk-sidebar:end-[var(--padding-wk-x-sm)]
-group-data-[collapsed]/wk-sidebar:h-2
-group-data-[collapsed]/wk-sidebar:ms-0
-group-data-[collapsed]/wk-sidebar:p-0
-group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]
-group-data-[collapsed]/wk-sidebar:w-2"
 group.items"
 groupBy:
 groupIndex';
@@ -1579,6 +1593,7 @@ language.
 last
 later
 latestLabels:
+layout
 lazy
 leading-snug
 leads
@@ -2129,7 +2144,7 @@ tells
 template
 text
 text,
-text-[color:var(--color-wk-accent-fg)]
+text-[color:var(--color-wk-accent-fg)]{{
 text-[color:var(--color-wk-accent-text)]
 text-[color:var(--color-wk-accent-text)]"
 text-[color:var(--color-wk-text)]"
@@ -2229,6 +2244,7 @@ trim($shortcut)
 trim($shortcut),
 trim(html_entity_decode(strip_tags((string)
 trip.
+true
 true,
 truncating,
 truthy

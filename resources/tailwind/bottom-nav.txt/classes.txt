@@ -51,6 +51,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $family,
 $familyClasses
 $familyClasses,
@@ -111,15 +114,18 @@ $sizeClasses,
 $sizeMap
 $sizeMap[$validated];
 $slot
+$slot)
 $slot,
 $svgHtml
 $svgHtml,
 $tabular
 $targetAttr
 $tipClasses
+$tipClasses])->render()));
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $trackCurrent
 $trackCurrent)
@@ -391,6 +397,7 @@ $wrap,
 ($break
 ($callerAriaHidden
 ($fitFloor
+($fitted
 ($isInformative
 ($isInteractive)
 ($leading
@@ -436,6 +443,7 @@ $wrap,
 (not
 (or
 (parent's
+(partials.text-tip-panel).
 (paths,
 (preserving
 (provides
@@ -484,7 +492,7 @@ $wrap,
 </a>
 </nav>
 </span>
-</template></{{
+</template>
 <a
 <div
 <nav
@@ -492,6 +500,7 @@ $wrap,
 <span
 <svg
 <svg…>)
+<template
 <use>,
 <x-wirekit::icon
 <x-wirekit::icon>
@@ -502,7 +511,6 @@ $wrap,
 =>
 >
 ></div>
->{{
 ?
 ?:
 ??
@@ -511,6 +519,7 @@ $wrap,
 @aware.
 @else
 @endif
+@endif{{
 @endphp
 @endunless
 @if
@@ -520,7 +529,7 @@ $wrap,
 @if($computedRel)
 @if($icon)
 @if($isInteractive)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(filled($accessibleName)
 @if(filled($label))
 @php
@@ -646,6 +655,7 @@ TOKEN
 Tailwind
 That
 The
+They
 This
 Three
 Throwing
@@ -667,8 +677,8 @@ WireKit::validateProp('icon',
 WireKit::validateProp('text',
 With
 [
-[$classes,
 [$classes]))
+[$classes];
 [$iconClasses])));
 [$placeholderDisplay
 [$placeholderStyle,
@@ -681,6 +691,7 @@ With
 ['sans',
 ['style'
 ['tight',
+['tipClasses'
 ['true',
 ['wk-touch-row',
 ['x-on:click.prevent']);
@@ -693,6 +704,7 @@ With
 \'page\'
 \'true\'
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::from($label);
@@ -810,6 +822,7 @@ __toString
 `sans`
 `shrink`
 `size`,
+`text`
 `tight`,
 `tooltip`
 `tooltip`.
@@ -861,6 +874,7 @@ all.
 allowed
 alone,
 already
+already.
 already:
 also
 always
@@ -1026,6 +1040,7 @@ class="relative
 class="truncate"></span>
 class="wk-tooltip-panel
 classes
+classes,
 click
 clicking
 clicks
@@ -1045,6 +1060,7 @@ color.
 colors
 column
 comment
+comments
 compare
 compiles
 complete
@@ -1094,7 +1110,6 @@ data-active="{{
 data-wk-bottom-nav
 data-wk-bottom-nav-badge
 data-wk-bottom-nav-item
-data-wk-cut-tip
 data-wk-prose-skip
 data-wk-scroll-inset="bottom"
 date
@@ -1254,7 +1269,7 @@ floor.
 focus
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:ring-inset',
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus.
@@ -1587,6 +1602,7 @@ overrides
 own
 own,
 own.
+own:
 package
 padding
 page
@@ -1595,6 +1611,7 @@ page.
 pages
 panel
 panel's
+panel.
 paragraph
 parent
 part
@@ -1756,6 +1773,7 @@ should
 show
 shown
 shows
+shows,
 shrink
 shrink-0';
 sibling
@@ -1779,6 +1797,8 @@ size="inherit"
 size="lg"
 sized
 slot
+slot,
+slot.
 small
 so
 some
@@ -1824,6 +1844,7 @@ string,
 strip
 stylesheet
 stylesheet's
+sub-component
 subtle
 success
 such
@@ -1858,6 +1879,7 @@ technology,
 ternary)
 test
 text
+text's
 text,
 text-[color:var(--color-wk-danger-fg)]">{{
 text-[length:var(--text-wk-xs)]
@@ -2077,12 +2099,11 @@ z-[var(--z-wk-sticky)]',
 }}</span>
 }}</x-wirekit::text>
 }}</{{
-}}<template
+}}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
 }}`
+}}{{
 —
 …
 →

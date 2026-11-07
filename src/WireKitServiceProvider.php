@@ -23,6 +23,7 @@ use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
+use Pushery\WireKit\Http\WritePageScripts;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\AssetTags;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
@@ -177,6 +178,13 @@ class WireKitServiceProvider extends ServiceProvider
         $this->app['events']->listen(RequestHandled::class, $resetPerRender);
         $this->app['events']->listen(JobProcessing::class, $resetPerRender);
 
+        // `'scripts' => ['bundle' => 'auto']` loads the shared runtime and the factories a page
+        // starts. They are known once the page is complete, so they are written into the response
+        // on the `web` group, where pages are rendered (Http\WritePageScripts).
+        if (config('wirekit.scripts.bundle') === 'auto') {
+            Route::pushMiddlewareToGroup('web', WritePageScripts::class);
+        }
+
         // A Livewire property typed with a date range binds with `wire:model` (Values\DateRangeSynth).
         // Added to Livewire's synthesizers whenever Livewire builds them, so the order in which the
         // two packages register does not matter. A Livewire without HandleSynths, 4.0 to 4.3.0 among
@@ -313,6 +321,11 @@ class WireKitServiceProvider extends ServiceProvider
                 static fn (string $type): bool => str_starts_with($type, 'application/javascript'),
             ))), 'wirekit-scripts');
             $this->publishes($publishedAs(array_keys($distFiles)), 'wirekit-assets');
+
+            // The per-page bundle (`'scripts' => ['bundle' => 'auto']`), as one directory: its chunks
+            // are named by their content, so the set of files changes with every release.
+            $this->publishes([__DIR__.'/../dist/auto' => public_path('vendor/wirekit/auto')], 'wirekit-scripts');
+            $this->publishes([__DIR__.'/../dist/auto' => public_path('vendor/wirekit/auto')], 'wirekit-assets');
         }
 
         // ── Translations ──
@@ -586,11 +599,15 @@ class WireKitServiceProvider extends ServiceProvider
                 // The overlay landmark\'s accessible name rides this tag. See
                 // WireKitServiceProvider::overlayLabelAttribute() for why it travels here
                 // rather than in an inline script or in markup of its own.
-                echo \Pushery\WireKit\WireKitServiceProvider::scriptTag(
+                $__wk_tag = \Pushery\WireKit\WireKitServiceProvider::scriptTag(
                     $__wk_file,
                     $__wk_nonceAttr,
                     \Pushery\WireKit\WireKitServiceProvider::overlayLabelAttribute(),
                 );
+                // `auto`: the full bundle\'s tag in a region that Http\\WritePageScripts
+                // rewrites to the runtime and the factories the page starts
+                // (Support\\PageScripts), so a response nothing rewrites still works.
+                echo $__wk_bundle === "auto" ? \Pushery\WireKit\Support\PageScripts::region($__wk_tag) : $__wk_tag;
 
                 // The ApexCharts adapter, opt-in via config.
                 //
@@ -926,6 +943,33 @@ class WireKitServiceProvider extends ServiceProvider
                     'Cache-Control' => 'public, max-age=31536000, immutable',
                 ]);
             })->where('path', '.*');
+        });
+
+        // The per-page bundle served from this package's own `dist/auto` while no current copy is
+        // published (Support\PageScripts decides by the manifest). The path is resolved inside that
+        // directory and nowhere else, and only a script or the manifest is served.
+        Route::group(['middleware' => $this->assetRouteMiddleware()], function (): void {
+            Route::get('wirekit/auto/{path}', function (string $path) {
+                $file = ContainedFile::resolve(__DIR__.'/../dist/auto', $path);
+
+                $type = $file === null ? null : match (strtolower(pathinfo($file, PATHINFO_EXTENSION))) {
+                    'js' => 'application/javascript; charset=utf-8',
+                    'json' => 'application/json; charset=utf-8',
+                    default => null,
+                };
+
+                if ($file === null || $type === null) {
+                    abort(404);
+                }
+
+                return response((string) file_get_contents($file), 200, [
+                    'Content-Type' => $type,
+                    'X-Content-Type-Options' => 'nosniff',
+                    // A chunk is named by its content and an entry carries the manifest's `?v=`, so
+                    // new bytes are a new URL and the year-long promise holds.
+                    'Cache-Control' => 'public, max-age=31536000, immutable',
+                ]);
+            })->where('path', '[A-Za-z0-9_./-]+');
         });
 
         // Flags served from this package's own `resources/flags`, so the flag component works with

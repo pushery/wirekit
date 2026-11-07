@@ -118,6 +118,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $family,
 $familyClasses
 $familyClasses,
@@ -281,10 +284,12 @@ $tag):
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -747,6 +752,7 @@ $writtenIn
 ($display
 ($displayUnitPrice
 ($fitFloor
+($fitted
 ($formattedBase
 ($from)
 ($intent)
@@ -843,6 +849,7 @@ $writtenIn
 (mixed
 (not
 (or
+(partials.text-tip-panel).
 (paths,
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (preg_match('/^[A-Za-z]{3}$/',
@@ -969,7 +976,6 @@ $writtenIn
 </span>@elseif(\Pushery\WireKit\Support\SlotContent::given($slot)
 </span>@endif
 </template>
-</template></{{
 </x-wirekit::tooltip>
 </{{
 <bdi>
@@ -1000,7 +1006,6 @@ $writtenIn
 =>
 >
 ></div>
->{{
 ?
 ?:
 ??
@@ -1011,6 +1016,7 @@ $writtenIn
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @foreach($prices
@@ -1047,7 +1053,7 @@ $writtenIn
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(\Pushery\WireKit\Support\SlotContent::given($action
 @if(\Pushery\WireKit\Support\SlotContent::given($features
 @if(\Pushery\WireKit\Support\SlotContent::given($suffix
@@ -1287,6 +1293,7 @@ Text
 That
 The
 There
+They
 This
 Three
 Throwing
@@ -1337,8 +1344,8 @@ X|iPhone|iPad|iPod/',
 [$baseClasses,
 [$baseClasses]))
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$formattedBase,
 [$iconClasses])));
 [$placeholderDisplay
@@ -1365,6 +1372,7 @@ X|iPhone|iPad|iPod/',
 ['soft',
 ['style'
 ['tight',
+['tipClasses'
 ['true',
 ['x-on:mouseenter',
 ['xs',
@@ -1378,6 +1386,7 @@ X|iPhone|iPad|iPod/',
 \Illuminate\Support\HtmlString($languageOf($writtenIn)
 \Illuminate\Support\HtmlString('');
 \Illuminate\Support\HtmlString(implode('
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter([
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
@@ -1598,6 +1607,7 @@ __toString
 `swapElements`
 `tagName()`
 `text-decoration`
+`text`
 `this.$refs.tooltip`
 `tight`,
 `tooltip`
@@ -1677,6 +1687,7 @@ alone:
 alongside
 already
 already,
+already.
 already:
 also
 always
@@ -1975,6 +1986,7 @@ class="text-[length:var(--text-wk-sm)]
 class="wk-tooltip-panel
 class="{{
 classes
+classes,
 classes.
 classes:
 classic
@@ -2005,6 +2017,7 @@ column;
 come
 comes
 comment
+comments
 compare-at
 compete
 compile
@@ -2086,7 +2099,6 @@ data
 data-featured="true"
 data-replayable="true"
 data-wk-badge-dismiss
-data-wk-cut-tip
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -2362,7 +2374,7 @@ focus,
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]"
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
 focus.
@@ -2948,6 +2960,7 @@ overview
 own
 own,
 own.
+own:
 own;
 owns
 owns,
@@ -3281,6 +3294,7 @@ should
 show
 shown
 shows
+shows,
 shrink
 shrink-0
 shrink-0';
@@ -3395,6 +3409,7 @@ styles
 stylesheet
 stylesheet's
 stylesheet).
+sub-component
 subtle
 subtree
 subtree,
@@ -3449,6 +3464,7 @@ ternary)
 test
 tests
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -3832,12 +3848,10 @@ zoom,
 }}</x-wirekit::badge>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
+}}{{
 —
 …
 €"

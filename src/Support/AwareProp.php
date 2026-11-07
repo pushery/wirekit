@@ -98,6 +98,37 @@ final class AwareProp
     }
 
     /**
+     * Whether one of the owners is above the child on the component stack.
+     *
+     * A child can only take its family's values while the family renders around it. A component
+     * Livewire renders on its own, on an update, renders its children with no owner above them,
+     * and every read answers with its default. A child that leaves out what its owner can never
+     * need asks this first, and writes everything where the answer is not true: false where no
+     * owner is on the stack, null where the stack cannot be read.
+     *
+     * @param  list<string>  $owners  the components the family belongs to, by name
+     */
+    public static function within(array $owners): ?bool
+    {
+        $state = self::state();
+
+        if ($state === null) {
+            return null;
+        }
+
+        foreach ($state[0] as $entry) {
+            // Read as read() reads the stack: an anonymous component stands on it as its view's name.
+            $name = is_string($entry) ? UnboundModel::componentOf($entry) : null;
+
+            if ($name !== null && in_array($name, $owners, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The stack, the tag data by depth and the rendering view's data, or null where the factory
      * does not keep them as this reads them.
      *

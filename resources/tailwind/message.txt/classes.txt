@@ -118,6 +118,9 @@ $e;
 $edited
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $family,
 $familyClasses
 $familyClasses,
@@ -278,10 +281,12 @@ $timestamp))
 $timestamp->format('Y-m-d
 $timezone,
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -796,6 +801,7 @@ $wrap,
 ($dismissLabel
 ($display
 ($fitFloor
+($fitted
 ($fromInitials
 ($intent)
 ($intentValue)
@@ -898,6 +904,7 @@ $wrap,
 (no
 (not
 (or
+(partials.text-tip-panel).
 (paths,
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (preserving
@@ -1039,7 +1046,6 @@ $wrap,
 </svg>
 </svg></span>
 </template>
-</template></{{
 </time>
 </x-wirekit::tooltip>
 </{{
@@ -1074,7 +1080,6 @@ $wrap,
 >
 ></div>
 ><svg
->{{
 ?
 ?:
 ??
@@ -1091,6 +1096,7 @@ $wrap,
 @endif
 @endif>
 @endif>+{{
+@endif{{
 @endphp
 @endswitch
 @endunless
@@ -1128,7 +1134,7 @@ $wrap,
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(\Pushery\WireKit\Support\NumericProp::int($remaining,
 @if(\Pushery\WireKit\Support\SlotContent::given($actions
 @if(\Pushery\WireKit\Support\SlotContent::given($attachments
@@ -1445,8 +1451,8 @@ X|iPhone|iPad|iPod/',
 [$baseClasses,
 [$baseClasses]))
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$groupClasses]))
 [$iconClasses])));
 [$placeholderDisplay
@@ -1477,6 +1483,7 @@ X|iPhone|iPad|iPod/',
 ['soft',
 ['style'
 ['tight',
+['tipClasses'
 ['true',
 ['x-on:mouseenter',
 ['xs',
@@ -1490,6 +1497,7 @@ X|iPhone|iPad|iPod/',
 \DateTimeInterface
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
@@ -1723,6 +1731,7 @@ __toString
 `surface="outline"`,
 `swapElements`
 `tagName()`
+`text`
 `this.$refs.tooltip`
 `tight`,
 `timeFormat`).
@@ -1812,6 +1821,7 @@ alone,
 alone.
 already
 already,
+already.
 already:
 also
 alt
@@ -2123,6 +2133,7 @@ class="w-full
 class="wk-tooltip-panel
 class="{{
 classes
+classes,
 classes:
 classic
 clears
@@ -2157,6 +2168,7 @@ column;
 come
 comes
 comment
+comments
 common
 compare
 compete
@@ -2247,7 +2259,6 @@ data-replayable="true"
 data-status="{{
 data-wk-badge-dismiss
 data-wk-check-double
-data-wk-cut-tip
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -2532,7 +2543,7 @@ focus,
 focus-visible:outline-hidden
 focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]"
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
 focus-within:opacity-100
@@ -3134,6 +3145,7 @@ overview
 own
 own,
 own.
+own:
 own;
 owner
 owns,
@@ -3491,6 +3503,7 @@ show
 shown
 shown.
 shows
+shows,
 shrink
 shrink-0
 shrink-0"
@@ -3614,6 +3627,7 @@ style
 stylesheet
 stylesheet's
 stylesheet).
+sub-component
 subtle
 subtree
 subtree,
@@ -3668,6 +3682,7 @@ template
 ternary)
 test
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -4072,12 +4087,10 @@ zoom,
 }}</x-wirekit::badge>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
+}}{{
 —
 …
 →

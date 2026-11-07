@@ -34,13 +34,13 @@ final class BundleConfigCheck extends VerifyCheck
         // it back. A check that tells you to undo a correct setting is worse than no
         // check: it is confidently wrong, in the one place a developer goes when they are
         // already unsure.
-        $valid = ['full', 'core', 'csp'];
+        $valid = ['full', 'core', 'auto', 'csp'];
 
         if (in_array($bundle, $valid, true)) {
             $this->reportPass("JS bundle configured: {$bundle}");
         } else {
             $this->reportFail("Invalid wirekit.scripts.bundle value: '{$bundle}'");
-            $this->line('  Valid values: full, core, csp');
+            $this->line('  Valid values: full, core, auto, csp');
         }
     }
 }

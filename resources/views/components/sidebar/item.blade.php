@@ -48,6 +48,13 @@
     $collapsible = \Pushery\WireKit\Support\AwareProp::read('collapsible', ['sidebar'], false);
     $trackCurrent = \Pushery\WireKit\Support\AwareProp::read('trackCurrent', ['sidebar'], false);
 
+    // The folded column's layout is written only where the column can fold: a sidebar that is not
+    // `collapsible` never carries `data-collapsed`, so its rows leave those classes out. A row that
+    // renders without its sidebar on the stack, as one inside a component Livewire renders on its
+    // own does on an update, cannot tell, and writes them (the link's counter reads this as well).
+    $folds = \Pushery\WireKit\Support\AwareProp::within(['sidebar']) !== true
+        || \Pushery\WireKit\Support\BooleanProp::from($collapsible, false);
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
@@ -158,7 +165,7 @@
         // positions against — without it the dot would anchor to the nav.
         'relative flex items-center gap-[var(--padding-wk-x-sm)]',
         // Collapse-to-icon rail: center the lone icon when the sidebar collapses.
-        'group-data-[collapsed]/wk-sidebar:justify-center',
+        ...($folds ? ['group-data-[collapsed]/wk-sidebar:justify-center'] : []),
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         // The row height must not depend on which child happens to be tallest.
         //

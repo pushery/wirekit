@@ -10,6 +10,30 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.72.0] — 2026-11-06
+
+**Minor.** A release for page weight: a page can load only the JavaScript of the components it starts, and texts, app rails and sidebars send less markup with every Livewire update. They look and behave as before.
+
+### Added
+
+- **[`@wirekitScripts`](https://docs.wirekit.app/dependencies#only-the-components-a-page-starts) loads only the components a page starts, with `'scripts' => ['bundle' => 'auto']`.** Each component is an ES module of its own, the parts they share load once, and the response names the ones the page's markup starts, from WireKit's components and the page's own `x-data` alike. A component that a later Livewire update or a visit adds loads its module before it starts. On the documentation's own pages, whose frame already starts a command palette, a drawer, a modal and a toast, a page loads about a third of the JavaScript of `'full'`, and a little under half of it compressed. `'full'` stays the default.
+
+### Changed
+
+- **A [text](https://docs.wirekit.app/components/text) carries none of Livewire's morph markers.** Inside a Livewire component every text wrote two HTML comments around its element, 57 bytes, whether it was cut with a tooltip or not, so a list of 1,150 texts carried 2,300 of them. The tooltip form writes its attributes in the tag and its panel after the text now. Texts look and behave as before.
+
+- **An [app rail](https://docs.wirekit.app/components/app-rail)'s entries and group headings carry only the classes of the modes their rail can be in.** A rail holds the `labels` mode it was given or `inline`, and its `indicator` never changes, but every entry wrote the classes of each mode: in a rail given `tooltip` or `inline`, 570 characters for `below` on every entry and 340 on every group heading, and on the current entry the classes of the indicator the rail does not use, sent again with every Livewire update. The rails look as before.
+
+- **A [sidebar](https://docs.wirekit.app/components/sidebar)'s rows carry the classes of the folded column only where the sidebar can fold.** A sidebar without `collapsible` never folds, yet its entries, its sections and the row of a [notification center](https://docs.wirekit.app/components/notification-center) wrote the layout of the folded column: 49 characters on every entry, 322 on every counter and 123 on the entries of every section. And each part that leaves the folded column, the trigger and arrow of a section, the control beside a heading and the arrow of an entry with a submenu, wrote two Tailwind variants of 80 characters in every sidebar. Those parts now carry one attribute the stylesheet hides there, and the layout of the folded column is written only in a sidebar that can fold. The sidebars look as before.
+
+### Fixed
+
+- **The entries of an [app rail](https://docs.wirekit.app/components/app-rail) given a `labels` value it does not know show their names in a tooltip.** The rail reports the value and falls back to `tooltip`, while its entries read the value as written, so an entry showed its name neither in the rail nor beside it.
+
+### Components
+
+Every component this release changes, each linked to its page: [App Rail](https://docs.wirekit.app/components/app-rail) · [Notification Center](https://docs.wirekit.app/components/notification-center) · [Sidebar](https://docs.wirekit.app/components/sidebar) · [Text](https://docs.wirekit.app/components/text)
+
 ## [2.71.1] — 2026-11-05
 
 **Patch.** One change, for pages with long tables: a cell and a row no longer repeat the classes of their table's switches, so a Livewire update of such a table sends less markup.

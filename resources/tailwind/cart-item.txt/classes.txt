@@ -196,6 +196,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $emitAriaBusy
 $error
 $error);
@@ -506,10 +509,12 @@ $targetAttr
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -1201,6 +1206,7 @@ $writtenIn
 ($fit)
 ($fitFloor
 ($fitTotalFloor
+($fitted
 ($forceLoading)
 ($formattedBase
 ($from)
@@ -1353,6 +1359,7 @@ $writtenIn
 (not
 (only
 (or
+(partials.text-tip-panel).
 (partials/cart-item-quantity).
 (partials/field-help).
 (paths,
@@ -1628,7 +1635,6 @@ $writtenIn
 </span>{{
 </svg>
 </template>
-</template></{{
 </x-slot:iconLeft>
 </x-wirekit::button>
 </x-wirekit::tooltip>
@@ -1688,7 +1694,6 @@ $writtenIn
 >
 ></div>
 >=
->{{
 ?
 ?:
 ??
@@ -1709,6 +1714,7 @@ $writtenIn
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @foreach($pictureSources
@@ -1781,7 +1787,7 @@ $writtenIn
 @if($triggerDescribes)
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(\Pushery\WireKit\Support\SlotContent::given($iconLeft
 @if(\Pushery\WireKit\Support\SlotContent::given($iconRight
 @if(\Pushery\WireKit\Support\SlotContent::given($suffix
@@ -2270,8 +2276,8 @@ Your
 [$baseClasses,
 [$baseClasses]))
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$compactClasses]))
 [$figureClasses]))
 [$formattedBase,
@@ -2311,6 +2317,7 @@ Your
 ['sm',
 ['style'
 ['tight',
+['tipClasses'
 ['true',
 ['wk-field',
 ['x-on:input',
@@ -2335,6 +2342,7 @@ Your
 \Illuminate\Support\HtmlString('');
 \Illuminate\Support\HtmlString(e($quantityNumber)."\u{00A0}".$unit->toHtml())
 \Illuminate\Support\HtmlString(implode('
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter([
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \InvalidArgumentException('wirekit::button:
@@ -3000,6 +3008,7 @@ along
 alongside
 already
 already,
+already.
 already:
 also
 alt
@@ -3482,6 +3491,7 @@ class="wk-tooltip-panel
 class="wk-touch-row
 class="{{
 classes
+classes,
 classes.
 classes:
 classic
@@ -3699,7 +3709,6 @@ data-wk-cart-item-quantity
 data-wk-cart-item-stepper
 data-wk-cart-item-total
 data-wk-cart-item-unit-price>
-data-wk-cut-tip
 data-wk-field-help>
 data-wk-field-label
 data-wk-kbd-guess="{{
@@ -4172,7 +4181,6 @@ focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
 focus-visible:ring-[var(--color-wk-ring)]',
 focus-visible:ring-[var(--color-wk-ring)]';
-focus-visible:ring-[var(--color-wk-ring)]']))
 focus-visible:ring-inset
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
@@ -6019,6 +6027,7 @@ ternary,
 test
 test".
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -6624,15 +6633,13 @@ zooming
 }}</x-slot:after></x-wirekit::label>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}<x-slot:after>{{
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
 }}@if($required)<span
 }}`
+}}{{
 ·
 —
 …

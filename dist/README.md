@@ -13,9 +13,9 @@ number nobody could reproduce. Budget from it, do not diff against it.
 
 | File | Format | Contents | Size (gzip ≈) | When to load |
 |---|---|---|---|---|
-| `wirekit.min.css` | CSS | The same stylesheet, minified. **This is what `@wirekitStyles` links** — a page that uses the directive ships this file and not the one below | 28 KB gzip (221 KB raw) | Always, and you get it automatically: `@wirekitStyles` emits the `<link>` for you |
+| `wirekit.min.css` | CSS | The same stylesheet, minified. **This is what `@wirekitStyles` links** — a page that uses the directive ships this file and not the one below | 29 KB gzip (221 KB raw) | Always, and you get it automatically: `@wirekitStyles` emits the `<link>` for you |
 | `wirekit-compact.css` | CSS | The Tailwind utilities the components write, each under a short name with exactly its utility's rules, for [compact classes](https://docs.wirekit.app/customization#compact-classes) | 17 KB gzip (130 KB raw) | Only with `wirekit.styles.compact` on, and then you get it automatically: `@wirekitStyles` links it after `wirekit.min.css` |
-| `wirekit.css` | CSS | Design tokens (`--color-wk-*`, `--radius-wk-*`, …), shared utility classes, global keyframes — the readable reference for what a token means | 157 KB gzip (624 KB raw) | When you are reading or overriding tokens by hand, or bundling the stylesheet yourself. Budget from the minified row above, not this one — the difference is a factor of six |
+| `wirekit.css` | CSS | Design tokens (`--color-wk-*`, `--radius-wk-*`, …), shared utility classes, global keyframes — the readable reference for what a token means | 158 KB gzip (625 KB raw) | When you are reading or overriding tokens by hand, or bundling the stylesheet yourself. Budget from the minified row above, not this one — the difference is a factor of six |
 | `wirekit.js` | IIFE | Every WireKit Alpine component (chart, dropdown, tooltip, modal, drawer, toast, …) registered as plugins. **Does NOT bundle Alpine itself.** | 181 KB gzip (642 KB raw) | When your app already runs Alpine and you register WireKit plugins yourself (the usual Laravel + Livewire setup) |
 | `wirekit.core.js` | IIFE | Chart and image-compare components, the scopes of a toggle-button that flips itself, of the native-color readout beside a color field and of the date-range fields of a date picker, plus the `x-wk-indeterminate`, `x-wk-findable`, `x-wk-focus-first` and `x-wk-focus-unit` directives the zero-JS form and disclosure primitives need, the `x-wk-ref` directive that files the ref a caller writes on a component under the caller's own component, the `x-wk-fit-text` directive that keeps a fitted text's copies in step with words a script writes, the memory for a field Livewire emptied after a successful action, the scroll inset that keeps a focused element clear of a bar pinned to an edge, the mark that keeps the focus ring on a radio the arrow keys reach in WebKit, `wirekit:focus-invalid`, which takes the focus to the first field a response rejected, and `data-wk-submit-once`, which holds a form without Livewire to one submission — no overlay deps, no Floating-UI / focus-trap. Installs the empty overlay ROOT even so, because a missing teleport target throws and takes the page down where an unregistered component is merely inert | 16 KB gzip (51 KB raw) | When you only need `<x-wirekit-chart>` / `<x-wirekit::image-compare>` and want the smallest possible bundle |
 | `wirekit-apex.js` | IIFE | ApexCharts adapter glue — does **NOT** contain ApexCharts itself (developer's separate npm install) | 15 KB gzip (47 KB raw) | When using `<x-wirekit-chart>` with `'charts.library' => 'apexcharts'` config |
@@ -25,6 +25,7 @@ number nobody could reproduce. Budget from it, do not diff against it.
 | `wirekit-alpine.js` | IIFE | Alpine.js core + every WireKit Alpine plugin + auto-`Alpine.start()`. **Self-contained drop-in.** | 200 KB gzip (696 KB raw) | When you want one bundle that gives you Alpine + every WireKit primitive in a single tag (docs site iframe srcdoc, isolated preview surfaces, sample landing pages) |
 | `wirekit-alpine.csp.js` | IIFE | The same self-contained drop-in built against Alpine's CSP variant. It never CONSTRUCTS code, which is what `unsafe-eval` pays for — it still evaluates your directives, through a parser of its own that accepts a restricted grammar. Property reads, chains, index access, calls with arguments, object literals, ternaries and the usual operators are all inside it; a function expression, an arrow, `new`, `??` and optional chaining are not, and an expression it cannot parse is never evaluated and reports nothing | 204 KB gzip (712 KB raw) | When your Content-Security-Policy forbids `unsafe-eval`. Selected by config — `'scripts' => ['bundle' => 'csp']`, see the table below |
 | `wirekit.esm.js` | ESM | Every WireKit Alpine component as an ES module. **Does NOT bundle Alpine itself.** Default export is an Alpine plugin — `Alpine.plugin(WireKit)` — and each factory is also a named export | 183 KB gzip (648 KB raw) | When you bundle WireKit yourself (Vite, Rollup, esbuild) and want tree-shaking or your own registration order. This one is an `import`, not a `<script src>` |
+| `auto/` | ESM | The shared runtime, `wirekit.auto.js`, one module per Alpine component in `factories/`, the parts they share in `chunks/`, and `manifest.json` | Depends on the page: the runtime and the modules of the components it starts, about a third of `wirekit.js` on the documentation's own pages | Selected by config — `'scripts' => ['bundle' => 'auto']` — and loaded by `@wirekitScripts`, see the section below |
 
 ## Pick exactly one of `wirekit.js` OR `wirekit-alpine.js`
 
@@ -73,6 +74,7 @@ layout — publish the config with
 |---|---|
 | `full` | `wirekit.js` — the default; any unrecognized value falls back here |
 | `core` | `wirekit.core.js` |
+| `auto` | `auto/wirekit.auto.js` and the modules of the components the page starts, from `auto/factories/` (see below) |
 | `csp` | `wirekit-alpine.csp.js` |
 
 The directive's one optional argument is a Content-Security-Policy nonce
@@ -90,6 +92,20 @@ The directive has automatic staleness detection: if the developer ran
 `vendor:publish` and forgot to re-publish after a `composer update`,
 the directive falls back to serving from the package's own dist/
 directory, so you never accidentally serve a stale bundle.
+
+### `auto`: only the components a page starts
+
+`auto/` holds the shared runtime, `wirekit.auto.js`, one ES module per Alpine component in
+`factories/`, the parts they share in `chunks/`, and `manifest.json`, which names the chunks
+each module imports and carries a fingerprint of every file of the build. A published copy whose
+manifest differs from the package's is not served: the modules then come from the package's own
+route, like a stale copy of the other bundles. Under `'scripts' => ['bundle' => 'auto']`,
+`@wirekitScripts` writes the tag of `wirekit.js` into a marked region, and once the response is
+complete WireKit replaces that region with a module script that imports the runtime and the
+modules of the components the page's markup starts, with a preload of each file they ask for. A
+component that a later Livewire response adds loads its module before Alpine starts it. A
+response nothing rewrites, outside the `web` middleware group for instance, keeps `wirekit.js`
+and works as before.
 
 ## Loading without Blade
 

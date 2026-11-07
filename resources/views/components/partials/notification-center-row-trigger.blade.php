@@ -33,13 +33,6 @@
         x-show="unreadCount > 0"
         x-cloak
         aria-hidden="true"
-        class="shrink-0 ms-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]
-        group-data-[collapsed]/wk-sidebar:absolute
-        group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]
-        group-data-[collapsed]/wk-sidebar:end-[var(--padding-wk-x-sm)]
-        group-data-[collapsed]/wk-sidebar:ms-0
-        group-data-[collapsed]/wk-sidebar:p-0
-        group-data-[collapsed]/wk-sidebar:h-2
-        group-data-[collapsed]/wk-sidebar:w-2"
+        class="shrink-0 ms-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]{{ $rowCounterFold ?? '' }}"
     ><span class="wk-rail-hide" x-text="unreadCount > 99 ? '99+' : unreadCount">{{ $serverUnread }}</span></span>
 </button>

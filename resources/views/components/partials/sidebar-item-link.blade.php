@@ -82,16 +82,22 @@
          outright. Note this differs from hiding the counter and announcing it
          separately; adopting `badge` over a hand-rolled counter changes what
          assistive technology reads out. Documented on the component page. --}}
-    @php($badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
+    @php
+        $badgeText = \Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge);
+
+        // The dot of the folded column, in a sidebar that can fold (`$folds`, sidebar.item).
+        $badgeFold = ($folds ?? true) ? ' '.implode(' ', [
+            'group-data-[collapsed]/wk-sidebar:absolute',
+            'group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]',
+            'group-data-[collapsed]/wk-sidebar:right-[var(--padding-wk-x-sm)]',
+            'group-data-[collapsed]/wk-sidebar:ml-0',
+            'group-data-[collapsed]/wk-sidebar:p-0',
+            'group-data-[collapsed]/wk-sidebar:h-2',
+            'group-data-[collapsed]/wk-sidebar:w-2',
+        ]) : '';
+    @endphp
     @if($badgeText !== null)
-        <span class="shrink-0 ml-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]
-            group-data-[collapsed]/wk-sidebar:absolute
-            group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]
-            group-data-[collapsed]/wk-sidebar:right-[var(--padding-wk-x-sm)]
-            group-data-[collapsed]/wk-sidebar:ml-0
-            group-data-[collapsed]/wk-sidebar:p-0
-            group-data-[collapsed]/wk-sidebar:h-2
-            group-data-[collapsed]/wk-sidebar:w-2"><span class="wk-rail-hide">{{ $badgeText }}</span></span>
+        <span class="shrink-0 ml-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]{{ $badgeFold }}"><span class="wk-rail-hide">{{ $badgeText }}</span></span>
     @endif
     @if($opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
@@ -99,7 +105,7 @@
     @if($submenu)
         {{-- Submenu indicator — signals a flyout or sub-navigation exists.
              Purely visual hint; only shown when the developer opts in via :submenu="true". --}}
-        <svg class="w-3.5 h-3.5 shrink-0 text-[color:var(--color-wk-text-subtle)] wk-submenu-indicator group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <svg data-wk-rail-gone class="w-3.5 h-3.5 shrink-0 text-[color:var(--color-wk-text-subtle)] wk-submenu-indicator" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
         </svg>
     @endif

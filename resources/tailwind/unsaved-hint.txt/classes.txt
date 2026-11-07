@@ -191,6 +191,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $emitAriaBusy
 $error
 $error);
@@ -479,10 +482,12 @@ $targetAttr
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -1290,6 +1295,7 @@ $wrapperClasses
 ($fieldGroup?->covers($errorName)
 ($fieldGroup?->isInvalid($errors
 ($fitFloor
+($fitted
 ($forceLoading)
 ($groupError
 ($hasError
@@ -1451,6 +1457,7 @@ $wrapperClasses
 (only
 (opt-in;
 (or
+(partials.text-tip-panel).
 (partials/field-help).
 (partials/label-after).
 (paths,
@@ -1784,7 +1791,6 @@ $wrapperClasses
 </span>@endif
 </svg>
 </template>
-</template></{{
 </x-wirekit::alert-dialog.actions>
 </x-wirekit::alert-dialog.cancel>
 </x-wirekit::alert-dialog>
@@ -1850,7 +1856,6 @@ $wrapperClasses
 ></p>
 ></span>
 >=
->{{
 ?
 ?:
 ??
@@ -1874,6 +1879,7 @@ $wrapperClasses
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @foreach($insertTokens
@@ -1953,7 +1959,7 @@ $wrapperClasses
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
 @if($truncate)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if($useWrapper)
 @if(\Pushery\WireKit\Support\SlotContent::given($iconLeft
 @if(\Pushery\WireKit\Support\SlotContent::given($iconRight
@@ -2380,6 +2386,7 @@ Teleporting
 That
 The
 There
+They
 This
 Three
 Throwing
@@ -2488,8 +2495,8 @@ Your
 [$baseClasses,
 [$callerDescribedBy,
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$iconClasses])));
 [$outerAttributes,
 [$placeholderDisplay
@@ -2537,6 +2544,7 @@ Your
 ['soft',
 ['style'
 ['tight',
+['tipClasses'
 ['track'
 ['true',
 ['value',
@@ -2561,6 +2569,7 @@ Your
 \Illuminate\Contracts\Support\Htmlable
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag(array_filter([
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
 \InvalidArgumentException('wirekit::button:
@@ -3074,6 +3083,7 @@ __toString
 `table.th
 `tagName()`
 `target`
+`text`
 `this.$refs.tooltip`
 `tight`,
 `toggleBooleanStateDirective`
@@ -3265,6 +3275,7 @@ alongside
 aloud
 already
 already,
+already.
 already:
 already;
 also
@@ -3781,6 +3792,7 @@ class="wk-tooltip-panel
 class="wk-touch-row
 class="{{
 classes
+classes,
 classes.
 classes:
 classic
@@ -3848,6 +3860,7 @@ come
 comes
 comment
 comment,
+comments
 commit
 common
 compact
@@ -4046,7 +4059,6 @@ data-wk-counter-over
 data-wk-counter-phrases="{{
 data-wk-counter-separators="{{
 data-wk-counter-text>{{
-data-wk-cut-tip
 data-wk-desc-id="{{
 data-wk-dialog-primary',
 data-wk-field
@@ -4583,7 +4595,7 @@ focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
 focus-visible:ring-[var(--color-wk-ring)]"><span
 focus-visible:ring-[var(--color-wk-ring)]',
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:ring-[var(--color-wk-success)]',
 focus-visible:ring-inset
 focus-visible:rounded-[var(--radius-wk-sm)]
@@ -6204,6 +6216,7 @@ show.
 showing
 shown
 shows
+shows,
 shows.
 shows;
 shrink
@@ -6534,6 +6547,7 @@ test
 test".
 tests
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -7243,12 +7257,9 @@ zoom,
 }}</x-wirekit::button>
 }}</x-wirekit::text>
 }}</{{
-}}<template
 }}<x-slot:after>{{
 }}>
 }}></span>@endif
-}}>@else
-}}>@endif
 }}>{{
 }}@else{{
 }}@endif</x-wirekit::badge>
@@ -7256,6 +7267,7 @@ zoom,
 }}@if($wkRequiredMarker)<span
 }}`
 }}inline-flex
+}}{{
 ~2s.
 —
 …

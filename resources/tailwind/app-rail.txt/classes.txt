@@ -113,6 +113,8 @@ $iconClasses])
 $index
 $indicator
 $indicator,
+$indicatorEdge
+$indicatorPill
 $interactiveClasses
 $interactiveClasses]))
 $key
@@ -127,6 +129,8 @@ $labelText
 $labelText,
 $labels
 $labels,
+$labelsBelow
+$labelsTooltip
 $linkAttributes
 $linkAttributes,
 $linkAttributes->except('type')
@@ -148,6 +152,7 @@ $persistDriver
 $persistDriver,
 $placement
 $platform
+$railKnown
 $railTag
 $relAttr
 $relAttr;
@@ -265,6 +270,7 @@ $withoutOuterAttributes]
 'base',
 'below'
 'below',
+'below';
 'bg-[var(--color-wk-bg-muted)]',
 'bg-[var(--color-wk-rail-bg)]',
 'bg-[var(--color-wk-tooltip-bg)]',
@@ -305,7 +311,9 @@ $withoutOuterAttributes]
 'disabled');
 'div',
 'div';
+'edge';
 'edge']);
+'edge'],
 'elevated'
 'elevated')
 'elevated']);
@@ -353,7 +361,6 @@ $withoutOuterAttributes]
 'group-data-[labels=below]/wk-rail:not-sr-only',
 'group-data-[labels=below]/wk-rail:pb-[2px]',
 'group-data-[labels=below]/wk-rail:px-[var(--padding-wk-x-xs)]',
-'group-data-[labels=below]/wk-rail:size-[var(--size-wk-rail-icon-labeled)]',
 'group-data-[labels=below]/wk-rail:text-[length:var(--text-wk-xs)]',
 'group-data-[labels=below]/wk-rail:text-center',
 'group-data-[labels=below]/wk-rail:tracking-wider',
@@ -372,7 +379,6 @@ $withoutOuterAttributes]
 'group-data-[labels=inline]/wk-rail:text-[length:var(--text-wk-xs)]',
 'group-data-[labels=inline]/wk-rail:tracking-wider',
 'group-data-[labels=inline]/wk-rail:uppercase',
-'group-data-[labels=tooltip]/wk-rail:flex-1',
 'group-data-[wk-names]/wk-rail:min-w-0',
 'group-data-[wk-names]/wk-rail:not-sr-only',
 'group-data-[wk-names]/wk-rail:truncate',
@@ -389,6 +395,7 @@ $withoutOuterAttributes]
 'indicator',
 'inline'
 'inline']);
+'inline'],
 'inline-flex
 'inverse',
 'inverted',
@@ -432,7 +439,9 @@ $withoutOuterAttributes]
 'persist'
 'persistDriver'
 'persistDriver',
+'pill');
 'pill',
+'pill';
 'placement'
 'placement',
 'px-[var(--padding-wk-x-sm)]',
@@ -486,6 +495,7 @@ $withoutOuterAttributes]
 'tooltip')
 'tooltip');
 'tooltip',
+'tooltip';
 'tooltip'])
 'top'),
 'top');
@@ -568,6 +578,7 @@ $withoutOuterAttributes]
 (`x-wk-current`,
 (a
 (an
+(app-rail.item):
 (below,
 (cfg.wkSeedOn
 (count($badgeSentences))
@@ -591,6 +602,10 @@ $withoutOuterAttributes]
 -
 --}}
 ...$surface,
+...($indicatorEdge
+...($indicatorPill
+...($labelsBelow
+...($labelsTooltip
 ...($truncate
 /
 //
@@ -770,13 +785,13 @@ And
 And,
 Around
 As
+At
 Attributes
 Auto-inject
 BEFORE
 BOTH
 BOUND
 BRAND
-BY
 Below
 Beside
 Blade
@@ -1046,6 +1061,8 @@ X|iPhone|iPad|iPod/',
 ['count'
 ['default',
 ['flush',
+['group-data-[labels=below]/wk-rail:size-[var(--size-wk-rail-icon-labeled)]']
+['group-data-[labels=tooltip]/wk-rail:flex-1']
 ['inverted',
 ['local',
 ['mac'
@@ -1072,8 +1089,10 @@ X|iPhone|iPad|iPod/',
 \Pushery\WireKit\Support\AlpinePayload::string($placement)
 \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($expandedWidth))
 \Pushery\WireKit\Support\AlpinePayload::string(\Pushery\WireKit\Support\CompactClasses::map($restingWidth))
+\Pushery\WireKit\Support\AwareProp::read('indicator',
 \Pushery\WireKit\Support\AwareProp::read('labels',
 \Pushery\WireKit\Support\AwareProp::read('trackCurrent',
+\Pushery\WireKit\Support\AwareProp::within(['app-rail'])
 \Pushery\WireKit\Support\BooleanProp::from($trackCurrent,
 \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
 \Pushery\WireKit\Support\CallerAttribute::writes($attributes,
@@ -1200,6 +1219,8 @@ __('wirekit::then')
 `badge-label`
 `badgeLabelLimit`
 `badge`.
+`below`
+`below`,
 `break-words`
 `button`
 `button`.
@@ -1209,6 +1230,8 @@ __('wirekit::then')
 `contents`
 `cursor:
 `data-current`
+`data-indicator`
+`data-indicator`,
 `data-labels`
 `data-wk-names`
 `data-wk-names`;
@@ -1259,6 +1282,7 @@ __('wirekit::then')
 `id`
 `inline-block`,
 `inline`
+`inline`,
 `inverted`
 `isolation:
 `items-center`
@@ -2352,6 +2376,7 @@ hit
 hit,
 hoists
 holds
+holds,
 holdsParts:
 hook
 horizontal
@@ -2399,9 +2424,14 @@ imports
 in
 in,
 in.
+in_array($indicator,
+in_array($labels,
 inaccessible
 included.
 including
+indicator
+indicator's
+indicator,
 indicator;
 inert
 init
@@ -2679,6 +2709,7 @@ name:
 named
 nameless
 names
+names,
 names.
 naming
 narrow
@@ -2805,6 +2836,7 @@ ordinary
 other
 other,
 other.
+others.
 otherwise
 our
 out
@@ -3051,6 +3083,7 @@ registers
 regression,
 regularly
 reintroducing
+rejected
 rejoins
 rel
 rel="noopener
@@ -3082,6 +3115,7 @@ repetition
 replace
 replaced,
 replacement
+replaces
 reported
 reported,
 reports
@@ -3146,6 +3180,7 @@ run,
 running
 runs
 runs,
+runtime
 runtime,
 runtime.
 safe
@@ -3201,6 +3236,7 @@ selects,
 self
 self.dataset;
 self.previousElementSibling;
+send
 sentence
 sentence,
 sentence.
@@ -3286,6 +3322,7 @@ small
 snap
 snaps
 so
+so.
 somebody
 something
 something.
@@ -3310,6 +3347,7 @@ squeeze
 sr-only
 stable
 stack
+stack.
 stacking-context
 stand
 stands
@@ -3491,6 +3529,7 @@ time.
 timer
 timer,
 timer;
+times,
 tip
 tip.
 title
@@ -3559,6 +3598,7 @@ trim((string)
 trim(html_entity_decode(strip_tags((string)
 trim(implode('
 true
+true)
 true);
 true,
 true;
@@ -3573,6 +3613,7 @@ turn
 turns
 tweens
 twelve
+twenty
 twice
 twice).
 twice.
@@ -3618,6 +3659,8 @@ unwraps
 up
 up,
 up.
+update,
+update.
 usable
 use
 use:
@@ -3678,6 +3721,7 @@ wait
 wait,
 wait.
 waiting
+waits
 waits,
 waits.
 walk
@@ -3770,6 +3814,7 @@ writing
 written
 wrong
 wrong.
+wrote
 x-bind:data-wk-tooltip-disabled="expanded">@include('wirekit::components.partials.app-rail-link')</x-wirekit::tooltip>
 x-bind:…
 x-cloak

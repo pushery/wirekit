@@ -230,6 +230,12 @@
         $wrap,
     );
 
+    // The element's classes, and in the tooltip form the focus ring and the panel. The panel is
+    // rendered here, after the slot, so the element stands in no block of its own: Livewire writes
+    // two comments around every block outside a tag, on every use of the text, cut or not.
+    $elementClasses = [$classes];
+    $tipPanel = '';
+
     if ($truncateTooltip) {
         // The element carries the tooltip's listeners and becomes an Alpine root of its own. A
         // caller's listener for the same event goes in the other spelling, so both run
@@ -264,21 +270,24 @@
             'rounded-[var(--radius-wk-sm)]',
             'shadow-[var(--shadow-wk-md)]',
         ])).' [overflow-wrap:anywhere]';
+
+        // The focus ring is for the tab stop a cut text takes when it stands in no control.
+        $elementClasses[] = 'focus-visible:outline-hidden focus-visible:rounded-[var(--radius-wk-sm)] focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
+        $tipPanel = new \Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel', ['tipClasses' => $tipClasses])->render()));
     }
 @endphp
 
 {{-- The slot sits against both tags. A line break and an indent around it are part of the
      element's content, and a caller who keeps a user's own line breaks with `white-space`
      set to `pre-line` or `pre-wrap` saw them as an empty first line and an indented one. --}}
-@if($truncateTooltip)
 {{-- `truncate="tooltip"`. The element is the tooltip's trigger as well as its text, so the
-     tooltip's listeners sit on it: a wrapper would change the element a layout places. The panel
-     takes its words from the element when it shows (resources/js/components/tooltip.js), and it
-     is hidden from assistive technology, which reads the whole text here already: once, with no
-     description that repeats it. The focus ring is for the tab stop a cut text takes when it
-     stands in no control. `data-wk-cut-tip` is the stylesheet's hook: on a touch screen the line
-     stands at least 24px tall while it is cut, since a tap on it shows the tooltip. --}}
-<{{ $as }} data-wk-prose-skip data-wk-cut-tip
+     tooltip's listeners sit on it: a wrapper would change the element a layout places. They are
+     written in the tag, and the panel after the slot (partials.text-tip-panel). The panel takes
+     its words from the element when it shows, and it is hidden from assistive technology, which
+     reads the whole text here already: once, with no description that repeats it.
+     `data-wk-cut-tip` is the stylesheet's hook: on a touch screen the line stands at least 24px
+     tall while it is cut, since a tap on it shows the tooltip. --}}
+<{{ $as }} data-wk-prose-skip @if($truncateTooltip)data-wk-cut-tip
     x-data="wirekitTooltip({
         placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($tipPlacement) }},
         offset: {{ (int) $tipOffset }},
@@ -296,25 +305,4 @@
     x-on:pointerup="pointerup($event)"
     x-on:pointerleave="pointerleave($event)"
     x-on:keydown.escape.window.capture="keydownEscape($event)"
-    {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes, 'focus-visible:outline-hidden focus-visible:rounded-[var(--radius-wk-sm)] focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'])) }}
->{{ $slot }}<template x-teleport="#wk-overlay-root">
-    <div
-        x-ref="tooltip"
-        x-on:mouseenter="mouseenter()"
-        x-on:mouseleave="mouseleave()"
-        x-show="isOpen"
-        x-transition:enter="transition ease-out duration-100"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-75"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0"
-        x-cloak
-        role="tooltip"
-        aria-hidden="true"
-        {{-- The tooltip's marker, outside the resolved classes as on the tooltip itself: under
-             forced colors the panel's fill is repainted, and the marker gives it an edge. --}}
-        class="wk-tooltip-panel {{ $tipClasses }}"
-    ></div>
-</template></{{ $as }}>@else
-<{{ $as }} data-wk-prose-skip {{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, [$classes])) }}>{{ $fitted ?? $slot }}</{{ $as }}>@endif
+    @endif{{ $attributes->class(\Pushery\WireKit\Support\UtilityClasses::yieldToCaller($attributes, $elementClasses)) }}>{{ $truncateTooltip ? $slot : ($fitted ?? $slot) }}{{ $tipPanel }}</{{ $as }}>

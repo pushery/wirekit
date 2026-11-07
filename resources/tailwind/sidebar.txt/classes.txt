@@ -60,6 +60,7 @@ $attributes->has('x-html')
 $attributes->has('x-text')
 $attributes->merge(['rel'
 $attributes]
+$badgeFold
 $badgeText
 $bound)
 $buttonClasses
@@ -104,7 +105,9 @@ $display['other']];
 $expandName
 $finalRel
 $focusableTrigger
+$foldFlat
 $foldable
+$folds
 $footHostsToggle
 $footer
 $for
@@ -257,6 +260,7 @@ $zoneInset
 ')').matches)
 ',
 '.$activeClasses,
+'.implode('
 '0'
 '1'
 '1'))
@@ -375,7 +379,13 @@ $zoneInset
 'forceOpen');
 'function'
 'group'
-'group-data-[collapsed]/wk-sidebar:justify-center',
+'group-data-[collapsed]/wk-sidebar:absolute',
+'group-data-[collapsed]/wk-sidebar:h-2',
+'group-data-[collapsed]/wk-sidebar:ml-0',
+'group-data-[collapsed]/wk-sidebar:p-0',
+'group-data-[collapsed]/wk-sidebar:right-[var(--padding-wk-x-sm)]',
+'group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]',
+'group-data-[collapsed]/wk-sidebar:w-2',
 'group/wk-sidebar
 'h-full',
 'head',
@@ -575,6 +585,7 @@ $zoneInset
 ($collapsible)
 ($dataCurrent
 ($display
+($folds
 ($mode
 ($placement
 ($relAttr
@@ -608,6 +619,7 @@ $zoneInset
 (WireKit::validateProp('kbd',
 (\Pushery\WireKit\Support\AttributeText::get($attributes,
 (\Pushery\WireKit\Support\SlotContent::textOf($label)
+(`$folds`,
 (`--color-wk-rail-hover-fg`
 (`.wk-scroll-fade…:focus-within
 (`.wk-shell-foot`
@@ -681,6 +693,7 @@ $zoneInset
 ...$keyboardActiveClasses,
 ...$notCurrentClasses,
 ...$surface,
+...($folds
 ...($tone
 ...])
 /
@@ -883,7 +896,6 @@ $zoneInset
 @include('wirekit::components.partials.sidebar-item-link')
 @include('wirekit::components.partials.sidebar-zones')
 @php
-@php($badgeText
 @props([
 @props.
 @unless($label)
@@ -1279,6 +1291,7 @@ ZONE
 ['data-wk-tone'
 ['default',
 ['end',
+['group-data-[collapsed]/wk-sidebar:justify-center']
 ['inverted',
 ['local',
 ['mac'
@@ -1298,6 +1311,7 @@ ZONE
 ['x-on:mouseenter',
 ['x-wk-current'
 []
+[]),
 [];
 [transform-box:fill-box]
 \Illuminate\Contracts\Support\Htmlable
@@ -1317,6 +1331,9 @@ ZONE
 \Pushery\WireKit\Support\AwareProp::read('mode',
 \Pushery\WireKit\Support\AwareProp::read('selected',
 \Pushery\WireKit\Support\AwareProp::read('trackCurrent',
+\Pushery\WireKit\Support\AwareProp::within(['sidebar'])
+\Pushery\WireKit\Support\BooleanProp::from($collapsible,
+\Pushery\WireKit\Support\BooleanProp::from(\Pushery\WireKit\Support\AwareProp::read('collapsible',
 \Pushery\WireKit\Support\BooleanProp::stripFalseHtmlFlags($attributes);
 \Pushery\WireKit\Support\CallerListeners::beside($attributes,
 \Pushery\WireKit\Support\CallerName::attribute($callerLabelledBy,
@@ -1333,7 +1350,7 @@ ZONE
 \Pushery\WireKit\Support\KeyShortcuts::EXPECTED,
 \Pushery\WireKit\Support\KeyShortcuts::display($shortcutText);
 \Pushery\WireKit\Support\KeyShortcuts::display($tipShortcut);
-\Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge))
+\Pushery\WireKit\Support\LocalizedNumber::countOrNull($badge);
 \Pushery\WireKit\Support\NumericProp::int($delayHide,
 \Pushery\WireKit\Support\NumericProp::int($delayShow,
 \Pushery\WireKit\Support\NumericProp::int($offset,
@@ -1503,6 +1520,7 @@ __()
 `contents`
 `data-active`,
 `data-collapsed`
+`data-collapsed`,
 `data-current`
 `data-wk-icon-nudge`
 `data-wk-ready`,
@@ -2314,6 +2332,7 @@ data-wk-kbd-single=""@endif
 data-wk-kbd-single=""@endif><x-wirekit::kbd
 data-wk-option-value="{{
 data-wk-prose-skip
+data-wk-rail-gone
 data-wk-seed-class-off="{{
 data-wk-seed-class-on="{{
 data-wk-seed-key="{{
@@ -2471,6 +2490,7 @@ duration-100"
 duration-75"
 duration-[var(--transition-wk-duration)]
 duration-[var(--transition-wk-duration)]"
+duration-[var(--transition-wk-duration)]{{
 each
 each,
 early.
@@ -2658,6 +2678,7 @@ focusable-trigger="false"
 focused,
 focuses
 fold
+fold,
 fold.
 fold:
 folded
@@ -2743,22 +2764,10 @@ grid
 group
 group's
 group,
-group-data-[collapsed]/wk-sidebar:absolute
-group-data-[collapsed]/wk-sidebar:border-s-0">
-group-data-[collapsed]/wk-sidebar:h-2
-group-data-[collapsed]/wk-sidebar:hidden
-group-data-[collapsed]/wk-sidebar:ml-0
+group-data-[collapsed]/wk-sidebar:border-s-0'
 group-data-[collapsed]/wk-sidebar:ms-0
-group-data-[collapsed]/wk-sidebar:p-0
 group-data-[collapsed]/wk-sidebar:ps-0
-group-data-[collapsed]/wk-sidebar:right-[var(--padding-wk-x-sm)]
 group-data-[collapsed]/wk-sidebar:self-center';
-group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]
-group-data-[collapsed]/wk-sidebar:w-2"><span
-group-data-[settling]/wk-sidebar:hidden"
-group-data-[settling]/wk-sidebar:hidden">
-group-data-[settling]/wk-sidebar:hidden">{{
-group-data-[settling]/wk-sidebar:hidden{{
 group.
 group;
 grouped
@@ -3963,6 +3972,7 @@ sidebar.group's
 sidebar.group)
 sidebar.group.
 sidebar.item
+sidebar.item).
 sidebar.item,
 sidebar.item:
 sidebar.toggle
@@ -4041,6 +4051,7 @@ sr-only
 sr-only):
 stable
 stack
+stack,
 stacking-context
 stand
 standalone
@@ -4177,6 +4188,7 @@ technology
 teleport:
 teleported
 tell
+tell,
 tells
 template
 ternary
@@ -4185,7 +4197,7 @@ test
 test.
 text
 text,
-text-[color:var(--color-wk-accent-fg)]
+text-[color:var(--color-wk-accent-fg)]{{
 text-[color:var(--color-wk-text-muted)]',
 text-[color:var(--color-wk-text-subtle)]
 text-[length:var(--text-wk-xs)]
@@ -4389,6 +4401,7 @@ untoned
 unusable
 up
 update
+update,
 uppercase
 urgency
 us,
@@ -4474,6 +4487,7 @@ we
 web
 weight,
 well
+well).
 well-formed
 well.
 what
@@ -4524,7 +4538,7 @@ with.
 without
 wk-rail-hide">{{
 wk-scrollbar"
-wk-submenu-indicator
+wk-submenu-indicator"
 word
 word)
 word.
@@ -4635,6 +4649,8 @@ zoom,
 }`)
 }}
 }}"
+}}">
+}}"><span
 }}">{{
 }}"@endif
 }}"@endif>
@@ -4651,6 +4667,7 @@ zoom,
 }}>@endif
 }}>`
 }}>{{
+}}{{
 ~12
 —
 ⌘

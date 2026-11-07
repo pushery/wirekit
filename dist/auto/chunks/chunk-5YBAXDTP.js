@@ -1,0 +1,2 @@
+/*! WireKit per page v2.72.0 | MIT License | https://wirekit.app | bundled packages: wirekit.auto.js */
+var i=/[\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Gurmukhi}\p{Script=Gujarati}\p{Script=Oriya}\p{Script=Tamil}\p{Script=Telugu}\p{Script=Kannada}\p{Script=Malayalam}\p{Script=Sinhala}\p{Script=Thai}\p{Script=Lao}\p{Script=Tibetan}\p{Script=Myanmar}\p{Script=Khmer}\p{Script=Hiragana}\p{Script=Katakana}]/u;function S(r){return String(r??"").normalize("NFD").replace(/(\P{M})(\p{M}+)/gu,(a,p)=>i.test(p)?a:p).toLowerCase()}export{S as a};

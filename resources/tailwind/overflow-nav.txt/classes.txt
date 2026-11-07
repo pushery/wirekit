@@ -105,6 +105,9 @@ $e)
 $e;
 $effectiveIntent
 $effectiveIntent,
+$elementClasses
+$elementClasses))
+$elementClasses[]
 $emitAriaBusy
 $entries
 $entries;
@@ -300,10 +303,12 @@ $targetAttr
 $text
 $thenClasses
 $tipClasses
+$tipClasses])->render()));
 $tipCutLead
 $tipDelayHide
 $tipDelayShow
 $tipOffset
+$tipPanel
 $tipPlacement
 $tipShortcut
 $tipShortcutKeys
@@ -800,6 +805,7 @@ $wrapperClasses
 ($entries
 ($entry['after'])($place)
 ($fitFloor
+($fitted
 ($forceLoading)
 ($iconOnly
 ($iconOnly)
@@ -909,6 +915,7 @@ $wrapperClasses
 (only
 (open
 (or
+(partials.text-tip-panel).
 (paths,
 (preg_match('/\sx-wk-shortcut(?:\.[\w-]+)*="([^"]*)"/',
 (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw|%)$/',
@@ -1047,7 +1054,6 @@ $wrapperClasses
 </span>@elseif(\Pushery\WireKit\Support\SlotContent::given($slot)
 </svg>
 </template>
-</template></{{
 </ul>
 </x-slot:trigger>
 </x-wirekit::button>
@@ -1089,7 +1095,6 @@ $wrapperClasses
 =>
 >
 ></div>
->{{
 ?
 ?:
 ??
@@ -1101,6 +1106,7 @@ $wrapperClasses
 @endforeach
 @endif
 @endif>
+@endif{{
 @endphp
 @endunless
 @foreach($entries
@@ -1139,7 +1145,7 @@ $wrapperClasses
 @if($triggerDescribes)
 @if($triggerExplainsDisabled)
 @if($triggerIsButton)
-@if($truncateTooltip)
+@if($truncateTooltip)data-wk-cut-tip
 @if(\Pushery\WireKit\Support\SlotContent::given($iconLeft
 @if(\Pushery\WireKit\Support\SlotContent::given($iconRight
 @include
@@ -1415,6 +1421,7 @@ That
 The
 Theme
 There
+They
 This
 Three
 Throwing
@@ -1483,8 +1490,8 @@ X|iPhone|iPad|iPod/',
 [
 [$baseClasses,
 [$callerLabelledBy,
-[$classes,
 [$classes]))
+[$classes];
 [$iconClasses])));
 [$placeholderDisplay
 [$placeholderStyle,
@@ -1512,6 +1519,7 @@ X|iPhone|iPad|iPod/',
 ['style'
 ['the
 ['tight',
+['tipClasses'
 ['true',
 ['x-on:mouseenter',
 ['xs',
@@ -1531,6 +1539,7 @@ X|iPhone|iPad|iPod/',
 \Illuminate\Contracts\Support\Htmlable)
 \Illuminate\Support\Arr::toCssClasses($attributes->get('class',
 \Illuminate\Support\HtmlString('');
+\Illuminate\Support\HtmlString(trim(view('wirekit::components.partials.text-tip-panel',
 \Illuminate\View\ComponentAttributeBag((array)
 \Illuminate\View\ComponentAttributeBag(array_filter(
 \Illuminate\View\ComponentAttributeBag(array_filter(['style'
@@ -1863,6 +1872,7 @@ __toString
 `table.th
 `tagName()`
 `target`
+`text`
 `this.$refs.tooltip`
 `tight`,
 `toggleBooleanStateDirective`
@@ -1980,6 +1990,7 @@ along
 alongside
 already
 already,
+already.
 already:
 also
 always
@@ -2342,6 +2353,7 @@ class="wk-touch-row"
 class="wk-touch-target
 class="{{
 classes
+classes,
 classes.
 classes:
 classic
@@ -2385,6 +2397,7 @@ come
 comes
 comment
 comment,
+comments
 commit
 common
 compete
@@ -2487,7 +2500,6 @@ data-orientation="{{
 data-stack-below="{{
 data-wk-busy-spinner
 data-wk-busy-text="{{
-data-wk-cut-tip
 data-wk-kbd-guess="{{
 data-wk-kbd-platform="{{
 data-wk-kbd-shortcut="{{
@@ -2835,7 +2847,7 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]
 focus-visible:ring-[var(--color-wk-ring)]"
 focus-visible:ring-[var(--color-wk-ring)]',
-focus-visible:ring-[var(--color-wk-ring)]']))
+focus-visible:ring-[var(--color-wk-ring)]';
 focus-visible:ring-inset
 focus-visible:rounded-[var(--radius-wk-sm)]
 focus-within
@@ -4004,6 +4016,7 @@ should
 show
 shown
 shows
+shows,
 shrink
 shrink,
 shrink-0
@@ -4235,6 +4248,7 @@ ternary,
 test
 test".
 text
+text's
 text,
 text-[color:var(--color-wk-accent-content)]
 text-[color:var(--color-wk-accent-fg)]
@@ -4719,16 +4733,14 @@ zoom,
 }}</x-wirekit::text>@endif</a>
 }}</x-wirekit::text>@if(filled($rowAfter))<span
 }}</{{
-}}<template
 }}>
 }}></span>@endif
 }}><span
-}}>@else
-}}>@endif
 }}>@if($entry['icon']
 }}>{{
 }}@endif</span></a>
 }}`,
+}}{{
 —
 …
 →

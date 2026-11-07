@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.71.1 — MIT License
+ * WireKit CSS v2.72.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -12285,6 +12285,22 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     clip-path: inset(50%);
     white-space: nowrap;
     border-width: 0;
+}
+
+/*
+ * `data-wk-rail-gone` — a part of a sidebar row that leaves the folded column altogether: the trigger
+ * of a group or a nested section, its arrow, the control beside a heading, the arrow of an entry
+ * with a submenu. It goes while the column is folded and while it widens back, as the names do,
+ * and leaves the focus order with them. `wk-rail-hide` keeps its text for a screen reader instead,
+ * which suits a name and not a control: a control nobody can see would take the focus with no
+ * visible ring.
+ *
+ * One attribute in each such element rather than the two Tailwind variants of the folded and the
+ * settling column, so a sidebar carries less markup into every Livewire update, folded or not.
+ */
+.wk-sidebar[data-collapsed] [data-wk-rail-gone],
+.wk-sidebar[data-settling] [data-wk-rail-gone] {
+    display: none;
 }
 
 /*
